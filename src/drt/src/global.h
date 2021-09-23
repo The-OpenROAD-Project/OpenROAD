@@ -132,6 +132,7 @@ class frPin;
 class frRect;
 class frPolygon;
 class frNet;
+class drNet;
 class frPoint;
 class frBox;
 class drConnFig;

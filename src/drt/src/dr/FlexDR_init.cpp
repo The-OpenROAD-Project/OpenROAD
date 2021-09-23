@@ -2738,25 +2738,6 @@ void FlexDRWorker::route_queue_update_from_marker(
   set<frNet*> movableAggressorNets;
   set<frBlockObject*> movableAggressorOwners;
 
-  int n_NDnets = 0, n_dNets = 0;
-  if (getTech()->hasNondefaultRules()) {
-    for (auto& a : marker->getSrcs()) {
-      if (a->typeId() == frcNet) {
-        auto fNet = static_cast<frNet*>(a);
-        if (getDRNets(fNet)) {
-          for (auto dNet : *(getDRNets(fNet))) {
-            if (!canRipup(dNet)) {
-              continue;
-            }
-            if (dNet->hasNDR())
-              n_NDnets++;
-            else
-              n_dNets++;
-          }
-        }
-      }
-    }
-  }
   for (auto& aggressorPair : markerAggressors) {
     auto& aggressor = aggressorPair.first;
     if (aggressor && aggressor->typeId() == frcNet) {

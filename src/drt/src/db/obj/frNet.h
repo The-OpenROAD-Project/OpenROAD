@@ -38,7 +38,7 @@
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"
-//#include "global.h"
+#include "global.h"
 
 namespace fr {
 class frInstTerm;
@@ -209,9 +209,9 @@ class frNet : public frBlockObject
   {
     int max = absPriorityLvl;
     if (hasNDR())
-      max = std::max(max, 2 /*NDR_NETS_ABS_PRIORITY*/);
+      max = std::max(max, NDR_NETS_ABS_PRIORITY);
     if (isClock())
-      max = std::max(max, 4 /*CLOCK_NETS_ABS_PRIORITY*/);
+      max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
     absPriorityLvl = max;
   }
 

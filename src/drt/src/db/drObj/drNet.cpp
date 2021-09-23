@@ -14,3 +14,7 @@ bool fr::drNet::hasNDR() const
 {
   return getFrNet()->getNondefaultRule() != nullptr;
 }
+
+bool fr::drNet::isClockNet() const { 
+    return fNet_->isClock(); 
+}

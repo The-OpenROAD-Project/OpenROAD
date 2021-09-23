@@ -147,7 +147,7 @@ class drNet : public drBlockObject
     else if (isClockNetLeaf())
       maxRipupAvoids_ = CLOCK_NETS_LEAF_RIPUP_HARDINESS;
   }
-  bool isClockNet() const { return fNet_->isClock(); }
+  bool isClockNet() const;
   bool isClockNetTrunk() const
   {
     // TODO;
