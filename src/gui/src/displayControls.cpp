@@ -226,8 +226,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(blockage_group_);
 
   // Rulers
-  ruler_font_ = QFont(); // use default font
-  ruler_font_.setPointSize(12);
+  ruler_font_ = QApplication::font(); // use default font
   ruler_color_ = Qt::cyan;
   makeParentItem(rulers_, "Rulers", model_, Qt::Checked, true, row_color_);
 
@@ -238,6 +237,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Rows
   makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
   makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
+  pin_markers_font_ = QApplication::font(); // use default font
 
   // Track patterns group
   auto tracks = makeParentItem(
@@ -251,8 +251,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto misc = makeParentItem(
       misc_group_, "Misc", model_, Qt::Unchecked);
 
-  instance_name_font_ = QFont(); // use default font
-  instance_name_font_.setPointSize(12);
+  instance_name_font_ = QApplication::font(); // use default font
   instance_name_color_ = Qt::yellow;
 
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
@@ -357,6 +356,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, congestion_map_);
   // pin markers
   readSettingsForRow(settings, pin_markers_);
+  pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
 
   // rulers
   readSettingsForRow(settings, rulers_);
@@ -419,6 +419,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, congestion_map_);
   // pin markers
   writeSettingsForRow(settings, pin_markers_);
+  settings->setValue("pin_markers_font", pin_markers_font_);
 
   // rulers
   writeSettingsForRow(settings, rulers_);
@@ -556,9 +557,15 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (name_item == misc_.instance_names.name) {
       // handle font change
       instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+      emit changed();
     } else if (name_item == rulers_.name) {
       // handle font change
       ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
+      emit changed();
+    } else if (name_item == pin_markers_.name) {
+      // handle font change
+      pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
+      emit changed();
     }
   }
   else if (index.column() == 1) { // handle color changes
@@ -1042,6 +1049,11 @@ bool DisplayControls::isCongestionVisible() const
 bool DisplayControls::arePinMarkersVisible() const
 {
   return pin_markers_.visible->checkState() == Qt::Checked;
+}
+
+QFont DisplayControls::pinMarkersFont()
+{
+  return pin_markers_font_;
 }
 
 void DisplayControls::addCustomVisibilityControl(const std::string& name,

@@ -80,6 +80,7 @@ class Options
   virtual bool isScaleBarVisible() const = 0;
   virtual bool isCongestionVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;
+  virtual QFont pinMarkersFont() = 0;
   virtual bool showHorizontalCongestion() const = 0;
   virtual bool showVerticalCongestion() const = 0;
   virtual float getMinCongestionToShow() const = 0;
