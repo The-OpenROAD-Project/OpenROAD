@@ -38,6 +38,7 @@
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"
+#include "global.h"
 
 namespace fr {
 class frInstTerm;
@@ -67,7 +68,9 @@ class frNet : public frBlockObject
         type_(dbSigType::SIGNAL),
         modified_(false),
         isFakeNet_(false),
-        ndr_(nullptr)
+        ndr_(nullptr),
+        absPriorityLvl(0),
+        isClock_(false)
   {
   }
   // getters
@@ -188,8 +191,29 @@ class frNet : public frBlockObject
   dbSigType getType() const { return type_; }
   void setType(dbSigType in) { type_ = in; }
   virtual frBlockObjectEnum typeId() const override { return frcNet; }
-  void setNondefaultRule(frNonDefaultRule* n) { ndr_ = n; }
+  void updateNondefaultRule(frNonDefaultRule* n)
+  {
+    ndr_ = n;
+    updateAbsPriority();
+  }
   bool hasNDR() const { return getNondefaultRule() != nullptr; }
+  void setAbsPriorityLvl(int l) { absPriorityLvl = l; }
+  int getAbsPriorityLvl() const { return absPriorityLvl; }
+  bool isClock() const { return isClock_; }
+  void updateIsClock(bool ic)
+  {
+    isClock_ = ic;
+    updateAbsPriority();
+  }
+  void updateAbsPriority()
+  {
+    int max = absPriorityLvl;
+    if (hasNDR())
+      max = std::max(max, NDR_NETS_ABS_PRIORITY);
+    if (isClock())
+      max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
+    absPriorityLvl = max;
+  }
 
  protected:
   frString name_;
@@ -215,6 +239,9 @@ class frNet : public frBlockObject
   bool modified_;
   bool isFakeNet_;  // indicate floating PG nets
   frNonDefaultRule* ndr_;
+  int absPriorityLvl;  // absolute priority level: will be checked in net
+                       // ordering before other criteria
+  bool isClock_;
 };
 }  // namespace fr
 

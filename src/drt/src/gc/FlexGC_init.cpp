@@ -842,7 +842,7 @@ void FlexGCWorker::Impl::initRegionQuery()
 // init initializes all nets from frDesign if no drWorker is provided
 void FlexGCWorker::Impl::init(const frDesign* design)
 {
-  ProfileTask profile("GC:init");
+  // ProfileTask profile("GC:init");
   addNet(design->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
   addNet(design->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
   initDesign(design);

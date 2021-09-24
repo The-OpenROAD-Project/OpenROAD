@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -478,26 +479,30 @@ bool FastRouteCore::netCongestion(const int netID)
     // remove L routing
     if (seg->xFirst) {
       for (int i = seg->x1; i < seg->x2; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], i, seg->y1, EdgeDirection::Horizontal);
+        const int cap = getEdgeCapacity(
+            nets_[netID], i, seg->y1, EdgeDirection::Horizontal);
         if (h_edges_[seg->y1][i].est_usage >= cap) {
           return true;
         }
       }
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], seg->x2, i, EdgeDirection::Vertical);
+        const int cap = getEdgeCapacity(
+            nets_[netID], seg->x2, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg->x2].est_usage >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], seg->x1, i, EdgeDirection::Vertical);
+        const int cap = getEdgeCapacity(
+            nets_[netID], seg->x1, i, EdgeDirection::Vertical);
         if (v_edges_[i][seg->x1].est_usage >= cap) {
           return true;
         }
       }
       for (int i = seg->x1; i < seg->x2; i++) {
-        const int cap = getEdgeCapacity(nets_[netID], i, seg->y2, EdgeDirection::Horizontal);
+        const int cap = getEdgeCapacity(
+            nets_[netID], i, seg->y2, EdgeDirection::Horizontal);
         if (h_edges_[seg->y2][i].est_usage >= cap) {
           return true;
         }
@@ -718,6 +723,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         // call FLUTE to generate RSMT for each net
         fluteNormal(i, net->pinX, net->pinY, flute_accuracy, coeffV, rsmt);
       }
+    }
+    if (debug_->isOn_ && debug_->steinerTree_ && net->db_net == debug_->net_) {
+      steinerTreeVisualization(rsmt, net);
     }
 
     if (genTree) {
