@@ -37,8 +37,8 @@ according the row orientation.
 placed at the corners of macros.
 - `-cnrcap_nwin_master`, `-cnrcap_nwout_master`. Specify the macro cells placed
 at the corners of the core area, according the row orientation.
-- `-tap_prefix`. Specify the name prefix for the tapcell instances.
-- `-endcap_prefix`. Specify the name prefix for the endcaps instances.
+- `-tap_prefix`. Specify the name prefix for the tapcell instances. Default prefix is `TAP_`.
+- `-endcap_prefix`. Specify the name prefix for the endcaps instances. Default prefix is `PHY_`.
 
 The figures below shows two examples of tapcell insertion. When only the 
 `-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
