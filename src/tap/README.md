@@ -61,7 +61,7 @@ The figures below shows two examples of tapcell insertion. When only the
 is similar to the Figure 1. When the remaining masters are give, the tapcell
 placement is similar to the Figure 2.
 
-| <img src="./doc/image/tapcell_example1.png" width=450px> | <img src="./doc/image/tapcell_example2.png" width=450px> |
+| <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
 |:--:|:--:|
 | Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
 
