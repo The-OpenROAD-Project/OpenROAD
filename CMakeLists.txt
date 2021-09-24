@@ -58,17 +58,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(OPENROAD_VERSION ${PROJECT_VERSION})
-message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Get version string in OPENROAD_VERSION
 include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC OPENROAD_GIT_SHA1)
-message(STATUS "OpenROAD git sha: ${OPENROAD_GIT_SHA1}")
+git_describe(OPENROAD_VERSION)
+string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
+if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
+  message(WARNING "OpenROAD git describe failed, using sha1 instead")
+  get_git_head_revision(GIT_REFSPEC OPENROAD_VERSION)
+endif()
+message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8.3.0")
+    message(FATAL_ERROR "Insufficient gcc version. Found ${CMAKE_CXX_COMPILER_VERSION}, but require  >= 8.3.0.")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "7.0.0")
+    message(FATAL_ERROR "Insufficient Clang version. Found ${CMAKE_CXX_COMPILER_VERSION}, but require >= 7.0.0.")
+  endif()
+else()
+  message(WARNING "Compiler ${CMAKE_CXX_COMPILER_ID} is not officially supported.")
 endif()
 
 message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")

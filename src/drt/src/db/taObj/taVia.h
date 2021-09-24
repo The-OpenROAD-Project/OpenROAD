@@ -31,7 +31,7 @@
 
 #include <memory>
 
-#include "db/infra/frOrient.h"
+#include "odb/dbTypes.h"
 #include "db/obj/frShape.h"
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
@@ -44,11 +44,11 @@ class taRef : public taPinFig
   // constructors
   taRef() : taPinFig() {}
   // getters
-  virtual frOrient getOrient() const = 0;
+  virtual dbOrientType getOrient() const = 0;
   virtual void getOrigin(frPoint& tmpOrigin) const = 0;
   virtual void getTransform(frTransform& xform) const = 0;
   // setters
-  virtual void setOrient(const frOrient& tmpOrient) = 0;
+  virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const frPoint& tmpPoint) = 0;
   virtual void setTransform(const frTransform& xform) = 0;
 
@@ -163,8 +163,8 @@ class taVia : public taRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return frOrient(); }
-  void setOrient(const frOrient& tmpOrient) override { ; }
+  dbOrientType getOrient() const override { return dbOrientType(); }
+  void setOrient(const dbOrientType& tmpOrient) override { ; }
   void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
   void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
   void getTransform(frTransform& xformIn) const override

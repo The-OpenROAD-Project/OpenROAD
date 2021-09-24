@@ -81,8 +81,8 @@ class frInst : public frRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return xform_.orient(); }
-  void setOrient(const frOrient& tmpOrient) override { xform_.set(tmpOrient); }
+  dbOrientType getOrient() const override { return xform_.orient(); }
+  void setOrient(const dbOrientType& tmpOrient) override { xform_.set(tmpOrient); }
   void getOrigin(frPoint& tmpOrigin) const override
   {
     tmpOrigin.set(xform_.xOffset(), xform_.yOffset());

@@ -57,7 +57,7 @@ void io::Parser::initDefaultVias()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design->getTech()->getLayer(layerNum)->getViaDefs()) {
@@ -99,9 +99,9 @@ void io::Parser::initDefaultVias()
       bool isLayer2EncHorz = (layer2Box.right() - layer2Box.left())
                              > (layer2Box.top() - layer2Box.bottom());
       bool isLayer1Horz
-          = (tech->getLayer(layer1Num)->getDir() == frcHorzPrefRoutingDir);
+          = (tech->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz
-          = (tech->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir);
+          = (tech->getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL);
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
           || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
@@ -263,7 +263,7 @@ void io::Parser::initCutLayerWidth()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     auto layer = design->getTech()->getLayer(layerNum);
@@ -347,10 +347,10 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                                  (yh(layer1Rect) - yl(layer1Rect)));
   isNotLowerAlign = (isLayer1Horz
                      && (tech->getLayer(viaDef->getLayer1Num())->getDir()
-                         == frcVertPrefRoutingDir))
+                         == dbTechLayerDir::VERTICAL))
                     || (!isLayer1Horz
                         && (tech->getLayer(viaDef->getLayer1Num())->getDir()
-                            == frcHorzPrefRoutingDir));
+                            == dbTechLayerDir::HORIZONTAL));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -367,10 +367,10 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                                  (yh(layer2Rect) - yl(layer2Rect)));
   isNotUpperAlign = (isLayer2Horz
                      && (tech->getLayer(viaDef->getLayer2Num())->getDir()
-                         == frcVertPrefRoutingDir))
+                         == dbTechLayerDir::VERTICAL))
                     || (!isLayer2Horz
                         && (tech->getLayer(viaDef->getLayer2Num())->getDir()
-                            == frcHorzPrefRoutingDir));
+                            == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
@@ -742,9 +742,9 @@ void io::Parser::initRPin_rpin()
 
         // MACRO does not go through PA
         if (prefAp == nullptr) {
-          if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-              || isPad(inst->getRefBlock()->getMacroClass())
-              || inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+          dbMasterType masterType = inst->getRefBlock()->getMasterType();
+          if (masterType.isBlock() || masterType.isPad()
+              || masterType == dbMasterType::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
                           ->getAccessPoints())[0]
                          .get();
@@ -813,15 +813,15 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
       frBox guideBBox;
       rect.getBBox(guideBBox);
       frCoord guideWidth
-          = (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir)
+          = (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
                 ? (guideBBox.top() - guideBBox.bottom())
                 : (guideBBox.right() - guideBBox.left());
-      if (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
+      if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
         guideGridYMap[guideWidth]++;
-      } else if (tech->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir) {
+      } else if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL) {
         if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
           guideGridXMap[guideWidth] = 0;
         }
@@ -984,14 +984,14 @@ void io::Parser::buildGCellPatterns()
         frBox gcellBox;
         design->getTopBlock()->getGCellBox(frPoint(i, j), gcellBox);
         bool isH = (tech->getLayers().at(layerNum)->getDir()
-                    == frcHorzPrefRoutingDir);
+                    == dbTechLayerDir::HORIZONTAL);
         frCoord gcLow = isH ? gcellBox.bottom() : gcellBox.right();
         frCoord gcHigh = isH ? gcellBox.top() : gcellBox.left();
         int trackCnt = 0;
         for (auto& tp : design->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir
+          if ((tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
                && tp->isHorizontal() == false)
-              || (tech->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir
+              || (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL
                   && tp->isHorizontal() == true)) {
             int trackNum
                 = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();

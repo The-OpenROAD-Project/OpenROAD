@@ -397,8 +397,8 @@ void ScriptWidget::outputChanged()
 {
   // ensure the new output is visible
   output_->ensureCursorVisible();
-  // Make changes visible in output log
-  output_->repaint();
+  // Make changes visible
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)

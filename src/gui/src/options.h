@@ -72,9 +72,15 @@ class Options
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
 
+  virtual QColor rulerColor() = 0;
+  virtual QFont rulerFont() = 0;
+  virtual bool areRulersVisible() = 0;
+  virtual bool areRulersSelectable() = 0;
+
   virtual bool isScaleBarVisible() const = 0;
   virtual bool isCongestionVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;
+  virtual QFont pinMarkersFont() = 0;
   virtual bool showHorizontalCongestion() const = 0;
   virtual bool showVerticalCongestion() const = 0;
   virtual float getMinCongestionToShow() const = 0;

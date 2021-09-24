@@ -58,7 +58,7 @@ int FlexTAWorker::main()
        << ", "
        << routeBox_.top() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ";
-    if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (getDir() == dbTechLayerDir::HORIZONTAL) {
       ss << "H";
     } else {
       ss << "V";
@@ -68,6 +68,15 @@ int FlexTAWorker::main()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -104,7 +113,7 @@ int FlexTAWorker::main_mt()
        << ", "
        << routeBox_.top() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ";
-    if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (getDir() == dbTechLayerDir::HORIZONTAL) {
       ss << "H";
     } else {
       ss << "V";
@@ -114,6 +123,15 @@ int FlexTAWorker::main_mt()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -160,7 +178,7 @@ int FlexTA::initTA_helper(int iter,
         routeBox.bloat(ygp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::HORIZONTAL);
         worker.setTAIter(iter);
         worker.main();
         sol += worker.getNumAssigned();
@@ -184,7 +202,7 @@ int FlexTA::initTA_helper(int iter,
         routeBox.bloat(xgp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcVertPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::VERTICAL);
         worker.setTAIter(iter);
         worker.main();
         sol += worker.getNumAssigned();
@@ -212,7 +230,7 @@ int FlexTA::initTA_helper(int iter,
         routeBox.bloat(ygp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::HORIZONTAL);
         worker.setTAIter(iter);
         if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
           workers.push_back(vector<unique_ptr<FlexTAWorker>>());
@@ -235,7 +253,7 @@ int FlexTA::initTA_helper(int iter,
         routeBox.bloat(xgp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcVertPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::VERTICAL);
         worker.setTAIter(iter);
         if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
           workers.push_back(vector<unique_ptr<FlexTAWorker>>());
@@ -278,12 +296,12 @@ void FlexTA::initTA(int size)
 
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
   bool isBottomLayerH
-      = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+      = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
 
   // H first
   if (isBottomLayerH) {
@@ -349,12 +367,12 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
   bool isBottomLayerH
-      = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+      = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
 
   // H first
   if (isBottomLayerH) {

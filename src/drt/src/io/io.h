@@ -83,7 +83,7 @@ class Parser
   void initDefaultVias();
   void initRPin();
   std::map<frBlock*,
-           std::map<frOrient,
+           std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
            frBlockObjectComp>&
@@ -138,7 +138,7 @@ class Parser
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
   std::vector<std::pair<frBlockObject*, frPoint>> tmpGRPins;
   std::map<frBlock*,
-           std::map<frOrient,
+           std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
            frBlockObjectComp>
@@ -173,6 +173,11 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void checkPinForGuideEnclosure(frBlockObject* pin,
+                                 frNet* net,
+                                 std::vector<frRect>& guides);
   void genGuides_merge(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);

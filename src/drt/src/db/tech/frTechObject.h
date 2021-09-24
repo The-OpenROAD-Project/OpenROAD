@@ -245,9 +245,9 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers) {
       auto type = layer->getType();
-      if (type == frLayerTypeEnum::CUT)
+      if (type == dbTechLayerType::CUT)
         logger->report("Cut layer {}.", layer->getName());
-      else if (type == frLayerTypeEnum::ROUTING)
+      else if (type == dbTechLayerType::ROUTING)
         logger->report("Routing layer {}.", layer->getName());
       layer->printAllConstraints(logger);
     }
@@ -257,7 +257,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
-      if (layer->getType() == frLayerTypeEnum::CUT
+      if (layer->getType() == dbTechLayerType::CUT
           && layer->getLayerNum() >= 2 /*BOTTOM_ROUTING_LAYER*/) {
         logger->report("  Layer {}", layer->getName());
         logger->report("    default via: {}",
@@ -267,14 +267,17 @@ class frTechObject
   }
 
   friend class io::Parser;
+  void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasVia2ViaMinStepViolAt(int layerIdx) const
+
+  bool isHorizontalLayer(frLayerNum l)
   {
-    return !via2viaMinStepPatches_[layerIdx].empty();
+    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
   }
-  const std::vector<std::vector<frBox>>& getVia2ViaMinStepPatches() const
+
+  bool isVerticalLayer(frLayerNum l)
   {
-    return via2viaMinStepPatches_;
+    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
   }
 
  protected:
@@ -362,14 +365,6 @@ class frTechObject
   // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
   // for up via
   std::vector<std::vector<bool>> viaForbiddenThrough;
-  /*
-   Each position tells whether the corresponding routing layer (layer index,
-   not layerNum) has up and down default vias that create a min step viol:
-   if the vector of such layer index is empty, there is no viol; otherwise,
-   there are viols,
-   and each frBox in the sub vector is a patch to correct the viol
-   */
-  std::vector<std::vector<frBox>> via2viaMinStepPatches_;
   bool hasVia2viaMinStep_ = false;
 
   // forbidden length table related utilities

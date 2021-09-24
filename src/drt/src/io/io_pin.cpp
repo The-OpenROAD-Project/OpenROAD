@@ -42,7 +42,7 @@ void io::Parser::instAnalysis()
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
     if (design->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == frcHorzPrefRoutingDir) {
+        == dbTechLayerDir::HORIZONTAL) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }

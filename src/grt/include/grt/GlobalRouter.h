@@ -187,8 +187,16 @@ class GlobalRouter
   };
   void perturbCapacities();
 
+  void initDebugFastRoute();
+  void setDebugNet(const odb::dbNet* net);
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugRectilinearSTree(bool rectilinearSTree);
+  void setDebugTree2D(bool tree2D);
+  void setDebugTree3D(bool tree3D);
+
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
+
   // Clear routes in the gui
   void clearRouteGui();
   // Report the wire length on each layer.
@@ -249,7 +257,9 @@ class GlobalRouter
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  GSegment createFakePin(Pin pin, odb::Point& pin_position, odb::dbTechLayer* layer);
+  GSegment createFakePin(Pin pin,
+                         odb::Point& pin_position,
+                         odb::dbTechLayer* layer);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
@@ -360,5 +370,6 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::string getLayerName(int layer_idx, odb::dbDatabase* db);
 
 }  // namespace grt

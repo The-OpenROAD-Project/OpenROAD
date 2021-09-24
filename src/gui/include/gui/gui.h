@@ -265,7 +265,6 @@ class Painter
   // The color to highlight in
   static inline const Color highlight = yellow;
   static inline const Color persistHighlight = yellow;
-  static inline const Color ruler_color = cyan;
 
   Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
@@ -304,9 +303,23 @@ class Painter
 
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
-  virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
+  enum Anchor {
+    // four corners
+    BOTTOM_LEFT,
+    BOTTOM_RIGHT,
+    TOP_LEFT,
+    TOP_RIGHT,
 
-  virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;
+    // centers
+    CENTER,
+    BOTTOM_CENTER,
+    TOP_CENTER,
+    LEFT_CENTER,
+    RIGHT_CENTER
+  };
+  virtual void drawString(int x, int y, Anchor anchor, const std::string& s) = 0;
+
+  virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
 
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)
@@ -351,6 +364,9 @@ class Renderer
   {
     return SelectionSet();
   }
+
+  // Used to trigger a draw
+  void redraw();
 };
 
 // This is the API for the rest of the program to interact with the
@@ -378,7 +394,7 @@ class Gui
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
                        bool match_case = true,
-                       bool match_reg_ex = false,
+                       bool match_reg_ex = true,
                        bool add_to_highlight_set = false,
                        int highlight_group = 0);
 
@@ -403,7 +419,8 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
-  void addRuler(int x0, int y0, int x1, int y1);
+  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
+  void deleteRuler(const std::string& name);
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);

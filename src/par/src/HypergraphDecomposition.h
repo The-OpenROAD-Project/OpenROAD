@@ -57,7 +57,7 @@ namespace par {
 class HypergraphDecomposition
 {
  public:
-  HypergraphDecomposition() {}
+  HypergraphDecomposition();
   void init(odb::dbBlock* block, Logger * logger);
   void constructMap(Hypergraph& hypergraph, unsigned maxVertexWeight);
   void createHypergraph(Hypergraph& hypergraph,
