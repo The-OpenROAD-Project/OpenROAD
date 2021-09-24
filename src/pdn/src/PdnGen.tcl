@@ -3505,7 +3505,7 @@ proc generate_stripes {tag net_name} {
     } else { 
       set design_width [expr [lindex [dict get $grid_data area] 2] - [lindex [dict get $grid_data area] 0]]
       if {$spacing + $offset + 2* $width > $design_width} {
-        debug "spacing:$spacing , width:$width , design_width $design_width , offset: $offset "
+        #debug "spacing:$spacing , width:$width , design_width $design_width , offset: $offset "
         utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
       }
     }

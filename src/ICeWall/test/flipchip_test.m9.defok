@@ -6449,7 +6449,7 @@ PINS 252 ;
         + LAYER metal9 ( -800 -800 ) ( 800 800 )
         + FIXED ( 6945000 4155000 ) N ;
 END PINS
-SPECIALNETS 258 ;
+SPECIALNETS 262 ;
     - DVDD ( u_sig252 DVDD ) ( u_sig251 DVDD ) ( u_sig249 DVDD ) ( u_sig248 DVDD ) ( u_sig247 DVDD ) ( u_sig246 DVDD ) ( u_sig245 DVDD )
       ( u_sig244 DVDD ) ( u_sig243 DVDD ) ( u_sig242 DVDD ) ( u_sig241 DVDD ) ( u_sig240 DVDD ) ( u_sig239 DVDD ) ( u_sig238 DVDD ) ( u_sig237 DVDD )
       ( u_sig236 DVDD ) ( u_sig235 DVDD ) ( u_sig234 DVDD ) ( u_sig233 DVDD ) ( u_sig232 DVDD ) ( u_sig231 DVDD ) ( u_sig230 DVDD ) ( u_sig229 DVDD )
@@ -6482,6 +6482,10 @@ SPECIALNETS 258 ;
       ( u_sig19 DVDD ) ( u_sig20 DVDD ) ( u_sig18 DVDD ) ( u_sig16 DVDD ) ( u_sig17 DVDD ) ( u_sig15 DVDD ) ( u_sig13 DVDD ) ( u_sig14 DVDD )
       ( u_sig12 DVDD ) ( u_sig10 DVDD ) ( u_sig11 DVDD ) ( u_sig9 DVDD ) ( u_sig7 DVDD ) ( u_sig8 DVDD ) ( u_sig6 DVDD ) ( u_sig4 DVDD )
       ( u_sig5 DVDD ) ( u_sig250 DVDD ) ( u_sig2 DVDD ) ( u_sig3 DVDD ) ( u_sig1 DVDD ) + USE SIGNAL ;
+    - DVDD_0 + USE POWER
+      + ROUTED ;
+    - DVDD_1 + USE POWER
+      + ROUTED ;
     - DVSS ( u_sig252 DVSS ) ( u_sig251 DVSS ) ( u_sig249 DVSS ) ( u_sig248 DVSS ) ( u_sig247 DVSS ) ( u_sig246 DVSS ) ( u_sig245 DVSS )
       ( u_sig244 DVSS ) ( u_sig243 DVSS ) ( u_sig242 DVSS ) ( u_sig241 DVSS ) ( u_sig240 DVSS ) ( u_sig239 DVSS ) ( u_sig238 DVSS ) ( u_sig237 DVSS )
       ( u_sig236 DVSS ) ( u_sig235 DVSS ) ( u_sig234 DVSS ) ( u_sig233 DVSS ) ( u_sig232 DVSS ) ( u_sig231 DVSS ) ( u_sig230 DVSS ) ( u_sig229 DVSS )
@@ -6514,6 +6518,10 @@ SPECIALNETS 258 ;
       ( u_sig19 DVSS ) ( u_sig20 DVSS ) ( u_sig18 DVSS ) ( u_sig16 DVSS ) ( u_sig17 DVSS ) ( u_sig15 DVSS ) ( u_sig13 DVSS ) ( u_sig14 DVSS )
       ( u_sig12 DVSS ) ( u_sig10 DVSS ) ( u_sig11 DVSS ) ( u_sig9 DVSS ) ( u_sig7 DVSS ) ( u_sig8 DVSS ) ( u_sig6 DVSS ) ( u_sig4 DVSS )
       ( u_sig5 DVSS ) ( u_sig250 DVSS ) ( u_sig2 DVSS ) ( u_sig3 DVSS ) ( u_sig1 DVSS ) + USE SIGNAL ;
+    - DVSS_0 + USE GROUND
+      + ROUTED ;
+    - DVSS_1 + USE GROUND
+      + ROUTED ;
     - RETN ( u_sig252 RETN ) ( u_sig251 RETN ) ( u_sig249 RETN ) ( u_sig248 RETN ) ( u_sig247 RETN ) ( u_sig246 RETN ) ( u_sig245 RETN )
       ( u_sig244 RETN ) ( u_sig243 RETN ) ( u_sig242 RETN ) ( u_sig241 RETN ) ( u_sig240 RETN ) ( u_sig239 RETN ) ( u_sig238 RETN ) ( u_sig237 RETN )
       ( u_sig236 RETN ) ( u_sig235 RETN ) ( u_sig234 RETN ) ( u_sig233 RETN ) ( u_sig232 RETN ) ( u_sig231 RETN ) ( u_sig230 RETN ) ( u_sig229 RETN )

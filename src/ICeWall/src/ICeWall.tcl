@@ -3387,8 +3387,11 @@ namespace eval ICeWall {
     # debug "$pdngen::metal_layers"
     # debug "[array get pdngen::stripe_locs]"
     pdngen::merge_stripes
-    dict set pdngen::design_data power_nets [lsort -unique $power_nets]
-    dict set pdngen::design_data ground_nets [lsort -unique $ground_nets]
+    set ground_nets [get_ground_nets ]
+    set power_nets [get_power_nets]
+    #debug "$power_nets $ground_nets"
+    dict set pdngen::design_data power_nets $power_nets
+    dict set pdngen::design_data ground_nets $ground_nets
     dict set pdngen::design_data core_domain "CORE"
     dict set pdngen::voltage_domains CORE primary_ground [lindex $ground_nets 0]
     dict set pdngen::voltage_domains CORE primary_power [lindex $power_nets 0]

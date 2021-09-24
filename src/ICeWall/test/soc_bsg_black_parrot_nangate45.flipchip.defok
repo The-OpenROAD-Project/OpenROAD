@@ -4401,13 +4401,15 @@ SPECIALNETS 177 ;
       NEW metal10 20000 + SHAPE STRIPE ( 1820000 5635000 ) ( 1780000 5675000 )
       NEW metal10 20000 + SHAPE STRIPE ( 1780000 5675000 ) ( 1780000 5825000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3640000 5560000 ) ( 3640000 5825000 )
-      NEW metal10 20000 + SHAPE STRIPE ( 760000 5560000 ) ( 760000 5825000 ) ;
+      NEW metal10 20000 + SHAPE STRIPE ( 760000 5560000 ) ( 760000 5825000 )
+      + ROUTED ;
     - DVDD_1 ( PIN DVDD_1 ) ( u_v18_21 DVDD ) ( u_clk_C_i DVDD ) ( u_vzz_21 DVDD ) ( u_clk_o DVDD ) ( u_vdd_pll DVDD ) ( u_clk_async_reset_i DVDD )
       ( u_vss_pll DVDD ) ( u_pwrdet11 DVDD ) ( u_misc_o DVDD ) + USE POWER
       + ROUTED metal10 20000 + SHAPE STRIPE ( 3000000 4920000 ) ( 2900000 5020000 )
       NEW metal10 20000 + SHAPE STRIPE ( 2900000 5020000 ) ( 2900000 5635000 )
       NEW metal10 20000 + SHAPE STRIPE ( 2900000 5635000 ) ( 2950000 5685000 )
-      NEW metal10 20000 + SHAPE STRIPE ( 2950000 5685000 ) ( 2950000 5825000 ) ;
+      NEW metal10 20000 + SHAPE STRIPE ( 2950000 5685000 ) ( 2950000 5825000 )
+      + ROUTED ;
     - DVSS_0 ( PIN DVSS_0 ) ( u_UNASSIGNED_2 DVSS ) ( u_UNASSIGNED_1 DVSS ) ( u_UNASSIGNED_0 DVSS ) ( u_v18_33 DVSS ) ( u_vzz_33 DVSS ) ( u_vss_15 DVSS )
       ( u_vdd_15 DVSS ) ( u_ddr_dq_8_io DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_pwrdet17 DVSS ) ( u_ddr_dq_11_io DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_v18_32 DVSS )
       ( u_vzz_32 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_ddr_dq_14_io DVSS ) ( u_ddr_dq_15_io DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_v18_31 DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_n_0_io DVSS )
@@ -4538,13 +4540,15 @@ SPECIALNETS 177 ;
       NEW metal10 20000 + SHAPE STRIPE ( 2620000 5675000 ) ( 2620000 5825000 )
       NEW metal10 20000 + SHAPE STRIPE ( 5560000 5560000 ) ( 5560000 5825000 )
       NEW metal10 20000 + SHAPE STRIPE ( 4600000 5560000 ) ( 4600000 5825000 )
-      NEW metal10 20000 + SHAPE STRIPE ( 1080000 5560000 ) ( 1080000 5825000 ) ;
+      NEW metal10 20000 + SHAPE STRIPE ( 1080000 5560000 ) ( 1080000 5825000 )
+      + ROUTED ;
     - DVSS_1 ( PIN DVSS_1 ) ( u_v18_21 DVSS ) ( u_clk_C_i DVSS ) ( u_vzz_21 DVSS ) ( u_clk_o DVSS ) ( u_vdd_pll DVSS ) ( u_clk_async_reset_i DVSS )
       ( u_vss_pll DVSS ) ( u_pwrdet11 DVSS ) ( u_misc_o DVSS ) + USE GROUND
       + ROUTED metal10 20000 + SHAPE STRIPE ( 3000000 5240000 ) ( 3100000 5340000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3100000 5340000 ) ( 3100000 5635000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3100000 5635000 ) ( 3070000 5665000 )
-      NEW metal10 20000 + SHAPE STRIPE ( 3070000 5665000 ) ( 3070000 5825000 ) ;
+      NEW metal10 20000 + SHAPE STRIPE ( 3070000 5665000 ) ( 3070000 5825000 )
+      + ROUTED ;
     - RETN_0 ( u_UNASSIGNED_2 RETN ) ( u_UNASSIGNED_1 RETN ) ( u_UNASSIGNED_0 RETN ) ( u_v18_33 RETN ) ( u_vzz_33 RETN ) ( u_vss_15 RETN ) ( u_vdd_15 RETN )
       ( u_ddr_dq_8_io RETN ) ( u_ddr_dq_9_io RETN ) ( u_ddr_dq_10_io RETN ) ( u_pwrdet17 RETN ) ( u_ddr_dq_11_io RETN ) ( u_ddr_dq_12_io RETN ) ( u_v18_32 RETN ) ( u_vzz_32 RETN )
       ( u_ddr_dq_13_io RETN ) ( u_ddr_dq_14_io RETN ) + USE SIGNAL ;
