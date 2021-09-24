@@ -3506,7 +3506,7 @@ proc generate_stripes {tag net_name} {
       set design_width [expr [lindex [dict get $grid_data area] 2] - [lindex [dict get $grid_data area] 0]]
       if {$spacing + $offset + 2* $width > $design_width} {
         debug "spacing:$spacing , width:$width , design_width $design_width , offset: $offset "
-	utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
+        utl::error "PDN" 177 "Insufficient width to add power and ground straps on layer $lay."
       }
     }
     # debug "    Layer $lay ..."
@@ -4177,6 +4177,7 @@ proc get_global_connect_list_default {voltage_domain is_region} {
   foreach net_type "primary_power primary_ground" {
     set net_name [dict get $voltage_domains $voltage_domain $net_type]
     set net [$block findNet $net_name]
+    #debug "$voltage_domains $net $net_name"
     foreach term [get_valid_mterms $net_name] {
       if {$is_region} {
         pdn::add_global_connect $block $voltage_domain ".*" $term $net

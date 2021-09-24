@@ -3390,6 +3390,9 @@ namespace eval ICeWall {
     dict set pdngen::design_data power_nets [lsort -unique $power_nets]
     dict set pdngen::design_data ground_nets [lsort -unique $ground_nets]
     dict set pdngen::design_data core_domain "CORE"
+    dict set pdngen::voltage_domains CORE primary_ground [lindex $ground_nets 0]
+    dict set pdngen::voltage_domains CORE primary_power [lindex $power_nets 0]
+
     pdngen::opendb_update_grid
   }
     # Connect up pads in the corner regions
