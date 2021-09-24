@@ -506,6 +506,16 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   open_road->addObserver(main_window);
   main_window->show();
 
+  // execute commands to restore state of gui
+  std::string restore_commands;
+  for (const auto& cmd : gui->getRestoreStateCommands()) {
+    restore_commands += cmd + "\n";
+  }
+  if (!restore_commands.empty()) {
+    main_window->getScriptWidget()->executeSilentCommand(QString::fromStdString(restore_commands));
+  }
+  gui->clearRestoreStateCommands();
+
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
 
@@ -533,6 +543,11 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   // cleanup
   open_road->removeObserver(main_window);
+
+  // save restore state commands
+  for (const auto& cmd : main_window->getRestoreTclCommands()) {
+    gui->addRestoreStateCommands(cmd);
+  }
 
   // delete main window and set to nullptr
   delete main_window;

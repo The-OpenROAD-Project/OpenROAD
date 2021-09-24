@@ -93,6 +93,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
 
+  const std::vector<std::string> getRestoreTclCommands();
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update

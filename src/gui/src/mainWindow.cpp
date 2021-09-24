@@ -402,6 +402,18 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
   }
 
   auto action = view_tool_bar_->addAction(text);
+  // save the command so it can be restored later
+  QString escaped_script = script;
+  escaped_script.replace("\"", "\\\"");
+  QString cmd = "gui::create_toolbar_button ";
+  cmd += "\"" + QString::fromStdString(name) + "\" \"" + text + "\" ";
+  cmd += "\"" + escaped_script + "\" ";
+  if (echo) {
+    cmd += "true";
+  } else {
+    cmd += "false";
+  }
+  action->setData(cmd);
 
   connect(action, &QAction::triggered, [script, echo, this]() {
     script_->executeCommand(script, echo);
@@ -805,6 +817,24 @@ void MainWindow::closeEvent(QCloseEvent* event)
     // cancel selected so ignore event
     event->ignore();
   }
+}
+
+const std::vector<std::string> MainWindow::getRestoreTclCommands()
+{
+  std::vector<std::string> cmds;
+  // Save rulers
+  for (const auto& ruler : rulers_) {
+    cmds.push_back(ruler->getTclCommand());
+  }
+  // Save buttons
+  for (const auto& action : view_tool_bar_->actions()) {
+    // iterate over toolbar actions to get the correct order
+    QVariant cmd = action->data();
+    if (cmd.isValid()) {
+      cmds.push_back(cmd.toString().toStdString());
+    }
+  }
+  return cmds;
 }
 
 }  // namespace gui

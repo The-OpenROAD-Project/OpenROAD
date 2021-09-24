@@ -506,6 +506,11 @@ class Gui
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
 
+  // accessors for to add and remove commands needed to restore the state of the gui
+  const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
+  void addRestoreStateCommands(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }
+  void clearRestoreStateCommands() { tcl_state_commands_.clear(); }
+
   template <class T>
   void registerDescriptor(const Descriptor* descriptor)
   {
@@ -528,6 +533,9 @@ class Gui
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, const Descriptor*> descriptors_;
+
+  // tcl commands needed to restore state
+  std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
   static Gui* singleton_;

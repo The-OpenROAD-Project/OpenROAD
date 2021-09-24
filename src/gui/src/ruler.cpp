@@ -73,6 +73,15 @@ bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin) const
   return std::abs(d0 + d1 - druler) < margin;
 }
 
+std::string Ruler::getTclCommand() const
+{
+  double dbu_to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+  return "gui::add_ruler " +
+         std::to_string(pt0_.x() / dbu_to_microns) + " " + std::to_string(pt0_.y() / dbu_to_microns) + " " +
+         std::to_string(pt1_.x() / dbu_to_microns) + " " + std::to_string(pt1_.y() / dbu_to_microns) + " " +
+         "\"" + label_ + "\" \"" + name_ + "\"";
+}
+
 ////////////
 
 RulerDescriptor::RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers) :

@@ -81,8 +81,11 @@ class ScriptWidget : public QDockWidget
   void tclExiting();
 
  public slots:
-  // Triggered when the user hits return in the line edit
-  void executeCommand(const QString& command, bool echo = true);
+ // Triggered when the user hits return in the line edit
+ void executeCommand(const QString& command, bool echo = true);
+
+ // Use to execute a command silently, ie. without echo or return.
+ void executeSilentCommand(const QString& command);
 
  private slots:
   void outputChanged();
@@ -102,6 +105,7 @@ class ScriptWidget : public QDockWidget
   void resizeEvent(QResizeEvent* event) override;
 
  private:
+  int executeTclCommand(const QString& command);
 
   void triggerPauseCountDown(int timeout);
 

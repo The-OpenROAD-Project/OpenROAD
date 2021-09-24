@@ -166,15 +166,12 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp, const std::string& script)
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
-  pauser_->setText("Running");
-  pauser_->setStyleSheet("background-color: red");
-
   if (echo) {
     // Show the command that we executed
     addCommandToOutput(command);
   }
 
-  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
+  int return_code = executeTclCommand(command);
 
   // Show its output
   addTclResultToOutput(return_code);
@@ -197,10 +194,26 @@ void ScriptWidget::executeCommand(const QString& command, bool echo)
     historyPosition_ = history_.size();
   }
 
+  emit commandExecuted(return_code);
+}
+
+void ScriptWidget::executeSilentCommand(const QString& command)
+{
+  int return_code = executeTclCommand(command);
+  emit commandExecuted(return_code);
+}
+
+int ScriptWidget::executeTclCommand(const QString& command)
+{
+  pauser_->setText("Running");
+  pauser_->setStyleSheet("background-color: red");
+
+  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
+
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
 
-  emit commandExecuted(return_code);
+  return return_code;
 }
 
 void ScriptWidget::addCommandToOutput(const QString& cmd)
