@@ -108,7 +108,8 @@ class FlexTAWorker
         rq_(this),
         numAssigned_(0),
         totCost_(0),
-        maxRetry_(1){};
+        maxRetry_(1),
+        hardIroutesMode(false){};
   // setters
   void setRouteBox(const frBox& boxIn) { routeBox_.set(boxIn); }
   void setExtBox(const frBox& boxIn) { extBox_.set(boxIn); }
@@ -140,6 +141,7 @@ class FlexTAWorker
     }
     return sol;
   }
+
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
@@ -188,10 +190,10 @@ class FlexTAWorker
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>
       reassignIroutes_;  // iroutes to be assigned in sorted order
-
   int numAssigned_;
   int totCost_;
   int maxRetry_;
+  bool hardIroutesMode;
 
   //// others
   void init();

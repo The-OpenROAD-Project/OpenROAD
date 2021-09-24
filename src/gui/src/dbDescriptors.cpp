@@ -567,7 +567,8 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   auto net = std::any_cast<odb::dbNet*>(object);
   Properties props({{"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
-                    {"Wire type", net->getWireType().getString()}});
+                    {"Wire type", net->getWireType().getString()},
+                    {"Special", net->isSpecial()}});
   auto gui = Gui::get();
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
@@ -594,6 +595,22 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
   auto net = std::any_cast<odb::dbNet*>(object);
   Editors editors;
   addRenameEditor(net, editors);
+  editors.insert({"Special", makeEditor([net](std::any value) {
+    const bool new_special = std::any_cast<bool>(value);
+    if (new_special) {
+      net->setSpecial();
+    } else {
+      net->clearSpecial();
+    }
+    for (auto* iterm : net->getITerms()) {
+      if (new_special) {
+        iterm->setSpecial();
+      } else {
+        iterm->clearSpecial();
+      }
+    }
+    return true;
+  })});
   return editors;
 }
 
@@ -669,6 +686,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
   return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
                      {"IO type", iterm->getIoType().getString()},
                      {"Net", net_value},
+                     {"Special", iterm->isSpecial()},
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
 

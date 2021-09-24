@@ -33,9 +33,7 @@
 #include <memory>
 #include <string>
 
-#include "db/drObj/drFig.h"
-#include "db/obj/frBlock.h"
-#include "frDesign.h"
+#include "frBaseTypes.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -75,9 +73,14 @@ extern int MINNUMACCESSPOINT_STDCELLPIN;
 extern int ACCESS_PATTERN_END_ITERATION_NUM;
 
 extern int END_ITERATION;
-extern int NDR_NETS_RIPUP_THRESH;
+
+extern int NDR_NETS_RIPUP_HARDINESS;  // max ripup avoids
+extern int CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+extern int CLOCK_NETS_LEAF_RIPUP_HARDINESS;
 extern bool AUTO_TAPER_NDR_NETS;
 extern int TAPERBOX_RADIUS;
+extern int NDR_NETS_ABS_PRIORITY;
+extern int CLOCK_NETS_ABS_PRIORITY;
 
 extern fr::frUInt4 TAVIACOST;
 extern fr::frUInt4 TAPINCOST;
@@ -120,6 +123,25 @@ frCoord getGCELLGRIDY();
 frCoord getGCELLOFFSETX();
 frCoord getGCELLOFFSETY();
 
+class frViaDef;
+class frBlock;
+class frInst;
+class frInstTerm;
+class frTerm;
+class frPin;
+class frRect;
+class frPolygon;
+class frNet;
+class drNet;
+class frPoint;
+class frBox;
+class drConnFig;
+class frShape;
+class frConnFig;
+class frPathSeg;
+class frGuide;
+class frBlockObject;
+
 // These need to be in the fr namespace to support argument-dependent
 // lookup
 std::ostream& operator<<(std::ostream& os, const fr::frViaDef& viaDefIn);
@@ -130,7 +152,6 @@ std::ostream& operator<<(std::ostream& os, const fr::frTerm& termIn);
 std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
@@ -139,6 +160,8 @@ std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
 std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
+std::ostream& operator<<(std::ostream& os, const frNet& fig);
+std::ostream& operator<<(std::ostream& os, const drNet& n);
 // namespace fr
 }  // namespace fr
 #endif

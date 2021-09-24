@@ -53,6 +53,7 @@ class frLayer
         minWidth(0),
         numMasks(1),
         defaultViaDef(nullptr),
+        hasMinStepViol(false),
         minSpc(nullptr),
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
@@ -133,7 +134,7 @@ class frLayer
   }
   void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
-
+  void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
   // getters
   frUInt4 getNumMasks() const { return numMasks; }
   frLayerNum getLayerNum() const { return layerNum; }
@@ -160,6 +161,7 @@ class frLayer
     return style;
   }
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
+  bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
   frCollection<std::shared_ptr<frConstraint>> getConstraints() const
   {
@@ -667,6 +669,7 @@ class frLayer
   frUInt4 numMasks;
   dbTechLayerDir dir;
   frViaDef* defaultViaDef;
+  bool hasMinStepViol;
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;
   std::map<std::string, int> name2CutClassIdxMap;

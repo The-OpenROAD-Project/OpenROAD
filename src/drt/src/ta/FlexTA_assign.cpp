@@ -1116,6 +1116,8 @@ void FlexTAWorker::assignIroute_updateOthers(
     return;
   }
   for (auto& iroute : pinS) {
+    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode)
+        continue;
     removeFromReassignIroutes(iroute);
     // recalculate cost
     frUInt4 drcCost = 0;
