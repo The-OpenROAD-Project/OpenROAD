@@ -1492,7 +1492,7 @@ void FastRouteCore::setDebugRectilinearSTree(bool rectiliniarSTree)
 void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)
 {
   // init FastRouteRender
-  if (gui_) {
+  if (gui::Gui::enabled()) {
     if (fastrouteRender_ == nullptr) {
       fastrouteRender_ = new FastRouteRenderer(
           this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);

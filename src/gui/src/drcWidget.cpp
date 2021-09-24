@@ -315,11 +315,11 @@ void DRCWidget::hideEvent(QHideEvent* event)
 
 void DRCWidget::toggleRenderer(bool visible)
 {
-  auto gui = Gui::get();
-  if (gui == nullptr) {
+  if (!Gui::enabled()) {
     return;
   }
 
+  auto gui = Gui::get();
   if (visible) {
     gui->registerRenderer(this);
   } else {

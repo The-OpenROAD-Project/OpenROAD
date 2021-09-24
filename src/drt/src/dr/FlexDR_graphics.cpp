@@ -761,7 +761,7 @@ void FlexDRGraphics::status(const std::string& message)
 /* static */
 bool FlexDRGraphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 /* static */

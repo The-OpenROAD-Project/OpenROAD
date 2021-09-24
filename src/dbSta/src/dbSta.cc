@@ -666,7 +666,7 @@ dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 void
 dbSta::highlight(PathRef *path)
 {
-  if (gui_) {
+  if (gui::Gui::enabled()) {
     if (path_renderer_ == nullptr) {
       path_renderer_ = new PathRenderer(this);
       gui_->registerRenderer(path_renderer_);
