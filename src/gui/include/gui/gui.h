@@ -495,6 +495,9 @@ class Gui
   // Will return nullptr if openroad was invoked without -gui
   static Gui* get();
 
+  // Will return true if the GUI is active, false otherwise
+  static bool enabled();
+
  private:
   Gui() = default;
   void registerDescriptor(const std::type_info& type,

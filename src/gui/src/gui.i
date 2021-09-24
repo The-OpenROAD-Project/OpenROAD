@@ -100,8 +100,7 @@ odb::Point make_point(double x, double y)
 
 bool enabled()
 {
-  auto gui = gui::Gui::get();
-  return gui != nullptr;
+  return gui::Gui::enabled();
 }
 
 void

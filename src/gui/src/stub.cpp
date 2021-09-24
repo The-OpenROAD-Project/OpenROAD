@@ -46,6 +46,11 @@ Gui* gui::Gui::get()
   return singleton_;
 }
 
+bool gui::Gui::enabled()
+{
+   return false;
+}
+
 void gui::Gui::registerRenderer(gui::Renderer*)
 {
 }

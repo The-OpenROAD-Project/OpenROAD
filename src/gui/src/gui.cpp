@@ -87,6 +87,11 @@ Gui* Gui::get()
   return singleton_;
 }
 
+bool Gui::enabled()
+{
+  return main_window != nullptr;
+}
+
 void Gui::registerRenderer(Renderer* renderer)
 {
   renderers_.insert(renderer);
