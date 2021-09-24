@@ -1794,11 +1794,9 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
-    if (a->getFrNet()->getNondefaultRule()
-        && !b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() > b->getFrNet()->getAbsPriorityLvl())
       return true;
-    if (!a->getFrNet()->getNondefaultRule()
-        && b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() < b->getFrNet()->getAbsPriorityLvl())
       return false;
     frBox boxA, boxB;
     a->getPinBox(boxA);
@@ -1937,6 +1935,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
     bool didRoute = false;
     bool didCheck = false;
 
+    if (graphics_ && obj->typeId() == drcNet) {
+      graphics_->startNet(static_cast<drNet*>(obj));
+    }
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {
@@ -2768,10 +2769,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 
 bool FlexDRWorker::routeNet(drNet* net)
 {
-  // ProfileTask profile("DR:routeNet");
-  if (graphics_) {
-    graphics_->startNet(net);
-  }
+//  ProfileTask profile("DR:routeNet");
 
   if (net->getPins().size() <= 1) {
     return true;

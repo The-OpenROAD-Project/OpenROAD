@@ -68,6 +68,15 @@ int FlexTAWorker::main()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -114,6 +123,15 @@ int FlexTAWorker::main_mt()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
