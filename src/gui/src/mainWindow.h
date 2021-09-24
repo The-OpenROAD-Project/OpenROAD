@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QAction>
+#include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
 #include <QToolBar>
@@ -72,6 +73,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
  public:
   MainWindow(QWidget* parent = nullptr);
+  ~MainWindow();
 
   odb::dbDatabase* getDb() const { return db_; }
   void setDb(odb::dbDatabase* db);
@@ -93,6 +95,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
+  ScriptWidget* getScriptWidget() const { return script_; }
 
   const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
 
@@ -103,6 +106,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // The user chose the exit action; notify the app
   void exit();
+
+  // The user chose to hide the gui
+  void hide();
 
   // Trigger a redraw (used by Renderers)
   void redraw();
@@ -203,6 +209,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     int highlight_group = 0);
 
  protected:
+  // used to check if user intends to close Openroad or just the GUI.
+  void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
 
  private:
@@ -238,6 +246,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QToolBar* view_tool_bar_;
 
   QAction* exit_;
+  QAction* hide_option_;
+  QAction* hide_;
   QAction* fit_;
   QAction* find_;
   QAction* inspect_;

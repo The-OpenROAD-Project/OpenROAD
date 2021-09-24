@@ -1,6 +1,6 @@
 # Graphical User Interface
 
-The graphical user interface can be access by launching OpenROAD with ``-gui``.
+The graphical user interface can be access by launching OpenROAD with ``-gui`` or by opening it from the command-line with ``gui::show``.
 
 ## Commands
 
@@ -48,6 +48,24 @@ To load the results of a DRC report:
 
 ```
 gui::load_drc filename
+```
+
+### Opening and closing
+
+To open the GUI from the command-line (this command does not return until the GUI is closed):
+
+```
+gui::show
+gui::show script
+```
+
+Options description:
+- ``script`` TCL script to evaluate in the GUI.
+
+To close the GUI and return to the command-line:
+
+```
+gui::hide
 ```
 
 ### Layout navigation

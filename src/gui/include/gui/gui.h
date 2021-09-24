@@ -47,6 +47,10 @@
 
 #include "odb/db.h"
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace gui {
 class Painter;
 class Selected;
@@ -486,6 +490,20 @@ class Gui
 
   void fit();
 
+  // initialize gui
+  void init();
+
+  // Called to hide the gui and return to tcl command line
+  void hideGui();
+
+  // set the system logger
+  void setLogger(utl::Logger* logger);
+
+  // check if tcl should take over after closing gui
+  bool isContinueAfterClose() { return continue_after_close_; }
+  // clear continue after close, needed to reset before GUI starts
+  void clearContinueAfterClose() { continue_after_close_ = false; }
+
   template <class T>
   void registerDescriptor(const Descriptor* descriptor)
   {
@@ -499,15 +517,18 @@ class Gui
   static bool enabled();
 
  private:
-  Gui() = default;
+  Gui() : continue_after_close_(false) {};
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
+
+  // flag to indicate if tcl should take over after gui closes
+  bool continue_after_close_;
 
   std::set<Renderer*> renderers_;
   static Gui* singleton_;
 };
 
 // The main entry point
-int startGui(int argc, char* argv[]);
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "");
 
 }  // namespace gui

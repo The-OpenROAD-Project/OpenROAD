@@ -114,6 +114,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
+  ~LayoutViewer();
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);

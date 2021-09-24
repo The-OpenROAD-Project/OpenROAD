@@ -43,8 +43,7 @@ using utl::GUI;
 bool check_gui(const char* command)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  auto gui = gui::Gui::get();
-  if (gui == nullptr) {
+  if (!gui::Gui::enabled()) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -397,6 +396,27 @@ void hide_widget(const char* name)
   }
   auto gui = gui::Gui::get();
   return gui->showWidget(name, false);
+}
+
+void show(const char* script = "")
+{
+  if (gui::Gui::enabled()) {
+    ord::OpenRoad::openRoad()->getLogger()->warn(GUI, 8, "GUI already active.");
+    return;
+  }
+  // OR already running, so GUI should not set anything up
+  // passing in 0, nullptr, nullptr to indicate such
+  // pass script along
+  gui::startGui(0, nullptr, nullptr, script);
+}
+
+void hide()
+{
+  if (!check_gui("hide")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->hideGui();
 }
 
 %} // inline

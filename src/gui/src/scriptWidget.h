@@ -41,13 +41,10 @@
 #include <QTextEdit>
 
 #include "tclCmdInputWidget.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
-}
-
-namespace utl {
-class Logger;
 }
 
 namespace gui {
@@ -70,6 +67,8 @@ class ScriptWidget : public QDockWidget
   void writeSettings(QSettings* settings);
 
   void setLogger(utl::Logger* logger);
+
+  void setupTcl(Tcl_Interp* interp, const std::string& script = "");
 
   void setFont(const QFont& font);
 
@@ -103,7 +102,6 @@ class ScriptWidget : public QDockWidget
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  void setupTcl();
 
   void triggerPauseCountDown(int timeout);
 
@@ -113,10 +111,6 @@ class ScriptWidget : public QDockWidget
   void addReportToOutput(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
 
-  static int channelOutput(ClientData instanceData,
-                           const char* buf,
-                           int toWrite,
-                           int* errorCodePtr);
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp *interp,
                             int argc,
@@ -136,8 +130,7 @@ class ScriptWidget : public QDockWidget
   // Logger sink
   template <typename Mutex>
   class GuiSink;
-
-  static Tcl_ChannelType stdout_channel_type_;
+  std::shared_ptr<spdlog::sinks::sink> sink_;
 
   // maximum number of character to display in a log line
   const int max_output_line_length_ = 1000;

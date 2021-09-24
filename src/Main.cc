@@ -188,7 +188,7 @@ main(int argc,
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
-    return gui::startGui(cmd_argc, cmd_argv);
+    return gui::startGui(cmd_argc, cmd_argv, Tcl_CreateInterp());
   }
 #ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {

@@ -405,6 +405,13 @@ LayoutViewer::LayoutViewer(
   addMenuAndActions();
 }
 
+LayoutViewer::~LayoutViewer()
+{
+  if (getBlock() != nullptr) {
+    removeOwner(); // unregister as a callback object
+  }
+}
+
 void LayoutViewer::setDb(dbDatabase* db)
 {
   if (db_ != db) {

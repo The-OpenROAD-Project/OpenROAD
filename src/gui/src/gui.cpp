@@ -45,10 +45,12 @@
 #include "displayControls.h"
 #include "geom.h"
 #include "layoutViewer.h"
+#include "scriptWidget.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "utl/Logger.h"
 
 #include "drcWidget.h"
 #include "ruler.h"
@@ -443,12 +445,42 @@ void Gui::registerDescriptor(const std::type_info& type,
   main_window->registerDescriptor(type, descriptor);
 }
 
+void Gui::init()
+{
+  // inspector descriptors
+  registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+  registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
+  registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
+  registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
+  registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+  registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+  registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+  registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+  registerDescriptor<DRCViolation*>(new DRCDescriptor);
+  registerDescriptor<Ruler*>(new RulerDescriptor(main_window->getRulers()));
+}
+
+void Gui::setLogger(utl::Logger* logger)
+{
+  main_window->setLogger(logger);
+}
+
+void Gui::hideGui()
+{
+  // ensure continue after close is true, since we want to return to tcl
+  continue_after_close_ = true;
+  main_window->exit();
+}
+
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[])
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script)
 {
+  // ensure continue after close is false
+  gui::Gui::get()->clearContinueAfterClose();
+
   QApplication app(argc, argv);
 
   // Default to 12 point for easier reading
@@ -456,20 +488,52 @@ int startGui(int argc, char* argv[])
   font.setPointSize(12);
   QApplication::setFont(font);
 
-  gui::MainWindow win;
-  main_window = &win;
+  // create new MainWindow
+  main_window = new gui::MainWindow;
+
   auto* open_road = ord::OpenRoad::openRoad();
-  win.setDb(open_road->getDb());
-  open_road->addObserver(&win);
-  win.show();
+  main_window->setDb(open_road->getDb());
+  open_road->addObserver(main_window);
+  main_window->show();
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(&win, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+
+  // Hide the Gui if someone chooses hide from the menu in the window
+  QObject::connect(main_window, &gui::MainWindow::hide, []() {
+    gui::Gui::get()->hideGui();
+  });
 
   // Save the window's status into the settings when quitting.
-  QObject::connect(&app, SIGNAL(aboutToQuit()), &win, SLOT(saveSettings()));
+  QObject::connect(&app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
 
-  return app.exec();
+  // pass in tcl interp to script widget
+  main_window->getScriptWidget()->setupTcl(interp, script);
+
+  bool do_exec = true;
+  // check if hide was called by script
+  if (gui::Gui::get()->isContinueAfterClose()) {
+    do_exec = false;
+  }
+
+  int ret = 0;
+  if (do_exec) {
+    int ret = app.exec();
+  }
+
+  // cleanup
+  open_road->removeObserver(main_window);
+
+  // delete main window and set to nullptr
+  delete main_window;
+  main_window = nullptr;
+
+  if (!gui::Gui::get()->isContinueAfterClose()) {
+    // if exiting, go ahead and exit with gui return code.
+    exit(ret);
+  }
+
+  return ret;
 }
 
 void Selected::highlight(Painter& painter,
@@ -514,20 +578,9 @@ void initGui(OpenRoad* openroad)
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
   sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
-  if (gui::main_window) {
-    using namespace gui;
-    main_window->setLogger(openroad->getLogger());
-    Gui::get()->registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
-    Gui::get()->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
-    Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
-    Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
-    Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
-    Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
-    Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
-    Gui::get()->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
-
-    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
-    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
+  if (gui::Gui::enabled()) {
+    // gui already requested, so go ahead and set the logger
+    gui::Gui::get()->setLogger(ord::OpenRoad::openRoad()->getLogger());
   }
 }
 
