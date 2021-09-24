@@ -492,7 +492,7 @@ class Gui
     registerDescriptor(typeid(T), descriptor);
   }
 
-  // Will return nullptr if openroad was invoked without -gui
+  // returns the Gui singleton
   static Gui* get();
 
   // Will return true if the GUI is active, false otherwise
