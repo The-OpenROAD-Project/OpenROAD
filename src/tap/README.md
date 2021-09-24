@@ -26,9 +26,9 @@ tapcell [-tapcell_master tapcell_master]
 
 - `-tapcell_master`. Specify the master used as a tapcell.
 - `-endcap_master`. Specify the master used as an endcap.
-- `-distance`. Specify the distance between each tapcell in the checkerboard.
-- `-halo_width_x`. Specify the horizontal halo size around macros during cut rows.
-- `-halo_width_y`. Specify the vertical halo size around macros during cut rows.
+- `-distance`. Specify the distance (in microns) between each tapcell in the checkerboard.
+- `-halo_width_x`. Specify the horizontal halo size (in microns) around macros during cut rows.
+- `-halo_width_y`. Specify the vertical halo size (in microns) around macros during cut rows.
 - `-tap_nwin2_master`, `-tap_nwin3_master`, `-tap_nwout2_master`,
 `-tap_nwout3_master`, `-tap_nwintie_master`, `-tap_nwouttie_master`.
 Specify the master cells placed at the top and bottom of macros and of the core area,
