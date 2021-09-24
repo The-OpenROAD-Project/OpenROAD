@@ -75,7 +75,7 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [this](const std::any& object) { return makeSelected(object); },
+          [](const std::any& object) { return Gui::get()->makeSelected(object); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -263,14 +263,6 @@ MainWindow::MainWindow(QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
-}
-
-MainWindow::~MainWindow()
-{
-  for (auto& [type, descriptor] : descriptors_) {
-    delete descriptor;
-  }
-  descriptors_.clear();
 }
 
 void MainWindow::createStatusBar()
@@ -514,7 +506,7 @@ void MainWindow::deleteRuler(const std::string& name)
   });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
-    auto remove_selected = makeSelected(ruler_find->get());
+    auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
     selected_.erase(remove_selected);
     rulers_.erase(ruler_find);
     emit rulersChanged();
@@ -665,7 +657,7 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
     if (sel_obj.isNet()) {
       auto net_obj = std::any_cast<odb::dbNet*>(sel_obj.getObject());
       for (auto inst_term : net_obj->getITerms()) {
-        connected_insts.insert(makeSelected(inst_term));
+        connected_insts.insert(Gui::get()->makeSelected(inst_term));
       }
     }
   }
@@ -695,11 +687,11 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(makeSelected(inst_term->getNet()));
+          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(makeSelected(inst_term->getNet(), inst_term));
+          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet(), inst_term));
       }
     }
   }
@@ -762,26 +754,6 @@ void MainWindow::setLogger(utl::Logger* logger)
 void MainWindow::fit()
 {
   fit_->trigger();
-}
-
-Selected MainWindow::makeSelected(std::any object, void* additional_data)
-{
-  if (!object.has_value()) {
-    return Selected();
-  }
-
-  auto it = descriptors_.find(object.type());
-  if (it != descriptors_.end()) {
-    return it->second->makeSelected(object, additional_data);
-  } else {
-    return Selected();  // FIXME: null descriptor
-  }
-}
-
-void MainWindow::registerDescriptor(const std::type_info& type,
-                                    const Descriptor* descriptor)
-{
-  descriptors_[type] = descriptor;
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)

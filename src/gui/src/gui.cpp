@@ -119,7 +119,16 @@ void Gui::pause(int timeout)
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
 {
-  return main_window->makeSelected(object, additional_data);
+  if (!object.has_value()) {
+    return Selected();
+  }
+
+  auto it = descriptors_.find(object.type());
+  if (it != descriptors_.end()) {
+    return it->second->makeSelected(object, additional_data);
+  } else {
+    return Selected();  // FIXME: null descriptor
+  }
 }
 
 void Gui::setSelected(Selected selection)
@@ -442,7 +451,7 @@ void Gui::fit()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
-  main_window->registerDescriptor(type, descriptor);
+  descriptors_[type] = descriptor;
 }
 
 void Gui::init()
@@ -478,8 +487,9 @@ void Gui::hideGui()
 // returns when the GUI is done.
 int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script)
 {
+  auto gui = gui::Gui::get();
   // ensure continue after close is false
-  gui::Gui::get()->clearContinueAfterClose();
+  gui->clearContinueAfterClose();
 
   QApplication app(argc, argv);
 
@@ -500,8 +510,8 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
 
   // Hide the Gui if someone chooses hide from the menu in the window
-  QObject::connect(main_window, &gui::MainWindow::hide, []() {
-    gui::Gui::get()->hideGui();
+  QObject::connect(main_window, &gui::MainWindow::hide, [gui]() {
+    gui->hideGui();
   });
 
   // Save the window's status into the settings when quitting.
@@ -512,7 +522,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   bool do_exec = true;
   // check if hide was called by script
-  if (gui::Gui::get()->isContinueAfterClose()) {
+  if (gui->isContinueAfterClose()) {
     do_exec = false;
   }
 
@@ -528,7 +538,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   delete main_window;
   main_window = nullptr;
 
-  if (!gui::Gui::get()->isContinueAfterClose()) {
+  if (!gui->isContinueAfterClose()) {
     // if exiting, go ahead and exit with gui return code.
     exit(ret);
   }

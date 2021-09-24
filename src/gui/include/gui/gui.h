@@ -42,8 +42,10 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <typeindex>
 #include <typeinfo>
 #include <variant>
+#include <unordered_map>
 
 #include "odb/db.h"
 
@@ -523,6 +525,9 @@ class Gui
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
+
+  // Maps types to descriptors
+  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
 
   std::set<Renderer*> renderers_;
   static Gui* singleton_;

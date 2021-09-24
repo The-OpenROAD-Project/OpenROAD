@@ -38,8 +38,6 @@
 #include <QMainWindow>
 #include <QToolBar>
 #include <memory>
-#include <typeindex>
-#include <unordered_map>
 
 #include "findDialog.h"
 #include "gui/gui.h"
@@ -73,7 +71,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
  public:
   MainWindow(QWidget* parent = nullptr);
-  ~MainWindow();
 
   odb::dbDatabase* getDb() const { return db_; }
   void setDb(odb::dbDatabase* db);
@@ -88,9 +85,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Fit design in window
   void fit();
-
-  void registerDescriptor(const std::type_info& type,
-                          const Descriptor* descriptor);
 
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
@@ -141,10 +135,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Add the selections to the current selections
   void addSelected(const SelectionSet& selections);
-
-  // Make an Selected from object with a known descriptor
-  Selected makeSelected(std::any object,
-                        void* additional_data = nullptr);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection, bool show_connectivity = false);
@@ -262,9 +252,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
 
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;
