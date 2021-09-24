@@ -150,8 +150,8 @@ class FlexDRConnectivityChecker
       std::vector<int>& adjPrevIdx,
       const std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
       const NetRoutObjs& netRouteObjs,
-      const int& gCnt,
-      const int& nCnt);
+      const int gCnt,
+      const int nCnt);
   void finish(frNet* net,
               NetRoutObjs& netRouteObjs,
               const std::vector<frBlockObject*>& netPins,
