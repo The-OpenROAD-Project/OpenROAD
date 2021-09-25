@@ -373,6 +373,33 @@ class Renderer
 
   // Used to trigger a draw
   void redraw();
+
+  // If group_name is empty, no display group is created and all items will be added
+  // at the top level of the display control list
+  // else, a group is created and items added under that list
+  virtual const char* getDisplayControlGroupName()
+  {
+    return "";
+  }
+
+  // Used to register display controls for this renderer.
+  // DisplayControls is a map with the name of the control and the initial setting for the control
+  using DisplayControls = std::map<std::string, bool>;
+  const DisplayControls& getDisplayControls()
+  {
+    return controls_;
+  }
+
+  // Used to check the value of the display control
+  bool checkDisplayControl(const std::string& name);
+
+ protected:
+  // Adds a display control
+  void addDisplayControl(const std::string& name, bool initial_state = false);
+
+ private:
+  // Holds map of display controls and callback function
+  DisplayControls controls_;
 };
 
 // This is the API for the rest of the program to interact with the
@@ -447,6 +474,9 @@ class Gui
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  // Get the visibility/selectability for a control in the 'Display Control' panel.
+  bool checkDisplayControlsVisible(const std::string& name);
+  bool checkDisplayControlsSelectable(const std::string& name);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
@@ -474,14 +504,6 @@ class Gui
 
   // Show a message in the status bar
   void status(const std::string& message);
-
-  // Add a custom visibilty control to the 'Display Control' panel.
-  // Useful for debug renderers to control their display.
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-
-  // Get the visibility for a custom control in the 'Display Control' panel.
-  bool checkCustomVisibilityControl(const std::string& name);
 
   const std::set<Renderer*>& renderers() { return renderers_; }
 

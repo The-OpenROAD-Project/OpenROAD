@@ -284,6 +284,13 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(congestionSetupChanged()),
           this,
           SIGNAL(changed()));
+
+  // register renderers
+  if (gui::Gui::get() != nullptr) {
+    for (auto renderer : gui::Gui::get()->renderers()) {
+      registerRenderer(renderer);
+    }
+  }
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
@@ -652,6 +659,27 @@ void DisplayControls::setControlByPath(const std::string& path,
   } else {
     item->setCheckState(value);
   }
+}
+
+// path is separated by "/", so setting Standard Cells, would be Instances/StdCells
+bool DisplayControls::checkControlByPath(const std::string& path,
+                                         bool is_visible)
+{
+  QStandardItem* item = findControlInItem(model_->invisibleRootItem(),
+                                          path,
+                                          is_visible ? Visible : Selectable);
+
+  if (item == nullptr) {
+    logger_->warn(utl::GUI,
+                  14,
+                  "Unable to find {} display control at {}.",
+                  is_visible ? "visible" : "select",
+                  path);
+    // assume false when item cannot be found.
+    return false;
+  }
+
+  return item->checkState() == Qt::Checked;
 }
 
 QStandardItem* DisplayControls::findControlInItem(const QStandardItem* parent,
@@ -1056,20 +1084,64 @@ QFont DisplayControls::pinMarkersFont()
   return pin_markers_font_;
 }
 
-void DisplayControls::addCustomVisibilityControl(const std::string& name,
-                                                 bool initially_visible)
+void DisplayControls::registerRenderer(Renderer* renderer)
 {
-  auto q_name = QString::fromStdString(name);
-  auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
-  makeParentItem(custom_controls_[name],
-                 q_name,
-                 model_,
-                 checked);
+  if (custom_controls_.count(renderer) != 0) {
+    // already registered
+    return;
+  }
+
+  const std::string& group_name = renderer->getDisplayControlGroupName();
+  const auto& items = renderer->getDisplayControls();
+
+  if (items.empty()) {
+    return;
+  }
+
+  // build controls
+  std::map<std::string, QStandardItem*> control_items;
+  std::vector<ModelRow>& rows = custom_controls_[renderer];
+  if (group_name.empty()) {
+    for (const auto& [name, initial_value] : items) {
+      ModelRow row;
+      makeParentItem(row,
+                     QString::fromStdString(name),
+                     model_,
+                     initial_value ? Qt::Checked : Qt::Unchecked);
+      rows.push_back(row);
+      control_items[name] = row.visible;
+    }
+  } else {
+    ModelRow parent_row;
+    makeParentItem(parent_row,
+                   QString::fromStdString(group_name),
+                   model_,
+                   Qt::Checked);
+    rows.push_back(parent_row);
+    for (const auto& [name, initial_value] : items) {
+      ModelRow row;
+      makeLeafItem(row,
+                   QString::fromStdString(name),
+                   parent_row.name,
+                   initial_value ? Qt::Checked : Qt::Unchecked);
+      rows.push_back(row);
+      control_items[name] = row.visible;
+    }
+    toggleParent(parent_row);
+  }
 }
 
-bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
+void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
-  return custom_controls_[name].visible->checkState() == Qt::Checked;
+  const auto& rows = custom_controls_[renderer];
+
+  for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
+    // remove from Display controls
+    auto index = model_->indexFromItem(itr->name);
+    model_->removeRow(index.row(), index.parent());
+  }
+
+  custom_controls_.erase(renderer);
 }
 
 bool DisplayControls::showHorizontalCongestion() const

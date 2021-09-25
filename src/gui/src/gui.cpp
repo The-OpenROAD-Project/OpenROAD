@@ -92,12 +92,16 @@ bool Gui::enabled()
 
 void Gui::registerRenderer(Renderer* renderer)
 {
+  main_window->getControls()->registerRenderer(renderer);
+
   renderers_.insert(renderer);
   redraw();
 }
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
+  main_window->getControls()->unregisterRenderer(renderer);
+
   renderers_.erase(renderer);
   redraw();
 }
@@ -351,26 +355,24 @@ void Gui::loadDRC(const std::string& filename)
   }
 }
 
-void Gui::addCustomVisibilityControl(const std::string& name,
-                                     bool initially_visible)
-{
-  main_window->getControls()->addCustomVisibilityControl(name,
-                                                         initially_visible);
-}
-
-bool Gui::checkCustomVisibilityControl(const std::string& name)
-{
-  return main_window->getControls()->checkCustomVisibilityControl(name);
-}
-
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(name, true, value ? Qt::Checked : Qt::Unchecked);
 }
 
+bool Gui::checkDisplayControlsVisible(const std::string& name)
+{
+  return main_window->getControls()->checkControlByPath(name, true);
+}
+
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(name, false, value ? Qt::Checked : Qt::Unchecked);
+}
+
+bool Gui::checkDisplayControlsSelectable(const std::string& name)
+{
+  return main_window->getControls()->checkControlByPath(name, false);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -436,6 +438,22 @@ Renderer::~Renderer()
 void Renderer::redraw()
 {
   Gui::get()->redraw();
+}
+
+bool Renderer::checkDisplayControl(const std::string& name)
+{
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->checkDisplayControlsVisible(name);
+  } else {
+    return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
+  }
+}
+
+void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+{
+  controls_[name] = initial_state;
 }
 
 void Gui::load_design()

@@ -148,6 +148,10 @@ class DisplayControls : public QDockWidget, public Options
   void writeSettings(QSettings* settings);
 
   void setControlByPath(const std::string& path, bool is_visible, Qt::CheckState value);
+  bool checkControlByPath(const std::string& path, bool is_visible);
+
+  void registerRenderer(Renderer* renderer);
+  void unregisterRenderer(Renderer* renderer);
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
@@ -177,14 +181,6 @@ class DisplayControls : public QDockWidget, public Options
   QFont rulerFont() override;
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
-
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-  bool checkCustomVisibilityControl(const std::string& name);
-
-  bool isGridGraphVisible();
-  bool areRouteGuidesVisible();
-  bool areRoutingObjsVisible();
 
   bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
@@ -328,7 +324,7 @@ class DisplayControls : public QDockWidget, public Options
   MiscModels misc_;
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
-  std::map<std::string, ModelRow> custom_controls_;
+  std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

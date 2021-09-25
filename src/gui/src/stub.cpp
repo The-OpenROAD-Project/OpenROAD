@@ -71,21 +71,20 @@ void gui::Gui::pause(int timeout)
 {
 }
 
-void gui::Gui::addCustomVisibilityControl(const std::string& name,
-                                          bool initially_visible)
-{
-}
-
-bool gui::Gui::checkCustomVisibilityControl(const std::string& name)
-{
-  return false;
-}
-
 void Gui::status(const std::string& /* message */)
 {
 }
 
 Renderer::~Renderer()
+{
+}
+
+bool Renderer::checkDisplayControl(const std::string& /* name */)
+{
+  return false;
+}
+
+void Renderer::addDisplayControl(const std::string& /* name */, bool /* initial_state */)
 {
 }
 
