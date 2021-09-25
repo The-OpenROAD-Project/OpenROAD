@@ -91,6 +91,8 @@ class FlexDRGraphics : public gui::Renderer
 
   void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
 
+  const char* getDisplayControlGroupName() override;
+
  private:
   FlexDRWorker* worker_;
   const frDesign* design_;
