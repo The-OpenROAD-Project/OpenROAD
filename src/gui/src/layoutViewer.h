@@ -279,7 +279,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
-  void drawPinMarkers(QPainter* painter,
+  void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);

@@ -267,15 +267,8 @@ class frTechObject
   }
 
   friend class io::Parser;
+  void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasVia2ViaMinStepViolAt(int layerIdx) const
-  {
-    return !via2viaMinStepPatches_[layerIdx].empty();
-  }
-  const std::vector<std::vector<frBox>>& getVia2ViaMinStepPatches() const
-  {
-    return via2viaMinStepPatches_;
-  }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -372,14 +365,6 @@ class frTechObject
   // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
   // for up via
   std::vector<std::vector<bool>> viaForbiddenThrough;
-  /*
-   Each position tells whether the corresponding routing layer (layer index,
-   not layerNum) has up and down default vias that create a min step viol:
-   if the vector of such layer index is empty, there is no viol; otherwise,
-   there are viols,
-   and each frBox in the sub vector is a patch to correct the viol
-   */
-  std::vector<std::vector<frBox>> via2viaMinStepPatches_;
   bool hasVia2viaMinStep_ = false;
 
   // forbidden length table related utilities

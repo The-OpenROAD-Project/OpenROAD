@@ -291,6 +291,7 @@ class frPatchWire : public frShape
   }
   void getOffsetBox(frBox& boxIn) const { boxIn.set(offsetBox_); }
   void getOrigin(frPoint& in) const { in.set(origin_); }
+  frPoint getOrigin() const { return origin_; }
   void move(const frTransform& xform) override {}
   bool overlaps(const frBox& box) const override
   {
@@ -459,6 +460,10 @@ class frPathSeg : public frShape
   {
     beginIn.set(begin_);
     endIn.set(end_);
+  }
+  std::pair<frPoint, frPoint> getPoints() const
+  {
+    return {begin_, end_};
   }
   const frPoint& getBeginPoint() const { return begin_; }
   const frPoint& getEndPoint() const { return end_; }

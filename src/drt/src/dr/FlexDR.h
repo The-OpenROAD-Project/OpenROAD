@@ -151,119 +151,6 @@ class FlexDR
   void init_via2turnMinLen();
 
   void removeGCell2BoundaryPin();
-  void checkConnectivity(int iter = -1);
-  void checkConnectivity_initDRObjs(const frNet* net,
-                                    std::vector<frConnFig*>& netDRObjs);
-  void checkConnectivity_pin2epMap(
-      const frNet* net,
-      const std::vector<frConnFig*>& netDRObjs,
-      std::map<frBlockObject*,
-               std::set<std::pair<frPoint, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap);
-  void checkConnectivity_pin2epMap_helper(
-      const frNet* net,
-      const frPoint& bp,
-      frLayerNum lNum,
-      std::map<frBlockObject*,
-               std::set<std::pair<frPoint, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap,
-      bool isWire);
-  void checkConnectivity_nodeMap(
-      const frNet* net,
-      const std::vector<frConnFig*>& netDRObjs,
-      std::vector<frBlockObject*>& netPins,
-      const std::map<frBlockObject*,
-                     std::set<std::pair<frPoint, frLayerNum>>,
-                     frBlockObjectComp>& pin2epMap,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
-  void checkConnectivity_nodeMap_routeObjEnd(
-      const frNet* net,
-      const std::vector<frConnFig*>& netRouteObjs,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
-  void checkConnectivity_nodeMap_routeObjSplit(
-      const frNet* net,
-      const std::vector<frConnFig*>& netRouteObjs,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
-  void checkConnectivity_nodeMap_routeObjSplit_helper(
-      const frPoint& crossPt,
-      frCoord trackCoord,
-      frCoord splitCoord,
-      frLayerNum lNum,
-      const std::vector<
-          std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
-          mergeHelper,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
-  void checkConnectivity_nodeMap_pin(
-      const std::vector<frConnFig*>& netRouteObjs,
-      std::vector<frBlockObject*>& netPins,
-      const std::map<frBlockObject*,
-                     std::set<std::pair<frPoint, frLayerNum>>,
-                     frBlockObjectComp>& pin2epMap,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
-  void checkConnectivity_merge1(
-      const frNet* net,
-      const std::vector<frConnFig*>& netRouteObjs,
-      std::vector<std::map<frCoord, std::vector<int>>>& horzPathSegs,
-      std::vector<std::map<frCoord, std::vector<int>>>& vertPathSegs);
-  void checkConnectivity_merge2(
-      frNet* net,
-      const std::vector<frConnFig*>& netRouteObjs,
-      const std::vector<std::map<frCoord, std::vector<int>>>& horzPathSegs,
-      const std::vector<std::map<frCoord, std::vector<int>>>& vertPathSegs,
-      std::vector<std::vector<std::vector<int>>>& horzVictims,
-      std::vector<std::vector<std::vector<int>>>& vertVictims,
-      std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-          horzNewSegSpans,
-      std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-          vertNewSegSpans);
-  void checkConnectivity_merge3(
-      frNet* net,
-      std::vector<frConnFig*>& netRouteObjs,
-      const std::vector<std::map<frCoord, std::vector<int>>>& horzPathSegs,
-      const std::vector<std::map<frCoord, std::vector<int>>>& vertPathSegs,
-      const std::vector<std::vector<std::vector<int>>>& horzVictims,
-      const std::vector<std::vector<std::vector<int>>>& vertVictims,
-      const std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-          horzNewSegSpans,
-      const std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-          vertNewSegSpans);
-  void checkConnectivity_addMarker(frNet* net,
-                                   frLayerNum lNum,
-                                   const frBox& bbox);
-  void checkConnectivity_merge_perform(
-      const std::vector<frConnFig*>& netRouteObjs,
-      const std::vector<int>& indices,
-      std::vector<int>& victims,
-      std::vector<std::pair<frCoord, frCoord>>& newSegSpans,
-      bool isHorz);
-  void checkConnectivity_merge_perform_helper(
-      const std::vector<std::pair<std::pair<frCoord, frCoord>, int>>& segSpans,
-      std::vector<int>& victims,
-      std::vector<std::pair<frCoord, frCoord>>& newSegSpans);
-  void checkConnectivity_merge_commit(
-      frNet* net,
-      std::vector<frConnFig*>& netRouteObjs,
-      const std::vector<int>& victims,
-      frLayerNum lNum,
-      frCoord trackCoord,
-      const std::vector<std::pair<frCoord, frCoord>>& newSegSpans,
-      bool isHorz);
-  bool checkConnectivity_astar(
-      frNet* net,
-      std::vector<bool>& adjVisited,
-      std::vector<int>& adjPrevIdx,
-      const std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
-      const vector<frConnFig*>& netDRObjs,
-      const int& gCnt,
-      const int& nCnt);
-  void checkConnectivity_final(
-      frNet* net,
-      std::vector<frConnFig*>& netRouteObjs,
-      std::vector<frBlockObject*>& netPins,
-      const std::vector<bool>& adjVisited,
-      int gCnt,
-      int nCnt,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
   std::map<frNet*, std::set<std::pair<frPoint, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const frBox& routeBox);
   void searchRepair(int iter,
@@ -484,12 +371,13 @@ class FlexDRWorker
 
   // others
   int main(frDesign* design);
+  void end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
 
- protected:
+ private:
   typedef struct
   {
     frBlockObject* block;
@@ -535,6 +423,9 @@ class FlexDRWorker
 
   // persistant gc worker
   FlexGCWorker* gcWorker_;
+
+  // on-the-fly access points that require adding access edges in the grid graph
+  vector<Point3D> specialAccessAPs;
 
   // init
   void init(const frDesign* design);
@@ -931,7 +822,6 @@ class FlexDRWorker
 
   // end
   void cleanup();
-  void end(frDesign* design);
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,
@@ -957,13 +847,6 @@ class FlexDRWorker
 
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
-
-  friend class FlexDR;
-  friend class FlexGC;
-
- private:
-  // on-the-fly access points that require adding access edges in the grid graph
-  vector<Point3D> specialAccessAPs;
 };
 
 }  // namespace fr

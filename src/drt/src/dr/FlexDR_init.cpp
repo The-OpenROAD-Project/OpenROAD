@@ -1666,8 +1666,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            vector<frRect>& origGuides,
                            vector<frBlockObject*>& terms)
 {
-  auto dNet = make_unique<drNet>();
-  dNet->setFrNet(net);
+  auto dNet = make_unique<drNet>(net);
   // true pin
   initNet_term_new(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
@@ -2738,25 +2737,6 @@ void FlexDRWorker::route_queue_update_from_marker(
   set<frNet*> movableAggressorNets;
   set<frBlockObject*> movableAggressorOwners;
 
-  int n_NDnets = 0, n_dNets = 0;
-  if (getTech()->hasNondefaultRules()) {
-    for (auto& a : marker->getSrcs()) {
-      if (a->typeId() == frcNet) {
-        auto fNet = static_cast<frNet*>(a);
-        if (getDRNets(fNet)) {
-          for (auto dNet : *(getDRNets(fNet))) {
-            if (!canRipup(dNet)) {
-              continue;
-            }
-            if (dNet->hasNDR())
-              n_NDnets++;
-            else
-              n_dNets++;
-          }
-        }
-      }
-    }
-  }
   for (auto& aggressorPair : markerAggressors) {
     auto& aggressor = aggressorPair.first;
     if (aggressor && aggressor->typeId() == frcNet) {
@@ -2792,9 +2772,6 @@ void FlexDRWorker::route_queue_update_from_marker(
             uniqueAggressors.insert(fNet);
             uniqueAggressorOwners.push_back(fNet);
           }
-          // cout << "push route1: " << dNet->getFrNet()->getName() <<
-          // "(subNetIdx " << subNetIdx << "), NumReroutes = " <<
-          // dNet->getNumReroutes() <<  "\n";
           hasRerouteNet = true;
         }
       }
@@ -2845,9 +2822,6 @@ void FlexDRWorker::route_queue_update_from_marker(
                 uniqueAggressors.insert(fNet);
                 uniqueAggressorOwners.push_back(fNet);
               }
-              // cout << "push route2: " << dNet->getFrNet()->getName() <<
-              // "(subNetIdx " << subNetIdx << "), NumReroutes = " <<
-              // dNet->getNumReroutes() <<  "\n";
               routeOwners.insert(owner);
               hasRerouteNet = true;
             }
@@ -2883,12 +2857,13 @@ void FlexDRWorker::route_queue_update_from_marker(
             if (!canRipup(dNet)) {
               continue;
             }
-            if (dNet->hasNDR() && n_NDnets == 1 && n_dNets > 0) {
-              if (dNet->getNdrRipupThresh() < NDR_NETS_RIPUP_THRESH) {
-                dNet->incNdrRipupThresh();
-                continue;
-              }
-              dNet->setNdrRipupThresh(0);
+            if (uniqueAggressorOwners.size() + uniqueVictimOwners.size() > 1) {
+                if (dNet->canAvoidRipup()) {
+                  dNet->incNRipupAvoids();
+                  checks.push_back({dNet, -1, false});
+                  continue;
+                }
+                dNet->setNRipupAvoids(0);
             }
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }

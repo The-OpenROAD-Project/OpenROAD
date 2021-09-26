@@ -38,6 +38,8 @@ class drNet;
 class drPatchWire;
 class FlexDRWorker;
 class gcNet;
+class gcPin;
+
 
 class FlexGCWorker
 {
@@ -70,6 +72,8 @@ class FlexGCWorker
   void initPA0(const frDesign* design);
   void initPA1();
   void updateDRNet(drNet* net);
+  // used in rp_prep
+  void checkMinStep(gcPin* pin);
 
  private:
   class Impl;

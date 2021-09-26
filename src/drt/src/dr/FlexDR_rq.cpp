@@ -221,6 +221,7 @@ void FlexDRWorkerRegionQuery::query(const frBox& box,
 {
   vector<rq_box_value_t<drConnFig*>> temp;
   impl_->shapes_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
+  result.reserve(temp.size());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
