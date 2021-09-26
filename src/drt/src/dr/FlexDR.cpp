@@ -34,9 +34,11 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -64,7 +66,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 
 int FlexDRWorker::main(frDesign* design)
 {
-  ProfileTask profile("DR:main");
+  ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
@@ -251,7 +253,7 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
@@ -448,7 +450,7 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef1);
@@ -549,7 +551,7 @@ void FlexDR::init_via2viaMinLen()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2viaMinLen = via_data_.via2viaMinLen;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2viaMinLenTmp(4, 0);
@@ -559,7 +561,7 @@ void FlexDR::init_via2viaMinLen()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -588,7 +590,7 @@ void FlexDR::init_via2viaMinLen()
   // check minimumcut
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1047,7 +1049,7 @@ void FlexDR::init_via2viaMinLenNew()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2viaMinLenNew = via_data_.via2viaMinLenNew;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2viaMinLenTmp(8, 0);
@@ -1056,7 +1058,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1097,7 +1099,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check minimumcut
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1138,7 +1140,7 @@ void FlexDR::init_via2viaMinLenNew()
   // check cut spacing
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1183,11 +1185,11 @@ void FlexDR::init_halfViaEncArea()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& halfViaEncArea = via_data_.halfViaEncArea;
   for (int i = bottomLayerNum; i <= topLayerNum; i++) {
-    if (getTech()->getLayer(i)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(i)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     if (i + 1 <= topLayerNum
-        && getTech()->getLayer(i + 1)->getType() == frLayerTypeEnum::CUT) {
+        && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
       frVia via(viaDef);
       frBox layer1Box;
@@ -1310,7 +1312,7 @@ void FlexDR::init_via2turnMinLen()
   auto topLayerNum = getTech()->getTopLayerNum();
   auto& via2turnMinLen = via_data_.via2turnMinLen;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
@@ -1319,7 +1321,7 @@ void FlexDR::init_via2turnMinLen()
   // check prl
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1344,7 +1346,7 @@ void FlexDR::init_via2turnMinLen()
   // check minstep
   i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -1558,7 +1560,9 @@ void FlexDR::searchRepair(int iter,
     ProfileTask profile("DR:checkerboard");
     for (auto& workersInBatch : workerBatch) {
       {
-        ProfileTask profile("DR:batch");
+        const std::string batch_name = std::string("DR:batch<")
+          + std::to_string(workersInBatch.size()) + ">";
+        ProfileTask profile(batch_name.c_str());
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
@@ -1612,7 +1616,8 @@ void FlexDR::searchRepair(int iter,
       }
     }
   }
-  checkConnectivity(iter);
+  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     logger_->info(DRT,
@@ -1627,12 +1632,10 @@ void FlexDR::searchRepair(int iter,
 
 void FlexDR::end(bool writeMetrics)
 {
-  vector<unsigned long long> wlen(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> sCut(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> mCut(getTech()->getLayers().size(), 0);
-  unsigned long long totWlen = 0;
-  unsigned long long totSCut = 0;
-  unsigned long long totMCut = 0;
+  using ULL = unsigned long long;
+  vector<ULL> wlen(getTech()->getLayers().size(), 0);
+  vector<ULL> sCut(getTech()->getLayers().size(), 0);
+  vector<ULL> mCut(getTech()->getLayers().size(), 0);
   frPoint bp, ep;
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
@@ -1642,20 +1645,22 @@ void FlexDR::end(bool writeMetrics)
         auto lNum = obj->getLayerNum();
         frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
         wlen[lNum] += psLen;
-        totWlen += psLen;
       }
     }
     for (auto& via : net->getVias()) {
       auto lNum = via->getViaDef()->getCutLayerNum();
       if (via->getViaDef()->isMultiCut()) {
         ++mCut[lNum];
-        ++totMCut;
       } else {
         ++sCut[lNum];
-        ++totSCut;
       }
     }
   }
+
+  const ULL totWlen = std::accumulate(wlen.begin(), wlen.end(), ULL(0));
+  const ULL totSCut = std::accumulate(sCut.begin(), sCut.end(), ULL(0));
+  const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
+
 
   if (writeMetrics) {
     logger_->metric("drt::wire length::total",
@@ -1669,7 +1674,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::ROUTING) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::ROUTING) {
         logger_->report("Total wire length on LAYER {} = {} um.",
                         getTech()->getLayer(i)->getName(),
                         wlen[i] / getDesign()->getTopBlock()->getDBUPerUU());
@@ -1689,7 +1694,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
         nameLen
             = max(nameLen, (int) getTech()->getLayer(i - 1)->getName().size());
       }
@@ -1714,7 +1719,7 @@ void FlexDR::end(bool writeMetrics)
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
-      if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
+      if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
         msg << " " << setw(nameLen) << getTech()->getLayer(i - 1)->getName()
             << "    " << setw((int) to_string(totSCut).length()) << sCut[i];
         if (totMCut) {
@@ -1767,8 +1772,7 @@ void FlexDR::reportDRC()
 
   if (DRC_RPT_FILE == string("")) {
     if (VERBOSE > 0) {
-      cout << "Waring: no DRC report specified, skipped writing DRC report"
-           << endl;
+      logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
@@ -1782,10 +1786,10 @@ void FlexDR::reportDRC()
         switch (con->typeId()) {
           case frConstraintTypeEnum::frcShortConstraint: {
             if (getTech()->getLayer(marker->getLayerNum())->getType()
-                == frLayerTypeEnum::ROUTING) {
+                == dbTechLayerType::ROUTING) {
               drcRpt << "Short";
             } else if (getTech()->getLayer(marker->getLayerNum())->getType()
-                       == frLayerTypeEnum::CUT) {
+                       == dbTechLayerType::CUT) {
               drcRpt << "CShort";
             }
             break;
@@ -1931,38 +1935,40 @@ void FlexDR::reportDRC()
       }
       drcRpt << endl;
       // get source(s) of violation
+      // format: type:name/identifier
       drcRpt << "    srcs: ";
       for (auto src : marker->getSrcs()) {
         if (src) {
           switch (src->typeId()) {
             case frcNet:
-              drcRpt << (static_cast<frNet*>(src))->getName() << " ";
+              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
               break;
             case frcInstTerm: {
               frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << instTerm->getInst()->getName() << "/"
+              drcRpt << "iterm:"
+                     << instTerm->getInst()->getName() << "/"
                      << instTerm->getTerm()->getName() << " ";
               break;
             }
             case frcTerm: {
               frTerm* term = (static_cast<frTerm*>(src));
-              drcRpt << "PIN/" << term->getName() << " ";
+              drcRpt << "bterm:" << term->getName() << " ";
               break;
             }
             case frcInstBlockage: {
               frInstBlockage* instBlockage
                   = (static_cast<frInstBlockage*>(src));
-              drcRpt << instBlockage->getInst()->getName() << "/OBS"
+              drcRpt << "inst:"
+                     << instBlockage->getInst()->getName()
                      << " ";
               break;
             }
             case frcBlockage: {
-              drcRpt << "PIN/OBS"
-                     << " ";
+              drcRpt << "obstruction: ";
               break;
             }
             default:
-              std::cout << "Error: unexpected src type in marker\n";
+              logger_->error(DRT, 291, "Unexpected source type in marker: {}", src->typeId());
           }
         }
       }
@@ -1974,7 +1980,7 @@ void FlexDR::reportDRC()
              << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu << ", "
              << bbox.top() / dbu << " ) on Layer ";
       if (getTech()->getLayer(marker->getLayerNum())->getType()
-              == frLayerTypeEnum::CUT
+              == dbTechLayerType::CUT
           && marker->getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
         drcRpt << getTech()->getLayer(marker->getLayerNum() - 1)->getName()
                << "\n";

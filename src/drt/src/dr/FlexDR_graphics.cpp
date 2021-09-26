@@ -437,7 +437,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
-      cout << "MARKER " << box << "\n";
+      cout << "MARKER " << box << "lNum " << layerNum << "\n";
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
@@ -525,14 +525,16 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawLine({xl, yh}, {xh, yl});
 }
 
-void FlexDRGraphics::show() {
-    if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
-        return;
-    }
-    frBox gcellBox = worker_->getGCellBox();
-    if (settings_->gcellX >= 0
-        && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
-      return;
+void FlexDRGraphics::show(bool checkStopConditions) {
+    if (checkStopConditions) {
+        if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
+            return;
+        }
+        frBox gcellBox = worker_->getGCellBox();
+        if (settings_->gcellX >= 0
+            && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+          return;
+        }
     }
     update();
     pause(nullptr);

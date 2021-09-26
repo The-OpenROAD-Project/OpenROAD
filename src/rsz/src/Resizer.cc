@@ -3758,6 +3758,41 @@ Resizer::findFaninFanouts(VertexSet &ends)
   return fanouts;
 }
 
+// Find source pins for logic fanin of ends.
+PinSet
+Resizer::findFanins(PinSet *end_pins)
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+
+  VertexSet ends;
+  for (Pin *pin : *end_pins) {
+    Vertex *end = graph_->pinLoadVertex(pin);
+    ends.insert(end);
+  }
+
+  Search *search = sta_->search();
+  SearchPredNonReg2 pred(sta_);
+  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *vertex : ends)
+    iter.enqueueAdjacentVertices(vertex);
+
+  PinSet fanins;
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    if (isRegOutput(vertex)
+        || network_->isTopLevelPort(vertex->pin()))
+      continue;
+    else {
+      iter.enqueueAdjacentVertices(vertex);
+      fanins.insert(vertex->pin());
+    }
+  }
+  return fanins;
+}
+
 // Find roots for logic fanin of ends.
 VertexSet
 Resizer::findFaninRoots(VertexSet &ends)

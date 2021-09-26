@@ -48,7 +48,7 @@ void FlexGR::initLayerPitch()
   for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size();
        lNum++) {
     if (design_->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     numRoutingLayer++;
@@ -64,14 +64,14 @@ void FlexGR::initLayerPitch()
   for (int lNum = 0; lNum < (int) design_->getTech()->getLayers().size();
        lNum++) {
     if (design_->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     // zIdx  always equal to lNum / 2 - 1
     int zIdx = lNum / 2 - 1;
     auto layer = design_->getTech()->getLayer(lNum);
     bool isLayerHorz
-        = (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+        = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
     // get track pitch
     for (auto& tp : design_->getTopBlock()->getTrackPatterns(lNum)) {
       if ((isLayerHorz && !tp->isHorizontal())

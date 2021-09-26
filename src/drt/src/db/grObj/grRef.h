@@ -30,7 +30,7 @@
 #define _GR_REF_H_
 
 #include "db/grObj/grFig.h"
-#include "db/infra/frOrient.h"
+#include "odb/dbTypes.h"
 
 namespace fr {
 class grRef : public grPinFig
@@ -39,11 +39,11 @@ class grRef : public grPinFig
   // constructors
   grRef() : grPinFig() {}
   // getters
-  virtual frOrient getOrient() const = 0;
+  virtual dbOrientType getOrient() const = 0;
   virtual void getOrigin(frPoint& tmpOrigin) const = 0;
   virtual void getTransform(frTransform& xform) const = 0;
   // setters
-  virtual void setOrient(const frOrient& tmpOrient) = 0;
+  virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const frPoint& tmpPoint) = 0;
   virtual void setTransform(const frTransform& xform) = 0;
   frBlockObjectEnum typeId() const override { return grcRef; }

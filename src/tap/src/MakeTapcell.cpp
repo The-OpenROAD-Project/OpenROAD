@@ -33,30 +33,44 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "tap/MakeTapcell.h"
 
 #include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
 #include "tap/tapcell.h"
-#include "tap/MakeTapcell.h"
+
+using std::max;
+using std::min;
+using std::vector;
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* tap_tcl_inits[];
+}  // namespace sta
+
+extern "C" {
+extern int Tap_Init(Tcl_Interp* interp);
+}
 
 namespace ord {
 
-tap::Tapcell *
-makeTapcell()
+tap::Tapcell* makeTapcell()
 {
-  return new tap::Tapcell;
+  return new tap::Tapcell();
 }
 
-void
-deleteTapcell(tap::Tapcell *tapcell)
+void deleteTapcell(tap::Tapcell* tapcell)
 {
   delete tapcell;
 }
 
-void
-initTapcell(OpenRoad *openroad)
+void initTapcell(OpenRoad* openroad)
 {
-  openroad->getTapcell()->init(openroad->tclInterp(),
-			    openroad->getDb());
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  Tap_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
+  openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
 }
 
-}
+}  // namespace ord

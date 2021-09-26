@@ -359,13 +359,19 @@ OpenRoad::writeDef(const char *filename, string version)
 }
 
 void
-OpenRoad::writeCdl(const char* filename, bool includeFillers)
+OpenRoad::writeCdl(const char *outFilename,
+                   const char *mastersFilename,
+                   bool includeFillers)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      odb::cdl::writeCdl(block, filename, includeFillers);
+      odb::cdl::writeCdl(getLogger(),
+                         block,
+                         outFilename,
+                         mastersFilename,
+                         includeFillers);
     }
   }
 

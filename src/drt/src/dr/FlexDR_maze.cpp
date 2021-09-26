@@ -275,11 +275,11 @@ void FlexDRWorker::modCornerToCornerSpacing(const frBox& box,
   }
 }
 
-/*inline*/ void FlexDRWorker::modMinSpacingCostPlanar(const frBox& box,
-                                                      frMIdx z,
-                                                      int type,
-                                                      bool isBlockage,
-                                                      frNonDefaultRule* ndr)
+void FlexDRWorker::modMinSpacingCostPlanar(const frBox& box,
+                                           frMIdx z,
+                                           int type,
+                                           bool isBlockage,
+                                           frNonDefaultRule* ndr)
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.width();
@@ -358,14 +358,9 @@ void FlexDRWorker::modCornerToCornerSpacing(const frBox& box,
           default:;
         }
         cnt++;
-        // if (!isInitDR()) {
-        //   cout <<" planer find viol mIdx (" <<i <<", " <<j <<") " <<pt
-        //   <<endl;
-        // }
       }
     }
   }
-  // cout <<"planer mod " <<cnt <<" edges" <<endl;
 }
 
 void FlexDRWorker::modMinSpacingCostVia_eol_helper(const frBox& box,
@@ -679,7 +674,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   // via prl should check min area patch metal if not fat via
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
   bool isH = (getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
   bool isFatVia = (isH) ? (viaBox.top() - viaBox.bottom() > defaultWidth)
                         : (viaBox.right() - viaBox.left() > defaultWidth);
 
@@ -871,10 +866,10 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
 // eolType == 0: planer
 // eolType == 1: down
 // eolType == 2: up
-/*inline*/ void FlexDRWorker::modEolSpacingCost_helper(const frBox& testbox,
-                                                       frMIdx z,
-                                                       int type,
-                                                       int eolType)
+void FlexDRWorker::modEolSpacingCost_helper(const frBox& testbox,
+                                            frMIdx z,
+                                            int type,
+                                            int eolType)
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frBox bx;
@@ -1089,8 +1084,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                                                  const frBox& origCutBox,
                                                  frVia* origVia)
 {
-  if (origVia->getNet()->getType() != frNetEnum::frcPowerNet
-      && origVia->getNet()->getType() != frNetEnum::frcGroundNet) {
+  if (!origVia->getNet()->getType().isSupply()) {
     return;
   }
   auto lNum = origVia->getViaDef()->getCutLayerNum();
@@ -1124,8 +1118,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcVia) {
         auto via = static_cast<frVia*>(obj);
-        if (via->getNet()->getType() != frNetEnum::frcPowerNet
-            && via->getNet()->getType() != frNetEnum::frcGroundNet) {
+        if (!via->getNet()->getType().isSupply()) {
           continue;
         }
         if (origCutBox == box) {
@@ -1166,10 +1159,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       } else {
         origCutBox.bloat(reqDist + cutWidth / 2, spacingBox);
       }
-      // cout << "  @@@ debug: blocking for adj (" << spacingBox.left() / 2000.0
-      // << ", " << spacingBox.bottom() / 2000.0
-      //      << ") -- (" << spacingBox.right() / 2000.0 << ", " <<
-      //      spacingBox.top() / 2000.0 << ")\n";
       gridGraph_.getIdxBox(mIdx1, mIdx2, spacingBox);
 
       frMIdx zIdx
@@ -1233,7 +1222,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy, prl;
   frTransform xform;
-  // frCoord reqDist = 0;
   frSquaredDistance reqDistSquare = 0;
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
@@ -1579,7 +1567,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     // will add eol cost; (2) with pref-dir wire, then not eol edge
     bool isHLayer
         = (getTech()->getLayer(gridGraph_.getLayerNum(bi.z()))->getDir()
-           == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+           == dbTechLayerDir::HORIZONTAL);
     if (isHLayer == (bi.y() == ei.y())) {
       modEolSpacingRulesCost(box, bi.z(), type);
     }
@@ -1635,11 +1623,9 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
-    if (a->getFrNet()->getNondefaultRule()
-        && !b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() > b->getFrNet()->getAbsPriorityLvl())
       return true;
-    if (!a->getFrNet()->getNondefaultRule()
-        && b->getFrNet()->getNondefaultRule())
+    if (a->getFrNet()->getAbsPriorityLvl() < b->getFrNet()->getAbsPriorityLvl())
       return false;
     frBox boxA, boxB;
     a->getPinBox(boxA);
@@ -1761,7 +1747,7 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
   }
   setBestMarkers();
   if (graphics_) {
-    graphics_->show();
+    graphics_->show(true);
   }
 }
 
@@ -1769,7 +1755,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   while (!rerouteQueue.empty()) {
-    // cout << "rerouteQueue size = " << rerouteQueue.size() << endl;
     auto& entry = rerouteQueue.front();
     frBlockObject* obj = entry.block;
     bool doRoute = entry.doRoute;
@@ -1779,6 +1764,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
     bool didRoute = false;
     bool didCheck = false;
 
+    if (graphics_ && obj->typeId() == drcNet) {
+      graphics_->startNet(static_cast<drNet*>(obj));
+    }
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {
@@ -1815,6 +1803,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           }
         } else {
           gridGraph_.print();
+        }
+        if (graphics_) {
+            graphics_->show(false);
         }
         logger_->error(DRT,
                        255,
@@ -1857,23 +1848,19 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         cout << "Error: fail to setTargetNet\n";
       }
     } else {
-      // if (isRouteSkipped == false) {
       gcWorker_->setEnableSurgicalFix(false);
       if (obj->typeId() == frcNet) {
         auto net = static_cast<frNet*>(obj);
         if (gcWorker_->setTargetNet(net)) {
           gcWorker_->main();
           didCheck = true;
-          // cout << "do check " << net->getName() << "\n";
         }
       } else {
         if (gcWorker_->setTargetNet(obj)) {
           gcWorker_->main();
           didCheck = true;
-          // cout << "do check\n";
         }
       }
-      // }
     }
 
     // end
@@ -1901,8 +1888,7 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
                                  set<FlexMazeIdx> &apMazeIdx,
                                  set<FlexMazeIdx> &realPinAPMazeIdx,
                                  map<FlexMazeIdx, frBox3D*>& mazeIdx2Tbox,
-                                 list<pair<drPin*, frBox3D>>& pinTaperBoxes/*,
-                                 map<FlexMazeIdx, frViaDef*> &apSVia*/)
+                                 list<pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
   frBox3D* tbx = nullptr;
   for (auto& pin : net->getPins()) {
@@ -2285,7 +2271,6 @@ void FlexDRWorker::routeNet_postAstarWritePath(
       for (auto currZ = startZ; currZ < endZ; ++currZ) {
         frPoint loc;
         frLayerNum startLayerNum = gridGraph_.getLayerNum(currZ);
-        // frLayerNum endLayerNum = gridGraph_.getLayerNum(currZ + 1);
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
         auto via = getTech()->getLayer(startLayerNum + 1)->getDefaultViaDef();
@@ -2592,7 +2577,6 @@ void FlexDRWorker::routeNet_postRouteAddPathCost(drNet* net)
     addPathCost(connFig.get());
     cnt++;
   }
-  // cout <<"updated " <<cnt <<" connfig costs" <<endl;
 }
 
 void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
@@ -2614,10 +2598,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 
 bool FlexDRWorker::routeNet(drNet* net)
 {
-  ProfileTask profile("DR:routeNet");
-  if (graphics_) {
-    graphics_->startNet(net);
-  }
+//  ProfileTask profile("DR:routeNet");
 
   if (net->getPins().size() <= 1) {
     return true;
@@ -2781,7 +2762,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           bp = points[prev_i];
           ep = points[i - 1];
           if (getTech()->getLayer(layerNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+              == dbTechLayerDir::HORIZONTAL) {
             if (points[prev_i].x() < points[prev_i + 1].x()) {
               bpPatchStyle = true;
             } else if (points[prev_i].x() > points[prev_i + 1].x()) {
@@ -2841,7 +2822,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         currArea = getHalfViaEncArea(
             prevIdx.z(),
             false,
-            net);  // gridGraph_.getHalfViaEncArea(prevIdx.z(), false);
+            net);
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(prevIdx.z(), false);
       }
       prev_i = i;
@@ -2891,7 +2872,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         bp = points[prev_i];
         ep = points[i - 1];
         if (getTech()->getLayer(layerNum)->getDir()
-            == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+            == dbTechLayerDir::HORIZONTAL) {
           if (points[prev_i].x() < points[prev_i + 1].x()) {
             bpPatchStyle = true;
           } else if (points[prev_i].x() > points[prev_i + 1].x()) {
@@ -3103,7 +3084,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getTech()->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
+  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
     isPatchHorz = true;
   } else {
     isPatchHorz = false;

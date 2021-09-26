@@ -231,7 +231,9 @@ bool HighlightModel::setData(const QModelIndex& index,
 }
 
 HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
-    : QStyledItemDelegate(parent)
+    : QStyledItemDelegate(parent),
+      items_(),
+      table_model_(nullptr)
 {
   items_.push_back("Group 1");
   items_.push_back("Group 2");

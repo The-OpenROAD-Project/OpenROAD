@@ -4,7 +4,6 @@ source "stt_helpers.tcl"
 set alpha .4
 set dup1 {dup1 0 {p0 0 0} {p1 10 10} {p2 10 20} {p3 10 10}}
 report_pd_net $dup1 $alpha
-report_pdrev_net $dup1 $alpha
 
 set dup2 {dup2 2 {p0 29 43} {p1 28 45} {p2 28 44}}
 report_pd_net $dup2 $alpha
@@ -18,3 +17,7 @@ report_pd_net $dup4 $alpha
 
 set one {one 0 {p0 10 10}}
 report_pd_net $one $alpha
+
+# driver index changes by duplicate removal
+set dup5 {dup5 2 {p0 123 209} {p1 123 209} {p2 123 215} {p3 122 211}}
+report_pd_net $dup5 .3

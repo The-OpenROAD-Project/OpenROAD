@@ -11,9 +11,9 @@
 [INFO ODB-0131]     Created 366 components and 2656 component-terminals.
 [INFO ODB-0133]     Created 402 nets and 1192 connections.
 [INFO ODB-0134] Finished DEF file: gcd_sky130hs_floorplan.def
-[INFO TAP-0001] Macro blocks found: 0
+[INFO TAP-0001] Found 0 macro blocks.
 [INFO TAP-0002] Original rows: 84
-[INFO TAP-0003] Created rows: 0
-[INFO TAP-0004] Endcaps inserted: 168
-[INFO TAP-0005] Tapcells inserted: 817
+[INFO TAP-0003] Created 0 rows for a total of 84 rows.
+[INFO TAP-0004] Inserted 168 endcaps.
+[INFO TAP-0005] Inserted 817 tapcells.
 No differences found.

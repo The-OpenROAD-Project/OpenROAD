@@ -31,8 +31,9 @@
 
 #include <iostream>
 
-#include "db/infra/frOrient.h"
+#include "odb/dbTypes.h"
 #include "db/infra/frPoint.h"
+using dbOrientType = odb::dbOrientType;
 
 namespace fr {
 class frTransform
@@ -41,20 +42,20 @@ class frTransform
   // constructor
   frTransform() : offset_(), ori_() {}
   frTransform(const frPoint& pointIn,
-              const frOrient& orientIn = frOrient(frcR0))
+              const dbOrientType& orientIn = dbOrientType(dbOrientType::R0))
       : offset_(pointIn), ori_(orientIn)
   {
   }
   frTransform(frCoord xOffsetIn,
               frCoord yOffsetIn,
-              const frOrient& orientIn = frOrient(frcR0))
+              const dbOrientType& orientIn = dbOrientType(dbOrientType::R0))
       : offset_(xOffsetIn, yOffsetIn), ori_(orientIn)
   {
   }
   // setters
   void set(const frPoint& pointIn) { offset_ = pointIn; }
-  void set(const frOrient& orientIn) { ori_ = orientIn; }
-  void set(const frPoint& pointIn, const frOrient& orientIn)
+  void set(const dbOrientType& orientIn) { ori_ = orientIn; }
+  void set(const frPoint& pointIn, const dbOrientType& orientIn)
   {
     set(pointIn);
     set(orientIn);
@@ -63,7 +64,7 @@ class frTransform
   {
     set(frPoint(xOffsetIn, yOffsetIn));
   }
-  void set(frCoord xOffsetIn, frCoord yOffsetIn, const frOrient& orientIn)
+  void set(frCoord xOffsetIn, frCoord yOffsetIn, const dbOrientType& orientIn)
   {
     set(xOffsetIn, yOffsetIn);
     set(orientIn);
@@ -71,31 +72,31 @@ class frTransform
   // getters
   frCoord xOffset() const { return offset_.x(); }
   frCoord yOffset() const { return offset_.y(); }
-  frOrient orient() const { return ori_; }
+  dbOrientType orient() const { return ori_; }
   // util
   void updateXform(frPoint& size)
   {
     switch (orient()) {
-      // case frcR0: == default
-      case frcR90:
+      // case R0: == default
+      case dbOrientType::R90:
         set(xOffset() + size.y(), yOffset());
         break;
-      case frcR180:  // verified
+      case dbOrientType::R180:  // verified
         set(xOffset() + size.x(), yOffset() + size.y());
         break;
-      case frcR270:
+      case dbOrientType::R270:
         set(xOffset(), yOffset() + size.x());
         break;
-      case frcMY:  // verified
+      case dbOrientType::MY:  // verified
         set(xOffset() + size.x(), yOffset());
         break;
-      case frcMXR90:
+      case dbOrientType::MXR90:
         set(xOffset(), yOffset());
         break;
-      case frcMX:  // verified
+      case dbOrientType::MX:  // verified
         set(xOffset(), yOffset() + size.y());
         break;
-      case frcMYR90:
+      case dbOrientType::MYR90:
         set(xOffset() + size.y(), yOffset() + size.x());
         break;
       default:  // verified
@@ -106,52 +107,52 @@ class frTransform
   void revert(frTransform& transformIn)
   {
     frCoord resXOffset, resYOffset;
-    frOrient resOrient;
+    dbOrientType resOrient;
     switch (ori_) {
-      case frcR0:
+      case dbOrientType::R0:
         resXOffset = -offset_.x();
         resYOffset = -offset_.y();
-        resOrient = frcR0;
+        resOrient = dbOrientType::R0;
         break;
-      case frcR90:
+      case dbOrientType::R90:
         resXOffset = -offset_.y();
         resYOffset = offset_.x();
-        resOrient = frcR270;
+        resOrient = dbOrientType::R270;
         break;
-      case frcR180:
+      case dbOrientType::R180:
         resXOffset = offset_.x();
         resYOffset = offset_.y();
-        resOrient = frcR180;
+        resOrient = dbOrientType::R180;
         break;
-      case frcR270:
+      case dbOrientType::R270:
         resXOffset = offset_.y();
         resYOffset = -offset_.x();
-        resOrient = frcR90;
+        resOrient = dbOrientType::R90;
         break;
-      case frcMY:
+      case dbOrientType::MY:
         resXOffset = offset_.x();
         resYOffset = -offset_.y();
-        resOrient = frcMY;
+        resOrient = dbOrientType::MY;
         break;
-      case frcMYR90:
+      case dbOrientType::MYR90:
         resXOffset = offset_.y();
         resYOffset = offset_.x();
-        resOrient = frcMYR90;
+        resOrient = dbOrientType::MYR90;
         break;
-      case frcMX:
+      case dbOrientType::MX:
         resXOffset = -offset_.x();
         resYOffset = offset_.y();
-        resOrient = frcMX;
+        resOrient = dbOrientType::MX;
         break;
-      case frcMXR90:
+      case dbOrientType::MXR90:
         resXOffset = -offset_.y();
         resYOffset = -offset_.x();
-        resOrient = frcMXR90;
+        resOrient = dbOrientType::MXR90;
         break;
       default:
         resXOffset = -offset_.x();
         resYOffset = -offset_.y();
-        resOrient = frcR0;
+        resOrient = dbOrientType::R0;
         std::cout << "Error: unrecognized orient in revert\n";
     }
     transformIn.set(resXOffset, resYOffset, resOrient);
@@ -159,7 +160,7 @@ class frTransform
 
  protected:
   frPoint offset_;
-  frOrient ori_;
+  dbOrientType ori_;
 };
 }  // namespace fr
 

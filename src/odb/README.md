@@ -51,24 +51,18 @@ The full set of the Tcl commands exposed can be found under
 
 ### Python
 
-After building successfully, run a Python shell using `python3`. Load
-`opendbpy` module using:
+After building successfully, run `openroad -python` to enable the Python
+interpreter. You can find examples on using the API from Python under
+`test/python/` directory.
 
+To list the full set of the Python classes exposed run `openroad -python`
+then:
 ```
-import importlib.util
-spec = importlib.util.spec_from_file_location("opendbpy", "./build/src/swig/python/opendbpy.py")
-odb = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(odb)
-
-# use it as following
-odb.[class_name]
+import openroad
+import odb
+print(', '.join(dir(openroad)))
+print(', '.join(dir(odb)))
 ```
-
-You can find examples on using the API from Python under `test/python/`
-directory.
-
-The full set of the Python classes exposed can be found under
-`./build/src/swig/python/opendbpy.py`.
 
 ### C++
 

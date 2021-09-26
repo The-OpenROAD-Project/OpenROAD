@@ -56,14 +56,14 @@ metal9     Horizontal       2256          2162          4.17%
 metal10    Vertical         2256          2209          2.08%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 255
-[INFO GRT-0112] Final usage 3D: 1400
+[INFO GRT-0111] Final number of vias: 263
+[INFO GRT-0112] Final usage 3D: 1442
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           32066           329            1.03%             0 /  0 /  0
-metal2           24581           306            1.24%             0 /  0 /  0
+metal1           32066           341            1.06%             0 /  0 /  0
+metal2           24581           312            1.27%             0 /  0 /  0
 metal3           33028             0            0.00%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
 metal5           15410             0            0.00%             0 /  0 /  0
@@ -73,9 +73,9 @@ metal8            4512             0            0.00%             0 /  0 /  0
 metal9            2162             0            0.00%             0 /  0 /  0
 metal10           2209             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           149734           635            0.42%             0 /  0 /  0
+Total           149734           653            0.44%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 2322 um
+[INFO GRT-0018] Total wirelength: 2381 um
 [INFO GRT-0014] Routed nets: 87
 [INFO GRT-0020] Min routing layer: metal1
 [INFO GRT-0021] Max routing layer: metal10
@@ -124,17 +124,17 @@ metal9     Horizontal       2256             0          100.00%
 metal10    Vertical         2256            47          97.92%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 268
-[INFO GRT-0112] Final usage 3D: 1439
+[INFO GRT-0111] Final number of vias: 275
+[INFO GRT-0112] Final usage 3D: 1481
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1            4899           312            6.37%             0 /  0 /  0
-metal2            5123           305            5.95%             0 /  0 /  0
-metal3            4968            18            0.36%             0 /  0 /  0
-metal4            2726             0            0.00%             0 /  0 /  0
+metal1            4899           321            6.55%             0 /  0 /  0
+metal2            5123           306            5.97%             0 /  0 /  0
+metal3            4968            24            0.48%             0 /  0 /  0
+metal4            2726             5            0.18%             0 /  0 /  0
 metal5            2438             0            0.00%             0 /  0 /  0
 metal6            2726             0            0.00%             0 /  0 /  0
 metal7              46             0            0.00%             0 /  0 /  0
@@ -142,10 +142,10 @@ metal8             188             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10             47             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            23161           635            2.74%             0 /  0 /  0
+Total            23161           656            2.83%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 2324 um
+[INFO GRT-0018] Total wirelength: 2373 um
 [INFO GRT-0014] Routed nets: 87
-Differences found at line 64.
-105000 134400 109200 138600 metal1
-105000 130200 109200 134400 metal1
+Differences found at line 47.
+88200 37800 96600 42000 metal1
+88200 37800 92400 42000 metal1

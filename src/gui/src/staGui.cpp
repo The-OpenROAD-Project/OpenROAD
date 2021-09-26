@@ -303,15 +303,27 @@ bool TimingPathsModel::populatePaths(bool get_max,
     sta::DcalcAnalysisPt* dcalc_ap
         = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
 
-    path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
-    path->setEndClock(path_end->targetClk(sta_)->name());
+    auto* start_clock_edge = path_end->sourceClkEdge(sta_);
+    if (start_clock_edge != nullptr) {
+      path->setStartClock(start_clock_edge->clock()->name());
+    } else {
+      path->setStartClock("<No clock>");
+    }
+    auto* end_clock = path_end->targetClk(sta_);
+    if (end_clock != nullptr) {
+      path->setEndClock(end_clock->name());
+    } else {
+      path->setEndClock("<No clock>");
+    }
     path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay()
                                              : 0);
     path->setSlack(path_end->slack(sta_));
     path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     path->setPathRequiredTime(path_end->requiredTime(sta_));
-    bool clockPropagated
-        = path_end->sourceClkEdge(sta_)->clock()->isPropagated();
+    bool clockPropagated = false;
+    if (start_clock_edge != nullptr) {
+      clockPropagated = start_clock_edge->clock()->isPropagated();
+    }
     if (!clockPropagated)
       clockExpanded = false;
     else
@@ -520,12 +532,15 @@ void TimingPathRenderer::highlight(TimingPath* path)
 {
   path_ = path;
   highlight_node_ = -1;
+  redraw();
 }
 
 void TimingPathRenderer::highlightNode(int node_idx)
 {
-  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount())
+  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount()) {
     highlight_node_ = node_idx;
+    redraw();
+  }
 }
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
@@ -608,6 +623,10 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter)
     nxt_stage = highlight_node_ - 1;
   if (nxt_stage != -1)
     getSegmentEnds(nxt_stage, dst_x, dst_y);
+  else {
+    // no dst
+    return;
+  }
   odb::Point pt1(src_x, src_y);
   odb::Point pt2(dst_x, dst_y);
 

@@ -36,6 +36,7 @@
 #include <ostream>
 #include <vector>
 
+#include "pdrevII.h"
 #include "node.h"
 
 namespace pdr {

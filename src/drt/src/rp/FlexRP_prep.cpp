@@ -30,6 +30,9 @@
 #include <sstream>
 
 #include "FlexRP.h"
+#include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -49,6 +52,98 @@ void FlexRP::prep()
     prep_via2viaForbiddenLen(ndr.get());
     prep_viaForbiddenTurnLen(ndr.get());
   }
+  prep_minStepViasCheck();
+}
+
+void FlexRP::prep_minStepViasCheck()
+{
+  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    frLayer* layer = tech_->getLayer(lNum);
+    if (layer->getType() != dbTechLayerType::ROUTING) {
+      continue;
+    }
+    if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum)
+      continue;
+    frViaDef* downVia
+        = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    frViaDef* upVia
+        = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    if (!downVia || !upVia)
+      continue;
+    auto minStepCons = layer->getMinStepConstraint();
+    if (!minStepCons)
+      continue;
+
+    frBox upViaBox = upVia->getLayer1ShapeBox();
+    frBox downViaBox = downVia->getLayer2ShapeBox();
+    gtl::rectangle_data<frCoord> upViaRect(
+        upViaBox.left(), upViaBox.bottom(), upViaBox.right(), upViaBox.top());
+    gtl::rectangle_data<frCoord> downViaRect(
+        downViaBox.left(), downViaBox.bottom(), downViaBox.right(), downViaBox.top());
+    
+    // joining the two via rects in one polygon
+    gtl::polygon_90_set_data<frCoord> set;
+    using namespace boost::polygon::operators;
+    set += upViaRect;
+    set += downViaRect;
+    std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+    set.get_polygons(polys);
+    if (polys.size() != 1)
+      continue;
+    
+    gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
+    gcNet* testNet = new gcNet(0);
+    gcPin* testPin = new gcPin(poly, lNum, testNet);
+    testPin->setNet(testNet);
+
+    bool first = true;
+    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+    gtl::point_data<frCoord> prev;
+    for(gtl::point_data<frCoord> cur : poly)
+    {
+      if(first)
+      {
+        prev = cur;
+        first = false; 
+      } else {
+        auto edge = make_unique<gcSegment>();
+        edge->setLayerNum(lNum);
+        edge->addToPin(testPin);
+        edge->addToNet(testNet);
+        edge->setSegment(prev, cur);
+        if (!tmpEdges.empty()) {
+          edge->setPrevEdge(tmpEdges.back().get());
+          tmpEdges.back()->setNextEdge(edge.get());
+        }
+        tmpEdges.push_back(std::move(edge));
+        prev = cur;
+      }
+    }
+    // last edge
+    auto edge = make_unique<gcSegment>();
+    edge->setLayerNum(lNum);
+    edge->addToPin(testPin);
+    edge->addToNet(testNet);
+    edge->setSegment(prev, *poly.begin());
+    edge->setPrevEdge(tmpEdges.back().get());
+    tmpEdges.back()->setNextEdge(edge.get());
+    // set first edge
+    tmpEdges.front()->setPrevEdge(edge.get());
+    edge->setNextEdge(tmpEdges.front().get());
+    tmpEdges.push_back(std::move(edge));
+    // add to polygon edges
+    testPin->addPolygonEdges(tmpEdges);
+    // check gc minstep violations
+    FlexGCWorker worker(tech_, logger_);
+    worker.checkMinStep(testPin);
+    auto& markers = worker.getMarkers();
+    if (!markers.empty()) {
+      tech_->setVia2ViaMinStep(true);
+      layer->setHasVia2ViaMinStepViol(true);
+    }
+  }
 }
 
 void FlexRP::prep_viaForbiddenThrough()
@@ -58,7 +153,7 @@ void FlexRP::prep_viaForbiddenThrough()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -114,7 +209,7 @@ void FlexRP::prep_lineForbiddenLen()
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     prep_lineForbiddenLen_helper(lNum, i, 0, true, true);
@@ -194,7 +289,7 @@ void FlexRP::prep_viaForbiddenPlanarLen()
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -261,7 +356,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -391,7 +486,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
-        != frLayerTypeEnum::ROUTING) {
+        != dbTechLayerType::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -636,7 +731,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   via1.getCutBBox(cutBox1);
   via2.getCutBBox(cutBox2);
-  pair<frCoord, frCoord> range;
   frCoord reqSpcVal = 0;
   auto layer1 = tech_->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = tech_->getLayer(viaDef2->getCutLayerNum());
@@ -790,7 +884,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
   }
 
   bool isH = (getDesign()->getTech()->getLayer(lNum)->getDir()
-              == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+              == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);

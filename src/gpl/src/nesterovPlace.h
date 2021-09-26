@@ -92,7 +92,8 @@ public:
       utl::Logger* log);
   ~NesterovPlace();
 
-  void doNesterovPlace();
+  // return iteration count
+  int doNesterovPlace(int start_iter = 0);
 
   void updateGradients(
       std::vector<FloatPoint>& sumGrads,
@@ -117,6 +118,8 @@ public:
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   float getDensityPenalty() const { return densityPenalty_; }
+
+  void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
 
 private:
   std::shared_ptr<PlacerBase> pb_;

@@ -18,8 +18,8 @@
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
-      Layer: M1  -  width: 0.072  offset: 0.000 
-      Layer: M2  -  width: 0.072  offset: 0.000 
+      Layer: M1  -  width: 0.072  pitch: 0.540  offset: 0.000 
+      Layer: M2  -  width: 0.072  pitch: 0.540  offset: 0.000 
     Straps
       Layer: M3  -  width: 0.936  pitch: 31.680  spacing: 1.512  offset: 1.872 
       Layer: M6  -  width: 1.152  pitch: 56.320  spacing: 2.688  offset: 6.408 

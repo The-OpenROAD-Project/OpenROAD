@@ -4,12 +4,6 @@ Wire length = 30 Path depth = 30
 1 (10 10) neighbor 3 length 0
 2 (10 20) neighbor 3 length 10
 3 (10 10) neighbor 0 length 20
-Net dup1
-Wire length = 30 Path depth = 30
-0 (0 0) neighbor 0 length 0
-1 (10 10) neighbor 3 length 0
-2 (10 20) neighbor 3 length 10
-3 (10 10) neighbor 0 length 20
 Net dup2
 Wire length = 3 Path depth = 2
 0 (29 43) neighbor 3 length 2
@@ -26,3 +20,9 @@ Net dup4
 Wire length = 0 Path depth = 0
 Net one
 Wire length = 0 Path depth = 0
+Net dup5
+Wire length = 8 Path depth = 8
+0 (123 209) neighbor 3 length 3
+1 (123 215) neighbor 1 length 0
+2 (122 211) neighbor 3 length 0
+3 (122 211) neighbor 1 length 5

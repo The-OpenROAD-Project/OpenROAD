@@ -1,7 +1,7 @@
 record_tests {
-  check
   flute1
   flute_gcd
+  check
   pd1
   pd2
   pd_gcd
