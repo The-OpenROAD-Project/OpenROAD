@@ -72,7 +72,7 @@ class Tapcell
            int halo_y,
            const std::string& cnrcap_nwin_master,
            const std::string& cnrcap_nwout_master,
-           int add_boundary_cell,
+           bool add_boundary_cell,
            const std::string& tap_nwintie_master,
            const std::string& tap_nwin2_master,
            const std::string& tap_nwin3_master,

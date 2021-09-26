@@ -177,6 +177,7 @@ proc tapcell { args } {
 
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
+  set dist [ord::microns_to_dbu $dist]
 
   set tapcell_master "NULL"
     if { [info exists keys(-tapcell_master)] } {

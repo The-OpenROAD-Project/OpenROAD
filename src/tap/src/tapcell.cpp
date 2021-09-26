@@ -103,7 +103,7 @@ void Tapcell::run(odb::dbMaster* endcap_master,
                   int halo_y,
                   const string& cnrcap_nwin_master,
                   const string& cnrcap_nwout_master,
-                  int add_boundary_cell,
+                  bool add_boundary_cell,
                   const string& tap_nwintie_master,
                   const string& tap_nwin2_master,
                   const string& tap_nwin3_master,
@@ -520,8 +520,8 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
 
       int offset = 0;
       int pitch = -1;
-      const int dist1 = dist * (db_->getTech()->getLefUnits());
-      const int dist2 = 2 * dist * (db_->getTech()->getLefUnits());
+      const int dist1 = dist;
+      const int dist2 = 2 * dist;
 
       if ((row_idx % 2) == 0) {
         offset = dist1;

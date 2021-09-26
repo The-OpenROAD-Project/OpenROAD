@@ -189,6 +189,7 @@ class DisplayControls : public QDockWidget, public Options
   bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
+  QFont pinMarkersFont() override;
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
   float getMinCongestionToShow() const override;
@@ -346,6 +347,8 @@ class DisplayControls : public QDockWidget, public Options
   QFont ruler_font_;
 
   QColor row_color_;
+
+  QFont pin_markers_font_;
 
   CongestionSetupDialog* congestion_dialog_;
 };
