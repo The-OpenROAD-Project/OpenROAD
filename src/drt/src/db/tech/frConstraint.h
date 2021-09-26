@@ -1148,75 +1148,6 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
   bool isTwoEdges;
 };
 
-class frLef58CutSpacingTableLayerConstraint : public frConstraint
-{
- public:
-  // constructors
-  frLef58CutSpacingTableLayerConstraint() : secondLayerNum(0), nonZeroEnc(false)
-  {
-  }
-  // getters
-  frLayerNum getSecondLayerNum() const { return secondLayerNum; }
-  bool isNonZeroEnc() const { return nonZeroEnc; }
-  // setters
-  void setSecondLayerNum(frLayerNum in) { secondLayerNum = in; }
-  void setNonZeroEnc(bool in) { nonZeroEnc = in; }
-  // others
-  frConstraintTypeEnum typeId() const override
-  {
-    return frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint;
-  }
-  void report(utl::Logger* logger) const override
-  {
-    logger->report("\tLAYERCONSTRAINT secondLayerNum {} nonZeroEnc {} ",
-                   secondLayerNum,
-                   nonZeroEnc);
-  }
-
- protected:
-  frLayerNum secondLayerNum;
-  bool nonZeroEnc;
-};
-
-class frLef58CutSpacingTablePrlConstraint : public frConstraint
-{
- public:
-  // constructors
-  frLef58CutSpacingTablePrlConstraint()
-      : prl(0), horizontal(false), vertical(false), maxXY(false)
-  {
-  }
-  // getters
-  frCoord getPrl() const { return prl; }
-  bool isHorizontal() const { return horizontal; }
-  bool isVertical() const { return vertical; }
-  bool isMaxXY() const { return maxXY; }
-  // setters
-  void setPrl(frCoord in) { prl = in; }
-  void setHorizontal(bool in) { horizontal = in; }
-  void setVertical(bool in) { vertical = in; }
-  void setMaxXY(bool in) { maxXY = in; }
-  // others
-  frConstraintTypeEnum typeId() const override
-  {
-    return frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint;
-  }
-  void report(utl::Logger* logger) const override
-  {
-    logger->report("\tPRLCONSTRAINT prl {} horizontal {} vertical {} maxXY {} ",
-                   prl,
-                   horizontal,
-                   vertical,
-                   maxXY);
-  }
-
- protected:
-  frCoord prl;
-  bool horizontal;
-  bool vertical;
-  bool maxXY;
-};
-
 class frLef58EolExtensionConstraint : public frSpacingConstraint
 {
  public:
@@ -1267,6 +1198,7 @@ class frLef58CutSpacingTableConstraint : public frConstraint
       : db_rule_(dbRule), default_spacing_(0), default_c2c_(false)
   {
   }
+  ~frLef58CutSpacingTableConstraint() {}
   // setter
   void setDefaultSpacing(frCoord value) { default_spacing_ = value; }
   void setDefaultCenterToCenter(bool value) { default_c2c_ = value; }
