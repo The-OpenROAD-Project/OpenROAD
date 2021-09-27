@@ -43,6 +43,7 @@
 #include <QWidgetAction>
 #include <map>
 #include <vector>
+#include <QDebug>
 
 #include "displayControls.h"
 #include "inspector.h"
@@ -833,6 +834,12 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
       cmds.push_back(cmd.toString().toStdString());
     }
   }
+  // save display settings
+  controls_->restoreTclCommands(cmds);
+
+  // save layout view
+  viewer_->restoreTclCommands(cmds);
+
   return cmds;
 }
 

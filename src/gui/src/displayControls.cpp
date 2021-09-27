@@ -1245,4 +1245,33 @@ void DisplayControls::designLoaded(odb::dbBlock* block)
   setDb(block->getDb());
 }
 
+void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)
+{
+  buildRestoreTclCommands(cmds, model_->invisibleRootItem());
+}
+
+void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix)
+{
+  const std::string visible_restore = "gui::set_display_controls \"{}\" visible {}";
+  const std::string selectable_restore = "gui::set_display_controls \"{}\" selectable {}";
+
+  // loop over settings and save
+  for (int r = 0; r < parent->rowCount(); r++) {
+    QStandardItem* item = parent->child(r, 0);
+    const std::string name = prefix + item->text().toStdString();
+
+    if (item->hasChildren()) {
+      buildRestoreTclCommands(cmds, item, name + "/");
+    } else {
+      bool visible = parent->child(r, Visible)->checkState() == Qt::Checked;
+      cmds.push_back(fmt::format(visible_restore, name, visible));
+      auto* selectable = parent->child(r, Selectable);
+      if (selectable != nullptr) {
+        bool select = selectable->checkState() == Qt::Checked;
+        cmds.push_back(fmt::format(selectable_restore, name, select));
+      }
+    }
+  }
+}
+
 }  // namespace gui

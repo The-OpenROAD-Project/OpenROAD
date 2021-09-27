@@ -153,6 +153,8 @@ class DisplayControls : public QDockWidget, public Options
   void registerRenderer(Renderer* renderer);
   void unregisterRenderer(Renderer* renderer);
 
+  void restoreTclCommands(std::vector<std::string>& cmds);
+
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
@@ -297,6 +299,8 @@ class DisplayControls : public QDockWidget, public Options
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+
+  void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
   QTreeView* view_;
   QStandardItemModel* model_;

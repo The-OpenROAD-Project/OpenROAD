@@ -121,6 +121,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
+  void restoreTclCommands(std::vector<std::string>& cmds);
+
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
   odb::Point screenToDBU(const QPointF& point);

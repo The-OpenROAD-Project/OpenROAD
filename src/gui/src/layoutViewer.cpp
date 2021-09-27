@@ -2564,6 +2564,18 @@ void LayoutViewer::addMenuAndActions()
   });
 }
 
+void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
+{
+  cmds.push_back(fmt::format("gui::set_resolution {}", 1.0 / pixels_per_dbu_));
+
+  odb::dbBlock* block = getBlock();
+  if (block != nullptr) {
+    double dbu_per_micron = block->getDbUnitsPerMicron();
+
+    cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
+  }
+}
+
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
     : QScrollArea(parent), viewer_(viewer)
