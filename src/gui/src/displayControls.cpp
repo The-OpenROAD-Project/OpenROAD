@@ -714,6 +714,10 @@ void DisplayControls::setDb(odb::dbDatabase* db)
     return;
   }
 
+  if (tech_inited_) {
+    return;
+  }
+
   techInit();
 
   double dbu_to_microns = tech->getDbUnitsPerMicron();
