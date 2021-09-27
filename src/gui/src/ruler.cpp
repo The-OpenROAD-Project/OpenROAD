@@ -79,7 +79,7 @@ std::string Ruler::getTclCommand() const
   return "gui::add_ruler " +
          std::to_string(pt0_.x() / dbu_to_microns) + " " + std::to_string(pt0_.y() / dbu_to_microns) + " " +
          std::to_string(pt1_.x() / dbu_to_microns) + " " + std::to_string(pt1_.y() / dbu_to_microns) + " " +
-         "\"" + label_ + "\" \"" + name_ + "\"";
+         "{" + label_ + "} {" + name_ + "}";
 }
 
 ////////////
