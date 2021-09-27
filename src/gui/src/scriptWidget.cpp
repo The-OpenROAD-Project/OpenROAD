@@ -114,7 +114,7 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   return Tcl_Eval(widget->interp_, "::tcl::openroad::exit");
 }
 
-void ScriptWidget::setupTcl(Tcl_Interp* interp, const std::string& script)
+void ScriptWidget::setupTcl(Tcl_Interp* interp)
 {
   // interp will be nullptr if called from Tcl, therefore tcl is already initialized
   bool do_init = interp != nullptr;
@@ -157,11 +157,6 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp, const std::string& script)
   }
 
   input_->init(interp_);
-
-  // execute script if requested
-  if (!script.empty()) {
-    executeCommand(QString::fromStdString(script), true);
-  }
 }
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)

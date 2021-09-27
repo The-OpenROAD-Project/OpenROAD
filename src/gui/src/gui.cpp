@@ -585,6 +585,9 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   }
   main_window->show();
 
+  // pass in tcl interp to script widget
+  main_window->getScriptWidget()->setupTcl(interp);
+
   // execute commands to restore state of gui
   std::string restore_commands;
   for (const auto& cmd : gui->getRestoreStateCommands()) {
@@ -606,8 +609,10 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   // Save the window's status into the settings when quitting.
   QObject::connect(&app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
 
-  // pass in tcl interp to script widget
-  main_window->getScriptWidget()->setupTcl(interp, script);
+  // Execute script
+  if (!script.empty()) {
+    main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+  }
 
   bool do_exec = interactive;
   // check if hide was called by script
