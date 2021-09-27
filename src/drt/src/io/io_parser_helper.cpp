@@ -636,7 +636,7 @@ void io::Parser::initDefaultVias_N16(const string& node)
 void io::Parser::initConstraints()
 {
   for (auto& layer : tech->getLayers()) {
-    if (layer->getType() == frLayerTypeEnum::CUT) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
       auto viaDef = layer->getDefaultViaDef();
       if (viaDef == nullptr)
         continue;
