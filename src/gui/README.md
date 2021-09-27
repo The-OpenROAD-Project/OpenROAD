@@ -27,6 +27,24 @@ To remove the button:
 gui::remove_toolbar_button name
 ```
 
+### Save screenshot of layout
+
+This command can be both be used when the GUI is active and not active.
+
+```
+save_image [-resolution microns_per_pixel]
+           [-area {x0 y0 x1 y1}]
+           [-display_option {option value}]
+           filename
+```
+
+Options description:
+- ``filename`` path to save the image to.
+- ``x0, y0`` first corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
+- ``x1, y1`` second corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
+- ``microns_per_pixel` resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.
+- ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}`` or to show routing tracks ``-display_option {Tracks/Pref true}``.
+
 ## TCL functions
 
 ### Support
@@ -201,20 +219,6 @@ gui::clear_highlights highlight_group
 
 Options description:
 - ``highlight_group`` group to clear, defaults to ``0``, valid groups are ``-1 - 7``. Use ``-1`` to clear all groups.
-
-### Save layout images
-
-To save a picture of the currently visible layout use:
-
-```
-gui::save_image filename
-gui::save_image filename x0 y0 x1 y1
-```
-
-Options description:
-- ``filename`` path to save the image to.
-- ``x0, y0`` first corner of the layout area (in microns) to be saved.
-- ``x1, y1`` second corner of the layout area (in microns) to be saved.
 
 ### Rulers
 

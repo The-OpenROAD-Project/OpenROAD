@@ -469,7 +469,10 @@ class Gui
   void setResolution(double pixels_per_dbu);
 
   // Save layout to an image file
-  void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region = odb::Rect(),
+                 double dbu_per_pixel = 0,
+                 const std::map<std::string, bool>& display_settings = {});
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -520,6 +523,9 @@ class Gui
   // Called to hide the gui and return to tcl command line
   void hideGui();
 
+  // Called to show the gui and return to tcl command line
+  void showGui(const std::string& cmds = "", bool interactive = true);
+
   // set the system logger
   void setLogger(utl::Logger* logger);
 
@@ -564,6 +570,6 @@ class Gui
 };
 
 // The main entry point
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "");
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
 
 }  // namespace gui

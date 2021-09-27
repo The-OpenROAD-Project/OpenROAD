@@ -60,3 +60,82 @@ proc create_toolbar_button { args } {
 
   return [gui::create_toolbar_button $name $button_text $tcl_script $echo]
 }
+
+sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
+                                   [-resolution microns_per_pixel] \
+                                   [-display_option option] \
+                                   path
+}
+
+proc save_image { args } {
+  set options [gui::parge_options $args]
+  sta::parse_key_args "save_image" args \
+    keys {-area -resolution -display_option} flags {}
+
+  set resolution 0
+  if { [info exists keys(-resolution)] } {
+    sta::check_positive_float "-resolution" $keys(-resolution)
+    set tech [ord::get_db_tech]
+    if {$tech == "NULL"} {
+      utl::error GUI 17 "No technology loaded."
+    }
+    set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
+    if {$resolution < 1} {
+      set resolution 1.0
+      utl::warn GUI 31 "Resolution too high for design, defaulting to [expr $resolution / [$tech getLefUnits]] um per pixel"
+    }
+  }
+
+  set area "0 0 0 0"
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    if {[llength $area] != 4} {
+      utl::error GUI 18 "Area must contain 4 elements."
+    }
+  } elseif {![gui::enabled]} {
+    # gui is not enabled, so default to whole block + 5%
+    set die_area [ord::get_die_area]
+    set die_width_margin [expr 0.05 * ([lindex $die_area 2] - [lindex $die_area 0])]
+    set die_height_margin [expr 0.05 * ([lindex $die_area 3] - [lindex $die_area 1])]
+    set area [list \
+               [expr [lindex $die_area 0] - $die_width_margin] \
+               [expr [lindex $die_area 1] - $die_height_margin] \
+               [expr [lindex $die_area 2] + $die_width_margin] \
+               [expr [lindex $die_area 3] + $die_height_margin]]
+  }
+
+  sta::check_argc_eq1 "save_image" $args
+  set path [lindex $args 0]
+
+  gui::save_image $path {*}$area $resolution $options
+
+  # delete map
+  rename $options ""
+}
+
+namespace eval gui {
+  proc parge_options { args_var } {
+    set options [gui::DisplayControlMap]
+    while { $args_var != {} } {
+      set arg [lindex $args_var 0]
+      if { $arg == "-display_option" } {
+        set opt [lindex $args_var 1]
+
+        if {[llength $opt] != 2} {
+          utl::error GUI 19 "Display option must have elements."
+        }
+
+        set key [lindex $opt 0]
+        set val [lindex $opt 1]
+
+        $options set $key $val
+
+        set args_var [lrange $args_var 1 end]
+      } else {
+        set args_var [lrange $args_var 1 end]
+      }
+    }
+
+    return $options
+  }
+}

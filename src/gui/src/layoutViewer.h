@@ -128,7 +128,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
   // save image of the layout
-  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
+  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect(), double dbu_per_pixel = 0);
 
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;

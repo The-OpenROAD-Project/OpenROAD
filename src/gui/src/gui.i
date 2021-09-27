@@ -93,7 +93,11 @@ odb::Point make_point(double x, double y)
 %}
 
 %include "../../Exception.i"
-%include "std_string.i"
+%include <std_string.i>
+%include <std_map.i>
+namespace std {
+  %template(DisplayControlMap) map<string, bool>;
+}
 
 %inline %{
 
@@ -267,22 +271,10 @@ void fit()
   gui->fit();
 }
 
-void save_image(const char* filename)
+void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
 {
-  if (!check_gui("save_image")) {
-    return;
-  }
   auto gui = gui::Gui::get();
-  gui->saveImage(filename);
-}
-
-void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi)
-{
-  if (!check_gui("save_image")) {
-    return;
-  }
-  auto gui = gui::Gui::get();
-  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi));
+  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), dbu_per_pixel, display_settings);
 }
 
 void clear_rulers()
@@ -333,6 +325,31 @@ void set_display_controls(const char* name, const char* display_type, bool value
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 7, "Unknown display control type: {}", display_type);
   }
+}
+
+bool check_display_controls(const char* name, const char* display_type)
+{
+  if (!check_gui("check_display_controls")) {
+    return false;
+  }
+  auto gui = gui::Gui::get();
+  
+  std::string disp_type = display_type;
+  // make lower case
+  std::transform(disp_type.begin(), 
+                 disp_type.end(), 
+                 disp_type.begin(), 
+                 [](char c) { return std::tolower(c); });
+  if (disp_type == "visible") {
+    return gui->checkDisplayControlsVisible(name);
+  } else if (disp_type == "selectable") {
+    return gui->checkDisplayControlsSelectable(name);
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 9, "Unknown display control type: {}", display_type);
+  }
+  
+  return false;
 }
 
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
@@ -398,16 +415,10 @@ void hide_widget(const char* name)
   return gui->showWidget(name, false);
 }
 
-void show(const char* script = "")
+void show(const char* script = "", bool interactive = true)
 {
-  if (gui::Gui::enabled()) {
-    ord::OpenRoad::openRoad()->getLogger()->warn(GUI, 8, "GUI already active.");
-    return;
-  }
-  // OR already running, so GUI should not set anything up
-  // passing in 0, nullptr, nullptr to indicate such
-  // pass script along
-  gui::startGui(0, nullptr, nullptr, script);
+  auto gui = gui::Gui::get();
+  gui->showGui(script, interactive);
 }
 
 void hide()

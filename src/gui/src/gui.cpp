@@ -410,9 +410,54 @@ void Gui::setResolution(double pixels_per_dbu)
   main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
-void Gui::saveImage(const std::string& filename, const odb::Rect& region)
+void Gui::saveImage(const std::string& filename, const odb::Rect& region, double dbu_per_pixel, const std::map<std::string, bool>& display_settings)
 {
-  main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
+  if (!enabled()) {
+    auto* db = ord::OpenRoad::openRoad()->getDb();
+    if (db == nullptr) {
+      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 15, "No design loaded.");
+    }
+    auto* tech = db->getTech();
+    if (tech == nullptr) {
+      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 16, "No design loaded.");
+    }
+    const double dbu_per_micron = tech->getLefUnits();
+
+    std::string save_cmds;
+    // build display control commands
+    save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
+    for (const auto& [control, value] : display_settings) {
+      // first save current setting
+      save_cmds += fmt::format("$::gui::display_settings set \"{}\" {}", control, value) + "\n";
+    }
+    // save command
+    save_cmds += "gui::save_image ";
+    save_cmds += "\"" + filename + "\" ";
+    save_cmds += std::to_string(region.xMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.yMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.xMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(dbu_per_pixel) + " ";
+    save_cmds += "$::gui::display_settings\n";
+    // delete display settings map
+    save_cmds += "rename $::gui::display_settings \"\"\n";
+    save_cmds += "unset ::gui::display_settings\n";
+    // end with hide to return
+    save_cmds += "gui::hide";
+    showGui(save_cmds, false);
+  } else {
+    // save current display settings and apply new
+    std::map<std::string, bool> settings;
+    for (const auto& [control, value] : display_settings) {
+      settings[control] = checkDisplayControlsVisible(control);
+      setDisplayControlsVisible(control, value);
+    }
+    main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
+    // restore settings
+    for (const auto& [control, value] : settings) {
+      setDisplayControlsVisible(control, value);
+    }
+  }
 }
 
 void Gui::showWidget(const std::string& name, bool show)
@@ -499,11 +544,24 @@ void Gui::hideGui()
   main_window->exit();
 }
 
+void Gui::showGui(const std::string& cmds, bool interactive)
+{
+  if (enabled()) {
+    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 8, "GUI already active.");
+    return;
+  }
+
+  // OR already running, so GUI should not set anything up
+  // passing in 0, nullptr, nullptr to indicate such
+  // pass cmds and interactive along
+  startGui(0, nullptr, nullptr, cmds, interactive);
+}
+
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script)
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -522,6 +580,9 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   auto* open_road = ord::OpenRoad::openRoad();
   main_window->setDb(open_road->getDb());
   open_road->addObserver(main_window);
+  if (!interactive) {
+    main_window->setAttribute(Qt::WA_DontShowOnScreen);
+  }
   main_window->show();
 
   // execute commands to restore state of gui
@@ -548,7 +609,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   // pass in tcl interp to script widget
   main_window->getScriptWidget()->setupTcl(interp, script);
 
-  bool do_exec = true;
+  bool do_exec = interactive;
   // check if hide was called by script
   if (gui->isContinueAfterClose()) {
     do_exec = false;
