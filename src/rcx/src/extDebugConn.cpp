@@ -637,6 +637,11 @@ int HashNode::getMapping(bool bterm, bool iterm, int n)
 }
 void extDebugNet::makeRsegs(Ath__array1D<extListWire*>* rects)
 {
+  for (uint ii = 0; ii < rects->getCnt(); ii++) {
+    extListWire* a = rects->get(ii);
+    a->setSrcNode(_hashNodeRC, 0);
+    a->setDstNode(_hashNodeRC, 0);
+  }
   make1stRseg(rects);
   for (uint ii = 0; ii < rects->getCnt(); ii++) {
     extListWire* a = rects->get(ii);
@@ -1044,37 +1049,57 @@ bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
       if (w->_src == 0) {
         _src = nodeCnt++;
         w->_src = _src;
-      } else
+      } else {
         _src = w->_src;
+        if (w->_src < 0) {
+          _btermFlag_src = w->_btermFlag_src;
+          _itermFlag_src = w->_itermFlag_src;
+        }
+      }
       return true;
     }
     if (lo->intersects(*hi2)) {
       if (w->_dst == 0) {
         _src = nodeCnt++;
         w->_dst = _src;
-      } else
+      } else {
         _src = w->_dst;
+        if (w->_dst < 0) {
+          _btermFlag_src = w->_btermFlag_dst;
+          _itermFlag_src = w->_itermFlag_dst;
+        }
+      }
       return true;
     }
     return false;
   } else if (_dst == 0) {
     Rect* hi = new Rect(r1);
-    hi->set_xhi(hiCoord.getX() - width);
-    hi->set_yhi(hiCoord.getY() - width);
+    hi->set_xlo(hiCoord.getX() - width);
+    hi->set_ylo(hiCoord.getY() - width);
     if (hi->intersects(*lo2)) {
       if (w->_src == 0) {
         _dst = nodeCnt++;
         w->_src = _dst;
-      } else
+      } else {
         _dst = w->_src;
+         if (w->_src < 0) {
+          _btermFlag_dst = w->_btermFlag_src;
+          _itermFlag_dst = w->_itermFlag_src;
+        }
+      }
       return true;
     }
     if (hi->intersects(*hi2)) {
       if (w->_dst == 0) {
         _dst = nodeCnt++;
         w->_dst = _dst;
-      } else
+      } else {
         _dst = w->_dst;
+        if (w->_dst < 0) {
+          _btermFlag_dst = w->_btermFlag_dst;
+          _itermFlag_dst = w->_itermFlag_dst;
+        }
+      }
       return true;
     }
     return false;
@@ -1154,7 +1179,7 @@ bool extListWire::overlapVia2Wire(extListWire* w,
 {
   Rect via = *_rect;  // this == via
   Rect r2 = *w->_rect;
-  uint width = r2.minDXDY();
+  uint width = r2.minDXDY()/2;
 
   if (!via.overlaps(r2))
     return false;
@@ -1608,6 +1633,10 @@ void extCapNodeHash::dfs(int n)
   extListNode* e = _table[n];
   if (e == NULL)
     return;
+  if (_debug) {
+    fprintf(_connFP, "\tdfs: map=%d --> %d  visited=%d   ", n, n + _min, e->isVisited());
+    _debugNet->writeCapNode(e->getNode(), "\n");
+  }
   if (e->isVisited())
     return;
   e->setVisited();
