@@ -30,36 +30,36 @@ tapcell [-tapcell_master tapcell_master]
 - `-halo_width_x`. Specify the horizontal halo size (in microns) around macros during cut rows.
 - `-halo_width_y`. Specify the vertical halo size (in microns) around macros during cut rows.
 - `-tap_nwintie_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation.
+macros and the core area according the row orientation.
 - `-tap_nwin2_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation. This master should be
+macros and the core area according the row orientation. This master should be
 smaller than `tap_nwintie_master`.
 - `-tap_nwin3_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation. This master should be
+macros and the core area according the row orientation. This master should be
 smaller than `tap_nwin2_master`.
 - `-tap_nwouttie_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation.
+macros and the core area according the row orientation.
 - `-tap_nwout2_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation. This master should be
+macros and the core area according the row orientation. This master should be
 smaller than `tap_nwouttie_master`.
 - `-tap_nwout3_master`. Specify the master cell placed at the top and bottom of
-macros and of the core area, according the row orientation. This master should be
+macros and the core area according the row orientation. This master should be
 smaller than `tap_nwout2_master`.
 - `-incnrcap_nwin_master`. Specify the master cell placed at the corners of macros,
 according the row orientation.
 - `-incnrcap_nwout_master`. Specify the master cell placed at the corners of macros,
 according the row orientation.
-- `-cnrcap_nwin_master`. Specify the macro cell placed at the corners of the core area,
+- `-cnrcap_nwin_master`. Specify the macro cell placed at the corners the core area
 according the row orientation.
-- `-cnrcap_nwout_master`. Specify the macro cell placed at the corners of the core area,
+- `-cnrcap_nwout_master`. Specify the macro cell placed at the corners the core area
 according the row orientation.
-- `-tap_prefix`. Specify the name prefix for the tapcell instances. Default prefix is `TAP_`.
-- `-endcap_prefix`. Specify the name prefix for the endcaps instances. Default prefix is `PHY_`.
+- `-tap_prefix`. Specify the name prefix for the tapcell instances. The default prefix is `TAP_`.
+- `-endcap_prefix`. Specify the name prefix for the endcaps instances. The default prefix is `PHY_`.
 
-The figures below shows two examples of tapcell insertion. When only the 
+The figures below show two examples of tapcell insertion. When only the 
 `-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
-is similar to the Figure 1. When the remaining masters are give, the tapcell
-placement is similar to the Figure 2.
+is similar to Figure 1. When the remaining masters are give, the tapcell
+placement is similar to Figure 2.
 
 | <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
 |:--:|:--:|
