@@ -105,7 +105,7 @@ void Restructure::run(char* liberty_file_name,
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  if (!is_area_mode_) // Only in area mode
+  if (is_area_mode_) // Only in area mode
     removeConstCells();
 
   getBlob(max_depth);
@@ -134,7 +134,7 @@ void Restructure::getBlob(unsigned max_depth)
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       open_sta_->getDbNetwork()->staToDb(pin, term, port);
-      if (term && term->getInst()->getITerms().size() < 10)
+      if (term && !term->getInst()->getMaster()->isBlock())
         path_insts_.insert(term->getInst());
     }
     logger_->report("Found {} instances for restructuring.",
@@ -394,31 +394,33 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   }
 
   // unconstrained end points
-  auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
-                                       false /*no_output_delay*/,
-                                       false /*reg_multiple_clks*/,
-                                       true /*reg_no_clks*/,
-                                       true /*unconstrained_endpoints*/,
-                                       false /*loops*/,
-                                       false /*generated_clks*/);
-  debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
-  if (errors.size() && errors[0]->size() > 1) {
-    sta::CheckError* error = errors[0];
-    bool first = true;
-    for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
-      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+  if (is_area_mode_) {
+    auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
+                                        false /*no_output_delay*/,
+                                        false /*reg_multiple_clks*/,
+                                        true /*reg_no_clks*/,
+                                        true /*unconstrained_endpoints*/,
+                                        false /*loops*/,
+                                        false /*generated_clks*/);
+    debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
+    if (errors.size() && errors[0]->size() > 1) {
+      sta::CheckError* error = errors[0];
+      bool first = true;
+      for (auto pinName : *error) {
+        debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        }
       }
     }
-  }
-  if (errors.size() > 1 && errors[1]->size() > 1) {
-    sta::CheckError* error = errors[1];
-    bool first = true;
-    for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+    if (errors.size() > 1 && errors[1]->size() > 1) {
+      sta::CheckError* error = errors[1];
+      bool first = true;
+      for (auto pinName : *error) {
+        debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        }
       }
     }
   }
