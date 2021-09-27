@@ -3,7 +3,7 @@
  ,"design_area" : "761926.8"
  ,"utilization" : "8.64"
  ,"worst_slack_min" : "-0.8706181799691558"
- ,"worst_slack_max" : "-2.1176624608826784"
+ ,"worst_slack_max" : "-2.2"
  ,"tns_max" : "-3874.1026911118547"
  ,"clock_skew" : "1.0156100248256978"
  ,"max_slew_violations" : "0"
