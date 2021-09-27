@@ -131,6 +131,7 @@ Selected Gui::makeSelected(std::any object, void* additional_data)
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object, additional_data);
   } else {
+    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 33, "No descriptor is registered for {}.", object.type().name());
     return Selected();  // FIXME: null descriptor
   }
 }

@@ -75,6 +75,7 @@ class FlexDRGraphics : public gui::Renderer
   virtual void drawObjects(gui::Painter& painter) override;
   virtual void drawLayer(odb::dbTechLayer* layer,
                          gui::Painter& painter) override;
+  const char* getDisplayControlGroupName() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
@@ -90,8 +91,6 @@ class FlexDRGraphics : public gui::Renderer
   void debugWholeDesign();
 
   void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
-
-  const char* getDisplayControlGroupName() override;
 
  private:
   FlexDRWorker* worker_;

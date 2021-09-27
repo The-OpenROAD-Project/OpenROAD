@@ -404,15 +404,10 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
 
   auto action = view_tool_bar_->addAction(text);
   // save the command so it can be restored later
-  QString escaped_script = script;
   QString cmd = "gui::create_toolbar_button ";
   cmd += "{" + QString::fromStdString(name) + "} {" + text + "} ";
-  cmd += "{" + escaped_script + "} ";
-  if (echo) {
-    cmd += "true";
-  } else {
-    cmd += "false";
-  }
+  cmd += "{" + script + "} ";
+  cmd += echo ? "true" : "false";
   action->setData(cmd);
 
   connect(action, &QAction::triggered, [script, echo, this]() {

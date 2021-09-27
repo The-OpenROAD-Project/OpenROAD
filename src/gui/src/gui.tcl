@@ -68,7 +68,7 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
 }
 
 proc save_image { args } {
-  set options [gui::parge_options $args]
+  set options [gui::parse_options $args]
   sta::parse_key_args "save_image" args \
     keys {-area -resolution -display_option} flags {}
 
@@ -114,7 +114,7 @@ proc save_image { args } {
 }
 
 namespace eval gui {
-  proc parge_options { args_var } {
+  proc parse_options { args_var } {
     set options [gui::DisplayControlMap]
     while { $args_var != {} } {
       set arg [lindex $args_var 0]
@@ -122,7 +122,7 @@ namespace eval gui {
         set opt [lindex $args_var 1]
 
         if {[llength $opt] != 2} {
-          utl::error GUI 19 "Display option must have elements."
+          utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
         }
 
         set key [lindex $opt 0]
