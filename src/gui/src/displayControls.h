@@ -47,6 +47,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <functional>
+#include <map>
 #include <vector>
 
 #include "congestionSetupDialog.h"
@@ -152,6 +153,9 @@ class DisplayControls : public QDockWidget, public Options
 
   void registerRenderer(Renderer* renderer);
   void unregisterRenderer(Renderer* renderer);
+
+  void save();
+  void restore();
 
   void restoreTclCommands(std::vector<std::string>& cmds);
 
@@ -272,9 +276,13 @@ class DisplayControls : public QDockWidget, public Options
 
   void techInit();
 
-  QStandardItem* findControlInItem(const QStandardItem* parent,
-                                   const std::string& path,
-                                   Column column);
+  void collectControls(const QStandardItem* parent,
+                       Column column,
+                       std::map<std::string, QStandardItem*>& items,
+                       const std::string& prefix = "");
+  void findControlsInItems(const std::string& path,
+                           Column column,
+                           std::vector<QStandardItem*>& items);
 
   QStandardItem* makeParentItem(ModelRow& row,
                                 const QString& text,
@@ -329,6 +337,7 @@ class DisplayControls : public QDockWidget, public Options
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

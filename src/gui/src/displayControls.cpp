@@ -36,6 +36,7 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
+#include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
 #include <vector>
@@ -650,18 +651,21 @@ void DisplayControls::setControlByPath(const std::string& path,
                                        bool is_visible,
                                        Qt::CheckState value)
 {
-  QStandardItem* item = findControlInItem(model_->invisibleRootItem(),
-                                          path,
-                                          is_visible ? Visible : Selectable);
+  std::vector<QStandardItem*> items;
+  findControlsInItems(path,
+                      is_visible ? Visible : Selectable,
+                      items);
 
-  if (item == nullptr) {
+  if (items.empty()) {
     logger_->error(utl::GUI,
                    13,
                    "Unable to find {} display control at {}.",
                    is_visible ? "visible" : "select",
                    path);
   } else {
-    item->setCheckState(value);
+    for (auto* item : items) {
+      item->setCheckState(value);
+    }
   }
 }
 
@@ -669,11 +673,12 @@ void DisplayControls::setControlByPath(const std::string& path,
 bool DisplayControls::checkControlByPath(const std::string& path,
                                          bool is_visible)
 {
-  QStandardItem* item = findControlInItem(model_->invisibleRootItem(),
-                                          path,
-                                          is_visible ? Visible : Selectable);
+  std::vector<QStandardItem*> items;
+  findControlsInItems(path,
+                      is_visible ? Visible : Selectable,
+                      items);
 
-  if (item == nullptr) {
+  if (items.empty()) {
     logger_->warn(utl::GUI,
                   14,
                   "Unable to find {} display control at {}.",
@@ -683,27 +688,76 @@ bool DisplayControls::checkControlByPath(const std::string& path,
     return false;
   }
 
-  return item->checkState() == Qt::Checked;
+  if (items.size() == 1) {
+    return items[0]->checkState() == Qt::Checked;
+  } else {
+    logger_->warn(utl::GUI,
+                  34,
+                  "Found {} controls matching {} at {}.",
+                  items.size(),
+                  path,
+                  is_visible ? "visible" : "select");
+    return false;
+  }
 }
 
-QStandardItem* DisplayControls::findControlInItem(const QStandardItem* parent,
-                                                  const std::string& name,
-                                                  Column column)
+void DisplayControls::collectControls(const QStandardItem* parent,
+                                      Column column,
+                                      std::map<std::string, QStandardItem*>& items,
+                                      const std::string& prefix)
 {
-  auto next_level = name.find_first_of("/");
-  bool at_end_of_path = next_level == std::string::npos;
-  const QString item_name = name.substr(0, next_level).c_str();
   for (int i = 0; i < parent->rowCount(); i++) {
     auto child = parent->child(i, Name);
-    if (child != nullptr && child->text().compare(item_name, Qt::CaseInsensitive) == 0) {
-      if (at_end_of_path) {
-        return parent->child(i, column);
+    if (child != nullptr) {
+      if (child->hasChildren()) {
+        collectControls(child, column, items, prefix + child->text().toStdString() + "/");
       } else {
-        return findControlInItem(child, name.substr(next_level+1), column);
+        auto* item = parent->child(i, column);
+        if (item != nullptr) {
+          items[prefix + child->text().toStdString()] = item;
+        }
       }
     }
   }
-  return nullptr;
+}
+
+void DisplayControls::findControlsInItems(const std::string& path,
+                                          Column column,
+                                          std::vector<QStandardItem*>& items)
+{
+  std::map<std::string, QStandardItem*> controls;
+  collectControls(model_->invisibleRootItem(), column, controls);
+
+  const QRegExp path_compare(QString::fromStdString(path), Qt::CaseInsensitive, QRegExp::Wildcard);
+  for (auto& [item_path, item] : controls) {
+    if (path_compare.exactMatch(QString::fromStdString(item_path))) {
+      items.push_back(item);
+    }
+  }
+}
+
+void DisplayControls::save()
+{
+  saved_state_.clear();
+
+  std::map<std::string, QStandardItem*> controls_visible;
+  std::map<std::string, QStandardItem*> controls_selectable;
+  collectControls(model_->invisibleRootItem(), Visible, controls_visible);
+  collectControls(model_->invisibleRootItem(), Selectable, controls_selectable);
+
+  for (auto& [control_name, control] : controls_visible) {
+    saved_state_[control] = control->checkState();
+  }
+  for (auto& [control_name, control] : controls_selectable) {
+    saved_state_[control] = control->checkState();
+  }
+}
+
+void DisplayControls::restore()
+{
+  for (auto& [control, state] : saved_state_) {
+    control->setCheckState(state);
+  }
 }
 
 void DisplayControls::setDb(odb::dbDatabase* db)
