@@ -388,11 +388,11 @@ void TimingWidget::modelWasReset()
 
 void TimingWidget::toggleRenderer(bool visible)
 {
-  auto gui = Gui::get();
-  if (gui == nullptr) {
+  if (!Gui::enabled()) {
     return;
   }
 
+  auto gui = Gui::get();
   if (visible) {
     gui->registerRenderer(path_renderer_);
   } else {

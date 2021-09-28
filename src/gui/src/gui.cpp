@@ -45,10 +45,12 @@
 #include "displayControls.h"
 #include "geom.h"
 #include "layoutViewer.h"
+#include "scriptWidget.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "utl/Logger.h"
 
 #include "drcWidget.h"
 #include "ruler.h"
@@ -76,25 +78,30 @@ Gui* Gui::singleton_ = nullptr;
 
 Gui* Gui::get()
 {
-  if (main_window == nullptr) {
-    return nullptr;  // batch mode
-  }
-
-  if (!singleton_) {
+  if (singleton_ == nullptr) {
     singleton_ = new Gui();
   }
 
   return singleton_;
 }
 
+bool Gui::enabled()
+{
+  return main_window != nullptr;
+}
+
 void Gui::registerRenderer(Renderer* renderer)
 {
+  main_window->getControls()->registerRenderer(renderer);
+
   renderers_.insert(renderer);
   redraw();
 }
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
+  main_window->getControls()->unregisterRenderer(renderer);
+
   renderers_.erase(renderer);
   redraw();
 }
@@ -116,7 +123,17 @@ void Gui::pause(int timeout)
 
 Selected Gui::makeSelected(std::any object, void* additional_data)
 {
-  return main_window->makeSelected(object, additional_data);
+  if (!object.has_value()) {
+    return Selected();
+  }
+
+  auto it = descriptors_.find(object.type());
+  if (it != descriptors_.end()) {
+    return it->second->makeSelected(object, additional_data);
+  } else {
+    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 33, "No descriptor is registered for {}.", object.type().name());
+    return Selected();  // FIXME: null descriptor
+  }
 }
 
 void Gui::setSelected(Selected selection)
@@ -339,26 +356,24 @@ void Gui::loadDRC(const std::string& filename)
   }
 }
 
-void Gui::addCustomVisibilityControl(const std::string& name,
-                                     bool initially_visible)
-{
-  main_window->getControls()->addCustomVisibilityControl(name,
-                                                         initially_visible);
-}
-
-bool Gui::checkCustomVisibilityControl(const std::string& name)
-{
-  return main_window->getControls()->checkCustomVisibilityControl(name);
-}
-
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(name, true, value ? Qt::Checked : Qt::Unchecked);
 }
 
+bool Gui::checkDisplayControlsVisible(const std::string& name)
+{
+  return main_window->getControls()->checkControlByPath(name, true);
+}
+
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(name, false, value ? Qt::Checked : Qt::Unchecked);
+}
+
+bool Gui::checkDisplayControlsSelectable(const std::string& name)
+{
+  return main_window->getControls()->checkControlByPath(name, false);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -396,9 +411,54 @@ void Gui::setResolution(double pixels_per_dbu)
   main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
-void Gui::saveImage(const std::string& filename, const odb::Rect& region)
+void Gui::saveImage(const std::string& filename, const odb::Rect& region, double dbu_per_pixel, const std::map<std::string, bool>& display_settings)
 {
-  main_window->getLayoutViewer()->saveImage(filename.c_str(), region);
+  if (!enabled()) {
+    auto* db = ord::OpenRoad::openRoad()->getDb();
+    if (db == nullptr) {
+      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 15, "No design loaded.");
+    }
+    auto* tech = db->getTech();
+    if (tech == nullptr) {
+      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 16, "No design loaded.");
+    }
+    const double dbu_per_micron = tech->getLefUnits();
+
+    std::string save_cmds;
+    // build display control commands
+    save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
+    for (const auto& [control, value] : display_settings) {
+      // first save current setting
+      save_cmds += fmt::format("$::gui::display_settings set \"{}\" {}", control, value) + "\n";
+    }
+    // save command
+    save_cmds += "gui::save_image ";
+    save_cmds += "\"" + filename + "\" ";
+    save_cmds += std::to_string(region.xMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.yMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.xMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(dbu_per_pixel) + " ";
+    save_cmds += "$::gui::display_settings\n";
+    // delete display settings map
+    save_cmds += "rename $::gui::display_settings \"\"\n";
+    save_cmds += "unset ::gui::display_settings\n";
+    // end with hide to return
+    save_cmds += "gui::hide";
+    showGui(save_cmds, false);
+  } else {
+    // save current display settings and apply new
+    std::map<std::string, bool> settings;
+    for (const auto& [control, value] : display_settings) {
+      settings[control] = checkDisplayControlsVisible(control);
+      setDisplayControlsVisible(control, value);
+    }
+    main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
+    // restore settings
+    for (const auto& [control, value] : settings) {
+      setDisplayControlsVisible(control, value);
+    }
+  }
 }
 
 void Gui::showWidget(const std::string& name, bool show)
@@ -426,6 +486,22 @@ void Renderer::redraw()
   Gui::get()->redraw();
 }
 
+bool Renderer::checkDisplayControl(const std::string& name)
+{
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->checkDisplayControlsVisible(name);
+  } else {
+    return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
+  }
+}
+
+void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+{
+  controls_[name] = initial_state;
+}
+
 void Gui::load_design()
 {
   main_window->postReadDb(main_window->getDb());
@@ -439,15 +515,59 @@ void Gui::fit()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
-  main_window->registerDescriptor(type, descriptor);
+  descriptors_[type] = descriptor;
+}
+
+void Gui::init()
+{
+  // inspector descriptors
+  registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+  registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
+  registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
+  registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
+  registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+  registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+  registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+  registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+  registerDescriptor<DRCViolation*>(new DRCDescriptor);
+  registerDescriptor<Ruler*>(new RulerDescriptor(main_window->getRulers()));
+}
+
+void Gui::setLogger(utl::Logger* logger)
+{
+  main_window->setLogger(logger);
+}
+
+void Gui::hideGui()
+{
+  // ensure continue after close is true, since we want to return to tcl
+  continue_after_close_ = true;
+  main_window->exit();
+}
+
+void Gui::showGui(const std::string& cmds, bool interactive)
+{
+  if (enabled()) {
+    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 8, "GUI already active.");
+    return;
+  }
+
+  // OR already running, so GUI should not set anything up
+  // passing in 0, nullptr, nullptr to indicate such
+  // pass cmds and interactive along
+  startGui(0, nullptr, nullptr, cmds, interactive);
 }
 
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[])
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
+  auto gui = gui::Gui::get();
+  // ensure continue after close is false
+  gui->clearContinueAfterClose();
+
   QApplication app(argc, argv);
 
   // Default to 12 point for easier reading
@@ -455,20 +575,75 @@ int startGui(int argc, char* argv[])
   font.setPointSize(12);
   QApplication::setFont(font);
 
-  gui::MainWindow win;
-  main_window = &win;
+  // create new MainWindow
+  main_window = new gui::MainWindow;
+
   auto* open_road = ord::OpenRoad::openRoad();
-  win.setDb(open_road->getDb());
-  open_road->addObserver(&win);
-  win.show();
+  main_window->setDb(open_road->getDb());
+  open_road->addObserver(main_window);
+  if (!interactive) {
+    main_window->setAttribute(Qt::WA_DontShowOnScreen);
+  }
+  main_window->show();
+
+  // pass in tcl interp to script widget
+  main_window->getScriptWidget()->setupTcl(interp);
+
+  // execute commands to restore state of gui
+  std::string restore_commands;
+  for (const auto& cmd : gui->getRestoreStateCommands()) {
+    restore_commands += cmd + "\n";
+  }
+  if (!restore_commands.empty()) {
+    main_window->getScriptWidget()->executeSilentCommand(QString::fromStdString(restore_commands));
+  }
+  gui->clearRestoreStateCommands();
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(&win, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+
+  // Hide the Gui if someone chooses hide from the menu in the window
+  QObject::connect(main_window, &gui::MainWindow::hide, [gui]() {
+    gui->hideGui();
+  });
 
   // Save the window's status into the settings when quitting.
-  QObject::connect(&app, SIGNAL(aboutToQuit()), &win, SLOT(saveSettings()));
+  QObject::connect(&app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
 
-  return app.exec();
+  // Execute script
+  if (!script.empty()) {
+    main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+  }
+
+  bool do_exec = interactive;
+  // check if hide was called by script
+  if (gui->isContinueAfterClose()) {
+    do_exec = false;
+  }
+
+  int ret = 0;
+  if (do_exec) {
+    int ret = app.exec();
+  }
+
+  // cleanup
+  open_road->removeObserver(main_window);
+
+  // save restore state commands
+  for (const auto& cmd : main_window->getRestoreTclCommands()) {
+    gui->addRestoreStateCommands(cmd);
+  }
+
+  // delete main window and set to nullptr
+  delete main_window;
+  main_window = nullptr;
+
+  if (!gui->isContinueAfterClose()) {
+    // if exiting, go ahead and exit with gui return code.
+    exit(ret);
+  }
+
+  return ret;
 }
 
 void Selected::highlight(Painter& painter,
@@ -513,20 +688,9 @@ void initGui(OpenRoad* openroad)
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
   sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
-  if (gui::main_window) {
-    using namespace gui;
-    main_window->setLogger(openroad->getLogger());
-    Gui::get()->registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
-    Gui::get()->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
-    Gui::get()->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
-    Gui::get()->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
-    Gui::get()->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
-    Gui::get()->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
-    Gui::get()->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
-    Gui::get()->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
-
-    Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor);
-    Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(gui::main_window->getRulers()));
+  if (gui::Gui::enabled()) {
+    // gui already requested, so go ahead and set the logger
+    gui::Gui::get()->setLogger(ord::OpenRoad::openRoad()->getLogger());
   }
 }
 

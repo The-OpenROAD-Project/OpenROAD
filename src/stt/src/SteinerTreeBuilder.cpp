@@ -400,7 +400,7 @@ void
 highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui)
 {
-  if (gui) {
+  if (gui::Gui::enabled()) {
     if (LinesRenderer::lines_renderer == nullptr) {
       LinesRenderer::lines_renderer = new LinesRenderer();
       gui->registerRenderer(LinesRenderer::lines_renderer);
