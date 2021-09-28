@@ -292,7 +292,7 @@ void FlexDRConnectivityChecker::buildNodeMap(
 
 bool FlexDRConnectivityChecker::astar(
     const frNet* net,
-    vector<bool>& adjVisited,
+    vector<char>& adjVisited,
     vector<int>& adjPrevIdx,
     const map<pair<frPoint, frLayerNum>, set<int>>& nodeMap,
     const NetRoutObjs& netRouteObjs,
@@ -302,7 +302,7 @@ bool FlexDRConnectivityChecker::astar(
   // a star search
   // node index, node visited
   vector<vector<int>> adjVec(nNetObjs, vector<int>());
-  vector<bool> onPathIdx(nNetObjs, false);
+  vector<char> onPathIdx(nNetObjs, false);
   adjVisited.clear();
   adjPrevIdx.clear();
   adjVisited.resize(nNetObjs, false);
@@ -398,7 +398,7 @@ void FlexDRConnectivityChecker::finish(
     frNet* net,
     NetRoutObjs& netRouteObjs,
     const vector<frBlockObject*>& netPins,
-    const vector<bool>& adjVisited,
+    const vector<char>& adjVisited,
     const int gCnt,
     const int nCnt,
     map<pair<frPoint, frLayerNum>, set<int>>& nodeMap)
@@ -972,9 +972,9 @@ void FlexDRConnectivityChecker::check(int iter)
         aPin2epMap(batchSize);
     vector<vector<frBlockObject*>> aNetPins(batchSize);
     vector<map<pair<frPoint, frLayerNum>, set<int>>> aNodeMap(batchSize);
-    vector<vector<bool>> aAdjVisited(batchSize);
+    vector<vector<char>> aAdjVisited(batchSize);
     vector<vector<int>> aAdjPrevIdx(batchSize);
-    vector<bool> status(batchSize, false);
+    vector<char> status(batchSize, false);
 
 // parallel
 #pragma omp parallel for schedule(static)
