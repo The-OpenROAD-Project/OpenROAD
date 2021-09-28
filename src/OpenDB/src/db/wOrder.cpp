@@ -76,10 +76,10 @@ void orderWires(dbBlock* block,
         net, force, verbose, quiet, no_convert, cutLength, maxLength, no_patch);
   }
   if (_conn->_swireNetCnt)
-    logger->warn(utl::ODB, 221, "Set dont_touch on {} swire nets.", _conn->_swireNetCnt);
+    logger->warn(utl::ODB, 2021, "Set dont_touch on {} swire nets.", _conn->_swireNetCnt);
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0)
-    logger->warn(utl::ODB, 222, "Split top of {} T shapes.", splitcnt);
+    logger->warn(utl::ODB, 2022, "Split top of {} T shapes.", splitcnt);
 }
 
 void orderWires(dbBlock* block,
@@ -103,12 +103,12 @@ void orderWires(dbBlock* block,
   // dbNet *net = tmg_findNet(block,net_name_or_id);
   dbNet* net = block->findNet(net_name_or_id);
   if (net == NULL) {
-    logger->warn(utl::ODB, 223, "net not found");
+    logger->warn(utl::ODB, 2023, "net not found");
     return;
   }
   if (net->getSigType() == dbSigType::POWER
       || net->getSigType() == dbSigType::GROUND) {
-    logger->warn(utl::ODB, 224, "skipping power net");
+    logger->warn(utl::ODB, 2024, "skipping power net");
     return;
   }
   _conn->resetSplitCnt();
@@ -116,7 +116,7 @@ void orderWires(dbBlock* block,
       net, force, verbose, false, no_convert, cutLength, maxLength, no_patch);
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0)
-    logger->warn(utl::ODB, 225, "Split top of {} T shapes.", splitcnt);
+    logger->warn(utl::ODB, 2025, "Split top of {} T shapes.", splitcnt);
 }
 
 void orderWires(dbNet* net, bool force, utl::Logger* logger, bool verbose)
@@ -126,14 +126,14 @@ void orderWires(dbNet* net, bool force, utl::Logger* logger, bool verbose)
   bool no_convert = false;
   if (net->getSigType() == dbSigType::POWER
       || net->getSigType() == dbSigType::GROUND) {
-    logger->warn(utl::ODB, 226, "skipping power net");
+    logger->warn(utl::ODB, 2026, "skipping power net");
     return;
   }
   _conn->resetSplitCnt();
   _conn->analyzeNet(net, force, verbose, false, no_convert);
   int splitcnt = _conn->getSplitCnt();
   if (splitcnt != 0)
-    logger->warn(utl::ODB, 227, "Split top of {} T shapes.", splitcnt);
+    logger->warn(utl::ODB, 2027, "Split top of {} T shapes.", splitcnt);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -196,7 +196,7 @@ tmg_wire_link* tmg_wire_link_pool::get()
     curblk++;
     if (curblk == blkN) {
       if (blkN == 4096) {
-        logger_->warn(utl::ODB, 229, "overflow in tmg_wire_link_pool!");
+        logger_->warn(utl::ODB, 2029, "overflow in tmg_wire_link_pool!");
         return NULL;
       }
       V[blkN++] = (tmg_wire_link*) malloc(blkSize * sizeof(tmg_wire_link));

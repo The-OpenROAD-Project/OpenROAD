@@ -39,6 +39,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include "utl/Logger.h"
 
 namespace odb {
 

@@ -67,7 +67,7 @@ void extSpef::initSearchForNets() {
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
     if (P[n] <= 0)
-      logger_->error(utl::RCX, 101, "Layer {}, routing level {}, has pitch {} !!\n",
+      logger_->error(utl::RCX, 1101, "Layer {}, routing level {}, has pitch {} !!\n",
             layer->getConstName(), n, P[n]);
     tg = _block->findTrackGrid(layer);
     if (tg) {

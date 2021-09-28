@@ -49,6 +49,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "odb.h"
 #include "utl/Logger.h"
 
 using namespace std;

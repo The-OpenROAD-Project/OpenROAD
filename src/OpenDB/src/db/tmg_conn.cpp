@@ -87,7 +87,7 @@ void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm, utl::Logger*
     *iterm = *iterms.begin();
     return;
   }
-  logger->warn(utl::ODB, 230, "no terminals for net {} {}", net->getId(), net->getConstName());
+  logger->warn(utl::ODB, 23430, "no terminals for net {} {}", net->getId(), net->getConstName());
   return;
 }
 
@@ -158,7 +158,7 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
     x._vert = 0;
     x._width = s.xMax() - s.xMin();
   } else {
-    logger_->warn(utl::ODB, 240, "warning, nonsquare shape with same points");
+    logger_->warn(utl::ODB, 1240, "warning, nonsquare shape with same points");
     x._vert = 0;
     x._width = 0;
   }
@@ -194,7 +194,7 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
   dbTechLayer* layer = _ptV[ifr]._layer;
   if (!layer || layer != _ptV[ito]._layer
       || (_ptV[ifr]._x != _ptV[ito]._x && _ptV[ifr]._y != _ptV[ito]._y)) {
-    logger_->warn(utl::ODB, 241, "bad patch, net {}", _net->getId());
+    logger_->warn(utl::ODB, 29941, "bad patch, net {}", _net->getId());
     return NULL;
   }
   tmg_rc x;
@@ -305,12 +305,12 @@ static void print_shape(tmg_rc_sh& s, utl::Logger* logger)
     logger->warn(utl::ODB, 244, "{}", s.getVia()->getName().c_str());
   else
     logger->warn(utl::ODB, 245, " ");
-  logger->warn(utl::ODB, 246, " ({} {}) ({} {})", s.xMin(), s.yMin(), s.xMax(), s.yMax());
+  logger->warn(utl::ODB, 2496, " ({} {}) ({} {})", s.xMin(), s.yMin(), s.xMax(), s.yMax());
 }
 
 void tmg_conn::loadNet(dbNet* net)
 {
-  // logger_->warn(utl::ODB, 240, "tmg_conn::loadNet({})",net->getName().c_str());
+  // logger_->warn(utl::ODB, 2466, "tmg_conn::loadNet({})",net->getName().c_str());
   _net = net;
   _rcV.clear();
   _ptN = 0;
@@ -479,17 +479,17 @@ void tmg_conn::loadWire(dbWire* wire)
   int j,k=0;
   for (j=0;j<_ptN;j++) {
     if (_rcV[k]._ifr == j-1 && _rcV[k]._ito == j) {
-      logger_->warn(utl::ODB, 240, "rcV[{}] ",k); print_shape(_rcV[k]._shape);
+      logger_->warn(utl::ODB, 29416, "rcV[{}] ",k); print_shape(_rcV[k]._shape);
       if (!_rcV[k]._shape.isVia()) {
         int dx = _rcV[k]._shape.getDX();
         int dy = _rcV[k]._shape.getDY();
-        logger_->warn(utl::ODB, 240, "  w {}",(dx<dy?dx:dy));
+        logger_->warn(utl::ODB, 2429, "  w {}",(dx<dy?dx:dy));
       }
-      if (_rcV[k]._shape._rule) logger_->warn(utl::ODB, 240, " {}",_rcV[k]._shape._rule->getName().c_str());
-      logger_->warn(utl::ODB, 240, "");
+      if (_rcV[k]._shape._rule) logger_->warn(utl::ODB, 24344, " {}",_rcV[k]._shape._rule->getName().c_str());
+      logger_->warn(utl::ODB, 2433, "");
       k++;
-    } else logger_->warn(utl::ODB, 240, "");
-    logger_->warn(utl::ODB, 240, "ptV[{}] {} ({} {})",j,_ptV[j]._layer->getName().c_str(), _ptV[j]._x,_ptV[j]._y);
+    } else logger_->warn(utl::ODB, 2434, "");
+    logger_->warn(utl::ODB, 2435, "ptV[{}] {} ({} {})",j,_ptV[j]._layer->getName().c_str(), _ptV[j]._x,_ptV[j]._y);
   }
 #endif
 }
@@ -532,7 +532,7 @@ void tmg_conn::splitBySj(bool verbose,
           continue;
         _vertSplitCnt++;
         if (verbose || _gVerbose)
-          logger_->warn(utl::ODB, 248,
+          logger_->warn(utl::ODB, 2498,
                  "split ( {} {} {} {} {} {} )",
                  nxmin,
                  nymin,
@@ -543,12 +543,12 @@ void tmg_conn::splitBySj(bool verbose,
         if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
           _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            logger_->warn(utl::ODB, 249, "      ( {} {} {} {} )", nxmin, sk->yMin(), nxmax, nymax);
+            logger_->warn(utl::ODB, 5249, "      ( {} {} {} {} )", nxmin, sk->yMin(), nxmax, nymax);
           nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            logger_->warn(utl::ODB, 250, "      ( {} {} {} {} )", nxmin, nymin, nxmax, sk->yMax());
+            logger_->warn(utl::ODB, 2590, "      ( {} {} {} {} )", nxmin, nymin, nxmax, sk->yMax());
           nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
         }
         pt->_x = _ptV[_rcV[k]._ifr]._x;
@@ -560,7 +560,7 @@ void tmg_conn::splitBySj(bool verbose,
           continue;
         _horzSplitCnt++;
         if (verbose || _gVerbose)
-          logger_->warn(utl::ODB, 251,
+          logger_->warn(utl::ODB, 2951,
                  "split ( {} {} {} {} {} {} )",
                  nxmin,
                  nymin,
@@ -573,12 +573,12 @@ void tmg_conn::splitBySj(bool verbose,
           // removing, dec12,06 wfs
           // _search->setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width/2);
           if (verbose || _gVerbose)
-            logger_->warn(utl::ODB, 252, "      ( {} {} {} {} )", sk->xMin(), nymin, nxmax, nymax);
+            logger_->warn(utl::ODB, 2952, "      ( {} {} {} {} )", sk->xMin(), nymin, nxmax, nymax);
           nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
           if (verbose || _gVerbose)
-            logger_->warn(utl::ODB, 253, "      ( {} {} {} {} )", nxmin, nymin, sk->xMax(), nymax);
+            logger_->warn(utl::ODB, 2953, "      ( {} {} {} {} )", nxmin, nymin, sk->xMax(), nymax);
           nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
         }
         pt->_x = _ptV[_rcV[j]._ifr]._x;
@@ -600,7 +600,7 @@ void tmg_conn::splitBySj(bool verbose,
       _ptN++;
       _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
       if (verbose || _gVerbose)
-        logger_->warn(utl::ODB, 254, "      ( {} {} {} {} )", nxmin, nymin, nxmax, nymax);
+        logger_->warn(utl::ODB, 2594, "      ( {} {} {} {} )", nxmin, nymin, nxmax, nymax);
       //_search->resetSorted();
     }
 }
@@ -687,7 +687,7 @@ void tmg_conn::setSring()
       tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
       tmg_rcpt* x;
       if (pfr == pto) {
-        logger_->warn(utl::ODB, 256, "WHAT?");
+        logger_->warn(utl::ODB, 2596, "WHAT?");
         continue;
       }
       if (pfr->_sring && !pto->_sring) {
@@ -773,7 +773,7 @@ void tmg_conn::detachTilePins()
               continue;
           }
           if (recti.contains(rectb))
-            logger_->error(utl::ODB, 280,
+            logger_->error(utl::ODB, 2890,
                   "Internal Error: tmg_conn::detachTilePins: tilepin inside "
                   "iterm. should not happen.");
 
@@ -1017,7 +1017,7 @@ void tmg_conn::findConnections(bool verbose)
                 continue;  // skipping V01
               box->getBox(rect);
               transform.apply(rect);
-              // logger_->warn(utl::ODB, 240, "iterm {} ({} {}) ({}
+              // logger_->warn(utl::ODB, 2436, "iterm {} ({} {}) ({}
               // {})",box->getTechVia()->getName().c_str(),
               //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
@@ -1065,7 +1065,7 @@ void tmg_conn::findConnections(bool verbose)
               rt = box->getTechLayer()->getRoutingLevel();
               box->getBox(rect);
               transform.apply(rect);
-              // logger_->warn(utl::ODB, 240, "iterm {} ({} {}) ({}
+              // logger_->warn(utl::ODB, 2437, "iterm {} ({} {}) ({}
               // {})",box->getTechLayer()->getName().c_str(),
               //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
@@ -1092,10 +1092,10 @@ void tmg_conn::findConnections(bool verbose)
 #if 0
         // this identifies some terminal loops 
         if (_csN > 3) {
-          logger_->warn(utl::ODB, 240, "more than 3 wire shapes connecting to term {}/{}",
+          logger_->warn(utl::ODB, 2438, "more than 3 wire shapes connecting to term {}/{}",
               x->_iterm->getInst()->getName().c_str(),
               x->_iterm->getMTerm()->getName().c_str());
-          logger_->warn(utl::ODB, 240, " in net {} {}",_net->getId(),_net->getName().c_str());
+          logger_->warn(utl::ODB, 2439, " in net {} {}",_net->getId(),_net->getName().c_str());
         }
 #endif
       }  // mpins
@@ -1349,7 +1349,7 @@ void tmg_conn::connectTerm(int j, bool soft)
         if (c2pinpt) {
           for (x = pc->_sring; x != pc; x = x->_sring) {
             if (!(x->_pinpt || x->_c2pinpt)) {
-              // logger_->warn(utl::ODB, 240,"add x {}",x-_ptV);
+              // logger_->warn(utl::ODB, 2440,"add x {}",x-_ptV);
               x->_next_for_clear = _first_for_clear;
               _first_for_clear = x;
             }
@@ -1365,7 +1365,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
       if (pfr->_c2pinpt) {
         if (!(pto->_pinpt || pto->_c2pinpt)) {
-          // logger_->warn(utl::ODB, 240,"add pto {}",pto-_ptV);
+          // logger_->warn(utl::ODB, 2441,"add pto {}",pto-_ptV);
           pto->_next_for_clear = _first_for_clear;
           _first_for_clear = pto;
         }
@@ -1373,7 +1373,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       }
       if (pto->_c2pinpt) {
         if (!(pfr->_pinpt || pfr->_c2pinpt)) {
-          // logger_->warn(utl::ODB, 240,"add pfr {}",pfr-_ptV);
+          // logger_->warn(utl::ODB, 2442,"add pfr {}",pfr-_ptV);
           pfr->_next_for_clear = _first_for_clear;
           _first_for_clear = pfr;
         }
@@ -1402,9 +1402,9 @@ void tmg_conn::connectTerm(int j, bool soft)
     }
   }
 #if 0
-  logger_->warn(utl::ODB, 240,"xterm {}",j);
-  if (x->_iterm) logger_->warn(utl::ODB, 240," I{}",x->_iterm->getInst()->getId());
-  logger_->warn(utl::ODB, 240,"");
+  logger_->warn(utl::ODB, 2443,"xterm {}",j);
+  if (x->_iterm) logger_->warn(utl::ODB, 2444," I{}",x->_iterm->getInst()->getId());
+  logger_->warn(utl::ODB, 2445,"");
   int p[64], pN=0, m;
   for (ii=0;ii<_csN;ii++) {
     int k = _csV[ii].k;
@@ -1416,10 +1416,10 @@ void tmg_conn::connectTerm(int j, bool soft)
     if (m==pN) p[pN++]= bto;
   }
   for (m=0;m<pN;m++) {
-    logger_->warn(utl::ODB, 240,"ptV[{}]",p[m]);
-    if (_ptV[p[m]]._pinpt) logger_->warn(utl::ODB, 240," pinpt");
-    if (_ptV[p[m]]._c2pinpt) logger_->warn(utl::ODB, 240," c2pinpt");
-    logger_->warn(utl::ODB, 240,"");
+    logger_->warn(utl::ODB, 2446,"ptV[{}]",p[m]);
+    if (_ptV[p[m]]._pinpt) logger_->warn(utl::ODB, 2447," pinpt");
+    if (_ptV[p[m]]._c2pinpt) logger_->warn(utl::ODB, 2448," c2pinpt");
+    logger_->warn(utl::ODB, 2449,"");
   }
 #endif
 
@@ -1568,7 +1568,7 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   tmg_rcpt* pt = _ptV + (choose_bfr ? bfr : bto);
   tmg_rcpt* pother = _ptV + (choose_bfr ? bto : bfr);
   if (pt->_tindex == j) {
-    // logger_->warn(utl::ODB, 240, "already connected");
+    // logger_->warn(utl::ODB, 2450, "already connected");
     return;
   }
 
@@ -1605,18 +1605,18 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   }
 
   if (pt->_tindex >= 0) {
-    // logger_->warn(utl::ODB, 240, "warning, net {}, shorts to another term",_net->getId());
-    // logger_->warn(utl::ODB, 240, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
-    // logger_->warn(utl::ODB, 240, "wire point ({} {})",pt->_x,pt->_y);
-    // logger_->warn(utl::ODB, 240, " {}",_net->getName().c_str());
+    // logger_->warn(utl::ODB, 2451, "warning, net {}, shorts to another term",_net->getId());
+    // logger_->warn(utl::ODB, 2452, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
+    // logger_->warn(utl::ODB, 24532, "wire point ({} {})",pt->_x,pt->_y);
+    // logger_->warn(utl::ODB, 2453, " {}",_net->getName().c_str());
     return;  // skip soft if conflicts with hard
   }
-  // logger_->warn(utl::ODB, 240, "net {} {}, term {}/{}",_net->getId(),_net->getName().c_str(),
+  // logger_->warn(utl::ODB, 2454, "net {} {}, term {}/{}",_net->getId(),_net->getName().c_str(),
   //  x->_iterm->getInst()->getName().c_str(),
   //  x->_iterm->getMTerm()->getName().c_str());
-  // logger_->warn(utl::ODB, 240, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
-  // logger_->warn(utl::ODB, 240, "wire point ({} {})",pt->_x,pt->_y);
-  // logger_->warn(utl::ODB, 240, "adding point {} to term {}",pt-_ptV,j);
+  // logger_->warn(utl::ODB, 2455, "intersection region ({} {}) ({} {})",xlo,ylo,xhi,yhi);
+  // logger_->warn(utl::ODB, 2456, "wire point ({} {})",pt->_x,pt->_y);
+  // logger_->warn(utl::ODB, 2457, "adding point {} to term {}",pt-_ptV,j);
   pt->_tindex = j;
   addPointToTerm(pt, x);
   pt->_fre = 0;
@@ -1636,45 +1636,45 @@ void tmg_conn::printConnections()
   int k = 0;
   for (j = 0; j < _ptN; j++) {
     if (_rcV[k]._ifr == j - 1 && _rcV[k]._ito == j) {
-      logger_->warn(utl::ODB, 270, "  ");
+      logger_->warn(utl::ODB, 2970, "  ");
       print_shape(_rcV[k]._shape, logger_);
-      logger_->warn(utl::ODB, 271, "");
+      logger_->warn(utl::ODB, 2791, "");
       k++;
     } else
-      logger_->warn(utl::ODB, 272, "");
-    logger_->warn(utl::ODB, 273,
+      logger_->warn(utl::ODB, 2792, "");
+    logger_->warn(utl::ODB, 2793,
            "ptV[{}] {} ({} {})",
            j,
            _ptV[j]._layer->getName().c_str(),
            _ptV[j]._x,
            _ptV[j]._y);
   }
-  logger_->warn(utl::ODB, 274, "");
+  logger_->warn(utl::ODB, 2744, "");
 
   int start = 1;
   for (unsigned long j = 0; j < _rcV.size(); j++) {
     if (start) {
       start = 0;
-      logger_->warn(utl::ODB, 275, "path {}", _rcV[j]._ifr);
+      logger_->warn(utl::ODB, 2775, "path {}", _rcV[j]._ifr);
     } else if (_ptV[_rcV[j]._ifr]._jct)
-      logger_->warn(utl::ODB, 276, " {}", _rcV[j]._ifr);
+      logger_->warn(utl::ODB, 2766, " {}", _rcV[j]._ifr);
     if (j == _rcV.size() - 1 || _rcV[j]._ito != _rcV[j + 1]._ifr) {
-      logger_->warn(utl::ODB, 277, " {}", _rcV[j]._ito);
+      logger_->warn(utl::ODB, 2777, " {}", _rcV[j]._ito);
       start = 1;
     }
   }
   for (j = 0; j < _shortN; j++) {
     if (_shortV[j]._skip)
-      logger_->warn(utl::ODB, 278, "skip ");
+      logger_->warn(utl::ODB, 2678, "skip ");
     // if (_shortV[j]._skip) continue;
-    logger_->warn(utl::ODB, 279, "short {} {}", _shortV[j]._i0, _shortV[j]._i1);
+    logger_->warn(utl::ODB, 2179, "short {} {}", _shortV[j]._i0, _shortV[j]._i1);
   }
 }
 
 static void print_rcterm(tmg_rcterm* x, utl::Logger* logger)
 {
   dbITerm* iterm = x->_iterm;
-  // if (iterm) logger_->warn(utl::ODB, 240, " iterm {}/{}",iterm->getInst()->getName().c_str(),
+  // if (iterm) logger_->warn(utl::ODB, 2458, " iterm {}/{}",iterm->getInst()->getName().c_str(),
   //     iterm->getMTerm()->getName().c_str());
   if (iterm)
     logger->warn(utl::ODB, 601,
@@ -2083,10 +2083,10 @@ int tmg_conn::addPoint(int ipt, tmg_rc* rc)
   tmg_rcpt* p = _ptV + ipt;
   ext = getExtension(ipt, rc);
   if (ext == rc->_default_ext) {
-    // logger_->warn(utl::ODB, 240, "addPoint({}, {})",p->_x,p->_y);
+    // logger_->warn(utl::ODB, 2459, "addPoint({}, {})",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 2460, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2172,10 +2172,10 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
     }
   }
   if (ext == rc->_default_ext) {
-    // logger_->warn(utl::ODB, 240, "addPoint({}, {})",p->_x,p->_y);
+    // logger_->warn(utl::ODB, 2461, "addPoint({}, {})",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 2462, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2189,7 +2189,7 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
   tmg_rcpt* p = _ptV + ipt;
   ext = getExtension(ipt, rc);
   if (ext != rc->_default_ext) {
-    // logger_->warn(utl::ODB, 240, "addPoint({}, {}, {})",p->_x,p->_y,ext);
+    // logger_->warn(utl::ODB, 2463, "addPoint({}, {}, {})",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2239,7 +2239,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   if (is_short) {
     // wfs 4-19-05
     if (xfr != xto || yfr != yto) {
-      // logger_->warn(utl::ODB, 240, "changing bad short to disconnect");
+      // logger_->warn(utl::ODB, 2464, "changing bad short to disconnect");
       _ptV[to]._dbwire_id = -1;
       _last_id = _ptV[fr]._dbwire_id;
       return;
@@ -2274,7 +2274,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       else
         _encoder.newPathShort(_last_id, _ptV[fr]._layer, dbWireType::ROUTED);
     } else {
-      //   logger_->warn(utl::ODB, 240, "disconnected wire forest, net {}",_net->getId());
+      //   logger_->warn(utl::ODB, 2465, "disconnected wire forest, net {}",_net->getId());
       if (_path_rule)
         _encoder.newPath(_ptV[fr]._layer, dbWireType::ROUTED, lyr_rule);
       else

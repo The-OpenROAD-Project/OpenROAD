@@ -43,7 +43,10 @@
 
 #include "db.h"
 #include "odb.h"
-#include "utl/Logger.h"
+
+namespace utl {
+    class Logger;
+}
 
 namespace odb {
 

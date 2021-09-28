@@ -3046,19 +3046,19 @@ void Ath__gridTable::adjustMetalFill()
     }
   }
   if (_signalPowerNotAlignedOverlap)
-    logger_->warn(utl::ODB, 201 , "{} not aligned power-signal overlaps\n",_signalPowerNotAlignedOverlap);
+    logger_->warn(utl::ODB, 2001 , "{} not aligned power-signal overlaps\n",_signalPowerNotAlignedOverlap);
   if (_powerNotAlignedOverlap)
-    logger_->warn(utl::ODB, 202 , "{} not aligned power overlaps\n", _powerNotAlignedOverlap);
+    logger_->warn(utl::ODB, 2002 , "{} not aligned power overlaps\n", _powerNotAlignedOverlap);
   if (_signalNotAlignedOverlap)
-    logger_->warn(utl::ODB, 203 , "{} not aligned signal overlaps\n", _signalNotAlignedOverlap);
+    logger_->warn(utl::ODB, 2003 , "{} not aligned signal overlaps\n", _signalNotAlignedOverlap);
   if (_powerSignalOverlap)
-    logger_->warn(utl::ODB, 204 , "{} power-signal overlaps\n", _powerSignalOverlap);
+    logger_->warn(utl::ODB, 2004 , "{} power-signal overlaps\n", _powerSignalOverlap);
   if (_signalPowerOverlap)
-    logger_->warn(utl::ODB, 205 , "{} signal-power overlaps\n", _signalPowerOverlap);
+    logger_->warn(utl::ODB, 2005 , "{} signal-power overlaps\n", _signalPowerOverlap);
   if (_powerOverlap)
-    logger_->warn(utl::ODB, 206 , "{} power overlaps\n", _powerOverlap);
+    logger_->warn(utl::ODB, 2006 , "{} power overlaps\n", _powerOverlap);
   if (_signalOverlap)
-    logger_->warn(utl::ODB, 207 , "{} signal overlaps\n", _signalOverlap);
+    logger_->warn(utl::ODB, 2007 , "{} signal overlaps\n", _signalOverlap);
   setExtrusionMarker(0, 1);
 }
 void Ath__gridTable::incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2)

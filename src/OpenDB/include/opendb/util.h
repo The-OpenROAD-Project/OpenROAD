@@ -39,7 +39,11 @@
 
 #include "array1.h"
 #include "atypes.h"
-#include "utl/Logger.h"
+
+namespace utl {
+  class Logger;
+}
+
 
 unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);

@@ -8,13 +8,20 @@ add_library(zutil
 )
 
 target_include_directories(zutil
-  PUBLIC
-    ${PROJECT_SOURCE_DIR}/include/opendb
-    ${TCL_INCLUDE_PATH}
+    PUBLIC
+      ${PROJECT_SOURCE_DIR}/include
+      ${PROJECT_SOURCE_DIR}/include/opendb
+      ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(zutil
   PROPERTIES
     # python requirement
     POSITION_INDEPENDENT_CODE ON
+)
+
+
+target_link_libraries(zutil
+    PUBLIC
+        utl
 )

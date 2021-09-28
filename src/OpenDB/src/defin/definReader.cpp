@@ -65,7 +65,7 @@
 
 #define CHECKBLOCK                                                        \
   if (reader->_block == nullptr) {                                        \
-    reader->_logger->warn(utl::ODB, 260, "DESIGN is not defined in DEF"); \
+    reader->_logger->warn(utl::ODB, 24560, "DESIGN is not defined in DEF"); \
     return PARSE_ERROR;                                                   \
   }
 namespace odb {
@@ -325,7 +325,7 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
         std::string new_name = renameBlock(reader->parent_, block_name.c_str());
         reader->_logger->warn(
             utl::ODB,
-            261,
+            26199,
             "Block with name \"{}\" already exists, renaming too \"{}\"",
             block_name.c_str(),
             new_name.c_str());
