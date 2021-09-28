@@ -378,6 +378,8 @@ void DisplayControls::readSettings(QSettings* settings)
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
 
+  congestion_dialog_->readSettings(settings);
+
   settings->endGroup();
 }
 
@@ -440,6 +442,8 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("instance_name_color", instance_name_color_);
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
+
+  congestion_dialog_->writeSettings(settings);
 
   settings->endGroup();
 }
