@@ -146,16 +146,16 @@ class FlexDRConnectivityChecker
                     const bool isHorz);
   bool astar(
       const frNet* net,
-      std::vector<bool>& adjVisited,
+      std::vector<char>& adjVisited,
       std::vector<int>& adjPrevIdx,
       const std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
       const NetRoutObjs& netRouteObjs,
-      const int& gCnt,
-      const int& nCnt);
+      const int gCnt,
+      const int nCnt);
   void finish(frNet* net,
               NetRoutObjs& netRouteObjs,
               const std::vector<frBlockObject*>& netPins,
-              const std::vector<bool>& adjVisited,
+              const std::vector<char>& adjVisited,
               const int gCnt,
               const int nCnt,
               std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
