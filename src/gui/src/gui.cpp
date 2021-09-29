@@ -449,6 +449,9 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
   } else {
     // save current display settings and apply new
     main_window->getControls()->save();
+    for (const auto& [control, value] : display_settings) {
+      setDisplayControlsVisible(control, value);
+    }
     main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
