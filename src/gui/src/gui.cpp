@@ -448,16 +448,13 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     showGui(save_cmds, false);
   } else {
     // save current display settings and apply new
-    std::map<std::string, bool> settings;
+    main_window->getControls()->save();
     for (const auto& [control, value] : display_settings) {
-      settings[control] = checkDisplayControlsVisible(control);
       setDisplayControlsVisible(control, value);
     }
     main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
     // restore settings
-    for (const auto& [control, value] : settings) {
-      setDisplayControlsVisible(control, value);
-    }
+    main_window->getControls()->restore();
   }
 }
 
