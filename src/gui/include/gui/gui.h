@@ -39,6 +39,7 @@
 #include <functional>
 #include <initializer_list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
@@ -65,6 +66,7 @@ class Options;
 class Descriptor
 {
  public:
+  virtual ~Descriptor() = default;
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getTypeName(std::any object) const = 0;
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
@@ -517,9 +519,6 @@ class Gui
 
   void fit();
 
-  // initialize gui
-  void init();
-
   // Called to hide the gui and return to tcl command line
   void hideGui();
 
@@ -545,6 +544,12 @@ class Gui
     registerDescriptor(typeid(T), descriptor);
   }
 
+  template <class T>
+  void unregisterDescriptor()
+  {
+    unregisterDescriptor(typeid(T));
+  }
+
   // returns the Gui singleton
   static Gui* get();
 
@@ -552,15 +557,17 @@ class Gui
   static bool enabled();
 
  private:
-  Gui() : continue_after_close_(false) {};
+  Gui();
+
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
+  void unregisterDescriptor(const std::type_info& type);
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
 
   // Maps types to descriptors
-  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
+  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>> descriptors_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;

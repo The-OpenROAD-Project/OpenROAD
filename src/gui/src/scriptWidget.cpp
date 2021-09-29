@@ -131,7 +131,6 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp)
   Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
   Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
 
-  Gui::get()->init();
   if (do_init) {
     // OpenRoad is not initialized
     pauser_->setText("Running");

@@ -264,6 +264,15 @@ MainWindow::MainWindow(QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
+
+  // register descriptor
+  Gui::get()->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_));
+}
+
+MainWindow::~MainWindow()
+{
+  // unregister descriptors
+  Gui::get()->unregisterDescriptor<Ruler*>();
 }
 
 void MainWindow::createStatusBar()

@@ -85,6 +85,21 @@ Gui* Gui::get()
   return singleton_;
 }
 
+Gui::Gui() : continue_after_close_(false),
+             logger_(nullptr)
+{
+  // inspector descriptors
+  registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
+  registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
+  registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
+  registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
+  registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+  registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+  registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+  registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+  registerDescriptor<DRCViolation*>(new DRCDescriptor);
+}
+
 bool Gui::enabled()
 {
   return main_window != nullptr;
@@ -512,22 +527,12 @@ void Gui::fit()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
-  descriptors_[type] = descriptor;
+  descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
 }
 
-void Gui::init()
+void Gui::unregisterDescriptor(const std::type_info& type)
 {
-  // inspector descriptors
-  registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
-  registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
-  registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
-  registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
-  registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
-  registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
-  registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
-  registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
-  registerDescriptor<DRCViolation*>(new DRCDescriptor);
-  registerDescriptor<Ruler*>(new RulerDescriptor(main_window->getRulers()));
+  descriptors_.erase(type);
 }
 
 void Gui::setLogger(utl::Logger* logger)

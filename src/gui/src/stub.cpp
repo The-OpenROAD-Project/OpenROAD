@@ -41,6 +41,11 @@ namespace gui {
 
 Gui* Gui::singleton_ = nullptr;
 
+Gui::Gui() : continue_after_close_(false),
+             logger_(nullptr)
+{
+}
+
 Gui* gui::Gui::get()
 {
   return singleton_;
@@ -99,6 +104,10 @@ void Gui::setSelected(Selected selection)
 
 void Gui::registerDescriptor(const std::type_info& type,
                         const Descriptor* descriptor)
+{
+}
+
+void Gui::unregisterDescriptor(const std::type_info& type)
 {
 }
 
