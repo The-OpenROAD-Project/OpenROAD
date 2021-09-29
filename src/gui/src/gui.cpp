@@ -39,7 +39,6 @@
 #include <string>
 
 #include "db.h"
-#include "dbDescriptors.h"
 #include "dbShape.h"
 #include "defin.h"
 #include "displayControls.h"
@@ -86,18 +85,9 @@ Gui* Gui::get()
 }
 
 Gui::Gui() : continue_after_close_(false),
-             logger_(nullptr)
+             logger_(nullptr),
+             db_(nullptr)
 {
-  // inspector descriptors
-  registerDescriptor<odb::dbInst*>(new DbInstDescriptor);
-  registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor);
-  registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
-  registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
-  registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
-  registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
-  registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
-  registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
-  registerDescriptor<DRCViolation*>(new DRCDescriptor);
 }
 
 bool Gui::enabled()
@@ -146,7 +136,7 @@ Selected Gui::makeSelected(std::any object, void* additional_data)
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object, additional_data);
   } else {
-    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 33, "No descriptor is registered for {}.", object.type().name());
+    logger_->warn(utl::GUI, 33, "No descriptor is registered for {}.", object.type().name());
     return Selected();  // FIXME: null descriptor
   }
 }
@@ -429,13 +419,12 @@ void Gui::setResolution(double pixels_per_dbu)
 void Gui::saveImage(const std::string& filename, const odb::Rect& region, double dbu_per_pixel, const std::map<std::string, bool>& display_settings)
 {
   if (!enabled()) {
-    auto* db = ord::OpenRoad::openRoad()->getDb();
-    if (db == nullptr) {
-      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 15, "No design loaded.");
+    if (db_ == nullptr) {
+      logger_->error(utl::GUI, 15, "No design loaded.");
     }
-    auto* tech = db->getTech();
+    auto* tech = db_->getTech();
     if (tech == nullptr) {
-      ord::OpenRoad::openRoad()->getLogger()->error(utl::GUI, 16, "No design loaded.");
+      logger_->error(utl::GUI, 16, "No design loaded.");
     }
     const double dbu_per_micron = tech->getLefUnits();
 
@@ -537,7 +526,21 @@ void Gui::unregisterDescriptor(const std::type_info& type)
 
 void Gui::setLogger(utl::Logger* logger)
 {
-  main_window->setLogger(logger);
+  if (logger == nullptr) {
+    return;
+  }
+
+  logger_ = logger;
+
+  if (enabled()) {
+    // gui already requested, so go ahead and set the logger
+    main_window->setLogger(logger);
+  }
+}
+
+void Gui::setDatabase(odb::dbDatabase* db)
+{
+  db_ = db;
 }
 
 void Gui::hideGui()
@@ -550,7 +553,7 @@ void Gui::hideGui()
 void Gui::showGui(const std::string& cmds, bool interactive)
 {
   if (enabled()) {
-    ord::OpenRoad::openRoad()->getLogger()->warn(utl::GUI, 8, "GUI already active.");
+    logger_->warn(utl::GUI, 8, "GUI already active.");
     return;
   }
 
@@ -577,19 +580,21 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   font.setPointSize(12);
   QApplication::setFont(font);
 
+  auto* open_road = ord::OpenRoad::openRoad();
+
   // create new MainWindow
   main_window = new gui::MainWindow;
 
-  auto* open_road = ord::OpenRoad::openRoad();
-  main_window->setDb(open_road->getDb());
   open_road->addObserver(main_window);
   if (!interactive) {
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
   }
   main_window->show();
 
-  // pass in tcl interp to script widget
-  main_window->getScriptWidget()->setupTcl(interp);
+  gui->setLogger(open_road->getLogger());
+
+  // init with OpenRoad
+  main_window->init(open_road, interp);
 
   // execute commands to restore state of gui
   std::string restore_commands;
@@ -690,10 +695,11 @@ void initGui(OpenRoad* openroad)
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
   sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
-  if (gui::Gui::enabled()) {
-    // gui already requested, so go ahead and set the logger
-    gui::Gui::get()->setLogger(ord::OpenRoad::openRoad()->getLogger());
-  }
+
+  // ensure gui is made
+  auto* gui = gui::Gui::get();
+  gui->setDatabase(openroad->getDb());
+  gui->setLogger(openroad->getLogger());
 }
 
 }  // namespace ord

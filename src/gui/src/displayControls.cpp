@@ -43,7 +43,6 @@
 
 #include "db.h"
 #include "displayControls.h"
-#include "ord/InitOpenRoad.hh"
 
 #include "utl/Logger.h"
 

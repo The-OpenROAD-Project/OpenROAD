@@ -528,6 +528,9 @@ class Gui
   // set the system logger
   void setLogger(utl::Logger* logger);
 
+  // set openroad database
+  void setDatabase(odb::dbDatabase* db);
+
   // check if tcl should take over after closing gui
   bool isContinueAfterClose() { return continue_after_close_; }
   // clear continue after close, needed to reset before GUI starts
@@ -565,6 +568,9 @@ class Gui
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
+
+  utl::Logger* logger_;
+  odb::dbDatabase* db_;
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>> descriptors_;

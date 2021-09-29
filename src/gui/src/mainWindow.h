@@ -73,8 +73,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   MainWindow(QWidget* parent = nullptr);
   ~MainWindow();
 
+  void init(ord::OpenRoad* openroad, Tcl_Interp* interp);
+
   odb::dbDatabase* getDb() const { return db_; }
-  void setDb(odb::dbDatabase* db);
 
   // From ord::OpenRoad::Observer
   virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;

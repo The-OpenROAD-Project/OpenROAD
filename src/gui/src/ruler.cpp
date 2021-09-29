@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include "ruler.h"
 
@@ -73,9 +72,8 @@ bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin) const
   return std::abs(d0 + d1 - druler) < margin;
 }
 
-std::string Ruler::getTclCommand() const
+std::string Ruler::getTclCommand(double dbu_to_microns) const
 {
-  double dbu_to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
   return "gui::add_ruler " +
          std::to_string(pt0_.x() / dbu_to_microns) + " " + std::to_string(pt0_.y() / dbu_to_microns) + " " +
          std::to_string(pt1_.x() / dbu_to_microns) + " " + std::to_string(pt1_.y() / dbu_to_microns) + " " +
@@ -84,8 +82,10 @@ std::string Ruler::getTclCommand() const
 
 ////////////
 
-RulerDescriptor::RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers) :
-    rulers_(rulers)
+RulerDescriptor::RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
+                                 odb::dbDatabase* db) :
+    rulers_(rulers),
+    db_(db)
 {
 }
 
@@ -118,7 +118,7 @@ void RulerDescriptor::highlight(std::any object,
 Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const double dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+  const double dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {{"Label", ruler->getLabel()},
           {"Point 0 - x", ruler->getPt0().x() / dbu_per_uu_},
           {"Point 0 - y", ruler->getPt0().y() / dbu_per_uu_},
@@ -129,7 +129,7 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const int dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+  const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {
     {"Name", makeEditor([this, ruler](std::any value){
       auto new_name = std::any_cast<const std::string>(value);

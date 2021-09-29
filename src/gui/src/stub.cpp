@@ -42,7 +42,8 @@ namespace gui {
 Gui* Gui::singleton_ = nullptr;
 
 Gui::Gui() : continue_after_close_(false),
-             logger_(nullptr)
+             logger_(nullptr),
+             db_(nullptr)
 {
 }
 
