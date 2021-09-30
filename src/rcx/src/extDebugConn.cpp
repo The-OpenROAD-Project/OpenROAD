@@ -87,7 +87,8 @@ extDebugNet::extDebugNet(dbNet* net, dbBlock* block)
     _vias[ii] = new Ath__array1D<extListWire*>(4);
   }
   _shapes = new Ath__array1D<extListWire*>(4096);
-  _hashNodeRC = new HashNode(1000000, 4000, 100000);
+  _hashNodeRC = new HashNode(10000000, 4000, 1000000);
+  // _listWirePoolPtr= new AthPool<extListWire>(false, 4096);
 }
 bool extDebugNet::writeCapNode(uint capNodeId)
 {
@@ -994,10 +995,15 @@ bool extListWire::connectWires(extListWire* w, uint& nodeCnt)
     return false;
   // TODO: overlap unit rects around lo and hi coords
   if (_src == 0) {
+    /*
     Rect* lo = new Rect(r1);
     lo->set_xhi(loCoord.getX() + width / 2);
-    lo->set_yhi(loCoord.getY() + width / 2);
-    if (lo->intersects(r2)) {
+    lo->set_yhi(loCoord.getY() + width / 2); 
+    */
+    int x1= r1.low().getX();
+    int y1= r1.low().getY();
+    Rect lo(x1, y1, x1+width/2, y1+width/2);
+    if (lo.intersects(r2)) {
       _src = nodeCnt++;
       if (w->_src == 0)
         w->_src = _src;
@@ -1007,10 +1013,15 @@ bool extListWire::connectWires(extListWire* w, uint& nodeCnt)
     }
     return false;
   } else if (_dst == 0) {
+    /*
     Rect* hi = new Rect(r1);
     hi->set_xhi(hiCoord.getX() - width / 2);
     hi->set_yhi(hiCoord.getY() - width / 2);
-    if (hi->intersects(r2)) {
+    */
+    int x= r1.high().getX();
+    int y= r1.high().getY();
+    Rect hi(x-width/2, y-width/2, x, y);
+    if (hi.intersects(r2)) {
       _dst = nodeCnt++;
       if (w->_src == 0)
         w->_src = _dst;
@@ -1022,7 +1033,59 @@ bool extListWire::connectWires(extListWire* w, uint& nodeCnt)
   }
   return false;
 }
-bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
+
+bool extListWire::intesectsSquare(Rect &lo2, bool loCoord, int divider)
+{
+  Rect r1 = *_rect;
+  int width= divider;
+  /*
+  int width = r1.minDXDY();
+  if (divider>1)
+    width /= divider;
+*/
+
+  if (loCoord) {
+    int x= r1.low().getX();
+    int y= r1.low().getY();
+    Rect lo(x, y, x+width, y+width);
+
+    if (lo.intersects(lo2)) 
+      return true;
+    else
+      return false;
+
+  } else {
+    int x= r1.high().getX();
+    int y= r1.high().getY();
+    Rect hi(x-width, y-width, x, y);
+
+    if (hi.intersects(lo2)) 
+      return true;
+    else
+      return false;
+  }
+}
+bool extListWire::intesectsSquares(extListWire* w, int divider, bool loCoord1, bool loCoord2)
+{
+  Rect r1 = *_rect;  // this == via
+  Rect r2 = *w->_rect;
+  int width = r2.minDXDY();
+  if (divider>1)
+    width /= divider;
+
+  if (loCoord2) {
+    int x1= r2.low().getX();
+    int y1= r2.low().getY();
+    Rect lo2(x1, y1, x1+width, y1+width);
+    return intesectsSquare(lo2, loCoord1, width);
+  } else {
+     int x= r2.high().getX();
+    int y= r2.high().getY();
+    Rect hi2(x-width, y-width, x, y);
+    return intesectsSquare(hi2, loCoord1, width);
+  }
+}
+bool extListWire::connectSquareWires2(extListWire* w, uint& nodeCnt)
 {
   Rect r1 = *_rect;
   Rect r2 = *w->_rect;
@@ -1033,19 +1096,9 @@ bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
   if (!r1.overlaps(r2))
     return false;
 
-  Rect* lo2 = new Rect(r2);
-  lo2->set_xhi(r2.low().getX() + width);
-  lo2->set_yhi(r2.low().getY() + width);
-
-  Rect* hi2 = new Rect(r2);
-  hi2->set_xlo(r2.high().getX() - width);
-  hi2->set_ylo(r2.high().getY() - width);
-
+  int divider= 2;
   if (_src == 0) {
-    Rect* lo = new Rect(r1);
-    lo->set_xhi(loCoord.getX() + width);
-    lo->set_yhi(loCoord.getY() + width);
-    if (lo->intersects(*lo2)) {
+    if (intesectsSquares(w, divider, true, true)){ 
       if (w->_src == 0) {
         _src = nodeCnt++;
         w->_src = _src;
@@ -1058,7 +1111,7 @@ bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
       }
       return true;
     }
-    if (lo->intersects(*hi2)) {
+    if (intesectsSquares(w, divider, true, false)){
       if (w->_dst == 0) {
         _src = nodeCnt++;
         w->_dst = _src;
@@ -1073,10 +1126,7 @@ bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
     }
     return false;
   } else if (_dst == 0) {
-    Rect* hi = new Rect(r1);
-    hi->set_xlo(hiCoord.getX() - width);
-    hi->set_ylo(hiCoord.getY() - width);
-    if (hi->intersects(*lo2)) {
+    if (intesectsSquares(w, divider, false, true)){
       if (w->_src == 0) {
         _dst = nodeCnt++;
         w->_src = _dst;
@@ -1089,7 +1139,94 @@ bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
       }
       return true;
     }
-    if (hi->intersects(*hi2)) {
+    if (intesectsSquares(w, divider, false, false)){
+      if (w->_dst == 0) {
+        _dst = nodeCnt++;
+        w->_dst = _dst;
+      } else {
+        _dst = w->_dst;
+        if (w->_dst < 0) {
+          _btermFlag_dst = w->_btermFlag_dst;
+          _itermFlag_dst = w->_itermFlag_dst;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+  return false;
+}
+bool extListWire::connectSquareWires(extListWire* w, uint& nodeCnt)
+{
+  // works!! - original
+  Rect r1 = *_rect;
+  Rect r2 = *w->_rect;
+  uint width = r2.minDXDY();
+  Point loCoord = r1.low();
+  Point hiCoord = r1.high();
+
+  if (!r1.overlaps(r2))
+    return false;
+
+  int x1= r2.low().getX();
+  int y1= r2.low().getY();
+  Rect lo2(x1, y1, x1+width, y1+width);
+
+  int x2= r2.high().getX();
+  int y2= r2.high().getY();
+  Rect hi2(x2-width, y2-width, x2, y2);
+
+  if (_src == 0) {
+    int x= r1.low().getX();
+    int y= r1.low().getY();
+    Rect lo(x, y, x+width, y+width);
+
+    if (lo.intersects(lo2)) {
+      if (w->_src == 0) {
+        _src = nodeCnt++;
+        w->_src = _src;
+      } else {
+        _src = w->_src;
+        if (w->_src < 0) {
+          _btermFlag_src = w->_btermFlag_src;
+          _itermFlag_src = w->_itermFlag_src;
+        }
+      }
+      return true;
+    }
+    if (lo.intersects(hi2)) {
+      if (w->_dst == 0) {
+        _src = nodeCnt++;
+        w->_dst = _src;
+      } else {
+        _src = w->_dst;
+        if (w->_dst < 0) {
+          _btermFlag_src = w->_btermFlag_dst;
+          _itermFlag_src = w->_itermFlag_dst;
+        }
+      }
+      return true;
+    }
+    return false;
+  } else if (_dst == 0) {
+
+    int x= r1.high().getX();
+    int y= r1.high().getY();
+    Rect hi(x-width, y-width, x, y);
+    if (hi.intersects(lo2)) {
+      if (w->_src == 0) {
+        _dst = nodeCnt++;
+        w->_src = _dst;
+      } else {
+        _dst = w->_src;
+         if (w->_src < 0) {
+          _btermFlag_dst = w->_btermFlag_src;
+          _itermFlag_dst = w->_itermFlag_src;
+        }
+      }
+      return true;
+    }
+    if (hi.intersects(hi2)) {
       if (w->_dst == 0) {
         _dst = nodeCnt++;
         w->_dst = _dst;
@@ -1173,21 +1310,49 @@ bool extListWire::overlapWires(extListWire* w,
   }
   return false;
 }
+bool extListWire::containsLo(extListWire* w, int divider)
+{
+  Rect via = *_rect;  // this == via
+  Rect r2 = *w->_rect;
+  int width = r2.minDXDY();
+  if (divider>1)
+    width /= divider;
+
+  int x1= r2.low().getX();
+  int y1= r2.low().getY();
+  Rect lo(x1, y1, x1+width, y1+width);
+
+  if (via.contains(lo)) {
+    return true;
+  }
+  return false;
+}
+bool extListWire::containsHi(extListWire* w, int divider)
+{
+  Rect via = *_rect;  // this == via
+  Rect r2 = *w->_rect;
+  int width = r2.minDXDY();
+  if (divider>1)
+    width /= divider;
+
+  int x2= r2.high().getX();
+  int y2= r2.high().getY();
+  Rect hi(x2-width, y2-width, x2, y2);
+  if (via.contains(hi)) {
+    return true;
+  }
+  return false;
+}
 bool extListWire::overlapVia2Wire(extListWire* w,
                                   bool upLayerConnection,
                                   uint& nodeCnt)
 {
-  Rect via = *_rect;  // this == via
-  Rect r2 = *w->_rect;
-  uint width = r2.minDXDY()/2;
+  // this == via
 
-  if (!via.overlaps(r2))
+  if (!(*_rect).overlaps(*w->_rect))
     return false;
-
-  Rect* lo = new Rect(r2);
-  lo->set_xhi(r2.low().getX() + width);
-  lo->set_yhi(r2.low().getY() + width);
-  if (via.contains(*lo)) {
+  
+  if (containsLo(w, 2)) {
     int n = this->setViaNode(upLayerConnection, nodeCnt);
     if (n != w->_dst) {
       w->_src = n;
@@ -1196,13 +1361,9 @@ bool extListWire::overlapVia2Wire(extListWire* w,
         w->_itermFlag_src = isITermSrc(n) || isITermDst(n);
       }
     }
-
     return true;
   }
-  Rect* hi = new Rect(r2);
-  hi->set_xlo(r2.high().getX() - width);
-  hi->set_ylo(r2.high().getY() - width);
-  if (via.contains(*hi)) {
+  if (containsHi(w, 2)) {
     int n = this->setViaNode(upLayerConnection, nodeCnt);
     if (n != w->_src) {
       w->_dst = n;
@@ -1303,6 +1464,10 @@ extListWire::extListWire(int shapeId, dbShape& s, int units)
   s.getBox(r);
   _rect = new Rect(r);
 }
+extListWire::~extListWire()
+{
+    delete _rect;
+}
 void extListWire::setSrcNode(HashNode* hashNode, int n)
 {
   hashNode->setMapping(_btermFlag_src, _itermFlag_src, _src, n);
@@ -1386,6 +1551,12 @@ uint extDebugNet::checkNet(int debug_net_id)
 
   getRects();
   makeRsegs(_shapes);
+
+  for (uint ii = 0; ii < _shapes->getCnt(); ii++) {
+    extListWire* a = _shapes->get(ii);
+    delete a;
+  }
+
   dbSet<dbRSeg> rSet = _net->getRSegs();
   // rSet.reverse();
 

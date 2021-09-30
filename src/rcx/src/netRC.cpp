@@ -2709,7 +2709,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
             //dbgNet->checkNet(_debug_net_id);
             // if (netId==4963)
            
-            if (netId==42890)
+            if (netId==_debug_net_id)
                 dbgNet->_debug= true;
             if (dbgNet->checkNet(0) == 0) {
                 orderWireFixedCnt ++;
@@ -2718,7 +2718,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
                 dbgNet->netStats(openNetsFP, "--------------- Disconnected Net NOT FIXED:");
             }
             getInitialRCvalues(net);
-            if (netId==42890)
+            if (netId==_debug_net_id)
                 dbgNet->_debug= false;
             // dbgNet->checkNet(0);
         }
