@@ -673,8 +673,8 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
 
   // via prl should check min area patch metal if not fat via
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
-  bool isH = (getTech()->getLayer(lNum)->getDir()
-              == dbTechLayerDir::HORIZONTAL);
+  bool isH
+      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
   bool isFatVia = (isH) ? (viaBox.top() - viaBox.bottom() > defaultWidth)
                         : (viaBox.right() - viaBox.left() > defaultWidth);
 
@@ -1322,32 +1322,41 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
   auto cutLayerNum1 = gridGraph_.getLayerNum(z) + 1;
   auto cutLayerNum2 = isUpperVia ? cutLayerNum1 + 2 : cutLayerNum1 - 2;
   auto z2 = isUpperVia ? z + 1 : z - 1;
+  if (cutLayerNum2 > getTech()->getTopLayerNum()
+      || cutLayerNum2 < getTech()->getBottomLayerNum())
+    return;
+  frLayer* layer1 = getTech()->getLayer(cutLayerNum1);
+  frLayer* layer2 = getTech()->getLayer(cutLayerNum2);
 
   frViaDef* viaDef = nullptr;
-  if (isUpperVia) {
-    viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
-                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
-                 : nullptr;
-  } else {
-    viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
-                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
-                 : nullptr;
-  }
+  viaDef = layer2->getDefaultViaDef();
+
   if (viaDef == nullptr) {
     return;
   }
   frCutSpacingConstraint* con
-      = getTech()
-            ->getLayer(cutLayerNum1)
-            ->getInterLayerCutSpacing(cutLayerNum2, false);
+      = layer1->getInterLayerCutSpacing(cutLayerNum2, false);
   if (con == nullptr) {
-    con = getTech()
-              ->getLayer(cutLayerNum2)
-              ->getInterLayerCutSpacing(cutLayerNum1, false);
+    con = layer2->getInterLayerCutSpacing(cutLayerNum1, false);
   }
-  if (con == nullptr) {
+  // LEF58_SPACINGTABLE START
+  frLef58CutSpacingTableConstraint* lef58con;
+  if (!isUpperVia)
+    lef58con = layer1->getLef58DefaultInterCutSpcTblConstraint();
+  else
+    lef58con = layer2->getLef58DefaultInterCutSpcTblConstraint();
+
+  if (lef58con != nullptr) {
+    auto dbRule = lef58con->getODBRule();
+    if (!isUpperVia && dbRule->getSecondLayer()->getName() != layer2->getName())
+      lef58con = nullptr;
+    if (isUpperVia && dbRule->getSecondLayer()->getName() != layer1->getName())
+      lef58con = nullptr;
+  }
+  // LEF58_SPACINGTABLE END
+  if (con == nullptr && lef58con == nullptr)
     return;
-  }
+
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
@@ -1356,7 +1365,11 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
   via.getCutBBox(viaBox);
 
   // spacing value needed
-  frCoord bloatDist = con->getCutSpacing();
+  frCoord bloatDist = 0;
+  if (con != nullptr)
+    bloatDist = con->getCutSpacing();
+  if (lef58con != nullptr)
+    bloatDist = std::max(bloatDist, lef58con->getDefaultSpacing());
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -1391,12 +1404,22 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         hasViol = false;
-        reqDistSquare = con->getCutSpacing();
-        reqDistSquare *= con->getCutSpacing();
-        currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
-        if (currDistSquare < reqDistSquare) {
-          hasViol = true;
+        if (con != nullptr) {
+          reqDistSquare = con->getCutSpacing();
+          reqDistSquare *= reqDistSquare;
+          currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
+          if (currDistSquare < reqDistSquare)
+            hasViol = true;
         }
+        if (!hasViol && lef58con != nullptr) {
+          reqDistSquare = lef58con->getDefaultSpacing();
+          reqDistSquare *= reqDistSquare;
+          currDistSquare
+              = lef58con->getDefaultCenterToCenter() ? c2cSquare : distSquare;
+          if (currDistSquare < reqDistSquare)
+            hasViol = true;
+        }
+
         if (hasViol) {
           switch (type) {
             case 0:
@@ -1414,123 +1437,6 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
             default:;
           }
           break;
-        }
-      }
-    }
-  }
-}
-
-void FlexDRWorker::modLef58InterLayerCutSpacingCost(const frBox& box,
-                                                    frMIdx z,
-                                                    int type,
-                                                    bool isUpperVia,
-                                                    bool isBlockage)
-{
-  // isUpperVia == cutLayerNum2 > cutLayerNum1
-  auto cutLayerNum1 = gridGraph_.getLayerNum(z) + 1;
-  auto cutLayerNum2 = isUpperVia ? cutLayerNum1 + 2 : cutLayerNum1 - 2;
-
-  auto z2 = isUpperVia ? z + 1 : z - 1;
-
-  frViaDef* viaDef = nullptr;
-  if (isUpperVia) {
-    viaDef = (cutLayerNum2 <= getTech()->getTopLayerNum())
-                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
-                 : nullptr;
-  } else {
-    viaDef = (cutLayerNum2 >= getTech()->getBottomLayerNum())
-                 ? getTech()->getLayer(cutLayerNum2)->getDefaultViaDef()
-                 : nullptr;
-  }
-  if (viaDef == nullptr)
-    return;
-
-  frLayer* layer1 = getTech()->getLayer(cutLayerNum1);
-  frLayer* layer2 = getTech()->getLayer(cutLayerNum2);
-
-  frLef58CutSpacingTableConstraint* con;
-  if (!isUpperVia)
-    con = layer1->getLef58DefaultInterCutSpcTblConstraint();
-  else
-    con = layer2->getLef58DefaultInterCutSpcTblConstraint();
-
-  if (con == nullptr)
-    return;
-  auto dbRule = con->getODBRule();
-  if (!isUpperVia && dbRule->getSecondLayer()->getName() != layer2->getName())
-    return;
-  if (isUpperVia && dbRule->getSecondLayer()->getName() != layer1->getName())
-    return;
-  // obj1 = curr obj
-  // obj2 = other obj
-  // default via dimension
-  frVia via(viaDef);
-  frBox viaBox(0, 0, 0, 0);
-  via.getCutBBox(viaBox);
-
-  // spacing value needed
-
-  FlexMazeIdx mIdx1;
-  FlexMazeIdx mIdx2;
-
-  frCoord bloatDist = con->getDefaultSpacing();
-  if (bloatDist == 0)
-    return;
-  // assumes width always > 2
-  frBox bx(box.left() - bloatDist - (viaBox.right() - 0) + 1,
-           box.bottom() - bloatDist - (viaBox.top() - 0) + 1,
-           box.right() + bloatDist + (0 - viaBox.left()) - 1,
-           box.top() + bloatDist + (0 - viaBox.bottom()) - 1);
-  gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
-
-  frPoint pt;
-  frBox tmpBx;
-  frSquaredDistance distSquare = 0;
-  frSquaredDistance c2cSquare = 0;
-  frSquaredDistance reqDistSquare, currDistSquare;
-  frCoord dx, dy;
-  frTransform xform;
-  frPoint boxCenter, tmpBxCenter;
-  boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
-  bool hasViol;
-  for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
-    for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-      for (auto& uFig : via.getViaDef()->getCutFigs()) {
-        auto obj = static_cast<frRect*>(uFig.get());
-        gridGraph_.getPoint(pt, i, j);
-        xform.set(pt);
-        obj->getBBox(tmpBx);
-        tmpBx.transform(xform);
-        tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
-                        (tmpBx.bottom() + tmpBx.top()) / 2);
-        distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
-        hasViol = false;
-        bool center2center = con->getDefaultCenterToCenter();
-        reqDistSquare = con->getDefaultSpacing();
-        reqDistSquare *= reqDistSquare;
-        if (center2center)
-          currDistSquare = c2cSquare;
-        else
-          currDistSquare = distSquare;
-        if (currDistSquare < reqDistSquare)
-          hasViol = true;
-        if (hasViol) {
-          switch (type) {
-            case 0:
-              gridGraph_.subRouteShapeCostVia(i, j, z2);  // safe access
-              break;
-            case 1:
-              gridGraph_.addRouteShapeCostVia(i, j, z2);  // safe access
-              break;
-            case 2:
-              gridGraph_.subFixedShapeCostVia(i, j, z2);  // safe access
-              break;
-            case 3:
-              gridGraph_.addFixedShapeCostVia(i, j, z2);  // safe access
-              break;
-            default:;
-          }
         }
       }
     }
@@ -1613,8 +1519,6 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
       modCutSpacingCost(box, bi.z(), type);
       modInterLayerCutSpacingCost(box, bi.z(), type, true);
       modInterLayerCutSpacingCost(box, bi.z(), type, false);
-      modLef58InterLayerCutSpacingCost(box, bi.z(), type, true);
-      modLef58InterLayerCutSpacingCost(box, bi.z(), type, false);
     }
   }
 }
@@ -1805,7 +1709,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           gridGraph_.print();
         }
         if (graphics_) {
-            graphics_->show(false);
+          graphics_->show(false);
         }
         logger_->error(DRT,
                        255,
@@ -1883,12 +1787,14 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
   }
 }
 
-void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unConnPins, 
-                                 map<FlexMazeIdx, set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
-                                 set<FlexMazeIdx> &apMazeIdx,
-                                 set<FlexMazeIdx> &realPinAPMazeIdx,
-                                 map<FlexMazeIdx, frBox3D*>& mazeIdx2Tbox,
-                                 list<pair<drPin*, frBox3D>>& pinTaperBoxes)
+void FlexDRWorker::routeNet_prep(
+    drNet* net,
+    set<drPin*, frBlockObjectComp>& unConnPins,
+    map<FlexMazeIdx, set<drPin*, frBlockObjectComp>>& mazeIdx2unConnPins,
+    set<FlexMazeIdx>& apMazeIdx,
+    set<FlexMazeIdx>& realPinAPMazeIdx,
+    map<FlexMazeIdx, frBox3D*>& mazeIdx2Tbox,
+    list<pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
   frBox3D* tbx = nullptr;
   for (auto& pin : net->getPins()) {
@@ -2598,7 +2504,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 
 bool FlexDRWorker::routeNet(drNet* net)
 {
-//  ProfileTask profile("DR:routeNet");
+  //  ProfileTask profile("DR:routeNet");
 
   if (net->getPins().size() <= 1) {
     return true;
@@ -2819,10 +2725,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         currArea = getHalfViaEncArea(prevIdx.z() - 1, true, net);
         startViaHalfEncArea = getHalfViaEncArea(prevIdx.z() - 1, true, net);
       } else {
-        currArea = getHalfViaEncArea(
-            prevIdx.z(),
-            false,
-            net);
+        currArea = getHalfViaEncArea(prevIdx.z(), false, net);
         startViaHalfEncArea = gridGraph_.getHalfViaEncArea(prevIdx.z(), false);
       }
       prev_i = i;
