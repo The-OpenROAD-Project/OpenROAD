@@ -3332,6 +3332,7 @@ class extListWire {
       uint _topLevel;
       int DB_FACTOR;
   extListWire(int shapeId, dbShape &s, int units);
+  ~extListWire();
   uint level() { return _level;};
   inline bool isITermSrc(int n) { return _itermFlag_src ? n==_src : false;};
   inline bool isBTermSrc(int n) { return _btermFlag_src ? n==_src : false;};
@@ -3362,10 +3363,15 @@ class extListWire {
   bool overlapVia2Wire(extListWire* w, bool upLayerConnection, uint &nodeCnt);
   bool connectWires(extListWire* w, uint &nodeCnt);
   bool connectSquareWires(extListWire* w, uint &nodeCnt);
+  bool connectSquareWires2(extListWire* w, uint &nodeCnt);
   int setViaNode(bool upLayerConnection, uint &nodeCnt);
   bool overlapPinShape(int id, Rect pinRect);
   bool overlapItermShape(int id, Rect pinRect);
   bool overlapItermShape_via(int id, Rect pinRect, bool bottom);
+  bool containsLo(extListWire* w, int divider);
+  bool containsHi(extListWire* w, int divider);
+  bool intesectsSquare(Rect &lo2, bool loCoord, int divider);
+  bool intesectsSquares(extListWire* w, int divider, bool loCoord1, bool loCoord2);
 
   void setNode(HashNode* hashNode, int n);
   void setSrcNode(HashNode* hashNode, int n);
@@ -3470,6 +3476,7 @@ private:
   uint _levelCnt;
   Ath__array1D<extListWire*>* _shapes;
   HashNode *_hashNodeRC;
+  AthPool<extListWire>* _listWirePoolPtr;
 
  public:
   bool _debug;
