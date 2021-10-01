@@ -41,7 +41,7 @@ class Graphics : public gui::Renderer
   // From Renderer API
   virtual void drawObjects(gui::Painter& painter) override;
   virtual gui::SelectionSet select(odb::dbTechLayer* layer,
-                                   const odb::Point& point) override;
+                                   const odb::Rect& region) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
