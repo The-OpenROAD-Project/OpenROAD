@@ -213,6 +213,29 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
+void GlobalRouter::updateDirtyRoutes(Capacities &capacities)
+{
+  // Fastroute barfs if there are no nets. It shouldn't. -cherry
+  if (!dirty_nets_.empty()) {
+    updateDirtyNets();
+    std::vector<Net*> dirty_nets = startFastRoute(min_routing_layer_, max_routing_layer_,
+                                                  NetType::Antenna);
+    fastroute_->setVerbose(0);
+    logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
+    if (logger_->debugCheck(GRT, "incr", 2)) {
+      for (auto net : dirty_nets_)
+        debugPrint(logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+    }
+    restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
+    removeDirtyNetsRouting();
+
+    NetRouteMap new_route
+      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+    mergeResults(new_route);
+    dirty_nets_.clear();
+  }
+}
+
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
 {
   AntennaRepair antenna_repair = AntennaRepair(this,
@@ -227,41 +250,26 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
   int itr = 0;
   while (violations_cnt != 0 && itr < iterations) {
     logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
-    // Copy first route result and make changes in this new vector
-    NetRouteMap originalRoute(routes_);
 
-    Capacities capacities
-        = saveCapacities(min_routing_layer_, max_routing_layer_);
-    addLocalConnections(originalRoute);
-
-    violations_cnt = antenna_repair.checkAntennaViolations(
-        originalRoute, max_routing_layer_, diode_mterm);
+    IncrementalGRoute incr_groute(this);
+    // Antenna checker requires local connections so copy the routes
+    // so the originals are not side-effected.
+    NetRouteMap routes = routes_;
+    addLocalConnections(routes);
+    violations_cnt = antenna_repair.checkAntennaViolations(routes,
+                                                           max_routing_layer_,
+                                                           diode_mterm);
 
     if (violations_cnt > 0) {
       clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
+      logger_->info(GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
+
       antenna_repair.legalizePlacedCells();
-
-      logger_->info(
-          GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
-
-      updateDirtyNets();
-      std::vector<Net*> antenna_nets = startFastRoute(
-          min_routing_layer_, max_routing_layer_, NetType::Antenna);
-
-      fastroute_->setVerbose(0);
-      logger_->info(GRT, 9, "Nets to reroute: {}.", antenna_nets.size());
-
-      restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
-      removeDirtyNetsRouting();
-
-      NetRouteMap new_route
-          = findRouting(antenna_nets, min_routing_layer_, max_routing_layer_);
-      mergeResults(new_route);
+      incr_groute.finish();
     }
 
     antenna_repair.clearViolations();
-    dirty_nets_.clear();
     itr++;
   }
 }
@@ -302,6 +310,16 @@ void GlobalRouter::estimateRC()
       builder.estimateParasitcs(db_net, net->getPins(), route);
     }
   }
+}
+
+void GlobalRouter::estimateRC(odb::dbNet *db_net)
+{
+  MakeWireParasitics builder(openroad_, this);
+  GRoute& route = routes_[db_net];
+    if (!route.empty()) {
+      Net* net = getNet(db_net);
+      builder.estimateParasitcs(db_net, net->getPins(), route);
+    }
 }
 
 void GlobalRouter::initCoreGrid(int max_routing_layer)
@@ -362,8 +380,7 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
   }
 }
 
-Capacities GlobalRouter::saveCapacities(int previous_min_layer,
-                                        int previous_max_layer)
+Capacities GlobalRouter::getCapacities()
 {
   int old_cap;
   int x_grids = grid_->getXGrids();
@@ -392,20 +409,18 @@ Capacities GlobalRouter::saveCapacities(int previous_min_layer,
     }
   }
 
-  for (int layer = previous_min_layer; layer <= previous_max_layer; layer++) {
+  for (int layer = min_routing_layer_; layer <= max_routing_layer_; layer++) {
     auto tech_layer = routing_layers_[layer];
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap
-            = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
+        old_cap = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
         h_caps[layer - 1][y - 1][x - 1] = old_cap;
       }
     }
 
     for (int x = 1; x < x_grids; x++) {
       for (int y = 1; y < y_grids; y++) {
-        old_cap
-            = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
+        old_cap = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
         v_caps[layer - 1][x - 1][y - 1] = old_cap;
       }
     }
@@ -556,6 +571,10 @@ void GlobalRouter::updateDirtyNets()
   initRoutingLayers();
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
+    if (net == nullptr) {
+      // This should be done with a dbNet::create observer -cherry
+      net = addNet(db_net);
+    }
     net->destroyPins();
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
@@ -652,6 +671,7 @@ void GlobalRouter::findPins(Net* net,
 
 void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 {
+  fastroute_->resetNewNetID();
   checkPinPlacement();
   pad_pins_connections_.clear();
 
@@ -660,8 +680,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   int min_degree = std::numeric_limits<int>::max();
   int max_degree = std::numeric_limits<int>::min();
 
-  for (const Net& net : *nets_) {
-    if (net.getNumPins() > 1) {
+  for (const Net* net : nets) {
+    if (net->getNumPins() > 1) {
       valid_nets++;
     }
   }
@@ -2073,13 +2093,6 @@ int GlobalRouter::getNetCount() const
   return nets_->size();
 }
 
-Net* GlobalRouter::addNet(odb::dbNet* db_net)
-{
-  nets_->push_back(Net(db_net));
-  Net* net = &nets_->back();
-  return net;
-}
-
 void GlobalRouter::reserveNets(size_t net_count)
 {
   nets_->reserve(net_count);
@@ -2544,18 +2557,27 @@ void GlobalRouter::initNetlist()
 void GlobalRouter::addNets(std::set<odb::dbNet*, cmpById>& db_nets)
 {
   // Prevent nets_ from growing because pointers to nets become invalid.
-  reserveNets(db_nets.size());
+  // Leave room for incremental nets (this needs to be rewritten to not
+  // use a vector of Nets because it is not incremental -cherry).
+  reserveNets(db_nets.size() * 2);
   for (odb::dbNet* db_net : db_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
-      Net* net = addNet(db_net);
-      db_net_map_[db_net] = net;
-      makeItermPins(net, db_net, grid_->getGridArea());
-      makeBtermPins(net, db_net, grid_->getGridArea());
-      findPins(net);
+      addNet(db_net);
     }
   }
+}
+
+Net* GlobalRouter::addNet(odb::dbNet* db_net)
+{
+  nets_->push_back(Net(db_net));
+  Net* net = &nets_->back();
+  db_net_map_[db_net] = net;
+  makeItermPins(net, db_net, grid_->getGridArea());
+  makeBtermPins(net, db_net, grid_->getGridArea());
+  findPins(net);
+  return net;
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
@@ -3534,6 +3556,20 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
       }
     }
   }
+}
+
+////////////////////////////////////////////////////////////////
+
+IncrementalGRoute::IncrementalGRoute(GlobalRouter *groute) :
+  groute_(groute),
+  capacities_(groute_->getCapacities())
+{
+}
+
+void
+IncrementalGRoute::finish()
+{
+  groute_->updateDirtyRoutes(capacities_);
 }
 
 }  // namespace grt

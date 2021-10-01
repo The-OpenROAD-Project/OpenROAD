@@ -86,6 +86,7 @@ class RoutingTracks;
 class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
+class GlobalRouter;
 
 struct RegionAdjustment
 {
@@ -129,6 +130,18 @@ class RoutePt
   int _layer;
 };
 
+// Class to save global router state before incremental changes.
+class IncrementalGRoute
+{
+public:
+  IncrementalGRoute(GlobalRouter *groute);
+  void finish();
+
+private:
+  GlobalRouter *groute_;
+  Capacities capacities_;
+};
+
 bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
@@ -165,6 +178,7 @@ class GlobalRouter
                                    int max_routing_layer,
                                    NetType type);
   void estimateRC();
+  void estimateRC(odb::dbNet *db_net);
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
@@ -277,7 +291,8 @@ class GlobalRouter
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  Capacities saveCapacities(int previous_min_layer, int previous_max_layer);
+  Capacities getCapacities();
+  void updateDirtyRoutes(Capacities &capacities);
   void restoreCapacities(Capacities capacities,
                          int previous_min_layer,
                          int previous_max_layer);
@@ -367,6 +382,8 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+
+  friend class IncrementalGRoute;
 };
 
 std::string getITermName(odb::dbITerm* iterm);

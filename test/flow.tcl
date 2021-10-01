@@ -139,11 +139,17 @@ write_def $cts_def
 ################################################################
 # Setup/hold timing repair
 
-# Global route for parasitics - no guide file requied
-global_route -congestion_iterations 100
-estimate_parasitics -global_routing
-
 set_propagated_clock [all_clocks]
+
+set repair_timing_use_grt_parasitics 0
+if { $repair_timing_use_grt_parasitics } {
+  # Global route for parasitics - no guide file requied
+  global_route -congestion_iterations 100
+  set_debug GRT incr 2
+  estimate_parasitics -global_routing
+} else {
+  estimate_parasitics -placement
+}
 
 repair_timing
 

@@ -171,13 +171,29 @@ Resizer::haveEstimatedParasitics() const
 void
 Resizer::ensureWireParasitics()
 {
-  if (haveEstimatedParasitics()) {
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
     for (const Net *net : parasitics_invalid_)
       estimateWireParasitic(net);
     parasitics_invalid_.clear();
+    break;
+  case ParasiticsSrc::global_routing: {
+    grt::IncrementalGRoute incr_groute(global_router_);
+    for (const Net *net : parasitics_invalid_)
+      global_router_->addDirtyNet(db_network_->staToDb(net));
+    incr_groute.finish();
+
+    for (const Net *net : parasitics_invalid_)
+      global_router_->estimateRC(db_network_->staToDb(net));
+    parasitics_invalid_.clear();
+    break;
   }
-  else
-    estimateWireParasitics();
+  case ParasiticsSrc::none:
+    estimateParasitics(global_router_->haveRoutes()
+                       ? ParasiticsSrc::global_routing
+                       : ParasiticsSrc::placement);
+    break;
+  }
 }
 
 void
@@ -196,13 +212,25 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
   // they are all made at the same time.
   const Corner *corner = sta_->corners()->findCorner(0);
   const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
-  if (haveEstimatedParasitics()
-      && net
-      && (parasitics_invalid_.hasKey(net)
-          || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
-                                       parasitic_ap) == nullptr)) {
-    estimateWireParasitic(drvr_pin, net);
-    parasitics_invalid_.erase(net);
+  if (parasitics_invalid_.hasKey(net)
+      || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+                                   parasitic_ap) == nullptr) {
+    switch (parasitics_src_) {
+    case ParasiticsSrc::placement:
+      estimateWireParasitic(drvr_pin, net);
+      parasitics_invalid_.erase(net);
+      break;
+    case ParasiticsSrc::global_routing: {
+      grt::IncrementalGRoute incr_groute(global_router_);
+      global_router_->addDirtyNet(db_network_->staToDb(net));
+      incr_groute.finish();
+      global_router_->estimateRC(db_network_->staToDb(net));
+      parasitics_invalid_.erase(net);
+      break;
+    }
+    case ParasiticsSrc::none:
+      break;
+    }
   }
 }
 
