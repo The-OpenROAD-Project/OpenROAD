@@ -392,7 +392,7 @@ void DRCWidget::drawObjects(Painter& painter)
   }
 }
 
-SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Point& point)
+SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Rect& region)
 {
   if (layer != nullptr) {
     return SelectionSet();
@@ -402,7 +402,7 @@ SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Point& point)
 
   SelectionSet selections;
   for (const auto& violation : violations_) {
-    if (violation->getBBox().intersects(point)) {
+    if (violation->getBBox().intersects(region)) {
       selections.insert(gui->makeSelected(violation.get()));
     }
   }

@@ -138,6 +138,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
+  connect(viewer_,
+          SIGNAL(addSelected(const SelectionSet&)),
+          this,
+          SLOT(addSelected(const SelectionSet&)));
 
   connect(viewer_,
           SIGNAL(addRuler(int, int, int, int)),

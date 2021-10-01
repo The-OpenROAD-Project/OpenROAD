@@ -34,7 +34,7 @@
 #include "odb/db.h"
 #include "ruler.h"
 
-#include <cmath>
+#include <boost/geometry.hpp>
 
 namespace gui {
 
@@ -54,23 +54,23 @@ bool Ruler::operator ==(const Ruler& other) const
          (pt0_ == other.getPt1() && pt1_ == other.getPt0());
 }
 
-bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin) const
+bool Ruler::fuzzyIntersection(const odb::Rect& region, int margin) const
 {
-  // compute composite line from two end points through the pt
-  // if the resultant line is longer by the margin, no intersection is reported.
+  typedef boost::geometry::model::d2::point_xy<int> point_t;
+  typedef boost::geometry::model::linestring<point_t> linestring_t;
+  typedef boost::geometry::model::polygon<point_t> polygon_t;
 
-  auto distance = [](const odb::Point& pt0, const odb::Point& pt1) -> int {
-    const double len_x = pt0.x() - pt1.x();
-    const double len_y = pt0.y() - pt1.y();
+  linestring_t ls;
+  boost::geometry::append(ls, point_t(pt0_.x(), pt0_.y()));
+  boost::geometry::append(ls, point_t(pt1_.x(), pt1_.y()));
+  polygon_t poly;
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMin() - margin));
+  boost::geometry::append(poly, point_t(region.xMax() + margin, region.yMin() - margin));
+  boost::geometry::append(poly, point_t(region.xMax() + margin, region.yMax() + margin));
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMax() + margin));
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMin() - margin));
 
-    return std::sqrt(len_x * len_x + len_y * len_y);
-  };
-
-  const int d0 = distance(pt0_, pt);
-  const int d1 = distance(pt1_, pt);
-  const int druler = distance(pt0_, pt1_);
-
-  return std::abs(d0 + d1 - druler) < margin;
+  return boost::geometry::intersects(ls, poly);
 }
 
 std::string Ruler::getTclCommand() const

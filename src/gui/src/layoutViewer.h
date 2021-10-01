@@ -167,6 +167,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   // add additional object to selected set
   void addSelected(const Selected& selected);
+  void addSelected(const SelectionSet& selected);
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
@@ -287,6 +288,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
+  void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
+  SelectionSet selectAt(odb::Rect region_dbu);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);

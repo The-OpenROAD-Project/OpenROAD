@@ -366,7 +366,7 @@ class Renderer
   // object not associated with a layer.
   // Return true if an object was found; false otherwise.
   virtual SelectionSet select(odb::dbTechLayer* /* layer */,
-                              const odb::Point& /* point */)
+                              const odb::Rect& /* region */)
   {
     return SelectionSet();
   }

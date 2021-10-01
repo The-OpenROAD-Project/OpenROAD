@@ -58,7 +58,7 @@ class Ruler
 
   std::string getTclCommand() const;
 
-  bool fuzzyIntersection(const odb::Point& pt, int margin) const;
+  bool fuzzyIntersection(const odb::Rect& region, int margin) const;
 
   bool operator ==(const Ruler& other) const;
 
