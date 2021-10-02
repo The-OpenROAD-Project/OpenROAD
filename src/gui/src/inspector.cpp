@@ -226,8 +226,13 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       view_(new QTreeView()),
       model_(new SelectedItemModel(Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
       layout_(new QVBoxLayout),
+      action_layout_(new QVBoxLayout),
       selected_(selected),
+      selected_itr_(selected.begin()),
       selection_(Selected()),
+      button_frame_(new QFrame),
+      button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
+      button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
       mouse_timer_(nullptr)
 {
   setObjectName("inspector");  // for settings
@@ -243,6 +248,16 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
   QWidget* container = new QWidget;
   layout_->addWidget(view_, /* stretch */ 1);
+  layout_->addLayout(action_layout_);
+
+  button_frame_->setFrameShape(QFrame::StyledPanel);
+  button_frame_->setFrameShadow(QFrame::Raised);
+  QHBoxLayout* button_layout = new QHBoxLayout;
+  button_layout->addWidget(button_prev_);
+  button_layout->addWidget(button_next_);
+  button_frame_->setLayout(button_layout);
+  layout_->addWidget(button_frame_);
+  button_frame_->setVisible(false);
 
   container->setLayout(layout_);
 
@@ -257,6 +272,26 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(clicked(const QModelIndex&)));
+
+  connect(button_prev_,
+          &QPushButton::pressed,
+          [this]() {
+            if (selected_itr_ == selected_.begin()) {
+              selected_itr_ = selected_.end();
+            }
+            selected_itr_--;
+            inspect(*selected_itr_);
+          });
+
+  connect(button_next_,
+          &QPushButton::pressed,
+          [this]() {
+            selected_itr_++; // go to next
+            if (selected_itr_ == selected_.end()) {
+              selected_itr_ = selected_.begin();
+            }
+            inspect(*selected_itr_);
+          });
 }
 
 void Inspector::inspect(const Selected& object)
@@ -330,7 +365,7 @@ void Inspector::inspect(const Selected& object)
     connect(button, &QPushButton::released, [this, button]() {
       handleAction(button);
     });
-    layout_->addWidget(button);
+    action_layout_->addWidget(button);
     actions_[button] = action;
   }
 
@@ -392,7 +427,13 @@ void Inspector::update()
   if (selected_.empty()) {
     inspect(Selected());
   } else {
-    inspect(*selected_.begin());
+    if (selected_.size() > 1) {
+      button_frame_->setVisible(true);
+    } else {
+      button_frame_->setVisible(false);
+    }
+    selected_itr_ = selected_.begin();
+    inspect(*selected_itr_);
     raise();
   }
 }
