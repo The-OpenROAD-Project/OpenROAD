@@ -45,7 +45,11 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
-#include "grt/GlobalRouter.h"
+
+namespace grt {
+class GlobalRouter;
+class IncrementalGRoute;
+}
 
 namespace rsz {
 
@@ -67,6 +71,7 @@ using odb::dbTechLayer;
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
+using grt::IncrementalGRoute;
 
 using sta::StaState;
 using sta::Sta;
@@ -512,12 +517,16 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void estimateWireParasiticSteiner(const Pin *drvr_pin,
-                                    const Net *net);
+
+  void incrementalParasiticsBegin();
+  void incrementalParasiticsEnd();
+  void ensureParasitics();
+  void updateParasitics();
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
-  void ensureWireParasitics();
+  void estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                    const Net *net);
   void makePadParasitic(const Net *net);
   bool isPadNet(const Net *net) const;
   bool isPadPin(const Pin *pin) const;
@@ -589,7 +598,6 @@ protected:
   void journalRestore();
 
   ////////////////////////////////////////////////////////////////
-
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet &ends);
   VertexSet findFaninRoots(VertexSet &ends);
@@ -616,6 +624,8 @@ protected:
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;
+  IncrementalGRoute *incr_groute_;
+
   Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;

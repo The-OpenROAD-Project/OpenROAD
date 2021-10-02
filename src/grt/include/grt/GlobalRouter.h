@@ -176,8 +176,12 @@ class GlobalRouter
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);
+
+  // Incremental global routing functions.
+  // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   void removeDirtyNet(odb::dbNet* net);
+  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
 
   double dbuToMicrons(int64_t dbu);
 
@@ -402,15 +406,17 @@ private:
   GlobalRouter* grouter_;
 };
 
-// Class to save global router state and monitor db updates
+// Class to save global router state and monitor db updates with callbacks
 // to make incremental routing updates.
 class IncrementalGRoute
 {
 public:
+  // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter *groute,
                     odb::dbBlock *block);
   // Update global routes for dirty nets.
   void updateRoutes();
+  // Disables db callbacks.
   ~IncrementalGRoute();
 
 private:
