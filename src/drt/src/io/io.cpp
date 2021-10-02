@@ -1249,6 +1249,20 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       continue;
     }
     auto con = make_shared<frLef58CutSpacingTableConstraint>(rule);
+    frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
+    std::map<frString, frUInt4> rowMap, colMap;
+    rule->getSpacingTable(table, rowMap, colMap);
+    frString cutClass1 = colMap.begin()->first;
+    if (cutClass1.find("/") != std::string::npos)
+      cutClass1 = cutClass1.substr(0, cutClass1.find("/"));
+    frString cutClass2 = rowMap.begin()->first;
+    if (cutClass2.find("/") != std::string::npos)
+      cutClass2 = cutClass2.substr(0, cutClass2.find("/"));
+    auto spc = table[0][0];
+    con->setDefaultSpacing(std::max(spc.first, spc.second));
+    con->setDefaultCenterToCenter(
+        rule->isCenterToCenter(cutClass1, cutClass2)
+        || rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
