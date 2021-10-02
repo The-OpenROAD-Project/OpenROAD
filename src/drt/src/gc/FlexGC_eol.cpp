@@ -436,6 +436,11 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
       eolWithin = con->getWithinConstraint()->getEolWithin();
       eolSpace = con->getEolSpace();
+      if (con->getWithinConstraint()->hasEndToEndConstraint())
+        eolSpace = std::max(eolSpace,
+                            con->getWithinConstraint()
+                                ->getEndToEndConstraint()
+                                ->getEndToEndSpace());
     } break;
     default:
       logger_->error(DRT, 226, "Unsupported endofline spacing rule.");
@@ -535,6 +540,34 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   addMarker(std::move(marker));
 }
 
+bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
+    gcSegment* edge1,
+    gcSegment* edge2,
+    frConstraint* constraint)
+{
+  if (constraint->typeId()
+      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
+    return true;
+  auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
+  if (!con->getWithinConstraint()->hasEndToEndConstraint())
+    return true;
+  frCoord eolSpace = con->getEolSpace();
+  frCoord endSpace
+      = con->getWithinConstraint()->getEndToEndConstraint()->getEndToEndSpace();
+  gtl::rectangle_data<frCoord> rect1;
+  gtl::set_points(rect1, edge1->low(), edge1->high());
+  gtl::rectangle_data<frCoord> rect2;
+  gtl::set_points(rect2, edge2->low(), edge2->high());
+  frCoord dist = gtl::euclidean_distance(rect1, rect2);
+  if (checkMetalEndOfLine_eol_isEolEdge(edge2, constraint)) {
+    if (dist < endSpace)
+      return true;
+  } else {
+    if (dist < eolSpace)
+      return true;
+  }
+  return false;
+}
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     gcSegment* edge,
     frConstraint* constraint,
@@ -580,6 +613,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     if (!hasRoute) {
       continue;
     }
+    // check endtoend
+    if (!checkMetalEndOfLine_eol_hasEol_endToEndHelper(edge, ptr, constraint))
+      continue;
     checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
   }
 }

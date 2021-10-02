@@ -462,8 +462,11 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
       auto eolSpace = eolCon->getEolSpace();
       auto eolWidth = eolCon->getEolWidth();
       frCoord eolWithin = 0;
-      if(eolCon->hasWithinConstraint())
+      if(eolCon->hasWithinConstraint()) {
         eolWithin = eolCon->getWithinConstraint()->getEolWithin();
+        if(eolCon->getWithinConstraint()->hasEndToEndConstraint())
+          eolSpace = std::max(eolSpace, eolCon->getWithinConstraint()->getEndToEndConstraint()->getEndToEndSpace());
+      }
       // eol to up and down
       if (tmpBx.right() - tmpBx.left() < eolWidth) {
         testBox.set(tmpBx.left() - eolWithin,
@@ -744,6 +747,10 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   for (auto con : getTech()->getLayer(lNum)->getLef58SpacingEndOfLineConstraints()) {
     auto eolSpace = con->getEolSpace();
     auto eolWidth = con->getEolWidth();
+    if(con->hasWithinConstraint()) {
+      if(con->getWithinConstraint()->hasEndToEndConstraint())
+        eolSpace = std::max(eolSpace, con->getWithinConstraint()->getEndToEndConstraint()->getEndToEndSpace());
+    }
     // eol up and down
     if (viaBox.right() - viaBox.left() < eolWidth) {
       bloatDistEolY = max(bloatDistEolY, eolSpace);
@@ -1011,8 +1018,11 @@ void FlexDRWorker::modEolSpacingCost(const frBox& box,
         = (frLef58SpacingEndOfLineConstraint*) con;
     eolSpace = constraint->getEolSpace();
     eolWidth = constraint->getEolWidth();
-    if (constraint->hasWithinConstraint())
+    if (constraint->hasWithinConstraint()) {
       eolWithin = constraint->getWithinConstraint()->getEolWithin();
+      if(constraint->getWithinConstraint()->hasEndToEndConstraint())
+        eolSpace = std::max(eolSpace, constraint->getWithinConstraint()->getEndToEndConstraint()->getEndToEndSpace());
+    }
     else
       eolWithin = 0;
   } else if (con->typeId()

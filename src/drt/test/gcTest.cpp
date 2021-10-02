@@ -609,6 +609,33 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
 }
+
+// Check for a basic end-of-line (EOL) spacing violation.
+BOOST_AUTO_TEST_CASE(eol_endtoend)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  auto endToEnd
+      = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+  endToEnd->setEndToEndSpace(300);
+  con->getWithinConstraint()->setSameMask(true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {350, 50}, {1000, 50});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             frBox(100, 0, 350, 100));
+}
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
                      ext,
@@ -897,8 +924,7 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl,
   row_map["Vx/END"] = 0;
   col_map["Vx/SIDE"] = 1;
   col_map["Vx/END"] = 0;
-  if(viol)
-  {
+  if (viol) {
     table.push_back({{300, 300}, {300, 300}});
     table.push_back({{300, 300}, {300, 301}});
   } else {

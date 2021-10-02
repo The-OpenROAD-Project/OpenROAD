@@ -734,7 +734,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   // getters
   bool hasOppositeWidth() const { return hOppositeWidth; }
   frCoord getOppositeWidth() const { return oppositeWidth; }
-  frCoord getEolWithin() const { return eolWithin; }
+  frCoord getEolWithin() const { return sameMask ? 0 :eolWithin; }
   frCoord getWrongDirWithin() const { return wrongDirWithin; }
   bool hasSameMask() const { return sameMask; }
   bool hasExceptExactWidth() const

@@ -376,6 +376,9 @@ class FlexGCWorker::Impl
   void checkMetalEndOfLine_eol_hasEol_helper(gcSegment* edge1,
                                              gcSegment* edge2,
                                              frConstraint* constraint);
+  bool checkMetalEndOfLine_eol_hasEol_endToEndHelper(gcSegment* edge1,
+                                                     gcSegment* edge2,
+                                                     frConstraint* constraint);
 
   void checkCutSpacing();
   void checkCutSpacing_main(gcRect* rect);
