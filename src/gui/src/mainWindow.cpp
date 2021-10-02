@@ -176,6 +176,10 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateSelectedStatus(const Selected&)));
 
+  connect(selection_browser_,
+          SIGNAL(selected(const Selected&)),
+          inspector_,
+          SLOT(inspect(const Selected&)));
   connect(this,
           SIGNAL(selectionChanged()),
           selection_browser_,

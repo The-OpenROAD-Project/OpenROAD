@@ -310,6 +310,10 @@ void Inspector::inspect(const Selected& object)
   }
 
   selection_ = object;
+  // update iterator
+  selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
+    return item < selection_;
+  });
 
   if (!object) {
     return;
