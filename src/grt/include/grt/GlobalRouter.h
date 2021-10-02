@@ -42,7 +42,10 @@
 #include <vector>
 
 #include "GRoute.h"
+
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+
 #include "sta/Liberty.hh"
 
 namespace ord {
@@ -130,18 +133,6 @@ class RoutePt
   int _layer;
 };
 
-// Class to save global router state before incremental changes.
-class IncrementalGRoute
-{
-public:
-  IncrementalGRoute(GlobalRouter *groute);
-  void finish();
-
-private:
-  GlobalRouter *groute_;
-  Capacities capacities_;
-};
-
 bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
@@ -186,6 +177,7 @@ class GlobalRouter
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);
   void addDirtyNet(odb::dbNet* net);
+  void removeDirtyNet(odb::dbNet* net);
 
   double dbuToMicrons(int64_t dbu);
 
@@ -290,9 +282,11 @@ class GlobalRouter
 
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
-  void mergeResults(NetRouteMap& routes);
-  Capacities getCapacities();
+
+  // incremental funcions
   void updateDirtyRoutes(Capacities &capacities);
+  Capacities getCapacities();
+  void mergeResults(NetRouteMap& routes);
   void restoreCapacities(Capacities capacities,
                          int previous_min_layer,
                          int previous_max_layer);
@@ -388,5 +382,41 @@ class GlobalRouter
 
 std::string getITermName(odb::dbITerm* iterm);
 std::string getLayerName(int layer_idx, odb::dbDatabase* db);
+
+class GRouteDbCbk : public odb::dbBlockCallBackObj
+{
+public:
+  GRouteDbCbk(GlobalRouter* grouter);
+  virtual void inDbPostMoveInst(odb::dbInst* net);
+
+  virtual void inDbNetDestroy(odb::dbNet* net);
+  virtual void inDbNetCreate(odb::dbNet*);
+
+  virtual void inDbITermPreDisconnect(odb::dbITerm*);
+  virtual void inDbITermPostConnect(odb::dbITerm*);
+
+  virtual void inDbBTermPostConnect(odb::dbBTerm*);
+  virtual void inDbBTermPreDisconnect(odb::dbBTerm*);
+
+private:
+  GlobalRouter* grouter_;
+};
+
+// Class to save global router state and monitor db updates
+// to make incremental routing updates.
+class IncrementalGRoute
+{
+public:
+  IncrementalGRoute(GlobalRouter *groute,
+                    odb::dbBlock *block);
+  // Update global routes for dirty nets.
+  void updateRoutes();
+  ~IncrementalGRoute();
+
+private:
+  GlobalRouter *groute_;
+  Capacities capacities_;
+  GRouteDbCbk db_cbk_;
+};
 
 }  // namespace grt

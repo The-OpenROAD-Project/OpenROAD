@@ -178,11 +178,10 @@ Resizer::ensureWireParasitics()
     parasitics_invalid_.clear();
     break;
   case ParasiticsSrc::global_routing: {
-    grt::IncrementalGRoute incr_groute(global_router_);
+    grt::IncrementalGRoute incr_groute(global_router_, block_);
     for (const Net *net : parasitics_invalid_)
       global_router_->addDirtyNet(db_network_->staToDb(net));
-    incr_groute.finish();
-
+    incr_groute.updateRoutes();
     for (const Net *net : parasitics_invalid_)
       global_router_->estimateRC(db_network_->staToDb(net));
     parasitics_invalid_.clear();
@@ -221,9 +220,9 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {
-      grt::IncrementalGRoute incr_groute(global_router_);
+      grt::IncrementalGRoute incr_groute(global_router_, block_);
       global_router_->addDirtyNet(db_network_->staToDb(net));
-      incr_groute.finish();
+      incr_groute.updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));
       parasitics_invalid_.erase(net);
       break;

@@ -213,29 +213,6 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
-void GlobalRouter::updateDirtyRoutes(Capacities &capacities)
-{
-  // Fastroute barfs if there are no nets. It shouldn't. -cherry
-  if (!dirty_nets_.empty()) {
-    updateDirtyNets();
-    std::vector<Net*> dirty_nets = startFastRoute(min_routing_layer_, max_routing_layer_,
-                                                  NetType::Antenna);
-    fastroute_->setVerbose(0);
-    logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
-    if (logger_->debugCheck(GRT, "incr", 2)) {
-      for (auto net : dirty_nets_)
-        debugPrint(logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
-    }
-    restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
-    removeDirtyNetsRouting();
-
-    NetRouteMap new_route
-      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
-    mergeResults(new_route);
-    dirty_nets_.clear();
-  }
-}
-
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
 {
   AntennaRepair antenna_repair = AntennaRepair(this,
@@ -251,7 +228,6 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
   while (violations_cnt != 0 && itr < iterations) {
     logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
-    IncrementalGRoute incr_groute(this);
     // Antenna checker requires local connections so copy the routes
     // so the originals are not side-effected.
     NetRouteMap routes = routes_;
@@ -261,22 +237,19 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
                                                            diode_mterm);
 
     if (violations_cnt > 0) {
+      antenna_repair.deleteFillerCells();
+
+      IncrementalGRoute incr_groute(this, block_);
       clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
       logger_->info(GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
 
       antenna_repair.legalizePlacedCells();
-      incr_groute.finish();
+      incr_groute.updateRoutes();
     }
-
     antenna_repair.clearViolations();
     itr++;
   }
-}
-
-void GlobalRouter::addDirtyNet(odb::dbNet* net)
-{
-  dirty_nets_.insert(net);
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
@@ -3560,16 +3533,101 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
 
 ////////////////////////////////////////////////////////////////
 
-IncrementalGRoute::IncrementalGRoute(GlobalRouter *groute) :
+IncrementalGRoute::IncrementalGRoute(GlobalRouter *groute,
+                                     odb::dbBlock *block) :
   groute_(groute),
-  capacities_(groute_->getCapacities())
+  capacities_(groute_->getCapacities()),
+  db_cbk_(groute)
+{
+  db_cbk_.addOwner(block);
+}
+
+void IncrementalGRoute::updateRoutes()
+{
+  groute_->updateDirtyRoutes(capacities_);
+}
+
+IncrementalGRoute::~IncrementalGRoute()
+{
+  db_cbk_.removeOwner();
+}
+
+void GlobalRouter::addDirtyNet(odb::dbNet* net)
+{
+  dirty_nets_.insert(net);
+}
+
+void GlobalRouter::removeDirtyNet(odb::dbNet* net)
+{
+  dirty_nets_.erase(net);
+}
+
+void GlobalRouter::updateDirtyRoutes(Capacities &capacities)
+{
+  // Fastroute barfs if there are no nets. It shouldn't. -cherry
+  if (!dirty_nets_.empty()) {
+    updateDirtyNets();
+    std::vector<Net*> dirty_nets = startFastRoute(min_routing_layer_, max_routing_layer_,
+                                                  NetType::Antenna);
+    fastroute_->setVerbose(0);
+    logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
+    if (logger_->debugCheck(GRT, "incr", 2)) {
+      for (auto net : dirty_nets_)
+        debugPrint(logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+    }
+    restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
+    removeDirtyNetsRouting();
+
+    NetRouteMap new_route
+      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+    mergeResults(new_route);
+    dirty_nets_.clear();
+  }
+}
+
+GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)
 {
 }
 
-void
-IncrementalGRoute::finish()
+void GRouteDbCbk::inDbPostMoveInst(odb::dbInst* inst)
 {
-  groute_->updateDirtyRoutes(capacities_);
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    odb::dbNet* db_net = iterm->getNet();
+    if (db_net != nullptr && !db_net->isSpecial())
+      grouter_->addDirtyNet(iterm->getNet());
+  }
+}
+
+void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
+{
+  grouter_->removeDirtyNet(net);
+  // This should delete grt::net but cannot because of the allocation
+  // in an array.
+}
+
+void GRouteDbCbk::inDbNetCreate(odb::dbNet*)
+{
+  // fix GlobalRouter::updateDirtyNets()
+}
+
+void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
+{
+  grouter_->addDirtyNet(iterm->getNet());
+}
+
+void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
+{
+  grouter_->addDirtyNet(iterm->getNet());
+}
+
+void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
+{
+  grouter_->addDirtyNet(bterm->getNet());
+}
+
+void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
+{
+  grouter_->addDirtyNet(bterm->getNet());
 }
 
 }  // namespace grt
