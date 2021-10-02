@@ -80,7 +80,7 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 
 void FlexDRConnectivityChecker::buildPin2epMap(
     const frNet* net,
-    const NetRoutObjs& netRouteObjs,
+    const NetRouteObjs& netRouteObjs,
     map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>&
         pin2epMap)
 {
@@ -119,7 +119,7 @@ void FlexDRConnectivityChecker::buildPin2epMap(
 }
 
 void FlexDRConnectivityChecker::initRouteObjs(const frNet* net,
-                                              NetRoutObjs& netRouteObjs)
+                                              NetRouteObjs& netRouteObjs)
 {
   for (auto& uPtr : net->getShapes()) {
     auto connFig = uPtr.get();
@@ -278,7 +278,7 @@ void FlexDRConnectivityChecker::nodeMap_pin(
 
 void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
-    const NetRoutObjs& netRouteObjs,
+    const NetRouteObjs& netRouteObjs,
     vector<frBlockObject*>& netPins,
     const map<frBlockObject*,
               set<pair<frPoint, frLayerNum>>,
@@ -292,17 +292,17 @@ void FlexDRConnectivityChecker::buildNodeMap(
 
 bool FlexDRConnectivityChecker::astar(
     const frNet* net,
-    vector<bool>& adjVisited,
+    vector<char>& adjVisited,
     vector<int>& adjPrevIdx,
     const map<pair<frPoint, frLayerNum>, set<int>>& nodeMap,
-    const NetRoutObjs& netRouteObjs,
-    const int& nNetRouteObjs,
-    const int& nNetObjs)
+    const NetRouteObjs& netRouteObjs,
+    const int nNetRouteObjs,
+    const int nNetObjs)
 {
   // a star search
   // node index, node visited
   vector<vector<int>> adjVec(nNetObjs, vector<int>());
-  vector<bool> onPathIdx(nNetObjs, false);
+  vector<char> onPathIdx(nNetObjs, false);
   adjVisited.clear();
   adjPrevIdx.clear();
   adjVisited.resize(nNetObjs, false);
@@ -312,9 +312,9 @@ bool FlexDRConnectivityChecker::astar(
     for (auto it1 = idxS.begin(); it1 != idxS.end(); it1++) {
       auto it2 = it1;
       it2++;
-      auto idx1 = *it1;
+      const auto idx1 = *it1;
       for (; it2 != idxS.end(); it2++) {
-        auto idx2 = *it2;
+        const auto idx2 = *it2;
         adjVec[idx1].push_back(idx2);
         adjVec[idx2].push_back(idx1);
       }
@@ -336,8 +336,6 @@ bool FlexDRConnectivityChecker::astar(
     }
   };
   for (int findNode = nNetRouteObjs; findNode < nNetObjs - 1; findNode++) {
-    // adjVisited = onPathIdx;
-    // cout <<"finished " <<findNode <<" nodes" <<endl;
     priority_queue<wf> pq;
     if (findNode == nNetRouteObjs) {
       // push only first pin into pq
@@ -345,7 +343,6 @@ bool FlexDRConnectivityChecker::astar(
     } else {
       // push every visited node into pq
       for (int i = 0; i < nNetObjs; i++) {
-        // if (adjVisited[i]) {
         if (onPathIdx[i]) {
           // penalize feedthrough in normal mode
           if (i >= nNetRouteObjs) {
@@ -386,7 +383,7 @@ bool FlexDRConnectivityChecker::astar(
     }
     adjVisited = onPathIdx;
   }
-  int pinVisited
+  const int pinVisited
       = count(adjVisited.begin() + nNetRouteObjs, adjVisited.end(), true);
   // true error when allowing feedthrough
   if (pinVisited != nNetObjs - nNetRouteObjs) {
@@ -399,9 +396,9 @@ bool FlexDRConnectivityChecker::astar(
 
 void FlexDRConnectivityChecker::finish(
     frNet* net,
-    NetRoutObjs& netRouteObjs,
+    NetRouteObjs& netRouteObjs,
     const vector<frBlockObject*>& netPins,
-    const vector<bool>& adjVisited,
+    const vector<char>& adjVisited,
     const int gCnt,
     const int nCnt,
     map<pair<frPoint, frLayerNum>, set<int>>& nodeMap)
@@ -652,7 +649,7 @@ void FlexDRConnectivityChecker::finish(
 
 void FlexDRConnectivityChecker::organizePathSegsByLayerAndTrack(
     const frNet* net,
-    const NetRoutObjs& netRouteObjs,
+    const NetRouteObjs& netRouteObjs,
     PathSegsByLayerAndTrack& horzPathSegs,
     PathSegsByLayerAndTrack& vertPathSegs)
 {
@@ -676,7 +673,7 @@ void FlexDRConnectivityChecker::organizePathSegsByLayerAndTrack(
 }
 
 void FlexDRConnectivityChecker::findSegmentOverlaps(
-    const NetRoutObjs& netRouteObjs,
+    const NetRouteObjs& netRouteObjs,
     const PathSegsByLayerAndTrack& horzPathSegs,
     const PathSegsByLayerAndTrack& vertPathSegs,
     PathSegsByLayerAndTrackId& horzVictims,
@@ -715,7 +712,7 @@ void FlexDRConnectivityChecker::findSegmentOverlaps(
 
 void FlexDRConnectivityChecker::mergeSegmentOverlaps(
     frNet* net,
-    NetRoutObjs& netRouteObjs,
+    NetRouteObjs& netRouteObjs,
     const PathSegsByLayerAndTrack& horzPathSegs,
     const PathSegsByLayerAndTrack& vertPathSegs,
     const PathSegsByLayerAndTrackId& horzVictims,
@@ -752,7 +749,7 @@ void FlexDRConnectivityChecker::mergeSegmentOverlaps(
   }
 }
 
-void FlexDRConnectivityChecker::merge_perform(const NetRoutObjs& netRouteObjs,
+void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
                                               const vector<int>& indices,
                                               vector<int>& victims,
                                               vector<Span>& newSegSpans,
@@ -829,7 +826,6 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
   auto regionQuery = getRegionQuery();
   // add segments from overlapped segments
   int cnt = 0;
-  frPathSeg *last, *curr;
   for (auto& newSegSpan : newSegSpans) {
     auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
@@ -844,21 +840,21 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     }
     victimPathSeg->setPoints(bp, ep);
     cnt++;
-    last = nullptr;
+    frEndStyle end_style = victimPathSeg->getEndStyle();
+    frUInt4 end_ext = victimPathSeg->getEndExt();
     for (; cnt < (int) victims.size(); cnt++) {
-      curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
+      frPathSeg* curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
       if (curr->high() <= newSegSpan.hi) {
-        last = curr;
-        regionQuery->removeDRObj(curr);
+        end_style = curr->getEndStyle();
+        end_ext = curr->getEndExt();
+        regionQuery->removeDRObj(curr);  // deallocates curr
         net->removeShape(curr);
         netRouteObjs[victims[cnt]] = nullptr;
       } else {
         break;
       }
     }
-    if (last) {
-      victimPathSeg->setEndStyle(last->getEndStyle(), last->getEndExt());
-    }
+    victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
   }
 }
@@ -882,11 +878,13 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
 // feedthrough and loop check
 void FlexDRConnectivityChecker::check(int iter)
 {
-  ProfileTask profile("DR:checkConnectivity");
+  ProfileTask profile("checkConnectivity");
   bool isWrong = false;
 
   int batchSize = 1 << 17;  // 128k
   vector<vector<frNet*>> batches(1);
+  batches.reserve(32);
+  batches.back().reserve(batchSize);
   for (auto& uPtr : design_->getTopBlock()->getNets()) {
     auto net = uPtr.get();
     if (!net->isModified()) {
@@ -897,6 +895,7 @@ void FlexDRConnectivityChecker::check(int iter)
       batches.back().push_back(net);
     } else {
       batches.push_back(vector<frNet*>());
+      batches.back().reserve(batchSize);
       batches.back().push_back(net);
     }
   }
@@ -905,12 +904,12 @@ void FlexDRConnectivityChecker::check(int iter)
   }
 
   const int numLayers = getTech()->getLayers().size();
-  // omp_set_num_threads(MAX_THREADS);
-  omp_set_num_threads(1);
+  omp_set_num_threads(MAX_THREADS);
   for (auto& batch : batches) {
+    ProfileTask profile("batch");
     // prefix a = all batch
     // net->figs
-    vector<NetRoutObjs> aNetRouteObjs(batchSize);
+    vector<NetRouteObjs> aNetRouteObjs(batchSize);
     // net->layer->track->indices of RouteObj
     vector<PathSegsByLayerAndTrack> aHorzPathSegs(
         batchSize, PathSegsByLayerAndTrack(numLayers));
@@ -927,10 +926,11 @@ void FlexDRConnectivityChecker::check(int iter)
     vector<SpansByLayerAndTrackId> aVertNewSegSpans(
         batchSize, SpansByLayerAndTrackId(numLayers));
 
+    ProfileTask init_parallel("init-parallel");
 // parallel
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
-      const auto& net = batch[i];
+      const auto net = batch[i];
       auto& initNetRouteObjs = aNetRouteObjs[i];
       auto& horzPathSegs = aHorzPathSegs[i];
       auto& vertPathSegs = aVertPathSegs[i];
@@ -950,10 +950,12 @@ void FlexDRConnectivityChecker::check(int iter)
                           horzNewSegSpans,
                           vertNewSegSpans);
     }
+    init_parallel.done();
+    ProfileTask merge_serial("merge-serial");
 
     // sequential - writes to the db
     for (int i = 0; i < (int) batch.size(); i++) {
-      auto& net = batch[i];
+      auto net = batch[i];
       auto& initNetRouteObjs = aNetRouteObjs[i];
       const auto& horzPathSegs = aHorzPathSegs[i];
       const auto& vertPathSegs = aVertPathSegs[i];
@@ -970,21 +972,23 @@ void FlexDRConnectivityChecker::check(int iter)
                            horzNewSegSpans,
                            vertNewSegSpans);
     }
-
     // net->term/instTerm->pt_layer
     vector<
         map<frBlockObject*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>>
         aPin2epMap(batchSize);
     vector<vector<frBlockObject*>> aNetPins(batchSize);
     vector<map<pair<frPoint, frLayerNum>, set<int>>> aNodeMap(batchSize);
-    vector<vector<bool>> aAdjVisited(batchSize);
+    vector<vector<char>> aAdjVisited(batchSize);
     vector<vector<int>> aAdjPrevIdx(batchSize);
-    vector<bool> status(batchSize, false);
+    vector<char> status(batchSize, false);
+
+    merge_serial.done();
+    ProfileTask astar_parallel("astar-parallel");
 
 // parallel
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
-      auto& net = batch[i];
+      const auto net = batch[i];
       auto& netRouteObjs = aNetRouteObjs[i];
       auto& pin2epMap = aPin2epMap[i];
       auto& netPins = aNetPins[i];
@@ -1006,17 +1010,19 @@ void FlexDRConnectivityChecker::check(int iter)
                         nNetRouteObjs,
                         nNetObjs);
     }
+    astar_parallel.done();
+    ProfileTask finish_serial("finish-serial");
 
     // sequential
     for (int i = 0; i < (int) batch.size(); i++) {
-      auto& net = batch[i];
+      auto net = batch[i];
       auto& netRouteObjs = aNetRouteObjs[i];
-      auto& netPins = aNetPins[i];
+      const auto& netPins = aNetPins[i];
       auto& nodeMap = aNodeMap[i];
-      auto& adjVisited = aAdjVisited[i];
+      const auto& adjVisited = aAdjVisited[i];
 
-      int gCnt = (int) netRouteObjs.size();
-      int nCnt = (int) netRouteObjs.size() + (int) netPins.size();
+      const int gCnt = (int) netRouteObjs.size();
+      const int nCnt = (int) netRouteObjs.size() + (int) netPins.size();
 
       if (!status[i]) {
         cout << "Error: checkConnectivity break, net " << net->getName() << endl

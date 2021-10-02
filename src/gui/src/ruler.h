@@ -56,6 +56,8 @@ class Ruler
   const std::string getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
 
+  std::string getTclCommand() const;
+
   bool fuzzyIntersection(const odb::Point& pt, int margin) const;
 
   bool operator ==(const Ruler& other) const;

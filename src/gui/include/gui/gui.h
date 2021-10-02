@@ -42,10 +42,16 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <typeindex>
 #include <typeinfo>
 #include <variant>
+#include <unordered_map>
 
 #include "odb/db.h"
+
+namespace utl {
+class Logger;
+} // namespace utl
 
 namespace gui {
 class Painter;
@@ -367,6 +373,33 @@ class Renderer
 
   // Used to trigger a draw
   void redraw();
+
+  // If group_name is empty, no display group is created and all items will be added
+  // at the top level of the display control list
+  // else, a group is created and items added under that list
+  virtual const char* getDisplayControlGroupName()
+  {
+    return "";
+  }
+
+  // Used to register display controls for this renderer.
+  // DisplayControls is a map with the name of the control and the initial setting for the control
+  using DisplayControls = std::map<std::string, bool>;
+  const DisplayControls& getDisplayControls()
+  {
+    return controls_;
+  }
+
+  // Used to check the value of the display control
+  bool checkDisplayControl(const std::string& name);
+
+ protected:
+  // Adds a display control
+  void addDisplayControl(const std::string& name, bool initial_state = false);
+
+ private:
+  // Holds map of display controls and callback function
+  DisplayControls controls_;
 };
 
 // This is the API for the rest of the program to interact with the
@@ -436,11 +469,17 @@ class Gui
   void setResolution(double pixels_per_dbu);
 
   // Save layout to an image file
-  void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region = odb::Rect(),
+                 double dbu_per_pixel = 0,
+                 const std::map<std::string, bool>& display_settings = {});
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  // Get the visibility/selectability for a control in the 'Display Control' panel.
+  bool checkDisplayControlsVisible(const std::string& name);
+  bool checkDisplayControlsSelectable(const std::string& name);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
@@ -469,14 +508,6 @@ class Gui
   // Show a message in the status bar
   void status(const std::string& message);
 
-  // Add a custom visibilty control to the 'Display Control' panel.
-  // Useful for debug renderers to control their display.
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-
-  // Get the visibility for a custom control in the 'Display Control' panel.
-  bool checkCustomVisibilityControl(const std::string& name);
-
   const std::set<Renderer*>& renderers() { return renderers_; }
 
   // The GUI listening for callbacks on read_def or read_db but
@@ -486,25 +517,59 @@ class Gui
 
   void fit();
 
+  // initialize gui
+  void init();
+
+  // Called to hide the gui and return to tcl command line
+  void hideGui();
+
+  // Called to show the gui and return to tcl command line
+  void showGui(const std::string& cmds = "", bool interactive = true);
+
+  // set the system logger
+  void setLogger(utl::Logger* logger);
+
+  // check if tcl should take over after closing gui
+  bool isContinueAfterClose() { return continue_after_close_; }
+  // clear continue after close, needed to reset before GUI starts
+  void clearContinueAfterClose() { continue_after_close_ = false; }
+
+  // accessors for to add and remove commands needed to restore the state of the gui
+  const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
+  void addRestoreStateCommands(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }
+  void clearRestoreStateCommands() { tcl_state_commands_.clear(); }
+
   template <class T>
   void registerDescriptor(const Descriptor* descriptor)
   {
     registerDescriptor(typeid(T), descriptor);
   }
 
-  // Will return nullptr if openroad was invoked without -gui
+  // returns the Gui singleton
   static Gui* get();
 
+  // Will return true if the GUI is active, false otherwise
+  static bool enabled();
+
  private:
-  Gui() = default;
+  Gui() : continue_after_close_(false) {};
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
+
+  // flag to indicate if tcl should take over after gui closes
+  bool continue_after_close_;
+
+  // Maps types to descriptors
+  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
+
+  // tcl commands needed to restore state
+  std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
   static Gui* singleton_;
 };
 
 // The main entry point
-int startGui(int argc, char* argv[]);
+int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
 
 }  // namespace gui
