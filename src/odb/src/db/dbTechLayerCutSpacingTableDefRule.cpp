@@ -933,9 +933,8 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
     if ((class1 == cutClass1 || class1 == "ALL")
         && (class2 == cutClass2 || class2 == "ALL"))
       return true;
-    class1.swap(class2);
-    if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+    if ((class1 == cutClass2 || class1 == "ALL")
+        && (class2 == cutClass1 || class2 == "ALL"))
       return true;
   }
   return false;
@@ -978,9 +977,8 @@ int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
     if ((class1 == cutClass1 || class1 == "ALL")
         && (class2 == cutClass2 || class2 == "ALL"))
       return prl;
-    class1.swap(class2);
-    if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+    if ((class1 == cutClass2 || class1 == "ALL")
+        && (class2 == cutClass1 || class2 == "ALL"))
       return prl;
   }
   return obj->prl_;
@@ -995,9 +993,8 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdge(std::string cutClass1,
     if ((class1 == cutClass1 || class1 == "ALL")
         && (class2 == cutClass2 || class2 == "ALL"))
       return true;
-    class1.swap(class2);
-    if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+    if ((class1 == cutClass2 || class1 == "ALL")
+        && (class2 == cutClass1 || class2 == "ALL"))
       return true;
   }
   return false;
