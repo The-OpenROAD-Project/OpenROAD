@@ -94,7 +94,7 @@ void Graphics::status(const std::string& message)
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace mpl

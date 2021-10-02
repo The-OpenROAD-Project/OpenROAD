@@ -47,6 +47,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <functional>
+#include <map>
 #include <vector>
 
 #include "congestionSetupDialog.h"
@@ -148,6 +149,15 @@ class DisplayControls : public QDockWidget, public Options
   void writeSettings(QSettings* settings);
 
   void setControlByPath(const std::string& path, bool is_visible, Qt::CheckState value);
+  bool checkControlByPath(const std::string& path, bool is_visible);
+
+  void registerRenderer(Renderer* renderer);
+  void unregisterRenderer(Renderer* renderer);
+
+  void save();
+  void restore();
+
+  void restoreTclCommands(std::vector<std::string>& cmds);
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
@@ -177,14 +187,6 @@ class DisplayControls : public QDockWidget, public Options
   QFont rulerFont() override;
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
-
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-  bool checkCustomVisibilityControl(const std::string& name);
-
-  bool isGridGraphVisible();
-  bool areRouteGuidesVisible();
-  bool areRoutingObjsVisible();
 
   bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
@@ -274,9 +276,13 @@ class DisplayControls : public QDockWidget, public Options
 
   void techInit();
 
-  QStandardItem* findControlInItem(const QStandardItem* parent,
-                                   const std::string& path,
-                                   Column column);
+  void collectControls(const QStandardItem* parent,
+                       Column column,
+                       std::map<std::string, QStandardItem*>& items,
+                       const std::string& prefix = "");
+  void findControlsInItems(const std::string& path,
+                           Column column,
+                           std::vector<QStandardItem*>& items);
 
   QStandardItem* makeParentItem(ModelRow& row,
                                 const QString& text,
@@ -301,6 +307,8 @@ class DisplayControls : public QDockWidget, public Options
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+
+  void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
   QTreeView* view_;
   QStandardItemModel* model_;
@@ -328,7 +336,8 @@ class DisplayControls : public QDockWidget, public Options
   MiscModels misc_;
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
-  std::map<std::string, ModelRow> custom_controls_;
+  std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

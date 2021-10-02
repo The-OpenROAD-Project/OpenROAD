@@ -405,6 +405,13 @@ LayoutViewer::LayoutViewer(
   addMenuAndActions();
 }
 
+LayoutViewer::~LayoutViewer()
+{
+  if (getBlock() != nullptr) {
+    removeOwner(); // unregister as a callback object
+  }
+}
+
 void LayoutViewer::setDb(dbDatabase* db)
 {
   if (db_ != db) {
@@ -2365,7 +2372,7 @@ void LayoutViewer::viewportUpdated()
   }
 }
 
-void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
+void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double dbu_per_pixel)
 {
   dbBlock* block = getBlock();
   if (block == nullptr) {
@@ -2406,6 +2413,11 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
     logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
   }
 
+  const qreal old_pixels_per_dbu = pixels_per_dbu_;
+  if (dbu_per_pixel != 0) {
+    pixels_per_dbu_ = 1.0 / dbu_per_pixel;
+  }
+
   QRegion save_region;
   if (region.dx() == 0 || region.dy() == 0) {
     // default to just that is currently visible
@@ -2433,6 +2445,8 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region)
   } else {
     logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
   }
+
+  pixels_per_dbu_ = old_pixels_per_dbu;
 }
 
 void LayoutViewer::addMenuAndActions()
@@ -2548,6 +2562,18 @@ void LayoutViewer::addMenuAndActions()
     Gui::get()->clearHighlights(-1);
     Gui::get()->clearRulers();
   });
+}
+
+void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
+{
+  cmds.push_back(fmt::format("gui::set_resolution {}", 1.0 / pixels_per_dbu_));
+
+  odb::dbBlock* block = getBlock();
+  if (block != nullptr) {
+    double dbu_per_micron = block->getDbUnitsPerMicron();
+
+    cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
+  }
 }
 
 ////// LayoutScroll ///////

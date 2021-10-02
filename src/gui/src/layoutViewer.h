@@ -114,11 +114,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
+  ~LayoutViewer();
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
+
+  void restoreTclCommands(std::vector<std::string>& cmds);
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -127,7 +130,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
   // save image of the layout
-  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
+  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect(), double dbu_per_pixel = 0);
 
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;

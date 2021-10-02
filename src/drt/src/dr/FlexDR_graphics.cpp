@@ -262,17 +262,22 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     }
   }
 
-  gui_->addCustomVisibilityControl(graph_edges_visible_);
-  gui_->addCustomVisibilityControl(grid_cost_edges_visible_);
-  gui_->addCustomVisibilityControl(blocked_edges_visible_);
-  gui_->addCustomVisibilityControl(route_shape_cost_visible_);
-  gui_->addCustomVisibilityControl(marker_cost_visible_);
-  gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
-  gui_->addCustomVisibilityControl(route_guides_visible_, true);
-  gui_->addCustomVisibilityControl(routing_objs_visible_, true);
-  gui_->addCustomVisibilityControl(maze_search_visible_, true);
+  addDisplayControl(graph_edges_visible_);
+  addDisplayControl(grid_cost_edges_visible_);
+  addDisplayControl(blocked_edges_visible_);
+  addDisplayControl(route_shape_cost_visible_);
+  addDisplayControl(marker_cost_visible_);
+  addDisplayControl(fixed_shape_cost_visible_);
+  addDisplayControl(route_guides_visible_, true);
+  addDisplayControl(routing_objs_visible_, true);
+  addDisplayControl(maze_search_visible_, true);
 
   gui_->registerRenderer(this);
+}
+
+const char* FlexDRGraphics::getDisplayControlGroupName()
+{
+  return "FlexDR";
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
@@ -288,7 +293,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
+  if (checkDisplayControl(routing_objs_visible_)) {
     frBox box;
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
@@ -307,7 +312,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (net_ && gui_->checkCustomVisibilityControl(route_guides_visible_)) {
+  if (net_ && checkDisplayControl(route_guides_visible_)) {
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -319,7 +324,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
   painter.setPen(layer, /* cosmetic */ true);
-  if (gui_->checkCustomVisibilityControl(maze_search_visible_) &&
+  if (checkDisplayControl(maze_search_visible_) &&
         !points_by_layer_.empty()) {
     for (frPoint& pt : points_by_layer_[layerNum]) {
       painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
@@ -328,17 +333,17 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
   // Draw graphs
   const bool draw_drc
-      = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
+      = checkDisplayControl(route_shape_cost_visible_);
   const bool draw_marker
-      = gui_->checkCustomVisibilityControl(marker_cost_visible_);
+      = checkDisplayControl(marker_cost_visible_);
   const bool draw_shape
-      = gui_->checkCustomVisibilityControl(fixed_shape_cost_visible_);
+      = checkDisplayControl(fixed_shape_cost_visible_);
   const bool draw_edges
-      = gui_->checkCustomVisibilityControl(graph_edges_visible_);
+      = checkDisplayControl(graph_edges_visible_);
   const bool draw_gCostEdges
-      = gui_->checkCustomVisibilityControl(grid_cost_edges_visible_);
+      = checkDisplayControl(grid_cost_edges_visible_);
   const bool draw_blockedEdges
-      = gui_->checkCustomVisibilityControl(blocked_edges_visible_);
+      = checkDisplayControl(blocked_edges_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
       && (draw_edges || draw_drc || draw_marker || draw_shape ||
           draw_gCostEdges || draw_blockedEdges)) {
@@ -761,7 +766,7 @@ void FlexDRGraphics::status(const std::string& message)
 /* static */
 bool FlexDRGraphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 /* static */

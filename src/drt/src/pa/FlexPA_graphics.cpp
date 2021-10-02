@@ -276,7 +276,7 @@ void FlexPAGraphics::status(const std::string& message)
 /* static */
 bool FlexPAGraphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace fr

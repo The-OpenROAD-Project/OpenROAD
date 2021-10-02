@@ -514,7 +514,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
     instIds[masterName] = (instIds[masterName]) ? instIds[masterName] + 1 : 1;
     std::string instName
-        = masterName + "_" + std::to_string(call_id_) + std::to_string(instIds[masterName]);
+        = masterName + "_" + std::to_string(call_id_) + "_" + std::to_string(instIds[masterName]);
     auto newInst = odb::dbInst::create(block, master, instName.c_str());
 
     if (newInst == NULL) {

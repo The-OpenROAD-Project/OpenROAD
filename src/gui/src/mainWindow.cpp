@@ -35,6 +35,7 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QSettings>
 #include <QStatusBar>
 #include <QToolButton>
@@ -42,6 +43,7 @@
 #include <QWidgetAction>
 #include <map>
 #include <vector>
+#include <QDebug>
 
 #include "displayControls.h"
 #include "inspector.h"
@@ -74,7 +76,7 @@ MainWindow::MainWindow(QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
-          [this](const std::any& object) { return makeSelected(object); },
+          [](const std::any& object) { return Gui::get()->makeSelected(object); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -252,6 +254,7 @@ MainWindow::MainWindow(QWidget* parent)
   settings.beginGroup("main");
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
+  hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -286,6 +289,10 @@ odb::dbBlock* MainWindow::getBlock()
 
 void MainWindow::createActions()
 {
+  hide_ = new QAction("Hide GUI", this);
+  hide_option_ = new QAction("Check on exit", this);
+  hide_option_->setCheckable(true);
+  hide_option_->setChecked(true);
   exit_ = new QAction("Exit", this);
 
   fit_ = new QAction("Fit", this);
@@ -318,6 +325,7 @@ void MainWindow::createActions()
           controls_,
           SLOT(showCongestionSetup()));
 
+  connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
@@ -333,6 +341,7 @@ void MainWindow::createActions()
 void MainWindow::createMenus()
 {
   file_menu_ = menuBar()->addMenu("&File");
+  file_menu_->addAction(hide_);
   file_menu_->addAction(exit_);
 
   view_menu_ = menuBar()->addMenu("&View");
@@ -353,6 +362,9 @@ void MainWindow::createMenus()
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
+
+  auto option_menu = menuBar()->addMenu("&Options");
+  option_menu->addAction(hide_option_);
 
   menuBar()->addAction(help_);
 }
@@ -391,6 +403,12 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
   }
 
   auto action = view_tool_bar_->addAction(text);
+  // save the command so it can be restored later
+  QString cmd = "gui::create_toolbar_button ";
+  cmd += "{" + QString::fromStdString(name) + "} {" + text + "} ";
+  cmd += "{" + script + "} ";
+  cmd += echo ? "true" : "false";
+  action->setData(cmd);
 
   connect(action, &QAction::triggered, [script, echo, this]() {
     script_->executeCommand(script, echo);
@@ -495,7 +513,7 @@ void MainWindow::deleteRuler(const std::string& name)
   });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
-    auto remove_selected = makeSelected(ruler_find->get());
+    auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
     selected_.erase(remove_selected);
     rulers_.erase(ruler_find);
     emit rulersChanged();
@@ -646,7 +664,7 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
     if (sel_obj.isNet()) {
       auto net_obj = std::any_cast<odb::dbNet*>(sel_obj.getObject());
       for (auto inst_term : net_obj->getITerms()) {
-        connected_insts.insert(makeSelected(inst_term));
+        connected_insts.insert(Gui::get()->makeSelected(inst_term));
       }
     }
   }
@@ -676,11 +694,11 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(makeSelected(inst_term->getNet()));
+          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
                 || inst_term_dir == odb::dbIoType::INOUT))
-          connected_nets.insert(makeSelected(inst_term->getNet(), inst_term));
+          connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet(), inst_term));
       }
     }
   }
@@ -698,6 +716,7 @@ void MainWindow::saveSettings()
   settings.beginGroup("main");
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
+  settings.setValue("check_exit", hide_option_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -744,26 +763,6 @@ void MainWindow::fit()
   fit_->trigger();
 }
 
-Selected MainWindow::makeSelected(std::any object, void* additional_data)
-{
-  if (!object.has_value()) {
-    return Selected();
-  }
-
-  auto it = descriptors_.find(object.type());
-  if (it != descriptors_.end()) {
-    return it->second->makeSelected(object, additional_data);
-  } else {
-    return Selected();  // FIXME: null descriptor
-  }
-}
-
-void MainWindow::registerDescriptor(const std::type_info& type,
-                                    const Descriptor* descriptor)
-{
-  descriptors_[type] = descriptor;
-}
-
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
   if (event->key() == Qt::Key_Escape) {
@@ -774,6 +773,69 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
     clearRulers();
   }
   QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+  if (!hide_option_->isChecked()) {
+    // no check required, just go ahead and exit
+    event->accept();
+    return;
+  }
+
+  // Ask if user wants to exit or return to command line.
+  QMessageBox exit_check;
+  exit_check.setIcon(QMessageBox::Question);
+  exit_check.setWindowTitle(windowTitle());
+  exit_check.setText("Are you sure you want to exit?");
+  QPushButton* exit_button = exit_check.addButton("Exit", QMessageBox::AcceptRole);
+  QPushButton* cancel_button = exit_check.addButton(QMessageBox::Cancel);
+  QPushButton* hide_button = exit_check.addButton("Hide GUI", QMessageBox::ActionRole);
+
+  // Colorize exit and hide buttons
+  exit_button->setStyleSheet("background-color: darkred; color: white;");
+  hide_button->setStyleSheet("background-color: darkgreen; color: white;");
+
+  // default option is to cancel
+  exit_check.setDefaultButton(cancel_button);
+
+  exit_check.exec();
+
+  if (exit_check.clickedButton() == exit_button) {
+    // exit selected so go ahead and close
+    event->accept();
+  } else if (exit_check.clickedButton() == hide_button) {
+    // hide selected so process as hide
+    emit hide();
+    event->accept();
+  } else {
+    // cancel selected so ignore event
+    event->ignore();
+  }
+}
+
+const std::vector<std::string> MainWindow::getRestoreTclCommands()
+{
+  std::vector<std::string> cmds;
+  // Save rulers
+  for (const auto& ruler : rulers_) {
+    cmds.push_back(ruler->getTclCommand());
+  }
+  // Save buttons
+  for (const auto& action : view_tool_bar_->actions()) {
+    // iterate over toolbar actions to get the correct order
+    QVariant cmd = action->data();
+    if (cmd.isValid()) {
+      cmds.push_back(cmd.toString().toStdString());
+    }
+  }
+  // save display settings
+  controls_->restoreTclCommands(cmds);
+
+  // save layout view
+  viewer_->restoreTclCommands(cmds);
+
+  return cmds;
 }
 
 }  // namespace gui

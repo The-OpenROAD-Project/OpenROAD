@@ -36,6 +36,7 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
+#include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
 #include <vector>
@@ -284,6 +285,13 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(congestionSetupChanged()),
           this,
           SIGNAL(changed()));
+
+  // register renderers
+  if (gui::Gui::get() != nullptr) {
+    for (auto renderer : gui::Gui::get()->renderers()) {
+      registerRenderer(renderer);
+    }
+  }
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
@@ -378,6 +386,8 @@ void DisplayControls::readSettings(QSettings* settings)
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
 
+  congestion_dialog_->readSettings(settings);
+
   settings->endGroup();
 }
 
@@ -440,6 +450,8 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("instance_name_color", instance_name_color_);
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
+
+  congestion_dialog_->writeSettings(settings);
 
   settings->endGroup();
 }
@@ -639,39 +651,113 @@ void DisplayControls::setControlByPath(const std::string& path,
                                        bool is_visible,
                                        Qt::CheckState value)
 {
-  QStandardItem* item = findControlInItem(model_->invisibleRootItem(),
-                                          path,
-                                          is_visible ? Visible : Selectable);
+  std::vector<QStandardItem*> items;
+  findControlsInItems(path,
+                      is_visible ? Visible : Selectable,
+                      items);
 
-  if (item == nullptr) {
+  if (items.empty()) {
     logger_->error(utl::GUI,
                    13,
                    "Unable to find {} display control at {}.",
                    is_visible ? "visible" : "select",
                    path);
   } else {
-    item->setCheckState(value);
+    for (auto* item : items) {
+      item->setCheckState(value);
+    }
   }
 }
 
-QStandardItem* DisplayControls::findControlInItem(const QStandardItem* parent,
-                                                  const std::string& name,
-                                                  Column column)
+// path is separated by "/", so setting Standard Cells, would be Instances/StdCells
+bool DisplayControls::checkControlByPath(const std::string& path,
+                                         bool is_visible)
 {
-  auto next_level = name.find_first_of("/");
-  bool at_end_of_path = next_level == std::string::npos;
-  const QString item_name = name.substr(0, next_level).c_str();
+  std::vector<QStandardItem*> items;
+  findControlsInItems(path,
+                      is_visible ? Visible : Selectable,
+                      items);
+
+  if (items.empty()) {
+    logger_->warn(utl::GUI,
+                  14,
+                  "Unable to find {} display control at {}.",
+                  is_visible ? "visible" : "select",
+                  path);
+    // assume false when item cannot be found.
+    return false;
+  }
+
+  if (items.size() == 1) {
+    return items[0]->checkState() == Qt::Checked;
+  } else {
+    logger_->warn(utl::GUI,
+                  34,
+                  "Found {} controls matching {} at {}.",
+                  items.size(),
+                  path,
+                  is_visible ? "visible" : "select");
+    return false;
+  }
+}
+
+void DisplayControls::collectControls(const QStandardItem* parent,
+                                      Column column,
+                                      std::map<std::string, QStandardItem*>& items,
+                                      const std::string& prefix)
+{
   for (int i = 0; i < parent->rowCount(); i++) {
     auto child = parent->child(i, Name);
-    if (child != nullptr && child->text().compare(item_name, Qt::CaseInsensitive) == 0) {
-      if (at_end_of_path) {
-        return parent->child(i, column);
+    if (child != nullptr) {
+      if (child->hasChildren()) {
+        collectControls(child, column, items, prefix + child->text().toStdString() + "/");
       } else {
-        return findControlInItem(child, name.substr(next_level+1), column);
+        auto* item = parent->child(i, column);
+        if (item != nullptr) {
+          items[prefix + child->text().toStdString()] = item;
+        }
       }
     }
   }
-  return nullptr;
+}
+
+void DisplayControls::findControlsInItems(const std::string& path,
+                                          Column column,
+                                          std::vector<QStandardItem*>& items)
+{
+  std::map<std::string, QStandardItem*> controls;
+  collectControls(model_->invisibleRootItem(), column, controls);
+
+  const QRegExp path_compare(QString::fromStdString(path), Qt::CaseInsensitive, QRegExp::Wildcard);
+  for (auto& [item_path, item] : controls) {
+    if (path_compare.exactMatch(QString::fromStdString(item_path))) {
+      items.push_back(item);
+    }
+  }
+}
+
+void DisplayControls::save()
+{
+  saved_state_.clear();
+
+  std::map<std::string, QStandardItem*> controls_visible;
+  std::map<std::string, QStandardItem*> controls_selectable;
+  collectControls(model_->invisibleRootItem(), Visible, controls_visible);
+  collectControls(model_->invisibleRootItem(), Selectable, controls_selectable);
+
+  for (auto& [control_name, control] : controls_visible) {
+    saved_state_[control] = control->checkState();
+  }
+  for (auto& [control_name, control] : controls_selectable) {
+    saved_state_[control] = control->checkState();
+  }
+}
+
+void DisplayControls::restore()
+{
+  for (auto& [control, state] : saved_state_) {
+    control->setCheckState(state);
+  }
 }
 
 void DisplayControls::setDb(odb::dbDatabase* db)
@@ -683,6 +769,10 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
   dbTech* tech = db->getTech();
   if (!tech) {
+    return;
+  }
+
+  if (tech_inited_) {
     return;
   }
 
@@ -1056,20 +1146,64 @@ QFont DisplayControls::pinMarkersFont()
   return pin_markers_font_;
 }
 
-void DisplayControls::addCustomVisibilityControl(const std::string& name,
-                                                 bool initially_visible)
+void DisplayControls::registerRenderer(Renderer* renderer)
 {
-  auto q_name = QString::fromStdString(name);
-  auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
-  makeParentItem(custom_controls_[name],
-                 q_name,
-                 model_,
-                 checked);
+  if (custom_controls_.count(renderer) != 0) {
+    // already registered
+    return;
+  }
+
+  const std::string& group_name = renderer->getDisplayControlGroupName();
+  const auto& items = renderer->getDisplayControls();
+
+  if (items.empty()) {
+    return;
+  }
+
+  // build controls
+  std::map<std::string, QStandardItem*> control_items;
+  std::vector<ModelRow>& rows = custom_controls_[renderer];
+  if (group_name.empty()) {
+    for (const auto& [name, initial_value] : items) {
+      ModelRow row;
+      makeParentItem(row,
+                     QString::fromStdString(name),
+                     model_,
+                     initial_value ? Qt::Checked : Qt::Unchecked);
+      rows.push_back(row);
+      control_items[name] = row.visible;
+    }
+  } else {
+    ModelRow parent_row;
+    makeParentItem(parent_row,
+                   QString::fromStdString(group_name),
+                   model_,
+                   Qt::Checked);
+    rows.push_back(parent_row);
+    for (const auto& [name, initial_value] : items) {
+      ModelRow row;
+      makeLeafItem(row,
+                   QString::fromStdString(name),
+                   parent_row.name,
+                   initial_value ? Qt::Checked : Qt::Unchecked);
+      rows.push_back(row);
+      control_items[name] = row.visible;
+    }
+    toggleParent(parent_row);
+  }
 }
 
-bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
+void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
-  return custom_controls_[name].visible->checkState() == Qt::Checked;
+  const auto& rows = custom_controls_[renderer];
+
+  for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
+    // remove from Display controls
+    auto index = model_->indexFromItem(itr->name);
+    model_->removeRow(index.row(), index.parent());
+  }
+
+  custom_controls_.erase(renderer);
 }
 
 bool DisplayControls::showHorizontalCongestion() const
@@ -1167,6 +1301,35 @@ void DisplayControls::techInit()
 void DisplayControls::designLoaded(odb::dbBlock* block)
 {
   setDb(block->getDb());
+}
+
+void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)
+{
+  buildRestoreTclCommands(cmds, model_->invisibleRootItem());
+}
+
+void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix)
+{
+  const std::string visible_restore = "gui::set_display_controls \"{}\" visible {}";
+  const std::string selectable_restore = "gui::set_display_controls \"{}\" selectable {}";
+
+  // loop over settings and save
+  for (int r = 0; r < parent->rowCount(); r++) {
+    QStandardItem* item = parent->child(r, 0);
+    const std::string name = prefix + item->text().toStdString();
+
+    if (item->hasChildren()) {
+      buildRestoreTclCommands(cmds, item, name + "/");
+    } else {
+      bool visible = parent->child(r, Visible)->checkState() == Qt::Checked;
+      cmds.push_back(fmt::format(visible_restore, name, visible));
+      auto* selectable = parent->child(r, Selectable);
+      if (selectable != nullptr) {
+        bool select = selectable->checkState() == Qt::Checked;
+        cmds.push_back(fmt::format(selectable_restore, name, select));
+      }
+    }
+  }
 }
 
 }  // namespace gui

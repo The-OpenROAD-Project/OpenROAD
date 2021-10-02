@@ -3486,7 +3486,7 @@ class GrouteRenderer : public gui::Renderer
 // Highlight guide in the gui.
 void GlobalRouter::highlightRoute(const odb::dbNet* net)
 {
-  if (gui_) {
+  if (gui::Gui::enabled()) {
     if (groute_renderer_ == nullptr) {
       groute_renderer_ = new GrouteRenderer(this, db_->getTech());
       gui_->registerRenderer(groute_renderer_);

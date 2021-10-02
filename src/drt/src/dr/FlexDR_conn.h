@@ -49,8 +49,8 @@ class FlexDRConnectivityChecker
   void check(int iter = -1);
 
  private:
-  using NetRoutObjs = vector<frConnFig*>;
-  // layer -> track -> indices of NetRoutObjs
+  using NetRouteObjs = vector<frConnFig*>;
+  // layer -> track -> indices of NetRouteObjs
   using PathSegsByLayerAndTrack = vector<map<frCoord, vector<int>>>;
   // The track id matches the map iteration order above
   using PathSegsByLayerAndTrackId = vector<vector<vector<int>>>;
@@ -65,9 +65,9 @@ class FlexDRConnectivityChecker
   };
   using SpansByLayerAndTrackId = vector<vector<vector<Span>>>;
 
-  void initRouteObjs(const frNet* net, NetRoutObjs& netRouteObjs);
+  void initRouteObjs(const frNet* net, NetRouteObjs& netRouteObjs);
   void buildPin2epMap(const frNet* net,
-                      const NetRoutObjs& netRouteObjs,
+                      const NetRouteObjs& netRouteObjs,
                       std::map<frBlockObject*,
                                std::set<std::pair<frPoint, frLayerNum>>,
                                frBlockObjectComp>& pin2epMap);
@@ -80,7 +80,7 @@ class FlexDRConnectivityChecker
                         const bool isWire);
   void buildNodeMap(
       const frNet* net,
-      const NetRoutObjs& netRouteObjs,
+      const NetRouteObjs& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
       const std::map<frBlockObject*,
                      std::set<std::pair<frPoint, frLayerNum>>,
@@ -111,10 +111,10 @@ class FlexDRConnectivityChecker
                      frBlockObjectComp>& pin2epMap,
       std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);
   void organizePathSegsByLayerAndTrack(const frNet* net,
-                                       const NetRoutObjs& netRouteObjs,
+                                       const NetRouteObjs& netRouteObjs,
                                        PathSegsByLayerAndTrack& horzPathSegs,
                                        PathSegsByLayerAndTrack& vertPathSegs);
-  void findSegmentOverlaps(const NetRoutObjs& netRouteObjs,
+  void findSegmentOverlaps(const NetRouteObjs& netRouteObjs,
                            const PathSegsByLayerAndTrack& horzPathSegs,
                            const PathSegsByLayerAndTrack& vertPathSegs,
                            PathSegsByLayerAndTrackId& horzVictims,
@@ -122,7 +122,7 @@ class FlexDRConnectivityChecker
                            SpansByLayerAndTrackId& horzNewSegSpans,
                            SpansByLayerAndTrackId& vertNewSegSpans);
   void mergeSegmentOverlaps(frNet* net,
-                            NetRoutObjs& netRouteObjs,
+                            NetRouteObjs& netRouteObjs,
                             const PathSegsByLayerAndTrack& horzPathSegs,
                             const PathSegsByLayerAndTrack& vertPathSegs,
                             const PathSegsByLayerAndTrackId& horzVictims,
@@ -130,7 +130,7 @@ class FlexDRConnectivityChecker
                             const SpansByLayerAndTrackId& horzNewSegSpans,
                             const SpansByLayerAndTrackId& vertNewSegSpans);
   void addMarker(frNet* net, frLayerNum lNum, const frBox& bbox);
-  void merge_perform(const NetRoutObjs& netRouteObjs,
+  void merge_perform(const NetRouteObjs& netRouteObjs,
                      const std::vector<int>& indices,
                      std::vector<int>& victims,
                      std::vector<Span>& newSegSpans,
@@ -146,16 +146,16 @@ class FlexDRConnectivityChecker
                     const bool isHorz);
   bool astar(
       const frNet* net,
-      std::vector<bool>& adjVisited,
+      std::vector<char>& adjVisited,
       std::vector<int>& adjPrevIdx,
       const std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
-      const NetRoutObjs& netRouteObjs,
-      const int& gCnt,
-      const int& nCnt);
+      const NetRouteObjs& netRouteObjs,
+      const int gCnt,
+      const int nCnt);
   void finish(frNet* net,
-              NetRoutObjs& netRouteObjs,
+              NetRouteObjs& netRouteObjs,
               const std::vector<frBlockObject*>& netPins,
-              const std::vector<bool>& adjVisited,
+              const std::vector<char>& adjVisited,
               const int gCnt,
               const int nCnt,
               std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap);

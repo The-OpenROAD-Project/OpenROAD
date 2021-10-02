@@ -3686,7 +3686,7 @@ private:
 void
 Resizer::highlightSteiner(const Pin *drvr)
 {
-  if (gui_) {
+  if (gui::Gui::enabled()) {
     if (steiner_renderer_ == nullptr) {
       steiner_renderer_ = new SteinerRenderer(this);
       gui_->registerRenderer(steiner_renderer_);
