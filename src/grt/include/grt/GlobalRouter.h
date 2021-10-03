@@ -392,6 +392,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 public:
   GRouteDbCbk(GlobalRouter* grouter);
   virtual void inDbPostMoveInst(odb::dbInst* net);
+  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
 
   virtual void inDbNetDestroy(odb::dbNet* net);
   virtual void inDbNetCreate(odb::dbNet*);
@@ -403,6 +404,8 @@ public:
   virtual void inDbBTermPreDisconnect(odb::dbBTerm*);
 
 private:
+  void instItermsDirty(odb::dbInst* inst);
+
   GlobalRouter* grouter_;
 };
 
