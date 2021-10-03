@@ -1592,17 +1592,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  // core cell text should be 10% of cell height
-  static const float size_target = 0.1;
   // text should not fill more than 90% of the instance height or width
   static const float size_limit = 0.9;
   static const float rotation_limit = 0.85; // slightly lower to prevent oscillating rotations when zooming
 
   // limit non-core text to 1/2.0 (50%) of cell height or width
   static const float non_core_scale_limit = 2.0;
-
-  const float font_core_scale_height = size_target * pixels_per_dbu_;
-  const float font_core_scale_width = size_limit * pixels_per_dbu_;
 
   painter->setFont(text_font);
   for (auto inst : insts) {
@@ -1721,7 +1716,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   int min_resolution = fineViewableResolution();  // 1 pixel in DBU
   int nominal_resolution = nominalViewableResolution();
   LayerBoxes boxes;
-  QTransform initial_xfm = painter->transform();
 
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter,
