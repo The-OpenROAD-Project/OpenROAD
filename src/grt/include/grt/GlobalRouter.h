@@ -217,6 +217,7 @@ class GlobalRouter
   // Net functions
   int getNetCount() const;
   Net* addNet(odb::dbNet* db_net);
+  void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -310,7 +311,6 @@ class GlobalRouter
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
   void initNetlist();
-  void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
@@ -337,7 +337,6 @@ class GlobalRouter
   GrouteRenderer* groute_renderer_;
   NetRouteMap routes_;
 
-  std::vector<Net*> nets_;
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;

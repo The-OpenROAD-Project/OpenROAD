@@ -115,9 +115,9 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
 void GlobalRouter::clear()
 {
   routes_.clear();
-  for (auto net : nets_)
-    delete net;
-  nets_.clear();
+  for (auto net_itr : db_net_map_)
+    delete net_itr.second;
+  db_net_map_.clear();
   clearObjects();
 }
 
@@ -136,8 +136,8 @@ GlobalRouter::~GlobalRouter()
   delete routing_tracks_;
   delete fastroute_;
   delete grid_;
-  for (auto net : nets_)
-    delete net;
+  for (auto net_itr : db_net_map_)
+    delete net_itr.second;
 }
 
 std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
@@ -2061,13 +2061,14 @@ void GlobalRouter::initAdjustments()
 
 int GlobalRouter::getNetCount() const
 {
-  return nets_.size();
+  return db_net_map_.size();
 }
 
 int GlobalRouter::getMaxNetDegree()
 {
   int max_degree = -1;
-  for (Net *net : nets_) {
+  for (auto net_itr : db_net_map_) {
+    Net* net = net_itr.second;
     int netDegree = net->getNumPins();
     if (netDegree > max_degree) {
       max_degree = netDegree;
@@ -2079,7 +2080,8 @@ int GlobalRouter::getMaxNetDegree()
 std::vector<Pin*> GlobalRouter::getAllPorts()
 {
   std::vector<Pin*> ports;
-  for (Net *net : nets_) {
+  for (auto net_itr : db_net_map_) {
+    Net* net = net_itr.second;
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
         ports.push_back(&pin);
@@ -2504,42 +2506,35 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
 
 void GlobalRouter::initNetlist()
 {
-  if (nets_.empty()) {
+  if (db_net_map_.empty()) {
     initClockNets();
-    std::set<odb::dbNet*, cmpById> db_nets;
-
     for (odb::dbNet* net : block_->getNets()) {
-      db_nets.insert(net);
-    }
-
-    if (db_nets.empty()) {
-      logger_->error(GRT, 92, "Design without nets.");
-    }
-
-    addNets(db_nets);
-  }
-}
-
-void GlobalRouter::addNets(std::set<odb::dbNet*, cmpById>& db_nets)
-{
-  for (odb::dbNet* db_net : db_nets) {
-    if (db_net->getSigType().getValue() != odb::dbSigType::POWER
-        && db_net->getSigType().getValue() != odb::dbSigType::GROUND
-        && !db_net->isSpecial() && db_net->getSWires().empty()) {
-      addNet(db_net);
+      addNet(net);
     }
   }
 }
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
-  Net* net = new Net(db_net);
-  nets_.push_back(net);
-  db_net_map_[db_net] = net;
-  makeItermPins(net, db_net, grid_->getGridArea());
-  makeBtermPins(net, db_net, grid_->getGridArea());
-  findPins(net);
-  return net;
+  if (db_net->getSigType().getValue() != odb::dbSigType::POWER
+      && db_net->getSigType().getValue() != odb::dbSigType::GROUND
+      && !db_net->isSpecial() && db_net->getSWires().empty()) {
+    Net* net = new Net(db_net);
+    db_net_map_[db_net] = net;
+    makeItermPins(net, db_net, grid_->getGridArea());
+    makeBtermPins(net, db_net, grid_->getGridArea());
+    findPins(net);
+    return net;
+  }
+  return nullptr;
+}
+
+void GlobalRouter::removeNet(odb::dbNet* db_net)
+{
+  Net* net = db_net_map_[db_net];
+  delete net;
+  db_net_map_.erase(db_net);
+  dirty_nets_.erase(db_net);
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
@@ -2555,14 +2550,16 @@ void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
     }
   } else {
     // add clock nets not connected to a leaf first
-    for (Net *net : nets_) {
+    for (auto net_itr : db_net_map_) {
+      Net* net = net_itr.second;
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
       if (is_non_leaf_clock) {
         nets.push_back(net);
       }
     }
 
-    for (Net *net : nets_) {
+    for (auto net_itr : db_net_map_) {
+      Net* net = net_itr.second;
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
       if (!is_non_leaf_clock) {
         nets.push_back(net);
@@ -3546,11 +3543,6 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::removeDirtyNet(odb::dbNet* net)
-{
-  dirty_nets_.erase(net);
-}
-
 void GlobalRouter::updateDirtyRoutes(Capacities &capacities)
 {
   // Fastroute barfs if there are no nets. It shouldn't. -cherry
@@ -3597,16 +3589,14 @@ void GRouteDbCbk::instItermsDirty(odb::dbInst* inst)
   }
 }
 
-void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
-{
-  grouter_->removeDirtyNet(net);
-  // This should delete grt::net but cannot because of the allocation
-  // in an array.
-}
-
 void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 {
   grouter_->addNet(net);
+}
+
+void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
+{
+  grouter_->removeNet(net);
 }
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
