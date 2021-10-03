@@ -216,7 +216,6 @@ class GlobalRouter
  protected:
   // Net functions
   int getNetCount() const;
-  void reserveNets(size_t net_count);
   Net* addNet(odb::dbNet* db_net);
   int getMaxNetDegree();
   friend class AntennaRepair;
@@ -338,7 +337,7 @@ class GlobalRouter
   GrouteRenderer* groute_renderer_;
   NetRouteMap routes_;
 
-  std::vector<Net>* nets_;
+  std::vector<Net*> nets_;
   std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
@@ -382,6 +381,7 @@ class GlobalRouter
   std::set<odb::dbNet*> dirty_nets_;
 
   friend class IncrementalGRoute;
+  friend class GRouteDbCbk;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
@@ -391,17 +391,17 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 {
 public:
   GRouteDbCbk(GlobalRouter* grouter);
-  virtual void inDbPostMoveInst(odb::dbInst* net);
+  virtual void inDbPostMoveInst(odb::dbInst* inst);
   virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
 
   virtual void inDbNetDestroy(odb::dbNet* net);
-  virtual void inDbNetCreate(odb::dbNet*);
+  virtual void inDbNetCreate(odb::dbNet* net);
 
-  virtual void inDbITermPreDisconnect(odb::dbITerm*);
-  virtual void inDbITermPostConnect(odb::dbITerm*);
+  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
+  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
 
-  virtual void inDbBTermPostConnect(odb::dbBTerm*);
-  virtual void inDbBTermPreDisconnect(odb::dbBTerm*);
+  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
+  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
 
 private:
   void instItermsDirty(odb::dbInst* inst);
