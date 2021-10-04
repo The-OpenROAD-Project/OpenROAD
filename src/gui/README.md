@@ -75,10 +75,12 @@ To open the GUI from the command-line (this command does not return until the GU
 ```
 gui::show
 gui::show script
+gui::show script interactive
 ```
 
 Options description:
 - ``script`` TCL script to evaluate in the GUI.
+- ``interactive`` indicates if true the GUI should open in an interactive session (default), or if false that the GUI would execute the script and return to the terminal.
 
 To close the GUI and return to the command-line:
 
