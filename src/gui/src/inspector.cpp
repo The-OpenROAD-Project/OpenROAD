@@ -233,6 +233,7 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       button_frame_(new QFrame),
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
+      selected_itr_label_(new QLabel(this)),
       mouse_timer_(nullptr)
 {
   setObjectName("inspector");  // for settings
@@ -253,8 +254,9 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   button_frame_->setFrameShape(QFrame::StyledPanel);
   button_frame_->setFrameShadow(QFrame::Raised);
   QHBoxLayout* button_layout = new QHBoxLayout;
-  button_layout->addWidget(button_prev_);
-  button_layout->addWidget(button_next_);
+  button_layout->addWidget(button_prev_, 1);
+  button_layout->addWidget(selected_itr_label_, 1, Qt::AlignHCenter);
+  button_layout->addWidget(button_next_, 1);
   button_frame_->setLayout(button_layout);
   layout_->addWidget(button_frame_);
   button_frame_->setVisible(false);
@@ -314,6 +316,11 @@ void Inspector::inspect(const Selected& object)
   selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
     return item < selection_;
   });
+  int selected_index = std::distance(selected_.begin(), selected_itr_);
+  selected_itr_label_->setText(
+      QString::number(selected_index + 1) +
+      "/" +
+      QString::number(selected_.size()));
 
   if (!object) {
     return;

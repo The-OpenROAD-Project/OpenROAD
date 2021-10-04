@@ -34,6 +34,7 @@
 
 #include <QDockWidget>
 #include <QItemDelegate>
+#include <QLabel>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -157,11 +158,12 @@ class Inspector : public QDockWidget
   QVBoxLayout* layout_;
   QVBoxLayout* action_layout_;
   const SelectionSet& selected_;
-  std::set<Selected>::iterator selected_itr_;
+  SelectionSet::iterator selected_itr_;
   Selected selection_;
   QFrame* button_frame_;
   QPushButton* button_next_;
   QPushButton* button_prev_;
+  QLabel* selected_itr_label_;
   std::unique_ptr<QTimer> mouse_timer_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
