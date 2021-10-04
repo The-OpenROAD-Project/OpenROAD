@@ -1251,6 +1251,11 @@ void FastRouteCore::reInitTree(const int netID)
   copyStTree(netID, rsmt);
   newrouteLInMaze(netID);
   convertToMazerouteNet(netID);
+  // check embedded trees only when maze router is called
+  // i.e., when running overflow iterations
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    checkTree(netID);
+  }
 }
 
 void FastRouteCore::mazeRouteMSMD(const int iter,
