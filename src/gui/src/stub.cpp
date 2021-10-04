@@ -102,6 +102,11 @@ void Gui::registerDescriptor(const std::type_info& type,
 {
 }
 
+std::string Descriptor::Property::toString(const std::any& /* value */)
+{
+  return "";
+}
+
 // using namespace odb;
 int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {

@@ -76,6 +76,9 @@ class Descriptor
   struct Property {
     std::string name;
     std::any value;
+
+    static std::string toString(const std::any& /* value */);
+    std::string toString() const { return toString(value); };
   };
   using Properties = std::vector<Property>;
 

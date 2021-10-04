@@ -183,21 +183,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return false;
           }
           info += "\n" + QString::fromStdString(prop) + ": ";
-          if (auto v = std::any_cast<const char*>(&(*prop_find).value)) {
-            info += QString(*v);
-          } else if (auto v = std::any_cast<const std::string>(&(*prop_find).value)) {
-            info += QString::fromStdString(*v);
-          } else if (auto v = std::any_cast<int>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<unsigned int>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<double>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<float>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else {
-            info += "<unknown>";
-          }
+          info += QString::fromStdString((*prop_find).toString());
           return true;
         };
 
