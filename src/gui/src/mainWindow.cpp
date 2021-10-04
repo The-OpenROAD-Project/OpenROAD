@@ -272,26 +272,17 @@ MainWindow::~MainWindow()
   Gui::get()->unregisterDescriptor<Ruler*>();
 }
 
-void MainWindow::init(ord::OpenRoad* openroad, Tcl_Interp* interp)
+void MainWindow::setDatabase(odb::dbDatabase* db)
 {
   // set database and pass along
-  db_ = openroad->getDb();
+  db_ = db;
   controls_->setDb(db_);
   viewer_->setDb(db_);
   selection_browser_->setDb(db_);
+}
 
-  bool do_openroad_init = true;
-  if (interp == nullptr) {
-    // not first time, so get openroads interpreter and db
-    interp = openroad->tclInterp();
-    do_openroad_init = false;
-  }
-  // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  script_->setupTcl(interp, do_openroad_init);
-
-  // at this point, OpenRoad is guaranteed to be initialized.
-
-  auto* sta = openroad->getSta();
+void MainWindow::init(sta::dbSta* sta)
+{
   // Setup timing widget
   timing_widget_->init(sta);
 

@@ -73,7 +73,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   MainWindow(QWidget* parent = nullptr);
   ~MainWindow();
 
-  void init(ord::OpenRoad* openroad, Tcl_Interp* interp);
+  void setDatabase(odb::dbDatabase* db);
+  void init(sta::dbSta* sta);
 
   odb::dbDatabase* getDb() const { return db_; }
 

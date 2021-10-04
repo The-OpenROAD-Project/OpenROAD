@@ -593,8 +593,18 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   gui->setLogger(open_road->getLogger());
 
-  // init with OpenRoad
-  main_window->init(open_road, interp);
+  main_window->setDatabase(open_road->getDb());
+
+  bool init_openroad = interp != nullptr;
+  if (!init_openroad) {
+    interp = open_road->tclInterp();
+  }
+
+  // pass in tcl interp to script widget and ensure OpenRoad gets initialized
+  main_window->getScriptWidget()->setupTcl(interp, init_openroad);
+
+  // openroad is guaranteed to be initialized here
+  main_window->init(open_road->getSta());
 
   // execute commands to restore state of gui
   std::string restore_commands;
