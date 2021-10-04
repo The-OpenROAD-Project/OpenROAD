@@ -1008,7 +1008,7 @@ void FastRouteCore::updateRouteType1(const int net_id,
   if (E1_pos == -1) {
     int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
     int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->error(GRT,
+    logger_->warn(GRT,
                    169,
                    "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
                    netName(nets_[net_id]),
@@ -1181,7 +1181,7 @@ void FastRouteCore::updateRouteType2(const int net_id,
   if (E1_pos == -1) {
     int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
     int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->error(GRT,
+    logger_->warn(GRT,
                    170,
                    "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
                    netName(nets_[net_id]),
