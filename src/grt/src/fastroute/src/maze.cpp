@@ -1229,8 +1229,6 @@ void FastRouteCore::updateRouteType2(const int net_id,
 
 void FastRouteCore::reInitTree(const int netID)
 {
-  newRipupNet(netID);
-
   const int deg = sttrees_[netID].deg;
   const int numEdges = 2 * deg - 3;
   for (int edgeID = 0; edgeID < numEdges; edgeID++) {
