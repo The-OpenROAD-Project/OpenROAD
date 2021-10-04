@@ -160,7 +160,7 @@ Graphics::drawObjects(gui::Painter &painter)
 bool
 Graphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace dpl
