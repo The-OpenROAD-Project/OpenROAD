@@ -75,6 +75,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Renderer::redraw()
+{
+}
+
 Renderer::~Renderer()
 {
 }

@@ -3496,6 +3496,7 @@ void GlobalRouter::clearRouteGui()
 void GrouteRenderer::clear()
 {
   nets_.clear();
+  redraw();
 }
 
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
@@ -3506,6 +3507,7 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
 void GrouteRenderer::highlight(const odb::dbNet* net)
 {
   nets_.insert(net);
+  redraw();
 }
 
 void GrouteRenderer::drawObjects(gui::Painter& painter)
