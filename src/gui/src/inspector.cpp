@@ -413,7 +413,13 @@ void Inspector::indexClicked(const QModelIndex& index)
   QStandardItem* item = model_->itemFromIndex(index);
   auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
-    emit selected(new_selected, false);
+    // If shift is help add to the list instead of replacing list
+    if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
+      emit addSelected(new_selected);
+      inspect(new_selected);
+    } else {
+      emit selected(new_selected, false);
+    }
   }
 }
 
@@ -453,7 +459,30 @@ void Inspector::handleAction(QWidget* action)
 {
   auto callback = actions_[action];
   auto new_selection = callback();
-  emit selected(new_selection);
+
+  int itr_index = std::distance(selected_.begin(), selected_itr_);
+  // remove the current selection
+  emit removeSelected(selection_);
+  if (new_selection) {
+    // new selection as made, so add that and inspect it
+    emit addSelected(new_selection);
+    inspect(new_selection);
+  } else {
+
+    if (selected_.empty()) {
+      // set is empty
+      emit selected(Selected());
+    } else {
+      // determine new position in set
+      itr_index = std::min(itr_index, static_cast<int>(selected_.size()) - 1);
+
+      selected_itr_ = selected_.begin();
+      std::advance(selected_itr_, itr_index);
+
+      // inspect item at new this index
+      inspect(*selected_itr_);
+    }
+  }
 }
 
 QStandardItem* Inspector::makeItem(const QString& name)

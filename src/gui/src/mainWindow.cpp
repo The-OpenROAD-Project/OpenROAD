@@ -161,6 +161,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selected(const Selected&, bool)),
           this,
           SLOT(setSelected(const Selected&, bool)));
+  connect(inspector_,
+          SIGNAL(addSelected(const Selected&)),
+          this,
+          SLOT(addSelected(const Selected&)));
+  connect(inspector_,
+          SIGNAL(removeSelected(const Selected&)),
+          this,
+          SLOT(removeSelected(const Selected&)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
   connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
   connect(inspector_,
@@ -470,6 +478,17 @@ void MainWindow::addSelected(const Selected& selection)
   }
   emit updateSelectedStatus(selection);
   emit selectionChanged();
+}
+
+void MainWindow::removeSelected(const Selected& selection)
+{
+  auto itr = std::find_if_not(selected_.begin(), selected_.end(), [selection](auto& item) {
+    return item < selection;
+  });
+  if (itr != selected_.end()) {
+    selected_.erase(itr);
+    emit selectionChanged();
+  }
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)

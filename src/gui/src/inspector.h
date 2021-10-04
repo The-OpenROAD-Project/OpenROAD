@@ -120,6 +120,8 @@ class Inspector : public QDockWidget
   Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
  signals:
+  void addSelected(const Selected& selected);
+  void removeSelected(const Selected& selected);
   void selected(const Selected& selected, bool showConnectivity = false);
   void selectedItemChanged(const Selected& selected);
 
