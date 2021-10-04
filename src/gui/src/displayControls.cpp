@@ -183,7 +183,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return false;
           }
           info += "\n" + QString::fromStdString(prop) + ": ";
-          info += QString::fromStdString((*prop_find).toString());
+          info += QString::fromStdString(prop_find->toString());
           return true;
         };
 
