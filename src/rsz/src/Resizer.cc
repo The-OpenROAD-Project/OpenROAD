@@ -1001,26 +1001,23 @@ Resizer::findSlewLoadCap(LibertyPort *drvr_port,
   double cap1 = 0.0;
   double cap2 = slew / drvr_port->driveResistance() * 2;
   double tol = .01; // 1%
-  double diff1 = gateSlewDiff(drvr_port, cap1, slew, dcalc_ap);
-  double diff2 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
+  double diff1 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
   // binary search for diff = 0.
   while (abs(cap1 - cap2) > max(cap1, cap2) * tol) {
-    if (diff2 < 0.0) {
+    if (diff1 < 0.0) {
       cap1 = cap2;
-      diff1 = diff2;
       cap2 *= 2;
-      diff2 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
+      diff1 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
     }
     else {
       double cap3 = (cap1 + cap2) / 2.0;
-      double diff3 = gateSlewDiff(drvr_port, cap3, slew, dcalc_ap);
-      if (diff3 < 0.0) {
+      double diff2 = gateSlewDiff(drvr_port, cap3, slew, dcalc_ap);
+      if (diff2 < 0.0) {
         cap1 = cap3;
-        diff1 = diff3;
       }
       else {
         cap2 = cap3;
-        diff2 = diff3;
+        diff1 = diff2;
       }
     }
   }
@@ -2193,7 +2190,6 @@ Resizer::repairSetup(PathRef &path,
     int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
     int start_index = expanded.startIndex();
-    PathRef *prev_path = expanded.path(start_index - 1);
     const DcalcAnalysisPt *dcalc_ap = path.dcalcAnalysisPt(sta_);
     int lib_ap = dcalc_ap->libertyIndex();
     for (int i = start_index; i < path_length; i++) {
@@ -2213,7 +2209,6 @@ Resizer::repairSetup(PathRef &path,
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3));
       }
-      prev_path = path;
     }
 
     sort(load_delays.begin(), load_delays.end(),
@@ -2332,7 +2327,6 @@ Resizer::splitLoads(PathRef *drvr_path,
   inserted_buffer_count_++;
   designAreaIncr(area(db_network_->cell(buffer_cell)));
 
-  Net *in_net = makeUniqueNet();
   Net *out_net = makeUniqueNet();
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -3256,26 +3250,23 @@ Resizer::findMaxWireLength(LibertyPort *drvr_port,
   // Initial guess with wire resistance same as driver resistance.
   double wire_length2 = drvr_r / wireSignalResistance(corner);
   double tol = .01; // 1%
-  double diff1 = splitWireDelayDiff(wire_length1, cell);
-  double diff2 = splitWireDelayDiff(wire_length2, cell);
+  double diff1 = splitWireDelayDiff(wire_length2, cell);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
-    if (diff2 < 0.0) {
+    if (diff1 < 0.0) {
       wire_length1 = wire_length2;
-      diff1 = diff2;
       wire_length2 *= 2;
-      diff2 = splitWireDelayDiff(wire_length2, cell);
+      diff1 = splitWireDelayDiff(wire_length2, cell);
     }
     else {
       double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff3 = splitWireDelayDiff(wire_length3, cell);
-      if (diff3 < 0.0) {
+      double diff2 = splitWireDelayDiff(wire_length3, cell);
+      if (diff2 < 0.0) {
         wire_length1 = wire_length3;
-        diff1 = diff3;
       }
       else {
         wire_length2 = wire_length3;
-        diff2 = diff3;
+        diff1 = diff2;
       }
     }
   }
@@ -3424,26 +3415,23 @@ Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
   double wire_length2 = std::sqrt(max_slew /(wireSignalResistance(corner)
                                              * wireSignalCapacitance(corner)));
   double tol = .01; // 1%
-  double diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length1, max_slew);
-  double diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
+  double diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
-    if (diff2 < 0.0) {
+    if (diff1 < 0.0) {
       wire_length1 = wire_length2;
-      diff1 = diff2;
       wire_length2 *= 2;
-      diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
+      diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
     }
     else {
       double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff3 = maxSlewWireDiff(drvr_port, load_port, wire_length3, max_slew);
-      if (diff3 < 0.0) {
+      double diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length3, max_slew);
+      if (diff2 < 0.0) {
         wire_length1 = wire_length3;
-        diff1 = diff3;
       }
       else {
         wire_length2 = wire_length3;
-        diff2 = diff3;
+        diff1 = diff2;
       }
     }
   }

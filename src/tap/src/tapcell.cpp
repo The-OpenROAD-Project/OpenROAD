@@ -91,8 +91,8 @@ void Tapcell::setEndcapPrefix(const string& endcap_prefix) {
 
 void Tapcell::clear()
 {
-  int taps_removed = removeCells(tap_prefix_);
-  int endcaps_removed = removeCells(endcap_prefix_);
+  removeCells(tap_prefix_);
+  removeCells(endcap_prefix_);
 
   // Reset global parameters
   reset();
@@ -1103,7 +1103,6 @@ bool Tapcell::overlaps(odb::dbBox* blockage,
 
 vector<odb::dbBox*> Tapcell::findBlockages()
 {
-  odb::dbBlock* block = db_->getChip()->getBlock();
   vector<odb::dbBox*> blockages;
   for (auto&& inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {

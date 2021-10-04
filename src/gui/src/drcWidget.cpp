@@ -69,8 +69,8 @@ DRCViolation::DRCViolation(const std::string& name,
       shapes_(shapes),
       layer_(layer),
       comment_(comment),
-      viewed_(false),
-      file_line_(file_line)
+      file_line_(file_line),
+      viewed_(false)
 {
   computeBBox();
 }

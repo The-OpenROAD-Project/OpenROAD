@@ -2265,7 +2265,6 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
   std::vector<std::pair<int, int>> pitches(
       db_->getTech()->getRoutingLayerCount() + 1);
-  odb::dbTech* tech = db_->getTech();
   for (auto const& [level, layer] : routing_layers_) {
     if (layer->getType() != odb::dbTechLayerType::ROUTING)
       continue;
@@ -2360,7 +2359,6 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
 void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
                                      int max_layer)
 {
-  odb::dbTech* tech = db_->getTech();
   auto l2vPitches = calcLayerPitches(max_layer);
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
@@ -2435,8 +2433,6 @@ void GlobalRouter::computeCapacities(int max_layer)
 {
   int h_capacity, v_capacity;
 
-  odb::dbTech* tech = db_->getTech();
-
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
       break;
@@ -2487,8 +2483,6 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
   int track_step_x, track_step_y;
   int init_track_x, num_tracks_x;
   int init_track_y, num_tracks_y;
-
-  odb::dbTech* tech = db_->getTech();
 
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
@@ -2916,7 +2910,6 @@ void GlobalRouter::initObstructions()
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 {
-  odb::dbTech* tech = db_->getTech();
   layer_extensions.resize(routing_layers_.size() + 1, 0);
 
   for (auto const& [level, obstruct_layer] : routing_layers_) {
@@ -3503,6 +3496,7 @@ void GlobalRouter::clearRouteGui()
 void GrouteRenderer::clear()
 {
   nets_.clear();
+  redraw();
 }
 
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
@@ -3513,6 +3507,7 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
 void GrouteRenderer::highlight(const odb::dbNet* net)
 {
   nets_.insert(net);
+  redraw();
 }
 
 void GrouteRenderer::drawObjects(gui::Painter& painter)
