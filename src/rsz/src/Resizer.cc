@@ -377,6 +377,7 @@ Resizer::removeBuffer(Instance *buffer)
   }
   delete pin_iter;
   sta_->deleteNet(removed);
+  parasitics_invalid_.erase(removed);
 }
 
 void
@@ -2047,6 +2048,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
         Pin *tie_pin = network_->findPin(inst, tie_port);
         Net *tie_net = network_->net(tie_pin);
         sta_->deleteNet(tie_net);
+        parasitics_invalid_.erase(tie_net);
         // Delete the tie instance.
         sta_->deleteInstance(inst);
       }
@@ -3634,6 +3636,7 @@ Resizer::cloneClkInverter(Instance *inv)
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteNet(out_net);
+    parasitics_invalid_.erase(out_net);
     sta_->deleteInstance(inv);
   }
 }
