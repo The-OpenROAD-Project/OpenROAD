@@ -314,7 +314,6 @@ class GuiPainter : public Painter
 
     // tick mark interval in microns
     qreal major_tick_mark_interval = std::pow(10.0, std::floor(std::log10(len_microns)));
-    const int major_ticks = std::floor(len_microns / major_tick_mark_interval);
     qreal minor_tick_mark_interval = major_tick_mark_interval / 10;
     const int min_tick_spacing = 10; // pixels
     const bool do_minor_ticks = minor_tick_mark_interval * dbu_per_micron_ * getPixelsPerDBU() > min_tick_spacing;
@@ -350,7 +349,6 @@ class GuiPainter : public Painter
       // flip text to keep it in the right position
       painter_->scale(-1, -1);
     }
-    const int x = len / 2;
     if (!label.empty()) {
       // label on next to length
       drawString(0, 0, BOTTOM_CENTER, label + ": " + ss.str());

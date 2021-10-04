@@ -620,7 +620,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   int ret = 0;
   if (do_exec) {
-    int ret = app.exec();
+    ret = app.exec();
   }
 
   // cleanup

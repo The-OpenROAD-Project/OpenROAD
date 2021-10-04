@@ -778,8 +778,6 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
   techInit();
 
-  double dbu_to_microns = tech->getDbUnitsPerMicron();
-
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
