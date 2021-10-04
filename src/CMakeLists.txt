@@ -64,7 +64,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 3.0 REQUIRED)
+find_package(SWIG REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
