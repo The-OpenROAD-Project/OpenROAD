@@ -44,6 +44,7 @@
 #include <limits>
 #include <map>
 
+#include "Graphics.h"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 
@@ -179,13 +180,25 @@ Opendp::havePadding() const
 }
 
 void
+Opendp::setDebug(bool displacement,
+                 float min_displacement,
+                 const dbInst* debug_instance)
+{
+  if (Graphics::guiActive()) {
+    graphics_ = std::make_unique<Graphics>(this,
+                                           displacement,
+                                           min_displacement,
+                                           debug_instance);
+  }
+}
+
+void
 Opendp::detailedPlacement(int max_displacement_x,
                           int max_displacement_y)
 {
   importDb();
 
-  if (max_displacement_x == 0
-      || max_displacement_y == 0) {
+  if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults
     max_displacement_x_ = 500;
     max_displacement_y_ = 100;
@@ -287,8 +300,7 @@ bool
 Opendp::isSupply(dbNet *net) const
 {
   dbSigType sig_type = net->getSigType();
-  return sig_type == dbSigType::POWER
-    || sig_type == dbSigType::GROUND;
+  return sig_type == dbSigType::POWER || sig_type == dbSigType::GROUND;
 }
 
 Rect
@@ -656,4 +668,4 @@ divFloor(int dividend, int divisor)
   return dividend / divisor;
 }
 
-}  // namespace opendp
+}  // namespace dpl
