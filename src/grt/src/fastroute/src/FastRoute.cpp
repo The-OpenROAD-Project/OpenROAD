@@ -860,6 +860,7 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
+  float overflow_reduction_percent = -1;
   while (total_overflow_ > 0 && i <= overflow_iterations_
          && overflow_increases <= max_overflow_increases) {
     if (verbose_ > 1) {
@@ -973,6 +974,16 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
+        if (overflow_reduction_percent < 0.15) {
+          // if after 20 iterations the largest reduction percentage
+          // is smaller than 15%, stop congestion iterations and
+          // consider the design unroutable
+          logger_->warn(GRT,
+                        227,
+                        "Reached 20 congestion iterations with less than 15% "
+                        "of reduction between iterations.");
+          break;
+        }
         logger_->info(GRT, 103, "Extra Run for hard benchmark.");
         L = 0;
         upType = 3;
@@ -1077,6 +1088,12 @@ NetRouteMap FastRouteCore::run()
     if (total_overflow_ > last_total_overflow) {
       overflow_increases++;
     }
+    if (last_total_overflow > 0) {
+      overflow_reduction_percent
+          = std::max(overflow_reduction_percent,
+                     1 - ((float) total_overflow_ / last_total_overflow));
+    }
+
     last_total_overflow = total_overflow_;
   }  // end overflow iterations
 
