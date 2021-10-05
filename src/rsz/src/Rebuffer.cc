@@ -151,7 +151,7 @@ Resizer::rebuffer(Net *net)
     Pin *drvr = drvr_iter.next();
     rebuffer(drvr);
   }
-  printf("Inserted %d buffers.\n", inserted_buffer_count_);
+  logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
 
 bool
@@ -299,14 +299,13 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                      p->requiredDelay() + wire_delay,
                                      nullptr,
                                      p, nullptr);
-    if (logger_->debugCheck(RSZ, "rebuffer", 4)) {
-      printf("%*swire %s -> %s wl %d\n",
-             level, "",
-             tree->name(prev, sdc_network_),
-             tree->name(k, sdc_network_),
-             wire_length_dbu);
+    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire {} -> {} wl {}",
+               "", level,
+               tree->name(prev, sdc_network_),
+               tree->name(k, sdc_network_),
+               wire_length_dbu);
+    if (logger_->debugCheck(RSZ, "rebuffer", 4))
       z->report(level, this);
-    }
     Z1.push_back(z);
   }
   if (!Z1.empty()) {
@@ -363,14 +362,13 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                            best_option->requiredDelay()+buffer_delay,
                                            buffer_cell,
                                            best_option, nullptr);
-          if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
-            printf("%*sbuffer %s cap %s req %s ->\n",
-                   level, "",
-                   tree->name(prev, sdc_network_),
-                   units_->capacitanceUnit()->asString(best_option->cap()),
-                   delayAsString(best_req, this));
+          debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer {} cap {} req {} ->",
+                     "", level,
+                     tree->name(prev, sdc_network_),
+                     units_->capacitanceUnit()->asString(best_option->cap()),
+                     delayAsString(best_req, this));
+          if (logger_->debugCheck(RSZ, "rebuffer", 3))
             z->report(level, this);
-          }
           buffered_options.push_back(z);
         }
       }
@@ -413,13 +411,12 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     level_drvr_vertices_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    if (logger_->debugCheck(RSZ, "rebuffer", 3))
-      printf("%*sinsert %s -> %s (%s) -> %s",
-             level, "",
-             sdc_network_->pathName(net),
-             buffer_name.c_str(),
-             buffer_cell->name(),
-             sdc_network_->pathName(net2));
+    debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}insert {} -> {} ({}) -> {}",
+               "", level,
+               sdc_network_->pathName(net),
+               buffer_name.c_str(),
+               buffer_cell->name(),
+               sdc_network_->pathName(net2));
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
@@ -428,13 +425,11 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     break;
   }
   case BufferedNetType::wire:
-    if (logger_->debugCheck(RSZ, "rebuffer", 3))
-      printf("%*swire", level, "");
+    debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
     rebufferTopDown(choice->ref(), net, level + 1);
     break;
   case BufferedNetType::junction: {
-    if (logger_->debugCheck(RSZ, "rebuffer", 3))
-      printf("%*sjunction", level, "");
+    debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
     rebufferTopDown(choice->ref(), net, level + 1);
     rebufferTopDown(choice->ref2(), net, level + 1);
     break;
@@ -445,9 +440,8 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     if (load_net != net) {
       Instance *load_inst = db_network_->instance(load_pin);
       Port *load_port = db_network_->port(load_pin);
-      if (logger_->debugCheck(RSZ, "rebuffer", 3))
-        printf("%*sconnect load %s to %s",
-               level, "",
+      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}connect load {} to {}",
+               "", level,
                sdc_network_->pathName(load_pin),
                sdc_network_->pathName(net));
       sta_->disconnectPin(load_pin);
