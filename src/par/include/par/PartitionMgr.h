@@ -188,9 +188,9 @@ class PartOptions
 class PartSolutions
 {
  public:
-  void addAssignment(std::vector<unsigned long> currentAssignment,
-                     unsigned long runtime,
-                     int seed);
+  void addAssignment(const std::vector<unsigned long>& currentAssignment,
+                     const unsigned long runtime,
+                     const int seed);
   void clearAssignments();
   const std::vector<unsigned long>& getAssignment(unsigned idx) const
   {
@@ -198,7 +198,7 @@ class PartSolutions
   }
   unsigned long getRuntime(unsigned idx) const { return _runtimeResults[idx]; }
   int getSeed(unsigned idx) const { return _seeds[idx]; }
-  void setToolName(std::string name) { _toolName = name; }
+  void setToolName(const std::string& name) { _toolName = name; }
   std::string getToolName() const { return _toolName; }
   void setPartitionId(unsigned id) { _partitionId = id; }
   unsigned getPartitionId() const { return _partitionId; }
@@ -251,8 +251,8 @@ class PartitionMgr
   odb::dbBlock* getDbBlock() const;
   unsigned getNumPartitioningResults() const { return _results.size(); }
   unsigned getNumClusteringResults() const { return _clusResults.size(); }
-  PartSolutions& getPartitioningResult(unsigned id) { return _results[id]; }
-  PartSolutions& getClusteringResult(unsigned id) { return _clusResults[id]; }
+  const PartSolutions& getPartitioningResult(unsigned id) const { return _results[id]; }
+  const PartSolutions& getClusteringResult(unsigned id) const { return _clusResults[id]; }
 
   PartOptions _options;
   odb::dbDatabase* _db = nullptr;
@@ -274,7 +274,7 @@ class PartitionMgr
   void runClustering();
   void run3PClustering();
   void evaluatePartitioning();
-  unsigned getCurrentBestId() { return _bestId; }
+  unsigned getCurrentBestId() const { return _bestId; }
   void setCurrentBestId(unsigned id) { _bestId = id; }
   void runChaco();
   void runGpMetis();
@@ -283,22 +283,22 @@ class PartitionMgr
   void runGpMetisClustering();
   void runMlPartClustering();
   PartOptions& getOptions() { return _options; }
-  unsigned getCurrentId() { return (_results.size() - 1); }
-  unsigned getCurrentClusId() { return (_clusResults.size() - 1); }
+  unsigned getCurrentId() const { return (_results.size() - 1); }
+  unsigned getCurrentClusId() const { return (_clusResults.size() - 1); }
   void toGraph();
   void toHypergraph();
   void hypergraph(bool buildGraph = false);
-  unsigned generatePartitionId();
-  unsigned generateClusterId();
+  unsigned generatePartitionId() const;
+  unsigned generateClusterId() const;
   void computePartitionResult(unsigned partitionId, std::string function);
   bool comparePartitionings(const PartSolutions& oldPartition,
                             const PartSolutions& newPartition,
-                            std::string function);
-  void reportPartitionResult(unsigned partitionId);
-  void writePartitioningToDb(unsigned partitionId);
+                            const std::string& function);
+  void reportPartitionResult(const unsigned partitionId);
+  void writePartitioningToDb(const unsigned partitionId);
   void dumpPartIdToFile(std::string name);
   void writeClusteringToDb(unsigned clusteringId);
-  void dumpClusIdToFile(std::string name);
+  void dumpClusIdToFile(std::string name) const;
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
   void reportGraph();

@@ -103,17 +103,15 @@ void PartitionMgr::runChaco()
   currentResults.setPartitionId(partitionId);
   std::string evaluationFunction = _options.getEvaluationFunction();
 
-  int firstRun = 0;
-
-  std::vector<int> edgeWeights = _graph->getEdgeWeight();
-  std::vector<int> vertexWeights = _graph->getVertexWeight();
-  std::vector<int> colIdx = _graph->getColIdx();
-  std::vector<int> rowPtr = _graph->getRowPtr();
-  int numVertices = vertexWeights.size();
-  int numVerticesTotal = vertexWeights.size();
+  const std::vector<int>& edgeWeights = _graph->getEdgeWeight();
+  const std::vector<int>& vertexWeights = _graph->getVertexWeight();
+  const std::vector<int>& colIdx = _graph->getColIdx();
+  const std::vector<int>& rowPtr = _graph->getRowPtr();
+  const int numVertices = vertexWeights.size();
+  const int numVerticesTotal = vertexWeights.size();
   short highestCurrentPartition = 0;
 
-  int architecture = _options.getArchTopology().size();
+  const int architecture = _options.getArchTopology().size();
   int architectureDims = 1;
   int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
   if (architecture > 0) {
@@ -127,30 +125,27 @@ void PartitionMgr::runChaco()
   int hypercubeDims
       = (int) (std::log2(((double) (_options.getTargetPartitions()))));
 
-  int numVertCoar = _options.getCoarVertices();
+  const int numVertCoar = _options.getCoarVertices();
 
-  int refinement = _options.getRefinement();
+  const int refinement = _options.getRefinement();
 
-  int termPropagation = 0;
-  if (_options.getTermProp()) {
-    termPropagation = 1;
-  }
+  const int termPropagation = _options.getTermProp() ? 1 : 0;
 
-  double inbalance = (double) _options.getBalanceConstraint() / 100;
+  const double inbalance = (double) _options.getBalanceConstraint() / 100;
 
-  double coarRatio = _options.getCoarRatio();
+  const double coarRatio = _options.getCoarRatio();
 
-  double cutCost = _options.getCutHopRatio();
+  const double cutCost = _options.getCutHopRatio();
 
-  int level = _options.getLevel();
+  const int level = _options.getLevel();
 
   int partitioningMethod = 1;  // Multi-level KL
 
   int kWay = 1;  // recursive 2-way
 
   for (long seed : _options.getSeeds()) {
-    auto start = std::chrono::system_clock::now();
-    std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+    const auto start = std::chrono::system_clock::now();
+    const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
 
     int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
     int* currentIndex = starts;
@@ -189,8 +184,8 @@ void PartitionMgr::runChaco()
 
     if (_options.getExistingID() > -1) {
       // If a previous solution ID already exists.
-      PartSolutions existingResult = _results[_options.getExistingID()];
-      unsigned existingBestIdx = existingResult.getBestSolutionIdx();
+      const PartSolutions existingResult = _results[_options.getExistingID()];
+      const unsigned existingBestIdx = existingResult.getBestSolutionIdx();
       const std::vector<unsigned long>& vertexResult
           = existingResult.getAssignment(existingBestIdx);
       // Gets the vertex assignments results from the last ID.
@@ -271,12 +266,12 @@ void PartitionMgr::runChaco()
     std::vector<unsigned long> chacoResult;
 
     for (int i = 0; i < numVertices; i++) {
-      short* currentpointer = assigment + i;
+      const short* currentpointer = assigment + i;
       chacoResult.push_back(*currentpointer);
     }
 
-    auto end = std::chrono::system_clock::now();
-    unsigned long runtime
+    const auto end = std::chrono::system_clock::now();
+    const unsigned long runtime
         = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
               .count();
 
@@ -307,16 +302,14 @@ void PartitionMgr::runGpMetis()
   _logger->report("Running GPMetis.");
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
-  unsigned partitionId = generatePartitionId();
+  const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
-
-  int firstRun = 0;
+  const std::string evaluationFunction = _options.getEvaluationFunction();
 
   idx_t edgeCut;
   idx_t nPartitions = _options.getTargetPartitions();
   int numVertices = _graph->getNumVertex();
-  int numEdges = _graph->getNumEdges();
+  const int numEdges = _graph->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
@@ -344,9 +337,7 @@ void PartitionMgr::runGpMetis()
     colIdx[i] = _graph->getColIdx(i);
   }
   for (int seed : _options.getSeeds()) {
-    std::vector<unsigned long> gpmetisResults;
-    auto start = std::chrono::system_clock::now();
-    std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+    const auto start = std::chrono::system_clock::now();
     options[METIS_OPTION_SEED] = seed;
     idx_t* parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
 
@@ -364,10 +355,11 @@ void PartitionMgr::runGpMetis()
                              &edgeCut,
                              parts);
 
+    std::vector<unsigned long> gpmetisResults;
     for (int i = 0; i < numVertices; i++)
       gpmetisResults.push_back(parts[i]);
-    auto end = std::chrono::system_clock::now();
-    unsigned long runtime
+    const auto end = std::chrono::system_clock::now();
+    const unsigned long runtime
         = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
               .count();
 
@@ -410,19 +402,18 @@ void PartitionMgr::runMlPart()
 
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
-  unsigned partitionId = generatePartitionId();
+  const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
 
   PartSolutions bestResult;
   bestResult.setToolName(_options.getTool());
   bestResult.setPartitionId(partitionId);
-  int firstRun = 0;
 
-  int numOriginalVertices = hypergraph.getNumVertex();
+  const int numOriginalVertices = hypergraph.getNumVertex();
   std::vector<unsigned long> clusters(numOriginalVertices, 0);
 
-  double tolerance = _options.getBalanceConstraint() / 100.0;
+  const double tolerance = _options.getBalanceConstraint() / 100.0;
   double balanceArray[2] = {0.5, 0.5};
 
   for (long seed : _options.getSeeds()) {
@@ -430,18 +421,18 @@ void PartitionMgr::runMlPart()
     int countPartitions = 0;
     partitions.push_back(0);
 
-    auto start = std::chrono::system_clock::now();
-    std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+    const auto start = std::chrono::system_clock::now();
+    const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
     while (partitions.size() < _options.getTargetPartitions()) {
       std::vector<short> auxPartitions;
-      for (int p : partitions) {
+      for (const int p : partitions) {
         Hypergraph newHypergraph;
         countPartitions++;
         hypergraphDecomp.updateHypergraph(
             hypergraph, newHypergraph, clusters, p);
-        int numEdges = newHypergraph.getNumEdges();
-        int numColIdx = newHypergraph.getNumColIdx();
-        int numVertices = newHypergraph.getNumVertex();
+        const int numEdges = newHypergraph.getNumEdges();
+        const int numColIdx = newHypergraph.getNumColIdx();
+        const int numVertices = newHypergraph.getNumVertex();
 
         double* vertexWeights
             = (double*) malloc((unsigned) numVertices * sizeof(double));
@@ -501,8 +492,8 @@ void PartitionMgr::runMlPart()
       partitions.insert(
           partitions.end(), auxPartitions.begin(), auxPartitions.end());
     }
-    auto end = std::chrono::system_clock::now();
-    unsigned long runtime
+    const auto end = std::chrono::system_clock::now();
+    const unsigned long runtime
         = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
               .count();
 
@@ -540,10 +531,9 @@ void PartitionMgr::hypergraph(bool buildGraph)
 
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), _logger);
-  hypergraphDecomp.constructMap(*_hypergraph,
-                                _options.getMaxVertexWeight());
+  hypergraphDecomp.constructMap(*_hypergraph, _options.getMaxVertexWeight());
 
-  int numVertices = _hypergraph->getNumVertex();
+  const int numVertices = _hypergraph->getNumVertex();
   std::vector<unsigned long> clusters(numVertices, 0);
   hypergraphDecomp.createHypergraph(*_hypergraph, clusters, 0);
 
@@ -564,38 +554,38 @@ void PartitionMgr::toGraph()
                            _options.getCliqueThreshold());
 }
 
-unsigned PartitionMgr::generatePartitionId()
+unsigned PartitionMgr::generatePartitionId() const
 {
-  unsigned sizeOfResults = _results.size();
-  return sizeOfResults;
+  return _results.size();
 }
 
 // Evaluate Partitioning
 
 void PartitionMgr::evaluatePartitioning()
 {
-  std::vector<int> partVector = _options.getPartitionsToTest();
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::vector<int> partVector = _options.getPartitionsToTest();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
   // Checks if IDs are valid
-  for (int partId : partVector) {
+  for (const int partId : partVector) {
     if (partId >= _results.size() || partId < 0) {
       _logger->error(PAR, 100, "Invalid partitioning id: {}", partId);
     }
   }
-  for (int partId : partVector) {
+  for (const int partId : partVector) {
     computePartitionResult(partId, evaluationFunction);
   }
   int bestId = -1;
-  for (int partId : partVector) {
+  for (const int partId : partVector) {
     // Compares the results for the current ID with the best one (if it exists).
     if (bestId == -1) {
       bestId = partId;
     } else {
       // If the new ID presents better results than the last one, update the
       // bestId.
-      bool isNewIdBetter = comparePartitionings(getPartitioningResult(bestId),
-                                                getPartitioningResult(partId),
-                                                evaluationFunction);
+      const bool isNewIdBetter
+          = comparePartitionings(getPartitioningResult(bestId),
+                                 getPartitioningResult(partId),
+                                 evaluationFunction);
       if (isNewIdBetter) {
         bestId = partId;
       }
@@ -609,21 +599,21 @@ void PartitionMgr::evaluatePartitioning()
 void PartitionMgr::computePartitionResult(unsigned partitionId,
                                           std::string function)
 {
-  std::vector<unsigned long> setSizes;
-  std::vector<unsigned long> setAreas;
-  int weightModel = _options.getWeightModel();
-  std::vector<float> edgeWeight = _graph->getDefaultEdgeWeight();
-  int maxEdgeWeight = _options.getMaxEdgeWeight();
+  const int weightModel = _options.getWeightModel();
+  const std::vector<float>& edgeWeight = _graph->getDefaultEdgeWeight();
+  const int maxEdgeWeight = _options.getMaxEdgeWeight();
 
-  float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
-  float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
+  const float maxEWeight
+      = *std::max_element(edgeWeight.begin(), edgeWeight.end());
+  const float minEWeight
+      = *std::min_element(edgeWeight.begin(), edgeWeight.end());
 
   PartSolutions& currentResults = _results[partitionId];
   currentResults.resetEvaluation();
   for (unsigned idx = 0; idx < currentResults.getNumOfRuns(); idx++) {
-    std::vector<unsigned long> currentAssignment
+    const std::vector<unsigned long>& currentAssignment
         = currentResults.getAssignment(idx);
-    unsigned long currentRuntime = currentResults.getRuntime(idx);
+    const unsigned long currentRuntime = currentResults.getRuntime(idx);
 
     unsigned long terminalCounter = 0;
     unsigned long cutCounter = 0;
@@ -631,26 +621,26 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
     std::vector<unsigned long> setSize(_options.getTargetPartitions(), 0);
     std::vector<unsigned long> setArea(_options.getTargetPartitions(), 0);
 
-    std::vector<int> hyperedgesEnd = _hypergraph->getRowPtr();
-    std::vector<int> hyperedgeNets = _hypergraph->getColIdx();
+    const std::vector<int>& hyperedgesEnd = _hypergraph->getRowPtr();
+    const std::vector<int>& hyperedgeNets = _hypergraph->getColIdx();
     std::set<unsigned> computedVertices;
     int startIndex = 0;
-    for (int endIndex :
-         hyperedgesEnd) {  // Iterate over each net in the hypergraph.
-      std::set<unsigned long>
-          netPartitions;  // Contains the partitions the net is part of.
-      std::vector<unsigned>
-          netVertices;  // Contains the vertices that are in the net.
+    // Iterate over each net in the hypergraph.
+    for (const int endIndex : hyperedgesEnd) {
+      // Contains the partitions the net is part of.
+      std::set<unsigned long> netPartitions;
+      // Contains the vertices that are in the net.
+      std::vector<unsigned> netVertices;
       if (endIndex != 0) {
         for (int currentIndex = startIndex; currentIndex < endIndex;
              currentIndex++) {  // Iterate over all vertices in the net.
-          int currentVertex = hyperedgeNets[currentIndex];
-          unsigned long currentPartition = currentAssignment[currentVertex];
+          const int currentVertex = hyperedgeNets[currentIndex];
+          const unsigned long currentPartition
+              = currentAssignment[currentVertex];
           netPartitions.insert(currentPartition);
           netVertices.push_back(currentVertex);
-          if (computedVertices.find(currentVertex)
-              == computedVertices
-                     .end()) {  // Update the partition size and area if needed.
+          // Update the partition size and area if needed.
+          if (computedVertices.find(currentVertex) == computedVertices.end()) {
             setSize[currentPartition]++;
             setArea[currentPartition] += _graph->getVertexWeight(currentVertex);
             computedVertices.insert(currentVertex);
@@ -665,7 +655,7 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
                                       // terminals. (Pathways to another set.)
         // Computations for hop weight:
         float currentNetWeight = 0;
-        int netSize = netVertices.size();
+        const int netSize = netVertices.size();
         switch (weightModel) {
           case 1:
             currentNetWeight = 1.0 / (netSize - 1);
@@ -766,7 +756,7 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
 
 bool PartitionMgr::comparePartitionings(const PartSolutions& oldPartition,
                                         const PartSolutions& newPartition,
-                                        std::string function)
+                                        const std::string& function)
 {
   bool isBetter = false;
   if (function == "hyperedges") {
@@ -788,7 +778,7 @@ bool PartitionMgr::comparePartitionings(const PartSolutions& oldPartition,
   return isBetter;
 }
 
-void PartitionMgr::reportPartitionResult(unsigned partitionId)
+void PartitionMgr::reportPartitionResult(const unsigned partitionId)
 {
   PartSolutions currentResults = _results[partitionId];
   _logger->info(PAR,
@@ -796,8 +786,8 @@ void PartitionMgr::reportPartitionResult(unsigned partitionId)
                 "Partitioning Results for ID = {} and Tool = {}.",
                 partitionId,
                 currentResults.getToolName());
-  unsigned bestIdx = currentResults.getBestSolutionIdx();
-  int seed = currentResults.getSeed(bestIdx);
+  const unsigned bestIdx = currentResults.getBestSolutionIdx();
+  const int seed = currentResults.getSeed(bestIdx);
   _logger->info(PAR, 7, "Best results used seed {}.", seed);
   _logger->info(PAR,
                 8,
@@ -826,23 +816,23 @@ odb::dbBlock* PartitionMgr::getDbBlock() const
   return block;
 }
 
-void PartitionMgr::writePartitioningToDb(unsigned partitioningId)
+void PartitionMgr::writePartitioningToDb(const unsigned partitioningId)
 {
   _logger->report("Writing partition id's to DB.");
   if (partitioningId >= getNumPartitioningResults()) {
     _logger->error(PAR, 14, "Partition id out of range ({}).", partitioningId);
   }
 
-  PartSolutions& results = getPartitioningResult(partitioningId);
-  unsigned bestSolutionIdx = results.getBestSolutionIdx();
+  const PartSolutions& results = getPartitioningResult(partitioningId);
+  const unsigned bestSolutionIdx = results.getBestSolutionIdx();
   const std::vector<unsigned long>& result
       = results.getAssignment(bestSolutionIdx);
 
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
-    std::string instName = inst->getName();
-    int instIdx = _hypergraph->getMapping(instName);
-    unsigned long partitionId = result[instIdx];
+    const std::string instName = inst->getName();
+    const int instIdx = _hypergraph->getMapping(instName);
+    const unsigned long partitionId = result[instIdx];
 
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
     if (!propId) {
@@ -860,10 +850,11 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
-    std::string instName = inst->getName();
+    const std::string instName = inst->getName();
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
     if (!propId) {
-      _logger->warn(PAR, 101, "Property 'partition_id' not found for inst {}.", instName);
+      _logger->warn(
+          PAR, 101, "Property 'partition_id' not found for inst {}.", instName);
       continue;
     }
     file << instName << " " << propId->getValue() << "\n";
@@ -895,36 +886,36 @@ void PartitionMgr::runChacoClustering()
   currentResults.setToolName(_options.getTool());
   unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
 
-  std::vector<int> edgeWeights = _graph->getEdgeWeight();
-  std::vector<int> vertexWeights = _graph->getVertexWeight();
-  std::vector<int> colIdx = _graph->getColIdx();
-  std::vector<int> rowPtr = _graph->getRowPtr();
-  int numVertices = vertexWeights.size();
+  const std::vector<int>& edgeWeights = _graph->getEdgeWeight();
+  const std::vector<int>& vertexWeights = _graph->getVertexWeight();
+  const std::vector<int>& colIdx = _graph->getColIdx();
+  const std::vector<int>& rowPtr = _graph->getRowPtr();
+  const int numVertices = vertexWeights.size();
 
-  int architecture = _options.getArchTopology().size();
-  int architectureDims = 1;
+  const int architecture = _options.getArchTopology().size();
+  const int architectureDims = 1;
   int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
 
-  int numVertCoar = _options.getCoarVertices();
+  const int numVertCoar = _options.getCoarVertices();
 
-  int refinement = _options.getRefinement();
+  const int refinement = _options.getRefinement();
 
-  double inbalance = (double) _options.getBalanceConstraint() / 100;
+  const double inbalance = (double) _options.getBalanceConstraint() / 100;
 
-  double coarRatio = _options.getCoarRatio();
+  const double coarRatio = _options.getCoarRatio();
 
-  double cutCost = _options.getCutHopRatio();
+  const double cutCost = _options.getCutHopRatio();
 
-  int level = _options.getLevel();
+  const int level = _options.getLevel();
 
-  auto start = std::chrono::system_clock::now();
-  std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+  const auto start = std::chrono::system_clock::now();
+  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
 
   int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
   int* currentIndex = starts;
-  for (int pointer : rowPtr) {
+  for (const int pointer : rowPtr) {
     *currentIndex = (pointer);
     currentIndex++;
   }
@@ -933,21 +924,21 @@ void PartitionMgr::runChacoClustering()
 
   int* vweights = (int*) malloc((unsigned) numVertices * sizeof(int));
   currentIndex = vweights;
-  for (int weigth : vertexWeights) {
+  for (const int weigth : vertexWeights) {
     *currentIndex = weigth;
     currentIndex++;
   }
 
   int* adjacency = (int*) malloc((unsigned) colIdx.size() * sizeof(int));
   currentIndex = adjacency;
-  for (int pointer : colIdx) {
+  for (const int pointer : colIdx) {
     *currentIndex = (pointer + 1);
     currentIndex++;
   }
 
   float* eweights = (float*) malloc((unsigned) colIdx.size() * sizeof(float));
   float* currentIndexFloat = eweights;
-  for (int weigth : edgeWeights) {
+  for (const int weigth : edgeWeights) {
     *currentIndexFloat = weigth;
     currentIndexFloat++;
   }
@@ -1001,8 +992,8 @@ void PartitionMgr::runChacoClustering()
   }
   free(clusteringResults);
 
-  auto end = std::chrono::system_clock::now();
-  unsigned long runtime
+  const auto end = std::chrono::system_clock::now();
+  const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
 
@@ -1024,14 +1015,14 @@ void PartitionMgr::runGpMetisClustering()
   _logger->report("Running GPMetis.");
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
-  unsigned clusterId = generateClusterId();
+  const unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
 
   idx_t edgeCut;
   idx_t nPartitions = _options.getTargetPartitions();
   int numVertices = _graph->getNumVertex();
-  int numEdges = _graph->getNumEdges();
+  const int numEdges = _graph->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
@@ -1059,9 +1050,8 @@ void PartitionMgr::runGpMetisClustering()
     edgeWeights[i] = _graph->getEdgeWeight(i);
     colIdx[i] = _graph->getColIdx(i);
   }
-  std::vector<unsigned long> gpmetisResults;
-  auto start = std::chrono::system_clock::now();
-  std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+  const auto start = std::chrono::system_clock::now();
+  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
   idx_t* parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
 
   METIS_CoarsenGraph(&numVertices,
@@ -1079,10 +1069,11 @@ void PartitionMgr::runGpMetisClustering()
                      parts,
                      &level);
 
+  std::vector<unsigned long> gpmetisResults;
   for (int i = 0; i < numVertices; i++)
     gpmetisResults.push_back(parts[i]);
-  auto end = std::chrono::system_clock::now();
-  unsigned long runtime
+  const auto end = std::chrono::system_clock::now();
+  const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
 
@@ -1115,21 +1106,21 @@ void PartitionMgr::runMlPartClustering()
 
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
-  unsigned clusterId = generateClusterId();
+  const unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
-  unsigned level = _options.getLevel();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const unsigned level = _options.getLevel();
 
   std::vector<unsigned long> clusters;
 
-  double tolerance = _options.getBalanceConstraint() / 100.0;
+  const double tolerance = _options.getBalanceConstraint() / 100.0;
   double balanceArray[2] = {0.5, 0.5};
 
-  auto start = std::chrono::system_clock::now();
-  std::time_t startTime = std::chrono::system_clock::to_time_t(start);
-  int numEdges = hypergraph.getNumEdges();
-  int numColIdx = hypergraph.getNumColIdx();
-  int numVertices = hypergraph.getNumVertex();
+  const auto start = std::chrono::system_clock::now();
+  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+  const int numEdges = hypergraph.getNumEdges();
+  const int numColIdx = hypergraph.getNumColIdx();
+  const int numVertices = hypergraph.getNumVertex();
 
   double* vertexWeights
       = (double*) malloc((unsigned) numVertices * sizeof(double));
@@ -1173,8 +1164,8 @@ void PartitionMgr::runMlPartClustering()
     clusters.push_back(part[i]);
   }
 
-  auto end = std::chrono::system_clock::now();
-  unsigned long runtime
+  const auto end = std::chrono::system_clock::now();
+  const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
   _logger->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
@@ -1192,10 +1183,9 @@ void PartitionMgr::runMlPartClustering()
 #endif
 }
 
-unsigned PartitionMgr::generateClusterId()
+unsigned PartitionMgr::generateClusterId() const
 {
-  unsigned sizeOfResults = _clusResults.size();
-  return sizeOfResults;
+  return _clusResults.size();
 }
 
 // Write Clustering To DB
@@ -1207,15 +1197,15 @@ void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
     _logger->error(PAR, 18, "Cluster id out of range ({}).", clusteringId);
   }
 
-  PartSolutions& results = getClusteringResult(clusteringId);
+  const PartSolutions& results = getClusteringResult(clusteringId);
   const std::vector<unsigned long>& result
       = results.getAssignment(0);  // Clustering uses only 1 seed
 
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
-    std::string instName = inst->getName();
-    int instIdx = _hypergraph->getMapping(instName);
-    unsigned long clusterId = result[instIdx];
+    const std::string instName = inst->getName();
+    const int instIdx = _hypergraph->getMapping(instName);
+    const unsigned long clusterId = result[instIdx];
 
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "cluster_id");
     if (!propId) {
@@ -1228,16 +1218,17 @@ void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
   _logger->report("Writing done.");
 }
 
-void PartitionMgr::dumpClusIdToFile(std::string name)
+void PartitionMgr::dumpClusIdToFile(std::string name) const
 {
   std::ofstream file(name);
 
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
-    std::string instName = inst->getName();
+    const std::string instName = inst->getName();
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "cluster_id");
     if (!propId) {
-      _logger->warn(PAR, 65, "Property 'cluster_id' not found for inst {}.", instName);
+      _logger->warn(
+          PAR, 65, "Property 'cluster_id' not found for inst {}.", instName);
       continue;
     }
     file << instName << " " << propId->getValue() << "\n";
@@ -1253,8 +1244,8 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
   std::map<unsigned long, unsigned long> setSizes;
   std::set<unsigned long> partitions;
   unsigned long numberOfPartitions = 0;
-  PartSolutions& results = getPartitioningResult(partitionId);
-  unsigned bestSolutionIdx = results.getBestSolutionIdx();
+  const PartSolutions& results = getPartitioningResult(partitionId);
+  const unsigned bestSolutionIdx = results.getBestSolutionIdx();
   const std::vector<unsigned long>& result
       = results.getAssignment(bestSolutionIdx);
   for (unsigned long currentPartition : result) {
@@ -1271,8 +1262,8 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
   _logger->info(
       PAR, 19, "The netlist has {} partitions.", (numberOfPartitions + 1));
   unsigned long totalVertices = 0;
-  for (unsigned long partIdx : partitions) {
-    unsigned long partSize = setSizes[partIdx];
+  for (const unsigned long partIdx : partitions) {
+    const unsigned long partSize = setSizes[partIdx];
     _logger->info(PAR, 20, "Partition {} has {} vertices.", partIdx, partSize);
     totalVertices += partSize;
   }
@@ -1286,9 +1277,9 @@ void PartitionMgr::readPartitioningFile(std::string filename)
   hypergraph();
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
-  unsigned partitionId = generatePartitionId();
+  const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = _options.getEvaluationFunction();
   _options.setTargetPartitions(_options.getFinalPartitions());
 
   std::ifstream file(filename);
@@ -1316,9 +1307,10 @@ void PartitionMgr::runClustering()
   }
 }
 
-void PartSolutions::addAssignment(std::vector<unsigned long> currentAssignment,
-                                  unsigned long runtime,
-                                  int seed)
+void PartSolutions::addAssignment(
+    const std::vector<unsigned long>& currentAssignment,
+    const unsigned long runtime,
+    const int seed)
 {
   _assignmentResults.push_back(currentAssignment);
   _runtimeResults.push_back(runtime);
