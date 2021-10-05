@@ -34,6 +34,8 @@
 
 #include <QDockWidget>
 #include <QItemDelegate>
+#include <QLabel>
+#include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QTreeView>
@@ -120,6 +122,8 @@ class Inspector : public QDockWidget
   Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
  signals:
+  void addSelected(const Selected& selected);
+  void removeSelected(const Selected& selected);
   void selected(const Selected& selected, bool showConnectivity = false);
   void selectedItemChanged(const Selected& selected);
 
@@ -156,8 +160,14 @@ class Inspector : public QDockWidget
   QTreeView* view_;
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
+  QVBoxLayout* action_layout_;
   const SelectionSet& selected_;
+  SelectionSet::iterator selected_itr_;
   Selected selection_;
+  QFrame* button_frame_;
+  QPushButton* button_next_;
+  QPushButton* button_prev_;
+  QLabel* selected_itr_label_;
   std::unique_ptr<QTimer> mouse_timer_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;

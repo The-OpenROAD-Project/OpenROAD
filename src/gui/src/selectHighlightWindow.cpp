@@ -382,6 +382,25 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           this,
           SLOT(zoomInHighlightedItems()));
 
+  connect(ui->selTableView->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          [this](const QItemSelection& selected_items, const QItemSelection& deselected_items) {
+            auto indexes = selected_items.indexes();
+            if (indexes.isEmpty()) {
+              return;
+            }
+            emit selected(*selection_model_.getItemAt(indexes[0].row()));
+          });
+  connect(ui->hltTableView->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          [this](const QItemSelection& selected_items, const QItemSelection& deselected_items) {
+            auto indexes = selected_items.indexes();
+            if (indexes.isEmpty()) {
+              return;
+            }
+            emit selected(*highlight_model_.getItemAt(indexes[0].row()));
+          });
+
   ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 
