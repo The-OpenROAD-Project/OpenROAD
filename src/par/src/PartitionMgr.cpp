@@ -109,7 +109,6 @@ void PartitionMgr::runChaco()
   const std::vector<int>& rowPtr = _graph->getRowPtr();
   const int numVertices = vertexWeights.size();
   const int numVerticesTotal = vertexWeights.size();
-  short highestCurrentPartition = 0;
 
   const int architecture = _options.getArchTopology().size();
   int architectureDims = 1;
@@ -145,7 +144,6 @@ void PartitionMgr::runChaco()
 
   for (long seed : _options.getSeeds()) {
     const auto start = std::chrono::system_clock::now();
-    const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
 
     int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
     int* currentIndex = starts;
@@ -422,7 +420,6 @@ void PartitionMgr::runMlPart()
     partitions.push_back(0);
 
     const auto start = std::chrono::system_clock::now();
-    const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
     while (partitions.size() < _options.getTargetPartitions()) {
       std::vector<short> auxPartitions;
       for (const int p : partitions) {
@@ -895,7 +892,6 @@ void PartitionMgr::runChacoClustering()
   const int numVertices = vertexWeights.size();
 
   const int architecture = _options.getArchTopology().size();
-  const int architectureDims = 1;
   int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
 
   const int numVertCoar = _options.getCoarVertices();
@@ -911,7 +907,6 @@ void PartitionMgr::runChacoClustering()
   const int level = _options.getLevel();
 
   const auto start = std::chrono::system_clock::now();
-  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
 
   int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
   int* currentIndex = starts;
@@ -1051,7 +1046,6 @@ void PartitionMgr::runGpMetisClustering()
     colIdx[i] = _graph->getColIdx(i);
   }
   const auto start = std::chrono::system_clock::now();
-  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
   idx_t* parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
 
   METIS_CoarsenGraph(&numVertices,
@@ -1117,7 +1111,6 @@ void PartitionMgr::runMlPartClustering()
   double balanceArray[2] = {0.5, 0.5};
 
   const auto start = std::chrono::system_clock::now();
-  const std::time_t startTime = std::chrono::system_clock::to_time_t(start);
   const int numEdges = hypergraph.getNumEdges();
   const int numColIdx = hypergraph.getNumColIdx();
   const int numVertices = hypergraph.getNumVertex();
