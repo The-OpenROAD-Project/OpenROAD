@@ -203,8 +203,8 @@ Resizer::incrementalParasiticsBegin()
     break;
   case ParasiticsSrc::none:
     break;
-    parasitics_invalid_.clear();
   }
+  parasitics_invalid_.clear();
 }
 
 void
