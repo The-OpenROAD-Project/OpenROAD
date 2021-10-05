@@ -295,6 +295,11 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
   net->pinL.push_back(layer);
 }
 
+void FastRouteCore::resetNewNetID()
+{
+  new_net_id_ = 0;
+}
+
 int FastRouteCore::addNet(odb::dbNet* db_net,
                           int num_pins,
                           bool is_clock,

@@ -41,6 +41,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 #include <utility> // pair
@@ -80,6 +81,7 @@ using odb::Rect;
 
 class Pixel;
 struct Group;
+class Graphics;
 
 using Grid = Pixel *;
 using dbMasterSeq = vector<dbMaster *>;
@@ -188,6 +190,10 @@ public:
   void setPadding(dbInst *inst,
                   int left,
                   int right);
+  void setDebug(bool displacement,
+                float min_displacement,
+                const dbInst* debug_instance);
+
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }
   int padGlobalRight() const { return pad_right_; }
@@ -205,6 +211,13 @@ public:
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
+
+  const vector<Cell>& getCells() const { return cells_; }
+  Rect getCore() const { return core_; }
+  int getRowHeight() const { return row_height_; }
+  int getSiteWidth() const { return site_width_; }
+  int getRowCount() const { return row_count_; }
+  int getRowSiteCount() const { return row_site_count_; }
 
 private:
   void importDb();
@@ -426,6 +439,8 @@ private:
   int64_t displacement_avg_;
   int64_t displacement_sum_;
   int64_t displacement_max_;
+
+  std::unique_ptr<Graphics> graphics_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

@@ -48,9 +48,7 @@ void frLayer::printAllConstraints(utl::Logger* logger)
   if (lef58DefaultInterCutSpacingTableConstraint)
     lef58DefaultInterCutSpacingTableConstraint->report(logger);
   for (auto& constraint : lef58SpacingEndOfLineConstraints) {
-    if (auto c = constraint.lock()) {
-      c->report(logger);
-    }
+    constraint->report(logger);
   }
   if (minSpc) {
     minSpc->report(logger);

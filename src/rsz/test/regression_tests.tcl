@@ -69,4 +69,3 @@ record_tests {
   repair_wire8
   gcd_resize
 }
-

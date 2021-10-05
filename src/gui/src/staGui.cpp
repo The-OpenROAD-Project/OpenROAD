@@ -43,7 +43,6 @@
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "ord/OpenRoad.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -120,8 +119,8 @@ float getRequiredTime(sta::dbSta* staRoot,
 
 /////////
 
-TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
-    : openroad_(ord::OpenRoad::openRoad())
+TimingPathsModel::TimingPathsModel(sta::dbSta* sta, bool get_max, int path_count)
+    : sta_(sta)
 {
 }
 
@@ -160,8 +159,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
     return QVariant();
   }
 
-  sta::dbSta* sta = openroad_->getSta();
-  auto time_units = sta->search()->units()->timeUnit();
+  auto time_units = sta_->search()->units()->timeUnit();
 
   unsigned int row_index = index.row();
   if (row_index > timing_paths_.size())
@@ -262,7 +260,6 @@ bool TimingPathsModel::populatePaths(bool get_max,
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  sta::dbSta* sta_ = openroad_->getSta();
   sta_->ensureGraph();
   sta_->searchPreamble();
 
@@ -431,8 +428,9 @@ std::string TimingPathNode::getNetName() const
 
 /////////
 
-TimingPathDetailModel::TimingPathDetailModel()
+TimingPathDetailModel::TimingPathDetailModel(sta::dbSta* sta)
   : QAbstractTableModel(),
+    sta_(sta),
     path_(nullptr)
 {
 }
@@ -470,8 +468,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     return QVariant();
   }
 
-  sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
-  const auto time_units = sta->search()->units()->timeUnit();
+  const auto time_units = sta_->search()->units()->timeUnit();
 
   const int row_index = index.row();
   if (row_index > path_->levelsCount())
@@ -491,7 +488,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     case Load: {
       if (node.load_ == 0)
         return "";
-      const auto cap_units = sta->search()->units()->capacitanceUnit();
+      const auto cap_units = sta_->search()->units()->capacitanceUnit();
       return cap_units->asString(node.load_);
     }
   }
@@ -518,7 +515,10 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_node_(0)
+TimingPathRenderer::TimingPathRenderer(sta::dbSta* sta) :
+    sta_(sta),
+    path_(nullptr),
+    highlight_node_(0)
 {
   TimingPathRenderer::path_inst_color_.a = 100;
   TimingPathRenderer::inst_highlight_color_.a = 100;
@@ -670,16 +670,15 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
     return;
   int src_x, src_y;
   int dst_x, dst_y;
-  auto getSegmentEnd = [](odb::dbObject* node, int& x, int& y, bool& clk_node) {
+  auto getSegmentEnd = [this](odb::dbObject* node, int& x, int& y, bool& clk_node) {
     if (node->getObjectType() == odb::dbObjectType::dbITermObj) {
       odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node);
       db_iterm->getAvgXY(&x, &y);
     } else {
       odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node);
       bterm->getFirstPinLocation(x, y);
-      sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
-      auto sta_term = sta->getDbNetwork()->dbToSta(bterm);
-      clk_node = sta->isClock(sta_term);
+      auto sta_term = sta_->getDbNetwork()->dbToSta(bterm);
+      clk_node = sta_->isClock(sta_term);
     }
   };
   // SigType is not populated properly in OpenDB

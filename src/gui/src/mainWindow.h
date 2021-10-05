@@ -71,9 +71,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
  public:
   MainWindow(QWidget* parent = nullptr);
+  ~MainWindow();
+
+  void setDatabase(odb::dbDatabase* db);
+  void init(sta::dbSta* sta);
 
   odb::dbDatabase* getDb() const { return db_; }
-  void setDb(odb::dbDatabase* db);
 
   // From ord::OpenRoad::Observer
   virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -90,8 +93,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   LayoutViewer* getLayoutViewer() const { return viewer_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
-
-  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
 
   const std::vector<std::string> getRestoreTclCommands();
 
@@ -137,6 +138,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Add the selections to the current selections
   void addSelected(const SelectionSet& selections);
+
+  // Remove a selection from the set of selections
+  void removeSelected(const Selected& selection);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection, bool show_connectivity = false);

@@ -44,7 +44,6 @@
 #include <vector>
 
 #include "db.h"
-#include "ord/OpenRoad.hh"
 #include "ui_congestionSetup.h"
 
 namespace gui {
