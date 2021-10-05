@@ -43,7 +43,7 @@ Options description:
 - ``x0, y0`` first corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
 - ``x1, y1`` second corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
 - ``microns_per_pixel` resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.
-- ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}`` or to show routing tracks ``-display_option {Tracks/Pref true}``.
+- ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}``, to show routing tracks ``-display_option {Tracks/Pref true}``, or to show everthing ``-display_option {* true}``.
 
 ## TCL functions
 
@@ -75,10 +75,12 @@ To open the GUI from the command-line (this command does not return until the GU
 ```
 gui::show
 gui::show script
+gui::show script interactive
 ```
 
 Options description:
 - ``script`` TCL script to evaluate in the GUI.
+- ``interactive`` indicates if true the GUI should open in an interactive session (default), or if false that the GUI would execute the script and return to the terminal.
 
 To close the GUI and return to the command-line:
 
@@ -267,7 +269,7 @@ gui::set_display_controls name display_type value
 ```
 
 Options description: 
-- ``name`` is the name of the control. For example, for the power nets option this would be ``Signals/Power``.
+- ``name`` is the name of the control. For example, for the power nets option this would be ``Signals/Power`` or could be ``Layers/*`` to set the option for all the layers.
 - ``display_type`` is either ``visible`` or ``selectable``
 - ``value`` is either ``true`` or ``false``
 

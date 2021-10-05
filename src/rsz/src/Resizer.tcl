@@ -223,18 +223,16 @@ proc estimate_parasitics { args } {
   
   sta::check_argc_eq0 "estimate_parasitics" $args
   if { [info exists flags(-placement)] } {
-    set have_rc 1
-    foreach corner [sta::corners] {
-      if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-        utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero. Use the set_wire_rc command to set wire resistance and capacitance."
-        set have_rc 0
-      }
-    }
-    if { $have_rc } {
-      rsz::estimate_parasitics_cmd
+    if { [rsz::check_corner_wire_cap] } {
+      rsz::estimate_parasitics_cmd "placement"
     }
   } elseif { [info exists flags(-global_routing)] } {
-    grt::estimate_rc_cmd
+    if { [grt::have_routes] } {
+      # should check for layer rc
+      rsz::estimate_parasitics_cmd "global_routing"
+    } else {
+      utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
+    }
   } else {
     utl::error RSZ 3 "missing -placement or -global_routing flag."
   }
@@ -506,7 +504,7 @@ proc parse_margin_arg { key keys_var } {
   }
   return $margin
 }
-  
+
 proc parse_max_util { keys_var } {
   upvar 1 $keys_var keys
   set max_util 0.0
@@ -531,6 +529,17 @@ proc parse_max_wire_length { keys_var } {
   return $max_wire_length
 }
   
+proc check_corner_wire_caps {} {
+  set have_rc 1
+  foreach corner [sta::corners] {
+    if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
+      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+      set have_rc 0
+    }
+  }
+  return $have_rc
+}
+
 proc check_max_wire_length { max_wire_length } {
   if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     # Must follow rsz::resizer_preamble so buffers are known.

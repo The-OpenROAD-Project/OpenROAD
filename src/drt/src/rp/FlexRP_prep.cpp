@@ -30,8 +30,8 @@
 #include <sstream>
 
 #include "FlexRP.h"
-#include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
@@ -47,6 +47,7 @@ void FlexRP::prep()
   prep_viaForbiddenTurnLen();
   prep_viaForbiddenPlanarLen();
   prep_lineForbiddenLen();
+  prep_eolForbiddenLen();
   prep_viaForbiddenThrough();
   for (auto& ndr : tech_->nonDefaultRules) {
     prep_via2viaForbiddenLen(ndr.get());
@@ -80,9 +81,11 @@ void FlexRP::prep_minStepViasCheck()
     frBox downViaBox = downVia->getLayer2ShapeBox();
     gtl::rectangle_data<frCoord> upViaRect(
         upViaBox.left(), upViaBox.bottom(), upViaBox.right(), upViaBox.top());
-    gtl::rectangle_data<frCoord> downViaRect(
-        downViaBox.left(), downViaBox.bottom(), downViaBox.right(), downViaBox.top());
-    
+    gtl::rectangle_data<frCoord> downViaRect(downViaBox.left(),
+                                             downViaBox.bottom(),
+                                             downViaBox.right(),
+                                             downViaBox.top());
+
     // joining the two via rects in one polygon
     gtl::polygon_90_set_data<frCoord> set;
     using namespace boost::polygon::operators;
@@ -92,7 +95,7 @@ void FlexRP::prep_minStepViasCheck()
     set.get_polygons(polys);
     if (polys.size() != 1)
       continue;
-    
+
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
     gcNet* testNet = new gcNet(0);
     gcPin* testPin = new gcPin(poly, lNum, testNet);
@@ -101,12 +104,10 @@ void FlexRP::prep_minStepViasCheck()
     bool first = true;
     std::vector<std::unique_ptr<gcSegment>> tmpEdges;
     gtl::point_data<frCoord> prev;
-    for(gtl::point_data<frCoord> cur : poly)
-    {
-      if(first)
-      {
+    for (gtl::point_data<frCoord> cur : poly) {
+      if (first) {
         prev = cur;
-        first = false; 
+        first = false;
       } else {
         auto edge = make_unique<gcSegment>();
         edge->setLayerNum(lNum);
@@ -199,6 +200,44 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
     return true;
   } else {
     return false;
+  }
+}
+
+void FlexRP::prep_eolForbiddenLen()
+{
+  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    auto layer = tech_->getLayer(lNum);
+    if (layer->getType() != dbTechLayerType::ROUTING) {
+      continue;
+    }
+    frCoord eolSpace = 0;
+    frCoord eolWithin = 0;
+    frCoord defaultWidth = layer->getWidth();
+    if (layer->hasEolSpacing()) {
+      for (auto con : layer->getEolSpacing()) {
+        if (defaultWidth <= con->getEolWidth()) {
+          eolSpace = std::max(eolSpace, con->getMinSpacing());
+          eolWithin = std::max(eolWithin, con->getEolWithin());
+        }
+      }
+    }
+    for (auto con : layer->getLef58SpacingEndOfLineConstraints()) {
+      if (defaultWidth <= con->getEolWidth()) {
+        eolSpace = std::max(eolSpace, con->getEolSpace());
+        if (con->hasWithinConstraint()) {
+          auto withinCon = con->getWithinConstraint();
+          eolWithin = std::max(eolWithin, withinCon->getEolWithin());
+          if (withinCon->hasEndToEndConstraint()) {
+            auto endToEndCon = withinCon->getEndToEndConstraint();
+            eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+          }
+        }
+      }
+    }
+    layer->setDrEolSpacingConstraint(eolSpace, eolWithin);
   }
 }
 
@@ -762,11 +801,11 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       lef58con = layer1->getLef58SameNetCutSpcTblConstraint();
     else if (layer1->hasLef58DiffNetCutSpcTblConstraint())
       lef58con = layer1->getLef58DiffNetCutSpcTblConstraint();
-
     if (lef58con != nullptr) {
       auto dbRule = lef58con->getODBRule();
       reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         if (!swapped)
           reqSpcVal += isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
                                   : (cutBox1.right() - cutBox1.left());
@@ -783,8 +822,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       con = layer1->getLef58SameMetalInterCutSpcTblConstraint();
     else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
       con = layer1->getLef58SameNetInterCutSpcTblConstraint();
-    else if (layer1->hasLef58DefaultInterCutSpcTblConstraint())
-      con = layer1->getLef58DefaultInterCutSpcTblConstraint();
     else
       return;
     auto dbRule = con->getODBRule();
@@ -794,7 +831,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
     if (reqSpcVal == 0)
       return;
-    if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+    if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+        && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
       reqSpcVal += isCurrDirY ? ((cutBox1.top() - cutBox1.bottom()
                                   + cutBox2.top() - cutBox2.bottom())
                                  / 2)

@@ -100,6 +100,8 @@ public:
                     QAbstractItemModel* model,
                     const QModelIndex& index) const override;
 
+  static EditType getEditorType(const std::any& value);
+
 private:
   SelectedItemModel* model_;
   const QColor background_;

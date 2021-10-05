@@ -155,10 +155,70 @@ void DisplayColorDialog::rejectDialog()
   reject();
 }
 
+DisplayControlModel::DisplayControlModel(QWidget* parent) :
+  QStandardItemModel(0, 4, parent)
+{
+}
+
+QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
+{
+  if (role == Qt::ToolTipRole) {
+    QStandardItem* item = itemFromIndex(index);
+    QVariant data = item->data(Qt::UserRole);
+    if (data.isValid()) {
+      odb::dbTechLayer* layer = data.value<odb::dbTechLayer*>();
+      auto selected = Gui::get()->makeSelected(layer);
+      if (selected) {
+        auto props = selected.getProperties();
+        const QString micron = "\u03BC";
+
+        // provide tooltip with layer information
+        QString information;
+
+        auto add_prop = [props](const std::string& prop, QString& info) -> bool {
+          auto prop_find = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
+            return p.name == prop;
+          });
+          if (prop_find == props.end()) {
+            return false;
+          }
+          info += "\n" + QString::fromStdString(prop) + ": ";
+          info += QString::fromStdString(prop_find->toString());
+          return true;
+        };
+
+        // direction
+        add_prop("Direction", information);
+
+        // min width
+        if (add_prop("Minimum width", information)) {
+          information += micron + "m";
+        }
+
+        // min spacing
+        if (add_prop("Minimum spacing", information)) {
+          information += micron + "m";
+        }
+
+        // resistance
+        add_prop("Resistance", information);
+
+        // capacitance
+        add_prop("Capacitance", information);
+
+        if (!information.isEmpty()) {
+          return information.remove(0, 1);
+        }
+      }
+    }
+  }
+  return QStandardItemModel::data(index, role);
+}
+
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(parent)),
-      model_(new QStandardItemModel(0, 4, parent)),
+      model_(new DisplayControlModel(parent)),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
@@ -602,8 +662,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       if (!tech_layer_data.isValid()) {
         return;
       }
-      auto tech_layer
-          = static_cast<odb::dbTechLayer*>(tech_layer_data.value<void*>());
+      auto tech_layer = tech_layer_data.value<odb::dbTechLayer*>();
       if (tech_layer == nullptr) {
         return;
       }
@@ -791,68 +850,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           true,
           color(layer),
-          type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(static_cast<void*>(layer)));
-      if (type == dbTechLayerType::ROUTING) {
-        auto selected = Gui::get()->makeSelected(layer);
-        if (!selected) {
-          continue;
-        }
-        auto props = selected.getProperties();
-
-        const QString micron = "\u03BC";
-
-        // provide tooltip with layer information
-        QString information;
-
-        auto add_prop = [props](const std::string& prop, QString& info) -> bool {
-          auto prop_find = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
-            return p.name == prop;
-          });
-          if (prop_find == props.end()) {
-            return false;
-          }
-          info += "\n" + QString::fromStdString(prop) + ": ";
-          if (auto v = std::any_cast<const char*>(&(*prop_find).value)) {
-            info += QString(*v);
-          } else if (auto v = std::any_cast<const std::string>(&(*prop_find).value)) {
-            info += QString::fromStdString(*v);
-          } else if (auto v = std::any_cast<int>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<unsigned int>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<double>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else if (auto v = std::any_cast<float>(&(*prop_find).value)) {
-            info += QString::number(*v);
-          } else {
-            info += "<unknown>";
-          }
-          return true;
-        };
-
-        // direction
-        add_prop("Direction", information);
-
-        // min width
-        if (add_prop("Minimum width", information)) {
-          information += micron + "m";
-        }
-
-        // min spacing
-        if (add_prop("Minimum spacing", information)) {
-          information += micron + "m";
-        }
-
-        // resistance
-        add_prop("Resistance", information);
-
-        // capacitance
-        add_prop("Capacitance", information);
-
-        if (!information.isEmpty()) {
-          row.name->setToolTip(information.remove(0, 1));
-        }
-      }
+          type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(layer));
     }
   }
 
@@ -905,6 +903,9 @@ void DisplayControls::makeLeafItem(
 {
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
+  if (user_data.isValid()) {
+    row.name->setData(user_data, Qt::UserRole);
+  }
 
   row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);

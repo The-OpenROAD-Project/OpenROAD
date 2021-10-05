@@ -120,6 +120,7 @@ class FastRouteCore
              int min_layer,
              int max_layer,
              std::vector<int> edge_cost_per_layer);
+  void resetNewNetID();
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,

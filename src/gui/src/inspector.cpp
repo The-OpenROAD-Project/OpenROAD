@@ -51,42 +51,6 @@ namespace gui {
 
 using namespace odb;
 
-static QString convertAnyToQString(const std::any& item, EditorItemDelegate::EditType* type = nullptr)
-{
-  QString value;
-  EditorItemDelegate::EditType value_type = EditorItemDelegate::STRING; // default to string
-
-  if (auto selected = std::any_cast<Selected>(&item)) {
-    value = QString::fromStdString(selected->getName());
-  } else if (auto v = std::any_cast<const char*>(&item)) {
-    value = QString(*v);
-  } else if (auto v = std::any_cast<const std::string>(&item)) {
-    value = QString::fromStdString(*v);
-  } else if (auto v = std::any_cast<int>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<unsigned int>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<double>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<float>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<bool>(&item)) {
-    value_type = EditorItemDelegate::BOOL;
-    value = *v ? "True" : "False";
-  } else {
-    value = "<unknown>";
-  }
-
-  if (type != nullptr) {
-    *type = value_type;
-  }
-  return value;
-}
-
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (index.column() == 1) {
@@ -210,13 +174,34 @@ void EditorItemDelegate::setModelData(QWidget* editor,
         auto new_selected = std::any_cast<Selected>(new_property);
         model->setData(index, QVariant::fromValue(new_selected), selected_);
       }
-      edit_save = convertAnyToQString(new_property);
+      edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
     }
   }
   model->setData(index, edit_save, Qt::EditRole);
 
   // disable editing as we are done editing
   model_->itemFromIndex(index)->setEditable(false);
+}
+
+EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
+{
+  if (auto v = std::any_cast<const char*>(&value)) {
+    return EditorItemDelegate::STRING;
+  } else if (auto v = std::any_cast<const std::string>(&value)) {
+    return EditorItemDelegate::STRING;
+  } else if (auto v = std::any_cast<int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<double>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<float>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<bool>(&value)) {
+    return EditorItemDelegate::BOOL;
+  } else {
+    return EditorItemDelegate::STRING;
+  }
 }
 
 ////////
@@ -289,10 +274,12 @@ void Inspector::inspect(const Selected& object)
   Descriptor::Properties properties = object.getProperties();
   std::copy(properties.begin(), properties.end(), std::back_inserter(all_properties));
 
-  for (auto& [name, value] : all_properties) {
+  for (auto& prop : all_properties) {
+    const std::string& name = prop.name;
+    const std::any& value = prop.value;
+
     auto name_item = makeItem(QString::fromStdString(name));
     auto editor_found = editors.find(name);
-    EditorItemDelegate::EditType editor_type = EditorItemDelegate::STRING; // default to string
 
     QStandardItem* value_item = nullptr;
 
@@ -307,7 +294,7 @@ void Inspector::inspect(const Selected& object)
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
     } else {
-      value_item = makeItem(convertAnyToQString(value, &editor_type));
+      value_item = makeItem(QString::fromStdString(prop.toString()));
     }
 
     model_->appendRow({name_item, value_item});
@@ -320,7 +307,7 @@ void Inspector::inspect(const Selected& object)
     // make editor if found
     if (editor_found != editors.end()) {
       auto editor = (*editor_found).second;
-      makeItemEditor(name, value_item, object, editor_type, editor);
+      makeItemEditor(name, value_item, object, EditorItemDelegate::getEditorType(value), editor);
     }
   }
 
@@ -414,7 +401,7 @@ QStandardItem* Inspector::makeItem(const QString& name)
 
 QStandardItem* Inspector::makeItem(const std::any& item)
 {
-  return makeItem(convertAnyToQString(item));
+  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
 }
 
 QStandardItem* Inspector::makeItem(const Selected& selected)

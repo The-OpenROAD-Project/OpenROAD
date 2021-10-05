@@ -75,6 +75,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Renderer::redraw()
+{
+}
+
 Renderer::~Renderer()
 {
 }
@@ -100,6 +104,11 @@ void Gui::setSelected(Selected selection)
 void Gui::registerDescriptor(const std::type_info& type,
                         const Descriptor* descriptor)
 {
+}
+
+std::string Descriptor::Property::toString(const std::any& /* value */)
+{
+  return "";
 }
 
 // using namespace odb;
