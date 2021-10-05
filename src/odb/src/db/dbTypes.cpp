@@ -1710,4 +1710,60 @@ const char* dbDirection::getString() const
   return value;
 }
 
+dbMTermShapeType::dbMTermShapeType(const char* value)
+{
+  if (strcasecmp(value, "NONE") == 0)
+    _value = NONE;
+
+  else if (strcasecmp(value, "RING") == 0)
+    _value = RING;
+
+  else if (strcasecmp(value, "ABUTMENT") == 0)
+    _value = ABUTMENT;
+
+  else if (strcasecmp(value, "FEEDTHRU") == 0)
+    _value = FEEDTHRU;
+}
+
+dbMTermShapeType::dbMTermShapeType(Value value)
+{
+  _value = value;
+}
+
+dbMTermShapeType::dbMTermShapeType()
+{
+  _value = NONE;
+}
+
+dbMTermShapeType::dbMTermShapeType(const dbMTermShapeType& value)
+{
+  _value = value._value;
+}
+
+const char* dbMTermShapeType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case NONE:
+      value = "NONE";
+      break;
+
+    case RING:
+      value = "RING";
+      break;
+
+    case FEEDTHRU:
+      value = "FEEDTHRU";
+      break;
+
+    case ABUTMENT:
+      value = "ABUTMENT";
+      break;
+  }
+
+  return value;
+}
+
+
 }  // namespace odb
