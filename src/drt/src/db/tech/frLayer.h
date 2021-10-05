@@ -40,6 +40,13 @@ namespace fr {
 namespace io {
 class Parser;
 }
+struct drEolSpacingConstraint
+{
+  drEolSpacingConstraint() : eolSpace(0), eolWithin(0) {}
+  frCoord eolSpace;
+  frCoord eolWithin;
+};
+
 class frLayer
 {
  public:
@@ -82,7 +89,8 @@ class frLayer
         lef58CutSpacingTableDiffNetConstraint(nullptr),
         lef58SameNetInterCutSpacingTableConstraint(nullptr),
         lef58SameMetalInterCutSpacingTableConstraint(nullptr),
-        lef58DefaultInterCutSpacingTableConstraint(nullptr)
+        lef58DefaultInterCutSpacingTableConstraint(nullptr),
+        drEolCon()
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
@@ -283,21 +291,16 @@ class frLayer
   // spacing end of line
   bool hasLef58SpacingEndOfLineConstraints() const
   {
-    return (lef58SpacingEndOfLineConstraints.size()) ? true : false;
+    return !lef58SpacingEndOfLineConstraints.empty();
   }
-  frCollection<std::shared_ptr<frLef58SpacingEndOfLineConstraint>>
+  const frCollection<frLef58SpacingEndOfLineConstraint*>&
   getLef58SpacingEndOfLineConstraints() const
   {
-    frCollection<std::shared_ptr<frLef58SpacingEndOfLineConstraint>> sol;
-    std::transform(lef58SpacingEndOfLineConstraints.begin(),
-                   lef58SpacingEndOfLineConstraints.end(),
-                   std::back_inserter(sol),
-                   [](auto& kv) { return kv.lock(); });
-    return sol;
+    return lef58SpacingEndOfLineConstraints;
   }
 
   void addLef58SpacingEndOfLineConstraint(
-      const std::shared_ptr<frLef58SpacingEndOfLineConstraint>& constraintIn)
+      frLef58SpacingEndOfLineConstraint* constraintIn)
   {
     lef58SpacingEndOfLineConstraints.push_back(constraintIn);
   }
@@ -657,6 +660,14 @@ class frLayer
     return lef58DefaultInterCutSpacingTableConstraint;
   }
 
+  void setDrEolSpacingConstraint(frCoord space, frCoord within)
+  {
+    drEolCon.eolSpace = space;
+    drEolCon.eolWithin = within;
+  }
+
+  drEolSpacingConstraint getDrEolSpacingConstraint() const { return drEolCon; }
+
   void printAllConstraints(utl::Logger* logger);
 
  protected:
@@ -675,7 +686,7 @@ class frLayer
   std::map<std::string, int> name2CutClassIdxMap;
   frCollection<std::weak_ptr<frConstraint>> constraints;
 
-  frCollection<std::weak_ptr<frLef58SpacingEndOfLineConstraint>>
+  frCollection<frLef58SpacingEndOfLineConstraint*>
       lef58SpacingEndOfLineConstraints;
 
   frConstraint* minSpc;
@@ -721,6 +732,7 @@ class frLayer
 
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
+  drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr
 

@@ -1030,8 +1030,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       enc->setBelow(rule->isBelowValid());
       enc->setAllCuts(rule->isAllCutsValid());
     }
+    tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech->addConstraint(con);
-    tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);
   }
   if (layer->isRectOnly()) {
     auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(

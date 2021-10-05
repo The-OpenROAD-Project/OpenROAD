@@ -1060,7 +1060,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
         checkMetalEndOfLine_eol(edge.get(), con);
       }
       for (auto con : lef58Cons) {
-        checkMetalEndOfLine_eol(edge.get(), con.get());
+        checkMetalEndOfLine_eol(edge.get(), con);
       }
       for (auto con : keepoutCons) {
         checkMetalEOLkeepout_main(edge.get(), con);
