@@ -1030,8 +1030,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       enc->setBelow(rule->isBelowValid());
       enc->setAllCuts(rule->isAllCutsValid());
     }
+    tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech->addConstraint(con);
-    tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);
   }
   if (layer->isRectOnly()) {
     auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(
@@ -1039,7 +1039,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech->addUConstraint(std::move(rectOnlyConstraint));
   }
-  if (layer->isRightWayOnGridOnly()) {
+  if (layer->isRightWayOnGridOnly() || layer->getNumMasks() > 1) {
     auto rightWayOnGridOnlyConstraint
         = make_unique<frLef58RightWayOnGridOnlyConstraint>(
             layer->isRightWayOnGridOnlyCheckMask());

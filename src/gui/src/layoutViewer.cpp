@@ -799,19 +799,18 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   return {selected_edge, true};
 }
 
-Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
+void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 {
   if (db_ == nullptr) {
-    return Selected();
+    return;
   }
 
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = db_->getTech();
-  std::vector<Selected> selections;
 
   if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
-    auto blockages = search_.searchBlockages(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+    auto blockages = search_.searchBlockages(region.xMin(), region.yMin(), region.xMax(), region.yMax());
     for (auto iter : blockages) {
       selections.push_back(makeSelected_(std::get<2>(iter)));
     }
@@ -829,7 +828,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     }
 
     for (auto* renderer : renderers) {
-      for (auto selected : renderer->select(layer, pt_dbu)) {
+      for (auto selected : renderer->select(layer, region)) {
         // copy selected items from the renderer
         selections.push_back(selected);
       }
@@ -837,14 +836,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     if (options_->areObstructionsVisible() && options_->areObstructionsSelectable()) {
       auto obs = search_.searchObstructions(
-          layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+          layer, region.xMin(), region.yMin(), region.xMax(), region.yMax());
       for (auto iter : obs) {
         selections.push_back(makeSelected_(std::get<2>(iter)));
       }
     }
 
     auto shapes = search_.searchShapes(
-        layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+        layer, region.xMin(), region.yMin(), region.xMax(), region.yMax());
 
     // Just return the first one
     for (auto iter : shapes) {
@@ -857,14 +856,14 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
   // Check for objects not in a layer
   for (auto* renderer : renderers) {
-    for (auto selected : renderer->select(nullptr, pt_dbu)) {
+    for (auto selected : renderer->select(nullptr, region)) {
       selections.push_back(selected);
     }
   }
 
   // Look for an instance since no shape was found
   auto insts
-      = search_.searchInsts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+      = search_.searchInsts(region.xMin(), region.yMin(), region.xMax(), region.yMax());
 
   for (auto& inst : insts) {
     dbInst* inst_ptr = std::get<2>(inst);
@@ -878,11 +877,29 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // because rulers are 1 pixel wide, we'll add another couple of pixels to its width
     const int ruler_margin = 4 / pixels_per_dbu_; // 4 pixels in each direction
     for (auto& ruler : rulers_) {
-      if (ruler->fuzzyIntersection(pt_dbu, ruler_margin)) {
+      if (ruler->fuzzyIntersection(region, ruler_margin)) {
         selections.push_back(makeSelected_(ruler.get()));
       }
     }
   }
+}
+
+SelectionSet LayoutViewer::selectAt(odb::Rect region)
+{
+  std::vector<Selected> selections;
+  selectAt(region, selections);
+
+  SelectionSet selected;
+  for (auto& select : selections) {
+    selected.insert(select);
+  }
+  return selected;
+}
+
+Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
+{
+  std::vector<Selected> selections;
+  selectAt({pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y()}, selections);
 
   if (!selections.empty()) {
     if (selections.size() == 1) {
@@ -982,32 +999,20 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
   }
   
   mouse_press_pos_ = event->pos();
-  if (event->button() == Qt::LeftButton) {
-    Point pt_dbu = screenToDBU(event->pos());
-    if (building_ruler_) {
-      // build ruler...
-      odb::Point next_ruler_pt = findNextRulerPoint(pt_dbu);
-      if (ruler_start_ == nullptr) {
-        ruler_start_ = std::make_unique<odb::Point>(next_ruler_pt);
-      } else {
-        emit addRuler(ruler_start_->x(), ruler_start_->y(), next_ruler_pt.x(), next_ruler_pt.y());
-        cancelRulerBuild();
-      }
-    } else if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
-      emit addSelected(selectAtPoint(pt_dbu));
-    } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
-      emit selected(selectAtPoint(pt_dbu), true);
+  Point pt_dbu = screenToDBU(mouse_press_pos_);
+  if (building_ruler_ && event->button() == Qt::LeftButton) {
+    // build ruler...
+    odb::Point next_ruler_pt = findNextRulerPoint(pt_dbu);
+    if (ruler_start_ == nullptr) {
+      ruler_start_ = std::make_unique<odb::Point>(next_ruler_pt);
     } else {
-      emit selected(selectAtPoint(pt_dbu), false);
+      emit addRuler(ruler_start_->x(), ruler_start_->y(), next_ruler_pt.x(), next_ruler_pt.y());
+      cancelRulerBuild();
     }
-  } else if (event->button() == Qt::RightButton) {
-    Point pt_dbu = screenToDBU(event->pos());
-    rubber_band_showing_ = true;
-    rubber_band_.setTopLeft(event->pos());
-    rubber_band_.setBottomRight(event->pos());
-    update();
-    setCursor(Qt::CrossCursor);
   }
+
+  rubber_band_.setTopLeft(mouse_press_pos_);
+  rubber_band_.setBottomRight(mouse_press_pos_);
 }
 
 void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
@@ -1017,11 +1022,13 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
     return;
   }
 
+  mouse_move_pos_ = event->pos();
+
   // emit location in microns
-  Point pt_dbu = screenToDBU(event->pos());
+  Point pt_dbu = screenToDBU(mouse_move_pos_);
   qreal to_dbu = block->getDbUnitsPerMicron();
   emit location(pt_dbu.x() / to_dbu, pt_dbu.y() / to_dbu);
-  mouse_move_pos_ = event->pos();
+
   if (building_ruler_) {
     if (!(qGuiApp->keyboardModifiers() & Qt::ControlModifier)) {
       // set to false and toggle to true if edges are available
@@ -1031,7 +1038,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
       bool do_hor = true;
 
       if (ruler_start_ != nullptr && !(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
-        const odb::Point mouse_pos = screenToDBU(mouse_move_pos_);
+        const odb::Point mouse_pos = pt_dbu;
 
         if (std::abs(ruler_start_->x() - mouse_pos.x()) < std::abs(ruler_start_->y() - mouse_pos.y())) {
           // mostly vertical, so don't look for vertical snaps
@@ -1069,10 +1076,16 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
     update();
   }
-  if (rubber_band_showing_) {
-    update();
-    rubber_band_.setBottomRight(event->pos());
-    update();
+  if (!rubber_band_.isNull()) {
+    rubber_band_.setBottomRight(mouse_move_pos_);
+    const QRect rect = rubber_band_.normalized();
+    if (rect.width() >= 4 && rect.height() >= 4) {
+      rubber_band_showing_ = true;
+      setCursor(Qt::CrossCursor);
+    }
+    if (rubber_band_showing_) {
+      update();
+    }
   }
 }
 
@@ -1083,20 +1096,23 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     return;
   }
 
-  if (event->button() == Qt::RightButton && rubber_band_showing_) {
+  QPoint mouse_pos = event->pos();
+
+  const QRect rubber_band = rubber_band_.normalized();
+  if (!rubber_band_.isNull()) {
+    rubber_band_ = QRect();
+  }
+
+  if (rubber_band_showing_) {
+    Rect rubber_band_dbu = screenToDBU(rubber_band);
+
     rubber_band_showing_ = false;
     update();
+
     unsetCursor();
-    QRect rect = rubber_band_.normalized();
-    if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)
-        && (rect.width() < 4 || rect.height() < 4)) {
-      showLayoutCustomMenu(event->pos());
-      return;  // ignore clicks not intended to be drags
-    }
 
     const Rect block_bounds = getBounds(block);
 
-    Rect rubber_band_dbu = screenToDBU(rect);
     // Clip to the block bounds
     Rect bbox = getPaddedRect(block_bounds);
 
@@ -1104,7 +1120,30 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox.yMin()));
     rubber_band_dbu.set_xhi(qMin(rubber_band_dbu.xMax(), bbox.xMax()));
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
-    zoomTo(rubber_band_dbu);
+
+    if (event->button() == Qt::LeftButton) {
+      auto selection = selectAt(rubber_band_dbu);
+      if (!(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
+        emit selected(Selected()); // remove previous selections
+      }
+      emit addSelected(selection);
+    } else if (event->button() == Qt::RightButton) {
+      zoomTo(rubber_band_dbu);
+    }
+  } else {
+    if (event->button() == Qt::LeftButton) {
+      Point pt_dbu = screenToDBU(mouse_pos);
+      Selected selection = selectAtPoint(pt_dbu);
+      if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
+        emit addSelected(selection);
+      } else {
+        emit selected(selection, qGuiApp->keyboardModifiers() & Qt::ControlModifier);
+      }
+    } else if (event->button() == Qt::RightButton) {
+      if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)) {
+        showLayoutCustomMenu(event->pos());
+      }
+    }
   }
 }
 
@@ -1592,17 +1631,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  // core cell text should be 10% of cell height
-  static const float size_target = 0.1;
   // text should not fill more than 90% of the instance height or width
   static const float size_limit = 0.9;
   static const float rotation_limit = 0.85; // slightly lower to prevent oscillating rotations when zooming
 
   // limit non-core text to 1/2.0 (50%) of cell height or width
   static const float non_core_scale_limit = 2.0;
-
-  const float font_core_scale_height = size_target * pixels_per_dbu_;
-  const float font_core_scale_width = size_limit * pixels_per_dbu_;
 
   painter->setFont(text_font);
   for (auto inst : insts) {
@@ -1721,7 +1755,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   int min_resolution = fineViewableResolution();  // 1 pixel in DBU
   int nominal_resolution = nominalViewableResolution();
   LayerBoxes boxes;
-  QTransform initial_xfm = painter->transform();
 
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter,

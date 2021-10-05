@@ -479,8 +479,6 @@ int extMeasure::readQcap(extMain* extMain, const char* filename,
           continue;
         }
 
-        dbTechLayerType type = techLayer->getType();
-
         if (techLayer->getRoutingLevel() == 0)
           continue;
 
@@ -727,7 +725,6 @@ int extMeasure::readAB(extMain* extMain, const char* filename,
           layerName, parser1.getLineNum(), filename);
       continue;
     }
-    dbTechLayerType type = techLayer->getType();
     if (techLayer->getRoutingLevel() == 0)
       continue;
 

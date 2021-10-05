@@ -2126,7 +2126,6 @@ int FastRouteCore::getOverflow3D()
 {
   // get overflow
   int overflow = 0;
-  int max_overflow = 0;
   int H_overflow = 0;
   int V_overflow = 0;
   int max_H_overflow = 0;
@@ -2162,7 +2161,6 @@ int FastRouteCore::getOverflow3D()
     }
   }
 
-  max_overflow = std::max(max_H_overflow, max_V_overflow);
   total_overflow_ = H_overflow + V_overflow;
 
   return total_usage;

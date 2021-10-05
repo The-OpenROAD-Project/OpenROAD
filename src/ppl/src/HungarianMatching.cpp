@@ -43,9 +43,10 @@ HungarianMatching::HungarianMatching(Section& section,
                                      Netlist& netlist,
                                      std::vector<Slot>& slots,
                                      Logger* logger)
-    : netlist_(netlist), slots_(slots),
+    : netlist_(netlist),
       pin_indices_(section.pin_indices),
-      pin_groups_(section.pin_groups)
+      pin_groups_(section.pin_groups),
+      slots_(slots)
 {
   num_io_pins_ = section.pin_indices.size();
   num_pin_groups_ = netlist_.numIOGroups();

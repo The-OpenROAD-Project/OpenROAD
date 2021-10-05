@@ -12,4 +12,3 @@ rsz::find_resize_slacks
 foreach net [rsz::resize_worst_slack_nets] {
   puts "[get_full_name $net] [sta::format_time [rsz::resize_net_slack $net] 3]"
 }
-

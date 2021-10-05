@@ -153,6 +153,7 @@ class SelectHighlightWindow : public QDockWidget
   void clearAllSelections();
   void clearAllHighlights();
 
+  void selected(const Selected& selection);
   void clearSelectedItems(const QList<const Selected*>& items);
   void clearHighlightedItems(const QList<const Selected*>& items);
   void zoomInToItems(const QList<const Selected*>& items);

@@ -45,16 +45,14 @@
 #include "odb/db.h"
 #include "staGui.h"
 
-namespace ord {
-class OpenRoad;
-}
-
 namespace gui {
 class TimingWidget : public QDockWidget
 {
   Q_OBJECT
  public:
   TimingWidget(QWidget* parent = nullptr);
+
+  void init(sta::dbSta* sta);
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
 

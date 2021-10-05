@@ -140,7 +140,7 @@ class DRCWidget : public QDockWidget, public Renderer
 
     // Renderer
     void drawObjects(Painter& painter) override;
-    SelectionSet select(odb::dbTechLayer* layer, const odb::Point& point) override;
+    SelectionSet select(odb::dbTechLayer* layer, const odb::Rect& region) override;
 
   signals:
     void selectDRC(const Selected& selected);
