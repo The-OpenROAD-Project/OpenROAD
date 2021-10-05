@@ -45,11 +45,11 @@
 #include <vector>
 #include <QDebug>
 
+#include "dbDescriptors.h"
 #include "displayControls.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
-#include "ord/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
@@ -282,6 +282,40 @@ MainWindow::MainWindow(QWidget* parent)
   setWindowTitle("OpenROAD");
 }
 
+MainWindow::~MainWindow()
+{
+  // unregister descriptors
+  Gui::get()->unregisterDescriptor<Ruler*>();
+}
+
+void MainWindow::setDatabase(odb::dbDatabase* db)
+{
+  // set database and pass along
+  db_ = db;
+  controls_->setDb(db_);
+  viewer_->setDb(db_);
+  selection_browser_->setDb(db_);
+}
+
+void MainWindow::init(sta::dbSta* sta)
+{
+  // Setup timing widget
+  timing_widget_->init(sta);
+
+  // register descriptors
+  auto* gui = Gui::get();
+  gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(sta));
+  gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(sta));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
+  gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+  gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+  gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+  gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+  gui->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+}
+
 void MainWindow::createStatusBar()
 {
   location_ = new QLabel();
@@ -451,14 +485,6 @@ const std::string MainWindow::requestUserInput(const QString& title, const QStri
                                        title,
                                        question);
   return text.toStdString();
-}
-
-void MainWindow::setDb(odb::dbDatabase* db)
-{
-  db_ = db;
-  controls_->setDb(db);
-  viewer_->setDb(db);
-  selection_browser_->setDb(db);
 }
 
 void MainWindow::setLocation(qreal x, qreal y)
@@ -846,7 +872,7 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   std::vector<std::string> cmds;
   // Save rulers
   for (const auto& ruler : rulers_) {
-    cmds.push_back(ruler->getTclCommand());
+    cmds.push_back(ruler->getTclCommand(db_->getChip()->getBlock()->getDbUnitsPerMicron()));
   }
   // Save buttons
   for (const auto& action : view_tool_bar_->actions()) {

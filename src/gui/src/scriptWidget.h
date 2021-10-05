@@ -45,7 +45,7 @@
 
 namespace odb {
 class dbDatabase;
-}
+} // namespace odb
 
 namespace gui {
 
@@ -68,7 +68,7 @@ class ScriptWidget : public QDockWidget
 
   void setLogger(utl::Logger* logger);
 
-  void setupTcl(Tcl_Interp* interp);
+  void setupTcl(Tcl_Interp* interp, bool do_init_openroad);
 
   void setFont(const QFont& font);
 
