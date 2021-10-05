@@ -147,6 +147,35 @@ proc optimize_mirroring { args } {
 
 namespace eval dpl {
 
+# min_displacement is the smallest displacement to draw
+# measured as a multiple of row_height.
+proc detailed_placement_debug { args } {
+  sta::parse_key_args "global_placement_debug" args \
+      keys {-instance -min_displacement} \
+      flags {-displacement}
+
+  set displacement [info exists flags(-displacement)]
+
+  if { [info exists keys(-min_displacement)] } {
+    set min_displacement $keys(-min_displacement)
+  } else {
+      set min_displacement 0
+  }
+
+  if { [info exists keys(-instance)] } {
+      set instance_name $keys(-instance)
+      set block [ord::get_db_block]
+      set debug_instance [$block findInst $instance_name]
+      if {$debug_instance == "NULL"} {
+          utl::error DPL 32 "Debug instance $instance_name not found."
+      }
+  } else {
+      set debug_instance "NULL"
+  }
+
+  dpl::set_debug_cmd $displacement $min_displacement $debug_instance
+}
+
 proc get_masters_arg { arg_name arg } {
   set matched 0
   set masters {}

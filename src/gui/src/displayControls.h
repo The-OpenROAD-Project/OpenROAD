@@ -128,6 +128,16 @@ class DisplayColorDialog : public QDialog
       {Qt::FDiagPattern, Qt::BDiagPattern}};
 };
 
+class DisplayControlModel : public QStandardItemModel
+{
+  Q_OBJECT
+
+ public:
+  DisplayControlModel(QWidget* parent = nullptr);
+
+  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+};
+
 // This class shows the user the set of layers & objects that
 // they can control the visibility and selectablity of.  The
 // controls are show in a tree view to provide grouping of
@@ -311,7 +321,7 @@ class DisplayControls : public QDockWidget, public Options
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
   QTreeView* view_;
-  QStandardItemModel* model_;
+  DisplayControlModel* model_;
 
   bool ignore_callback_;
 

@@ -683,6 +683,27 @@ void Selected::highlight(Painter& painter,
   return descriptor_->highlight(object_, painter, additional_data_);
 }
 
+std::string Descriptor::Property::toString(const std::any& value)
+{
+  if (auto v = std::any_cast<const char*>(&value)) {
+    return *v;
+  } else if (auto v = std::any_cast<const std::string>(&value)) {
+    return *v;
+  } else if (auto v = std::any_cast<int>(&value)) {
+    return std::to_string(*v);
+  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+    return std::to_string(*v);
+  } else if (auto v = std::any_cast<double>(&value)) {
+    return QString::number(*v).toStdString();
+  } else if (auto v = std::any_cast<float>(&value)) {
+    return QString::number(*v).toStdString();
+  } else if (auto v = std::any_cast<bool>(&value)) {
+    return *v ? "True" : "False";
+  } else {
+    return "<unknown>";
+  }
+}
+
 }  // namespace gui
 
 namespace sta {

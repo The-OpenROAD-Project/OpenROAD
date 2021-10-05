@@ -46,6 +46,11 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 
+namespace grt {
+class GlobalRouter;
+class IncrementalGRoute;
+}
+
 namespace rsz {
 
 using std::array;
@@ -64,6 +69,9 @@ using odb::dbBlock;
 using odb::dbTechLayer;
 
 using stt::SteinerTreeBuilder;
+
+using grt::GlobalRouter;
+using grt::IncrementalGRoute;
 
 using sta::StaState;
 using sta::Sta;
@@ -122,6 +130,8 @@ typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
 typedef Vector<BufferedNet*> BufferedNetSeq;
 
+enum class ParasiticsSrc { none, placement, global_routing };
+
 class Resizer : public StaState
 {
 public:
@@ -132,7 +142,8 @@ public:
             Gui *gui,
             dbDatabase *db,
             dbSta *sta,
-            SteinerTreeBuilder *stt_builder);
+            SteinerTreeBuilder *stt_builder,
+            GlobalRouter *global_router);
 
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -157,11 +168,12 @@ public:
   // farads/meter
   double wireSignalCapacitance(const Corner *corner);
   double wireClkCapacitance(const Corner *corner);
+  void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const Pin *drvr_pin,
                              const Net *net);
-  bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
+  bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net *net);
   void parasiticsInvalid(const dbNet *net);
 
@@ -505,12 +517,16 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void estimateWireParasiticSteiner(const Pin *drvr_pin,
-                                    const Net *net);
+
+  void incrementalParasiticsBegin();
+  void incrementalParasiticsEnd();
+  void ensureParasitics();
+  void updateParasitics();
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
-  void ensureWireParasitics();
+  void estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                    const Net *net);
   void makePadParasitic(const Net *net);
   bool isPadNet(const Net *net) const;
   bool isPadPin(const Pin *pin) const;
@@ -582,7 +598,6 @@ protected:
   void journalRestore();
 
   ////////////////////////////////////////////////////////////////
-
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet &ends);
   VertexSet findFaninRoots(VertexSet &ends);
@@ -592,7 +607,7 @@ protected:
 
   ////////////////////////////////////////////////////////////////
 
-  // These are command args
+  // These are command args values.
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
@@ -608,6 +623,9 @@ protected:
   OpenRoad *openroad_;
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
+  GlobalRouter *global_router_;
+  IncrementalGRoute *incr_groute_;
+
   Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -615,14 +633,17 @@ protected:
   dbBlock *block_;
   Rect core_;
   bool core_exists_;
+
+  ParasiticsSrc parasitics_src_;
+  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+
   double design_area_;
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
   LibertyCell *buffer_med_drive_;
   LibertyCell *buffer_highest_drive_;
-  bool have_estimated_parasitics_;
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_;

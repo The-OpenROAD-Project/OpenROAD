@@ -127,6 +127,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
           diode_mterm->getConstName());
       if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
+        // This should be done with the db callbacks.
         grouter_->addDirtyNet(db_net);
       }
 
@@ -160,8 +161,6 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
     }
   }
 
-  deleteFillerCells();
-
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixed_insts);
 
@@ -188,13 +187,8 @@ void AntennaRepair::repairAntennas(odb::dbMTerm* diode_mterm)
 
 void AntennaRepair::legalizePlacedCells()
 {
-  AntennaCbk cbk(grouter_);
-  cbk.addOwner(block_);
-
   opendp_->detailedPlacement(0, 0);
   opendp_->checkPlacement(false);
-
-  cbk.removeOwner();
 
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -380,19 +374,6 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
   }
 
   return inst_rect;
-}
-
-AntennaCbk::AntennaCbk(GlobalRouter* grouter) : grouter_(grouter)
-{
-}
-
-void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
-{
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    odb::dbNet* db_net = iterm->getNet();
-    if (db_net != nullptr && !db_net->isSpecial())
-      grouter_->addDirtyNet(iterm->getNet());
-  }
 }
 
 }  // namespace grt

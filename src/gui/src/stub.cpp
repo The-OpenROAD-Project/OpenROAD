@@ -81,6 +81,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Renderer::redraw()
+{
+}
+
 Renderer::~Renderer()
 {
 }
@@ -110,6 +114,11 @@ void Gui::registerDescriptor(const std::type_info& type,
 
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
+}
+
+std::string Descriptor::Property::toString(const std::any& /* value */)
+{
+  return "";
 }
 
 // using namespace odb;
