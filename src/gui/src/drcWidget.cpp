@@ -439,6 +439,7 @@ void DRCWidget::loadReport(const QString& filename)
   }  // catch errors
 
   updateModel();
+  raise();
 }
 
 void DRCWidget::loadTRReport(const QString& filename)
