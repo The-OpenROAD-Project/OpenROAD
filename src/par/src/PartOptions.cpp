@@ -44,10 +44,10 @@ PartOptions::setRandomSeed(int seed) {
 
 void
 PartOptions::generateSeeds(int seeds) {
-  _seeds.clear();
+  seeds_.clear();
 
-  while (_seeds.size() < seeds)
-    _seeds.insert(getNewSeed());
+  while (seeds_.size() < seeds)
+    seeds_.insert(getNewSeed());
 }
 
 }  // namespace par

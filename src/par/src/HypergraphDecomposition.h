@@ -77,11 +77,11 @@ class HypergraphDecomposition
                         const short currentCluster);
 
  private:
-  odb::dbBlock* _block;
-  Logger* _logger;
+  odb::dbBlock* block_;
+  Logger* logger_;
 
-  int _weightingOption;
-  std::vector<std::map<int, float>> adjMatrix;
+  int weightingOption_;
+  std::vector<std::map<int, float>> adjMatrix_;
   void addMapping(Hypergraph& hypergraph,
                   std::string instName,
                   const odb::Rect& rect);
