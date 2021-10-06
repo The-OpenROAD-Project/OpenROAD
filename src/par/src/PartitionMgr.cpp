@@ -70,10 +70,12 @@ PartitionMgr::~PartitionMgr()
 }
 
 void PartitionMgr::init(odb::dbDatabase* db,
+                        sta::dbNetwork* db_network,
                         ord::dbVerilogNetwork* network,
                         Logger* logger)
 {
   _db = db;
+  _db_network = db_network;
   _network = network;
   _logger = logger;
 }
