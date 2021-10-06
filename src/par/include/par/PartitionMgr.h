@@ -51,6 +51,7 @@ class dbBlock;
 }  // namespace odb
 
 namespace sta {
+class dbNetwork;
 class Instance;
 class NetworkReader;
 class Library;
@@ -251,11 +252,18 @@ class PartitionMgr
   odb::dbBlock* getDbBlock() const;
   unsigned getNumPartitioningResults() const { return _results.size(); }
   unsigned getNumClusteringResults() const { return _clusResults.size(); }
-  const PartSolutions& getPartitioningResult(unsigned id) const { return _results[id]; }
-  const PartSolutions& getClusteringResult(unsigned id) const { return _clusResults[id]; }
+  const PartSolutions& getPartitioningResult(unsigned id) const
+  {
+    return _results[id];
+  }
+  const PartSolutions& getClusteringResult(unsigned id) const
+  {
+    return _clusResults[id];
+  }
 
   PartOptions _options;
   odb::dbDatabase* _db = nullptr;
+  sta::dbNetwork* _db_network = nullptr;
   ord::dbVerilogNetwork* _network = nullptr;
   unsigned _bestId = 0;
   Logger* _logger;
@@ -268,6 +276,7 @@ class PartitionMgr
   PartitionMgr();
   ~PartitionMgr();
   void init(odb::dbDatabase* db,
+            sta::dbNetwork* db_network,
             ord::dbVerilogNetwork* network,
             Logger* logger);
   void runPartitioning();
@@ -324,8 +333,11 @@ class PartitionMgr
       sta::Library* library,
       sta::NetworkReader* network,
       sta::Instance* parent,
-      std::set<sta::Instance*>* insts,
+      const std::set<sta::Instance*>* insts,
       std::map<sta::Net*, sta::Port*>* port_map);
+  sta::Instance* buildPartitionedTopInstance(const char* name,
+                                             sta::Library* library,
+                                             sta::NetworkReader* network);
 };
 
 }  // namespace par
