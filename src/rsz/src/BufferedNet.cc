@@ -36,6 +36,8 @@
 #include "rsz/BufferedNet.hh"
 
 #include <algorithm>
+// Use spdlog fmt::format until c++20 that supports std::format.
+#include <spdlog/fmt/fmt.h>
 
 #include "rsz/Resizer.hh"
 
@@ -105,7 +107,7 @@ void
 BufferedNet::reportTree(int level,
                         Resizer *resizer)
 {
-  report(level, resizer);
+  resizer->logger()->report("{:{}s}{}", "", level, to_string(resizer));
   switch (type_) {
   case BufferedNetType::load:
     break;
@@ -120,11 +122,9 @@ BufferedNet::reportTree(int level,
   }
 }
 
-void
-BufferedNet::report(int level,
-                    Resizer *resizer)
+string
+BufferedNet::to_string(Resizer *resizer)
 {
-  Logger *logger = resizer->logger();
   Network *sdc_network = resizer->sdcNetwork();
   Units *units = resizer->units();
   Unit *dist_unit = units->distanceUnit();
@@ -135,31 +135,27 @@ BufferedNet::report(int level,
   switch (type_) {
   case BufferedNetType::load:
     // {:{}s} format indents level spaces.
-    logger->report("{:{}s}load {} ({}, {}) cap {} req {}",
-                   "", level,
-                   sdc_network->pathName(load_pin_),
-                   x, y, cap,
-                   delayAsString(required(resizer), resizer));
+    return fmt::format("load {} ({}, {}) cap {} req {}",
+                       sdc_network->pathName(load_pin_),
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::wire:
-    logger->report("{:{}s}swire ({}, {}) cap {} req {}",
-                   "", level,
-                   x, y, cap,
-                   delayAsString(required(resizer), resizer));
+    return fmt::format("wire ({}, {}) cap {} req {}",
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::buffer:
-    logger->report("{:{}s}buffer ({}, {}) {} cap {} req {}",
-                   "", level,
-                   x, y,
-                   buffer_cell_->name(),
-                   cap,
-                   delayAsString(required(resizer), resizer));
+    return fmt::format("buffer ({}, {}) {} cap {} req {}",
+                       x, y,
+                       buffer_cell_->name(),
+                       cap,
+                       delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::junction:
-    logger->report("{:{}s}junction ({}, {}) cap {} req {}",
-                   "", level,
-                   x, y, cap,
-                   delayAsString(required(resizer), resizer));
+    return fmt::format("junction ({}, {}) cap {} req {}",
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
     break;
   }
 }

@@ -194,8 +194,8 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                                            0.0,
                                            nullptr,
                                            nullptr, nullptr);
-          if (logger_->debugCheck(RSZ, "rebuffer", 4))
-            z->report(level, this);
+          debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}{}",
+                     "", level, z->to_string(this));
           BufferedNetSeq Z;
           Z.push_back(z);
           return addWireAndBuffer(Z, tree, k, prev, level);
@@ -299,13 +299,12 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                      p->requiredDelay() + wire_delay,
                                      nullptr,
                                      p, nullptr);
-    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire {} -> {} wl {}",
+    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire {} -> {} wl {} {}",
                "", level,
                tree->name(prev, sdc_network_),
                tree->name(k, sdc_network_),
-               wire_length_dbu);
-    if (logger_->debugCheck(RSZ, "rebuffer", 4))
-      z->report(level, this);
+               wire_length_dbu,
+               z->to_string(this));
     Z1.push_back(z);
   }
   if (!Z1.empty()) {
@@ -362,13 +361,12 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                            best_option->requiredDelay()+buffer_delay,
                                            buffer_cell,
                                            best_option, nullptr);
-          debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer {} cap {} req {} ->",
+          debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer {} cap {} req {} -> {}",
                      "", level,
                      tree->name(prev, sdc_network_),
                      units_->capacitanceUnit()->asString(best_option->cap()),
-                     delayAsString(best_req, this));
-          if (logger_->debugCheck(RSZ, "rebuffer", 3))
-            z->report(level, this);
+                     delayAsString(best_req, this),
+                     z->to_string(this));
           buffered_options.push_back(z);
         }
       }
