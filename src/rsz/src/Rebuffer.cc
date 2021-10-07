@@ -141,16 +141,15 @@ Resizer::rebuffer(const Pin *drvr_pin)
 
 // For testing.
 void
-Resizer::rebuffer(Net *net)
+Resizer::rebuffer1(const Pin *drvr_pin)
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
-  PinSet *drvrs = network_->drivers(net);
-  PinSet::Iterator drvr_iter(drvrs);
-  if (drvr_iter.hasNext()) {
-    Pin *drvr = drvr_iter.next();
-    rebuffer(drvr);
-  }
+  incrementalParasiticsBegin();
+  rebuffer(drvr_pin);
+  // Leave the parasitics up to date.
+  updateParasitics();
+  incrementalParasiticsEnd();
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
 
