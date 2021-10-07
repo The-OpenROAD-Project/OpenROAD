@@ -365,6 +365,8 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
   auto lowTrack = tracks.lower_bound(low);
   if (lowTrack == tracks.end())
     logger_->error(DRT, 1004, "enclosesPlanarAccess: low track not found");
+  if (lowTrack->first > high)
+      return false;
   auto highTrack = tracks.lower_bound(high);
   if (highTrack != tracks.end()) {
     if (highTrack->first > high)
