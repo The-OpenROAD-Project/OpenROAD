@@ -82,7 +82,6 @@ class Blif
   float getArrivalTime(sta::Pin* term, bool is_rise);
   void addArrival(sta::Pin* pin, std::string netName);
   void addRequired(sta::Pin* pin, std::string netName);
-  static int call_id_;
 
  private:
   std::set<odb::dbInst*> instances_to_optimize;
@@ -94,6 +93,7 @@ class Blif
   std::string const1_cell_port_;
   std::map<std::string, std::pair<float,float>> requireds_;
   std::map<std::string, std::pair<float,float>> arrivals_;
+  static int call_id_;
 };
 
 }  // namespace rmp
