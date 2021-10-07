@@ -42,41 +42,41 @@
 namespace par {
 
 HypergraphDecomposition::HypergraphDecomposition()
-    : _block(nullptr),
-      _logger(nullptr),
-      _weightingOption(0)
+    : block_(nullptr),
+      logger_(nullptr),
+      weightingOption_(0)
 {
 }
 
 void HypergraphDecomposition::init(odb::dbBlock* block, Logger * logger)
 {
-  _block = block;
-  _logger = logger;
+  block_ = block;
+  logger_ = logger;
 }
 
 void HypergraphDecomposition::addMapping(Hypergraph& hypergraph,
                                          std::string instName,
                                          const odb::Rect& rect)
 {
-  int64_t length = rect.dy();
-  int64_t width = rect.dx();
-  int64_t area = length * width;
-  int nextIdx = hypergraph.computeNextVertexIdx();
+  const int64_t length = rect.dy();
+  const int64_t width = rect.dx();
+  const int64_t area = length * width;
+  const int nextIdx = hypergraph.computeNextVertexIdx();
   hypergraph.addMapping(instName, nextIdx);
   hypergraph.addVertexWeight(area);
 }
 
 void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
-                                           unsigned maxVertexWeight)
+                                           const unsigned maxVertexWeight)
 {
-  for (odb::dbNet* net : _block->getNets()) {
-    int nITerms = (net->getITerms()).size();
-    int nBTerms = (net->getBTerms()).size();
+  for (odb::dbNet* net : block_->getNets()) {
+    const int nITerms = (net->getITerms()).size();
+    const int nBTerms = (net->getBTerms()).size();
     if (nITerms + nBTerms >= 2) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         for (odb::dbBPin* pin : bterm->getBPins()) {
           if (!hypergraph.isInMap(bterm->getName())) {
-            odb::Rect box = pin->getBBox();
+            const odb::Rect box = pin->getBBox();
             addMapping(hypergraph, bterm->getName(), box);
           }
         }
@@ -93,27 +93,27 @@ void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
       }
     }
   }
-  hypergraph.computeVertexWeightRange(maxVertexWeight, _logger);
+  hypergraph.computeVertexWeightRange(maxVertexWeight, logger_);
 }
 
 void HypergraphDecomposition::createHypergraph(
     Hypergraph& hypergraph,
-    std::vector<unsigned long> clusters,
-    short currentCluster)
+    const std::vector<unsigned long>& clusters,
+    const short currentCluster)
 {
-  for (odb::dbNet* net : _block->getNets()) {
-    int nITerms = (net->getITerms()).size();
-    int nBTerms = (net->getBTerms()).size();
+  for (odb::dbNet* net : block_->getNets()) {
+    const int nITerms = (net->getITerms()).size();
+    const int nBTerms = (net->getBTerms()).size();
     if (nITerms + nBTerms >= 2) {
       int driveIdx = -1;
       std::vector<int> netVertices;
-      int nextPtr = hypergraph.computeNextRowPtr();
+      const int nextPtr = hypergraph.computeNextRowPtr();
       hypergraph.addRowPtr(nextPtr);
       hypergraph.addEdgeWeightNormalized(1);
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         for (odb::dbBPin* pin : bterm->getBPins()) {
           (void) pin; // unused?
-          int mapping = hypergraph.getMapping(bterm->getName());
+          const int mapping = hypergraph.getMapping(bterm->getName());
           if (clusters[mapping] == currentCluster) {
             if (driveIdx == -1 && bterm->getIoType() == odb::dbIoType::INPUT)
               driveIdx = mapping;
@@ -125,7 +125,7 @@ void HypergraphDecomposition::createHypergraph(
 
       for (odb::dbITerm* iterm : net->getITerms()) {
         odb::dbInst* inst = iterm->getInst();
-        int mapping = hypergraph.getMapping(inst->getName());
+        const int mapping = hypergraph.getMapping(inst->getName());
         if (clusters[mapping] == currentCluster) {
           if (driveIdx == -1 && iterm->isOutputSignal())
             driveIdx = mapping;
@@ -135,12 +135,12 @@ void HypergraphDecomposition::createHypergraph(
       }
       if (driveIdx != -1)
         hypergraph.addColIdx(driveIdx);
-      for (int vertex : netVertices) {
+      for (const int vertex : netVertices) {
         hypergraph.addColIdx(vertex);
       }
     }
   }
-  int nextPtr = hypergraph.computeNextRowPtr();
+  const int nextPtr = hypergraph.computeNextRowPtr();
   hypergraph.addRowPtr(nextPtr);
 }
 
@@ -151,39 +151,39 @@ that are inside a specific cluster
 */
 
 void HypergraphDecomposition::updateHypergraph(
-    Hypergraph& hypergraph,
+    const Hypergraph& hypergraph,
     Hypergraph& newHypergraph,
-    std::vector<unsigned long> clusters,
-    short currentCluster)
+    const std::vector<unsigned long>& clusters,
+    const short currentCluster)
 {
-  std::vector<int> colIdx = hypergraph.getColIdx();
-  std::vector<int> rowPtr = hypergraph.getRowPtr();
-  std::vector<int> vertexWeights = hypergraph.getVertexWeight();
-  std::vector<int> edgeWeights = hypergraph.getEdgeWeight();
+  const std::vector<int>& colIdx = hypergraph.getColIdx();
+  const std::vector<int>& rowPtr = hypergraph.getRowPtr();
+  const std::vector<int>& vertexWeights = hypergraph.getVertexWeight();
+  const std::vector<int>& edgeWeights = hypergraph.getEdgeWeight();
 
   for (int i = 0; i < rowPtr.size() - 1; i++) {
     int instInNet = 0;
-    int start = rowPtr[i];
-    int end = rowPtr[i + 1];
+    const int start = rowPtr[i];
+    const int end = rowPtr[i + 1];
 
     std::vector<int> netVertices;
-    int nextPtr = newHypergraph.computeNextRowPtr();
+    const int nextPtr = newHypergraph.computeNextRowPtr();
 
     for (int j = start; j < end; j++) {
-      int mapping = colIdx[j];
+      const int mapping = colIdx[j];
       if (clusters[mapping] == currentCluster) {
         instInNet++;
         if (!newHypergraph.isInClusterMap(mapping)) {
-          int nextIdx = newHypergraph.computeNextVertexIdx(true);
+          const int nextIdx = newHypergraph.computeNextVertexIdx(true);
           newHypergraph.addClusterMapping(mapping, nextIdx);
           newHypergraph.addVertexWeightNormalized(vertexWeights[mapping]);
         }
-        int idx = newHypergraph.getClusterMapping(mapping);
+        const int idx = newHypergraph.getClusterMapping(mapping);
         netVertices.push_back(idx);
       }
     }
     if (instInNet >= 2) {
-      for (int j : netVertices)
+      for (const int j : netVertices)
         newHypergraph.addColIdx(j);
 
       newHypergraph.addRowPtr(nextPtr);
@@ -191,40 +191,38 @@ void HypergraphDecomposition::updateHypergraph(
     }
   }
 
-  int nextPtr = newHypergraph.computeNextRowPtr();
+  const int nextPtr = newHypergraph.computeNextRowPtr();
   newHypergraph.addRowPtr(nextPtr);
 }
 
-void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
+void HypergraphDecomposition::toGraph(const Hypergraph& hypergraph,
                                       Graph& graph,
-                                      GraphType graphModel,
-                                      unsigned weightingOption,
-                                      unsigned maxEdgeWeight,
-                                      unsigned threshold)
+                                      const GraphType graphModel,
+                                      const unsigned weightingOption,
+                                      const unsigned maxEdgeWeight,
+                                      const unsigned threshold)
 {
-  _weightingOption = weightingOption;
-  std::vector<int> colIdx = hypergraph.getColIdx();
-  adjMatrix.resize(hypergraph.getNumVertex());
+  weightingOption_ = weightingOption;
+  const std::vector<int>& colIdx = hypergraph.getColIdx();
+  adjMatrix_.resize(hypergraph.getNumVertex());
   for (int i = 0; i < hypergraph.getNumRowPtr() - 1; i++) {
-    std::vector<int> net;
-    std::vector<int>::iterator begin = colIdx.begin() + hypergraph.getRowPtr(i);
-    std::vector<int>::iterator end = colIdx.end();
-    end = colIdx.begin() + hypergraph.getRowPtr(i + 1);
-    net.assign(begin, end);
+    const auto begin = colIdx.begin() + hypergraph.getRowPtr(i);
+    const auto end = colIdx.begin() + hypergraph.getRowPtr(i + 1);
+    const std::vector<int> net(begin, end);
 
     switch (graphModel) {
       case CLIQUE:
         if (net.size() <= threshold)
-          createCliqueGraph(graph, net);
+          createCliqueGraph(net);
         break;
       case STAR:
-        createStarGraph(graph, net);
+        createStarGraph(net);
         break;
       case HYBRID:
         if (net.size() > threshold) {
-          createStarGraph(graph, net);
+          createStarGraph(net);
         } else {
-          createCliqueGraph(graph, net);
+          createCliqueGraph(net);
         }
         break;
       case HYPERGRAPH:
@@ -233,7 +231,7 @@ void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
   }
   createCompressedMatrix(graph);
   graph.assignVertexWeight(hypergraph.getVertexWeight());
-  graph.computeEdgeWeightRange(maxEdgeWeight, _logger);
+  graph.computeEdgeWeightRange(maxEdgeWeight, logger_);
 }
 
 /*
@@ -242,9 +240,9 @@ C. J. Alpert and A. B. Kahng, "Recent Directions in Netlist Partitioning: A
 Survey"
  */
 
-float HypergraphDecomposition::computeWeight(int nPins)
+float HypergraphDecomposition::computeWeight(const int nPins)
 {
-  switch (_weightingOption) {
+  switch (weightingOption_) {
     case 1:
       return 1.0 / (nPins - 1);
     case 2:
@@ -263,43 +261,41 @@ float HypergraphDecomposition::computeWeight(int nPins)
   return 1.0;
 }
 
-void HypergraphDecomposition::connectStarPins(int firstPin,
-                                              int secondPin,
-                                              float weight)
+void HypergraphDecomposition::connectStarPins(const int firstPin,
+                                              const int secondPin,
+                                              const float weight)
 {
   if (firstPin != secondPin) {
-    if (adjMatrix[firstPin].find(secondPin) == adjMatrix[firstPin].end())
-      adjMatrix[firstPin][secondPin] = weight;
+    if (adjMatrix_[firstPin].find(secondPin) == adjMatrix_[firstPin].end())
+      adjMatrix_[firstPin][secondPin] = weight;
   }
 }
 
-void HypergraphDecomposition::connectPins(int firstPin,
-                                          int secondPin,
-                                          float weight)
+void HypergraphDecomposition::connectPins(const int firstPin,
+                                          const int secondPin,
+                                          const float weight)
 {
   if (firstPin != secondPin) {
-    if (adjMatrix[firstPin].find(secondPin) == adjMatrix[firstPin].end())
-      adjMatrix[firstPin][secondPin] = weight;
+    if (adjMatrix_[firstPin].find(secondPin) == adjMatrix_[firstPin].end())
+      adjMatrix_[firstPin][secondPin] = weight;
     else
-      adjMatrix[firstPin][secondPin] += weight;
+      adjMatrix_[firstPin][secondPin] += weight;
   }
 }
 
-void HypergraphDecomposition::createStarGraph(Graph& graph,
-                                              std::vector<int> net)
+void HypergraphDecomposition::createStarGraph(const std::vector<int>& net)
 {
-  float weight = 1;
-  int driveIdx = 0;
+  const float weight = 1;
+  const int driveIdx = 0;
   for (int i = 1; i < net.size(); i++) {
     connectStarPins(net[i], net[driveIdx], weight);
     connectStarPins(net[driveIdx], net[i], weight);
   }
 }
 
-void HypergraphDecomposition::createCliqueGraph(Graph& graph,
-                                                std::vector<int> net)
+void HypergraphDecomposition::createCliqueGraph(const std::vector<int>& net)
 {
-  float weight = computeWeight(net.size());
+  const float weight = computeWeight(net.size());
   for (int i = 0; i < net.size(); i++) {
     for (int j = i + 1; j < net.size(); j++) {
       connectPins(net[i], net[j], weight);
@@ -310,10 +306,10 @@ void HypergraphDecomposition::createCliqueGraph(Graph& graph,
 
 void HypergraphDecomposition::createCompressedMatrix(Graph& graph)
 {
-  for (std::map<int, float>& node : adjMatrix) {
-    int nextPtr = graph.computeNextRowPtr();
+  for (const std::map<int, float>& node : adjMatrix_) {
+    const int nextPtr = graph.computeNextRowPtr();
     graph.addRowPtr(nextPtr);
-    for (std::pair<const int, float>& connection : node) {
+    for (const std::pair<const int, float>& connection : node) {
       graph.addEdgeWeight(connection.second);
       graph.addColIdx(connection.first);
     }
@@ -323,26 +319,25 @@ void HypergraphDecomposition::createCompressedMatrix(Graph& graph)
 void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph,
                                            const Graph* graph)
 {
-  std::vector<int> colIdx = graph->getColIdx();
-  adjMatrix.resize(graph->getNumVertex());
+  const std::vector<int>& colIdx = graph->getColIdx();
+  adjMatrix_.resize(graph->getNumVertex());
   int countEdges = 0;
   for (int i = 0; i < graph->getNumRowPtr() - 1; i++) {
     std::vector<int> connections;
-    std::vector<int>::iterator begin = colIdx.begin() + graph->getRowPtr(i);
-    std::vector<int>::iterator end = colIdx.end();
-    end = colIdx.begin() + graph->getRowPtr(i + 1);
+    const auto begin = colIdx.begin() + graph->getRowPtr(i);
+    const auto end = colIdx.begin() + graph->getRowPtr(i + 1);
     connections.assign(begin, end);
-    for (int j : connections) {
+    for (const int j : connections) {
       if (j > i) {
-        adjMatrix[i][j] = graph->getEdgeWeight(countEdges);
+        adjMatrix_[i][j] = graph->getEdgeWeight(countEdges);
       }
       countEdges++;
     }
   }
   int countVertex = 0;
-  for (std::map<int, float>& node : adjMatrix) {
-    for (std::pair<const int, float>& connection : node) {
-      int nextPtr = hypergraph.computeNextRowPtr();
+  for (const std::map<int, float>& node : adjMatrix_) {
+    for (const std::pair<const int, float>& connection : node) {
+      const int nextPtr = hypergraph.computeNextRowPtr();
       hypergraph.addRowPtr(nextPtr);
       hypergraph.addColIdx(countVertex);
       hypergraph.addColIdx(connection.first);
@@ -350,7 +345,7 @@ void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph,
     }
     countVertex++;
   }
-  int nextPtr = hypergraph.computeNextRowPtr();
+  const int nextPtr = hypergraph.computeNextRowPtr();
   hypergraph.addRowPtr(nextPtr);
 
   hypergraph.assignVertexWeight(graph->getVertexWeight());

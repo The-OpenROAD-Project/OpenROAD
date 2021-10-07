@@ -39,6 +39,8 @@
 
 #include "rsz/Resizer.hh"
 
+#include "utl/Logger.h"
+
 #include "sta/Units.hh"
 #include "sta/Liberty.hh"
 
@@ -47,6 +49,9 @@ namespace rsz {
 using std::min;
 
 using sta::INF;
+
+using utl::Logger;
+using utl::RSZ;
 
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
@@ -119,6 +124,7 @@ void
 BufferedNet::report(int level,
                     Resizer *resizer)
 {
+  Logger *logger = resizer->logger();
   Network *sdc_network = resizer->sdcNetwork();
   Units *units = resizer->units();
   Unit *dist_unit = units->distanceUnit();
@@ -128,32 +134,32 @@ BufferedNet::report(int level,
   
   switch (type_) {
   case BufferedNetType::load:
-    // %*s format indents level spaces.
-    printf("%*sload %s (%s, %s) cap %s req %s\n",
-           level, "",
-           sdc_network->pathName(load_pin_),
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
+    // {:{}s} format indents level spaces.
+    logger->report("{:{}s}load {} ({}, {}) cap {} req {}",
+                   "", level,
+                   sdc_network->pathName(load_pin_),
+                   x, y, cap,
+                   delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::wire:
-    printf("%*swire (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
+    logger->report("{:{}s}swire ({}, {}) cap {} req {}",
+                   "", level,
+                   x, y, cap,
+                   delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::buffer:
-    printf("%*sbuffer (%s, %s) %s cap %s req %s\n",
-           level, "",
-           x, y,
-           buffer_cell_->name(),
-           cap,
-           delayAsString(required(resizer), resizer));
+    logger->report("{:{}s}buffer ({}, {}) {} cap {} req {}",
+                   "", level,
+                   x, y,
+                   buffer_cell_->name(),
+                   cap,
+                   delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::junction:
-    printf("%*sjunction (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
+    logger->report("{:{}s}junction ({}, {}) cap {} req {}",
+                   "", level,
+                   x, y, cap,
+                   delayAsString(required(resizer), resizer));
     break;
   }
 }

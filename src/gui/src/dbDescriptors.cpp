@@ -35,7 +35,6 @@
 #include "db.h"
 #include "dbShape.h"
 
-#include "ord/OpenRoad.hh"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Liberty.hh"
@@ -139,6 +138,13 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
   } else {
     return current;
   }
+}
+
+////////
+
+DbInstDescriptor::DbInstDescriptor(sta::dbSta* sta) :
+    sta_(sta)
+{
 }
 
 std::string DbInstDescriptor::getName(std::any object) const
@@ -255,7 +261,7 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
 void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const
 {
   std::set<odb::dbMaster*> masters;
-  DbMasterDescriptor::getMasterEquivalent(master, masters);
+  DbMasterDescriptor::getMasterEquivalent(sta_, master, masters);
   for (auto master : masters) {
     options.push_back({master->getConstName(), master});
   }
@@ -325,6 +331,11 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
 
 //////////////////////////////////////////////////
 
+DbMasterDescriptor::DbMasterDescriptor(sta::dbSta* sta) :
+    sta_(sta)
+{
+}
+
 std::string DbMasterDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbMaster*>(object)->getName();
@@ -377,7 +388,7 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
   props.push_back({"MTerms", mterms});
   SelectionSet equivalent;
   std::set<odb::dbMaster*> equivalent_masters;
-  getMasterEquivalent(master, equivalent_masters);
+  getMasterEquivalent(sta_, master, equivalent_masters);
   for (auto other_master : equivalent_masters) {
     if (other_master != master) {
       equivalent.insert(gui->makeSelected(other_master));
@@ -412,10 +423,11 @@ bool DbMasterDescriptor::lessThan(std::any l, std::any r) const
 }
 
 // get list of equivalent masters as EditorOptions
-void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb::dbMaster*>& masters)
+void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
+                                             odb::dbMaster* master,
+                                             std::set<odb::dbMaster*>& masters)
 {
   // mirrors method used in Resizer.cpp
-  auto sta = ord::OpenRoad::openRoad()->getSta();
   auto network = sta->getDbNetwork();
 
   sta::LibertyLibrarySeq libs;
@@ -442,7 +454,7 @@ void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb
 // get list of instances of that type
 void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const
 {
-  for (auto inst : ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getInsts()) {
+  for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
       insts.insert(inst);
     }

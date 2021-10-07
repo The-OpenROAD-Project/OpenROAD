@@ -606,6 +606,7 @@ protected:
   bool isRegister(Vertex *vertex);
 
   ////////////////////////////////////////////////////////////////
+  Logger *logger() { return logger_; }
 
   // These are command args values.
   // Layer RC per wire length indexed by layer->getNumber(), corner->index

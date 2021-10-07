@@ -987,7 +987,7 @@ void FastRouteCore::checkRoute3D()
               GRT, 204, "Invalid layer value in gridsL, {}.", gridsL[i]);
         }
       }
-      if (gridFlag) {
+      if (gridFlag && logger_->debugCheck(GRT, "checkRoute3D", 1)) {
         printEdge3D(netID, edgeID);
       }
     }
@@ -1354,7 +1354,7 @@ bool FastRouteCore::checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger_->error(
+        logger_->warn(
             GRT, 167, "Invalid 2D tree for net {}.", netName(nets_[netID]));
         return true;
       }

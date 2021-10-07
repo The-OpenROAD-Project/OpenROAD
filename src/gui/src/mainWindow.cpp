@@ -45,11 +45,11 @@
 #include <vector>
 #include <QDebug>
 
+#include "dbDescriptors.h"
 #include "displayControls.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
-#include "ord/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 #include "staGui.h"
@@ -138,6 +138,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
+  connect(viewer_,
+          SIGNAL(addSelected(const SelectionSet&)),
+          this,
+          SLOT(addSelected(const SelectionSet&)));
 
   connect(viewer_,
           SIGNAL(addRuler(int, int, int, int)),
@@ -157,6 +161,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selected(const Selected&, bool)),
           this,
           SLOT(setSelected(const Selected&, bool)));
+  connect(inspector_,
+          SIGNAL(addSelected(const Selected&)),
+          this,
+          SLOT(addSelected(const Selected&)));
+  connect(inspector_,
+          SIGNAL(removeSelected(const Selected&)),
+          this,
+          SLOT(removeSelected(const Selected&)));
   connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
   connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
   connect(inspector_,
@@ -172,6 +184,10 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateSelectedStatus(const Selected&)));
 
+  connect(selection_browser_,
+          SIGNAL(selected(const Selected&)),
+          inspector_,
+          SLOT(inspect(const Selected&)));
   connect(this,
           SIGNAL(selectionChanged()),
           selection_browser_,
@@ -264,6 +280,40 @@ MainWindow::MainWindow(QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
+}
+
+MainWindow::~MainWindow()
+{
+  // unregister descriptors
+  Gui::get()->unregisterDescriptor<Ruler*>();
+}
+
+void MainWindow::setDatabase(odb::dbDatabase* db)
+{
+  // set database and pass along
+  db_ = db;
+  controls_->setDb(db_);
+  viewer_->setDb(db_);
+  selection_browser_->setDb(db_);
+}
+
+void MainWindow::init(sta::dbSta* sta)
+{
+  // Setup timing widget
+  timing_widget_->init(sta);
+
+  // register descriptors
+  auto* gui = Gui::get();
+  gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(sta));
+  gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(sta));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
+  gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
+  gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
+  gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
+  gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
+  gui->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 }
 
 void MainWindow::createStatusBar()
@@ -437,14 +487,6 @@ const std::string MainWindow::requestUserInput(const QString& title, const QStri
   return text.toStdString();
 }
 
-void MainWindow::setDb(odb::dbDatabase* db)
-{
-  db_ = db;
-  controls_->setDb(db);
-  viewer_->setDb(db);
-  selection_browser_->setDb(db);
-}
-
 void MainWindow::setLocation(qreal x, qreal y)
 {
   location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
@@ -462,6 +504,17 @@ void MainWindow::addSelected(const Selected& selection)
   }
   emit updateSelectedStatus(selection);
   emit selectionChanged();
+}
+
+void MainWindow::removeSelected(const Selected& selection)
+{
+  auto itr = std::find_if_not(selected_.begin(), selected_.end(), [selection](auto& item) {
+    return item < selection;
+  });
+  if (itr != selected_.end()) {
+    selected_.erase(itr);
+    emit selectionChanged();
+  }
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -819,7 +872,7 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   std::vector<std::string> cmds;
   // Save rulers
   for (const auto& ruler : rulers_) {
-    cmds.push_back(ruler->getTclCommand());
+    cmds.push_back(ruler->getTclCommand(db_->getChip()->getBlock()->getDbUnitsPerMicron()));
   }
   // Save buttons
   for (const auto& action : view_tool_bar_->actions()) {
