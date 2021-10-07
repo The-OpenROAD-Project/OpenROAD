@@ -513,6 +513,8 @@ void io::Parser::setNets(odb::dbBlock* block)
       }
     }
     for (auto term : net->getITerms()) {
+      if (term->getMTerm()->getShape() == odb::dbMTermShapeType::ABUTMENT)
+            continue;
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
