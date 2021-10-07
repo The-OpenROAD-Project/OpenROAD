@@ -343,6 +343,34 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
     }
   }
 }
+
+bool FlexPA::enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect, frLayerNum layerNum) {
+    frCoord low, high;
+    frLayer* layer = getDesign()->getTech()->getLayer(layerNum);
+    if (layer->isHorizontal()) {
+        low = gtl::yl(rect);
+        high = gtl::yh(rect);
+    } else if (layer->isVertical()) {
+        low = gtl::xl(rect);
+        high = gtl::xh(rect);
+    } else logger_->error(DRT, 1003, "enclosesPlanarAccess: layer is neither vertical or horizontal");
+    auto& tracks = trackCoords_[layerNum];
+    auto lowTrack = tracks.lower_bound(low);
+    if (lowTrack == tracks.end())
+        logger_->error(DRT, 1004, "enclosesPlanarAccess: low track not found");
+    auto highTrack = tracks.lower_bound(high);
+    if (highTrack != tracks.end()) {
+        if (highTrack->first > high)
+            highTrack--;
+    } else logger_->error(DRT, 1005, "enclosesPlanarAccess: high track not found");
+    if (highTrack->first - lowTrack->first > (int)layer->getPitch())
+        return true;
+    if (lowTrack->first - (int)layer->getWidth()/2 < low)
+        return false;
+    if (highTrack->first + (int)layer->getWidth()/2 > high)
+        return false;
+    return true;
+}
 void FlexPA::prepPoint_pin_genPoints_rect(
     vector<unique_ptr<frAccessPoint>>& aps,
     set<pair<frPoint, frLayerNum>>& apset,
@@ -393,6 +421,8 @@ void FlexPA::prepPoint_pin_genPoints_rect(
         useCenterLine = true;
       }
     }
+    if (!useCenterLine && !enclosesOnTrackPlanarAccess(rect, layerNum))
+        useCenterLine = true;
   }
 
   // gen all full/half grid coords
