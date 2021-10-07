@@ -53,9 +53,9 @@ struct _dbMTermFlags
 {
   dbIoType::Value _io_type : 4;
   dbSigType::Value _sig_type : 4;
-  dbMTermShapeType::Value _shape_type : 4;
+  dbMTermShapeType::Value _shape_type : 2;
   uint _mark : 1;
-  uint _spare_bits : 19;
+  uint _spare_bits : 21;
 };
 
 class _dbMTerm : public _dbObject

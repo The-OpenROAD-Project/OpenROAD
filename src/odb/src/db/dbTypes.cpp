@@ -1723,6 +1723,9 @@ dbMTermShapeType::dbMTermShapeType(const char* value)
 
   else if (strcasecmp(value, "FEEDTHRU") == 0)
     _value = FEEDTHRU;
+
+  else 
+    _value = NONE;
 }
 
 dbMTermShapeType::dbMTermShapeType(Value value)
