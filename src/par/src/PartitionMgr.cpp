@@ -59,9 +59,9 @@ using utl::PAR;
 namespace par {
 
 PartitionMgr::PartitionMgr()
-    : _logger(nullptr),
-      _graph(std::make_unique<Graph>()),
-      _hypergraph(std::make_unique<Hypergraph>())
+    : logger_(nullptr),
+      graph_(std::make_unique<Graph>()),
+      hypergraph_(std::make_unique<Hypergraph>())
 {
 }
 
@@ -74,10 +74,10 @@ void PartitionMgr::init(odb::dbDatabase* db,
                         ord::dbVerilogNetwork* network,
                         Logger* logger)
 {
-  _db = db;
-  _db_network = db_network;
-  _network = network;
-  _logger = logger;
+  db_ = db;
+  db_network_ = db_network;
+  network_ = network;
+  logger_ = logger;
 }
 
 // Partition Netlist
@@ -85,9 +85,9 @@ void PartitionMgr::init(odb::dbDatabase* db,
 void PartitionMgr::runPartitioning()
 {
   hypergraph(true);
-  if (_options.getTool() == "mlpart") {
+  if (options_.getTool() == "mlpart") {
     runMlPart();
-  } else if (_options.getTool() == "gpmetis") {
+  } else if (options_.getTool() == "gpmetis") {
     runGpMetis();
   } else {
     runChaco();
@@ -97,26 +97,26 @@ void PartitionMgr::runPartitioning()
 void PartitionMgr::runChaco()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running Chaco.");
+  logger_->report("Running Chaco.");
 
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  std::string evaluationFunction = _options.getEvaluationFunction();
+  std::string evaluationFunction = options_.getEvaluationFunction();
 
-  const std::vector<int>& edgeWeights = _graph->getEdgeWeight();
-  const std::vector<int>& vertexWeights = _graph->getVertexWeight();
-  const std::vector<int>& colIdx = _graph->getColIdx();
-  const std::vector<int>& rowPtr = _graph->getRowPtr();
+  const std::vector<int>& edgeWeights = graph_->getEdgeWeight();
+  const std::vector<int>& vertexWeights = graph_->getVertexWeight();
+  const std::vector<int>& colIdx = graph_->getColIdx();
+  const std::vector<int>& rowPtr = graph_->getRowPtr();
   const int numVertices = vertexWeights.size();
   const int numVerticesTotal = vertexWeights.size();
 
-  const int architecture = _options.getArchTopology().size();
+  const int architecture = options_.getArchTopology().size();
   int architectureDims = 1;
   int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
   if (architecture > 0) {
-    std::vector<int> archTopology = _options.getArchTopology();
+    std::vector<int> archTopology = options_.getArchTopology();
     for (int i = 0; ((i < architecture) && (i < 3)); i++) {
       mesh_dims[i] = archTopology[i];
       architectureDims = architectureDims * archTopology[i];
@@ -124,27 +124,27 @@ void PartitionMgr::runChaco()
   }
 
   int hypercubeDims
-      = (int) (std::log2(((double) (_options.getTargetPartitions()))));
+      = (int) (std::log2(((double) (options_.getTargetPartitions()))));
 
-  const int numVertCoar = _options.getCoarVertices();
+  const int numVertCoar = options_.getCoarVertices();
 
-  const int refinement = _options.getRefinement();
+  const int refinement = options_.getRefinement();
 
-  const int termPropagation = _options.getTermProp() ? 1 : 0;
+  const int termPropagation = options_.getTermProp() ? 1 : 0;
 
-  const double inbalance = (double) _options.getBalanceConstraint() / 100;
+  const double inbalance = (double) options_.getBalanceConstraint() / 100;
 
-  const double coarRatio = _options.getCoarRatio();
+  const double coarRatio = options_.getCoarRatio();
 
-  const double cutCost = _options.getCutHopRatio();
+  const double cutCost = options_.getCutHopRatio();
 
-  const int level = _options.getLevel();
+  const int level = options_.getLevel();
 
   int partitioningMethod = 1;  // Multi-level KL
 
   int kWay = 1;  // recursive 2-way
 
-  for (long seed : _options.getSeeds()) {
+  for (long seed : options_.getSeeds()) {
     const auto start = std::chrono::system_clock::now();
 
     int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
@@ -182,9 +182,9 @@ void PartitionMgr::runChaco()
 
     int oldTargetPartitions = 0;
 
-    if (_options.getExistingID() > -1) {
+    if (options_.getExistingID() > -1) {
       // If a previous solution ID already exists.
-      const PartSolutions existingResult = _results[_options.getExistingID()];
+      const PartSolutions existingResult = results_[options_.getExistingID()];
       const unsigned existingBestIdx = existingResult.getBestSolutionIdx();
       const std::vector<unsigned long>& vertexResult
           = existingResult.getAssignment(existingBestIdx);
@@ -208,14 +208,14 @@ void PartitionMgr::runChaco()
         kWay = hypercubeDims;
         if (kWay > 3 || architectureDims < oldTargetPartitions
             || architectureDims % 2 == 1) {
-          _logger->error(PAR,
+          logger_->error(PAR,
                          1,
                          "Graph has too many sets (>8), the number of target "
                          "partitions changed or the architecture is invalid.");
         }
       } else {
-        if (kWay > 3 || _options.getTargetPartitions() < oldTargetPartitions) {
-          _logger->error(PAR,
+        if (kWay > 3 || options_.getTargetPartitions() < oldTargetPartitions) {
+          logger_->error(PAR,
                          2,
                          "Graph has too many sets (>8) or the number of target "
                          "partitions changed.");
@@ -278,38 +278,38 @@ void PartitionMgr::runChaco()
     currentResults.addAssignment(chacoResult, runtime, seed);
     free(assigment);
 
-    _logger->info(PAR,
+    logger_->info(PAR,
                   4,
                   "[Chaco] Partitioned graph for seed {} in {} ms.",
                   seed,
                   runtime);
   }
 
-  _results.push_back(currentResults);
+  results_.push_back(currentResults);
   free(mesh_dims);
 
-  _logger->info(PAR,
+  logger_->info(PAR,
                 5,
                 "[Chaco] Run completed. Partition ID = {}. Total runs = {}.",
                 partitionId,
-                _options.getSeeds().size());
+                options_.getSeeds().size());
 #endif
 }
 
 void PartitionMgr::runGpMetis()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running GPMetis.");
+  logger_->report("Running GPMetis.");
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
 
   idx_t edgeCut;
-  idx_t nPartitions = _options.getTargetPartitions();
-  int numVertices = _graph->getNumVertex();
-  const int numEdges = _graph->getNumEdges();
+  idx_t nPartitions = options_.getTargetPartitions();
+  int numVertices = graph_->getNumVertex();
+  const int numEdges = graph_->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
@@ -317,7 +317,7 @@ void PartitionMgr::runGpMetis()
   options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
   options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
   options[METIS_OPTION_NUMBERING] = 0;
-  options[METIS_OPTION_UFACTOR] = _options.getBalanceConstraint() * 10;
+  options[METIS_OPTION_UFACTOR] = options_.getBalanceConstraint() * 10;
 
   idx_t* vertexWeights
       = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
@@ -325,18 +325,18 @@ void PartitionMgr::runGpMetis()
   idx_t* colIdx = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   idx_t* edgeWeights = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   for (int i = 0; i < numVertices; i++) {
-    vertexWeights[i] = _graph->getVertexWeight(i);
-    edgeWeights[i] = _graph->getEdgeWeight(i);
-    rowPtr[i] = _graph->getRowPtr(i);
-    colIdx[i] = _graph->getColIdx(i);
+    vertexWeights[i] = graph_->getVertexWeight(i);
+    edgeWeights[i] = graph_->getEdgeWeight(i);
+    rowPtr[i] = graph_->getRowPtr(i);
+    colIdx[i] = graph_->getColIdx(i);
   }
   rowPtr[numVertices] = numEdges;
 
   for (int i = numVertices; i < numEdges; i++) {
-    edgeWeights[i] = _graph->getEdgeWeight(i);
-    colIdx[i] = _graph->getColIdx(i);
+    edgeWeights[i] = graph_->getEdgeWeight(i);
+    colIdx[i] = graph_->getColIdx(i);
   }
-  for (int seed : _options.getSeeds()) {
+  for (int seed : options_.getSeeds()) {
     const auto start = std::chrono::system_clock::now();
     options[METIS_OPTION_SEED] = seed;
     idx_t* parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
@@ -366,7 +366,7 @@ void PartitionMgr::runGpMetis()
     currentResults.addAssignment(gpmetisResults, runtime, seed);
     free(parts);
 
-    _logger->info(PAR,
+    logger_->info(PAR,
                   56,
                   "[GPMetis] Partitioned graph for seed {} in {} ms.",
                   seed,
@@ -377,52 +377,52 @@ void PartitionMgr::runGpMetis()
   free(colIdx);
   free(edgeWeights);
 
-  _results.push_back(currentResults);
+  results_.push_back(currentResults);
 
-  _logger->info(PAR,
+  logger_->info(PAR,
                 57,
                 "[GPMetis] Run completed. Partition ID = {}. Total runs = {}.",
                 partitionId,
-                _options.getSeeds().size());
+                options_.getSeeds().size());
 #endif
 }
 
 void PartitionMgr::runMlPart()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running MLPart.");
+  logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(getDbBlock(), _logger);
+  hypergraphDecomp.init(getDbBlock(), logger_);
   Hypergraph hypergraph;
-  if (_options.getForceGraph()) {
-    hypergraphDecomp.toHypergraph(hypergraph, _graph.get());
+  if (options_.getForceGraph()) {
+    hypergraphDecomp.toHypergraph(hypergraph, graph_.get());
   } else {
-    hypergraph = *_hypergraph;
+    hypergraph = *hypergraph_;
   }
 
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
 
   PartSolutions bestResult;
-  bestResult.setToolName(_options.getTool());
+  bestResult.setToolName(options_.getTool());
   bestResult.setPartitionId(partitionId);
 
   const int numOriginalVertices = hypergraph.getNumVertex();
   std::vector<unsigned long> clusters(numOriginalVertices, 0);
 
-  const double tolerance = _options.getBalanceConstraint() / 100.0;
+  const double tolerance = options_.getBalanceConstraint() / 100.0;
   double balanceArray[2] = {0.5, 0.5};
 
-  for (long seed : _options.getSeeds()) {
+  for (long seed : options_.getSeeds()) {
     std::vector<short> partitions;
     int countPartitions = 0;
     partitions.push_back(0);
 
     const auto start = std::chrono::system_clock::now();
-    while (partitions.size() < _options.getTargetPartitions()) {
+    while (partitions.size() < options_.getTargetPartitions()) {
       std::vector<short> auxPartitions;
       for (const int p : partitions) {
         Hypergraph newHypergraph;
@@ -446,7 +446,7 @@ void PartitionMgr::runMlPart()
 
         for (int i = 0; i < numVertices; i++) {
           vertexWeights[i] = newHypergraph.getVertexWeight(i)
-                             / _options.getMaxVertexWeight();
+                             / options_.getMaxVertexWeight();
         }
         for (int i = 0; i < numColIdx; i++) {
           colIdx[i] = newHypergraph.getColIdx(i);
@@ -497,7 +497,7 @@ void PartitionMgr::runMlPart()
               .count();
 
     currentResults.addAssignment(clusters, runtime, seed);
-    _logger->info(PAR,
+    logger_->info(PAR,
                   59,
                   "[MLPart] Partitioned graph for seed {} in {} ms.",
                   seed,
@@ -506,35 +506,35 @@ void PartitionMgr::runMlPart()
     std::fill(clusters.begin(), clusters.end(), 0);
   }
 
-  _results.push_back(currentResults);
+  results_.push_back(currentResults);
 
-  _logger->info(PAR,
+  logger_->info(PAR,
                 60,
                 "[MLPart] Run completed. Partition ID = {}. Total runs = {}.",
                 partitionId,
-                _options.getSeeds().size());
+                options_.getSeeds().size());
 #endif
 }
 
 void PartitionMgr::toHypergraph()
 {
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(getDbBlock(), _logger);
+  hypergraphDecomp.init(getDbBlock(), logger_);
   Hypergraph hype;
-  hypergraphDecomp.toHypergraph(hype, _graph.get());
+  hypergraphDecomp.toHypergraph(hype, graph_.get());
 }
 
 void PartitionMgr::hypergraph(bool buildGraph)
 {
-  _hypergraph->clearHypergraph();
+  hypergraph_->clearHypergraph();
 
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(getDbBlock(), _logger);
-  hypergraphDecomp.constructMap(*_hypergraph, _options.getMaxVertexWeight());
+  hypergraphDecomp.init(getDbBlock(), logger_);
+  hypergraphDecomp.constructMap(*hypergraph_, options_.getMaxVertexWeight());
 
-  const int numVertices = _hypergraph->getNumVertex();
+  const int numVertices = hypergraph_->getNumVertex();
   std::vector<unsigned long> clusters(numVertices, 0);
-  hypergraphDecomp.createHypergraph(*_hypergraph, clusters, 0);
+  hypergraphDecomp.createHypergraph(*hypergraph_, clusters, 0);
 
   if (buildGraph)
     toGraph();
@@ -543,31 +543,31 @@ void PartitionMgr::hypergraph(bool buildGraph)
 void PartitionMgr::toGraph()
 {
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(getDbBlock(), _logger);
-  _graph->clearGraph();
-  hypergraphDecomp.toGraph(*_hypergraph,
-                           *_graph,
-                           _options.getGraphModel(),
-                           _options.getWeightModel(),
-                           _options.getMaxEdgeWeight(),
-                           _options.getCliqueThreshold());
+  hypergraphDecomp.init(getDbBlock(), logger_);
+  graph_->clearGraph();
+  hypergraphDecomp.toGraph(*hypergraph_,
+                           *graph_,
+                           options_.getGraphModel(),
+                           options_.getWeightModel(),
+                           options_.getMaxEdgeWeight(),
+                           options_.getCliqueThreshold());
 }
 
 unsigned PartitionMgr::generatePartitionId() const
 {
-  return _results.size();
+  return results_.size();
 }
 
 // Evaluate Partitioning
 
 void PartitionMgr::evaluatePartitioning()
 {
-  const std::vector<int> partVector = _options.getPartitionsToTest();
-  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::vector<int> partVector = options_.getPartitionsToTest();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
   // Checks if IDs are valid
   for (const int partId : partVector) {
-    if (partId >= _results.size() || partId < 0) {
-      _logger->error(PAR, 100, "Invalid partitioning id: {}", partId);
+    if (partId >= results_.size() || partId < 0) {
+      logger_->error(PAR, 100, "Invalid partitioning id: {}", partId);
     }
   }
   for (const int partId : partVector) {
@@ -598,16 +598,16 @@ void PartitionMgr::evaluatePartitioning()
 void PartitionMgr::computePartitionResult(unsigned partitionId,
                                           std::string function)
 {
-  const int weightModel = _options.getWeightModel();
-  const std::vector<float>& edgeWeight = _graph->getDefaultEdgeWeight();
-  const int maxEdgeWeight = _options.getMaxEdgeWeight();
+  const int weightModel = options_.getWeightModel();
+  const std::vector<float>& edgeWeight = graph_->getDefaultEdgeWeight();
+  const int maxEdgeWeight = options_.getMaxEdgeWeight();
 
   const float maxEWeight
       = *std::max_element(edgeWeight.begin(), edgeWeight.end());
   const float minEWeight
       = *std::min_element(edgeWeight.begin(), edgeWeight.end());
 
-  PartSolutions& currentResults = _results[partitionId];
+  PartSolutions& currentResults = results_[partitionId];
   currentResults.resetEvaluation();
   for (unsigned idx = 0; idx < currentResults.getNumOfRuns(); idx++) {
     const std::vector<unsigned long>& currentAssignment
@@ -617,11 +617,11 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
     unsigned long terminalCounter = 0;
     unsigned long cutCounter = 0;
     unsigned long edgeTotalWeigth = 0;
-    std::vector<unsigned long> setSize(_options.getTargetPartitions(), 0);
-    std::vector<unsigned long> setArea(_options.getTargetPartitions(), 0);
+    std::vector<unsigned long> setSize(options_.getTargetPartitions(), 0);
+    std::vector<unsigned long> setArea(options_.getTargetPartitions(), 0);
 
-    const std::vector<int>& hyperedgesEnd = _hypergraph->getRowPtr();
-    const std::vector<int>& hyperedgeNets = _hypergraph->getColIdx();
+    const std::vector<int>& hyperedgesEnd = hypergraph_->getRowPtr();
+    const std::vector<int>& hyperedgeNets = hypergraph_->getColIdx();
     std::set<unsigned> computedVertices;
     int startIndex = 0;
     // Iterate over each net in the hypergraph.
@@ -641,7 +641,7 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
           // Update the partition size and area if needed.
           if (computedVertices.find(currentVertex) == computedVertices.end()) {
             setSize[currentPartition]++;
-            setArea[currentPartition] += _graph->getVertexWeight(currentVertex);
+            setArea[currentPartition] += graph_->getVertexWeight(currentVertex);
             computedVertices.insert(currentVertex);
           }
         }
@@ -779,30 +779,30 @@ bool PartitionMgr::comparePartitionings(const PartSolutions& oldPartition,
 
 void PartitionMgr::reportPartitionResult(const unsigned partitionId)
 {
-  PartSolutions currentResults = _results[partitionId];
-  _logger->info(PAR,
+  PartSolutions currentResults = results_[partitionId];
+  logger_->info(PAR,
                 6,
                 "Partitioning Results for ID = {} and Tool = {}.",
                 partitionId,
                 currentResults.getToolName());
   const unsigned bestIdx = currentResults.getBestSolutionIdx();
   const int seed = currentResults.getSeed(bestIdx);
-  _logger->info(PAR, 7, "Best results used seed {}.", seed);
-  _logger->info(PAR,
+  logger_->info(PAR, 7, "Best results used seed {}.", seed);
+  logger_->info(PAR,
                 8,
                 "Number of Hyperedge Cuts = {}.",
                 currentResults.getBestNumHyperedgeCuts());
-  _logger->info(PAR,
+  logger_->info(PAR,
                 9,
                 "Number of Terminals = {}.",
                 currentResults.getBestNumTerminals());
-  _logger->info(
+  logger_->info(
       PAR, 10, "Cluster Size SD = {}.", currentResults.getBestSetSize());
-  _logger->info(
+  logger_->info(
       PAR, 11, "Cluster Area SD = {}.", currentResults.getBestSetArea());
-  _logger->info(
+  logger_->info(
       PAR, 12, "Total Hop Weight = {}.", currentResults.getBestHopWeigth());
-  _logger->info(
+  logger_->info(
       PAR, 13, "Total Runtime = {}.", currentResults.getBestRuntime());
 }
 
@@ -810,16 +810,16 @@ void PartitionMgr::reportPartitionResult(const unsigned partitionId)
 
 odb::dbBlock* PartitionMgr::getDbBlock() const
 {
-  odb::dbChip* chip = _db->getChip();
+  odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
   return block;
 }
 
 void PartitionMgr::writePartitioningToDb(const unsigned partitioningId)
 {
-  _logger->report("Writing partition id's to DB.");
+  logger_->report("Writing partition id's to DB.");
   if (partitioningId >= getNumPartitioningResults()) {
-    _logger->error(PAR, 14, "Partition id out of range ({}).", partitioningId);
+    logger_->error(PAR, 14, "Partition id out of range ({}).", partitioningId);
   }
 
   const PartSolutions& results = getPartitioningResult(partitioningId);
@@ -830,7 +830,7 @@ void PartitionMgr::writePartitioningToDb(const unsigned partitioningId)
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
     const std::string instName = inst->getName();
-    const int instIdx = _hypergraph->getMapping(instName);
+    const int instIdx = hypergraph_->getMapping(instName);
     const unsigned long partitionId = result[instIdx];
 
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
@@ -840,7 +840,7 @@ void PartitionMgr::writePartitioningToDb(const unsigned partitioningId)
       propId->setValue(partitionId);
     }
   }
-  _logger->report("Writing done.");
+  logger_->report("Writing done.");
 }
 
 void PartitionMgr::dumpPartIdToFile(std::string name)
@@ -852,7 +852,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
     const std::string instName = inst->getName();
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
     if (!propId) {
-      _logger->warn(
+      logger_->warn(
           PAR, 101, "Property 'partition_id' not found for inst {}.", instName);
       continue;
     }
@@ -867,9 +867,9 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 void PartitionMgr::run3PClustering()
 {
   hypergraph(true);
-  if (_options.getTool() == "mlpart") {
+  if (options_.getTool() == "mlpart") {
     runMlPartClustering();
-  } else if (_options.getTool() == "gpmetis") {
+  } else if (options_.getTool() == "gpmetis") {
     runGpMetisClustering();
   } else {
     runChacoClustering();
@@ -879,34 +879,34 @@ void PartitionMgr::run3PClustering()
 void PartitionMgr::runChacoClustering()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running Chaco.");
+  logger_->report("Running Chaco.");
 
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
 
-  const std::vector<int>& edgeWeights = _graph->getEdgeWeight();
-  const std::vector<int>& vertexWeights = _graph->getVertexWeight();
-  const std::vector<int>& colIdx = _graph->getColIdx();
-  const std::vector<int>& rowPtr = _graph->getRowPtr();
+  const std::vector<int>& edgeWeights = graph_->getEdgeWeight();
+  const std::vector<int>& vertexWeights = graph_->getVertexWeight();
+  const std::vector<int>& colIdx = graph_->getColIdx();
+  const std::vector<int>& rowPtr = graph_->getRowPtr();
   const int numVertices = vertexWeights.size();
 
-  const int architecture = _options.getArchTopology().size();
+  const int architecture = options_.getArchTopology().size();
   int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
 
-  const int numVertCoar = _options.getCoarVertices();
+  const int numVertCoar = options_.getCoarVertices();
 
-  const int refinement = _options.getRefinement();
+  const int refinement = options_.getRefinement();
 
-  const double inbalance = (double) _options.getBalanceConstraint() / 100;
+  const double inbalance = (double) options_.getBalanceConstraint() / 100;
 
-  const double coarRatio = _options.getCoarRatio();
+  const double coarRatio = options_.getCoarRatio();
 
-  const double cutCost = _options.getCutHopRatio();
+  const double cutCost = options_.getCutHopRatio();
 
-  const int level = _options.getLevel();
+  const int level = options_.getLevel();
 
   const auto start = std::chrono::system_clock::now();
 
@@ -996,39 +996,39 @@ void PartitionMgr::runChacoClustering()
 
   currentResults.addAssignment(chacoResult, runtime, 0);
   free(assigment);
-  _logger->info(PAR, 16, "[Chaco] Clustered graph in {} ms.", runtime);
+  logger_->info(PAR, 16, "[Chaco] Clustered graph in {} ms.", runtime);
 
-  _clusResults.push_back(currentResults);
+  clusResults_.push_back(currentResults);
 
   free(mesh_dims);
 
-  _logger->info(PAR, 17, "[Chaco] Run completed. Cluster ID = {}.", clusterId);
+  logger_->info(PAR, 17, "[Chaco] Run completed. Cluster ID = {}.", clusterId);
 #endif
 }
 
 void PartitionMgr::runGpMetisClustering()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running GPMetis.");
+  logger_->report("Running GPMetis.");
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   const unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
 
   idx_t edgeCut;
-  idx_t nPartitions = _options.getTargetPartitions();
-  int numVertices = _graph->getNumVertex();
-  const int numEdges = _graph->getNumEdges();
+  idx_t nPartitions = options_.getTargetPartitions();
+  int numVertices = graph_->getNumVertex();
+  const int numEdges = graph_->getNumEdges();
   idx_t constraints = 1;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
-  idx_t level = _options.getLevel();
+  idx_t level = options_.getLevel();
 
   options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
   options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
   options[METIS_OPTION_NUMBERING] = 0;
-  options[METIS_OPTION_UFACTOR] = _options.getBalanceConstraint() * 10;
+  options[METIS_OPTION_UFACTOR] = options_.getBalanceConstraint() * 10;
 
   idx_t* vertexWeights
       = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
@@ -1036,16 +1036,16 @@ void PartitionMgr::runGpMetisClustering()
   idx_t* colIdx = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   idx_t* edgeWeights = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
   for (int i = 0; i < numVertices; i++) {
-    vertexWeights[i] = _graph->getVertexWeight(i);
-    edgeWeights[i] = _graph->getEdgeWeight(i);
-    rowPtr[i] = _graph->getRowPtr(i);
-    colIdx[i] = _graph->getColIdx(i);
+    vertexWeights[i] = graph_->getVertexWeight(i);
+    edgeWeights[i] = graph_->getEdgeWeight(i);
+    rowPtr[i] = graph_->getRowPtr(i);
+    colIdx[i] = graph_->getColIdx(i);
   }
   rowPtr[numVertices] = numEdges;
 
   for (int i = numVertices; i < numEdges; i++) {
-    edgeWeights[i] = _graph->getEdgeWeight(i);
-    colIdx[i] = _graph->getColIdx(i);
+    edgeWeights[i] = graph_->getEdgeWeight(i);
+    colIdx[i] = graph_->getColIdx(i);
   }
   const auto start = std::chrono::system_clock::now();
   idx_t* parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
@@ -1073,16 +1073,16 @@ void PartitionMgr::runGpMetisClustering()
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
 
-  _logger->info(PAR, 61, "[GPMetis] Clustered graph in {} ms.", runtime);
+  logger_->info(PAR, 61, "[GPMetis] Clustered graph in {} ms.", runtime);
   currentResults.addAssignment(gpmetisResults, runtime, 0);
-  _clusResults.push_back(currentResults);
+  clusResults_.push_back(currentResults);
   free(parts);
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
   free(edgeWeights);
 
-  _logger->info(
+  logger_->info(
       PAR, 62, "[GPMetis] Run completed. Cluster ID = {}.", clusterId);
 #endif
 }
@@ -1090,26 +1090,26 @@ void PartitionMgr::runGpMetisClustering()
 void PartitionMgr::runMlPartClustering()
 {
 #ifdef PARTITIONERS
-  _logger->report("Running MLPart.");
+  logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
-  hypergraphDecomp.init(getDbBlock(), _logger);
+  hypergraphDecomp.init(getDbBlock(), logger_);
   Hypergraph hypergraph;
-  if (_options.getForceGraph()) {
-    hypergraphDecomp.toHypergraph(hypergraph, _graph.get());
+  if (options_.getForceGraph()) {
+    hypergraphDecomp.toHypergraph(hypergraph, graph_.get());
   } else {
-    hypergraph = *_hypergraph;
+    hypergraph = *hypergraph_;
   }
 
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   const unsigned clusterId = generateClusterId();
   currentResults.setPartitionId(clusterId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
-  const unsigned level = _options.getLevel();
+  const std::string evaluationFunction = options_.getEvaluationFunction();
+  const unsigned level = options_.getLevel();
 
   std::vector<unsigned long> clusters;
 
-  const double tolerance = _options.getBalanceConstraint() / 100.0;
+  const double tolerance = options_.getBalanceConstraint() / 100.0;
   double balanceArray[2] = {0.5, 0.5};
 
   const auto start = std::chrono::system_clock::now();
@@ -1129,7 +1129,7 @@ void PartitionMgr::runMlPartClustering()
 
   for (int i = 0; i < numVertices; i++) {
     vertexWeights[i]
-        = hypergraph.getVertexWeight(i) / _options.getMaxVertexWeight();
+        = hypergraph.getVertexWeight(i) / options_.getMaxVertexWeight();
   }
   for (int i = 0; i < numColIdx; i++) {
     colIdx[i] = hypergraph.getColIdx(i);
@@ -1163,7 +1163,7 @@ void PartitionMgr::runMlPartClustering()
   const unsigned long runtime
       = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
-  _logger->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
+  logger_->info(PAR, 63, "[MLPart] Clustered graph in {} ms.", runtime);
   free(vertexWeights);
   free(rowPtr);
   free(colIdx);
@@ -1172,24 +1172,24 @@ void PartitionMgr::runMlPartClustering()
 
   currentResults.addAssignment(clusters, runtime, 0);
 
-  _clusResults.push_back(currentResults);
+  clusResults_.push_back(currentResults);
 
-  _logger->info(PAR, 64, "[MLPart] Run completed. Cluster ID = {}.", clusterId);
+  logger_->info(PAR, 64, "[MLPart] Run completed. Cluster ID = {}.", clusterId);
 #endif
 }
 
 unsigned PartitionMgr::generateClusterId() const
 {
-  return _clusResults.size();
+  return clusResults_.size();
 }
 
 // Write Clustering To DB
 
 void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
 {
-  _logger->report("Writing cluster id's to DB.");
+  logger_->report("Writing cluster id's to DB.");
   if (clusteringId >= getNumClusteringResults()) {
-    _logger->error(PAR, 18, "Cluster id out of range ({}).", clusteringId);
+    logger_->error(PAR, 18, "Cluster id out of range ({}).", clusteringId);
   }
 
   const PartSolutions& results = getClusteringResult(clusteringId);
@@ -1199,7 +1199,7 @@ void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
   odb::dbBlock* block = getDbBlock();
   for (odb::dbInst* inst : block->getInsts()) {
     const std::string instName = inst->getName();
-    const int instIdx = _hypergraph->getMapping(instName);
+    const int instIdx = hypergraph_->getMapping(instName);
     const unsigned long clusterId = result[instIdx];
 
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "cluster_id");
@@ -1210,7 +1210,7 @@ void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
     }
   }
 
-  _logger->report("Writing done.");
+  logger_->report("Writing done.");
 }
 
 void PartitionMgr::dumpClusIdToFile(std::string name) const
@@ -1222,7 +1222,7 @@ void PartitionMgr::dumpClusIdToFile(std::string name) const
     const std::string instName = inst->getName();
     odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "cluster_id");
     if (!propId) {
-      _logger->warn(
+      logger_->warn(
           PAR, 65, "Property 'cluster_id' not found for inst {}.", instName);
       continue;
     }
@@ -1254,15 +1254,15 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
     }
     partitions.insert(currentPartition);
   }
-  _logger->info(
+  logger_->info(
       PAR, 19, "The netlist has {} partitions.", (numberOfPartitions + 1));
   unsigned long totalVertices = 0;
   for (const unsigned long partIdx : partitions) {
     const unsigned long partSize = setSizes[partIdx];
-    _logger->info(PAR, 20, "Partition {} has {} vertices.", partIdx, partSize);
+    logger_->info(PAR, 20, "Partition {} has {} vertices.", partIdx, partSize);
     totalVertices += partSize;
   }
-  _logger->info(PAR, 21, "The total number of vertices is {}.", totalVertices);
+  logger_->info(PAR, 21, "The total number of vertices is {}.", totalVertices);
 }
 
 // Read partitioning input file
@@ -1271,11 +1271,11 @@ void PartitionMgr::readPartitioningFile(std::string filename)
 {
   hypergraph();
   PartSolutions currentResults;
-  currentResults.setToolName(_options.getTool());
+  currentResults.setToolName(options_.getTool());
   const unsigned partitionId = generatePartitionId();
   currentResults.setPartitionId(partitionId);
-  const std::string evaluationFunction = _options.getEvaluationFunction();
-  _options.setTargetPartitions(_options.getFinalPartitions());
+  const std::string evaluationFunction = options_.getEvaluationFunction();
+  options_.setTargetPartitions(options_.getFinalPartitions());
 
   std::ifstream file(filename);
   std::string line;
@@ -1286,18 +1286,18 @@ void PartitionMgr::readPartitioningFile(std::string filename)
     }
     file.close();
   } else {
-    _logger->error(PAR, 22, "Unable to open file {}.", filename);
+    logger_->error(PAR, 22, "Unable to open file {}.", filename);
   }
   currentResults.addAssignment(partitions, 0, 1);
-  _results.push_back(currentResults);
+  results_.push_back(currentResults);
   computePartitionResult(partitionId, evaluationFunction);
 }
 
 void PartitionMgr::runClustering()
 {
   hypergraph();
-  if (_options.getClusteringScheme() == "hem") {
-  } else if (_options.getClusteringScheme() == "scheme2") {
+  if (options_.getClusteringScheme() == "hem") {
+  } else if (options_.getClusteringScheme() == "scheme2") {
   } else {
   }
 }
@@ -1307,29 +1307,29 @@ void PartSolutions::addAssignment(
     const unsigned long runtime,
     const int seed)
 {
-  _assignmentResults.push_back(currentAssignment);
-  _runtimeResults.push_back(runtime);
-  _seeds.push_back(seed);
+  assignmentResults_.push_back(currentAssignment);
+  runtimeResults_.push_back(runtime);
+  seeds_.push_back(seed);
 }
 
 void PartSolutions::clearAssignments()
 {
   resetEvaluation();
 
-  _assignmentResults.clear();
-  _runtimeResults.clear();
-  _seeds.clear();
+  assignmentResults_.clear();
+  runtimeResults_.clear();
+  seeds_.clear();
 }
 
 void PartSolutions::resetEvaluation()
 {
-  _bestSolutionIdx = 0;
-  _bestSetSizeSD = 0;
-  _bestSetAreaSD = 0;
-  _bestNumTerminals = 0;
-  _bestNumHyperedgeCuts = 0;
-  _bestRuntime = 0;
-  _bestHopWeigth = 0;
+  bestSolutionIdx_ = 0;
+  bestSetSizeSD_ = 0;
+  bestSetAreaSD_ = 0;
+  bestNumTerminals_ = 0;
+  bestNumHyperedgeCuts_ = 0;
+  bestRuntime_ = 0;
+  bestHopWeigth_ = 0;
 }
 
 void PartitionMgr::reportGraph()
@@ -1337,16 +1337,16 @@ void PartitionMgr::reportGraph()
   hypergraph();
   int numNodes;
   int numEdges;
-  if (_options.getGraphModel() == HYPERGRAPH) {
-    numNodes = _hypergraph->getNumVertex();
-    numEdges = _hypergraph->getNumEdges();
+  if (options_.getGraphModel() == HYPERGRAPH) {
+    numNodes = hypergraph_->getNumVertex();
+    numEdges = hypergraph_->getNumEdges();
   } else {
     toGraph();
-    numNodes = _graph->getNumVertex();
-    numEdges = _graph->getNumEdges();
+    numNodes = graph_->getNumVertex();
+    numEdges = graph_->getNumEdges();
   }
-  _logger->info(PAR, 67, "Number of Nodes: {}", numNodes);
-  _logger->info(PAR, 68, "Number of Hyperedges/Edges: {}", numEdges);
+  logger_->info(PAR, 67, "Number of Nodes: {}", numNodes);
+  logger_->info(PAR, 68, "Number of Hyperedges/Edges: {}", numEdges);
 }
 
 void PartitionMgr::partitionDesign(unsigned int max_num_macro,
@@ -1360,12 +1360,12 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    const char* file_name)
 {
 #ifndef PARTITIONERS
-  _logger->error(PAR,
+  logger_->error(PAR,
                  404,
                  "dbPartitionDesign can't run because OpenROAD wasn't compiled "
                  "with LOAD_PARTITIONERS.");
 #endif
-  auto clusterer = std::make_unique<AutoClusterMgr>(_network, _db, _logger);
+  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,

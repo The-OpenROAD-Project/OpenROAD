@@ -51,67 +51,67 @@ class Hypergraph
  public:
   Hypergraph() {}
   virtual ~Hypergraph() = default;
-  int getEdgeWeight(int idx) const { return _edgeWeightsNormalized.at(idx); }
+  int getEdgeWeight(int idx) const { return edgeWeightsNormalized_.at(idx); }
   int getVertexWeight(int idx) const
   {
-    return _vertexWeightsNormalized.at(idx);
+    return vertexWeightsNormalized_.at(idx);
   }
-  int getColIdx(int idx) const { return _colIdx.at(idx); }
-  int getRowPtr(int idx) const { return _rowPtr.at(idx); }
-  int getMapping(const std::string& inst) const { return _instToIdx.at(inst); }
-  int getClusterMapping(int idx) const { return _idxToClusterIdx.at(idx); }
+  int getColIdx(int idx) const { return colIdx_.at(idx); }
+  int getRowPtr(int idx) const { return rowPtr_.at(idx); }
+  int getMapping(const std::string& inst) const { return instToIdx_.at(inst); }
+  int getClusterMapping(int idx) const { return idxToClusterIdx_.at(idx); }
   const std::vector<float>& getDefaultEdgeWeight() const
   {
-    return _edgeWeights;
+    return edgeWeights_;
   };
   const std::vector<int>& getEdgeWeight() const
   {
-    return _edgeWeightsNormalized;
+    return edgeWeightsNormalized_;
   };
   const std::vector<int>& getVertexWeight() const
   {
-    return _vertexWeightsNormalized;
+    return vertexWeightsNormalized_;
   };
-  const std::vector<int>& getColIdx() const { return _colIdx; };
-  const std::vector<int>& getRowPtr() const { return _rowPtr; };
+  const std::vector<int>& getColIdx() const { return colIdx_; };
+  const std::vector<int>& getRowPtr() const { return rowPtr_; };
 
-  void addEdgeWeight(float weight) { _edgeWeights.push_back(weight); }
+  void addEdgeWeight(float weight) { edgeWeights_.push_back(weight); }
   void addEdgeWeightNormalized(int weight)
   {
-    _edgeWeightsNormalized.push_back(weight);
+    edgeWeightsNormalized_.push_back(weight);
   }
-  void addVertexWeight(int64_t weight) { _vertexWeights.push_back(weight); }
+  void addVertexWeight(int64_t weight) { vertexWeights_.push_back(weight); }
   void addVertexWeightNormalized(int64_t weight)
   {
-    _vertexWeightsNormalized.push_back(weight);
+    vertexWeightsNormalized_.push_back(weight);
   }
-  void addColIdx(int idx) { _colIdx.push_back(idx); }
-  void addRowPtr(int idx) { _rowPtr.push_back(idx); }
-  void addMapping(std::string inst, int idx) { _instToIdx[inst] = idx; }
+  void addColIdx(int idx) { colIdx_.push_back(idx); }
+  void addRowPtr(int idx) { rowPtr_.push_back(idx); }
+  void addMapping(std::string inst, int idx) { instToIdx_[inst] = idx; }
   void addClusterMapping(int idx, int clusterIdx)
   {
-    _idxToClusterIdx[idx] = clusterIdx;
+    idxToClusterIdx_[idx] = clusterIdx;
   }
-  const std::map<std::string, int>& getMap() { return _instToIdx; }
+  const std::map<std::string, int>& getMap() { return instToIdx_; }
 
   bool isInMap(std::string pinName) const
   {
-    return (_instToIdx.find(pinName) != _instToIdx.end());
+    return (instToIdx_.find(pinName) != instToIdx_.end());
   }
 
   bool isInClusterMap(int idx) const
   {
-    return (_idxToClusterIdx.find(idx) != _idxToClusterIdx.end());
+    return (idxToClusterIdx_.find(idx) != idxToClusterIdx_.end());
   }
 
   void clearHypergraph()
   {
-    _edgeWeightsNormalized.clear();
-    _edgeWeights.clear();
-    _vertexWeightsNormalized.clear();
-    _colIdx.clear();
-    _rowPtr.clear();
-    _instToIdx.clear();
+    edgeWeightsNormalized_.clear();
+    edgeWeights_.clear();
+    vertexWeightsNormalized_.clear();
+    colIdx_.clear();
+    rowPtr_.clear();
+    instToIdx_.clear();
   }
 
   void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
@@ -119,27 +119,27 @@ class Hypergraph
   void computeEdgeWeightRange(int maxEdgeWeight, Logger* logger);
   int computeNextVertexIdx(bool cluster = false) const
   {
-    return cluster ? _vertexWeightsNormalized.size() : _vertexWeights.size();
+    return cluster ? vertexWeightsNormalized_.size() : vertexWeights_.size();
   }
-  int computeNextRowPtr() const { return _colIdx.size(); }
-  int getNumEdges() const { return _edgeWeightsNormalized.size(); }
-  int getNumVertex() const { return _vertexWeightsNormalized.size(); }
-  int getNumColIdx() const { return _colIdx.size(); }
-  int getNumRowPtr() const { return _rowPtr.size(); }
+  int computeNextRowPtr() const { return colIdx_.size(); }
+  int getNumEdges() const { return edgeWeightsNormalized_.size(); }
+  int getNumVertex() const { return vertexWeightsNormalized_.size(); }
+  int getNumColIdx() const { return colIdx_.size(); }
+  int getNumRowPtr() const { return rowPtr_.size(); }
   void assignVertexWeight(const std::vector<int>& vertex)
   {
-    _vertexWeightsNormalized = vertex;
+    vertexWeightsNormalized_ = vertex;
   }
 
  protected:
-  std::vector<float> _edgeWeights;
-  std::vector<int> _edgeWeightsNormalized;
-  std::vector<int64_t> _vertexWeights;
-  std::vector<int> _vertexWeightsNormalized;
-  std::vector<int> _colIdx;
-  std::vector<int> _rowPtr;
-  std::map<std::string, int> _instToIdx;
-  std::map<int, int> _idxToClusterIdx;
+  std::vector<float> edgeWeights_;
+  std::vector<int> edgeWeightsNormalized_;
+  std::vector<int64_t> vertexWeights_;
+  std::vector<int> vertexWeightsNormalized_;
+  std::vector<int> colIdx_;
+  std::vector<int> rowPtr_;
+  std::map<std::string, int> instToIdx_;
+  std::map<int, int> idxToClusterIdx_;
 };
 
 /*
@@ -189,16 +189,16 @@ class Graph : public Hypergraph
   Graph() {}
   void clearGraph()
   {
-    _edgeWeightsNormalized.clear();
-    _edgeWeights.clear();
-    _vertexWeightsNormalized.clear();
-    _colIdx.clear();
-    _rowPtr.clear();
-    _instToIdx.clear();
+    edgeWeightsNormalized_.clear();
+    edgeWeights_.clear();
+    vertexWeightsNormalized_.clear();
+    colIdx_.clear();
+    rowPtr_.clear();
+    instToIdx_.clear();
   }
   void assignVertexWeight(const std::vector<int>& vertex)
   {
-    _vertexWeightsNormalized = vertex;
+    vertexWeightsNormalized_ = vertex;
   }
 };
 
