@@ -1326,9 +1326,13 @@ void lefin::pin(lefiPin* pin)
   }
 
   dbSigType sig_type;
+  dbMTermShapeType shape_type;
 
   if (pin->lefiPin::hasUse())
     sig_type = dbSigType(pin->use());
+
+  if (pin->lefiPin::hasShape())
+    shape_type = dbMTermShapeType(pin->shape());
 
   dbMTerm* term = _master->findMTerm(pin->name());
 
@@ -1345,7 +1349,7 @@ void lefin::pin(lefiPin* pin)
       return;
     }
 
-    term = dbMTerm::create(_master, pin->name(), io_type, sig_type);
+    term = dbMTerm::create(_master, pin->name(), io_type, sig_type, shape_type);
   }
 
   //
