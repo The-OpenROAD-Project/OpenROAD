@@ -344,32 +344,40 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
   }
 }
 
-bool FlexPA::enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect, frLayerNum layerNum) {
-    frCoord low, high;
-    frLayer* layer = getDesign()->getTech()->getLayer(layerNum);
-    if (layer->isHorizontal()) {
-        low = gtl::yl(rect);
-        high = gtl::yh(rect);
-    } else if (layer->isVertical()) {
-        low = gtl::xl(rect);
-        high = gtl::xh(rect);
-    } else logger_->error(DRT, 1003, "enclosesPlanarAccess: layer is neither vertical or horizontal");
-    auto& tracks = trackCoords_[layerNum];
-    auto lowTrack = tracks.lower_bound(low);
-    if (lowTrack == tracks.end())
-        logger_->error(DRT, 1004, "enclosesPlanarAccess: low track not found");
-    auto highTrack = tracks.lower_bound(high);
-    if (highTrack != tracks.end()) {
-        if (highTrack->first > high)
-            highTrack--;
-    } else logger_->error(DRT, 1005, "enclosesPlanarAccess: high track not found");
-    if (highTrack->first - lowTrack->first > (int)layer->getPitch())
-        return true;
-    if (lowTrack->first - (int)layer->getWidth()/2 < low)
-        return false;
-    if (highTrack->first + (int)layer->getWidth()/2 > high)
-        return false;
+bool FlexPA::enclosesOnTrackPlanarAccess(
+    const gtl::rectangle_data<frCoord>& rect,
+    frLayerNum layerNum)
+{
+  frCoord low, high;
+  frLayer* layer = getDesign()->getTech()->getLayer(layerNum);
+  if (layer->isHorizontal()) {
+    low = gtl::yl(rect);
+    high = gtl::yh(rect);
+  } else if (layer->isVertical()) {
+    low = gtl::xl(rect);
+    high = gtl::xh(rect);
+  } else
+    logger_->error(
+        DRT,
+        1003,
+        "enclosesPlanarAccess: layer is neither vertical or horizontal");
+  auto& tracks = trackCoords_[layerNum];
+  auto lowTrack = tracks.lower_bound(low);
+  if (lowTrack == tracks.end())
+    logger_->error(DRT, 1004, "enclosesPlanarAccess: low track not found");
+  auto highTrack = tracks.lower_bound(high);
+  if (highTrack != tracks.end()) {
+    if (highTrack->first > high)
+      highTrack--;
+  } else
+    logger_->error(DRT, 1005, "enclosesPlanarAccess: high track not found");
+  if (highTrack->first - lowTrack->first > (int) layer->getPitch())
     return true;
+  if (lowTrack->first - (int) layer->getWidth() / 2 < low)
+    return false;
+  if (highTrack->first + (int) layer->getWidth() / 2 > high)
+    return false;
+  return true;
 }
 void FlexPA::prepPoint_pin_genPoints_rect(
     vector<unique_ptr<frAccessPoint>>& aps,
@@ -422,7 +430,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
       }
     }
     if (!useCenterLine && !enclosesOnTrackPlanarAccess(rect, layerNum))
-        useCenterLine = true;
+      useCenterLine = true;
   }
 
   // gen all full/half grid coords
@@ -609,7 +617,8 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
   bool allowPlanar = true;
   bool isMacroCellPin = false;
   if (instTerm) {
-    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
     if (masterType == dbMasterType::CORE
         || masterType == dbMasterType::CORE_TIEHIGH
         || masterType == dbMasterType::CORE_TIELOW
@@ -754,7 +763,8 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1030,7 +1040,8 @@ void FlexPA::prepPoint_pin_updateStat(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1078,7 +1089,8 @@ bool FlexPA::prepPoint_pin_helper(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1178,7 +1190,8 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+    dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1280,10 +1293,8 @@ void FlexPA::prepPoint()
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL
-        && !masterType.isBlock()
-        && !masterType.isPad()
-        && masterType != dbMasterType::RING) {
+        && masterType != dbMasterType::CORE_ANTENNACELL && !masterType.isBlock()
+        && !masterType.isPad() && masterType != dbMasterType::RING) {
       continue;
     }
     ProfileTask profile("PA:uniqueInstance");
@@ -1509,7 +1520,8 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
 {
   // init virutal nodes
   int startNodeIdx = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
-  int endNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int endNodeIdx
+      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   nodes[startNodeIdx].setNodeCost(0);
   nodes[startNodeIdx].setPathCost(0);
   nodes[endNodeIdx].setNodeCost(0);
@@ -1533,15 +1545,19 @@ void FlexPA::genInstPattern_perform(std::vector<FlexDPNode>& nodes,
 {
   for (int currIdx1 = 0; currIdx1 <= (int) insts.size(); currIdx1++) {
     bool isSet = false;
-    for (int currIdx2 = 0; currIdx2 < ACCESS_PATTERN_END_ITERATION_NUM; currIdx2++) {
-      auto currNodeIdx = getFlatIdx(currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+    for (int currIdx2 = 0; currIdx2 < ACCESS_PATTERN_END_ITERATION_NUM;
+         currIdx2++) {
+      auto currNodeIdx
+          = getFlatIdx(currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       auto& currNode = nodes[currNodeIdx];
       if (currNode.getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       int prevIdx1 = currIdx1 - 1;
-      for (int prevIdx2 = 0; prevIdx2 < ACCESS_PATTERN_END_ITERATION_NUM; prevIdx2++) {
-        int prevNodeIdx = getFlatIdx(prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+      for (int prevIdx2 = 0; prevIdx2 < ACCESS_PATTERN_END_ITERATION_NUM;
+           prevIdx2++) {
+        int prevNodeIdx
+            = getFlatIdx(prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
         auto& prevNode = nodes[prevNodeIdx];
         if (prevNode.getPathCost() == std::numeric_limits<int>::max()) {
           continue;
@@ -1567,7 +1583,8 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
 {
   // bool isDebugMode = true;
   bool isDebugMode = false;
-  int currNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int currNodeIdx
+      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1575,7 +1592,8 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
     // non-virtual node
     if (instCnt != (int) insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+      getNestedIdx(
+          currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       instAccessPatternIdx[currIdx1] = currIdx2;
 
       auto& inst = insts[currIdx1];
@@ -1624,7 +1642,8 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
 void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
                                   const std::vector<frInst*>& insts)
 {
-  int currNodeIdx = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int currNodeIdx
+      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1633,7 +1652,8 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
     // non-virtual node
     if (instCnt != (int) insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+      getNestedIdx(
+          currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
       instAccessPatternIdx[currIdx1] = currIdx2;
 
       // print debug information
@@ -1675,8 +1695,7 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
   cout << flush;
 
   if (instCnt != -1) {
-    logger_->error(
-        DRT, 276, "Valid access pattern combination not found.");
+    logger_->error(DRT, 276, "Valid access pattern combination not found.");
   }
 }
 
@@ -1687,8 +1706,10 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
 {
   int edgeCost = 0;
   int prevIdx1, prevIdx2, currIdx1, currIdx2;
-  getNestedIdx(prevNodeIdx, prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
-  getNestedIdx(currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+  getNestedIdx(
+      prevNodeIdx, prevIdx1, prevIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
+  getNestedIdx(
+      currNodeIdx, currIdx1, currIdx2, ACCESS_PATTERN_END_ITERATION_NUM);
   if (prevIdx1 == -1 || currIdx1 == (int) insts.size()) {
     return edgeCost;
   }
@@ -2450,8 +2471,7 @@ void FlexPA::genPatterns_print_debug(
   }
   cout << endl;
   if (pinCnt != -1) {
-    logger_->error(
-        DRT, 277, "Valid access pattern not found.");
+    logger_->error(DRT, 277, "Valid access pattern not found.");
   }
 }
 
@@ -2478,8 +2498,8 @@ void FlexPA::genPatterns_print(
       unique_ptr<frVia> via
           = make_unique<frVia>(pa->getAccessPoint(currIdx2)->getViaDef());
       frPoint pt(pa->getAccessPoint(currIdx2)->getPoint());
-      cout << " gccleanvia " << inst->getRefBlock()->getName()
-           << " " << instTerm->getTerm()->getName() << " "
+      cout << " gccleanvia " << inst->getRefBlock()->getName() << " "
+           << instTerm->getTerm()->getName() << " "
            << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()
            << " " << inst->getOrient().getString() << "\n";
     }
@@ -2489,8 +2509,7 @@ void FlexPA::genPatterns_print(
     pinCnt--;
   }
   if (pinCnt != -1) {
-    logger_->error(
-        DRT, 278, "Valid access pattern not found.");
+    logger_->error(DRT, 278, "Valid access pattern not found.");
   }
 }
 
