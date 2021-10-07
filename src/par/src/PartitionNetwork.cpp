@@ -272,7 +272,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
                    path_escape,
                    bus_name,
                    idx);
-      delete bus_name;
+      delete[] bus_name;
 
       port_idx.insert(idx);
 
