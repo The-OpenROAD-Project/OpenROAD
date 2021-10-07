@@ -540,7 +540,7 @@ protected:
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
 
-  void repairSetup(PathRef &path,
+  bool repairSetup(PathRef &path,
                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,
                   Slack drvr_slack);
