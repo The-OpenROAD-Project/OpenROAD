@@ -62,11 +62,6 @@ using sta::LibertyPort;
 %inline %{
 
 
-void set_logfile_cmd(const char* logfile)
-{
-  getRestructure()->setLogfile(logfile);
-}
-
 void set_tielo_port_cmd(LibertyPort* tieLoport)
 {
   getRestructure()->setTieLoPort(tieLoport);
@@ -78,10 +73,12 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
 }
 
 void
-restructure_cmd(char* liberty_file_name, char* target, float slack_threshold, int depth_threshold, char* workdir_name)
+restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
+                int depth_threshold, char* workdir_name, char* abc_logfile)
 {
   getRestructure()->setMode(target);
-  getRestructure()->run(liberty_file_name, slack_threshold, depth_threshold, workdir_name);
+  getRestructure()->run(liberty_file_name, slack_threshold, depth_threshold,
+                        workdir_name, abc_logfile);
 }
 
 // Locally Exposed for testing only..
