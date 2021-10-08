@@ -520,10 +520,11 @@ void MainWindow::removeSelected(const Selected& selection)
 void MainWindow::addSelected(const SelectionSet& selections)
 {
   int prev_selected_size = selected_.size();
-  auto filter_empty_selection = std::find_if(selections.begin(), selections.end(), [](const Selected& sel) -> bool {
-    return sel;
-  });
-  selected_.insert(filter_empty_selection, selections.end());
+  for (const auto& selection : selections) {
+    if (selection) {
+      selected_.insert(selection);
+    }
+  }
   status(std::string("Added ") + std::to_string(selected_.size() - prev_selected_size));
   emit selectionChanged();
 }
@@ -542,12 +543,12 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   if (highlight_group >= 7) {
     return;
   }
-
-  auto filter_empty_selection = std::find_if(highlights.begin(), highlights.end(), [](const Selected& sel) -> bool {
-    return sel;
-  });
-
-  highlighted_[highlight_group].insert(filter_empty_selection, highlights.end());
+  auto& group = highlighted_[highlight_group];
+  for (const auto& highlight : highlights) {
+    if (highlight) {
+      group.insert(highlight);
+    }
+  }
   emit highlightChanged();
 }
 
