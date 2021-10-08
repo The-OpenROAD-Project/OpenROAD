@@ -346,26 +346,47 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   }
 
   for (k = 0; k < routelen; k++) {
+    int best_cost = std::numeric_limits<int>::min();
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
-      for (l = 0; l < num_layers_; l++) {
+      for (l = net->minLayer; l <= net->maxLayer; l++) {
         // check if the current layer is vertical to match the edge orientation
         bool is_vertical = ((l % 2) - layer_orientation_) != 0;
-        if (l >= net->minLayer && l <= net->maxLayer && is_vertical) {
+        if (is_vertical) {
           layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
+          best_cost = std::max(best_cost, layer_grid_[l][k]);
         } else {
           layer_grid_[l][k] = std::numeric_limits<int>::min();
         }
       }
+      for (l = 0; l < num_layers_; l++) {
+        if (l < net->minLayer || l > net->maxLayer) {
+          if (best_cost > 0) {
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
+          } else {
+            layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
+          }
+        }
+      }
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
-      for (l = 0; l < num_layers_; l++) {
+      for (l = net->minLayer; l <= net->maxLayer; l++) {
         // check if the current layer is horizontal to match the edge orientation
         bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
-        if (l >= net->minLayer && l <= net->maxLayer && is_horizontal) {
+        if (is_horizontal) {
           layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
+          best_cost = std::max(best_cost, layer_grid_[l][k]);
         } else {
           layer_grid_[l][k] = std::numeric_limits<int>::min();
+        }
+      }
+      for (l = 0; l < num_layers_; l++) {
+        if (l < net->minLayer || l > net->maxLayer) {
+          if (best_cost > 0) {
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
+          } else {
+            layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
+          }
         }
       }
     }
