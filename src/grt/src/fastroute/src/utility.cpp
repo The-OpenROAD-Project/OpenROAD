@@ -361,8 +361,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
       for (l = 0; l < num_layers_; l++) {
         if (l < net->minLayer || l > net->maxLayer) {
+          bool is_vertical = ((l % 2) - layer_orientation_) != 0;
           // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
-          if (best_cost > 0) {
+          // also, check if the layer direction matches the segment direction
+          if (best_cost > 0 || !is_vertical) {
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
             // if the layer range causes overflow, allow the edge to be assigned to other layers
@@ -384,8 +386,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
       for (l = 0; l < num_layers_; l++) {
         if (l < net->minLayer || l > net->maxLayer) {
+          bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
           // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
-          if (best_cost > 0) {
+          // also, check if the layer direction matches the segment direction
+          if (best_cost > 0 || !is_horizontal) {
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
             // if the layer range causes overflow, allow the edge to be assigned to other layers
