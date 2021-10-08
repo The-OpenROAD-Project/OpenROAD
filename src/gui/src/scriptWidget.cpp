@@ -111,7 +111,7 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   // announces exit to Qt
   emit widget->tclExiting();
 
-  return Tcl_Eval(widget->interp_, "::tcl::openroad::exit");
+  return TCL_OK;
 }
 
 void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad)
