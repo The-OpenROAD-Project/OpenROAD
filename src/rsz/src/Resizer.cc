@@ -2133,7 +2133,7 @@ Resizer::repairSetup(float slack_margin)
   incrementalParasiticsBegin();
   while (fuzzyLess(worst_slack, slack_margin)) {
     PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
-    repairSetup(worst_path, worst_slack);
+    bool changed = repairSetup(worst_path, worst_slack);
     updateParasitics();
     sta_->findRequireds();
     sta_->worstSlack(max_, worst_slack, worst_vertex);
@@ -2143,15 +2143,16 @@ Resizer::repairSetup(float slack_margin)
                delayAsString(worst_slack, sta_, 3),
                decreasing_slack ? "v" : "^");
     if (decreasing_slack) {
-      // Allow slack to increase a few passes to get out of local minima.
+      // Allow slack to increase to get out of local minima.
       // Do not update prev_worst_slack so it saves the high water mark.
       decreasing_slack_passes++;
-      if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
+      if (!changed
+          || decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
         journalRestore();
         debugPrint(logger_, RSZ, "repair_setup", 1,
-                   "decreasing slack for {} passes restoring worst_slack {}",
-                   repair_setup_decreasing_slack_passes_allowed_,
+                   "decreasing slack for {} passes. Restoring best slack {}",
+                   decreasing_slack_passes,
                    delayAsString(prev_worst_slack, sta_, 3));
         break;
       }
@@ -2201,17 +2202,19 @@ Resizer::repairSetup(Pin *end_pin)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
 }
 
-void
+bool
 Resizer::repairSetup(PathRef &path,
                      Slack path_slack)
 {
   PathExpanded expanded(&path, sta_);
+  bool changed = false;
   if (expanded.size() > 1) {
     int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
     int start_index = expanded.startIndex();
     const DcalcAnalysisPt *dcalc_ap = path.dcalcAnalysisPt(sta_);
     int lib_ap = dcalc_ap->libertyIndex();
+    // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
@@ -2236,6 +2239,7 @@ Resizer::repairSetup(PathRef &path,
             pair<int, Delay> pair2) {
            return pair1.second > pair2.second;
          });
+    // Attack gates with largest load delays first.
     for (auto index_delay : load_delays) {
       int drvr_index = index_delay.first;
       PathRef *drvr_path = expanded.path(drvr_index);
@@ -2254,11 +2258,13 @@ Resizer::repairSetup(PathRef &path,
         int count_before = inserted_buffer_count_;
         rebuffer(drvr_pin);
         int insert_count = inserted_buffer_count_ - count_before;
-        debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
-                   network_->pathName(drvr_pin),
-                   insert_count);
-        if (insert_count > 0)
+        if (insert_count > 0) {
+          debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
+                     network_->pathName(drvr_pin),
+                     insert_count);
+          changed = true;
           break;
+        }
       }
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_) {
@@ -2267,6 +2273,7 @@ Resizer::repairSetup(PathRef &path,
                    network_->pathName(drvr_pin),
                    network_->pathName(load_pin));
         splitLoads(drvr_path, path_slack);
+        changed = true;
         break;
       }
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
@@ -2289,8 +2296,6 @@ Resizer::repairSetup(PathRef &path,
       }
       else
         prev_drive = 0.0;
-      debugPrint(logger_, RSZ, "repair_setup", 2, "resize {}",
-                 network_->pathName(drvr_pin));
       LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
                                        prev_drive, dcalc_ap);
       if (upsize) {
@@ -2299,12 +2304,15 @@ Resizer::repairSetup(PathRef &path,
                    network_->pathName(drvr_pin),
                    drvr_port->libertyCell()->name(),
                    upsize->name());
-        if (replaceCell(drvr, upsize, true))
+        if (replaceCell(drvr, upsize, true)) {
           resize_count_++;
-        break;
+          changed = true;
+          break;
+        }
       }
     }
   }
+  return changed;
 }
 
 void

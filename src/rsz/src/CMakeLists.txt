@@ -65,6 +65,7 @@ target_link_libraries(rsz
     grt
     gui
     utl
+    spdlog::spdlog
 )
 
 messages(

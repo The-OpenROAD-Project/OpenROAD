@@ -274,15 +274,10 @@ public:
                          const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
-  dbNetwork *getDbNetwork() { return db_network_; }
-  double dbuToMeters(int dist) const;
-  int metersToDbu(double dist) const;
 
-  void rebuffer(const Pin *drvr_pin);
-  // Rebuffer net (for testing).
+  // Rebuffer one net (for testing).
   // resizerPreamble() required.
-  void rebuffer(Net *net);
-  void highlightSteiner(const Pin *drvr);
+  void rebuffer1(const Pin *drvr_pin);
 
   ////////////////////////////////////////////////////////////////
   // Slack API for timing driven placement.
@@ -302,11 +297,18 @@ public:
   // db flavor
   vector<dbNet*> resizeWorstSlackDbNets();
   Slack resizeNetSlack(const dbNet *db_net);
-  ////////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   PinSet findFaninFanouts(PinSet *end_pins);
   PinSet findFanins(PinSet *end_pins);
+
+  ////////////////////////////////////////////////////////////////
+  void highlightSteiner(const Pin *drvr);
+
+  dbNetwork *getDbNetwork() { return db_network_; }
+  double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
 
 protected:
   void init();
@@ -540,7 +542,7 @@ protected:
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
 
-  void repairSetup(PathRef &path,
+  bool repairSetup(PathRef &path,
                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,
                   Slack drvr_slack);
@@ -553,6 +555,7 @@ protected:
                    LibertyCell *cell,
                    bool journal);
 
+  void rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                   SteinerPt k,
                                   SteinerPt prev,

@@ -475,13 +475,14 @@ repair_hold(float slack_margin,
 
 ////////////////////////////////////////////////////////////////
 
-// for testing
+// Rebuffer one net (for testing).
+// resizerPreamble() required.
 void
-rebuffer_net(Net *net)
+rebuffer_net(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->rebuffer(net);
+  resizer->rebuffer1(drvr_pin);
 }
 
 void
