@@ -361,9 +361,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
       for (l = 0; l < num_layers_; l++) {
         if (l < net->minLayer || l > net->maxLayer) {
+          // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
           if (best_cost > 0) {
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
+            // if the layer range causes overflow, allow the edge to be assigned to other layers
             layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
           }
         }
@@ -382,9 +384,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
       for (l = 0; l < num_layers_; l++) {
         if (l < net->minLayer || l > net->maxLayer) {
+          // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
           if (best_cost > 0) {
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
+            // if the layer range causes overflow, allow the edge to be assigned to other layers
             layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
           }
         }
