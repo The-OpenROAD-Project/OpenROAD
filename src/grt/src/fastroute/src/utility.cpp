@@ -359,16 +359,32 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           layer_grid_[l][k] = std::numeric_limits<int>::min();
         }
       }
-      for (l = 0; l < num_layers_; l++) {
-        if (l < net->minLayer || l > net->maxLayer) {
+
+      if (best_cost <= 0) { // assigning the edge to the layer range would cause overflow
+        // try to assign the edge to the closest layer below the min routing layer
+        for (l = net->minLayer - 1; l >= 0; l--) {
           bool is_vertical = ((l % 2) - layer_orientation_) != 0;
-          // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
-          // also, check if the layer direction matches the segment direction
-          if (best_cost > 0 || !is_vertical) {
+          if (!is_vertical || best_cost > 0) { // if already found a layer for the edge, ignores the remaining layers
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
-            // if the layer range causes overflow, allow the edge to be assigned to other layers
             layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
+            best_cost = std::max(best_cost, layer_grid_[l][k]);
+          }
+        }
+        // try to assign the edge to the closest layer above the max routing layer
+        for (l = net->maxLayer + 1; l < num_layers_; l++) {
+          bool is_vertical = ((l % 2) - layer_orientation_) != 0;
+          if (!is_vertical || best_cost > 0) { // if already found a layer for the edge, ignores the remaining layers
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
+          } else {
+            layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
+            best_cost = std::max(best_cost, layer_grid_[l][k]);
+          }
+        }
+      } else { // the edge was assigned to a layer without causing overflow
+        for (l = 0; l < num_layers_; l++) {
+          if (l < net->minLayer || l > net->maxLayer) {
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
           }
         }
       }
@@ -384,16 +400,32 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           layer_grid_[l][k] = std::numeric_limits<int>::min();
         }
       }
-      for (l = 0; l < num_layers_; l++) {
-        if (l < net->minLayer || l > net->maxLayer) {
+
+      if (best_cost <= 0) { // assigning the edge to the layer range would cause overflow
+        // try to assign the edge to the closest layer below the min routing layer
+        for (l = net->minLayer - 1; l >= 0; l--) {
           bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
-          // if assign the edge to the layer range of the net is not causing overflow, ignores the other layers
-          // also, check if the layer direction matches the segment direction
-          if (best_cost > 0 || !is_horizontal) {
+          if (!is_horizontal || best_cost > 0) { // if already found a layer for the edge, ignores the remaining layers
             layer_grid_[l][k] = std::numeric_limits<int>::min();
           } else {
-            // if the layer range causes overflow, allow the edge to be assigned to other layers
             layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
+            best_cost = std::max(best_cost, layer_grid_[l][k]);
+          }
+        }
+        // try to assign the edge to the closest layer above the max routing layer
+        for (l = net->maxLayer + 1; l < num_layers_; l++) {
+          bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
+          if (!is_horizontal || best_cost > 0) { // if already found a layer for the edge, ignores the remaining layers
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
+          } else {
+            layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
+            best_cost = std::max(best_cost, layer_grid_[l][k]);
+          }
+        }
+      } else { // the edge was assigned to a layer without causing overflow
+        for (l = 0; l < num_layers_; l++) {
+          if (l < net->minLayer || l > net->maxLayer) {
+            layer_grid_[l][k] = std::numeric_limits<int>::min();
           }
         }
       }
