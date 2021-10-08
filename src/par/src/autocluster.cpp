@@ -894,18 +894,17 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   row_ptr.push_back(count);
 
   // Convert it to MLPart Format
-  const int num_vertice = vertex_weight.size();
+  const int num_vertices = vertex_weight.size();
   const int num_edge = row_ptr.size() - 1;
   const int num_col_idx = col_idx.size();
 
-  double* vertexWeight
-      = (double*) malloc((unsigned) num_vertice * sizeof(double));
-  int* rowPtr = (int*) malloc((unsigned) (num_edge + 1) * sizeof(int));
-  int* colIdx = (int*) malloc((unsigned) (num_col_idx) * sizeof(int));
-  double* edgeWeight = (double*) malloc((unsigned) num_edge * sizeof(double));
-  int* part = (int*) malloc((unsigned) num_vertice * sizeof(int));
+  vector<double> vertexWeight(num_vertices);
+  vector<int> rowPtr(num_edge + 1);
+  vector<int> colIdx(num_col_idx);
+  vector<double> edgeWeight(num_edge);
+  vector<int> part(num_vertices);
 
-  for (int i = 0; i < num_vertice; i++) {
+  for (int i = 0; i < num_vertices; i++) {
     part[i] = -1;
     vertexWeight[i] = 1.0;
   }
@@ -927,16 +926,16 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   double tolerance = 0.05;
   unsigned int seed = 0;
 
-  UMpack_mlpart(num_vertice,
+  UMpack_mlpart(num_vertices,
                 num_edge,
-                vertexWeight,
-                rowPtr,
-                colIdx,
-                edgeWeight,
+                vertexWeight.data(),
+                rowPtr.data(),
+                colIdx.data(),
+                edgeWeight.data(),
                 npart,  // Number of Partitions
                 balanceArray,
                 tolerance,
-                part,
+                part.data(),
                 1,  // Starts Per Run #TODO: add a tcl command
                 1,  // Number of Runs
                 0,  // Debug Level
@@ -956,7 +955,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   cluster_part0->addLogicalModuleVec(cluster->getLogicalModuleVec());
   cluster_part1->addLogicalModuleVec(cluster->getLogicalModuleVec());
 
-  for (int i = cluster_list_.size() - 2; i < num_vertice; i++) {
+  for (int i = cluster_list_.size() - 2; i < num_vertices; i++) {
     if (part[i] == 0) {
       cluster_part0->addInst(idx_to_inst[i]);
       inst_map_[idx_to_inst[i]] = id_part0;

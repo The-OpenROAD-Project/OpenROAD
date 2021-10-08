@@ -1185,4 +1185,62 @@ class Ads_NoCopy
   Ads_NoCopy& operator=(const Ads_NoCopy& q);
 };
 
+
+///
+/// Defines the type of shapes.
+///
+class dbMTermShapeType
+{
+ public:
+  enum Value
+  {
+    NONE,
+    RING,
+    FEEDTHRU,
+    ABUTMENT
+  };
+
+  ///
+  ///  Create a dbMterm type of one of the following
+  ///  values "ring", "feedthru", "abutment"
+  ///
+  dbMTermShapeType(const char* value);
+
+  ///
+  /// Create a dbMterm type with an explicit value.
+  ///
+  dbMTermShapeType(Value value);
+
+  ///
+  /// Create a dbMTermType instance with value = NONE
+  ///
+  dbMTermShapeType();
+
+  ///
+  /// Copy constructor.
+  ///
+  dbMTermShapeType(const dbMTermShapeType& value);
+
+  ///
+  /// Returns the type-value.
+  ///
+  Value getValue() const { return _value; }
+
+  ///
+  /// Returns the owner-value as a string.
+  ///
+  const char* getString() const;
+
+  ///
+  /// Cast operator
+  ///
+  operator Value() const { return _value; }
+
+ private:
+  Value _value;
+};
+
+
+
+
 }  // namespace odb

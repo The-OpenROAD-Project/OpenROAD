@@ -594,6 +594,10 @@ void PartitionMgr::evaluatePartitioning()
     }
   }
 
+  if (bestId == -1) {
+    logger_->error(PAR, 103, "No partitioning result found.");
+  }
+
   reportPartitionResult(bestId);
   setCurrentBestId(bestId);
 }

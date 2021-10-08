@@ -92,13 +92,15 @@ void Restructure::reset()
 void Restructure::run(char* liberty_file_name,
                       float slack_threshold,
                       unsigned max_depth,
-                      char* workdir_name)
+                      char* workdir_name,
+                      char* abc_logfile)
 {
   reset();
   block_ = db_->getChip()->getBlock();
   if (!block_)
     return;
 
+  logfile_ = abc_logfile;
   sta::Slack worst_slack = slack_threshold;
 
   lib_file_names_.emplace_back(liberty_file_name);
@@ -213,10 +215,10 @@ void Restructure::runABC()
                  "Writing ABC script file {}.",
                  abc_script_file);
       if (writeAbcScript(abc_script_file)) {
-        std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
+        std::string abc_command = std::string("yosys-abc -F ") + abc_script_file;
         if (logfile_ != "")
           abc_command
-              = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
+              = abc_command + " >& " + logfile_ + std::to_string(temp_mode_idx);
 
         pid_t child_pid = fork();
         if (child_pid == 0) {  // Begin child
@@ -653,11 +655,6 @@ void Restructure::setMode(const char* mode_name)
   else {
     logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
   }
-}
-
-void Restructure::setLogfile(const char* logfile)
-{
-  logfile_ = logfile;
 }
 
 void Restructure::setTieHiPort(sta::LibertyPort* tieHiPort)
