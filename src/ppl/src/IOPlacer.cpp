@@ -829,7 +829,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
 
     if (index == -1) {
-      logger->error(PPL, 77, "Layer {} of Pin {} not found.",
+      logger_->error(PPL, 77, "Layer {} of Pin {} not found.",
                     pin.getLayer(), pin.getName());
     }
 
