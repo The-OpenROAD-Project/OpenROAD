@@ -812,7 +812,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 
   if (pin.getLayer() != top_grid_.layer) {
-    int index;
+    int index = -1;
 
     int i = 0;
     for (int layer : hor_layers_) {
@@ -826,6 +826,11 @@ void IOPlacer::updatePinArea(IOPin& pin)
       if (layer == pin.getLayer())
         index = i;
       i++;
+    }
+
+    if (index == -1) {
+      logger_->error(PPL, 77, "Layer {} of Pin {} not found.",
+                    pin.getLayer(), pin.getName());
     }
 
     if (pin.getOrientation() == Orientation::north

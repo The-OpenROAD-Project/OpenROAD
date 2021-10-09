@@ -484,7 +484,7 @@ void FastRouteCore::updateRouteType13D(int netID,
     logger_->error(GRT, 171, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
-  int E1_pos2;
+  int E1_pos2 = 0;
   for (int i = cnt_n1A1 - 1; i >= 0; i--) {
     if (gridsX_n1A1[i] == E1x && gridsY_n1A1[i] == E1y)  // reach the E1
     {
