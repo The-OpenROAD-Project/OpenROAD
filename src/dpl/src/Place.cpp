@@ -43,6 +43,7 @@
 #include <cmath>
 #include <cstdlib>
 
+#include "Graphics.h"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 
@@ -67,6 +68,10 @@ cellAreaGreater(const Cell *cell1, const Cell *cell2);
 void
 Opendp::detailedPlacement()
 {
+  if (graphics_) {
+    graphics_->startPlacement(block_);
+  }
+
   initGrid();
   // Paint fixed cells.
   setFixedGridCells();
@@ -79,6 +84,10 @@ Opendp::detailedPlacement()
     placeGroups();
   }
   place();
+
+  if (graphics_) {
+    graphics_->endPlacement();
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -565,6 +574,9 @@ Opendp::mapMove(Cell *cell,
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
+    if (graphics_) {
+      graphics_->placeInstance(cell->db_inst_);
+    }
     return true;
   }
   return false;
@@ -810,6 +822,10 @@ Opendp::binSearch(int x,
   int x_end = bin_x + gridPaddedWidth(cell);
   int height = gridHeight(cell);
   int y_end = bin_y + height;
+
+  if (graphics_) {
+    graphics_->binSearch(cell, bin_x, bin_y, x_end, y_end);
+  }
 
   // Check y is beyond the border.
   if (y_end > row_count_

@@ -51,42 +51,6 @@ namespace gui {
 
 using namespace odb;
 
-static QString convertAnyToQString(const std::any& item, EditorItemDelegate::EditType* type = nullptr)
-{
-  QString value;
-  EditorItemDelegate::EditType value_type = EditorItemDelegate::STRING; // default to string
-
-  if (auto selected = std::any_cast<Selected>(&item)) {
-    value = QString::fromStdString(selected->getName());
-  } else if (auto v = std::any_cast<const char*>(&item)) {
-    value = QString(*v);
-  } else if (auto v = std::any_cast<const std::string>(&item)) {
-    value = QString::fromStdString(*v);
-  } else if (auto v = std::any_cast<int>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<unsigned int>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<double>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<float>(&item)) {
-    value_type = EditorItemDelegate::NUMBER;
-    value = QString::number(*v);
-  } else if (auto v = std::any_cast<bool>(&item)) {
-    value_type = EditorItemDelegate::BOOL;
-    value = *v ? "True" : "False";
-  } else {
-    value = "<unknown>";
-  }
-
-  if (type != nullptr) {
-    *type = value_type;
-  }
-  return value;
-}
-
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (index.column() == 1) {
@@ -210,13 +174,34 @@ void EditorItemDelegate::setModelData(QWidget* editor,
         auto new_selected = std::any_cast<Selected>(new_property);
         model->setData(index, QVariant::fromValue(new_selected), selected_);
       }
-      edit_save = convertAnyToQString(new_property);
+      edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
     }
   }
   model->setData(index, edit_save, Qt::EditRole);
 
   // disable editing as we are done editing
   model_->itemFromIndex(index)->setEditable(false);
+}
+
+EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
+{
+  if (auto v = std::any_cast<const char*>(&value)) {
+    return EditorItemDelegate::STRING;
+  } else if (auto v = std::any_cast<const std::string>(&value)) {
+    return EditorItemDelegate::STRING;
+  } else if (auto v = std::any_cast<int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<double>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<float>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  } else if (auto v = std::any_cast<bool>(&value)) {
+    return EditorItemDelegate::BOOL;
+  } else {
+    return EditorItemDelegate::STRING;
+  }
 }
 
 ////////
@@ -226,8 +211,14 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       view_(new QTreeView()),
       model_(new SelectedItemModel(Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
       layout_(new QVBoxLayout),
+      action_layout_(new QVBoxLayout),
       selected_(selected),
+      selected_itr_(selected.begin()),
       selection_(Selected()),
+      button_frame_(new QFrame),
+      button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
+      button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
+      selected_itr_label_(new QLabel(this)),
       mouse_timer_(nullptr)
 {
   setObjectName("inspector");  // for settings
@@ -243,6 +234,17 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
   QWidget* container = new QWidget;
   layout_->addWidget(view_, /* stretch */ 1);
+  layout_->addLayout(action_layout_);
+
+  button_frame_->setFrameShape(QFrame::StyledPanel);
+  button_frame_->setFrameShadow(QFrame::Raised);
+  QHBoxLayout* button_layout = new QHBoxLayout;
+  button_layout->addWidget(button_prev_, 1);
+  button_layout->addWidget(selected_itr_label_, 1, Qt::AlignHCenter);
+  button_layout->addWidget(button_next_, 1);
+  button_frame_->setLayout(button_layout);
+  layout_->addWidget(button_frame_);
+  button_frame_->setVisible(false);
 
   container->setLayout(layout_);
 
@@ -257,6 +259,26 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(clicked(const QModelIndex&)));
+
+  connect(button_prev_,
+          &QPushButton::pressed,
+          [this]() {
+            if (selected_itr_ == selected_.begin()) {
+              selected_itr_ = selected_.end();
+            }
+            selected_itr_--;
+            inspect(*selected_itr_);
+          });
+
+  connect(button_next_,
+          &QPushButton::pressed,
+          [this]() {
+            selected_itr_++; // go to next
+            if (selected_itr_ == selected_.end()) {
+              selected_itr_ = selected_.begin();
+            }
+            inspect(*selected_itr_);
+          });
 }
 
 void Inspector::inspect(const Selected& object)
@@ -275,6 +297,15 @@ void Inspector::inspect(const Selected& object)
   }
 
   selection_ = object;
+  // update iterator
+  selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
+    return item < selection_;
+  });
+  int selected_index = std::distance(selected_.begin(), selected_itr_);
+  selected_itr_label_->setText(
+      QString::number(selected_index + 1) +
+      "/" +
+      QString::number(selected_.size()));
 
   if (!object) {
     return;
@@ -289,10 +320,12 @@ void Inspector::inspect(const Selected& object)
   Descriptor::Properties properties = object.getProperties();
   std::copy(properties.begin(), properties.end(), std::back_inserter(all_properties));
 
-  for (auto& [name, value] : all_properties) {
+  for (auto& prop : all_properties) {
+    const std::string& name = prop.name;
+    const std::any& value = prop.value;
+
     auto name_item = makeItem(QString::fromStdString(name));
     auto editor_found = editors.find(name);
-    EditorItemDelegate::EditType editor_type = EditorItemDelegate::STRING; // default to string
 
     QStandardItem* value_item = nullptr;
 
@@ -307,7 +340,7 @@ void Inspector::inspect(const Selected& object)
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
     } else {
-      value_item = makeItem(convertAnyToQString(value, &editor_type));
+      value_item = makeItem(QString::fromStdString(prop.toString()));
     }
 
     model_->appendRow({name_item, value_item});
@@ -320,7 +353,7 @@ void Inspector::inspect(const Selected& object)
     // make editor if found
     if (editor_found != editors.end()) {
       auto editor = (*editor_found).second;
-      makeItemEditor(name, value_item, object, editor_type, editor);
+      makeItemEditor(name, value_item, object, EditorItemDelegate::getEditorType(value), editor);
     }
   }
 
@@ -330,7 +363,7 @@ void Inspector::inspect(const Selected& object)
     connect(button, &QPushButton::released, [this, button]() {
       handleAction(button);
     });
-    layout_->addWidget(button);
+    action_layout_->addWidget(button);
     actions_[button] = action;
   }
 
@@ -367,7 +400,13 @@ void Inspector::indexClicked(const QModelIndex& index)
   QStandardItem* item = model_->itemFromIndex(index);
   auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
-    emit selected(new_selected, false);
+    // If shift is help add to the list instead of replacing list
+    if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
+      emit addSelected(new_selected);
+      inspect(new_selected);
+    } else {
+      emit selected(new_selected, false);
+    }
   }
 }
 
@@ -392,7 +431,13 @@ void Inspector::update()
   if (selected_.empty()) {
     inspect(Selected());
   } else {
-    inspect(*selected_.begin());
+    if (selected_.size() > 1) {
+      button_frame_->setVisible(true);
+    } else {
+      button_frame_->setVisible(false);
+    }
+    selected_itr_ = selected_.begin();
+    inspect(*selected_itr_);
     raise();
   }
 }
@@ -401,7 +446,30 @@ void Inspector::handleAction(QWidget* action)
 {
   auto callback = actions_[action];
   auto new_selection = callback();
-  emit selected(new_selection);
+
+  int itr_index = std::distance(selected_.begin(), selected_itr_);
+  // remove the current selection
+  emit removeSelected(selection_);
+  if (new_selection) {
+    // new selection as made, so add that and inspect it
+    emit addSelected(new_selection);
+    inspect(new_selection);
+  } else {
+
+    if (selected_.empty()) {
+      // set is empty
+      emit selected(Selected());
+    } else {
+      // determine new position in set
+      itr_index = std::min(itr_index, static_cast<int>(selected_.size()) - 1);
+
+      selected_itr_ = selected_.begin();
+      std::advance(selected_itr_, itr_index);
+
+      // inspect item at new this index
+      inspect(*selected_itr_);
+    }
+  }
 }
 
 QStandardItem* Inspector::makeItem(const QString& name)
@@ -414,7 +482,7 @@ QStandardItem* Inspector::makeItem(const QString& name)
 
 QStandardItem* Inspector::makeItem(const std::any& item)
 {
-  return makeItem(convertAnyToQString(item));
+  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
 }
 
 QStandardItem* Inspector::makeItem(const Selected& selected)

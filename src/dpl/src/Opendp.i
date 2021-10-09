@@ -154,6 +154,15 @@ optimize_mirroring_cmd()
   opendp->optimizeMirroring();
 }
 
+void
+set_debug_cmd(bool displacement,
+              float min_displacement,
+              const odb::dbInst* debug_instance)
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setDebug(displacement, min_displacement, debug_instance);
+}
+
 } // namespace
 
 %} // inline

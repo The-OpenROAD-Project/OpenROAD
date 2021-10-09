@@ -36,7 +36,11 @@
 
 namespace odb {
 class dbMaster;
-}
+} // namespace odb
+
+namespace sta {
+class dbSta;
+} // namespace sta
 
 namespace gui {
 
@@ -46,6 +50,8 @@ namespace gui {
 class DbInstDescriptor : public Descriptor
 {
  public:
+  DbInstDescriptor(sta::dbSta* sta);
+
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
@@ -67,11 +73,15 @@ class DbInstDescriptor : public Descriptor
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
   bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
+
+  sta::dbSta* sta_;
 };
 
 class DbMasterDescriptor : public Descriptor
 {
  public:
+  DbMasterDescriptor(sta::dbSta* sta);
+
   std::string getName(std::any object) const override;
   std::string getTypeName(std::any object) const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
@@ -84,10 +94,12 @@ class DbMasterDescriptor : public Descriptor
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
-  static void getMasterEquivalent(odb::dbMaster* master, std::set<odb::dbMaster*>& masters);
+  static void getMasterEquivalent(sta::dbSta* sta, odb::dbMaster* master, std::set<odb::dbMaster*>& masters);
 
  private:
   void getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const;
+
+  sta::dbSta* sta_;
 };
 
 class DbNetDescriptor : public Descriptor

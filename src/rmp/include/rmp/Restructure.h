@@ -87,10 +87,10 @@ class Restructure
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,
-           char* workdir_name);
+           char* workdir_name,
+           char* abc_logfile);
 
   void setMode(const char* mode_name);
-  void setLogfile(const char* file_name);
   void setTieLoPort(sta::LibertyPort* loport);
   void setTieHiPort(sta::LibertyPort* hiport);
 

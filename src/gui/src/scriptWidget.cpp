@@ -111,28 +111,18 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   // announces exit to Qt
   emit widget->tclExiting();
 
-  return Tcl_Eval(widget->interp_, "::tcl::openroad::exit");
+  return TCL_OK;
 }
 
-void ScriptWidget::setupTcl(Tcl_Interp* interp)
+void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad)
 {
-  // interp will be nullptr if called from Tcl, therefore tcl is already initialized
-  bool do_init = interp != nullptr;
-
-  if (do_init) {
-    // first time though
-    interp_ = interp;
-  } else {
-    // second time though openroad is already setup, so get its tcl_interp
-    interp_ = ord::OpenRoad::openRoad()->tclInterp();
-  }
+  interp_ = interp;
 
   // Overwrite exit to allow Qt to handle exit
   Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
   Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
 
-  Gui::get()->init();
-  if (do_init) {
+  if (do_init_openroad) {
     // OpenRoad is not initialized
     pauser_->setText("Running");
     pauser_->setStyleSheet("background-color: red");
@@ -142,18 +132,7 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp)
 
     addTclResultToOutput(setup_tcl_result);
   } else {
-    // OpenRoad already initialized
-    Gui::get()->setLogger(ord::OpenRoad::openRoad()->getLogger());
-    // check if design is loaded
-    auto db = ord::OpenRoad::openRoad()->getDb();
-    if (db != nullptr) {
-      auto chip = db->getChip();
-      if (chip != nullptr) {
-        if (chip->getBlock() != nullptr) {
-          Gui::get()->load_design();
-        }
-      }
-    }
+    Gui::get()->load_design();
   }
 
   input_->init(interp_);

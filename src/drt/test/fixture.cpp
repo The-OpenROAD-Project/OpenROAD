@@ -429,7 +429,7 @@ Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
   withinCon->setEolWithin(within);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58SpacingEndOfLineConstraint(con);
+  layer->addLef58SpacingEndOfLineConstraint(con.get());
   tech->addConstraint(con);
   return con;
 }

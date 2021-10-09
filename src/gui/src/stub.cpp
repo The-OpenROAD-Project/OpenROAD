@@ -41,6 +41,12 @@ namespace gui {
 
 Gui* Gui::singleton_ = nullptr;
 
+Gui::Gui() : continue_after_close_(false),
+             logger_(nullptr),
+             db_(nullptr)
+{
+}
+
 Gui* gui::Gui::get()
 {
   return singleton_;
@@ -75,6 +81,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Renderer::redraw()
+{
+}
+
 Renderer::~Renderer()
 {
 }
@@ -100,6 +110,15 @@ void Gui::setSelected(Selected selection)
 void Gui::registerDescriptor(const std::type_info& type,
                         const Descriptor* descriptor)
 {
+}
+
+void Gui::unregisterDescriptor(const std::type_info& type)
+{
+}
+
+std::string Descriptor::Property::toString(const std::any& /* value */)
+{
+  return "";
 }
 
 // using namespace odb;

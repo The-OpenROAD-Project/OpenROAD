@@ -333,14 +333,6 @@ proc global_route_debug { args } {
 
 namespace eval grt {
 
-proc estimate_rc_cmd {} {
-  if { [have_routes] } {
-    estimate_rc
-  } else {
-    utl::error GRT 58 "Run global_route before estimating parasitics for global routing."
-  }
-}
-
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {
     utl::error GRT 59 "Missing technology file."

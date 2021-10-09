@@ -45,6 +45,8 @@
 #include "sta/Parasitics.hh"
 #include "sta/ArcDelayCalc.hh"
 
+#include "grt/GlobalRouter.h"
+
 namespace rsz {
 
 using utl::RSZ;
@@ -161,15 +163,85 @@ Resizer::wireClkCapacitance(const Corner *corner)
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::ensureWireParasitics()
+Resizer::ensureParasitics()
 {
-  if (have_estimated_parasitics_) {
+  estimateParasitics(global_router_->haveRoutes()
+                     ? ParasiticsSrc::global_routing
+                     : ParasiticsSrc::placement);
+}
+
+void
+Resizer::estimateParasitics(ParasiticsSrc src)
+{
+  switch (src) {
+  case ParasiticsSrc::placement:
+    estimateWireParasitics();
+    break;
+  case ParasiticsSrc::global_routing:
+    global_router_->estimateRC();
+    parasitics_src_ = ParasiticsSrc::global_routing;
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+}
+
+bool
+Resizer::haveEstimatedParasitics() const
+{
+  return parasitics_src_ != ParasiticsSrc::none;
+}
+
+void
+Resizer::incrementalParasiticsBegin()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
+    break;
+  case ParasiticsSrc::global_routing:
+    incr_groute_ = new IncrementalGRoute(global_router_, block_);
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+  parasitics_invalid_.clear();
+}
+
+void
+Resizer::incrementalParasiticsEnd()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
+    break;
+  case ParasiticsSrc::global_routing:
+    delete incr_groute_;
+    incr_groute_ = nullptr;
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+  parasitics_invalid_.clear();
+}
+
+void
+Resizer::updateParasitics()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
     for (const Net *net : parasitics_invalid_)
       estimateWireParasitic(net);
     parasitics_invalid_.clear();
+    break;
+  case ParasiticsSrc::global_routing: {
+    incr_groute_->updateRoutes();
+    for (const Net *net : parasitics_invalid_)
+      global_router_->estimateRC(db_network_->staToDb(net));
+    parasitics_invalid_.clear();
+    break;
   }
-  else
-    estimateWireParasitics();
+  case ParasiticsSrc::none:
+    break;
+  }
 }
 
 void
@@ -188,15 +260,29 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
   // they are all made at the same time.
   const Corner *corner = sta_->corners()->findCorner(0);
   const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
-  if (have_estimated_parasitics_
-      && net
-      && (parasitics_invalid_.hasKey(net)
-          || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
-                                       parasitic_ap) == nullptr)) {
-    estimateWireParasitic(drvr_pin, net);
-    parasitics_invalid_.erase(net);
+  if (parasitics_invalid_.hasKey(net)
+      || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+                                   parasitic_ap) == nullptr) {
+    switch (parasitics_src_) {
+    case ParasiticsSrc::placement:
+      estimateWireParasitic(drvr_pin, net);
+      parasitics_invalid_.erase(net);
+      break;
+    case ParasiticsSrc::global_routing: {
+      grt::IncrementalGRoute incr_groute(global_router_, block_);
+      global_router_->addDirtyNet(db_network_->staToDb(net));
+      incr_groute.updateRoutes();
+      global_router_->estimateRC(db_network_->staToDb(net));
+      parasitics_invalid_.erase(net);
+      break;
+    }
+    case ParasiticsSrc::none:
+      break;
+    }
   }
 }
+
+////////////////////////////////////////////////////////////////
 
 void
 Resizer::estimateWireParasitics()
@@ -212,7 +298,8 @@ Resizer::estimateWireParasitics()
       estimateWireParasitic(net);
     }
     delete net_iter;
-    have_estimated_parasitics_ = true;
+
+    parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
   }
 }
@@ -424,7 +511,7 @@ Resizer::isPad(const Instance *inst) const
 void
 Resizer::parasiticsInvalid(const Net *net)
 {
-  if (have_estimated_parasitics_) {
+  if (haveEstimatedParasitics()) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 2, "parasitics invalid {}",
                network_->pathName(net));
     parasitics_invalid_.insert(net);

@@ -30,11 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include "ruler.h"
 
-#include <cmath>
+#include <boost/geometry.hpp>
 
 namespace gui {
 
@@ -54,28 +53,27 @@ bool Ruler::operator ==(const Ruler& other) const
          (pt0_ == other.getPt1() && pt1_ == other.getPt0());
 }
 
-bool Ruler::fuzzyIntersection(const odb::Point& pt, int margin) const
+bool Ruler::fuzzyIntersection(const odb::Rect& region, int margin) const
 {
-  // compute composite line from two end points through the pt
-  // if the resultant line is longer by the margin, no intersection is reported.
+  typedef boost::geometry::model::d2::point_xy<int> point_t;
+  typedef boost::geometry::model::linestring<point_t> linestring_t;
+  typedef boost::geometry::model::polygon<point_t> polygon_t;
 
-  auto distance = [](const odb::Point& pt0, const odb::Point& pt1) -> int {
-    const double len_x = pt0.x() - pt1.x();
-    const double len_y = pt0.y() - pt1.y();
+  linestring_t ls;
+  boost::geometry::append(ls, point_t(pt0_.x(), pt0_.y()));
+  boost::geometry::append(ls, point_t(pt1_.x(), pt1_.y()));
+  polygon_t poly;
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMin() - margin));
+  boost::geometry::append(poly, point_t(region.xMax() + margin, region.yMin() - margin));
+  boost::geometry::append(poly, point_t(region.xMax() + margin, region.yMax() + margin));
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMax() + margin));
+  boost::geometry::append(poly, point_t(region.xMin() - margin, region.yMin() - margin));
 
-    return std::sqrt(len_x * len_x + len_y * len_y);
-  };
-
-  const int d0 = distance(pt0_, pt);
-  const int d1 = distance(pt1_, pt);
-  const int druler = distance(pt0_, pt1_);
-
-  return std::abs(d0 + d1 - druler) < margin;
+  return boost::geometry::intersects(ls, poly);
 }
 
-std::string Ruler::getTclCommand() const
+std::string Ruler::getTclCommand(double dbu_to_microns) const
 {
-  double dbu_to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
   return "gui::add_ruler " +
          std::to_string(pt0_.x() / dbu_to_microns) + " " + std::to_string(pt0_.y() / dbu_to_microns) + " " +
          std::to_string(pt1_.x() / dbu_to_microns) + " " + std::to_string(pt1_.y() / dbu_to_microns) + " " +
@@ -84,8 +82,10 @@ std::string Ruler::getTclCommand() const
 
 ////////////
 
-RulerDescriptor::RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers) :
-    rulers_(rulers)
+RulerDescriptor::RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
+                                 odb::dbDatabase* db) :
+    rulers_(rulers),
+    db_(db)
 {
 }
 
@@ -118,7 +118,7 @@ void RulerDescriptor::highlight(std::any object,
 Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const double dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+  const double dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {{"Label", ruler->getLabel()},
           {"Point 0 - x", ruler->getPt0().x() / dbu_per_uu_},
           {"Point 0 - y", ruler->getPt0().y() / dbu_per_uu_},
@@ -129,7 +129,7 @@ Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 Descriptor::Editors RulerDescriptor::getEditors(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const int dbu_per_uu_ = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+  const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {
     {"Name", makeEditor([this, ruler](std::any value){
       auto new_name = std::any_cast<const std::string>(value);
