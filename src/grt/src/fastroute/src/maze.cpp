@@ -245,11 +245,6 @@ void FastRouteCore::routeLShape(
     std::vector<short>& new_route_x,
     std::vector<short>& new_route_y)
 {
-  short x_min = std::min(startpoint.x, endpoint.x);
-  short y_min = std::min(startpoint.y, endpoint.y);
-  short x_max = std::max(startpoint.x, endpoint.x);
-  short y_max = std::max(startpoint.y, endpoint.y);
-
   new_route_x.push_back(startpoint.x);
   new_route_y.push_back(startpoint.y);
   short first_x;
@@ -964,7 +959,8 @@ int FastRouteCore::copyGrids(const TreeNode* treenodes,
   return cnt;
 }
 
-void FastRouteCore::updateRouteType1(const TreeNode* treenodes,
+void FastRouteCore::updateRouteType1(const int net_id,
+                                     const TreeNode* treenodes,
                                      const int n1,
                                      const int A1,
                                      const int A2,
@@ -1005,7 +1001,15 @@ void FastRouteCore::updateRouteType1(const TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    logger_->error(GRT, 169, "Invalid index for position ({}, {}).", E1x, E1y);
+    int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
+    int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
+    logger_->warn(GRT,
+                   169,
+                   "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+                   netName(nets_[net_id]),
+                   x_pos,
+                   y_pos,
+                   nets_[net_id]->numPins);
   }
 
   // reallocate memory for route.gridsX and route.gridsY
@@ -1172,12 +1176,13 @@ void FastRouteCore::updateRouteType2(const int net_id,
   if (E1_pos == -1) {
     int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
     int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->error(GRT,
+    logger_->warn(GRT,
                    170,
-                   "Net {}: Invalid index for position ({}, {}).",
+                   "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
                    netName(nets_[net_id]),
                    x_pos,
-                   y_pos);
+                   y_pos,
+                   nets_[net_id]->numPins);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
@@ -1219,8 +1224,6 @@ void FastRouteCore::updateRouteType2(const int net_id,
 
 void FastRouteCore::reInitTree(const int netID)
 {
-  newRipupNet(netID);
-
   const int deg = sttrees_[netID].deg;
   const int numEdges = 2 * deg - 3;
   for (int edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1243,6 +1246,11 @@ void FastRouteCore::reInitTree(const int netID)
   copyStTree(netID, rsmt);
   newrouteLInMaze(netID);
   convertToMazerouteNet(netID);
+  // check embedded trees only when maze router is called
+  // i.e., when running overflow iterations
+  for (int netID = 0; netID < num_valid_nets_; netID++) {
+    checkTree(netID);
+  }
 }
 
 void FastRouteCore::mazeRouteMSMD(const int iter,
@@ -1735,7 +1743,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n1, A1), (n1, A2)
           updateRouteType1(
-              treenodes, n1, A1, A2, E1x, E1y, treeedges, edge_n1A1, edge_n1A2);
+              netID, treenodes, n1, A1, A2, E1x, E1y, treeedges, edge_n1A1, edge_n1A2);
           // update position for n1
           treenodes[n1].x = E1x;
           treenodes[n1].y = E1y;
@@ -1858,7 +1866,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
           // update route for edge (n2, B1), (n2, B2)
           updateRouteType1(
-              treenodes, n2, B1, B2, E2x, E2y, treeedges, edge_n2B1, edge_n2B2);
+              netID, treenodes, n2, B1, B2, E2x, E2y, treeedges, edge_n2B1, edge_n2B2);
 
           // update position for n2
           treenodes[n2].x = E2x;

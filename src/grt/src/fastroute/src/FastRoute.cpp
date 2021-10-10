@@ -63,6 +63,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              gui::Gui* gui)
     : max_degree_(0),
       db_(db),
+      gui_(gui),
       allow_overflow_(false),
       overflow_iterations_(0),
       num_nets_(0),
@@ -95,7 +96,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       logger_(log),
       stt_builder_(stt_builder),
-      gui_(gui),
       fastrouteRender_(nullptr)
 {
   debug_ = new DebugSetting();
@@ -860,6 +860,7 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
+  float overflow_reduction_percent = -1;
   while (total_overflow_ > 0 && i <= overflow_iterations_
          && overflow_increases <= max_overflow_increases) {
     if (verbose_ > 1) {
@@ -973,6 +974,16 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
+        if (overflow_reduction_percent < 0.15) {
+          // if after 20 iterations the largest reduction percentage
+          // is smaller than 15%, stop congestion iterations and
+          // consider the design unroutable
+          logger_->warn(GRT,
+                        227,
+                        "Reached 20 congestion iterations with less than 15% "
+                        "of reduction between iterations.");
+          break;
+        }
         logger_->info(GRT, 103, "Extra Run for hard benchmark.");
         L = 0;
         upType = 3;
@@ -1077,6 +1088,12 @@ NetRouteMap FastRouteCore::run()
     if (total_overflow_ > last_total_overflow) {
       overflow_increases++;
     }
+    if (last_total_overflow > 0) {
+      overflow_reduction_percent
+          = std::max(overflow_reduction_percent,
+                     1 - ((float) total_overflow_ / last_total_overflow));
+    }
+
     last_total_overflow = total_overflow_;
   }  // end overflow iterations
 
@@ -1393,7 +1410,7 @@ void FastRouteRenderer::drawLineObject(int x1,
 }
 void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 {
-  int lastL;
+  int lastL = 0;
   for (TreeEdge treeEdge : treeEdges_) {
     if (treeEdge.len == 0) {
       continue;

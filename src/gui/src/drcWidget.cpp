@@ -263,11 +263,12 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
+  // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
   QString filename = QFileDialog::getOpenFileName(
       this,
       tr("DRC Report"),
       QString(),
-      tr("DRC Report (*.rpt *.json);;TritonRoute Report (*.rpt);;JSON (*.json);;All (*)"));
+      tr("DRC Report (*.rpt *.drc *.json);;TritonRoute Report (*.rpt *.drc);;JSON (*.json);;All (*)"));
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
@@ -423,7 +424,8 @@ void DRCWidget::loadReport(const QString& filename)
   violations_.clear();
 
   try {
-    if (filename.endsWith(".rpt")) {
+    // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
+    if (filename.endsWith(".rpt") || filename.endsWith(".drc")) {
       loadTRReport(filename);
     } else if (filename.endsWith(".json")) {
       loadJSONReport(filename);
@@ -437,6 +439,7 @@ void DRCWidget::loadReport(const QString& filename)
   }  // catch errors
 
   updateModel();
+  raise();
 }
 
 void DRCWidget::loadTRReport(const QString& filename)

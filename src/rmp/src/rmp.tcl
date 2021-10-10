@@ -66,6 +66,7 @@ proc restructure { args } {
   set depth_threshold_value 16
   set target "area"
   set workdir_name "."
+  set abc_logfile ""
 
   if { [info exists keys(-slack_threshold)] } {
     set slack_threshold_value $keys(-slack_threshold)
@@ -80,7 +81,7 @@ proc restructure { args } {
   }
 
   if { [info exists keys(-abc_logfile)] } {
-    rmp::set_logfile_cmd $keys(-abc_logfile)
+    set abc_logfile $keys(-abc_logfile)
   }
 
   if { [info exists keys(-liberty_file)] } {
@@ -125,5 +126,5 @@ proc restructure { args } {
     set workdir_name $keys(-work_dir)
   }
 
-  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value $workdir_name
+  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value $workdir_name $abc_logfile
 }

@@ -1012,7 +1012,6 @@ void DbTechLayerDescriptor::highlight(std::any object,
 
 Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) const
 {
-  auto gui = Gui::get();
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   double dbuPerUU = layer->getTech()->getDbUnitsPerMicron();
   Properties props({{"Direction", layer->getDirection().getString()},

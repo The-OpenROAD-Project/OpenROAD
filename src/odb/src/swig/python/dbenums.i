@@ -194,6 +194,56 @@
 		$1 = 0;
 	}
 }
+
+%typemap(out) odb::dbMTermShapeType, dbMTermShapeType {
+	PyObject *obj;
+	if ($1.getValue() == odb::dbMTermShapeType::Value::NONE) {
+		obj = PyString_FromString("NONE");
+	} else if ($1.getValue() == odb::dbMTermShapeType::Value::RING) {
+		obj = PyString_FromString("RING");
+	} else if ($1.getValue() == odb::dbMTermShapeType::Value::FEEDTHRU) {
+		obj = PyString_FromString("FEEDTHRU");
+	} else if ($1.getValue() == odb::dbMTermShapeType::Value::ABUTMENT) {
+		obj = PyString_FromString("ABUTMENT");
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown ioType");
+        }
+	$result=obj;
+}
+%typemap(in) odb::dbMTermShapeType, dbMTermShapeType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	if (strcasecmp(str, "NONE") == 0) {
+		$1 = odb::dbMTermShapeType::Value::NONE;
+	} else if (strcasecmp(str, "RING") == 0) {
+		$1 = odb::dbMTermShapeType::Value::RING;
+	} else if (strcasecmp(str, "FEEDTHRU") == 0) {
+		$1 = odb::dbMTermShapeType::Value::FEEDTHRU;
+	} else if (strcasecmp(str, "ABUTMENT") == 0) {
+		$1 = odb::dbMTermShapeType::Value::ABUTMENT;
+	} else {
+                SWIG_exception(SWIG_ValueError, "Unknown ioType");
+        }          
+}
+%typemap(typecheck) odb::dbMTermShapeType, dbMTermShapeType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "NONE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "RING") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "FEEDTHRU") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ABUTMENT") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
 %typemap(out) odb::dbPlacementStatus, dbPlacementStatus {
 	PyObject *obj;
 	if ($1.getValue() == odb::dbPlacementStatus::Value::NONE) {
