@@ -233,6 +233,8 @@ void FlexRP::prep_eolForbiddenLen()
           if (withinCon->hasEndToEndConstraint()) {
             auto endToEndCon = withinCon->getEndToEndConstraint();
             eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+            if (endToEndCon->hasExtension())
+              eolWithin = std::max(eolWithin, endToEndCon->getExtension());
           }
         }
       }
