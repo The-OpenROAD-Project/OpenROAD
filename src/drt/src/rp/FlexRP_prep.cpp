@@ -203,6 +203,25 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
   }
 }
 
+inline frCoord getMinEol(frLayer* layer)
+{
+  frCoord eol = INT_MAX;
+  if (layer->hasEolSpacing())
+    for (auto con : layer->getEolSpacing())
+      eol = std::min(eol, con->getEolWidth());
+  for (auto con : layer->getLef58SpacingEndOfLineConstraints())
+    eol = std::min(eol, con->getEolWidth());
+  for (auto con : layer->getLef58EolKeepOutConstraints())
+    eol = std::min(eol, con->getEolWidth());
+  for (auto con : layer->getLef58EolExtConstraints())
+    eol = std::min(eol, con->getExtensionTable().getMinRow());
+  if (eol != INT_MAX)
+    eol = layer->getWidth();
+  else
+    eol = std::max(eol, (frCoord) layer->getWidth());
+  return eol;
+}
+
 void FlexRP::prep_eolForbiddenLen()
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
@@ -215,17 +234,17 @@ void FlexRP::prep_eolForbiddenLen()
     }
     frCoord eolSpace = 0;
     frCoord eolWithin = 0;
-    frCoord defaultWidth = layer->getWidth();
+    frCoord eolWidth = getMinEol(layer);
     if (layer->hasEolSpacing()) {
       for (auto con : layer->getEolSpacing()) {
-        if (defaultWidth <= con->getEolWidth()) {
+        if (eolWidth < con->getEolWidth()) {
           eolSpace = std::max(eolSpace, con->getMinSpacing());
           eolWithin = std::max(eolWithin, con->getEolWithin());
         }
       }
     }
     for (auto con : layer->getLef58SpacingEndOfLineConstraints()) {
-      if (defaultWidth <= con->getEolWidth()) {
+      if (eolWidth < con->getEolWidth()) {
         eolSpace = std::max(eolSpace, con->getEolSpace());
         if (con->hasWithinConstraint()) {
           auto withinCon = con->getWithinConstraint();
@@ -235,6 +254,19 @@ void FlexRP::prep_eolForbiddenLen()
             eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
           }
         }
+      }
+    }
+    for (auto con : layer->getLef58EolKeepOutConstraints()) {
+      if (eolWidth < con->getEolWidth()) {
+        eolSpace = std::max(eolSpace, con->getForwardExt());
+        eolWithin = std::max(eolWithin, con->getSideExt());
+      }
+    }
+    for (auto con : layer->getLef58EolExtConstraints()) {
+      if (eolWidth < con->getExtensionTable().getMaxRow()) {
+        eolSpace = std::max(
+            eolSpace,
+            con->getExtensionTable().find(eolWidth) + con->getMinSpacing());
       }
     }
     layer->setDrEolSpacingConstraint(eolSpace, eolWithin);
