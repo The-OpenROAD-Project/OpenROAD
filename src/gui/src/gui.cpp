@@ -635,9 +635,12 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
     QObject::disconnect(tcl_return_code_connect);
 
     if (tcl_return_code != TCL_OK) {
-      // if there was a failure, exit with failure
-      // this will mirror the behavior of tclAppInit
-      exit(EXIT_FAILURE);
+      auto& cmds = gui->getRestoreStateCommands();
+      if (cmds[cmds.size() - 1] == "exit") { // exit, will be the last command if it is present
+        // if there was a failure and exit was requested, exit with failure
+        // this will mirror the behavior of tclAppInit
+        exit(EXIT_FAILURE);
+      }
     }
   }
   gui->clearRestoreStateCommands();
