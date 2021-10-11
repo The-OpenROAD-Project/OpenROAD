@@ -1527,6 +1527,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
   int minimum_height_for_tag = nominalViewableResolution();
+  int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   painter->setPen(QPen(Qt::gray, 0));
@@ -1543,18 +1544,23 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     // draw bbox
     Rect master_box;
     master->getPlacementBoundary(master_box);
-    painter->drawRect(
-        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
-    // Draw an orientation tag in corner if useful in size
-    int master_h = master->getHeight();
-    if (master_h >= minimum_height_for_tag) {
-      qreal master_w = master->getWidth();
-      qreal tag_size = 0.1 * master_h;
-      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-      qreal tag_y = master_box.yMin() + tag_size;
-      painter->drawLine(QPointF(tag_x, master_box.yMin()),
-                        QPointF(master_box.xMin(), tag_y));
+    if (minimum_size > master_box.dx() && minimum_size > master_box.dy()) {
+      painter->drawPoint(master_box.xMin(), master_box.yMin());
+    } else {
+      painter->drawRect(
+          master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
+
+      // Draw an orientation tag in corner if useful in size
+      int master_h = master->getHeight();
+      if (master_h >= minimum_height_for_tag) {
+        qreal master_w = master->getWidth();
+        qreal tag_size = 0.1 * master_h;
+        qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
+        qreal tag_y = master_box.yMin() + tag_size;
+        painter->drawLine(QPointF(tag_x, master_box.yMin()),
+                          QPointF(master_box.xMin(), tag_y));
+      }
     }
   }
   painter->setTransform(initial_xfm);
@@ -1565,7 +1571,7 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
-  const int minimum_height = instanceSizeLimit();
+  const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
   for (auto inst : insts) {
