@@ -423,7 +423,7 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
     return;
   frBox testBox;
   frCoord eolSpace = drCon.eolSpace;
-  frCoord eolWidth = layer->getWidth();
+  frCoord eolWidth = drCon.eolWidth;
   frCoord eolWithin = drCon.eolWithin;
   // eol to up and down
   if (tmpBx.right() - tmpBx.left() <= eolWidth) {
@@ -686,11 +686,11 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
   auto drCon = getTech()->getLayer(lNum)->getDrEolSpacingConstraint();
-  if (viaBox.right() - viaBox.left() <= defaultWidth) {
+  if (viaBox.right() - viaBox.left() <= drCon.eolWidth) {
     bloatDistEolY = max(bloatDistEolY, drCon.eolSpace);
   }
   // eol left and right
-  if (viaBox.top() - viaBox.bottom() <= defaultWidth) {
+  if (viaBox.top() - viaBox.bottom() <= drCon.eolWidth) {
     bloatDistEolX = max(bloatDistEolX, drCon.eolSpace);
   }
 
@@ -947,7 +947,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
   frCoord eolSpace, eolWidth, eolWithin;
   eolSpace = layer->getDrEolSpacingConstraint().eolSpace;
   eolWithin = layer->getDrEolSpacingConstraint().eolWithin;
-  eolWidth = layer->getWidth();
+  eolWidth = layer->getDrEolSpacingConstraint().eolWidth;
   if (eolSpace == 0)
     return;
   frBox testBox;

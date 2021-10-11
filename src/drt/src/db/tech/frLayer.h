@@ -42,7 +42,8 @@ class Parser;
 }
 struct drEolSpacingConstraint
 {
-  drEolSpacingConstraint() : eolSpace(0), eolWithin(0) {}
+  drEolSpacingConstraint() : eolWidth(0), eolSpace(0), eolWithin(0) {}
+  frCoord eolWidth;
   frCoord eolSpace;
   frCoord eolWithin;
 };
@@ -660,8 +661,9 @@ class frLayer
     return lef58DefaultInterCutSpacingTableConstraint;
   }
 
-  void setDrEolSpacingConstraint(frCoord space, frCoord within)
+  void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
   {
+    drEolCon.eolWidth = width;
     drEolCon.eolSpace = space;
     drEolCon.eolWithin = within;
   }

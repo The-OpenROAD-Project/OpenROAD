@@ -203,6 +203,13 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
   }
 }
 
+/**
+ * Calculate the min end of line width in the eol rules.
+ * If no eol rules found, consider default width.
+ * @param[in] layer the layer we are calculating the min eol width for.
+ * @return the min eol width from the eol rules -1 or the default width if no
+ * eol rules found.
+ */
 inline frCoord getMinEol(frLayer* layer)
 {
   frCoord eol = INT_MAX;
@@ -215,10 +222,10 @@ inline frCoord getMinEol(frLayer* layer)
     eol = std::min(eol, con->getEolWidth());
   for (auto con : layer->getLef58EolExtConstraints())
     eol = std::min(eol, con->getExtensionTable().getMinRow());
-  if (eol != INT_MAX)
+  if (eol == INT_MAX)
     eol = layer->getWidth();
   else
-    eol = std::max(eol, (frCoord) layer->getWidth());
+    eol = std::max(eol - 1, (frCoord) layer->getWidth());
   return eol;
 }
 
@@ -269,7 +276,7 @@ void FlexRP::prep_eolForbiddenLen()
             con->getExtensionTable().find(eolWidth) + con->getMinSpacing());
       }
     }
-    layer->setDrEolSpacingConstraint(eolSpace, eolWithin);
+    layer->setDrEolSpacingConstraint(eolWidth, eolSpace, eolWithin);
   }
 }
 
