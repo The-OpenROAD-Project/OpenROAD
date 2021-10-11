@@ -63,6 +63,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              gui::Gui* gui)
     : max_degree_(0),
       db_(db),
+      gui_(gui),
       allow_overflow_(false),
       overflow_iterations_(0),
       num_nets_(0),
@@ -95,7 +96,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       logger_(log),
       stt_builder_(stt_builder),
-      gui_(gui),
       fastrouteRender_(nullptr)
 {
   debug_ = new DebugSetting();
@@ -1410,7 +1410,7 @@ void FastRouteRenderer::drawLineObject(int x1,
 }
 void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 {
-  int lastL;
+  int lastL = 0;
   for (TreeEdge treeEdge : treeEdges_) {
     if (treeEdge.len == 0) {
       continue;

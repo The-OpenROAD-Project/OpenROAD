@@ -606,16 +606,6 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
   // openroad is guaranteed to be initialized here
   main_window->init(open_road->getSta());
 
-  // execute commands to restore state of gui
-  std::string restore_commands;
-  for (const auto& cmd : gui->getRestoreStateCommands()) {
-    restore_commands += cmd + "\n";
-  }
-  if (!restore_commands.empty()) {
-    main_window->getScriptWidget()->executeSilentCommand(QString::fromStdString(restore_commands));
-  }
-  gui->clearRestoreStateCommands();
-
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
 
@@ -626,6 +616,34 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   // Save the window's status into the settings when quitting.
   QObject::connect(&app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
+
+  // execute commands to restore state of gui
+  std::string restore_commands;
+  for (const auto& cmd : gui->getRestoreStateCommands()) {
+    restore_commands += cmd + "\n";
+  }
+  if (!restore_commands.empty()) {
+    // Temporarily connect to script widget to get ending tcl state
+    int tcl_return_code = TCL_OK;
+    auto tcl_return_code_connect = QObject::connect(main_window->getScriptWidget(), &ScriptWidget::commandExecuted, [&tcl_return_code](int code) {
+      tcl_return_code = code;
+    });
+
+    main_window->getScriptWidget()->executeSilentCommand(QString::fromStdString(restore_commands));
+
+    // disconnect tcl return lister
+    QObject::disconnect(tcl_return_code_connect);
+
+    if (tcl_return_code != TCL_OK) {
+      auto& cmds = gui->getRestoreStateCommands();
+      if (cmds[cmds.size() - 1] == "exit") { // exit, will be the last command if it is present
+        // if there was a failure and exit was requested, exit with failure
+        // this will mirror the behavior of tclAppInit
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  gui->clearRestoreStateCommands();
 
   // Execute script
   if (!script.empty()) {
@@ -640,7 +658,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   int ret = 0;
   if (do_exec) {
-    int ret = app.exec();
+    ret = app.exec();
   }
 
   // cleanup
@@ -648,7 +666,7 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
   // save restore state commands
   for (const auto& cmd : main_window->getRestoreTclCommands()) {
-    gui->addRestoreStateCommands(cmd);
+    gui->addRestoreStateCommand(cmd);
   }
 
   // delete main window and set to nullptr

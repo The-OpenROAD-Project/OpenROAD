@@ -245,11 +245,6 @@ void FastRouteCore::routeLShape(
     std::vector<short>& new_route_x,
     std::vector<short>& new_route_y)
 {
-  short x_min = std::min(startpoint.x, endpoint.x);
-  short y_min = std::min(startpoint.y, endpoint.y);
-  short x_max = std::max(startpoint.x, endpoint.x);
-  short y_max = std::max(startpoint.y, endpoint.y);
-
   new_route_x.push_back(startpoint.x);
   new_route_y.push_back(startpoint.y);
   short first_x;

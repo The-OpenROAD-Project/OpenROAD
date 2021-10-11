@@ -143,7 +143,7 @@ static void determineLibraryBrackets(const dbNetwork* db_network,
 
   sta::LibertyLibraryIterator* lib_iter = db_network->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
+    const sta::LibertyLibrary* lib = lib_iter->next();
     *left = lib->busBrktLeft();
     *right = lib->busBrktRight();
   }
@@ -272,7 +272,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
                    path_escape,
                    bus_name,
                    idx);
-      delete bus_name;
+      delete[] bus_name;
 
       port_idx.insert(idx);
 

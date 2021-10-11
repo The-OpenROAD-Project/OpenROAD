@@ -78,12 +78,12 @@ struct DebugSetting
   bool tree3D_;
   bool isOn_;
   DebugSetting()
-      : steinerTree_(false),
+      : net_(nullptr),
+        steinerTree_(false),
         rectilinearSTree_(false),
         tree2D_(false),
         tree3D_(false),
-        isOn_(false),
-        net_(nullptr)
+        isOn_(false)
   {
   }
 };

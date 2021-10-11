@@ -98,6 +98,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       Required best_slack = -INF;
       BufferedNet *best_option = nullptr;
       int best_index = 0;
+      int best_buffer_count = 0;
       int i = 1;
       for (BufferedNet *p : Z) {
         // Find slack for drvr_pin into option.
@@ -106,7 +107,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
           Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
                                        p->cap(), req_path.dcalcAnalysisPt(sta_));
           Slack slack = p->required(sta_) - drvr_delay;
-          debugPrint(logger_, RSZ, "rebuffer", 3,
+          debugPrint(logger_, RSZ, "rebuffer", 2,
                      "option {:3d}: {:2d} buffers req {} - {} = {} cap {}",
                      i,
                      p->bufferCount(),
@@ -116,18 +117,22 @@ Resizer::rebuffer(const Pin *drvr_pin)
                      units_->capacitanceUnit()->asString(p->cap()));
           if (logger_->debugCheck(RSZ, "rebuffer", 4))
             p->reportTree(this);
-          if (fuzzyGreater(slack, best_slack)) {
+          int buffer_count = p->bufferCount();
+          float buffer_penalty = .005;
+          if (best_option == nullptr
+              || fuzzyGreater(slack * (1.0 - buffer_count * buffer_penalty),
+                              best_slack * (1.0 - best_buffer_count
+                                            * buffer_penalty))) {
             best_slack = slack;
             best_option = p;
+            best_buffer_count = buffer_count;
             best_index = i;
           }
           i++;
         }
       }
       if (best_option) {
-        debugPrint(logger_, RSZ, "rebuffer", 3, "best option {}", best_index);
-        if (logger_->debugCheck( RSZ, "rebuffer", 4))
-          best_option->reportTree(this);
+        debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
         int before = inserted_buffer_count_;
         rebufferTopDown(best_option, net, 1);
         if (inserted_buffer_count_ != before)
@@ -141,16 +146,15 @@ Resizer::rebuffer(const Pin *drvr_pin)
 
 // For testing.
 void
-Resizer::rebuffer(Net *net)
+Resizer::rebuffer1(const Pin *drvr_pin)
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
-  PinSet *drvrs = network_->drivers(net);
-  PinSet::Iterator drvr_iter(drvrs);
-  if (drvr_iter.hasNext()) {
-    Pin *drvr = drvr_iter.next();
-    rebuffer(drvr);
-  }
+  incrementalParasiticsBegin();
+  rebuffer(drvr_pin);
+  // Leave the parasitics up to date.
+  updateParasitics();
+  incrementalParasiticsEnd();
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
 
@@ -182,7 +186,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
       for (Pin *pin : *pins) {
         if (network_->isLoad(pin)) {
           Vertex *vertex = graph_->pinLoadVertex(pin);
-          PathRef req_path = sta_->vertexWorstRequiredPath(vertex, max_);
+          PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
           const DcalcAnalysisPt *dcalc_ap = req_path.isNull()
             ? tgt_slew_dcalc_ap_
             : req_path.dcalcAnalysisPt(sta_);
@@ -194,8 +198,8 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                                            0.0,
                                            nullptr,
                                            nullptr, nullptr);
-          if (logger_->debugCheck(RSZ, "rebuffer", 4))
-            z->report(level, this);
+          debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}{}",
+                     "", level, z->to_string(this));
           BufferedNetSeq Z;
           Z.push_back(z);
           return addWireAndBuffer(Z, tree, k, prev, level);
@@ -299,13 +303,12 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                      p->requiredDelay() + wire_delay,
                                      nullptr,
                                      p, nullptr);
-    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire {} -> {} wl {}",
+    debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire {} -> {} wl {} {}",
                "", level,
                tree->name(prev, sdc_network_),
                tree->name(k, sdc_network_),
-               wire_length_dbu);
-    if (logger_->debugCheck(RSZ, "rebuffer", 4))
-      z->report(level, this);
+               wire_length_dbu,
+               z->to_string(this));
     Z1.push_back(z);
   }
   if (!Z1.empty()) {
@@ -362,13 +365,12 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                                            best_option->requiredDelay()+buffer_delay,
                                            buffer_cell,
                                            best_option, nullptr);
-          debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer {} cap {} req {} ->",
+          debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer {} cap {} req {} -> {}",
                      "", level,
                      tree->name(prev, sdc_network_),
                      units_->capacitanceUnit()->asString(best_option->cap()),
-                     delayAsString(best_req, this));
-          if (logger_->debugCheck(RSZ, "rebuffer", 3))
-            z->report(level, this);
+                     delayAsString(best_req, this),
+                     z->to_string(this));
           buffered_options.push_back(z);
         }
       }
