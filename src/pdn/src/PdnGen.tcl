@@ -6353,6 +6353,7 @@ proc core_area_boundary {} {
 
   # Add blockages around the outside of the core area in order to trim back the templates.
   #
+  set blockages {}
   set boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]]]
