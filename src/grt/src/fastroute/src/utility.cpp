@@ -369,6 +369,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           } else {
             layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
             best_cost = std::max(best_cost, layer_grid_[l][k]);
+            if (best_cost > 0) {
+              // set the new min routing layer for the net to avoid
+              // errors during mazeRouteMSMDOrder3D
+              net->minLayer = l;
+            }
           }
         }
         // try to assign the edge to the closest layer above the max routing layer
@@ -379,6 +384,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           } else {
             layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap - v_edges_3D_[l][min_y][gridsX[k]].usage;
             best_cost = std::max(best_cost, layer_grid_[l][k]);
+            if (best_cost > 0) {
+              // set the new max routing layer for the net to avoid
+              // errors during mazeRouteMSMDOrder3D
+              net->maxLayer = l;
+            }
           }
         }
       } else { // the edge was assigned to a layer without causing overflow
@@ -410,6 +420,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           } else {
             layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
             best_cost = std::max(best_cost, layer_grid_[l][k]);
+            if (best_cost > 0) {
+              // set the new min routing layer for the net to avoid
+              // errors during mazeRouteMSMDOrder3D
+              net->minLayer = l;
+            }
           }
         }
         // try to assign the edge to the closest layer above the max routing layer
@@ -420,6 +435,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           } else {
             layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap - h_edges_3D_[l][gridsY[k]][min_x].usage;
             best_cost = std::max(best_cost, layer_grid_[l][k]);
+            if (best_cost > 0) {
+              // set the new max routing layer for the net to avoid
+              // errors during mazeRouteMSMDOrder3D
+              net->maxLayer = l;
+            }
           }
         }
       } else { // the edge was assigned to a layer without causing overflow
