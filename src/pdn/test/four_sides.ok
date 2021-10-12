@@ -1,0 +1,39 @@
+[INFO ODB-0222] Reading LEF file: four_sides/tech.lef
+[WARNING ODB-0220] WARNING (LEFPARS-2077): A SPACING SAMENET section is defined but it is not legal in a LEF 5.7 version file.
+It will be ignored which will probably cause real DRC violations to be ignored, and may
+cause false DRC violations to occur.
+
+To avoid this warning, and correctly handle these DRC rules, you should modify your
+LEF to use the appropriate SAMENET keywords as described in the LEF/DEF 5.7
+manual under the SPACING statements in the LAYER (Routing) and LAYER (Cut)
+sections listed in the LEF Table of Contents. See file four_sides/tech.lef at line 216.
+
+[INFO ODB-0223]     Created 9 technology layers
+[INFO ODB-0226] Finished LEF file:  four_sides/tech.lef
+[INFO ODB-0222] Reading LEF file: four_sides/pad.lef
+[INFO ODB-0225]     Created 4 library cells
+[INFO ODB-0226] Finished LEF file:  four_sides/pad.lef
+[INFO ODB-0127] Reading DEF file: four_sides/floorplan.def
+[INFO ODB-0128] Design: four_sides
+[INFO ODB-0131]     Created 16 components and 16 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0134] Finished DEF file: four_sides/floorplan.def
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: four_sides/pdn.cfg
+[INFO PDN-0008] Design name is four_sides.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0018] No macro grid specifications found - no straps added.
+[INFO PDN-0011] ****** INFO ******
+Type: stdcell, grid
+    Core Rings
+      Layer: metal1  -  width: 3.000  spacing: 3.000  core_offset: 5.000 
+      Layer: metal2  -  width: 3.000  spacing: 3.000  core_offset: 5.000 
+      Layer: metal3  -  width: 3.000  spacing: 3.000  core_offset: 5.000 
+      Layer: metal4  -  width: 3.000  spacing: 3.000  core_offset: 5.000 
+    Connect: 
+        {metal1 metal2} {metal2 metal3} {metal3 metal4}
+    
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
+No differences found.
