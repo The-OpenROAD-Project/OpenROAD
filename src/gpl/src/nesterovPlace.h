@@ -120,6 +120,7 @@ public:
   float getDensityPenalty() const { return densityPenalty_; }
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
+  void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
 private:
   std::shared_ptr<PlacerBase> pb_;
