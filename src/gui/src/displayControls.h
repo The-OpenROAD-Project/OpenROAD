@@ -261,6 +261,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow blocks;
     ModelRow fill;
     ModelRow endcap;
+    ModelRow welltap;
     ModelRow pads;
     ModelRow cover;
   };
