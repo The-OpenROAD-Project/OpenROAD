@@ -93,20 +93,21 @@
 [NesterovSolve] Iter: 280 overflow: 0.301069 HPWL: 1286213629
 [NesterovSolve] Iter: 290 overflow: 0.28998 HPWL: 1286058726
 [NesterovSolve] Iter: 300 overflow: 0.279963 HPWL: 1291567056
-[NesterovSolve] Iter: 310 overflow: 0.266991 HPWL: 1300844487
-[NesterovSolve] Iter: 320 overflow: 0.249807 HPWL: 1309470521
-[NesterovSolve] Iter: 330 overflow: 0.229588 HPWL: 1323578791
-[NesterovSolve] Iter: 340 overflow: 0.212459 HPWL: 1333213614
-[NesterovSolve] Iter: 350 overflow: 0.200486 HPWL: 1326228679
-[NesterovSolve] Finished with Overflow: 0.198316
 [INFO GPL-0133] Unlocked instances
-[NesterovSolve] Iter: 360 overflow: 0.258303 HPWL: 1235297820
-[NesterovSolve] Iter: 370 overflow: 0.223152 HPWL: 1250371582
-[NesterovSolve] Iter: 380 overflow: 0.197022 HPWL: 1258791623
-[NesterovSolve] Iter: 390 overflow: 0.172853 HPWL: 1266498851
-[NesterovSolve] Iter: 400 overflow: 0.153297 HPWL: 1273073518
-[NesterovSolve] Iter: 410 overflow: 0.136149 HPWL: 1278618536
-[NesterovSolve] Iter: 420 overflow: 0.121513 HPWL: 1283025969
-[NesterovSolve] Iter: 430 overflow: 0.10785 HPWL: 1286691488
-[NesterovSolve] Finished with Overflow: 0.099087
+[NesterovSolve] Iter: 310 overflow: 0.506922 HPWL: 1145880293
+[NesterovSolve] Iter: 320 overflow: 0.472894 HPWL: 1140608357
+[NesterovSolve] Iter: 330 overflow: 0.439159 HPWL: 1151969494
+[NesterovSolve] Iter: 340 overflow: 0.39851 HPWL: 1167632204
+[NesterovSolve] Iter: 350 overflow: 0.356457 HPWL: 1184964059
+[NesterovSolve] Iter: 360 overflow: 0.315288 HPWL: 1202206728
+[NesterovSolve] Iter: 370 overflow: 0.278786 HPWL: 1218240188
+[NesterovSolve] Iter: 380 overflow: 0.24713 HPWL: 1231835179
+[NesterovSolve] Iter: 390 overflow: 0.218357 HPWL: 1243872648
+[NesterovSolve] Iter: 400 overflow: 0.192322 HPWL: 1253883228
+[NesterovSolve] Iter: 410 overflow: 0.169892 HPWL: 1261874035
+[NesterovSolve] Iter: 420 overflow: 0.151133 HPWL: 1268504224
+[NesterovSolve] Iter: 430 overflow: 0.134496 HPWL: 1273725568
+[NesterovSolve] Iter: 440 overflow: 0.119633 HPWL: 1278051961
+[NesterovSolve] Iter: 450 overflow: 0.106572 HPWL: 1281586370
+[NesterovSolve] Finished with Overflow: 0.099956
 No differences found.
