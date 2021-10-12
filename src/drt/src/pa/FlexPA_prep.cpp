@@ -781,14 +781,6 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
                    || masterType == dbMasterType::CORE_ANTENNACELL;
-    if (instTerm->getName() == "wrapped_rgb_mixer_0/io_out[24]") {
-      dbMasterType masterType
-          = instTerm->getInst()->getRefBlock()->getMasterType();
-      isStdCellPin = masterType == dbMasterType::CORE
-                     || masterType == dbMasterType::CORE_TIEHIGH
-                     || masterType == dbMasterType::CORE_TIELOW
-                     || masterType == dbMasterType::CORE_ANTENNACELL;
-    }
   }
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
       ep, layerPolys, bp, ap->getLayerNum(), dir);
