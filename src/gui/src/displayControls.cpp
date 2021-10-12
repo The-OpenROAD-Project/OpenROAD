@@ -318,6 +318,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   setWidget(view_);
@@ -443,6 +444,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
+  readSettingsForRow(settings, misc_.detailed);
   getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
@@ -509,6 +511,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
+  writeSettingsForRow(settings, misc_.detailed);
   settings->setValue("instance_name_color", instance_name_color_);
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
@@ -1123,6 +1126,11 @@ bool DisplayControls::areRowsVisible()
 QColor DisplayControls::rowColor()
 {
   return row_color_;
+}
+
+bool DisplayControls::isDetailedVisibility()
+{
+  return misc_.detailed.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::arePrefTracksVisible()

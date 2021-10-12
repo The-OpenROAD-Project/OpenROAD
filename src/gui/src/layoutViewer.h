@@ -302,6 +302,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
+  int instanceSizeLimit();
+  int shapeSizeLimit();
 
   void generateCutLayerMaximumSizes();
 
