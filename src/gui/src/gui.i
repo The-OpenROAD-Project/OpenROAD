@@ -470,5 +470,19 @@ const std::string get_selection_property(const std::string& prop_name)
   }
 }
 
+void select_at(double x0, double y0, double x1, double y1, bool append = true)
+{
+  if (!check_gui("select_at")) {
+    return;
+  }  
+  auto gui = gui::Gui::get();
+  gui->selectAt(make_rect(x0, y0, x1, y1), append);
+}
+
+void select_at(double x, double y, bool append = true)
+{
+  select_at(x, y, x, y, append);
+}
+
 %} // inline
 

@@ -886,6 +886,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 }
 
+void LayoutViewer::selectArea(const odb::Rect& area, bool append)
+{
+  if (!append) {
+    emit selected(Selected()); // remove previous selections
+  }
+  emit addSelected(selectAt(area));
+}
+
 SelectionSet LayoutViewer::selectAt(odb::Rect region)
 {
   std::vector<Selected> selections;

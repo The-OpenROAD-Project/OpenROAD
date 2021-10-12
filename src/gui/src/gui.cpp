@@ -309,6 +309,11 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
+void Gui::selectAt(const odb::Rect& area, bool append)
+{
+  main_window->getLayoutViewer()->selectArea(area, append);
+}
+
 std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
   return main_window->addRuler(x0, y0, x1, y1, label, name);

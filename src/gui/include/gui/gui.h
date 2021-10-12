@@ -457,6 +457,8 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
+  void selectAt(const odb::Rect& area, bool append = true);
+
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
   void deleteRuler(const std::string& name);
 
