@@ -541,7 +541,7 @@ class Gui
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
-  void addRestoreStateCommands(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }
+  void addRestoreStateCommand(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }
   void clearRestoreStateCommands() { tcl_state_commands_.clear(); }
 
   template <class T>
