@@ -197,12 +197,19 @@ void Replace::doIncrementalPlace()
 
   log_->info(GPL, 132, "Locked {} instances", locked_cnt);
 
-  // Roughly place the unplaced objects (allow more overflow)
+  // Roughly place the unplaced objects (allow more overflow).
+  // Limit iterations to prevent objects drifting too far or
+  // non-convergence.
   constexpr float rough_oveflow = 0.2f;
   float previous_overflow = overflow_;
   setTargetOverflow(std::max(rough_oveflow, overflow_));
   doInitialPlace();
+
+  int previous_max_iter = nesterovPlaceMaxIter_;
+  initNesterovPlace();
+  setNesterovPlaceMaxIter(300);
   int iter = doNesterovPlace();
+  setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
   log_->info(GPL, 133, "Unlocked instances");
@@ -348,6 +355,9 @@ Replace::setInitialPlaceNetWeightScale(float scale) {
 void
 Replace::setNesterovPlaceMaxIter(int iter) {
   nesterovPlaceMaxIter_ = iter;
+  if (np_) {
+    np_->setMaxIters(iter);
+  }
 }
 
 void 
