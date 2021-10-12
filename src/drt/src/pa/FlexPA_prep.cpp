@@ -441,7 +441,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
       prepPoint_pin_genPoints_rect_genGrid(
           yCoords, layer1TrackCoords, gtl::yl(rect), gtl::yh(rect));
       prepPoint_pin_genPoints_rect_genGrid(
-          xCoords, layer2TrackCoords, gtl::xl(rect) + isMacroCellPin ? hwidth : 0, gtl::xh(rect) - isMacroCellPin ? hwidth : 0);
+          xCoords, layer2TrackCoords, gtl::xl(rect) + (isMacroCellPin ? hwidth : 0), gtl::xh(rect) - (isMacroCellPin ? hwidth : 0));
       if (lowerType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(
             yCoords, layerNum, gtl::yl(rect), gtl::yh(rect));
@@ -452,7 +452,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
       }
       if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(
-            xCoords, layerNum, gtl::xl(rect) + isMacroCellPin ? hwidth : 0, gtl::xh(rect) - isMacroCellPin ? hwidth : 0);
+            xCoords, layerNum, gtl::xl(rect) + (isMacroCellPin ? hwidth : 0), gtl::xh(rect) - (isMacroCellPin ? hwidth : 0));
       }
       if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(
@@ -486,7 +486,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
       prepPoint_pin_genPoints_rect_genGrid(
           xCoords, layer1TrackCoords, gtl::xl(rect), gtl::xh(rect));
       prepPoint_pin_genPoints_rect_genGrid(
-          yCoords, layer2TrackCoords, gtl::yl(rect) + isMacroCellPin ? hwidth : 0, gtl::yh(rect) - isMacroCellPin ? hwidth : 0);
+          yCoords, layer2TrackCoords, gtl::yl(rect) + (isMacroCellPin ? hwidth : 0), gtl::yh(rect) - (isMacroCellPin ? hwidth : 0));
       if (lowerType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(
             xCoords, layerNum, gtl::xl(rect), gtl::xh(rect));
@@ -497,7 +497,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
       }
       if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(
-            yCoords, layerNum, gtl::yl(rect) + isMacroCellPin ? hwidth : 0, gtl::yh(rect) - isMacroCellPin ? hwidth : 0);
+            yCoords, layerNum, gtl::yl(rect) + (isMacroCellPin ? hwidth : 0), gtl::yh(rect) - (isMacroCellPin ? hwidth : 0));
       }
       if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(
@@ -771,6 +771,14 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
                    || masterType == dbMasterType::CORE_ANTENNACELL;
+    if (instTerm->getName() == "wrapped_rgb_mixer_0/io_out[24]") {
+        dbMasterType masterType
+        = instTerm->getInst()->getRefBlock()->getMasterType();
+    isStdCellPin = masterType == dbMasterType::CORE
+                   || masterType == dbMasterType::CORE_TIEHIGH
+                   || masterType == dbMasterType::CORE_TIELOW
+                   || masterType == dbMasterType::CORE_ANTENNACELL;
+    }
   }
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
       ep, layerPolys, bp, ap->getLayerNum(), dir);
