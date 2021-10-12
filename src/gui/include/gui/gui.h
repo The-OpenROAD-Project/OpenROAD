@@ -539,6 +539,8 @@ class Gui
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
 
+  const Selected& getInspectorSelection();
+
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
   void addRestoreStateCommand(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }

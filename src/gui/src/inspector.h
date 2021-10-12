@@ -121,6 +121,8 @@ class Inspector : public QDockWidget
  public:
   Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
+  const Selected& getSelection() { return selection_; }
+
  signals:
   void addSelected(const Selected& selected);
   void removeSelected(const Selected& selected);

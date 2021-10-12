@@ -308,6 +308,8 @@ void Inspector::inspect(const Selected& object)
       QString::number(selected_.size()));
 
   if (!object) {
+    blockSignals(false);
+
     return;
   }
 

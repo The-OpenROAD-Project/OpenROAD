@@ -93,6 +93,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   LayoutViewer* getLayoutViewer() const { return viewer_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
+  Inspector* getInspector() const { return inspector_; }
 
   const std::vector<std::string> getRestoreTclCommands();
 

@@ -43,6 +43,7 @@
 #include "defin.h"
 #include "displayControls.h"
 #include "geom.h"
+#include "inspector.h"
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "lefin.h"
@@ -522,6 +523,11 @@ void Gui::registerDescriptor(const std::type_info& type,
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
   descriptors_.erase(type);
+}
+
+const Selected& Gui::getInspectorSelection()
+{
+  return main_window->getInspector()->getSelection();
 }
 
 void Gui::setLogger(utl::Logger* logger)
