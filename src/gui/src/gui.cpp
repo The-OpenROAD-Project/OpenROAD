@@ -703,7 +703,11 @@ void Selected::highlight(Painter& painter,
 
 std::string Descriptor::Property::toString(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (auto v = std::any_cast<Selected>(&value)) {
+    if (*v) {
+      return v->getName();
+    }
+  } else if (auto v = std::any_cast<const char*>(&value)) {
     return *v;
   } else if (auto v = std::any_cast<const std::string>(&value)) {
     return *v;
@@ -717,9 +721,9 @@ std::string Descriptor::Property::toString(const std::any& value)
     return QString::number(*v).toStdString();
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
-  } else {
-    return "<unknown>";
   }
+
+  return "<unknown>";
 }
 
 }  // namespace gui
