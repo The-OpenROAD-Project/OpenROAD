@@ -210,23 +210,23 @@ class FastRouteCore
   void InitLastUsage(const int upType);
   void InitEstUsage();
   bool checkTree(const int net_id);
-  bool areEdgesOverlapping(
-    const int net_id,
-    const int edge_id,
-    const std::vector<int>& edges);
-  void fixOverlappingEdge(const int net_id,
-                          const int edge,
-                          std::vector<std::pair<short, short>>& blocked_positions);
+  bool areEdgesOverlapping(const int net_id,
+                           const int edge_id,
+                           const std::vector<int>& edges);
+  void fixOverlappingEdge(
+      const int net_id,
+      const int edge,
+      std::vector<std::pair<short, short>>& blocked_positions);
   void bendEdge(TreeEdge* treeedge,
                 TreeNode* treenodes,
                 std::vector<short>& new_route_x,
                 std::vector<short>& new_route_y,
                 std::vector<std::pair<short, short>>& blocked_positions);
   void routeLShape(const TreeNode& startpoint,
-                 const TreeNode& endpoint,
-                 std::vector<std::pair<short, short>>& blocked_positions,
-                 std::vector<short>& new_route_x,
-                 std::vector<short>& new_route_y);
+                   const TreeNode& endpoint,
+                   std::vector<std::pair<short, short>>& blocked_positions,
+                   std::vector<short>& new_route_x,
+                   std::vector<short>& new_route_y);
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
@@ -409,6 +409,14 @@ class FastRouteCore
   void ConvertToFull3DType2();
   void fillVIA();
   int threeDVIA();
+  void fixEdgeAssignment(int& net_layer,
+                         multi_array<Edge3D, 3>& edges_3D,
+                         int x,
+                         int y,
+                         int k,
+                         int l,
+                         bool horizontal,
+                         int& best_cost);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
   void newLayerAssignmentV4();
