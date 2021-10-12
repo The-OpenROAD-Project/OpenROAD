@@ -271,6 +271,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.fill, "Fill", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.welltap, "Welltap", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
   toggleParent(instance_group_);
@@ -401,6 +402,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, instances_.blocks);
   readSettingsForRow(settings, instances_.fill);
   readSettingsForRow(settings, instances_.endcap);
+  readSettingsForRow(settings, instances_.welltap);
   readSettingsForRow(settings, instances_.pads);
   readSettingsForRow(settings, instances_.cover);
   settings->endGroup();
@@ -468,6 +470,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, instances_.blocks);
   writeSettingsForRow(settings, instances_.fill);
   writeSettingsForRow(settings, instances_.endcap);
+  writeSettingsForRow(settings, instances_.welltap);
   writeSettingsForRow(settings, instances_.pads);
   writeSettingsForRow(settings, instances_.cover);
   settings->endGroup();
@@ -981,7 +984,11 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
   } else if (master->isFiller()) {
     return instances_.fill.visible->checkState() == Qt::Checked;
   } else if (master->isCore()) {
-    return instances_.core.visible->checkState() == Qt::Checked;
+    if (master->getType() == dbMasterType::CORE_WELLTAP) {
+      return instances_.welltap.visible->checkState() == Qt::Checked;
+    } else {
+      return instances_.core.visible->checkState() == Qt::Checked;
+    }
   } else if (master->isBlock()) {
     return instances_.blocks.visible->checkState() == Qt::Checked;
   } else if (master->isPad()) {
@@ -1001,7 +1008,11 @@ bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
   } else if (master->isFiller()) {
     return instances_.fill.selectable->checkState() == Qt::Checked;
   } else if (master->isCore()) {
-    return instances_.core.selectable->checkState() == Qt::Checked;
+    if (master->getType() == dbMasterType::CORE_WELLTAP) {
+      return instances_.welltap.selectable->checkState() == Qt::Checked;
+    } else {
+      return instances_.core.selectable->checkState() == Qt::Checked;
+    }
   } else if (master->isBlock()) {
     return instances_.blocks.selectable->checkState() == Qt::Checked;
   } else if (master->isPad()) {
