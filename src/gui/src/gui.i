@@ -430,5 +430,45 @@ void hide()
   gui->hideGui();
 }
 
+const std::string get_selection_property(const std::string& prop_name)
+{
+  if (!check_gui("get_selection_property")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  
+  const gui::Selected& selected = gui->getInspectorSelection();
+  if (!selected) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 35, "Nothing selected");
+  }
+  if (prop_name == "Name") {
+    return selected.getName();
+  } else if (prop_name == "Type") {
+    return selected.getTypeName();
+  } else if (prop_name == "bbox") {
+    odb::Rect box;
+    if (selected.getBBox(box)) {
+      auto block = get_block();
+      double dbuPerUU = block->getDbUnitsPerMicron();
+      return std::to_string(box.ll().x() / dbuPerUU) + " " +
+             std::to_string(box.ll().y() / dbuPerUU) + " " +
+             std::to_string(box.ur().x() / dbuPerUU) + " " +
+             std::to_string(box.ur().y() / dbuPerUU);
+    } else {
+      auto logger = ord::OpenRoad::openRoad()->getLogger();
+      logger->error(GUI, 36, "Selected object does not have a bounding box.");
+    }
+  } else {
+    const std::any& prop = selected.getProperty(prop_name);
+    if (!prop.has_value()) {
+      auto logger = ord::OpenRoad::openRoad()->getLogger();
+      logger->error(GUI, 37, "Unknown property: {}", prop_name);
+    }
+    
+    return gui::Descriptor::Property::toString(prop);
+  }
+}
+
 %} // inline
 

@@ -188,6 +188,16 @@ To clear the current set of selected items:
 gui::clear_selections
 ```
 
+To get the properties for the current selection in the Inspector:
+
+```
+gui::get_selection_property name
+```
+
+Options description:
+- ``name`` name of the property. For example, ``Type`` for object type or ``bbox`` for the bounding box of the object.
+
+
 ### Highlighting
 
 To highlight a net:
