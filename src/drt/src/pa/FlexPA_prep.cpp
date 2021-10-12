@@ -431,8 +431,6 @@ void FlexPA::prepPoint_pin_genPoints_rect(
         useCenterLine = true;
       }
     }
-//    if (!useCenterLine && !enclosesOnTrackPlanarAccess(rect, layerNum))
-//      useCenterLine = true;
   }
 
   // gen all full/half grid coords
