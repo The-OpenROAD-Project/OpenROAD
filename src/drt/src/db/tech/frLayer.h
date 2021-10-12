@@ -669,6 +669,8 @@ class frLayer
   drEolSpacingConstraint getDrEolSpacingConstraint() const { return drEolCon; }
 
   void printAllConstraints(utl::Logger* logger);
+  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
+  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
 
  protected:
   dbTechLayerType type;
