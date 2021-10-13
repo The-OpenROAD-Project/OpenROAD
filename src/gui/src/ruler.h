@@ -90,6 +90,8 @@ class RulerDescriptor : public Descriptor
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
+  bool getAllObjects(SelectionSet& objects) const override;
+
  private:
   static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);
 

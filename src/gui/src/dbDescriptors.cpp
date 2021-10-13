@@ -142,7 +142,8 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
 
 ////////
 
-DbInstDescriptor::DbInstDescriptor(sta::dbSta* sta) :
+DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
     sta_(sta)
 {
 }
@@ -329,6 +330,23 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
   return l_inst->getId() < r_inst->getId();
 }
 
+bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* inst : block->getInsts()) {
+    objects.insert(makeSelected(inst, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
 
 DbMasterDescriptor::DbMasterDescriptor(sta::dbSta* sta) :
@@ -462,6 +480,10 @@ void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbIns
 }
 
 //////////////////////////////////////////////////
+
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
 
 std::string DbNetDescriptor::getName(std::any object) const
 {
@@ -642,6 +664,23 @@ bool DbNetDescriptor::lessThan(std::any l, std::any r) const
   return l_net->getId() < r_net->getId();
 }
 
+bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* net : block->getNets()) {
+    objects.insert(makeSelected(net, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
 
 std::string DbITermDescriptor::getName(std::any object) const
@@ -720,6 +759,10 @@ bool DbITermDescriptor::lessThan(std::any l, std::any r) const
 
 //////////////////////////////////////////////////
 
+DbBTermDescriptor::DbBTermDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
 std::string DbBTermDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbBTerm*>(object)->getName();
@@ -782,6 +825,23 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
   auto l_bterm = std::any_cast<odb::dbBTerm*>(l);
   auto r_bterm = std::any_cast<odb::dbBTerm*>(r);
   return l_bterm->getId() < r_bterm->getId();
+}
+
+bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getBTerms()) {
+    objects.insert(makeSelected(term, nullptr));
+  }
+  return true;
 }
 
 //////////////////////////////////////////////////

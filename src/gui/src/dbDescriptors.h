@@ -50,7 +50,7 @@ namespace gui {
 class DbInstDescriptor : public Descriptor
 {
  public:
-  DbInstDescriptor(sta::dbSta* sta);
+  DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -68,12 +68,15 @@ class DbInstDescriptor : public Descriptor
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
+  bool getAllObjects(SelectionSet& objects) const override;
+
  private:
   void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
   bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
 
+  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 };
 
@@ -105,6 +108,8 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
+  DbNetDescriptor(odb::dbDatabase* db);
+
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
@@ -120,7 +125,11 @@ class DbNetDescriptor : public Descriptor
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
+  bool getAllObjects(SelectionSet& objects) const override;
+
  private:
+  odb::dbDatabase* db_;
+
   static const int max_iterms_ = 10000;
 };
 
@@ -143,6 +152,8 @@ class DbITermDescriptor : public Descriptor
 class DbBTermDescriptor : public Descriptor
 {
  public:
+  DbBTermDescriptor(odb::dbDatabase* db);
+
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
@@ -155,6 +166,11 @@ class DbBTermDescriptor : public Descriptor
   Editors getEditors(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
 };
 
 class DbBlockageDescriptor : public Descriptor
