@@ -77,7 +77,7 @@ class RulerDescriptor : public Descriptor
   RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers, odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,

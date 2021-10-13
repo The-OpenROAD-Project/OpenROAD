@@ -53,7 +53,7 @@ class DbInstDescriptor : public Descriptor
   DbInstDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -83,7 +83,7 @@ class DbMasterDescriptor : public Descriptor
   DbMasterDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -106,7 +106,7 @@ class DbNetDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -128,7 +128,7 @@ class DbITermDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -144,7 +144,7 @@ class DbBTermDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -161,7 +161,7 @@ class DbBlockageDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -178,7 +178,7 @@ class DbObstructionDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -195,7 +195,7 @@ class DbTechLayerDescriptor : public Descriptor
 {
  public:
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,

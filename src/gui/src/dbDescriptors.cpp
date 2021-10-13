@@ -152,7 +152,7 @@ std::string DbInstDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbInst*>(object)->getName();
 }
 
-std::string DbInstDescriptor::getTypeName(std::any object) const
+std::string DbInstDescriptor::getTypeName() const
 {
   return "Inst";
 }
@@ -341,7 +341,7 @@ std::string DbMasterDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbMaster*>(object)->getName();
 }
 
-std::string DbMasterDescriptor::getTypeName(std::any object) const
+std::string DbMasterDescriptor::getTypeName() const
 {
   return "Master";
 }
@@ -468,7 +468,7 @@ std::string DbNetDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbNet*>(object)->getName();
 }
 
-std::string DbNetDescriptor::getTypeName(std::any object) const
+std::string DbNetDescriptor::getTypeName() const
 {
   return "Net";
 }
@@ -650,7 +650,7 @@ std::string DbITermDescriptor::getName(std::any object) const
   return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
 }
 
-std::string DbITermDescriptor::getTypeName(std::any object) const
+std::string DbITermDescriptor::getTypeName() const
 {
   return "ITerm";
 }
@@ -725,7 +725,7 @@ std::string DbBTermDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbBTerm*>(object)->getName();
 }
 
-std::string DbBTermDescriptor::getTypeName(std::any object) const
+std::string DbBTermDescriptor::getTypeName() const
 {
   return "BTerm";
 }
@@ -791,7 +791,7 @@ std::string DbBlockageDescriptor::getName(std::any object) const
   return "Blockage";
 }
 
-std::string DbBlockageDescriptor::getTypeName(std::any object) const
+std::string DbBlockageDescriptor::getTypeName() const
 {
   return "Blockage";
 }
@@ -887,7 +887,7 @@ std::string DbObstructionDescriptor::getName(std::any object) const
   return "Obstruction: " + obs->getBBox()->getTechLayer()->getName();
 }
 
-std::string DbObstructionDescriptor::getTypeName(std::any object) const
+std::string DbObstructionDescriptor::getTypeName() const
 {
   return "Obstruction";
 }
@@ -994,7 +994,7 @@ std::string DbTechLayerDescriptor::getName(std::any object) const
   return layer->getConstName();
 }
 
-std::string DbTechLayerDescriptor::getTypeName(std::any object) const
+std::string DbTechLayerDescriptor::getTypeName() const
 {
   return "Tech layer";
 }

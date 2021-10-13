@@ -52,7 +52,7 @@ class GridGraphDescriptor : public gui::Descriptor
   };
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -72,7 +72,7 @@ std::string GridGraphDescriptor::getName(std::any object) const
          + std::to_string(data.z) + ">";
 }
 
-std::string GridGraphDescriptor::getTypeName(std::any object) const
+std::string GridGraphDescriptor::getTypeName() const
 {
   return "Grid Graph Node";
 }

@@ -129,7 +129,7 @@ std::string DRCDescriptor::getName(std::any object) const
   return vio->getType();
 }
 
-std::string DRCDescriptor::getTypeName(std::any object) const
+std::string DRCDescriptor::getTypeName() const
 {
   return "DRC";
 }

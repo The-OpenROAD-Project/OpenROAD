@@ -95,7 +95,7 @@ std::string RulerDescriptor::getName(std::any object) const
   return ruler->getName();
 }
 
-std::string RulerDescriptor::getTypeName(std::any object) const
+std::string RulerDescriptor::getTypeName() const
 {
   return "Ruler";
 }
