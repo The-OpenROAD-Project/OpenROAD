@@ -197,6 +197,15 @@ Options description:
 - ``x1, y1`` second corner of the layout area in microns.
 - ``append`` if ``true`` (the default value) append the new selections to the current selection list, else replace the selection list with the new selections.
 
+To navigate through multiple selected items:
+
+```
+gui::select_next
+gui::select_previous
+```
+
+Returns: current index of the selected item.
+
 To clear the current set of selected items:
 
 ```

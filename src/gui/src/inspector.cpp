@@ -261,24 +261,41 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SLOT(clicked(const QModelIndex&)));
 
   connect(button_prev_,
-          &QPushButton::pressed,
-          [this]() {
-            if (selected_itr_ == selected_.begin()) {
-              selected_itr_ = selected_.end();
-            }
-            selected_itr_--;
-            inspect(*selected_itr_);
-          });
+          SIGNAL(pressed()),
+          this,
+          SLOT(selectPrevious()));
 
   connect(button_next_,
-          &QPushButton::pressed,
-          [this]() {
-            selected_itr_++; // go to next
-            if (selected_itr_ == selected_.end()) {
-              selected_itr_ = selected_.begin();
-            }
-            inspect(*selected_itr_);
-          });
+          SIGNAL(pressed()),
+          this,
+          SLOT(selectNext()));
+}
+
+int Inspector::selectNext()
+{
+  selected_itr_++; // go to next
+  if (selected_itr_ == selected_.end()) {
+    selected_itr_ = selected_.begin();
+  }
+  emit inspect(*selected_itr_);
+
+  return getSelectedIteratorPosition();
+}
+
+int Inspector::selectPrevious()
+{
+  if (selected_itr_ == selected_.begin()) {
+    selected_itr_ = selected_.end();
+  }
+  selected_itr_--;
+  emit inspect(*selected_itr_);
+
+  return getSelectedIteratorPosition();
+}
+
+int Inspector::getSelectedIteratorPosition()
+{
+  return std::distance(selected_.begin(), selected_itr_);
 }
 
 void Inspector::inspect(const Selected& object)
@@ -301,9 +318,8 @@ void Inspector::inspect(const Selected& object)
   selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
     return item < selection_;
   });
-  int selected_index = std::distance(selected_.begin(), selected_itr_);
   selected_itr_label_->setText(
-      QString::number(selected_index + 1) +
+      QString::number(getSelectedIteratorPosition() + 1) +
       "/" +
       QString::number(selected_.size()));
 

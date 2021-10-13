@@ -484,5 +484,23 @@ void select_at(double x, double y, bool append = true)
   select_at(x, y, x, y, append);
 }
 
+int select_next()
+{
+  if (!check_gui("select_next")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectNext();
+}
+
+int select_previous()
+{
+  if (!check_gui("select_previous")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectPrevious();
+}
+
 %} // inline
 
