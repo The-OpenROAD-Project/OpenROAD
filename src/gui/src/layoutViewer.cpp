@@ -1425,6 +1425,10 @@ void LayoutViewer::drawRows(dbBlock* block,
 
 void LayoutViewer::drawSelected(Painter& painter)
 {
+  if (!options_->areSelectedVisible()) {
+    return;
+  }
+
   for (auto& selected : selected_) {
     selected.highlight(painter);
   }
