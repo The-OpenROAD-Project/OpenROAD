@@ -430,5 +430,14 @@ void hide()
   gui->hideGui();
 }
 
+void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+{
+  if (!check_gui("select")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->select(type, name_filter, case_sensitive, highlight_group);
+}
+
 %} // inline
 

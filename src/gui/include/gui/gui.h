@@ -466,6 +466,8 @@ class Gui
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
 
+  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
+
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
   void zoomIn();

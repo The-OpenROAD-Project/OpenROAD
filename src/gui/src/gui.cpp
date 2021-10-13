@@ -318,6 +318,37 @@ void Gui::deleteRuler(const std::string& name)
   main_window->deleteRuler(name);
 }
 
+void Gui::select(const std::string& type, const std::string& name_filter, bool filter_case_sensitive, int highlight_group)
+{
+  for (auto& [object_type, descriptor] : descriptors_) {
+    if (descriptor->getTypeName() == type) {
+      SelectionSet selected;
+      if (descriptor->getAllObjects(selected)) {
+        if (!name_filter.empty()) {
+          // convert to vector
+          std::vector<Selected> selected_vector(selected.begin(), selected.end());
+          // remove elements
+          QRegExp reg_filter(QString::fromStdString(name_filter),
+                             filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
+                             QRegExp::Wildcard);
+          auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
+              [&reg_filter](auto sel) -> bool {
+                return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
+              });
+          selected_vector.erase(remove_if, selected_vector.end());
+          // rebuild selectionset
+          selected.clear();
+          selected.insert(selected_vector.begin(), selected_vector.end());
+        }
+        main_window->addSelected(selected);
+        if (highlight_group != -1) {
+          main_window->addHighlighted(selected, highlight_group);
+        }
+      }
+    }
+  }
+}
+
 void Gui::clearSelections()
 {
   main_window->setSelected(Selected());
