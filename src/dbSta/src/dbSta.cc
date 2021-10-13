@@ -171,12 +171,13 @@ public:
                                         dbMaster *master) override;
   virtual void inDbInstSwapMasterAfter(dbInst *inst) override;
   virtual void inDbNetDestroy(dbNet *net) override;
-  void inDbITermPostConnect(dbITerm *iterm) override;
-  void inDbITermPreDisconnect(dbITerm *iterm) override;
-  void inDbITermDestroy(dbITerm *iterm) override;
-  void inDbBTermPostConnect(dbBTerm *bterm) override;
-  void inDbBTermPreDisconnect(dbBTerm *bterm) override;
-  void inDbBTermDestroy(dbBTerm *bterm) override;
+  virtual void inDbITermPostConnect(dbITerm *iterm) override;
+  virtual void inDbITermPreDisconnect(dbITerm *iterm) override;
+  virtual void inDbITermDestroy(dbITerm *iterm) override;
+  virtual void inDbBTermPostConnect(dbBTerm *bterm) override;
+  virtual void inDbBTermPreDisconnect(dbBTerm *bterm) override;
+  virtual void inDbBTermCreate(dbBTerm*) override;
+  virtual void inDbBTermDestroy(dbBTerm *bterm) override;
 
 private:
   dbSta *sta_;
@@ -683,9 +684,16 @@ dbStaCbk::inDbBTermPreDisconnect(dbBTerm *bterm)
 }
 
 void
+dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
+{
+  sta_->getDbNetwork()->makeTopPort(bterm);
+}
+
+void
 dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 {
   sta_->deletePinBefore(network_->dbToSta(bterm));
+  // sta::NetworkEdit does not support port removal.
 }
 
 ////////////////////////////////////////////////////////////////
