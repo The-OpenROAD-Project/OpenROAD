@@ -59,6 +59,11 @@ class Painter;
 class Selected;
 class Options;
 
+// A collection of selected objects
+using SelectionSet = std::set<Selected>;
+using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
+                                                   // Color is supported for now
+
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
 // give it information about the foreign object (eg attributes like
@@ -73,6 +78,8 @@ class Descriptor
 
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
+
+  virtual bool getAllObjects(SelectionSet& /* objects */) const { return false; }
 
   // A property is a name and a value.
   struct Property {
@@ -218,11 +225,6 @@ class Selected
                            // in which case it will store the input instTerm
   const Descriptor* descriptor_;
 };
-
-// A collection of selected objects
-using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
-                                                   // Color is supported for now
 
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
