@@ -87,8 +87,8 @@ class Descriptor
     std::string name;
     std::any value;
 
-    static std::string toString(const std::any& /* value */);
-    std::string toString() const { return toString(value); };
+    static std::string toString(const std::any& value, odb::dbDatabase* db);
+    std::string toString(odb::dbDatabase* db) const { return toString(value, db); };
   };
   using Properties = std::vector<Property>;
 

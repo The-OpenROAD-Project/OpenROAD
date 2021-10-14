@@ -295,6 +295,7 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   controls_->setDb(db_);
   viewer_->setDb(db_);
   selection_browser_->setDb(db_);
+  inspector_->setDb(db_);
 }
 
 void MainWindow::init(sta::dbSta* sta)

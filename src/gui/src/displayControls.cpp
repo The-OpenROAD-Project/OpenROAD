@@ -155,7 +155,8 @@ void DisplayColorDialog::rejectDialog()
 }
 
 DisplayControlModel::DisplayControlModel(QWidget* parent) :
-  QStandardItemModel(0, 4, parent)
+  QStandardItemModel(0, 4, parent),
+  db_(nullptr)
 {
 }
 
@@ -174,7 +175,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
         // provide tooltip with layer information
         QString information;
 
-        auto add_prop = [props](const std::string& prop, QString& info) -> bool {
+        auto add_prop = [this, &props](const std::string& prop, QString& info) -> bool {
           auto prop_find = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
             return p.name == prop;
           });
@@ -182,7 +183,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return false;
           }
           info += "\n" + QString::fromStdString(prop) + ": ";
-          info += QString::fromStdString(prop_find->toString());
+          info += QString::fromStdString(prop_find->toString(db_));
           return true;
         };
 
@@ -830,6 +831,8 @@ void DisplayControls::restore()
 void DisplayControls::setDb(odb::dbDatabase* db)
 {
   db_ = db;
+  model_->setDb(db_);
+
   if (!db) {
     return;
   }

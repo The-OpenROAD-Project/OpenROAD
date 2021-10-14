@@ -449,7 +449,7 @@ const std::string get_selection_property(const std::string& prop_name)
     logger->error(GUI, 37, "Unknown property: {}", prop_name);
   }
 
-  std::string prop_text = gui::Descriptor::Property::toString(prop);
+  std::string prop_text = gui::Descriptor::Property::toString(prop, get_block()->getDb());
 
   if (prop_name == "BBox") {
     // need to reformat to make it useable for TCL

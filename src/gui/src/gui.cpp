@@ -692,7 +692,7 @@ Descriptor::Properties Selected::getProperties() const
   return props;
 }
 
-std::string Descriptor::Property::toString(const std::any& value)
+std::string Descriptor::Property::toString(const std::any& value, odb::dbDatabase* db)
 {
   if (auto v = std::any_cast<Selected>(&value)) {
     if (*v) {
@@ -713,15 +713,20 @@ std::string Descriptor::Property::toString(const std::any& value)
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
-    double to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
-    const int precision = std::ceil(std::log10(to_microns));
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(precision) << "(";
-    ss << v->xMin() / to_microns << ",";
-    ss << v->yMin() / to_microns << "), (";
-    ss << v->xMax() / to_microns << ",";
-    ss << v->yMax() / to_microns << ")";
-    return ss.str();
+    if (db != nullptr) {
+      auto* tech = db->getTech();
+      if (tech != nullptr) {
+        double to_microns = tech->getLefUnits();
+        const int precision = std::ceil(std::log10(to_microns));
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(precision) << "(";
+        ss << v->xMin() / to_microns << ",";
+        ss << v->yMin() / to_microns << "), (";
+        ss << v->xMax() / to_microns << ",";
+        ss << v->yMax() / to_microns << ")";
+        return ss.str();
+      }
+    }
   }
 
   return "<unknown>";
