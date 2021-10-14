@@ -273,6 +273,12 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
 int Inspector::selectNext()
 {
+  if (selected_.empty()) {
+    selected_itr_ = selected_.begin();
+
+    return 0;
+  }
+
   selected_itr_++; // go to next
   if (selected_itr_ == selected_.end()) {
     selected_itr_ = selected_.begin();
@@ -284,6 +290,12 @@ int Inspector::selectNext()
 
 int Inspector::selectPrevious()
 {
+  if (selected_.empty()) {
+    selected_itr_ = selected_.begin();
+
+    return 0;
+  }
+
   if (selected_itr_ == selected_.begin()) {
     selected_itr_ = selected_.end();
   }
@@ -301,7 +313,8 @@ int Inspector::getSelectedIteratorPosition()
 void Inspector::inspect(const Selected& object)
 {
   // disconnect so announcements can be will not be made about changes
-  // changes right now are based on adding item to model
+  // this is needed to stop SelectedItemModel::itemChanged from triggering
+  // since the change is related to adding the item and modifying the item
   blockSignals(true);
 
   model_->removeRows(0, model_->rowCount());
