@@ -534,6 +534,8 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
   addSelected(selection);
   if (show_connectivity)
     selectHighlightConnectedNets(true, true, true, false);
+
+  emit selectionChanged();
 }
 
 void MainWindow::addHighlighted(const SelectionSet& highlights,

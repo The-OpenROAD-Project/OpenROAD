@@ -429,6 +429,7 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
 void Inspector::update()
 {
   if (selected_.empty()) {
+    button_frame_->setVisible(false);
     inspect(Selected());
   } else {
     if (selected_.size() > 1) {
