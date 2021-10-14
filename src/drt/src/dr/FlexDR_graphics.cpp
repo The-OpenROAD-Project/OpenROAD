@@ -63,6 +63,8 @@ class GridGraphDescriptor : public gui::Descriptor
   gui::Selected makeSelected(std::any object,
                              void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(gui::SelectionSet& objects) const override;
 };
 
 std::string GridGraphDescriptor::getName(std::any object) const
@@ -213,6 +215,11 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
 
   return std::tie(l_grid.x, l_grid.y, l_grid.z)
          < std::tie(r_grid.x, r_grid.y, r_grid.z);
+}
+
+bool GridGraphDescriptor::getAllObjects(gui::SelectionSet& objects) const
+{
+  return false;
 }
 
 //////////////////////////////////////////////////
