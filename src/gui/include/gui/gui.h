@@ -74,6 +74,7 @@ class Descriptor
   virtual ~Descriptor() = default;
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getTypeName() const = 0;
+  virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
   virtual bool isInst(std::any /* object */) const { return false; }
@@ -169,7 +170,7 @@ class Selected
   }
 
   std::string getName() const { return descriptor_->getName(object_); }
-  std::string getTypeName() const { return descriptor_->getTypeName(); }
+  std::string getTypeName() const { return descriptor_->getTypeName(object_); }
   bool getBBox(odb::Rect& bbox) const
   {
     return descriptor_->getBBox(object_, bbox);
