@@ -42,7 +42,8 @@ class Parser;
 }
 struct drEolSpacingConstraint
 {
-  drEolSpacingConstraint() : eolSpace(0), eolWithin(0) {}
+  drEolSpacingConstraint() : eolWidth(0), eolSpace(0), eolWithin(0) {}
+  frCoord eolWidth;
   frCoord eolSpace;
   frCoord eolWithin;
 };
@@ -660,8 +661,9 @@ class frLayer
     return lef58DefaultInterCutSpacingTableConstraint;
   }
 
-  void setDrEolSpacingConstraint(frCoord space, frCoord within)
+  void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
   {
+    drEolCon.eolWidth = width;
     drEolCon.eolSpace = space;
     drEolCon.eolWithin = within;
   }
@@ -669,6 +671,8 @@ class frLayer
   drEolSpacingConstraint getDrEolSpacingConstraint() const { return drEolCon; }
 
   void printAllConstraints(utl::Logger* logger);
+  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
+  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
 
  protected:
   dbTechLayerType type;

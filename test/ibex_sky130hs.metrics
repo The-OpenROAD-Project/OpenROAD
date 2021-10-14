@@ -10,7 +10,7 @@
   , "worst_slack_max" : "-1.459681306030876"
   , "tns_max" : "-282.89728338410197"
   , "clock_skew" : "4.482495390631427"
-  , "max_slew_violations" : "0"
+  , "max_slew_violations" : "5"
   , "max_fanout_violations" : "0"
   , "max_capacitance_violations" : "0"
   , "clock_period" : "11.290000"

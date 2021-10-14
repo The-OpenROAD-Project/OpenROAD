@@ -198,6 +198,8 @@ class DisplayControls : public QDockWidget, public Options
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
 
+  bool isDetailedVisibility() override;
+
   bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
@@ -261,6 +263,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow blocks;
     ModelRow fill;
     ModelRow endcap;
+    ModelRow welltap;
     ModelRow pads;
     ModelRow cover;
   };
@@ -282,6 +285,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow instance_names;
     ModelRow scale_bar;
     ModelRow fills;
+    ModelRow detailed;
   };
 
   void techInit();

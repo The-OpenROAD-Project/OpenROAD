@@ -58,7 +58,7 @@ metal10    Vertical         2256            47          97.92%
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [WARNING GRT-0227] Reached 20 congestion iterations with less than 15% of reduction between iterations.
 [INFO GRT-0104] Minimal overflow 1095 occurring at round 13.
-[INFO GRT-0111] Final number of vias: 3018
-[INFO GRT-0112] Final usage 3D: 13278
+[INFO GRT-0111] Final number of vias: 2738
+[INFO GRT-0112] Final usage 3D: 12438
 [ERROR GRT-0118] Routing congestion too high.
 GRT-0118

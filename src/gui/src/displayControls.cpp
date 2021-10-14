@@ -271,6 +271,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.fill, "Fill", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.welltap, "Welltap", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
   toggleParent(instance_group_);
@@ -317,6 +318,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   setWidget(view_);
@@ -401,6 +403,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, instances_.blocks);
   readSettingsForRow(settings, instances_.fill);
   readSettingsForRow(settings, instances_.endcap);
+  readSettingsForRow(settings, instances_.welltap);
   readSettingsForRow(settings, instances_.pads);
   readSettingsForRow(settings, instances_.cover);
   settings->endGroup();
@@ -441,6 +444,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
+  readSettingsForRow(settings, misc_.detailed);
   getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
@@ -468,6 +472,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, instances_.blocks);
   writeSettingsForRow(settings, instances_.fill);
   writeSettingsForRow(settings, instances_.endcap);
+  writeSettingsForRow(settings, instances_.welltap);
   writeSettingsForRow(settings, instances_.pads);
   writeSettingsForRow(settings, instances_.cover);
   settings->endGroup();
@@ -506,6 +511,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
+  writeSettingsForRow(settings, misc_.detailed);
   settings->setValue("instance_name_color", instance_name_color_);
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
@@ -981,7 +987,11 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
   } else if (master->isFiller()) {
     return instances_.fill.visible->checkState() == Qt::Checked;
   } else if (master->isCore()) {
-    return instances_.core.visible->checkState() == Qt::Checked;
+    if (master->getType() == dbMasterType::CORE_WELLTAP) {
+      return instances_.welltap.visible->checkState() == Qt::Checked;
+    } else {
+      return instances_.core.visible->checkState() == Qt::Checked;
+    }
   } else if (master->isBlock()) {
     return instances_.blocks.visible->checkState() == Qt::Checked;
   } else if (master->isPad()) {
@@ -1001,7 +1011,11 @@ bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
   } else if (master->isFiller()) {
     return instances_.fill.selectable->checkState() == Qt::Checked;
   } else if (master->isCore()) {
-    return instances_.core.selectable->checkState() == Qt::Checked;
+    if (master->getType() == dbMasterType::CORE_WELLTAP) {
+      return instances_.welltap.selectable->checkState() == Qt::Checked;
+    } else {
+      return instances_.core.selectable->checkState() == Qt::Checked;
+    }
   } else if (master->isBlock()) {
     return instances_.blocks.selectable->checkState() == Qt::Checked;
   } else if (master->isPad()) {
@@ -1112,6 +1126,11 @@ bool DisplayControls::areRowsVisible()
 QColor DisplayControls::rowColor()
 {
   return row_color_;
+}
+
+bool DisplayControls::isDetailedVisibility()
+{
+  return misc_.detailed.visible->checkState() == Qt::Checked;
 }
 
 bool DisplayControls::arePrefTracksVisible()
