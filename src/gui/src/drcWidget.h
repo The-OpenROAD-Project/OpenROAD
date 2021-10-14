@@ -108,8 +108,10 @@ class DRCViolation {
 class DRCDescriptor : public Descriptor
 {
   public:
+    DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+
     std::string getName(std::any object) const override;
-    std::string getTypeName(std::any object) const override;
+    std::string getTypeName() const override;
     bool getBBox(std::any object, odb::Rect& bbox) const override;
 
     void highlight(std::any object,
@@ -119,6 +121,11 @@ class DRCDescriptor : public Descriptor
     Properties getProperties(std::any object) const override;
     Selected makeSelected(std::any object, void* additional_data) const override;
     bool lessThan(std::any l, std::any r) const override;
+
+    bool getAllObjects(SelectionSet& objects) const override;
+
+  private:
+    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
 };
 
 class DRCItemModel : public QStandardItemModel

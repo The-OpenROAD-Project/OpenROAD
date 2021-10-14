@@ -45,6 +45,20 @@ Options description:
 - ``microns_per_pixel` resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.
 - ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}``, to show routing tracks ``-display_option {Tracks/Pref true}``, or to show everthing ``-display_option {* true}``.
 
+### Selecting objects
+
+```
+select -type object_type
+       [-name glob_pattern]
+       [-case_insensitive]
+       [-highlight group]
+```
+
+Options description:
+- ``object_type``: name of the object typ. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
+- ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
+- ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
+
 ## TCL functions
 
 ### Support

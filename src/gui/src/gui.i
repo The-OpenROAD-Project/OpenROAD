@@ -123,7 +123,7 @@ selection_add_nets(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  gui->select("Net", name);
 }
 
 void
@@ -143,7 +143,7 @@ selection_add_insts(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  gui->select("Inst", name);
 }
 
 void highlight_inst(const char* name, int highlight_group = 0)
@@ -428,6 +428,15 @@ void hide()
   }
   auto gui = gui::Gui::get();
   gui->hideGui();
+}
+
+void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+{
+  if (!check_gui("select")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->select(type, name_filter, case_sensitive, highlight_group);
 }
 
 %} // inline

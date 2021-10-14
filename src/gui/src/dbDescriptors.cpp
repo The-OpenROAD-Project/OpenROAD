@@ -142,7 +142,8 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
 
 ////////
 
-DbInstDescriptor::DbInstDescriptor(sta::dbSta* sta) :
+DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
     sta_(sta)
 {
 }
@@ -152,7 +153,7 @@ std::string DbInstDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbInst*>(object)->getName();
 }
 
-std::string DbInstDescriptor::getTypeName(std::any object) const
+std::string DbInstDescriptor::getTypeName() const
 {
   return "Inst";
 }
@@ -329,9 +330,27 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
   return l_inst->getId() < r_inst->getId();
 }
 
+bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* inst : block->getInsts()) {
+    objects.insert(makeSelected(inst, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
 
-DbMasterDescriptor::DbMasterDescriptor(sta::dbSta* sta) :
+DbMasterDescriptor::DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
     sta_(sta)
 {
 }
@@ -341,7 +360,7 @@ std::string DbMasterDescriptor::getName(std::any object) const
   return std::any_cast<odb::dbMaster*>(object)->getName();
 }
 
-std::string DbMasterDescriptor::getTypeName(std::any object) const
+std::string DbMasterDescriptor::getTypeName() const
 {
   return "Master";
 }
@@ -461,14 +480,39 @@ void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbIns
   }
 }
 
+bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  std::vector<odb::dbMaster*> masters;
+  block->getMasters(masters);
+
+  for (auto* master : masters) {
+    objects.insert(makeSelected(master, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbNetDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbNet*>(object)->getName();
 }
 
-std::string DbNetDescriptor::getTypeName(std::any object) const
+std::string DbNetDescriptor::getTypeName() const
 {
   return "Net";
 }
@@ -642,7 +686,29 @@ bool DbNetDescriptor::lessThan(std::any l, std::any r) const
   return l_net->getId() < r_net->getId();
 }
 
+bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* net : block->getNets()) {
+    objects.insert(makeSelected(net, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbITermDescriptor::getName(std::any object) const
 {
@@ -650,7 +716,7 @@ std::string DbITermDescriptor::getName(std::any object) const
   return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
 }
 
-std::string DbITermDescriptor::getTypeName(std::any object) const
+std::string DbITermDescriptor::getTypeName() const
 {
   return "ITerm";
 }
@@ -718,14 +784,36 @@ bool DbITermDescriptor::lessThan(std::any l, std::any r) const
   return l_iterm->getId() < r_iterm->getId();
 }
 
+bool DbITermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getITerms()) {
+    objects.insert(makeSelected(term, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbBTermDescriptor::DbBTermDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbBTermDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbBTerm*>(object)->getName();
 }
 
-std::string DbBTermDescriptor::getTypeName(std::any object) const
+std::string DbBTermDescriptor::getTypeName() const
 {
   return "BTerm";
 }
@@ -784,14 +872,36 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
   return l_bterm->getId() < r_bterm->getId();
 }
 
+bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getBTerms()) {
+    objects.insert(makeSelected(term, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbBlockageDescriptor::DbBlockageDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbBlockageDescriptor::getName(std::any object) const
 {
   return "Blockage";
 }
 
-std::string DbBlockageDescriptor::getTypeName(std::any object) const
+std::string DbBlockageDescriptor::getTypeName() const
 {
   return "Blockage";
 }
@@ -879,7 +989,29 @@ bool DbBlockageDescriptor::lessThan(std::any l, std::any r) const
   return l_blockage->getId() < r_blockage->getId();
 }
 
+bool DbBlockageDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* blockage : block->getBlockages()) {
+    objects.insert(makeSelected(blockage, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbObstructionDescriptor::DbObstructionDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbObstructionDescriptor::getName(std::any object) const
 {
@@ -887,7 +1019,7 @@ std::string DbObstructionDescriptor::getName(std::any object) const
   return "Obstruction: " + obs->getBBox()->getTechLayer()->getName();
 }
 
-std::string DbObstructionDescriptor::getTypeName(std::any object) const
+std::string DbObstructionDescriptor::getTypeName() const
 {
   return "Obstruction";
 }
@@ -986,7 +1118,29 @@ bool DbObstructionDescriptor::lessThan(std::any l, std::any r) const
   return l_obs->getId() < r_obs->getId();
 }
 
+bool DbObstructionDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* obs : block->getObstructions()) {
+    objects.insert(makeSelected(obs, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbTechLayerDescriptor::DbTechLayerDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbTechLayerDescriptor::getName(std::any object) const
 {
@@ -994,7 +1148,7 @@ std::string DbTechLayerDescriptor::getName(std::any object) const
   return layer->getConstName();
 }
 
-std::string DbTechLayerDescriptor::getTypeName(std::any object) const
+std::string DbTechLayerDescriptor::getTypeName() const
 {
   return "Tech layer";
 }
@@ -1041,6 +1195,19 @@ bool DbTechLayerDescriptor::lessThan(std::any l, std::any r) const
   auto l_layer = std::any_cast<odb::dbTechLayer*>(l);
   auto r_layer = std::any_cast<odb::dbTechLayer*>(r);
   return l_layer->getId() < r_layer->getId();
+}
+
+bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* tech = db_->getTech();
+  if (tech == nullptr) {
+    return false;
+  }
+
+  for (auto* layer : tech->getLayers()) {
+    objects.insert(makeSelected(layer, nullptr));
+  }
+  return true;
 }
 
 }  // namespace gui

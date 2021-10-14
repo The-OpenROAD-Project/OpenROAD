@@ -123,13 +123,18 @@ void DRCViolation::paint(Painter& painter)
 
 ///////
 
+DRCDescriptor::DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
+    violations_(violations)
+{
+}
+
 std::string DRCDescriptor::getName(std::any object) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
   return vio->getType();
 }
 
-std::string DRCDescriptor::getTypeName(std::any object) const
+std::string DRCDescriptor::getTypeName() const
 {
   return "DRC";
 }
@@ -201,6 +206,14 @@ bool DRCDescriptor::lessThan(std::any l, std::any r) const
   return l_drc < r_drc;
 }
 
+bool DRCDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto& violation : violations_) {
+    objects.insert(makeSelected(violation.get(), nullptr));
+  }
+  return true;
+}
+
 ///////
 
 QVariant DRCItemModel::data(const QModelIndex& index, int role) const
@@ -254,6 +267,8 @@ DRCWidget::DRCWidget(QWidget* parent)
           this,
           SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
+
+  Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
 }
 
 void DRCWidget::setLogger(utl::Logger* logger)

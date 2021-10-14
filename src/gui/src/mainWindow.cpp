@@ -304,15 +304,14 @@ void MainWindow::init(sta::dbSta* sta)
 
   // register descriptors
   auto* gui = Gui::get();
-  gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(sta));
-  gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor);
-  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor);
-  gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor);
-  gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor);
-  gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor);
-  gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor);
-  gui->registerDescriptor<DRCViolation*>(new DRCDescriptor);
+  gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
+  gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_));
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
+  gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 }
 
@@ -535,6 +534,8 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
   addSelected(selection);
   if (show_connectivity)
     selectHighlightConnectedNets(true, true, true, false);
+
+  emit selectionChanged();
 }
 
 void MainWindow::addHighlighted(const SelectionSet& highlights,
