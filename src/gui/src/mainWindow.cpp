@@ -500,9 +500,9 @@ void MainWindow::addSelected(const Selected& selection)
 {
   if (selection) {
     selected_.emplace(selection);
-    emit updateSelectedStatus(selection);
     emit selectionChanged();
   }
+  emit updateSelectedStatus(selection);
 }
 
 void MainWindow::removeSelected(const Selected& selection)
