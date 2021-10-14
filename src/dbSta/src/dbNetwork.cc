@@ -952,14 +952,19 @@ dbNetwork::makeTopCell()
   const char *design_name = block_->getConstName();
   Library *top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
-  for (dbBTerm *bterm : block_->getBTerms()) {
-    const char *port_name = bterm->getConstName();
-    Port *port = makePort(top_cell_, port_name);
-    PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
-    setDirection(port, dir);
-  }
+  for (dbBTerm *bterm : block_->getBTerms())
+    makeTopPort(bterm);
   groupBusPorts(top_cell_,
                 [=](const char *port_name) { return portMsbFirst(port_name); } );
+}
+
+void
+dbNetwork::makeTopPort(dbBTerm *bterm)
+{
+  const char *port_name = bterm->getConstName();
+  Port *port = makePort(top_cell_, port_name);
+  PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  setDirection(port, dir);
 }
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
