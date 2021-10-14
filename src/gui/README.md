@@ -49,14 +49,14 @@ Options description:
 
 ```
 select -type object_type
-       [-name name_regex]
+       [-name glob_pattern]
        [-case_insensitive]
        [-highlight group]
 ```
 
 Options description:
 - ``object_type``: name of the object typ. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
-- ``name_regex``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
+- ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
 - ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
 
 ## TCL functions
