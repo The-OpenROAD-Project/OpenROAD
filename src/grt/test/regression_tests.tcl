@@ -22,6 +22,7 @@ record_tests {
   pd2
   pd3
   pd4
+  pre_routed1
   region_adjustment
   repair_antennas1
   repair_antennas2
