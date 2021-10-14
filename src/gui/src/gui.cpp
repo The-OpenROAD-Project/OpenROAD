@@ -164,47 +164,6 @@ void Gui::addSelectedNet(const char* name)
   main_window->addSelected(makeSelected(net));
 }
 
-void Gui::addSelectedNets(const char* pattern,
-                          bool match_case,
-                          bool match_reg_ex,
-                          bool add_to_highlight_set,
-                          int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
-  SelectionSet nets;
-  if (match_reg_ex == true) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-
-    for (auto* net : block->getNets()) {
-      if (re.exactMatch(net->getConstName())) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* net : block->getNets()) {
-      if (boost::iequals(pattern, net->getConstName()))
-        nets.insert(makeSelected(net));
-    }
-  } else {
-    for (auto* net : block->getNets()) {
-      if (pattern == net->getConstName()) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  }
-
-  main_window->addSelected(nets);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(nets, highlight_group);
-}  // namespace gui
-
 void Gui::addSelectedInst(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -218,46 +177,6 @@ void Gui::addSelectedInst(const char* name)
   }
 
   main_window->addSelected(makeSelected(inst));
-}
-
-void Gui::addSelectedInsts(const char* pattern,
-                           bool match_case,
-                           bool match_reg_ex,
-                           bool add_to_highlight_set,
-                           int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  SelectionSet insts;
-  if (match_reg_ex) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-    for (auto* inst : block->getInsts()) {
-      if (re.exactMatch(inst->getConstName())) {
-        insts.insert(makeSelected(inst));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* inst : block->getInsts()) {
-      if (boost::iequals(inst->getConstName(), pattern))
-        insts.insert(makeSelected(inst));
-    }
-  } else {
-    for (auto* inst : block->getInsts()) {
-      if (pattern == inst->getConstName()) {
-        insts.insert(makeSelected(inst));
-        break;  // There can't be two insts with the same name
-      }
-    }
-  }
-
-  main_window->addSelected(insts);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(insts, highlight_group);
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
@@ -334,6 +253,42 @@ std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& lab
 void Gui::deleteRuler(const std::string& name)
 {
   main_window->deleteRuler(name);
+}
+
+void Gui::select(const std::string& type, const std::string& name_filter, bool filter_case_sensitive, int highlight_group)
+{
+  for (auto& [object_type, descriptor] : descriptors_) {
+    if (descriptor->getTypeName() == type) {
+      SelectionSet selected;
+      if (descriptor->getAllObjects(selected)) {
+        if (!name_filter.empty()) {
+          // convert to vector
+          std::vector<Selected> selected_vector(selected.begin(), selected.end());
+          // remove elements
+          QRegExp reg_filter(QString::fromStdString(name_filter),
+                             filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
+                             QRegExp::Wildcard);
+          auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
+              [&reg_filter](auto sel) -> bool {
+                return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
+              });
+          selected_vector.erase(remove_if, selected_vector.end());
+          // rebuild selectionset
+          selected.clear();
+          selected.insert(selected_vector.begin(), selected_vector.end());
+        }
+        main_window->addSelected(selected);
+        if (highlight_group != -1) {
+          main_window->addHighlighted(selected, highlight_group);
+        }
+      }
+
+      // already found the descriptor, so return to exit loop
+      return;
+    }
+  }
+
+  logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
 void Gui::clearSelections()

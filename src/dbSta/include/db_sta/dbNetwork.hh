@@ -120,6 +120,8 @@ public:
   Port *dbToSta(dbMTerm *mterm) const;
   PortDirection *dbToSta(dbSigType sig_type,
 			 dbIoType io_type) const;
+  // dbStaCbk::inDbBTermCreate
+  void makeTopPort(dbBTerm *bterm);
 
   ////////////////////////////////////////////////////////////////
   //

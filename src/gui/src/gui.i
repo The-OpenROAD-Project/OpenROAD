@@ -123,7 +123,7 @@ selection_add_nets(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  gui->select("Net", name);
 }
 
 void
@@ -143,7 +143,7 @@ selection_add_insts(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  gui->select("Inst", name);
 }
 
 void highlight_inst(const char* name, int highlight_group = 0)
@@ -440,7 +440,7 @@ const std::string get_selection_property(const std::string& prop_name)
   const gui::Selected& selected = gui->getInspectorSelection();
   if (!selected) {
     auto logger = ord::OpenRoad::openRoad()->getLogger();
-    logger->error(GUI, 35, "Nothing selected");
+    logger->error(GUI, 36, "Nothing selected");
   }
   
   const std::any& prop = selected.getProperty(prop_name);
@@ -500,6 +500,15 @@ int select_previous()
   }  
   auto gui = gui::Gui::get();
   return gui->selectPrevious();
+}
+
+void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+{
+  if (!check_gui("select")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->select(type, name_filter, case_sensitive, highlight_group);
 }
 
 %} // inline

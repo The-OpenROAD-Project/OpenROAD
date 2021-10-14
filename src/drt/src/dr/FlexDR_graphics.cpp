@@ -52,7 +52,7 @@ class GridGraphDescriptor : public gui::Descriptor
   };
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -63,6 +63,8 @@ class GridGraphDescriptor : public gui::Descriptor
   gui::Selected makeSelected(std::any object,
                              void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(gui::SelectionSet& objects) const override;
 };
 
 std::string GridGraphDescriptor::getName(std::any object) const
@@ -72,7 +74,7 @@ std::string GridGraphDescriptor::getName(std::any object) const
          + std::to_string(data.z) + ">";
 }
 
-std::string GridGraphDescriptor::getTypeName(std::any object) const
+std::string GridGraphDescriptor::getTypeName() const
 {
   return "Grid Graph Node";
 }
@@ -213,6 +215,11 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
 
   return std::tie(l_grid.x, l_grid.y, l_grid.z)
          < std::tie(r_grid.x, r_grid.y, r_grid.z);
+}
+
+bool GridGraphDescriptor::getAllObjects(gui::SelectionSet& objects) const
+{
+  return false;
 }
 
 //////////////////////////////////////////////////

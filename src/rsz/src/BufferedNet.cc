@@ -139,25 +139,23 @@ BufferedNet::to_string(Resizer *resizer)
                        sdc_network->pathName(load_pin_),
                        x, y, cap,
                        delayAsString(required(resizer), resizer));
-    break;
   case BufferedNetType::wire:
     return fmt::format("wire ({}, {}) cap {} req {}",
                        x, y, cap,
                        delayAsString(required(resizer), resizer));
-    break;
   case BufferedNetType::buffer:
     return fmt::format("buffer ({}, {}) {} cap {} req {}",
                        x, y,
                        buffer_cell_->name(),
                        cap,
                        delayAsString(required(resizer), resizer));
-    break;
   case BufferedNetType::junction:
     return fmt::format("junction ({}, {}) cap {} req {}",
                        x, y, cap,
                        delayAsString(required(resizer), resizer));
-    break;
   }
+  // suppress gcc warning
+  return "";
 }
 
 Required
