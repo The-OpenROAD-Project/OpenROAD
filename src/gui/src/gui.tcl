@@ -133,7 +133,7 @@ proc select { args } {
   
   set highlight -1
   if { [info exists keys(-highlight)] } {
-    set case_sense $keys(-highlight)
+    set highlight $keys(-highlight)
   }
   
   set name ""
