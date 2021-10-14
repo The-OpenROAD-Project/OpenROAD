@@ -2514,11 +2514,10 @@ void GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   uint wire_cnt = 0, via_cnt = 0;
-  db_net->getWireCount(wire_cnt, via_cnt);
   if (db_net->getSigType().getValue() != odb::dbSigType::POWER
       && db_net->getSigType().getValue() != odb::dbSigType::GROUND
       && !db_net->isSpecial() && db_net->getSWires().empty()
-      && wire_cnt == 0 && via_cnt == 0) {
+      && db_net->getWire() == nullptr) {
     Net* net = new Net(db_net);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());
