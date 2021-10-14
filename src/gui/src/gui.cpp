@@ -35,6 +35,8 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -727,6 +729,11 @@ Descriptor::Properties Selected::getProperties() const
   Descriptor::Properties props = descriptor_->getProperties(object_);
   props.insert(props.begin(), {"Name", getName()});
   props.insert(props.begin(), {"Type", getTypeName()});
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    props.push_back({"BBox", bbox});
+  }
+
   return props;
 }
 
@@ -750,6 +757,16 @@ std::string Descriptor::Property::toString(const std::any& value)
     return QString::number(*v).toStdString();
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
+  } else if (auto v = std::any_cast<odb::Rect>(&value)) {
+    double to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
+    const int precision = std::ceil(std::log10(to_microns));
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(precision) << "(";
+    ss << v->xMin() / to_microns << ",";
+    ss << v->yMin() / to_microns << "), (";
+    ss << v->xMax() / to_microns << ",";
+    ss << v->yMax() / to_microns << ")";
+    return ss.str();
   }
 
   return "<unknown>";

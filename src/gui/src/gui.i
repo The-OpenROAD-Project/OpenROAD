@@ -442,28 +442,32 @@ const std::string get_selection_property(const std::string& prop_name)
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 35, "Nothing selected");
   }
-  if (prop_name == "bbox") {
-    odb::Rect box;
-    if (selected.getBBox(box)) {
-      auto block = get_block();
-      double dbuPerUU = block->getDbUnitsPerMicron();
-      return std::to_string(box.ll().x() / dbuPerUU) + " " +
-             std::to_string(box.ll().y() / dbuPerUU) + " " +
-             std::to_string(box.ur().x() / dbuPerUU) + " " +
-             std::to_string(box.ur().y() / dbuPerUU);
-    } else {
-      auto logger = ord::OpenRoad::openRoad()->getLogger();
-      logger->error(GUI, 36, "Selected object does not have a bounding box.");
-    }
-  } else {
-    const std::any& prop = selected.getProperty(prop_name);
-    if (!prop.has_value()) {
-      auto logger = ord::OpenRoad::openRoad()->getLogger();
-      logger->error(GUI, 37, "Unknown property: {}", prop_name);
-    }
-    
-    return gui::Descriptor::Property::toString(prop);
+  
+  const std::any& prop = selected.getProperty(prop_name);
+  if (!prop.has_value()) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 37, "Unknown property: {}", prop_name);
   }
+
+  std::string prop_text = gui::Descriptor::Property::toString(prop);
+
+  if (prop_name == "BBox") {
+    // need to reformat to make it useable for TCL
+    // remove () and space
+    for (const char ch : {'(', ')', ' '}) {
+      std::size_t pos;
+      while ((pos = prop_text.find(ch)) != std::string::npos) {
+        prop_text.erase(pos, 1);
+      }
+    }
+    // replace commas with spaces
+    std::size_t pos;
+    while ((pos = prop_text.find(',')) != std::string::npos) {
+      prop_text.replace(pos, 1, " ");
+    }
+  }
+  
+  return prop_text;
 }
 
 void select_at(double x0, double y0, double x1, double y1, bool append = true)

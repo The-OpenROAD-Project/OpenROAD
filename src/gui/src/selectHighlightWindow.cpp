@@ -38,8 +38,6 @@
 #include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <iomanip>
-#include <sstream>
 #include <string>
 
 #include "gui/gui.h"
@@ -47,18 +45,6 @@
 #include "selectHighlightWindow.h"
 
 namespace gui {
-
-static QString getBBoxString(odb::Rect& bbox, odb::dbDatabase* db)
-{
-  double to_microns = db->getChip()->getBlock()->getDbUnitsPerMicron();
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(5) << "(";
-  ss << bbox.xMin() / to_microns << ",";
-  ss << bbox.yMin() / to_microns << "), (";
-  ss << bbox.xMax() / to_microns << ",";
-  ss << bbox.yMax() / to_microns << ")";
-  return QString::fromStdString(ss.str());
-}
 
 SelectionModel::SelectionModel(const SelectionSet& objs)
     : db_(nullptr), objs_(objs)
@@ -105,7 +91,7 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index]->getBBox(bbox);
-    return valid ? getBBoxString(bbox, db_) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   }
   return QVariant();
 }
@@ -191,7 +177,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index].second->getBBox(bbox);
-    return valid ? getBBoxString(bbox, db_) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   } else if (index.column() == 3) {
     return QString("Group ")
            + QString::number(table_data_[row_index].first + 1);
