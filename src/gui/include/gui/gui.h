@@ -431,22 +431,9 @@ class Gui
   // Add a net to the selection set
   void addSelectedNet(const char* name);
 
-  // Add nets matching the pattern to the selection set
-  void addSelectedNets(const char* pattern,
-                       bool match_case = true,
-                       bool match_reg_ex = true,
-                       bool add_to_highlight_set = false,
-                       int highlight_group = 0);
-
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
-  // Add instances matching the pattern to the selection set
-  void addSelectedInsts(const char* pattern,
-                        bool match_case = true,
-                        bool match_regE_ex = true,
-                        bool add_to_highlight_set = false,
-                        int highlight_group = 0);
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 

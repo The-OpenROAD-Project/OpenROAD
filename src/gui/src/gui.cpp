@@ -161,47 +161,6 @@ void Gui::addSelectedNet(const char* name)
   main_window->addSelected(makeSelected(net));
 }
 
-void Gui::addSelectedNets(const char* pattern,
-                          bool match_case,
-                          bool match_reg_ex,
-                          bool add_to_highlight_set,
-                          int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
-  SelectionSet nets;
-  if (match_reg_ex == true) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-
-    for (auto* net : block->getNets()) {
-      if (re.exactMatch(net->getConstName())) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* net : block->getNets()) {
-      if (boost::iequals(pattern, net->getConstName()))
-        nets.insert(makeSelected(net));
-    }
-  } else {
-    for (auto* net : block->getNets()) {
-      if (pattern == net->getConstName()) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  }
-
-  main_window->addSelected(nets);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(nets, highlight_group);
-}  // namespace gui
-
 void Gui::addSelectedInst(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -215,46 +174,6 @@ void Gui::addSelectedInst(const char* name)
   }
 
   main_window->addSelected(makeSelected(inst));
-}
-
-void Gui::addSelectedInsts(const char* pattern,
-                           bool match_case,
-                           bool match_reg_ex,
-                           bool add_to_highlight_set,
-                           int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  SelectionSet insts;
-  if (match_reg_ex) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-    for (auto* inst : block->getInsts()) {
-      if (re.exactMatch(inst->getConstName())) {
-        insts.insert(makeSelected(inst));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* inst : block->getInsts()) {
-      if (boost::iequals(inst->getConstName(), pattern))
-        insts.insert(makeSelected(inst));
-    }
-  } else {
-    for (auto* inst : block->getInsts()) {
-      if (pattern == inst->getConstName()) {
-        insts.insert(makeSelected(inst));
-        break;  // There can't be two insts with the same name
-      }
-    }
-  }
-
-  main_window->addSelected(insts);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(insts, highlight_group);
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
