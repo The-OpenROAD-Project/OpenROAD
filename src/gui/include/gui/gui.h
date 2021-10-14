@@ -116,16 +116,6 @@ class Descriptor
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
-  std::any getProperty(std::any object, const std::string& name) const
-  {
-    for (auto& [prop, value] : getProperties(object)) {
-      if (prop == name) {
-        return value;
-      }
-    }
-    return std::any();
-  }
-
   static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
   {
     return {func, options};
@@ -179,14 +169,16 @@ class Selected
                  bool select_flag = true,
                  int highlight_group = 0) const;
 
-  Descriptor::Properties getProperties() const
-  {
-    return descriptor_->getProperties(object_);
-  }
+  Descriptor::Properties getProperties() const;
 
   std::any getProperty(const std::string& name) const
   {
-    return descriptor_->getProperty(object_, name);
+    for (auto& [prop, value] : getProperties()) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
   }
 
   Descriptor::Actions getActions() const

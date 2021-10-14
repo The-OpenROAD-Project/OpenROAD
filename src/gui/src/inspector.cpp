@@ -164,18 +164,13 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     // retrieve property again
     auto selected = model->data(index, editor_select_).value<Selected>();
     auto item_name = model->data(index, editor_name_).value<std::string>();
-    if (item_name == "Name") { // name and type are inserted in inspector, so handle differently
-      edit_save = QString::fromStdString(selected.getName());
-    } else if (item_name == "Type") {
-      edit_save = QString::fromStdString(selected.getTypeName());
-    } else {
-      auto new_property = selected.getProperty(item_name);
-      if (model->data(index, selected_).isValid()) {
-        auto new_selected = std::any_cast<Selected>(new_property);
-        model->setData(index, QVariant::fromValue(new_selected), selected_);
-      }
-      edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
+
+    auto new_property = selected.getProperty(item_name);
+    if (model->data(index, selected_).isValid()) {
+      auto new_selected = std::any_cast<Selected>(new_property);
+      model->setData(index, QVariant::fromValue(new_selected), selected_);
     }
+    edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
   }
   model->setData(index, edit_save, Qt::EditRole);
 
@@ -344,12 +339,7 @@ void Inspector::inspect(const Selected& object)
 
   auto editors = object.getEditors();
 
-  Descriptor::Properties all_properties;
-  all_properties.push_back({"Type", object.getTypeName()});
-  all_properties.push_back({"Name", object.getName()});
-
-  Descriptor::Properties properties = object.getProperties();
-  std::copy(properties.begin(), properties.end(), std::back_inserter(all_properties));
+  Descriptor::Properties all_properties = object.getProperties();
 
   for (auto& prop : all_properties) {
     const std::string& name = prop.name;

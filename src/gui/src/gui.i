@@ -442,11 +442,7 @@ const std::string get_selection_property(const std::string& prop_name)
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 35, "Nothing selected");
   }
-  if (prop_name == "Name") {
-    return selected.getName();
-  } else if (prop_name == "Type") {
-    return selected.getTypeName();
-  } else if (prop_name == "bbox") {
+  if (prop_name == "bbox") {
     odb::Rect box;
     if (selected.getBBox(box)) {
       auto block = get_block();

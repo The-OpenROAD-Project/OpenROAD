@@ -722,6 +722,14 @@ void Selected::highlight(Painter& painter,
   return descriptor_->highlight(object_, painter, additional_data_);
 }
 
+Descriptor::Properties Selected::getProperties() const
+{
+  Descriptor::Properties props = descriptor_->getProperties(object_);
+  props.insert(props.begin(), {"Name", getName()});
+  props.insert(props.begin(), {"Type", getTypeName()});
+  return props;
+}
+
 std::string Descriptor::Property::toString(const std::any& value)
 {
   if (auto v = std::any_cast<Selected>(&value)) {
