@@ -264,8 +264,13 @@ void Gui::select(const std::string& type, const std::string& name_filter, bool f
           main_window->addHighlighted(selected, highlight_group);
         }
       }
+
+      // already found the descriptor, so return to exit loop
+      return;
     }
   }
+
+  logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
 void Gui::clearSelections()
