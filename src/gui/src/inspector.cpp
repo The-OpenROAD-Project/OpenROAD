@@ -316,7 +316,7 @@ void Inspector::setDb(odb::dbDatabase* db)
 
 void Inspector::inspect(const Selected& object)
 {
-  // disconnect so announcements can be will not be made about changes
+  // disconnect announcements/signals so they will not be made for the following changes
   // this is needed to stop SelectedItemModel::itemChanged from triggering
   // since the change is related to adding the item and modifying the item
   blockSignals(true);
