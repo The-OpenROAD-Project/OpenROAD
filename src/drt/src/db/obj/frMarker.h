@@ -92,7 +92,7 @@ class frMarker : public frFig
    */
 
   void getBBox(frBox& bboxIn) const override { bboxIn.set(bbox_); }
-
+  const frBox& getBBox() const { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
 
   const std::set<frBlockObject*>& getSrcs() const { return srcs_; }
