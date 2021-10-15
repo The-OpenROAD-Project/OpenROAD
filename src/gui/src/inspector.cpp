@@ -80,7 +80,6 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
                                        QObject* parent) : QItemDelegate(parent),
                                        model_(model),
-                                       db_(nullptr),
                                        background_(model->getEditableColor())
 {
 }
@@ -171,7 +170,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
       auto new_selected = std::any_cast<Selected>(new_property);
       model->setData(index, QVariant::fromValue(new_selected), selected_);
     }
-    edit_save = QString::fromStdString(Descriptor::Property::toString(new_property, db_));
+    edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
   }
   model->setData(index, edit_save, Qt::EditRole);
 
@@ -208,7 +207,6 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       model_(new SelectedItemModel(Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
       layout_(new QVBoxLayout),
       action_layout_(new QVBoxLayout),
-      db_(nullptr),
       selected_(selected),
       selected_itr_(selected.begin()),
       selection_(Selected()),
@@ -216,13 +214,12 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
-      mouse_timer_(nullptr),
-      delegate_(new EditorItemDelegate(model_, this))
+      mouse_timer_(nullptr)
 {
   setObjectName("inspector");  // for settings
   model_->setHorizontalHeaderLabels({"Name", "Value"});
   view_->setModel(model_);
-  view_->setItemDelegate(delegate_);
+  view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -308,12 +305,6 @@ int Inspector::getSelectedIteratorPosition()
   return std::distance(selected_.begin(), selected_itr_);
 }
 
-void Inspector::setDb(odb::dbDatabase* db)
-{
-  db_ = db;
-  delegate_->setDb(db_);
-}
-
 void Inspector::inspect(const Selected& object)
 {
   // disconnect announcements/signals so they will not be made for the following changes
@@ -370,7 +361,7 @@ void Inspector::inspect(const Selected& object)
     } else if (auto selected = std::any_cast<Selected>(&value)) {
       value_item = makeItem(*selected);
     } else {
-      value_item = makeItem(QString::fromStdString(prop.toString(db_)));
+      value_item = makeItem(QString::fromStdString(prop.toString()));
     }
 
     model_->appendRow({name_item, value_item});
@@ -513,7 +504,7 @@ QStandardItem* Inspector::makeItem(const QString& name)
 
 QStandardItem* Inspector::makeItem(const std::any& item)
 {
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item, db_)));
+  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
 }
 
 QStandardItem* Inspector::makeItem(const Selected& selected)

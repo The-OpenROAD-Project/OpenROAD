@@ -136,11 +136,6 @@ class DisplayControlModel : public QStandardItemModel
   DisplayControlModel(QWidget* parent = nullptr);
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
- private:
-  odb::dbDatabase* db_;
 };
 
 // This class shows the user the set of layers & objects that

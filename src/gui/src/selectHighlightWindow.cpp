@@ -91,7 +91,7 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index]->getBBox(bbox);
-    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox, db_)) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   }
   return QVariant();
 }
@@ -177,7 +177,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index].second->getBBox(bbox);
-    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox, db_)) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   } else if (index.column() == 3) {
     return QString("Group ")
            + QString::number(table_data_[row_index].first + 1);

@@ -104,11 +104,8 @@ public:
 
   static EditType getEditorType(const std::any& value);
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
 private:
   SelectedItemModel* model_;
-  odb::dbDatabase* db_;
   const QColor background_;
 };
 
@@ -125,8 +122,6 @@ class Inspector : public QDockWidget
   Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
   const Selected& getSelection() { return selection_; }
-
-  void setDb(odb::dbDatabase* db);
 
  signals:
   void addSelected(const Selected& selected);
@@ -173,7 +168,6 @@ class Inspector : public QDockWidget
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
   QVBoxLayout* action_layout_;
-  odb::dbDatabase* db_;
   const SelectionSet& selected_;
   SelectionSet::iterator selected_itr_;
   Selected selection_;
@@ -182,7 +176,6 @@ class Inspector : public QDockWidget
   QPushButton* button_prev_;
   QLabel* selected_itr_label_;
   std::unique_ptr<QTimer> mouse_timer_;
-  EditorItemDelegate* delegate_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 
