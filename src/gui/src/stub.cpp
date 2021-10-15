@@ -41,6 +41,9 @@ namespace gui {
 
 Gui* Gui::singleton_ = nullptr;
 
+// Used by toString to convert dbu to microns
+int Descriptor::Property::dbu = 0;
+
 Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
              db_(nullptr)

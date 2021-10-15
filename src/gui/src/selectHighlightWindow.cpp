@@ -47,7 +47,7 @@
 namespace gui {
 
 SelectionModel::SelectionModel(const SelectionSet& objs)
-    : db_(nullptr), objs_(objs)
+    : objs_(objs)
 {
 }
 
@@ -113,7 +113,7 @@ QVariant SelectionModel::headerData(int section,
 }
 
 HighlightModel::HighlightModel(const HighlightSet& objs)
-    : db_(nullptr), objs_(objs)
+    : objs_(objs)
 {
 }
 
@@ -475,12 +475,6 @@ void SelectHighlightWindow::zoomInHighlightedItems()
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
-}
-
-void SelectHighlightWindow::setDb(odb::dbDatabase* db)
-{
-  selection_model_.setDb(db);
-  highlight_model_.setDb(db);
 }
 
 }  // namespace gui

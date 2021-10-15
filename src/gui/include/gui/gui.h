@@ -87,6 +87,8 @@ class Descriptor
     std::string name;
     std::any value;
 
+    static int dbu;
+
     static std::string toString(const std::any& /* value */);
     std::string toString() const { return toString(value); };
   };

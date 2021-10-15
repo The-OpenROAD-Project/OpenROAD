@@ -76,6 +76,9 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
+// Used by toString to convert dbu to microns
+int Descriptor::Property::dbu = 0;
+
 Gui* Gui::singleton_ = nullptr;
 
 Gui* Gui::get()
@@ -713,14 +716,20 @@ std::string Descriptor::Property::toString(const std::any& value)
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
-    double to_microns = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getDbUnitsPerMicron();
-    const int precision = std::ceil(std::log10(to_microns));
+    double lef_units = dbu;
+    if (dbu == 0) {
+      lef_units = 1;
+    }
+    const int precision = std::ceil(std::log10(lef_units));
     std::stringstream ss;
     ss << std::fixed << std::setprecision(precision) << "(";
-    ss << v->xMin() / to_microns << ",";
-    ss << v->yMin() / to_microns << "), (";
-    ss << v->xMax() / to_microns << ",";
-    ss << v->yMax() / to_microns << ")";
+    ss << v->xMin() / lef_units << ",";
+    ss << v->yMin() / lef_units << "), (";
+    ss << v->xMax() / lef_units << ",";
+    ss << v->yMax() / lef_units << ")";
+    if (dbu == 0) {
+      ss << " DBU";
+    }
     return ss.str();
   }
 
