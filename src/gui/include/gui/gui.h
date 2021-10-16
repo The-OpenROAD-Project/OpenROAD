@@ -214,6 +214,11 @@ class Selected
     return l_type_info.before(r_type_info);
   }
 
+  friend bool operator==(const Selected& l, const Selected& r)
+  {
+    return !(l < r) && !(r < l);
+  }
+
  private:
   std::any object_;
   void* additional_data_;  // Will only be required for highlighting input nets,
@@ -239,6 +244,14 @@ class Painter
     int g;
     int b;
     int a;
+
+    bool operator==(const Color& other) const
+    {
+      return (r == other.r) &&
+             (g == other.g) &&
+             (b == other.b) &&
+             (a == other.a);
+    }
   };
 
   static inline const Color black{0x00, 0x00, 0x00, 0xff};
