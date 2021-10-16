@@ -323,9 +323,8 @@ void Inspector::inspect(const Selected& object)
 
   selection_ = object;
   // update iterator
-  selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
-    return item < selection_;
-  });
+  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
+  int selected_index = std::distance(selected_.begin(), selected_itr_);
   selected_itr_label_->setText(
       QString::number(getSelectedIteratorPosition() + 1) +
       "/" +
