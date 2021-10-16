@@ -663,20 +663,15 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 }
 
 void Selected::highlight(Painter& painter,
-                         bool select_flag,
-                         int highlight_group) const
+                         const Painter::Color& pen,
+                         const Painter::Color& brush,
+                         bool use_hashed_brush) const
 {
-  if (select_flag) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else if (highlight_group >= 0 && highlight_group < 7) {
-    auto highlight_color = Painter::highlightColors[highlight_group];
-    highlight_color.a = 100;
-    painter.setPen(highlight_color, true);
-    painter.setBrush(highlight_color);
+  painter.setPen(pen, true);
+  if (!use_hashed_brush) {
+    painter.setBrush(brush);
   } else {
-    painter.setPen(Painter::persistHighlight);
-    painter.setBrush(Painter::transparent);
+    painter.setHashedBrush(brush);
   }
 
   return descriptor_->highlight(object_, painter, additional_data_);

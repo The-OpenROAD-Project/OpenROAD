@@ -183,6 +183,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selectedItemChanged(const Selected&)),
           this,
           SLOT(updateSelectedStatus(const Selected&)));
+  connect(inspector_,
+          SIGNAL(selection(const Selected&)),
+          viewer_,
+          SLOT(selection(const Selected&)));
 
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),

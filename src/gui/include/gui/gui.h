@@ -64,168 +64,6 @@ using SelectionSet = std::set<Selected>;
 using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
                                                    // Color is supported for now
 
-// This interface allows the GUI to interact with selected objects of
-// types it knows nothing about.  It can just ask the descriptor to
-// give it information about the foreign object (eg attributes like
-// name).
-class Descriptor
-{
- public:
-  virtual ~Descriptor() = default;
-  virtual std::string getName(std::any object) const = 0;
-  virtual std::string getTypeName() const = 0;
-  virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
-  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
-
-  virtual bool isInst(std::any /* object */) const { return false; }
-  virtual bool isNet(std::any /* object */) const { return false; }
-
-  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
-
-  // A property is a name and a value.
-  struct Property {
-    std::string name;
-    std::any value;
-
-    static int dbu;
-
-    static std::string toString(const std::any& /* value */);
-    std::string toString() const { return toString(value); };
-  };
-  using Properties = std::vector<Property>;
-
-  // An action is a name and a callback function, the function should return
-  // the next object to select (when deleting the object just return Selected())
-  using ActionCallback = std::function<Selected(void)>;
-  struct Action {
-    std::string name;
-    ActionCallback callback;
-  };
-  using Actions = std::vector<Action>;
-
-  // An editor is a callback function and a list of possible values (this can be empty),
-  // the name of the editor should match the property it modifies
-  // the callback should return true if the edit was successful, otherwise false
-  struct EditorOption {
-    std::string name;
-    std::any value;
-  };
-  using EditorCallback = std::function<bool(std::any)>;
-  struct Editor {
-    EditorCallback callback;
-    std::vector<EditorOption> options;
-  };
-  using Editors = std::map<std::string, Editor>;
-
-  virtual Properties getProperties(std::any object) const = 0;
-  virtual Actions getActions(std::any /* object */) const { return Actions(); }
-  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
-
-  virtual Selected makeSelected(std::any object,
-                                void* additional_data) const = 0;
-
-  virtual bool lessThan(std::any l, std::any r) const = 0;
-
-  static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
-  {
-    return {func, options};
-  }
-  static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
-
-protected:
-  // The caller (Selected) will pre-configure the Painter's pen
-  // and brush before calling.
-  virtual void highlight(std::any object,
-                         Painter& painter,
-                         void* additional_data = nullptr) const = 0;
-
-  friend class Selected;
-};
-
-// An object selected in the gui.  The object is stored as a
-// std::any to allow any client objects to be stored.  The descriptor
-// is the API for the object as described above.  This doesn't
-// require the client object to use inheritance from an interface.
-class Selected
-{
- public:
-  // Null case
-  Selected() : additional_data_(nullptr), descriptor_(nullptr) {}
-
-  Selected(std::any object,
-           const Descriptor* descriptor,
-           void* additional_data = nullptr)
-      : object_(object),
-        additional_data_(additional_data),
-        descriptor_(descriptor)
-  {
-  }
-
-  std::string getName() const { return descriptor_->getName(object_); }
-  std::string getTypeName() const { return descriptor_->getTypeName(object_); }
-  bool getBBox(odb::Rect& bbox) const
-  {
-    return descriptor_->getBBox(object_, bbox);
-  }
-
-  bool isInst() const { return descriptor_->isInst(object_); }
-  bool isNet() const { return descriptor_->isNet(object_); }
-  std::any getObject() const { return object_; }
-
-  // If the select_flag is false, the drawing will happen in highlight mode.
-  // Highlight shapes are persistent which will not get removed from
-  // highlightSet, if the user clicks on layout view as in case of selectionSet
-  void highlight(Painter& painter,
-                 bool select_flag = true,
-                 int highlight_group = 0) const;
-
-  Descriptor::Properties getProperties() const;
-
-  std::any getProperty(const std::string& name) const
-  {
-    for (auto& [prop, value] : getProperties()) {
-      if (prop == name) {
-        return value;
-      }
-    }
-    return std::any();
-  }
-
-  Descriptor::Actions getActions() const
-  {
-    return descriptor_->getActions(object_);
-  }
-
-  Descriptor::Editors getEditors() const
-  {
-    return descriptor_->getEditors(object_);
-  }
-
-  operator bool() const { return object_.has_value(); }
-
-  // For SelectionSet
-  friend bool operator<(const Selected& l, const Selected& r)
-  {
-    auto& l_type_info = l.object_.type();
-    auto& r_type_info = r.object_.type();
-    if (l_type_info == r_type_info) {
-      return l.descriptor_->lessThan(l.object_, r.object_);
-    }
-    return l_type_info.before(r_type_info);
-  }
-
-  friend bool operator==(const Selected& l, const Selected& r)
-  {
-    return !(l < r) && !(r < l);
-  }
-
- private:
-  std::any object_;
-  void* additional_data_;  // Will only be required for highlighting input nets,
-                           // in which case it will store the input instTerm
-  const Descriptor* descriptor_;
-};
-
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
 // the clients.  Clients will only deal with this API and not Qt itself,
@@ -357,6 +195,169 @@ class Painter
  private:
   Options* options_;
   double pixels_per_dbu_;
+};
+
+// This interface allows the GUI to interact with selected objects of
+// types it knows nothing about.  It can just ask the descriptor to
+// give it information about the foreign object (eg attributes like
+// name).
+class Descriptor
+{
+ public:
+  virtual ~Descriptor() = default;
+  virtual std::string getName(std::any object) const = 0;
+  virtual std::string getTypeName() const = 0;
+  virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
+  virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
+
+  virtual bool isInst(std::any /* object */) const { return false; }
+  virtual bool isNet(std::any /* object */) const { return false; }
+
+  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+
+  // A property is a name and a value.
+  struct Property {
+    std::string name;
+    std::any value;
+
+    static int dbu;
+
+    static std::string toString(const std::any& /* value */);
+    std::string toString() const { return toString(value); };
+  };
+  using Properties = std::vector<Property>;
+
+  // An action is a name and a callback function, the function should return
+  // the next object to select (when deleting the object just return Selected())
+  using ActionCallback = std::function<Selected(void)>;
+  struct Action {
+    std::string name;
+    ActionCallback callback;
+  };
+  using Actions = std::vector<Action>;
+
+  // An editor is a callback function and a list of possible values (this can be empty),
+  // the name of the editor should match the property it modifies
+  // the callback should return true if the edit was successful, otherwise false
+  struct EditorOption {
+    std::string name;
+    std::any value;
+  };
+  using EditorCallback = std::function<bool(std::any)>;
+  struct Editor {
+    EditorCallback callback;
+    std::vector<EditorOption> options;
+  };
+  using Editors = std::map<std::string, Editor>;
+
+  virtual Properties getProperties(std::any object) const = 0;
+  virtual Actions getActions(std::any /* object */) const { return Actions(); }
+  virtual Editors getEditors(std::any /* object */) const { return Editors(); }
+
+  virtual Selected makeSelected(std::any object,
+                                void* additional_data) const = 0;
+
+  virtual bool lessThan(std::any l, std::any r) const = 0;
+
+  static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
+  {
+    return {func, options};
+  }
+  static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
+
+protected:
+  // The caller (Selected) will pre-configure the Painter's pen
+  // and brush before calling.
+  virtual void highlight(std::any object,
+                         Painter& painter,
+                         void* additional_data = nullptr) const = 0;
+
+  friend class Selected;
+};
+
+// An object selected in the gui.  The object is stored as a
+// std::any to allow any client objects to be stored.  The descriptor
+// is the API for the object as described above.  This doesn't
+// require the client object to use inheritance from an interface.
+class Selected
+{
+ public:
+  // Null case
+  Selected() : additional_data_(nullptr), descriptor_(nullptr) {}
+
+  Selected(std::any object,
+           const Descriptor* descriptor,
+           void* additional_data = nullptr)
+      : object_(object),
+        additional_data_(additional_data),
+        descriptor_(descriptor)
+  {
+  }
+
+  std::string getName() const { return descriptor_->getName(object_); }
+  std::string getTypeName() const { return descriptor_->getTypeName(object_); }
+  bool getBBox(odb::Rect& bbox) const
+  {
+    return descriptor_->getBBox(object_, bbox);
+  }
+
+  bool isInst() const { return descriptor_->isInst(object_); }
+  bool isNet() const { return descriptor_->isNet(object_); }
+  std::any getObject() const { return object_; }
+
+  // If the select_flag is false, the drawing will happen in highlight mode.
+  // Highlight shapes are persistent which will not get removed from
+  // highlightSet, if the user clicks on layout view as in case of selectionSet
+  void highlight(Painter& painter,
+                 const Painter::Color& pen = Painter::persistHighlight,
+                 const Painter::Color& brush = Painter::transparent,
+                 bool use_hashed_brush = false) const;
+
+  Descriptor::Properties getProperties() const;
+
+  std::any getProperty(const std::string& name) const
+  {
+    for (auto& [prop, value] : getProperties()) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
+  }
+
+  Descriptor::Actions getActions() const
+  {
+    return descriptor_->getActions(object_);
+  }
+
+  Descriptor::Editors getEditors() const
+  {
+    return descriptor_->getEditors(object_);
+  }
+
+  operator bool() const { return object_.has_value(); }
+
+  // For SelectionSet
+  friend bool operator<(const Selected& l, const Selected& r)
+  {
+    auto& l_type_info = l.object_.type();
+    auto& r_type_info = r.object_.type();
+    if (l_type_info == r_type_info) {
+      return l.descriptor_->lessThan(l.object_, r.object_);
+    }
+    return l_type_info.before(r_type_info);
+  }
+
+  friend bool operator==(const Selected& l, const Selected& r)
+  {
+    return !(l < r) && !(r < l);
+  }
+
+ private:
+  std::any object_;
+  void* additional_data_;  // Will only be required for highlighting input nets,
+                           // in which case it will store the input instTerm
+  const Descriptor* descriptor_;
 };
 
 // This is an interface for classes that wish to be called to render

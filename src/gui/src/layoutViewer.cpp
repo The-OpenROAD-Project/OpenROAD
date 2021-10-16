@@ -392,6 +392,7 @@ LayoutViewer::LayoutViewer(
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       snap_edge_(),
+      inspector_selection_(Selected()),
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
@@ -1423,6 +1424,12 @@ void LayoutViewer::drawRows(dbBlock* block,
   }
 }
 
+void LayoutViewer::selection(const Selected& selection)
+{
+  inspector_selection_ = selection;
+  update();
+}
+
 void LayoutViewer::drawSelected(Painter& painter)
 {
   if (!options_->areSelectedVisible()) {
@@ -1430,7 +1437,15 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 
   for (auto& selected : selected_) {
-    selected.highlight(painter);
+    auto brush = Painter::transparent;
+
+    if (selected_.size() > 1 &&
+        inspector_selection_ == selected) {
+      brush = Painter::highlight;
+      brush.a = 50;
+    }
+
+    selected.highlight(painter, Painter::highlight, brush);
   }
 }
 
@@ -1438,8 +1453,15 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 {
   int highlight_group = 0;
   for (auto& highlight_set : highlighted_) {
-    for (auto& highlighted : highlight_set)
-      highlighted.highlight(painter, false /* select_flag*/, highlight_group);
+    auto highlight_color = Painter::highlightColors[highlight_group];
+    highlight_color.a = 100;
+
+    for (auto& highlighted : highlight_set) {
+      highlighted.highlight(painter,
+                            highlight_color,
+                            highlight_color);
+    }
+
     highlight_group++;
   }
 }

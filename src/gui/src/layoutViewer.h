@@ -226,6 +226,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void selectArea(const odb::Rect& area, bool append);
 
+  void selection(const Selected& selection);
+
  private:
   struct Boxes
   {
@@ -358,6 +360,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   bool snap_edge_showing_;
   Edge snap_edge_;
+
+  //
+  Selected inspector_selection_;
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
