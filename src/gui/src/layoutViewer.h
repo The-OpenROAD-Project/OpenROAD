@@ -227,6 +227,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void selectArea(const odb::Rect& area, bool append);
 
   void selection(const Selected& selection);
+  void selectionFocus(const Selected& focus, const QColor& color);
 
  private:
   struct Boxes
@@ -361,8 +362,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool snap_edge_showing_;
   Edge snap_edge_;
 
-  //
+  // keeps track of inspector selection and focus items
   Selected inspector_selection_;
+  struct Focus {
+    Selected selection;
+    Painter::Color color;
+  };
+  std::unique_ptr<Focus> inspector_focus_;
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;

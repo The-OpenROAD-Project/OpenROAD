@@ -187,6 +187,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selection(const Selected&)),
           viewer_,
           SLOT(selection(const Selected&)));
+  connect(inspector_,
+          SIGNAL(focus(const Selected&, const QColor&)),
+          viewer_,
+          SLOT(selectionFocus(const Selected&, const QColor&)));
 
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),

@@ -264,6 +264,12 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(pressed()),
           this,
           SLOT(selectNext()));
+
+  view_->setMouseTracking(true);
+  connect(view_,
+          SIGNAL(entered(const QModelIndex&)),
+          this,
+          SLOT(focusIndex(const QModelIndex&)));
 }
 
 int Inspector::selectNext()
@@ -445,6 +451,25 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
     item->setEditable(true);
     // start editing
     view_->edit(index);
+  }
+}
+
+void Inspector::focusIndex(const QModelIndex& index)
+{
+  if (index.column() == 0) {
+    return;
+  }
+
+  QStandardItem* item = model_->itemFromIndex(index);
+  QVariant item_data = item->data(EditorItemDelegate::selected_);
+
+  const QColor& color = model_->getSelectableColor();
+
+  if (item_data.isValid()) {
+    // emit the selected item as something to focus on
+    emit focus(item_data.value<Selected>(), color);
+  } else {
+    emit focus(Selected(), color);
   }
 }
 

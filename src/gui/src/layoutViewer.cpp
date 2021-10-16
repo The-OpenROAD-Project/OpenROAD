@@ -393,6 +393,7 @@ LayoutViewer::LayoutViewer(
       snap_edge_showing_(false),
       snap_edge_(),
       inspector_selection_(Selected()),
+      inspector_focus_(nullptr),
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
@@ -1427,6 +1428,18 @@ void LayoutViewer::drawRows(dbBlock* block,
 void LayoutViewer::selection(const Selected& selection)
 {
   inspector_selection_ = selection;
+  inspector_focus_ = nullptr; // reset focus
+  update();
+}
+
+void LayoutViewer::selectionFocus(const Selected& focus, const QColor& color)
+{
+  if (focus) {
+    Painter::Color paint_color{color.red(), color.green(), color.blue(), color.alpha()};
+    inspector_focus_ = std::make_unique<Focus>(Focus{focus, paint_color});
+  } else {
+    inspector_focus_ = nullptr;
+  }
   update();
 }
 
@@ -1439,13 +1452,24 @@ void LayoutViewer::drawSelected(Painter& painter)
   for (auto& selected : selected_) {
     auto brush = Painter::transparent;
 
+    bool hashed_brush = false;
+
     if (selected_.size() > 1 &&
         inspector_selection_ == selected) {
       brush = Painter::highlight;
-      brush.a = 50;
+      brush.a = 100;
+
+      hashed_brush = true;
     }
 
-    selected.highlight(painter, Painter::highlight, brush);
+    selected.highlight(painter, Painter::highlight, brush, hashed_brush);
+  }
+
+  if (inspector_focus_ != nullptr) {
+    inspector_focus_->selection.highlight(painter,
+                                          inspector_focus_->color,
+                                          inspector_focus_->color,
+                                          true);
   }
 }
 
