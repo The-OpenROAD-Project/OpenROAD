@@ -665,14 +665,10 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 void Selected::highlight(Painter& painter,
                          const Painter::Color& pen,
                          const Painter::Color& brush,
-                         bool use_hashed_brush) const
+                         const Painter::Brush& brush_style) const
 {
   painter.setPen(pen, true);
-  if (!use_hashed_brush) {
-    painter.setBrush(brush);
-  } else {
-    painter.setHashedBrush(brush);
-  }
+  painter.setBrush(brush, brush_style);
 
   return descriptor_->highlight(object_, painter, additional_data_);
 }

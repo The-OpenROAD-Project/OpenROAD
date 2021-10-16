@@ -148,9 +148,35 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(color, brush_pattern));
   }
 
-  void setBrush(const Color& color) override
+  void setBrush(const Color& color, const Brush& style = Brush::SOLID) override
   {
-    painter_->setBrush(QColor(color.r, color.g, color.b, color.a));
+    const QColor qcolor(color.r, color.g, color.b, color.a);
+
+    Qt::BrushStyle brush_pattern;
+    if (color == Painter::transparent) {
+      // if color is transparent, make it no brush
+      brush_pattern = Qt::NoBrush;
+    } else {
+      switch (style) {
+      case NONE:
+        brush_pattern = Qt::NoBrush;
+        break;
+      case SOLID:
+        brush_pattern = Qt::SolidPattern;
+        break;
+      case DIAGONAL:
+        brush_pattern = Qt::DiagCrossPattern;
+        break;
+      case CROSS:
+        brush_pattern = Qt::CrossPattern;
+        break;
+      case DOTS:
+        brush_pattern = Qt::Dense6Pattern;
+        break;
+      }
+    }
+
+    painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
   void drawGeomShape(const odb::GeomShape* shape) override
   {
@@ -187,12 +213,6 @@ class GuiPainter : public Painter
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
   using Painter::drawLine;
-
-  void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
-  void setHashedBrush(const Color& color) override
-  {
-    painter_->setBrush(QBrush(QColor(color.r, color.g, color.b, color.a), Qt::DiagCrossPattern));
-  }
 
   void drawCircle(int x, int y, int r) override
   {
@@ -1451,25 +1471,24 @@ void LayoutViewer::drawSelected(Painter& painter)
 
   for (auto& selected : selected_) {
     auto brush = Painter::transparent;
-
-    bool hashed_brush = false;
+    auto brush_style = Painter::Brush::NONE;
 
     if (selected_.size() > 1 &&
         inspector_selection_ == selected) {
       brush = Painter::highlight;
       brush.a = 100;
 
-      hashed_brush = true;
+      brush_style = Painter::Brush::DIAGONAL;
     }
 
-    selected.highlight(painter, Painter::highlight, brush, hashed_brush);
+    selected.highlight(painter, Painter::highlight, brush, brush_style);
   }
 
   if (inspector_focus_ != nullptr) {
     inspector_focus_->selection.highlight(painter,
                                           inspector_focus_->color,
                                           inspector_focus_->color,
-                                          true);
+                                          Painter::Brush::DOTS);
   }
 }
 

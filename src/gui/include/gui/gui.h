@@ -144,7 +144,14 @@ class Painter
   virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
 
   // Set the brush to whatever the user has chosen for this layer
-  virtual void setBrush(const Color& color) = 0;
+  enum Brush {
+    NONE,
+    SOLID,
+    DIAGONAL,
+    CROSS,
+    DOTS
+  };
+  virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
 
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
@@ -185,9 +192,6 @@ class Painter
   {
     drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
   }
-
-  virtual void setTransparentBrush() = 0;
-  virtual void setHashedBrush(const Color& color) = 0;
 
   inline double getPixelsPerDBU() { return pixels_per_dbu_; }
   inline Options* getOptions() { return options_; }
@@ -311,7 +315,7 @@ class Selected
   void highlight(Painter& painter,
                  const Painter::Color& pen = Painter::persistHighlight,
                  const Painter::Color& brush = Painter::transparent,
-                 bool use_hashed_brush = false) const;
+                 const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
 
   Descriptor::Properties getProperties() const;
 

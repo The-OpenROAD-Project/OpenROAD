@@ -393,7 +393,7 @@ void DRCWidget::drawObjects(Painter& painter)
   brush_color.a = 50;
 
   painter.setPen(pen_color, true, 0);
-  painter.setHashedBrush(brush_color);
+  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
   for (const auto& violation : violations_) {
     const odb::Rect& box = violation->getBBox();
     if (std::max(box.dx(), box.dy()) < min_box) {
