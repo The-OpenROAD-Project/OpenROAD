@@ -3331,7 +3331,9 @@ class extListWire {
       uint _level;
       uint _topLevel;
       int DB_FACTOR;
+  void set(int shapeId, dbShape& s, int units);
   extListWire(int shapeId, dbShape &s, int units);
+  extListWire();
   ~extListWire();
   uint level() { return _level;};
   inline bool isITermSrc(int n) { return _itermFlag_src ? n==_src : false;};
@@ -3411,10 +3413,12 @@ class extListNode {
   dbCapNode *_nextCapNode;
   bool _visited;
 
-  uint shapeId;
+  // uint shapeId;
 
   public:
+    extListNode() {}
     extListNode(dbRSeg *rc, extListNode *next, dbCapNode *node);
+    void set(dbRSeg *rc, extListNode *next, dbCapNode *node);
     ~extListNode(){
       for (extListNode *e= this; e!=NULL; ) {
           extListNode *f= e;
@@ -3446,10 +3450,15 @@ private:
   int _sourceIndex;
  
   FILE *_connFP;
+  bool _debugAlloc;
+  AthPool<extListNode>* _listNodePoolPtr;
 public: 
   bool _debug;
-  extCapNodeHash(uint maxNodeCnt);
+  
+  extCapNodeHash(uint maxNodeCnt, bool debugAlloc);
   void alloc(uint n);
+  extListNode* alloc();
+  void dealloc(extListNode* a);
   void init(dbNet *net, extDebugNet *debugNet, FILE *fp);
   void getMin(uint n) { _min= _min>n ? n : _min;};
   void getMax(uint n) { _max= _max<n ? n : _max;};
@@ -3463,7 +3472,6 @@ public:
   void checkUmarkedTerms();
   uint countUmarkedTerms();
   void resetVisited();
-
 };
 class extDebugNet {
 private:
@@ -3476,14 +3484,16 @@ private:
   uint _levelCnt;
   Ath__array1D<extListWire*>* _shapes;
   HashNode *_hashNodeRC;
+  bool _debugAlloc;
   AthPool<extListWire>* _listWirePoolPtr;
 
  public:
   bool _debug;
   bool _lef_res;
-  extDebugNet(odb::dbNet *net, odb::dbBlock *_block);
+  extDebugNet(odb::dbNet *net, odb::dbBlock *_block, bool debugAlloc=false);
   void setNet(odb::dbNet *net) {_net=net; };
-  
+  extListWire* alloc();
+  void dealloc(extListWire *a);
 
   // extDebugConn
   FILE* OpenConnFile(const char* name);

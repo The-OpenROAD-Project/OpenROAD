@@ -72,23 +72,25 @@ using odb::ISdb;
 using odb::Rect;
 using odb::ZPtr;
 
-extDebugNet::extDebugNet(dbNet* net, dbBlock* block)
+extDebugNet::extDebugNet(dbNet* net, dbBlock* block, bool debugAlloc)
 {
   _debug = false;
   _net = net;
   _block = block;
-  _nodeMap = new extCapNodeHash(100000);
+  _nodeMap = new extCapNodeHash(100000, debugAlloc);
 
   _levelCnt = 32;
   _rects = new Ath__array1D<extListWire*>*[_levelCnt];
   _vias = new Ath__array1D<extListWire*>*[_levelCnt];
   for (int ii = 0; ii < _levelCnt; ii++) {
     _rects[ii] = new Ath__array1D<extListWire*>(8);
-    _vias[ii] = new Ath__array1D<extListWire*>(4);
+    _vias[ii] = new Ath__array1D<extListWire*>(8);
   }
   _shapes = new Ath__array1D<extListWire*>(4096);
   _hashNodeRC = new HashNode(10000000, 4000, 1000000);
-  // _listWirePoolPtr= new AthPool<extListWire>(false, 4096);
+  _listWirePoolPtr= new AthPool<extListWire>(false, 4096);
+
+  _debugAlloc= debugAlloc;
 }
 bool extDebugNet::writeCapNode(uint capNodeId)
 {
@@ -257,6 +259,16 @@ void extDebugNet::printShapes(bool dbunits)
     printShape(s, shapeId, dbunits);
   }
 }
+extListWire* extDebugNet::alloc()
+{
+  extListWire* a = NULL;
+  if (_debugAlloc)
+    a= new extListWire();
+  else 
+    a= _listWirePoolPtr->alloc();
+
+  return a;
+}  
 void extDebugNet::getRects()
 {
   dbWire* wire = _net->getWire();
@@ -264,13 +276,14 @@ void extDebugNet::getRects()
   dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     int shapeId = shapes.getShapeId();
-
-    extListWire* a = new extListWire(shapeId, s, _block->getDbUnitsPerMicron());
+    extListWire* a= alloc();
+    a->set(shapeId, s, _block->getDbUnitsPerMicron());
     if (a->_topLevel == 0)
       _rects[a->level()]->add(a);
     else
       _vias[a->level()]->add(a);
-    _shapes->add(a);
+
+  _shapes->add(a);
   }
   printViasWires(
       "\n------------------------------ Wires and Vias "
@@ -995,11 +1008,6 @@ bool extListWire::connectWires(extListWire* w, uint& nodeCnt)
     return false;
   // TODO: overlap unit rects around lo and hi coords
   if (_src == 0) {
-    /*
-    Rect* lo = new Rect(r1);
-    lo->set_xhi(loCoord.getX() + width / 2);
-    lo->set_yhi(loCoord.getY() + width / 2); 
-    */
     int x1= r1.low().getX();
     int y1= r1.low().getY();
     Rect lo(x1, y1, x1+width/2, y1+width/2);
@@ -1013,11 +1021,6 @@ bool extListWire::connectWires(extListWire* w, uint& nodeCnt)
     }
     return false;
   } else if (_dst == 0) {
-    /*
-    Rect* hi = new Rect(r1);
-    hi->set_xhi(hiCoord.getX() - width / 2);
-    hi->set_yhi(hiCoord.getY() - width / 2);
-    */
     int x= r1.high().getX();
     int y= r1.high().getY();
     Rect hi(x-width/2, y-width/2, x, y);
@@ -1422,7 +1425,14 @@ void extListWire::printRect(FILE* _connFP, bool dbFactor)
             term);
   }
 }
+extListWire::extListWire()
+{
+}
 extListWire::extListWire(int shapeId, dbShape& s, int units)
+{
+  set(shapeId, s, units);
+}
+void extListWire::set(int shapeId, dbShape& s, int units)
 {
   _btermFlag_src = false;
   _btermFlag_dst = false;
@@ -1432,7 +1442,6 @@ extListWire::extListWire(int shapeId, dbShape& s, int units)
   _shapeId = shapeId;
   _src = 0;
   _dst = 0;
-
   _level = 0;
   _topLevel = 0;
 
@@ -1445,7 +1454,6 @@ extListWire::extListWire(int shapeId, dbShape& s, int units)
       // width = tvia->getBottomLayer()->getWidth();
       // res = tvia->getResistance();
       _viaName = tvia->getConstName();
-
     } else {
       dbVia* bvia = s.getVia();
       if (bvia != NULL) {
@@ -1458,11 +1466,20 @@ extListWire::extListWire(int shapeId, dbShape& s, int units)
     }
   } else {
     _level = s.getTechLayer()->getRoutingLevel();
-    _viaName = "   ";
+    _viaName = "";
   }
   Rect r;
   s.getBox(r);
   _rect = new Rect(r);
+}
+void extDebugNet::dealloc(extListWire *a)
+{
+    if (_debugAlloc)
+      delete a;
+    else {
+      delete a->_rect;
+      _listWirePoolPtr->free(a);
+    }
 }
 extListWire::~extListWire()
 {
@@ -1554,7 +1571,7 @@ uint extDebugNet::checkNet(int debug_net_id)
 
   for (uint ii = 0; ii < _shapes->getCnt(); ii++) {
     extListWire* a = _shapes->get(ii);
-    delete a;
+    dealloc(a);
   }
 
   dbSet<dbRSeg> rSet = _net->getRSegs();
@@ -1607,12 +1624,15 @@ void extCapNodeHash::alloc(uint n)
   for (uint ii = 0; ii < n; ii++)
     _table[ii] = NULL;
 }
-extCapNodeHash::extCapNodeHash(uint n)
+extCapNodeHash::extCapNodeHash(uint n, bool debugAlloc)
 {
   _maxSize = n;
   _table = new extListNode*[n];
   for (uint ii = 0; ii < n; ii++)
     _table[ii] = NULL;
+  
+   _listNodePoolPtr= new AthPool<extListNode>(false, 4096);
+   _debugAlloc= debugAlloc;
 }
 void extCapNodeHash::init(dbNet* net, extDebugNet* debugNet, FILE* fp)
 {
@@ -1688,17 +1708,6 @@ void extCapNodeHash::resetVisited()
     extListNode* e = _table[ii];
     e->resetVisited();
   }
-}
-extListNode::extListNode(dbRSeg* rc, extListNode* next, dbCapNode* node)
-{
-  _rc = rc;
-  _next = next;
-  _capNode = node;
-  _nextCapNode = _rc->getTargetCapNode();
-  if (_nextCapNode == _capNode) {
-    _nextCapNode = _rc->getSourceCapNode();
-  }
-  _visited = false;
 }
 void extCapNodeHash::unmarkAllTerms()
 {
@@ -1828,12 +1837,52 @@ void extCapNodeHash::dfs(int n)
     dfs(ii);
   }
 }
+extListNode::extListNode(dbRSeg* rc, extListNode* next, dbCapNode* node)
+{
+   set(rc, next, node);
+}
+void extListNode::set(dbRSeg* rc, extListNode* next, dbCapNode* node)
+{
+  _rc = rc;
+  _next = next;
+  _capNode = node;
+  _nextCapNode = _rc->getTargetCapNode();
+  if (_nextCapNode == _capNode) {
+    _nextCapNode = _rc->getSourceCapNode();
+  }
+  _visited = false;
+}
+extListNode* extCapNodeHash::alloc() 
+{
+  extListNode *a= NULL;
+  if (_debugAlloc)
+    a= new extListNode();
+  else
+    a= _listNodePoolPtr->alloc();
+  
+  return a;
+}
+void extCapNodeHash::dealloc(extListNode* a)
+{
+  if (_debugAlloc) {
+    delete a;
+  } else {
+      for (extListNode *e= a; e!=NULL; ) {
+          extListNode *f= e;
+          e= e->getNext();
+          _listNodePoolPtr->free(e);
+      }
+    }
+}
 extListNode* extCapNodeHash::addNode(uint n1, dbRSeg* rc, dbCapNode* node)
 {
   if (node->getNode() == 0)
     return NULL;
   int ii = getIndex(n1);
-  extListNode* e = new extListNode(rc, _table[ii], node);
+  // extListNode* e = new extListNode(rc, _table[ii], node);
+  extListNode* e = alloc();
+  e->set(rc, _table[ii], node);
+  
   _table[ii] = e;
   if (e->getNode()->isSourceTerm())
     _sourceIndex = ii;
