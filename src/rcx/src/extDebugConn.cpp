@@ -77,7 +77,7 @@ extDebugNet::extDebugNet(dbNet* net, dbBlock* block, bool debugAlloc)
   _debug = false;
   _net = net;
   _block = block;
-  _nodeMap = new extCapNodeHash(100000, debugAlloc);
+  _nodeMap = new extCapNodeHash(1000000, debugAlloc);
 
   _levelCnt = 32;
   _rects = new Ath__array1D<extListWire*>*[_levelCnt];
@@ -1619,8 +1619,8 @@ uint extDebugNet::CheckConnectivity(bool verbose)
 }
 void extCapNodeHash::alloc(uint n)
 {
-  _maxSize = n;
-  _table = new extListNode*[n];
+  _maxSize += 100000;
+  _table = new extListNode*[_maxSize];
   for (uint ii = 0; ii < n; ii++)
     _table[ii] = NULL;
 }
@@ -1661,8 +1661,8 @@ void extCapNodeHash::init(dbNet* net, extDebugNet* debugNet, FILE* fp)
   _count = _max - _min + 1;
 
   int cnt = _count;
-  if (_count > _maxSize)
-    cnt = _maxSize;
+  if (_count >= _maxSize) 
+    alloc(_count);
 
   for (uint ii = 0; ii < cnt; ii++) {
     if (_table[ii] != NULL) {
@@ -1670,9 +1670,6 @@ void extCapNodeHash::init(dbNet* net, extDebugNet* debugNet, FILE* fp)
       _table[ii] = NULL;
     }
   }
-  if (_count >= _maxSize)
-    alloc(_count);
-
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     dbRSeg* rc = *rc_itr;
     uint n1 = rc->getSourceNode();
@@ -1879,7 +1876,6 @@ extListNode* extCapNodeHash::addNode(uint n1, dbRSeg* rc, dbCapNode* node)
   if (node->getNode() == 0)
     return NULL;
   int ii = getIndex(n1);
-  // extListNode* e = new extListNode(rc, _table[ii], node);
   extListNode* e = alloc();
   e->set(rc, _table[ii], node);
   
