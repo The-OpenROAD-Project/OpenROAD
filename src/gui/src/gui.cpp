@@ -35,6 +35,8 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -43,6 +45,7 @@
 #include "defin.h"
 #include "displayControls.h"
 #include "geom.h"
+#include "inspector.h"
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "lefin.h"
@@ -72,6 +75,9 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
+
+// Used by toString to convert dbu to microns
+int Descriptor::Property::dbu = 0;
 
 Gui* Gui::singleton_ = nullptr;
 
@@ -225,6 +231,21 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   SelectionSet selection_set;
   selection_set.insert(makeSelected(net));
   main_window->addHighlighted(selection_set, highlight_group);
+}
+
+void Gui::selectAt(const odb::Rect& area, bool append)
+{
+  main_window->getLayoutViewer()->selectArea(area, append);
+}
+
+int Gui::selectNext()
+{
+  return main_window->getInspector()->selectNext();
+}
+
+int Gui::selectPrevious()
+{
+  return main_window->getInspector()->selectPrevious();
 }
 
 std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
@@ -479,6 +500,11 @@ void Gui::unregisterDescriptor(const std::type_info& type)
   descriptors_.erase(type);
 }
 
+const Selected& Gui::getInspectorSelection()
+{
+  return main_window->getInspector()->getSelection();
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {
@@ -656,9 +682,26 @@ void Selected::highlight(Painter& painter,
   return descriptor_->highlight(object_, painter, additional_data_);
 }
 
+Descriptor::Properties Selected::getProperties() const
+{
+  Descriptor::Properties props = descriptor_->getProperties(object_);
+  props.insert(props.begin(), {"Name", getName()});
+  props.insert(props.begin(), {"Type", getTypeName()});
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    props.push_back({"BBox", bbox});
+  }
+
+  return props;
+}
+
 std::string Descriptor::Property::toString(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (auto v = std::any_cast<Selected>(&value)) {
+    if (*v) {
+      return v->getName();
+    }
+  } else if (auto v = std::any_cast<const char*>(&value)) {
     return *v;
   } else if (auto v = std::any_cast<const std::string>(&value)) {
     return *v;
@@ -672,9 +715,25 @@ std::string Descriptor::Property::toString(const std::any& value)
     return QString::number(*v).toStdString();
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
-  } else {
-    return "<unknown>";
+  } else if (auto v = std::any_cast<odb::Rect>(&value)) {
+    double lef_units = dbu;
+    if (dbu == 0) {
+      lef_units = 1;
+    }
+    const int precision = std::ceil(std::log10(lef_units));
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(precision) << "(";
+    ss << v->xMin() / lef_units << ",";
+    ss << v->yMin() / lef_units << "), (";
+    ss << v->xMax() / lef_units << ",";
+    ss << v->yMax() / lef_units << ")";
+    if (dbu == 0) {
+      ss << " DBU";
+    }
+    return ss.str();
   }
+
+  return "<unknown>";
 }
 
 }  // namespace gui

@@ -87,6 +87,8 @@ class Descriptor
     std::string name;
     std::any value;
 
+    static int dbu;
+
     static std::string toString(const std::any& /* value */);
     std::string toString() const { return toString(value); };
   };
@@ -123,16 +125,6 @@ class Descriptor
                                 void* additional_data) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
-
-  std::any getProperty(std::any object, const std::string& name) const
-  {
-    for (auto& [prop, value] : getProperties(object)) {
-      if (prop == name) {
-        return value;
-      }
-    }
-    return std::any();
-  }
 
   static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
   {
@@ -187,14 +179,16 @@ class Selected
                  bool select_flag = true,
                  int highlight_group = 0) const;
 
-  Descriptor::Properties getProperties() const
-  {
-    return descriptor_->getProperties(object_);
-  }
+  Descriptor::Properties getProperties() const;
 
   std::any getProperty(const std::string& name) const
   {
-    return descriptor_->getProperty(object_, name);
+    for (auto& [prop, value] : getProperties()) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
   }
 
   Descriptor::Actions getActions() const
@@ -447,6 +441,10 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
+  void selectAt(const odb::Rect& area, bool append = true);
+  int selectNext();
+  int selectPrevious();
+
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
   void deleteRuler(const std::string& name);
 
@@ -530,6 +528,8 @@ class Gui
   bool isContinueAfterClose() { return continue_after_close_; }
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
+
+  const Selected& getInspectorSelection();
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }

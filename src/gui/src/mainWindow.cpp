@@ -260,6 +260,14 @@ MainWindow::MainWindow(QWidget* parent)
             }
           });
 
+  connect(this,
+          &MainWindow::designLoaded,
+          [](odb::dbBlock* block) {
+            if (block != nullptr) {
+              Descriptor::Property::dbu = block->getDbUnitsPerMicron();
+            }
+          });
+
   createActions();
   createToolbars();
   createMenus();
@@ -294,7 +302,6 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   db_ = db;
   controls_->setDb(db_);
   viewer_->setDb(db_);
-  selection_browser_->setDb(db_);
 }
 
 void MainWindow::init(sta::dbSta* sta)
