@@ -41,6 +41,7 @@
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QTimer>
 #include <map>
 #include <memory>
 #include <vector>
@@ -375,6 +376,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   utl::Logger* logger_;
   bool design_loaded_;
+
+  // Timer used to handle blinking objects in the layout
+  QTimer blinking_timer_;
+  bool blink_on_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

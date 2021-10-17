@@ -417,12 +417,22 @@ LayoutViewer::LayoutViewer(
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
+      blinking_timer_(),
+      blink_on_(false),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
+
+  // setup blinking timer to 750ms interval
+  blinking_timer_.setInterval(750);
+  connect(&blinking_timer_, &QTimer::timeout, [this]() {
+    blink_on_ = !blink_on_;
+    update();
+  });
+  blinking_timer_.start();
 }
 
 LayoutViewer::~LayoutViewer()
@@ -1470,25 +1480,23 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 
   for (auto& selected : selected_) {
-    auto brush = Painter::transparent;
-    auto brush_style = Painter::Brush::NONE;
+    bool do_paint = true;
 
     if (selected_.size() > 1 &&
         inspector_selection_ == selected) {
-      brush = Painter::highlight;
-      brush.a = 100;
-
-      brush_style = Painter::Brush::DIAGONAL;
+      do_paint = blink_on_;
     }
 
-    selected.highlight(painter, Painter::highlight, brush, brush_style);
+    if (do_paint) {
+      selected.highlight(painter, Painter::highlight);
+    }
   }
 
   if (inspector_focus_ != nullptr) {
     inspector_focus_->selection.highlight(painter,
                                           inspector_focus_->color,
                                           inspector_focus_->color,
-                                          Painter::Brush::DOTS);
+                                          Painter::Brush::DIAGONAL);
   }
 }
 
