@@ -138,6 +138,8 @@ class FlexPA
       bool allowVia,
       frAccessPointEnum lowerType,
       frAccessPointEnum upperType);
+  bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
+                                   frLayerNum layerNum);
   void prepPoint_pin_genPoints_rect(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<frPoint, frLayerNum>>& apset,

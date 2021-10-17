@@ -45,6 +45,20 @@ Options description:
 - ``microns_per_pixel` resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.
 - ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}``, to show routing tracks ``-display_option {Tracks/Pref true}``, or to show everthing ``-display_option {* true}``.
 
+### Selecting objects
+
+```
+select -type object_type
+       [-name glob_pattern]
+       [-case_insensitive]
+       [-highlight group]
+```
+
+Options description:
+- ``object_type``: name of the object typ. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
+- ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
+- ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
+
 ## TCL functions
 
 ### Support
@@ -182,11 +196,45 @@ gui::selection_add_insts name_regex
 Options description:
 - ``name_regex`` regular expression of the instance names to add.
 
+To add items at a specific point or in an area:
+
+```
+gui::select_at x y
+gui::select_at x y append
+gui::select_at x0 y0 x1 y1
+gui::select_at x0 y0 x1 y1 append
+```
+
+Options description:
+- ``x, y`` point in the layout area in microns.
+- ``x0, y0`` first corner of the layout area in microns.
+- ``x1, y1`` second corner of the layout area in microns.
+- ``append`` if ``true`` (the default value) append the new selections to the current selection list, else replace the selection list with the new selections.
+
+To navigate through multiple selected items:
+
+```
+gui::select_next
+gui::select_previous
+```
+
+Returns: current index of the selected item.
+
 To clear the current set of selected items:
 
 ```
 gui::clear_selections
 ```
+
+To get the properties for the current selection in the Inspector:
+
+```
+gui::get_selection_property name
+```
+
+Options description:
+- ``name`` name of the property. For example, ``Type`` for object type or ``bbox`` for the bounding box of the object.
+
 
 ### Highlighting
 

@@ -123,7 +123,7 @@ selection_add_nets(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  gui->select("Net", name);
 }
 
 void
@@ -143,7 +143,7 @@ selection_add_insts(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  gui->select("Inst", name);
 }
 
 void highlight_inst(const char* name, int highlight_group = 0)
@@ -428,6 +428,87 @@ void hide()
   }
   auto gui = gui::Gui::get();
   gui->hideGui();
+}
+
+const std::string get_selection_property(const std::string& prop_name)
+{
+  if (!check_gui("get_selection_property")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  
+  const gui::Selected& selected = gui->getInspectorSelection();
+  if (!selected) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 36, "Nothing selected");
+  }
+  
+  const std::any& prop = selected.getProperty(prop_name);
+  if (!prop.has_value()) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 37, "Unknown property: {}", prop_name);
+  }
+
+  std::string prop_text = gui::Descriptor::Property::toString(prop);
+
+  if (prop_name == "BBox") {
+    // need to reformat to make it useable for TCL
+    // remove () and space
+    for (const char ch : {'(', ')', ' '}) {
+      std::size_t pos;
+      while ((pos = prop_text.find(ch)) != std::string::npos) {
+        prop_text.erase(pos, 1);
+      }
+    }
+    // replace commas with spaces
+    std::size_t pos;
+    while ((pos = prop_text.find(',')) != std::string::npos) {
+      prop_text.replace(pos, 1, " ");
+    }
+  }
+  
+  return prop_text;
+}
+
+void select_at(double x0, double y0, double x1, double y1, bool append = true)
+{
+  if (!check_gui("select_at")) {
+    return;
+  }  
+  auto gui = gui::Gui::get();
+  gui->selectAt(make_rect(x0, y0, x1, y1), append);
+}
+
+void select_at(double x, double y, bool append = true)
+{
+  select_at(x, y, x, y, append);
+}
+
+int select_next()
+{
+  if (!check_gui("select_next")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectNext();
+}
+
+int select_previous()
+{
+  if (!check_gui("select_previous")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectPrevious();
+}
+
+void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+{
+  if (!check_gui("select")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->select(type, name_filter, case_sensitive, highlight_group);
 }
 
 %} // inline

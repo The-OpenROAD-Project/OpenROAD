@@ -237,6 +237,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Rect& reg
     }
 
     selected_ = cell;
+    gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
       return {gui::Gui::get()->makeSelected(cell->instance()->dbInst())};

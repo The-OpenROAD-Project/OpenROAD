@@ -113,6 +113,45 @@ proc save_image { args } {
   rename $options ""
 }
 
+sta::define_cmd_args "select" {-type object_type \
+                               [-name name_regex] \
+                               [-case_insensitive] \
+                               [-highlight group]
+}
+
+proc select { args } {
+  sta::parse_key_args "select" args \
+    keys {-type -name -highlight} flags {-case_insensitive}
+  sta::check_argc_eq0 "select" $args
+  
+  set type ""
+  if { [info exists keys(-type)] } {
+    set type $keys(-type)
+  } else {
+    utl::error GUI 38 "Must specify -type."
+  }
+  
+  set highlight -1
+  if { [info exists keys(-highlight)] } {
+    set highlight $keys(-highlight)
+  }
+  
+  set name ""
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+  
+  set case_sense 1
+  if { [info exists flags(-case_insensitive)] } {
+    if { $name == "" } {
+      utl::warn GUI 39 "Cannot use case insensitivity without a name."
+    }
+    set case_sense 0
+  }
+  
+  gui::select $type $name $case_sense $highlight
+}
+
 namespace eval gui {
   proc parse_options { args_var } {
     set options [gui::DisplayControlMap]

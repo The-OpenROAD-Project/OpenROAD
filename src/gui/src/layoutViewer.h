@@ -224,6 +224,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void startRulerBuild();
   void cancelRulerBuild();
 
+  void selectArea(const odb::Rect& area, bool append);
+
  private:
   struct Boxes
   {
@@ -302,6 +304,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
+  int instanceSizeLimit();
+  int shapeSizeLimit();
 
   void generateCutLayerMaximumSizes();
 
