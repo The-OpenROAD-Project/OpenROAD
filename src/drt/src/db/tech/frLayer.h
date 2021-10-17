@@ -40,13 +40,6 @@ namespace fr {
 namespace io {
 class Parser;
 }
-struct drEolSpacingConstraint
-{
-  drEolSpacingConstraint() : eolWidth(0), eolSpace(0), eolWithin(0) {}
-  frCoord eolWidth;
-  frCoord eolSpace;
-  frCoord eolWithin;
-};
 
 class frLayer
 {
