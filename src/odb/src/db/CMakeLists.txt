@@ -141,7 +141,7 @@ target_link_libraries(odb
         zlib 
         zutil
         utl
-        tcl
+        ${TCL_LIBRARY}
 )
 
 messages(

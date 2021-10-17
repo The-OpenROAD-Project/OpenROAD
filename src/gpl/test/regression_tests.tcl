@@ -3,6 +3,7 @@ record_tests {
   simple01-obs
   simple01-td
   simple01-uniform
+  simple01-ref
   simple02
   simple03
   simple04

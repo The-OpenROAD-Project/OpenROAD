@@ -164,18 +164,13 @@ void EditorItemDelegate::setModelData(QWidget* editor,
     // retrieve property again
     auto selected = model->data(index, editor_select_).value<Selected>();
     auto item_name = model->data(index, editor_name_).value<std::string>();
-    if (item_name == "Name") { // name and type are inserted in inspector, so handle differently
-      edit_save = QString::fromStdString(selected.getName());
-    } else if (item_name == "Type") {
-      edit_save = QString::fromStdString(selected.getTypeName());
-    } else {
-      auto new_property = selected.getProperty(item_name);
-      if (model->data(index, selected_).isValid()) {
-        auto new_selected = std::any_cast<Selected>(new_property);
-        model->setData(index, QVariant::fromValue(new_selected), selected_);
-      }
-      edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
+
+    auto new_property = selected.getProperty(item_name);
+    if (model->data(index, selected_).isValid()) {
+      auto new_selected = std::any_cast<Selected>(new_property);
+      model->setData(index, QVariant::fromValue(new_selected), selected_);
     }
+    edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
   }
   model->setData(index, edit_save, Qt::EditRole);
 
@@ -261,30 +256,60 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SLOT(clicked(const QModelIndex&)));
 
   connect(button_prev_,
-          &QPushButton::pressed,
-          [this]() {
-            if (selected_itr_ == selected_.begin()) {
-              selected_itr_ = selected_.end();
-            }
-            selected_itr_--;
-            inspect(*selected_itr_);
-          });
+          SIGNAL(pressed()),
+          this,
+          SLOT(selectPrevious()));
 
   connect(button_next_,
-          &QPushButton::pressed,
-          [this]() {
-            selected_itr_++; // go to next
-            if (selected_itr_ == selected_.end()) {
-              selected_itr_ = selected_.begin();
-            }
-            inspect(*selected_itr_);
-          });
+          SIGNAL(pressed()),
+          this,
+          SLOT(selectNext()));
+}
+
+int Inspector::selectNext()
+{
+  if (selected_.empty()) {
+    selected_itr_ = selected_.begin();
+
+    return 0;
+  }
+
+  selected_itr_++; // go to next
+  if (selected_itr_ == selected_.end()) {
+    selected_itr_ = selected_.begin();
+  }
+  emit inspect(*selected_itr_);
+
+  return getSelectedIteratorPosition();
+}
+
+int Inspector::selectPrevious()
+{
+  if (selected_.empty()) {
+    selected_itr_ = selected_.begin();
+
+    return 0;
+  }
+
+  if (selected_itr_ == selected_.begin()) {
+    selected_itr_ = selected_.end();
+  }
+  selected_itr_--;
+  emit inspect(*selected_itr_);
+
+  return getSelectedIteratorPosition();
+}
+
+int Inspector::getSelectedIteratorPosition()
+{
+  return std::distance(selected_.begin(), selected_itr_);
 }
 
 void Inspector::inspect(const Selected& object)
 {
-  // disconnect so announcements can be will not be made about changes
-  // changes right now are based on adding item to model
+  // disconnect announcements/signals so they will not be made for the following changes
+  // this is needed to stop SelectedItemModel::itemChanged from triggering
+  // since the change is related to adding the item and modifying the item
   blockSignals(true);
 
   model_->removeRows(0, model_->rowCount());
@@ -301,24 +326,20 @@ void Inspector::inspect(const Selected& object)
   selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
     return item < selection_;
   });
-  int selected_index = std::distance(selected_.begin(), selected_itr_);
   selected_itr_label_->setText(
-      QString::number(selected_index + 1) +
+      QString::number(getSelectedIteratorPosition() + 1) +
       "/" +
       QString::number(selected_.size()));
 
   if (!object) {
+    blockSignals(false);
+
     return;
   }
 
   auto editors = object.getEditors();
 
-  Descriptor::Properties all_properties;
-  all_properties.push_back({"Type", object.getTypeName()});
-  all_properties.push_back({"Name", object.getName()});
-
-  Descriptor::Properties properties = object.getProperties();
-  std::copy(properties.begin(), properties.end(), std::back_inserter(all_properties));
+  Descriptor::Properties all_properties = object.getProperties();
 
   for (auto& prop : all_properties) {
     const std::string& name = prop.name;
@@ -429,6 +450,7 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
 void Inspector::update()
 {
   if (selected_.empty()) {
+    button_frame_->setVisible(false);
     inspect(Selected());
   } else {
     if (selected_.size() > 1) {

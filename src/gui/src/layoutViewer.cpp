@@ -686,7 +686,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
     search_line = odb::Rect(pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
   }
 
-  auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax());
+  auto inst_range = search_.searchInsts(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), instanceSizeLimit());
 
   // Cache the search results as we will iterate over the instances
   // for each layer.
@@ -697,6 +697,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
       boxes.push_back(box);
     }
   }
+
+  const int shape_limit = shapeSizeLimit();
 
   // look for edges in metal shapes
   dbTech* tech = db_->getTech();
@@ -734,7 +736,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
       }
     }
 
-    auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax());
+    auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, net] : shapes) {
       if (options_->isNetVisible(net)) {
         boxes.push_back(box);
@@ -742,14 +744,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
     }
 
     if (options_->areFillsVisible()) {
-      auto fills = search_.searchFills(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax());
+      auto fills = search_.searchFills(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
       for (auto& [box, poly, fill] : fills) {
         boxes.push_back(box);
       }
     }
 
     if (options_->areObstructionsVisible()) {
-      auto obs = search_.searchObstructions(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax());
+      auto obs = search_.searchObstructions(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
       for (auto& [box, poly, ob] : obs) {
         boxes.push_back(box);
       }
@@ -757,7 +759,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   }
 
   if (options_->areBlockagesVisible()) {
-    auto blcks = search_.searchBlockages(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax());
+    auto blcks = search_.searchBlockages(search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, blck] : blcks) {
       boxes.push_back(box);
     }
@@ -807,8 +809,10 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = db_->getTech();
 
+  const int shape_limit = shapeSizeLimit();
+
   if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
-    auto blockages = search_.searchBlockages(region.xMin(), region.yMin(), region.xMax(), region.yMax());
+    auto blockages = search_.searchBlockages(region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
     for (auto iter : blockages) {
       selections.push_back(makeSelected_(std::get<2>(iter)));
     }
@@ -834,14 +838,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
     if (options_->areObstructionsVisible() && options_->areObstructionsSelectable()) {
       auto obs = search_.searchObstructions(
-          layer, region.xMin(), region.yMin(), region.xMax(), region.yMax());
+          layer, region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
       for (auto iter : obs) {
         selections.push_back(makeSelected_(std::get<2>(iter)));
       }
     }
 
     auto shapes = search_.searchShapes(
-        layer, region.xMin(), region.yMin(), region.xMax(), region.yMax());
+        layer, region.xMin(), region.yMin(), region.xMax(), region.yMax(), shape_limit);
 
     // Just return the first one
     for (auto iter : shapes) {
@@ -861,7 +865,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
   // Look for an instance since no shape was found
   auto insts
-      = search_.searchInsts(region.xMin(), region.yMin(), region.xMax(), region.yMax());
+      = search_.searchInsts(region.xMin(), region.yMin(), region.xMax(), region.yMax(), instanceSizeLimit());
 
   for (auto& inst : insts) {
     dbInst* inst_ptr = std::get<2>(inst);
@@ -880,6 +884,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
   }
+}
+
+void LayoutViewer::selectArea(const odb::Rect& area, bool append)
+{
+  if (!append) {
+    emit selected(Selected()); // remove previous selections
+  }
+  emit addSelected(selectAt(area));
 }
 
 SelectionSet LayoutViewer::selectAt(odb::Rect region)
@@ -1281,7 +1293,7 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  int min_resolution = nominalViewableResolution();
+  int min_resolution = shapeSizeLimit();
   Rect block_bounds;
   block->getBBox()->getBox(block_bounds);
   const Rect draw_bounds = block_bounds.intersect(bounds);
@@ -1413,6 +1425,10 @@ void LayoutViewer::drawRows(dbBlock* block,
 
 void LayoutViewer::drawSelected(Painter& painter)
 {
+  if (!options_->areSelectedVisible()) {
+    return;
+  }
+
   for (auto& selected : selected_) {
     selected.highlight(painter);
   }
@@ -1523,6 +1539,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
   int minimum_height_for_tag = nominalViewableResolution();
+  int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   painter->setPen(QPen(Qt::gray, 0));
@@ -1539,18 +1556,23 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     // draw bbox
     Rect master_box;
     master->getPlacementBoundary(master_box);
-    painter->drawRect(
-        master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
-    // Draw an orientation tag in corner if useful in size
-    int master_h = master->getHeight();
-    if (master_h >= minimum_height_for_tag) {
-      qreal master_w = master->getWidth();
-      qreal tag_size = 0.1 * master_h;
-      qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-      qreal tag_y = master_box.yMin() + tag_size;
-      painter->drawLine(QPointF(tag_x, master_box.yMin()),
-                        QPointF(master_box.xMin(), tag_y));
+    if (minimum_size > master_box.dx() && minimum_size > master_box.dy()) {
+      painter->drawPoint(master_box.xMin(), master_box.yMin());
+    } else {
+      painter->drawRect(
+          master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
+
+      // Draw an orientation tag in corner if useful in size
+      int master_h = master->getHeight();
+      if (master_h >= minimum_height_for_tag) {
+        qreal master_w = master->getWidth();
+        qreal tag_size = 0.1 * master_h;
+        qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
+        qreal tag_y = master_box.yMin() + tag_size;
+        painter->drawLine(QPointF(tag_x, master_box.yMin()),
+                          QPointF(master_box.xMin(), tag_y));
+      }
     }
   }
   painter->setTransform(initial_xfm);
@@ -1561,7 +1583,7 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
-  int minimum_height = nominalViewableResolution();
+  const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
   for (auto inst : insts) {
@@ -1711,7 +1733,7 @@ void LayoutViewer::drawBlockages(QPainter* painter,
   painter->setBrush(QBrush(options_->placementBlockageColor(), options_->placementBlockagePattern()));
 
   auto blockage_range = search_.searchBlockages(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, blockage] : blockage_range) {
     Rect bbox;
@@ -1734,7 +1756,7 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   painter->setBrush(QBrush(color, brush_pattern));
 
   auto obstructions_range = search_.searchObstructions(
-      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), fineViewableResolution());
+      layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), shapeSizeLimit());
 
   for (auto& [box, poly, obs] : obstructions_range) {
     Rect bbox;
@@ -1750,8 +1772,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              dbBlock* block,
                              int depth)
 {
-  int min_resolution = fineViewableResolution();  // 1 pixel in DBU
-  int nominal_resolution = nominalViewableResolution();
+  const int instance_limit = instanceSizeLimit();
+  const int shape_limit = shapeSizeLimit();
+
   LayerBoxes boxes;
 
   auto& renderers = Gui::get()->renderers();
@@ -1770,7 +1793,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   auto inst_range = search_.searchInsts(
-      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), min_resolution);
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
 
   // Cache the search results as we will iterate over the instances
   // for each layer.
@@ -1794,7 +1817,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     }
 
     // Skip the cut layer if the cuts will be too small to see
-    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < nominal_resolution) {
+    if (layer->getType() == dbTechLayerType::CUT && cut_maximum_size_[layer] < shape_limit) {
       continue;
     }
 
@@ -1812,7 +1835,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMin(),
                                      bounds.xMax(),
                                      bounds.yMax(),
-                                     nominal_resolution);
+                                     instance_limit);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -1845,7 +1868,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       bounds.yMin(),
                                       bounds.xMax(),
                                       bounds.yMax(),
-                                      nominal_resolution);
+                                      shape_limit);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -2444,35 +2467,37 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
     logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
   }
 
+  Rect save_area = region;
+  if (region.dx() == 0 || region.dy() == 0) {
+    // default to just that is currently visible
+    save_area = screenToDBU(visibleRegion().boundingRect());
+  }
+
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
 
-  QRegion save_region;
-  if (region.dx() == 0 || region.dy() == 0) {
-    // default to just that is currently visible
-    save_region = visibleRegion();
-  } else {
-    const QRectF screen_region = dbuToScreen(region);
-    save_region = QRegion(
-        screen_region.left(),  screen_region.top(),
-        screen_region.width(), screen_region.height());
-  }
+  // convert back to pixels based on new resolution
+  const QRectF screen_region = dbuToScreen(save_area);
+  const QRegion save_region = QRegion(
+      screen_region.left(),  screen_region.top(),
+      screen_region.width(), screen_region.height());
 
   const QRect bounding_rect = save_region.boundingRect();
   QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
   if (!img.isNull()) {
     img.fill(background_);
     // need to remove cache to ensure image is correct
+    std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
     block_drawing_ = nullptr;
 
     render(&img, {0, 0}, save_region);
     if (!img.save(save_filepath)) {
       logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
     }
-    // update cache and repaint
-    fullRepaint();
+    // restore cache
+    block_drawing_ = std::move(saved_cache);
   } else {
     logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
   }
@@ -2765,6 +2790,24 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
   // This happens when initialize_floorplan is run and it make sense
   // to fit as current zoom will be on a zero sized block.
   fit();
+}
+
+inline int LayoutViewer::instanceSizeLimit()
+{
+  if (options_->isDetailedVisibility()) {
+    return 0;
+  }
+
+  return fineViewableResolution();
+}
+
+inline int LayoutViewer::shapeSizeLimit()
+{
+  if (options_->isDetailedVisibility()) {
+    return fineViewableResolution();
+  }
+
+  return nominalViewableResolution();
 }
 
 inline int LayoutViewer::fineViewableResolution()

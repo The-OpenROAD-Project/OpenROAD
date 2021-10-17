@@ -121,6 +121,8 @@ class Inspector : public QDockWidget
  public:
   Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
 
+  const Selected& getSelection() { return selection_; }
+
  signals:
   void addSelected(const Selected& selected);
   void removeSelected(const Selected& selected);
@@ -134,6 +136,9 @@ class Inspector : public QDockWidget
 
   void indexClicked(const QModelIndex& index);
   void indexDoubleClicked(const QModelIndex& index);
+
+  int selectNext();
+  int selectPrevious();
 
  private:
   void handleAction(QWidget* action);
@@ -149,6 +154,8 @@ class Inspector : public QDockWidget
                       const Selected& selected,
                       const EditorItemDelegate::EditType type,
                       const Descriptor::Editor& editor);
+
+  int getSelectedIteratorPosition();
 
   // The columns in the tree view
   enum Column

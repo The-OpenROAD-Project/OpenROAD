@@ -77,7 +77,7 @@ class RulerDescriptor : public Descriptor
   RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers, odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -89,6 +89,8 @@ class RulerDescriptor : public Descriptor
   Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
 
  private:
   static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);

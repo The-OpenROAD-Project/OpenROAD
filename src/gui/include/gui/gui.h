@@ -59,6 +59,11 @@ class Painter;
 class Selected;
 class Options;
 
+// A collection of selected objects
+using SelectionSet = std::set<Selected>;
+using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
+                                                   // Color is supported for now
+
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
 // give it information about the foreign object (eg attributes like
@@ -68,16 +73,21 @@ class Descriptor
  public:
   virtual ~Descriptor() = default;
   virtual std::string getName(std::any object) const = 0;
-  virtual std::string getTypeName(std::any object) const = 0;
+  virtual std::string getTypeName() const = 0;
+  virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
 
+  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+
   // A property is a name and a value.
   struct Property {
     std::string name;
     std::any value;
+
+    static int dbu;
 
     static std::string toString(const std::any& /* value */);
     std::string toString() const { return toString(value); };
@@ -115,16 +125,6 @@ class Descriptor
                                 void* additional_data) const = 0;
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
-
-  std::any getProperty(std::any object, const std::string& name) const
-  {
-    for (auto& [prop, value] : getProperties(object)) {
-      if (prop == name) {
-        return value;
-      }
-    }
-    return std::any();
-  }
 
   static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
   {
@@ -179,14 +179,16 @@ class Selected
                  bool select_flag = true,
                  int highlight_group = 0) const;
 
-  Descriptor::Properties getProperties() const
-  {
-    return descriptor_->getProperties(object_);
-  }
+  Descriptor::Properties getProperties() const;
 
   std::any getProperty(const std::string& name) const
   {
-    return descriptor_->getProperty(object_, name);
+    for (auto& [prop, value] : getProperties()) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
   }
 
   Descriptor::Actions getActions() const
@@ -218,11 +220,6 @@ class Selected
                            // in which case it will store the input instTerm
   const Descriptor* descriptor_;
 };
-
-// A collection of selected objects
-using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
-                                                   // Color is supported for now
 
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
@@ -429,22 +426,9 @@ class Gui
   // Add a net to the selection set
   void addSelectedNet(const char* name);
 
-  // Add nets matching the pattern to the selection set
-  void addSelectedNets(const char* pattern,
-                       bool match_case = true,
-                       bool match_reg_ex = true,
-                       bool add_to_highlight_set = false,
-                       int highlight_group = 0);
-
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
-  // Add instances matching the pattern to the selection set
-  void addSelectedInsts(const char* pattern,
-                        bool match_case = true,
-                        bool match_regE_ex = true,
-                        bool add_to_highlight_set = false,
-                        int highlight_group = 0);
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
@@ -457,12 +441,18 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
+  void selectAt(const odb::Rect& area, bool append = true);
+  int selectNext();
+  int selectPrevious();
+
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
   void deleteRuler(const std::string& name);
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
+
+  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -538,6 +528,8 @@ class Gui
   bool isContinueAfterClose() { return continue_after_close_; }
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
+
+  const Selected& getInspectorSelection();
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
