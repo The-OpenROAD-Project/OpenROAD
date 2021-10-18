@@ -463,7 +463,7 @@ class Gui
   void selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
   int selectPrevious();
-  void animateSelection(int repeat = 3);
+  void animateSelection(int repeat = 0);
 
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
   void deleteRuler(const std::string& name);

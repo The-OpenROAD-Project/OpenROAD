@@ -229,8 +229,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus);
-  void selectionAnimation(const Selected& selection, int repeats = 3, int update_interval = 750);
-  void selectionAnimation(int repeats = 3, int update_interval = 750) { selectionAnimation(inspector_selection_, repeats, update_interval); }
+  void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
+  void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
  private:
   struct Boxes
@@ -400,6 +400,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
+
+  // parameters used to animate the selection of objects
+  static constexpr int animation_repeats_ = 6;
+  static constexpr int animation_interval_ = 300;
 
   const QColor background_ = Qt::black;
 };

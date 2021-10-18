@@ -243,7 +243,7 @@ gui::selection_animate repeat
 ```
 
 Options description:
-- ``repeat``: indicate how many times the animation should repeat, default value is 3 repeats. If the value is 0, the animation will repeat indefinitely.
+- ``repeat``: indicate how many times the animation should repeat, default value is 0 repeats. If the value is 0, the animation will repeat indefinitely.
 
 ### Highlighting
 
