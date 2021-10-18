@@ -258,13 +258,16 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int min_routing_layer,
                                       int max_routing_layer)
 {
-  NetRouteMap routes = fastroute_->run();
-  addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
-  connectPadPins(routes);
-  for (auto& net_route : routes) {
-    std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
-    GRoute& route = net_route.second;
-    mergeSegments(pins, route);
+  NetRouteMap routes;
+  if (getNetCount() > 0) {
+    routes = fastroute_->run();
+    addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
+    connectPadPins(routes);
+    for (auto& net_route : routes) {
+      std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
+      GRoute& route = net_route.second;
+      mergeSegments(pins, route);
+    }
   }
 
   return routes;
@@ -2510,9 +2513,11 @@ void GlobalRouter::initNetlist()
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
+  uint wire_cnt = 0, via_cnt = 0;
   if (db_net->getSigType().getValue() != odb::dbSigType::POWER
       && db_net->getSigType().getValue() != odb::dbSigType::GROUND
-      && !db_net->isSpecial() && db_net->getSWires().empty()) {
+      && !db_net->isSpecial() && db_net->getSWires().empty()
+      && db_net->getWire() == nullptr) {
     Net* net = new Net(db_net);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());

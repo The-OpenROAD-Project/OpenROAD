@@ -35,6 +35,8 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -43,6 +45,7 @@
 #include "defin.h"
 #include "displayControls.h"
 #include "geom.h"
+#include "inspector.h"
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "lefin.h"
@@ -72,6 +75,9 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
+
+// Used by toString to convert dbu to microns
+int Descriptor::Property::dbu = 0;
 
 Gui* Gui::singleton_ = nullptr;
 
@@ -161,47 +167,6 @@ void Gui::addSelectedNet(const char* name)
   main_window->addSelected(makeSelected(net));
 }
 
-void Gui::addSelectedNets(const char* pattern,
-                          bool match_case,
-                          bool match_reg_ex,
-                          bool add_to_highlight_set,
-                          int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
-  SelectionSet nets;
-  if (match_reg_ex == true) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-
-    for (auto* net : block->getNets()) {
-      if (re.exactMatch(net->getConstName())) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* net : block->getNets()) {
-      if (boost::iequals(pattern, net->getConstName()))
-        nets.insert(makeSelected(net));
-    }
-  } else {
-    for (auto* net : block->getNets()) {
-      if (pattern == net->getConstName()) {
-        nets.insert(makeSelected(net));
-      }
-    }
-  }
-
-  main_window->addSelected(nets);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(nets, highlight_group);
-}  // namespace gui
-
 void Gui::addSelectedInst(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -215,46 +180,6 @@ void Gui::addSelectedInst(const char* name)
   }
 
   main_window->addSelected(makeSelected(inst));
-}
-
-void Gui::addSelectedInsts(const char* pattern,
-                           bool match_case,
-                           bool match_reg_ex,
-                           bool add_to_highlight_set,
-                           int highlight_group)
-{
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
-  }
-
-  SelectionSet insts;
-  if (match_reg_ex) {
-    QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
-               QRegExp::Wildcard);
-    for (auto* inst : block->getInsts()) {
-      if (re.exactMatch(inst->getConstName())) {
-        insts.insert(makeSelected(inst));
-      }
-    }
-  } else if (match_case == false) {
-    for (auto* inst : block->getInsts()) {
-      if (boost::iequals(inst->getConstName(), pattern))
-        insts.insert(makeSelected(inst));
-    }
-  } else {
-    for (auto* inst : block->getInsts()) {
-      if (pattern == inst->getConstName()) {
-        insts.insert(makeSelected(inst));
-        break;  // There can't be two insts with the same name
-      }
-    }
-  }
-
-  main_window->addSelected(insts);
-  if (add_to_highlight_set == true)
-    main_window->addHighlighted(insts, highlight_group);
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
@@ -308,6 +233,21 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
+void Gui::selectAt(const odb::Rect& area, bool append)
+{
+  main_window->getLayoutViewer()->selectArea(area, append);
+}
+
+int Gui::selectNext()
+{
+  return main_window->getInspector()->selectNext();
+}
+
+int Gui::selectPrevious()
+{
+  return main_window->getInspector()->selectPrevious();
+}
+
 std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
   return main_window->addRuler(x0, y0, x1, y1, label, name);
@@ -316,6 +256,42 @@ std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& lab
 void Gui::deleteRuler(const std::string& name)
 {
   main_window->deleteRuler(name);
+}
+
+void Gui::select(const std::string& type, const std::string& name_filter, bool filter_case_sensitive, int highlight_group)
+{
+  for (auto& [object_type, descriptor] : descriptors_) {
+    if (descriptor->getTypeName() == type) {
+      SelectionSet selected;
+      if (descriptor->getAllObjects(selected)) {
+        if (!name_filter.empty()) {
+          // convert to vector
+          std::vector<Selected> selected_vector(selected.begin(), selected.end());
+          // remove elements
+          QRegExp reg_filter(QString::fromStdString(name_filter),
+                             filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
+                             QRegExp::WildcardUnix);
+          auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
+              [&reg_filter](auto sel) -> bool {
+                return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
+              });
+          selected_vector.erase(remove_if, selected_vector.end());
+          // rebuild selectionset
+          selected.clear();
+          selected.insert(selected_vector.begin(), selected_vector.end());
+        }
+        main_window->addSelected(selected);
+        if (highlight_group != -1) {
+          main_window->addHighlighted(selected, highlight_group);
+        }
+      }
+
+      // already found the descriptor, so return to exit loop
+      return;
+    }
+  }
+
+  logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
 void Gui::clearSelections()
@@ -524,6 +500,11 @@ void Gui::unregisterDescriptor(const std::type_info& type)
   descriptors_.erase(type);
 }
 
+const Selected& Gui::getInspectorSelection()
+{
+  return main_window->getInspector()->getSelection();
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {
@@ -701,9 +682,26 @@ void Selected::highlight(Painter& painter,
   return descriptor_->highlight(object_, painter, additional_data_);
 }
 
+Descriptor::Properties Selected::getProperties() const
+{
+  Descriptor::Properties props = descriptor_->getProperties(object_);
+  props.insert(props.begin(), {"Name", getName()});
+  props.insert(props.begin(), {"Type", getTypeName()});
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    props.push_back({"BBox", bbox});
+  }
+
+  return props;
+}
+
 std::string Descriptor::Property::toString(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (auto v = std::any_cast<Selected>(&value)) {
+    if (*v) {
+      return v->getName();
+    }
+  } else if (auto v = std::any_cast<const char*>(&value)) {
     return *v;
   } else if (auto v = std::any_cast<const std::string>(&value)) {
     return *v;
@@ -717,9 +715,25 @@ std::string Descriptor::Property::toString(const std::any& value)
     return QString::number(*v).toStdString();
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
-  } else {
-    return "<unknown>";
+  } else if (auto v = std::any_cast<odb::Rect>(&value)) {
+    double lef_units = dbu;
+    if (dbu == 0) {
+      lef_units = 1;
+    }
+    const int precision = std::ceil(std::log10(lef_units));
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(precision) << "(";
+    ss << v->xMin() / lef_units << ",";
+    ss << v->yMin() / lef_units << "), (";
+    ss << v->xMax() / lef_units << ",";
+    ss << v->yMax() / lef_units << ")";
+    if (dbu == 0) {
+      ss << " DBU";
+    }
+    return ss.str();
   }
+
+  return "<unknown>";
 }
 
 }  // namespace gui

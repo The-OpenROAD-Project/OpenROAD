@@ -42,6 +42,8 @@ entries:
     title: Floorplan Initialization
   - file: main/src/ppl/README
     title: ioPlacer
+  - file: main/src/gui/README
+    title: GUI
   - file: main/src/ICeWall/README
     title: ICeWall
     entries:
@@ -91,6 +93,8 @@ entries:
         title: add_pdn_stripe
       - file: main/src/pdn/doc/set_voltage_domain.md
         title: add_pdn_stripe
+      - file: main/src/pdn/doc/pdngen.md
+        title: pdngen
   - file: main/src/psm/README
     title: PDNSim
     entries:

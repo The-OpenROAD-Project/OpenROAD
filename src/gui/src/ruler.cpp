@@ -95,7 +95,7 @@ std::string RulerDescriptor::getName(std::any object) const
   return ruler->getName();
 }
 
-std::string RulerDescriptor::getTypeName(std::any object) const
+std::string RulerDescriptor::getTypeName() const
 {
   return "Ruler";
 }
@@ -190,6 +190,14 @@ bool RulerDescriptor::lessThan(std::any l, std::any r) const
   auto r_ruler = std::any_cast<Ruler*>(r);
 
   return l_ruler->getName() < r_ruler->getName();
+}
+
+bool RulerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto& ruler : rulers_) {
+    objects.insert(makeSelected(ruler.get(), nullptr));
+  }
+  return true;
 }
 
 }  // namespace gui

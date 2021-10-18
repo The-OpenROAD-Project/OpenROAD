@@ -10,9 +10,9 @@ FastRoute is a global routing tool for VLSI back-end design. It  is based on seq
 
 Literature
 
-[1] Chris Chu and Yiu-Chung Wong, FLUTE: Fast Lookup Table Based Rectilinear Steiner Minimal Tree Algorithm for VLSI Design. In IEEE Transactions on Computer-Aided Design, vol. 27, no. 1, pages 70-83, January 2008.
-[2] Min Pan and Chris Chu, FastRoute: A Step to Integrate Global Routing into Placement. IEEE/ACM International Conference on Computer-Aided Design, pages 464-471, 2006.
-[3] Min Pan and Chris Chu, FastRoute 2.0: A High-quality and Efficient Global Router. Asian and South Pacific Design Automation Conference, pages 250-255, 2007.
-[4] Yanheng Zhang, Yue Xu and Chris Chu, FastRoute 3.0: A Fast and High Quality Global Router Based on Virtual Capacity. IEEE/ACM International Conference on Computer-Aided Design, pages 344-349, 2008.
-[5] Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute 4.0: Global Router with Efficient Via Minimization. Asian and South Pacific Design Automation Conference, pages 576-581, 2009.
-[6] Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and High-Quality Global Router. VLSI Design, Article ID 608362, 2012.
+1. Chris Chu and Yiu-Chung Wong, FLUTE: Fast Lookup Table Based Rectilinear Steiner Minimal Tree Algorithm for VLSI Design. In IEEE Transactions on Computer-Aided Design, vol. 27, no. 1, pages 70-83, January 2008.
+2. Min Pan and Chris Chu, FastRoute: A Step to Integrate Global Routing into Placement. IEEE/ACM International Conference on Computer-Aided Design, pages 464-471, 2006.
+3. Min Pan and Chris Chu, FastRoute 2.0: A High-quality and Efficient Global Router. Asian and South Pacific Design Automation Conference, pages 250-255, 2007.
+4. Yanheng Zhang, Yue Xu and Chris Chu, FastRoute 3.0: A Fast and High Quality Global Router Based on Virtual Capacity. IEEE/ACM International Conference on Computer-Aided Design, pages 344-349, 2008.
+5. Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute 4.0: Global Router with Efficient Via Minimization. Asian and South Pacific Design Automation Conference, pages 576-581, 2009.
+6. Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and High-Quality Global Router. VLSI Design, Article ID 608362, 2012.

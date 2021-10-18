@@ -79,6 +79,8 @@ class Options
 
   virtual bool isDetailedVisibility() = 0;
 
+  virtual bool areSelectedVisible() = 0;
+
   virtual bool isScaleBarVisible() const = 0;
   virtual bool isCongestionVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;

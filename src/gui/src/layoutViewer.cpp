@@ -886,6 +886,14 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 }
 
+void LayoutViewer::selectArea(const odb::Rect& area, bool append)
+{
+  if (!append) {
+    emit selected(Selected()); // remove previous selections
+  }
+  emit addSelected(selectAt(area));
+}
+
 SelectionSet LayoutViewer::selectAt(odb::Rect region)
 {
   std::vector<Selected> selections;
@@ -1417,6 +1425,10 @@ void LayoutViewer::drawRows(dbBlock* block,
 
 void LayoutViewer::drawSelected(Painter& painter)
 {
+  if (!options_->areSelectedVisible()) {
+    return;
+  }
+
   for (auto& selected : selected_) {
     selected.highlight(painter);
   }
@@ -2455,35 +2467,37 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
     logger_->warn(utl::GUI, 10, "File path does not end with a valid extension, new path is: {}", save_filepath.toStdString());
   }
 
+  Rect save_area = region;
+  if (region.dx() == 0 || region.dy() == 0) {
+    // default to just that is currently visible
+    save_area = screenToDBU(visibleRegion().boundingRect());
+  }
+
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
 
-  QRegion save_region;
-  if (region.dx() == 0 || region.dy() == 0) {
-    // default to just that is currently visible
-    save_region = visibleRegion();
-  } else {
-    const QRectF screen_region = dbuToScreen(region);
-    save_region = QRegion(
-        screen_region.left(),  screen_region.top(),
-        screen_region.width(), screen_region.height());
-  }
+  // convert back to pixels based on new resolution
+  const QRectF screen_region = dbuToScreen(save_area);
+  const QRegion save_region = QRegion(
+      screen_region.left(),  screen_region.top(),
+      screen_region.width(), screen_region.height());
 
   const QRect bounding_rect = save_region.boundingRect();
   QImage img(bounding_rect.width(), bounding_rect.height(), QImage::Format_ARGB32_Premultiplied);
   if (!img.isNull()) {
     img.fill(background_);
     // need to remove cache to ensure image is correct
+    std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
     block_drawing_ = nullptr;
 
     render(&img, {0, 0}, save_region);
     if (!img.save(save_filepath)) {
       logger_->warn(utl::GUI, 11, "Failed to write image: {}", save_filepath.toStdString());
     }
-    // update cache and repaint
-    fullRepaint();
+    // restore cache
+    block_drawing_ = std::move(saved_cache);
   } else {
     logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
   }
