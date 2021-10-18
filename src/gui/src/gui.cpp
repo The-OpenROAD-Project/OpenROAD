@@ -270,7 +270,7 @@ void Gui::select(const std::string& type, const std::string& name_filter, bool f
           // remove elements
           QRegExp reg_filter(QString::fromStdString(name_filter),
                              filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-                             QRegExp::Wildcard);
+                             QRegExp::WildcardUnix);
           auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
               [&reg_filter](auto sel) -> bool {
                 return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
