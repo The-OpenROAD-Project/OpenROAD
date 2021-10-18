@@ -2067,7 +2067,8 @@ dbTech* lefin::createTech(const char* lef_file)
 
   if (_errors != 0) {
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(utl::ODB, 288, "LEF data from {} is discarded due to errors",
+                   lef_file);
   }
 
   return _tech;
@@ -2103,7 +2104,8 @@ dbLib* lefin::createLib(const char* name, const char* lef_file)
   if (_errors != 0) {
     if (_lib)
       dbLib::destroy(_lib);
-    return NULL;
+    _logger->error(utl::ODB, 292, "LEF data from {} is discarded due to errors",
+                   lef_file);
   }
 
   return _lib;
@@ -2142,7 +2144,8 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
     if (_lib)
       dbLib::destroy(_lib);
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(utl::ODB, 289, "LEF data from {} is discarded due to errors",
+                   lef_file);
   }
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();
@@ -2189,7 +2192,8 @@ dbLib* lefin::createTechAndLib(const char* lib_name,
       if (_lib)
         dbLib::destroy(_lib);
       dbTech::destroy(_tech);
-      return NULL;
+      _logger->error(utl::ODB, 291, "LEF data from {} is discarded due to errors",
+                     lef_file);
     }
     _logger->info(utl::ODB, 236, "Finished LEF file:  {}", lef_file);
   }
@@ -2208,7 +2212,7 @@ dbLib* lefin::createTechAndLib(const char* lib_name,
     if (_lib)
       dbLib::destroy(_lib);
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(utl::ODB, 290, "LEF data discarded due to errors");
   }
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();
