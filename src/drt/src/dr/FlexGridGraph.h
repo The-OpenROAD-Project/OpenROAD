@@ -881,6 +881,9 @@ class FlexGridGraph
     return (*via2turnMinLen_)[z][((unsigned) isPrevViaUp << 1)
                                  + (unsigned) isCurrDirY];
   }
+  frCoord getMinAreaCost(const FlexWavefrontGrid& grid, frDirEnum viaDir, frLayer* layer) const;
+  int nTracksX() { return xCoords_.size(); }
+  int nTracksY() { return yCoords_.size(); }
   void cleanup()
   {
     nodes_.clear();

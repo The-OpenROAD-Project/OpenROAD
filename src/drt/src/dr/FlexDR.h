@@ -376,7 +376,18 @@ class FlexDRWorker
   Logger* getLogger() { return logger_; }
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
-
+  int checkMinAreaViolPatch(int initArea, 
+                                        frMIdx segLow, 
+                                        frMIdx segHigh, 
+                                        frMIdx segLine,
+                                        int lowViaHalfArea, 
+                                        int highViaHalfArea, 
+                                        frCoord* patchLow, 
+                                        frCoord* patchHigh, 
+                                        frMIdx layerIdx,
+                                        bool simpleMode = false);
+  frMIdx getAreaMeetingIdx(frMIdx start, bool isVertical, bool patchHigh, int meetingArea, int wireWidth);
+  frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
  private:
   typedef struct
   {
@@ -789,7 +800,6 @@ class FlexDRWorker
       drNet* net,
       const std::vector<FlexMazeIdx>& path,
       const std::map<FlexMazeIdx, frCoord>& areaMap);
-  frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, drNet* net);
   void routeNet_postAstarAddPatchMetal(drNet* net,
                                        const FlexMazeIdx& bpIdx,
                                        const FlexMazeIdx& epIdx,
@@ -809,6 +819,7 @@ class FlexDRWorker
                                                 frCoord patchWidth);
   void routeNet_postRouteAddPathCost(drNet* net);
   void routeNet_postRouteAddPatchMetalCost(drNet* net);
+  int getPatchCost(frMIdx low, frMIdx high, frMIdx line, frMIdx z, bool isVertical);
 
   // end
   void cleanup();

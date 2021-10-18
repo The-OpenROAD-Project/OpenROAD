@@ -153,6 +153,8 @@ class frLayer
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
   dbTechLayerDir getDir() const { return dir; }
+  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
+  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any double/triple patterned
@@ -671,8 +673,6 @@ class frLayer
   drEolSpacingConstraint getDrEolSpacingConstraint() const { return drEolCon; }
 
   void printAllConstraints(utl::Logger* logger);
-  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
-  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
 
  protected:
   dbTechLayerType type;

@@ -1421,7 +1421,7 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
   }
   return bp;
 }
-
+bool lowerMarkerCost = false;
 void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
 {
   batchStepX = 2;
@@ -1488,6 +1488,17 @@ void FlexDR::searchRepair(int iter,
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
+  if (iter > 7 && lowerMarkerCost) {
+      if ((iter - 7)%4 == 0)
+          lowerMarkerCost = !lowerMarkerCost;
+//      cout << "MAKING MARKERCOST < ROUTESHAPECOST\n";
+      if (MARKERCOST > ROUTESHAPECOST)
+          MARKERCOST = ROUTESHAPECOST-1;
+  }
+  if (iter > 10) {
+//      cout << "INCREASING CLIPSIZE\n";
+      clipSize += iter - 10;
+  }
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
             * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
