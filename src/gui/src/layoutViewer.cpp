@@ -414,25 +414,16 @@ LayoutViewer::LayoutViewer(
       snap_edge_(),
       inspector_selection_(Selected()),
       inspector_focus_(nullptr),
+      blink_selection_(nullptr),
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
-      blinking_timer_(),
-      blink_on_(false),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
-
-  // setup blinking timer to 750ms interval
-  blinking_timer_.setInterval(750);
-  connect(&blinking_timer_, &QTimer::timeout, [this]() {
-    blink_on_ = !blink_on_;
-    update();
-  });
-  blinking_timer_.start();
 }
 
 LayoutViewer::~LayoutViewer()
@@ -1458,6 +1449,7 @@ void LayoutViewer::drawRows(dbBlock* block,
 void LayoutViewer::selection(const Selected& selection)
 {
   inspector_selection_ = selection;
+  selectionBlink(selection, 3);
   inspector_focus_ = nullptr; // reset focus
   update();
 }
@@ -1473,6 +1465,38 @@ void LayoutViewer::selectionFocus(const Selected& focus, const QColor& color)
   update();
 }
 
+void LayoutViewer::selectionBlink(const Selected& selection, int max_blinks, int blink_interval)
+{
+  if (blink_selection_ != nullptr) {
+    blink_selection_->timer->stop();
+    blink_selection_ = nullptr;
+  }
+
+  if (selection) {
+    blink_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{selection, 0, 2*max_blinks, nullptr});
+    blink_selection_->timer = std::make_unique<QTimer>();
+    blink_selection_->timer->setInterval(blink_interval);
+
+    connect(blink_selection_->timer.get(),
+            &QTimer::timeout,
+            [this]() {
+              if (blink_selection_ == nullptr) {
+                return;
+              }
+
+              blink_selection_->state_count++;
+              if (blink_selection_->state_count == blink_selection_->max_state_count) {
+                blink_selection_->timer->stop();
+                blink_selection_ = nullptr;
+              }
+
+              update();
+            });
+
+    blink_selection_->timer->start();
+  }
+}
+
 void LayoutViewer::drawSelected(Painter& painter)
 {
   if (!options_->areSelectedVisible()) {
@@ -1482,9 +1506,11 @@ void LayoutViewer::drawSelected(Painter& painter)
   for (auto& selected : selected_) {
     bool do_paint = true;
 
-    if (selected_.size() > 1 &&
-        inspector_selection_ == selected) {
-      do_paint = blink_on_;
+    if (blink_selection_ != nullptr && selected == blink_selection_->selection) {
+      // if item is blinking only paint on even states
+      if (blink_selection_->state_count % 2 == 0) {
+        do_paint = false;
+      }
     }
 
     if (do_paint) {
