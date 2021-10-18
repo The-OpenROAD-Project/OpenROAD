@@ -413,7 +413,7 @@ LayoutViewer::LayoutViewer(
       snap_edge_showing_(false),
       snap_edge_(),
       inspector_selection_(Selected()),
-      inspector_focus_(nullptr),
+      inspector_focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
       logger_(nullptr),
@@ -1452,18 +1452,13 @@ void LayoutViewer::selection(const Selected& selection)
   if (selected_.size() > 1) {
     selectionAnimation(selection);
   }
-  inspector_focus_ = nullptr; // reset focus
+  inspector_focus_ = Selected(); // reset focus
   update();
 }
 
-void LayoutViewer::selectionFocus(const Selected& focus, const QColor& color)
+void LayoutViewer::selectionFocus(const Selected& focus)
 {
-  if (focus) {
-    Painter::Color paint_color{color.red(), color.green(), color.blue(), color.alpha()};
-    inspector_focus_ = std::make_unique<Focus>(Focus{focus, paint_color});
-  } else {
-    inspector_focus_ = nullptr;
-  }
+  inspector_focus_ = focus;
   update();
 }
 
@@ -1521,12 +1516,12 @@ void LayoutViewer::drawSelected(Painter& painter)
     selected.highlight(painter, Painter::highlight, pen_width);
   }
 
-  if (inspector_focus_ != nullptr) {
-    inspector_focus_->selection.highlight(painter,
-                                          inspector_focus_->color,
-                                          1,
-                                          inspector_focus_->color,
-                                          Painter::Brush::DIAGONAL);
+  if (inspector_focus_) {
+    inspector_focus_.highlight(painter,
+                               Painter::highlight,
+                               1,
+                               Painter::highlight,
+                               Painter::Brush::DIAGONAL);
   }
 }
 

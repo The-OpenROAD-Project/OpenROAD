@@ -129,7 +129,7 @@ class Inspector : public QDockWidget
   void selected(const Selected& selected, bool showConnectivity = false);
   void selectedItemChanged(const Selected& selected);
   void selection(const Selected& selected);
-  void focus(const Selected& selected, const QColor& color);
+  void focus(const Selected& selected);
 
  public slots:
   void inspect(const Selected& object);

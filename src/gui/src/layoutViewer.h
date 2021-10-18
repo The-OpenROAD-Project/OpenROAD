@@ -228,7 +228,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void selectArea(const odb::Rect& area, bool append);
 
   void selection(const Selected& selection);
-  void selectionFocus(const Selected& focus, const QColor& color);
+  void selectionFocus(const Selected& focus);
   void selectionAnimation(const Selected& selection, int repeats = 3, int update_interval = 750);
 
  private:
@@ -366,11 +366,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   // keeps track of inspector selection and focus items
   Selected inspector_selection_;
-  struct Focus {
-    Selected selection;
-    Painter::Color color;
-  };
-  std::unique_ptr<Focus> inspector_focus_;
+  Selected inspector_focus_;
   // Timer used to handle blinking objects in the layout
   struct AnimatedSelected {
     const Selected selection;

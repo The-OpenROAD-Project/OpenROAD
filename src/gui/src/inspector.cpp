@@ -463,13 +463,11 @@ void Inspector::focusIndex(const QModelIndex& index)
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
-  const QColor& color = model_->getSelectableColor();
-
   if (item_data.isValid()) {
     // emit the selected item as something to focus on
-    emit focus(item_data.value<Selected>(), color);
+    emit focus(item_data.value<Selected>());
   } else {
-    emit focus(Selected(), color);
+    emit focus(Selected());
   }
 }
 
