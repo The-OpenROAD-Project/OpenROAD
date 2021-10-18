@@ -235,6 +235,15 @@ gui::get_selection_property name
 Options description:
 - ``name`` name of the property. For example, ``Type`` for object type or ``bbox`` for the bounding box of the object.
 
+To animate the current selection in the Inspector:
+
+```
+gui::selection_animate
+gui::selection_animate repeat
+```
+
+Options description:
+- ``repeat``: indicate how many times the animation should repeat, default value is 3 repeats. If the value is 0, the animation will repeat indefinitely.
 
 ### Highlighting
 

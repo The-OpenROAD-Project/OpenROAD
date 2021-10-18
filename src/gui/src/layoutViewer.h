@@ -230,6 +230,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus);
   void selectionAnimation(const Selected& selection, int repeats = 3, int update_interval = 750);
+  void selectionAnimation(int repeats = 3, int update_interval = 750) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
  private:
   struct Boxes
