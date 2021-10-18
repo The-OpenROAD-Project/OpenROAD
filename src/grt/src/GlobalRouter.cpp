@@ -234,9 +234,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
     // so the originals are not side-effected.
     NetRouteMap routes = routes_;
     addLocalConnections(routes);
-    violations_cnt = antenna_repair.checkAntennaViolations(routes,
-                                                           max_routing_layer_,
-                                                           diode_mterm);
+    violations_cnt = antenna_repair.checkAntennaViolations(
+        routes, max_routing_layer_, diode_mterm);
 
     if (violations_cnt > 0) {
       antenna_repair.deleteFillerCells();
@@ -244,7 +243,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
       IncrementalGRoute incr_groute(this, block_);
       clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
-      logger_->info(GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
+      logger_->info(
+          GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
 
       antenna_repair.legalizePlacedCells();
       incr_groute.updateRoutes();
@@ -290,14 +290,14 @@ void GlobalRouter::estimateRC()
   }
 }
 
-void GlobalRouter::estimateRC(odb::dbNet *db_net)
+void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
   MakeWireParasitics builder(openroad_, this);
   GRoute& route = routes_[db_net];
-    if (!route.empty()) {
-      Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route);
-    }
+  if (!route.empty()) {
+    Net* net = getNet(db_net);
+    builder.estimateParasitcs(db_net, net->getPins(), route);
+  }
 }
 
 void GlobalRouter::initCoreGrid(int max_routing_layer)
@@ -391,14 +391,16 @@ Capacities GlobalRouter::getCapacities()
     auto tech_layer = routing_layers_[layer];
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
+        old_cap
+            = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
         h_caps[layer - 1][y - 1][x - 1] = old_cap;
       }
     }
 
     for (int x = 1; x < x_grids; x++) {
       for (int y = 1; y < y_grids; y++) {
-        old_cap = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
+        old_cap
+            = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
         v_caps[layer - 1][x - 1][y - 1] = old_cap;
       }
     }
@@ -2117,19 +2119,34 @@ void GlobalRouter::initGrid(int max_layer)
         GRT, 82, "Track for layer {} not found.", tech_layer->getName());
   }
 
-  int track_step_x, track_step_y;
+  int track_step_x = -1;
+  int track_step_y = -1;
   int init_track_x, num_tracks_x;
   int init_track_y, num_tracks_y;
   int track_spacing;
 
-  track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-  track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+  if (track_grid->getNumGridPatternsX() > 0)
+    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+  if (track_grid->getNumGridPatternsY() > 0)
+    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
 
   if (tech_layer->getDirection().getValue()
       == odb::dbTechLayerDir::HORIZONTAL) {
+    if (track_step_y == -1) {
+      logger_->error(GRT,
+                     124,
+                     "Horizontal tracks for layer {} not found.",
+                     tech_layer->getName());
+    }
     track_spacing = track_step_y;
   } else if (tech_layer->getDirection().getValue()
              == odb::dbTechLayerDir::VERTICAL) {
+    if (track_step_x == -1) {
+      logger_->error(GRT,
+                     147,
+                     "Vertical tracks for layer {} not found.",
+                     tech_layer->getName());
+    }
     track_spacing = track_step_x;
   } else {
     logger_->error(GRT,
@@ -2360,7 +2377,8 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
           GRT, 86, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    int track_step_x, track_step_y;
+    int track_step_x = -1;
+    int track_step_y = -1;
     int init_track_x, num_tracks_x;
     int init_track_y, num_tracks_y;
     int track_pitch, line_2__via_pitch_down, line_2__via_pitch_up, location,
@@ -2369,11 +2387,19 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
     const bool horizontal = false;
     const bool vertical = true;
 
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    if (track_grid->getNumGridPatternsX() > 0)
+      track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+    if (track_grid->getNumGridPatternsY() > 0)
+      track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
 
     if (tech_layer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
+      if (track_step_y == -1) {
+        logger_->error(GRT,
+                       148,
+                       "Horizontal tracks for layer {} not found.",
+                       tech_layer->getName());
+      }
       track_pitch = track_step_y;
       line_2__via_pitch_up = l2vPitches[level].first;
       line_2__via_pitch_down = l2vPitches[level].second;
@@ -2382,6 +2408,12 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
       orientation = horizontal;
     } else if (tech_layer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
+      if (track_step_x == -1) {
+        logger_->error(GRT,
+                       149,
+                       "Vertical tracks for layer {} not found.",
+                       tech_layer->getName());
+      }
       track_pitch = track_step_x;
       line_2__via_pitch_up = l2vPitches[level].first;
       line_2__via_pitch_down = l2vPitches[level].second;
@@ -2464,7 +2496,8 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
 {
   int min_spacing = 0;
   int min_width;
-  int track_step_x, track_step_y;
+  int track_step_x = -1;
+  int track_step_y = -1;
   int init_track_x, num_tracks_x;
   int init_track_y, num_tracks_y;
 
@@ -2480,14 +2513,30 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
           GRT, 90, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    track->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    if (track->getNumGridPatternsX() > 0) {
+      track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+    }
+    if (track->getNumGridPatternsY() > 0) {
+      track->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    }
 
     if (tech_layer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
+      if (track_step_y == -1) {
+        logger_->error(GRT,
+                       116,
+                       "Horizontal tracks for layer {} not found.",
+                       tech_layer->getName());
+      }
       min_width = track_step_y;
     } else if (tech_layer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
+      if (track_step_x == -1) {
+        logger_->error(GRT,
+                       117,
+                       "Vertical tracks for layer {} not found.",
+                       tech_layer->getName());
+      }
       min_width = track_step_x;
     } else {
       logger_->error(GRT,
@@ -3519,11 +3568,8 @@ void GrouteRenderer::drawObjects(gui::Painter& painter)
 
 ////////////////////////////////////////////////////////////////
 
-IncrementalGRoute::IncrementalGRoute(GlobalRouter *groute,
-                                     odb::dbBlock *block) :
-  groute_(groute),
-  capacities_(groute_->getCapacities()),
-  db_cbk_(groute)
+IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
+    : groute_(groute), capacities_(groute_->getCapacities()), db_cbk_(groute)
 {
   db_cbk_.addOwner(block);
 }
@@ -3543,24 +3589,25 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes(Capacities &capacities)
+void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
 {
   // Fastroute barfs if there are no nets. It shouldn't. -cherry
   if (!dirty_nets_.empty()) {
     updateDirtyNets();
-    std::vector<Net*> dirty_nets = startFastRoute(min_routing_layer_, max_routing_layer_,
-                                                  NetType::Antenna);
+    std::vector<Net*> dirty_nets = startFastRoute(
+        min_routing_layer_, max_routing_layer_, NetType::Antenna);
     fastroute_->setVerbose(0);
     logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
-        debugPrint(logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+        debugPrint(
+            logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
     }
     restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
     removeDirtyNetsRouting();
 
     NetRouteMap new_route
-      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+        = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
     dirty_nets_.clear();
   }
