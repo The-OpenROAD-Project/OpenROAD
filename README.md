@@ -71,14 +71,14 @@ make DESTDIR=<prefix_path> install
 ``` shell
 ./etc/Build.sh
 # To build with debug option enabled and if the Tcl library is not on the default path
-./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
 To install in a different directory use:
 
 ``` shell
-./etc/Build.sh --cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 ## Regression Tests
