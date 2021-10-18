@@ -103,7 +103,7 @@ define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
 define_metric "DPL::errors" "DPL" "%3d" "<=" {0}
 define_metric "ANT::errors" "ANT" "%3d" "<=" {0}
 define_metric "DRT::drv" "drv" "%3d" "<=" {0}
-define_metric "clock_period" "" "%d" "<=" {0}
+define_metric "clock_period" "" "%.2f" "<=" {$clock_period}
 
 ################################################################
 
