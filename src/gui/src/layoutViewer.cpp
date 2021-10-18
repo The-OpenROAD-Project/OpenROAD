@@ -414,7 +414,7 @@ LayoutViewer::LayoutViewer(
       snap_edge_(),
       inspector_selection_(Selected()),
       inspector_focus_(nullptr),
-      blink_selection_(nullptr),
+      animate_selection_(nullptr),
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
@@ -1449,7 +1449,9 @@ void LayoutViewer::drawRows(dbBlock* block,
 void LayoutViewer::selection(const Selected& selection)
 {
   inspector_selection_ = selection;
-  selectionBlink(selection, 3);
+  if (selected_.size() > 1) {
+    selectionAnimation(selection);
+  }
   inspector_focus_ = nullptr; // reset focus
   update();
 }
@@ -1465,35 +1467,41 @@ void LayoutViewer::selectionFocus(const Selected& focus, const QColor& color)
   update();
 }
 
-void LayoutViewer::selectionBlink(const Selected& selection, int max_blinks, int blink_interval)
+void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, int update_interval)
 {
-  if (blink_selection_ != nullptr) {
-    blink_selection_->timer->stop();
-    blink_selection_ = nullptr;
+  if (animate_selection_ != nullptr) {
+    animate_selection_->timer->stop();
+    animate_selection_ = nullptr;
   }
 
   if (selection) {
-    blink_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{selection, 0, 2*max_blinks, nullptr});
-    blink_selection_->timer = std::make_unique<QTimer>();
-    blink_selection_->timer->setInterval(blink_interval);
+    const int state_reset_interval = 3;
+    animate_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{
+      selection,
+      0,
+      state_reset_interval*repeats,
+      state_reset_interval,
+      nullptr});
+    animate_selection_->timer = std::make_unique<QTimer>();
+    animate_selection_->timer->setInterval(update_interval);
 
-    connect(blink_selection_->timer.get(),
+    connect(animate_selection_->timer.get(),
             &QTimer::timeout,
             [this]() {
-              if (blink_selection_ == nullptr) {
+              if (animate_selection_ == nullptr) {
                 return;
               }
 
-              blink_selection_->state_count++;
-              if (blink_selection_->state_count == blink_selection_->max_state_count) {
-                blink_selection_->timer->stop();
-                blink_selection_ = nullptr;
+              animate_selection_->state_count++;
+              if (animate_selection_->state_count == animate_selection_->max_state_count) {
+                animate_selection_->timer->stop();
+                animate_selection_ = nullptr;
               }
 
               update();
             });
 
-    blink_selection_->timer->start();
+    animate_selection_->timer->start();
   }
 }
 
@@ -1504,23 +1512,19 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 
   for (auto& selected : selected_) {
-    bool do_paint = true;
+    int pen_width = 1;
 
-    if (blink_selection_ != nullptr && selected == blink_selection_->selection) {
-      // if item is blinking only paint on even states
-      if (blink_selection_->state_count % 2 == 0) {
-        do_paint = false;
-      }
+    if (animate_selection_ != nullptr && selected == animate_selection_->selection) {
+      pen_width = animate_selection_->state_count % animate_selection_->state_modulo + 1;
     }
 
-    if (do_paint) {
-      selected.highlight(painter, Painter::highlight);
-    }
+    selected.highlight(painter, Painter::highlight, pen_width);
   }
 
   if (inspector_focus_ != nullptr) {
     inspector_focus_->selection.highlight(painter,
                                           inspector_focus_->color,
+                                          1,
                                           inspector_focus_->color,
                                           Painter::Brush::DIAGONAL);
   }
@@ -1536,6 +1540,7 @@ void LayoutViewer::drawHighlighted(Painter& painter)
     for (auto& highlighted : highlight_set) {
       highlighted.highlight(painter,
                             highlight_color,
+                            1,
                             highlight_color);
     }
 

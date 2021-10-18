@@ -314,6 +314,7 @@ class Selected
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   void highlight(Painter& painter,
                  const Painter::Color& pen = Painter::persistHighlight,
+                 int pen_width = 0,
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
 

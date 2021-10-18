@@ -229,7 +229,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus, const QColor& color);
-  void selectionBlink(const Selected& selection, int max_blinks, int blink_interval = 750);
+  void selectionAnimation(const Selected& selection, int repeats = 3, int update_interval = 750);
 
  private:
   struct Boxes
@@ -375,10 +375,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   struct AnimatedSelected {
     const Selected selection;
     int state_count;
-    int max_state_count;
+    const int max_state_count;
+    const int state_modulo;
     std::unique_ptr<QTimer> timer;
   };
-  std::unique_ptr<AnimatedSelected> blink_selection_;
+  std::unique_ptr<AnimatedSelected> animate_selection_;
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;

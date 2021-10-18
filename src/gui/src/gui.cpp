@@ -664,10 +664,11 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 
 void Selected::highlight(Painter& painter,
                          const Painter::Color& pen,
+                         int pen_width,
                          const Painter::Color& brush,
                          const Painter::Brush& brush_style) const
 {
-  painter.setPen(pen, true);
+  painter.setPen(pen, true, pen_width);
   painter.setBrush(brush, brush_style);
 
   return descriptor_->highlight(object_, painter, additional_data_);
