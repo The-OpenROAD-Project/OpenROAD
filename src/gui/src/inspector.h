@@ -134,7 +134,7 @@ class Inspector : public QDockWidget
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
-  void update();
+  void update(const Selected& object = Selected());
 
   void indexClicked(const QModelIndex& index);
   void indexDoubleClicked(const QModelIndex& index);

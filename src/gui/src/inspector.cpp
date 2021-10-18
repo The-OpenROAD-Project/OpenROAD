@@ -471,7 +471,7 @@ void Inspector::focusIndex(const QModelIndex& index)
   }
 }
 
-void Inspector::update()
+void Inspector::update(const Selected& object)
 {
   if (selected_.empty()) {
     button_frame_->setVisible(false);
@@ -483,7 +483,11 @@ void Inspector::update()
       button_frame_->setVisible(false);
     }
     selected_itr_ = selected_.begin();
-    inspect(*selected_itr_);
+    if (object) {
+      inspect(object);
+    } else {
+      inspect(*selected_itr_);
+    }
     raise();
   }
 }
