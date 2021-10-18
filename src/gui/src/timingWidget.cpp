@@ -301,6 +301,8 @@ void TimingWidget::showPathIndex(int path_idx)
 
 void TimingWidget::populatePaths()
 {
+  clearPathDetails();
+
   int count = path_count_spin_box_->value();
 
   setup_timing_paths_model_->populateModel(true, count);
