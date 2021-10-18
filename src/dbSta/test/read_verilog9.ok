@@ -1,0 +1,6 @@
+[INFO ODB-0222] Reading LEF file: liberty1.lef
+[INFO ODB-0223]     Created 2 technology layers
+[INFO ODB-0225]     Created 6 library cells
+[INFO ODB-0226] Finished LEF file:  liberty1.lef
+[WARNING ODB-0229] Error: library (liberty1) already exists
+[WARNING STA-0053] liberty1.lib line 1, library liberty1 already exists.
