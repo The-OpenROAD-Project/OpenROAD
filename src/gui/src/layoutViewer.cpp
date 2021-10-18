@@ -1508,12 +1508,19 @@ void LayoutViewer::drawSelected(Painter& painter)
 
   for (auto& selected : selected_) {
     int pen_width = 1;
+    auto brush = Painter::transparent;
 
     if (animate_selection_ != nullptr && selected == animate_selection_->selection) {
       pen_width = animate_selection_->state_count % animate_selection_->state_modulo + 1;
+
+      if (pen_width == 1) {
+        // flash with brush, since pen width is the same as normal
+        brush = Painter::highlight;
+        brush.a = 100;
+      }
     }
 
-    selected.highlight(painter, Painter::highlight, pen_width);
+    selected.highlight(painter, Painter::highlight, pen_width, brush);
   }
 
   if (inspector_focus_) {
