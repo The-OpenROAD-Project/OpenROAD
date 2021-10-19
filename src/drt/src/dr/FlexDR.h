@@ -658,6 +658,7 @@ class FlexDRWorker
                                 const frBox& tmpBx,
                                 int type,
                                 bool isUpperVia,
+                                const drEolSpacingConstraint& drCon,
                                 frMIdx i,
                                 frMIdx j,
                                 frMIdx z);
@@ -676,7 +677,8 @@ class FlexDRWorker
   void modEolSpacingRulesCost(const frBox& box,
                               frMIdx z,
                               int type,
-                              bool isSkipVia = false);
+                              bool isSkipVia = false,
+                              frNonDefaultRule* ndr = nullptr);
   // cutSpc
   void modCutSpacingCost(const frBox& box,
                          frMIdx z,

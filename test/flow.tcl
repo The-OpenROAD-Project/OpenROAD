@@ -241,6 +241,7 @@ utl::metric "clock_skew" [sta::worst_clock_skew -setup]
 utl::metric "max_slew_violations" [sta::max_slew_violation_count]
 utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
 utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+# report clock period as a metric for updating limits
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations

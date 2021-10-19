@@ -91,8 +91,8 @@ set design_list_ispd19 " \
     ispd19_test1 \
     "
 set drvs_ispd19 { \
-    28 \
-    1 \
+    29 \
+    0 \
     0 \
     0 \
     0 \
