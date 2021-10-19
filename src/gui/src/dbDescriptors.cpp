@@ -527,6 +527,9 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return false;
 }
 
+// additional_data is used define the related sink for this net
+// this will limit the fly-wires to just those related to that sink
+// if nullptr, all flywires will be drawn
 void DbNetDescriptor::highlight(std::any object,
                                 Painter& painter,
                                 void* additional_data) const
@@ -586,8 +589,13 @@ void DbNetDescriptor::highlight(std::any object,
                                (pin_rect.yMax() + pin_rect.yMin()) / 2.0);
         if (driver_term == true)
           driver_locs.insert(rect_center);
-        if (sink_term)
+        if (sink_term) {
+          if (sink_object != nullptr && sink_object != blk_term) {
+            continue;
+          }
+
           sink_locs.insert(rect_center);
+        }
       }
     }
 
@@ -596,7 +604,6 @@ void DbNetDescriptor::highlight(std::any object,
     auto color = painter.getPenColor();
     color.a = 255;
     painter.setPen(color, true);
-    painter.setBrush(color);
     for (auto& driver : driver_locs) {
       for (auto& sink : sink_locs) {
         painter.drawLine(driver, sink);
