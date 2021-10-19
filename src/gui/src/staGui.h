@@ -237,12 +237,14 @@ class TimingPathRenderer : public gui::Renderer
   void highlightInst(odb::dbInst* inst,
                      gui::Painter& painter,
                      const gui::Painter::Color& color);
-  void highlightStage(gui::Painter& painter);
+  void highlightStage(gui::Painter& painter,
+                      const gui::Descriptor* net_descriptor);
   void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
   void highlightNet(odb::dbNet* net,
                     odb::dbObject* source_node,
                     odb::dbObject* sink_node,
-                    gui::Painter& painter);
+                    gui::Painter& painter,
+                    const gui::Descriptor* net_descriptor);
 
   sta::dbSta* sta_;
 
