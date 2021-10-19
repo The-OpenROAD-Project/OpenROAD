@@ -668,15 +668,12 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
 {
   if (path_ == nullptr)
     return;
-  int src_x, src_y;
-  int dst_x, dst_y;
-  auto getSegmentEnd = [this](odb::dbObject* node, int& x, int& y, bool& clk_node) {
-    if (node->getObjectType() == odb::dbObjectType::dbITermObj) {
-      odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node);
-      db_iterm->getAvgXY(&x, &y);
-    } else {
+
+  auto* net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
+
+  auto getSegmentEnd = [this](odb::dbObject* node, bool& clk_node) {
+    if (node->getObjectType() == odb::dbObjectType::dbBTermObj) {
       odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node);
-      bterm->getFirstPinLocation(x, y);
       auto sta_term = sta_->getDbNetwork()->dbToSta(bterm);
       clk_node = sta_->isClock(sta_term);
     }
@@ -684,17 +681,14 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
   // SigType is not populated properly in OpenDB
   bool clk_node = false;
 
-  getSegmentEnd(source_node, src_x, src_y, clk_node);
-  getSegmentEnd(sink_node, dst_x, dst_y, clk_node);
-
-  odb::Point pt1(src_x, src_y);
-  odb::Point pt2(dst_x, dst_y);
+  getSegmentEnd(source_node, clk_node);
+  getSegmentEnd(sink_node, clk_node);
 
   gui::Painter::Color wire_color = clk_node == true
                                        ? TimingPathRenderer::clock_color_
                                        : TimingPathRenderer::signal_color_;
   painter.setPen(wire_color, true);
-  painter.drawLine(pt1, pt2);
+  net_descriptor->highlight(net, painter, sink_node);
 }
 
 }  // namespace gui
