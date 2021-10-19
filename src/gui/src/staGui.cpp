@@ -547,6 +547,9 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
   if (path_ == nullptr)
     return;
+
+  auto* net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
+
   odb::dbObject* sink_node = nullptr;
   odb::dbNet* net = nullptr;
   int node_count = path_->levelsCount();
@@ -564,7 +567,7 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
         net = db_iterm->getNet();
         continue;
       } else if (sink_node) {
-        highlightNet(net, db_iterm /*source*/, sink_node, painter);
+        highlightNet(net, db_iterm /*source*/, sink_node, painter, net_descriptor);
         sink_node = nullptr;
         net = nullptr;
       }
@@ -578,61 +581,68 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
         net = bterm->getNet();
         continue;
       } else if (sink_node) {
-        highlightNet(net, bterm, sink_node, painter);
+        highlightNet(net, bterm, sink_node, painter, net_descriptor);
         sink_node = nullptr;
         net = nullptr;
       }
     }
   }
-  if (highlight_node_ >= 0 && highlight_node_ < node_count)
-    highlightStage(painter);
+  if (highlight_node_ >= 0 && highlight_node_ < node_count) {
+    highlightStage(painter, net_descriptor);
+  }
 }
 
-void TimingPathRenderer::highlightStage(gui::Painter& painter)
+void TimingPathRenderer::highlightStage(gui::Painter& painter, const gui::Descriptor* net_descriptor)
 {
   if (path_ == nullptr)
     return;
   odb::dbObject* sink_node = nullptr;
-  int src_x, src_y;
-  int dst_x, dst_y;
-  auto getSegmentEnds = [&](int node_idx, int& x, int& y) {
+  odb::dbNet* net = nullptr;
+
+  auto getSegmentEnds = [&](int node_idx) {
     auto node = path_->getNodeAt(node_idx);
     if (node.pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
       odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node.pin_);
+      net = db_iterm->getNet();
+
       odb::dbInst* db_inst = db_iterm->getInst();
       highlightInst(
           db_inst, painter, TimingPathRenderer::inst_highlight_color_);
-      db_iterm->getAvgXY(&x, &y);
+
       auto io_dir = db_iterm->getIoType();
-      if (io_dir == odb::dbIoType::INPUT || io_dir == odb::dbIoType::INOUT)
+      if (io_dir == odb::dbIoType::INPUT || io_dir == odb::dbIoType::INOUT) {
         sink_node = db_iterm;
+      }
     } else {
       odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node.pin_);
-      bterm->getFirstPinLocation(x, y);
+      net = bterm->getNet();
       auto io_dir = bterm->getIoType();
-      if (io_dir == odb::dbIoType::OUTPUT || io_dir == odb::dbIoType::INOUT)
+      if (io_dir == odb::dbIoType::OUTPUT || io_dir == odb::dbIoType::INOUT) {
         sink_node = bterm;
+      }
     }
   };
-  getSegmentEnds(highlight_node_, src_x, src_y);
+
+  getSegmentEnds(highlight_node_);
   int nxt_stage = -1;
   if ((sink_node == nullptr && highlight_node_ < (path_->levelsCount() - 1))
-      || (sink_node != nullptr && highlight_node_ == 0))
+      || (sink_node != nullptr && highlight_node_ == 0)) {
     nxt_stage = highlight_node_ + 1;
-  else if (highlight_node_ != 0)
+  } else if (highlight_node_ != 0) {
     nxt_stage = highlight_node_ - 1;
-  if (nxt_stage != -1)
-    getSegmentEnds(nxt_stage, dst_x, dst_y);
-  else {
-    // no dst
-    return;
   }
-  odb::Point pt1(src_x, src_y);
-  odb::Point pt2(dst_x, dst_y);
 
-  painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
-  painter.drawLine(pt1, pt2);
+  if (nxt_stage != -1) {
+    getSegmentEnds(nxt_stage);
+  }
+
+  if (net != nullptr) {
+    painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
+    painter.setBrush(TimingPathRenderer::inst_highlight_color_);
+    net_descriptor->highlight(net, painter, sink_node);
+  }
 }
+
 // Color in the instances to make them more visible.
 void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
                                        gui::Painter& painter,
@@ -664,12 +674,11 @@ void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
 void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                       odb::dbObject* source_node,
                                       odb::dbObject* sink_node,
-                                      gui::Painter& painter)
+                                      gui::Painter& painter,
+                                      const gui::Descriptor* net_descriptor)
 {
   if (path_ == nullptr)
     return;
-
-  auto* net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
 
   auto getSegmentEnd = [this](odb::dbObject* node, bool& clk_node) {
     if (node->getObjectType() == odb::dbObjectType::dbBTermObj) {
@@ -688,6 +697,7 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                        ? TimingPathRenderer::clock_color_
                                        : TimingPathRenderer::signal_color_;
   painter.setPen(wire_color, true);
+  painter.setBrush(wire_color);
   net_descriptor->highlight(net, painter, sink_node);
 }
 
