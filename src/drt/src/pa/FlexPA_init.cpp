@@ -124,10 +124,6 @@ void FlexPA::initUniqueInstance_main(
         refBlock2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
-  map<frBlock*,
-      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
-      refBlockOT2Insts;  // refblock orient track-offset to instances
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
@@ -181,11 +177,12 @@ void FlexPA::initUniqueInstance_main(
   for (auto& [refBlock, orientMap] : refBlockOT2Insts) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
-      for (auto& [vec, inst] : offsetMap) {
-        auto uniqueInst = *(inst.begin());
+      for (auto& [vec, insts] : offsetMap) {
+        auto uniqueInst = *(insts.begin());
         uniqueInstances_.push_back(uniqueInst);
-        for (auto i : inst) {
-          inst2unique_[i] = uniqueInst;
+        for (auto i : insts) {
+            inst2unique_[i] = uniqueInst;
+            inst2Class_[i] = &insts;
         }
       }
     }
@@ -193,6 +190,7 @@ void FlexPA::initUniqueInstance_main(
   for (frInst* inst : ndrInsts) {
     uniqueInstances_.push_back(inst);
     inst2unique_[inst] = inst;
+    inst2Class_[inst] = nullptr;
   }
 
   // init unique2Idx
