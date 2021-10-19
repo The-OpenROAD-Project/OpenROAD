@@ -76,6 +76,10 @@ class FlexRP
                                         frViaDef* viaDef,
                                         bool isCurrDirX);
   void prep_lineForbiddenLen();
+  void prep_eolForbiddenLen_helper(frLayer* layer,
+                                   const frCoord eolWidth,
+                                   frCoord& eolSpace,
+                                   frCoord& eolWithin);
   void prep_eolForbiddenLen();
   void prep_lineForbiddenLen_helper(const frLayerNum& lNum,
                                     const int& tableLayerIdx,

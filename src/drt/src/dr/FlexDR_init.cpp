@@ -2730,6 +2730,26 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
+  //if shapes dont overlap routeBox, ignore violation
+  if (!getRouteBox().overlaps(marker->getBBox())) {
+        bool overlaps = false;
+        for (auto& s : marker->getAggressors()) {
+            if (std::get<1>(s.second).overlaps(getRouteBox())) {
+                overlaps = true;
+                break;
+            }
+        }
+        if (!overlaps) {
+            for (auto& s : marker->getVictims()) {
+                if (std::get<1>(s.second).overlaps(getRouteBox())) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            if (!overlaps)
+                return;
+        }
+  }
   vector<frBlockObject*> uniqueVictimOwners;     // to maintain order
   vector<frBlockObject*> uniqueAggressorOwners;  // to maintain order
 

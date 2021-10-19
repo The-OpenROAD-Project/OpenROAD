@@ -210,7 +210,7 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
  * @return the min eol width from the eol rules -1 or the default width if no
  * eol rules found.
  */
-inline frCoord getMinEol(frLayer* layer)
+inline frCoord getMinEol(frLayer* layer, frCoord minWidth)
 {
   frCoord eol = INT_MAX;
   if (layer->hasEolSpacing())
@@ -223,10 +223,51 @@ inline frCoord getMinEol(frLayer* layer)
   for (auto con : layer->getLef58EolExtConstraints())
     eol = std::min(eol, con->getExtensionTable().getMinRow());
   if (eol == INT_MAX)
-    eol = layer->getWidth();
+    eol = minWidth;
   else
-    eol = std::max(eol - 1, (frCoord) layer->getWidth());
+    eol = std::max(eol - 1, (frCoord) minWidth);
   return eol;
+}
+
+void FlexRP::prep_eolForbiddenLen_helper(frLayer* layer,
+                                         const frCoord eolWidth,
+                                         frCoord& eolSpace,
+                                         frCoord& eolWithin)
+{
+  if (layer->hasEolSpacing()) {
+    for (auto con : layer->getEolSpacing()) {
+      if (eolWidth < con->getEolWidth()) {
+        eolSpace = std::max(eolSpace, con->getMinSpacing());
+        eolWithin = std::max(eolWithin, con->getEolWithin());
+      }
+    }
+  }
+  for (auto con : layer->getLef58SpacingEndOfLineConstraints()) {
+    if (eolWidth < con->getEolWidth()) {
+      eolSpace = std::max(eolSpace, con->getEolSpace());
+      if (con->hasWithinConstraint()) {
+        auto withinCon = con->getWithinConstraint();
+        eolWithin = std::max(eolWithin, withinCon->getEolWithin());
+        if (withinCon->hasEndToEndConstraint()) {
+          auto endToEndCon = withinCon->getEndToEndConstraint();
+          eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+        }
+      }
+    }
+  }
+  for (auto con : layer->getLef58EolKeepOutConstraints()) {
+    if (eolWidth < con->getEolWidth()) {
+      eolSpace = std::max(eolSpace, con->getForwardExt());
+      eolWithin = std::max(eolWithin, con->getSideExt());
+    }
+  }
+  for (auto con : layer->getLef58EolExtConstraints()) {
+    if (eolWidth < con->getExtensionTable().getMaxRow()) {
+      eolSpace = std::max(
+          eolSpace,
+          con->getExtensionTable().find(eolWidth) + con->getMinSpacing());
+    }
+  }
 }
 
 void FlexRP::prep_eolForbiddenLen()
@@ -241,42 +282,27 @@ void FlexRP::prep_eolForbiddenLen()
     }
     frCoord eolSpace = 0;
     frCoord eolWithin = 0;
-    frCoord eolWidth = getMinEol(layer);
-    if (layer->hasEolSpacing()) {
-      for (auto con : layer->getEolSpacing()) {
-        if (eolWidth < con->getEolWidth()) {
-          eolSpace = std::max(eolSpace, con->getMinSpacing());
-          eolWithin = std::max(eolWithin, con->getEolWithin());
-        }
-      }
-    }
-    for (auto con : layer->getLef58SpacingEndOfLineConstraints()) {
-      if (eolWidth < con->getEolWidth()) {
-        eolSpace = std::max(eolSpace, con->getEolSpace());
-        if (con->hasWithinConstraint()) {
-          auto withinCon = con->getWithinConstraint();
-          eolWithin = std::max(eolWithin, withinCon->getEolWithin());
-          if (withinCon->hasEndToEndConstraint()) {
-            auto endToEndCon = withinCon->getEndToEndConstraint();
-            eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
-          }
-        }
-      }
-    }
-    for (auto con : layer->getLef58EolKeepOutConstraints()) {
-      if (eolWidth < con->getEolWidth()) {
-        eolSpace = std::max(eolSpace, con->getForwardExt());
-        eolWithin = std::max(eolWithin, con->getSideExt());
-      }
-    }
-    for (auto con : layer->getLef58EolExtConstraints()) {
-      if (eolWidth < con->getExtensionTable().getMaxRow()) {
-        eolSpace = std::max(
-            eolSpace,
-            con->getExtensionTable().find(eolWidth) + con->getMinSpacing());
-      }
-    }
+    frCoord eolWidth = getMinEol(layer, layer->getWidth());
+    prep_eolForbiddenLen_helper(layer, eolWidth, eolSpace, eolWithin);
     layer->setDrEolSpacingConstraint(eolWidth, eolSpace, eolWithin);
+  }
+  for (auto& ndr : tech_->getNondefaultRules()) {
+    for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+      auto layer = tech_->getLayer(lNum);
+      if (layer->getType() != dbTechLayerType::ROUTING) {
+        continue;
+      }
+      auto z = lNum / 2 - 1;
+      frCoord minWidth = ndr->getWidth(z);
+      if (minWidth == 0)
+        continue;
+      frCoord eolSpace = 0;
+      frCoord eolWithin = 0;
+      frCoord eolWidth = getMinEol(layer, minWidth);
+      prep_eolForbiddenLen_helper(layer, eolWidth, eolSpace, eolWithin);
+      drEolSpacingConstraint drCon(eolWidth, eolSpace, eolWithin);
+      ndr->setDrEolConstraint(drCon, z);
+    }
   }
 }
 
