@@ -495,7 +495,7 @@ void Gui::registerDescriptor(const std::type_info& type,
   descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
 }
 
-const Descriptor* Gui::getDescriptor(const std::type_info& type)
+const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 {
   auto find_descriptor = descriptors_.find(type);
   if (find_descriptor == descriptors_.end()) {

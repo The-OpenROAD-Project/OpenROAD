@@ -540,7 +540,7 @@ class Gui
   }
 
   template <class T>
-  const Descriptor* getDescriptor()
+  const Descriptor* getDescriptor() const
   {
     return getDescriptor(typeid(T));
   }
@@ -562,7 +562,7 @@ class Gui
 
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
-  const Descriptor* getDescriptor(const std::type_info& type);
+  const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
 
   // flag to indicate if tcl should take over after gui closes
