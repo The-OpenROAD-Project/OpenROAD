@@ -413,6 +413,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
         if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
           ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
         }
+        first = false;
       }
     }
     if (errors.size() > 1 && errors[1]->size() > 1) {
@@ -423,6 +424,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
         if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
           ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
         }
+        first = false;
       }
     }
   }
