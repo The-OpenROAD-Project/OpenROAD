@@ -65,7 +65,7 @@
 #include "ord/Version.hh"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
-#include "utl/Logger.h" 
+#include "utl/Logger.h"
 #include "gui/gui.h"
 
 using std::string;
@@ -79,35 +79,33 @@ using sta::is_regular_file;
 extern "C"
 {
     extern PyObject* PyInit__openroad_swig_py();
-    extern PyObject* PyInit__opendbpy();
+    extern PyObject* PyInit__odbpy();
 }
 #endif
 
 static int cmd_argc;
 static char **cmd_argv;
-bool gui_mode = false;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 
 static const char *init_filename = ".openroad";
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename);
+showUsage(const char *prog, const char *init_filename);
 static void
 showSplash();
 
 #ifdef ENABLE_PYTHON3
 namespace sta {
-extern const char *opendbpy_python_inits[];
+extern const char *odbpy_python_inits[];
 extern const char *openroad_swig_py_python_inits[];
 }
 
 static void
 initPython()
 {
-  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
-    fprintf(stderr, "Error: could not add module opendbpy\n");
+  if (PyImport_AppendInittab("_odbpy", PyInit__odbpy) == -1) {
+    fprintf(stderr, "Error: could not add module odbpy\n");
     exit(1);
   }
 
@@ -118,18 +116,18 @@ initPython()
 
   Py_Initialize();
 
-  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+  char *unencoded = sta::unencode(sta::odbpy_python_inits);
 
-  PyObject* odb_code = Py_CompileString(unencoded, "opendbpy.py", Py_file_input);
+  PyObject* odb_code = Py_CompileString(unencoded, "odbpy.py", Py_file_input);
   if (odb_code == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not compile opendbpy\n");
+    fprintf(stderr, "Error: could not compile odbpy\n");
     exit(1);
   }
 
-  if (PyImport_ExecCodeModule("opendb", odb_code) == nullptr) {
+  if (PyImport_ExecCodeModule("odb", odb_code) == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not add module opendb.py\n");
+    fprintf(stderr, "Error: could not add module odb\n");
     exit(1);
   }
 
@@ -163,7 +161,7 @@ main(int argc,
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_SHA1);
+    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_DESCRIBE);
     return 0;
   }
 
@@ -177,21 +175,15 @@ main(int argc,
     remove(metrics_filename);
   }
 
+  cmd_argc = argc;
+  cmd_argv = argv;
 #ifdef ENABLE_PYTHON3
   // Capture the current SIGINT handler before python changes it.
   struct sigaction orig_sigint_handler;
   sigaction(SIGINT, NULL, &orig_sigint_handler);
 
   initPython();
-#endif
 
-  cmd_argc = argc;
-  cmd_argv = argv;
-  if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
-    gui_mode = true;
-    return gui::startGui(cmd_argc, cmd_argv);
-  }
-#ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
@@ -217,8 +209,9 @@ main(int argc,
     // on ctrl-C. We don't want that if python is not the main interpreter.
     // We restore the handler from before initPython.
     sigaction(SIGINT, &orig_sigint_handler, NULL);
-  }  
+  }
 #endif
+
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
@@ -229,13 +222,12 @@ main(int argc,
 static int
 tclReadlineInit(Tcl_Interp *interp)
 {
-  std::array<const char *, 8> readline_cmds = {
-    "history",
+  std::array<const char *, 7> readline_cmds = {
     "history event",
     "eval $auto_index(::tclreadline::ScriptCompleter)",
     "::tclreadline::readline builtincompleter true",
     "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
-    "proc ::tclreadline::prompt1 {} { return \"openroad " OPENROAD_VERSION "> \" }",
+    "proc ::tclreadline::prompt1 {} { return \"openroad> \" }",
     "proc ::tclreadline::prompt2 {} { return \"...> \" }",
     "::tclreadline::Loop"
   };
@@ -256,17 +248,22 @@ tclAppInit(int argc,
            const char *init_filename,
            Tcl_Interp *interp)
 {
-  // source init.tcl
-  if (Tcl_Init(interp) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
+  // first check if gui was requested and launch.
+  // gui will call this function again as part of setup
+  // ensuring the else {} will be utilized to initialize tcl and OR.
+  if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
+    gui::startGui(cmd_argc, cmd_argv, interp);
+  } else {
+    // init tcl
+    if (Tcl_Init(interp) == TCL_ERROR) {
+      return TCL_ERROR;
+    }
 #ifdef ENABLE_TCLX
-  if (Tclx_Init(interp) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
+    if (Tclx_Init(interp) == TCL_ERROR) {
+      return TCL_ERROR;
+    }
 #endif
 #ifdef ENABLE_READLINE
-  if (!gui_mode) {
     if (Tclreadline_Init(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
@@ -274,56 +271,81 @@ tclAppInit(int argc,
     if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
       printf("Failed to load tclreadline\n");
     }
-  }
 #endif
-  ord::initOpenRoad(interp);
 
-  if (!findCmdLineFlag(argc, argv, "-no_splash"))
-    showSplash();
+    ord::initOpenRoad(interp);
 
-  const char* threads = findCmdLineKey(argc, argv, "-threads");
-  if (threads) {
-    ord::OpenRoad::openRoad()->setThreadCount(threads);
-  } else {
-    // set to default number of threads
-    ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount(), false);
-  }
-
-  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
-
-  if (!findCmdLineFlag(argc, argv, "-no_init")) {
-#ifdef USE_STD_FILESYSTEM
-    std::filesystem::path init(getenv("HOME"));
-    init /= init_filename;
-    if (std::filesystem::is_regular_file(init)) {
-      sourceTclFile(init.c_str(), true, true, interp);
+    if (!findCmdLineFlag(argc, argv, "-no_splash")) {
+      showSplash();
     }
-#else
-    string init_path = getenv("HOME");
-    init_path += "/";
-    init_path += init_filename;
-    if (is_regular_file(init_path.c_str()))
-      sourceTclFile(init_path.c_str(), true, true, interp);
-#endif
-  }
 
-  if (argc > 2 ||
-      (argc > 1 && argv[1][0] == '-'))
-    showUsage(argv[0], init_filename);
-  else {
-    if (argc == 2) {
-      char *cmd_file = argv[1];
-      if (cmd_file) {
-	int result = sourceTclFile(cmd_file, false, false, interp);
-        if (exit_after_cmd_file) {
-          int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
-          exit(exit_code);
+    const char* threads = findCmdLineKey(argc, argv, "-threads");
+    if (threads) {
+      ord::OpenRoad::openRoad()->setThreadCount(threads);
+    } else {
+      // set to default number of threads
+      ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount(), false);
+    }
+
+    bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+
+    const bool gui_enabled = gui::Gui::enabled();
+
+    if (!findCmdLineFlag(argc, argv, "-no_init")) {
+      const char* restore_state_cmd = "source -echo -verbose {{{}}}";
+#ifdef USE_STD_FILESYSTEM
+      std::filesystem::path init(getenv("HOME"));
+      init /= init_filename;
+      if (std::filesystem::is_regular_file(init)) {
+        if (!gui_enabled) {
+          sourceTclFile(init.c_str(), true, true, interp);
+        } else {
+          // need to delay loading of file until after GUI is completed initialized
+          gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, init.string()));
+        }
+      }
+#else
+      string init_path = getenv("HOME");
+      init_path += "/";
+      init_path += init_filename;
+      if (is_regular_file(init_path.c_str())) {
+        if (!gui_enabled) {
+          sourceTclFile(init_path.c_str(), true, true, interp);
+        } else {
+          // need to delay loading of file until after GUI is completed initialized
+          gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, init_path));
+        }
+      }
+#endif
+    }
+
+    if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
+      showUsage(argv[0], init_filename);
+    }
+    else {
+      if (argc == 2) {
+        char *cmd_file = argv[1];
+        if (cmd_file) {
+          if (!gui_enabled) {
+            int result = sourceTclFile(cmd_file, false, false, interp);
+            if (exit_after_cmd_file) {
+              int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+              exit(exit_code);
+            }
+          } else {
+            // need to delay loading of file until after GUI is completed initialized
+            const char* restore_state_cmd = "source {{{}}}";
+            gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, cmd_file));
+            if (exit_after_cmd_file) {
+              gui::Gui::get()->addRestoreStateCommand("exit");
+            }
+          }
         }
       }
     }
   }
 #ifdef ENABLE_READLINE
-  if (!gui_mode) {
+  if (!gui::Gui::enabled()) {
     return tclReadlineInit(interp);
   }
 #endif
@@ -338,8 +360,7 @@ ord::tclAppInit(Tcl_Interp *interp)
 
 
 static void
-showUsage(const char *prog,
-	  const char *init_filename)
+showUsage(const char *prog, const char *init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
@@ -360,7 +381,7 @@ static void
 showSplash()
 {
   utl::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
-  string sha = OPENROAD_GIT_SHA1;
+  string sha = OPENROAD_GIT_DESCRIBE;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,
                  sha.c_str());

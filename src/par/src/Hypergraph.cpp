@@ -45,7 +45,7 @@ namespace par {
 
 void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
 {
-  std::vector<float> edgeWeight = _edgeWeights;
+  std::vector<float> edgeWeight = edgeWeights_;
   double percentile = 0.99;  // Exclude possible outliers
 
   std::sort(edgeWeight.begin(), edgeWeight.end());
@@ -59,7 +59,7 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
     float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
     float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
 
-    for (float& weight : _edgeWeights) {
+    for (float& weight : edgeWeights_) {
       int auxWeight;
       weight = std::min(weight, maxEWeight);
       if (minEWeight == maxEWeight) {
@@ -69,7 +69,7 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
                             / (maxEWeight - minEWeight))
                            + 1);
       }
-      _edgeWeightsNormalized.push_back(auxWeight);
+      edgeWeightsNormalized_.push_back(auxWeight);
     }
   } else {
     logger->error(PAR, 23, "Number of edges equal to 0.");
@@ -78,7 +78,7 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
 
 void Hypergraph::computeVertexWeightRange(int maxVertexWeight, Logger * logger)
 {
-  std::vector<int64_t> vertexWeight = _vertexWeights;
+  std::vector<int64_t> vertexWeight = vertexWeights_;
   double percentile = 0.99;  // Exclude possible outliers
 
   std::sort(vertexWeight.begin(), vertexWeight.end());
@@ -94,7 +94,7 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight, Logger * logger)
     int64_t minVWeight
         = *std::min_element(vertexWeight.begin(), vertexWeight.end());
 
-    for (int64_t & weight : _vertexWeights) {
+    for (int64_t & weight : vertexWeights_) {
       int auxWeight;
       weight = std::min(weight, maxVWeight);
       if (minVWeight == maxVWeight) {
@@ -104,10 +104,10 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight, Logger * logger)
                             / (maxVWeight - minVWeight))
                            + 1);
       }
-      _vertexWeightsNormalized.push_back(auxWeight);
+      vertexWeightsNormalized_.push_back(auxWeight);
     }
-    _vertexWeights.clear();
-    _vertexWeights.shrink_to_fit();
+    vertexWeights_.clear();
+    vertexWeights_.shrink_to_fit();
   } else {
     logger->error(PAR, 24, "Number of vertices equal to 0.");
   }

@@ -79,11 +79,11 @@
 [NesterovSolve] Iter: 280 overflow: 0.136171 HPWL: 1985974
 [NesterovSolve] Iter: 290 overflow: 0.110876 HPWL: 1995010
 [NesterovSolve] Finished with Overflow: 0.098632
-[INFO MPL-0005] Found 3 macros
-[INFO MPL-0009] West pins 21
-[INFO MPL-0009] East pins 22
-[INFO MPL-0009] North pins 16
-[INFO MPL-0009] South pins 16
-[INFO MPL-0067] Initial weighted wire length 752.896
-[INFO MPL-0068] Placed weighted wire length 676.531
+[INFO MPL-0005] Found 3 macros.
+[INFO MPL-0009] West pins 21.
+[INFO MPL-0009] East pins 22.
+[INFO MPL-0009] North pins 16.
+[INFO MPL-0009] South pins 16.
+[INFO MPL-0067] Initial weighted wire length 752.896.
+[INFO MPL-0068] Placed weighted wire length 676.531.
 No differences found.

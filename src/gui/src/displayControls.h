@@ -47,22 +47,32 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <functional>
+#include <map>
 #include <vector>
 
 #include "congestionSetupDialog.h"
 #include "options.h"
 
+#include "gui/gui.h"
+
 namespace odb {
 class dbDatabase;
 class dbBlock;
 class dbNet;
+class dbInst;
 }  // namespace odb
+
+namespace utl {
+class Logger;
+} // namespace utl
 
 namespace gui {
 
+using CallbackFunction = std::function<void(bool)>;
+
 struct Callback
 {
-  std::function<void(bool)> action;
+  CallbackFunction action;
 };
 
 class PatternButton : public QRadioButton
@@ -84,7 +94,9 @@ class DisplayColorDialog : public QDialog
   Q_OBJECT
  public:
   DisplayColorDialog(QColor color,
-                     Qt::BrushStyle pattern = Qt::SolidPattern,
+                     Qt::BrushStyle pattern,
+                     QWidget* parent = nullptr);
+  DisplayColorDialog(QColor color,
                      QWidget* parent = nullptr);
   ~DisplayColorDialog();
 
@@ -98,6 +110,7 @@ class DisplayColorDialog : public QDialog
  private:
   QColor color_;
   Qt::BrushStyle pattern_;
+  bool show_brush_;
 
   QGroupBox* pattern_group_box_;
   QGridLayout* grid_layout_;
@@ -115,6 +128,16 @@ class DisplayColorDialog : public QDialog
       {Qt::FDiagPattern, Qt::BDiagPattern}};
 };
 
+class DisplayControlModel : public QStandardItemModel
+{
+  Q_OBJECT
+
+ public:
+  DisplayControlModel(QWidget* parent = nullptr);
+
+  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+};
+
 // This class shows the user the set of layers & objects that
 // they can control the visibility and selectablity of.  The
 // controls are show in a tree view to provide grouping of
@@ -130,31 +153,59 @@ class DisplayControls : public QDockWidget, public Options
   DisplayControls(QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
+  void setLogger(utl::Logger* logger);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
+  void setControlByPath(const std::string& path, bool is_visible, Qt::CheckState value);
+  bool checkControlByPath(const std::string& path, bool is_visible);
+
+  void registerRenderer(Renderer* renderer);
+  void unregisterRenderer(Renderer* renderer);
+
+  void save();
+  void restore();
+
+  void restoreTclCommands(std::vector<std::string>& cmds);
+
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
+  QColor placementBlockageColor() override;
+  Qt::BrushStyle placementBlockagePattern() override;
+  QColor instanceNameColor() override;
+  QFont instanceNameFont() override;
+  QColor rowColor() override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
+  bool isNetSelectable(odb::dbNet* net) override;
+  bool isInstanceVisible(odb::dbInst* inst) override;
+  bool isInstanceSelectable(odb::dbInst* inst) override;
+  bool areInstanceNamesVisible() override;
   bool areFillsVisible() override;
+  bool areBlockagesVisible() override;
+  bool areBlockagesSelectable() override;
+  bool areObstructionsVisible() override;
+  bool areObstructionsSelectable() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-  bool checkCustomVisibilityControl(const std::string& name);
+  QColor rulerColor() override;
+  QFont rulerFont() override;
+  bool areRulersVisible() override;
+  bool areRulersSelectable() override;
 
-  bool isGridGraphVisible();
-  bool areRouteGuidesVisible();
-  bool areRoutingObjsVisible();
+  bool isDetailedVisibility() override;
 
+  bool areSelectedVisible() override;
+
+  bool isScaleBarVisible() const override;
   bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
+  QFont pinMarkersFont() override;
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
   float getMinCongestionToShow() const override;
@@ -165,6 +216,9 @@ class DisplayControls : public QDockWidget, public Options
   // The display options have changed and clients need to update
   void changed();
 
+  // Emit a selected tech layer
+  void selected(const Selected& selected);
+
  public slots:
   // Tells this widget that a new design is loaded and the
   // options displayed need to match
@@ -172,6 +226,7 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
+  void displayItemClicked(const QModelIndex& index);
   void displayItemDblClicked(const QModelIndex& index);
 
   void showCongestionSetup();
@@ -204,6 +259,23 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
+  struct InstanceModels
+  {
+    ModelRow core;
+    ModelRow blocks;
+    ModelRow fill;
+    ModelRow endcap;
+    ModelRow welltap;
+    ModelRow pads;
+    ModelRow cover;
+  };
+
+  struct BlockageModels
+  {
+    ModelRow blockages;
+    ModelRow obstructions;
+  };
+
   struct TrackModels
   {
     ModelRow pref;
@@ -212,51 +284,97 @@ class DisplayControls : public QDockWidget, public Options
 
   struct MiscModels
   {
+    ModelRow instance_names;
+    ModelRow scale_bar;
     ModelRow fills;
+    ModelRow detailed;
+    ModelRow selected;
   };
 
   void techInit();
 
-  template <typename T>
-  QStandardItem* makeItem(ModelRow& row,
-                          const QString& text,
-                          T* parent,
-                          Qt::CheckState checked,
-                          const std::function<void(bool)>& visibility_action
-                          = std::function<void(bool)>(),
-                          const std::function<void(bool)>& select_action
-                          = std::function<void(bool)>(),
-                          const QColor& color = Qt::transparent,
-                          odb::dbTechLayer* tech_layer = nullptr);
+  void collectControls(const QStandardItem* parent,
+                       Column column,
+                       std::map<std::string, QStandardItem*>& items,
+                       const std::string& prefix = "");
+  void findControlsInItems(const std::string& path,
+                           Column column,
+                           std::vector<QStandardItem*>& items);
+
+  QStandardItem* makeParentItem(ModelRow& row,
+                                const QString& text,
+                                QStandardItemModel* parent,
+                                Qt::CheckState checked,
+                                bool add_selectable = false,
+                                const QColor& color = Qt::transparent);
+
+  void makeLeafItem(ModelRow& row,
+                    const QString& text,
+                    QStandardItem* parent,
+                    Qt::CheckState checked,
+                    bool add_selectable = false,
+                    const QColor& color = Qt::transparent,
+                    const QVariant& user_data = QVariant());
+
+  const QIcon makeSwatchIcon(const QColor& color);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
+  void toggleParent(const QStandardItem* parent, QStandardItem* parent_flag, int column);
+  void toggleParent(ModelRow& row);
+
+  void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+
+  void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
   QTreeView* view_;
-  QStandardItemModel* model_;
+  DisplayControlModel* model_;
+
+  bool ignore_callback_;
 
   // Categories in the model
   ModelRow layers_group_;
   ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
+  ModelRow instance_group_;
+  ModelRow blockage_group_;
   ModelRow misc_group_;
 
   // Object controls
   NetModels nets_;
+  InstanceModels instances_;
+  BlockageModels blockages_;
   ModelRow rows_;
   ModelRow congestion_map_;
   ModelRow pin_markers_;
+  ModelRow rulers_;
   TrackModels tracks_;
   MiscModels misc_;
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
-  std::map<std::string, ModelRow> custom_controls_;
+  std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
+
+  QColor placement_blockage_color_;
+  Qt::BrushStyle placement_blockage_pattern_;
+
+  QColor instance_name_color_;
+  QFont instance_name_font_;
+
+  QColor ruler_color_;
+  QFont ruler_font_;
+
+  QColor row_color_;
+
+  QFont pin_markers_font_;
 
   CongestionSetupDialog* congestion_dialog_;
 };

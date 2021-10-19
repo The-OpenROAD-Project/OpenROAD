@@ -14,14 +14,13 @@ Found 0 macro blocks.
 [INFO PPL-0041] Pin group 1: [req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] req_msg[29] req_msg[2] req_msg[30] req_msg[31] req_msg[3] req_msg[4] req_msg[5] req_msg[6] req_msg[7] req_msg[8] req_msg[9]]
 [INFO PPL-0041] Pin group 2: [clk req_rdy req_val reset resp_msg[0] resp_msg[10] resp_msg[11] resp_msg[12] resp_msg[13] resp_msg[14] resp_msg[15]]
 [INFO PPL-0041] Pin group 3: [resp_rdy resp_val resp_msg[1] resp_msg[2] resp_msg[3] resp_msg[4] resp_msg[5] resp_msg[6] resp_msg[7] resp_msg[8] resp_msg[9]]
-[INFO PPL-0010] Tentative 0 to set up sections
+[INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          1248
 [INFO PPL-0002] Number of I/O            54
 [INFO PPL-0003] Number of I/O w/sink     54
 [INFO PPL-0004] Number of I/O w/o sink   0
 [INFO PPL-0005] Slots per section        200
 [INFO PPL-0006] Slots increase factor    0.01
-[INFO PPL-0008] Usage increase factor    0.01
-[INFO PPL-0009] Force pin spread         true
-Successfully assigned I/O pins
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 2430.76 um.
 No differences found.

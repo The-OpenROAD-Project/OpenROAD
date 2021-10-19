@@ -38,8 +38,6 @@
 #include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <iomanip>
-#include <sstream>
 #include <string>
 
 #include "gui/gui.h"
@@ -48,20 +46,8 @@
 
 namespace gui {
 
-static QString getBBoxString(odb::Rect& bbox, odb::dbDatabase* db)
-{
-  double to_microns = db->getChip()->getBlock()->getDbUnitsPerMicron();
-  std::stringstream ss;
-  ss << std::fixed << std::setprecision(5) << "(";
-  ss << bbox.xMin() / to_microns << ",";
-  ss << bbox.yMin() / to_microns << "), (";
-  ss << bbox.xMax() / to_microns << ",";
-  ss << bbox.yMax() / to_microns << ")";
-  return QString::fromStdString(ss.str());
-}
-
 SelectionModel::SelectionModel(const SelectionSet& objs)
-    : db_(nullptr), objs_(objs)
+    : objs_(objs)
 {
 }
 
@@ -105,7 +91,7 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index]->getBBox(bbox);
-    return valid ? getBBoxString(bbox, db_) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   }
   return QVariant();
 }
@@ -127,7 +113,7 @@ QVariant SelectionModel::headerData(int section,
 }
 
 HighlightModel::HighlightModel(const HighlightSet& objs)
-    : db_(nullptr), objs_(objs)
+    : objs_(objs)
 {
 }
 
@@ -191,7 +177,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index].second->getBBox(bbox);
-    return valid ? getBBoxString(bbox, db_) : "<none>";
+    return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   } else if (index.column() == 3) {
     return QString("Group ")
            + QString::number(table_data_[row_index].first + 1);
@@ -231,7 +217,9 @@ bool HighlightModel::setData(const QModelIndex& index,
 }
 
 HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
-    : QStyledItemDelegate(parent)
+    : QStyledItemDelegate(parent),
+      items_(),
+      table_model_(nullptr)
 {
   items_.push_back("Group 1");
   items_.push_back("Group 2");
@@ -329,10 +317,16 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showHighlightCustomMenu(QPoint)));
-  ui->selTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
-  ui->hltTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
+  auto sel_header = ui->selTableView->horizontalHeader();
+  for (int i = 0; i < sel_header->count()-1; i++) {
+    sel_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+  }
+  sel_header->setSectionResizeMode(sel_header->count()-1, QHeaderView::Stretch);
+  auto hlt_header = ui->hltTableView->horizontalHeader();
+  for (int i = 0; i < hlt_header->count()-1; i++) {
+    hlt_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+  }
+  hlt_header->setSectionResizeMode(hlt_header->count()-1, QHeaderView::Stretch);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
   QAction* remove_all_sel_items = select_context_menu_->addAction("Clear All");
@@ -374,6 +368,25 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           this,
           SLOT(zoomInHighlightedItems()));
 
+  connect(ui->selTableView->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          [this](const QItemSelection& selected_items, const QItemSelection& deselected_items) {
+            auto indexes = selected_items.indexes();
+            if (indexes.isEmpty()) {
+              return;
+            }
+            emit selected(*selection_model_.getItemAt(indexes[0].row()));
+          });
+  connect(ui->hltTableView->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          [this](const QItemSelection& selected_items, const QItemSelection& deselected_items) {
+            auto indexes = selected_items.indexes();
+            if (indexes.isEmpty()) {
+              return;
+            }
+            emit selected(*highlight_model_.getItemAt(indexes[0].row()));
+          });
+
   ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 
@@ -394,6 +407,12 @@ void SelectHighlightWindow::updateHighlightModel()
 {
   highlight_model_.populateModel();
   ui->tabWidget->setCurrentWidget(ui->hltTab);
+}
+
+void SelectHighlightWindow::updateModels()
+{
+  selection_model_.populateModel();
+  highlight_model_.populateModel();
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
@@ -456,12 +475,6 @@ void SelectHighlightWindow::zoomInHighlightedItems()
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
-}
-
-void SelectHighlightWindow::setDb(odb::dbDatabase* db)
-{
-  selection_model_.setDb(db);
-  highlight_model_.setDb(db);
 }
 
 }  // namespace gui

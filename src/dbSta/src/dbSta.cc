@@ -55,7 +55,7 @@
 #include "sta/EquivCells.hh"
 #include "sta/ReportTcl.hh"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
@@ -153,6 +153,10 @@ protected:
                          size_t length);
 
   Logger *logger_;
+
+private:
+  // text buffer for tcl puts output when in GUI mode.
+  std::string tcl_buffer_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -167,12 +171,13 @@ public:
                                         dbMaster *master) override;
   virtual void inDbInstSwapMasterAfter(dbInst *inst) override;
   virtual void inDbNetDestroy(dbNet *net) override;
-  void inDbITermPostConnect(dbITerm *iterm) override;
-  void inDbITermPreDisconnect(dbITerm *iterm) override;
-  void inDbITermDestroy(dbITerm *iterm) override;
-  void inDbBTermPostConnect(dbBTerm *bterm) override;
-  void inDbBTermPreDisconnect(dbBTerm *bterm) override;
-  void inDbBTermDestroy(dbBTerm *bterm) override;
+  virtual void inDbITermPostConnect(dbITerm *iterm) override;
+  virtual void inDbITermPreDisconnect(dbITerm *iterm) override;
+  virtual void inDbITermDestroy(dbITerm *iterm) override;
+  virtual void inDbBTermPostConnect(dbBTerm *bterm) override;
+  virtual void inDbBTermPreDisconnect(dbBTerm *bterm) override;
+  virtual void inDbBTermCreate(dbBTerm*) override;
+  virtual void inDbBTermDestroy(dbBTerm *bterm) override;
 
 private:
   dbSta *sta_;
@@ -435,19 +440,43 @@ size_t
 dbStaReport::printString(const char *buffer,
                          size_t length)
 {
-  if (buffer[length - 1] == '\n') {
-    string buf(buffer);
+  // prepend saved buffer
+  string buf = tcl_buffer_ + string(buffer);
+  tcl_buffer_.clear(); // clear buffer
+
+  if (buffer[length - 1] != '\n') {
+    // does not end with a newline, so might need to buffer the information
+
+    auto last_newline = buf.find_last_of('\n');
+    if (last_newline == string::npos) {
+      // no newlines found, so add entire buf to tcl_buffer_
+      tcl_buffer_ = buf;
+      buf.clear();
+    } else {
+      // save partial line to buffer
+      tcl_buffer_ = buf.substr(last_newline + 1);
+      buf = buf.substr(0, last_newline + 1);
+    }
+  }
+
+  if (!buf.empty()) {
     // Trim trailing \r\n.
     buf.erase(buf.find_last_not_of("\r\n") + 1);
     logger_->report(buf.c_str());
   }
-  else
+
+  // if gui enabled, keep tcl_buffer_ until a newline appears
+  // otherwise proceed to print directly to console
+  if (!gui::Gui::enabled()) {
     // puts without a trailing \n in the string.
     // Tcl command prompts get here.
     // puts "xyz" makes a separate call for the '\n '.
     // This seems to be the only way to get the output.
     // It will not be logged.
-    printConsole(buffer, length);
+    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
+    tcl_buffer_.clear();
+  }
+
   return length;
 }
 
@@ -655,9 +684,16 @@ dbStaCbk::inDbBTermPreDisconnect(dbBTerm *bterm)
 }
 
 void
+dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
+{
+  sta_->getDbNetwork()->makeTopPort(bterm);
+}
+
+void
 dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 {
   sta_->deletePinBefore(network_->dbToSta(bterm));
+  // sta::NetworkEdit does not support port removal.
 }
 
 ////////////////////////////////////////////////////////////////
@@ -666,7 +702,7 @@ dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 void
 dbSta::highlight(PathRef *path)
 {
-  if (gui_) {
+  if (gui::Gui::enabled()) {
     if (path_renderer_ == nullptr) {
       path_renderer_ = new PathRenderer(this);
       gui_->registerRenderer(path_renderer_);

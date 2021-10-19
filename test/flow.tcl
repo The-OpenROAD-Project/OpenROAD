@@ -39,7 +39,7 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-utl::metric "ord_sha1" [ord::openroad_git_sha1]
+utl::metric "ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "instance_count" [sta::network_instance_count]
 
@@ -129,6 +129,9 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
+# place clock buffers
+detailed_placement
+
 # checkpoint
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
@@ -136,14 +139,26 @@ write_def $cts_def
 ################################################################
 # Setup/hold timing repair
 
-estimate_parasitics -placement
 set_propagated_clock [all_clocks]
+
+set repair_timing_use_grt_parasitics 0
+if { $repair_timing_use_grt_parasitics } {
+  # Global route for parasitics - no guide file requied
+  global_route -congestion_iterations 100
+  estimate_parasitics -global_routing
+} else {
+  estimate_parasitics -placement
+}
+
 repair_timing
 
-# Post timing repair using placement based parasitics.
+# Post timing repair.
 report_worst_slack -min -digits 3
 report_worst_slack -max -digits 3
 report_tns -digits 3
+
+################################################################
+# Detailed Placement (final)
 
 detailed_placement
 # Capture utilization before fillers make it 100%
@@ -226,6 +241,7 @@ utl::metric "clock_skew" [sta::worst_clock_skew -setup]
 utl::metric "max_slew_violations" [sta::max_slew_violation_count]
 utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
 utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+# report clock period as a metric for updating limits
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations

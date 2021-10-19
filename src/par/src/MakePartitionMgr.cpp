@@ -33,10 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "par/MakePartitionMgr.h"
 #include "par/PartitionMgr.h"
-#include "opendb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
@@ -63,8 +63,10 @@ void initPartitionMgr(OpenRoad* openroad)
 
   par::PartitionMgr* kernel = openroad->getPartitionMgr();
 
-  kernel->init(
-      openroad->getDb(), openroad->getVerilogNetwork(), openroad->getLogger());
+  kernel->init(openroad->getDb(),
+               openroad->getDbNetwork(),
+               openroad->getVerilogNetwork(),
+               openroad->getLogger());
 };
 
 void deletePartitionMgr(par::PartitionMgr* partitionmgr)

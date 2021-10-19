@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace ppl {
 
@@ -163,12 +163,12 @@ class Netlist
  public:
   Netlist();
 
-  void addIONet(const IOPin&, const std::vector<InstancePin>&);
+  void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
   void addIOGroup(const std::vector<int>& pin_group);
   std::vector<std::vector<int>>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<std::vector<int>>& io_groups) { io_groups_ = io_groups; }
-  int numSinksOfIO(int);
+  int numSinksOfIO(int idx);
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }
   std::vector<IOPin>& getIOPins() { return io_pins_; }
@@ -176,11 +176,9 @@ class Netlist
   int getIoPinIdx(odb::dbBTerm* bterm) { return _db_pin_idx_map[bterm]; }
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
-  int computeIONetHPWL(int, odb::Point);
-  int computeIONetHPWL(int, odb::Point, Edge, const std::vector<Constraint>&);
-  int computeIONetHPWL(int, const Section&, const std::vector<Constraint>&, const std::vector<Slot>&);
-  int computeDstIOtoPins(int, odb::Point);
-  odb::Rect getBB(int, odb::Point);
+  int computeIONetHPWL(int idx, const odb::Point& slot_pos);
+  int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
+  odb::Rect getBB(int idx, const odb::Point& slot_pos);
   void clear();
 
  private:

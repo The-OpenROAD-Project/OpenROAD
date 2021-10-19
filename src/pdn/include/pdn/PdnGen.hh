@@ -39,7 +39,7 @@
 #include <map>
 #include <regex>
 
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace pdn {

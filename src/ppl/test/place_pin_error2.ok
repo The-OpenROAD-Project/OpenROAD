@@ -9,5 +9,5 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-[ERROR PPL-0071] place_pin command should receive only one pin name.
+[ERROR PPL-0071] Command place_pin should receive only one pin name.
 PPL-0071

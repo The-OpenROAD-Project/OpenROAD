@@ -465,7 +465,9 @@ bool BTreeAreaWireAnnealer::anneal()
   // global counters and book-keepers
   int move = UNINITIALIZED;
   int count = 0;
+#ifdef PARQUET_DEBUG_HAYWARD_ASSERT_BTREEANNEAL
   int prev_move = UNINITIALIZED;
+#endif
 
   unsigned int timeChangeCtr = 0;
   unsigned int moveSelect = UNSIGNED_UNINITIALIZED;
@@ -534,7 +536,9 @@ bool BTreeAreaWireAnnealer::anneal()
 
       ++count;
       ++iter;
+#ifdef PARQUET_DEBUG_HAYWARD_ASSERT_BTREEANNEAL
       prev_move = move;
+#endif
 
       // -----select the types of moves here-----
       if (_params->softBlocks && currTime < 50)

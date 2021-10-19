@@ -20,10 +20,7 @@ make_tracks
 
 ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.sigmap
 
-set def_file1 [make_result_file "soc_bsg_black_parrot_nangate45.flipchip1.def"]
 set def_file [make_result_file "soc_bsg_black_parrot_nangate45.flipchip.def"]
 
-write_def $def_file1
-exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file1 > $def_file
-
+write_def $def_file
 diff_files $def_file "soc_bsg_black_parrot_nangate45.flipchip.defok"

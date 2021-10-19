@@ -7,7 +7,7 @@ module reg5 (out,
     in);
  output out;
  input [2:0] clk;
- input [1:0] in;
+ input [0:1] in;
 
  wire r1q;
  wire r2q;

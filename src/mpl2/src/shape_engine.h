@@ -42,7 +42,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "opendb/dbTypes.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace shape_engine {

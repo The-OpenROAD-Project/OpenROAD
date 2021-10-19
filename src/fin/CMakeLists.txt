@@ -54,7 +54,7 @@ target_include_directories(fin
 
 target_link_libraries(fin
   PRIVATE
-    opendb
+    odb
     gui
     OpenSTA
     Boost::boost

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "db_sta/dbReadVerilog.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 

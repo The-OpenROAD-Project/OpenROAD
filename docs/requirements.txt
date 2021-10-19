@@ -1,11 +1,5 @@
 git+https://github.com/SymbiFlow/sphinx_materialdesign_theme.git#egg=sphinx-symbiflow-theme
-
-docutils
+git+https://github.com/executablebooks/sphinx-external-toc
 sphinx
 sphinx-autobuild
-
-symbolator
-
-restructuredtext-lint
-
-tabulate
+myst-parser

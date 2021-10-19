@@ -55,7 +55,7 @@ target_include_directories(tap
 target_link_libraries(tap
   PRIVATE
     utl
-    opendb
+    odb
     OpenSTA
 )
 

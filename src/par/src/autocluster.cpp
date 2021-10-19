@@ -1,4 +1,4 @@
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "autocluster.h"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -474,7 +474,6 @@ void AutoClusterMgr::calculateBufferNetConnection()
     }
 
     if (driver_id != 0 && loads_id.size() > 0) {
-      Cluster* driver_cluster = cluster_map_[driver_id];
       for (int i = 0; i < loads_id.size(); i++) {
         cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
         cluster_map_[loads_id[i]]->addInputConnection(driver_id);
@@ -527,7 +526,6 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
       }
 
       if (driver_id != 0 && loads_id.size() > 0) {
-        Cluster* driver_cluster = cluster_map_[driver_id];
         for (int i = 0; i < loads_id.size(); i++) {
           cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
           cluster_map_[loads_id[i]]->addInputConnection(driver_id);
@@ -561,7 +559,6 @@ void AutoClusterMgr::merge(string parent_name)
 
   unsigned int num_inst = calculateClusterNumInst(merge_cluster_list_);
   unsigned int num_macro = calculateClusterNumMacro(merge_cluster_list_);
-  int iteration = 0;
   int merge_index = 0;
   while (num_inst > max_num_inst_ || num_macro > max_num_macro_) {
     int num_merge_cluster = merge_cluster_list_.size();
@@ -836,18 +833,17 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   row_ptr.push_back(count);
 
   // Convert it to MLPart Format
-  const int num_vertice = vertex_weight.size();
+  const int num_vertices = vertex_weight.size();
   const int num_edge = row_ptr.size() - 1;
   const int num_col_idx = col_idx.size();
 
-  double* vertexWeight
-      = (double*) malloc((unsigned) num_vertice * sizeof(double));
-  int* rowPtr = (int*) malloc((unsigned) (num_edge + 1) * sizeof(int));
-  int* colIdx = (int*) malloc((unsigned) (num_col_idx) * sizeof(int));
-  double* edgeWeight = (double*) malloc((unsigned) num_edge * sizeof(double));
-  int* part = (int*) malloc((unsigned) num_vertice * sizeof(int));
+  vector<double> vertexWeight(num_vertices);
+  vector<int> rowPtr(num_edge + 1);
+  vector<int> colIdx(num_col_idx);
+  vector<double> edgeWeight(num_edge);
+  vector<int> part(num_vertices);
 
-  for (int i = 0; i < num_vertice; i++) {
+  for (int i = 0; i < num_vertices; i++) {
     part[i] = -1;
     vertexWeight[i] = 1.0;
   }
@@ -862,23 +858,23 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   for (int i = 0; i < num_col_idx; i++)
     colIdx[i] = col_idx[i];
 
+#ifdef PARTITIONERS
   // MLPart only support 2-way partition
   const int npart = 2;
   double balanceArray[2] = {0.5, 0.5};
   double tolerance = 0.05;
   unsigned int seed = 0;
 
-#ifdef PARTITIONERS
-  UMpack_mlpart(num_vertice,
+  UMpack_mlpart(num_vertices,
                 num_edge,
-                vertexWeight,
-                rowPtr,
-                colIdx,
-                edgeWeight,
+                vertexWeight.data(),
+                rowPtr.data(),
+                colIdx.data(),
+                edgeWeight.data(),
                 npart,  // Number of Partitions
                 balanceArray,
                 tolerance,
-                part,
+                part.data(),
                 1,  // Starts Per Run #TODO: add a tcl command
                 1,  // Number of Runs
                 0,  // Debug Level
@@ -898,7 +894,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   cluster_part0->addLogicalModuleVec(cluster->getLogicalModuleVec());
   cluster_part1->addLogicalModuleVec(cluster->getLogicalModuleVec());
 
-  for (int i = cluster_list_.size() - 2; i < num_vertice; i++) {
+  for (int i = cluster_list_.size() - 2; i < num_vertices; i++) {
     if (part[i] == 0) {
       cluster_part0->addInst(idx_to_inst[i]);
       inst_map_[idx_to_inst[i]] = id_part0;
@@ -1395,8 +1391,10 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   logger_->info(
       PAR,
       402,
-      "Traversed Logical Hierarchy \n\t Number of std cell instances: {}\n\t "
-      "Total Area: {}\n\t Number of Hard Macros: {}\n\t ",
+      "Traversed logical hierarchy\n"
+      "\tNumber of std cell instances: {}\n"
+      "\tTotal area: {}\n"
+      "\tNumber of hard macros: {}",
       metric.num_inst,
       metric.area,
       metric.num_macro);
@@ -1575,7 +1573,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   map_iter = cluster_map_.begin();
   float dbu = db_->getTech()->getDbUnitsPerMicron();
   while (map_iter != cluster_map_.end()) {
-    int id = map_iter->first;
     float area = map_iter->second->calculateArea(network_);
     if (area != 0.0) {
       output_file << "cluster: " << map_iter->second->getName() << endl;
@@ -1623,7 +1620,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
           //    || cluster_map_[iter->first]->getNumMacro() > 0) {
           //  weight += virtual_weight_;
           //}
-            
+
           if(weight < ignore_net_threshold) {
               weight = 0;
           }

@@ -50,7 +50,6 @@ target_sources(cts
     MakeTritoncts.cpp
     PostCtsOpt.cpp
     SinkClustering.cpp
-    StaEngine.cpp
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp
@@ -67,12 +66,11 @@ target_include_directories(cts
 
 target_link_libraries(cts
   PRIVATE
-    opendb
+    odb
     dbSta
     OpenSTA
     rsz
     stt
-    pdr
     utl
  )
 

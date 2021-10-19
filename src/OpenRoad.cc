@@ -45,11 +45,11 @@
 #include "utl/MakeLogger.h"
 #include "utl/Logger.h"
 
-#include "opendb/db.h"
-#include "opendb/lefin.h"
-#include "opendb/defin.h"
-#include "opendb/defout.h"
-#include "opendb/cdl.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/cdl.h"
 
 #include "sta/VerilogWriter.hh"
 #include "sta/StaMain.hh"
@@ -61,7 +61,6 @@
 #include "db_sta/dbNetwork.hh"
 
 #include "ord/InitOpenRoad.hh"
-#include "stt/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
 #include "ppl/MakeIoplacer.h"
@@ -71,7 +70,7 @@
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "mpl2/MakeMacroPlacer.h"
-#include "replace/MakeReplace.h"
+#include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "cts/MakeTritoncts.h"
 #include "rmp/MakeRestructure.h"
@@ -82,7 +81,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
-#include "pdr/MakePdrev.h"
+#include "stt/MakeSteinerTreeBuilder.h"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -91,7 +90,7 @@ extern const char *openroad_swig_tcl_inits[];
 // Swig uses C linkage for init functions.
 extern "C" {
 extern int Openroad_swig_Init(Tcl_Interp *interp);
-extern int Opendbtcl_Init(Tcl_Interp *interp);
+extern int Odbtcl_Init(Tcl_Interp *interp);
 }
 
 // Main.cc set by main()
@@ -137,9 +136,10 @@ OpenRoad::OpenRoad()
     detailed_router_(nullptr),
     antenna_checker_(nullptr),
     replace_(nullptr),
-    pdnsim_(nullptr), 
+    pdnsim_(nullptr),
     partitionMgr_(nullptr),
     pdngen_(nullptr),
+    stt_builder_(nullptr),
     threads_(1)
 {
   db_ = dbDatabase::create();
@@ -166,7 +166,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
-  stt::deleteLUT();
+  deleteSteinerTreeBuilder(stt_builder_);
   delete logger_;
 }
 
@@ -227,6 +227,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  stt_builder_ = makeSteinerTreeBuilder();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -235,9 +236,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger
-  Opendbtcl_Init(tcl_interp);
+  Odbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  stt::readLUT();
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
@@ -257,20 +257,28 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
-  initPdrev(this);
+  initSteinerTreeBuilder(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // Initialize tcl history
+  if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
+    // There appears to be a typo in the history.tcl file in some
+    // distributions, which is generating this error.
+    // remove error from tcl result.
+    Tcl_ResetResult(tcl_interp);
+  }
 }
 
 ////////////////////////////////////////////////////////////////
 
 void
 OpenRoad::readLef(const char *filename,
-		  const char *lib_name,
-		  bool make_tech,
-		  bool make_library)
+                  const char *lib_name,
+                  bool make_tech,
+                  bool make_library)
 {
   odb::lefin lef_reader(db_, logger_, false);
   dbLib *lib = nullptr;
@@ -294,9 +302,9 @@ OpenRoad::readLef(const char *filename,
 
 void
 OpenRoad::readDef(const char *filename,
-		  bool continue_on_errors,
-      bool floorplan_init,
-      bool incremental)
+                  bool continue_on_errors,
+                  bool floorplan_init,
+                  bool incremental)
 {
   odb::defin::MODE mode = odb::defin::DEFAULT;
   if(floorplan_init)
@@ -332,13 +340,12 @@ stringToDefVersion(string version)
     return odb::defout::Version::DEF_5_4;
   else if (version == "5.3")
     return odb::defout::Version::DEF_5_3;
-  else 
+  else
     return odb::defout::Version::DEF_5_8;
 }
 
 void
-OpenRoad::writeDef(const char *filename,
-		   string version)
+OpenRoad::writeDef(const char *filename, string version)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
@@ -351,17 +358,23 @@ OpenRoad::writeDef(const char *filename,
   }
 }
 
-void 
-OpenRoad::writeCdl(const char* filename, bool includeFillers)
+void
+OpenRoad::writeCdl(const char *outFilename,
+                   const char *mastersFilename,
+                   bool includeFillers)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      odb::cdl::writeCdl(block, filename, includeFillers);
+      odb::cdl::writeCdl(getLogger(),
+                         block,
+                         outFilename,
+                         mastersFilename,
+                         includeFillers);
     }
   }
-  
+
 }
 
 void
@@ -393,6 +406,7 @@ OpenRoad::writeDb(const char *filename)
 void
 OpenRoad::readVerilog(const char *filename)
 {
+  verilog_network_->deleteTopInstance();
   dbReadVerilog(filename, verilog_network_);
 }
 
@@ -408,12 +422,12 @@ OpenRoad::linkDesign(const char *design_name)
 
 void
 OpenRoad::writeVerilog(const char *filename,
-		       bool sort,
-		       bool include_pwr_gnd,
-		       std::vector<sta::LibertyCell*> *remove_cells)
+                       bool sort,
+                       bool include_pwr_gnd,
+                       std::vector<sta::LibertyCell*> *remove_cells)
 {
   sta::writeVerilog(filename, sort, include_pwr_gnd,
-		    remove_cells, sta_->network());
+                    remove_cells, sta_->network());
 }
 
 bool
@@ -460,7 +474,11 @@ void
 OpenRoad::setThreadCount(int threads, bool printInfo) {
   int max_threads = std::thread::hardware_concurrency();
   if (max_threads == 0) {
-    logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
+    logger_->warn(ORD,
+                  31,
+                  "Unable to determine maximum number of threads.\n"
+                  "One thread will be used."
+                  );
     max_threads = 1;
   }
   if (threads <= 0) { // max requested
@@ -471,7 +489,7 @@ OpenRoad::setThreadCount(int threads, bool printInfo) {
   threads_ = threads;
 
   if (printInfo)
-    logger_->info(ORD, 30, "Using {} thread(s)", threads_);
+    logger_->info(ORD, 30, "Using {} thread(s).", threads_);
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
@@ -488,7 +506,7 @@ OpenRoad::setThreadCount(const char* threads, bool printInfo) {
     try {
       max_threads = std::stoi(threads);
     } catch (const std::invalid_argument&) {
-      logger_->warn(ORD, 32, "Invalid thread number specification: {}", threads);
+      logger_->warn(ORD, 32, "Invalid thread number specification: {}.", threads);
     }
   }
 
@@ -515,17 +533,14 @@ getCore(dbBlock *block)
 
 // Return the point inside rect that is closest to pt.
 Point
-closestPtInRect(Rect rect,
-		Point pt)
+closestPtInRect(Rect rect, Point pt)
 {
   return Point(min(max(pt.getX(), rect.xMin()), rect.xMax()),
                min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
 Point
-closestPtInRect(Rect rect,
-		int x,
-		int y)
+closestPtInRect(Rect rect, int x, int y)
 {
   return Point(min(max(x, rect.xMin()), rect.xMax()),
                min(max(y, rect.yMin()), rect.yMax()));

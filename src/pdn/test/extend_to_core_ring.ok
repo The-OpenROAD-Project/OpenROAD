@@ -11,9 +11,9 @@
 [INFO ODB-0134] Finished DEF file: extend_to_core_ring/floorplan.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: extend_to_core_ring/pdn.cfg
-[INFO PDN-0008] Design name is gcd
-[INFO PDN-0009] Reading technology data
-[WARNING PDN-0018] No macro grid specifications found - no straps added
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
+[WARNING PDN-0018] No macro grid specifications found - no straps added.
 [INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
@@ -27,6 +27,6 @@ Type: stdcell, grid
 	{metal1 metal6} {metal5 metal6}
     
 [INFO PDN-0012] **** END INFO ****
-[INFO PDN-0013] Inserting stdcell grid - grid
-[INFO PDN-0015] Writing to database
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
 No differences found.

@@ -402,8 +402,6 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt) {
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 
-  uint patternSep = 1000;
-
   sprintf(_patternName, "OU%d", opt->_wireCnt + 1);
   // openCapLogFile();
   uint cnt = 0;
@@ -419,7 +417,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt) {
     if (!opt->_db_only)
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
 
-    patternSep = measure.initWS_box(opt, 20);
+    measure.initWS_box(opt, 20);
 
     for (int underMet = 1; underMet < met; underMet++) {
       if (met - underMet > (int)opt->_underDist)
@@ -435,7 +433,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt) {
         if ((opt->_overMet > 0) && (opt->_overMet != (int)overMet))
           continue;
 
-        patternSep = measure.initWS_box(opt, 20);
+        measure.initWS_box(opt, 20);
         measure.setMets(met, underMet, overMet);
 
         uint cnt1 = benchWithVar_density(opt, &measure);

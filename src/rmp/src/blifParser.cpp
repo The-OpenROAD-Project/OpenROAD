@@ -35,7 +35,7 @@
 
 #include "rmp/blifParser.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/config/warning_disable.hpp>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container.hpp>
@@ -60,6 +60,8 @@ namespace blif_parser {
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
+
+using namespace boost::placeholders;
 
 using boost::fusion::at_c;
 using boost::spirit::ascii::space_type;

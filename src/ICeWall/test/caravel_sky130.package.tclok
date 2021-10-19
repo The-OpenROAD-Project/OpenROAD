@@ -1,7 +1,7 @@
 source $::env(FOOTPRINT_LIBRARY)
 
 Footprint definition {
-  Type Wirebond
+  Type wirebond
 
   die_area "0.0 0.0 3588.0 5188.0"
   core_area "5.52 10.88 3582.48 5176.16"

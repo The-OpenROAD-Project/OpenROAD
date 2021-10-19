@@ -85,8 +85,10 @@ using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
 using sta::dbNetwork;
+using sta::stringEq;
 
 using rsz::Resizer;
+using rsz::ParasiticsSrc;
 
 %}
 
@@ -156,6 +158,19 @@ using rsz::Resizer;
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
+}
+
+%typemap(in) ParasiticsSrc {
+  int length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  if (stringEq(arg, "placement"))
+    $1 = ParasiticsSrc::placement;
+  else if (stringEq(arg, "global_routing"))
+    $1 = ParasiticsSrc::global_routing;
+  else {
+    Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
+    return TCL_ERROR;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -255,11 +270,11 @@ wire_clk_capacitance(const Corner *corner)
 }
 
 void
-estimate_parasitics_cmd()
+estimate_parasitics_cmd(ParasiticsSrc src)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->estimateWireParasitics();
+  resizer->estimateParasitics(src);
 }
 
 // For debugging. Does not protect against annotating power/gnd.
@@ -414,8 +429,8 @@ repair_clk_inverters_cmd()
 void
 repair_net_cmd(Net *net,
                double max_length,
-                  double max_slew_margin,
-                  double max_cap_margin)
+               double max_slew_margin,
+               double max_cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -460,13 +475,14 @@ repair_hold(float slack_margin,
 
 ////////////////////////////////////////////////////////////////
 
-// for testing
+// Rebuffer one net (for testing).
+// resizerPreamble() required.
 void
-rebuffer_net(Net *net)
+rebuffer_net(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->rebuffer(net);
+  resizer->rebuffer1(drvr_pin);
 }
 
 void

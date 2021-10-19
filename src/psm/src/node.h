@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_NODE__
 
 #include <map>
-#include "opendb/db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 namespace psm {
 using odb::dbInst;

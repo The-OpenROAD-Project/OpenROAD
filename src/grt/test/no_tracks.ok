@@ -4,5 +4,5 @@
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO IFP-0001] Added 29 rows of 219 sites.
-[ERROR GRT-0057] missing track structure.
+[ERROR GRT-0057] Missing track structure for layer metal1.
 GRT-0057

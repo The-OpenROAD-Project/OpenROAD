@@ -82,6 +82,14 @@ void Search::init(odb::dbBlock* block)
     bg::convert(box, poly);
     fills_[fill->getTechLayer()].insert(std::make_tuple(box, poly, fill));
   }
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    addBlockage(blockage);
+  }
+
+  for (odb::dbObstruction* obs : block->getObstructions()) {
+    addObstruction(obs);
+  }
 }
 
 void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
@@ -170,10 +178,34 @@ void Search::addInst(odb::dbInst* inst)
   insts_.insert(std::make_tuple(box, poly, inst));
 }
 
+void Search::addBlockage(odb::dbBlockage* blockage)
+{
+  odb::dbBox* bbox = blockage->getBBox();
+  Point ll(bbox->xMin(), bbox->yMin());
+  Point ur(bbox->xMax(), bbox->yMax());
+  Box box(ll, ur);
+  Polygon poly;
+  bg::convert(box, poly);
+  blockages_.insert({box, poly, blockage});
+}
+
+void Search::addObstruction(odb::dbObstruction* obs)
+{
+  odb::dbBox* bbox = obs->getBBox();
+  Point ll(bbox->xMin(), bbox->yMin());
+  Point ur(bbox->xMax(), bbox->yMax());
+  Box box(ll, ur);
+  Polygon poly;
+  bg::convert(box, poly);
+  obstructions_[bbox->getTechLayer()].insert({box, poly, obs});
+}
+
 void Search::clear()
 {
   insts_.clear();
   shapes_.clear();
+  blockages_.clear();
+  obstructions_.clear();
 }
 
 template <typename T>
@@ -280,6 +312,49 @@ Search::InstRange Search::searchInsts(int x_lo,
   }
 
   return InstRange(insts_.qbegin(bgi::intersects(query)), insts_.qend());
+}
+
+Search::BlockageRange Search::searchBlockages(int x_lo,
+                                              int y_lo,
+                                              int x_hi,
+                                              int y_hi,
+                                              int min_height)
+{
+  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  if (min_height > 0) {
+    return BlockageRange(
+        blockages_.qbegin(
+            bgi::intersects(query)
+            && bgi::satisfies(MinHeightPredicate<odb::dbBlockage*>(min_height))),
+            blockages_.qend());
+  }
+
+  return BlockageRange(blockages_.qbegin(bgi::intersects(query)), blockages_.qend());
+}
+
+Search::ObstructionRange Search::searchObstructions(odb::dbTechLayer* layer,
+                                                    int x_lo,
+                                                    int y_lo,
+                                                    int x_hi,
+                                                    int y_hi,
+                                                    int min_size)
+{
+  auto it = obstructions_.find(layer);
+  if (it == obstructions_.end()) {
+    return ObstructionRange();
+  }
+
+  auto& rtree = it->second;
+  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  if (min_size > 0) {
+    return ObstructionRange(
+        rtree.qbegin(
+            bgi::intersects(query)
+            && bgi::satisfies(MinSizePredicate<odb::dbObstruction*>(min_size))),
+        rtree.qend());
+  }
+
+  return ObstructionRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
 }
 
 }  // namespace gui

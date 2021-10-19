@@ -15,20 +15,19 @@ Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0007] Random pin placement.
-[WARNING PPL-0075] Pin req_msg[15] is assigned to more than one constraints. Using last defined constraint.
-[WARNING PPL-0075] Pin req_msg[14] is assigned to more than one constraints. Using last defined constraint.
+[WARNING PPL-0075] Pin req_msg[15] is assigned to more than one constraint, using last defined constraint.
+[WARNING PPL-0075] Pin req_msg[14] is assigned to more than one constraint, using last defined constraint.
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0010] Tentative 0 to set up sections
+[INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          1232
 [INFO PPL-0002] Number of I/O            54
 [INFO PPL-0003] Number of I/O w/sink     54
 [INFO PPL-0004] Number of I/O w/o sink   0
 [INFO PPL-0005] Slots per section        200
 [INFO PPL-0006] Slots increase factor    0.01
-[INFO PPL-0008] Usage increase factor    0.01
-[INFO PPL-0009] Force pin spread         true
-Successfully assigned I/O pins
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 816.19 um.
 No differences found.
 No differences found.

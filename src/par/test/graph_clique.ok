@@ -9,5 +9,5 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-[INFO PAR-0067] #Nodes: 142
-[INFO PAR-0068] #Hyperedges/Edges: 1366
+[INFO PAR-0067] Number of Nodes: 142
+[INFO PAR-0068] Number of Hyperedges/Edges: 1366

@@ -54,7 +54,7 @@ target_include_directories(pdn
 
 target_link_libraries(pdn
   PRIVATE
-    opendb
+    odb
     utl
 )
 

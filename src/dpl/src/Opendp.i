@@ -43,7 +43,7 @@ namespace dpl {
 using std::vector;
 
 // Swig vector type in does not seem to work at all.
-// (see OpenDB/src/swig/common/polgon.i)
+// (see odb/src/swig/common/polgon.i)
 // Copied from opensta/tcl/StaTcl.i
 template <class TYPE>
 vector<TYPE> *
@@ -91,10 +91,11 @@ tclListSeqdbMaster(Tcl_Obj *const source,
 namespace dpl {
 
 void
-detailed_placement_cmd(int max_displacment)
+detailed_placement_cmd(int max_displacment_x,
+                       int max_displacment_y)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y);
 }
 
 void
@@ -151,6 +152,15 @@ optimize_mirroring_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->optimizeMirroring();
+}
+
+void
+set_debug_cmd(bool displacement,
+              float min_displacement,
+              const odb::dbInst* debug_instance)
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setDebug(displacement, min_displacement, debug_instance);
 }
 
 } // namespace

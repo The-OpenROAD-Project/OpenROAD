@@ -97,18 +97,6 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_routing_alpha_cmd(float alpha)
-{
-  getGlobalRouter()->setAlpha(alpha);
-}
-
-void
-set_alpha_for_net(char* netName, float alpha)
-{
-  getGlobalRouter()->addAlphaForNet(netName, alpha);
-}
-
-void
 set_verbose(int v)
 {
   getGlobalRouter()->setVerbose(v);
@@ -164,21 +152,9 @@ set_perturbation_amount(int perturbation)
 }
 
 void
-global_route()
-{
-  getGlobalRouter()->globalRoute();
-}
-
-void
-global_route_clocks_separately()
-{
-  getGlobalRouter()->globalRouteClocksSeparately();
-}
-
-void
 run()
 {
-  getGlobalRouter()->run();
+  getGlobalRouter()->globalRoute();
 }
 
 void
@@ -209,6 +185,21 @@ void
 highlight_net_route(const odb::dbNet *net)
 {
   getGlobalRouter()->highlightRoute(net);
+}
+
+void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D, bool tree3D){
+  getGlobalRouter()->initDebugFastRoute();
+  getGlobalRouter()->setDebugNet(net);
+  getGlobalRouter()->setDebugSteinerTree(steinerTree);
+  getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
+  getGlobalRouter()->setDebugTree2D(tree2D);
+  getGlobalRouter()->setDebugTree3D(tree3D);
+}
+
+void
+erase_routes()
+{
+  getGlobalRouter()->clearRouteGui();
 }
 
 void

@@ -50,6 +50,13 @@ namespace bgi = boost::geometry::index;
 // db changes.  TODO: this should be into an observer of OpenDB.
 class Search
 {
+  template <typename T>
+  class MinSizePredicate;
+
+  template <typename T>
+  class MinHeightPredicate;
+
+ public:
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
   using Polygon
@@ -60,13 +67,6 @@ class Search
   template <typename T>
   using Rtree = bgi::rtree<Value<T>, bgi::quadratic<16>>;
 
-  template <typename T>
-  class MinSizePredicate;
-
-  template <typename T>
-  class MinHeightPredicate;
-
- public:
   // This is an iterator range for return values
   template <typename T>
   class Range
@@ -89,6 +89,8 @@ class Search
   using InstRange = Range<odb::dbInst*>;
   using ShapeRange = Range<odb::dbNet*>;
   using FillRange = Range<odb::dbFill*>;
+  using ObstructionRange = Range<odb::dbObstruction*>;
+  using BlockageRange = Range<odb::dbBlockage*>;
 
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
@@ -118,6 +120,22 @@ class Search
                         int y_hi,
                         int min_height = 0);
 
+  // Find all blockages in the given bounds with height of at least min_height
+  BlockageRange searchBlockages(int x_lo,
+                                int y_lo,
+                                int x_hi,
+                                int y_hi,
+                                int min_height = 0);
+
+  // Find all obstructions in the given bounds on the given layer which
+  // are at least min_size in either dimension.
+  ObstructionRange searchObstructions(odb::dbTechLayer* layer,
+                                      int x_lo,
+                                      int y_lo,
+                                      int x_hi,
+                                      int y_hi,
+                                      int min_size = 0);
+
   void clear();
 
  private:
@@ -125,11 +143,15 @@ class Search
   void addNet(odb::dbNet* net);
   void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
   void addInst(odb::dbInst* inst);
+  void addBlockage(odb::dbBlockage* blockage);
+  void addObstruction(odb::dbObstruction* obstruction);
 
   // The net is used for filter shapes by net type
   std::map<odb::dbTechLayer*, Rtree<odb::dbNet*>> shapes_;
   std::map<odb::dbTechLayer*, Rtree<odb::dbFill*>> fills_;
   Rtree<odb::dbInst*> insts_;
+  Rtree<odb::dbBlockage*> blockages_;
+  std::map<odb::dbTechLayer*, Rtree<odb::dbObstruction*>> obstructions_;
 };
 
 }  // namespace gui

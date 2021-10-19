@@ -44,12 +44,13 @@
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
-#include "pdr/pdrev.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
 
 using std::abs;
 using std::string;
+using std::vector;
 
 using utl::RSZ;
 
@@ -73,8 +74,9 @@ SteinerPt SteinerTree::null_pt = -1;
 
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
-                float alpha,
                 bool find_left_rights,
+                int max_pin_count,
+                SteinerTreeBuilder *stt_builder,
                 dbNetwork *network,
                 Logger *logger)
 {
@@ -88,22 +90,22 @@ makeSteinerTree(const Pin *drvr_pin,
   SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
   connectedPins(net, network, pins);
-  // Steiner tree is apparently sensitive to pin order.
-  // Pay the price to stabilize the results.
-  sort(pins, PinPathNameLess(network));
   int pin_count = pins.size();
   bool is_placed = true;
-  if (pin_count >= 2) {
-    int x[pin_count];
-    int y[pin_count];
+  if (pin_count > max_pin_count)
+    logger->warn(RSZ, 69, "skipping net {} with {} pins.",
+                 sdc_network->pathName(net),
+                 pin_count);
+  else if (pin_count >= 2) {
+    vector<int> x, y;
     int drvr_idx = 0;
     for (int i = 0; i < pin_count; i++) {
       Pin *pin = pins[i];
       if (pin == drvr_pin)
         drvr_idx = i;
       Point loc = network->location(pin);
-      x[i] = loc.x();
-      y[i] = loc.y();
+      x.push_back(loc.x());
+      y.push_back(loc.y());
       debugPrint(debug, "steiner", 3, " %s (%d %d)",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
@@ -115,19 +117,11 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      stt::Tree ftree;
-      if (alpha > 0.0) {
-        std::vector<int> x1(x, x + pin_count);
-        std::vector<int> y1(y, y + pin_count);
-        float alpha = 0.4;
-        ftree = pdr::primDijkstra(x1, y1, drvr_idx, alpha, logger);
-      }
-      else {
-        int flute_accuracy = 3;
-        ftree = stt::flute(pin_count, x, y, flute_accuracy);
-      }
+      stt::Tree ftree = stt_builder->makeSteinerTree(network->staToDb(net),
+                                                     x, y, drvr_idx);
+      
       if (debug->check("steiner", 3))
-        stt::printtree(ftree);
+        ftree.printTree(logger);
       tree->setTree(ftree, network);
       if (find_left_rights)
         tree->findLeftRights(network, logger);
@@ -158,14 +152,14 @@ void
 SteinerTree::setTree(stt::Tree tree,
                      const dbNetwork *network)
 {
-  tree_ = tree;
+  tree_ = std::move(tree);
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
   Point drvr_loc = network->location(drvr_pin_);
   int drvr_x = drvr_loc.getX();
   int drvr_y = drvr_loc.getY();
-  int branch_count = stt::branch_count(tree_);
+  int branch_count = tree_.branchCount();
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &pt1 = tree_.branch[i];
     if (pt1.x == drvr_x
@@ -177,20 +171,14 @@ SteinerTree::setTree(stt::Tree tree,
 }
 
 SteinerTree::SteinerTree(const Pin *drvr_pin) :
-  drvr_pin_(drvr_pin),
-  tree_({0, 0, nullptr})
+  drvr_pin_(drvr_pin)
 {
-}
-
-SteinerTree::~SteinerTree()
-{
-  stt::free_tree(tree_);
 }
 
 int
 SteinerTree::branchCount() const
 {
-  return stt::branch_count(tree_);
+  return tree_.branchCount();
 }
 
 void
@@ -286,7 +274,7 @@ SteinerTree::drvrPt(const Network *network) const
 Point
 SteinerTree::location(SteinerPt pt) const
 {
-  stt::Branch &branch_pt = tree_.branch[pt];
+  stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
 }
 
@@ -333,10 +321,12 @@ SteinerTree::findLeftRights(const Network *network,
       printf("\n");
     }
   }
-  SteinerPt root = drvrPt(network);
-  SteinerPt root_adj = adj1[root];
-  left_[root] = root_adj;
-  findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
+  if (drvr_steiner_pt_ != null_pt) {
+    SteinerPt root = drvrPt(network);
+    SteinerPt root_adj = adj1[root];
+    left_[root] = root_adj;
+    findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
+  }
 }
 
 void

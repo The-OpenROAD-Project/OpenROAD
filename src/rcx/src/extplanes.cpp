@@ -91,7 +91,7 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb) {
   odb::dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
-    if (layer->getType() != odb::dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     uint level = layer->getRoutingLevel();
@@ -420,11 +420,10 @@ uint extMain::addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag,
 
     uint level = s.getTechLayer()->getRoutingLevel();
 
-    uint n = 0;
     if (!rotatedFlag)
-      n = _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
+      _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
     else
-      n = addShapeOnGs(&s, swap_coords);
+      addShapeOnGs(&s, swap_coords);
   }
   return cnt;
 }

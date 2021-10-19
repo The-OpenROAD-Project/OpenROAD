@@ -37,10 +37,10 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "opendb/db.h"
-#include "opendb/dbTypes.h"
-#include "opendb/dbWireGraph.h"
-#include "opendb/wOrder.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/dbWireGraph.h"
+#include "odb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 
@@ -911,7 +911,6 @@ void AntennaChecker::build_VIA_PAR_table(
       minus_diff_factor = am.minus_diff_factor;
       plus_diff_factor = am.plus_diff_factor;
 
-      double plus_diff_factor = 5.0;
       if (iterm_areas[1] != 0) {
         par = (diff_cut_factor * via_area) / iterm_areas[0];
         diff_par = (diff_cut_factor * via_area * diff_metal_reduce_factor

@@ -606,7 +606,7 @@ bool PinAlignmentSingleCluster(
     if (name[j] == '/')
       name[j] = '*';
 
-  logger->info(MPL, 3002, "Pin_Aligment Working on macro_clutser: {}", name);
+  logger->info(MPL, 3002, "Performing pin alignment on macro cluster {}.", name);
 
   float lx = cluster->GetX();
   float ly = cluster->GetY();
@@ -695,11 +695,12 @@ bool PinAlignmentSingleCluster(
 
   if (min_id == -1) {
     // throw std::invalid_argument(std::string("Invalid Floorplan.  Please
-    // increase the num_run!!!"));
+    // increase the num_run."));
     logger->info(MPL,
                  3003,
-                 "Pin_Alignment  Cannot generate valid floorplan for current "
-                 "cluster!!!");
+                 "Pin alignment cannot generate valid floorplan for cluster "
+                 "{}.",
+                 name);
     return false;
   } else {
     cluster->SetMacros(sa_vector[min_id]->GetMacros());
@@ -708,7 +709,7 @@ bool PinAlignmentSingleCluster(
   for (int j = 0; j < sa_vector.size(); j++)
     delete sa_vector[j];
 
-  logger->info(MPL, 3004, "Pin_Aligment finish macro_clutser: {}", name);
+  logger->info(MPL, 3004, "Finished pin alignment on macro cluster {}.", name);
 
   return true;
 }
@@ -722,7 +723,7 @@ bool PinAlignment(const vector<Cluster*>& clusters,
                   int num_run,
                   unsigned seed)
 {
-  logger->info(MPL, 3001, "Pin_Aligment Starts");
+  logger->info(MPL, 3001, "Starting pin alignment.");
 
   unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;
@@ -758,7 +759,7 @@ bool PinAlignment(const vector<Cluster*>& clusters,
       string net_file = string(report_directory) + string("/") + name + string(".txt.net");
       block_placement::ParseNetFile(nets, terminal_position, net_file.c_str());
 
-      bool flag = PinAlignmentSingleCluster(report_directory, 
+      bool flag = PinAlignmentSingleCluster(report_directory,
                                             clusters[i],
                                             terminal_position,
                                             nets,

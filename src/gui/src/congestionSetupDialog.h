@@ -35,6 +35,7 @@
 #include <QColor>
 #include <QDialog>
 #include <QListWidgetItem>
+#include <QSettings>
 #include <QString>
 #include <QVector>
 #include <map>
@@ -43,7 +44,6 @@
 #include <vector>
 
 #include "db.h"
-#include "ord/OpenRoad.hh"
 #include "ui_congestionSetup.h"
 
 namespace gui {
@@ -52,6 +52,9 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   Q_OBJECT
  public:
   CongestionSetupDialog(QWidget* parent = nullptr);
+
+  void readSettings(QSettings* settings);
+  void writeSettings(QSettings* settings);
 
  signals:
   void congestionSetupChanged();

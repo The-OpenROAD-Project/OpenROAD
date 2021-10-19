@@ -56,11 +56,11 @@ class PostCtsOpt
              CtsOptions* options,
              TechChar* techChar,
              Logger* logger)
-      : _builder((HTreeBuilder*) builder),
-        _clock(&(builder->getClock())),
-        _techChar(techChar),
+      : _clock(&(builder->getClock())),
         _options(options),
-        _logger(logger)
+        _techChar(techChar),
+        _logger(logger),
+        _builder((HTreeBuilder*) builder)
   {
     _bufDistRatio = _options->getBufDistRatio();
   }
@@ -76,7 +76,7 @@ class PostCtsOpt
   void createSubClockNet(Clock::SubNet& net,
                          ClockInst* driver,
                          ClockInst* sink);
-  Point<DBU> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
+  Point<int> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
 
   Clock* _clock;
   CtsOptions* _options;
@@ -88,7 +88,7 @@ class PostCtsOpt
   double _avgSourceSinkDist = 0.0;
   double _bufDistRatio = 0.0;
   int bufIndex = 1;
-  std::unordered_map<std::string, DBU> _sinkDistMap;
+  std::unordered_map<std::string, int> _sinkDistMap;
 };
 
 }  // namespace cts

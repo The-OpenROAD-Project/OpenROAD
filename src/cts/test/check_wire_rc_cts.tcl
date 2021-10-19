@@ -9,8 +9,6 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal5
 
-configure_cts_characterization
-
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
                      -post_cts_disable \
@@ -31,5 +29,3 @@ foreach buf [get_cells clkbuf_*_clk] {
 }
 
 puts "#unconnected buffers: $unconnected_buffers"
-
-exit

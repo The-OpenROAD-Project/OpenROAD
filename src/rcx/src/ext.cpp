@@ -33,10 +33,10 @@
 
 #include <errno.h>
 
-#include "opendb/wOrder.h"
+#include "odb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#include "opendb/wOrder.h"
+#include "odb/wOrder.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -155,7 +155,6 @@ bool Ext::bench_net(const std::string& dir, int net, bool write_to_solver,
   opt._run_solver = run_solver;
 
   int netId = net;
-  int trackCnt = max_track_count;
   opt._topDir = dir.c_str();
 
   if (netId == 0) {
@@ -403,8 +402,8 @@ bool Ext::extract(ExtractOptions opts) {
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
 
-  bool extract_power_grid_only = opts.power_grid;
 #ifdef ZUI
+  bool extract_power_grid_only = opts.power_grid;
   if (extract_power_grid_only) {
     dbBlock* block = _ext->getBlock();
     if (block != NULL) {

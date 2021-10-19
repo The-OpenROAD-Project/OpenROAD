@@ -36,5 +36,5 @@
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 910
 [INFO GRT-0019] Found 0 clock nets.
-[ERROR GRT-0093] Pin clk does not have layer assignment.
-GRT-0093
+[ERROR GRT-0042] Pin clk does not have geometries below the max routing layer (metal10).
+GRT-0042

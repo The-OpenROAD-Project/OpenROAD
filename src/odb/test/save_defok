@@ -1,0 +1,35 @@
+#!/bin/sh
+# The next line is executed by /bin/sh, but not Tcl \
+exec tclsh $0 ${1+"$@"}
+
+# Copyright (c) 2019, Parallax Software, Inc.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Usage: save_defok test1 [test2...] | failures
+# Where test1 is all or the name of a tcl script in /test
+# Wildcard matching with '*' and '?' in test names is supported.
+
+# Directory containing tests.
+set test_dir [file dirname [file normalize [info script]]]
+set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
+
+source [file join $openroad_dir "test" "regression.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
+
+save_defok_main
+
+# Local Variables:
+# mode:tcl
+# End:

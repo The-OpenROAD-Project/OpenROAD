@@ -65,7 +65,7 @@ target_include_directories(rmp
 
 target_link_libraries(rmp 
   PRIVATE
-    opendb
+    odb
     dbSta
     OpenSTA
     rsz

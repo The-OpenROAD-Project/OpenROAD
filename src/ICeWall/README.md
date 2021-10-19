@@ -1,15 +1,21 @@
-# OpenROAD-ICeWall
+# ICeWall
 
-If you want to use this as part of the OpenROAD project it can be used from inside the integrated [openroad app](https://github.com/The-OpenROAD-Project/OpenROAD).
+At the top level of the chip, special padcells are use to connect signals
+to the external package. Additional commands are provided to [specify the
+placement of padcells, bondpads and bumps](doc/TCL_Interface.md)
 
-This utility aims to simplify the process of adding a padring into a floorplan. 
 
-The definition of the padring is split into three separate parts
-- A library definition which contains additional required information about the IO cells being used
-- A package description which details the location of IO cells around the periphery of the design
-- A signal mapping file, that associates signals in the design with the IO cells placed around the periphery
+The definition of the padring is split into three separate parts:
 
-The separation of the package description from the signal mapping file allows the same IO padring to be re-used for 
-different designs, reducing the amount of re-work necessary.
+- A library definition which contains additional required information about the IO cells
+being used
+- A package description which details the location of IO cells
+around the periphery of the design
+- A signal mapping file that associates
+signals in the design with the IO cells placed around the periphery
+
+The separation of the package description from the signal mapping file
+allows the same IO padring to be reused for different designs, reducing
+the amount of rework needed.
 
 For more details refer to [doc/README.md](doc/README.md)

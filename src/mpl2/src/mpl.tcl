@@ -40,11 +40,11 @@ proc rtl_macro_placer { args } {
        -report_directory -report_file } flag {  }
 
     if { ![info exists keys(-config_file)] } {
-        utl::error MPL 2 "rtl_macro_placer -config_file config_file"
+        utl::error MPL 2 "Missing mandatory -config_file file"
     }
 
     if { ![info exists keys(-report_file)] } {
-        utl::error MPL 3 "missing mandatory argument -report_file"
+        utl::error MPL 3 "Missing mandatory argument -report_file file"
     }
 
     set config_file $keys(-config_file)
@@ -75,7 +75,7 @@ proc rtl_macro_placer { args } {
         set y [expr round([lindex $line 3] * $units)]
 
         if {[set inst [$block findInst $inst_name]] == "NULL"} {
-            utl::error MPL 4 "Cannot find instance $inst_name"
+            utl::error MPL 4 "Cannot find instance $inst_name."
         }
 
         $inst setOrient $orientation

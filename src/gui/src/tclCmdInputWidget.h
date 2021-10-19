@@ -34,12 +34,19 @@
 
 #include <tcl.h>
 #include <memory>
+#include <set>
+#include <string>
 
+#include <QCompleter>
 #include <QMenu>
 #include <QPlainTextEdit>
+#include <QRegularExpression>
 #include <QSettings>
+#include <QStringList>
+#include <QStringListModel>
 
 #include "tclCmdHighlighter.h"
+#include "tclSwig.h" // generated header
 
 namespace gui {
 
@@ -67,7 +74,7 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
   signals:
     // complete TCL command available
-    void completeCommand();
+    void completeCommand(const QString& command);
 
     // back in history
     void historyGoBack();
@@ -79,6 +86,9 @@ class TclCmdInputWidget: public QPlainTextEdit {
     void updateSize();
 
     void updateHighlighting();
+    void updateCompletion();
+
+    void insertCompletion(const QString& text);
 
   protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -93,17 +103,45 @@ class TclCmdInputWidget: public QPlainTextEdit {
 
     void determineLineHeight();
 
+    void initOpenRoadCommands();
+    void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);
+    void collectNamespaces(std::set<std::string>& namespaces);
+    void collectSWIGArguments();
+
+    const QString wordUnderCursor();
+    const swig_class* swigBeforeCursor();
+
+    void setCompleterCommands();
+    void setCompleterSWIG(const swig_class* type);
+    void setCompleterArguments(const std::set<int>& cmds);
+    void setCompleterVariables();
+
     int line_height_;
     int document_margins_;
 
     int max_height_;
 
+    Tcl_Interp* interp_;
+
     std::unique_ptr<QMenu> context_menu_;
     std::unique_ptr<QAction> enable_highlighting_;
-
-    static constexpr const char* enable_highlighting_keyword_ = "highlighting";
+    std::unique_ptr<QAction> enable_completion_;
 
     std::unique_ptr<TclCmdHighlighter> highlighter_;
+
+    std::unique_ptr<QCompleter> completer_;
+    std::unique_ptr<QStringListModel> completer_options_;
+    std::unique_ptr<QStringList> completer_commands_;
+    std::unique_ptr<QRegularExpression> completer_start_of_command_;
+    std::unique_ptr<QRegularExpression> completer_end_of_command_;
+
+    // hold openroad commands and associated arguments
+    std::vector<CommandArguments> commands_;
+    std::map<const swig_class*, std::unique_ptr<QStringList>> swig_arguments_;
+
+    static constexpr const char* enable_highlighting_keyword_ = "highlighting";
+    static constexpr const char* enable_completion_keyword_ = "completion";
+    static const int completer_mimimum_length_ = 2;
 };
 
 }  // namespace gui

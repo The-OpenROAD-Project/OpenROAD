@@ -13,7 +13,7 @@
 [INFO PSM-0001] Reading voltage source file: Vsrc_aes_vdd.loc.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_aes_vdd.loc.
 [INFO PSM-0031] Number of PDN nodes on net VDD = 74368.
-[INFO PSM-0064] Number of voltage sources = 4
+[INFO PSM-0064] Number of voltage sources = 4.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V

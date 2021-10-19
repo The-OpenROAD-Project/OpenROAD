@@ -35,8 +35,8 @@
 
 #include <map>
 
-#include "opendb/db.h"
-#include "opendb/dbWireGraph.h"
+#include "odb/db.h"
+#include "odb/dbWireGraph.h"
 #include "utl/Logger.h"
 
 namespace ant {

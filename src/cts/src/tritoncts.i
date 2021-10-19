@@ -102,18 +102,6 @@ set_out_path(const char* path)
 }
 
 void
-set_cap_per_sqr(double cap)
-{
-  getTritonCts()->getParms()->setCapPerSqr(cap);
-}
-
-void
-set_res_per_sqr(double res)
-{
-  getTritonCts()->getParms()->setResPerSqr(res);
-}
-
-void
 set_slew_inter(double slew)
 {
   getTritonCts()->getParms()->setSlewInter(slew);

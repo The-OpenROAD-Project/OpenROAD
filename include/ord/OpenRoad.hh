@@ -129,6 +129,10 @@ namespace utl {
 class Logger;
 }
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
 namespace ord {
 
 using std::string;
@@ -169,6 +173,7 @@ public:
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen *getPdnGen() { return pdngen_; }
+  stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -189,7 +194,9 @@ public:
 		// major.minor (avoid including defout.h)
 		string version);
   
-  void writeCdl(const char *filename, bool includeFillers);
+  void writeCdl(const char *outFilename,
+                const char *mastersFilename,
+                bool includeFillers);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
@@ -258,6 +265,7 @@ private:
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
+  stt::SteinerTreeBuilder *stt_builder_;
 
   std::set<Observer *> observers_;
 

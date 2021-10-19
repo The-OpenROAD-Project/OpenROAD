@@ -166,13 +166,10 @@ class IOPlacer
   Netlist netlist_;
   Core core_;
   std::vector<IOPin> assignment_;
-  bool report_hpwl_;
 
   int slots_per_section_;
   float slots_increase_factor_;
-  float usage_increase_factor_;
 
-  bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
@@ -228,13 +225,14 @@ class IOPlacer
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();
 
-  void updateOrientation(IOPin&);
-  void updatePinArea(IOPin&);
+  void updateOrientation(IOPin& pin);
+  void updatePinArea(IOPin& pin);
   bool checkBlocked(Edge edge, int pos);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
+  double dbuToMicrons(int64_t dbu);
 
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,

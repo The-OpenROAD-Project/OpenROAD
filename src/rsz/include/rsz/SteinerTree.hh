@@ -42,11 +42,11 @@
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
 
-#include "opendb/geom.h"
+#include "odb/geom.h"
 
 #include "db_sta/dbNetwork.hh"
 
-#include "flute.h"
+#include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
 
@@ -62,6 +62,8 @@ using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
 using sta::hashIncr;
+
+using stt::SteinerTreeBuilder;
 
 class SteinerTree;
 
@@ -95,8 +97,9 @@ typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
 makeSteinerTree(const Pin *drvr_pin,
-                float alpha,
                 bool find_left_rights,
+                int max_pin_count,
+                SteinerTreeBuilder *stt_builder,
                 dbNetwork *network,
                 Logger *logger);
 
@@ -114,7 +117,6 @@ class SteinerTree
 {
 public:
   SteinerTree(const Pin *drvr_pin);
-  ~SteinerTree();
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
@@ -173,8 +175,9 @@ protected:
   SteinerPtSeq right_;
 
   friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
-                                      float alpha,
                                       bool find_left_rights,
+                                      int max_pin_count,
+                                      SteinerTreeBuilder *stt_builder,
                                       dbNetwork *network,
                                       Logger *logger);
 };

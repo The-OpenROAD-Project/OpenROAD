@@ -59,7 +59,7 @@ target_link_libraries(mpl
     ParquetFP
     dbSta
     OpenSTA
-    opendb
+    odb
     utl
     gui
 )

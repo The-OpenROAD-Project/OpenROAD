@@ -72,10 +72,7 @@ class SelectionModel : public QAbstractTableModel
 
   void populateModel();
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
  private:
-  odb::dbDatabase* db_;
   const SelectionSet& objs_;
   std::vector<const Selected*> table_data_;
 };
@@ -104,10 +101,7 @@ class HighlightModel : public QAbstractTableModel
                const QVariant& value,
                int role) override;
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
  private:
-  odb::dbDatabase* db_;
   const HighlightSet& objs_;
   std::vector<std::pair<int, const Selected*>> table_data_;
 };
@@ -147,12 +141,11 @@ class SelectHighlightWindow : public QDockWidget
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
 
-  void setDb(odb::dbDatabase* db);
-
  signals:
   void clearAllSelections();
   void clearAllHighlights();
 
+  void selected(const Selected& selection);
   void clearSelectedItems(const QList<const Selected*>& items);
   void clearHighlightedItems(const QList<const Selected*>& items);
   void zoomInToItems(const QList<const Selected*>& items);
@@ -162,6 +155,7 @@ class SelectHighlightWindow : public QDockWidget
  public slots:
   void updateSelectionModel();
   void updateHighlightModel();
+  void updateModels();
   void showSelectCustomMenu(QPoint pos);
   void showHighlightCustomMenu(QPoint pos);
 

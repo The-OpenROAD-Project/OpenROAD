@@ -1983,7 +1983,7 @@ class extMain
                    double& max_res,
                    double& via_res,
                    uint& via_cnt);
-  char _tmpLenStats[1024000];
+  std::string _tmpLenStats;
 
   enum INCR_SPEF_TYPE
   {

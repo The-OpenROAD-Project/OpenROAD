@@ -66,7 +66,7 @@ target_link_libraries(ppl
   PUBLIC
     Munkres
     OpenSTA
-    opendb
+    odb
     utl
 )
                       

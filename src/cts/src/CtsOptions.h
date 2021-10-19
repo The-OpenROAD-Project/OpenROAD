@@ -38,6 +38,7 @@
 #include "Util.h"
 #include "db.h"
 #include "utl/Logger.h"
+#include "stt/SteinerTreeBuilder.h"
 
 #include <iostream>
 #include <sstream>
@@ -49,7 +50,8 @@ namespace cts {
 class CtsOptions
 {
  public:
-  CtsOptions() = default;
+  CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
+      : _logger(logger), _sttBuilder(sttBuildder) {}
 
   void setBlockName(const std::string& blockName) { _blockName = blockName; }
   std::string getBlockName() const { return _blockName; }
@@ -63,8 +65,8 @@ class CtsOptions
     _bufferList = buffers;
   }
   std::vector<std::string> getBufferList() const { return _bufferList; }
-  void setDbUnits(DBU units) { _dbUnits = units; }
-  DBU getDbUnits() const { return _dbUnits; }
+  void setDbUnits(int units) { _dbUnits = units; }
+  int getDbUnits() const { return _dbUnits; }
   void setWireSegmentUnit(unsigned wireSegmentUnit)
   {
     _wireSegmentUnit = wireSegmentUnit;
@@ -106,10 +108,6 @@ class CtsOptions
   }
   void setOutputPath(const std::string& path) { _outputPath = path; }
   std::string getOutputPath() const { return _outputPath; }
-  void setCapPerSqr(double cap) { _capPerSqr = cap; }
-  double getCapPerSqr() const { return _capPerSqr; }
-  void setResPerSqr(double res) { _resPerSqr = res; }
-  double getResPerSqr() const { return _resPerSqr; }
   void setCapInter(double cap) { _capInter = cap; }
   double getCapInter() const { return _capInter; }
   void setSlewInter(double slew) { _slewInter = slew; }
@@ -186,8 +184,8 @@ class CtsOptions
   void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
   double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
-  void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}
+  stt::SteinerTreeBuilder *getSttBuilder() { return _sttBuilder;}
 
  private:
   std::string _blockName = "";
@@ -197,7 +195,7 @@ class CtsOptions
   std::string _sinkBuffer = "";
   std::string _treeBuffer = "";
   std::string _metricFile = "";
-  DBU _dbUnits = -1;
+  int _dbUnits = -1;
   unsigned _wireSegmentUnit = 0;
   bool _plotSolution = false;
   bool _simpleCts = false;
@@ -215,8 +213,6 @@ class CtsOptions
   double _maxCharCap = 0;
   double _sinkBufferMaxCap = 0;
   double _sinkBufferInputCap = 0;
-  double _capPerSqr = 0;
-  double _resPerSqr = 0;
   double _capInter = 0;
   double _slewInter = 0;
   unsigned _charWirelengthIterations = 4;
@@ -239,7 +235,8 @@ class CtsOptions
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
-  utl::Logger* _logger = nullptr;
+  utl::Logger* _logger;
+  stt::SteinerTreeBuilder* _sttBuilder;
 };
 
 }  // namespace cts

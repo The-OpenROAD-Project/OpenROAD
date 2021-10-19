@@ -35,8 +35,8 @@
 
 #pragma once
 
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/Sta.hh"
 #include "ord/OpenRoad.hh"
 

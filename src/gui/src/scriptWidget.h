@@ -41,14 +41,11 @@
 #include <QTextEdit>
 
 #include "tclCmdInputWidget.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
+} // namespace odb
 
 namespace gui {
 
@@ -71,6 +68,8 @@ class ScriptWidget : public QDockWidget
 
   void setLogger(utl::Logger* logger);
 
+  void setupTcl(Tcl_Interp* interp, bool do_init_openroad);
+
   void setFont(const QFont& font);
 
  signals:
@@ -81,25 +80,34 @@ class ScriptWidget : public QDockWidget
   // shutdown
   void tclExiting();
 
- private slots:
-  // Triggered when the user hits return in the line edit
-  void executeCommand();
+ public slots:
+ // Triggered when the user hits return in the line edit
+ void executeCommand(const QString& command, bool echo = true);
 
+ // Use to execute a command silently, ie. without echo or return.
+ void executeSilentCommand(const QString& command);
+
+ private slots:
   void outputChanged();
 
-  void pause();
+  void pause(int timeout);
+  void unpause();
 
   void pauserClicked();
 
   void goBackHistory();
   void goForwardHistory();
 
+  void updatePauseTimeout();
+
  protected:
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
  private:
-  void setupTcl();
+  int executeTclCommand(const QString& command);
+
+  void triggerPauseCountDown(int timeout);
 
   void addToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
@@ -107,10 +115,6 @@ class ScriptWidget : public QDockWidget
   void addReportToOutput(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
 
-  static int channelOutput(ClientData instanceData,
-                           const char* buf,
-                           int toWrite,
-                           int* errorCodePtr);
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp *interp,
                             int argc,
@@ -119,6 +123,7 @@ class ScriptWidget : public QDockWidget
   QTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
+  std::unique_ptr<QTimer> pause_timer_;
   Tcl_Interp* interp_;
   QStringList history_;
   QString history_buffer_last_;
@@ -129,8 +134,7 @@ class ScriptWidget : public QDockWidget
   // Logger sink
   template <typename Mutex>
   class GuiSink;
-
-  static Tcl_ChannelType stdout_channel_type_;
+  std::shared_ptr<spdlog::sinks::sink> sink_;
 
   // maximum number of character to display in a log line
   const int max_output_line_length_ = 1000;

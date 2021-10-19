@@ -58,7 +58,7 @@ target_include_directories( psm
 target_link_libraries(psm
   PRIVATE
     utl
-    opendb
+    odb
     OpenSTA
     dbSta
     Eigen3::Eigen

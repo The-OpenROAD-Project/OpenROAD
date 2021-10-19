@@ -7,5 +7,5 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1885 rows of 13893 sites.
-[ERROR PAD-0087] Cell PADCELL_SIG of Type sig is not specified in the list of cells in the library
+[ERROR PAD-0087] Cell PADCELL_SIG of Type sig is not specified in the list of cells in the library.
 PAD-0087

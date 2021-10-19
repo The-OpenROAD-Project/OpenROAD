@@ -38,8 +38,8 @@
 #include <QAbstractTableModel>
 
 #include "gui/gui.h"
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/Sta.hh"
@@ -59,10 +59,8 @@ class dbRegion;
 class dbRow;
 class dbSWire;
 }  // namespace odb
-namespace ord {
-class OpenRoad;
-}
 namespace sta {
+class dbSta;
 class Instance;
 class Net;
 class Pin;
@@ -76,8 +74,10 @@ class GuiDBChangeListener;
 
 class TimingPathsModel : public QAbstractTableModel
 {
+ Q_OBJECT
+
  public:
-  TimingPathsModel(bool get_max = true, int path_count = 100);
+  TimingPathsModel(sta::dbSta* sta, bool get_max = true, int path_count = 100);
   ~TimingPathsModel();
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -93,13 +93,15 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
 
   void resetModel();
-  void sort(int col_index, Qt::SortOrder sort_order) override;
   void populateModel(bool get_max = true, int path_count = 100);
+
+ public slots:
+  void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
   bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
 
-  ord::OpenRoad* openroad_;
+  sta::dbSta* sta_;
   std::vector<TimingPath*> timing_paths_;
 
   static const std::vector<std::string> _path_columns;
@@ -192,7 +194,7 @@ class TimingPath
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel() {}
+  TimingPathDetailModel(sta::dbSta* sta);
   ~TimingPathDetailModel() {}
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -208,6 +210,8 @@ class TimingPathDetailModel : public QAbstractTableModel
   void populateModel(TimingPath* path);
 
  private:
+  sta::dbSta* sta_;
+
   TimingPath* path_;
   // Unicode symbols
   static const char* up_down_arrows;
@@ -220,7 +224,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 class TimingPathRenderer : public gui::Renderer
 {
  public:
-  TimingPathRenderer();
+  TimingPathRenderer(sta::dbSta* sta);
   ~TimingPathRenderer();
   void highlight(TimingPath* path);
 
@@ -239,6 +243,8 @@ class TimingPathRenderer : public gui::Renderer
                     odb::dbObject* source_node,
                     odb::dbObject* sink_node,
                     gui::Painter& painter);
+
+  sta::dbSta* sta_;
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
