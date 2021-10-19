@@ -96,12 +96,12 @@ enum TimingPathDetailModel::Column : int
 };
 
 gui::Painter::Color TimingPathRenderer::inst_highlight_color_
-    = gui::Painter::dark_cyan;
+    = gui::Painter::highlight;
 gui::Painter::Color TimingPathRenderer::path_inst_color_
     = gui::Painter::magenta;
 gui::Painter::Color TimingPathRenderer::term_color_ = gui::Painter::blue;
 gui::Painter::Color TimingPathRenderer::signal_color_ = gui::Painter::red;
-gui::Painter::Color TimingPathRenderer::clock_color_ = gui::Painter::yellow;
+gui::Painter::Color TimingPathRenderer::clock_color_ = gui::Painter::cyan;
 // helper functions
 float getRequiredTime(sta::dbSta* staRoot,
                       sta::Pin* term,
@@ -522,6 +522,9 @@ TimingPathRenderer::TimingPathRenderer(sta::dbSta* sta) :
 {
   TimingPathRenderer::path_inst_color_.a = 100;
   TimingPathRenderer::inst_highlight_color_.a = 100;
+  TimingPathRenderer::clock_color_.a = 100;
+  TimingPathRenderer::signal_color_.a = 100;
+  TimingPathRenderer::term_color_.a = 100;
 }
 
 TimingPathRenderer::~TimingPathRenderer()
