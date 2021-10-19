@@ -132,14 +132,11 @@ class Descriptor
   }
   static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
 
-protected:
-  // The caller (Selected) will pre-configure the Painter's pen
+  // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
   virtual void highlight(std::any object,
                          Painter& painter,
                          void* additional_data = nullptr) const = 0;
-
-  friend class Selected;
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -543,6 +540,12 @@ class Gui
   }
 
   template <class T>
+  const Descriptor* getDescriptor()
+  {
+    return getDescriptor(typeid(T));
+  }
+
+  template <class T>
   void unregisterDescriptor()
   {
     unregisterDescriptor(typeid(T));
@@ -559,6 +562,7 @@ class Gui
 
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
+  const Descriptor* getDescriptor(const std::type_info& type);
   void unregisterDescriptor(const std::type_info& type);
 
   // flag to indicate if tcl should take over after gui closes
