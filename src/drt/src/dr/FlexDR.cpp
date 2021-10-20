@@ -1488,9 +1488,9 @@ void FlexDR::searchRepair(int iter,
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
+  if ((iter - 7)%4 == 0)
+        lowerMarkerCost = !lowerMarkerCost;
   if (iter > 7 && lowerMarkerCost) {
-      if ((iter - 7)%4 == 0)
-          lowerMarkerCost = !lowerMarkerCost;
 //      cout << "MAKING MARKERCOST < ROUTESHAPECOST\n";
       if (MARKERCOST > ROUTESHAPECOST)
           MARKERCOST = ROUTESHAPECOST-1;
