@@ -1833,14 +1833,21 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
   if (in->getTerm()->getType().isSupply())
       return true;
-  if (in->getNet() && in->getNet()->isSpecial()) {
+  if (!in->getNet() || in->getNet()->isSpecial()) {
       auto instClass = inst2Class_[in->getInst()];
       if (instClass != nullptr) {
         for (auto& inst : *instClass) {
             frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
-            if (it->getNet() && !it->getNet()->isSpecial()) {
-                cout << "cant skip this special net iterm " << in->getName() << "\n";
-                return false;
+            if (in->getNet()->isSpecial()) {
+                if (it->getNet() && !it->getNet()->isSpecial()) {
+                    cout << "cant skip this special net iterm " << in->getName() << "\n";
+                    return false;
+                }
+            } else { //in->getNet() == nullptr
+                if (it->getNet()) {
+                    cout << "cant skip this iterm " << in->getName() << "\n";
+                    return false;
+                }
             }
         }
       }
