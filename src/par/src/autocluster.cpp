@@ -202,8 +202,6 @@ static void appendNet(vector<Net*>& vec, pair<Net*, Net*>& p)
 
 //
 // Handle Buffer transparency for handling net connection across buffers
-//  RV? Is this handling chain of buffers? ZW: It will handle chain of buffers.
-//  TODO: handle inverter pairs
 //
 void AutoClusterMgr::getBufferNet()
 {
@@ -560,7 +558,7 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
     if ((buffer_flag == false) && (is_top || !hasTerminals(net))) {
       NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
       while (pin_iter->hasNext()) {
-        Pin* pin = pin_iter->next();
+        const Pin* pin = pin_iter->next();
         if (network_->isTopLevelPort(pin)) {
           const char* port_name = network_->portName(pin);
           const int id = bundled_io_map_[bterm_map_[string(port_name)]];
@@ -667,7 +665,7 @@ unsigned int AutoClusterMgr::calculateClusterNumInst(
 
 //
 // Merge target cluster into src
-// RV -- del targe cluster? // target cluster will be deleted outside the function
+// Target cluster will be deleted outside the function
 //
 void AutoClusterMgr::mergeCluster(Cluster* src, Cluster* target)
 {
@@ -1397,11 +1395,13 @@ void AutoClusterMgr::findAdjacencies()
   // seed the BFS
   seedFaninBfs(bfs);
 
-  // Propagate fanins through register D->Q
   for(int i = 0; i < num_hops_; i++) {
+    // Propagate fanins through combinational logics
     findFanins(bfs);
     logger_->info(PAR, 490, "Number of hops:  {}", i);
+    // add timing weights
     addTimingWeight(1.0 / pow(2.0, i * 1.0));
+    // Propagate fanins through register D->Q
     copyFaninsAcrossRegisters(bfs);
   } 
 }
@@ -1573,15 +1573,14 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
 
 void AutoClusterMgr::addWeight(int src_id, int target_id, int weight)
 {
-   if(virtual_timing_map_.find(src_id) != virtual_timing_map_.end()) {
-     if(virtual_timing_map_[src_id].find(target_id) != virtual_timing_map_[src_id].end()) {
-       virtual_timing_map_[src_id][target_id] += weight;
-     } else {
-       virtual_timing_map_[src_id][target_id] = weight;
-     }
-   } else {
-     virtual_timing_map_[src_id][target_id] = weight;
-   }
+  if (virtual_timing_map_.find(src_id) != virtual_timing_map_.end()) 
+    if (virtual_timing_map_[src_id].find(target_id) 
+      != virtual_timing_map_[src_id].end()) 
+      virtual_timing_map_[src_id][target_id] += weight;
+    else 
+      virtual_timing_map_[src_id][target_id] = weight;
+  else 
+    virtual_timing_map_[src_id][target_id] = weight;
 }
 
 void AutoClusterMgr::addTimingWeight(float weight)
@@ -1681,13 +1680,13 @@ void AutoClusterMgr::addTimingWeight(float weight)
       bool src_macro = cluster_map_[src_id]->getNumMacro() > 0;
       bool sink_macro = cluster_map_[map_it->first]->getNumMacro() > 0;
  
-      if((src_io && sink_io) || (src_io && sink_macro) || (src_macro && sink_io)) {
+      if((src_io && sink_io) || (src_io && sink_macro) || (src_macro && sink_io)) 
         level_weight = weight * 100.0;
-      } else if(src_macro && sink_macro) {
+      else if(src_macro && sink_macro) 
         level_weight =  weight * 1;
-      } else {
-        level_weight = weight * 0.0;
-      }
+      else 
+        level_weight = 0.0;
+
       
       level_weight = map_it->second * level_weight;
       cluster_map_[src_id]->addOutputConnection(map_it->first, level_weight);
@@ -1923,10 +1922,10 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // Generates the output files needed by the macro placer
   //
   
-  float outline_width = (floorplan_ux_ - floorplan_lx_) / dbu_ ;
-  float outline_height = (floorplan_uy_ - floorplan_ly_) / dbu_;
-  float blockage_width = outline_width / 5.0;
-  float blockage_height = outline_height / 5.0;
+  const float outline_width = (floorplan_ux_ - floorplan_lx_) / dbu_ ;
+  const float outline_height = (floorplan_uy_ - floorplan_ly_) / dbu_;
+  const float blockage_width = outline_width / 5.0;  // the depth (0.2) of macro blockage
+  const float blockage_height = outline_height / 5.0; // the depth (0.2) of macro blockage
 
 
   ofstream output_file;

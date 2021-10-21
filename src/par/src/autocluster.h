@@ -95,7 +95,7 @@ class Cluster
 
   float calculateArea(ord::dbVerilogNetwork* network) const;
   void calculateNumSeq(ord::dbVerilogNetwork* network);
-  int getNumSeq() { return num_seq_; }
+  int getNumSeq() const { return num_seq_; }
 
   void addInst(sta::Instance* inst) { inst_vec_.push_back(inst); }
   void addMacro(sta::Instance* inst) { macro_vec_.push_back(inst); }
@@ -239,7 +239,7 @@ class AutoClusterMgr
 
 
   // Map all the BTerms to an IORegion
-  std::unordered_map<std::string, sta::Pin*> bterm_pin_;
+  std::unordered_map<std::string, const sta::Pin*> bterm_pin_;
   std::unordered_map<std::string, IORegion> bterm_map_;
   std::unordered_map<IORegion, int> bundled_io_map_;
   std::unordered_map<sta::Instance*, Metric> logical_cluster_map_;

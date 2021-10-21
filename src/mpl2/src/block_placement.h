@@ -56,7 +56,7 @@ class Block
   bool is_soft_ = true;
   int num_macro_ = 0;
 
-  bool flag_ = false;
+  bool align_flag_ = false;
 
   std::vector<std::pair<float, float>> aspect_ratio_;
   std::vector<std::pair<float, float>>
@@ -84,8 +84,8 @@ class Block
   float GetAspectRatio() const { return height_ / width_; }
   int GetNumMacro() const { return num_macro_; }
 
-  void SetFlag(bool flag) { flag_ = flag; }
-  bool GetFlag() { return flag_; }
+  void SetAlignFlag(bool align_flag) { align_flag_ = align_flag; }
+  bool GetAlignFlag() { return align_flag_; }
 
   void SetX(float x) { x_ = x; }
   void SetY(float y) { y_ = y; }
@@ -256,7 +256,9 @@ class SimulatedAnnealingCore
 
   std::mt19937 generator_;
   std::uniform_real_distribution<float> distribution_;
-
+  
+  
+  void ShrinkBlocks();
   void PackFloorplan();
   void Resize();
   void SingleSwap(bool flag);  // true for pos_seq and false for neg_seq
@@ -277,13 +279,6 @@ class SimulatedAnnealingCore
                  float macro_blockage_penalty,
                  float location_penalty,
                  float notch_penalty) const;
-
-  void UpdateWeight(float avg_area,
-                    float avg_wirelength,
-                    float avg_outline_penalty,
-                    float avg_boundary_penalty,
-                    float avg_macro_blockage_penalty,
-                    float avg_location_penalty);
 
  public:
   // Constructor
@@ -370,10 +365,6 @@ class SimulatedAnnealingCore
   std::vector<Block> GetBlocks() const { return blocks_; }
   std::vector<int> GetPosSeq() const { return pos_seq_; }
   std::vector<int> GetNegSeq() const { return neg_seq_; }
-
-  void ShrinkBlocks();
-  bool FitFloorplan();
-
   bool IsFeasible() const;
 };
 
