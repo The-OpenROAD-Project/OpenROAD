@@ -51,7 +51,7 @@ class grAccessPattern : public grBlockObject
   {
   }
   // getters
-  void getPoint(frPoint& bpIn) const { bpIn.set(beginPoint); }
+  void getPoint(frPoint& bpIn) const { bpIn = beginPoint; }
   frPoint getPoint() const { return beginPoint; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum; }
   grPin* getPin() const { return pin; }
@@ -98,7 +98,7 @@ class grAccessPattern : public grBlockObject
   }
 
   // setters
-  void setPoint(const frPoint& bpIn) { beginPoint.set(bpIn); }
+  void setPoint(const frPoint& bpIn) { beginPoint = bpIn; }
   void setBeginLayerNum(frLayerNum in) { beginLayerNum = in; }
   void setPin(grPin* in) { pin = in; }
   void setValidAccess(const std::vector<bool>& in) { validAccess = in; }

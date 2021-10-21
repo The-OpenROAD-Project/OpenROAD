@@ -55,7 +55,7 @@ class drAccessPattern : public drBlockObject
   {
   }
   // getters
-  void getPoint(frPoint& bpIn) const { bpIn.set(beginPoint_); }
+  void getPoint(frPoint& bpIn) const { bpIn = beginPoint_; }
   const frPoint& getPoint() const { return beginPoint_; }
   frLayerNum getBeginLayerNum() const { return beginLayerNum_; }
   frCoord getBeginArea() const { return beginArea_; }
@@ -154,7 +154,7 @@ class drAccessPattern : public drBlockObject
   bool isOnTrack(bool isX) const { return (isX) ? onTrackX_ : onTrackY_; }
   frUInt4 getPinCost() const { return pinCost_; }
   // setters
-  void setPoint(const frPoint& bpIn) { beginPoint_.set(bpIn); }
+  void setPoint(const frPoint& bpIn) { beginPoint_ = bpIn; }
   void setBeginLayerNum(frLayerNum in) { beginLayerNum_ = in; }
   void setBeginArea(frCoord in) { beginArea_ = in; }
   void setMazeIdx(const FlexMazeIdx& in) { mazeIdx_.set(in); }

@@ -106,8 +106,8 @@ class drPathSeg : public drShape
   // getters
   void getPoints(frPoint& beginIn, frPoint& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
 
   const frPoint& getBeginPoint() const { return begin_; }
@@ -123,8 +123,8 @@ class drPathSeg : public drShape
   // setters
   void setPoints(const frPoint& beginIn, const frPoint& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {
@@ -327,8 +327,8 @@ class drPatchWire : public drShape
   void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
   void setOffsetBox(const frBox& boxIn) { offsetBox_.set(boxIn); }
 
-  void getOrigin(frPoint& in) const { in.set(origin_); }
-  void setOrigin(const frPoint& in) { origin_.set(in); }
+  void getOrigin(frPoint& in) const { in = origin_; }
+  void setOrigin(const frPoint& in) { origin_ = in; }
 
  protected:
   frBox offsetBox_;

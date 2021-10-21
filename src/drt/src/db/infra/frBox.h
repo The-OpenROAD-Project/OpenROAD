@@ -60,8 +60,8 @@ class frBox
   // setters
   void set(const frBox& tmpBox)
   {
-    ll_.set(tmpBox.ll_);
-    ur_.set(tmpBox.ur_);
+    ll_ = tmpBox.ll_;
+    ur_ = tmpBox.ur_;
   }
   void set(frCoord llx, frCoord lly, frCoord urx, frCoord ury)
   {
@@ -77,8 +77,8 @@ class frBox
   }
   void setUnsafe(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
   {
-    ll_.set(tmpLowerLeft);
-    ur_.set(tmpUpperRight);
+    ll_ = tmpLowerLeft;
+    ur_ = tmpUpperRight;
   }
   // getters
   frCoord left() const { return ll_.x(); }

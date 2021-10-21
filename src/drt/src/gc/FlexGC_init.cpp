@@ -419,7 +419,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
       for (; outerIt != poly.end(); outerIt++) {
         ep.set((*outerIt).x(), (*outerIt).y());
         fixedPolygonEdges[i].insert(make_pair(bp, ep));
-        bp.set(ep);
+        bp = ep;
       }
       // insert last edge
       fixedPolygonEdges[i].insert(make_pair(bp, firstPt));
@@ -435,7 +435,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
         for (; innerIt != hole_poly.end(); innerIt++) {
           ep.set((*innerIt).x(), (*innerIt).y());
           fixedPolygonEdges[i].insert(make_pair(bp, ep));
-          bp.set(ep);
+          bp = ep;
         }
         // insert last edge
         fixedPolygonEdges[i].insert(make_pair(bp, firstPt));
@@ -503,7 +503,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
       tmpEdges.back()->setNextEdge(edge.get());
     }
     tmpEdges.push_back(std::move(edge));
-    bp.set(ep);
+    bp = ep;
     bp1 = ep1;
     // cntOuter++;
   }
@@ -577,7 +577,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
       tmpEdges.back()->setNextEdge(edge.get());
     }
     tmpEdges.push_back(std::move(edge));
-    bp.set(ep);
+    bp = ep;
     bp1 = ep1;
     // cntInner++;
   }

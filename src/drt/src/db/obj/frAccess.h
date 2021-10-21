@@ -54,7 +54,7 @@ class frAccessPoint : public frBlockObject
   {
   }
   // getters
-  void getPoint(frPoint& in) const { in.set(point_); }
+  void getPoint(frPoint& in) const { in = point_; }
   const frPoint& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
   bool hasAccess() const
@@ -134,7 +134,7 @@ class frAccessPoint : public frBlockObject
     }
   }
   // setters
-  void setPoint(const frPoint& in) { point_.set(in); }
+  void setPoint(const frPoint& in) { point_ = in; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
   {
     switch (dir) {

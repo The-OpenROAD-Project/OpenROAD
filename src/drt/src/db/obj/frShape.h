@@ -225,8 +225,8 @@ class frPatchWire : public frShape
   }
   frPatchWire(const drPatchWire& in);
   // setters
-  void setOffsetBox(const frBox& in) { offsetBox_.set(in); }
-  void setOrigin(const frPoint& in) { origin_.set(in); }
+  void setOffsetBox(const frBox& in) { offsetBox_ = in; }
+  void setOrigin(const frPoint& in) { origin_ = in; }
   // getters
   // others
   frBlockObjectEnum typeId() const override { return frcPatchWire; }
@@ -289,8 +289,8 @@ class frPatchWire : public frShape
     boxIn.set(offsetBox_);
     boxIn.transform(xform);
   }
-  void getOffsetBox(frBox& boxIn) const { boxIn.set(offsetBox_); }
-  void getOrigin(frPoint& in) const { in.set(origin_); }
+  void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
+  void getOrigin(frPoint& in) const { in = origin_; }
   frPoint getOrigin() const { return origin_; }
   void move(const frTransform& xform) override {}
   bool overlaps(const frBox& box) const override
@@ -458,8 +458,8 @@ class frPathSeg : public frShape
   // getters
   void getPoints(frPoint& beginIn, frPoint& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
   std::pair<frPoint, frPoint> getPoints() const
   {
@@ -483,8 +483,8 @@ class frPathSeg : public frShape
   // setters
   void setPoints(const frPoint& beginIn, const frPoint& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {

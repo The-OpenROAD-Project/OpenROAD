@@ -384,10 +384,10 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     frPoint bp, ep;
     childPathSeg->getPoints(bp, ep);
     if (bp == childLoc) {
-      ep.set(parentLoc);
+      ep = parentLoc;
     } else {
       // ep == childLoc
-      bp.set(parentLoc);
+      bp = parentLoc;
     }
     childPathSeg->setPoints(bp, ep);
     getRegionQuery()->addGRObj(childConnFig);

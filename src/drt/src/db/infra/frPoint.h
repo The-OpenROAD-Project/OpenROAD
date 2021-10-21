@@ -44,11 +44,6 @@ class frPoint : public Point
   frPoint(const frPoint& tmpPoint) : Point(tmpPoint) {}
   frPoint(const frCoord tmpX, const frCoord tmpY) : Point(tmpX, tmpY) {}
   // setters
-  void set(const frPoint& tmpPoint)
-  {
-    setX(tmpPoint.getX());
-    setY(tmpPoint.getY());
-  }
   void set(const frCoord tmpX, const frCoord tmpY)
   {
     setX(tmpX);

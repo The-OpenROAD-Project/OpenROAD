@@ -176,9 +176,9 @@ class frVia : public frRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
+  void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin = origin_; }
   const frPoint getOrigin() const { return origin_; }
-  void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
+  void setOrigin(const frPoint& tmpPoint) override { origin_ = tmpPoint; }
   void getTransform(frTransform& xformIn) const override
   {
     xformIn.set(origin_);

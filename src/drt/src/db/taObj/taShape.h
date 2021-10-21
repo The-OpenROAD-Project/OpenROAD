@@ -89,8 +89,8 @@ class taPathSeg : public taShape
   // getters
   void getPoints(frPoint& beginIn, frPoint& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
   void getStyle(frSegStyle& styleIn) const
   {
@@ -101,8 +101,8 @@ class taPathSeg : public taShape
   // setters
   void setPoints(const frPoint& beginIn, const frPoint& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {

@@ -108,15 +108,15 @@ class grPathSeg : public grShape
   // getters
   void getPoints(frPoint& beginIn, frPoint& endIn) const
   {
-    beginIn.set(begin);
-    endIn.set(end);
+    beginIn = begin;
+    endIn = end;
   }
 
   // setters
   void setPoints(const frPoint& beginIn, const frPoint& endIn)
   {
-    begin.set(beginIn);
-    end.set(endIn);
+    begin = beginIn;
+    end = endIn;
   }
   // others
   frBlockObjectEnum typeId() const override { return grcPathSeg; }
