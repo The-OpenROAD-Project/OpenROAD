@@ -62,7 +62,7 @@ static int right_index(int i)
   return 2 * i + 2;
 }
 
-bool FastRouteCore::checkTree(const int net_id)
+void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   TreeEdge* treeedges = sttrees_[net_id].edges;
   const int deg = sttrees_[net_id].deg;
@@ -106,8 +106,6 @@ bool FastRouteCore::checkTree(const int net_id)
     fixOverlappingEdge(net_id, edge, blocked_positions);
     break;
   }
-
-  return true;
 }
 
 bool FastRouteCore::areEdgesOverlapping(const int net_id,
@@ -475,7 +473,7 @@ void FastRouteCore::convertToMazeroute()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < num_valid_nets_; netID++) {
-      checkTree(netID);
+      checkAndFixEmbeddedTree(netID);
     }
   }
 }
@@ -1253,7 +1251,7 @@ void FastRouteCore::reInitTree(const int netID)
   copyStTree(netID, rsmt);
   newrouteLInMaze(netID);
   convertToMazerouteNet(netID);
-  checkTree(netID);
+  checkAndFixEmbeddedTree(netID);
 }
 
 void FastRouteCore::mazeRouteMSMD(const int iter,
