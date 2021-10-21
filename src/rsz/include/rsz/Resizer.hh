@@ -269,9 +269,6 @@ public:
                                LibertyPort *load_port,
                                double max_slew,
                                const Corner *corner);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew,
-                         const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
 
@@ -384,10 +381,19 @@ protected:
                  float &limit,
                  float &slack,
                  const Corner *&corner);
+  void checkLoadSlews(const Pin *drvr_pin,
+                      double max_slew_margin,
+                      // Return values.
+                      Slew &slew,
+                      float &limit,
+                      float &slack,
+                      const Corner *&corner);
   void repairNet(SteinerTree *tree,
                  SteinerPt pt,
                  SteinerPt prev_pt,
                  Net *net,
+                 const Pin *drvr_pin,
+                 float max_load_slew,
                  float max_cap,
                  float max_fanout,
                  int max_length,
@@ -398,6 +404,13 @@ protected:
                  float &pin_cap,
                  float &fanout,
                  PinSeq &load_pins);
+  double findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew,
+                         const Corner *corner);
+  double gateSlewDiff(LibertyPort *drvr_port,
+                      double load_cap,
+                      double slew,
+                      const DcalcAnalysisPt *dcalc_ap);
   void makeRepeater(const char *where,
                     SteinerTree *tree,
                     SteinerPt pt,
@@ -416,10 +429,6 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  double gateSlewDiff(LibertyPort *drvr_port,
-                      double load_cap,
-                      double slew,
-                      const DcalcAnalysisPt *dcalc_ap);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
@@ -448,12 +457,12 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
-  Parasitic *makeWireParasitic(Net *net,
-                               Pin *drvr_pin,
-                               Pin *load_pin,
-                               double wire_length, // meters
-                               const Corner *corner,
-                               Parasitics *parasitics);
+  void makeWireParasitic(Net *net,
+                         Pin *drvr_pin,
+                         Pin *load_pin,
+                         double wire_length, // meters
+                         const Corner *corner,
+                         Parasitics *parasitics);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
