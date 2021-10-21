@@ -1831,7 +1831,27 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
 
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
-  return in->getTerm()->getType().isSupply();
+  if (in->getTerm()->getType().isSupply())
+      return true;
+  if (!in->getNet() || in->getNet()->isSpecial()) {
+      auto instClass = inst2Class_[in->getInst()];
+      if (instClass != nullptr) {
+        for (auto& inst : *instClass) {
+            frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
+            if (!in->getNet()) {
+                if (it->getNet()) {
+                    return false;
+                }
+            } else if (in->getNet()->isSpecial()) {
+                if (it->getNet() && !it->getNet()->isSpecial()) {
+                    return false;
+                }
+            }
+        }
+      }
+      return true;
+  }
+  return false;
 }
 
 // the input inst must be unique instance
