@@ -827,15 +827,15 @@ Resizer::repairNet(Net *net,
       ensureWireParasitic(drvr_pin, net);
       graph_delay_calc_->findDelays(drvr);
 
-      if (checkLimits(drvr_pin, max_slew_margin, max_cap_margin,
-                      check_slew, check_cap, check_fanout)
-          && network_->isTopLevelPort(drvr_pin)) {
-        // Input port driving net with slew/cap/fanout violataions.
+      if (network_->isTopLevelPort(drvr_pin)
+          && checkLimits(drvr_pin, max_slew_margin, max_cap_margin,
+                         check_slew, check_cap, check_fanout)) {
+        // Input port driving net with load slew/cap/fanout violataions.
         // Buffer the input so we some leverage to fix it.
         LibertyCell *input_buffer_cell = buffer_lowest_drive_;
         Instance *buffer = bufferInput(drvr_pin, input_buffer_cell);
         if (buffer) {
-          // Switcheroo to repairting the input buffer output.
+          // Switcheroo to repairing the input buffer output.
           LibertyPort *buffer_input_port, *buffer_output_port;
           input_buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
           drvr_pin = network_->findPin(buffer, buffer_output_port);
@@ -1689,7 +1689,7 @@ Resizer::replaceCell(Instance *inst,
     sta_->replaceCell(inst, replacement_cell1);
     designAreaIncr(area(replacement_master));
 
-    // Delete estimated parasitics on all instance pins.
+    // Invalidate estimated parasitics on all instance pins.
     // Input nets change pin cap, outputs change location (slightly).
     if (haveEstimatedParasitics()) {
       InstancePinIterator *pin_iter = network_->pinIterator(inst);
