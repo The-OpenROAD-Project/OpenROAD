@@ -27,52 +27,47 @@
  */
 
 #include "db/infra/frPoint.h"
-
 #include "db/infra/frTransform.h"
 
-using namespace std;
 using namespace fr;
 
 void frPoint::transform(const frTransform& xform)
 {
-  frCoord tmpX = 0;
-  frCoord tmpY = 0;
-  // cout <<xform.orient() <<endl;
+  frCoord& xCoord = x();
+  frCoord& yCoord = y();
   switch (xform.orient()) {
     case dbOrientType::R90:
-      tmpX = xform.xOffset() - yCoord_;
-      tmpY = xform.yOffset() + xCoord_;
+      xCoord = xform.xOffset() - yCoord;
+      yCoord = xform.yOffset() + xCoord;
       break;
     case dbOrientType::R180:
-      tmpX = xform.xOffset() - xCoord_;
-      tmpY = xform.yOffset() - yCoord_;
+      xCoord = xform.xOffset() - xCoord;
+      yCoord = xform.yOffset() - yCoord;
       break;
     case dbOrientType::R270:
-      tmpX = xform.xOffset() + yCoord_;
-      tmpY = xform.yOffset() - xCoord_;
+      xCoord = xform.xOffset() + yCoord;
+      yCoord = xform.yOffset() - xCoord;
       break;
     case dbOrientType::MY:
-      tmpX = xform.xOffset() - xCoord_;
-      tmpY = xform.yOffset() + yCoord_;
+      xCoord = xform.xOffset() - xCoord;
+      yCoord = xform.yOffset() + yCoord;
       break;
     case dbOrientType::MYR90:  // MY, rotate, then shift
-      tmpX = xform.xOffset() - yCoord_;
-      tmpY = xform.yOffset() - xCoord_;
+      xCoord = xform.xOffset() - yCoord;
+      yCoord = xform.yOffset() - xCoord;
       break;
     case dbOrientType::MX:
-      tmpX = xform.xOffset() + xCoord_;
-      tmpY = xform.yOffset() - yCoord_;
+      xCoord = xform.xOffset() + xCoord;
+      yCoord = xform.yOffset() - yCoord;
       break;
     case dbOrientType::MXR90:  // MX, rotate, then shift
-      tmpX = xform.xOffset() + yCoord_;
-      tmpY = xform.yOffset() + xCoord_;
+      xCoord = xform.xOffset() + yCoord;
+      yCoord = xform.yOffset() + xCoord;
       break;
     // R0
     default:
-      tmpX = xform.xOffset() + xCoord_;
-      tmpY = xform.yOffset() + yCoord_;
+      xCoord = xform.xOffset() + xCoord;
+      yCoord = xform.yOffset() + yCoord;
       break;
   }
-  xCoord_ = tmpX;
-  yCoord_ = tmpY;
 }
