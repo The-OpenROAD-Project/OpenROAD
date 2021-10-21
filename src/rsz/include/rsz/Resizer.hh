@@ -429,6 +429,7 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
+  float driveResistance(const Pin *drvr_pin);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 

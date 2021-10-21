@@ -56,6 +56,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Sdc.hh"
+#include "sta/InputDrive.hh"
 #include "sta/Corner.hh"
 #include "sta/PathVertex.hh"
 #include "sta/SearchPred.hh"
@@ -141,6 +142,7 @@ using sta::stringPrint;
 using sta::Unit;
 using sta::ArcDelayCalc;
 using sta::Corners;
+using sta::InputDrive;
 
 extern "C" {
 extern int Rsz_Init(Tcl_Interp *interp);
@@ -828,6 +830,7 @@ Resizer::repairNet(Net *net,
       graph_delay_calc_->findDelays(drvr);
 
       if (network_->isTopLevelPort(drvr_pin)
+          && sdc_->findInputDrive(network_->port(drvr_pin)) == nullptr
           && checkLimits(drvr_pin, max_slew_margin, max_cap_margin,
                          check_slew, check_cap, check_fanout)) {
         // Input port driving net with load slew/cap/fanout violataions.
@@ -917,18 +920,15 @@ Resizer::repairNet(Net *net,
           // Don't double count violations on the same net.
           if (!repair_slew)
             slew_violations++;
-          LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-          if (drvr_port) {
-            // max slew violations at the load pins are repaired by reducing the
-            // wire length.
-            max_load_slew = max_slew1;
-            corner = corner1;
-            debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_slew={} corner={}",
-                       delayAsString(slew1, this, 3),
-                       delayAsString(max_slew1, this, 3),
-                       corner1->name());
-            repair_slew = true;
-          }
+          // max slew violations at the load pins are repaired by reducing the
+          // wire length.
+          max_load_slew = max_slew1;
+          corner = corner1;
+          debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_slew={} corner={}",
+                     delayAsString(slew1, this, 3),
+                     delayAsString(max_slew1, this, 3),
+                     corner1->name());
+          repair_slew = true;
         }
       }
 
@@ -1174,10 +1174,8 @@ Resizer::repairNet(SteinerTree *tree,
              units_->capacitanceUnit()->asString(cap_left, 3),
              units_->capacitanceUnit()->asString(cap_right, 3));
 
-  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+  float r_drvr = driveResistance(drvr_pin);
   double wire_length1 = dbuToMeters(wire_length_left + wire_length_right);
-  // Need to use external drive cell for ports.
-  float r_drvr = drvr_port ? drvr_port->driveResistance() : 0.0;
   float load_cap = cap_left + cap_right;
   Slew load_slew = (r_drvr + wire_length1 * wire_res) * load_cap;
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load_slew={}",
@@ -1298,7 +1296,6 @@ Resizer::repairNet(SteinerTree *tree,
         // Setting this to max_slew is a quadratic in L
         // L^2*Rwire*Cwire + L*(Rdrvr*Cwire + Rwire*Cpin) + Rdrvr*Cpin - max_slew
         // Solve using quadradic eqn for L.
-        float r_drvr = drvr_port->driveResistance();
         float a = wire_res * wire_cap;
         float b = r_drvr * wire_cap + wire_res * pin_cap;
         float c = r_drvr * pin_cap - max_load_slew;
@@ -1519,6 +1516,41 @@ Resizer::hasPort(const Net *net)
   }
   delete pin_iter;
   return has_top_level_port;
+}
+
+float
+Resizer::driveResistance(const Pin *drvr_pin)
+{
+  if (network_->isTopLevelPort(drvr_pin)) {
+    InputDrive *drive = sdc_->findInputDrive(network_->port(drvr_pin));
+    if (drive) {
+      float max_res = 0;
+      for (auto min_max : MinMax::range()) {
+        for (auto rf : RiseFall::range()) {
+          LibertyCell *cell;
+          LibertyPort *from_port;
+          float *from_slews;
+          LibertyPort *to_port;
+          drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
+          if (to_port)
+            max_res = max(max_res, to_port->driveResistance());
+          else {
+            float res;
+            bool exists;
+            drive->driveResistance(rf, min_max, res, exists);
+            max_res = max(max_res, res);
+          }
+        }
+      }
+      return max_res;
+    }
+  }
+  else {
+    LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+    if (drvr_port)
+      return drvr_port->driveResistance();
+  }
+  return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////
