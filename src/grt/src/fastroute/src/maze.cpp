@@ -479,7 +479,6 @@ void FastRouteCore::convertToMazeroute()
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
-  fixEmbeddedTrees();
 }
 
 // non recursive version of heapify
