@@ -62,6 +62,17 @@ static int right_index(int i)
   return 2 * i + 2;
 }
 
+void FastRouteCore::fixEmbeddedTrees()
+{
+  // check embedded trees only when maze router is called
+  // i.e., when running overflow iterations
+  if (overflow_iterations_ > 0) {
+    for (int netID = 0; netID < num_valid_nets_; netID++) {
+      checkAndFixEmbeddedTree(netID);
+    }
+  }
+}
+
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   TreeEdge* treeedges = sttrees_[net_id].edges;
@@ -468,14 +479,7 @@ void FastRouteCore::convertToMazeroute()
 
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
-
-  // check embedded trees only when maze router is called
-  // i.e., when running overflow iterations
-  if (overflow_iterations_ > 0) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
-      checkAndFixEmbeddedTree(netID);
-    }
-  }
+  fixEmbeddedTrees();
 }
 
 // non recursive version of heapify

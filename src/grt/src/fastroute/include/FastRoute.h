@@ -209,8 +209,8 @@ class FastRouteCore
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
+  void fixEmbeddedTrees();
   void checkAndFixEmbeddedTree(const int net_id);
-
   bool areEdgesOverlapping(const int net_id,
                            const int edge_id,
                            const std::vector<int>& edges);
