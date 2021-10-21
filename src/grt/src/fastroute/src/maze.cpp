@@ -1762,7 +1762,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           if (!route_ok) {
             logger_->warn(GRT,
                           150,
-                          "Net {} have errors during updateRouteType1.",
+                          "Net {} has errors during updateRouteType1.",
                           netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
@@ -1795,7 +1795,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           if (!route_ok) {
             logger_->warn(GRT,
                           151,
-                          "Net {} have errors during updateRouteType1.",
+                          "Net {} has errors during updateRouteType2.",
                           netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
@@ -1911,7 +1911,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           if (!route_ok) {
             logger_->warn(GRT,
                           152,
-                          "Net {} have errors during updateRouteType1.",
+                          "Net {} has errors during updateRouteType1.",
                           netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
@@ -1945,7 +1945,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           if (!route_ok) {
             logger_->warn(GRT,
                           153,
-                          "Net {} have errors during updateRouteType2.",
+                          "Net {} has errors during updateRouteType2.",
                           netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
