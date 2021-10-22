@@ -78,6 +78,7 @@ class FlexPA
 
   std::vector<frInst*> uniqueInstances_;
   std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
+  std::map<frInst*, set<frInst*, frBlockObjectComp>*> inst2Class_;
   std::map<frInst*, int, frBlockObjectComp>
       unique2paidx_;  // unique instance to pinaccess index
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
@@ -88,6 +89,10 @@ class FlexPA
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
   std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
+  map<frBlock*,
+      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
+      frBlockObjectComp>
+      refBlockOT2Insts;  // refblock orient track-offset to instances
 
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);

@@ -70,7 +70,8 @@ class frNet : public frBlockObject
         isFakeNet_(false),
         ndr_(nullptr),
         absPriorityLvl(0),
-        isClock_(false)
+        isClock_(false),
+        isSpecial_(false)
   {
   }
   // getters
@@ -214,7 +215,9 @@ class frNet : public frBlockObject
       max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
     absPriorityLvl = max;
   }
-
+  bool isSpecial() const { return isSpecial_; }
+  void setIsSpecial(bool s) { isSpecial_ = s; }
+  
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
@@ -242,6 +245,7 @@ class frNet : public frBlockObject
   int absPriorityLvl;  // absolute priority level: will be checked in net
                        // ordering before other criteria
   bool isClock_;
+  bool isSpecial_;
 };
 }  // namespace fr
 
