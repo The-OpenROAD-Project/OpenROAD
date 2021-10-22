@@ -881,8 +881,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     const int netID = tree_order_pv_[orderIndex].treeIndex;
     FrNet* net = nets_[netID];
 
-    const std::vector<int>& edge_cost_per_layer
-        = net->edge_cost_per_layer;
+    const std::vector<int>& edge_cost_per_layer = net->edge_cost_per_layer;
 
     int enlarge = expand;
     const int deg = sttrees_[netID].deg;
@@ -971,7 +970,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
 
         if (src_heap_3D.empty()) {
-          logger_->error(GRT, 183, "Heap underflow.");
+          logger_->error(GRT,
+                         183,
+                         "Net {}: heap underflow during 3D maze routing.",
+                         netName(nets_[netID]));
         }
         removeMin3D(src_heap_3D);
 
@@ -983,8 +985,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               && directions_3D[curL][curY][curX] != Direction::East) {
             const float tmp = d1_3D[curL][curY][curX] + 1;
             if (h_edges_3D_[curL][curY][curX - 1].usage
-                < h_edges_3D_[curL][curY][curX - 1].cap &&
-                net->minLayer <= curL && curL <= net->maxLayer) {
+                    < h_edges_3D_[curL][curY][curX - 1].cap
+                && net->minLayer <= curL && curL <= net->maxLayer) {
               const int tmpX = curX - 1;  // the left neighbor
 
               if (d1_3D[curL][curY][tmpX] >= BIG_INT)  // left neighbor not been
@@ -1021,8 +1023,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const int tmpX = curX + 1;  // the right neighbor
 
             if (h_edges_3D_[curL][curY][curX].usage
-                < h_edges_3D_[curL][curY][curX].cap &&
-                net->minLayer <= curL && curL <= net->maxLayer) {
+                    < h_edges_3D_[curL][curY][curX].cap
+                && net->minLayer <= curL && curL <= net->maxLayer) {
               if (d1_3D[curL][curY][tmpX]
                   >= BIG_INT)  // right neighbor not been put into
                                // src_heap_3D
@@ -1058,8 +1060,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D[curL][curY][curX] + 1;
             const int tmpY = curY - 1;  // the bottom neighbor
             if (v_edges_3D_[curL][curY - 1][curX].usage
-                < v_edges_3D_[curL][curY - 1][curX].cap &&
-                net->minLayer <= curL && curL <= net->maxLayer) {
+                    < v_edges_3D_[curL][curY - 1][curX].cap
+                && net->minLayer <= curL && curL <= net->maxLayer) {
               if (d1_3D[curL][tmpY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into
                                // src_heap_3D
@@ -1094,8 +1096,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D[curL][curY][curX] + 1;
             const int tmpY = curY + 1;  // the top neighbor
             if (v_edges_3D_[curL][curY][curX].usage
-                < v_edges_3D_[curL][curY][curX].cap &&
-                net->minLayer <= curL && curL <= net->maxLayer) {
+                    < v_edges_3D_[curL][curY][curX].cap
+                && net->minLayer <= curL && curL <= net->maxLayer) {
               if (d1_3D[curL][tmpY][curX]
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
               {
