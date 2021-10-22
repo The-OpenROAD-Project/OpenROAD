@@ -79,8 +79,8 @@ class grVia : public grRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& in) override { ; }
-  void getOrigin(frPoint& in) const override { in = origin; }
-  void setOrigin(const frPoint& in) override { origin = in; }
+  void getOrigin(Point& in) const override { in = origin; }
+  void setOrigin(const Point& in) override { origin = in; }
   void getTransform(frTransform& in) const override { in.set(origin); }
   void setTransform(const frTransform& in) override { ; }
 
@@ -160,7 +160,7 @@ class grVia : public grRef
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter; }
 
  protected:
-  frPoint origin;
+  Point origin;
   frViaDef* viaDef;
   frBlockObject* child;
   frBlockObject* parent;

@@ -38,7 +38,7 @@ using namespace fr;
 
 void frRPin::getBBox(frBox& in)
 {
-  frPoint pt;
+  Point pt;
   if (term->typeId() == frcInstTerm) {
     auto inst = static_cast<frInstTerm*>(term)->getInst();
     frTransform shiftXform;
@@ -46,7 +46,7 @@ void frRPin::getBBox(frBox& in)
     shiftXform.set(dbOrientType(dbOrientType::R0));
 
     accessPoint->getPoint(pt);
-    pt.transform(shiftXform);
+    shiftXform.apply(pt);
   } else if (term->typeId() == frcTerm) {
     accessPoint->getPoint(pt);
   }

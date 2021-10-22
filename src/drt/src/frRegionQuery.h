@@ -31,6 +31,10 @@
 
 #include "frBaseTypes.h"
 
+namespace odb {
+class Point;
+}
+
 namespace fr {
 class frBlockObject;
 struct frBlockObjectComp;
@@ -38,7 +42,6 @@ class frDesign;
 class frGuide;
 class frMarker;
 class frNet;
-class frPoint;
 class frRect;
 class frRPin;
 class frShape;
@@ -111,7 +114,7 @@ class frRegionQuery
   void initGuide();
   void initOrigGuide(
       std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides);
-  void initGRPin(std::vector<std::pair<frBlockObject*, frPoint>>& in);
+  void initGRPin(std::vector<std::pair<frBlockObject*, odb::Point>>& in);
   void initRPin();
   void initDRObj();
   void initGRObj();

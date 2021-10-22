@@ -106,14 +106,14 @@ class grPathSeg : public grShape
   }
   grPathSeg(const frPathSeg& in);
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
     beginIn = begin;
     endIn = end;
   }
 
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
     begin = beginIn;
     end = endIn;
@@ -207,8 +207,8 @@ class grPathSeg : public grShape
   frListIter<std::unique_ptr<grShape>> getIter() const override { return iter; }
 
  protected:
-  frPoint begin;
-  frPoint end;
+  Point begin;
+  Point end;
   frLayerNum layer;
   frBlockObject* child;
   frBlockObject* parent;

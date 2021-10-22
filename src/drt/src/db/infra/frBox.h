@@ -50,7 +50,7 @@ class frBox
     ll_.set((llx > urx) ? urx : llx, (lly > ury) ? ury : lly);
     ur_.set((llx > urx) ? llx : urx, (lly > ury) ? lly : ury);
   }
-  frBox(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
+  frBox(const Point& tmpLowerLeft, const Point& tmpUpperRight)
       : frBox(tmpLowerLeft.x(),
               tmpLowerLeft.y(),
               tmpUpperRight.x(),
@@ -68,14 +68,14 @@ class frBox
     ll_.set((llx > urx) ? urx : llx, (lly > ury) ? ury : lly);
     ur_.set((llx > urx) ? llx : urx, (lly > ury) ? lly : ury);
   }
-  void set(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
+  void set(const Point& tmpLowerLeft, const Point& tmpUpperRight)
   {
     set(tmpLowerLeft.x(),
         tmpLowerLeft.y(),
         tmpUpperRight.x(),
         tmpUpperRight.y());
   }
-  void setUnsafe(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
+  void setUnsafe(const Point& tmpLowerLeft, const Point& tmpUpperRight)
   {
     ll_ = tmpLowerLeft;
     ur_ = tmpUpperRight;
@@ -85,10 +85,10 @@ class frBox
   frCoord bottom() const { return ll_.y(); }
   frCoord right() const { return ur_.x(); }
   frCoord top() const { return ur_.y(); }
-  frPoint& lowerLeft() { return ll_; }
-  const frPoint& lowerLeft() const { return ll_; }
-  frPoint& upperRight() { return ur_; }
-  const frPoint& upperRight() const { return ur_; }
+  Point& lowerLeft() { return ll_; }
+  const Point& lowerLeft() const { return ll_; }
+  Point& upperRight() { return ur_; }
+  const Point& upperRight() const { return ur_; }
   frCoord width() const
   {
     frCoord xSpan = right() - left();
@@ -118,7 +118,7 @@ class frBox
               && box.top() < ur_.y() && box.bottom() > ll_.y());
     }
   }
-  bool contains(const frPoint& in, bool incEdges = true) const
+  bool contains(const Point& in, bool incEdges = true) const
   {
     if (incEdges) {
       return ll_.x() <= in.x() && in.x() <= ur_.x() && ll_.y() <= in.y()
@@ -197,7 +197,7 @@ class frBox
       return result.area();
     return 0;
   }
-  int distL1(const frPoint& p) const
+  int distL1(const Point& p) const
   {
     int dx = 0, dy = 0;
     if (p.x() < left())
@@ -210,7 +210,7 @@ class frBox
       dy = p.y() - top();
     return dx + dy;
   }
-  void getClosestPoint(frPoint& p, frPoint& result) const
+  void getClosestPoint(Point& p, Point& result) const
   {
     int x, y;
     if (p.x() < left())
@@ -234,7 +234,7 @@ class frBox
   void setTop(int t) { ur_.setY(t); }
 
  protected:
-  frPoint ll_, ur_;
+  Point ll_, ur_;
 };
 
 class frBox3D : public frBox

@@ -136,7 +136,7 @@ void FlexPA::initUniqueInstance_main(
       ndrInsts.push_back(inst.get());
       continue;
     }
-    frPoint origin;
+    Point origin;
     inst->getOrigin(origin);
     frBox boundaryBBox;
     inst->getBoundaryBBox(boundaryBBox);

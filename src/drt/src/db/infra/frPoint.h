@@ -31,34 +31,17 @@
 
 #include "frBaseTypes.h"
 #include "odb/geom.h"
-using odb::Point;
 
 namespace fr {
 class frTransform;
+using odb::Point;
 
-class frPoint : public Point
+class Point3D : public Point
 {
  public:
-  // constructorso
-  frPoint() : Point(0,0) {}
-  frPoint(const frPoint& tmpPoint) : Point(tmpPoint) {}
-  frPoint(const frCoord tmpX, const frCoord tmpY) : Point(tmpX, tmpY) {}
-  // setters
-  void set(const frCoord tmpX, const frCoord tmpY)
-  {
-    setX(tmpX);
-    setY(tmpY);
-  }
-  // others
-  void transform(const frTransform& xform);
-};
-
-class Point3D : public frPoint
-{
- public:
-  Point3D() : frPoint(0, 0), z_(0) {}
-  Point3D(int x, int y, int z) : frPoint(x, y), z_(z) {}
-  Point3D(const Point3D& p) : frPoint(p.getX(), p.getY()), z_(p.getZ()) {}
+  Point3D() : Point(0, 0), z_(0) {}
+  Point3D(int x, int y, int z) : Point(x, y), z_(z) {}
+  Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
 
   int z() const { return getZ(); }
   int getZ() const { return z_; }

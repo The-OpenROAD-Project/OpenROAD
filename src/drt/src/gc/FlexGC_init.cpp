@@ -400,11 +400,11 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
     gcNet* net,
-    vector<set<pair<frPoint, frPoint>>>& fixedPolygonEdges)
+    vector<set<pair<Point, Point>>>& fixedPolygonEdges)
 {
   int numLayers = getTech()->getLayers().size();
   vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
-  frPoint bp, ep, firstPt;
+  Point bp, ep, firstPt;
   // get fixed polygon edges from polygons
   for (int i = 0; i < numLayers; i++) {
     polys.clear();
@@ -446,17 +446,17 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
   for (int i = 0; i < numLayers; i++) {
     for (auto& rect : net->getRectangles(i, true)) {
       fixedPolygonEdges[i].insert(
-          make_pair(frPoint(gtl::xl(rect), gtl::yl(rect)),
-                    frPoint(gtl::xh(rect), gtl::yl(rect))));
+          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                    Point(gtl::xh(rect), gtl::yl(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(frPoint(gtl::xh(rect), gtl::yl(rect)),
-                    frPoint(gtl::xh(rect), gtl::yh(rect))));
+          make_pair(Point(gtl::xh(rect), gtl::yl(rect)),
+                    Point(gtl::xh(rect), gtl::yh(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(frPoint(gtl::xh(rect), gtl::yh(rect)),
-                    frPoint(gtl::xl(rect), gtl::yh(rect))));
+          make_pair(Point(gtl::xh(rect), gtl::yh(rect)),
+                    Point(gtl::xl(rect), gtl::yh(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(frPoint(gtl::xl(rect), gtl::yh(rect)),
-                    frPoint(gtl::xl(rect), gtl::yl(rect))));
+          make_pair(Point(gtl::xl(rect), gtl::yh(rect)),
+                    Point(gtl::xl(rect), gtl::yl(rect))));
     }
   }
 }
@@ -466,9 +466,9 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
     gcPin* pin,
     gcPolygon* poly,
     frLayerNum i,
-    const vector<set<pair<frPoint, frPoint>>>& fixedPolygonEdges)
+    const vector<set<pair<Point, Point>>>& fixedPolygonEdges)
 {
-  frPoint bp, ep, firstPt;
+  Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
   vector<unique_ptr<gcSegment>> tmpEdges;
   // skip the first pt
@@ -540,9 +540,9 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
     gcPin* pin,
     const gtl::polygon_90_data<frCoord>& hole_poly,
     frLayerNum i,
-    const vector<set<pair<frPoint, frPoint>>>& fixedPolygonEdges)
+    const vector<set<pair<Point, Point>>>& fixedPolygonEdges)
 {
-  frPoint bp, ep, firstPt;
+  Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
   vector<unique_ptr<gcSegment>> tmpEdges;
   // skip the first pt
@@ -612,7 +612,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
 void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<set<pair<frPoint, frPoint>>> fixedPolygonEdges(numLayers);
+  vector<set<pair<Point, Point>>> fixedPolygonEdges(numLayers);
   // get all fixed polygon edges
   initNet_pins_polygonEdges_getFixedPolygonEdges(net, fixedPolygonEdges);
 
@@ -735,24 +735,24 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
     gcNet* net,
-    vector<set<pair<frPoint, frPoint>>>& fixedMaxRectangles)
+    vector<set<pair<Point, Point>>>& fixedMaxRectangles)
 {
   int numLayers = getTech()->getLayers().size();
   vector<gtl::rectangle_data<frCoord>> rects;
-  frPoint bp, ep;
+  Point bp, ep;
   for (int i = 0; i < numLayers; i++) {
     rects.clear();
     gtl::get_max_rectangles(rects, net->getPolygons(i, true));
     for (auto& rect : rects) {
       fixedMaxRectangles[i].insert(
-          make_pair(frPoint(gtl::xl(rect), gtl::yl(rect)),
-                    frPoint(gtl::xh(rect), gtl::yh(rect))));
+          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                    Point(gtl::xh(rect), gtl::yh(rect))));
     }
     // for rectangles input --> non-merge scenario
     for (auto& rect : net->getRectangles(i, true)) {
       fixedMaxRectangles[i].insert(
-          make_pair(frPoint(gtl::xl(rect), gtl::yl(rect)),
-                    frPoint(gtl::xh(rect), gtl::yh(rect))));
+          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                    Point(gtl::xh(rect), gtl::yh(rect))));
     }
   }
 }
@@ -762,7 +762,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     gcPin* pin,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum i,
-    const vector<set<pair<frPoint, frPoint>>>& fixedMaxRectangles)
+    const vector<set<pair<Point, Point>>>& fixedMaxRectangles)
 {
   auto rectangle = make_unique<gcRect>();
   rectangle->setRect(rect);
@@ -770,8 +770,8 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
   rectangle->addToPin(pin);
   rectangle->addToNet(net);
   if (fixedMaxRectangles[i].find(
-          make_pair(frPoint(gtl::xl(rect), gtl::yl(rect)),
-                    frPoint(gtl::xh(rect), gtl::yh(rect))))
+          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                    Point(gtl::xh(rect), gtl::yh(rect))))
       != fixedMaxRectangles[i].end()) {
     // fixed max rectangles
     rectangle->setFixed(true);
@@ -800,7 +800,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
 void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<set<pair<frPoint, frPoint>>> fixedMaxRectangles(numLayers);
+  vector<set<pair<Point, Point>>> fixedMaxRectangles(numLayers);
   // get all fixed max rectangles
   initNet_pins_maxRectangles_getFixedMaxRectangles(net, fixedMaxRectangles);
 

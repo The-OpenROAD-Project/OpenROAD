@@ -68,6 +68,7 @@ class Point
   int getY() const;
   void setX(int x);
   void setY(int y);
+  void set(int x, int y);
 
   void rotate90();
   void rotate180();
@@ -465,6 +466,12 @@ inline void Point::setX(int x)
 
 inline void Point::setY(int y)
 {
+  _y = y;
+}
+
+inline void Point::set(int x, int y)
+{
+  _x = x;
   _y = y;
 }
 

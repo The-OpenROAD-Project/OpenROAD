@@ -226,7 +226,7 @@ class frPatchWire : public frShape
   frPatchWire(const drPatchWire& in);
   // setters
   void setOffsetBox(const frBox& in) { offsetBox_ = in; }
-  void setOrigin(const frPoint& in) { origin_ = in; }
+  void setOrigin(const Point& in) { origin_ = in; }
   // getters
   // others
   frBlockObjectEnum typeId() const override { return frcPatchWire; }
@@ -290,8 +290,8 @@ class frPatchWire : public frShape
     boxIn.transform(xform);
   }
   void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
-  void getOrigin(frPoint& in) const { in = origin_; }
-  frPoint getOrigin() const { return origin_; }
+  void getOrigin(Point& in) const { in = origin_; }
+  Point getOrigin() const { return origin_; }
   void move(const frTransform& xform) override {}
   bool overlaps(const frBox& box) const override
   {
@@ -312,7 +312,7 @@ class frPatchWire : public frShape
  protected:
   // frBox          box_;
   frBox offsetBox_;
-  frPoint origin_;
+  Point origin_;
   frLayerNum layer_;
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
@@ -328,9 +328,9 @@ class frPolygon : public frShape
   {
   }
   // setters
-  void setPoints(const std::vector<frPoint>& pointsIn) { points_ = pointsIn; }
+  void setPoints(const std::vector<Point>& pointsIn) { points_ = pointsIn; }
   // getters
-  const std::vector<frPoint>& getPoints() const { return points_; }
+  const std::vector<Point>& getPoints() const { return points_; }
   // others
   frBlockObjectEnum typeId() const override { return frcPolygon; }
 
@@ -409,7 +409,7 @@ class frPolygon : public frShape
   void move(const frTransform& xform) override
   {
     for (auto& point : points_) {
-      point.transform(xform);
+      xform.apply(point);
     }
   }
   bool overlaps(const frBox& box) const override { return false; }
@@ -424,7 +424,7 @@ class frPolygon : public frShape
   }
 
  protected:
-  std::vector<frPoint> points_;
+  std::vector<Point> points_;
   frLayerNum layer_;
   frBlockObject* owner_;
   frListIter<std::unique_ptr<frShape>> iter_;
@@ -456,17 +456,17 @@ class frPathSeg : public frShape
   frPathSeg(const drPathSeg& in);
   frPathSeg(const taPathSeg& in);
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
     beginIn = begin_;
     endIn = end_;
   }
-  std::pair<frPoint, frPoint> getPoints() const
+  std::pair<Point, Point> getPoints() const
   {
     return {begin_, end_};
   }
-  const frPoint& getBeginPoint() const { return begin_; }
-  const frPoint& getEndPoint() const { return end_; }
+  const Point& getBeginPoint() const { return begin_; }
+  const Point& getEndPoint() const { return end_; }
   void getStyle(frSegStyle& styleIn) const
   {
     styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
@@ -481,7 +481,7 @@ class frPathSeg : public frShape
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
     begin_ = beginIn;
     end_ = endIn;
@@ -579,8 +579,8 @@ class frPathSeg : public frShape
   }
   void move(const frTransform& xform) override
   {
-    begin_.transform(xform);
-    end_.transform(xform);
+    xform.apply(begin_);
+    xform.apply(end_);
   }
   bool overlaps(const frBox& box) const override { return false; }
 
@@ -595,15 +595,15 @@ class frPathSeg : public frShape
   void setTapered(bool t) { tapered_ = t; }
   bool isTapered() const { return tapered_; }
 
-  bool intersectsCenterLine(const frPoint& pt)
+  bool intersectsCenterLine(const Point& pt)
   {
     return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y()
            && pt.y() <= end_.y();
   }
 
  protected:
-  frPoint begin_;  // begin always smaller than end, assumed
-  frPoint end_;
+  Point begin_;  // begin always smaller than end, assumed
+  Point end_;
   frLayerNum layer_;
   frSegStyle style_;
   frBlockObject* owner_;
