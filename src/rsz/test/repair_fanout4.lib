@@ -1,0 +1,293 @@
+/* 
+* ******************************************************************************
+* *                                                                            *
+* *                   Copyright (C) 2004-2011, Nangate Inc.                    *
+* *                           All rights reserved.                             *
+* *                                                                            *
+* * Nangate and the Nangate logo are trademarks of Nangate Inc.                *
+* *                                                                            *
+* * All trademarks, logos, software marks, and trade names (collectively the   *
+* * "Marks") in this program are proprietary to Nangate or other respective    *
+* * owners that have granted Nangate the right and license to use such Marks.  *
+* * You are not permitted to use the Marks without the prior written consent   *
+* * of Nangate or such third party that may own the Marks.                     *
+* *                                                                            *
+* * This file has been provided pursuant to a License Agreement containing     *
+* * restrictions on its use. This file contains valuable trade secrets and     *
+* * proprietary information of Nangate Inc., and is protected by U.S. and      *
+* * international laws and/or treaties.                                        *
+* *                                                                            *
+* * The copyright notice(s) in this file does not indicate actual or intended  *
+* * publication of this file.                                                  *
+* *                                                                            *
+* *   NGLibraryCharacterizer, v2011.01-HR04-2011-01-19 - build 201102050200    *
+* *                                                                            *
+* ******************************************************************************
+*
+* Spice engine            : Nanspice v2011.01-HR04-2011-01-19-1102050200
+* Liberty export type     : conditional
+*
+* Characterization Corner : typical
+* Process                 : TypTyp
+* Temperature             : 25C
+* Voltage                 : 1.1V
+*
+****************************************************************************/
+
+library (NangateOpenCellLibrary) {
+
+  /* Documentation Attributes */
+  date                    		: "Thu 10 Feb 2011, 18:11:20";
+  revision                		: "revision 1.0";
+  comment                 		: "Copyright (c) 2004-2011 Nangate Inc. All Rights Reserved.";
+
+  /* General Attributes */
+  technology              		  (cmos);
+  delay_model             		: table_lookup;
+  in_place_swap_mode      		: match_footprint;
+  library_features        		  (report_delay_calculation,report_power_calculation);
+
+  /* Units Attributes */
+  time_unit               		: "1ns";
+  leakage_power_unit      		: "1nW";
+  voltage_unit            		: "1V";
+  current_unit            		: "1mA";
+  pulling_resistance_unit 		: "1kohm";
+  capacitive_load_unit    		  (1,ff);
+
+  /* Operation Conditions */
+  nom_process             		: 1.00;
+  nom_temperature         		: 25.00;
+  nom_voltage             		: 1.10;
+
+  voltage_map (VDD,1.10);
+  voltage_map (VSS,0.00);
+
+  define(process_corner, operating_conditions, string);
+  operating_conditions (typical) {
+    process_corner	: "TypTyp";
+    process       	: 1.00;
+    voltage       	: 1.10;
+    temperature   	: 25.00;
+    tree_type     	: balanced_tree;
+  }
+  default_operating_conditions : typical;
+
+  /* Threshold Definitions */
+  slew_lower_threshold_pct_fall 	: 30.00 ;
+  slew_lower_threshold_pct_rise 	: 30.00 ;
+  slew_upper_threshold_pct_fall 	: 70.00 ;
+  slew_upper_threshold_pct_rise 	: 70.00 ;
+  slew_derate_from_library      	: 1.00 ;
+  input_threshold_pct_fall      	: 50.00 ;
+  input_threshold_pct_rise      	: 50.00 ;
+  output_threshold_pct_fall     	: 50.00 ;
+  output_threshold_pct_rise     	: 50.00 ;
+  default_leakage_power_density 	: 0.00 ;
+  default_cell_leakage_power    	: 0.00 ;
+
+  /* Default Pin Attributes */
+  default_inout_pin_cap       		: 1.000000;
+  default_input_pin_cap       		: 1.000000;
+  default_output_pin_cap      		: 0.000000;
+  default_fanout_load         		: 1.000000;
+  default_max_transition      		: 0.198535;
+
+  define(drive_strength, cell, float);
+
+  power_lut_template (Hidden_power_7) {
+	variable_1 : input_transition_time;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Hold_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  power_lut_template (Power_7_7) {
+	variable_1 : input_transition_time;
+	variable_2 : total_output_net_capacitance;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+	index_2 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Pulse_width_3) {
+	variable_1 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Recovery_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Removal_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Setup_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Timing_7_7) {
+	variable_1 : input_net_transition;
+	variable_2 : total_output_net_capacitance;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+	index_2 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Tristate_disable_7) {
+	variable_1 : input_net_transition;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  cell (BUF_X1) {
+
+	drive_strength     	: 1;
+
+	area               	: 0.798000;
+	pg_pin(VDD) {
+		voltage_name : VDD;
+		pg_type      : primary_power;
+	}
+	pg_pin(VSS) {
+		voltage_name : VSS;
+		pg_type      : primary_ground;
+	}
+
+
+	cell_leakage_power 	: 21.438247;
+
+	leakage_power () {
+		when           : "!A";
+		value          : 23.592690;
+	}
+	leakage_power () {
+		when           : "A";
+		value          : 19.283803;
+	}
+
+	pin (A) {
+
+		direction		: input;
+		related_power_pin		: "VDD";
+		related_ground_pin		: "VSS";
+		capacitance		: 0.974659;
+		fall_capacitance	: 0.875250;
+		rise_capacitance	: 0.974659;
+	}
+
+	pin (Z) {
+
+		direction		: output;
+		related_power_pin	: "VDD";
+		related_ground_pin	: "VSS";
+		max_capacitance		: 60.653700;
+		/* added */
+                max_fanout		: 10;
+		function		: "A";
+
+		timing () {
+
+			related_pin	   : "A";
+			timing_sense	   : positive_unate;
+
+			cell_fall(Timing_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("0.0201865,0.0235911,0.0269641,0.0326475,0.0426135,0.0612850,0.0980519", \
+				        "0.0216894,0.0250889,0.0284611,0.0341451,0.0441133,0.0627860,0.0995534", \
+				        "0.0282371,0.0316005,0.0349620,0.0406488,0.0506262,0.0693068,0.106085", \
+				        "0.0386967,0.0423879,0.0459970,0.0519401,0.0620489,0.0807319,0.117469", \
+				        "0.0497158,0.0538601,0.0579014,0.0644031,0.0750488,0.0940280,0.130742", \
+				        "0.0617868,0.0663516,0.0708446,0.0780153,0.0893727,0.108751,0.145588", \
+				        "0.0752644,0.0802460,0.0851919,0.0931189,0.105447,0.125609,0.162684");
+			}
+			cell_rise(Timing_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("0.0150655,0.0192785,0.0240774,0.0333696,0.0517046,0.0881789,0.160987", \
+				        "0.0165564,0.0207573,0.0255464,0.0348375,0.0531776,0.0896605,0.162472", \
+				        "0.0214908,0.0256639,0.0303825,0.0396011,0.0579260,0.0944300,0.167270", \
+				        "0.0260031,0.0305149,0.0352680,0.0444044,0.0626416,0.0990750,0.171904", \
+				        "0.0286695,0.0338681,0.0389159,0.0480290,0.0660890,0.102453,0.175196", \
+				        "0.0292776,0.0351629,0.0408826,0.0503417,0.0683247,0.104510,0.177181", \
+				        "0.0276264,0.0340820,0.0405673,0.0509039,0.0690618,0.105239,0.177778");
+			}
+			fall_transition(Timing_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("0.00428038,0.00587611,0.00772130,0.0113117,0.0186397,0.0340136,0.0657428", \
+				        "0.00428149,0.00587928,0.00772328,0.0113125,0.0186395,0.0340125,0.0657441", \
+				        "0.00433231,0.00593056,0.00776605,0.0113399,0.0186507,0.0340160,0.0657438", \
+				        "0.00570636,0.00712701,0.00877721,0.0120475,0.0189713,0.0340896,0.0657497", \
+				        "0.00743478,0.00888423,0.0104969,0.0135974,0.0201189,0.0346664,0.0658338", \
+				        "0.00930028,0.0108106,0.0124793,0.0155209,0.0216383,0.0354778,0.0662702", \
+				        "0.0114177,0.0129928,0.0147480,0.0178786,0.0237774,0.0368541,0.0667999");
+			}
+			rise_transition(Timing_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("0.00431629,0.00745385,0.0115682,0.0200985,0.0373705,0.0719884,0.141199", \
+				        "0.00431547,0.00745699,0.0115710,0.0200973,0.0373767,0.0719737,0.141202", \
+				        "0.00462733,0.00759784,0.0116220,0.0201068,0.0373719,0.0719887,0.141209", \
+				        "0.00578092,0.00834323,0.0120283,0.0202847,0.0374271,0.0719916,0.141212", \
+				        "0.00727015,0.00982049,0.0129680,0.0206046,0.0375723,0.0720789,0.141201", \
+				        "0.00896521,0.0118355,0.0147991,0.0215467,0.0378810,0.0722184,0.141291", \
+				        "0.0109632,0.0140938,0.0173169,0.0234177,0.0386893,0.0726298,0.141465");
+			}
+		}
+
+		internal_power () {
+
+			related_pin	         : "A";
+			fall_power(Power_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("2.564894,2.799299,2.957067,3.094368,3.177359,3.208676,3.224208", \
+				        "2.523975,2.758870,2.906896,3.051543,3.132619,3.167669,3.184325", \
+				        "2.557562,2.758257,2.912887,3.059657,3.143704,3.185301,3.205477", \
+				        "2.738030,2.918120,3.085918,3.232685,3.321122,3.359244,3.379054", \
+				        "3.094740,3.193507,3.306621,3.503529,3.664130,3.708538,3.728807", \
+				        "3.701766,3.741706,3.808100,3.980866,4.138829,4.252584,4.291949", \
+				        "4.579731,4.551722,4.586452,4.707734,4.887175,5.000311,5.114520");
+			}
+			rise_power(Power_7_7) {
+				index_1 ("0.00117378,0.00472397,0.0171859,0.0409838,0.0780596,0.130081,0.198535");
+				index_2 ("0.365616,1.895430,3.790860,7.581710,15.163400,30.326900,60.653700");
+				values ("1.715355,1.803297,1.852956,1.902489,1.927891,1.807024,1.790761", \
+				        "1.716261,1.766998,1.819000,1.882163,1.876785,1.908889,1.923115", \
+				        "1.742854,1.785255,1.792170,1.783818,1.879641,1.813047,1.663681", \
+				        "1.950981,1.972777,1.947016,1.928201,1.916752,1.918670,1.887537", \
+				        "2.299397,2.399779,2.396534,2.358520,2.314282,2.138670,2.233501", \
+				        "2.887732,3.014187,3.058108,3.050280,2.983688,2.729248,2.939056", \
+				        "3.627490,3.770017,3.871934,3.939645,3.943141,3.841790,3.726703");
+			}
+		}
+	}
+
+  }
+}
+/*
+* End of file
+*/

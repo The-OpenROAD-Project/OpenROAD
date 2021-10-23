@@ -829,26 +829,6 @@ Resizer::repairNet(Net *net,
       ensureWireParasitic(drvr_pin, net);
       graph_delay_calc_->findDelays(drvr);
 
-      if (network_->isTopLevelPort(drvr_pin)
-          && sdc_->findInputDrive(network_->port(drvr_pin)) == nullptr
-          && checkLimits(drvr_pin, max_slew_margin, max_cap_margin,
-                         check_slew, check_cap, check_fanout)) {
-        // Input port driving net with load slew/cap/fanout violataions.
-        // Buffer the input so we some leverage to fix it.
-        LibertyCell *input_buffer_cell = buffer_lowest_drive_;
-        Instance *buffer = bufferInput(drvr_pin, input_buffer_cell);
-        if (buffer) {
-          // Switcheroo to repairing the input buffer output.
-          LibertyPort *buffer_input_port, *buffer_output_port;
-          input_buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-          drvr_pin = network_->findPin(buffer, buffer_output_port);
-          net = network_->net(drvr_pin);
-          resizeToTargetSlew(drvr_pin, false);
-          ensureWireParasitic(drvr_pin, net);
-          graph_delay_calc_->findDelays(drvr);
-        }
-      }
-
       float max_load_slew = INF;
       float max_cap = INF;
       float max_fanout = INF;
