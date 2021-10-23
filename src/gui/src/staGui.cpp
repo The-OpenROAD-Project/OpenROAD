@@ -680,23 +680,23 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                       gui::Painter& painter,
                                       const gui::Descriptor* net_descriptor)
 {
-  if (path_ == nullptr)
+  if (path_ == nullptr) {
     return;
+  }
 
-  auto getSegmentEnd = [this](odb::dbObject* node, bool& clk_node) {
+  auto isClockTerm = [this](odb::dbObject* node) -> bool {
     if (node->getObjectType() == odb::dbObjectType::dbBTermObj) {
       odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node);
-      auto sta_term = sta_->getDbNetwork()->dbToSta(bterm);
-      clk_node = sta_->isClock(sta_term);
+      auto* sta_term = sta_->getDbNetwork()->dbToSta(bterm);
+      return sta_->isClock(sta_term);
+    } else if (node->getObjectType() == odb::dbObjectType::dbITermObj) {
+      odb::dbITerm* iterm = static_cast<odb::dbITerm*>(node);
+      auto* sta_term = sta_->getDbNetwork()->dbToSta(iterm);
+      return sta_->isClock(sta_term);
     }
   };
-  // SigType is not populated properly in OpenDB
-  bool clk_node = false;
 
-  getSegmentEnd(source_node, clk_node);
-  getSegmentEnd(sink_node, clk_node);
-
-  gui::Painter::Color wire_color = clk_node == true
+  gui::Painter::Color wire_color = isClockTerm(source_node) || isClockTerm(sink_node)
                                        ? TimingPathRenderer::clock_color_
                                        : TimingPathRenderer::signal_color_;
   painter.setPen(wire_color, true);
