@@ -160,9 +160,9 @@ class TimingPath
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
   void setStartClock(const char* name) { start_clk_ = name; }
-  std::string getStartClock() const { return start_clk_; }
+  const std::string& getStartClock() const { return start_clk_; }
   void setEndClock(const char* name) { end_clk_ = name; }
-  std::string getEndClock() const { return end_clk_; }
+  const std::string& getEndClock() const { return end_clk_; }
 
   float getPathArrivalTime() const { return arr_time_; }
   void setPathArrivalTime(float arr) { arr_time_ = arr; }
