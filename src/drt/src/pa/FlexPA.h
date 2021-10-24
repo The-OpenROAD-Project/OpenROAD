@@ -127,7 +127,7 @@ class FlexPA
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   void prepPoint_pin_genPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       frPin* pin,
       frInstTerm* instTerm,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
@@ -135,7 +135,7 @@ class FlexPA
       frAccessPointEnum upperType);
   void prepPoint_pin_genPoints_layerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       frPin* pin,
       frInstTerm* instTerm,
       const gtl::polygon_90_set_data<frCoord>& layerShapes,
@@ -147,7 +147,7 @@ class FlexPA
                                    frLayerNum layerNum);
   void prepPoint_pin_genPoints_rect(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum layerNum,
       bool allowPlanar,
@@ -173,7 +173,7 @@ class FlexPA
       bool isCurrLayerHorz);
   void prepPoint_pin_genPoints_rect_ap(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum layerNum,
       bool allowPlanar,
@@ -185,7 +185,7 @@ class FlexPA
       frAccessPointEnum upperType);
   void prepPoint_pin_genPoints_rect_ap_helper(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& maxrect,
       frCoord x,
       frCoord y,
@@ -212,9 +212,9 @@ class FlexPA
       frPin* pin,
       frInstTerm* instTerm);
   bool prepPoint_pin_checkPoint_planar_ep(
-      frPoint& ep,
+      Point& ep,
       const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
-      const frPoint& bp,
+      const Point& bp,
       frLayerNum layerNum,
       frDirEnum dir,
       int stepSizeMultiplier = 2);
@@ -234,7 +234,7 @@ class FlexPA
       frInstTerm* instTerm);
   bool prepPoint_pin_helper(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<frPoint, frLayerNum>>& apset,
+      std::set<std::pair<Point, frLayerNum>>& apset,
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       frPin* pin,
       frInstTerm* instTerm,

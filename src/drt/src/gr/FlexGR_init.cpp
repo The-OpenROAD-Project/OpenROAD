@@ -289,13 +289,13 @@ void FlexGRWorker::initBoundary()
 // split pathSeg at boudnary
 void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 {
-  frPoint bp, ep;
+  Point bp, ep;
   pathSeg->getPoints(bp, ep);
   // skip if both endpoints are inside extBox (i.e., no intersection)
   if (extBox_.contains(bp) && extBox_.contains(ep)) {
     return;
   }
-  frPoint breakPt1, breakPt2;
+  Point breakPt1, breakPt2;
   initBoundary_splitPathSeg_getBreakPts(bp, ep, breakPt1, breakPt2);
   auto parent = pathSeg->getParent();
   auto child = pathSeg->getChild();
@@ -306,7 +306,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
   } else {
     // break on both sides
 
-    frPoint childLoc = child->getLoc();
+    Point childLoc = child->getLoc();
     if (childLoc == bp) {
       auto breakNode1
           = initBoundary_splitPathSeg_split(child, parent, breakPt1);
@@ -320,10 +320,10 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 }
 
 // breakPt1 <= breakPt2 always
-void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const frPoint& bp,
-                                                         const frPoint& ep,
-                                                         frPoint& breakPt1,
-                                                         frPoint& breakPt2)
+void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const Point& bp,
+                                                         const Point& ep,
+                                                         Point& breakPt1,
+                                                         Point& breakPt2)
 {
   bool hasBreakPt1 = false;
   bool hasBreakPt2 = false;
@@ -368,15 +368,15 @@ void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const frPoint& bp,
 
 frNode* FlexGRWorker::initBoundary_splitPathSeg_split(frNode* child,
                                                       frNode* parent,
-                                                      const frPoint& breakPt)
+                                                      const Point& breakPt)
 {
   // frNet
   auto pathSeg = static_cast<grPathSeg*>(child->getConnFig());
   auto net = pathSeg->getNet();
   auto lNum = pathSeg->getLayerNum();
-  frPoint bp, ep;
+  Point bp, ep;
   pathSeg->getPoints(bp, ep);
-  frPoint childLoc = child->getLoc();
+  Point childLoc = child->getLoc();
   bool isChildBP = (childLoc == bp);
 
   auto uBreakNode = make_unique<frNode>();
@@ -572,7 +572,7 @@ void FlexGRWorker::initNet(frNet* net, const vector<frNode*>& netRoots)
 void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 {
   // map from loc to gcell node
-  // map<pair<frPoint, frlayerNum>, grNode*> loc2GCellNode;
+  // map<pair<Point, frlayerNum>, grNode*> loc2GCellNode;
   vector<pair<frNode*, grNode*>> pinNodePairs;
   map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
   // parent grNode to children frNode
@@ -589,7 +589,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
     nodeQ.pop_front();
 
     bool isRoot = (parent == nullptr);
-    frPoint parentLoc;
+    Point parentLoc;
     if (!isRoot) {
       parentLoc = parent->getLoc();
     }
@@ -604,7 +604,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
     // root at boundary
     if (!isRoot && parent->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      frPoint gcellLoc = getBoundaryPinGCellNodeLoc(parentLoc);
+      Point gcellLoc = getBoundaryPinGCellNodeLoc(parentLoc);
       // if parent is boundary pin, child must be on the same layer
       if (gcellLoc != childLoc) {
         needGenParentGCellNode = true;
@@ -613,7 +613,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
     // leaf at boundary
     if (!needGenParentGCellNode && !isRoot
         && child->getType() == frNodeTypeEnum::frcBoundaryPin) {
-      frPoint gcellLoc = getBoundaryPinGCellNodeLoc(childLoc);
+      Point gcellLoc = getBoundaryPinGCellNodeLoc(childLoc);
       // no need to gen gcell node if immediate parent is the gcell node we need
       if (gcellLoc != parentLoc) {
         needGenChildGCellNode = true;
@@ -629,7 +629,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
       net->addNode(uGCellNode);
 
       gcellNode->addToNet(net);
-      frPoint gcellNodeLoc = getBoundaryPinGCellNodeLoc(parentLoc);
+      Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(parentLoc);
 
       gcellNode->setLoc(gcellNodeLoc);
       gcellNode->setLayerNum(parent->getLayerNum());
@@ -645,7 +645,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
       net->addNode(uGCellNode);
 
       gcellNode->addToNet(net);
-      frPoint gcellNodeLoc = getBoundaryPinGCellNodeLoc(childLoc);
+      Point gcellNodeLoc = getBoundaryPinGCellNodeLoc(childLoc);
 
       gcellNode->setLoc(gcellNodeLoc);
       gcellNode->setLayerNum(child->getLayerNum());
@@ -700,9 +700,9 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
   net->setGR2FrPinNode(gr2FrPinNode);
 }
 
-frPoint FlexGRWorker::getBoundaryPinGCellNodeLoc(const frPoint& boundaryPinLoc)
+Point FlexGRWorker::getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc)
 {
-  frPoint gcellNodeLoc;
+  Point gcellNodeLoc;
   if (boundaryPinLoc.x() == extBox_.left()) {
     gcellNodeLoc.set(routeBox_.left(), boundaryPinLoc.y());
   } else if (boundaryPinLoc.x() == extBox_.right()) {
@@ -725,13 +725,13 @@ void FlexGRWorker::initNet_initRoot(grNet* net)
   net->setRoot(rootNode);
   // sanity check
   if (rootNode->getType() == frNodeTypeEnum::frcBoundaryPin) {
-    frPoint rootLoc = rootNode->getLoc();
+    Point rootLoc = rootNode->getLoc();
     if (extBox_.contains(rootLoc) && routeBox_.contains(rootLoc)) {
       cout << "Error: root should be on an outgoing edge\n";
     }
   } else if (rootNode->getType() == frNodeTypeEnum::frcPin) {
-    frPoint rootLoc = rootNode->getLoc();
-    frPoint globalRootLoc = rootNode->getNet()->getFrNet()->getRoot()->getLoc();
+    Point rootLoc = rootNode->getLoc();
+    Point globalRootLoc = rootNode->getNet()->getFrNet()->getRoot()->getLoc();
     if (rootLoc != globalRootLoc) {
       cout << "Error: local root and global root location mismatch\n";
     }
@@ -767,7 +767,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
         auto parentLoc = parent->getLoc();
         auto nodeLoc = node->getLoc();
         FlexMazeIdx bi, ei;
-        frPoint bp, ep;
+        Point bp, ep;
         frLayerNum lNum = parent->getLayerNum();
         if (parentLoc < nodeLoc) {
           bp = parentLoc;
@@ -841,7 +841,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
       rootGCellNode = gcellNode;
     }
 
-    frPoint gcellNodeLoc = gcellNode->getLoc();
+    Point gcellNodeLoc = gcellNode->getLoc();
     frLayerNum gcellNodeLNum = gcellNode->getLayerNum();
     FlexMazeIdx gcellNodeMIdx;
     gridGraph_.getMazeIdx(gcellNodeLoc, gcellNodeLNum, gcellNodeMIdx);
@@ -940,8 +940,8 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
     if (node->getLayerNum() == node->getParent()->getLayerNum()) {
       // pathSeg
       auto parent = node->getParent();
-      frPoint childLoc, parentLoc;
-      frPoint bp, ep;
+      Point childLoc, parentLoc;
+      Point bp, ep;
       node->getLoc(childLoc);
       parent->getLoc(parentLoc);
       if (childLoc < parentLoc) {
@@ -968,7 +968,7 @@ void FlexGRWorker::initNet_initObjs(grNet* net)
     } else {
       // via
       auto parent = node->getParent();
-      frPoint loc;
+      Point loc;
       frLayerNum beginLayerNum, endLayerNum;
       node->getLoc(loc);
       beginLayerNum = node->getLayerNum();
@@ -1034,7 +1034,7 @@ void FlexGRWorker::initNets_printNet(grNet* net)
       cout << "boundary pin node ";
     }
     cout << "at ";
-    frPoint loc = node->getLoc();
+    Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
          << endl;
@@ -1078,7 +1078,7 @@ void FlexGRWorker::initNets_printFNet(frNode* root)
       cout << "boundary pin node ";
     }
     cout << "at ";
-    frPoint loc = node->getLoc();
+    Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
          << endl;
@@ -1106,8 +1106,8 @@ void FlexGRWorker::initGridGraph()
 void FlexGRWorker::initGridGraph_fromCMap()
 {
   auto cmap = getCMap();
-  frPoint gcellIdxLL = getRouteGCellIdxLL();
-  frPoint gcellIdxUR = getRouteGCellIdxUR();
+  Point gcellIdxLL = getRouteGCellIdxLL();
+  Point gcellIdxUR = getRouteGCellIdxUR();
   int idxLLX = gcellIdxLL.x();
   int idxLLY = gcellIdxLL.y();
   int idxURX = gcellIdxUR.x();

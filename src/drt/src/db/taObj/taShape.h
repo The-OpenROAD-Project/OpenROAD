@@ -87,10 +87,10 @@ class taPathSeg : public taShape
   }
   taPathSeg(const frPathSeg& in);
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
   void getStyle(frSegStyle& styleIn) const
   {
@@ -99,10 +99,10 @@ class taPathSeg : public taShape
     styleIn.setWidth(style_.getWidth());
   }
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {
@@ -187,14 +187,14 @@ class taPathSeg : public taShape
   }
   void move(const frTransform& xform) override
   {
-    begin_.transform(xform);
-    end_.transform(xform);
+    xform.apply(begin_);
+    xform.apply(end_);
   }
   bool overlaps(const frBox& box) const override { return false; }
 
  protected:
-  frPoint begin_;  // begin always smaller than end, assumed
-  frPoint end_;
+  Point begin_;  // begin always smaller than end, assumed
+  Point end_;
   frLayerNum layer_;
   frSegStyle style_;
   frBlockObject* owner_;

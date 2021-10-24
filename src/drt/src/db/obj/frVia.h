@@ -176,9 +176,9 @@ class frVia : public frRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
-  const frPoint getOrigin() const { return origin_; }
-  void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
+  void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
+  const Point getOrigin() const { return origin_; }
+  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   void getTransform(frTransform& xformIn) const override
   {
     xformIn.set(origin_);
@@ -300,7 +300,7 @@ class frVia : public frRef
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
  protected:
-  frPoint origin_;
+  Point origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
   bool tapered_ : 1;
