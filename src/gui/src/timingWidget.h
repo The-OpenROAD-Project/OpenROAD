@@ -32,11 +32,12 @@
 
 #pragma once
 
+#include <QCheckBox>
 #include <QDockWidget>
 #include <QKeyEvent>
+#include <QLineEdit>
 #include <QModelIndex>
 #include <QTableView>
-#include <QLineEdit>
 #include <QSpinBox>
 #include <QPushButton>
 #include <QSettings>
@@ -81,6 +82,8 @@ class TimingWidget : public QDockWidget
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
+  void updateClockRows();
+
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
   void showEvent(QShowEvent* event) override;
@@ -97,6 +100,7 @@ class TimingWidget : public QDockWidget
   QSpinBox* path_index_spin_box_;
   QSpinBox* path_count_spin_box_;
   QPushButton* update_button_;
+  QCheckBox* expand_clk_;
 
   TimingPathsModel* setup_timing_paths_model_;
   TimingPathsModel* hold_timing_paths_model_;

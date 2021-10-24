@@ -57,6 +57,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_index_spin_box_(new QSpinBox),
       path_count_spin_box_(new QSpinBox),
       update_button_(new QPushButton("Update")),
+      expand_clk_(new QCheckBox("Expand clock")),
       setup_timing_paths_model_(nullptr),
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
@@ -110,6 +111,9 @@ TimingWidget::TimingWidget(QWidget* parent)
 
   frame_layout->addWidget(new QLabel("Path:"));
   frame_layout->addWidget(path_index_spin_box_);
+  frame_layout->addWidget(expand_clk_);
+  expand_clk_->setCheckState(Qt::Checked);
+  expand_clk_->setTristate(false);
 
   bottom_widg_layout->addWidget(path_details_table_view_);
 
@@ -137,6 +141,8 @@ TimingWidget::TimingWidget(QWidget* parent)
           SLOT(handleDbChange(QString, std::vector<odb::dbObject*>)));
   connect(
       update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
+
+  connect(expand_clk_, SIGNAL(stateChanged(int)), this, SLOT(updateClockRows()));
 
   path_index_spin_box_->setRange(0, 0);
 }
@@ -203,6 +209,7 @@ void TimingWidget::readSettings(QSettings* settings)
   settings->beginGroup(objectName());
 
   path_count_spin_box_->setValue(settings->value("path_count", path_count_spin_box_->value()).toInt());
+  expand_clk_->setCheckState(settings->value("expand_clk", expand_clk_->checkState()).value<Qt::CheckState>());
 
   settings->endGroup();
 }
@@ -212,6 +219,7 @@ void TimingWidget::writeSettings(QSettings* settings)
   settings->beginGroup(objectName());
 
   settings->setValue("path_count", path_count_spin_box_->value());
+  settings->setValue("expand_clk", expand_clk_->checkState());
 
   settings->endGroup();
 }
@@ -248,7 +256,7 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
 
   TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
 
-  auto path = focus_model->getPathAt(index.row());
+  auto* path = focus_model->getPathAt(index.row());
 
   path_details_model_->populateModel(path);
   path_details_table_view_->resizeColumnsToContents();
@@ -259,6 +267,30 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
 
   path_index_spin_box_->setRange(0, focus_model->rowCount()-1);
   path_index_spin_box_->setValue(index.row());
+
+  updateClockRows();
+}
+
+void TimingWidget::updateClockRows()
+{
+  if (path_details_model_ == nullptr) {
+    return;
+  }
+
+  if (path_details_model_->getPath() == nullptr) {
+    return;
+  }
+
+  const int path_start_index = path_details_model_->getPath()->getPathStartIndex();
+  const bool show = expand_clk_->checkState() == Qt::Checked;
+
+  for (int row = 0; row < path_start_index; row++) {
+    if (show) {
+      path_details_table_view_->showRow(row);
+    } else {
+      path_details_table_view_->hideRow(row);
+    }
+  }
 }
 
 void TimingWidget::highlightPathStage(const QModelIndex& index)
@@ -279,7 +311,12 @@ void TimingWidget::findNodeInPathDetails()
   proxy.setFilterFixedString(search_node);
   QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
   if (match_index.isValid()) {
-    path_details_table_view_->selectRow(match_index.row());
+    const int row = match_index.row();
+    if (path_details_table_view_->isRowHidden(row)) {
+      // row found is hidden, so unhide clock rows
+      expand_clk_->setCheckState(Qt::Checked);
+    }
+    path_details_table_view_->selectRow(row);
     highlightPathStage(match_index);
   } else {
     QMessageBox::information(
