@@ -3019,14 +3019,14 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
     }
 
     frBox markerBBox;
-    frPoint origin;
+    Point origin;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
     if(markerBBox.length() < (frCoord) layer->getWidth())
       continue;
     workerRegionQuery.query(markerBBox, lNum, results);
-    std::map<frPoint, std::vector<drVia*>> vias;
+    std::map<Point, std::vector<drVia*>> vias;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
@@ -3035,7 +3035,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      frPoint tmpOrigin;
+      Point tmpOrigin;
       obj->getOrigin(tmpOrigin);
       frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
       if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {

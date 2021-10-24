@@ -38,11 +38,11 @@ class drRef : public drPinFig
  public:
   // getters
   virtual dbOrientType getOrient() const = 0;
-  virtual void getOrigin(frPoint& tmpOrigin) const = 0;
+  virtual void getOrigin(Point& tmpOrigin) const = 0;
   virtual void getTransform(frTransform& xform) const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
-  virtual void setOrigin(const frPoint& tmpPoint) = 0;
+  virtual void setOrigin(const Point& tmpPoint) = 0;
   virtual void setTransform(const frTransform& xform) = 0;
 
  protected:

@@ -68,7 +68,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     frTransform xform;
-    frPoint origin;
+    Point origin;
     via->getOrigin(origin);
     xform.set(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
@@ -122,7 +122,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     frTransform xform;
-    frPoint origin;
+    Point origin;
     via->getOrigin(origin);
     xform.set(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
@@ -174,7 +174,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     frTransform xform;
-    frPoint origin;
+    Point origin;
     via->getOrigin(origin);
     xform.set(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {

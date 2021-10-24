@@ -53,17 +53,17 @@ void io::Parser::setDieArea(odb::dbBlock* block)
 {
   vector<frBoundary> bounds;
   frBoundary bound;
-  vector<frPoint> points;
+  vector<Point> points;
   odb::Rect box;
   block->getDieArea(box);
   points.push_back(
-      frPoint(defdist(block, box.xMin()), defdist(block, box.yMin())));
+      Point(defdist(block, box.xMin()), defdist(block, box.yMin())));
   points.push_back(
-      frPoint(defdist(block, box.xMax()), defdist(block, box.yMax())));
+      Point(defdist(block, box.xMax()), defdist(block, box.yMax())));
   points.push_back(
-      frPoint(defdist(block, box.xMax()), defdist(block, box.yMin())));
+      Point(defdist(block, box.xMax()), defdist(block, box.yMin())));
   points.push_back(
-      frPoint(defdist(block, box.xMin()), defdist(block, box.yMax())));
+      Point(defdist(block, box.xMin()), defdist(block, box.yMax())));
   bound.setPoints(points);
   bounds.push_back(bound);
   tmpBlock->setDBUPerUU(block->getDbUnitsPerMicron());
@@ -131,7 +131,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     inst->getLocation(x, y);
     x = defdist(block, x);
     y = defdist(block, y);
-    tmpInst->setOrigin(frPoint(x, y));
+    tmpInst->setOrigin(Point(x, y));
     tmpInst->setOrient(inst->getOrient());
     for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
       auto term = uTerm.get();
@@ -659,10 +659,10 @@ void io::Parser::setNets(odb::dbBlock* block)
         if (hasEndPoint) {
           auto tmpP = make_unique<frPathSeg>();
           if (beginX > endX || beginY > endY) {
-            tmpP->setPoints(frPoint(endX, endY), frPoint(beginX, beginY));
+            tmpP->setPoints(Point(endX, endY), Point(beginX, beginY));
             swap(beginExt, endExt);
           } else {
-            tmpP->setPoints(frPoint(beginX, beginY), frPoint(endX, endY));
+            tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
           }
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
@@ -706,7 +706,7 @@ void io::Parser::setNets(odb::dbBlock* block)
           if (tech->name2via.find(viaName) == tech->name2via.end()) {
             logger->error(DRT, 108, "Unsupported via in db.");
           } else {
-            frPoint p;
+            Point p;
             if (hasEndPoint) {
               p.set(endX, endY);
             } else {
@@ -730,7 +730,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             auto layerNum = tech->name2layer[box->getTechLayer()->getName()]
                                 ->getLayerNum();
             auto tmpP = make_unique<frPathSeg>();
-            tmpP->setPoints(frPoint(beginX, beginY), frPoint(endX, endY));
+            tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
             tmpP->addToNet(netIn);
             tmpP->setLayerNum(layerNum);
             width = (width) ? width : tech->name2layer[layerName]->getWidth();
@@ -771,7 +771,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             else {
               int x, y;
               box->getViaXY(x, y);
-              frPoint p(defdist(block, x), defdist(block, y));
+              Point p(defdist(block, x), defdist(block, y));
               auto viaDef = tech->name2via[viaName];
               auto tmpP = make_unique<frVia>(viaDef);
               tmpP->setOrigin(p);
@@ -1736,11 +1736,11 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       frCoord sizeY = master->getHeight();
       vector<frBoundary> bounds;
       frBoundary bound;
-      vector<frPoint> points;
-      points.push_back(frPoint(originX, originY));
-      points.push_back(frPoint(sizeX, originY));
-      points.push_back(frPoint(sizeX, sizeY));
-      points.push_back(frPoint(originX, sizeY));
+      vector<Point> points;
+      points.push_back(Point(originX, originY));
+      points.push_back(Point(sizeX, originY));
+      points.push_back(Point(sizeX, sizeY));
+      points.push_back(Point(originX, sizeY));
       bound.setPoints(points);
       bounds.push_back(bound);
       tmpBlock->setBoundaries(bounds);
@@ -1875,7 +1875,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
         frCoord x;
         frCoord y;
         layerRule->getEnclosure(x, y);
-        frPoint enc(x, y);
+        Point enc(x, y);
         switch (lNum2Int[layerNum]) {
           case 1:
             viaRuleGen->setLayer1Enc(enc);
@@ -1924,7 +1924,7 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
         frCoord x;
         frCoord y;
         layerRule->getSpacing(x, y);
-        frPoint pt(x, y);
+        Point pt(x, y);
         switch (lNum2Int[layerNum]) {
           case 1:
             logger->warn(
@@ -2221,7 +2221,7 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
-        frPoint start, end;
+        Point start, end;
         pathSeg.getPoints(start, end);
 
         connFigs[netName].push_back(make_shared<frPathSeg>(pathSeg));
@@ -2249,7 +2249,7 @@ void io::Writer::splitVia_helper(
       && mergedPathSegs.at(layerNum).at(isH).find(trackLoc)
              != mergedPathSegs.at(layerNum).at(isH).end()) {
     for (auto& pathSeg : mergedPathSegs.at(layerNum).at(isH).at(trackLoc)) {
-      frPoint begin, end;
+      Point begin, end;
       pathSeg->getPoints(begin, end);
       if ((isH == 0 && (begin.x() < x) && (end.x() > x))
           || (isH == 1 && (begin.y() < y) && (end.y() > y))) {
@@ -2258,11 +2258,11 @@ void io::Writer::splitVia_helper(
         pathSeg->getStyle(style2);
         style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
         shared_ptr<frPathSeg> newPathSeg = make_shared<frPathSeg>(*pathSeg);
-        pathSeg->setPoints(begin, frPoint(x, y));
+        pathSeg->setPoints(begin, Point(x, y));
         style1.setEndStyle(style_default.getEndStyle(),
                            style_default.getEndExt());
         pathSeg->setStyle(style1);
-        newPathSeg->setPoints(frPoint(x, y), end);
+        newPathSeg->setPoints(Point(x, y), end);
         style2.setBeginStyle(style_default.getBeginStyle(),
                              style_default.getBeginExt());
         newPathSeg->setStyle(style2);
@@ -2288,7 +2288,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
   for (auto& connFig : connFigs) {
     if (connFig->typeId() == frcPathSeg) {
       auto pathSeg = dynamic_pointer_cast<frPathSeg>(connFig);
-      frPoint begin, end;
+      Point begin, end;
       pathSeg->getPoints(begin, end);
       frLayerNum layerNum = pathSeg->getLayerNum();
       if (begin == end) {
@@ -2308,7 +2308,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
     } else if (connFig->typeId() == frcVia) {
       auto via = dynamic_pointer_cast<frVia>(connFig);
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
-      frPoint viaPoint;
+      Point viaPoint;
       via->getOrigin(viaPoint);
       viaMergeMap[make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)] = via;
       // cout <<"found via" <<endl;
@@ -2329,7 +2329,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
     int cnt = 0;
     shared_ptr<frPathSeg> newPathSeg;
     frSegStyle style;
-    frPoint begin, end;
+    Point begin, end;
     for (auto& it2 : it1.second) {
       // cout <<"coord " <<coord <<endl;
       for (auto& pathSegTuple : it2.second) {
@@ -2362,7 +2362,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
           auto pathSeg = get<0>(pathSegTuple);
           auto isBegin = get<1>(pathSegTuple);
           if (!isBegin) {
-            frPoint tmp;
+            Point tmp;
             pathSeg->getPoints(tmp, end);
             frSegStyle tmpStyle;
             pathSeg->getStyle(tmpStyle);
@@ -2420,10 +2420,10 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
         for (auto& seg1 : mapIt1.second) {
           bool skip = false;
           // seg2 is horizontal
-          frPoint seg1Begin, seg1End;
+          Point seg1Begin, seg1End;
           seg1->getPoints(seg1Begin, seg1End);
           for (auto& seg2 : mapIt2.second) {
-            frPoint seg2Begin, seg2End;
+            Point seg2Begin, seg2End;
             seg2->getPoints(seg2Begin, seg2End);
             bool pushNewSeg1 = false;
             bool pushNewSeg2 = false;
@@ -2434,9 +2434,9 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
               pushNewSeg1 = true;
               newSeg1 = make_shared<frPathSeg>(*seg1);
               // modify seg1
-              seg1->setPoints(seg1Begin, frPoint(seg1End.x(), seg2End.y()));
+              seg1->setPoints(seg1Begin, Point(seg1End.x(), seg2End.y()));
               // modify newSeg1
-              newSeg1->setPoints(frPoint(seg1End.x(), seg2Begin.y()), seg1End);
+              newSeg1->setPoints(Point(seg1End.x(), seg2Begin.y()), seg1End);
               // modify endstyle
               auto layerNum = seg1->getLayerNum();
               frSegStyle tmpStyle1;
@@ -2458,9 +2458,9 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
               pushNewSeg2 = true;
               newSeg2 = make_shared<frPathSeg>(*seg1);
               // modify seg2
-              seg2->setPoints(seg2Begin, frPoint(seg1End.x(), seg2End.y()));
+              seg2->setPoints(seg2Begin, Point(seg1End.x(), seg2End.y()));
               // modify newSeg2
-              newSeg2->setPoints(frPoint(seg1End.x(), seg2Begin.y()), seg2End);
+              newSeg2->setPoints(Point(seg1End.x(), seg2Begin.y()), seg2End);
               // modify endstyle
               auto layerNum = seg2->getLayerNum();
               frSegStyle tmpStyle1;
@@ -2608,7 +2608,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                   layer,
                   odb::dbWireType("ROUTED"),
                   net->getNonDefaultRule()->getLayerRule(layer));
-            frPoint begin, end;
+            Point begin, end;
             frSegStyle segStyle;
             pathSeg->getPoints(begin, end);
             pathSeg->getStyle(segStyle);
@@ -2647,7 +2647,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                   layer,
                   odb::dbWireType("ROUTED"),
                   net->getNonDefaultRule()->getLayerRule(layer));
-            frPoint origin;
+            Point origin;
             via->getOrigin(origin);
             _wire_encoder.addPoint(origin.x(), origin.y());
             odb::dbTechVia* tech_via = tech->findVia(viaName.c_str());
@@ -2665,7 +2665,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                 = getTech()->getLayer(pwire->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
-            frPoint origin;
+            Point origin;
             frBox offsetBox;
             pwire->getOrigin(origin);
             pwire->getOffsetBox(offsetBox);

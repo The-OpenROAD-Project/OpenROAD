@@ -64,7 +64,7 @@ frDesign* FlexTAWorkerRegionQuery::getDesign() const
 void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 {
   frBox box;
-  frPoint bp, ep;
+  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);
@@ -84,7 +84,7 @@ void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
 {
   frBox box;
-  frPoint bp, ep;
+  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);

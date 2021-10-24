@@ -69,7 +69,7 @@ struct frRegionQuery::Impl
   void initOrigGuide(map<frNet*, vector<frRect>, frBlockObjectComp>& tmpGuides);
   void initGuide();
   void initRPin();
-  void initGRPin(vector<pair<frBlockObject*, frPoint>>& in);
+  void initGRPin(vector<pair<frBlockObject*, Point>>& in);
   void initDRObj();
   void initGRObj();
 
@@ -258,7 +258,7 @@ void frRegionQuery::Impl::add(frVia* via,
 {
   frBox frb;
   frTransform xform;
-  frPoint origin;
+  Point origin;
   via->getOrigin(origin);
   xform.set(origin);
   box_t boostb;
@@ -415,7 +415,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       // Convert the frPolygon to a Boost polygon
       vector<gtl::point_data<frCoord>> points;
       for (auto pt : ((frPolygon*) shape)->getPoints()) {
-        pt.transform(xform);
+        xform.apply(pt);
         points.push_back({pt.x(), pt.y()});
       }
       gtl::polygon_90_data<frCoord> poly;
@@ -839,12 +839,12 @@ void frRegionQuery::Impl::initGuide()
   }
 }
 
-void frRegionQuery::initGRPin(vector<pair<frBlockObject*, frPoint>>& in)
+void frRegionQuery::initGRPin(vector<pair<frBlockObject*, Point>>& in)
 {
   impl_->initGRPin(in);
 }
 
-void frRegionQuery::Impl::initGRPin(vector<pair<frBlockObject*, frPoint>>& in)
+void frRegionQuery::Impl::initGRPin(vector<pair<frBlockObject*, Point>>& in)
 {
   grPins_.clear();
   Objects<frBlockObject> allGRPins;

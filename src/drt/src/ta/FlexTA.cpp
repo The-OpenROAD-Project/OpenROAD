@@ -167,9 +167,9 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) ygp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
         frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(0, i), beginBox);
+        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint((int) xgp.getCount() - 1,
+            Point((int) xgp.getCount() - 1,
                     min(i + size - 1, (int) ygp.getCount() - 1)),
             endBox);
         frBox routeBox(
@@ -191,9 +191,9 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) xgp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
         frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, 0), beginBox);
+        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint(min(i + size - 1, (int) xgp.getCount() - 1),
+            Point(min(i + size - 1, (int) xgp.getCount() - 1),
                     (int) ygp.getCount() - 1),
             endBox);
         frBox routeBox(
@@ -219,9 +219,9 @@ int FlexTA::initTA_helper(int iter,
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
         frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(0, i), beginBox);
+        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint((int) xgp.getCount() - 1,
+            Point((int) xgp.getCount() - 1,
                     min(i + size - 1, (int) ygp.getCount() - 1)),
             endBox);
         frBox routeBox(
@@ -242,9 +242,9 @@ int FlexTA::initTA_helper(int iter,
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
         frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, 0), beginBox);
+        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint(min(i + size - 1, (int) xgp.getCount() - 1),
+            Point(min(i + size - 1, (int) xgp.getCount() - 1),
                     (int) ygp.getCount() - 1),
             endBox);
         frBox routeBox(

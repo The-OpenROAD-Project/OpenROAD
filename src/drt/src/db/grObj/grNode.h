@@ -84,7 +84,7 @@ class grNode : public grBlockObject
 
   // setters
   void addToNet(grNet* in) { net = in; }
-  void setLoc(const frPoint& in) { loc = in; }
+  void setLoc(const Point& in) { loc = in; }
   void setLayerNum(frLayerNum in) { layerNum = in; }
   void setConnFig(grBlockObject* in) { connFig = in; }
   void setPin(frBlockObject* in) { pin = in; }
@@ -124,8 +124,8 @@ class grNode : public grBlockObject
   // getters
   bool hasNet() { return (net != nullptr); }
   grNet* getNet() { return net; }
-  void getLoc(frPoint& in) { in = loc; }
-  frPoint getLoc() { return loc; }
+  void getLoc(Point& in) { in = loc; }
+  Point getLoc() { return loc; }
   frLayerNum getLayerNum() { return layerNum; }
   grBlockObject* getConnFig() { return connFig; }
   frBlockObject* getPin() { return pin; }
@@ -141,7 +141,7 @@ class grNode : public grBlockObject
 
  protected:
   grNet* net;
-  frPoint loc;
+  Point loc;
   frLayerNum layerNum;
   grBlockObject* connFig;  // wire / via / patch to parent
   frBlockObject* pin;      // term / instTerm / null if boundary pin or steiner

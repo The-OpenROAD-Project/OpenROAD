@@ -155,9 +155,9 @@ class frBlock : public frBlockObject
   }
   frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
   // idx must be legal
-  void getGCellBox(const frPoint& idx1, frBox& box) const
+  void getGCellBox(const Point& idx1, frBox& box) const
   {
-    frPoint idx(idx1);
+    Point idx(idx1);
     frBox dieBox;
     getDieBox(dieBox);
     auto& gp = getGCellPatterns();
@@ -195,7 +195,7 @@ class frBlock : public frBlockObject
     }
     box.set(xl, yl, xh, yh);
   }
-  void getGCellCenter(const frPoint& idx, frPoint& pt) const
+  void getGCellCenter(const Point& idx, Point& pt) const
   {
     frBox dieBox;
     getDieBox(dieBox);
@@ -222,7 +222,7 @@ class frBlock : public frBlockObject
     }
     pt.set((xl + xh) / 2, (yl + yh) / 2);
   }
-  void getGCellIdx(const frPoint& pt, frPoint& idx) const
+  void getGCellIdx(const Point& pt, Point& idx) const
   {
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];

@@ -180,8 +180,8 @@ class drVia : public drRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& tmpOrient) override { ; }
-  void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
-  void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
+  void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
+  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   void getTransform(frTransform& xformIn) const override
   {
     xformIn.set(origin_);
@@ -307,14 +307,14 @@ class drVia : public drRef
 
   bool isTapered() const { return tapered_; }
 
-  const frPoint& getOrigin() const { return origin_; }
+  const Point& getOrigin() const { return origin_; }
   
   bool isBottomConnected() const { return bottomConnected_; }
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
  protected:
-  frPoint origin_;
+  Point origin_;
   frViaDef* viaDef_;
   drBlockObject* owner_;
   FlexMazeIdx beginMazeIdx_;
