@@ -153,7 +153,8 @@ class TimingPath
         path_delay_(0),
         arr_time_(0),
         req_time_(0),
-        path_index_(path_index)
+        path_index_(path_index),
+        path_start_index_(0)
   {
   }
 
@@ -175,7 +176,10 @@ class TimingPath
 
   int getPathIndex() const { return path_index_; }
 
+  void setPathStartIndex(int idx) { path_start_index_ = idx; }
+
   TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
+  int getNodeCount() const { return path_nodes_.size(); }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
@@ -189,6 +193,7 @@ class TimingPath
   float arr_time_;
   float req_time_;
   int path_index_;
+  int path_start_index_;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel

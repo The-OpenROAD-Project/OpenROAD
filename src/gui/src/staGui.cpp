@@ -359,6 +359,11 @@ bool TimingPathsModel::populatePaths(bool get_max,
       if (term == nullptr)
         pin_object = port;
       arrival_cur_stage = arrival;
+
+      if (ref == expanded->startPath()) {
+        path->setPathStartIndex(path->getNodeCount());
+      }
+
       if (i == 0)
         path->appendNode(TimingPathNode(pin_object,
                                         is_rising,
@@ -392,7 +397,7 @@ bool TimingPathsModel::populatePaths(bool get_max,
 
 std::string TimingPath::getStartStageName() const
 {
-  auto node = getNodeAt(1);
+  auto node = getNodeAt(path_start_index_);
   return node.getNodeName();
 }
 
