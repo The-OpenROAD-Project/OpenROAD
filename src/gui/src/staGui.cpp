@@ -694,6 +694,7 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
       auto* sta_term = sta_->getDbNetwork()->dbToSta(iterm);
       return sta_->isClock(sta_term);
     }
+    return false;
   };
 
   gui::Painter::Color wire_color = isClockTerm(source_node) || isClockTerm(sink_node)
