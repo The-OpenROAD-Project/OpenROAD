@@ -2153,6 +2153,7 @@ class frNonDefaultRule
   vector<frCoord> widths_;
   vector<frCoord> spacings_;
   vector<frCoord> wireExtensions_;
+  vector<drEolSpacingConstraint> drEolCons_;
   vector<int> minCuts_;  // min cuts per cut layer
 
   // vias for each layer
@@ -2207,6 +2208,14 @@ class frNonDefaultRule
     wireExtensions_[z] = we;
   }
 
+  void setDrEolConstraint(drEolSpacingConstraint con, int z)
+  {
+    if (z >= (int) drEolCons_.size()) {
+      drEolCons_.resize(z + 1, 0);
+    }
+    drEolCons_[z] = con;
+  }
+
   void addVia(frViaDef* via, int z)
   {
     if (z >= (int) vias_.size()) {
@@ -2251,6 +2260,14 @@ class frNonDefaultRule
       return 0;
     }
     return wireExtensions_[z];
+  }
+
+  drEolSpacingConstraint getDrEolSpacingConstraint(int z) const
+  {
+    if (z >= (int) drEolCons_.size()) {
+      return drEolSpacingConstraint();
+    }
+    return drEolCons_[z];
   }
 
   int getMinCuts(int z) const

@@ -794,15 +794,6 @@ NetRouteMap FastRouteCore::run()
 
   convertToMazeroute();
 
-  // debug mode Rectilinear Steiner Tree
-  if (debug_->isOn_ && debug_->rectilinearSTree_) {
-    for (int netID = 0; netID < num_valid_nets_; netID++) {
-      if (nets_[netID]->db_net == debug_->net_) {
-        StTreeVisualization(sttrees_[netID], nets_[netID], false);
-      }
-    }
-  }
-
   int enlarge_ = 10;
   int newTH = 10;
   int healingTrigger = 0;
@@ -834,6 +825,9 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
+  // check and fix invalid embedded trees
+  fixEmbeddedTrees();
+
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   InitEstUsage();
@@ -853,6 +847,15 @@ NetRouteMap FastRouteCore::run()
   InitLastUsage(upType);
   if (total_overflow_ > 0 && overflow_iterations_ > 0) {
     logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
+  }
+
+  // debug mode Rectilinear Steiner Tree before overflow iterations
+  if (debug_->isOn_ && debug_->rectilinearSTree_) {
+    for (int netID = 0; netID < num_valid_nets_; netID++) {
+      if (nets_[netID]->db_net == debug_->net_) {
+        StTreeVisualization(sttrees_[netID], nets_[netID], false);
+      }
+    }
   }
 
   const int max_overflow_increases = 25;

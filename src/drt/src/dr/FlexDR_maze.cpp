@@ -412,13 +412,11 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const frBox& box,
                                             const frBox& tmpBx,
                                             int type,
                                             bool isUpperVia,
+                                            const drEolSpacingConstraint& drCon,
                                             frMIdx i,
                                             frMIdx j,
                                             frMIdx z)
 {
-  auto lNum = gridGraph_.getLayerNum(z);
-  auto layer = getTech()->getLayer(lNum);
-  auto drCon = layer->getDrEolSpacingConstraint();
   if (drCon.eolSpace == 0)
     return;
   frBox testBox;
@@ -679,13 +677,17 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
     cout << "Warning: no min spacing rule" << endl;
     return;
   }
-  if (ndr)
+  drEolSpacingConstraint drCon;
+  if (ndr) {
     bloatDist = max(bloatDist, ndr->getSpacing(z));
+    drCon = ndr->getDrEolSpacingConstraint(z);
+  }
   // other obj eol spc to curr obj
   // no need to bloat eolWithin because eolWithin always < minSpacing
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
-  auto drCon = getTech()->getLayer(lNum)->getDrEolSpacingConstraint();
+  if (drCon.eolWidth == 0)
+    drCon = getTech()->getLayer(lNum)->getDrEolSpacingConstraint();
   if (viaBox.right() - viaBox.left() <= drCon.eolWidth) {
     bloatDistEolY = max(bloatDistEolY, drCon.eolSpace);
   }
@@ -801,7 +803,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
         }
       }
       // eol, other obj to curr obj
-      modMinSpacingCostVia_eol(box, tmpBx, type, isUpperVia, i, j, z);
+      modMinSpacingCostVia_eol(box, tmpBx, type, isUpperVia, drCon, i, j, z);
     }
   }
 }
@@ -941,13 +943,19 @@ void FlexDRWorker::modEolSpacingCost_helper(const frBox& testbox,
 void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
                                           frMIdx z,
                                           int type,
-                                          bool isSkipVia)
+                                          bool isSkipVia,
+                                          frNonDefaultRule* ndr)
 {
   auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
+  drEolSpacingConstraint drCon;
+  if (ndr != nullptr)
+    drCon = ndr->getDrEolSpacingConstraint(z);
+  if (drCon.eolWidth == 0)
+    drCon = layer->getDrEolSpacingConstraint();
   frCoord eolSpace, eolWidth, eolWithin;
-  eolSpace = layer->getDrEolSpacingConstraint().eolSpace;
-  eolWithin = layer->getDrEolSpacingConstraint().eolWithin;
-  eolWidth = layer->getDrEolSpacingConstraint().eolWidth;
+  eolSpace = drCon.eolSpace;
+  eolWithin = drCon.eolWithin;
+  eolWidth = drCon.eolWidth;
   if (eolSpace == 0)
     return;
   frBox testBox;
@@ -1391,7 +1399,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
         = (getTech()->getLayer(gridGraph_.getLayerNum(bi.z()))->getDir()
            == dbTechLayerDir::HORIZONTAL);
     if (isHLayer == (bi.y() == ei.y())) {
-      modEolSpacingRulesCost(box, bi.z(), type);
+      modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
     }
   } else if (connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drPatchWire*>(connFig);
@@ -1415,14 +1423,14 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
-    modEolSpacingRulesCost(box, bi.z(), type);
+    modEolSpacingRulesCost(box, bi.z(), type, false, ndr);
 
     obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
 
     modMinSpacingCostPlanar(box, ei.z(), type, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
-    modEolSpacingRulesCost(box, ei.z(), type);
+    modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
 
     frTransform xform;
     frPoint pt;

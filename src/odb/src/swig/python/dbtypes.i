@@ -37,6 +37,98 @@
     $result = list;
 }
 
+%typemap(out) std::vector< T > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i=0; i<$1.size(); i++) {
+        T* ptr = new T((($1_type &)$1)[i]);
+        PyList_Append(list,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
+    }
+    $result = list;
+}
+%typemap(out) std::vector< T* > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        T* ptr = ((($1_type &)$1)[i]);
+        PyList_Append(list,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
+    }
+    $result = list;
+}
+
+%typemap(out) std::pair< int, int > {
+    PyObject *list = PyList_New(0);
+    PyList_Append(list, PyInt_FromLong((long)$1.first));
+    PyList_Append(list, PyInt_FromLong((long)$1.second));
+    $result = list;
+}
+
+%typemap(out) std::vector< std::pair< T*, int > > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(0);
+        std::pair< T*, int > p = ((($1_type &)$1)[i]);
+        T* ptr1 = p.first;
+        int num = p.second;
+        PyObject *obj = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyList_Append(sub_list, obj);
+        PyList_Append(sub_list, PyInt_FromLong((long)num));
+        PyList_Append(list, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::tuple< T*, T*, int > > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(0);
+        std::tuple< T*, T*, int > p = ((($1_type &)$1)[i]);
+        T* ptr1 = std::get<0>(p);
+        T* ptr2 = std::get<1>(p);
+        int num = std::get<2>(p);
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        PyList_Append(sub_list, obj1);
+        PyList_Append(sub_list, obj2);
+        PyList_Append(sub_list, PyInt_FromLong((long)num));
+        PyList_Append(list, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::tuple< T*, int, int, int > > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(0);
+        std::tuple< T*, int, int, int > p = ((($1_type &)$1)[i]);
+        T* ptr = std::get<0>(p);
+        int num1 = std::get<1>(p);
+        int num2 = std::get<2>(p);
+        int num3 = std::get<3>(p);
+        PyObject *obj = SWIG_NewInstanceObj(ptr, $descriptor(T *), 0);
+        PyList_Append(sub_list, obj);
+        PyList_Append(sub_list, PyInt_FromLong((long)num1));
+        PyList_Append(sub_list, PyInt_FromLong((long)num2));
+        PyList_Append(sub_list, PyInt_FromLong((long)num3));
+        PyList_Append(list, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::pair< T*, T* > > {
+    PyObject *list = PyList_New(0);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(0);
+        std::pair< T*, T* > p = ((($1_type &)$1)[i]);
+        T* ptr1 = p.first;
+        T* ptr2 = p.second;
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        PyList_Append(sub_list, obj1);
+        PyList_Append(sub_list, obj2);
+        PyList_Append(list, sub_list);
+    }
+    $result = list;
+}
+
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
 
@@ -69,6 +161,26 @@
             }
         }
 }
+%typemap(typecheck) vector< T * >, std::vector< T * >, vector< T * > &, std::vector< T * > & {
+    int       nitems;
+    T         *temp;
+    std::vector< T > *v;
+    swig_type_info *tf = SWIG_TypeQuery("T" "*");
+    if(SWIG_ConvertPtr($input, (void **) &v, $&1_descriptor, 0) == 0){
+        $1 = 1;
+    } else {
+        if(!PyList_Check($input))
+            $1 = 0;
+        else
+            if (PyList_Size($input) == 0)
+                $1 = 1;
+       if (SWIG_ConvertPtr(PyList_GetItem($input,0),(void **) &temp, tf, 0) != 0) {
+            $1 = 0;
+        } else {
+            $1 = 1;
+        }
+    }
+}  
 %enddef
 
 %define WRAP_OBJECT_RETURN_REF(T, A)
@@ -126,6 +238,14 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     $result = SWIG_Python_AppendOutput($result, o);
   }
 }
+
+%typemap(argout) std::vector<int> &OUTPUT {
+  for(auto it = $1->begin(); it != $1->end(); it++) {
+    PyObject *obj = PyInt_FromLong((long)*it);
+    $result = SWIG_Python_AppendOutput($result, obj);
+  }
+}
+
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
 
 
@@ -169,4 +289,10 @@ WRAP_DB_CONTAINER(odb::dbTechMinEncRule)
 WRAP_DB_CONTAINER(odb::dbModule)
 WRAP_DB_CONTAINER(odb::dbModInst)
 WRAP_DB_CONTAINER(odb::dbGroup)
-
+WRAP_DB_CONTAINER(odb::dbTechLayerMinStepRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCornerSpacingRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerSpacingTablePrlRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutClassRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingTableOrthRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingTableDefRule)

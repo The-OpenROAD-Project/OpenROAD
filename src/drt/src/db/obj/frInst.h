@@ -134,6 +134,8 @@ class frInst : public frRef
   // others
   void getUpdatedXform(frTransform& in, bool noOrient = false) const;
   void getBoundaryBBox(frBox& in) const;
+  
+  frInstTerm* getInstTerm(const std::string& name);
 
  protected:
   frString name_;

@@ -270,7 +270,7 @@ void Gui::select(const std::string& type, const std::string& name_filter, bool f
           // remove elements
           QRegExp reg_filter(QString::fromStdString(name_filter),
                              filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-                             QRegExp::Wildcard);
+                             QRegExp::WildcardUnix);
           auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
               [&reg_filter](auto sel) -> bool {
                 return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
@@ -493,6 +493,16 @@ void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
   descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
+}
+
+const Descriptor* Gui::getDescriptor(const std::type_info& type) const
+{
+  auto find_descriptor = descriptors_.find(type);
+  if (find_descriptor == descriptors_.end()) {
+    logger_->error(utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
+  }
+
+  return find_descriptor->second.get();
 }
 
 void Gui::unregisterDescriptor(const std::type_info& type)
