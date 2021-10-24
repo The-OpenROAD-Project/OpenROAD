@@ -177,6 +177,7 @@ class TimingPath
   int getPathIndex() const { return path_index_; }
 
   void setPathStartIndex(int idx) { path_start_index_ = idx; }
+  int getPathStartIndex() const { return path_start_index_; }
 
   TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
   int getNodeCount() const { return path_nodes_.size(); }
@@ -213,6 +214,8 @@ class TimingPathDetailModel : public QAbstractTableModel
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
   void populateModel(TimingPath* path);
+
+  TimingPath* getPath() const { return path_; }
 
  private:
   sta::dbSta* sta_;
