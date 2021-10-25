@@ -53,6 +53,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       setup_timing_table_view_(new QTableView),
       hold_timing_table_view_(new QTableView),
       path_details_table_view_(new QTableView),
+      capture_details_table_view_(new QTableView),
       find_object_edit_(new QLineEdit),
       path_index_spin_box_(new QSpinBox),
       path_count_spin_box_(new QSpinBox),
@@ -61,9 +62,11 @@ TimingWidget::TimingWidget(QWidget* parent)
       setup_timing_paths_model_(nullptr),
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
+      capture_details_model_(nullptr),
       path_renderer_(nullptr),
       dbchange_listener_(new GuiDBChangeListener),
       delay_widget_(new QTabWidget),
+      detail_widget_(new QTabWidget),
       focus_view_(nullptr)
 {
   setObjectName("timing_report"); // for settings
@@ -115,7 +118,9 @@ TimingWidget::TimingWidget(QWidget* parent)
   expand_clk_->setCheckState(Qt::Checked);
   expand_clk_->setTristate(false);
 
-  bottom_widg_layout->addWidget(path_details_table_view_);
+  detail_widget_->addTab(path_details_table_view_, "Data");
+  detail_widget_->addTab(capture_details_table_view_, "Capture");
+  bottom_widg_layout->addWidget(detail_widget_);
 
   layout->addWidget(path_widget, 2, 0);
 
@@ -152,6 +157,7 @@ void TimingWidget::init(sta::dbSta* sta)
   setup_timing_paths_model_ = new TimingPathsModel(sta);
   hold_timing_paths_model_ = new TimingPathsModel(sta);
   path_details_model_ = new TimingPathDetailModel(sta);
+  capture_details_model_ = new TimingPathDetailModel(sta);
   path_renderer_ = new TimingPathRenderer(sta);
 
   auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
@@ -165,6 +171,7 @@ void TimingWidget::init(sta::dbSta* sta)
   setupTableView(setup_timing_table_view_, setup_timing_paths_model_);
   setupTableView(hold_timing_table_view_, hold_timing_paths_model_);
   setupTableView(path_details_table_view_, path_details_model_);
+  setupTableView(capture_details_table_view_, capture_details_model_);
 
   // default to sorting by slack
   setup_timing_table_view_->setSortingEnabled(true);

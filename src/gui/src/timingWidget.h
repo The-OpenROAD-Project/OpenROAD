@@ -95,6 +95,7 @@ class TimingWidget : public QDockWidget
   QTableView* setup_timing_table_view_;
   QTableView* hold_timing_table_view_;
   QTableView* path_details_table_view_;
+  QTableView* capture_details_table_view_;
 
   QLineEdit* find_object_edit_;
   QSpinBox* path_index_spin_box_;
@@ -105,9 +106,11 @@ class TimingWidget : public QDockWidget
   TimingPathsModel* setup_timing_paths_model_;
   TimingPathsModel* hold_timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
+  TimingPathDetailModel* capture_details_model_;
   TimingPathRenderer* path_renderer_;
   GuiDBChangeListener* dbchange_listener_;
   QTabWidget* delay_widget_;
+  QTabWidget* detail_widget_;
 
   QTableView* focus_view_;
 };

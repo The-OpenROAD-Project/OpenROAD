@@ -289,8 +289,6 @@ bool TimingPathsModel::populatePaths(bool get_max,
 
   bool first_path = true;
   for (auto& path_end : *path_ends) {
-    sta::PathExpanded* expanded = new sta::PathExpanded(path_end->path(), sta_);
-
     TimingPath* path = new TimingPath();
     sta::DcalcAnalysisPt* dcalc_ap
         = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
@@ -322,8 +320,9 @@ bool TimingPathsModel::populatePaths(bool get_max,
       clockExpanded = true;
     float arrival_prev_stage = 0;
     float arrival_cur_stage = 0;
-    for (size_t i = 0; i < expanded->size(); i++) {
-      auto ref = expanded->path(i);
+    sta::PathExpanded expanded(path_end->path(), sta_);
+    for (size_t i = 0; i < expanded.size(); i++) {
+      auto ref = expanded.path(i);
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
@@ -355,7 +354,7 @@ bool TimingPathsModel::populatePaths(bool get_max,
         pin_object = port;
       arrival_cur_stage = arrival;
 
-      if (ref == expanded->startPath()) {
+      if (ref == expanded.startPath()) {
         path->setPathStartIndex(path->getNodeCount());
       }
 
