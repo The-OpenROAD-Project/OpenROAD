@@ -115,6 +115,7 @@ class TimingPathsModel : public QAbstractTableModel
 struct TimingPathNode
 {
   TimingPathNode(odb::dbObject* pin,
+                 bool is_clock,
                  bool is_rising,
                  float arrival,
                  float required,
@@ -123,6 +124,7 @@ struct TimingPathNode
                  float slew,
                  float load)
       : pin_(pin),
+        is_clock_(is_clock),
         is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
@@ -137,6 +139,7 @@ struct TimingPathNode
   std::string getNetName() const;
 
   odb::dbObject* pin_;
+  bool is_clock_;
   bool is_rising_;
   float arrival_;
   float required_;
@@ -157,8 +160,7 @@ class TimingPath
         slack_(0),
         path_delay_(0),
         arr_time_(0),
-        req_time_(0),
-        path_start_index_(0)
+        req_time_(0)
   {
   }
 
@@ -166,7 +168,6 @@ class TimingPath
 
   void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
 
-//  int levelsCount() const { return path_nodes_.size(); }
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
   void setEndClock(const char* name) { end_clk_ = name; }
@@ -181,11 +182,7 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
-  void setPathStartIndex(int idx) { path_start_index_ = idx; }
-  int getPathStartIndex() const { return path_start_index_; }
-
-//  const TimingPathNode* getNodeAt(int index) const { return path_nodes_[index].get(); }
-  int getNodeCount() const { return path_nodes_.size(); }
+  int getPathStartIndex() const;
 
   TimingNodeList* getPathNodes() { return &path_nodes_; }
   TimingNodeList* getCaptureNodes() { return &capture_nodes_; }
@@ -193,8 +190,8 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
-  void populatePath();
-  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
+  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
+  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path);
 
  private:
   TimingNodeList path_nodes_;
@@ -205,7 +202,9 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
-  int path_start_index_;
+
+  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
+
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
@@ -263,6 +262,7 @@ class TimingPathRenderer : public gui::Renderer
                       const gui::Descriptor* net_descriptor);
   void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
   void highlightNet(odb::dbNet* net,
+                    bool is_clock,
                     odb::dbObject* source_node,
                     odb::dbObject* sink_node,
                     gui::Painter& painter,

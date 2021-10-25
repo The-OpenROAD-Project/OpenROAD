@@ -305,76 +305,11 @@ bool TimingPathsModel::populatePaths(bool get_max,
       clockExpanded = false;
     else
       clockExpanded = true;
-    float arrival_prev_stage = 0;
-    float arrival_cur_stage = 0;
-    sta::PathExpanded expanded(path_end->path(), sta_);
-    for (size_t i = 0; i < expanded.size(); i++) {
-      auto ref = expanded.path(i);
-      auto pin = ref->vertex(sta_)->pin();
-      auto slew = ref->slew(sta_);
-      float cap = 0.0;
-      if (sta_->network()->isDriver(pin)
-          && !(!clockExpanded && (sta_->network()->isCheckClk(pin) || !i))) {
-        sta::Parasitic* parasitic = nullptr;
-        sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
-        if (arc_delay_calc)
-          parasitic = arc_delay_calc->findParasitic(
-              pin, ref->transition(sta_), dcalc_ap);
-        sta::GraphDelayCalc* graph_delay_calc = sta_->graphDelayCalc();
-        cap = graph_delay_calc->loadCap(
-            pin, parasitic, ref->transition(sta_), dcalc_ap);
-      }
 
-      auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
-      auto arrival = ref->arrival(sta_);
-      auto path_ap = ref->pathAnalysisPt(sta_);
-      auto path_required = !first_path ? 0 : ref->required(sta_);
-      if (!path_required || sta::delayInf(path_required)) {
-        auto* vert = sta_->getDbNetwork()->graph()->pinLoadVertex(pin);
-        auto req = sta_->vertexRequired(
-            vert, is_rising ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
-        if (sta::delayInf(req)) {
-          path_required = 0;
-        }
-        path_required = req;
-      }
-      auto slack = !first_path ? path_required - arrival : ref->slack(sta_);
-      odb::dbITerm* term;
-      odb::dbBTerm* port;
-      sta_->getDbNetwork()->staToDb(pin, term, port);
-      odb::dbObject* pin_object = term;
-      if (term == nullptr)
-        pin_object = port;
-      arrival_cur_stage = arrival;
+    path->populatePath(path_end->path(), sta_, dcalc_ap, clockExpanded, first_path);
+    path->populateCapturePath(path_end->targetClkPath(), sta_, dcalc_ap, path_end->targetClkOffset(sta_), clockExpanded, first_path);
 
-      if (ref == expanded.startPath()) {
-        path->setPathStartIndex(path->getNodeCount());
-      }
-
-      if (i == 0)
-        path->appendNode(new TimingPathNode(pin_object,
-                                            is_rising,
-                                            arrival,
-                                            path_required,
-                                            0,
-                                            slack,
-                                            slew,
-                                            cap));
-      else {
-        path->appendNode(new TimingPathNode(pin_object,
-                                            is_rising,
-                                            arrival,
-                                            path_required,
-                                            arrival_cur_stage - arrival_prev_stage,
-                                            slack,
-                                            slew,
-                                            cap));
-        arrival_prev_stage = arrival_cur_stage;
-      }
-      first_path = false;
-    }
-
-    path->populateCapturePath(path_end->targetClkPath(), sta_, dcalc_ap, clockPropagated, first_path);
+    first_path = false;
 
     timing_paths_.push_back(std::unique_ptr<TimingPath>(path));
   }
@@ -385,7 +320,7 @@ bool TimingPathsModel::populatePaths(bool get_max,
 
 /////////
 
-void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path)
+void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list)
 {
   float arrival_prev_stage = 0;
   float arrival_cur_stage = 0;
@@ -430,20 +365,24 @@ void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::Dcal
       pin_object = port;
     arrival_cur_stage = arrival;
 
+    bool pin_is_clock = sta->isClock(pin);
+
     if (i == 0) {
-      capture_nodes_.push_back(std::make_unique<TimingPathNode>(pin_object,
+      list.push_back(std::make_unique<TimingPathNode>(pin_object,
+          pin_is_clock,
           is_rising,
-          arrival,
-          path_required,
+          arrival + offset,
+          path_required + offset,
           0,
           slack,
           slew,
           cap));
     } else {
-      capture_nodes_.push_back(std::make_unique<TimingPathNode>(pin_object,
+      list.push_back(std::make_unique<TimingPathNode>(pin_object,
+          pin_is_clock,
           is_rising,
-          arrival,
-          path_required,
+          arrival + offset,
+          path_required + offset,
           arrival_cur_stage - arrival_prev_stage,
           slack,
           slew,
@@ -454,15 +393,38 @@ void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::Dcal
   }
 }
 
+void TimingPath::populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path)
+{
+  populateNodeList(path, sta, dcalc_ap, 0, clock_expanded, first_path, path_nodes_);
+}
+
+void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path)
+{
+  populateNodeList(path, sta, dcalc_ap, offset, clock_expanded, first_path, capture_nodes_);
+}
+
 std::string TimingPath::getStartStageName() const
 {
-  return path_nodes_[path_start_index_]->getNodeName();
+  return path_nodes_[getPathStartIndex()]->getNodeName();
 }
 
 std::string TimingPath::getEndStageName() const
 {
   return path_nodes_.back()->getNodeName();
 }
+
+int TimingPath::getPathStartIndex() const
+{
+  for (int i = 0; i < path_nodes_.size(); i++) {
+    if (!path_nodes_[i]->is_clock_) {
+      return i;
+    }
+  }
+
+  return path_nodes_.size() - 1;
+}
+
+/////////////
 
 std::string TimingPathNode::getNodeName(bool include_master) const
 {
@@ -718,7 +680,7 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
         net = db_iterm->getNet();
         continue;
       } else if (sink_node) {
-        highlightNet(net, db_iterm /*source*/, sink_node, painter, net_descriptor, clock_color);
+        highlightNet(net, node->is_clock_, db_iterm /*source*/, sink_node, painter, net_descriptor, clock_color);
         sink_node = nullptr;
         net = nullptr;
       }
@@ -732,7 +694,7 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
         net = bterm->getNet();
         continue;
       } else if (sink_node) {
-        highlightNet(net, bterm, sink_node, painter, net_descriptor, clock_color);
+        highlightNet(net, node->is_clock_, bterm, sink_node, painter, net_descriptor, clock_color);
         sink_node = nullptr;
         net = nullptr;
       }
@@ -804,6 +766,7 @@ void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
 }
 
 void TimingPathRenderer::highlightNet(odb::dbNet* net,
+                                      bool is_clock,
                                       odb::dbObject* source_node,
                                       odb::dbObject* sink_node,
                                       gui::Painter& painter,
@@ -814,22 +777,8 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
     return;
   }
 
-  auto isClockTerm = [this](odb::dbObject* node) -> bool {
-    if (node->getObjectType() == odb::dbObjectType::dbBTermObj) {
-      odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node);
-      auto* sta_term = sta_->getDbNetwork()->dbToSta(bterm);
-      return sta_->isClock(sta_term);
-    } else if (node->getObjectType() == odb::dbObjectType::dbITermObj) {
-      odb::dbITerm* iterm = static_cast<odb::dbITerm*>(node);
-      auto* sta_term = sta_->getDbNetwork()->dbToSta(iterm);
-      return sta_->isClock(sta_term);
-    }
-    return false;
-  };
+  gui::Painter::Color wire_color = is_clock ? clock_color : TimingPathRenderer::signal_color_;
 
-  gui::Painter::Color wire_color = isClockTerm(source_node) || isClockTerm(sink_node)
-                                       ? clock_color
-                                       : TimingPathRenderer::signal_color_;
   painter.setPen(wire_color, true);
   painter.setBrush(wire_color);
   net_descriptor->highlight(net, painter, sink_node);

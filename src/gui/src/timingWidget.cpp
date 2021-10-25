@@ -323,17 +323,25 @@ void TimingWidget::findNodeInPathDetails()
 {
   auto search_node = find_object_edit_->text();
   QSortFilterProxyModel proxy;
-  proxy.setSourceModel(path_details_model_);
+
+  TimingPathDetailModel* model = path_details_model_;
+  QTableView* view = path_details_table_view_;
+  if (detail_widget_->currentWidget() == capture_details_table_view_) {
+    model = capture_details_model_;
+    view = capture_details_table_view_;
+  }
+
+  proxy.setSourceModel(model);
   proxy.setFilterKeyColumn(0);
   proxy.setFilterFixedString(search_node);
   QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
   if (match_index.isValid()) {
     const int row = match_index.row();
-    if (path_details_table_view_->isRowHidden(row)) {
+    if (view->isRowHidden(row)) {
       // row found is hidden, so unhide clock rows
       expand_clk_->setCheckState(Qt::Checked);
     }
-    path_details_table_view_->selectRow(row);
+    view->selectRow(row);
   } else {
     QMessageBox::information(
         this, "Node Search: ", search_node + " Match not found!");
