@@ -248,6 +248,11 @@ int Gui::selectPrevious()
   return main_window->getInspector()->selectPrevious();
 }
 
+void Gui::animateSelection(int repeat)
+{
+  main_window->getLayoutViewer()->selectionAnimation(repeat);
+}
+
 std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
 {
   return main_window->addRuler(x0, y0, x1, y1, label, name);
@@ -673,21 +678,13 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 }
 
 void Selected::highlight(Painter& painter,
-                         bool select_flag,
-                         int highlight_group) const
+                         const Painter::Color& pen,
+                         int pen_width,
+                         const Painter::Color& brush,
+                         const Painter::Brush& brush_style) const
 {
-  if (select_flag) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else if (highlight_group >= 0 && highlight_group < 7) {
-    auto highlight_color = Painter::highlightColors[highlight_group];
-    highlight_color.a = 100;
-    painter.setPen(highlight_color, true);
-    painter.setBrush(highlight_color);
-  } else {
-    painter.setPen(Painter::persistHighlight);
-    painter.setBrush(Painter::transparent);
-  }
+  painter.setPen(pen, true, pen_width);
+  painter.setBrush(brush, brush_style);
 
   return descriptor_->highlight(object_, painter, additional_data_);
 }
