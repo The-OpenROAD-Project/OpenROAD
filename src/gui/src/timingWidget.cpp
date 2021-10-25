@@ -127,11 +127,6 @@ TimingWidget::TimingWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(path_details_table_view_,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(highlightPathStage(const QModelIndex&)));
-
   connect(find_object_edit_,
           SIGNAL(returnPressed()),
           this,
@@ -209,6 +204,12 @@ void TimingWidget::init(sta::dbSta* sta)
       this,
       SLOT(selectedDetailRowChanged(const QItemSelection&,
                                     const QItemSelection&)));
+  connect(
+      capture_details_table_view_->selectionModel(),
+      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+      this,
+      SLOT(selectedCaptureRowChanged(const QItemSelection&,
+                                     const QItemSelection&)));
 }
 
 void TimingWidget::readSettings(QSettings* settings)
@@ -243,7 +244,9 @@ void TimingWidget::clearPathDetails()
 {
   focus_view_ = nullptr;
 
-  path_details_model_->populateModel(nullptr);
+  path_details_model_->populateModel(nullptr, nullptr);
+  capture_details_model_->populateModel(nullptr, nullptr);
+
   path_renderer_->highlight(nullptr);
   emit highlightTimingPath(nullptr);
 }
@@ -265,9 +268,14 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
 
   auto* path = focus_model->getPathAt(index.row());
 
-  path_details_model_->populateModel(path);
+  path_details_model_->populateModel(path, path->getPathNodes());
+  capture_details_model_->populateModel(path, path->getCaptureNodes());
+
   path_details_table_view_->resizeColumnsToContents();
   path_details_table_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+  capture_details_table_view_->resizeColumnsToContents();
+  capture_details_table_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
 
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
@@ -288,7 +296,7 @@ void TimingWidget::updateClockRows()
     return;
   }
 
-  const int path_start_index = path_details_model_->getPath()->getPathStartIndex();
+  const int path_start_index = path_details_model_->getPath()->getPathStartIndex() - 1; // include clock pin
   const bool show = expand_clk_->checkState() == Qt::Checked;
 
   for (int row = 0; row < path_start_index; row++) {
@@ -300,12 +308,14 @@ void TimingWidget::updateClockRows()
   }
 }
 
-void TimingWidget::highlightPathStage(const QModelIndex& index)
+void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index)
 {
   if (!index.isValid()) {
     return;
   }
-  path_renderer_->highlightNode(index.row());
+  auto* nodes = model->getNodes();
+  auto* node = nodes->at(index.row()).get();
+  path_renderer_->highlightNode(node, nodes);
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
@@ -324,7 +334,6 @@ void TimingWidget::findNodeInPathDetails()
       expand_clk_->setCheckState(Qt::Checked);
     }
     path_details_table_view_->selectRow(row);
-    highlightPathStage(match_index);
   } else {
     QMessageBox::information(
         this, "Node Search: ", search_node + " Match not found!");
@@ -379,10 +388,23 @@ void TimingWidget::selectedDetailRowChanged(
     const QItemSelection& deselected_row)
 {
   auto sel_indices = selected_row.indexes();
-  if (sel_indices.isEmpty())
+  if (sel_indices.isEmpty()) {
     return;
+  }
   auto top_sel_index = sel_indices.first();
-  highlightPathStage(top_sel_index);
+  highlightPathStage(path_details_model_, top_sel_index);
+}
+
+void TimingWidget::selectedCaptureRowChanged(
+    const QItemSelection& selected_row,
+    const QItemSelection& deselected_row)
+{
+  auto sel_indices = selected_row.indexes();
+  if (sel_indices.isEmpty()) {
+    return;
+  }
+  auto top_sel_index = sel_indices.first();
+  highlightPathStage(capture_details_model_, top_sel_index);
 }
 
 void TimingWidget::copy()
@@ -416,7 +438,8 @@ void TimingWidget::copy()
 void TimingWidget::handleDbChange(QString change_type,
                                   std::vector<odb::dbObject*> objects)
 {
-  path_details_model_->populateModel(nullptr);
+  path_details_model_->populateModel(nullptr, nullptr);
+  capture_details_model_->populateModel(nullptr, nullptr);
 
   setup_timing_paths_model_->resetModel();
   hold_timing_paths_model_->resetModel();

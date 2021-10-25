@@ -66,7 +66,7 @@ class TimingWidget : public QDockWidget
  public slots:
   void showPathDetails(const QModelIndex& index);
   void clearPathDetails();
-  void highlightPathStage(const QModelIndex& index);
+  void highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index);
   void findNodeInPathDetails();
 
   void toggleRenderer(bool enable);
@@ -79,6 +79,8 @@ class TimingWidget : public QDockWidget
                           const QItemSelection& curr_index);
   void selectedDetailRowChanged(const QItemSelection& prev_index,
                                 const QItemSelection& curr_index);
+  void selectedCaptureRowChanged(const QItemSelection& prev_index,
+                                 const QItemSelection& curr_index);
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
