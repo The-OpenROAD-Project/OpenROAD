@@ -104,15 +104,15 @@ class drPathSeg : public drShape
   }
   drPathSeg(const frPathSeg& in);
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
 
-  const frPoint& getBeginPoint() const { return begin_; }
+  const Point& getBeginPoint() const { return begin_; }
 
-  const frPoint& getEndPoint() const { return end_; }
+  const Point& getEndPoint() const { return end_; }
 
   void getStyle(frSegStyle& styleIn) const
   {
@@ -121,10 +121,10 @@ class drPathSeg : public drShape
     styleIn.setWidth(style_.getWidth());
   }
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {
@@ -239,8 +239,8 @@ class drPathSeg : public drShape
   void setTapered(bool t) { isTapered_ = t; }
 
  protected:
-  frPoint begin_;  // begin always smaller than end, assumed
-  frPoint end_;
+  Point begin_;  // begin always smaller than end, assumed
+  Point end_;
   frLayerNum layer_;
   frSegStyle style_;
   drBlockObject* owner_;
@@ -327,12 +327,12 @@ class drPatchWire : public drShape
   void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
   void setOffsetBox(const frBox& boxIn) { offsetBox_.set(boxIn); }
 
-  void getOrigin(frPoint& in) const { in.set(origin_); }
-  void setOrigin(const frPoint& in) { origin_.set(in); }
+  void getOrigin(Point& in) const { in = origin_; }
+  void setOrigin(const Point& in) { origin_ = in; }
 
  protected:
   frBox offsetBox_;
-  frPoint origin_;
+  Point origin_;
   frLayerNum layer_;
   drBlockObject* owner_;
 };

@@ -103,11 +103,11 @@ frBlock* Fixture::makeMacro(const char* name,
   auto block = make_unique<frBlock>(name);
   vector<frBoundary> bounds;
   frBoundary bound;
-  vector<frPoint> points;
-  points.push_back(frPoint(originX, originY));
-  points.push_back(frPoint(sizeX, originY));
-  points.push_back(frPoint(sizeX, sizeY));
-  points.push_back(frPoint(originX, sizeY));
+  vector<Point> points;
+  points.push_back(Point(originX, originY));
+  points.push_back(Point(sizeX, originY));
+  points.push_back(Point(sizeX, sizeY));
+  points.push_back(Point(originX, sizeY));
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
@@ -182,7 +182,7 @@ frInst* Fixture::makeInst(const char* name,
   auto uInst = make_unique<frInst>(name, refBlock);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
-  tmpInst->setOrigin(frPoint(x, y));
+  tmpInst->setOrigin(Point(x, y));
   tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
     auto term = uTerm.get();
@@ -530,8 +530,8 @@ frNet* Fixture::makeNet(const char* name)
 
 frViaDef* Fixture::makeViaDef(const char* name,
                               frLayerNum layer_num,
-                              const frPoint& ll,
-                              const frPoint& ur)
+                              const Point& ll,
+                              const Point& ur)
 {
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
@@ -557,7 +557,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
   return via;
 }
 
-frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const frPoint& origin)
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
 {
   auto via_p = make_unique<frVia>(viaDef);
   via_p->setOrigin(origin);
@@ -569,8 +569,8 @@ frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const frPoint& origin)
 
 void Fixture::makePathseg(frNet* net,
                           frLayerNum layer_num,
-                          const frPoint& begin,
-                          const frPoint& end,
+                          const Point& begin,
+                          const Point& end,
                           frUInt4 width,
                           frEndStyleEnum begin_style,
                           frEndStyleEnum end_style)

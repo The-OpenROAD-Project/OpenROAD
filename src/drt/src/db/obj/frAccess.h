@@ -42,7 +42,7 @@ class frAccessPoint : public frBlockObject
 {
  public:
   // constructors
-  frAccessPoint(const frPoint& point, frLayerNum layerNum)
+  frAccessPoint(const Point& point, frLayerNum layerNum)
       : frBlockObject(),
         point_(point),
         layerNum_(layerNum),
@@ -54,8 +54,8 @@ class frAccessPoint : public frBlockObject
   {
   }
   // getters
-  void getPoint(frPoint& in) const { in.set(point_); }
-  const frPoint& getPoint() const { return point_; }
+  void getPoint(Point& in) const { in = point_; }
+  const Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
   bool hasAccess() const
   {
@@ -134,7 +134,7 @@ class frAccessPoint : public frBlockObject
     }
   }
   // setters
-  void setPoint(const frPoint& in) { point_.set(in); }
+  void setPoint(const Point& in) { point_ = in; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
   {
     switch (dir) {
@@ -176,7 +176,7 @@ class frAccessPoint : public frBlockObject
   frCoord y() const { return point_.y(); }
 
  private:
-  frPoint point_;
+  Point point_;
   frLayerNum layerNum_;
   std::vector<bool> accesses_;  // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   std::vector<std::vector<frViaDef*>>

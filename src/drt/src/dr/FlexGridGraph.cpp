@@ -411,7 +411,7 @@ void FlexGridGraph::print() const
            << zDim << ")\n";
     }
 
-    frPoint p;
+    Point p;
     for (frMIdx xIdx = 0; xIdx < xDim; ++xIdx) {
       for (frMIdx yIdx = 0; yIdx < yDim; ++yIdx) {
         for (frMIdx zIdx = 0; zIdx < zDim; ++zIdx) {
