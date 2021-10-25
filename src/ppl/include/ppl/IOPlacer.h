@@ -160,7 +160,13 @@ class IOPlacer
                              int llx, int lly, int urx, int ury,
                              int width, int height, int keepout);
   int getTopLayer() { return top_grid_.layer; }
-  void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
+  void placePin(odb::dbBTerm* bterm,
+                int layer,
+                int x,
+                int y,
+                int width,
+                int height,
+                bool force_to_die_bound);
 
  private:
   Netlist netlist_;

@@ -1174,7 +1174,13 @@ void IOPlacer::run(bool random_mode)
   clear();
 }
 
-void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height)
+void IOPlacer::placePin(odb::dbBTerm* bterm,
+                        int layer,
+                        int x,
+                        int y,
+                        int width,
+                        int height,
+                        bool force_to_die_bound)
 {
   tech_ = db_->getTech();
   block_ = db_->getChip()->getBlock();
@@ -1189,15 +1195,15 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
 
   odb::Point pos = odb::Point(x, y);
 
-  movePinToTrack(pos, layer, width, height);
+  if (force_to_die_bound) {
+    movePinToTrack(pos, layer, width, height);
+  }
 
   odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
   odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
 
   IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
   io_pin.setLayer(layer);
-
-  logger_->report("Pin {} pos: ({}, {})", io_pin.getName(), ((float)pos.x() / tech_->getLefUnits()), ((float)pos.y() / tech_->getLefUnits()));
 
   commitIOPinToDB(io_pin);
 
