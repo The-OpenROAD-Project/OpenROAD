@@ -3331,6 +3331,10 @@ class extListWire {
       uint _level;
       uint _topLevel;
       int DB_FACTOR;
+      extListWire *_left;
+      extListWire *_right;
+
+
   void set(int shapeId, dbShape& s, int units);
   extListWire(int shapeId, dbShape &s, int units);
   extListWire();
@@ -3481,11 +3485,15 @@ private:
   extCapNodeHash* _nodeMap;
   Ath__array1D<extListWire*>** _rects;
   Ath__array1D<extListWire*>** _vias;
+  Ath__array1D<extListWire*>** _rects_bin;
+  Ath__array1D<extListWire*>** _vias_bin;
   uint _levelCnt;
   Ath__array1D<extListWire*>* _shapes;
   HashNode *_hashNodeRC;
   bool _debugAlloc;
   AthPool<extListWire>* _listWirePoolPtr;
+  bool _useBinaryArrays;
+  uint _DIR[32];
 
  public:
   bool _debug;
@@ -3494,6 +3502,9 @@ private:
   void setNet(odb::dbNet *net) {_net=net; };
   extListWire* alloc();
   void dealloc(extListWire *a);
+  void allocBinaryArrays();
+  void makeBinaryArrays();
+  void resetRects_bin();
 
   // extDebugConn
   FILE* OpenConnFile(const char* name);
@@ -3516,6 +3527,8 @@ private:
   void printITermNode(uint node);
   uint CheckConnectivity(bool verbose);  
   // -------------------------------------
+  extListWire* getBinaryTreeX(Ath__array1D<extListWire*> *rects);
+  bool getBinaryArray(Ath__array1D<extListWire*> *rects, Ath__array1D<extListWire*> *binary_rects,  bool horizontal);
   void getRects();
   void printRects(bool dbFactor, Ath__array1D<extListWire*>** _rects);
   void printViasWires(const char *header);
@@ -3523,6 +3536,7 @@ private:
   void termsViasWiresWires();
   void vias2vias2wires2terms2wires();
   void intersectRect2Rect(uint &nodeCnt);
+  void intersectRect2Rect_binary(uint &nodeCnt);
   void intersectRect2Rect_open(uint &nodeCnt);
   void intersectVias(uint &nodeCnt);
   void intersectRects_bottom(uint &nodeCnt);
@@ -3532,6 +3546,7 @@ private:
   bool connectIterm(dbITerm *iterm, uint level);
   bool intersectRect(dbBTerm *b, dbShape &s, bool openEndedWires);
   bool intersectRect(dbITerm *b, dbShape &s, bool openEndedWires);
+  bool intersectRect_brute_force(dbITerm *b, dbShape &s, bool openEndedWires);
   uint netStats(FILE *fp, const char *prefix);
   void resetNodes();
   void makeRsegs(Ath__array1D<extListWire*>* rects);

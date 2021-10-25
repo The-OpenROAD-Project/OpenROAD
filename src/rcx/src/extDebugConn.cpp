@@ -91,7 +91,198 @@ extDebugNet::extDebugNet(dbNet* net, dbBlock* block, bool debugAlloc)
   _listWirePoolPtr= new AthPool<extListWire>(false, 4096);
 
   _debugAlloc= debugAlloc;
+  _useBinaryArrays= true;
+
+  allocBinaryArrays();
 }
+void extDebugNet::allocBinaryArrays()
+{
+  _rects_bin = new Ath__array1D<extListWire*>*[_levelCnt];
+  _vias_bin = new Ath__array1D<extListWire*>*[_levelCnt];
+  for (int ii = 0; ii < _levelCnt; ii++) {
+    _rects_bin[ii] = new Ath__array1D<extListWire*>(8);
+    _vias_bin[ii] = new Ath__array1D<extListWire*>(8);
+  }
+  dbSet<dbTechLayer> layers = _block->getDataBase()->getTech()->getLayers();
+  odb::dbSet<odb::dbTechLayer>::iterator litr;
+  odb::dbTechLayer* layer;
+  for (litr = layers.begin(); litr != layers.end(); ++litr) {
+    layer = *litr;
+    if (layer->getRoutingLevel() == 0)
+      continue;
+
+    uint level = layer->getRoutingLevel();
+    uint pp = layer->getPitch();
+    uint minWidth = layer->getWidth();
+
+    _DIR[level]= layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  }
+}
+void extDebugNet::makeBinaryArrays()
+{
+  for (int ii = 1; ii < _levelCnt; ii++) {
+     getBinaryArray(_rects[ii], _rects_bin[ii], _DIR[ii]==0);
+     getBinaryArray(_vias[ii], _vias_bin[ii], _DIR[ii]==0);
+  }
+}
+// ------------------------------------ Binary Trees --------------------------
+extListWire* findX(extListWire* node, Rect &w1, bool zero_src_check) 
+{
+    if (node == NULL)
+      return NULL;
+    // 2. Otherwise, recur down the tree
+    Rect r1 = *node->_rect;
+    
+    if (!(zero_src_check && (node->_src != 0))) {
+      if (r1.overlaps(w1)) {
+        return node;
+      }
+    }
+    if (w1.low().getX() <= r1.low().getX())
+      return findX(node->_left, w1, zero_src_check);
+    else 
+      return findX(node->_right, w1, zero_src_check);
+}
+extListWire* insertX(extListWire* node, extListWire* w) 
+{
+    if (node == NULL)
+      return w;
+    // 2. Otherwise, recur down the tree
+    Rect r1 = *node->_rect;
+    Rect w1 = *w->_rect;
+    if (w1.low().getX() <= r1.low().getX())
+      node->_left = insertX(node->_left, w);
+    else 
+      node->_right = insertX(node->_right, w);
+
+    return node; // return the (unchanged) node pointer
+}
+extListWire* insertY(extListWire* node, extListWire* w) 
+{
+    if (node == NULL)
+      return w;
+    // 2. Otherwise, recur down the tree
+    Rect r1 = *node->_rect;
+    Rect w1 = *w->_rect;
+    if (w1.low().getY() <= r1.low().getY())
+      node->_left = insertY(node->_left, w);
+    else 
+      node->_right = insertY(node->_right, w);
+
+    return node; // return the (unchanged) node pointer
+}
+void storeBSTNodes(extListWire* root, std::vector<extListWire*> &nodes)
+{
+    // Base case
+    if (root==NULL)
+        return;
+ 
+    // Store nodes in Inorder (which is sorted
+    // order for BST)
+    storeBSTNodes(root->_left, nodes);
+    nodes.push_back(root);
+    storeBSTNodes(root->_right, nodes);
+}
+extListWire* buildTreeUtil( std::vector<extListWire*> &nodes, int start, int end)
+{
+    // base case
+    if (start > end)
+        return NULL;
+ 
+    /* Get the middle element and make it root */
+    int mid = (start + end)/2;
+    extListWire *root = nodes[mid];
+
+    /* Using index in Inorder traversal, construct
+       left and right subtress */
+    root->_left  = buildTreeUtil(nodes, start, mid-1);
+    root->_right = buildTreeUtil(nodes, mid+1, end);
+ 
+    return root;
+}
+extListWire* buildTree(extListWire* root)
+{
+    // Store nodes of given BST in sorted order
+    std::vector<extListWire*> nodes;
+    storeBSTNodes(root, nodes);
+ 
+    // Constructs BST from nodes[]
+    int n = nodes.size();
+    return buildTreeUtil(nodes, 0, n-1);
+}
+extListWire* getBinaryArray(extListWire* root)
+{
+    // Store nodes of given BST in sorted order
+    std::vector<extListWire*> nodes;
+    storeBSTNodes(root, nodes);
+ 
+    // Constructs BST from nodes[]
+    int n = nodes.size();
+    return buildTreeUtil(nodes, 0, n-1);
+}
+extListWire* extDebugNet::getBinaryTreeX(Ath__array1D<extListWire*> *rects)
+{
+  uint n= rects->getCnt();
+
+  if (n==0)
+    return NULL;
+  for (uint ii=0; ii<n; ii++) {
+      extListWire* f=rects->get(ii);
+      f->_right= NULL;
+      f->_left= NULL;
+  }
+  extListWire* first=rects->get(0);
+  if (n==1)
+    return first;
+  if (n==2)
+    insertX(first, rects->get(1));
+  else {
+    for (uint ii=1; ii<n; ii++)
+      insertX(first, rects->get(ii));
+  }
+  
+  // return first;
+  if (n<=2)
+    return first;
+  extListWire* bstRoot= buildTree(first);
+  return bstRoot;
+}
+bool extDebugNet::getBinaryArray(Ath__array1D<extListWire*> *rects, Ath__array1D<extListWire*> *binary_rects, bool horizontal)
+{
+  uint n= rects->getCnt();
+  if (n==0)
+    return false;
+  
+  if (n<=3) {
+    for (uint ii=0; ii<n; ii++) 
+      binary_rects->add(rects->get(ii));
+    return false;
+  }
+  for (uint ii=0; ii<n; ii++) {
+      extListWire* f=rects->get(ii);
+      f->_right= NULL;
+      f->_left= NULL;
+  }
+  extListWire* first=rects->get(0);
+  // horizontal= true;
+  if (horizontal) {
+    for (uint ii=1; ii<n; ii++)
+        insertX(first, rects->get(ii));
+  } else {
+    for (uint ii=1; ii<n; ii++)
+        insertY(first, rects->get(ii));
+  }
+  
+  std::vector<extListWire*> nodes;
+  storeBSTNodes(first, nodes);
+  for (uint ii=0; ii<n; ii++) 
+      binary_rects->add(nodes[ii]);
+
+  return binary_rects;
+}
+
+
+// ------------------------------------ Binary Tress --------------------------
 bool extDebugNet::writeCapNode(uint capNodeId)
 {
   odb::dbCapNode* capNode = odb::dbCapNode::getCapNode(_block, capNodeId);
@@ -288,7 +479,9 @@ void extDebugNet::getRects()
   printViasWires(
       "\n------------------------------ Wires and Vias "
       "------------------------------\n");
-  // vias2vias2wires2terms2wires();
+  if (_useBinaryArrays)
+    makeBinaryArrays();
+
   termsViasWiresWires();
 }
 void extDebugNet::vias2vias2wires2terms2wires()
@@ -333,13 +526,13 @@ void extDebugNet::termsViasWiresWires()
 
   intersectRects_top(nodeCnt);
   intersectRects_bottom(nodeCnt);
-  printViasWires(
-      "\n------------------------------ Net Connectivity after Vias/Wires "
-      "------------------------------\n");
-  intersectRect2Rect(nodeCnt);
-  printViasWires(
-      "\n------------------------------ Net Connectivity after wire to wire "
-      "------------------------------\n");
+  printViasWires("\n-------- Net Connectivity after Vias/Wires ------------\n");
+  
+  if (_useBinaryArrays)
+    intersectRect2Rect_binary(nodeCnt);
+  else 
+    intersectRect2Rect(nodeCnt);
+  printViasWires("\n------ Net Connectivity after wire to wire ------------\n");
   intersectRect2Rect_open(nodeCnt);
   printViasWires(
       "\n------------------------------ Net Connectivity after wire to wire "
@@ -353,12 +546,7 @@ bool extDebugNet::connectIterms(uint options)
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     dbITerm* iterm = *iterm_itr;
     if (_debug) {
-      fprintf(_connFP,
-              "connectIterms: %s %s \n",
-              iterm->getMTerm()->getConstName(),
-              iterm->getInst()->getConstName());
-      fprintf(stdout,
-              "connectIterms: %s %s \n",
+      fprintf(_connFP, "connectIterms: %s %s \n",
               iterm->getMTerm()->getConstName(),
               iterm->getInst()->getConstName());
     }
@@ -481,8 +669,6 @@ bool extListWire::overlapItermShape_via(int id, Rect pinRect, bool bottom)
 {
   // Assumption: bottom via layer connecting with iterm layer so bottom NOT used
   Rect r2 = *_rect;  // this is via
-  // Point loCoord= r2.low();
-  // Point hiCoord= r2.high();
   bool overlap = r2.overlaps(pinRect);
   if (overlap) {
     if (_src == 0) {
@@ -546,8 +732,60 @@ bool extListWire::overlapItermShape(int id, Rect pinRect)
   }
   return true;
 }
+
 bool extDebugNet::intersectRect(dbITerm* b, dbShape& s, bool openEndedWires)
 {
+  bool found = false;
+  Rect pinRect;
+  s.getBox(pinRect);
+  uint level = s.getTechLayer()->getRoutingLevel();
+  
+  Ath__array1D<extListWire*> *vias= _useBinaryArrays ? _vias_bin[level] : _vias[level];
+  for (uint kk = 0; kk < vias->getCnt(); kk++) {
+    extListWire* t = vias->get(kk);
+    if (t->_src != 0)
+      continue;  // TODO: Assume bottom layer connecetion with iterm shape
+    
+    if (_debug) {
+      t->printRect(_connFP, true);
+      t->printRect(stdout, true);
+    }
+    // if (t->overlapItermShape(b->getId(), pinRect)) {
+    if (t->overlapItermShape_via(b->getId(), pinRect, level == t->level())) {
+      fprintf(_connFP, "\nIterm Wire Conn ------------------------------\n");
+      printRect(pinRect, b->getId(), "iTERM", level, 0, true);
+      t->printRect(_connFP, true);
+      found = true;
+      break;
+    }
+  }
+  if (found)
+    return true;
+  
+  Ath__array1D<extListWire*> *rects= _useBinaryArrays ? _rects_bin[level] : _rects[level];
+  for (uint kk = 0; kk < rects->getCnt(); kk++) {
+    extListWire* t = rects->get(kk);
+    if (_debug) {
+      fprintf(_connFP, "WIRE: ");
+      t->printRect(_connFP, true);
+    }
+    if (openEndedWires && (t->_src == 0 || t->_dst == 0)) {
+      if (t->overlapItermShape(b->getId(), pinRect)) {
+        fprintf(_connFP, "\nIterm Wire Conn ------------------------------\n");
+        printRect(pinRect, b->getId(), "I TERM", level, 0, true);
+        t->printRect(_connFP, true);
+        found = true;
+        break;
+      }
+      continue;
+    }
+  }
+  return found;
+}
+
+bool extDebugNet::intersectRect_brute_force(dbITerm* b, dbShape& s, bool openEndedWires)
+{
+  // DF: 1024 WORKS!!! original routine tested many times
   bool found = false;
   Rect pinRect;
   s.getBox(pinRect);
@@ -838,14 +1076,13 @@ void extDebugNet::intersectVias(uint& nodeCnt)
     for (uint ii = 0; ii < cnt; ii++) {
       extListWire* v = _vias[bot]->get(ii);
       uint top = v->_topLevel;
-      for (uint kk = 0; kk < _vias[top]->getCnt(); kk++) {
-        extListWire* t = _vias[top]->get(kk);
-        // if (v->overlapVias(t, nodeCnt)) {
+
+      Ath__array1D<extListWire*> *vias= _useBinaryArrays ? _vias_bin[top] : _vias[top];
+      for (uint kk = 0; kk < vias->getCnt(); kk++) {
+        extListWire* t = vias->get(kk);
         if (v->overlapVias2(t, nodeCnt)) {
           if (_debug) {
-            fprintf(
-                _connFP,
-                "\n------------Stacked Vias ------------------------------\n");
+            fprintf(_connFP, "\n------------Stacked Vias ------------------------------\n");
             v->printRect(_connFP, true);
             t->printRect(_connFP, true);
           }
@@ -862,9 +1099,11 @@ void extDebugNet::intersectRects_top(uint& nodeCnt)
     for (uint ii = 0; ii < cnt; ii++) {
       extListWire* v = _vias[bot]->get(ii);
       uint top = v->_topLevel;
-      for (uint kk = 0; kk < _rects[top]->getCnt(); kk++) {
-        extListWire* t = _rects[top]->get(kk);
-        // if (v->overlapWires(t, true, nodeCnt)) {
+
+      Ath__array1D<extListWire*> *rects= _useBinaryArrays ? _rects_bin[top] : _rects[top];
+      for (uint kk = 0; kk < rects->getCnt(); kk++) {
+        extListWire* t = rects->get(kk);
+     
         if (v->overlapVia2Wire(t, true, nodeCnt)) {
           if (_debug) {
             fprintf(
@@ -885,9 +1124,11 @@ void extDebugNet::intersectRects_bottom(uint& nodeCnt)
     int cnt = _vias[bot]->getCnt();
     for (uint ii = 0; ii < cnt; ii++) {
       extListWire* v = _vias[bot]->get(ii);
-      for (uint kk = 0; kk < _rects[bot]->getCnt(); kk++) {
-        extListWire* t = _rects[bot]->get(kk);
-        // if (v->overlapWires(t, false, nodeCnt)) {
+
+      Ath__array1D<extListWire*> *rects= _useBinaryArrays ? _rects_bin[bot] : _rects[bot];
+      for (uint kk = 0; kk < rects->getCnt(); kk++) {
+        extListWire* t = rects->get(kk);
+      
         if (v->overlapVia2Wire(t, false, nodeCnt)) {
           if (_debug) {
             fprintf(_connFP,
@@ -897,6 +1138,40 @@ void extDebugNet::intersectRects_bottom(uint& nodeCnt)
             t->printRect(_connFP, true);
           }
         }
+      }
+    }
+  }
+}
+void extDebugNet::intersectRect2Rect_binary(uint& nodeCnt)
+{
+  // TODO: optimize loop for only unconnected rects and sort by x or y
+  
+  for (uint bot = 1; bot < _levelCnt; bot++) {
+    int cnt = _rects[bot]->getCnt();
+    if (cnt==0)
+      continue;
+    Ath__array1D<extListWire*> *rects= _useBinaryArrays ? _rects_bin[bot] : _rects[bot];
+    for (int ii = 0; ii < cnt; ii++) {
+      extListWire* v = _rects[bot]->get(ii);
+      if (v->_src != 0 && v->_dst != 0)
+        continue;
+      bool found = true;
+      for (uint kk = 0; kk < cnt; kk++) {
+        extListWire* t = rects->get(kk);
+        if (t->_src != 0 && t->_dst != 0)
+          continue;
+        if (v == t)
+          continue;
+
+        if (v->connectSquareWires(t, nodeCnt)) {
+          found = true;
+          break;
+        }
+      }
+      if (_debug) {
+        fprintf(_connFP, "\n------------ Rect Disconnected ------------------------------\n");
+        v->printRect(stdout, true);
+        v->printRect(_connFP, true);
       }
     }
   }
@@ -934,31 +1209,31 @@ void extDebugNet::intersectRect2Rect(uint& nodeCnt)
 }
 void extDebugNet::intersectRect2Rect_open(uint& nodeCnt)
 {
-  // TODO: optimize loop for only unconnected rects and sort by x or y
+  // TODO: optimize loop for only unconnected rects lowand sort by x or y
   for (uint bot = 1; bot < _levelCnt; bot++) {
     int cnt = _rects[bot]->getCnt();
+    if (cnt==0)
+      continue;
     for (int ii = 0; ii < cnt; ii++) {
       extListWire* v = _rects[bot]->get(ii);
       if (v->_src != 0 && v->_dst != 0)
         continue;
       bool found = true;
+      Ath__array1D<extListWire*> *rects= _useBinaryArrays ? _rects_bin[bot] : _rects[bot];
       for (uint kk = 0; kk < cnt; kk++) {
-        extListWire* t = _rects[bot]->get(kk);
+        extListWire* t = rects->get(kk);
         if (v == t)
           continue;
         // if (t->_src != 0 && t->_dst !=0)
         // continue;
 
-        // if (v->connectWires(t, nodeCnt)) {
         if (v->connectSquareWires(t, nodeCnt)) {
           found = true;
           break;
         }
       }
       if (_debug) {
-        fprintf(_connFP,
-                "\n------------ Rect Disconnected "
-                "------------------------------\n");
+        fprintf(_connFP, "\n---------- Rect Disconnected --------\n");
         v->printRect(stdout, true);
         v->printRect(_connFP, true);
       }
@@ -1425,6 +1700,7 @@ void extListWire::printRect(FILE* _connFP, bool dbFactor)
             term);
   }
 }
+
 extListWire::extListWire()
 {
 }
@@ -1444,6 +1720,8 @@ void extListWire::set(int shapeId, dbShape& s, int units)
   _dst = 0;
   _level = 0;
   _topLevel = 0;
+  _left= NULL;
+  _right= NULL;
 
   if (s.isVia()) {
     uint width = 0;
@@ -1518,6 +1796,14 @@ void extDebugNet::resetRects()
   }
   _shapes->resetCnt();
   resetNodes();
+  resetRects_bin();
+}
+void extDebugNet::resetRects_bin()
+{
+  for (uint ii = 0; ii < _levelCnt; ii++) {
+    _rects_bin[ii]->resetCnt();
+    _vias_bin[ii]->resetCnt();
+  }
 }
 uint extDebugNet::debugNet(dbNet* net, uint debug_net_id, const char* name)
 {
