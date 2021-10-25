@@ -313,7 +313,7 @@ bool TimingPathsModel::populatePaths(bool get_max,
 
     first_path = false;
 
-    path->computePathStartIndex();
+    path->computeClkEndIndex();
 
     timing_paths_.push_back(std::unique_ptr<TimingPath>(path));
   }
@@ -409,7 +409,7 @@ void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::Dcal
 
 std::string TimingPath::getStartStageName() const
 {
-  const int start_idx = getPathStartIndex();
+  const int start_idx = getClkPathEndIndex() + 1;
   if (start_idx >= path_nodes_.size()) {
     return path_nodes_[0]->getNodeName();
   }
@@ -421,16 +421,22 @@ std::string TimingPath::getEndStageName() const
   return path_nodes_.back()->getNodeName();
 }
 
-void TimingPath::computePathStartIndex()
+void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
 {
-  for (int i = 0; i < path_nodes_.size(); i++) {
-    if (!path_nodes_[i]->is_clock_) {
-      path_start_index_ = i;
+  for (int i = 0; i < nodes.size(); i++) {
+    if (!nodes[i]->is_clock_) {
+      index = i - 1;
       return;
     }
   }
 
-  path_start_index_ = path_nodes_.size();
+  index = nodes.size() - 1; // assume last index is the end of the clock path
+}
+
+void TimingPath::computeClkEndIndex()
+{
+  computeClkEndIndex(path_nodes_, clk_path_end_index_);
+  computeClkEndIndex(capture_nodes_, clk_capture_end_index_);
 }
 
 /////////////
@@ -461,9 +467,10 @@ std::string TimingPathNode::getNetName() const
 
 /////////
 
-TimingPathDetailModel::TimingPathDetailModel(sta::dbSta* sta)
+TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta)
   : QAbstractTableModel(),
     sta_(sta),
+    is_capture_(is_capture),
     path_(nullptr),
     nodes_(nullptr)
 {
@@ -512,19 +519,16 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     }
   }
 
-  if (!index.isValid() || role != Qt::DisplayRole || path_ == nullptr) {
+  if (!index.isValid() || role != Qt::DisplayRole || path_ == nullptr || nodes_ == nullptr) {
     return QVariant();
   }
 
   const auto time_units = sta_->search()->units()->timeUnit();
 
   if (index.row() == clock_summary_row_) {
-    int start_idx = path_->getPathStartIndex() - 1;
+    int start_idx = getClockEndIndex();
     if (start_idx < 0) {
       start_idx = 0;
-    }
-    if (start_idx >= nodes_->size()) {
-      start_idx = nodes_->size() - 1;
     }
     const auto& node = nodes_->at(start_idx);
 
@@ -566,7 +570,7 @@ bool TimingPathDetailModel::shouldHide(const QModelIndex& index,
                                        bool expand_clock) const
 {
   const int row = index.row();
-  const int last_clock = path_->getPathStartIndex(); // last clock pin is -1, but accounting for clock_summary would +1
+  const int last_clock = getClockEndIndex() + 1; // accounting for clock_summary would +1
 
   if (row == 0) {
     return false;

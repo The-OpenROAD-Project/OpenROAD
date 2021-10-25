@@ -161,7 +161,8 @@ class TimingPath
         path_delay_(0),
         arr_time_(0),
         req_time_(0),
-        path_start_index_(0)
+        clk_path_end_index_(0),
+        clk_capture_end_index_(0)
   {
   }
 
@@ -183,9 +184,10 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
-  void computePathStartIndex();
+  void computeClkEndIndex();
 
-  int getPathStartIndex() const { return path_start_index_; }
+  int getClkPathEndIndex() const { return clk_path_end_index_; }
+  int getClkCaptureEndIndex() const { return clk_capture_end_index_; }
 
   TimingNodeList* getPathNodes() { return &path_nodes_; }
   TimingNodeList* getCaptureNodes() { return &capture_nodes_; }
@@ -205,16 +207,18 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
-  int path_start_index_;
+  int clk_path_end_index_;
+  int clk_capture_end_index_;
 
   void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
 
+  void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel(sta::dbSta* sta);
+  TimingPathDetailModel(bool is_hold, sta::dbSta* sta);
   ~TimingPathDetailModel() {}
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -229,6 +233,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
+  int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
 
   const TimingPathNode* getNodeAt(const QModelIndex& index) const;
   bool shouldHide(const QModelIndex& index, bool expand_clock) const;
@@ -239,6 +244,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 
  private:
   sta::dbSta* sta_;
+  bool is_capture_;
 
   TimingPath* path_;
   TimingPath::TimingNodeList* nodes_;

@@ -151,8 +151,8 @@ void TimingWidget::init(sta::dbSta* sta)
 {
   setup_timing_paths_model_ = new TimingPathsModel(sta);
   hold_timing_paths_model_ = new TimingPathsModel(sta);
-  path_details_model_ = new TimingPathDetailModel(sta);
-  capture_details_model_ = new TimingPathDetailModel(sta);
+  path_details_model_ = new TimingPathDetailModel(false, sta);
+  capture_details_model_ = new TimingPathDetailModel(true, sta);
   path_renderer_ = new TimingPathRenderer(sta);
 
   auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
@@ -321,8 +321,7 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModel
 
   auto* nodes = model->getNodes();
   if (model->isClockSummaryRow(index)) {
-    auto* path = model->getPath();
-    for (int i = 1; i < path->getPathStartIndex() - 1; i++) {
+    for (int i = 1; i < model->getClockEndIndex(); i++) {
       path_renderer_->highlightNode(nodes->at(i).get(), nodes);
     }
   } else {
