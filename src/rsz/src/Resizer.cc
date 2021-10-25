@@ -1189,7 +1189,12 @@ Resizer::repairNet(SteinerTree *tree,
       repeater_right = true;
   }
   bool fanout_violation = max_fanout > 0
-    && (fanout_left + fanout_right) > max_fanout;
+    // Note that if both fanout_left==max_fanout and fanout_right==max_fanout
+    // there is no way repair the violation (adding a buffer to either branch
+    // results in max_fanout+1, which is a violation).
+    // Leave room for one buffer on the other branch by using >= to avoid
+    // this situation.
+    && (fanout_left + fanout_right) >= max_fanout;
   if (fanout_violation) {
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}fanout violation", "", level);
     if (fanout_left > fanout_right)

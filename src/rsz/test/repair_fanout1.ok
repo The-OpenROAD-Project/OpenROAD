@@ -24,5 +24,5 @@ max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-repeater1/Z                              10     10      0 (MET)
+repeater2/Z                              10      9      1 (MET)
 

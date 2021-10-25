@@ -99,7 +99,9 @@ buffer_ports [-inputs] [-outputs] [-max_utilization util]
 The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
 and the output port. The default behavior is `-inputs` and `-outputs`
-if neither is specified.
+if neither is specified. Inserting buffers on input and output ports makes
+the block input capacitances and output drives independent of the block
+internals.
 
 ### Repair Design
 
