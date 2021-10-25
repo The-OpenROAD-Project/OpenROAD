@@ -369,6 +369,7 @@ class FlexDRWorker
   int getBestNumMarkers() const { return bestMarkers_.size(); }
   FlexGCWorker* getGCWorker() { return gcWorker_; }
   const FlexDRViaData* getViaData() const { return via_data_; }
+    const FlexGridGraph& getGridGraph() const { return gridGraph_; }
 
   // others
   int main(frDesign* design);
