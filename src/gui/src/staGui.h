@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <memory>
 #include <QAbstractTableModel>
 
 #include "gui/gui.h"
@@ -90,7 +91,7 @@ class TimingPathsModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
+  TimingPath* getPathAt(int index) const { return timing_paths_[index].get(); }
 
   void resetModel();
   void populateModel(bool get_max = true, int path_count = 100);
@@ -102,7 +103,7 @@ class TimingPathsModel : public QAbstractTableModel
   bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
 
   sta::dbSta* sta_;
-  std::vector<TimingPath*> timing_paths_;
+  std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
   static const std::vector<std::string> _path_columns;
   enum Column : int;
@@ -145,7 +146,7 @@ struct TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath(int path_index)
+  TimingPath()
       : path_nodes_(),
         start_clk_(),
         end_clk_(),
@@ -153,12 +154,12 @@ class TimingPath
         path_delay_(0),
         arr_time_(0),
         req_time_(0),
-        path_index_(path_index),
         path_start_index_(0)
   {
   }
 
-  void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
+  void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
+
   int levelsCount() const { return path_nodes_.size(); }
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
@@ -174,26 +175,23 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
-  int getPathIndex() const { return path_index_; }
-
   void setPathStartIndex(int idx) { path_start_index_ = idx; }
   int getPathStartIndex() const { return path_start_index_; }
 
-  TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
+  const TimingPathNode* getNodeAt(int index) const { return path_nodes_[index].get(); }
   int getNodeCount() const { return path_nodes_.size(); }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
  private:
-  std::vector<TimingPathNode> path_nodes_;
+  std::vector<std::unique_ptr<const TimingPathNode>> path_nodes_;
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
   float path_delay_;
   float arr_time_;
   float req_time_;
-  int path_index_;
   int path_start_index_;
 };
 
