@@ -601,6 +601,9 @@ protected:
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
+  LibertyCell *findTargetCell(LibertyCell *cell,
+                              float load_cap,
+                              bool revisiting_inst);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
