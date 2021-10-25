@@ -628,12 +628,12 @@ Resizer::bufferOutput(Pin *top_pin,
 // max_wire_length zero for none (meters)
 void
 Resizer::repairDesign(double max_wire_length,
-                      double max_slew_margin,
+                      double slew_margin,
                       double max_cap_margin)
 {
   int repair_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length, max_slew_margin, max_cap_margin,
+  repairDesign(max_wire_length, slew_margin, max_cap_margin,
                repair_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -655,7 +655,7 @@ Resizer::repairDesign(double max_wire_length,
 
 void
 Resizer::repairDesign(double max_wire_length, // zero for none (meters)
-                      double max_slew_margin,
+                      double slew_margin,
                       double max_cap_margin,
                       int &repair_count,
                       int &slew_violations,
@@ -687,7 +687,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
-      repairNet(net, drvr_pin, drvr, max_slew_margin, max_cap_margin,
+      repairNet(net, drvr_pin, drvr, slew_margin, max_cap_margin,
                 true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
@@ -750,7 +750,7 @@ Resizer::repairClkNets(double max_wire_length) // max_wire_length zero for none 
 void
 Resizer::repairNet(Net *net,
                    double max_wire_length, // meters
-                   double max_slew_margin,
+                   double slew_margin,
                    double max_cap_margin)
 {
   init();
@@ -773,7 +773,7 @@ Resizer::repairNet(Net *net,
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net, drvr_pin, drvr, max_slew_margin, max_cap_margin,
+    repairNet(net, drvr_pin, drvr, slew_margin, max_cap_margin,
               true, true, true, max_length, true,
               repair_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
@@ -803,7 +803,7 @@ void
 Resizer::repairNet(Net *net,
                    const Pin *drvr_pin,
                    Vertex *drvr,
-                   double max_slew_margin,
+                   double slew_margin,
                    double max_cap_margin,
                    bool check_slew,
                    bool check_cap,
@@ -872,7 +872,7 @@ Resizer::repairNet(Net *net,
         float slew1, slew_slack1, max_slew1;
         const Corner *corner1;
         // Check slew at the driver.
-        checkSlew(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
+        checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
 
         // Max slew violations at the driver pin are repaired by reducing the
         // load capacitance. Wire resistance may shield capacitance from the
@@ -899,7 +899,7 @@ Resizer::repairNet(Net *net,
         // input pins.
         // Max slew violations at the load pins are repaired by reducing the
         // wire length.
-        checkLoadSlews(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
+        checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
         // Even when there are no load violations we need max_load_slew for
         // sizing inserted buffers.
         max_load_slew = max_slew1;
@@ -944,7 +944,7 @@ Resizer::repairNet(Net *net,
 
 bool
 Resizer::checkLimits(const Pin *drvr_pin,
-                     double max_slew_margin,
+                     double slew_margin,
                      double max_cap_margin,
                      bool check_slew,
                      bool check_cap,
@@ -971,10 +971,10 @@ Resizer::checkLimits(const Pin *drvr_pin,
   if (check_slew) {
     float slew1, slew_slack1, max_slew1;
     const Corner *corner1;
-    checkSlew(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
+    checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
-    checkLoadSlews(drvr_pin, max_slew_margin, slew1, max_slew1, slew_slack1, corner1);
+    checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
     if (slew_slack1 < 0.0)
       return true;
   }
@@ -983,7 +983,7 @@ Resizer::checkLimits(const Pin *drvr_pin,
 
 void
 Resizer::checkSlew(const Pin *drvr_pin,
-                   double max_slew_margin,
+                   double slew_margin,
                    // Return values.
                    Slew &slew,
                    float &limit,
@@ -998,7 +998,7 @@ Resizer::checkSlew(const Pin *drvr_pin,
   sta_->checkSlew(drvr_pin, nullptr, max_, false,
                   corner1, tr1, slew1, limit1, slack1);
   if (corner1) {
-    limit1 *= (1.0 - max_slew_margin / 100.0);
+    limit1 *= (1.0 - slew_margin / 100.0);
     slack1 = limit1 - slew1;
     if (slack1 < slack) {
       slew = slew1;
@@ -1011,7 +1011,7 @@ Resizer::checkSlew(const Pin *drvr_pin,
 
 void
 Resizer::checkLoadSlews(const Pin *drvr_pin,
-                        double max_slew_margin,
+                        double slew_margin,
                         // Return values.
                         Slew &slew,
                         float &limit,
@@ -1031,7 +1031,7 @@ Resizer::checkLoadSlews(const Pin *drvr_pin,
       sta_->checkSlew(pin, nullptr, max_, false,
                       corner1, tr1, slew1, limit1, slack1);
       if (corner1) {
-        limit1 *= (1.0 - max_slew_margin / 100.0);
+        limit1 *= (1.0 - slew_margin / 100.0);
         limit = min(limit, limit1);
         slack1 = limit1 - slew1;
         if (slack1 < slack) {

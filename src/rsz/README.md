@@ -107,8 +107,8 @@ internals.
 
 ```
 repair_design [-max_wire_length max_length]
-              [-max_slew_margin slew_margin]
-              [-max_cap_margin cap_margin]
+              [-slew_margin slew_margin]
+              [-cap_margin cap_margin]
               [-max_utilization util]
 ```
 
@@ -118,8 +118,8 @@ the wire. It also resizes gates to normalize slews.  Use `estimate_parasitics
 -placement` before `repair_design` to estimate parasitics considered
 during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
-to compensate. Use `-max_slew_margin` to add a margin to the slews, and
-`-max_cap_margin` to add a margin to the capacitances. Use `-max_wire_length`
+to compensate. Use `-slew_margin` to add a margin to the slews, and
+`-cap_margin` to add a margin to the capacitances. Use `-max_wire_length`
 to specify the maximum length of wires.  The maximum wirelength defaults to
 a value that minimizes the wire delay for the wire resistance/capacitance
 values specified by `set_wire_rc`.
