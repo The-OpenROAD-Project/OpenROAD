@@ -164,7 +164,7 @@ class FlexDR
   void end(bool writeMetrics = false);
 
   // utility
-  void reportDRC();
+  void reportDRC(const std::string& file_name);
 };
 
 class FlexDRWorker;

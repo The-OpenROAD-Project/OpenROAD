@@ -148,9 +148,35 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(color, brush_pattern));
   }
 
-  void setBrush(const Color& color) override
+  void setBrush(const Color& color, const Brush& style = Brush::SOLID) override
   {
-    painter_->setBrush(QColor(color.r, color.g, color.b, color.a));
+    const QColor qcolor(color.r, color.g, color.b, color.a);
+
+    Qt::BrushStyle brush_pattern;
+    if (color == Painter::transparent) {
+      // if color is transparent, make it no brush
+      brush_pattern = Qt::NoBrush;
+    } else {
+      switch (style) {
+      case NONE:
+        brush_pattern = Qt::NoBrush;
+        break;
+      case SOLID:
+        brush_pattern = Qt::SolidPattern;
+        break;
+      case DIAGONAL:
+        brush_pattern = Qt::DiagCrossPattern;
+        break;
+      case CROSS:
+        brush_pattern = Qt::CrossPattern;
+        break;
+      case DOTS:
+        brush_pattern = Qt::Dense6Pattern;
+        break;
+      }
+    }
+
+    painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
   void drawGeomShape(const odb::GeomShape* shape) override
   {
@@ -187,12 +213,6 @@ class GuiPainter : public Painter
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
   using Painter::drawLine;
-
-  void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
-  void setHashedBrush(const Color& color) override
-  {
-    painter_->setBrush(QBrush(QColor(color.r, color.g, color.b, color.a), Qt::DiagCrossPattern));
-  }
 
   void drawCircle(int x, int y, int r) override
   {
@@ -392,6 +412,9 @@ LayoutViewer::LayoutViewer(
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       snap_edge_(),
+      inspector_selection_(Selected()),
+      inspector_focus_(Selected()),
+      animate_selection_(nullptr),
       block_drawing_(nullptr),
       logger_(nullptr),
       design_loaded_(false),
@@ -1423,6 +1446,61 @@ void LayoutViewer::drawRows(dbBlock* block,
   }
 }
 
+void LayoutViewer::selection(const Selected& selection)
+{
+  inspector_selection_ = selection;
+  if (selected_.size() > 1) {
+    selectionAnimation(selection);
+  }
+  inspector_focus_ = Selected(); // reset focus
+  update();
+}
+
+void LayoutViewer::selectionFocus(const Selected& focus)
+{
+  inspector_focus_ = focus;
+  selectionAnimation(inspector_focus_);
+  update();
+}
+
+void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, int update_interval)
+{
+  if (animate_selection_ != nullptr) {
+    animate_selection_->timer->stop();
+    animate_selection_ = nullptr;
+  }
+
+  if (selection) {
+    const int state_reset_interval = 3;
+    animate_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{
+      selection,
+      0,
+      state_reset_interval*repeats,
+      state_reset_interval,
+      nullptr});
+    animate_selection_->timer = std::make_unique<QTimer>();
+    animate_selection_->timer->setInterval(update_interval);
+
+    connect(animate_selection_->timer.get(),
+            &QTimer::timeout,
+            [this]() {
+              if (animate_selection_ == nullptr) {
+                return;
+              }
+
+              animate_selection_->state_count++;
+              if (animate_selection_->state_count == animate_selection_->max_state_count) {
+                animate_selection_->timer->stop();
+                animate_selection_ = nullptr;
+              }
+
+              update();
+            });
+
+    animate_selection_->timer->start();
+  }
+}
+
 void LayoutViewer::drawSelected(Painter& painter)
 {
   if (!options_->areSelectedVisible()) {
@@ -1430,7 +1508,28 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 
   for (auto& selected : selected_) {
-    selected.highlight(painter);
+    selected.highlight(painter, Painter::highlight);
+  }
+
+  if (animate_selection_ != nullptr) {
+    auto brush = Painter::transparent;
+
+    const int pen_width = animate_selection_->state_count % animate_selection_->state_modulo + 1;
+    if (pen_width == 1) {
+      // flash with brush, since pen width is the same as normal
+      brush = Painter::highlight;
+      brush.a = 100;
+    }
+
+    animate_selection_->selection.highlight(painter, Painter::highlight, pen_width, brush);
+  }
+
+  if (inspector_focus_) {
+    inspector_focus_.highlight(painter,
+                               Painter::highlight,
+                               1,
+                               Painter::highlight,
+                               Painter::Brush::DIAGONAL);
   }
 }
 
@@ -1438,8 +1537,16 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 {
   int highlight_group = 0;
   for (auto& highlight_set : highlighted_) {
-    for (auto& highlighted : highlight_set)
-      highlighted.highlight(painter, false /* select_flag*/, highlight_group);
+    auto highlight_color = Painter::highlightColors[highlight_group];
+    highlight_color.a = 100;
+
+    for (auto& highlighted : highlight_set) {
+      highlighted.highlight(painter,
+                            highlight_color,
+                            1,
+                            highlight_color);
+    }
+
     highlight_group++;
   }
 }
