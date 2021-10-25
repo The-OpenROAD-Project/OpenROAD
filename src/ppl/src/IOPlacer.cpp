@@ -1188,11 +1188,16 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
   }
 
   odb::Point pos = odb::Point(x, y);
+
+  movePinToTrack(pos, layer, width, height);
+
   odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
   odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
 
   IOPin io_pin = IOPin(bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
   io_pin.setLayer(layer);
+
+  logger_->report("Pin {} pos: ({}, {})", io_pin.getName(), ((float)pos.x() / tech_->getLefUnits()), ((float)pos.y() / tech_->getLefUnits()));
 
   commitIOPinToDB(io_pin);
 
@@ -1202,6 +1207,46 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
                 bterm->getName(),
                 x/tech_->getLefUnits(),
                 y/tech_->getLefUnits());
+}
+
+void IOPlacer::movePinToTrack(odb::Point& pos, int layer, int width, int height)
+{
+  int database_unit = tech_->getLefUnits();
+  Rect boundary;
+  block_->getDieArea(boundary);
+  Point lb = boundary.ll();
+  Point ub = boundary.ur();
+
+  int lb_x = lb.x();
+  int lb_y = lb.y();
+  int ub_x = ub.x();
+  int ub_y = ub.y();
+
+
+  odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+  int min_spacing, init_track, num_track;
+  
+  int min_area = tech_layer->getArea() * database_unit * database_unit;
+  int half_width = int(ceil(tech_layer->getWidth() / 2));
+
+  if (layer != top_grid_.layer) { // pin is placed in the die boundaries
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) { // horizontal layer
+      track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
+      pos.setY(floor((pos.y() - init_track) / min_spacing) * min_spacing + init_track);
+      int dist_lb = abs(pos.x() - lb_x);
+      int dist_ub = abs(pos.x() - ub_x);
+      int new_x = (dist_lb < dist_ub) ? lb_x + (width / 2) : ub_x - (width / 2);
+      pos.setX(new_x);
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) { // vertical layer
+      track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
+      pos.setX(floor((pos.x() - init_track) / min_spacing) * min_spacing + init_track);
+      int dist_lb = abs(pos.y() - lb_y);
+      int dist_ub = abs(pos.y() - ub_y);
+      int new_y = (dist_lb < dist_ub) ? lb_y + (width / 2) : ub_y - (width / 2);
+      pos.setY(new_y);
+    }
+  }
 }
 
 // db functions

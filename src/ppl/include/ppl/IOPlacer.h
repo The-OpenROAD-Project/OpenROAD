@@ -227,6 +227,7 @@ class IOPlacer
 
   void updateOrientation(IOPin& pin);
   void updatePinArea(IOPin& pin);
+  void movePinToTrack(odb::Point& pos, int layer, int width, int height);
   bool checkBlocked(Edge edge, int pos);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
