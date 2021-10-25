@@ -36,6 +36,8 @@
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcPin.h"
 
 using namespace std;
 using namespace fr;
@@ -1385,14 +1387,6 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostVia(box, bi.z(), type, true, true, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, true, false, ndr);
     modViaForbiddenThrough(bi, ei, type);
-    // wrong way wire cannot have eol problem: (1) with via at end, then via
-    // will add eol cost; (2) with pref-dir wire, then not eol edge
-    bool isHLayer
-        = (getTech()->getLayer(gridGraph_.getLayerNum(bi.z()))->getDir()
-           == dbTechLayerDir::HORIZONTAL);
-    if (isHLayer == (bi.y() == ei.y())) {
-      modEolSpacingRulesCost(box, bi.z(), type);
-    }
   } else if (connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drPatchWire*>(connFig);
     frMIdx zIdx = gridGraph_.getMazeZIdx(obj->getLayerNum());
@@ -1402,7 +1396,6 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
-    modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1415,14 +1408,12 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
-    modEolSpacingRulesCost(box, bi.z(), type);
 
     obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
 
     modMinSpacingCostPlanar(box, ei.z(), type, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
-    modEolSpacingRulesCost(box, ei.z(), type);
 
     frTransform xform;
     frPoint pt;
@@ -1602,6 +1593,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         subPathCost(uConnFig.get());
         workerRegionQuery.remove(uConnFig.get());  // worker region query
       }
+      modEolCosts_poly(gcWorker_->getNet(net->getFrNet()), 0);
       // route_queue need to unreserve via access if all nets are ripupped
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
@@ -1643,7 +1635,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->updateDRNet(net);
         gcWorker_->setEnableSurgicalFix(true);
         gcWorker_->main();
-
+        modEolCosts_poly(gcWorker_->getTargetNet(), 1);
         // write back GC patches
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
@@ -1665,7 +1657,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
 
         didCheck = true;
       } else {
-        cout << "Error: fail to setTargetNet\n";
+        logger_->error(DRT, 1006, "failed to setTargetNet");
       }
     } else {
       gcWorker_->setEnableSurgicalFix(false);
@@ -1701,6 +1693,64 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
     }
   }
+}
+
+void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType) {
+  auto eol = layer->getDrEolSpacingConstraint();
+  if (eol.eolSpace == 0)
+    return;
+  for (auto& edges : shape->getPolygonEdges()) {
+    for (auto& edge : edges) {
+      if (edge->length() >= eol.eolWidth)
+        continue;
+      frCoord low, high, line;
+      bool innerIsHigh; // = "is the inner direction of the shape an axis-growing direction"
+      if (edge->isVertical()) {
+        low = min(edge->low().y(), edge->high().y());
+        high = max(edge->low().y(), edge->high().y());
+        line = edge->low().x();
+        innerIsHigh = edge->getInnerDir() == frDirEnum::N;
+      } else {
+        low = min(edge->low().x(), edge->high().x());
+        high = max(edge->low().x(),edge->high().x());
+        line = edge->low().y();
+        innerIsHigh = edge->getInnerDir() == frDirEnum::E;
+      }
+      modEolCost(low, high, line, edge->isVertical(), innerIsHigh, layer, modType);
+    }
+  }
+}
+//mods eol cost for an eol edge
+void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerIsHigh, frLayer* layer, int modType) {
+  frBox testBox;
+  auto eol = layer->getDrEolSpacingConstraint();
+  if (isVertical) {
+    if (innerIsHigh)
+      testBox.set(line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
+    else 
+      testBox.set(line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
+  } else {
+    if (innerIsHigh)
+      testBox.set(low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
+    else 
+      testBox.set(low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
+  }
+  frMIdx z = gridGraph_.getMazeZIdx(layer->getLayerNum());
+  modEolSpacingCost_helper(testBox, z, modType, 0);
+  modEolSpacingCost_helper(testBox, z, modType, 1);
+  modEolSpacingCost_helper(testBox, z, modType, 2);
+}
+
+void FlexDRWorker::modEolCosts_poly(gcNet* net, int modType) {
+  for (int lNum = getTech()->getBottomLayerNum();
+        lNum <= getTech()->getTopLayerNum(); lNum++) {
+      auto layer = getTech()->getLayer(lNum);
+      if (layer->getType() != dbTechLayerType::ROUTING)
+        continue;
+      for (auto& pin : net->getPins(lNum)) {
+        modEolCosts_poly(pin.get(), layer, modType);
+      }
+    }
 }
 
 void FlexDRWorker::routeNet_prep(
@@ -2574,70 +2624,70 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         // new
         bool newLogic = false;
         if (!newLogic) {
-        bool bpPatchStyle = true;  // style 1: left only; 0: right only
-        bool epPatchStyle = false;
-        // stack via
-        if (i - 1 == prev_i) {
-          bp = points[i - 1];
-          ep = points[i - 1];
-          bpPatchStyle = true;
-          epPatchStyle = false;
-          // planar
-        } else {
-          bp = points[prev_i];
-          ep = points[i - 1];
-          if (getTech()->getLayer(layerNum)->getDir()
-              == dbTechLayerDir::HORIZONTAL) {
-            if (points[prev_i].x() < points[prev_i + 1].x()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].x() > points[prev_i + 1].x()) {
-              bpPatchStyle = false;
-            } else {
-              if (points[prev_i].x() < points[i - 1].x()) {
-                bpPatchStyle = true;
-              } else {
-                bpPatchStyle = false;
-              }
-            }
-            if (points[i - 1].x() < points[i - 2].x()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].x() > points[i - 2].x()) {
-              epPatchStyle = false;
-            } else {
-              if (points[i - 1].x() < points[prev_i].x()) {
-                epPatchStyle = true;
-              } else {
-                epPatchStyle = false;
-              }
-            }
+          bool bpPatchStyle = true;  // style 1: left only; 0: right only
+          bool epPatchStyle = false;
+          // stack via
+          if (i - 1 == prev_i) {
+            bp = points[i - 1];
+            ep = points[i - 1];
+            bpPatchStyle = true;
+            epPatchStyle = false;
+            // planar
           } else {
-            if (points[prev_i].y() < points[prev_i + 1].y()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].y() > points[prev_i + 1].y()) {
-              bpPatchStyle = false;
-            } else {
-              if (points[prev_i].y() < points[i - 1].y()) {
+            bp = points[prev_i];
+            ep = points[i - 1];
+            if (getTech()->getLayer(layerNum)->getDir()
+                == dbTechLayerDir::HORIZONTAL) {
+              if (points[prev_i].x() < points[prev_i + 1].x()) {
                 bpPatchStyle = true;
-              } else {
+              } else if (points[prev_i].x() > points[prev_i + 1].x()) {
                 bpPatchStyle = false;
-              }
-            }
-            if (points[i - 1].y() < points[i - 2].y()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].y() > points[i - 2].y()) {
-              epPatchStyle = false;
-            } else {
-              if (points[i - 1].y() < points[prev_i].y()) {
-                epPatchStyle = true;
               } else {
+                if (points[prev_i].x() < points[i - 1].x()) {
+                  bpPatchStyle = true;
+                } else {
+                  bpPatchStyle = false;
+                }
+              }
+              if (points[i - 1].x() < points[i - 2].x()) {
+                epPatchStyle = true;
+              } else if (points[i - 1].x() > points[i - 2].x()) {
                 epPatchStyle = false;
+              } else {
+                if (points[i - 1].x() < points[prev_i].x()) {
+                  epPatchStyle = true;
+                } else {
+                  epPatchStyle = false;
+                }
+              }
+            } else {
+              if (points[prev_i].y() < points[prev_i + 1].y()) {
+                bpPatchStyle = true;
+              } else if (points[prev_i].y() > points[prev_i + 1].y()) {
+                bpPatchStyle = false;
+              } else {
+                if (points[prev_i].y() < points[i - 1].y()) {
+                  bpPatchStyle = true;
+                } else {
+                  bpPatchStyle = false;
+                }
+              }
+              if (points[i - 1].y() < points[i - 2].y()) {
+                epPatchStyle = true;
+              } else if (points[i - 1].y() > points[i - 2].y()) {
+                epPatchStyle = false;
+              } else {
+                if (points[i - 1].y() < points[prev_i].y()) {
+                  epPatchStyle = true;
+                } else {
+                  epPatchStyle = false;
+                }
               }
             }
           }
-        }
-        auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
-        routeNet_postAstarAddPatchMetal(
-            net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
+          auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
+          routeNet_postAstarAddPatchMetal(
+              net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
         } else {
             frCoord lowViaArea = 0, highViaArea = 0;
             frMIdx currTip, line;
@@ -2649,7 +2699,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             }else {
                 currTip = currIdx.x();
                 line = currIdx.y();
-      }
+            }
             frMIdx lastTip;
             frCoord patchLow, patchHigh;
             if (i - 1 == prev_i) { //stacked vias
@@ -3073,7 +3123,7 @@ int FlexDRWorker::checkMinAreaViolPatch(int initArea,
                     gridGraph_.xCoord(low)) - wireWidth/2;
             if (patchHigh)
                 *patchHigh = (isVertical ? gridGraph_.yCoord(high) : 
-                    gridGraph_.xCoord(high)) - wireWidth/2;
+                    gridGraph_.xCoord(high)) + wireWidth/2;
         }
         if (cost == 0)
             return 0;

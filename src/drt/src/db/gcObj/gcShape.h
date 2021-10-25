@@ -154,7 +154,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   gcCorner* getLowCorner() const { return lowCorner_; }
   gcCorner* getHighCorner() const { return highCorner_; }
   bool isFixed() const { return fixed_; }
-  // direction always from bp to ep, not orthogonal!!
+  // direction always from bp to ep
   frDirEnum getDir() const
   {
     frDirEnum dir = frDirEnum::UNKNOWN;
@@ -178,6 +178,36 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
     }
     return dir;
   }
+  frDirEnum getInnerDir() {
+    int o = gtl::orientation(*prev_edge_, *next_edge_); //1 = counterclockwise (from prev to next), -1 = clockwise
+    switch (getDir()) {
+      case frDirEnum::N:
+        return o ? frDirEnum::W : frDirEnum::E;
+      case frDirEnum::S:
+        return o ? frDirEnum::E : frDirEnum::W;
+      case frDirEnum::E:
+        return o ? frDirEnum::N : frDirEnum::S;
+      case frDirEnum::W:
+        return o ? frDirEnum::S : frDirEnum::N;
+      default:
+        return frDirEnum::UNKNOWN;
+    }
+  }
+  frDirEnum getOutterDir() {
+    int o = gtl::orientation(*prev_edge_, *next_edge_);
+    switch (getDir()) {
+      case frDirEnum::N:
+        return o ? frDirEnum::S : frDirEnum::N;
+      case frDirEnum::S:
+        return frDirEnum::W;
+      case frDirEnum::E:
+        return frDirEnum::S;
+      case frDirEnum::W:
+        return frDirEnum::N;
+      default:
+        return frDirEnum::UNKNOWN;
+    }
+  }
   // setters
   void setSegment(const gtl::segment_data<frCoord>& in)
   {
@@ -193,6 +223,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   void setNextEdge(gcSegment* in) { next_edge_ = in; }
   void setLowCorner(gcCorner* in) { lowCorner_ = in; }
   void setHighCorner(gcCorner* in) { highCorner_ = in; }
+  int isVertical() { return low().x() == high().x(); }
   void setFixed(bool in) { fixed_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return gccEdge; }
@@ -230,7 +261,9 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   void addToNet(gcNet* in) override { net_ = in; }
 
   void removeFromNet() override { net_ = nullptr; }
-
+  int length() {
+    return gtl::length(*this);
+  }
  protected:
   frLayerNum layer_;
   gcPin* pin_;

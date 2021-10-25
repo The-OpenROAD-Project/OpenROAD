@@ -39,6 +39,7 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
+#include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 
@@ -624,6 +625,9 @@ class FlexDRWorker
   // route_queue
   void route_queue(FlexGCWorker& gcWorker);
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  void modEolCosts_poly(gcNet* net, int modType);
+  void modEolCosts_poly(gcPin* shape, frLayer* layer, int modType);
+  void modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerIsHigh, frLayer* layer, int modType);
   void route_queue_resetRipup();
   void route_queue_markerCostDecay();
   void route_queue_addMarkerCost(

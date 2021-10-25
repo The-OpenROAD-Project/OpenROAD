@@ -159,7 +159,9 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in)
     return false;
   }
 }
-
+gcNet* FlexGCWorker::getTargetNet() {
+  return impl_->targetNet_;
+}
 void FlexGCWorker::setEnableSurgicalFix(bool in)
 {
   impl_->surgicalFixEnabled_ = in;
@@ -188,4 +190,8 @@ void FlexGCWorker::setIgnoreMinArea()
 std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
 {
   return impl_->getNets();
+}
+
+gcNet* FlexGCWorker::getNet(frNet* net) {
+  return impl_->getNet(net);
 }

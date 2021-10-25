@@ -670,7 +670,7 @@ class frLayer
     drEolCon.eolWithin = within;
   }
 
-  drEolSpacingConstraint getDrEolSpacingConstraint() const { return drEolCon; }
+  const drEolSpacingConstraint& getDrEolSpacingConstraint() const { return drEolCon; }
 
   void printAllConstraints(utl::Logger* logger);
 
