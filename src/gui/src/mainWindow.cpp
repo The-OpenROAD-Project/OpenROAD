@@ -528,6 +528,25 @@ void MainWindow::removeSelected(const Selected& selection)
   }
 }
 
+void MainWindow::removeSelectedByType(const std::string& type)
+{
+  bool changed = false;
+  for (auto itr = selected_.begin(); itr != selected_.end(); ) {
+    const auto& selection = *itr;
+
+    if (selection.getTypeName() == type) {
+      itr = selected_.erase(itr);
+      changed = true;
+    } else {
+      itr++;
+    }
+  }
+
+  if (changed) {
+    emit selectionChanged();
+  }
+}
+
 void MainWindow::addSelected(const SelectionSet& selections)
 {
   int prev_selected_size = selected_.size();

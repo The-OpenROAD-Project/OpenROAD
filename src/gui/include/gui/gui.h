@@ -439,6 +439,15 @@ class Gui
   // Set the current selected object in the gui.
   void setSelected(Selected selection);
 
+  void removeSelectedByType(const std::string& type);
+
+  template <class T>
+  void removeSelected()
+  {
+    const auto* descriptor = getDescriptor<T>();
+    removeSelectedByType(descriptor->getTypeName());
+  }
+
   // Add a net to the selection set
   void addSelectedNet(const char* name);
 

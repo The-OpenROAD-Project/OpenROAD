@@ -152,6 +152,11 @@ void Gui::setSelected(Selected selection)
   main_window->setSelected(selection);
 }
 
+void Gui::removeSelectedByType(const std::string& type)
+{
+  main_window->removeSelectedByType(type);
+}
+
 void Gui::addSelectedNet(const char* name)
 {
   auto block = getBlock(main_window->getDb());
