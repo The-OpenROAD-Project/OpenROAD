@@ -169,8 +169,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(removeSelected(const Selected&)),
           this,
           SLOT(removeSelected(const Selected&)));
-  connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
-  connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
+  connect(this, SIGNAL(selectionChanged(const Selected&)), inspector_, SLOT(update(const Selected&)));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
@@ -183,6 +182,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selectedItemChanged(const Selected&)),
           this,
           SLOT(updateSelectedStatus(const Selected&)));
+  connect(inspector_,
+          SIGNAL(selection(const Selected&)),
+          viewer_,
+          SLOT(selection(const Selected&)));
+  connect(inspector_,
+          SIGNAL(focus(const Selected&)),
+          viewer_,
+          SLOT(selectionFocus(const Selected&)));
 
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
@@ -507,16 +514,14 @@ void MainWindow::addSelected(const Selected& selection)
 {
   if (selection) {
     selected_.emplace(selection);
-    emit selectionChanged();
+    emit selectionChanged(selection);
   }
   emit updateSelectedStatus(selection);
 }
 
 void MainWindow::removeSelected(const Selected& selection)
 {
-  auto itr = std::find_if_not(selected_.begin(), selected_.end(), [selection](auto& item) {
-    return item < selection;
-  });
+  auto itr = std::find(selected_.begin(), selected_.end(), selection);
   if (itr != selected_.end()) {
     selected_.erase(itr);
     emit selectionChanged();
@@ -586,7 +591,10 @@ void MainWindow::deleteRuler(const std::string& name)
   if (ruler_find != rulers_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
-    selected_.erase(remove_selected);
+    if (selected_.find(remove_selected) != selected_.end()) {
+      selected_.erase(remove_selected);
+      emit selectionChanged();
+    }
     rulers_.erase(ruler_find);
     emit rulersChanged();
   }

@@ -65,41 +65,6 @@ static void create_tech(odb::dbDatabase* db) {
   odb::dbBox::create(v23, m2, -1000, -1000, 1000, 1000);
   odb::dbBox::create(v23, m3, -1000, -1000, 1000, 1000);
 }
-/*
-static uint print_shape( odb::dbShape & shape, uint j1, uint j2)
-{
-        uint dx = shape.xMax() - shape.xMin();
-        uint dy = shape.yMax() - shape.yMin();
-    if ( shape.isVia() )
-    {
-        odb::dbTechVia * tech_via = shape.getTechVia();
-        odb::dbString vname = tech_via ->getName();
-
-        notice(0, "VIA %s ( %d %d )  jids= ( %d %d )\n",
-               vname.c_str(),
-               shape.xMin() + dx / 2,
-               shape.yMin() + dy / 2, j1, j2
-               );
-    }
-    else
-    {
-        odb::dbTechLayer * layer = shape.getTechLayer();
-        odb::dbString lname = layer->getName();
-        notice(0, "RECT %s ( %d %d ) ( %d %d )  jids= ( %d %d )\n",
-               lname.c_str(),
-               shape.xMin(),
-               shape.yMin(),
-               shape.xMax(),
-               shape.yMax(), j1, j2 );
-
-                if (dx<dy)
-                        return dy;
-                else
-                        return dx;
-    }
-        return 0;
-}
-*/
 
 int extMain::db_test_wires(odb::dbDatabase* db) {
   if (db == NULL)

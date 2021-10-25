@@ -41,6 +41,7 @@
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QTimer>
 #include <map>
 #include <memory>
 #include <vector>
@@ -226,6 +227,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void selectArea(const odb::Rect& area, bool append);
 
+  void selection(const Selected& selection);
+  void selectionFocus(const Selected& focus);
+  void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
+  void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
+
  private:
   struct Boxes
   {
@@ -359,6 +365,19 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool snap_edge_showing_;
   Edge snap_edge_;
 
+  // keeps track of inspector selection and focus items
+  Selected inspector_selection_;
+  Selected inspector_focus_;
+  // Timer used to handle blinking objects in the layout
+  struct AnimatedSelected {
+    const Selected selection;
+    int state_count;
+    const int max_state_count;
+    const int state_modulo;
+    std::unique_ptr<QTimer> timer;
+  };
+  std::unique_ptr<AnimatedSelected> animate_selection_;
+
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
 
@@ -381,6 +400,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
+
+  // parameters used to animate the selection of objects
+  static constexpr int animation_repeats_ = 6;
+  static constexpr int animation_interval_ = 300;
 
   const QColor background_ = Qt::black;
 };

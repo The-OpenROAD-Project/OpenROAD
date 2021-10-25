@@ -116,7 +116,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void pause(int timeout);
 
   // The selected set of objects has changed
-  void selectionChanged();
+  void selectionChanged(const Selected& selection = Selected());
 
   // The highlight set of objects has changed
   void highlightChanged();
