@@ -239,7 +239,6 @@ class AutoClusterMgr
 
 
   // Map all the BTerms to an IORegion
-  std::unordered_map<std::string, const sta::Pin*> bterm_pin_;
   std::unordered_map<std::string, IORegion> bterm_map_;
   std::unordered_map<IORegion, int> bundled_io_map_;
   std::unordered_map<sta::Instance*, Metric> logical_cluster_map_;

@@ -56,6 +56,8 @@ class Block
   bool is_soft_ = true;
   int num_macro_ = 0;
 
+  // This flag is used multiple times by the SimulatedAnnealingCore::AlignMacro method
+  // It means alignment with boundaried or macros
   bool align_flag_ = false;
 
   std::vector<std::pair<float, float>> aspect_ratio_;

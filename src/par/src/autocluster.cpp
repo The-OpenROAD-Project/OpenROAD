@@ -506,7 +506,6 @@ void AutoClusterMgr::calculateBufferNetConnection()
           if (network_->isTopLevelPort(pin)) {
             const char* port_name = network_->portName(pin);
             const int id = bundled_io_map_[bterm_map_[string(port_name)]];
-            bterm_pin_[network_->pathName(pin)] = pin;
             const PortDirection* port_dir = network_->direction(pin);
             if (port_dir == PortDirection::input()) {
               driver_id = id;
@@ -563,7 +562,6 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
           const char* port_name = network_->portName(pin);
           const int id = bundled_io_map_[bterm_map_[string(port_name)]];
           const PortDirection* port_dir = network_->direction(pin);
-          bterm_pin_[network_->pathName(pin)] = pin;
           if (port_dir == PortDirection::input()) {
             driver_id = id;
           } else {
