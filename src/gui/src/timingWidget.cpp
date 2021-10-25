@@ -266,7 +266,7 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
 
   TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
 
-  auto* path = focus_model->getPathAt(index.row());
+  auto* path = focus_model->getPathAt(index);
 
   path_details_model_->populateModel(path, path->getPathNodes());
   capture_details_model_->populateModel(path, path->getCaptureNodes());
@@ -296,16 +296,20 @@ void TimingWidget::updateClockRows()
     return;
   }
 
-  const int path_start_index = path_details_model_->getPath()->getPathStartIndex() - 1; // include clock pin
   const bool show = expand_clk_->checkState() == Qt::Checked;
 
-  for (int row = 0; row < path_start_index; row++) {
-    if (show) {
-      path_details_table_view_->showRow(row);
-    } else {
-      path_details_table_view_->hideRow(row);
+  auto toggleModelView = [show](TimingPathDetailModel* model, QTableView* view) {
+    for (int row = 0; row < model->rowCount(); row++) {
+      if (model->shouldHide(model->index(row, 0), show)) {
+        view->hideRow(row);
+      } else {
+        view->showRow(row);
+      }
     }
-  }
+  };
+
+  toggleModelView(path_details_model_, path_details_table_view_);
+  toggleModelView(capture_details_model_, capture_details_table_view_);
 }
 
 void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index)
@@ -313,9 +317,19 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModel
   if (!index.isValid()) {
     return;
   }
+  path_renderer_->clearHighlightNodes();
+
   auto* nodes = model->getNodes();
-  auto* node = nodes->at(index.row()).get();
-  path_renderer_->highlightNode(node, nodes);
+  if (model->isClockSummaryRow(index)) {
+    auto* path = model->getPath();
+    for (int i = 1; i < path->getPathStartIndex() - 1; i++) {
+      path_renderer_->highlightNode(nodes->at(i).get(), nodes);
+    }
+  } else {
+    auto* node = model->getNodeAt(index);
+    path_renderer_->highlightNode(node, nodes);
+  }
+
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
@@ -337,15 +351,21 @@ void TimingWidget::findNodeInPathDetails()
   QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
   if (match_index.isValid()) {
     const int row = match_index.row();
-    if (view->isRowHidden(row)) {
-      // row found is hidden, so unhide clock rows
+    const bool show_clock = expand_clk_->checkState() == Qt::Checked;
+    if (view->isRowHidden(row) && !show_clock) {
+      // turn on expand clock so we can select that row
       expand_clk_->setCheckState(Qt::Checked);
     }
-    view->selectRow(row);
-  } else {
-    QMessageBox::information(
-        this, "Node Search: ", search_node + " Match not found!");
+
+    if (!view->isRowHidden(row)) {
+      // double check if row is hidden, since if th clock summary row matched, that is not a node.
+      view->selectRow(row);
+      return;
+    }
   }
+
+  QMessageBox::information(
+      this, "Node Search: ", search_node + " Match not found!");
 }
 
 void TimingWidget::showPathIndex(int path_idx)

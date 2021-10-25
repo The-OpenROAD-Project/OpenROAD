@@ -94,7 +94,7 @@ class TimingPathsModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  TimingPath* getPathAt(int index) const { return timing_paths_[index].get(); }
+  TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
   void populateModel(bool get_max = true, int path_count = 100);
@@ -160,7 +160,8 @@ class TimingPath
         slack_(0),
         path_delay_(0),
         arr_time_(0),
-        req_time_(0)
+        req_time_(0),
+        path_start_index_(0)
   {
   }
 
@@ -182,7 +183,9 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
-  int getPathStartIndex() const;
+  void computePathStartIndex();
+
+  int getPathStartIndex() const { return path_start_index_; }
 
   TimingNodeList* getPathNodes() { return &path_nodes_; }
   TimingNodeList* getCaptureNodes() { return &capture_nodes_; }
@@ -202,6 +205,7 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
+  int path_start_index_;
 
   void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
 
@@ -226,6 +230,11 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
 
+  const TimingPathNode* getNodeAt(const QModelIndex& index) const;
+  bool shouldHide(const QModelIndex& index, bool expand_clock) const;
+
+  bool isClockSummaryRow(const QModelIndex& index) const { return index.row() == clock_summary_row_; }
+
   void populateModel(TimingPath* path, TimingPath::TimingNodeList* nodes);
 
  private:
@@ -240,6 +249,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   static const char* down_arrow;
   static const std::vector<std::string> _path_details_columns;
   enum Column : int;
+  static constexpr int clock_summary_row_ = 1;
 };
 
 class TimingPathRenderer : public gui::Renderer
@@ -250,6 +260,8 @@ class TimingPathRenderer : public gui::Renderer
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
+  void clearHighlightNodes() { highlight_stage_.clear(); }
+
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
   TimingPath* getPathToRender() { return path_; }
@@ -284,7 +296,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbInst* inst;
     odb::dbObject* sink;
   };
-  std::unique_ptr<HighlightStage> highlight_stage_;
+  std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
 
   static gui::Painter::Color inst_highlight_color_;
   static gui::Painter::Color path_inst_color_;

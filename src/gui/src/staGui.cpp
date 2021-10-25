@@ -116,6 +116,11 @@ TimingPathsModel::~TimingPathsModel()
   // TBD
 }
 
+TimingPath* TimingPathsModel::getPathAt(const QModelIndex& index) const
+{
+  return timing_paths_[index.row()].get();
+}
+
 int TimingPathsModel::rowCount(const QModelIndex& parent) const
 {
   return timing_paths_.size();
@@ -148,10 +153,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 
   auto time_units = sta_->search()->units()->timeUnit();
 
-  unsigned int row_index = index.row();
-  if (row_index > timing_paths_.size())
-    return QVariant();
-  auto* timing_path = getPathAt(row_index);
+  auto* timing_path = getPathAt(index);
   switch (col_index) {
     case Clock:
       return QString::fromStdString(timing_path->getStartClock());
@@ -311,6 +313,8 @@ bool TimingPathsModel::populatePaths(bool get_max,
 
     first_path = false;
 
+    path->computePathStartIndex();
+
     timing_paths_.push_back(std::unique_ptr<TimingPath>(path));
   }
   QApplication::restoreOverrideCursor();
@@ -405,7 +409,11 @@ void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::Dcal
 
 std::string TimingPath::getStartStageName() const
 {
-  return path_nodes_[getPathStartIndex()]->getNodeName();
+  const int start_idx = getPathStartIndex();
+  if (start_idx >= path_nodes_.size()) {
+    return path_nodes_[0]->getNodeName();
+  }
+  return path_nodes_[start_idx]->getNodeName();
 }
 
 std::string TimingPath::getEndStageName() const
@@ -413,15 +421,16 @@ std::string TimingPath::getEndStageName() const
   return path_nodes_.back()->getNodeName();
 }
 
-int TimingPath::getPathStartIndex() const
+void TimingPath::computePathStartIndex()
 {
   for (int i = 0; i < path_nodes_.size(); i++) {
     if (!path_nodes_[i]->is_clock_) {
-      return i;
+      path_start_index_ = i;
+      return;
     }
   }
 
-  return path_nodes_.size() - 1;
+  path_start_index_ = path_nodes_.size();
 }
 
 /////////////
@@ -462,14 +471,28 @@ TimingPathDetailModel::TimingPathDetailModel(sta::dbSta* sta)
 
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
-  if (path_ == nullptr)
+  if (path_ == nullptr) {
     return 0;
-  return nodes_->size();
+  }
+
+  return nodes_->size() + 1;
 }
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
   return TimingPathDetailModel::_path_details_columns.size();
+}
+
+const TimingPathNode* TimingPathDetailModel::getNodeAt(const QModelIndex& index) const
+{
+  int node_idx = index.row();
+
+  if (node_idx > clock_summary_row_) {
+    // account for collapsed clock entry
+    node_idx--;
+  }
+
+  return nodes_->at(node_idx).get();
 }
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
@@ -495,30 +518,71 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 
   const auto time_units = sta_->search()->units()->timeUnit();
 
-  const int row_index = index.row();
-  if (row_index > nodes_->size()) {
-    return QVariant();
-  }
-  auto& node = nodes_->at(row_index);
-  switch (col_index) {
+  if (index.row() == clock_summary_row_) {
+    int start_idx = path_->getPathStartIndex() - 1;
+    if (start_idx < 0) {
+      start_idx = 0;
+    }
+    if (start_idx >= nodes_->size()) {
+      start_idx = nodes_->size() - 1;
+    }
+    const auto& node = nodes_->at(start_idx);
+
+    switch (col_index) {
     case Pin:
-      return QString(node->getNodeName(/* include_master */ true).c_str());
-    case RiseFall:
-      return node->is_rising_ ? QString(up_arrow) : QString(down_arrow);
+      return "clock network delay";
     case Time:
       return time_units->asString(node->arrival_);
     case Delay:
-      return time_units->asString(node->delay_);
-    case Slew:
-      return time_units->asString(node->slew_);
-    case Load: {
-      if (node->load_ == 0)
-        return "";
-      const auto cap_units = sta_->search()->units()->capacitanceUnit();
-      return cap_units->asString(node->load_);
+      return time_units->asString(node->arrival_ - nodes_->at(0)->arrival_);
+    default:
+      return QVariant();
+    }
+  } else {
+    const auto* node = getNodeAt(index);
+    switch (col_index) {
+      case Pin:
+        return QString(node->getNodeName(/* include_master */ true).c_str());
+      case RiseFall:
+        return node->is_rising_ ? QString(up_arrow) : QString(down_arrow);
+      case Time:
+        return time_units->asString(node->arrival_);
+      case Delay:
+        return time_units->asString(node->delay_);
+      case Slew:
+        return time_units->asString(node->slew_);
+      case Load: {
+        if (node->load_ == 0)
+          return "";
+        const auto cap_units = sta_->search()->units()->capacitanceUnit();
+        return cap_units->asString(node->load_);
+      }
     }
   }
   return QVariant();
+}
+
+bool TimingPathDetailModel::shouldHide(const QModelIndex& index,
+                                       bool expand_clock) const
+{
+  const int row = index.row();
+  const int last_clock = path_->getPathStartIndex(); // last clock pin is -1, but accounting for clock_summary would +1
+
+  if (row == 0) {
+    return false;
+  }
+
+  if (row == clock_summary_row_) {
+    return expand_clock;
+  }
+
+  if (row >= last_clock) {
+    return false;
+  } else {
+    return !expand_clock;
+  }
+
+  return false;
 }
 
 QVariant TimingPathDetailModel::headerData(int section,
@@ -545,7 +609,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path, TimingPath::TimingNo
 TimingPathRenderer::TimingPathRenderer(sta::dbSta* sta) :
     sta_(sta),
     path_(nullptr),
-    highlight_stage_(nullptr)
+    highlight_stage_()
 {
   TimingPathRenderer::path_inst_color_.a = 100;
   TimingPathRenderer::inst_highlight_color_.a = 100;
@@ -562,7 +626,7 @@ TimingPathRenderer::~TimingPathRenderer()
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   path_ = path;
-  highlight_stage_ = nullptr;
+  highlight_stage_.clear();
   redraw();
 }
 
@@ -649,9 +713,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::T
     }
 
     if (net != nullptr || inst != nullptr) {
-      highlight_stage_ = std::make_unique<HighlightStage>(HighlightStage{net, inst, sink_node});
-    } else {
-      highlight_stage_ = nullptr;
+      highlight_stage_.push_back(std::make_unique<HighlightStage>(HighlightStage{net, inst, sink_node}));
     }
 
     redraw();
@@ -717,18 +779,22 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter, const gui::Descriptor* net_descriptor)
 {
-  if (highlight_stage_ == nullptr) {
+  if (highlight_stage_.empty()) {
     return;
   }
 
-  if (highlight_stage_->inst != nullptr) {
-    highlightInst(highlight_stage_->inst, painter, TimingPathRenderer::inst_highlight_color_);
+  for (const auto& highlight : highlight_stage_) {
+    if (highlight->inst != nullptr) {
+      highlightInst(highlight->inst, painter, TimingPathRenderer::inst_highlight_color_);
+    }
   }
 
-  if (highlight_stage_->net != nullptr) {
-    painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
-    painter.setBrush(TimingPathRenderer::inst_highlight_color_);
-    net_descriptor->highlight(highlight_stage_->net, painter, highlight_stage_->sink);
+  painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
+  painter.setBrush(TimingPathRenderer::inst_highlight_color_);
+  for (const auto& highlight : highlight_stage_) {
+    if (highlight->net != nullptr) {
+      net_descriptor->highlight(highlight->net, painter, highlight->sink);
+    }
   }
 }
 
