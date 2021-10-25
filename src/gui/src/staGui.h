@@ -50,6 +50,7 @@ class dbFill;
 class dbInst;
 class dbMaster;
 class dbNet;
+class dbObject;
 class dbITerm;
 class dbWire;
 class dbBTerm;
@@ -62,8 +63,10 @@ class dbSWire;
 }  // namespace odb
 namespace sta {
 class dbSta;
+class DcalcAnalysisPt;
 class Instance;
 class Net;
+class Path;
 class Pin;
 }  // namespace sta
 namespace gui {
@@ -148,6 +151,7 @@ class TimingPath
  public:
   TimingPath()
       : path_nodes_(),
+        capture_nodes_(),
         start_clk_(),
         end_clk_(),
         slack_(0),
@@ -158,9 +162,11 @@ class TimingPath
   {
   }
 
+  using TimingNodeList = std::vector<std::unique_ptr<const TimingPathNode>>;
+
   void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
 
-  int levelsCount() const { return path_nodes_.size(); }
+//  int levelsCount() const { return path_nodes_.size(); }
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
   void setEndClock(const char* name) { end_clk_ = name; }
@@ -178,14 +184,21 @@ class TimingPath
   void setPathStartIndex(int idx) { path_start_index_ = idx; }
   int getPathStartIndex() const { return path_start_index_; }
 
-  const TimingPathNode* getNodeAt(int index) const { return path_nodes_[index].get(); }
+//  const TimingPathNode* getNodeAt(int index) const { return path_nodes_[index].get(); }
   int getNodeCount() const { return path_nodes_.size(); }
+
+  TimingNodeList* getPathNodes() { return &path_nodes_; }
+  TimingNodeList* getCaptureNodes() { return &capture_nodes_; }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
+  void populatePath();
+  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
+
  private:
-  std::vector<std::unique_ptr<const TimingPathNode>> path_nodes_;
+  TimingNodeList path_nodes_;
+  TimingNodeList capture_nodes_;
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
@@ -211,14 +224,17 @@ class TimingPathDetailModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  void populateModel(TimingPath* path);
-
   TimingPath* getPath() const { return path_; }
+  TimingPath::TimingNodeList* getNodes() const { return nodes_; }
+
+  void populateModel(TimingPath* path, TimingPath::TimingNodeList* nodes);
 
  private:
   sta::dbSta* sta_;
 
   TimingPath* path_;
+  TimingPath::TimingNodeList* nodes_;
+
   // Unicode symbols
   static const char* up_down_arrows;
   static const char* up_arrow;
@@ -234,7 +250,7 @@ class TimingPathRenderer : public gui::Renderer
   ~TimingPathRenderer();
   void highlight(TimingPath* path);
 
-  void highlightNode(int node_id);
+  void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
   TimingPath* getPathToRender() { return path_; }
@@ -252,12 +268,21 @@ class TimingPathRenderer : public gui::Renderer
                     gui::Painter& painter,
                     const gui::Descriptor* net_descriptor);
 
+  void drawNodesList(TimingPath::TimingNodeList* nodes,
+                     gui::Painter& painter,
+                     const gui::Descriptor* net_descriptor);
+
   sta::dbSta* sta_;
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
 
-  int highlight_node_;
+  struct HighlightStage {
+    odb::dbNet* net;
+    odb::dbInst* inst;
+    odb::dbObject* sink;
+  };
+  std::unique_ptr<HighlightStage> highlight_stage_;
 
   static gui::Painter::Color inst_highlight_color_;
   static gui::Painter::Color path_inst_color_;
