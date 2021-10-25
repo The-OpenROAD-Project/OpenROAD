@@ -2655,7 +2655,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       powerRCGen();
       return 1;
     }
-    bool newConnExt= false;
+    bool newConnExt= true;
     extDebugNet *dbgNet= new extDebugNet(NULL, _block);
     extDebugNet *dbgNet1= new extDebugNet(NULL, _block);
     extDebugNet *opens= new extDebugNet(NULL, _block);
@@ -2687,8 +2687,6 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       dbSet<dbBTerm> bterms = net->getBTerms();
 
       if (!newConnExt) {
-
-
         cnt += makeNetRCsegs(net);
 
         uint tt;
@@ -2701,7 +2699,8 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       uint termCnt= iterms.size() + bterms.size();
 
       //if (net->isDisconnected() && _debug_net_id==netId){
-      if (net->isDisconnected() && termCnt<100){
+      //if (net->isDisconnected() && termCnt<100){
+      if (net->isDisconnected()){
         orderWireWarnCnt ++;
         dbgNet->setNet(net);
       
@@ -2710,7 +2709,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
             // if (netId==4963)
            
             if (netId==_debug_net_id)
-                dbgNet->_debug= true;
+                  dbgNet->_debug= true;
             if (dbgNet->checkNet(0) == 0) {
                 orderWireFixedCnt ++;
                 dbgNet->netStats(openNetsFP, "--------------- Disconnected Net FIXED:");

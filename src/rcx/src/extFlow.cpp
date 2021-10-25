@@ -1343,8 +1343,9 @@ uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
       dbSet<dbITerm> iterms= net->getITerms();
       dbSet<dbBTerm> bterms = net->getBTerms();
       uint termCnt= iterms.size() + bterms.size();
-      bool newConnExt= net->isDisconnected() && termCnt<100;
-      newConnExt= false;
+      bool newConnExt= net->isDisconnected();
+      // bool newConnExt= net->isDisconnected() && termCnt<100;
+      // newConnExt= false ;
 // ---------------------------------------------------------------
    uint rseg_type= 19; // wire=9
    if (!newConnExt)
