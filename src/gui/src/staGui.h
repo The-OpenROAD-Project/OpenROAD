@@ -266,11 +266,13 @@ class TimingPathRenderer : public gui::Renderer
                     odb::dbObject* source_node,
                     odb::dbObject* sink_node,
                     gui::Painter& painter,
-                    const gui::Descriptor* net_descriptor);
+                    const gui::Descriptor* net_descriptor,
+                    const Painter::Color& clock_color);
 
   void drawNodesList(TimingPath::TimingNodeList* nodes,
                      gui::Painter& painter,
-                     const gui::Descriptor* net_descriptor);
+                     const gui::Descriptor* net_descriptor,
+                     const Painter::Color& clock_color);
 
   sta::dbSta* sta_;
 
@@ -289,6 +291,7 @@ class TimingPathRenderer : public gui::Renderer
   static gui::Painter::Color term_color_;
   static gui::Painter::Color signal_color_;
   static gui::Painter::Color clock_color_;
+  static gui::Painter::Color capture_clock_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
