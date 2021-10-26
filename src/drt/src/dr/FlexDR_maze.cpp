@@ -1504,7 +1504,14 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
     gcWorker.main();
     setMarkers(gcWorker.getMarkers());
   }
-
+  if (debug) {
+    cout << "Starting with " << markers_.size() << " markers\n";
+    for (auto& marker : markers_) {
+      cout << marker << "\n";
+    }
+    if (needRecheck_)
+      cout << "(Needs recheck)\n";
+  }
   setGCWorker(&gcWorker);
 
   // init net status
@@ -1575,9 +1582,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
     bool didRoute = false;
     bool didCheck = false;
 
-    if (graphics_ && obj->typeId() == drcNet) {
-      graphics_->startNet(static_cast<drNet*>(obj));
-    }
+    
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {
@@ -1589,11 +1594,15 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         net->getFrNet()->setModified(true);
       }
       net->setNumMarkers(0);
+      if (graphics_) 
+        graphics_->startNet(net);
       for (auto& uConnFig : net->getRouteConnFigs()) {
         subPathCost(uConnFig.get());
         workerRegionQuery.remove(uConnFig.get());  // worker region query
       }
       modEolCosts_poly(gcWorker_->getNet(net->getFrNet()), 0);
+      if (graphics_) 
+        graphics_->show(true);
       // route_queue need to unreserve via access if all nets are ripupped
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing

@@ -34,6 +34,7 @@
 #include <string>
 
 #include "frBaseTypes.h"
+#include "db/obj/frMarker.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -65,7 +66,7 @@ extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
-
+extern bool debug;
 extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
 
 extern int MINNUMACCESSPOINT_MACROCELLPIN;
@@ -162,6 +163,7 @@ std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
 std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
+std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
 #endif

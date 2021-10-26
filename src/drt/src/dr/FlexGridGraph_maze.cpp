@@ -33,7 +33,7 @@
 using namespace std;
 using namespace fr;
 
-bool debug = false;
+
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,

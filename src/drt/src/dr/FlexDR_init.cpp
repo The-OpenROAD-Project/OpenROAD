@@ -2682,6 +2682,8 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
           &marker, uniqueVictims, uniqueAggressors, checks, routes);
     }
   } else if (getRipupMode() == 1 || getRipupMode() == 2) {
+    if (debug && getDRIter() >= 13)
+      cout << "ADDING ALL NETS IN QUEUE\n";
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
@@ -2746,8 +2748,11 @@ void FlexDRWorker::route_queue_update_from_marker(
                     break;
                 }
             }
-            if (!overlaps)
-                return;
+            if (!overlaps) {
+              if (debug)
+                cout << "skipping marker " << *marker << " since it is outside worker\n";
+              return;
+            }
         }
   }
   vector<frBlockObject*> uniqueVictimOwners;     // to maintain order
@@ -2885,6 +2890,8 @@ void FlexDRWorker::route_queue_update_from_marker(
                 }
                 dNet->setNRipupAvoids(0);
             }
+            if (debug && getDRIter() >= 13)
+              cout << "Re-Adding net " << *fNet << " from marker " << *marker << "\n"; 
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }
