@@ -437,6 +437,8 @@ void DRCWidget::updateSelection(const Selected& selection)
 
 void DRCWidget::loadReport(const QString& filename)
 {
+  Gui::get()->removeSelected<DRCViolation*>();
+
   violations_.clear();
 
   try {
