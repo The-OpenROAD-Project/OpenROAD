@@ -210,6 +210,8 @@ void TimingWidget::init(sta::dbSta* sta)
       this,
       SLOT(selectedCaptureRowChanged(const QItemSelection&,
                                      const QItemSelection&)));
+
+  clearPathDetails();
 }
 
 void TimingWidget::readSettings(QSettings* settings)
@@ -246,6 +248,10 @@ void TimingWidget::clearPathDetails()
 
   path_details_model_->populateModel(nullptr, nullptr);
   capture_details_model_->populateModel(nullptr, nullptr);
+
+  path_details_table_view_->setEnabled(false);
+  capture_details_table_view_->setEnabled(false);
+
 
   path_renderer_->highlight(nullptr);
   emit highlightTimingPath(nullptr);
