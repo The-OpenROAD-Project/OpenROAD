@@ -24,16 +24,16 @@ u2/Z                                   60.65   23.79   36.87 (MET)
 
 [INFO RSZ-0058] Using max wire length 240um.
 [INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u3/A                                    0.10    0.06    0.04 (MET)
+u3/A                                    0.10    0.04    0.06 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-repeater1/Z                            60.65   16.20   44.46 (MET)
+repeater1/Z                            60.65   14.13   46.53 (MET)
 
