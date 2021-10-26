@@ -284,6 +284,9 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
   path_index_spin_box_->setValue(index.row());
 
   updateClockRows();
+
+  path_details_table_view_->setEnabled(path_details_model_->hasNodes());
+  capture_details_table_view_->setEnabled(capture_details_model_->hasNodes());
 }
 
 void TimingWidget::updateClockRows()
@@ -318,6 +321,10 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModel
     return;
   }
   path_renderer_->clearHighlightNodes();
+
+  if (!model->hasNodes()) {
+    return;
+  }
 
   auto* nodes = model->getNodes();
   if (model->isClockSummaryRow(index)) {

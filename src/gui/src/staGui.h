@@ -233,6 +233,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
+  bool hasNodes() const { return nodes_ != nullptr && !nodes_->empty(); }
   int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
 
   const TimingPathNode* getNodeAt(const QModelIndex& index) const;

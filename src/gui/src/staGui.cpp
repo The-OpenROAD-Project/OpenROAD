@@ -478,7 +478,7 @@ TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta)
 
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
-  if (path_ == nullptr) {
+  if (path_ == nullptr || !hasNodes()) {
     return 0;
   }
 
@@ -519,7 +519,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     }
   }
 
-  if (!index.isValid() || role != Qt::DisplayRole || path_ == nullptr || nodes_ == nullptr) {
+  if (!index.isValid() ||
+      role != Qt::DisplayRole ||
+      path_ == nullptr ||
+      nodes_ == nullptr ||
+      !hasNodes()) {
     return QVariant();
   }
 
