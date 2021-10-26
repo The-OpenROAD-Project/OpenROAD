@@ -66,7 +66,7 @@ extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
 extern fr::frLayerNum VIAONLY_STDCELLPIN_TOPLAYERNUM;
-extern bool debug;
+
 extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
 
 extern int MINNUMACCESSPOINT_MACROCELLPIN;

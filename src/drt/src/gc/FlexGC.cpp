@@ -114,6 +114,10 @@ void FlexGCWorker::checkMinStep(gcPin* pin)
   impl_->checkMetalShape_minStep(pin);
 }
 
+void FlexGCWorker::updateGCWorker() {
+  impl_->updateGCWorker();
+}
+
 void FlexGCWorker::end()
 {
   impl_->end();

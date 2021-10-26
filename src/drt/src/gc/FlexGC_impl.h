@@ -129,6 +129,9 @@ class FlexGCWorker::Impl
   void initPA0(const frDesign* design);
   void initPA1();
 
+  // update
+  void updateGCWorker();
+
  protected:
   frTechObject* tech_;
   Logger* logger_;
@@ -216,9 +219,6 @@ class FlexGCWorker::Impl
           fixedMaxRectangles);
 
   void initRegionQuery();
-
-  // update
-  void updateGCWorker();
 
   void checkMetalSpacing();
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,

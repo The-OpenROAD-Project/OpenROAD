@@ -76,7 +76,7 @@ class FlexGCWorker
   void updateDRNet(drNet* net);
   // used in rp_prep
   void checkMinStep(gcPin* pin);
-
+  void updateGCWorker();
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;

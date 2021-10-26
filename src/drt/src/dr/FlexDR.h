@@ -322,7 +322,7 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in) { gcWorker_ = in; }
+  void setGCWorker(FlexGCWorker* in) { gcWorker_ = unique_ptr<FlexGCWorker>(in); }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -367,7 +367,7 @@ class FlexDRWorker
   int getInitNumMarkers() const { return initNumMarkers_; }
   int getNumMarkers() const { return markers_.size(); }
   int getBestNumMarkers() const { return bestMarkers_.size(); }
-  FlexGCWorker* getGCWorker() { return gcWorker_; }
+  FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
     const FlexGridGraph& getGridGraph() const { return gridGraph_; }
 
@@ -435,7 +435,7 @@ class FlexDRWorker
   FlexDRWorkerRegionQuery rq_;
 
   // persistant gc worker
-  FlexGCWorker* gcWorker_;
+  unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
   vector<Point3D> specialAccessAPs;
@@ -624,7 +624,7 @@ class FlexDRWorker
   void initMarkers(const frDesign* design);
 
   // route_queue
-  void route_queue(FlexGCWorker& gcWorker);
+  void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
   void modEolCosts_poly(gcNet* net, int modType);
   void modEolCosts_poly(gcPin* shape, frLayer* layer, int modType);

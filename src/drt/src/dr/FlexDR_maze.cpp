@@ -42,7 +42,7 @@
 using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
-
+bool debug = false;
 static frSquaredDistance pt2boxDistSquare(const frPoint& pt, const frBox& box)
 {
   frCoord dx = max(max(box.left() - pt.x(), pt.x() - box.right()), 0);
@@ -1496,13 +1496,13 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
-void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
+void FlexDRWorker::route_queue()
 {
   queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
-    gcWorker.main();
-    setMarkers(gcWorker.getMarkers());
+    gcWorker_->main();
+    setMarkers(gcWorker_->getMarkers());
   }
   if (debug) {
     cout << "Starting with " << markers_.size() << " markers\n";
@@ -1512,7 +1512,6 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
     if (needRecheck_)
       cout << "(Needs recheck)\n";
   }
-  setGCWorker(&gcWorker);
 
   // init net status
   route_queue_resetRipup();
@@ -1530,11 +1529,11 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
   route_queue_main(rerouteQueue);
 
   // end
-  gcWorker.resetTargetNet();
-  gcWorker.setEnableSurgicalFix(true);
-  gcWorker.main();
+  gcWorker_->resetTargetNet();
+  gcWorker_->setEnableSurgicalFix(true);
+  gcWorker_->main();
   // write back GC patches
-  for (auto& pwire : gcWorker.getPWires()) {
+  for (auto& pwire : gcWorker_->getPWires()) {
     auto net = pwire->getNet();
     if (!net) {
       cout << "Error: pwire with no net\n";
@@ -1556,9 +1555,9 @@ void FlexDRWorker::route_queue(FlexGCWorker& gcWorker)
     net->addRoute(std::move(tmp));
   }
 
-  gcWorker.end();
+  gcWorker_->end();
 
-  setMarkers(gcWorker.getMarkers());
+  setMarkers(gcWorker_->getMarkers());
 
   for (auto& net : nets_) {
     net->setBestRouteConnFigs();
@@ -1601,8 +1600,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         workerRegionQuery.remove(uConnFig.get());  // worker region query
       }
       modEolCosts_poly(gcWorker_->getNet(net->getFrNet()), 0);
-      if (graphics_) 
-        graphics_->show(true);
       // route_queue need to unreserve via access if all nets are ripupped
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
@@ -2484,7 +2481,8 @@ bool FlexDRWorker::routeNet(drNet* net)
   if (net->getPins().size() <= 1) {
     return true;
   }
-
+  if (graphics_) 
+    graphics_->show(true);
   set<drPin*, frBlockObjectComp> unConnPins;
   map<FlexMazeIdx, set<drPin*, frBlockObjectComp>> mazeIdx2unConnPins;
   map<FlexMazeIdx, frBox3D*>
