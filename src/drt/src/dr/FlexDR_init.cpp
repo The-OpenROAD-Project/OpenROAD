@@ -3329,9 +3329,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     FlexMazeIdx bi, ei;
     via->getMazeIdx(bi, ei);
     if (isAddPathCost) {
-      addPathCost(via.get());
+      addPathCost(via.get(), true);
     } else {
-      subPathCost(via.get());
+      subPathCost(via.get(), true);
     }
   }
 }
@@ -3371,9 +3371,9 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
     if (isAddPathCost) {
-      addPathCost(connFig.get());
+      addPathCost(connFig.get(), true);
     } else {
-      subPathCost(connFig.get());
+      subPathCost(connFig.get(), true);
     }
   }
 }
