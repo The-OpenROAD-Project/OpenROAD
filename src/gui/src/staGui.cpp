@@ -106,14 +106,9 @@ gui::Painter::Color TimingPathRenderer::capture_clock_color_ = gui::Painter::gre
 
 /////////
 
-TimingPathsModel::TimingPathsModel(sta::dbSta* sta, bool get_max, int path_count)
-    : sta_(sta)
+TimingPathsModel::TimingPathsModel(sta::dbSta* sta, bool get_max, int path_count, QObject* parent)
+    : QAbstractTableModel(parent), sta_(sta)
 {
-}
-
-TimingPathsModel::~TimingPathsModel()
-{
-  // TBD
 }
 
 TimingPath* TimingPathsModel::getPathAt(const QModelIndex& index) const
@@ -467,8 +462,8 @@ std::string TimingPathNode::getNetName() const
 
 /////////
 
-TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta)
-  : QAbstractTableModel(),
+TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta, QObject* parent)
+  : QAbstractTableModel(parent),
     sta_(sta),
     is_capture_(is_capture),
     path_(nullptr),
@@ -625,10 +620,6 @@ TimingPathRenderer::TimingPathRenderer(sta::dbSta* sta) :
   TimingPathRenderer::signal_color_.a = 100;
   TimingPathRenderer::term_color_.a = 100;
   TimingPathRenderer::capture_clock_color_.a = 100;
-}
-
-TimingPathRenderer::~TimingPathRenderer()
-{
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)

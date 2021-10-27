@@ -240,7 +240,7 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new QTreeView(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
-      load_(new QPushButton("Load...")),
+      load_(new QPushButton("Load...", this)),
       renderer_(std::make_unique<DRCRenderer>(violations_))
 {
   setObjectName("drc_viewer");  // for settings
@@ -252,7 +252,7 @@ DRCWidget::DRCWidget(QWidget* parent)
   header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(1, QHeaderView::Stretch);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(view_);
   layout->addWidget(load_);
