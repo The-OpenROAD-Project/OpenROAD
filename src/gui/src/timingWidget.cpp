@@ -153,7 +153,7 @@ void TimingWidget::init(sta::dbSta* sta)
   hold_timing_paths_model_ = new TimingPathsModel(sta);
   path_details_model_ = new TimingPathDetailModel(false, sta);
   capture_details_model_ = new TimingPathDetailModel(true, sta);
-  path_renderer_ = new TimingPathRenderer(sta);
+  path_renderer_ = std::make_unique<TimingPathRenderer>(sta);
 
   auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
     view->setModel(model);
@@ -511,9 +511,9 @@ void TimingWidget::toggleRenderer(bool visible)
 
   auto gui = Gui::get();
   if (visible) {
-    gui->registerRenderer(path_renderer_);
+    gui->registerRenderer(path_renderer_.get());
   } else {
-    gui->unregisterRenderer(path_renderer_);
+    gui->unregisterRenderer(path_renderer_.get());
   }
 }
 
