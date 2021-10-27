@@ -1224,9 +1224,13 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
       edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
     }
 
+    // check the whole pin shape to make sure no overlaps will happen
+    // between pins
     bool placed_at_blocked = horizontal ?
-                             checkBlocked(edge, pos.y(), layer) :
-                             checkBlocked(edge, pos.x(), layer);;
+                             checkBlocked(edge, pos.y() - height/2, layer) ||
+                              checkBlocked(edge, pos.y() + height/2, layer) :
+                             checkBlocked(edge, pos.x() - width/2, layer) ||
+                              checkBlocked(edge, pos.x() + width/2, layer);
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
@@ -1242,9 +1246,13 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
         sum = true;
       }
 
+      // check the whole pin shape to make sure no overlaps will happen
+      // between pins
       placed_at_blocked = horizontal ?
-                          checkBlocked(edge, pos.y() + offset, layer) :
-                          checkBlocked(edge, pos.x() + offset, layer);
+                          checkBlocked(edge, pos.y() - height/2 + offset, layer) ||
+                            checkBlocked(edge, pos.y() + height/2 + offset, layer) :
+                          checkBlocked(edge, pos.x() - width/2 + offset, layer) ||
+                            checkBlocked(edge, pos.x() + width/2 + offset, layer);
     }
     pos.x() += horizontal ? 0 : offset;
     pos.y() += horizontal ? offset : 0;
@@ -1319,7 +1327,7 @@ Interval IOPlacer::getIntervalFromPin(IOPin& io_pin)
 
   odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(io_pin.getLayer());
   // sum the half width of the layer to avoid overlaps in adjacent tracks
-  int half_width = int(ceil(tech_layer->getWidth() / 2));
+  int half_width = int(ceil(tech_layer->getWidth()));
 
   if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     // pin is on the left or right edge
