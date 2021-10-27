@@ -324,7 +324,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
     gtl::yl((*this), yl);
     gtl::yh((*this), yh);
   }
-  void setRect(const frPoint& bp, const frPoint& ep)
+  void setRect(const Point& bp, const Point& ep)
   {
     gtl::xl((*this), bp.x());
     gtl::xh((*this), ep.x());
@@ -444,7 +444,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
     gtl::polygon_90_with_holes_data<frCoord>::operator=(in);
   }
   // ensure gtl assumption: counterclockwise for outer and clockwise for holes
-  void setPolygon(const std::vector<frPoint>& in)
+  void setPolygon(const std::vector<Point>& in)
   {
     std::vector<gtl::point_data<frCoord>> points;
     gtl::point_data<frCoord> tmp;

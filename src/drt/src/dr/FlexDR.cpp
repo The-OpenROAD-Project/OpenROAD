@@ -113,7 +113,7 @@ void FlexDR::initFromTA()
         if (connFig->typeId() == frcPathSeg) {
           unique_ptr<frShape> ps = make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
-          frPoint bp, ep;
+          Point bp, ep;
           static_cast<frPathSeg*>(ps.get())->getPoints(bp, ep);
           if (ep.x() - bp.x() + ep.y() - bp.y() == 1) {
             ;  // skip TA dummy segment
@@ -137,10 +137,10 @@ void FlexDR::initGCell2BoundaryPin()
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   auto tmpVec
-      = vector<map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>>(
+      = vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>(
           (int) ygp.getCount());
   gcell2BoundaryPin_ = vector<
-      vector<map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>>>(
+      vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>>(
       (int) xgp.getCount(), tmpVec);
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     auto netPtr = net.get();
@@ -149,7 +149,7 @@ void FlexDR::initGCell2BoundaryPin()
         if (connFig->typeId() == frcPathSeg) {
           auto ps = static_cast<frPathSeg*>(connFig.get());
           frLayerNum layerNum;
-          frPoint bp, ep;
+          Point bp, ep;
           ps->getPoints(bp, ep);
           layerNum = ps->getLayerNum();
           // skip TA dummy segment
@@ -157,7 +157,7 @@ void FlexDR::initGCell2BoundaryPin()
               || ep.x() - bp.x() + ep.y() - bp.y() == 0) {
             continue;
           }
-          frPoint idx1, idx2;
+          Point idx1, idx2;
           getDesign()->getTopBlock()->getGCellIdx(bp, idx1);
           getDesign()->getTopBlock()->getGCellIdx(ep, idx2);
           // update gcell2BoundaryPin
@@ -168,7 +168,7 @@ void FlexDR::initGCell2BoundaryPin()
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
               frBox gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(frPoint(x, y), gcellBox);
+              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
               frCoord leftBound = gcellBox.left();
               frCoord rightBound = gcellBox.right();
               bool hasLeftBound = true;
@@ -184,12 +184,12 @@ void FlexDR::initGCell2BoundaryPin()
                 hasRightBound = false;
               }
               if (hasLeftBound) {
-                frPoint boundaryPt(leftBound, bp.y());
+                Point boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
               if (hasRightBound) {
-                frPoint boundaryPt(rightBound, ep.y());
+                Point boundaryPt(rightBound, ep.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
@@ -200,7 +200,7 @@ void FlexDR::initGCell2BoundaryPin()
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
               frBox gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(frPoint(x, y), gcellBox);
+              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
               frCoord bottomBound = gcellBox.bottom();
               frCoord topBound = gcellBox.top();
               bool hasBottomBound = true;
@@ -216,12 +216,12 @@ void FlexDR::initGCell2BoundaryPin()
                 hasTopBound = false;
               }
               if (hasBottomBound) {
-                frPoint boundaryPt(bp.x(), bottomBound);
+                Point boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
               if (hasTopBound) {
-                frPoint boundaryPt(ep.x(), topBound);
+                Point boundaryPt(ep.x(), topBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
@@ -1390,13 +1390,13 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>
+map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
                                 const frBox& routeBox)
 {
-  map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp> bp;
+  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -1501,11 +1501,11 @@ void FlexDR::searchRepair(int iter,
     for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
       auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
       frBox routeBox1;
-      getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
+      getDesign()->getTopBlock()->getGCellBox(Point(i, j), routeBox1);
       frBox routeBox2;
       const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
       const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
-      getDesign()->getTopBlock()->getGCellBox(frPoint(max_i, max_j), routeBox2);
+      getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
       frBox routeBox(routeBox1.left(),
                      routeBox1.bottom(),
                      routeBox2.right(),
@@ -1622,6 +1622,9 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
+  if (logger_->debugCheck(DRT, "drc", 1)) {
+    reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  }
 }
 
 void FlexDR::end(bool writeMetrics)
@@ -1630,7 +1633,7 @@ void FlexDR::end(bool writeMetrics)
   vector<ULL> wlen(getTech()->getLayers().size(), 0);
   vector<ULL> sCut(getTech()->getLayers().size(), 0);
   vector<ULL> mCut(getTech()->getLayers().size(), 0);
-  frPoint bp, ep;
+  Point bp, ep;
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
@@ -1760,18 +1763,18 @@ void FlexDR::end(bool writeMetrics)
   }
 }
 
-void FlexDR::reportDRC()
+void FlexDR::reportDRC(const string& file_name)
 {
   double dbu = getTech()->getDBUPerUU();
 
-  if (DRC_RPT_FILE == string("")) {
+  if (file_name == string("")) {
     if (VERBOSE > 0) {
       logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
 
-  ofstream drcRpt(DRC_RPT_FILE.c_str());
+  ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
     for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
       auto con = marker->getConstraint();
@@ -2351,7 +2354,7 @@ int FlexDR::main()
                false);
 
   if (DRC_RPT_FILE != string("")) {
-    reportDRC();
+    reportDRC(DRC_RPT_FILE);
   }
   if (VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");

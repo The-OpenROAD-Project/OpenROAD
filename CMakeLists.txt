@@ -72,7 +72,7 @@ message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RELEASE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

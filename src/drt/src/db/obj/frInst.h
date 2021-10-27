@@ -83,11 +83,11 @@ class frInst : public frRef
 
   dbOrientType getOrient() const override { return xform_.orient(); }
   void setOrient(const dbOrientType& tmpOrient) override { xform_.set(tmpOrient); }
-  void getOrigin(frPoint& tmpOrigin) const override
+  void getOrigin(Point& tmpOrigin) const override
   {
     tmpOrigin.set(xform_.xOffset(), xform_.yOffset());
   }
-  void setOrigin(const frPoint& tmpPoint) override { xform_.set(tmpPoint); }
+  void setOrigin(const Point& tmpPoint) override { xform_.set(tmpPoint); }
   void getTransform(frTransform& xformIn) const override
   {
     xformIn.set(xform_.xOffset(), xform_.yOffset(), xform_.orient());
@@ -134,6 +134,8 @@ class frInst : public frRef
   // others
   void getUpdatedXform(frTransform& in, bool noOrient = false) const;
   void getBoundaryBBox(frBox& in) const;
+  
+  frInstTerm* getInstTerm(const std::string& name);
 
  protected:
   frString name_;

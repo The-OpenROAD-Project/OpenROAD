@@ -236,8 +236,8 @@ const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
 static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
 {
-  frPoint ll = worker->getRouteBox().lowerLeft();
-  frPoint origin;
+  Point ll = worker->getRouteBox().lowerLeft();
+  Point origin;
   design->getTopBlock()->getGCellIdx(ll, origin);
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
@@ -333,7 +333,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setPen(layer, /* cosmetic */ true);
   if (checkDisplayControl(maze_search_visible_) &&
         !points_by_layer_.empty()) {
-    for (frPoint& pt : points_by_layer_[layerNum]) {
+    for (Point& pt : points_by_layer_[layerNum]) {
       painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
       painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
     }
@@ -364,12 +364,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     color.a = 255;
     for (frMIdx x = 0; x < x_dim; ++x) {
       for (frMIdx y = 0; y < y_dim; ++y) {
-        frPoint pt;
+        Point pt;
         grid_graph_->getPoint(pt, x, y);
         //draw edges
         if (draw_edges || draw_gCostEdges || draw_blockedEdges) {
             if (x != x_dim - 1) {
-                frPoint pt2;
+                Point pt2;
                 grid_graph_->getPoint(pt2, x + 1, y);
 
                 if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
@@ -385,7 +385,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 painter.setPen(layer, true);
             }
             if (y != y_dim - 1) {
-                frPoint pt2;
+                Point pt2;
                 grid_graph_->getPoint(pt2, x, y + 1);
                 if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
                     painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -544,7 +544,7 @@ void FlexDRGraphics::show(bool checkStopConditions) {
         }
         frBox gcellBox = worker_->getGCellBox();
         if (settings_->gcellX >= 0
-            && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+            && !gcellBox.contains(Point(settings_->gcellX, settings_->gcellY))) {
           return;
         }
     }
@@ -600,7 +600,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   if (net_) {
     for (auto& pin : net_->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
-        frPoint pt;
+        Point pt;
         ap->getPoint(pt);
         painter.drawLine({pt.x() - 100, pt.y() - 100},
                          {pt.x() + 100, pt.y() + 100});
@@ -621,11 +621,11 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
 
   frBox gcellBox = in->getGCellBox();
   if (settings_->gcellX >= 0
-      && !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+      && !gcellBox.contains(Point(settings_->gcellX, settings_->gcellY))) {
     return;
   }
 
-  frPoint origin;
+  Point origin;
   design_->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(), origin);
   status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
@@ -657,7 +657,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   assert(grid_graph_ == nullptr || grid_graph_ == grid_graph);
   grid_graph_ = grid_graph;
 
-  frPoint in;
+  Point in;
   grid_graph->getPoint(in, grid.x(), grid.y());
   frLayerNum layer = grid_graph->getLayerNum(grid.z());
 
@@ -699,7 +699,7 @@ void FlexDRGraphics::startNet(drNet* net)
   for (auto& pin : net->getPins()) {
     logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
-      frPoint pt;
+      Point pt;
       ap->getPoint(pt);
       logger_->info(DRT,
                     275,

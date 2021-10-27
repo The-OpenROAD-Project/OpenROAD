@@ -152,6 +152,11 @@ void Gui::setSelected(Selected selection)
   main_window->setSelected(selection);
 }
 
+void Gui::removeSelectedByType(const std::string& type)
+{
+  main_window->removeSelectedByType(type);
+}
+
 void Gui::addSelectedNet(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -246,6 +251,11 @@ int Gui::selectNext()
 int Gui::selectPrevious()
 {
   return main_window->getInspector()->selectPrevious();
+}
+
+void Gui::animateSelection(int repeat)
+{
+  main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
 std::string Gui::addRuler(int x0, int y0, int x1, int y1, const std::string& label, const std::string& name)
@@ -495,6 +505,16 @@ void Gui::registerDescriptor(const std::type_info& type,
   descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
 }
 
+const Descriptor* Gui::getDescriptor(const std::type_info& type) const
+{
+  auto find_descriptor = descriptors_.find(type);
+  if (find_descriptor == descriptors_.end()) {
+    logger_->error(utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
+  }
+
+  return find_descriptor->second.get();
+}
+
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
   descriptors_.erase(type);
@@ -663,21 +683,13 @@ int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& scri
 }
 
 void Selected::highlight(Painter& painter,
-                         bool select_flag,
-                         int highlight_group) const
+                         const Painter::Color& pen,
+                         int pen_width,
+                         const Painter::Color& brush,
+                         const Painter::Brush& brush_style) const
 {
-  if (select_flag) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
-  } else if (highlight_group >= 0 && highlight_group < 7) {
-    auto highlight_color = Painter::highlightColors[highlight_group];
-    highlight_color.a = 100;
-    painter.setPen(highlight_color, true);
-    painter.setBrush(highlight_color);
-  } else {
-    painter.setPen(Painter::persistHighlight);
-    painter.setBrush(Painter::transparent);
-  }
+  painter.setPen(pen, true, pen_width);
+  painter.setBrush(brush, brush_style);
 
   return descriptor_->highlight(object_, painter, additional_data_);
 }

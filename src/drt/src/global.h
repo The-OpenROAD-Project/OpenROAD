@@ -118,6 +118,10 @@ extern int CONGCOST;
 #define GRWAVEFRONTBUFFERHIGHMASK \
   (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
 
+namespace odb {
+class Point;
+}
+
 namespace fr {
 frCoord getGCELLGRIDX();
 frCoord getGCELLGRIDY();
@@ -134,7 +138,6 @@ class frRect;
 class frPolygon;
 class frNet;
 class drNet;
-class frPoint;
 class frBox;
 class drConnFig;
 class frShape;
@@ -153,7 +156,7 @@ std::ostream& operator<<(std::ostream& os, const fr::frTerm& termIn);
 std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
+std::ostream& operator<<(std::ostream& os, const odb::Point& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frShape& fig);

@@ -109,7 +109,7 @@ int HISTCOST = 32;
 
 namespace fr {
 
-ostream& operator<<(ostream& os, const frPoint& pIn)
+ostream& operator<<(ostream& os, const Point& pIn)
 {
   os << "( " << pIn.x() << " " << pIn.y() << " )";
   return os;
@@ -243,7 +243,7 @@ ostream& operator<<(ostream& os, const frBlock& blockIn)
 
 ostream& operator<<(ostream& os, const frInst& instIn)
 {
-  frPoint tmpPoint;
+  Point tmpPoint;
   frString tmpString;
   frString tmpName;
   instIn.getOrigin(tmpPoint);

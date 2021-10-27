@@ -264,6 +264,12 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(pressed()),
           this,
           SLOT(selectNext()));
+
+  view_->setMouseTracking(true);
+  connect(view_,
+          SIGNAL(entered(const QModelIndex&)),
+          this,
+          SLOT(focusIndex(const QModelIndex&)));
 }
 
 int Inspector::selectNext()
@@ -307,6 +313,8 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  emit selection(object);
+
   // disconnect announcements/signals so they will not be made for the following changes
   // this is needed to stop SelectedItemModel::itemChanged from triggering
   // since the change is related to adding the item and modifying the item
@@ -323,9 +331,8 @@ void Inspector::inspect(const Selected& object)
 
   selection_ = object;
   // update iterator
-  selected_itr_ = std::find_if_not(selected_.begin(), selected_.end(), [this](auto& item) {
-    return item < selection_;
-  });
+  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
+  int selected_index = std::distance(selected_.begin(), selected_itr_);
   selected_itr_label_->setText(
       QString::number(getSelectedIteratorPosition() + 1) +
       "/" +
@@ -447,7 +454,24 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
   }
 }
 
-void Inspector::update()
+void Inspector::focusIndex(const QModelIndex& index)
+{
+  if (index.column() == 0) {
+    return;
+  }
+
+  QStandardItem* item = model_->itemFromIndex(index);
+  QVariant item_data = item->data(EditorItemDelegate::selected_);
+
+  if (item_data.isValid()) {
+    // emit the selected item as something to focus on
+    emit focus(item_data.value<Selected>());
+  } else {
+    emit focus(Selected());
+  }
+}
+
+void Inspector::update(const Selected& object)
 {
   if (selected_.empty()) {
     button_frame_->setVisible(false);
@@ -459,7 +483,11 @@ void Inspector::update()
       button_frame_->setVisible(false);
     }
     selected_itr_ = selected_.begin();
-    inspect(*selected_itr_);
+    if (object) {
+      inspect(object);
+    } else {
+      inspect(*selected_itr_);
+    }
     raise();
   }
 }

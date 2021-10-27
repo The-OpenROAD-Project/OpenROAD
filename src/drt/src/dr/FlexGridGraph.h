@@ -148,7 +148,7 @@ class FlexGridGraph
     zDim = zCoords_.size();
   }
   // unsafe access
-  frPoint& getPoint(frPoint& in, frMIdx x, frMIdx y) const
+  Point& getPoint(Point& in, frMIdx x, frMIdx y) const
   {
     in.set(xCoords_[x], yCoords_[y]);
     return in;
@@ -167,11 +167,11 @@ class FlexGridGraph
   {
     return std::binary_search(zCoords_.begin(), zCoords_.end(), in);
   }
-  bool hasIdx(const frPoint& p, frLayerNum lNum) const
+  bool hasIdx(const Point& p, frLayerNum lNum) const
   {
     return (hasMazeXIdx(p.x()) && hasMazeYIdx(p.y()) && hasMazeZIdx(lNum));
   }
-  bool hasMazeIdx(const frPoint& p, frLayerNum lNum) const
+  bool hasMazeIdx(const Point& p, frLayerNum lNum) const
   {
     return (hasMazeXIdx(p.x()) && hasMazeYIdx(p.y()) && hasMazeZIdx(lNum));
   }
@@ -191,7 +191,7 @@ class FlexGridGraph
     return it - zCoords_.begin();
   }
   FlexMazeIdx& getMazeIdx(FlexMazeIdx& mIdx,
-                          const frPoint& p,
+                          const Point& p,
                           frLayerNum layerNum) const
   {
     mIdx.set(getMazeXIdx(p.x()), getMazeYIdx(p.y()), getMazeZIdx(layerNum));
@@ -383,7 +383,7 @@ class FlexGridGraph
       auto y1 = y;
       auto z1 = z;
       reverse(x1, y1, z1, dir);
-      frPoint pt, pt1;
+      Point pt, pt1;
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
       sol = box.contains(pt) && box.contains(pt1);
@@ -845,7 +845,7 @@ class FlexGridGraph
               std::vector<FlexMazeIdx>& path,
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
-              const frPoint& centerPt,
+              const Point& centerPt,
               std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
   void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn)
   {
@@ -1149,7 +1149,7 @@ class FlexGridGraph
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const frPoint& centerPt);
+                       const Point& centerPt);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
@@ -1157,7 +1157,7 @@ class FlexGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const frPoint& centerPt);
+              const Point& centerPt);
   bool hasAlignedUpDefTrack(frLayerNum layerNum,
                         const map<frLayerNum, frTrackPattern*>& xSubMap,
                         const map<frLayerNum, frTrackPattern*>& ySubMap) const;

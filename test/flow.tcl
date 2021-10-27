@@ -102,7 +102,7 @@ set_dont_use $dont_use
 
 estimate_parasitics -placement
 
-repair_design -max_slew_margin $max_slew_margin -max_cap_margin $max_cap_margin
+repair_design -slew_margin $slew_margin -cap_margin $cap_margin
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -241,6 +241,7 @@ utl::metric "clock_skew" [sta::worst_clock_skew -setup]
 utl::metric "max_slew_violations" [sta::max_slew_violation_count]
 utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
 utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+# report clock period as a metric for updating limits
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations

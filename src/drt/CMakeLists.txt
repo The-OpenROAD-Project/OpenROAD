@@ -96,7 +96,6 @@ target_sources(drt
     src/db/infra/frBox.cpp
     src/db/infra/frTime_helper.cpp
     src/db/infra/frTime.cpp
-    src/db/infra/frPoint.cpp
     src/db/taObj/taShape.cpp
     src/db/taObj/taTrack.cpp
     src/db/obj/frShape.cpp

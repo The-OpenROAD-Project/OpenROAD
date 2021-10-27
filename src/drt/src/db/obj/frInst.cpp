@@ -37,10 +37,10 @@ void frInst::getBBox(frBox& boxIn) const
   getRefBlock()->getBBox(boxIn);
   frTransform xform;
   getTransform(xform);
-  frPoint origin(boxIn.left(), boxIn.bottom());
-  origin.transform(frTransform(0, 0, xform.orient()));
+  Point origin(boxIn.left(), boxIn.bottom());
+  frTransform(0, 0, xform.orient()).apply(origin);
   xform.set(xform.xOffset() + origin.x(), xform.yOffset() + origin.y());
-  frPoint s(boxIn.right(), boxIn.top());
+  Point s(boxIn.right(), boxIn.top());
   xform.updateXform(s);
   boxIn.transform(xform);
 }
@@ -50,10 +50,10 @@ void frInst::getBoundaryBBox(frBox& boxIn) const
   getRefBlock()->getDieBox(boxIn);
   frTransform xform;
   getTransform(xform);
-  frPoint origin(boxIn.left(), boxIn.bottom());
-  origin.transform(frTransform(0, 0, xform.orient()));
+  Point origin(boxIn.left(), boxIn.bottom());
+  frTransform(0, 0, xform.orient()).apply(origin);
   xform.set(xform.xOffset() + origin.x(), xform.yOffset() + origin.y());
-  frPoint s(boxIn.right(), boxIn.top());
+  Point s(boxIn.right(), boxIn.top());
   xform.updateXform(s);
   boxIn.transform(xform);
 }
@@ -63,13 +63,22 @@ void frInst::getUpdatedXform(frTransform& in, bool noOrient) const
   getTransform(in);
   frBox mbox;
   getRefBlock()->getDieBox(mbox);
-  frPoint origin(mbox.left(), mbox.bottom());
-  origin.transform(frTransform(0, 0, in.orient()));
+  Point origin(mbox.left(), mbox.bottom());
+  frTransform(0, 0, in.orient()).apply(origin);
   in.set(in.xOffset() + origin.x(), in.yOffset() + origin.y());
   if (!noOrient) {
-    frPoint s(mbox.right(), mbox.top());
+    Point s(mbox.right(), mbox.top());
     in.updateXform(s);
   } else {
     in.set(dbOrientType(dbOrientType::R0));
   }
 }
+
+
+  frInstTerm* frInst::getInstTerm(const std::string& name) {
+      for (auto& it : instTerms_) {
+          if (it->getTerm()->getName() == name)
+              return it.get();
+      }
+      return nullptr;
+  }

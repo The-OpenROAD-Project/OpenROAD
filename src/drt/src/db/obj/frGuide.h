@@ -58,14 +58,14 @@ class frGuide : public frConnFig
   {
   }
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
 
-  const frPoint& getBeginPoint() const { return begin_; }
-  const frPoint& getEndPoint() const { return end_; }
+  const Point& getBeginPoint() const { return begin_; }
+  const Point& getEndPoint() const { return end_; }
 
   frLayerNum getBeginLayerNum() const { return beginLayer_; }
   frLayerNum getEndLayerNum() const { return endLayer_; }
@@ -75,10 +75,10 @@ class frGuide : public frConnFig
     return routeObj_;
   }
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setBeginLayerNum(frLayerNum numIn) { beginLayer_ = numIn; }
   void setEndLayerNum(frLayerNum numIn) { endLayer_ = numIn; }
@@ -115,8 +115,8 @@ class frGuide : public frConnFig
   bool overlaps(const frBox& box) const override { return false; }
 
  protected:
-  frPoint begin_;
-  frPoint end_;
+  Point begin_;
+  Point end_;
   frLayerNum beginLayer_;
   frLayerNum endLayer_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;

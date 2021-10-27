@@ -38,7 +38,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
                            const FlexMazeIdx& dstMazeIdx2,
-                           const frPoint& centerPt)
+                           const Point& centerPt)
 {
   frCost nextEstCost, nextPathCost;
   int gridX = currGrid.x();
@@ -53,7 +53,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   nextPathCost = getNextPathCost(currGrid, dir);
   auto lNum = getLayerNum(currGrid.z());
   auto pathWidth = getTech()->getLayer(lNum)->getWidth();
-  frPoint currPt;
+  Point currPt;
   getPoint(currPt, gridX, gridY);
   frCoord currDist
       = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
@@ -158,7 +158,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
 void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx1,
                                     const FlexMazeIdx& dstMazeIdx2,
-                                    const frPoint& centerPt)
+                                    const Point& centerPt)
 {
   // N
   if (isExpandable(currGrid, frDirEnum::N)) {
@@ -194,7 +194,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // bend cost
   int bendCnt = 0;
   int forbiddenPenalty = 0;
-  frPoint srcPoint, dstPoint1, dstPoint2;
+  Point srcPoint, dstPoint1, dstPoint2;
   getPoint(srcPoint, src.x(), src.y());
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
@@ -231,7 +231,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   int gridY = src.y();
   int gridZ = src.z();
   getNextGrid(gridX, gridY, gridZ, dir);
-  frPoint nextPoint;
+  Point nextPoint;
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause fobidden via spacing to
   // boundary pin
@@ -824,7 +824,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
                            vector<FlexMazeIdx>& path,
                            FlexMazeIdx& ccMazeIdx1,
                            FlexMazeIdx& ccMazeIdx2,
-                           const frPoint& centerPt,
+                           const Point& centerPt,
                            map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
   // prep nextPinBox
@@ -845,7 +845,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
 
   wavefront_.cleanup();
   // init wavefront
-  frPoint currPt;
+  Point currPt;
   for (auto& idx : connComps) {
     if (isDst(idx.x(), idx.y(), idx.z())) {
       path.push_back(FlexMazeIdx(idx.x(), idx.y(), idx.z()));

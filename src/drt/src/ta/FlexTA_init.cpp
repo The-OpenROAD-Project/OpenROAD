@@ -90,7 +90,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          int& wlen,
                                          frCoord& wlen2)
 {
-  frPoint bp, ep;
+  Point bp, ep;
   guide->getPoints(bp, ep);
   if (!(bp == ep)) {
     return false;
@@ -167,10 +167,10 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         if (ap == nullptr) {
           continue;
         }
-        frPoint apBp;
+        Point apBp;
         ap->getPoint(apBp);
         auto bNum = ap->getLayerNum();
-        apBp.transform(shiftXform);
+        shiftXform.apply(apBp);
         if (layerNum == bNum && getRouteBox().contains(apBp)) {
           wlen2 = isH ? apBp.y() : apBp.x();
           maxBegin = isH ? apBp.x() : apBp.y();
@@ -215,7 +215,7 @@ void FlexTAWorker::initIroute_helper(frGuide* guide,
 void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
                                                     frCoord& wlen2)
 {
-  frPoint bp, ep;
+  Point bp, ep;
   guide->getPoints(bp, ep);
   auto net = guide->getNet();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -267,9 +267,9 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         if (ap == nullptr) {
           continue;
         }
-        frPoint apBp;
+        Point apBp;
         ap->getPoint(apBp);
-        apBp.transform(shiftXform);
+        shiftXform.apply(apBp);
         if (getRouteBox().contains(apBp)) {
           wlen2 = isH ? apBp.y() : apBp.x();
           return;
@@ -300,12 +300,12 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   downViaCoordSet.clear();
   upViaCoordSet.clear();
-  frPoint nbrBp, nbrEp;
-  frPoint nbrSegBegin, nbrSegEnd;
+  Point nbrBp, nbrEp;
+  Point nbrSegBegin, nbrSegEnd;
 
-  frPoint bp, ep;
+  Point bp, ep;
   guide->getPoints(bp, ep);
-  frPoint cp;
+  Point cp;
   // layerNum in FlexTAWorker
   vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
@@ -411,7 +411,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
       guide, maxBegin, minEnd, downViaCoordSet, upViaCoordSet, wlen, wlen2);
 
   frCoord trackLoc = 0;
-  frPoint segBegin, segEnd;
+  Point segBegin, segEnd;
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   // set trackIdx
   if (!isInitTA()) {
@@ -430,9 +430,9 @@ void FlexTAWorker::initIroute(frGuide* guide)
   ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {
-    rptr->setPoints(frPoint(maxBegin, trackLoc), frPoint(minEnd, trackLoc));
+    rptr->setPoints(Point(maxBegin, trackLoc), Point(minEnd, trackLoc));
   } else {
-    rptr->setPoints(frPoint(trackLoc, maxBegin), frPoint(trackLoc, minEnd));
+    rptr->setPoints(Point(trackLoc, maxBegin), Point(trackLoc, minEnd));
   }
   rptr->setLayerNum(layerNum);
   if (guide->getNet() && guide->getNet()->getNondefaultRule()) {
@@ -460,8 +460,8 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? frPoint(coord, trackLoc)
-                           : frPoint(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
+                           : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   for (auto coord : downViaCoordSet) {
@@ -475,8 +475,8 @@ void FlexTAWorker::initIroute(frGuide* guide)
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
-    rViaPtr->setOrigin(isH ? frPoint(coord, trackLoc)
-                           : frPoint(trackLoc, coord));
+    rViaPtr->setOrigin(isH ? Point(coord, trackLoc)
+                           : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   iroute->setWlenHelper(wlen);
@@ -503,7 +503,7 @@ void FlexTAWorker::initIroutes()
     regionQuery->queryGuide(getExtBox(), lNum, result);
     // cout <<endl <<"query1:" <<endl;
     for (auto& [boostb, guide] : result) {
-      frPoint pt1, pt2;
+      Point pt1, pt2;
       guide->getPoints(pt1, pt2);
       // cout <<endl;
       initIroute(guide);
@@ -514,7 +514,7 @@ void FlexTAWorker::initIroutes()
 void FlexTAWorker::initCosts()
 {
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  frPoint bp, ep;
+  Point bp, ep;
   frCoord bc, ec;
   // init cost
   if (isInitTA()) {
