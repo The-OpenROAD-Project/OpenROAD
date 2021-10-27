@@ -162,9 +162,6 @@ class GuiPainter : public Painter
       case NONE:
         brush_pattern = Qt::NoBrush;
         break;
-      case SOLID:
-        brush_pattern = Qt::SolidPattern;
-        break;
       case DIAGONAL:
         brush_pattern = Qt::DiagCrossPattern;
         break;
@@ -173,6 +170,10 @@ class GuiPainter : public Painter
         break;
       case DOTS:
         brush_pattern = Qt::Dense6Pattern;
+        break;
+      case SOLID:
+      default:
+        brush_pattern = Qt::SolidPattern;
         break;
       }
     }
@@ -961,14 +962,15 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
 
     int next_selection_idx;
+    const int selections_size = static_cast<int>(selections.size());
     // start at end of list and look for the selection item that is directly after a selected item.
-    for (next_selection_idx = selections.size(); next_selection_idx > 0; next_selection_idx--) {
+    for (next_selection_idx = selections_size; next_selection_idx > 0; next_selection_idx--) {
       // looking for true followed by false
-      if (is_selected[next_selection_idx-1] && !is_selected[next_selection_idx]) {
+      if (is_selected[next_selection_idx - 1] && !is_selected[next_selection_idx]) {
         break;
       }
     }
-    if (next_selection_idx == selections.size()) {
+    if (next_selection_idx == selections_size) {
       // found at the end of the list, loop around
       next_selection_idx = 0;
     }

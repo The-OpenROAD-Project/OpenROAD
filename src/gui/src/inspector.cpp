@@ -180,19 +180,19 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 
 EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (std::any_cast<const char*>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<const std::string>(&value)) {
+  } else if (std::any_cast<const std::string>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<int>(&value)) {
+  } else if (std::any_cast<int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+  } else if (std::any_cast<unsigned int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<double>(&value)) {
+  } else if (std::any_cast<double>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<float>(&value)) {
+  } else if (std::any_cast<float>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<bool>(&value)) {
+  } else if (std::any_cast<bool>(&value)) {
     return EditorItemDelegate::BOOL;
   } else {
     return EditorItemDelegate::STRING;
@@ -332,7 +332,6 @@ void Inspector::inspect(const Selected& object)
   selection_ = object;
   // update iterator
   selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
-  int selected_index = std::distance(selected_.begin(), selected_itr_);
   selected_itr_label_->setText(
       QString::number(getSelectedIteratorPosition() + 1) +
       "/" +
