@@ -1199,8 +1199,55 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   odb::Point pos = odb::Point(x, y);
 
+  Rect boundary;
+  block_->getDieArea(boundary);
+  Point lb = boundary.ll();
+  Point ub = boundary.ur();
+
   if (force_to_die_bound) {
     movePinToTrack(pos, layer, width, height);
+    Edge edge;
+    odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
+    odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+    int min_spacing, init_track, num_track;
+    bool horizontal = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
+      int dist_lb = abs(pos.x() - lb.x());
+      int dist_ub = abs(pos.x() - ub.x());
+      edge = (dist_lb < dist_ub) ? Edge::left : Edge::right;
+    } else {
+      track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
+      int dist_lb = abs(pos.y() - lb.y());
+      int dist_ub = abs(pos.y() - ub.y());
+      edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
+    }
+
+    bool placed_at_blocked = horizontal ?
+                             checkBlocked(edge, pos.y(), layer) :
+                             checkBlocked(edge, pos.x(), layer);;
+    bool sum = true;
+    int offset_sum = 1;
+    int offset_sub = 1;
+    int offset = 0;
+    while (placed_at_blocked) {
+      if (sum) {
+        offset = offset_sum * min_spacing;
+        offset_sum++;
+        sum = false;
+      } else {
+        offset = -(offset_sub * min_spacing);
+        offset_sub++;
+        sum = true;
+      }
+
+      placed_at_blocked = horizontal ?
+                          checkBlocked(edge, pos.y() + offset, layer) :
+                          checkBlocked(edge, pos.x() + offset, layer);
+    }
+    pos.x() += horizontal ? 0 : offset;
+    pos.y() += horizontal ? offset : 0;
   }
 
   odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
