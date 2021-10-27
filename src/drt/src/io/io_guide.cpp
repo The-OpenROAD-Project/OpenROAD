@@ -582,7 +582,7 @@ void io::Parser::genGuides_gCell2PinMap(
         gCell2PinMap)
 {
   for (auto& instTerm : net->getInstTerms()) {
-    frTransform xform;
+    dbTransform xform;
     instTerm->getInst()->getUpdatedXform(xform);
     auto origTerm = instTerm->getTerm();
     auto uTerm = make_unique<frTerm>(*origTerm, xform);
@@ -618,14 +618,14 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   }
 
   // ap
-  frTransform shiftXform;
-  frTransform xform;
+  dbTransform shiftXform;
+  dbTransform xform;
   instTerm->getInst()->getUpdatedXform(xform);
   frTerm* trueTerm = instTerm->getTerm();
   string name;
   frInst* inst = instTerm->getInst();
   inst->getTransform(shiftXform);
-  shiftXform.set(dbOrientType(dbOrientType::R0));
+  shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
@@ -747,15 +747,15 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
 
   for (auto term : terms) {
     // ap
-    frTransform instXform;  // (0,0), R0
-    frTransform shiftXform;
+    dbTransform instXform;  // (0,0), R0
+    dbTransform shiftXform;
     frTerm* trueTerm = nullptr;
     string name;
     frInst* inst = nullptr;
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(dbOrientType(dbOrientType::R0));
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();

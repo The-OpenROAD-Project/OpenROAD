@@ -102,13 +102,13 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
               idx2);
 
   frBox box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
-  frTransform xform;
+  dbTransform xform;
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    xform.set(Point(boxLeft, trackLoc));
+    xform.setOffset(Point(boxLeft, trackLoc));
     box2.transform(xform);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -248,7 +248,7 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   frBox tmpBx;
-  frTransform xform;
+  dbTransform xform;
   frCoord dx, dy, prl;
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
@@ -256,9 +256,9 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.set(Point(box.left(), trackLoc));
+      xform.setOffset(Point(box.left(), trackLoc));
     } else {
-      xform.set(Point(trackLoc, box.bottom()));
+      xform.setOffset(Point(trackLoc, box.bottom()));
     }
     tmpBx.set(viaBox);
     tmpBx.transform(xform);
@@ -412,7 +412,7 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
   auto& trackLocs = getTrackLocs(followTrackLNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   frBox tmpBx;
-  frTransform xform;
+  dbTransform xform;
   frCoord dx, dy, c2ctrackdist;
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
@@ -423,9 +423,9 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.set(Point(box.left(), trackLoc));
+      xform.setOffset(Point(box.left(), trackLoc));
     } else {
-      xform.set(Point(trackLoc, box.bottom()));
+      xform.setOffset(Point(trackLoc, box.bottom()));
     }
     tmpBx.set(viaBox);
     tmpBx.transform(xform);
@@ -596,10 +596,10 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    frTransform xform;
+    dbTransform xform;
     Point pt;
     obj->getOrigin(pt);
-    xform.set(pt);
+    xform.setOffset(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       rect->getBBox(box);
