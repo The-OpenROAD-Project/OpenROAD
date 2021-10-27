@@ -31,6 +31,9 @@
 
 #include "db/infra/frPoint.h"
 #include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+using odb::dbOrientType;
+using odb::dbTransform;
 
 namespace fr {
 class frBox
@@ -164,7 +167,7 @@ class frBox
     }
     return std::max(xd, yd);
   }
-  void transform(const frTransform& xform);
+  void transform(const dbTransform& xform);
   bool overlaps(const frBox& boxIn, bool incEdges = true) const;
   void bloat(const frCoord distance, frBox& boxOut) const;
   bool operator==(const frBox& boxIn) const

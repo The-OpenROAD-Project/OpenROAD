@@ -485,7 +485,7 @@ void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
 
   FlexMazeIdx mIdx1, mIdx2;
   frBox bx, tmpBx, sViaBox;
-  frTransform xform;
+  dbTransform xform;
   Point pt;
   frCoord dx, dy;
   frVia sVia;
@@ -527,7 +527,7 @@ void FlexDRWorker::modMinimumcutCostVia(const frBox& box,
       for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
         for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
           gridGraph_.getPoint(pt, i, j);
-          xform.set(pt);
+          xform.setOffset(pt);
           tmpBx.set(viaBox);
           if (gridGraph_.isSVia(i, j, isUpperVia ? z : z - 1)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, isUpperVia ? z : z - 1)]
@@ -709,14 +709,14 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   frBox tmpBx;
   frSquaredDistance distSquare = 0;
   frCoord dx, dy, prl;
-  frTransform xform;
+  dbTransform xform;
   frCoord reqDist = 0;
   frBox sViaBox;
   frVia sVia;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       gridGraph_.getPoint(pt, i, j);
-      xform.set(pt);
+      xform.setOffset(pt);
       tmpBx.set(viaBox);
       if (gridGraph_.isSVia(i, j, isUpperVia ? z : z - 1)) {
         auto sViaDef = apSVia_[FlexMazeIdx(i, j, isUpperVia ? z : z - 1)]
@@ -862,7 +862,7 @@ void FlexDRWorker::modEolSpacingCost_helper(const frBox& testbox,
 
   frVia sVia;
   frBox sViaBox;
-  frTransform xform;
+  dbTransform xform;
   Point pt;
 
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1145,7 +1145,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy, prl;
-  frTransform xform;
+  dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
@@ -1156,7 +1156,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        xform.set(pt);
+        xform.setOffset(pt);
         obj->getBBox(tmpBx);
         tmpBx.transform(xform);
         tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
@@ -1309,7 +1309,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy;
-  frTransform xform;
+  dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
@@ -1320,7 +1320,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        xform.set(pt);
+        xform.setOffset(pt);
         obj->getBBox(tmpBx);
         tmpBx.transform(xform);
         tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
@@ -1432,10 +1432,10 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
     modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
 
-    frTransform xform;
+    dbTransform xform;
     Point pt;
     obj->getOrigin(pt);
-    xform.set(pt);
+    xform.setOffset(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       rect->getBBox(box);

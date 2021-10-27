@@ -32,7 +32,6 @@
 #include <memory>
 
 #include "db/infra/frBox.h"
-#include "db/infra/frTransform.h"
 #include "db/taObj/taBlockObject.h"
 
 namespace fr {
@@ -43,7 +42,7 @@ class taFig : public taBlockObject
   virtual void getBBox(frBox& box) const = 0;
   // setters
   // others
-  virtual void move(const frTransform& xform) = 0;
+  virtual void move(const dbTransform& xform) = 0;
   virtual bool overlaps(const frBox& box) const = 0;
 
  protected:

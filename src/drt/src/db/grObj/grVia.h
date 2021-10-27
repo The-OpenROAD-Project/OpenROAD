@@ -81,8 +81,10 @@ class grVia : public grRef
   void setOrient(const dbOrientType& in) override { ; }
   void getOrigin(Point& in) const override { in = origin; }
   void setOrigin(const Point& in) override { origin = in; }
-  void getTransform(frTransform& in) const override { in.set(origin); }
-  void setTransform(const frTransform& in) override { ; }
+
+  // TODO this looks like a bug, shouldn't it also setOrient?
+  void getTransform(dbTransform& in) const override { in.setOffset(origin); }
+  void setTransform(const dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin
