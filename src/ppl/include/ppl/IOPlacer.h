@@ -82,11 +82,14 @@ struct Interval
   Edge edge;
   int begin;
   int end;
+  int layer;
   Interval() = default;
-  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e) {}
+  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e), layer(-1) {}
+  Interval(Edge edg, int b, int e, int l) : edge(edg), begin(b), end(e), layer(l) {}
   Edge getEdge() { return edge; }
   int getBegin() { return begin; }
   int getEnd() { return end; }
+  int getLayer() { return layer; }
 };
 
 struct Constraint
@@ -234,7 +237,7 @@ class IOPlacer
   void updateOrientation(IOPin& pin);
   void updatePinArea(IOPin& pin);
   void movePinToTrack(odb::Point& pos, int layer, int width, int height);
-  bool checkBlocked(Edge edge, int pos);
+  bool checkBlocked(Edge edge, int pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();

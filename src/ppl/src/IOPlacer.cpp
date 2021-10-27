@@ -226,12 +226,16 @@ void IOPlacer::initIOLists()
   }
 }
 
-bool IOPlacer::checkBlocked(Edge edge, int pos)
+bool IOPlacer::checkBlocked(Edge edge, int pos, int layer)
 {
   for (Interval blocked_interval : excluded_intervals_) {
-    if (blocked_interval.getEdge() == edge && pos >= blocked_interval.getBegin()
-        && pos <= blocked_interval.getEnd()) {
-      return true;
+    // check if the blocked interval blocks all layers (== -1) or if it blocks
+    // the layer of the position
+    if (blocked_interval.getLayer() == -1 || blocked_interval.getLayer() == layer) {
+      if (blocked_interval.getEdge() == edge && pos >= blocked_interval.getBegin()
+          && pos <= blocked_interval.getEnd()) {
+        return true;
+      }
     }
   }
 
@@ -400,7 +404,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
       curr_x = pos.getX();
       curr_y = pos.getY();
       bool blocked
-          = vertical ? checkBlocked(edge, curr_x) : checkBlocked(edge, curr_y);
+          = vertical ? checkBlocked(edge, curr_x, layer) : checkBlocked(edge, curr_y, layer);
       slots_.push_back({blocked, false, Point(curr_x, curr_y), layer, edge});
     }
     i++;
