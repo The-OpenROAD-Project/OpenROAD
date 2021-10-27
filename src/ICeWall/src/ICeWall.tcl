@@ -1024,6 +1024,19 @@ namespace eval ICeWall {
     return "$padcell"
   }
 
+  variable checked_masters {}
+  proc check_cell_master {name} {
+    variable db
+    variable checked_masters
+
+    if {![dict exists $checked_masters $name]} {
+      if {[$db findMaster $name] == "NULL"} {
+        utl::warn "PAD" 251 "Cannot find cell $name in the database."
+      }
+      dict set checked_masters $name 1
+    }
+  }
+
   proc get_cell_master {name} {
     variable db
 
@@ -4870,7 +4883,7 @@ namespace eval ICeWall {
     if {[dict exists $library cells] && [dict exists $library cells $cell_name]} {
       return $cell_name
     } else {
-      get_cell_master $cell_name
+      check_cell_master $cell_name
     }
 
     return $cell_name
@@ -5573,7 +5586,7 @@ namespace eval ICeWall {
       utl::error PAD 174 "Unexpected keyword in cell name specification, $msg."
     }
     foreach side [dict keys $cell_name_by_side] {
-      get_cell_master [dict get $cell_name_by_side $side]
+      check_cell_master [dict get $cell_name_by_side $side]
     }
 
     return $cell_name_by_side
@@ -5709,9 +5722,9 @@ namespace eval ICeWall {
         dict set cell_ref cell_name [check_cell_name_per_side [dict get $cell_ref cell_name]]
       } else {
         set cell_name [dict get $cell_ref cell_name]
-        get_cell_master $cell_name
+        check_cell_master $cell_name
         if {$type == "bump"} {
-          dict set cell_ref cell_name [check_cell_name $cell_name]
+          dict set cell_ref cell_name $cell_name
         } else {
           if {$type == "corner"} {
             set sides "ll lr ur ul"
