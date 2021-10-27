@@ -645,31 +645,32 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::T
     odb::dbNet* net = nullptr;
     odb::dbInst* inst = nullptr;
 
-    auto getInstance = [&](const TimingPathNode* node) {
-      if (inst != nullptr) {
-        return;
-      }
+    // get the next node for sink or instance
+    auto getNextNode = [&]() -> const TimingPathNode* {
+      auto node_itr = std::find_if(nodes->begin(), nodes->end(), [node](const auto& other) -> bool {
+        return other.get() == node;
+      });
 
-      if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-        inst = db_iterm->getInst();
+      if ((node_itr + 1) != nodes->end()) {
+        // advance to the next node if not at the end of the list
+        node_itr++;
+      } else if (node_itr != nodes->begin()) {
+        // go backwards if not at the start of the list (ie. prev was at the end)
+        node_itr--;
       }
+      return node_itr->get();
     };
 
-    auto getNet = [&](const TimingPathNode* node) {
-      if (net != nullptr) {
-        return;
-      }
+    // get the net associated with the node
+    if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+      odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
+      net = db_iterm->getNet();
+    } else {
+      odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node->pin_);
+      net = bterm->getNet();
+    }
 
-      if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-        net = db_iterm->getNet();
-      } else {
-        odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node->pin_);
-        net = bterm->getNet();
-      }
-    };
-
+    // get the sink associated with the node
     auto getSink = [&](const TimingPathNode* node) {
       if (sink_node != nullptr) {
         return;
@@ -689,35 +690,25 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::T
         }
       }
     };
-
-    getNet(node);
-
     getSink(node);
     if (sink_node == nullptr) {
-      auto node_itr = std::find_if(nodes->begin(), nodes->end(), [node](const auto& other) -> bool {
-        return other.get() == node;
-      });
-
-      if (node_itr != nodes->end()) {
-        node_itr++;
-      } else if (node_itr != nodes->begin()) {
-        node_itr--;
-      }
-      getSink(node_itr->get());
+      getSink(getNextNode());
     }
 
+    // get the instance associated with the node
+    auto getInstance = [&](const TimingPathNode* node) {
+      if (inst != nullptr) {
+        return;
+      }
+
+      if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
+        inst = db_iterm->getInst();
+      }
+    };
     getInstance(node);
     if (inst == nullptr) {
-      auto node_itr = std::find_if(nodes->begin(), nodes->end(), [node](const auto& other) -> bool {
-        return other.get() == node;
-      });
-
-      if (node_itr != nodes->end()) {
-        node_itr++;
-      } else if (node_itr != nodes->begin()) {
-        node_itr--;
-      }
-      getInstance(node_itr->get());
+      getInstance(getNextNode());
     }
 
     if (net != nullptr || inst != nullptr) {
