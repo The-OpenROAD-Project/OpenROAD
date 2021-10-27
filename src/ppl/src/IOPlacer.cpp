@@ -1239,14 +1239,14 @@ void IOPlacer::movePinToTrack(odb::Point& pos, int layer, int width, int height)
   if (layer != top_grid_.layer) { // pin is placed in the die boundaries
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) { // horizontal layer
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
-      pos.setY(floor((pos.y() - init_track) / min_spacing) * min_spacing + init_track);
+      pos.setY(round((pos.y() - init_track) / min_spacing) * min_spacing + init_track);
       int dist_lb = abs(pos.x() - lb_x);
       int dist_ub = abs(pos.x() - ub_x);
       int new_x = (dist_lb < dist_ub) ? lb_x + (width / 2) : ub_x - (width / 2);
       pos.setX(new_x);
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) { // vertical layer
       track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
-      pos.setX(floor((pos.x() - init_track) / min_spacing) * min_spacing + init_track);
+      pos.setX(round((pos.x() - init_track) / min_spacing) * min_spacing + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
       int new_y = (dist_lb < dist_ub) ? lb_y + (width / 2) : ub_y - (width / 2);
