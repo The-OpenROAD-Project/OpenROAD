@@ -109,6 +109,16 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
+  for (auto seg : pa_segs_) {
+    if (seg->getLayerNum() == layerNum) {
+      frBox bbox;
+      seg->getBBox(bbox);
+      painter.setPen(layer, /* cosmetic */ true);
+      painter.setBrush(layer);
+      painter.drawRect({bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+    }
+  }
+
   if (pa_markers_) {
     painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
@@ -129,7 +139,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
     painter.setPen(color, /* cosmetic */ true);
 
-    frPoint pt = ap.getPoint();
+    Point pt = ap.getPoint();
     painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
     painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
   }
@@ -207,6 +217,7 @@ void FlexPAGraphics::setViaAP(
 
   pa_ap_ = ap;
   pa_vias_ = {via};
+  pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     frBox bbox;
@@ -230,6 +241,41 @@ void FlexPAGraphics::setViaAP(
   pa_markers_ = nullptr;
 }
 
+void FlexPAGraphics::setPlanarAP(
+    const frAccessPoint* ap,
+    const frPathSeg* seg,
+    const std::vector<std::unique_ptr<frMarker>>& markers)
+{
+  if (!pin_ || !settings_->paMarkers) {
+    return;
+  }
+
+  pa_ap_ = ap;
+  pa_vias_.clear();
+  pa_segs_ = {seg};
+  pa_markers_ = &markers;
+  for (auto& marker : markers) {
+    frBox bbox;
+    marker->getBBox(bbox);
+    logger_->info(DRT,
+                  292,
+                  "Marker {} at ({}, {}) ({}, {}).",
+                  marker->getConstraint()->typeId(),
+                  bbox.left(),
+                  bbox.bottom(),
+                  bbox.right(),
+                  bbox.top());
+  }
+
+  gui_->redraw();
+  gui_->pause();
+
+  // These are going away once we return
+  pa_ap_ = nullptr;
+  pa_segs_.clear();
+  pa_markers_ = nullptr;
+}
+
 void FlexPAGraphics::setObjsAndMakers(
     const vector<pair<frConnFig*, frBlockObject*>>& objs,
     const std::vector<std::unique_ptr<frMarker>>& markers)
@@ -242,6 +288,9 @@ void FlexPAGraphics::setObjsAndMakers(
     if (obj->typeId() == frcVia) {
       auto via = static_cast<frVia*>(obj);
       pa_vias_.push_back(via);
+    } else if (obj->typeId() == frcPathSeg) {
+      auto seg = static_cast<frPathSeg*>(obj);
+      pa_segs_.push_back(seg);
     } else {
       logger_->warn(DRT, 280, "Unknown type {} in setObjAP", obj->typeId());
     }
@@ -266,6 +315,7 @@ void FlexPAGraphics::setObjsAndMakers(
   // These are going away once we return
   pa_markers_ = nullptr;
   pa_vias_.clear();
+  pa_segs_.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)

@@ -240,8 +240,8 @@ public:
                         const RiseFall *rf);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
-                    double max_slew_margin, // 0.0-1.0
-                    double max_cap_margin); // 0.0-1.0
+                    double slew_margin, // 0.0-1.0
+                    double cap_margin); // 0.0-1.0
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
@@ -253,8 +253,8 @@ public:
   // for debugging
   void repairNet(Net *net,
                  double max_wire_length, // meters
-                 double max_slew_margin,
-                 double max_cap_margin);
+                 double slew_margin,
+                 double cap_margin);
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
@@ -269,9 +269,6 @@ public:
                                LibertyPort *load_port,
                                double max_slew,
                                const Corner *corner);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew,
-                         const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
 
@@ -349,8 +346,8 @@ protected:
                          SteinerPt pt,
                          int dist_from_drvr);
   void repairDesign(double max_wire_length, // zero for none (meters)
-                    double max_slew_margin,
-                    double max_cap_margin,
+                    double slew_margin,
+                    double cap_margin,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,
@@ -359,8 +356,8 @@ protected:
   void repairNet(Net *net,
                  const Pin *drvr_pin,
                  Vertex *drvr,
-                 double max_slew_margin,
-                 double max_cap_margin,
+                 double slew_margin,
+                 double cap_margin,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
@@ -372,22 +369,31 @@ protected:
                  int &fanout_violations,
                  int &length_violations);
   bool checkLimits(const Pin *drvr_pin,
-                   double max_slew_margin,
-                   double max_cap_margin,
+                   double slew_margin,
+                   double cap_margin,
                    bool check_slew,
                    bool check_cap,
                    bool check_fanout);
   void checkSlew(const Pin *drvr_pin,
-                 double max_slew_margin,
+                 double slew_margin,
                  // Return values.
                  Slew &slew,
                  float &limit,
                  float &slack,
                  const Corner *&corner);
+  void checkLoadSlews(const Pin *drvr_pin,
+                      double slew_margin,
+                      // Return values.
+                      Slew &slew,
+                      float &limit,
+                      float &slack,
+                      const Corner *&corner);
   void repairNet(SteinerTree *tree,
                  SteinerPt pt,
                  SteinerPt prev_pt,
                  Net *net,
+                 const Pin *drvr_pin,
+                 float max_load_slew,
                  float max_cap,
                  float max_fanout,
                  int max_length,
@@ -398,6 +404,13 @@ protected:
                  float &pin_cap,
                  float &fanout,
                  PinSeq &load_pins);
+  double findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew,
+                         const Corner *corner);
+  double gateSlewDiff(LibertyPort *drvr_port,
+                      double load_cap,
+                      double slew,
+                      const DcalcAnalysisPt *dcalc_ap);
   void makeRepeater(const char *where,
                     SteinerTree *tree,
                     SteinerPt pt,
@@ -416,10 +429,7 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  double gateSlewDiff(LibertyPort *drvr_port,
-                      double load_cap,
-                      double slew,
-                      const DcalcAnalysisPt *dcalc_ap);
+  float driveResistance(const Pin *drvr_pin);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
@@ -448,12 +458,12 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
-  Parasitic *makeWireParasitic(Net *net,
-                               Pin *drvr_pin,
-                               Pin *load_pin,
-                               double wire_length, // meters
-                               const Corner *corner,
-                               Parasitics *parasitics);
+  void makeWireParasitic(Net *net,
+                         Pin *drvr_pin,
+                         Pin *load_pin,
+                         double wire_length, // meters
+                         const Corner *corner,
+                         Parasitics *parasitics);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
@@ -591,6 +601,9 @@ protected:
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
+  LibertyCell *findTargetCell(LibertyCell *cell,
+                              float load_cap,
+                              bool revisiting_inst);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes

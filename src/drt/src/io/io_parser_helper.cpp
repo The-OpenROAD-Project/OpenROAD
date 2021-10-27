@@ -1026,7 +1026,7 @@ void io::Parser::buildGCellPatterns()
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
         frBox gcellBox;
-        design->getTopBlock()->getGCellBox(frPoint(i, j), gcellBox);
+        design->getTopBlock()->getGCellBox(Point(i, j), gcellBox);
         bool isH = (tech->getLayers().at(layerNum)->getDir()
                     == dbTechLayerDir::HORIZONTAL);
         frCoord gcLow = isH ? gcellBox.bottom() : gcellBox.right();
@@ -1069,9 +1069,9 @@ void io::Parser::writeGuideFile()
       outputGuide << netName << endl;
       outputGuide << "(\n";
       for (auto& guide : net->getGuides()) {
-        frPoint bp, ep;
+        Point bp, ep;
         guide->getPoints(bp, ep);
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design->getTopBlock()->getGCellIdx(bp, bpIdx);
         design->getTopBlock()->getGCellIdx(ep, epIdx);
         frBox bbox, ebox;

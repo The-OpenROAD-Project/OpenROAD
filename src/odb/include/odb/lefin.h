@@ -132,6 +132,7 @@ class lefin
                      bool is_pin,
                      dbTechLayer* layer,
                      lefiGeomPolygon* p,
+                     int design_rule_width,
                      double offset_x = 0.0,
                      double offset_y = 0.0);
 

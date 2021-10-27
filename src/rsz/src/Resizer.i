@@ -402,12 +402,12 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 
 void
 repair_design_cmd(double max_length,
-                  double max_slew_margin,
-                  double max_cap_margin)
+                  double slew_margin,
+                  double cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, max_slew_margin, max_cap_margin);
+  resizer->repairDesign(max_length, slew_margin, cap_margin);
 }
 
 void
@@ -429,12 +429,12 @@ repair_clk_inverters_cmd()
 void
 repair_net_cmd(Net *net,
                double max_length,
-               double max_slew_margin,
-               double max_cap_margin)
+               double slew_margin,
+               double cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairNet(net, max_length, max_slew_margin, max_cap_margin); 
+  resizer->repairNet(net, max_length, slew_margin, cap_margin); 
 }
 
 void
@@ -575,16 +575,6 @@ find_max_slew_wire_length(LibertyPort *drvr_port,
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew, corner);
-}
-
-double
-find_slew_load_cap(LibertyPort *drvr_port,
-                   float max_slew,
-                   const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->findSlewLoadCap(drvr_port, max_slew, corner);
 }
 
 double

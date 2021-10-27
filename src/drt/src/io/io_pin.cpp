@@ -86,7 +86,7 @@ void io::Parser::instAnalysis()
   vector<frCoord> offset;
   int cnt = 0;
   for (auto& inst : design->getTopBlock()->getInsts()) {
-    frPoint origin;
+    Point origin;
     inst->getOrigin(origin);
     auto orient = inst->getOrient();
     auto [minLayerNum, maxLayerNum]

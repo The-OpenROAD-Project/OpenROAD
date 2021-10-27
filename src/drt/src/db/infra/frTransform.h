@@ -31,9 +31,11 @@
 
 #include <iostream>
 
-#include "odb/dbTypes.h"
 #include "db/infra/frPoint.h"
-using dbOrientType = odb::dbOrientType;
+#include "odb/dbTypes.h"
+#include "odb/dbTransform.h"
+using odb::dbOrientType;
+using odb::dbTransform;
 
 namespace fr {
 class frTransform
@@ -41,7 +43,7 @@ class frTransform
  public:
   // constructor
   frTransform() : offset_(), ori_() {}
-  frTransform(const frPoint& pointIn,
+  frTransform(const Point& pointIn,
               const dbOrientType& orientIn = dbOrientType(dbOrientType::R0))
       : offset_(pointIn), ori_(orientIn)
   {
@@ -53,16 +55,16 @@ class frTransform
   {
   }
   // setters
-  void set(const frPoint& pointIn) { offset_ = pointIn; }
+  void set(const Point& pointIn) { offset_ = pointIn; }
   void set(const dbOrientType& orientIn) { ori_ = orientIn; }
-  void set(const frPoint& pointIn, const dbOrientType& orientIn)
+  void set(const Point& pointIn, const dbOrientType& orientIn)
   {
     set(pointIn);
     set(orientIn);
   }
   void set(frCoord xOffsetIn, frCoord yOffsetIn)
   {
-    set(frPoint(xOffsetIn, yOffsetIn));
+    set(Point(xOffsetIn, yOffsetIn));
   }
   void set(frCoord xOffsetIn, frCoord yOffsetIn, const dbOrientType& orientIn)
   {
@@ -74,7 +76,11 @@ class frTransform
   frCoord yOffset() const { return offset_.y(); }
   dbOrientType orient() const { return ori_; }
   // util
-  void updateXform(frPoint& size)
+  void apply(Point& p) const
+  {
+    dbTransform(ori_, offset_).apply(p);
+  }
+  void updateXform(Point& size)
   {
     switch (orient()) {
       // case R0: == default
@@ -159,7 +165,7 @@ class frTransform
   }
 
  protected:
-  frPoint offset_;
+  Point offset_;
   dbOrientType ori_;
 };
 }  // namespace fr

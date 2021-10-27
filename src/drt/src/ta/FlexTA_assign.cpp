@@ -108,7 +108,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    xform.set(frPoint(boxLeft, trackLoc));
+    xform.set(Point(boxLeft, trackLoc));
     box2.transform(xform);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -256,9 +256,9 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.set(frPoint(box.left(), trackLoc));
+      xform.set(Point(box.left(), trackLoc));
     } else {
-      xform.set(frPoint(trackLoc, box.bottom()));
+      xform.set(Point(trackLoc, box.bottom()));
     }
     tmpBx.set(viaBox);
     tmpBx.transform(xform);
@@ -417,15 +417,15 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
   frBox blockBox;
-  frPoint boxCenter, tmpBxCenter;
+  Point boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
   bool hasViol = false;
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
     if (isH) {
-      xform.set(frPoint(box.left(), trackLoc));
+      xform.set(Point(box.left(), trackLoc));
     } else {
-      xform.set(frPoint(trackLoc, box.bottom()));
+      xform.set(Point(trackLoc, box.bottom()));
     }
     tmpBx.set(viaBox);
     tmpBx.transform(xform);
@@ -597,7 +597,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
     frTransform xform;
-    frPoint pt;
+    Point pt;
     obj->getOrigin(pt);
     xform.set(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
@@ -618,7 +618,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
                                             int& idx2)
 {
   lNum = iroute->getGuide()->getBeginLayerNum();
-  frPoint gbp, gep, gIdx;
+  Point gbp, gep, gIdx;
   frBox gBox;
   iroute->getGuide()->getPoints(gbp, gep);
   getDesign()->getTopBlock()->getGCellIdx(gbp, gIdx);
@@ -634,10 +634,10 @@ frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
 {
   auto guide = iroute->getGuide();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  frPoint begin, end;
+  Point begin, end;
   guide->getPoints(begin, end);
   frBox endBox;
-  frPoint idx;
+  Point idx;
   getDesign()->getTopBlock()->getGCellIdx(end, idx);
   getDesign()->getTopBlock()->getGCellBox(idx, endBox);
   int wlen = 0;
@@ -780,7 +780,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
 frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 cost = 0;
-  frPoint bp, ep;
+  Point bp, ep;
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
@@ -825,7 +825,7 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
   for (auto& uPinFig : iroute->getFigs()) {
     if (uPinFig->typeId() == tacPathSeg) {
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
-      frPoint bp, ep;
+      Point bp, ep;
       obj->getPoints(bp, ep);
       auto lNum = obj->getLayerNum();
       pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
@@ -1056,7 +1056,7 @@ void FlexTAWorker::assignIroute_updateIroute(
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  frPoint bp, ep;
+  Point bp, ep;
 
   // update coord
   for (auto& uPinFig : iroute->getFigs()) {
@@ -1111,7 +1111,7 @@ void FlexTAWorker::assignIroute_updateOthers(
     set<taPin*, frBlockObjectComp>& pinS)
 {
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-  frPoint bp, ep;
+  Point bp, ep;
   if (isInitTA()) {
     return;
   }
