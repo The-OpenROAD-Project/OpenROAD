@@ -128,17 +128,21 @@ class Inspector : public QDockWidget
   void removeSelected(const Selected& selected);
   void selected(const Selected& selected, bool showConnectivity = false);
   void selectedItemChanged(const Selected& selected);
+  void selection(const Selected& selected);
+  void focus(const Selected& selected);
 
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
-  void update();
+  void update(const Selected& object = Selected());
 
   void indexClicked(const QModelIndex& index);
   void indexDoubleClicked(const QModelIndex& index);
 
   int selectNext();
   int selectPrevious();
+
+  void focusIndex(const QModelIndex& index);
 
  private:
   void handleAction(QWidget* action);

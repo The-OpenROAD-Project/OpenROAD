@@ -159,14 +159,15 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   auto vio = std::any_cast<DRCViolation*>(object);
   Properties props;
 
+  auto gui = Gui::get();
+
   auto layer = vio->getLayer();
   if (layer != nullptr) {
-    props.push_back({"Layer", layer->getName()});
+    props.push_back({"Layer", gui->makeSelected(layer)});
   }
 
   auto srcs = vio->getSources();
   if (!srcs.empty()) {
-    auto gui = Gui::get();
     SelectionSet sources;
     for (auto src : srcs) {
       auto select = gui->makeSelected(src);
@@ -392,7 +393,7 @@ void DRCWidget::drawObjects(Painter& painter)
   brush_color.a = 50;
 
   painter.setPen(pen_color, true, 0);
-  painter.setHashedBrush(brush_color);
+  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
   for (const auto& violation : violations_) {
     const odb::Rect& box = violation->getBBox();
     if (std::max(box.dx(), box.dy()) < min_box) {
@@ -436,6 +437,8 @@ void DRCWidget::updateSelection(const Selected& selection)
 
 void DRCWidget::loadReport(const QString& filename)
 {
+  Gui::get()->removeSelected<DRCViolation*>();
+
   violations_.clear();
 
   try {

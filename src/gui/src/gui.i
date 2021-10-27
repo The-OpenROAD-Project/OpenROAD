@@ -511,5 +511,14 @@ void select(const std::string& type, const std::string& name_filter = "", bool c
   gui->select(type, name_filter, case_sensitive, highlight_group);
 }
 
+void selection_animate(int repeat = 0)
+{
+  if (!check_gui("selection_animate")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->animateSelection(repeat);
+}
+
 %} // inline
 

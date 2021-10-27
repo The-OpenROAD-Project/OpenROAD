@@ -116,7 +116,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void pause(int timeout);
 
   // The selected set of objects has changed
-  void selectionChanged();
+  void selectionChanged(const Selected& selection = Selected());
 
   // The highlight set of objects has changed
   void highlightChanged();
@@ -142,6 +142,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Remove a selection from the set of selections
   void removeSelected(const Selected& selection);
+
+  // Remove a selection type from the set of selections
+  void removeSelectedByType(const std::string& type);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection, bool show_connectivity = false);
