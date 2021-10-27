@@ -240,7 +240,8 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new QTreeView(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
-      load_(new QPushButton("Load..."))
+      load_(new QPushButton("Load...")),
+      renderer_(std::make_unique<DRCRenderer>(violations_))
 {
   setObjectName("drc_viewer");  // for settings
 
@@ -338,9 +339,9 @@ void DRCWidget::toggleRenderer(bool visible)
 
   auto gui = Gui::get();
   if (visible) {
-    gui->registerRenderer(this);
+    gui->registerRenderer(renderer_.get());
   } else {
-    gui->unregisterRenderer(this);
+    gui->unregisterRenderer(renderer_.get());
   }
 }
 
@@ -382,48 +383,7 @@ void DRCWidget::updateModel()
   }
 
   toggleRenderer(!this->isHidden());
-  redraw();
-}
-
-void DRCWidget::drawObjects(Painter& painter)
-{
-  int min_box = 20.0 / painter.getPixelsPerDBU();
-  Painter::Color pen_color = Painter::white;
-  Painter::Color brush_color = pen_color;
-  brush_color.a = 50;
-
-  painter.setPen(pen_color, true, 0);
-  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
-  for (const auto& violation : violations_) {
-    const odb::Rect& box = violation->getBBox();
-    if (std::max(box.dx(), box.dy()) < min_box) {
-      // box is too small to be useful, so draw X instead
-      odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
-                       {center.x() + min_box / 2, center.y() + min_box / 2});
-      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
-                       {center.x() + min_box / 2, center.y() - min_box / 2});
-    } else {
-      violation->paint(painter);
-    }
-  }
-}
-
-SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Rect& region)
-{
-  if (layer != nullptr) {
-    return SelectionSet();
-  }
-
-  auto gui = Gui::get();
-
-  SelectionSet selections;
-  for (const auto& violation : violations_) {
-    if (violation->getBBox().intersects(region)) {
-      selections.insert(gui->makeSelected(violation.get()));
-    }
-  }
-  return selections;
+  renderer_->redraw();
 }
 
 void DRCWidget::updateSelection(const Selected& selection)
@@ -686,6 +646,54 @@ void DRCWidget::loadJSONReport(const QString& filename)
           0));
     }
   }
+}
+
+////////
+
+DRCRenderer::DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
+    violations_(violations)
+{
+}
+
+void DRCRenderer::drawObjects(Painter& painter)
+{
+  int min_box = 20.0 / painter.getPixelsPerDBU();
+  Painter::Color pen_color = Painter::white;
+  Painter::Color brush_color = pen_color;
+  brush_color.a = 50;
+
+  painter.setPen(pen_color, true, 0);
+  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
+  for (const auto& violation : violations_) {
+    const odb::Rect& box = violation->getBBox();
+    if (std::max(box.dx(), box.dy()) < min_box) {
+      // box is too small to be useful, so draw X instead
+      odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
+      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
+                       {center.x() + min_box / 2, center.y() + min_box / 2});
+      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
+                       {center.x() + min_box / 2, center.y() - min_box / 2});
+    } else {
+      violation->paint(painter);
+    }
+  }
+}
+
+SelectionSet DRCRenderer::select(odb::dbTechLayer* layer, const odb::Rect& region)
+{
+  if (layer != nullptr) {
+    return SelectionSet();
+  }
+
+  auto gui = Gui::get();
+
+  SelectionSet selections;
+  for (const auto& violation : violations_) {
+    if (violation->getBBox().intersects(region)) {
+      selections.insert(gui->makeSelected(violation.get()));
+    }
+  }
+  return selections;
 }
 
 }  // namespace gui
