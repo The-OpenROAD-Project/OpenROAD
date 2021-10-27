@@ -459,12 +459,6 @@ frCost FlexGridGraph::getNextPathCost(
       }
     }
   }
-  //check min area costs
-  if (dir == frDirEnum::U || dir == frDirEnum::D) {
-      if (layer->getAreaConstraint() && currGrid.getLayerPathArea() < 
-            layer->getAreaConstraint()->getMinArea())
-          nextPathCost += getMinAreaCost(currGrid, dir, layer);
-  }
 
   if (useNDRCosts(currGrid))
     nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
@@ -475,73 +469,6 @@ frCost FlexGridGraph::getNextPathCost(
   return nextPathCost;
 }
 
-frCoord FlexGridGraph::getMinAreaCost(const FlexWavefrontGrid& grid, frDirEnum viaDir, frLayer* layer) const{
-    //find the other tip of the current path segment
-    frDirEnum lastDir = grid.getLastDir();
-    frMIdx tip1, line;
-    if (layer->isVertical()) {
-        tip1 = grid.y();
-        line = grid.x();
-    }else {
-        tip1 = grid.x();
-        line = grid.y();
-    }
-    frMIdx tip2 = tip1;
-    bool hasViaDownTip2 = false, hasViaUpTip2 = false;
-    //get last segment position and via info
-//    if (lastDir != frDirEnum::U && lastDir != frDirEnum::D) {
-//        auto backTraceBuffer = grid.getBackTraceBuffer();
-//        for (int i = 0; i < WAVEFRONTBUFFERSIZE; ++i) {
-//          int currDirVal
-//              = backTraceBuffer.to_ulong()
-//                - ((backTraceBuffer.to_ulong() >> DIRBITSIZE) << DIRBITSIZE);
-//          frDirEnum currDir = static_cast<frDirEnum>(currDirVal);
-//          backTraceBuffer >>= DIRBITSIZE;
-//          if (currDir == lastDir) {
-//              if (layer->isVertical())
-//                  tip2 += currDir == frDirEnum::N ? -1 : 1;
-//              else 
-//                  tip2 += currDir == frDirEnum::E ? -1 : 1;
-//              lastDir = currDir;
-//          } else {
-//              if (currDir == frDirEnum::U )
-//                  hasViaDownTip2 = true;
-//              else if (currDir == frDirEnum::D )
-//                  hasViaUpTip2 = true;
-//              break;
-//          }
-//        }
-//    }
-    if (lastDir == frDirEnum::U )
-        hasViaDownTip2 = true;
-    else if (lastDir == frDirEnum::D )
-        hasViaUpTip2 = true;
-    frCoord lowViaArea = 0, highViaArea = 0;
-    if (tip2 < tip1) {
-        if (hasViaDownTip2)
-            lowViaArea = drWorker_->getHalfViaEncArea(grid.z(), false, ndr_);
-        else if (hasViaUpTip2)
-            lowViaArea = drWorker_->getHalfViaEncArea(grid.z(), true, ndr_);
-        if (viaDir == frDirEnum::D)
-            highViaArea = drWorker_->getHalfViaEncArea(grid.z(), false, ndr_);
-        else 
-            highViaArea = drWorker_->getHalfViaEncArea(grid.z(), true, ndr_);
-        return getDRWorker()->checkMinAreaViolPatch(grid.getLayerPathArea(), 
-                tip2, tip1, line, lowViaArea, highViaArea, nullptr, nullptr, grid.z()), true;
-    }
-    //else ...
-    if (hasViaDownTip2)
-        highViaArea = drWorker_->getHalfViaEncArea(grid.z(), false, ndr_);
-    else if (hasViaUpTip2)
-        highViaArea = drWorker_->getHalfViaEncArea(grid.z(), true, ndr_);
-    if (viaDir == frDirEnum::D)
-        lowViaArea = drWorker_->getHalfViaEncArea(grid.z(), false, ndr_);
-    else 
-        lowViaArea = drWorker_->getHalfViaEncArea(grid.z(), true, ndr_);
-    return getDRWorker()->checkMinAreaViolPatch(grid.getLayerPathArea(), 
-            tip1, tip2, line, lowViaArea, highViaArea, nullptr, nullptr, grid.z(), true);  
-    
-}
 frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
                                    frMIdx gridY,
                                    frMIdx gridZ,

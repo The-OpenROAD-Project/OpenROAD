@@ -2627,127 +2627,71 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         frArea gapArea = reqArea
                          - (currArea - startViaHalfEncArea - endViaHalfEncArea)
                          - std::min(startViaHalfEncArea, endViaHalfEncArea);
-        frCoord wireWidth = getTech()->getLayer(layerNum)->getWidth();
         // new
-        bool newLogic = false;
-        if (!newLogic) {
-          bool bpPatchStyle = true;  // style 1: left only; 0: right only
-          bool epPatchStyle = false;
-          // stack via
-          if (i - 1 == prev_i) {
-            bp = points[i - 1];
-            ep = points[i - 1];
-            bpPatchStyle = true;
-            epPatchStyle = false;
-            // planar
-          } else {
-            bp = points[prev_i];
-            ep = points[i - 1];
-            if (getTech()->getLayer(layerNum)->getDir()
-                == dbTechLayerDir::HORIZONTAL) {
-              if (points[prev_i].x() < points[prev_i + 1].x()) {
-                bpPatchStyle = true;
-              } else if (points[prev_i].x() > points[prev_i + 1].x()) {
-                bpPatchStyle = false;
-              } else {
-                if (points[prev_i].x() < points[i - 1].x()) {
-                  bpPatchStyle = true;
-                } else {
-                  bpPatchStyle = false;
-                }
-              }
-              if (points[i - 1].x() < points[i - 2].x()) {
-                epPatchStyle = true;
-              } else if (points[i - 1].x() > points[i - 2].x()) {
-                epPatchStyle = false;
-              } else {
-                if (points[i - 1].x() < points[prev_i].x()) {
-                  epPatchStyle = true;
-                } else {
-                  epPatchStyle = false;
-                }
-              }
+        bool bpPatchStyle = true;  // style 1: left only; 0: right only
+        bool epPatchStyle = false;
+        // stack via
+        if (i - 1 == prev_i) {
+          bp = points[i - 1];
+          ep = points[i - 1];
+          bpPatchStyle = true;
+          epPatchStyle = false;
+          // planar
+        } else {
+          bp = points[prev_i];
+          ep = points[i - 1];
+          if (getTech()->getLayer(layerNum)->getDir()
+              == dbTechLayerDir::HORIZONTAL) {
+            if (points[prev_i].x() < points[prev_i + 1].x()) {
+              bpPatchStyle = true;
+            } else if (points[prev_i].x() > points[prev_i + 1].x()) {
+              bpPatchStyle = false;
             } else {
-              if (points[prev_i].y() < points[prev_i + 1].y()) {
+              if (points[prev_i].x() < points[i - 1].x()) {
                 bpPatchStyle = true;
-              } else if (points[prev_i].y() > points[prev_i + 1].y()) {
+              } else {
                 bpPatchStyle = false;
-              } else {
-                if (points[prev_i].y() < points[i - 1].y()) {
-                  bpPatchStyle = true;
-                } else {
-                  bpPatchStyle = false;
-                }
               }
-              if (points[i - 1].y() < points[i - 2].y()) {
+            }
+            if (points[i - 1].x() < points[i - 2].x()) {
+              epPatchStyle = true;
+            } else if (points[i - 1].x() > points[i - 2].x()) {
+              epPatchStyle = false;
+            } else {
+              if (points[i - 1].x() < points[prev_i].x()) {
                 epPatchStyle = true;
-              } else if (points[i - 1].y() > points[i - 2].y()) {
-                epPatchStyle = false;
               } else {
-                if (points[i - 1].y() < points[prev_i].y()) {
-                  epPatchStyle = true;
-                } else {
-                  epPatchStyle = false;
-                }
+                epPatchStyle = false;
+              }
+            }
+          } else {
+            if (points[prev_i].y() < points[prev_i + 1].y()) {
+              bpPatchStyle = true;
+            } else if (points[prev_i].y() > points[prev_i + 1].y()) {
+              bpPatchStyle = false;
+            } else {
+              if (points[prev_i].y() < points[i - 1].y()) {
+                bpPatchStyle = true;
+              } else {
+                bpPatchStyle = false;
+              }
+            }
+            if (points[i - 1].y() < points[i - 2].y()) {
+              epPatchStyle = true;
+            } else if (points[i - 1].y() > points[i - 2].y()) {
+              epPatchStyle = false;
+            } else {
+              if (points[i - 1].y() < points[prev_i].y()) {
+                epPatchStyle = true;
+              } else {
+                epPatchStyle = false;
               }
             }
           }
-          auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
-          routeNet_postAstarAddPatchMetal(
-              net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
-        } else {
-            frCoord lowViaArea = 0, highViaArea = 0;
-            frMIdx currTip, line;
-            bool isVertical = getTech()->getLayer(layerNum)->isVertical();
-            bool hasStartVia = false;
-            if (isVertical) {
-                currTip = currIdx.y();
-                line = currIdx.x();
-            }else {
-                currTip = currIdx.x();
-                line = currIdx.y();
-            }
-            frMIdx lastTip;
-            frCoord patchLow, patchHigh;
-            if (i - 1 == prev_i) { //stacked vias
-                checkMinAreaViolPatch(currArea, 
-                    currTip, currTip, line, endViaHalfEncArea, endViaHalfEncArea, &patchLow, &patchHigh, prevIdx.z()); 
-            } else {
-                lastTip = isVertical ? points[i-2].y() : points[i-2].x();
-                if (i-3 >= 0 && points[i-3].z() != prevIdx.z()) {
-                    hasStartVia = true;
-                }
-                if (currTip > lastTip) {
-                    lowViaArea = hasStartVia ? startViaHalfEncArea : 0;
-                    highViaArea = endViaHalfEncArea;
-                    checkMinAreaViolPatch(currArea, 
-                        lastTip, currTip, line, lowViaArea, highViaArea, &patchLow, &patchHigh, prevIdx.z()); 
-                } else {
-                    highViaArea = hasStartVia ? startViaHalfEncArea : 0;
-                    lowViaArea = endViaHalfEncArea;
-                    checkMinAreaViolPatch(currArea, 
-                        currTip, lastTip, line, lowViaArea, highViaArea, &patchLow, &patchHigh, prevIdx.z()); 
-                }
-            }
-            frPoint patchLL, patchUR, origin;
-            origin.set(gridGraph_.xCoord(currIdx.x()), gridGraph_.yCoord(currIdx.y()));
-            if (isVertical) {
-                patchLL.set(-wireWidth/2, patchLow - origin.y());
-                patchUR.set(wireWidth/2, patchHigh - origin.y());
-            } else {
-                patchLL.set(patchLow - origin.x(), -wireWidth/2);
-                patchUR.set(patchHigh - origin.x(), wireWidth/2);
-            }
-            auto tmpPatch = make_unique<drPatchWire>();
-            tmpPatch->setLayerNum(layerNum);
-            tmpPatch->setOrigin(origin);
-            tmpPatch->setOffsetBox(frBox(patchLL, patchUR));
-            tmpPatch->addToNet(net);
-            unique_ptr<drConnFig> tmp(std::move(tmpPatch));
-            auto& workerRegionQuery = getWorkerRegionQuery();
-            workerRegionQuery.add(tmp.get());
-            net->addRoute(std::move(tmp));
         }
+        auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
+        routeNet_postAstarAddPatchMetal(
+            net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
       }
       // init for next path
       if (currIdx.z() < prevIdx.z()) {
@@ -3036,115 +2980,4 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
     routeNet_postAstarAddPatchMetal_addPWire(
         net, epIdx, isPatchHorz, epPatchStyle, patchLength, patchWidth);
   }
-}
-
-frMIdx FlexDRWorker::getAreaMeetingIdx(frMIdx start, bool isVertical, bool patchHigh, int meetingArea, int wireWidth) {
-    int length = meetingArea/wireWidth;
-    int end;
-    frMIdx idx;
-    if (isVertical) {
-        end = gridGraph_.yCoord(start) + length*(patchHigh ? 1 : -1);
-        idx = gridGraph_.getMazeYIdx(end);
-        if (!patchHigh && std::abs(start-gridGraph_.yCoord(idx))*wireWidth < meetingArea)
-            idx--;
-    } else {
-        end = gridGraph_.xCoord(start) + length*(patchHigh ? 1 : -1);
-        idx = gridGraph_.getMazeXIdx(end);
-        if (!patchHigh && std::abs(start-gridGraph_.xCoord(idx))*wireWidth < meetingArea)
-            idx--;
-    }
-    return idx;
-} 
-
-int FlexDRWorker::getPatchCost(frMIdx low, frMIdx high, frMIdx line, frMIdx z, bool isVertical) {
-    frMIdx *x, *y;
-    frMIdx v;
-    if (isVertical) {
-        x = &line;
-        y = &v;
-    } else {
-        x = &v;
-        y = &line;
-    }
-    bool hasRouteShapeCost = false;
-    bool hasFixedShapeCost = false;
-    bool hasMarkerCost = false;
-    for (v = low; v <= high; v++) {
-        hasRouteShapeCost |= gridGraph_.hasRouteShapeCost(
-                *x, *y, z, frDirEnum::UNKNOWN);
-        hasFixedShapeCost |= gridGraph_.hasFixedShapeCost(
-                *x, *y, z, frDirEnum::UNKNOWN);
-        hasMarkerCost |= gridGraph_.hasMarkerCost(
-                *x, *y, z, frDirEnum::UNKNOWN);
-    }
-    int cost = isVertical ? gridGraph_.yCoord(high) - gridGraph_.yCoord(low) :
-                gridGraph_.xCoord(high) - gridGraph_.xCoord(low);
-    cost *= (hasRouteShapeCost ? workerDRCCost_ : 0  +
-             hasFixedShapeCost ? FIXEDSHAPECOST : 0 +
-             hasMarkerCost ? workerMarkerCost_ : 0);
-    return cost;
-}
-
-int FlexDRWorker::checkMinAreaViolPatch(int initArea, 
-                                        frMIdx segLow, 
-                                        frMIdx segHigh, 
-                                        frMIdx segLine,
-                                        int lowViaHalfArea, 
-                                        int highViaHalfArea, 
-                                        frCoord* patchLow, 
-                                        frCoord* patchHigh, 
-                                        frMIdx layerIdx,
-                                        bool simpleMode) {
-    frLayer* layer = design_->getTech()->getLayer(gridGraph_.getLayerNum(layerIdx));
-    if (!layer->getAreaConstraint())
-        return 0;
-    int reqArea = layer->getAreaConstraint()->getMinArea() - initArea;
-    if (reqArea <= 0)
-        return 0;
-    bool isVertical = layer->getDir() == dbTechLayerDir::VERTICAL;
-    int wireWidth = layer->getWidth();
-    int cost = 0, areaHigh, areaLow = 0, high, low;
-    int bestCost = std::numeric_limits<int>().max(), firstHigh;
-    areaHigh = reqArea;
-    areaHigh += max(highViaHalfArea, wireWidth*wireWidth);
-    high = getAreaMeetingIdx(segHigh, isVertical, true, areaHigh, wireWidth);
-    firstHigh = high;
-    int maxIdx = (isVertical ? gridGraph_.nTracksY() : gridGraph_.nTracksX()) -1;
-    if (high > maxIdx)
-        high = maxIdx;
-    low = segHigh;
-    areaLow = (firstHigh-high)*wireWidth;
-    do {
-        if (high > segHigh)
-            cost = getPatchCost(segHigh+1, high, segLine, layerIdx, isVertical);
-        //create lower patch based on change in high patch
-        if (areaLow) {
-            areaLow += max(lowViaHalfArea, wireWidth*wireWidth);
-            low = getAreaMeetingIdx(segLow, isVertical, false, areaLow, wireWidth);
-            cost += getPatchCost(low, segLow-1, segLine, layerIdx, isVertical);
-        }
-        if (cost < bestCost) {
-            bestCost = cost;
-            if (patchLow)
-                *patchLow = (isVertical ? gridGraph_.yCoord(low) : 
-                    gridGraph_.xCoord(low)) - wireWidth/2;
-            if (patchHigh)
-                *patchHigh = (isVertical ? gridGraph_.yCoord(high) : 
-                    gridGraph_.xCoord(high)) + wireWidth/2;
-        }
-        if (cost == 0)
-            return 0;
-        if (simpleMode) {
-            if (segHigh == high)
-                return cost;
-            high = segHigh;
-        } else 
-            high--;
-        if (isVertical)
-            areaLow = gridGraph_.yCoord(firstHigh) - gridGraph_.yCoord(high);
-        else 
-            areaLow = gridGraph_.xCoord(firstHigh) - gridGraph_.xCoord(high);
-        areaLow *= wireWidth;
-    } while (high >= segHigh);
-    return cost;
 }
