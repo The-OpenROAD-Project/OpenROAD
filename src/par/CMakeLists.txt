@@ -35,7 +35,7 @@
 
 include("openroad")
 
-option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
+option(LOAD_PARTITIONERS "Load GPMetis and Chaco" OFF)
 
 if (LOAD_PARTITIONERS)
     set(PATH_PARTITIONERS ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Partitioners Folder")
@@ -63,6 +63,13 @@ messages(
   TARGET par
 )
 
+add_subdirectory(src/MLPart)
+
+target_link_libraries(par
+    PRIVATE
+      MLPart
+)
+
 if (LOAD_PARTITIONERS)
   target_compile_definitions(par
     PRIVATE
@@ -72,17 +79,7 @@ if (LOAD_PARTITIONERS)
     PRIVATE
       ${PATH_PARTITIONERS}/Partitioners/Chaco/code
       ${PATH_PARTITIONERS}/Partitioners/Metis/include
-      ${PATH_PARTITIONERS}/Partitioners/MLPart/src
   )
-
-  find_library(MLPART NAMES MLPart
-          PATHS ${PATH_PARTITIONERS}/Partitioners
-          PATH_SUFFIXES build/MLPart)
-
-  if (NOT MLPART)
-          add_subdirectory(${PATH_PARTITIONERS}/Partitioners/MLPart MLPart)
-          set(MLPART MLPart)
-  endif()
 
   find_library(CHACO NAMES Chaco
           PATHS ${PATH_PARTITIONERS}/Partitioners
@@ -104,7 +101,6 @@ if (LOAD_PARTITIONERS)
 
   target_link_libraries(par
     PUBLIC
-      ${MLPART}
       ${CHACO}
       ${METIS}
   )
