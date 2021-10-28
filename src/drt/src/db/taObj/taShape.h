@@ -185,7 +185,7 @@ class taPathSeg : public taShape
                 end_.y() + endExt);
     }
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);

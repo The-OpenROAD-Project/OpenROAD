@@ -46,11 +46,11 @@ class taRef : public taPinFig
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual void getOrigin(Point& tmpOrigin) const = 0;
-  virtual void getTransform(frTransform& xform) const = 0;
+  virtual void getTransform(dbTransform& xform) const = 0;
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const frTransform& xform) = 0;
+  virtual void setTransform(const dbTransform& xform) = 0;
 
  protected:
 };
@@ -87,8 +87,8 @@ class taVia : public taRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getCutBBox(frBox& boxIn) const
@@ -116,8 +116,8 @@ class taVia : public taRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getLayer2BBox(frBox& boxIn) const
@@ -145,8 +145,8 @@ class taVia : public taRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   // setters
@@ -167,11 +167,11 @@ class taVia : public taRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  void getTransform(frTransform& xformIn) const override
+  void getTransform(dbTransform& xformIn) const override
   {
-    xformIn.set(origin_);
+    xformIn.setOffset(origin_);
   }
-  void setTransform(const frTransform& xformIn) override {}
+  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -270,11 +270,11 @@ class taVia : public taRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
-  void move(const frTransform& xform) override { ; }
+  void move(const dbTransform& xform) override { ; }
   bool overlaps(const frBox& box) const override { return false; }
 
  protected:

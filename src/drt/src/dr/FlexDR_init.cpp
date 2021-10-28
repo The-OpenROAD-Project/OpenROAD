@@ -868,7 +868,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
   if (dPinTerm->typeId() == frcInstTerm) {
     auto instTerm = static_cast<frInstTerm*>(dPinTerm);
     auto inst = instTerm->getInst();
-    frTransform xform;
+    dbTransform xform;
     inst->getUpdatedXform(xform);
 
     for (auto& uPin : instTerm->getTerm()->getPins()) {
@@ -1507,15 +1507,15 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     auto dPin = make_unique<drPin>();
     dPin->setFrTerm(term);
     // ap
-    frTransform instXform;  // (0,0), R0
-    frTransform shiftXform;
+    dbTransform instXform;  // (0,0), R0
+    dbTransform shiftXform;
     frTerm* trueTerm = nullptr;
     string name;
     frInst* inst = nullptr;
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(dbOrientType(dbOrientType::R0));
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();
@@ -3147,7 +3147,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      frTransform xform;
+      dbTransform xform;
       inst->getUpdatedXform(xform);
 
       for (auto& uPin : instTerm->getTerm()->getPins()) {
@@ -3341,7 +3341,7 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
     if (connFig->typeId() == drcVia) {
       auto via = static_cast<drVia*>(connFig.get());
       frBox l1Box, l2Box;
-      frTransform xform;
+      dbTransform xform;
       via->getTransform(xform);
 
       auto l1Num = via->getViaDef()->getLayer1Num();

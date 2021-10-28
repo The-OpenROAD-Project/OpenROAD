@@ -33,7 +33,6 @@
 #include "odb/geom.h"
 
 namespace fr {
-class frTransform;
 using odb::Point;
 
 class Point3D : public Point

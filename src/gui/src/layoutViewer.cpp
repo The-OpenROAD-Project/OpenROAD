@@ -703,6 +703,12 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   std::vector<Search::Box> boxes;
 
+  // get die bounding box
+  Rect bbox;
+  block->getDieArea(bbox);
+  boxes.push_back({{bbox.xMin(), bbox.yMin()},
+                   {bbox.xMax(), bbox.yMax()}});
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -1494,8 +1500,9 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->state_count == animate_selection_->max_state_count ||
-                  QDateTime::currentMSecsSinceEpoch() > max_animate_time) {
+              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
+                  (animate_selection_->state_count == animate_selection_->max_state_count ||
+                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }

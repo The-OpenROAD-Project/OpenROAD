@@ -47,6 +47,7 @@
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
+#include "odb/db.h"
 
 using utl::PAR;
 
@@ -63,6 +64,8 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
+using odb::dbDatabase;
+
 
 template <class T>
 static void get_param(const unordered_map<string, string>& params,
@@ -80,8 +83,11 @@ static void get_param(const unordered_map<string, string>& params,
 
 bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
+                      dbDatabase* db,
                       const char* report_directory,
-                      const char* report_file)
+                      const char* report_file,
+                      const char* macro_blockage_file, 
+                      const char* prefer_location_file)
 {
   logger->report("Start RTL-MP");
 
@@ -94,7 +100,8 @@ bool rtl_macro_placer(const char* config_file,
   float dead_space = 0.1;
   float halo_width = 2.0;
 
-  string region_file = string("macro_blockage.txt");
+  string region_file = string(macro_blockage_file);
+  string location_file = string(prefer_location_file);
 
   // These parameters are related to multi-start in shape engine
   int num_thread = 5;
@@ -113,6 +120,10 @@ bool rtl_macro_placer(const char* config_file,
   float gamma = 0.3;                   // weight for outline penalty
   float boundary_weight = 0.06;        // weight for pushing macros to boundary
   float macro_blockage_weight = 0.08;  // weight for macro blockage
+  float location_weight = 0.05;        // weight for preferred location
+  float notch_weight = 0.05;           // weight for notch
+
+
 
   float learning_rate
       = 0.01;  // learning rate for dynamic weight in cost function
@@ -135,6 +146,8 @@ bool rtl_macro_placer(const char* config_file,
   int max_num_step = 300;
   int perturb_per_step = 3000;
 
+  int snap_layer = 4;
+
   unordered_map<string, string> params = ParseConfigFile(config_file);
 
   get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
@@ -144,6 +157,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "shrink_freq", shrink_freq, logger);
   get_param(params, "halo_width", halo_width, logger);
   get_param(params, "region_file", region_file, logger);
+  get_param(params, "location_file", location_file, logger);
   get_param(params, "num_thread", num_thread, logger);
   get_param(params, "num_run", num_run, logger);
   get_param(params, "heat_rate", heat_rate, logger);
@@ -154,6 +168,8 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "gamma", gamma, logger);
   get_param(params, "boundary_weight", boundary_weight, logger);
   get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
+  get_param(params, "location_weight", location_weight, logger);
+  get_param(params, "notch_weight", notch_weight, logger);
   get_param(params, "resize_prob", resize_prob, logger);
   get_param(params, "pos_swap_prob", pos_swap_prob, logger);
   get_param(params, "neg_swap_prob", neg_swap_prob, logger);
@@ -162,6 +178,7 @@ bool rtl_macro_placer(const char* config_file,
   get_param(params, "rej_ratio", rej_ratio, logger);
   get_param(params, "k", k, logger);
   get_param(params, "c", c, logger);
+  get_param(params, "snap_layer", snap_layer, logger);
   get_param(params, "max_num_step", max_num_step, logger);
   get_param(params, "perturb_per_step", perturb_per_step, logger);
   get_param(params, "seed", seed, logger);
@@ -191,6 +208,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     outline_height,
                                                     net_file,
                                                     region_file.c_str(),
+                                                    location_file.c_str(),
                                                     num_level,
                                                     num_worker,
                                                     heat_rate,
@@ -199,6 +217,8 @@ bool rtl_macro_placer(const char* config_file,
                                                     gamma,
                                                     boundary_weight,
                                                     macro_blockage_weight,
+                                                    location_weight,
+                                                    notch_weight,
                                                     resize_prob,
                                                     pos_swap_prob,
                                                     neg_swap_prob,
@@ -236,6 +256,15 @@ bool rtl_macro_placer(const char* config_file,
     return false;
   }
 
+    
+  // Get Block Placement Grid
+  // The Block Placement Grid is based on the pitch of the bottom horizontal and 
+  // vertical routing layers. The Block Placement Grid is one pitch wide and one pitch tall.
+  // TR requires the macro pins to be on grid.
+  odb::dbTech* tech = db->getTech();
+  const int dbu = tech->getDbUnitsPerMicron();
+  float pitch_x = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX()) / dbu;
+  float pitch_y = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY()) / dbu;
 
   string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
@@ -252,16 +281,22 @@ bool rtl_macro_placer(const char* config_file,
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
         string orientation = macros[j].GetOrientation();
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
 
         if (orientation == string("MX"))
           line += string("  MX  ") + to_string(lx) + string("   ")
-                  + to_string(ly + height);
+                  + to_string(uy);
         else if (orientation == string("MY"))
-          line += string("  MY  ") + to_string(lx + width) + string("   ")
+          line += string("  MY  ") + to_string(ux) + string("   ")
                   + to_string(ly);
         else if (orientation == string("R180"))
-          line += string("  R180  ") + to_string(lx + width) + string("   ")
-                  + to_string(ly + height);
+          line += string("  R180  ") + to_string(ux) + string("   ")
+                  + to_string(uy);
         else
           line += string("  R0 ") + to_string(lx) + string("   ")
                   + to_string(ly);
@@ -286,8 +321,15 @@ bool rtl_macro_placer(const char* config_file,
         float ly = outline_ly + cluster_ly + macros[j].GetY() + halo_width;
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
+   
         line += to_string(lx) + string("   ") + to_string(ly) + string("  ");
-        line += to_string(lx + width) + string("  ") + to_string(ly + height);
+        line += to_string(ux) + string("  ") + to_string(uy);
         line += string("   ") + macros[j].GetOrientation();
         file << line << endl;
       }
@@ -344,16 +386,19 @@ bool rtl_macro_placer(const char* config_file,
   return true;
 }
 
-void MacroPlacer2::init(Logger* logger)
+void MacroPlacer2::init(dbDatabase* db, Logger* logger)
 {
+  db_ = db;
   logger_ = logger;
 }
 
 bool MacroPlacer2::place(const char* config_file,
                          const char* report_directory,
-                         const char* report_file)
+                         const char* report_file,
+                         const char* macro_blockage_file,
+                         const char* prefer_location_file)
 {
-  return rtl_macro_placer(config_file, logger_, report_directory, report_file);
+  return rtl_macro_placer(config_file, logger_, db_,  report_directory, report_file, macro_blockage_file, prefer_location_file);
 }
 
 }  // namespace mpl

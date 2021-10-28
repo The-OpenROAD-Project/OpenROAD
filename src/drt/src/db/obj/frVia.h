@@ -98,8 +98,8 @@ class frVia : public frRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getCutBBox(frBox& boxIn) const
@@ -127,8 +127,8 @@ class frVia : public frRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getLayer2BBox(frBox& boxIn) const
@@ -156,8 +156,8 @@ class frVia : public frRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   // setters
@@ -179,11 +179,11 @@ class frVia : public frRef
   void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
   const Point getOrigin() const { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  void getTransform(frTransform& xformIn) const override
+  void getTransform(dbTransform& xformIn) const override
   {
-    xformIn.set(origin_);
+    xformIn.setOffset(origin_);
   }
-  void setTransform(const frTransform& xformIn) override {}
+  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -282,11 +282,11 @@ class frVia : public frRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
-  void move(const frTransform& xform) override { ; }
+  void move(const dbTransform& xform) override { ; }
   bool overlaps(const frBox& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frVia>>& in) { iter_ = in; }

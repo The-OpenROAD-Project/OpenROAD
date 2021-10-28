@@ -53,6 +53,7 @@ extern "C" {
 #include "autocluster.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
 
 using utl::PAR;
 
@@ -72,11 +73,13 @@ PartitionMgr::~PartitionMgr()
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
                         ord::dbVerilogNetwork* network,
+                        sta::dbSta* sta,
                         Logger* logger)
 {
   db_ = db;
   db_network_ = db_network;
   network_ = network;
+  _sta = sta;
   logger_ = logger;
 }
 
@@ -1360,6 +1363,9 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int net_threshold,
                                    unsigned int ignore_net_threshold,
                                    unsigned int virtual_weight,
+                                   unsigned int num_hops,
+                                   unsigned int timing_weight,
+                                   bool std_cell_timing_flag,
                                    const char* report_directory,
                                    const char* file_name)
 {
@@ -1369,7 +1375,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                  "dbPartitionDesign can't run because OpenROAD wasn't compiled "
                  "with LOAD_PARTITIONERS.");
 #endif
-  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, logger_);
+  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,
@@ -1377,6 +1383,9 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              net_threshold,
                              ignore_net_threshold,
                              virtual_weight,
+                             num_hops,
+                             timing_weight,
+                             std_cell_timing_flag,
                              report_directory,
                              file_name);
 }
