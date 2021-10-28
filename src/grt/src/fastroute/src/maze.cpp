@@ -113,9 +113,11 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   }
 
   // fix the longest edge and break the loop
-  for (auto& [edge, blocked_positions] : edges_to_blocked_pos_map) {
+  if (!edges_to_blocked_pos_map.empty()) {
+    int edge = edges_to_blocked_pos_map.begin()->first;
+    std::vector<std::pair<short, short>>& blocked_positions
+        = edges_to_blocked_pos_map.begin()->second;
     fixOverlappingEdge(net_id, edge, blocked_positions);
-    break;
   }
 }
 
