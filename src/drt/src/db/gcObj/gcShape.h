@@ -178,26 +178,26 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
     }
     return dir;
   }
+  //returns the direction to the inner side of the polygon
   frDirEnum getInnerDir() {
-    int o = gtl::orientation(*prev_edge_, *next_edge_); //1 = counterclockwise (from prev to next), -1 = clockwise
     switch (getDir()) {
       case frDirEnum::N:
-        return o ? frDirEnum::W : frDirEnum::E;
+        return frDirEnum::W;
       case frDirEnum::S:
-        return o ? frDirEnum::E : frDirEnum::W;
+        return frDirEnum::E;
       case frDirEnum::E:
-        return o ? frDirEnum::N : frDirEnum::S;
+        return frDirEnum::N;
       case frDirEnum::W:
-        return o ? frDirEnum::S : frDirEnum::N;
+        return frDirEnum::S;
       default:
         return frDirEnum::UNKNOWN;
     }
   }
-  frDirEnum getOutterDir() {
-    int o = gtl::orientation(*prev_edge_, *next_edge_);
+  //returns the direction to the outer side of the polygon
+  frDirEnum getOuterDir() {
     switch (getDir()) {
       case frDirEnum::N:
-        return o ? frDirEnum::S : frDirEnum::N;
+        return frDirEnum::E;
       case frDirEnum::S:
         return frDirEnum::W;
       case frDirEnum::E:
