@@ -104,9 +104,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
 FastRouteCore::~FastRouteCore()
 {
   deleteComponents();
-  if (debug_ != nullptr) {
-    delete debug_;
-  }
 }
 
 void FastRouteCore::clear()
