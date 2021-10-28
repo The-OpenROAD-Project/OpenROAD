@@ -1199,13 +1199,13 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   odb::Point pos = odb::Point(x, y);
 
-  Rect boundary;
-  block_->getDieArea(boundary);
-  Point lb = boundary.ll();
-  Point ub = boundary.ur();
+  Rect die_boundary;
+  block_->getDieArea(die_boundary);
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
 
   if (force_to_die_bound) {
-    movePinToTrack(pos, layer, width, height);
+    movePinToTrack(pos, layer, width, height, die_boundary);
     Edge edge;
     odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
     odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
@@ -1266,7 +1266,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   commitIOPinToDB(io_pin);
 
-  Interval interval = getIntervalFromPin(io_pin);
+  Interval interval = getIntervalFromPin(io_pin, die_boundary);
 
   excludeInterval(interval);
 
@@ -1278,13 +1278,15 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                 pos.y()/tech_->getLefUnits());
 }
 
-void IOPlacer::movePinToTrack(odb::Point& pos, int layer, int width, int height)
+void IOPlacer::movePinToTrack(odb::Point& pos,
+                              int layer,
+                              int width,
+                              int height,
+                              const Rect& die_boundary)
 {
   int database_unit = tech_->getLefUnits();
-  Rect boundary;
-  block_->getDieArea(boundary);
-  Point lb = boundary.ll();
-  Point ub = boundary.ur();
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
 
   int lb_x = lb.x();
   int lb_y = lb.y();
@@ -1315,15 +1317,12 @@ void IOPlacer::movePinToTrack(odb::Point& pos, int layer, int width, int height)
   }
 }
 
-Interval IOPlacer::getIntervalFromPin(IOPin& io_pin)
+Interval IOPlacer::getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary)
 {
   Edge edge;
   int begin, end, layer;
-
-  Rect boundary;
-  block_->getDieArea(boundary);
-  Point lb = boundary.ll();
-  Point ub = boundary.ur();
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
 
   odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(io_pin.getLayer());
   // sum the half width of the layer to avoid overlaps in adjacent tracks
