@@ -1733,33 +1733,33 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType) {
       if (edge->length() >= eol.eolWidth)
         continue;
       frCoord low, high, line;
-      bool innerIsHigh; // = "is the inner direction of the shape an axis-growing direction"
+      bool innerDirIsIncreasing; // x: increases to the east, y: increases to the north
       if (edge->isVertical()) {
         low = min(edge->low().y(), edge->high().y());
         high = max(edge->low().y(), edge->high().y());
         line = edge->low().x();
-        innerIsHigh = edge->getInnerDir() == frDirEnum::N;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
       } else {
         low = min(edge->low().x(), edge->high().x());
         high = max(edge->low().x(),edge->high().x());
         line = edge->low().y();
-        innerIsHigh = edge->getInnerDir() == frDirEnum::E;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
       }
-      modEolCost(low, high, line, edge->isVertical(), innerIsHigh, layer, modType);
+      modEolCost(low, high, line, edge->isVertical(), innerDirIsIncreasing, layer, modType);
     }
   }
 }
 //mods eol cost for an eol edge
-void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerIsHigh, frLayer* layer, int modType) {
+void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerDirIsIncreasing, frLayer* layer, int modType) {
   frBox testBox;
   auto eol = layer->getDrEolSpacingConstraint();
   if (isVertical) {
-    if (innerIsHigh)
+    if (innerDirIsIncreasing)
       testBox.set(line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
     else 
       testBox.set(line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
   } else {
-    if (innerIsHigh)
+    if (innerDirIsIncreasing)
       testBox.set(low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
     else 
       testBox.set(low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
