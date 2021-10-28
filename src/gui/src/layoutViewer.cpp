@@ -1500,8 +1500,9 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->state_count == animate_selection_->max_state_count ||
-                  QDateTime::currentMSecsSinceEpoch() > max_animate_time) {
+              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
+                  (animate_selection_->state_count == animate_selection_->max_state_count ||
+                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }
