@@ -706,8 +706,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   // get die bounding box
   Rect bbox;
   block->getDieArea(bbox);
-  boxes.push_back({{bbox.ll().x(), bbox.ll().y()},
-                   {bbox.ur().x(), bbox.ur().y()}});
+  boxes.push_back({{bbox.xMin(), bbox.yMin()},
+                   {bbox.xMax(), bbox.yMax()}});
 
   odb::Rect search_line;
   if (horizontal) {
