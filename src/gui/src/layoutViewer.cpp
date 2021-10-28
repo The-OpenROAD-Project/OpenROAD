@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDateTime>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
@@ -701,6 +702,12 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   const int search_radius = block->getDbUnitsPerMicron();
 
   std::vector<Search::Box> boxes;
+
+  // get die bounding box
+  Rect bbox;
+  block->getDieArea(bbox);
+  boxes.push_back({{bbox.xMin(), bbox.yMin()},
+                   {bbox.xMax(), bbox.yMax()}});
 
   odb::Rect search_line;
   if (horizontal) {
@@ -1451,6 +1458,9 @@ void LayoutViewer::selection(const Selected& selection)
   inspector_selection_ = selection;
   if (selected_.size() > 1) {
     selectionAnimation(selection);
+  } else {
+    // stop animation
+    selectionAnimation(Selected());
   }
   inspector_focus_ = Selected(); // reset focus
   update();
@@ -1481,15 +1491,18 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
     animate_selection_->timer = std::make_unique<QTimer>();
     animate_selection_->timer->setInterval(update_interval);
 
+    const qint64 max_animate_time = QDateTime::currentMSecsSinceEpoch() + (animate_selection_->max_state_count + 2) * update_interval;
     connect(animate_selection_->timer.get(),
             &QTimer::timeout,
-            [this]() {
+            [this, max_animate_time]() {
               if (animate_selection_ == nullptr) {
                 return;
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->state_count == animate_selection_->max_state_count) {
+              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
+                  (animate_selection_->state_count == animate_selection_->max_state_count ||
+                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }

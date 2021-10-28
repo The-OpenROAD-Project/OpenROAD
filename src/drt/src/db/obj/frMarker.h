@@ -117,7 +117,7 @@ class frMarker : public frFig
 
   bool isH() const { return vioIsH_; }
 
-  void move(const frTransform& xform) override {}
+  void move(const dbTransform& xform) override {}
 
   bool overlaps(const frBox& box) const override { return false; }
 

@@ -28,12 +28,10 @@
 
 #include "db/infra/frBox.h"
 
-#include "db/infra/frTransform.h"
-
 using namespace std;
 using namespace fr;
 
-void frBox::transform(const frTransform& xform)
+void frBox::transform(const dbTransform& xform)
 {
   xform.apply(ll_);
   xform.apply(ur_);

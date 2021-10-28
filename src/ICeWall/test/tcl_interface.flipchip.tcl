@@ -106,6 +106,12 @@ define_pad_cell \
   -type bump \
   -physical_only
 
+define_pad_cell \
+  -name CELL_DOESNT_EXIST \
+  -cell_name NOT_FOUND \
+  -type bump1 \
+  -physical_only
+
 set_bump_options \
   -pitch 160 \
   -bump_pin_name PAD \
