@@ -96,14 +96,17 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       logger_(log),
       stt_builder_(stt_builder),
-      fastrouteRender_(nullptr)
+      fastrouteRender_(nullptr),
+      debug_(new DebugSetting())
 {
-  debug_ = new DebugSetting();
 }
 
 FastRouteCore::~FastRouteCore()
 {
   deleteComponents();
+  if (debug_ != nullptr) {
+    delete debug_;
+  }
 }
 
 void FastRouteCore::clear()
