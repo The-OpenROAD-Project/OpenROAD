@@ -67,6 +67,7 @@
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"
+#include "aak/MakeUWdp.h"
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "mpl2/MakeMacroPlacer.h"
@@ -125,6 +126,7 @@ OpenRoad::OpenRoad()
     resizer_(nullptr),
     ioPlacer_(nullptr),
     opendp_(nullptr),
+    uwdp_(nullptr),
     finale_(nullptr),
     macro_placer_(nullptr),
     macro_placer2_(nullptr),
@@ -152,6 +154,7 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deleteUWdp(uwdp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
@@ -213,6 +216,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  uwdp_ = makeUWdp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
@@ -244,6 +248,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
+  initUWdp(this);
   initFinale(this);
   initGlobalRouter(this);
   initTritonCts(this);

@@ -87,6 +87,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace aak {
+class UWdp;
+}
+
 namespace fin {
 class Finale;
 }
@@ -160,6 +164,7 @@ public:
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
+  aak::UWdp *getUWdp() { return uwdp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
@@ -251,6 +256,7 @@ private:
   rsz::Resizer *resizer_;
   ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
+  aak::UWdp *uwdp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
   mpl::MacroPlacer2 *macro_placer2_;
