@@ -707,6 +707,24 @@ Descriptor::Properties Selected::getProperties() const
   return props;
 }
 
+Descriptor::Actions Selected::getActions() const
+{
+  auto actions = descriptor_->getActions(object_);
+
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    actions.push_back({
+      "Zoom to",
+      [this, bbox]() -> Selected {
+        auto gui = Gui::get();
+        gui->zoomTo(bbox);
+        return *this;
+      }});
+  }
+
+  return actions;
+}
+
 std::string Descriptor::Property::toString(const std::any& value)
 {
   if (auto v = std::any_cast<Selected>(&value)) {

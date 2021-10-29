@@ -497,6 +497,10 @@ void Inspector::handleAction(QWidget* action)
   auto callback = actions_[action];
   auto new_selection = callback();
 
+  if (new_selection == selection_) {
+    return;
+  }
+
   int itr_index = std::distance(selected_.begin(), selected_itr_);
   // remove the current selection
   emit removeSelected(selection_);
