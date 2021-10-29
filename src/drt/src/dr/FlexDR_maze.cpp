@@ -43,7 +43,7 @@ using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
 
-bool debug = false;
+int debugIter = INT32_MAX;
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const frBox& box)
 {
   frCoord dx = max(max(box.left() - pt.x(), pt.x() - box.right()), 0);
@@ -1527,7 +1527,7 @@ void FlexDRWorker::route_queue()
     gcWorker_->main();
     setMarkers(gcWorker_->getMarkers());
   }
-  if (debug) {
+  if (getDRIter() >= debugIter) {
     cout << "Starting with " << markers_.size() << " markers\n";
     for (auto& marker : markers_) {
       cout << marker << "\n";
@@ -1733,7 +1733,8 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType) {
       if (edge->length() >= eol.eolWidth)
         continue;
       frCoord low, high, line;
-      bool innerDirIsIncreasing; // x: increases to the east, y: increases to the north
+      bool innerDirIsIncreasing;  // x: increases to the east, y: increases to
+                                  // the north
       if (edge->isVertical()) {
         low = min(edge->low().y(), edge->high().y());
         high = max(edge->low().y(), edge->high().y());
@@ -1745,12 +1746,25 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType) {
         line = edge->low().y();
         innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
       }
-      modEolCost(low, high, line, edge->isVertical(), innerDirIsIncreasing, layer, modType);
+      modEolCost(low,
+                 high,
+                 line,
+                 edge->isVertical(),
+                 innerDirIsIncreasing,
+                 layer,
+                 modType);
     }
   }
 }
 //mods eol cost for an eol edge
-void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerDirIsIncreasing, frLayer* layer, int modType) {
+void FlexDRWorker::modEolCost(frCoord low,
+                              frCoord high,
+                              frCoord line,
+                              bool isVertical,
+                              bool innerDirIsIncreasing,
+                              frLayer* layer,
+                              int modType)
+{
   frBox testBox;
   auto eol = layer->getDrEolSpacingConstraint();
   if (isVertical) {
