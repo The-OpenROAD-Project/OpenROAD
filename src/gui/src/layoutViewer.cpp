@@ -52,6 +52,7 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
+#include <deque>
 #include <iostream>
 #include <tuple>
 #include <vector>
@@ -108,7 +109,8 @@ class GuiPainter : public Painter
              int dbu_per_micron)
       : Painter(options, pixels_per_dbu),
         painter_(painter),
-        dbu_per_micron_(dbu_per_micron)
+        dbu_per_micron_(dbu_per_micron),
+        saved_pen_brush_()
   {
   }
 
@@ -140,6 +142,7 @@ class GuiPainter : public Painter
     pen.setWidth(width);
     painter_->setPen(pen);
   }
+
   void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
     QColor color = getOptions()->color(layer);
@@ -180,6 +183,19 @@ class GuiPainter : public Painter
     }
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
+  }
+
+  void savePenAndBrush() override
+  {
+    saved_pen_brush_.push_back({painter_->pen(), painter_->brush()});
+  }
+
+  void restorePenAndBrush() override
+  {
+    const auto [pen, brush] = saved_pen_brush_.back();
+    saved_pen_brush_.pop_back();
+    painter_->setPen(pen);
+    painter_->setBrush(brush);
   }
 
   void drawGeomShape(const odb::GeomShape* shape) override
@@ -389,6 +405,7 @@ class GuiPainter : public Painter
  private:
   QPainter* painter_;
   int dbu_per_micron_;
+  std::deque<std::pair<QPen, QBrush>> saved_pen_brush_;
 };
 
 LayoutViewer::LayoutViewer(
@@ -2006,7 +2023,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     drawTracks(layer, block, painter, bounds);
     for (auto* renderer : renderers) {
+      gui_painter.savePenAndBrush();
       renderer->drawLayer(layer, gui_painter);
+      gui_painter.restorePenAndBrush();
     }
   }
 
@@ -2015,7 +2034,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawRows(block, painter, bounds);
   for (auto* renderer : renderers) {
+    gui_painter.savePenAndBrush();
     renderer->drawObjects(gui_painter);
+    gui_painter.restorePenAndBrush();
   }
 
   drawCongestionMap(gui_painter, bounds);
