@@ -2609,7 +2609,7 @@ void FlowLegalizer::removeBinOverlap( void )
         // Increase cell widths to account for gaps.
         for( size_t i = 1; i < nodes.size(); i++ )
         {
-            double gap = m_arch->get_cell_spacing( nodes[i-1]->m_etr, nodes[i]->m_etl );
+            double gap = m_arch->getCellSpacing( nodes[i-1], nodes[i] );
             if( gap > 1.0e-3 )
             {
                 if( occ + gap <= space+1.0e-3 )

@@ -488,7 +488,7 @@ bool Utility::setOrientation( Network* network, Node* ndi, unsigned newOri )
 
     if( mX == -1 )
     {
-        std::swap<int>(ndi->m_etl, ndi->m_etr); 
+        ndi->swapEdgeTypes();
     }
     return false;
 }

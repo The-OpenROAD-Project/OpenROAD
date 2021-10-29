@@ -119,17 +119,18 @@ public:
     void            setRightEdgeType( int etr ) { m_etr = etr; }
     int             getRightEdgeType( void ) const { return m_etr; }
 
+    void            swapEdgeTypes( void ) { std::swap<int>(m_etl,m_etr); }
+
     void            setBottomPower( int bot ) { m_powerBot = bot; }
     int             getBottomPower( void ) const { return m_powerBot; }
 
     void            setTopPower( int top ) { m_powerTop = top; }
     int             getTopPower( void ) const { return m_powerTop; }
+ 
 
 
     unsigned        m_firstPin; 
     unsigned        m_lastPin;
-    int             m_etl;      // Edge types.
-    int             m_etr;
     int             m_regionId; // Regions.
     int             m_powerTop;
     int             m_powerBot;
@@ -154,6 +155,9 @@ protected:
     unsigned        m_fixed;
     // Place for attributes.
     unsigned        m_attributes;
+    // For edge types and spacing tables.
+    int             m_etl;      
+    int             m_etr;
 };
 
 class Edge

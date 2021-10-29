@@ -55,6 +55,10 @@ namespace utl {
 class Logger;
 }
 
+namespace ord {
+class OpenRoad;
+}
+
 namespace aak {
 
 class Node;
@@ -87,6 +91,8 @@ using odb::dbSite;
 using odb::Point;
 using odb::Rect;
 
+using ord::OpenRoad;
+
 
 class RoutingParams;
 class Architecture;
@@ -104,8 +110,7 @@ public:
   UWdp &operator=(const UWdp &&) = delete;
 
   void clear();
-  void init(dbDatabase *db,
-            Logger *logger);
+  void init(ord::OpenRoad* openroad);
 
   void improvePlacement();
 
@@ -115,6 +120,7 @@ protected:
 
   void initEdgeTypes();
   void initCellSpacingTable();
+  void initPadding();
   void createLayerMap();
   void createNdrMap();
   void createNetwork();
@@ -124,8 +130,9 @@ protected:
   void setUpPlacementRegions();
 
 protected:
-  Logger *logger_;
-  dbDatabase *db_;
+  ord::OpenRoad *openroad_;
+  utl::Logger *logger_;
+  odb::dbDatabase *db_;
 
   // My stuff.
   Architecture *arch_;

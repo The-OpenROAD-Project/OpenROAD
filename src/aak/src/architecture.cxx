@@ -30,7 +30,9 @@ namespace aak
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Architecture()
+Architecture::Architecture():
+    m_useSpacingTable( true ),
+    m_usePadding( true )
 {
     m_xmin = std::numeric_limits<double>::max();
     m_xmax = -std::numeric_limits<double>::max();
@@ -416,19 +418,81 @@ void Architecture::create_peanut_nodes( Network* network, RoutingParams* rt )
     //         << std::endl;
 }
 
-void Architecture::add_cell_spacing( int i1, int i2, double sep )
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Architecture::addCellSpacingUsingEdgeTypes( 
+    int firstEdge, int secondEdge, double sep )
 {
-    m_cellSpacings.push_back( new Architecture::Spacing( i1,  i2, sep  ) );
+    m_cellSpacings.push_back( 
+        new Architecture::Spacing( firstEdge, secondEdge, sep  ) 
+        );
 }
 
-double Architecture::get_cell_spacing( int i1, int i2 )
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Architecture::addCellPadding( Node* ndi, 
+    double leftPadding, double rightPadding )
 {
-// XXX: Would returning a minimum non-zero value help with routing?  This would force  a gap
-// between all cells...   Or, is this too much!  We could try forcing 1 site width of spacing...
-// XXX: This was a terrible idea on those designs with high target density; the legalizer
-// could not handle it...
+    m_cellPaddings[ndi->getId()] = std::make_pair(leftPadding,rightPadding);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool Architecture::getCellPadding( Node* ndi, 
+    double& leftPadding, double& rightPadding )
+{
+    std::map<int,std::pair<double,double> >::iterator it;
+    if( m_cellPaddings.end() == (it = m_cellPaddings.find( ndi->getId() )) )
+    {
+        rightPadding = 0;
+        leftPadding = 0;
+        return false;
+    }
+    rightPadding = it->second.second;
+    leftPadding = it->second.first;
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+double Architecture::getCellSpacing( Node* leftNode, Node* rightNode )
+{
+    // Return the required separation between the two cells.  We use
+    // either spacing tables or padding information, or both.  If 
+    // we use both, then we return the largest spacing.
+    double retval = 0.;
+    if( m_useSpacingTable )
+    {
+        retval = std::max( retval, 
+            getCellSpacingUsingEdgeTypes( 
+                leftNode->getRightEdgeType(), rightNode->getLeftEdgeType() )
+                );
+    }
+    if( m_usePadding )
+    {
+        // Separation is padding to the right of the left cell plus 
+        // the padding to the left of the right cell.
+        std::map<int,std::pair<double,double> >::iterator it;
+
+        double separation = 0.;
+        if( m_cellPaddings.end() != (it = m_cellPaddings.find( leftNode->getId() )) )
+        {
+            separation += it->second.second;
+        }
+        if( m_cellPaddings.end() != (it = m_cellPaddings.find( rightNode->getId() )) )
+        {
+            separation += it->second.first ;
+        }
+        retval = std::max( retval, separation );
+    }
+    return retval;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+double Architecture::getCellSpacingUsingEdgeTypes( int i1, int i2 )
+{
     int spacing_minimum = 0.0;
-    //int spacing_minimum = this->m_rows[0]->m_siteSpacing;
     for( int i = 0; i < m_cellSpacings.size(); i++ )
     {
         Architecture::Spacing* ptr = m_cellSpacings[i];

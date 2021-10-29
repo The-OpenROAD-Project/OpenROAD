@@ -220,7 +220,7 @@ bool DetailedOrient::orientAdjust( Node* ndi, unsigned newOri )
 
     if( mX == -1 ) 
     {
-        std::swap<int>(ndi->m_etl, ndi->m_etr); // Need to remember edge types!
+        ndi->swapEdgeTypes();
     }
     return false;
 }
@@ -343,11 +343,11 @@ int DetailedOrient::flipCells( void )
             gapr = 0.;
             if( ndl != 0 )
             {
-                gapl = m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etr );
+                gapl = m_arch->getCellSpacing( ndl, ndi );
             }
             if( ndr != 0 )
             {
-                gapr = m_arch->get_cell_spacing( ndi->m_etl, ndr->m_etl );
+                gapr = m_arch->getCellSpacing( ndi, ndr );
             }
             spacel = (ndi->getX() - 0.5 * ndi->getWidth()) - ((ndl == 0) ? segment->m_xmin : (ndl->getX() + 0.5 * ndl->getWidth()));
             spacer = ((ndr == 0) ? segment->m_xmax : (ndr->getX() - 0.5 * ndr->getWidth())) - (ndi->getX() + 0.5 * ndi->getWidth());
@@ -417,7 +417,7 @@ int DetailedOrient::flipCells( void )
                         Pin* pin = m_network->m_nodePins[pi];
                         pin->m_offsetX *= -1;
                     }
-                    std::swap<int>(ndi->m_etl, ndi->m_etr);
+                    ndi->swapEdgeTypes();
 
                     ndi->m_currentOrient = Orientation_FN;
 
@@ -430,7 +430,7 @@ int DetailedOrient::flipCells( void )
                         Pin* pin = m_network->m_nodePins[pi];
                         pin->m_offsetX *= -1;
                     }
-                    std::swap<int>(ndi->m_etl, ndi->m_etr);
+                    ndi->swapEdgeTypes();
 
                     ndi->m_currentOrient = Orientation_FS;
 
@@ -443,7 +443,7 @@ int DetailedOrient::flipCells( void )
                         Pin* pin = m_network->m_nodePins[pi];
                         pin->m_offsetX *= -1;
                     }
-                    std::swap<int>(ndi->m_etl, ndi->m_etr);
+                    ndi->swapEdgeTypes();
 
                     ndi->m_currentOrient = Orientation_N ;
 
@@ -456,7 +456,7 @@ int DetailedOrient::flipCells( void )
                         Pin* pin = m_network->m_nodePins[pi];
                         pin->m_offsetX *= -1;
                     }
-                    std::swap<int>(ndi->m_etl, ndi->m_etr);
+                    ndi->swapEdgeTypes();
 
                     ndi->m_currentOrient = Orientation_S ;
 

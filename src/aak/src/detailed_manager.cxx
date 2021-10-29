@@ -1145,16 +1145,16 @@ void DetailedMgr::removeCellFromSegment( Node* nd, int seg )
     double curr_gap = 0.;
     if( prev_cell )
     {
-        curr_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+        curr_gap += m_arch->getCellSpacing( prev_cell, nd );
     }
     if( next_cell )
     {
-        curr_gap += m_arch->get_cell_spacing( nd->m_etr, next_cell->m_etl );
+        curr_gap += m_arch->getCellSpacing( nd, next_cell );
     }
     double next_gap = 0.;
     if( prev_cell && next_cell )
     {
-        next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, next_cell->m_etl );
+        next_gap += m_arch->getCellSpacing( prev_cell, next_cell );
     }
 
     m_cellsInSeg[seg].erase( it ); // Removes the cell...
@@ -1187,16 +1187,16 @@ void DetailedMgr::removeCellFromSegmentTest( Node* nd, int seg, double& util, do
     double curr_gap = 0.;
     if( prev_cell )
     {
-        curr_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+        curr_gap += m_arch->getCellSpacing( prev_cell, nd );
     }
     if( next_cell )
     {
-        curr_gap += m_arch->get_cell_spacing( nd->m_etr, next_cell->m_etl );
+        curr_gap += m_arch->getCellSpacing( nd, next_cell );
     }
     double next_gap = 0.;
     if( prev_cell && next_cell )
     {
-        next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, next_cell->m_etl );
+        next_gap += m_arch->getCellSpacing( prev_cell, next_cell );
     }
 
     util -= nd->getWidth();  // Removes the utilization...
@@ -1234,7 +1234,7 @@ void DetailedMgr::addCellToSegment( Node* nd, int seg )
         double next_gap = 0.;
         if( prev_cell )
         {
-            next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+            next_gap += m_arch->getCellSpacing( prev_cell, nd );
         }
 
         m_cellsInSeg[seg].push_back( nd ); // Add the cell...
@@ -1251,16 +1251,16 @@ void DetailedMgr::addCellToSegment( Node* nd, int seg )
         double curr_gap = 0.;
         if( prev_cell && next_cell )
         {
-            curr_gap += m_arch->get_cell_spacing( prev_cell->m_etr, next_cell->m_etl );
+            curr_gap += m_arch->getCellSpacing( prev_cell, next_cell );
         }
         double next_gap = 0.;
         if( prev_cell )
         {
-            next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+            next_gap += m_arch->getCellSpacing( prev_cell, nd );
         }
         if( next_cell )
         {
-            next_gap += m_arch->get_cell_spacing( nd->m_etr, next_cell->m_etl );
+            next_gap += m_arch->getCellSpacing( nd, next_cell );
         }
 
         m_cellsInSeg[seg].insert( it, nd ); // Adds the cell...
@@ -1314,7 +1314,7 @@ void DetailedMgr::addCellToSegmentTest( Node* nd, int seg, double x, double& uti
         double next_gap = 0.;
         if( prev_cell )
         {
-            next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+            next_gap += m_arch->getCellSpacing( prev_cell, nd );
         }
 
         util += nd->getWidth();  // Adds the utilization...
@@ -1330,16 +1330,16 @@ void DetailedMgr::addCellToSegmentTest( Node* nd, int seg, double x, double& uti
         double curr_gap = 0.;
         if( prev_cell && next_cell )
         {
-            curr_gap += m_arch->get_cell_spacing( prev_cell->m_etr, next_cell->m_etl );
+            curr_gap += m_arch->getCellSpacing( prev_cell, next_cell );
         }
         double next_gap = 0.;
         if( prev_cell )
         {
-            next_gap += m_arch->get_cell_spacing( prev_cell->m_etr, nd->m_etl );
+            next_gap += m_arch->getCellSpacing( prev_cell, nd );
         }
         if( next_cell )
         {
-            next_gap += m_arch->get_cell_spacing( nd->m_etr, next_cell->m_etl );
+            next_gap += m_arch->getCellSpacing( nd, next_cell );
         }
 
         util += nd->getWidth();  // Adds the utilization...
@@ -1577,7 +1577,7 @@ int DetailedMgr::checkSegments( double& worst )
         double gapu = 0.; 
         for( int k = 1; k < nodes.size(); k++ )
         {
-            gapu += m_arch->get_cell_spacing( nodes[k-1]->m_etr, nodes[k-0]->m_etl );
+            gapu += m_arch->getCellSpacing( nodes[k-1], nodes[k-0] );
         }
 
         segment->m_util = util;
@@ -1855,7 +1855,7 @@ void DetailedMgr::removeOverlapMinimumShift( void )
         double gapu = 0.;
         for( int j = 1; j < nodes.size(); j++ )
         {
-            gapu += m_arch->get_cell_spacing( nodes[j-1]->m_etr, nodes[j-0]->m_etl );
+            gapu += m_arch->getCellSpacing( nodes[j-1], nodes[j-0] );
         }
 
         segment->m_util = util;
@@ -1886,7 +1886,7 @@ void DetailedMgr::removeOverlapMinimumShift( void )
             Node* ndl = nodes[i-1];
             Node* ndr = nodes[i-0];
 
-            double gap = m_arch->get_cell_spacing( ndl->m_etr, ndr->m_etl );
+            double gap = m_arch->getCellSpacing( ndl, ndr );
             // 'util' is the total amount of cell width (including any gaps included so far...).  'gap' is the
             // next amount of width to be included.  Skip the gap if we are going to violate the space limit.
             if( gap != 0.0 )
@@ -2293,7 +2293,7 @@ int DetailedMgr::checkEdgeSpacingInSegments( int max_err_n )
             double llx_r = ndr->getX() - 0.5 * ndr->getWidth();
             double rlx_r = llx_r + ndr->getWidth();
 
-            double req_space = m_arch->get_cell_spacing( ndl->m_etr, ndr->m_etl );
+            double req_space = m_arch->getCellSpacing( ndl, ndr );
             double act_space = llx_r - rlx_l;
             if( !(act_space >= req_space-1.0e-3) )
             {
@@ -2716,7 +2716,7 @@ double DetailedMgr::getCellSpacing( Node* ndl, Node* ndr, bool checkPinsOnCells 
     {
         return 0.0;
     }
-    double spacing1 = m_arch->get_cell_spacing( ndl->m_etr, ndl->m_etl );
+    double spacing1 = m_arch->getCellSpacing( ndl, ndl );
     if( !checkPinsOnCells )
     {
         return spacing1;
@@ -3154,7 +3154,7 @@ void DetailedMgr::removeSegmentOverlapSingleInner(
     }
     for( int k = 1; k < nodes.size(); k++ )
     {
-        gapu += m_arch->get_cell_spacing( nodes[k-1]->m_etr, nodes[k-0]->m_etl );
+        gapu += m_arch->getCellSpacing( nodes[k-1], nodes[k-0] );
     }
 
 
@@ -3220,7 +3220,7 @@ void DetailedMgr::removeSegmentOverlapSingleInner(
         Node* ndl = nodes[i-1];
         Node* ndr = nodes[i-0];
 
-        double gap = m_arch->get_cell_spacing( ndl->m_etr, ndr->m_etl );
+        double gap = m_arch->getCellSpacing( ndl, ndr );
         if( gap != 0.0 )
         {
             if( util + gap <= space )
@@ -3317,7 +3317,7 @@ void DetailedMgr::resortSegment( DetailedSeg* segPtr )
     {
         Node* ndl = m_cellsInSeg[segId][n-1];
         Node* ndr = m_cellsInSeg[segId][n];
-        segPtr->m_gapu += m_arch->get_cell_spacing( ndl->m_etr, ndr->m_etl );
+        segPtr->m_gapu += m_arch->getCellSpacing( ndl, ndr );
     }
 }
 
@@ -3535,7 +3535,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
         // Determine required space and see if segment is violated.
         change = 0.0;
         change += ndi->getWidth();
-        change += m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
+        change += m_arch->getCellSpacing( ndl, ndi );
 
         if( util + gapu + change > width )
         {
@@ -3543,7 +3543,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
         }
 
 
-        x1 = (ndl->getX() + 0.5 * ndl->getWidth()) + m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
+        x1 = (ndl->getX() + 0.5 * ndl->getWidth()) + m_arch->getCellSpacing( ndl, ndi );
         x2 = m_segments[sj]->m_xmax;
         if( !alignPos( ndi, xj, x1, x2 ) )
         {
@@ -3585,7 +3585,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
             }
 
             xj -= 0.5 * ndi->getWidth();
-            xj -= m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
+            xj -= m_arch->getCellSpacing( ndl, ndi );
             xj -= 0.5 * ndl->getWidth();
 
             // Site alignment.
@@ -3643,7 +3643,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
         // Determine required space and see if segment is violated.
         change = 0.0;
         change += ndi->getWidth();
-        change += m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
+        change += m_arch->getCellSpacing( ndi, ndr );
 
         if( util + gapu + change > width )
         {
@@ -3651,7 +3651,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
         }
 
         x1 = m_segments[sj]->m_xmin;
-        x2 = (ndr->getX() - 0.5 * ndr->getWidth()) - m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
+        x2 = (ndr->getX() - 0.5 * ndr->getWidth()) - m_arch->getCellSpacing( ndi, ndr );
         if( !alignPos( ndi, xj, x1, x2 ) )
         {
             return false;
@@ -3693,7 +3693,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
             }
 
             xj += 0.5 * ndi->getWidth();
-            xj += m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
+            xj += m_arch->getCellSpacing( ndi, ndr );
             xj += 0.5 * ndr->getWidth();
 
             // Site alignment.
@@ -3751,17 +3751,17 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
         // Determine required space and see if segment is violated.
         change = 0.0;
         change += ndi->getWidth();
-        change += m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
-        change += m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
-        change -= m_arch->get_cell_spacing( ndl->m_etr, ndr->m_etl );
+        change += m_arch->getCellSpacing( ndl, ndi );
+        change += m_arch->getCellSpacing( ndi, ndr );
+        change -= m_arch->getCellSpacing( ndl, ndr );
 
         if( util + gapu + change > width )
         {
             return false;
         }
 
-        x1 = (ndl->getX() + 0.5 * ndl->getWidth()) + m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
-        x2 = (ndr->getX() - 0.5 * ndr->getWidth()) - m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
+        x1 = (ndl->getX() + 0.5 * ndl->getWidth()) + m_arch->getCellSpacing( ndl, ndi );
+        x2 = (ndr->getX() - 0.5 * ndr->getWidth()) - m_arch->getCellSpacing( ndi, ndr );
         if( !alignPos( ndi, xj, x1, x2 ) )
         {
             return false;
@@ -3802,7 +3802,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
             }
 
             xj += 0.5 * ndi->getWidth();
-            xj += m_arch->get_cell_spacing( ndi->m_etr, ndr->m_etl );
+            xj += m_arch->getCellSpacing( ndi, ndr );
             xj += 0.5 * ndr->getWidth();
 
             // Site alignment.
@@ -3865,7 +3865,7 @@ bool DetailedMgr::tryMove1( Node* ndi, double xi, double yi, int si, double xj, 
             }
 
             xj -= 0.5 * ndi->getWidth();
-            xj -= m_arch->get_cell_spacing( ndl->m_etr, ndi->m_etl );
+            xj -= m_arch->getCellSpacing( ndl, ndi );
             xj -= 0.5 * ndl->getWidth();
 
             // Site alignment.
@@ -3993,16 +3993,16 @@ bool DetailedMgr::tryMove2( Node* ndi, double xi, double yi, int si, double xj, 
             int ni = m_cellsInSeg[si].size()-1;
             prev = (ix_i ==  0) ? 0 : m_cellsInSeg[si][ix_i-1];
             next = (ix_i == ni) ? 0 : m_cellsInSeg[si][ix_i+1];
-            if( prev ) change -= m_arch->get_cell_spacing( prev->m_etr, ndi->m_etl );
-            if( next ) change -= m_arch->get_cell_spacing( ndi->m_etr, next->m_etl );
-            if( prev && next ) change += m_arch->get_cell_spacing( prev->m_etr, next->m_etl );
+            if( prev ) change -= m_arch->getCellSpacing( prev, ndi );
+            if( next ) change -= m_arch->getCellSpacing( ndi, next );
+            if( prev && next ) change += m_arch->getCellSpacing( prev, next );
 
             int nj = m_cellsInSeg[sj].size()-1;
             prev = (ix_j ==  0) ? 0 : m_cellsInSeg[sj][ix_j-1];
             next = ndj;
-            if( prev ) change -= m_arch->get_cell_spacing( prev->m_etr, ndj->m_etl );
-            if( prev ) change += m_arch->get_cell_spacing( prev->m_etr, ndi->m_etl );
-            change += m_arch->get_cell_spacing( ndi->m_etr, ndj->m_etl );
+            if( prev ) change -= m_arch->getCellSpacing( prev, ndj );
+            if( prev ) change += m_arch->getCellSpacing( prev, ndi );
+            change += m_arch->getCellSpacing( ndi, ndj );
         }
         {
             x1 = ndj->getX() - 0.5 * ndj->getWidth() - space_left_j ;
@@ -4039,16 +4039,16 @@ bool DetailedMgr::tryMove2( Node* ndi, double xi, double yi, int si, double xj, 
             int ni = m_cellsInSeg[si].size()-1;
             prev = (ix_i ==  0) ? 0 : m_cellsInSeg[si][ix_i-1];
             next = (ix_i == ni) ? 0 : m_cellsInSeg[si][ix_i+1];
-            if( prev ) change -= m_arch->get_cell_spacing( prev->m_etr, ndi->m_etl );
-            if( next ) change -= m_arch->get_cell_spacing( ndi->m_etr, next->m_etl );
-            if( prev && next ) change += m_arch->get_cell_spacing( prev->m_etr, next->m_etl );
+            if( prev ) change -= m_arch->getCellSpacing( prev, ndi );
+            if( next ) change -= m_arch->getCellSpacing( ndi, next );
+            if( prev && next ) change += m_arch->getCellSpacing( prev, next );
 
             int nj = m_cellsInSeg[sj].size()-1;
             prev = ndj;
             next = (ix_j == nj) ? 0 : m_cellsInSeg[sj][ix_j+1];
-            if( next ) change -= m_arch->get_cell_spacing( ndj->m_etr, next->m_etl );
-            if( next ) change += m_arch->get_cell_spacing( ndi->m_etr, next->m_etl );
-            change += m_arch->get_cell_spacing( ndj->m_etr, ndi->m_etl );
+            if( next ) change -= m_arch->getCellSpacing( ndj, next );
+            if( next ) change += m_arch->getCellSpacing( ndi, next );
+            change += m_arch->getCellSpacing( ndj, ndi );
         }
         {
             x1 = ndj->getX() + 0.5 * ndj->getWidth();
@@ -4241,8 +4241,8 @@ bool DetailedMgr::tryMove3( Node* ndi, double xi, double yi, int si, double xj, 
 
         double lx = (left == nullptr) ? segPtr->m_xmin : (left->getX() + 0.5 * left->getWidth());
         double rx = (rite == nullptr) ? segPtr->m_xmax : (rite->getX() - 0.5 * rite->getWidth());
-        if( left != nullptr ) lx += m_arch->get_cell_spacing( left->m_etr, ndi->m_etl );
-        if( rite != nullptr ) rx -= m_arch->get_cell_spacing( ndi->m_etr, rite->m_etl );
+        if( left != nullptr ) lx += m_arch->getCellSpacing( left, ndi );
+        if( rite != nullptr ) rx -= m_arch->getCellSpacing( ndi, rite );
 
         if( ndi->getWidth() <= rx - lx )
         {
@@ -4397,24 +4397,24 @@ bool DetailedMgr::trySwap1( Node* ndi,
         if( ix_i !=  0 )
         {
             Node* ndk = m_cellsInSeg[si][ix_i-1];
-            need_j += m_arch->get_cell_spacing( ndk->m_etr, ndj->m_etl );
+            need_j += m_arch->getCellSpacing( ndk, ndj );
         }
         if( ix_i != ni )
         {
             Node* ndk = m_cellsInSeg[si][ix_i+1];
-            need_j += m_arch->get_cell_spacing( ndj->m_etr, ndk->m_etl );
+            need_j += m_arch->getCellSpacing( ndj, ndk );
         }
 
         double need_i = ndi->getWidth();
         if( ix_j !=  0 )
         {
             Node* ndk = m_cellsInSeg[sj][ix_j-1];
-            need_i += m_arch->get_cell_spacing( ndk->m_etr, ndi->m_etl );
+            need_i += m_arch->getCellSpacing( ndk, ndi );
         }
         if( ix_j != nj )
         {
             Node* ndk = m_cellsInSeg[sj][ix_j+1];
-            need_i += m_arch->get_cell_spacing( ndi->m_etr, ndk->m_etl );
+            need_i += m_arch->getCellSpacing( ndi, ndk );
         }
 
         // If the cells fit into the space (including gaps), then the swap is
@@ -4491,9 +4491,9 @@ bool DetailedMgr::trySwap1( Node* ndi,
             Node* prev = (ix_i ==  0) ? nullptr : m_cellsInSeg[si][ix_i-1];
             Node* next = (ix_j == ni) ? nullptr : m_cellsInSeg[si][ix_j+1];
             double need = ndi->getWidth() + ndj->getWidth();
-            if( prev != nullptr ) need += m_arch->get_cell_spacing( prev->m_etr, ndj->m_etl );
-            if( next != nullptr ) need += m_arch->get_cell_spacing( ndi->m_etr, next->m_etl );
-            need += m_arch->get_cell_spacing( ndj->m_etr, ndi->m_etl );
+            if( prev != nullptr ) need += m_arch->getCellSpacing( prev, ndj );
+            if( next != nullptr ) need += m_arch->getCellSpacing( ndi, next );
+            need += m_arch->getCellSpacing( ndj, ndi );
 
             if( need >= hole+1.0e-3 )
             {
@@ -4522,9 +4522,9 @@ bool DetailedMgr::trySwap1( Node* ndi,
             Node* prev = (ix_j ==  0) ? nullptr : m_cellsInSeg[sj][ix_j-1];
             Node* next = (ix_i == ni) ? nullptr : m_cellsInSeg[sj][ix_i+1];
             double need = ndi->getWidth() + ndj->getWidth();
-            if( prev != nullptr ) need += m_arch->get_cell_spacing( prev->m_etr, ndi->m_etl );
-            if( next != nullptr ) need += m_arch->get_cell_spacing( ndj->m_etr, next->m_etl );
-            need += m_arch->get_cell_spacing( ndi->m_etr, ndj->m_etl );
+            if( prev != nullptr ) need += m_arch->getCellSpacing( prev, ndi );
+            if( next != nullptr ) need += m_arch->getCellSpacing( ndj, next );
+            need += m_arch->getCellSpacing( ndi, ndj );
 
             if( need >= hole+1.0e-3 )
             {

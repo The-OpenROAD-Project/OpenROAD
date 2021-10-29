@@ -58,6 +58,7 @@
 #include <boost/format.hpp>
 
 #include "utl/Logger.h"
+#include "dpl/Opendp.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 
 // My stuff.
@@ -117,11 +118,11 @@ UWdp::~UWdp()
 
 ////////////////////////////////////////////////////////////////
 void
-UWdp::init(dbDatabase *db,
-             Logger *logger)
+UWdp::init(ord::OpenRoad* openroad )
 {
-  db_ = db;
-  logger_ = logger;
+  openroad_ = openroad;
+  db_ = openroad->getDb();
+  logger_ = openroad->getLogger();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -193,8 +194,9 @@ UWdp::import()
   arch_ = new Architecture;
   rt_ = new RoutingParams;
 
-  initEdgeTypes();
-  initCellSpacingTable();
+  initEdgeTypes();          // Does nothing.
+  initCellSpacingTable();   // Does nothing.
+  initPadding();
   createLayerMap();
   createNdrMap();
   createNetwork();
@@ -234,29 +236,65 @@ UWdp::updateDbInstLocations()
 void
 UWdp::initEdgeTypes()
 {
-  logger_->report( "initEdgeType() - not yet implemented, but needed." );
-
-  arch_->init_edge_type();
-
-  // XXX: This information is in the "LEF58_EDGETYPE",
-  // at least in the ICCAD14, 15 and 17 contests.  
-  // Where is it here??
-
-  // This is required to ensure proper spacing between cells.
-  ;
+  // Use padding instead.
 }
 ////////////////////////////////////////////////////////////////
 void
 UWdp::initCellSpacingTable()
 {
-  logger_->report( "initCellSpacingTable() - not yet implemented, but needed." );
-
-  // XXX: This information is in the "LEF58_CELLEDGESPACINGTABLE",
-  // at least in the ICCAD14, 15 and 17 contests.  
-  // Where is it here?
-
-  // This is required to ensure proper spacing between cells.
+  // Do nothing.  Use padding instead.
   ;
+}
+////////////////////////////////////////////////////////////////
+void
+UWdp::initPadding()
+{
+  logger_->report( "Initializing cell padding; not yet implemented." );
+
+  // Grab information from OpenDP.
+  dpl::Opendp* opendp = openroad_->getOpendp();
+
+  // Need to turn off spacing tables and turn on padding.
+  arch_->setUseSpacingTable( false );
+  arch_->setUsePadding( true );
+  arch_->init_edge_type();
+
+  // Create and edge type for each amount of padding.  This
+  // can be done by querying OpenDP.
+  //
+  // XXX: Note sure of one thing.  The padding is a factor times
+  // the site width, but the site width could be different
+  // for different rows.  I can't handle this right now so
+  // I am just going to grab a site from the first row and
+  // use that width.
+
+  dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
+  if( rows.empty() )
+  {
+    return;
+  }
+  int siteWidth = (*rows.begin())->getSite()->getWidth();
+  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
+
+  dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
+  for( dbInst* inst : insts )
+  {
+    it_n = instMap_.find( inst );
+    if( instMap_.end() != it_n )
+    {
+      Node* ndi = it_n->second;
+      int leftPadding = opendp->padLeft( inst ) * siteWidth;
+      int rightPadding = opendp->padRight( inst ) * siteWidth;
+      arch_->addCellPadding( ndi, leftPadding, rightPadding );
+
+      double padl, padr;
+      arch_->getCellPadding( ndi, padl, padr );
+      std::cout << "Cell " << ndi->getId() << ", "
+        << "Left padding is " << padl << ", "
+        << "Right padding is " << padr
+        << std::endl;
+    }
+  }
 }
 ////////////////////////////////////////////////////////////////
 void

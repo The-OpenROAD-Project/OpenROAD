@@ -78,6 +78,7 @@ target_link_libraries(aak
     odb
     OpenSTA
     utl
+    dpl
 )
 
 messages(

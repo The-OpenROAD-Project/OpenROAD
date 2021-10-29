@@ -62,8 +62,6 @@ public:
     void find_overlapped_rows( double ymin, double ymax, std::vector<Architecture::Row*>& rows );
     int find_closest_row( double y );
 
-    void add_cell_spacing( int i1, int i2, double sep );
-    double get_cell_spacing( int i1, int i2 );
 
     void clear_edge_type();
     void init_edge_type();
@@ -84,6 +82,14 @@ public:
 
     bool    power_compatible( Node* ndi, Row* row, bool& flip );
 
+    void    setUseSpacingTable( bool val = true ) { m_useSpacingTable = val; }
+    void    setUsePadding( bool val = true ) { m_usePadding = val; }
+    double  getCellSpacing( Node* leftNode, Node* rightNode );
+    double  getCellSpacingUsingEdgeTypes( int firstEdge, int secondEdge );
+    void    addCellSpacingUsingEdgeTypes( int firstEdge, int secondEdge, double sep );
+    void    addCellPadding( Node* ndi, double leftPadding, double rightPadding );
+    bool    getCellPadding( Node* ndi, double& leftPadding, double& rightPadding );
+
 protected:
     void create_filler_nodes( Network* network );
     void create_peanut_nodes( Network* network, RoutingParams* rt );
@@ -101,11 +107,13 @@ public:
     std::vector<Region*>    m_regions;
     std::vector<int>        m_numNodesInRegion;
 
-    // For EDGETYPE spacing...
-    std::vector<std::pair<char*, int> > m_edgeTypes;
-    std::vector<Spacing*> m_cellSpacings;
-
-
+    bool                    m_useSpacingTable;
+    bool                    m_usePadding;
+    std::vector<std::pair<char*, int> > 
+                            m_edgeTypes;
+    std::vector<Spacing*>   m_cellSpacings;
+    std::map<int,std::pair<double,double> >
+                            m_cellPaddings; // Padding to left,right.
 };
 
 class Architecture::Spacing

@@ -72,8 +72,7 @@ initUWdp(OpenRoad *openroad)
   Aak_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::aak_tcl_inits);
-  openroad->getUWdp()->init(openroad->getDb(),
-                              openroad->getLogger());
+  openroad->getUWdp()->init(openroad);
 }
 
 }  // namespace ord
