@@ -33,6 +33,11 @@
 #pragma once
 
 #include "gui/gui.h"
+#include "odb/dbWireGraph.h"
+
+#include <map>
+#include <set>
+#include <vector>
 
 namespace odb {
 class dbMaster;
@@ -132,6 +137,18 @@ class DbNetDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+
+  using Node = odb::dbWireGraph::Node;
+  using NodeList = std::set<const Node*>;
+  using NodeMap = std::map<const Node*, NodeList>;
+
+  void drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const;
+  void findPath(NodeMap& graph,
+                const Node* source,
+                const Node* sink,
+                std::vector<odb::Point>& path) const;
+
+  void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
   static const int max_iterms_ = 10000;
 };

@@ -43,6 +43,8 @@
 #include <QStringList>
 
 #include <iomanip>
+#include <limits>
+#include <queue>
 #include <regex>
 #include <sstream>
 
@@ -527,6 +529,249 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return false;
 }
 
+void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const
+{
+  typedef std::pair<const odb::Rect, const odb::dbTechLayer*> GraphTarget;
+
+  // gets all the shapes that make up the iterm
+  auto get_graph_iterm_targets = [](odb::dbMTerm* mterm, const odb::dbTransform& transform, std::vector<GraphTarget>& targets) {
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        odb::Rect rect;
+        box->getBox(rect);
+        transform.apply(rect);
+        targets.push_back({rect, box->getTechLayer()});
+      }
+    }
+  };
+
+  // gets all the shapes that make up the bterm
+  auto get_graph_bterm_targets = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
+    for (auto* bpin : bterm->getBPins()) {
+      for (auto* box : bpin->getBoxes()) {
+        odb::Rect rect;
+        box->getBox(rect);
+        targets.push_back({rect, box->getTechLayer()});
+      }
+    }
+  };
+
+  // find sources and sinks on this net
+  std::vector<GraphTarget> sources;
+  std::vector<GraphTarget> sinks;
+  for (auto* iterm : net->getITerms()) {
+    if (iterm == sink) {
+      odb::dbTransform transform;
+      iterm->getInst()->getTransform(transform);
+      get_graph_iterm_targets(iterm->getMTerm(), transform, sinks);
+      continue;
+    }
+
+    auto iotype = iterm->getIoType();
+    if (iotype == odb::dbIoType::OUTPUT ||
+        iotype == odb::dbIoType::INOUT) {
+      odb::dbTransform transform;
+      iterm->getInst()->getTransform(transform);
+      get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
+    }
+  }
+  for (auto* bterm : net->getBTerms()) {
+    if (bterm == sink) {
+      get_graph_bterm_targets(bterm, sinks);
+      continue;
+    }
+
+    auto iotype = bterm->getIoType();
+    if (iotype == odb::dbIoType::INPUT ||
+        iotype == odb::dbIoType::INOUT ||
+        iotype == odb::dbIoType::FEEDTHRU) {
+      get_graph_bterm_targets(bterm, sources);
+    }
+  }
+
+  odb::dbWireGraph graph;
+  graph.decode(net->getWire());
+
+  // find the nodes on the wire graph that intersect the sinks identified
+  NodeList source_nodes;
+  NodeList sink_nodes;
+  for (auto itr = graph.begin_nodes(); itr != graph.end_nodes(); itr++) {
+    const auto* node = *itr;
+    int x, y;
+    node->xy(x, y);
+    const odb::Point node_pt(x, y);
+    const odb::dbTechLayer* node_layer = node->layer();
+
+    for (const auto& [source_rect, source_layer] : sources) {
+      if (source_rect.intersects(node_pt) && source_layer == node_layer) {
+        source_nodes.insert(node);
+      }
+    }
+
+    for (const auto& [sink_rect, sink_layer] : sinks) {
+      if (sink_rect.intersects(node_pt) && sink_layer == node_layer) {
+        sink_nodes.insert(node);
+      }
+    }
+  }
+
+  // build connectivity map from the wire graph
+  NodeMap node_map;
+  buildNodeMap(&graph, node_map);
+
+  Painter::Color highlight_color = painter.getPenColor();
+  highlight_color.a = 255;
+
+  painter.savePenAndBrush();
+  painter.setPen(highlight_color, true, 4);
+
+  for (const auto* source_node : source_nodes) {
+    for (const auto* sink_node : sink_nodes) {
+      // find the shortest path from source to sink
+      std::vector<odb::Point> path;
+      findPath(node_map, source_node, sink_node, path);
+
+      if (!path.empty()) {
+        odb::Point prev_pt = path[0];
+        for (const auto& pt : path) {
+          if (pt == prev_pt) {
+            continue;
+          }
+
+          painter.drawLine(prev_pt, pt);
+          prev_pt = pt;
+        }
+      } else {
+        // unable to find path so just draw a fly-wire
+        int x, y;
+        source_node->xy(x, y);
+        odb::Point source_pt(x, y);
+        sink_node->xy(x, y);
+        odb::Point sink_pt(x, y);
+        painter.drawLine(source_pt, sink_pt);
+      }
+    }
+  }
+  painter.restorePenAndBrush();
+}
+
+void DbNetDescriptor::buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const
+{
+  for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
+    const auto* node = *itr;
+    NodeList connections;
+
+    int x, y;
+    node->xy(x, y);
+    const odb::Point node_pt(x, y);
+    const odb::dbTechLayer* layer = node->layer();
+
+    for (auto itr = graph->begin_edges(); itr != graph->end_edges(); itr++) {
+      const auto* edge = *itr;
+      const auto* source = edge->source();
+      const auto* target = edge->target();
+
+      if (source->layer() == layer || target->layer() == layer) {
+        int sx, sy;
+        source->xy(sx, sy);
+
+        int tx, ty;
+        target->xy(tx, ty);
+        if (sx > tx) {
+          std::swap(sx, tx);
+        }
+        if (sy > ty) {
+          std::swap(sy, ty);
+        }
+        const odb::Rect path_line(sx, sy, tx, ty);
+        if (path_line.intersects(node_pt)) {
+          connections.insert(source);
+          connections.insert(target);
+        }
+      }
+    }
+
+    node_map[node].insert(connections.begin(), connections.end());
+    for (const auto* cnode : connections) {
+      if (cnode == node) {
+        // don't insert the source node
+        continue;
+      }
+      node_map[cnode].insert(node);
+    }
+  }
+}
+
+void DbNetDescriptor::findPath(NodeMap& graph,
+                               const Node* source,
+                               const Node* sink,
+                               std::vector<odb::Point>& path) const
+{
+  // find path from source to sink using A*
+  // https://en.wikipedia.org/w/index.php?title=A*_search_algorithm&oldid=1050302256
+
+  auto distance = [](const Node* node0, const Node* node1) -> int {
+    int x0, y0;
+    node0->xy(x0, y0);
+    int x1, y1;
+    node1->xy(x1, y1);
+    return std::abs(x0 - x1) + std::abs(y0 - y1);
+  };
+
+  std::map<const Node*, const Node*> came_from;
+  std::map<const Node*, int> g_score;
+  std::map<const Node*, int> f_score;
+
+  struct DistNode {
+    const Node* node;
+    int dist;
+
+    public:
+      // used for priority queue
+      bool operator<(const DistNode& other) const { return dist > other.dist; }
+  };
+  std::priority_queue<DistNode> open_set;
+  const int source_sink_dist = distance(source, sink);
+  open_set.push({source, source_sink_dist});
+
+  for (const auto& [node, nodes] : graph) {
+    g_score[node] = std::numeric_limits<int>::max();
+    f_score[node] = std::numeric_limits<int>::max();
+  }
+  g_score[source] = 0;
+  f_score[source] = source_sink_dist;
+
+  while (!open_set.empty()) {
+    auto current = open_set.top().node;
+    open_set.pop();
+    if (current == sink) {
+      // build path
+      int x, y;
+      while (current != source) {
+        current->xy(x, y);
+        path.push_back(odb::Point(x, y));
+        current = came_from[current];
+      }
+      current->xy(x, y);
+      path.push_back(odb::Point(x, y));
+      return;
+    }
+
+    const int current_g_score = g_score[current];
+    for (const auto& neighbor : graph[current]) {
+      const int possible_g_score = current_g_score + distance(current, neighbor);
+      if (possible_g_score < g_score[neighbor]) {
+        const int new_f_score = possible_g_score + distance(neighbor, sink);
+        came_from[neighbor] = current;
+        g_score[neighbor] = possible_g_score;
+        f_score[neighbor] = new_f_score;
+
+        open_set.push({neighbor, new_f_score});
+      }
+    }
+  }
+}
+
 // additional_data is used define the related sink for this net
 // this will limit the fly-wires to just those related to that sink
 // if nullptr, all flywires will be drawn
@@ -601,6 +846,10 @@ void DbNetDescriptor::highlight(std::any object,
   odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
+    if (sink_object != nullptr) {
+      drawPathSegment(net, sink_object, painter);
+    }
+
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
