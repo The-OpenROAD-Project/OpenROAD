@@ -32,10 +32,6 @@
 ***
 ***************************************************************************/
 
-#ifndef GCC_VERSION
-#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-#endif
-
 #ifdef _MSC_VER
 #pragma warning(disable : 4786)
 #endif
@@ -54,17 +50,7 @@ using std::swap;
 using std::min;
 using std::max;
 using std::sort;
-
-#if (GCC_VERSION >= 30100)
-#include <ext/numeric>
-using __gnu_cxx::power;
-#else
-using std::power;
-#endif
-
-// #ifdef __SUNPRO_CC
-//  unsigned power(unsigned base, unsigned p) { return UINT_MAX; }
-// #endif
+using std::pow;
 
 // requires XXX GB RAM
 const unsigned maxSize = 40;
@@ -111,7 +97,7 @@ GrayCodeForPartitionings::GrayCodeForPartitionings(unsigned size, unsigned numPa
         abkfatal(numPart < 255, "GrayCodeForPartitionings class requires numPart <255");
         if (!_tables[size] || _numPartForTables[size] != int(numPart)) initTable(size, numPart);
         _begin = _current = _tables[size];
-        unsigned tableSize = power(numPart, size);
+        unsigned tableSize = pow(numPart, size);
         /* In case STL is not available
             unsigned tableSize=numPart;
             for(unsigned k=size-1; k!=0; k--) tableSize*=numPart;

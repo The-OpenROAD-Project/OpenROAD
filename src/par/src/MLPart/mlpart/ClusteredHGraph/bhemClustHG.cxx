@@ -40,6 +40,7 @@
 
 #include "bhemClustHG.h"
 #include "Stats/stats.h"
+#include <algorithm>
 
 using std::min;
 using std::max;

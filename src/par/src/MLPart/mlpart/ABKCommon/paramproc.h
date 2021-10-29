@@ -50,7 +50,7 @@
 */
 
 #ifndef _PARAMPROC_H_
-#define _PARAMPROC_H__
+#define _PARAMPROC_H_
 
 #include <stdlib.h>
 #include <iostream>

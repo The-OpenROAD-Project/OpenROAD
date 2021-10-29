@@ -310,13 +310,15 @@ void BBPart::_checkForLegalSol(PartitioningProblem& problem, NetCut2wayWWeights&
                         }
                 }
 
-                if (_params.verb.getForMajStats())
-                        if (_foundLegal)
+                if (_params.verb.getForMajStats()) {
+                       if (_foundLegal) {
                                 cout << " Randomized engineers method found a "
                                         "legal solution in " << k << " tries " << endl;
-                        else
+                       } else {
                                 cout << " Rand. engineer's method found no "
                                         "legal solution. Will do without." << endl;
+                       }
+                }
         }
 
         // cout << result;

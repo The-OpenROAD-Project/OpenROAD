@@ -43,6 +43,7 @@
 #include "Stats/freqDistr.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 using std::stringstream;
 using std::cout;

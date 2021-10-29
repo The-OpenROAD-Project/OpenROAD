@@ -195,7 +195,7 @@ bool PartitioningProblem::read(const char* baseFileName) {
 
                                 unsigned dirLen = strlen(dir);
 
-                                if (newNetD != NULL)
+                                if (newNetD != NULL) {
                                         if (newNetD[0] != pathDelimWindows && newNetD[0] != pathDelimUnix) {
                                                 tmpNet = new char[dirLen + strlen(newNetD) + 1];
                                                 sprintf(tmpNet, "%s%s", dir, newNetD);
@@ -203,8 +203,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpNet = new char[strlen(newNetD) + 1];
                                                 strcpy(tmpNet, newNetD);
                                         }
+                                }
 
-                                if (newAre != NULL)
+                                if (newAre != NULL) {
                                         if (newAre[0] != pathDelimWindows && newAre[0] != pathDelimUnix) {
                                                 tmpAre = new char[dirLen + strlen(newAre) + 1];
                                                 sprintf(tmpAre, "%s%s", dir, newAre);
@@ -212,8 +213,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpAre = new char[strlen(newAre) + 1];
                                                 strcpy(tmpAre, newAre);
                                         }
+                                }
 
-                                if (newNodes != NULL)
+                                if (newNodes != NULL) {
                                         if (newNodes[0] != pathDelimWindows && newNodes[0] != pathDelimUnix) {
                                                 tmpNodes = new char[dirLen + strlen(newNodes) + 1];
                                                 sprintf(tmpNodes, "%s%s", dir, newNodes);
@@ -221,8 +223,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpNodes = new char[strlen(newNodes) + 1];
                                                 strcpy(tmpNodes, newNodes);
                                         }
+                                }
 
-                                if (newNets != NULL)
+                                if (newNets != NULL) {
                                         if (newNets[0] != pathDelimWindows && newNets[0] != pathDelimUnix) {
                                                 tmpNets = new char[dirLen + strlen(newNets) + 1];
                                                 sprintf(tmpNets, "%s%s", dir, newNets);
@@ -230,8 +233,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpNets = new char[strlen(newNets) + 1];
                                                 strcpy(tmpNets, newNets);
                                         }
+                                }
 
-                                if (newWts != NULL)
+                                if (newWts != NULL) {
                                         if (newWts[0] != pathDelimWindows && newWts[0] != pathDelimUnix) {
                                                 tmpWts = new char[dirLen + strlen(newWts) + 1];
                                                 sprintf(tmpWts, "%s%s", dir, newWts);
@@ -239,8 +243,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpWts = new char[strlen(newWts) + 1];
                                                 strcpy(tmpWts, newWts);
                                         }
+                                }
 
-                                if (newBlk != NULL)
+                                if (newBlk != NULL) {
                                         if (newBlk[0] != pathDelimWindows && newBlk[0] != pathDelimUnix) {
                                                 tmpBlk = new char[dirLen + strlen(newBlk) + 1];
                                                 sprintf(tmpBlk, "%s%s", dir, newBlk);
@@ -248,8 +253,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpBlk = new char[strlen(newBlk) + 1];
                                                 strcpy(tmpBlk, newBlk);
                                         }
+                                }
 
-                                if (newFix != NULL)
+                                if (newFix != NULL) {
                                         if (newFix[0] != pathDelimWindows && newFix[0] != pathDelimUnix) {
                                                 tmpFix = new char[dirLen + strlen(newFix) + 1];
                                                 sprintf(tmpFix, "%s%s", dir, newFix);
@@ -257,8 +263,9 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpFix = new char[strlen(newFix) + 1];
                                                 strcpy(tmpFix, newFix);
                                         }
+                                }
 
-                                if (newSol != NULL)
+                                if (newSol != NULL) {
                                         if (newSol[0] != pathDelimWindows && newSol[0] != pathDelimUnix) {
                                                 tmpSol = new char[dirLen + strlen(newSol) + 1];
                                                 sprintf(tmpSol, "%s%s", dir, newSol);
@@ -266,6 +273,7 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                                 tmpSol = new char[strlen(newSol) + 1];
                                                 strcpy(tmpSol, newSol);
                                         }
+                                }
 
                                 abkfatal(tmpNet == NULL || tmpNodes == NULL,
                                          "AUX file cannot contain both net[D] "

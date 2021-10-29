@@ -82,16 +82,18 @@ class DestCentricGainContainerT {
                 } else if (canUseHash && overrideToHashBased)
                         _params.hashBasedGC = true;
 
-                if (_params.verb.getForActions() >= 2)
-                        if (_params.hashBasedGC)
+                if (_params.verb.getForActions() >= 2) {
+                       if (_params.hashBasedGC) {
                                 std::cout << "DestCentricGainContainerT using "
                                              "hash based gain container" << std::endl;
-                        else if (_params.mapBasedGC)
+                       } else if (_params.mapBasedGC) {
                                 std::cout << "DestCentricGainContainerT using "
                                              "map based gain container" << std::endl;
-                        else
+                       } else {
                                 std::cout << "DestCentricGainContainerT using "
                                              "array based gain container" << std::endl;
+                       }
+                }
         }
 
         void setMaxGain(unsigned maxG);

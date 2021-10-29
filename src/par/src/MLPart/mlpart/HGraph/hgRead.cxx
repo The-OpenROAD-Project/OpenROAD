@@ -225,7 +225,7 @@ void HGraphFixed::parseAux(const char* baseFileName) {
 
                                 unsigned dirLen = dir.size();
 
-                                if (newNetD != NULL)
+                                if (newNetD != NULL) {
                                         if (newNetD[0] != pathDelimWindows && newNetD[0] != pathDelimUnix) {
                                                 tmpNetD = new char[dirLen + strlen(newNetD) + 1];
                                                 sprintf(tmpNetD, "%s%s", dir.c_str(), newNetD);
@@ -233,8 +233,9 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                                 tmpNetD = new char[strlen(newNetD) + 1];
                                                 strcat(tmpNetD, newNetD);
                                         }
+                                }
 
-                                if (newAreM != NULL)
+                                if (newAreM != NULL) {
                                         if (newAreM[0] != pathDelimWindows && newAreM[0] != pathDelimUnix) {
                                                 tmpAreM = new char[dirLen + strlen(newAreM) + 1];
                                                 sprintf(tmpAreM, "%s%s", dir.c_str(), newAreM);
@@ -242,8 +243,9 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                                 tmpAreM = new char[strlen(newAreM) + 1];
                                                 strcat(tmpAreM, newAreM);
                                         }
+                                }
 
-                                if (newWts != NULL)
+                                if (newWts != NULL) {
                                         if (newWts[0] != pathDelimWindows && newWts[0] != pathDelimUnix) {
                                                 tmpWts = new char[dirLen + strlen(newWts) + 1];
                                                 sprintf(tmpWts, "%s%s", dir.c_str(), newWts);
@@ -251,8 +253,9 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                                 tmpWts = new char[strlen(newWts) + 1];
                                                 strcat(tmpWts, newWts);
                                         }
+                                }
 
-                                if (newNets != NULL)
+                                if (newNets != NULL) {
                                         if (newNets[0] != pathDelimWindows && newNets[0] != pathDelimUnix) {
                                                 tmpNets = new char[dirLen + strlen(newNets) + 1];
                                                 sprintf(tmpNets, "%s%s", dir.c_str(), newNets);
@@ -260,8 +263,9 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                                 tmpNets = new char[strlen(newNets) + 1];
                                                 strcat(tmpNets, newNets);
                                         }
+                                }
 
-                                if (newNodes != NULL)
+                                if (newNodes != NULL) {
                                         if (newNodes[0] != pathDelimWindows && newNodes[0] != pathDelimUnix) {
                                                 tmpNodes = new char[dirLen + strlen(newNodes) + 1];
                                                 sprintf(tmpNodes, "%s%s", dir.c_str(), newNodes);
@@ -269,6 +273,7 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                                 tmpNodes = new char[strlen(newNodes) + 1];
                                                 strcat(tmpNodes, newNodes);
                                         }
+                                }
 
                                 if (tmpNetD) {
                                         readNetD(tmpNetD);

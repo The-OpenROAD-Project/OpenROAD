@@ -174,16 +174,8 @@ class Tausworthe : public RandomRoot {
                         int otherPoint = _cursor - _tauswortheQ;
                         if (otherPoint < 0) otherPoint += _bufferSize;
 
-#if defined(__SUNPRO_CC)
-                        //|| defined(__GNUC__)
-                        /* SUN compiler doesn't use "mutable" */
-                        retval = const_cast<unsigned *>(_buffer)[const_cast<Tausworthe *>(this)->_cursor] ^= const_cast<unsigned *>(_buffer)[otherPoint];
-                        if (++(const_cast<Tausworthe *>(this)->_cursor) >= _bufferSize) const_cast<Tausworthe *>(this)->_cursor = 0;
-
-#else
                         retval = _buffer[_cursor] ^= _buffer[otherPoint];
                         if (++_cursor >= _bufferSize) _cursor = 0;
-#endif
 
                         return retval;
                 }
@@ -318,6 +310,11 @@ class RandomRawUnsignedT {
         }
 
        public:
+        using result_type = unsigned;
+        constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+        constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
+        result_type operator()() { return static_cast<unsigned>(*this); }
+  
         RandomRawUnsignedT(unsigned seedN = UINT_MAX, Verbosity verb = Verbosity("silent")) : _impl(NULL), _seedN(seedN), _verb(verb), _haveLoc(false) {}
 
         RandomRawUnsignedT(const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : _impl(NULL), _locIdent(locIdent), _counterOverride(counterOverride), _verb(verb), _haveLoc(true) {}

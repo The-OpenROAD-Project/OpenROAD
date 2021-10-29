@@ -53,17 +53,17 @@ class BucketArrayHL  // : public vector<GainList>
                 GainList gain_list;
         };
 
-        std::set<int>::iterator _highestNonEmpty;
-        std::set<int>::iterator _highestValid;
         SVGainElement* _lastMoveSuggested;
         int _gainOffset;
         int _maxBucketIdx;
 
         std::unordered_map<int, hash_elementT> _bucketArray;
         std::set<int> _weightList;
+        std::set<int>::iterator _highestNonEmpty;
+        std::set<int>::iterator _highestValid;
 
        public:
-        BucketArrayHL() : _highestNonEmpty(_weightList.end()), _highestValid(_weightList.end()), _lastMoveSuggested(NULL), _maxBucketIdx(-1) {}
+      BucketArrayHL() : _lastMoveSuggested(NULL), _maxBucketIdx(-1), _highestNonEmpty(_weightList.end()), _highestValid(_weightList.end()) {}
 
         ~BucketArrayHL() {}
 

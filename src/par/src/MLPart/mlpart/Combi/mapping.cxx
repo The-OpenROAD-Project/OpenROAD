@@ -43,32 +43,13 @@
 #include <utility>
 #include <iostream>
 #include <ABKCommon/abkrand.h>
-
-#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-
-#if (GCC_VERSION >= 30100)
-#include <ext/algorithm>
-#endif
+#include <algorithm>
 
 using std::ostream;
 using std::endl;
 using std::vector;
-
-#if (GCC_VERSION >= 30100)
-using __gnu_cxx::random_sample;
-#else
-using std::random_sample;
-#endif
+using std::sample;
 using std::random_shuffle;
-
-/* #ifdef __SUNPRO_CC
-  void random_sample(unsigned*,unsigned*,unsigned*,unsigned*,RandomUnsigned&)
-  { }
-  void random_sample_n(unsigned*,unsigned*,unsigned*,unsigned,RandomUnsigned&)
-  { }
-  void random_shuffle(unsigned*,unsigned*,RandomUnsigned&) {}
-#endif
-*/
 
 Mapping::Mapping(unsigned sourceSize, unsigned targetSize, Mapping::Example ex) : _destSize(targetSize), _meat(sourceSize) {
         abkassert(sourceSize <= targetSize, " Map not injective: source set bigger than target set");
@@ -87,7 +68,7 @@ Mapping::Mapping(unsigned sourceSize, unsigned targetSize, Mapping::Example ex) 
                         for (unsigned k = 0; k != targetSize; k++) zero2n[k] = k;
                         // RandomUnsigned rng(0,10);
                         RandomRawUnsigned rng("Mapping::Mapping,case _Random,rng");
-                        random_sample(zero2n.begin(), zero2n.end(), _meat.begin(), _meat.end(), rng);
+                        std::sample(zero2n.begin(), zero2n.end(), _meat.begin(), _meat.end() - _meat.begin(), rng);
                         random_shuffle(_meat.begin(), _meat.end(), rng);
                         return;
                 }
@@ -96,7 +77,7 @@ Mapping::Mapping(unsigned sourceSize, unsigned targetSize, Mapping::Example ex) 
                         for (unsigned k = 0; k != targetSize; k++) zero2n[k] = k;
                         // RandomUnsigned rng(0,10);
                         RandomRawUnsigned rng("Mapping::Mapping,case _RandomOrdered,rng");
-                        random_sample_n(zero2n.begin(), zero2n.end(), _meat.begin(), sourceSize, rng);
+                        std::sample(zero2n.begin(), zero2n.end(), _meat.begin(), sourceSize, rng);
                         return;
                 }
                 default:

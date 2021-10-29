@@ -180,7 +180,7 @@ void FMMMbaseNC2w::computeGainsOfModule(unsigned moduleIdx) {
 
         // if(tooLarge) cout<<"Skipping node "<<moduleIdx<<endl;
 
-        if (_lockedModules[moduleIdx] = (!canGoTo[to] || tooLarge))
+        if ((_lockedModules[moduleIdx] = (!canGoTo[to] || tooLarge)))
             /* assignment */
         {
                 for (itHGFEdgeLocal e = node.edgesBegin(); e != node.edgesEnd(); e++) _lockedNetConfigIds[(*e)->getIndex()] |= (1 << from);
@@ -215,7 +215,7 @@ void FMMMbaseNC2w::computeGainsOfModuleWW(unsigned moduleIdx) {
 
         // if(tooLarge) cout<<"Skipping node "<<moduleIdx<<endl;
 
-        if (_lockedModules[moduleIdx] = (!canGoTo[to] || tooLarge))
+        if ((_lockedModules[moduleIdx] = (!canGoTo[to] || tooLarge)))
             /* assignment */
         {
                 for (itHGFEdgeLocal e = node.edgesBegin(); e != node.edgesEnd(); e++) _lockedNetConfigIds[(*e)->getIndex()] |= (1 << from);

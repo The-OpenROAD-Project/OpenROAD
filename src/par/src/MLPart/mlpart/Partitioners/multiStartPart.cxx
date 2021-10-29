@@ -350,7 +350,7 @@ void MultiStartPartitioner::setBestSolAndAverageCost() {
                         {
                                 _bestCost = _solutions[s]->cost;
                                 _bestSolnNum = s;
-                        } else if (equalDouble(_solutions[s]->cost, _bestCost) && lessThanDouble(imbals[s], imbals[_bestSolnNum]) || (equalDouble(imbals[s], imbals[_bestSolnNum]) && lessThanDouble(_solutions[s]->pinImbalance, _solutions[_bestSolnNum]->pinImbalance))) {
+                        } else if ((equalDouble(_solutions[s]->cost, _bestCost) && lessThanDouble(imbals[s], imbals[_bestSolnNum])) || (equalDouble(imbals[s], imbals[_bestSolnNum]) && lessThanDouble(_solutions[s]->pinImbalance, _solutions[_bestSolnNum]->pinImbalance))) {
                                 _bestCost = _solutions[s]->cost;
                                 _bestSolnNum = s;
                         }
