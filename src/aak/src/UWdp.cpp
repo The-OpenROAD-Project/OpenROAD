@@ -196,12 +196,12 @@ UWdp::import()
 
   initEdgeTypes();          // Does nothing.
   initCellSpacingTable();   // Does nothing.
-  initPadding();
   createLayerMap();
   createNdrMap();
   createNetwork();
   createArchitecture();
   createRouteGrid();
+  initPadding();            // Need to do after network creation.
   setUpNdrRules();
   setUpPlacementRegions();
 
@@ -236,7 +236,8 @@ UWdp::updateDbInstLocations()
 void
 UWdp::initEdgeTypes()
 {
-  // Use padding instead.
+  // Do nothing.  Use padding instead.
+  ;
 }
 ////////////////////////////////////////////////////////////////
 void
@@ -249,7 +250,7 @@ UWdp::initCellSpacingTable()
 void
 UWdp::initPadding()
 {
-  logger_->report( "Initializing cell padding; not yet implemented." );
+  logger_->report( "Initializing cell padding." );;
 
   // Grab information from OpenDP.
   dpl::Opendp* opendp = openroad_->getOpendp();
@@ -283,16 +284,11 @@ UWdp::initPadding()
     if( instMap_.end() != it_n )
     {
       Node* ndi = it_n->second;
-      int leftPadding = opendp->padLeft( inst ) * siteWidth;
-      int rightPadding = opendp->padRight( inst ) * siteWidth;
-      arch_->addCellPadding( ndi, leftPadding, rightPadding );
-
-      double padl, padr;
-      arch_->getCellPadding( ndi, padl, padr );
-      std::cout << "Cell " << ndi->getId() << ", "
-        << "Left padding is " << padl << ", "
-        << "Right padding is " << padr
-        << std::endl;
+      int leftPadding = opendp->padLeft( inst );
+      int rightPadding = opendp->padRight( inst );
+      arch_->addCellPadding( ndi, 
+        leftPadding * siteWidth, rightPadding * siteWidth 
+        );
     }
   }
 }
