@@ -32,11 +32,12 @@
 
 #pragma once
 
+#include <QCheckBox>
 #include <QDockWidget>
 #include <QKeyEvent>
+#include <QLineEdit>
 #include <QModelIndex>
 #include <QTableView>
-#include <QLineEdit>
 #include <QSpinBox>
 #include <QPushButton>
 #include <QSettings>
@@ -65,7 +66,7 @@ class TimingWidget : public QDockWidget
  public slots:
   void showPathDetails(const QModelIndex& index);
   void clearPathDetails();
-  void highlightPathStage(const QModelIndex& index);
+  void highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index);
   void findNodeInPathDetails();
 
   void toggleRenderer(bool enable);
@@ -78,8 +79,12 @@ class TimingWidget : public QDockWidget
                           const QItemSelection& curr_index);
   void selectedDetailRowChanged(const QItemSelection& prev_index,
                                 const QItemSelection& curr_index);
+  void selectedCaptureRowChanged(const QItemSelection& prev_index,
+                                 const QItemSelection& curr_index);
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
+
+  void updateClockRows();
 
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
@@ -92,18 +97,22 @@ class TimingWidget : public QDockWidget
   QTableView* setup_timing_table_view_;
   QTableView* hold_timing_table_view_;
   QTableView* path_details_table_view_;
+  QTableView* capture_details_table_view_;
 
   QLineEdit* find_object_edit_;
   QSpinBox* path_index_spin_box_;
   QSpinBox* path_count_spin_box_;
   QPushButton* update_button_;
+  QCheckBox* expand_clk_;
 
   TimingPathsModel* setup_timing_paths_model_;
   TimingPathsModel* hold_timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
+  TimingPathDetailModel* capture_details_model_;
   TimingPathRenderer* path_renderer_;
   GuiDBChangeListener* dbchange_listener_;
   QTabWidget* delay_widget_;
+  QTabWidget* detail_widget_;
 
   QTableView* focus_view_;
 };

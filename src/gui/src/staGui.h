@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <memory>
 #include <QAbstractTableModel>
 
 #include "gui/gui.h"
@@ -49,6 +50,7 @@ class dbFill;
 class dbInst;
 class dbMaster;
 class dbNet;
+class dbObject;
 class dbITerm;
 class dbWire;
 class dbBTerm;
@@ -61,8 +63,10 @@ class dbSWire;
 }  // namespace odb
 namespace sta {
 class dbSta;
+class DcalcAnalysisPt;
 class Instance;
 class Net;
+class Path;
 class Pin;
 }  // namespace sta
 namespace gui {
@@ -90,7 +94,7 @@ class TimingPathsModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
+  TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
   void populateModel(bool get_max = true, int path_count = 100);
@@ -102,7 +106,7 @@ class TimingPathsModel : public QAbstractTableModel
   bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
 
   sta::dbSta* sta_;
-  std::vector<TimingPath*> timing_paths_;
+  std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
   static const std::vector<std::string> _path_columns;
   enum Column : int;
@@ -111,6 +115,7 @@ class TimingPathsModel : public QAbstractTableModel
 struct TimingPathNode
 {
   TimingPathNode(odb::dbObject* pin,
+                 bool is_clock,
                  bool is_rising,
                  float arrival,
                  float required,
@@ -119,6 +124,7 @@ struct TimingPathNode
                  float slew,
                  float load)
       : pin_(pin),
+        is_clock_(is_clock),
         is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
@@ -133,6 +139,7 @@ struct TimingPathNode
   std::string getNetName() const;
 
   odb::dbObject* pin_;
+  bool is_clock_;
   bool is_rising_;
   float arrival_;
   float required_;
@@ -145,24 +152,28 @@ struct TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath(int path_index)
+  TimingPath()
       : path_nodes_(),
+        capture_nodes_(),
         start_clk_(),
         end_clk_(),
         slack_(0),
         path_delay_(0),
         arr_time_(0),
         req_time_(0),
-        path_index_(path_index)
+        clk_path_end_index_(0),
+        clk_capture_end_index_(0)
   {
   }
 
-  void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
-  int levelsCount() const { return path_nodes_.size(); }
+  using TimingNodeList = std::vector<std::unique_ptr<const TimingPathNode>>;
+
+  void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
+
   void setStartClock(const char* name) { start_clk_ = name; }
-  std::string getStartClock() const { return start_clk_; }
+  const std::string& getStartClock() const { return start_clk_; }
   void setEndClock(const char* name) { end_clk_ = name; }
-  std::string getEndClock() const { return end_clk_; }
+  const std::string& getEndClock() const { return end_clk_; }
 
   float getPathArrivalTime() const { return arr_time_; }
   void setPathArrivalTime(float arr) { arr_time_ = arr; }
@@ -173,28 +184,41 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
-  int getPathIndex() const { return path_index_; }
+  void computeClkEndIndex();
 
-  TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
+  int getClkPathEndIndex() const { return clk_path_end_index_; }
+  int getClkCaptureEndIndex() const { return clk_capture_end_index_; }
+
+  TimingNodeList* getPathNodes() { return &path_nodes_; }
+  TimingNodeList* getCaptureNodes() { return &capture_nodes_; }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
+  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
+  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path);
+
  private:
-  std::vector<TimingPathNode> path_nodes_;
+  TimingNodeList path_nodes_;
+  TimingNodeList capture_nodes_;
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
   float path_delay_;
   float arr_time_;
   float req_time_;
-  int path_index_;
+  int clk_path_end_index_;
+  int clk_capture_end_index_;
+
+  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
+
+  void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel(sta::dbSta* sta);
+  TimingPathDetailModel(bool is_hold, sta::dbSta* sta);
   ~TimingPathDetailModel() {}
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -207,18 +231,32 @@ class TimingPathDetailModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  void populateModel(TimingPath* path);
+  TimingPath* getPath() const { return path_; }
+  TimingPath::TimingNodeList* getNodes() const { return nodes_; }
+  bool hasNodes() const { return nodes_ != nullptr && !nodes_->empty(); }
+  int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
+
+  const TimingPathNode* getNodeAt(const QModelIndex& index) const;
+  bool shouldHide(const QModelIndex& index, bool expand_clock) const;
+
+  bool isClockSummaryRow(const QModelIndex& index) const { return index.row() == clock_summary_row_; }
+
+  void populateModel(TimingPath* path, TimingPath::TimingNodeList* nodes);
 
  private:
   sta::dbSta* sta_;
+  bool is_capture_;
 
   TimingPath* path_;
+  TimingPath::TimingNodeList* nodes_;
+
   // Unicode symbols
   static const char* up_down_arrows;
   static const char* up_arrow;
   static const char* down_arrow;
   static const std::vector<std::string> _path_details_columns;
   enum Column : int;
+  static constexpr int clock_summary_row_ = 1;
 };
 
 class TimingPathRenderer : public gui::Renderer
@@ -228,7 +266,9 @@ class TimingPathRenderer : public gui::Renderer
   ~TimingPathRenderer();
   void highlight(TimingPath* path);
 
-  void highlightNode(int node_id);
+  void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
+  void clearHighlightNodes() { highlight_stage_.clear(); }
+
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
   TimingPath* getPathToRender() { return path_; }
@@ -241,23 +281,36 @@ class TimingPathRenderer : public gui::Renderer
                       const gui::Descriptor* net_descriptor);
   void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
   void highlightNet(odb::dbNet* net,
+                    bool is_clock,
                     odb::dbObject* source_node,
                     odb::dbObject* sink_node,
                     gui::Painter& painter,
-                    const gui::Descriptor* net_descriptor);
+                    const gui::Descriptor* net_descriptor,
+                    const Painter::Color& clock_color);
+
+  void drawNodesList(TimingPath::TimingNodeList* nodes,
+                     gui::Painter& painter,
+                     const gui::Descriptor* net_descriptor,
+                     const Painter::Color& clock_color);
 
   sta::dbSta* sta_;
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
 
-  int highlight_node_;
+  struct HighlightStage {
+    odb::dbNet* net;
+    odb::dbInst* inst;
+    odb::dbObject* sink;
+  };
+  std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
 
   static gui::Painter::Color inst_highlight_color_;
   static gui::Painter::Color path_inst_color_;
   static gui::Painter::Color term_color_;
   static gui::Painter::Color signal_color_;
   static gui::Painter::Color clock_color_;
+  static gui::Painter::Color capture_clock_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
