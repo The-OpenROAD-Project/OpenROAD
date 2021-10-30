@@ -40,6 +40,7 @@
 
 #include "randomClustHG.h"
 #include "Stats/stats.h"
+#include <algorithm>
 
 using std::min;
 using std::max;
@@ -163,7 +164,7 @@ void RandomClusteredHGraph::randomEdgeMatchingLevel(double maxChildArea, double 
         }
 
         RandomUnsigned rng(0, UINT_MAX);
-        std::random_shuffle(_randMap.begin(), _randMap.end(), rng);
+        std::shuffle(_randMap.begin(), _randMap.end(), rng);
 
         for (unsigned K = 0; K < _randMap.size() && numToCluster > 0; K++) {  // choose a cluster that has not yet been clustered at this
                                                                               // level

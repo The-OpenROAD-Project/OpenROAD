@@ -259,6 +259,12 @@ class RandomUnsignedT : public RandomNumberGeneratorT<RK> {
 
         RandomUnsignedT(double _lowerBdry, double _upperBdry, const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : RandomNumberGeneratorT<RK>(_lowerBdry, _upperBdry, locIdent, counterOverride, verb) {}
         operator unsigned() { return RandomNumberGeneratorT<RK>::_getUnsignedRand(); }
+
+        using result_type = unsigned;
+        constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+        constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
+        result_type operator()() { return static_cast<unsigned>(*this); }
+  
 };
 
 //: Everything is exactly analogous to RandomUnsigned as above,

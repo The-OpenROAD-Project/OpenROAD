@@ -49,7 +49,7 @@ using std::ostream;
 using std::endl;
 using std::vector;
 using std::sample;
-using std::random_shuffle;
+using std::shuffle;
 
 Mapping::Mapping(unsigned sourceSize, unsigned targetSize, Mapping::Example ex) : _destSize(targetSize), _meat(sourceSize) {
         abkassert(sourceSize <= targetSize, " Map not injective: source set bigger than target set");
@@ -69,7 +69,7 @@ Mapping::Mapping(unsigned sourceSize, unsigned targetSize, Mapping::Example ex) 
                         // RandomUnsigned rng(0,10);
                         RandomRawUnsigned rng("Mapping::Mapping,case _Random,rng");
                         std::sample(zero2n.begin(), zero2n.end(), _meat.begin(), _meat.end() - _meat.begin(), rng);
-                        random_shuffle(_meat.begin(), _meat.end(), rng);
+                        shuffle(_meat.begin(), _meat.end(), rng);
                         return;
                 }
                 case _RandomOrdered: {

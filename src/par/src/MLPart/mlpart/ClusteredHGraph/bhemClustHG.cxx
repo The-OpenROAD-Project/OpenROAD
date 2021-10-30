@@ -160,7 +160,7 @@ void BestHEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, double 
                 maxPasses = 1;
 
         for (; maxPasses > 0; maxPasses--) {
-                std::random_shuffle(randMap.begin(), randMap.end(), rng);
+                std::shuffle(randMap.begin(), randMap.end(), rng);
 
                 for (unsigned K = 0; K < randMap.size() && numToCluster > 0; K++) {  // choose a cluster that has not yet been clustered
                                                                                      // at this level

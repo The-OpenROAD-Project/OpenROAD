@@ -215,7 +215,7 @@ void HEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, double maxN
                 _toCluster[m]->setTag(0);
         }
 
-        std::random_shuffle(_randMap.begin(), _randMap.end(), _rng);
+        std::shuffle(_randMap.begin(), _randMap.end(), _rng);
 
         unsigned skipct = 0, notskipped = 0;
         for (unsigned K = 0; K < _randMap.size() && numToCluster > 0; K++) {  // choose a cluster that has not yet been clustered at this

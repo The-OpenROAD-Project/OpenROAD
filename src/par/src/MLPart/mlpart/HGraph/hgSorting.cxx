@@ -38,9 +38,11 @@
 
 #include <HGraph/hgFixed.h>
 #include <Stats/stats.h>
+#include <algorithm>
+#include <random>
 
 using std::sort;
-using std::random_shuffle;
+using std::shuffle;
 using std::vector;
 
 void HGraphFixed::sortNodes() {
@@ -172,6 +174,7 @@ void HGraphFixed::computeNodesSortedByWeightsWShuffle() const {
 
         double epsilon = 0.005 * totwt;
         unsigned idx = 0;
+        std::mt19937 random_gen;
         for (vector<unsigned>::iterator it = sortedNumbers.begin(); it != sortedNumbers.end(); ++it, ++idx) {
                 vector<unsigned>::iterator it2;
                 double currW = getWeight(*it);
@@ -182,7 +185,7 @@ void HGraphFixed::computeNodesSortedByWeightsWShuffle() const {
                         ++it2;
                         ++idx;
                 }
-                random_shuffle(it, it2);
+                shuffle(it, it2, random_gen);
                 it = sortedNumbers.begin() + idx;
                 // it = it2;
 
@@ -202,7 +205,7 @@ void HGraphFixed::computeNodesSortedByWeightsWShuffle() const {
                 if (wt < maxSingleNode * totwt) break;
                 if (accumwt > maxaccum * totwt) break;
         }
-        random_shuffle(sortedNumbers.rbegin(), rit);
+        shuffle(sortedNumbers.rbegin(), rit, random_gen);
         _weightSort = Permutation(getNumNodes(), sortedNumbers);
 }
 

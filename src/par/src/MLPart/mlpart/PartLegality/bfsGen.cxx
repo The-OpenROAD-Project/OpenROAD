@@ -44,7 +44,7 @@
 #include <deque>
 #include <algorithm>
 
-using std::random_shuffle;
+using std::shuffle;
 using std::deque;
 using std::vector;
 
@@ -143,7 +143,7 @@ vector<double> SBGWeightBfs::generateSoln(Partitioning& curPart) {
                         if (!vvisited[current]) vvisited[current] = true;  // get this out of here if possible
                         // put vertex into appropriate place in the ordering
                         // and remember location of start of "next wave" (for
-                        // random_shuffle)
+                        // shuffle)
                         int front_wave_i = -1;
                         if (front_turn) {
                                 ord.set(fronti++, current);
@@ -178,14 +178,14 @@ vector<double> SBGWeightBfs::generateSoln(Partitioning& curPart) {
                         deque<int>::iterator wave_it;
                         if (front_turn) {
                                 wave_it = frontQ.begin() + front_wave_i;
-                                random_shuffle(wave_it, frontQ.end(), r);
+                                shuffle(wave_it, frontQ.end(), r);
                         } else {
                                 wave_it = backQ.begin() + front_wave_i;
-                                random_shuffle(wave_it, backQ.end(), r);
+                                shuffle(wave_it, backQ.end(), r);
                         }
                         // end wave shuffle
 
-                        // random_shuffle(toQ.begin(),toQ.end(),r);
+                        // shuffle(toQ.begin(),toQ.end(),r);
                         // put on right queue
                         // if(front_turn)
                         //  for(vector<int>::const_iterator

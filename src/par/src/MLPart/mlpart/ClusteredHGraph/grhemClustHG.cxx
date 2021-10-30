@@ -263,7 +263,7 @@ void GreedyHEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, doubl
         }
 
         RandomUnsigned rng(0, UINT_MAX);
-        std::random_shuffle(_matchRecs.begin(), _matchRecs.end(), rng);
+        std::shuffle(_matchRecs.begin(), _matchRecs.end(), rng);
 
         std::sort(_matchRecs.begin(), _matchRecs.end());
 
