@@ -715,14 +715,14 @@ void Inspector::loadActions()
 
   // add action buttons
   std::vector<std::pair<std::string, QString>> button_replacements{
-    {"Delete", "user-trash"},
-    {"Zoom to", "zoom-fit-best"}
+    {"Delete", ":/delete.png"},
+    {"Zoom to", ":/zoom_to.png"}
   };
   for (const auto [name, action] : selection_.getActions()) {
     QPushButton* button = nullptr;
     for (const auto& [label, icon] : button_replacements) {
-      if (name == label && QIcon::hasThemeIcon(icon)) {
-        button = new QPushButton(QIcon::fromTheme(icon), "", this);
+      if (name == label) {
+        button = new QPushButton(QIcon(icon), "", this);
         button->setToolTip(QString::fromStdString(name)); // set tool since
         break;
       }
