@@ -350,6 +350,8 @@ int ActionLayout::count() const
 void ActionLayout::addItem(QLayoutItem* item)
 {
   actions_.append(item);
+
+  item->widget()->setMinimumHeight(rowHeight());
 }
 
 QLayoutItem* ActionLayout::itemAt(int index) const
@@ -434,6 +436,8 @@ void ActionLayout::setGeometry(const QRect& rect)
   getContentsMargins(&left, &top, &right, &bottom);
   QRect effective_rect = rect.adjusted(left, top, -right, -bottom);
 
+  const int button_height = rowHeight();
+
   int y = effective_rect.y();
   for (auto row_itr = rows.begin(); row_itr != rows.end(); row_itr++) {
     ItemList& items = *row_itr;
@@ -454,6 +458,7 @@ void ActionLayout::setGeometry(const QRect& rect)
           empty_space -= size_adder;
         }
       }
+      size.setHeight(button_height);
 
       item->setGeometry(QRect(QPoint(x, y), size));
       x += size.width() + buttonSpacing();
@@ -709,8 +714,23 @@ void Inspector::loadActions()
   }
 
   // add action buttons
+  std::vector<std::pair<std::string, QString>> button_replacements{
+    {"Delete", "user-trash"},
+    {"Zoom to", "zoom-fit-best"}
+  };
   for (const auto [name, action] : selection_.getActions()) {
-    QPushButton* button = new QPushButton(QString::fromStdString(name), this);
+    QPushButton* button = nullptr;
+    for (const auto& [label, icon] : button_replacements) {
+      if (name == label && QIcon::hasThemeIcon(icon)) {
+        button = new QPushButton(QIcon::fromTheme(icon), "", this);
+        button->setToolTip(QString::fromStdString(name)); // set tool since
+        break;
+      }
+    }
+
+    if (button == nullptr) {
+      button = new QPushButton(QString::fromStdString(name), this);
+    }
     connect(button, &QPushButton::released, [this, button]() {
       handleAction(button);
     });
