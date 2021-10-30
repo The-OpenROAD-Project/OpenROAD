@@ -50,23 +50,23 @@ namespace gui {
 
 TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
-      setup_timing_table_view_(new QTableView),
-      hold_timing_table_view_(new QTableView),
-      path_details_table_view_(new QTableView),
-      capture_details_table_view_(new QTableView),
-      find_object_edit_(new QLineEdit),
-      path_index_spin_box_(new QSpinBox),
-      path_count_spin_box_(new QSpinBox),
-      update_button_(new QPushButton("Update")),
-      expand_clk_(new QCheckBox("Expand clock")),
+      setup_timing_table_view_(new QTableView(this)),
+      hold_timing_table_view_(new QTableView(this)),
+      path_details_table_view_(new QTableView(this)),
+      capture_details_table_view_(new QTableView(this)),
+      find_object_edit_(new QLineEdit(this)),
+      path_index_spin_box_(new QSpinBox(this)),
+      path_count_spin_box_(new QSpinBox(this)),
+      update_button_(new QPushButton("Update", this)),
+      expand_clk_(new QCheckBox("Expand clock", this)),
       setup_timing_paths_model_(nullptr),
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
       capture_details_model_(nullptr),
       path_renderer_(nullptr),
-      dbchange_listener_(new GuiDBChangeListener),
-      delay_widget_(new QTabWidget),
-      detail_widget_(new QTabWidget),
+      dbchange_listener_(new GuiDBChangeListener(this)),
+      delay_widget_(new QTabWidget(this)),
+      detail_widget_(new QTabWidget(this)),
       focus_view_(nullptr)
 {
   setObjectName("timing_report"); // for settings
@@ -74,15 +74,15 @@ TimingWidget::TimingWidget(QWidget* parent)
   path_count_spin_box_->setRange(0, 10000);
   path_count_spin_box_->setValue(100);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   QGridLayout* layout = new QGridLayout;
 
-  QFrame* control_frame = new QFrame;
+  QFrame* control_frame = new QFrame(this);
   control_frame->setFrameShape(QFrame::StyledPanel);
   control_frame->setFrameShadow(QFrame::Raised);
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(new QLabel("Paths:"));
+  controls_layout->addWidget(new QLabel("Paths:", this));
   controls_layout->addWidget(path_count_spin_box_);
   controls_layout->addWidget(update_button_);
   controls_layout->insertStretch(0);
@@ -95,24 +95,24 @@ TimingWidget::TimingWidget(QWidget* parent)
   layout->addWidget(delay_widget_, 1, 0);
 
   // bottom half
-  QTabWidget* path_widget = new QTabWidget;
-  QWidget* bottom_widget = new QWidget;
+  QTabWidget* path_widget = new QTabWidget(this);
+  QWidget* bottom_widget = new QWidget(this);
   path_widget->addTab(bottom_widget, "Path Details");
   QGridLayout* bottom_widg_layout = new QGridLayout;
   bottom_widget->setLayout(bottom_widg_layout);
-  QFrame* frame = new QFrame;
+  QFrame* frame = new QFrame(this);
   frame->setFrameShape(QFrame::StyledPanel);
   frame->setFrameShadow(QFrame::Raised);
   bottom_widg_layout->addWidget(frame);
 
   QHBoxLayout* frame_layout = new QHBoxLayout;
   frame->setLayout(frame_layout);
-  frame_layout->addWidget(new QLabel("Find"));
+  frame_layout->addWidget(new QLabel("Find", this));
   frame_layout->addWidget(find_object_edit_);
   find_object_edit_->setFocusPolicy(Qt::ClickFocus);
   find_object_edit_->setPlaceholderText("Pin or Net");
 
-  frame_layout->addWidget(new QLabel("Path:"));
+  frame_layout->addWidget(new QLabel("Path:", this));
   frame_layout->addWidget(path_index_spin_box_);
   frame_layout->addWidget(expand_clk_);
   expand_clk_->setCheckState(Qt::Checked);
@@ -149,11 +149,11 @@ TimingWidget::TimingWidget(QWidget* parent)
 
 void TimingWidget::init(sta::dbSta* sta)
 {
-  setup_timing_paths_model_ = new TimingPathsModel(sta);
-  hold_timing_paths_model_ = new TimingPathsModel(sta);
-  path_details_model_ = new TimingPathDetailModel(false, sta);
-  capture_details_model_ = new TimingPathDetailModel(true, sta);
-  path_renderer_ = new TimingPathRenderer(sta);
+  setup_timing_paths_model_ = new TimingPathsModel(sta, this);
+  hold_timing_paths_model_ = new TimingPathsModel(sta, this);
+  path_details_model_ = new TimingPathDetailModel(false, sta, this);
+  capture_details_model_ = new TimingPathDetailModel(true, sta, this);
+  path_renderer_ = std::make_unique<TimingPathRenderer>(sta);
 
   auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
     view->setModel(model);
@@ -511,9 +511,9 @@ void TimingWidget::toggleRenderer(bool visible)
 
   auto gui = Gui::get();
   if (visible) {
-    gui->registerRenderer(path_renderer_);
+    gui->registerRenderer(path_renderer_.get());
   } else {
-    gui->unregisterRenderer(path_renderer_);
+    gui->unregisterRenderer(path_renderer_.get());
   }
 }
 

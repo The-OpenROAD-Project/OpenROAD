@@ -81,8 +81,7 @@ class TimingPathsModel : public QAbstractTableModel
  Q_OBJECT
 
  public:
-  TimingPathsModel(sta::dbSta* sta, bool get_max = true, int path_count = 100);
-  ~TimingPathsModel();
+  TimingPathsModel(sta::dbSta* sta, bool get_max = true, int path_count = 100, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -218,8 +217,7 @@ class TimingPath
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
-  TimingPathDetailModel(bool is_hold, sta::dbSta* sta);
-  ~TimingPathDetailModel() {}
+  TimingPathDetailModel(bool is_hold, sta::dbSta* sta, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -263,7 +261,6 @@ class TimingPathRenderer : public gui::Renderer
 {
  public:
   TimingPathRenderer(sta::dbSta* sta);
-  ~TimingPathRenderer();
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
@@ -317,7 +314,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener() : isDirty_(false) {}
+  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), isDirty_(false) {}
 
   void inDbInstCreate(odb::dbInst* inst) override
   {

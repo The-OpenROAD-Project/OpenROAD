@@ -135,7 +135,20 @@ class DRCItemModel : public QStandardItemModel
     QVariant data(const QModelIndex& index, int role) const override;
 };
 
-class DRCWidget : public QDockWidget, public Renderer
+class DRCRenderer : public Renderer
+{
+  public:
+    DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+
+    // Renderer
+    void drawObjects(Painter& painter) override;
+    SelectionSet select(odb::dbTechLayer* layer, const odb::Rect& region) override;
+
+  private:
+    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
+};
+
+class DRCWidget : public QDockWidget
 {
   Q_OBJECT
 
@@ -144,10 +157,6 @@ class DRCWidget : public QDockWidget, public Renderer
     ~DRCWidget() {}
 
     void setLogger(utl::Logger* logger);
-
-    // Renderer
-    void drawObjects(Painter& painter) override;
-    SelectionSet select(odb::dbTechLayer* layer, const odb::Rect& region) override;
 
   signals:
     void selectDRC(const Selected& selected);
@@ -179,6 +188,8 @@ class DRCWidget : public QDockWidget, public Renderer
     odb::dbBlock* block_;
 
     QPushButton* load_;
+
+    std::unique_ptr<DRCRenderer> renderer_;
 
     std::vector<std::unique_ptr<DRCViolation>> violations_;
 };
