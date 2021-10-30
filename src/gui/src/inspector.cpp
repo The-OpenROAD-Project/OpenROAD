@@ -326,12 +326,233 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& v
 
 ////////
 
+ActionLayout::ActionLayout(QWidget* parent) : QLayout(parent)
+{
+}
+
+ActionLayout::~ActionLayout()
+{
+  clear();
+}
+
+void ActionLayout::clear()
+{
+  for (auto& item : actions_) {
+    removeItem(item);
+  }
+}
+
+int ActionLayout::count() const
+{
+  return actions_.size();
+}
+
+void ActionLayout::addItem(QLayoutItem* item)
+{
+  actions_.append(item);
+}
+
+QLayoutItem* ActionLayout::itemAt(int index) const
+{
+  return actions_.value(index);
+}
+
+QLayoutItem* ActionLayout::takeAt(int index)
+{
+  if (index >= 0 && index < actions_.size()) {
+    return actions_.takeAt(index);
+  }
+
+  return nullptr;
+}
+
+QSize ActionLayout::sizeHint() const
+{
+  return minimumSize();
+}
+
+QSize ActionLayout::minimumSize() const
+{
+  if (actions_.empty()) {
+    return QSize(0, 0);
+  }
+
+  QSize size;
+  for (const auto& item : actions_) {
+    size = size.expandedTo(item->minimumSize());
+  }
+
+  const QMargins margins = contentsMargins();
+  size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom());
+  return size;
+}
+
+int ActionLayout::rowHeight() const
+{
+  QPushButton button;
+  return button.sizeHint().height();
+}
+
+int ActionLayout::rowSpacing() const
+{
+  QPushButton button;
+  return button.style()->layoutSpacing(
+      QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Vertical);
+}
+
+int ActionLayout::buttonSpacing() const
+{
+  QPushButton button;
+  return button.style()->layoutSpacing(
+      QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Horizontal);
+}
+
+int ActionLayout::requiredRows(int width) const
+{
+  std::vector<ItemList> rows;
+  organizeItemsToRows(width, rows);
+  return rows.size();
+}
+
+int ActionLayout::itemWidth(QLayoutItem* item) const
+{
+  const QWidget* wid = item->widget();
+  return item->sizeHint().width();
+}
+
+void ActionLayout::setGeometry(const QRect& rect)
+{
+  QLayout::setGeometry(rect);
+
+  std::vector<ItemList> rows;
+  organizeItemsToRows(rect.width(), rows);
+  if (rows.empty()) {
+    return;
+  }
+
+  int left, top, right, bottom;
+  getContentsMargins(&left, &top, &right, &bottom);
+  QRect effective_rect = rect.adjusted(left, top, -right, -bottom);
+
+  int y = effective_rect.y();
+  for (auto row_itr = rows.begin(); row_itr != rows.end(); row_itr++) {
+    ItemList& items = *row_itr;
+
+    int x = effective_rect.x();
+    int empty_space = effective_rect.right() - (x + rowWidth(items));
+    const int size_adder = std::ceil(empty_space / static_cast<double>(items.size()));
+
+    for (auto& item : items) {
+      QSize size = item->sizeHint();
+
+      if (empty_space != 0) {
+        if (size_adder > empty_space) {
+          size.setWidth(size.width() + empty_space);
+          empty_space = 0;
+        } else {
+          size.setWidth(size.width() + size_adder);
+          empty_space -= size_adder;
+        }
+      }
+
+      item->setGeometry(QRect(QPoint(x, y), size));
+      x += size.width() + buttonSpacing();
+    }
+
+    y += rowHeight() + rowSpacing();
+  }
+}
+
+bool ActionLayout::hasHeightForWidth() const
+{
+  return true;
+}
+
+int ActionLayout::heightForWidth(int width) const
+{
+  const int rows = requiredRows(width);
+  int height = rows * rowHeight();
+  if (rows > 1) {
+    height += (rows - 1) * rowSpacing();
+  }
+  return height;
+}
+
+void ActionLayout::organizeItemsToRows(int width, std::vector<ItemList>& rows) const
+{
+  if (actions_.empty()) {
+    return;
+  }
+
+  int left, top, right, bottom;
+  getContentsMargins(&left, &top, &right, &bottom);
+  const int effective_width = width + left + right;
+
+  const int button_spacing = buttonSpacing();
+
+  int x = 0;
+  ItemList row;
+  for (const auto& item : actions_) {
+    const int item_width = itemWidth(item);
+
+    int next_x = x + item_width;
+    if (next_x >= effective_width) {
+      x = item_width;
+      rows.emplace_back(row.begin(), row.end());
+      row.clear();
+    } else {
+      x = next_x;
+    }
+    row.push_back(item);
+
+    x += button_spacing;
+  }
+  rows.emplace_back(row.begin(), row.end());
+
+  if (rows.size() == 1) {
+    return;
+  }
+  // make rows approximately even
+  const int total_space = rows.size() * width;
+  int total_width = 0;
+  for (auto& row : rows) {
+    total_width += rowWidth(row);
+  }
+  const int target_width = total_width / static_cast<double>(rows.size());
+  for (int row = 0; row < rows.size() - 1; row++) {
+    ItemList& source = rows[row];
+    ItemList& destination = rows[row + 1];
+
+    while (rowWidth(source) > target_width && source.size() > 1) {
+      auto last_item = source.end() - 1;
+      destination.insert(destination.begin(), *last_item);
+      source.erase(last_item);
+    }
+  }
+}
+
+int ActionLayout::rowWidth(ItemList& row) const
+{
+  if (row.empty()) {
+    return 0;
+  }
+
+  const int button_spacing = buttonSpacing();
+  int width = -button_spacing;
+  for (auto& item : row) {
+    width += itemWidth(item) + buttonSpacing();
+  }
+  return width;
+}
+
+////////
+
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new QTreeView(this)),
       model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
       layout_(new QVBoxLayout),
-      action_layout_(new QVBoxLayout),
+      action_layout_(new ActionLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
       selection_(Selected()),
@@ -475,6 +696,7 @@ void Inspector::reload()
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
+  action_layout_->clear();
   while (!actions_.empty()) {
     auto it = actions_.begin();
     auto widget = it->first;
@@ -488,7 +710,7 @@ void Inspector::loadActions()
 
   // add action buttons
   for (const auto [name, action] : selection_.getActions()) {
-    QPushButton* button = new QPushButton(name.c_str(), this);
+    QPushButton* button = new QPushButton(QString::fromStdString(name), this);
     connect(button, &QPushButton::released, [this, button]() {
       handleAction(button);
     });

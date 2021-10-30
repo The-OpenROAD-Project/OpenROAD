@@ -128,6 +128,43 @@ class SelectedItemModel : public QStandardItemModel
   const Selected& object_;
 };
 
+class ActionLayout : public QLayout
+{
+  // modified from: https://doc.qt.io/qt-5/qtwidgets-layouts-flowlayout-example.html
+  Q_OBJECT
+
+ public:
+  ActionLayout(QWidget* parent = nullptr);
+  ~ActionLayout();
+
+  void clear();
+
+  void addItem(QLayoutItem* item) override;
+  QSize sizeHint() const override;
+  QSize minimumSize() const override;
+  void setGeometry(const QRect& rect) override;
+  QLayoutItem* itemAt(int index) const override;
+  QLayoutItem* takeAt(int index) override;
+  int count() const override;
+
+  bool hasHeightForWidth() const override;
+  int heightForWidth(int width) const override;
+
+ private:
+  int rowHeight() const;
+  int rowSpacing() const;
+  int buttonSpacing() const;
+  int requiredRows(int width) const;
+
+  int itemWidth(QLayoutItem* item) const;
+
+  using ItemList = std::vector<QLayoutItem*>;
+  void organizeItemsToRows(int width, std::vector<ItemList>& rows) const;
+  int rowWidth(ItemList& row) const;
+
+  QList<QLayoutItem*> actions_;
+};
+
 // The inspector is to allow a single object to have it properties displayed.
 // It is generic and builds on the Selected and Descriptor classes.
 // The inspector knows how to handle SelectionSet and Selected objects
@@ -183,7 +220,7 @@ class Inspector : public QDockWidget
   QTreeView* view_;
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
-  QVBoxLayout* action_layout_;
+  ActionLayout* action_layout_;
   const SelectionSet& selected_;
   SelectionSet::iterator selected_itr_;
   Selected selection_;
