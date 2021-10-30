@@ -50,9 +50,9 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      output_(new QTextEdit),
-      input_(new TclCmdInputWidget),
-      pauser_(new QPushButton("Idle")),
+      output_(new QTextEdit(this)),
+      input_(new TclCmdInputWidget(this)),
+      pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
       interp_(nullptr),
       history_(),
@@ -76,7 +76,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   layout->addWidget(output_, /* stretch */ 1);
   layout->addLayout(inner_layout);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
   connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));

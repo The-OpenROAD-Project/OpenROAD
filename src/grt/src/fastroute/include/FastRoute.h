@@ -40,6 +40,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -543,7 +544,7 @@ class FastRouteCore
   stt::SteinerTreeBuilder* stt_builder_;
 
   FastRouteRenderer* fastrouteRender_;
-  DebugSetting* debug_;
+  std::unique_ptr<DebugSetting> debug_;
 };
 
 }  // namespace grt

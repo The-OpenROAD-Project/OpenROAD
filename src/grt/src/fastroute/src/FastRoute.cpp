@@ -96,9 +96,9 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       logger_(log),
       stt_builder_(stt_builder),
-      fastrouteRender_(nullptr)
+      fastrouteRender_(nullptr),
+      debug_(new DebugSetting())
 {
-  debug_ = new DebugSetting();
 }
 
 FastRouteCore::~FastRouteCore()
@@ -1353,7 +1353,10 @@ FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute,
       w_tile_(w_tile),
       h_tile_(h_tile),
       x_corner_(x_corner),
-      y_corner_(y_corner)
+      y_corner_(y_corner),
+      treeStructure_(TreeStructure::steinerTreeByStt),
+      is3DVisualization_(false),
+      num_pins_(0)
 {
 }
 void FastRouteRenderer::setTreeStructure(TreeStructure treeStructure)

@@ -84,13 +84,7 @@ int FlexDRWorker::main(frDesign* design)
   init(design);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
-    FlexGCWorker gcWorker(design->getTech(), logger_, this);
-    gcWorker.setExtBox(getExtBox());
-    gcWorker.setDrcBox(getDrcBox());
-    gcWorker.init(design);
-    gcWorker.setEnableSurgicalFix(true);
-
-    route_queue(gcWorker);
+    route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();

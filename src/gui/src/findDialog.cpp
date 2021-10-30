@@ -47,7 +47,6 @@ void FindObjectDialog::accept()
 {
   std::string pattern_to_find = findObjEdit->text().toStdString();
   bool match_case = false;
-  bool match_regex = false;
   if (matchCaseCheckBox->isEnabled()) {
     match_case = matchCaseCheckBox->isChecked();
   }
