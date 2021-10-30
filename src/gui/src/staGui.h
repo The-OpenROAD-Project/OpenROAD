@@ -81,7 +81,7 @@ class TimingPathsModel : public QAbstractTableModel
  Q_OBJECT
 
  public:
-  TimingPathsModel(sta::dbSta* sta, bool get_max = true, int path_count = 100, QObject* parent = nullptr);
+  TimingPathsModel(sta::dbSta* sta, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -96,13 +96,13 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(bool get_max = true, int path_count = 100);
+  void populateModel(bool get_max, int path_count);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
+  bool populatePaths(bool get_max, int path_count, bool clockExpanded = false);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;

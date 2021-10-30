@@ -106,7 +106,7 @@ gui::Painter::Color TimingPathRenderer::capture_clock_color_ = gui::Painter::gre
 
 /////////
 
-TimingPathsModel::TimingPathsModel(sta::dbSta* sta, bool get_max, int path_count, QObject* parent)
+TimingPathsModel::TimingPathsModel(sta::dbSta* sta, QObject* parent)
     : QAbstractTableModel(parent), sta_(sta)
 {
 }
