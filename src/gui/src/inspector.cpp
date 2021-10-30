@@ -305,19 +305,19 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 
 EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (std::any_cast<const char*>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<const std::string>(&value)) {
+  } else if (std::any_cast<const std::string>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<int>(&value)) {
+  } else if (std::any_cast<int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+  } else if (std::any_cast<unsigned int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<double>(&value)) {
+  } else if (std::any_cast<double>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<float>(&value)) {
+  } else if (std::any_cast<float>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<bool>(&value)) {
+  } else if (std::any_cast<bool>(&value)) {
     return EditorItemDelegate::BOOL;
   } else {
     return EditorItemDelegate::STRING;
@@ -328,14 +328,14 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& v
 
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
-      view_(new QTreeView()),
-      model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
+      view_(new QTreeView(this)),
+      model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
       layout_(new QVBoxLayout),
       action_layout_(new QVBoxLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
       selection_(Selected()),
-      button_frame_(new QFrame),
+      button_frame_(new QFrame(this)),
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
@@ -351,7 +351,8 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
+
   layout_->addWidget(view_, /* stretch */ 1);
   layout_->addLayout(action_layout_);
 

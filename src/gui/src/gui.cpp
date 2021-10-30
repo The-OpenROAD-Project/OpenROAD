@@ -111,6 +111,10 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
+  if (renderers_.count(renderer) == 0) {
+    return;
+  }
+
   main_window->getControls()->unregisterRenderer(renderer);
 
   renderers_.erase(renderer);

@@ -238,6 +238,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
 
+  FindObjectDialog* find_dialog_;
+
   QMenu* file_menu_;
   QMenu* view_menu_;
   QMenu* tools_menu_;
@@ -260,8 +262,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* congestion_setup_;
 
   QLabel* location_;
-
-  FindObjectDialog* find_dialog_;
 
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;
