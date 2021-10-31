@@ -331,14 +331,14 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModel
     return;
   }
 
-  auto* nodes = model->getNodes();
   if (model->isClockSummaryRow(index)) {
+    auto* nodes = model->getNodes();
     for (int i = 1; i < model->getClockEndIndex(); i++) {
-      path_renderer_->highlightNode(nodes->at(i).get(), nodes);
+      path_renderer_->highlightNode(nodes->at(i).get());
     }
   } else {
     auto* node = model->getNodeAt(index);
-    path_renderer_->highlightNode(node, nodes);
+    path_renderer_->highlightNode(node);
   }
 
   emit highlightTimingPath(path_renderer_->getPathToRender());

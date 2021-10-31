@@ -659,9 +659,9 @@ void TimingPathRenderer::highlight(TimingPath* path)
   redraw();
 }
 
-void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes)
+void TimingPathRenderer::highlightNode(const TimingPathNode* node)
 {
-  if (path_ != nullptr) {
+  if (node != nullptr) {
     odb::dbNet* net = node->getNet();
     odb::dbObject* sink = nullptr;
     odb::dbInst* inst = nullptr;
@@ -687,31 +687,30 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::T
 void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
                                        gui::Painter& painter,
                                        const gui::Descriptor* net_descriptor,
+                                       const gui::Descriptor* inst_descriptor,
+                                       const gui::Descriptor* bterm_descriptor,
                                        const Painter::Color& clock_color)
 {
-  int node_count = nodes->size();
-  for (int i = node_count - 1; i >= 0; --i) {
-    auto& node = nodes->at(i);
+  for (auto node_itr = nodes->rbegin(); node_itr != nodes->rend(); node_itr++) {
+    auto& node = *node_itr;
 
     odb::dbInst* db_inst = node->getInstance();
     if (db_inst != nullptr) {
-      highlightInst(db_inst, painter, TimingPathRenderer::path_inst_color_);
+      painter.setPenAndBrush(TimingPathRenderer::path_inst_color_, true);
+      inst_descriptor->highlight(db_inst, painter);
     }
 
     if (node->isPinBTerm()) {
-      highlightTerm(node->getPinAsBTerm(), painter);
+      painter.setPenAndBrush(TimingPathRenderer::term_color_, true);
+      bterm_descriptor->highlight(node->getPinAsBTerm(), painter);
     }
 
     if (node->isSource()) {
       auto* sink_node = node->getSinkNode();
       if (sink_node != nullptr) {
-        highlightNet(node->getNet(),
-                     node->isClock(),
-                     node->getPin() /*source*/,
-                     sink_node->getPin(),
-                     painter,
-                     net_descriptor,
-                     clock_color);
+        gui::Painter::Color wire_color = node->isClock() ? clock_color : TimingPathRenderer::signal_color_;
+        painter.setPenAndBrush(wire_color, true);
+        net_descriptor->highlight(node->getNet(), painter, sink_node->getPin());
       }
     }
   }
@@ -719,88 +718,46 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  if (path_ == nullptr)
+  if (path_ == nullptr) {
     return;
+  }
 
   auto* net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
-  drawNodesList(path_->getCaptureNodes(), painter, net_descriptor, capture_clock_color_);
-  drawNodesList(path_->getPathNodes(), painter, net_descriptor, clock_color_);
+  for (const auto& nodes : {path_->getCaptureNodes(), path_->getPathNodes()}) {
+    drawNodesList(nodes,
+                  painter,
+                  net_descriptor,
+                  inst_descriptor,
+                  bterm_descriptor,
+                  capture_clock_color_);
+  }
 
-  highlightStage(painter, net_descriptor);
+  highlightStage(painter, net_descriptor, inst_descriptor);
 }
 
-void TimingPathRenderer::highlightStage(gui::Painter& painter, const gui::Descriptor* net_descriptor)
+void TimingPathRenderer::highlightStage(gui::Painter& painter,
+                                        const gui::Descriptor* net_descriptor,
+                                        const gui::Descriptor* inst_descriptor)
 {
   if (highlight_stage_.empty()) {
     return;
   }
 
+  painter.setPenAndBrush(TimingPathRenderer::inst_highlight_color_, true);
   for (const auto& highlight : highlight_stage_) {
     if (highlight->inst != nullptr) {
-      highlightInst(highlight->inst, painter, TimingPathRenderer::inst_highlight_color_);
+      inst_descriptor->highlight(highlight->inst, painter);
     }
   }
 
-  painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
-  painter.setBrush(TimingPathRenderer::inst_highlight_color_);
   for (const auto& highlight : highlight_stage_) {
     if (highlight->net != nullptr) {
       net_descriptor->highlight(highlight->net, painter, highlight->sink);
     }
   }
-}
-
-// Color in the instances to make them more visible.
-void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
-                                       gui::Painter& painter,
-                                       const gui::Painter::Color& inst_color)
-{
-  if (path_ == nullptr) {
-    return;
-  }
-  if (!db_inst->isPlaced()) {
-    return;
-  }
-
-  odb::dbBox* bbox = db_inst->getBBox();
-  odb::Rect rect;
-  bbox->getBox(rect);
-  painter.setBrush(inst_color);
-  painter.drawRect(rect);
-}
-
-void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
-                                       gui::Painter& painter)
-{
-  if (path_ == nullptr)
-    return;
-  odb::dbShape port_shape;
-  if (term->getFirstPin(port_shape)) {
-    odb::Rect rect;
-    port_shape.getBox(rect);
-    painter.setBrush(TimingPathRenderer::term_color_);
-    painter.drawRect(rect);
-  }
-}
-
-void TimingPathRenderer::highlightNet(odb::dbNet* net,
-                                      bool is_clock,
-                                      odb::dbObject* source_node,
-                                      odb::dbObject* sink_node,
-                                      gui::Painter& painter,
-                                      const gui::Descriptor* net_descriptor,
-                                      const Painter::Color& clock_color)
-{
-  if (path_ == nullptr) {
-    return;
-  }
-
-  gui::Painter::Color wire_color = is_clock ? clock_color : TimingPathRenderer::signal_color_;
-
-  painter.setPen(wire_color, true);
-  painter.setBrush(wire_color);
-  net_descriptor->highlight(net, painter, sink_node);
 }
 
 }  // namespace gui

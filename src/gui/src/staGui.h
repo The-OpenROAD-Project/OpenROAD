@@ -313,7 +313,7 @@ class TimingPathRenderer : public gui::Renderer
   TimingPathRenderer();
   void highlight(TimingPath* path);
 
-  void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
+  void highlightNode(const TimingPathNode* node);
   void clearHighlightNodes() { highlight_stage_.clear(); }
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
@@ -321,23 +321,15 @@ class TimingPathRenderer : public gui::Renderer
   TimingPath* getPathToRender() { return path_; }
 
  private:
-  void highlightInst(odb::dbInst* inst,
-                     gui::Painter& painter,
-                     const gui::Painter::Color& color);
   void highlightStage(gui::Painter& painter,
-                      const gui::Descriptor* net_descriptor);
-  void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
-  void highlightNet(odb::dbNet* net,
-                    bool is_clock,
-                    odb::dbObject* source_node,
-                    odb::dbObject* sink_node,
-                    gui::Painter& painter,
-                    const gui::Descriptor* net_descriptor,
-                    const Painter::Color& clock_color);
+                      const gui::Descriptor* net_descriptor,
+                      const gui::Descriptor* inst_descriptor);
 
   void drawNodesList(TimingPath::TimingNodeList* nodes,
                      gui::Painter& painter,
                      const gui::Descriptor* net_descriptor,
+                     const gui::Descriptor* inst_descriptor,
+                     const gui::Descriptor* bterm_descriptor,
                      const Painter::Color& clock_color);
 
   // Expanded path is owned by PathRenderer.
