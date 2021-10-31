@@ -180,6 +180,13 @@ class GuiPainter : public Painter
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
+
+  void setPenAndBrush(const Color& color, bool cosmetic = false, const Brush& style = Brush::SOLID) override
+  {
+    setPen(color, cosmetic);
+    setBrush(color, style);
+  }
+
   void drawGeomShape(const odb::GeomShape* shape) override
   {
     std::vector<Point> points = shape->getPoints();

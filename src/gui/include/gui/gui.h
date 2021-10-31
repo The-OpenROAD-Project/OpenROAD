@@ -153,6 +153,10 @@ class Painter
   };
   virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
 
+  // Set the pen to an RGBA value and the brush
+  virtual void setPenAndBrush(const Color& color, bool cosmetic = false, const Brush& style = SOLID)
+      = 0;
+
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
   virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
