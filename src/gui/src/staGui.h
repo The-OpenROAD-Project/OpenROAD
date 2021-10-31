@@ -354,109 +354,90 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), isDirty_(false) {}
+  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), is_modified_(false) {}
 
-  void inDbInstCreate(odb::dbInst* inst) override
+  void inDbInstCreate(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstCreate", inst);
+    callback();
   }
-  void inDbInstDestroy(odb::dbInst* inst) override
+  void inDbInstDestroy(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstDestroy", inst);
+    callback();
   }
-  void inDbInstSwapMasterBefore(odb::dbInst* inst,
-                                odb::dbMaster* master) override
+  void inDbInstSwapMasterBefore(odb::dbInst* /* inst */,
+                                odb::dbMaster* /* master */) override
   {
-    callback("inDbInstSwapMasterBefore", inst, master);
+    callback();
   }
-  void inDbInstSwapMasterAfter(odb::dbInst* inst) override
+  void inDbInstSwapMasterAfter(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstSwapMasterAfter", inst);
+    callback();
   }
-  void inDbNetCreate(odb::dbNet* net) override
+  void inDbNetCreate(odb::dbNet* /* net */) override
   {
-    callback("inDbNetCreate", net);
+    callback();
   }
-  void inDbNetDestroy(odb::dbNet* net) override
+  void inDbNetDestroy(odb::dbNet* /* net */) override
   {
-    callback("inDbNetDestroy", net);
+    callback();
   }
-  void inDbITermPostConnect(odb::dbITerm* iterm) override
+  void inDbITermPostConnect(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermPostConnect", iterm);
+    callback();
   }
-  void inDbITermPreDisconnect(odb::dbITerm* iterm) override
+  void inDbITermPreDisconnect(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermPreDisconnect", iterm);
+    callback();
   }
-  void inDbITermDestroy(odb::dbITerm* iterm) override
+  void inDbITermDestroy(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermDestroy", iterm);
+    callback();
   }
-  void inDbBTermPostConnect(odb::dbBTerm* bterm) override
+  void inDbBTermPostConnect(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermPostConnect", bterm);
+    callback();
   }
-  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override
+  void inDbBTermPreDisconnect(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermPreDisconnect", bterm);
+    callback();
   }
-  void inDbBTermDestroy(odb::dbBTerm* bterm) override
+  void inDbBTermDestroy(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermDestroy", bterm);
+    callback();
   }
-  void inDbWireCreate(odb::dbWire* wire) override
+  void inDbWireCreate(odb::dbWire* /* wire */) override
   {
-    callback("inDbWireCreate", wire);
+    callback();
   }
-  void inDbWireDestroy(odb::dbWire* wire) override
+  void inDbWireDestroy(odb::dbWire* /* wire */) override
   {
-    callback("inDbWireDestroy", wire);
+    callback();
   }
-  void inDbBlockageCreate(odb::dbBlockage* blockage) override
+  void inDbFillCreate(odb::dbFill* /* fill */) override
   {
-    callback("inDbBlockageCreate", blockage);
-  }
-  void inDbObstructionCreate(odb::dbObstruction* obstr) override
-  {
-    callback("inDbObstructionCreate", obstr);
-  }
-  void inDbObstructionDestroy(odb::dbObstruction* obstr) override
-  {
-    callback("inDbObstructionDestroy", obstr);
-  }
-  void inDbBlockStreamOutAfter(odb::dbBlock* block) override
-  {
-    callback("inDbBlockStreamOutAfter", block);
-  }
-  void inDbFillCreate(odb::dbFill* fill) override
-  {
-    callback("inDbFillCreate", fill);
+    callback();
   }
 
  signals:
-  void dbUpdated(const QString& update_type,
-                 const std::vector<odb::dbObject*>& update_objects);
+  void dbUpdated();
+
  public slots:
   void reset()
   {
-    isDirty_ = false;
+    is_modified_ = false;
     // call reset after gui refresh
   }
 
  private:
-  void callback(QString update_type,
-                odb::dbObject* obj1 = nullptr,
-                odb::dbObject* obj2 = nullptr)
+  void callback()
   {
-    if (isDirty_ == false) {
-      // send signal if dirty was false
-      std::vector<odb::dbObject*> objects{obj1, obj2};
-      emit dbUpdated(update_type, objects);
-      isDirty_ = true;
+    if (!is_modified_) {
+      emit dbUpdated();
+      is_modified_ = true;
     }
   }
-  bool isDirty_;
+
+  bool is_modified_;
 };
 
 }  // namespace gui

@@ -136,15 +136,22 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_index_spin_box_, SIGNAL(valueChanged(int)), this, SLOT(showPathIndex(int)));
 
   connect(dbchange_listener_,
-          SIGNAL(dbUpdated(QString, std::vector<odb::dbObject*>)),
+          SIGNAL(dbUpdated()),
           this,
-          SLOT(handleDbChange(QString, std::vector<odb::dbObject*>)));
+          SLOT(handleDbChange()));
   connect(
       update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
+  connect(
+      update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
 
   connect(expand_clk_, SIGNAL(stateChanged(int)), this, SLOT(updateClockRows()));
 
   path_index_spin_box_->setRange(0, 0);
+}
+
+TimingWidget::~TimingWidget()
+{
+  dbchange_listener_->removeOwner();
 }
 
 void TimingWidget::init(sta::dbSta* sta)
@@ -250,7 +257,6 @@ void TimingWidget::clearPathDetails()
 
   path_details_table_view_->setEnabled(false);
   capture_details_table_view_->setEnabled(false);
-
 
   path_renderer_->highlight(nullptr);
   emit highlightTimingPath(nullptr);
@@ -474,9 +480,10 @@ void TimingWidget::copy()
   }
 }
 
-void TimingWidget::handleDbChange(QString change_type,
-                                  std::vector<odb::dbObject*> objects)
+void TimingWidget::handleDbChange()
 {
+  clearPathDetails();
+
   path_details_model_->populateModel(nullptr, nullptr);
   capture_details_model_->populateModel(nullptr, nullptr);
 
@@ -514,6 +521,11 @@ void TimingWidget::toggleRenderer(bool visible)
   } else {
     gui->unregisterRenderer(path_renderer_.get());
   }
+}
+
+void TimingWidget::setBlock(odb::dbBlock* block)
+{
+  dbchange_listener_->addOwner(block);
 }
 
 }  // namespace gui
