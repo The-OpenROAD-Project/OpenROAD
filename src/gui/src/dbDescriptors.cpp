@@ -554,6 +554,10 @@ void DbNetDescriptor::highlight(std::any object,
     std::set<odb::Point> driver_locs;
     std::set<odb::Point> sink_locs;
     for (auto inst_term : net->getITerms()) {
+      if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+
       odb::Point rect_center;
       int x, y;
       if (!inst_term->getAvgXY(&x, &y)) {
@@ -563,16 +567,19 @@ void DbNetDescriptor::highlight(std::any object,
         bbox->getBox(rect);
         rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
                                  (rect.yMax() + rect.yMin()) / 2.0);
-      } else
+      } else {
         rect_center = odb::Point(x, y);
+      }
       auto iotype = inst_term->getIoType();
       if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
-        if (sink_object != nullptr && sink_object != inst_term)
+        if (sink_object != nullptr && sink_object != inst_term) {
           continue;
+        }
         sink_locs.insert(rect_center);
       }
-      if (iotype == odb::dbIoType::INOUT || iotype == odb::dbIoType::OUTPUT)
+      if (iotype == odb::dbIoType::INOUT || iotype == odb::dbIoType::OUTPUT) {
         driver_locs.insert(rect_center);
+      }
     }
     for (auto blk_term : net->getBTerms()) {
       auto blk_term_pins = blk_term->getBPins();
@@ -599,15 +606,17 @@ void DbNetDescriptor::highlight(std::any object,
       }
     }
 
-    if (driver_locs.empty() || sink_locs.empty())
-      return;
-    auto color = painter.getPenColor();
-    color.a = 255;
-    painter.setPen(color, true);
-    for (auto& driver : driver_locs) {
-      for (auto& sink : sink_locs) {
-        painter.drawLine(driver, sink);
+    if (!driver_locs.empty() && !sink_locs.empty()) {
+      painter.savePenAndBrush();
+      auto color = painter.getPenColor();
+      color.a = 255;
+      painter.setPen(color, true);
+      for (auto& driver : driver_locs) {
+        for (auto& sink : sink_locs) {
+          painter.drawLine(driver, sink);
+        }
       }
+      painter.restorePenAndBrush();
     }
   }
 
@@ -743,6 +752,11 @@ void DbITermDescriptor::highlight(std::any object,
                                   void* additional_data) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
+
+  if (!iterm->getInst()->getPlacementStatus().isPlaced()) {
+    return;
+  }
+
   odb::dbTransform inst_xfm;
   iterm->getInst()->getTransform(inst_xfm);
 
