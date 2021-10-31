@@ -272,6 +272,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   QVariant headerData(int section,
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
 
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
@@ -279,7 +280,8 @@ class TimingPathDetailModel : public QAbstractTableModel
   int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
 
   const TimingPathNode* getNodeAt(const QModelIndex& index) const;
-  bool shouldHide(const QModelIndex& index, bool expand_clock) const;
+  void setExpandClock(bool state) { expand_clock_ = state; }
+  bool shouldHide(const QModelIndex& index) const;
 
   bool isClockSummaryRow(const QModelIndex& index) const { return index.row() == clock_summary_row_; }
 
@@ -288,6 +290,7 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   sta::dbSta* sta_;
   bool is_capture_;
+  bool expand_clock_;
 
   TimingPath* path_;
   TimingPath::TimingNodeList* nodes_;

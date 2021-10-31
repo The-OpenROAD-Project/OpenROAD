@@ -493,6 +493,7 @@ TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta, Q
   : QAbstractTableModel(parent),
     sta_(sta),
     is_capture_(is_capture),
+    expand_clock_(false),
     path_(nullptr),
     nodes_(nullptr)
 {
@@ -590,8 +591,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-bool TimingPathDetailModel::shouldHide(const QModelIndex& index,
-                                       bool expand_clock) const
+bool TimingPathDetailModel::shouldHide(const QModelIndex& index) const
 {
   const int row = index.row();
   const int last_clock = getClockEndIndex() + 1; // accounting for clock_summary would +1
@@ -601,16 +601,24 @@ bool TimingPathDetailModel::shouldHide(const QModelIndex& index,
   }
 
   if (row == clock_summary_row_) {
-    return expand_clock;
+    return expand_clock_;
   }
 
   if (row >= last_clock) {
     return false;
   } else {
-    return !expand_clock;
+    return !expand_clock_;
   }
 
   return false;
+}
+
+Qt::ItemFlags TimingPathDetailModel::flags(const QModelIndex& index) const
+{
+  auto flags = QAbstractTableModel::flags(index);
+  flags.setFlag(Qt::ItemIsEnabled, !shouldHide(index));
+
+  return flags;
 }
 
 QVariant TimingPathDetailModel::headerData(int section,

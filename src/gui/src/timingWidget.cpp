@@ -313,8 +313,10 @@ void TimingWidget::updateClockRows()
   const bool show = expand_clk_->checkState() == Qt::Checked;
 
   auto toggleModelView = [show](TimingPathDetailModel* model, QTableView* view) {
+    model->setExpandClock(show);
+
     for (int row = 0; row < model->rowCount(); row++) {
-      if (model->shouldHide(model->index(row, 0), show)) {
+      if (model->shouldHide(model->index(row, 0))) {
         view->hideRow(row);
       } else {
         view->showRow(row);
