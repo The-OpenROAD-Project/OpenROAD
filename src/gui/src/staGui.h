@@ -111,11 +111,13 @@ class TimingPathsModel : public QAbstractTableModel
   enum Column : int;
 };
 
-struct TimingPathNode
+class TimingPathNode
 {
+ public:
   TimingPathNode(odb::dbObject* pin,
                  bool is_clock,
                  bool is_rising,
+                 bool is_sink,
                  float arrival,
                  float required,
                  float delay,
@@ -125,27 +127,63 @@ struct TimingPathNode
       : pin_(pin),
         is_clock_(is_clock),
         is_rising_(is_rising),
+        is_sink_(is_sink),
         arrival_(arrival),
         required_(required),
         delay_(delay),
         slack_(slack),
         slew_(slew),
-        load_(load)
+        load_(load),
+        sink_node_(nullptr),
+        instance_node_(nullptr)
   {
   }
 
   std::string getNodeName(bool include_master = false) const;
   std::string getNetName() const;
 
+  odb::dbNet* getNet() const;
+  odb::dbInst* getInstance() const;
+  bool hasInstance() const { return getInstance() != nullptr; }
+
+  bool isPinITerm() const { return pin_->getObjectType() == odb::dbObjectType::dbITermObj; }
+  bool isPinBTerm() const { return pin_->getObjectType() == odb::dbObjectType::dbBTermObj; }
+
+  odb::dbObject* getPin() const { return pin_; }
+  odb::dbITerm* getPinAsITerm() const { return static_cast<odb::dbITerm*>(pin_); }
+  odb::dbBTerm* getPinAsBTerm() const { return static_cast<odb::dbBTerm*>(pin_); }
+
+  bool isClock() const { return is_clock_; }
+  bool isRisingEdge() const { return is_rising_; }
+  bool isSink() const { return is_sink_; }
+  bool isSource() const { return !is_sink_; }
+
+  float getArrival() const { return arrival_; }
+  float getRequired() const { return required_; }
+  float getDelay() const { return delay_; }
+  float getSlack() const { return slack_; }
+  float getSlew() const { return slew_; }
+  float getLoad() const { return load_; }
+
+  void setSinkNode(const TimingPathNode* node) { sink_node_ = node; }
+  const TimingPathNode* getSinkNode() const { return sink_node_; }
+  void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
+  const TimingPathNode* getInstanceNode() const { return instance_node_; }
+
+ private:
   odb::dbObject* pin_;
   bool is_clock_;
   bool is_rising_;
+  bool is_sink_;
   float arrival_;
   float required_;
   float delay_;
   float slack_;
   float slew_;
   float load_;
+
+  const TimingPathNode* sink_node_;
+  const TimingPathNode* instance_node_;
 };
 
 class TimingPath
@@ -165,9 +203,9 @@ class TimingPath
   {
   }
 
-  using TimingNodeList = std::vector<std::unique_ptr<const TimingPathNode>>;
+  using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 
-  void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
+  void appendNode(TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node)); }
 
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
@@ -260,7 +298,7 @@ class TimingPathDetailModel : public QAbstractTableModel
 class TimingPathRenderer : public gui::Renderer
 {
  public:
-  TimingPathRenderer(sta::dbSta* sta);
+  TimingPathRenderer();
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
@@ -289,8 +327,6 @@ class TimingPathRenderer : public gui::Renderer
                      gui::Painter& painter,
                      const gui::Descriptor* net_descriptor,
                      const Painter::Color& clock_color);
-
-  sta::dbSta* sta_;
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;

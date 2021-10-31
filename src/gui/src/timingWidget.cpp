@@ -63,7 +63,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
       capture_details_model_(nullptr),
-      path_renderer_(nullptr),
+      path_renderer_(std::make_unique<TimingPathRenderer>()),
       dbchange_listener_(new GuiDBChangeListener(this)),
       delay_widget_(new QTabWidget(this)),
       detail_widget_(new QTabWidget(this)),
@@ -153,7 +153,6 @@ void TimingWidget::init(sta::dbSta* sta)
   hold_timing_paths_model_ = new TimingPathsModel(sta, this);
   path_details_model_ = new TimingPathDetailModel(false, sta, this);
   capture_details_model_ = new TimingPathDetailModel(true, sta, this);
-  path_renderer_ = std::make_unique<TimingPathRenderer>(sta);
 
   auto setupTableView = [](QTableView* view, QAbstractTableModel* model) {
     view->setModel(model);

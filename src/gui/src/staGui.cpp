@@ -330,7 +330,8 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
     auto pin = ref->vertex(sta)->pin();
     auto slew = ref->slew(sta);
     float cap = 0.0;
-    if (sta->network()->isDriver(pin)
+    const bool is_driver = sta->network()->isDriver(pin);
+    if (is_driver
         && !(!clock_expanded && (sta->network()->isCheckClk(pin) || !i))) {
       sta::Parasitic* parasitic = nullptr;
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
@@ -370,6 +371,7 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
       list.push_back(std::make_unique<TimingPathNode>(pin_object,
           pin_is_clock,
           is_rising,
+          !is_driver,
           arrival + offset,
           path_required + offset,
           0,
@@ -380,6 +382,7 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
       list.push_back(std::make_unique<TimingPathNode>(pin_object,
           pin_is_clock,
           is_rising,
+          !is_driver,
           arrival + offset,
           path_required + offset,
           arrival_cur_stage - arrival_prev_stage,
@@ -389,6 +392,36 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
       arrival_prev_stage = arrival_cur_stage;
     }
     first_path = false;
+  }
+
+  // populate list with source/sink nodes
+  for (int i = 0; i < list.size(); i++) {
+    auto* node = list[i].get();
+    if (node->isSource()) {
+      if (i < (list.size() - 1)) {
+        // get the next node
+        node->setSinkNode(list[i + 1].get());
+      }
+    } else {
+      // node is sink
+      node->setSinkNode(node);
+    }
+  }
+
+  // first find the first instance node
+  TimingPathNode* instance_node = nullptr;
+  for (auto& node : list) {
+    if (node->hasInstance()) {
+      instance_node = node.get();
+      break;
+    }
+  }
+  // populate with instance nodes
+  for (auto& node : list) {
+    if (node->hasInstance()) {
+      instance_node = node.get();
+    }
+    node->setInstanceNode(instance_node);
   }
 }
 
@@ -419,7 +452,7 @@ std::string TimingPath::getEndStageName() const
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
 {
   for (int i = 0; i < nodes.size(); i++) {
-    if (!nodes[i]->is_clock_) {
+    if (!nodes[i]->isClock()) {
       index = i - 1;
       return;
     }
@@ -438,26 +471,37 @@ void TimingPath::computeClkEndIndex()
 
 std::string TimingPathNode::getNodeName(bool include_master) const
 {
-  if (pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(pin_);
+  if (isPinITerm()) {
+    odb::dbITerm* db_iterm = getPinAsITerm();
     return db_iterm->getInst()->getName() + "/"
            + db_iterm->getMTerm()->getName()
            + (include_master
                   ? " (" + db_iterm->getInst()->getMaster()->getName() + ")"
                   : "");
   }
-  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(pin_);
-  return db_bterm->getName();
+  return getNetName();
 }
 
 std::string TimingPathNode::getNetName() const
 {
-  if (pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(pin_);
-    return db_iterm->getNet()->getName();
+  return getNet()->getName();
+}
+
+odb::dbNet* TimingPathNode::getNet() const
+{
+  if (isPinITerm()) {
+    return getPinAsITerm()->getNet();
   }
-  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(pin_);
-  return db_bterm->getNet()->getName();
+  return getPinAsBTerm()->getNet();
+}
+
+odb::dbInst* TimingPathNode::getInstance() const
+{
+  if (isPinITerm()) {
+    return getPinAsITerm()->getInst();
+  }
+
+  return nullptr;
 }
 
 /////////
@@ -535,9 +579,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     case Pin:
       return "clock network delay";
     case Time:
-      return time_units->asString(node->arrival_);
+      return time_units->asString(node->getArrival());
     case Delay:
-      return time_units->asString(node->arrival_ - nodes_->at(0)->arrival_);
+      return time_units->asString(node->getArrival() - nodes_->at(0)->getArrival());
     default:
       return QVariant();
     }
@@ -545,20 +589,20 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     const auto* node = getNodeAt(index);
     switch (col_index) {
       case Pin:
-        return QString(node->getNodeName(/* include_master */ true).c_str());
+        return QString::fromStdString(node->getNodeName(/* include_master */ true));
       case RiseFall:
-        return node->is_rising_ ? QString(up_arrow) : QString(down_arrow);
+        return node->isRisingEdge() ? QString(up_arrow) : QString(down_arrow);
       case Time:
-        return time_units->asString(node->arrival_);
+        return time_units->asString(node->getArrival());
       case Delay:
-        return time_units->asString(node->delay_);
+        return time_units->asString(node->getDelay());
       case Slew:
-        return time_units->asString(node->slew_);
+        return time_units->asString(node->getSlew());
       case Load: {
-        if (node->load_ == 0)
+        if (node->getLoad() == 0)
           return "";
         const auto cap_units = sta_->search()->units()->capacitanceUnit();
-        return cap_units->asString(node->load_);
+        return cap_units->asString(node->getLoad());
       }
     }
   }
@@ -609,8 +653,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path, TimingPath::TimingNo
 
 /////////
 
-TimingPathRenderer::TimingPathRenderer(sta::dbSta* sta) :
-    sta_(sta),
+TimingPathRenderer::TimingPathRenderer() :
     path_(nullptr),
     highlight_stage_()
 {
@@ -632,83 +675,22 @@ void TimingPathRenderer::highlight(TimingPath* path)
 void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes)
 {
   if (path_ != nullptr) {
-    odb::dbObject* sink_node = nullptr;
-    odb::dbNet* net = nullptr;
+    odb::dbNet* net = node->getNet();
+    odb::dbObject* sink = nullptr;
     odb::dbInst* inst = nullptr;
 
-    // get the next node for sink or instance
-    auto getNextNode = [&]() -> const TimingPathNode* {
-      if (nodes->empty()) {
-        return node;
-      }
-
-      auto node_itr = std::find_if(nodes->begin(), nodes->end(), [node](const auto& other) -> bool {
-        return other.get() == node;
-      });
-      int node_index = std::distance(nodes->begin(), node_itr);
-
-      if ((node_index + 1) < nodes->size()) {
-        // advance to the next node if not at the end of the list
-        node_index++;
-      } else if (node_index != 0) {
-        // go backwards if not at the start of the list (ie. prev was at the end)
-        node_index--;
-      }
-      return nodes->at(node_index).get();
-    };
-
-    // get the net associated with the node
-    if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-      odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-      net = db_iterm->getNet();
-    } else {
-      odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node->pin_);
-      net = bterm->getNet();
+    auto* instance_node = node->getInstanceNode();
+    if (instance_node != nullptr) {
+      inst = instance_node->getInstance();
     }
 
-    // get the sink associated with the node
-    auto getSink = [&](const TimingPathNode* node) {
-      if (sink_node != nullptr) {
-        return;
-      }
-
-      if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-        auto io_dir = db_iterm->getIoType();
-        if (io_dir == odb::dbIoType::INPUT || io_dir == odb::dbIoType::INOUT) {
-          sink_node = db_iterm;
-        }
-      } else {
-        odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node->pin_);
-        auto io_dir = bterm->getIoType();
-        if (io_dir == odb::dbIoType::OUTPUT || io_dir == odb::dbIoType::INOUT) {
-          sink_node = bterm;
-        }
-      }
-    };
-    getSink(node);
-    if (sink_node == nullptr) {
-      getSink(getNextNode());
-    }
-
-    // get the instance associated with the node
-    auto getInstance = [&](const TimingPathNode* node) {
-      if (inst != nullptr) {
-        return;
-      }
-
-      if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-        inst = db_iterm->getInst();
-      }
-    };
-    getInstance(node);
-    if (inst == nullptr) {
-      getInstance(getNextNode());
+    auto* sink_node = node->getSinkNode();
+    if (sink_node != nullptr) {
+      sink = sink_node->getPin();
     }
 
     if (net != nullptr || inst != nullptr) {
-      highlight_stage_.push_back(std::make_unique<HighlightStage>(HighlightStage{net, inst, sink_node}));
+      highlight_stage_.push_back(std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
 
     redraw();
@@ -720,40 +702,29 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
                                        const gui::Descriptor* net_descriptor,
                                        const Painter::Color& clock_color)
 {
-  odb::dbObject* sink_node = nullptr;
-  odb::dbNet* net = nullptr;
   int node_count = nodes->size();
   for (int i = node_count - 1; i >= 0; --i) {
     auto& node = nodes->at(i);
-    if (node->pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-      odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node->pin_);
-      odb::dbInst* db_inst = db_iterm->getInst();
+
+    odb::dbInst* db_inst = node->getInstance();
+    if (db_inst != nullptr) {
       highlightInst(db_inst, painter, TimingPathRenderer::path_inst_color_);
-      auto io_dir = db_iterm->getIoType();
-      if (!sink_node
-          && (io_dir == odb::dbIoType::INPUT
-              || io_dir == odb::dbIoType::INOUT)) {
-        sink_node = db_iterm;
-        net = db_iterm->getNet();
-        continue;
-      } else if (sink_node) {
-        highlightNet(net, node->is_clock_, db_iterm /*source*/, sink_node, painter, net_descriptor, clock_color);
-        sink_node = nullptr;
-        net = nullptr;
-      }
-    } else {
-      odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node->pin_);
-      highlightTerm(bterm, painter);
-      if (!sink_node
-          && (bterm->getIoType() == odb::dbIoType::OUTPUT
-              || bterm->getIoType() == odb::dbIoType::INOUT)) {
-        sink_node = bterm;
-        net = bterm->getNet();
-        continue;
-      } else if (sink_node) {
-        highlightNet(net, node->is_clock_, bterm, sink_node, painter, net_descriptor, clock_color);
-        sink_node = nullptr;
-        net = nullptr;
+    }
+
+    if (node->isPinBTerm()) {
+      highlightTerm(node->getPinAsBTerm(), painter);
+    }
+
+    if (node->isSource()) {
+      auto* sink_node = node->getSinkNode();
+      if (sink_node != nullptr) {
+        highlightNet(node->getNet(),
+                     node->isClock(),
+                     node->getPin() /*source*/,
+                     sink_node->getPin(),
+                     painter,
+                     net_descriptor,
+                     clock_color);
       }
     }
   }
