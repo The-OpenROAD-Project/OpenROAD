@@ -539,7 +539,65 @@ void DbNetDescriptor::highlight(std::any object,
     sink_object = static_cast<odb::dbObject*>(additional_data);
   auto net = std::any_cast<odb::dbNet*>(object);
 
+  auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
+  auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
+
+  const bool is_supply = net->getSigType().isSupply();
+  auto should_draw_term = [sink_object](const odb::dbObject* term) -> bool {
+    if (sink_object == nullptr) {
+      return true;
+    }
+    return sink_object == term;
+  };
+
+  auto is_source_iterm = [](odb::dbITerm* iterm) -> bool {
+    const auto iotype = iterm->getIoType();
+    return iotype == odb::dbIoType::OUTPUT ||
+           iotype == odb::dbIoType::INOUT;
+  };
+  auto is_sink_iterm = [](odb::dbITerm* iterm) -> bool {
+    const auto iotype = iterm->getIoType();
+    return iotype == odb::dbIoType::INPUT ||
+           iotype == odb::dbIoType::INOUT;
+  };
+
+  auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
+    const auto iotype = bterm->getIoType();
+    return iotype == odb::dbIoType::OUTPUT ||
+           iotype == odb::dbIoType::INOUT ||
+           iotype == odb::dbIoType::FEEDTHRU;
+  };
+  auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
+    const auto iotype = bterm->getIoType();
+    return iotype == odb::dbIoType::INPUT ||
+           iotype == odb::dbIoType::INOUT ||
+           iotype == odb::dbIoType::FEEDTHRU;
+  };
+
   // Draw regular routing
+  if (!is_supply) { // don't draw iterms on supply nets
+    // draw iterms
+    for (auto* iterm : net->getITerms()) {
+      if (is_sink_iterm(iterm)) {
+        if (should_draw_term(iterm)) {
+          iterm_descriptor->highlight(iterm, painter);
+        }
+      } else {
+        iterm_descriptor->highlight(iterm, painter);
+      }
+    }
+  }
+  // draw bterms
+  for (auto* bterm : net->getBTerms()) {
+    if (is_sink_bterm(bterm)) {
+      if (should_draw_term(bterm)) {
+        bterm_descriptor->highlight(bterm, painter);
+      }
+    } else {
+      bterm_descriptor->highlight(bterm, painter);
+    }
+  }
+
   odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
@@ -550,7 +608,7 @@ void DbNetDescriptor::highlight(std::any object,
       shape.getBox(rect);
       painter.drawRect(rect);
     }
-  } else if (!net->getSigType().isSupply()) {
+  } else if (!is_supply) {
     std::set<odb::Point> driver_locs;
     std::set<odb::Point> sink_locs;
     for (auto inst_term : net->getITerms()) {
@@ -561,8 +619,7 @@ void DbNetDescriptor::highlight(std::any object,
       odb::Point rect_center;
       int x, y;
       if (!inst_term->getAvgXY(&x, &y)) {
-        auto inst_term_inst = inst_term->getInst();
-        odb::dbBox* bbox = inst_term_inst->getBBox();
+        odb::dbBox* bbox = inst_term->getInst()->getBBox();
         odb::Rect rect;
         bbox->getBox(rect);
         rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
@@ -570,38 +627,31 @@ void DbNetDescriptor::highlight(std::any object,
       } else {
         rect_center = odb::Point(x, y);
       }
-      auto iotype = inst_term->getIoType();
-      if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
-        if (sink_object != nullptr && sink_object != inst_term) {
-          continue;
+
+      if (is_sink_iterm(inst_term)) {
+        if (should_draw_term(inst_term)) {
+          sink_locs.insert(rect_center);
         }
-        sink_locs.insert(rect_center);
       }
-      if (iotype == odb::dbIoType::INOUT || iotype == odb::dbIoType::OUTPUT) {
+      if (is_source_iterm(inst_term)) {
         driver_locs.insert(rect_center);
       }
     }
     for (auto blk_term : net->getBTerms()) {
-      auto blk_term_pins = blk_term->getBPins();
-      auto iotype = blk_term->getIoType();
-      bool driver_term = iotype == odb::dbIoType::INPUT
-                         || iotype == odb::dbIoType::INOUT
-                         || iotype == odb::dbIoType::FEEDTHRU;
-      bool sink_term = iotype == odb::dbIoType::INOUT
-                       || iotype == odb::dbIoType::OUTPUT
-                       || iotype == odb::dbIoType::FEEDTHRU;
-      for (auto pin : blk_term_pins) {
+      const bool driver_term = is_source_bterm(blk_term);
+      const bool sink_term = is_sink_bterm(blk_term);
+
+      for (auto pin : blk_term->getBPins()) {
         auto pin_rect = pin->getBBox();
         odb::Point rect_center((pin_rect.xMax() + pin_rect.xMin()) / 2.0,
                                (pin_rect.yMax() + pin_rect.yMin()) / 2.0);
-        if (driver_term == true)
-          driver_locs.insert(rect_center);
         if (sink_term) {
-          if (sink_object != nullptr && sink_object != blk_term) {
-            continue;
+          if (should_draw_term(blk_term)) {
+            sink_locs.insert(rect_center);
           }
-
-          sink_locs.insert(rect_center);
+        }
+        if (driver_term) {
+          driver_locs.insert(rect_center);
         }
       }
     }
