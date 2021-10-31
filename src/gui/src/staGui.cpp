@@ -638,12 +638,16 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node, TimingPath::T
 
     // get the next node for sink or instance
     auto getNextNode = [&]() -> const TimingPathNode* {
+      if (nodes->empty()) {
+        return node;
+      }
+
       auto node_itr = std::find_if(nodes->begin(), nodes->end(), [node](const auto& other) -> bool {
         return other.get() == node;
       });
       int node_index = std::distance(nodes->begin(), node_itr);
 
-      if ((node_index + 1) != nodes->size()) {
+      if ((node_index + 1) < nodes->size()) {
         // advance to the next node if not at the end of the list
         node_index++;
       } else if (node_index != 0) {
