@@ -261,8 +261,8 @@ class RandomUnsignedT : public RandomNumberGeneratorT<RK> {
         operator unsigned() { return RandomNumberGeneratorT<RK>::_getUnsignedRand(); }
 
         using result_type = unsigned;
-        constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
-        constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
+        static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+        static constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
         result_type operator()() { return static_cast<unsigned>(*this); }
   
 };
@@ -317,8 +317,8 @@ class RandomRawUnsignedT {
 
        public:
         using result_type = unsigned;
-        constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
-        constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
+        static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+        static constexpr result_type min() { return std::numeric_limits<result_type>::min(); }
         result_type operator()() { return static_cast<unsigned>(*this); }
   
         RandomRawUnsignedT(unsigned seedN = UINT_MAX, Verbosity verb = Verbosity("silent")) : _impl(NULL), _seedN(seedN), _verb(verb), _haveLoc(false) {}
