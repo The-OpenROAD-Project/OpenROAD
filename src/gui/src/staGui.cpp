@@ -65,44 +65,19 @@
 
 namespace gui {
 
-const char* TimingPathDetailModel::up_down_arrows = u8"\u21C5";
-const char* TimingPathDetailModel::up_arrow = u8"\u2191";
-const char* TimingPathDetailModel::down_arrow = u8"\u2193";
-
-// These two definitions need to stay in sync
-const std::vector<std::string> TimingPathsModel::_path_columns
-    = {"Capture Clock", "Required", "Arrival", "Slack", "Start", "End"};
-enum TimingPathsModel::Column : int
+static gui::Painter::Color makeColor(const gui::Painter::Color& color)
 {
-  Clock,
-  Required,
-  Arrival,
-  Slack,
-  Start,
-  End
-};
+  return gui::Painter::Color(color.r, color.g, color.b, 100);
+}
 
-// These two definitions need to stay in sync
-const std::vector<std::string> TimingPathDetailModel::_path_details_columns
-    = {"Pin", up_down_arrows, "Time", "Delay", "Slew", "Load"};
-enum TimingPathDetailModel::Column : int
-{
-  Pin,
-  RiseFall,
-  Time,
-  Delay,
-  Slew,
-  Load
-};
-
-gui::Painter::Color TimingPathRenderer::inst_highlight_color_
-    = gui::Painter::highlight;
-gui::Painter::Color TimingPathRenderer::path_inst_color_
-    = gui::Painter::magenta;
-gui::Painter::Color TimingPathRenderer::term_color_ = gui::Painter::blue;
-gui::Painter::Color TimingPathRenderer::signal_color_ = gui::Painter::red;
-gui::Painter::Color TimingPathRenderer::clock_color_ = gui::Painter::cyan;
-gui::Painter::Color TimingPathRenderer::capture_clock_color_ = gui::Painter::green;
+const gui::Painter::Color TimingPathRenderer::inst_highlight_color_
+    = makeColor(gui::Painter::highlight);
+const gui::Painter::Color TimingPathRenderer::path_inst_color_
+    = makeColor(gui::Painter::magenta);
+const gui::Painter::Color TimingPathRenderer::term_color_ = makeColor(gui::Painter::blue);
+const gui::Painter::Color TimingPathRenderer::signal_color_ = makeColor(gui::Painter::red);
+const gui::Painter::Color TimingPathRenderer::clock_color_ = makeColor(gui::Painter::cyan);
+const gui::Painter::Color TimingPathRenderer::capture_clock_color_ = makeColor(gui::Painter::green);
 
 /////////
 
@@ -123,13 +98,14 @@ int TimingPathsModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathsModel::columnCount(const QModelIndex& parent) const
 {
-  return TimingPathsModel::_path_columns.size();
+  return 6;
 }
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 {
   const Column col_index = static_cast<Column>(index.column());
-  if (index.isValid() && role == Qt::TextAlignmentRole) {
+
+  if (role == Qt::TextAlignmentRole) {
     switch (col_index) {
       case Clock:
       case Start:
@@ -140,28 +116,23 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Slack:
         return Qt::AlignRight;
     }
-  }
-
-  if (!index.isValid() || role != Qt::DisplayRole) {
-    return QVariant();
-  }
-
-  auto time_units = sta_->search()->units()->timeUnit();
-
-  auto* timing_path = getPathAt(index);
-  switch (col_index) {
-    case Clock:
-      return QString::fromStdString(timing_path->getStartClock());
-    case Required:
-      return QString(time_units->asString(timing_path->getPathRequiredTime()));
-    case Arrival:
-      return QString(time_units->asString(timing_path->getPathArrivalTime()));
-    case Slack:
-      return QString(time_units->asString(timing_path->getSlack()));
-    case Start:
-      return QString(timing_path->getStartStageName().c_str());
-    case End:
-      return QString::fromStdString(timing_path->getEndStageName());
+  } else if (role == Qt::DisplayRole) {
+    auto time_units = sta_->search()->units()->timeUnit();
+    auto* timing_path = getPathAt(index);
+    switch (col_index) {
+      case Clock:
+        return QString::fromStdString(timing_path->getEndClock());
+      case Required:
+        return QString(time_units->asString(timing_path->getPathRequiredTime()));
+      case Arrival:
+        return QString(time_units->asString(timing_path->getPathArrivalTime()));
+      case Slack:
+        return QString(time_units->asString(timing_path->getSlack()));
+      case Start:
+        return QString::fromStdString(timing_path->getStartStageName());
+      case End:
+        return QString::fromStdString(timing_path->getEndStageName());
+    }
   }
   return QVariant();
 }
@@ -170,8 +141,22 @@ QVariant TimingPathsModel::headerData(int section,
                                       Qt::Orientation orientation,
                                       int role) const
 {
-  if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
-    return QString::fromStdString(TimingPathsModel::_path_columns[section]);
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    switch (static_cast<Column>(section)) {
+    case Clock:
+      return "Capture Clock";
+    case Required:
+      return "Required";
+    case Arrival:
+      return "Arrival";
+    case Slack:
+      return "Slack";
+    case Start:
+      return "Start";
+    case End:
+      return "End";
+    }
+  }
   return QVariant();
 }
 
@@ -184,30 +169,28 @@ void TimingPathsModel::resetModel()
 
 void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 {
-  // columns {"Capture Clock", "Required", "Arrival", "Slack", "Start", "End"};
-
   std::function<bool(const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2)> sort_func;
-  if (col_index == 0) {
+  if (col_index == Clock) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
-      return path1->getStartClock() < path2->getStartClock();
+      return path1->getEndClock() < path2->getEndClock();
     };
-  } else if (col_index == 1) {
+  } else if (col_index == Required) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathRequiredTime() < path2->getPathRequiredTime();
     };
-  } else if (col_index == 2) {
+  } else if (col_index == Arrival) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
       return path1->getPathArrivalTime() < path2->getPathArrivalTime();
     };
-  } else if (col_index == 3) {
+  } else if (col_index == Slack) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
     };
-  } else if (col_index == 4) {
+  } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
       return path1->getStartStageName() < path2->getStartStageName();
     };
-  } else if (col_index == 5) {
+  } else if (col_index == End) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1, const std::unique_ptr<TimingPath>& path2) {
       return path1->getEndStageName() < path2->getEndStageName();
     };
@@ -526,7 +509,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return TimingPathDetailModel::_path_details_columns.size();
+  return 6;
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(const QModelIndex& index) const
@@ -543,8 +526,14 @@ const TimingPathNode* TimingPathDetailModel::getNodeAt(const QModelIndex& index)
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
+  if (path_ == nullptr ||
+      nodes_ == nullptr ||
+      !hasNodes()) {
+    return QVariant();
+  }
+
   const Column col_index = static_cast<Column>(index.column());
-  if (index.isValid() && role == Qt::TextAlignmentRole) {
+  if (role == Qt::TextAlignmentRole) {
     switch (col_index) {
       case Pin:
         return Qt::AlignLeft;
@@ -556,53 +545,45 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case RiseFall:
         return Qt::AlignCenter;
     }
-  }
+  } else if (role == Qt::DisplayRole) {
+    const auto time_units = sta_->search()->units()->timeUnit();
 
-  if (!index.isValid() ||
-      role != Qt::DisplayRole ||
-      path_ == nullptr ||
-      nodes_ == nullptr ||
-      !hasNodes()) {
-    return QVariant();
-  }
+    if (index.row() == clock_summary_row_) {
+      int start_idx = getClockEndIndex();
+      if (start_idx < 0) {
+        start_idx = 0;
+      }
+      const auto& node = nodes_->at(start_idx);
 
-  const auto time_units = sta_->search()->units()->timeUnit();
-
-  if (index.row() == clock_summary_row_) {
-    int start_idx = getClockEndIndex();
-    if (start_idx < 0) {
-      start_idx = 0;
-    }
-    const auto& node = nodes_->at(start_idx);
-
-    switch (col_index) {
-    case Pin:
-      return "clock network delay";
-    case Time:
-      return time_units->asString(node->getArrival());
-    case Delay:
-      return time_units->asString(node->getArrival() - nodes_->at(0)->getArrival());
-    default:
-      return QVariant();
-    }
-  } else {
-    const auto* node = getNodeAt(index);
-    switch (col_index) {
+      switch (col_index) {
       case Pin:
-        return QString::fromStdString(node->getNodeName(/* include_master */ true));
-      case RiseFall:
-        return node->isRisingEdge() ? QString(up_arrow) : QString(down_arrow);
+        return "clock network delay";
       case Time:
         return time_units->asString(node->getArrival());
       case Delay:
-        return time_units->asString(node->getDelay());
-      case Slew:
-        return time_units->asString(node->getSlew());
-      case Load: {
-        if (node->getLoad() == 0)
-          return "";
-        const auto cap_units = sta_->search()->units()->capacitanceUnit();
-        return cap_units->asString(node->getLoad());
+        return time_units->asString(node->getArrival() - nodes_->at(0)->getArrival());
+      default:
+        return QVariant();
+      }
+    } else {
+      const auto* node = getNodeAt(index);
+      switch (col_index) {
+        case Pin:
+          return QString::fromStdString(node->getNodeName(/* include_master */ true));
+        case RiseFall:
+          return node->isRisingEdge() ? up_arrow_ : down_arrow_;
+        case Time:
+          return time_units->asString(node->getArrival());
+        case Delay:
+          return time_units->asString(node->getDelay());
+        case Slew:
+          return time_units->asString(node->getSlew());
+        case Load: {
+          if (node->getLoad() == 0)
+            return "";
+          const auto cap_units = sta_->search()->units()->capacitanceUnit();
+          return cap_units->asString(node->getLoad());
+        }
       }
     }
   }
@@ -637,8 +618,20 @@ QVariant TimingPathDetailModel::headerData(int section,
                                            int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    return QString::fromStdString(
-        TimingPathDetailModel::_path_details_columns.at(section));
+    switch (static_cast<Column>(section)) {
+    case Pin:
+      return "Pin";
+    case RiseFall:
+      return up_down_arrows_;
+    case Time:
+      return "Time";
+    case Delay:
+      return "Delay";
+    case Slew:
+      return "Slew";
+    case Load:
+      return "Load";
+    }
   }
   return QVariant();
 }
@@ -657,12 +650,6 @@ TimingPathRenderer::TimingPathRenderer() :
     path_(nullptr),
     highlight_stage_()
 {
-  TimingPathRenderer::path_inst_color_.a = 100;
-  TimingPathRenderer::inst_highlight_color_.a = 100;
-  TimingPathRenderer::clock_color_.a = 100;
-  TimingPathRenderer::signal_color_.a = 100;
-  TimingPathRenderer::term_color_.a = 100;
-  TimingPathRenderer::capture_clock_color_.a = 100;
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)

@@ -107,8 +107,14 @@ class TimingPathsModel : public QAbstractTableModel
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
-  static const std::vector<std::string> _path_columns;
-  enum Column : int;
+  enum Column {
+    Clock,
+    Required,
+    Arrival,
+    Slack,
+    Start,
+    End
+  };
 };
 
 class TimingPathNode
@@ -287,11 +293,17 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingPath::TimingNodeList* nodes_;
 
   // Unicode symbols
-  static const char* up_down_arrows;
-  static const char* up_arrow;
-  static const char* down_arrow;
-  static const std::vector<std::string> _path_details_columns;
-  enum Column : int;
+  static constexpr char up_down_arrows_[] = "\u21C5";
+  static constexpr char up_arrow_[] = "\u2191";
+  static constexpr char down_arrow_[] = "\u2193";
+  enum Column {
+    Pin,
+    RiseFall,
+    Time,
+    Delay,
+    Slew,
+    Load
+  };
   static constexpr int clock_summary_row_ = 1;
 };
 
@@ -338,12 +350,12 @@ class TimingPathRenderer : public gui::Renderer
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
 
-  static gui::Painter::Color inst_highlight_color_;
-  static gui::Painter::Color path_inst_color_;
-  static gui::Painter::Color term_color_;
-  static gui::Painter::Color signal_color_;
-  static gui::Painter::Color clock_color_;
-  static gui::Painter::Color capture_clock_color_;
+  static const gui::Painter::Color inst_highlight_color_;
+  static const gui::Painter::Color path_inst_color_;
+  static const gui::Painter::Color term_color_;
+  static const gui::Painter::Color signal_color_;
+  static const gui::Painter::Color clock_color_;
+  static const gui::Painter::Color capture_clock_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
