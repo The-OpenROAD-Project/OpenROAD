@@ -109,20 +109,23 @@ gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004 
 ## Run
 
 ``` text
-openroad
+openroad [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file
   -help              show help and exit
   -version           show version and exit
-  -no_init           do not read ~/.openroad init file
+  -no_init           do not read .openroad init file
+  -threads count|max use count threads
   -no_splash         do not show the license splash at startup
-  -threads count     max number of threads to use
   -exit              exit after reading cmd_file
+  -gui               start in gui mode
+  -python            start with python interpreter [limited to db operations]
+  -log <file_name>   write a log in <file_name>
   cmd_file           source cmd_file
 ```
 
 OpenROAD sources the Tcl command file `~/.openroad` unless the command
 line option `-no_init` is specified.
 
-OpenROAD then sources the command file cmd_file if it is specified on
+OpenROAD then sources the command file `cmd_file` if it is specified on
 the command line. Unless the `-exit` command line flag is specified it
 enters and interactive Tcl command interpreter.
 

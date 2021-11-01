@@ -3274,6 +3274,9 @@ void FlexDRWorker::initMazeCost_connFig()
       addPathCost(connFig.get());
       cnt++;
     }
+    gcWorker_->updateDRNet(net.get());
+    gcWorker_->updateGCWorker();
+    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()), 1);
   }
   // cout <<"init " <<cnt <<" connfig costs" <<endl;
 }
@@ -3326,9 +3329,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     FlexMazeIdx bi, ei;
     via->getMazeIdx(bi, ei);
     if (isAddPathCost) {
-      addPathCost(via.get());
+      addPathCost(via.get(), true);
     } else {
-      subPathCost(via.get());
+      subPathCost(via.get(), true);
     }
   }
 }
@@ -3368,9 +3371,9 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
     if (isAddPathCost) {
-      addPathCost(connFig.get());
+      addPathCost(connFig.get(), true);
     } else {
-      subPathCost(connFig.get());
+      subPathCost(connFig.get(), true);
     }
   }
 }
@@ -3443,5 +3446,11 @@ void FlexDRWorker::init(const frDesign* design)
   initNets(design);
   initGridGraph(design);
   initMazeIdx();
+  FlexGCWorker* gcWorker = new FlexGCWorker(design->getTech(), logger_, this);
+  gcWorker->setExtBox(getExtBox());
+  gcWorker->setDrcBox(getDrcBox());
+  gcWorker->init(design);
+  gcWorker->setEnableSurgicalFix(true);
+  setGCWorker(gcWorker);
   initMazeCost(design);
 }

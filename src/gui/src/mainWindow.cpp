@@ -83,14 +83,13 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this)),
       timing_widget_(new TimingWidget(this)),
-      drc_viewer_(new DRCWidget(this))
+      drc_viewer_(new DRCWidget(this)),
+      find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
-
-  find_dialog_ = new FindObjectDialog(this);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -331,7 +330,7 @@ void MainWindow::init(sta::dbSta* sta)
 
 void MainWindow::createStatusBar()
 {
-  location_ = new QLabel();
+  location_ = new QLabel(this);
   statusBar()->addPermanentWidget(location_);
 }
 
