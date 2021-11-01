@@ -50,12 +50,12 @@ using std::vector;
 // as (leaf)nodes of root.
 void FillableHierarchy::putAllNodesInHierarchy() {
         for (unsigned n = 0; n < _leafHGraph.getNumNodes(); n++) {
-                const char* nodeName = _leafHGraph.getNodeNameByIndex(n).c_str();
-                if (_namesToId.find(nodeName) == _namesToId.end())
+                std::string nodeName = _leafHGraph.getNodeNameByIndex(n);
+                if (_namesToId.find(nodeName.c_str()) == _namesToId.end())
                     // not in hierarchy
                 {
-                        char* localNodeName = new char[strlen(nodeName) + 2];
-                        strcpy(localNodeName, nodeName);
+                        char* localNodeName = new char[nodeName.size() + 2];
+                        strcpy(localNodeName, nodeName.c_str());
 
                         _namesToId[localNodeName] = _names.size();
                         _parents.push_back(_root);
