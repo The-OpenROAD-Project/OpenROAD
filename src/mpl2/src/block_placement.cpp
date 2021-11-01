@@ -42,7 +42,7 @@
 #include <vector>
 #include <queue>
 #include <stdexcept>
-
+#include <cassert>
 
 #include "block_placement.h"
 #include "shape_engine.h"
@@ -439,15 +439,15 @@ void SimulatedAnnealingCore::SingleSwap(bool flag)
 
 void SimulatedAnnealingCore::DoubleSwap()
 {
-  int index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
-  int index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+  unsigned int index1 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
+  unsigned int index2 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
   while (index1 == index2) {
-    index2 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+    index2 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   swap(pos_seq_[index1], pos_seq_[index2]);
-  int neg_index1 = -1;
-  int neg_index2 = -1;
+  unsigned int neg_index1 = 0;
+  unsigned int neg_index2 = 0;
   for(int i = 0; i < blocks_.size(); i++) {
     if(pos_seq_[index1] == neg_seq_[i])
       neg_index1 = i;
@@ -461,9 +461,9 @@ void SimulatedAnnealingCore::DoubleSwap()
 
 void SimulatedAnnealingCore::Resize()
 {
-  int index1 = (int)(floor((distribution_)(generator_) * blocks_.size()));
+  unsigned int index1 = (unsigned)(floor((distribution_)(generator_) * blocks_.size()));
   while (blocks_[index1].IsResizeable() == false) {
-    index1 = (int) (floor((distribution_) (generator_) *blocks_.size()));
+    index1 = (unsigned) (floor((distribution_) (generator_) *blocks_.size()));
   }
 
   block_id_ = index1;
@@ -1037,57 +1037,57 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   const float threshold_H = min(50.0, outline_width_ / 10.0);
   const float threshold_V = min(50.0, outline_height_ / 10.0);
   int num_notch = 0;
-
-  for(int i = 0; i < num_x; i++) 
-    for(int j = 0; j < num_y; j++) {
+  
+  
+  for (int i = 0; i < num_x; i++) {
+    for (int j = 0; j < num_y; j++) {
       bool is_notch = false;
-      if(grid[i][j] == true)
+      if (grid[i][j] == true)
         continue;
-      else {
-        if(i == 0 && j==0) 
-          if(grid[i+1][j] == true || grid[i][j+1] == true)
-            is_notch = true;
-        else if(i == num_x - 1 && j == 0) 
-          if(grid[i-1][j] == true || grid[i][j+1] == true)
-            is_notch = true;
-        else if(i == 0 && j == num_y - 1) 
-          if(grid[i+1][j] == true || grid[i][j-1] == true)
-            is_notch = true;
-        else if(i == num_x - 1 && j == num_y - 1) 
-          if(grid[i-1][j] == true || grid[i][j-1] == true)
-            is_notch = true;
-        else if( j == 0 ) {
-          int result = 0 + grid[i-1][j] + grid[i+1][j]  + grid[i][j+1];
-          if(result >= 2)
-            is_notch = true;
-        } else if( j == num_y - 1 ) {
-          int result = 0 + grid[i-1][j] + grid[i+1][j] + grid[i][j-1];
-          if(result >= 2)
-            is_notch = true;
-        } else if( i == 0 ) {
-          int result = 0 + grid[i][j-1] + grid[i][j+1] + grid[i+1][j];
-          if(result >= 2)
-            is_notch = true;
-        } else if ( i == num_x - 1 ) {
-          int result = 0 + grid[i][j-1] + grid[i][j+1] + grid[i-1][j];
-          if(result >= 2)
-            is_notch = true;
-        } else {
-          int result = grid[i][j+1] + grid[i][j-1] + grid[i-1][j] + grid[i+1][j];
-          if(result >= 3 )
-            is_notch = true;
-        }
- 
-        if(is_notch == true) {
-          const float width = x_grid[i + 1] - x_grid[i];
-          const float height = y_grid[j+1] - y_grid[j];
-          if(width <= threshold_H || height <= threshold_V) {     
-            num_notch += 1;
-            notch_penalty_ += sqrt(width * height / (outline_width_ * outline_height_));
-          }
-        }
+      if (i == 0 && j==0) {
+        if (grid[i+1][j] == true || grid[i][j+1] == true)
+          is_notch = true;
+      } else if (i == num_x - 1 && j == 0) {
+        if (grid[i-1][j] == true || grid[i][j+1] == true)
+          is_notch = true;
+      } else if (i == 0 && j == num_y - 1) {
+        if(grid[i+1][j] == true || grid[i][j-1] == true)
+          is_notch = true;
+      } else if (i == num_x - 1 && j == num_y - 1) {
+        if (grid[i-1][j] == true || grid[i][j-1] == true)
+          is_notch = true;
+      } else if (j == 0) {
+        int result = 0 + grid[i-1][j] + grid[i+1][j]  + grid[i][j+1];
+        if (result >= 2)
+          is_notch = true;
+      } else if (j == num_y - 1) {
+        int result = 0 + grid[i-1][j] + grid[i+1][j] + grid[i][j-1];
+        if (result >= 2)
+          is_notch = true;
+      } else if (i == 0) {
+        int result = 0 + grid[i][j-1] + grid[i][j+1] + grid[i+1][j];
+        if (result >= 2)
+          is_notch = true;
+      } else if (i == num_x - 1) {
+        int result = 0 + grid[i][j-1] + grid[i][j+1] + grid[i-1][j];
+        if (result >= 2)
+          is_notch = true;
+      } else {
+        int result = grid[i][j+1] + grid[i][j-1] + grid[i-1][j] + grid[i+1][j];
+        if (result >= 3 )
+          is_notch = true;
       }
+ 
+      if (is_notch == true) {
+        const float width = x_grid[i + 1] - x_grid[i];
+        const float height = y_grid[j+1] - y_grid[j];
+        if (width <= threshold_H || height <= threshold_V) {     
+          num_notch += 1;
+          notch_penalty_ += sqrt(width * height / (outline_width_ * outline_height_));
+        }
+      } 
     }
+  }
 }
 
 //
@@ -1803,6 +1803,9 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     logger->info(
         MPL, 2008 + num_level, "Block placement no feasible floorplan.");
 
+  // free the memory of best_sa
+  delete best_sa;
+  
   return blocks;
 }
 

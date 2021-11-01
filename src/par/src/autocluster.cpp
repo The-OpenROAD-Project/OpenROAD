@@ -1260,27 +1260,24 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
 pair<float, float> AutoClusterMgr::printPinPos(Instance* macro_inst)
 {
   const float dbu = db_->getTech()->getDbUnitsPerMicron();
-  int lx = 100000000;
-  int ly = 100000000;
-  int ux = 0;
-  int uy = 0;
+  Rect bbox;
+  bbox.mergeInit();
   const Cell* cell = network_->cell(macro_inst);
   const char* cell_name = network_->name(cell);
   dbMaster* master = db_->findMaster(cell_name);
   for (dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == 0) {
+    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
-          lx = min(lx, box->xMin());
-          ly = min(ly, box->yMin());
-          ux = max(ux, box->xMax());
-          uy = max(uy, box->yMax());
+          Rect rect;
+          box->getBox(rect);
+          bbox.merge(rect);
         }
       }
     }
   }
-  const float x_center = (lx + ux) / (2 * dbu);
-  const float y_center = (ly + uy) / (2 * dbu);
+  const float x_center = (bbox.xMin() + bbox.xMax()) / (2 * dbu);
+  const float y_center = (bbox.yMin() + bbox.yMax()) / (2 * dbu);
   return std::pair<float, float>(x_center, y_center);
 }
 
@@ -1492,10 +1489,8 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
       // Union fanins sets of fanin vertices
       if(vertex_fanins_.find(fanin) != vertex_fanins_.end()) {
         std::unordered_map<Pin*, int> macro_fanin = vertex_fanins_[fanin];
-        std::unordered_map<Pin*, int>::iterator map_iter = macro_fanin.begin();
-        for(map_iter; map_iter != macro_fanin.end(); map_iter++) {
-          addFanin(vertex, map_iter->first, map_iter->second);
-        }
+        for (auto fanin_pin : macro_fanin)
+          addFanin(vertex, fanin_pin.first, fanin_pin.second);
       }
     }
     bfs.enqueueAdjacentVertices(vertex);
@@ -1604,27 +1599,21 @@ void AutoClusterMgr::addTimingWeight(float weight)
           continue;
        
         std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
-        std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-        for(map_it; map_it != pin_fanins.end(); map_it++) {
-          virtual_vertex_map_[sink_id][map_it->first] = 1;
-        }
+        for (auto pin_fanin : pin_fanins)
+          virtual_vertex_map_[sink_id][pin_fanin.first] = 1;
       }
     }
 
-    unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-    for(virtual_vertex_iter; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
-    {
+    for (auto virtual_vertex : virtual_vertex_map_) {
       int src_id = 0;
-      for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
-        std::string src_pin_name = network->pathName(iter->first);
-        if(bterm_map_.find(src_pin_name) != bterm_map_.end()) {
+      for (auto pin_fanin : virtual_vertex.second) {
+        std::string src_pin_name = network->pathName(pin_fanin.first);
+        if (bterm_map_.find(src_pin_name) != bterm_map_.end()) 
           src_id = bundled_io_map_[bterm_map_[src_pin_name]];
-        } else {
-          src_id = inst_map_[pin_inst_map_[iter->first]];  
-        }
-        if(src_id != virtual_vertex_iter->first) {
-          addWeight(src_id, virtual_vertex_iter->first, 1);
-        }
+        else 
+          src_id = inst_map_[pin_inst_map_[pin_fanin.first]];
+        if (src_id != virtual_vertex.first) 
+          addWeight(src_id, virtual_vertex.first, 1);
       }
     }
   } 
@@ -1639,56 +1628,44 @@ void AutoClusterMgr::addTimingWeight(float weight)
       sta::Vertex* vertex = graph->pinDrvrVertex(pin);
       if(vertex_fanins_.find(vertex) == vertex_fanins_.end())
         continue;
-    
       std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
-      std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-      for(map_it; map_it != pin_fanins.end(); map_it++) {
-        virtual_vertex_map_[sink_id][map_it->first] = 1;
-      }
+      for (auto pin_fanin : pin_fanins)
+        virtual_vertex_map_[sink_id][pin_fanin.first] = 1;
     }
   }
 
-
-  unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-  for(virtual_vertex_iter; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
-  {
+  for (auto virtual_vertex : virtual_vertex_map_) {
     int src_id = 0;
-    for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
-      std::string src_pin_name = network->pathName(iter->first);
-      if(bterm_map_.find(src_pin_name) != bterm_map_.end()) {
+    for (auto pin_fanin : virtual_vertex.second) {
+      std::string src_pin_name = network->pathName(pin_fanin.first);
+      if (bterm_map_.find(src_pin_name) != bterm_map_.end()) 
         src_id = bundled_io_map_[bterm_map_[src_pin_name]];
-      } else {
-        src_id = inst_map_[pin_inst_map_[iter->first]];  
-      }
-      if(src_id != virtual_vertex_iter->first) {
-        addWeight(src_id, virtual_vertex_iter->first, 1);
-      }
+      else 
+        src_id = inst_map_[pin_inst_map_[pin_fanin.first]];    
+      if (src_id != virtual_vertex.first) 
+        addWeight(src_id, virtual_vertex.first, 1);
     }
   }
+  
 
-  unordered_map<int, unordered_map<int, int> >::iterator map_iter = virtual_timing_map_.begin();
-  for(map_iter; map_iter != virtual_timing_map_.end(); map_iter++) {
-    int src_id = map_iter->first;
-    unordered_map<int, int> sinks = map_iter->second;
-    unordered_map<int, int>::iterator map_it = sinks.begin();
-    for(map_it; map_it != sinks.end(); map_it++) {
+  for (auto virtual_timing : virtual_timing_map_) {
+    int src_id = virtual_timing.first;
+    unordered_map<int, int> sinks = virtual_timing.second;
+    for (auto sink : sinks) {
       float level_weight = weight;
       bool src_io = src_id <= bundled_io_map_.size();
-      bool sink_io = map_it->first <= bundled_io_map_.size();
+      bool sink_io = sink.first <= bundled_io_map_.size();
       bool src_macro = cluster_map_[src_id]->getNumMacro() > 0;
-      bool sink_macro = cluster_map_[map_it->first]->getNumMacro() > 0;
- 
-      if((src_io && sink_io) || (src_io && sink_macro) || (src_macro && sink_io)) 
+      bool sink_macro = cluster_map_[sink.first]->getNumMacro() > 0;
+      if ((src_io && sink_io) || (src_io && sink_macro) || (src_macro && sink_io)) 
         level_weight = weight * 100.0;
-      else if(src_macro && sink_macro) 
+      else if (src_macro && sink_macro) 
         level_weight =  weight * 1;
       else 
         level_weight = 0.0;
-
-      
-      level_weight = map_it->second * level_weight;
-      cluster_map_[src_id]->addOutputConnection(map_it->first, level_weight);
-      cluster_map_[map_it->first]->addInputConnection(src_id, level_weight); 
+      level_weight = sink.second * level_weight;
+      cluster_map_[src_id]->addOutputConnection(sink.first, level_weight);
+      cluster_map_[sink.first]->addInputConnection(src_id, level_weight); 
     }
   }
 }

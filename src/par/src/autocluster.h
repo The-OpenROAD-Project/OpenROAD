@@ -213,7 +213,7 @@ class AutoClusterMgr
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;
-  utl::Logger* logger_;
+  utl::Logger* logger_ = nullptr;
   unsigned int max_num_macro_ = 0;
   unsigned int min_num_macro_ = 0;
   unsigned int max_num_inst_ = 0;
@@ -253,8 +253,8 @@ class AutoClusterMgr
   std::vector<sta::Net*> buffer_net_list_;
 
   // timing-driven related function
-  unsigned int num_hops_;
-  unsigned int timing_weight_;
+  unsigned int num_hops_ = 5;
+  unsigned int timing_weight_ = 1;
   
   std::vector<sta::Instance*> macros_;
   std::vector<sta::Instance*> seeds_;

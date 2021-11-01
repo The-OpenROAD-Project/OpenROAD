@@ -185,35 +185,35 @@ class SimulatedAnnealingCore
   float shrink_factor_ = 0.995;
   float shrink_freq_ = 0.01;
 
-  float height_;
-  float width_;
-  float area_;
-  float wirelength_;
-  float outline_penalty_;
-  float boundary_penalty_;
-  float macro_blockage_penalty_;
-  float location_penalty_;
-  float notch_penalty_;
+  float height_ = 0.0;
+  float width_ = 0.0;
+  float area_ = 0.0;
+  float wirelength_ = 0.0;
+  float outline_penalty_ = 0.0;
+  float boundary_penalty_ = 0.0;
+  float macro_blockage_penalty_ = 0.0;
+  float location_penalty_ = 0.0;
+  float notch_penalty_ = 0.0;
 
 
-  float pre_height_;
-  float pre_width_;
-  float pre_area_;
-  float pre_wirelength_;
-  float pre_outline_penalty_;
-  float pre_boundary_penalty_;
-  float pre_macro_blockage_penalty_;
-  float pre_location_penalty_;
-  float pre_notch_penalty_;
+  float pre_height_ = 0.0;
+  float pre_width_ = 0.0;
+  float pre_area_ = 0.0;
+  float pre_wirelength_ = 0.0;
+  float pre_outline_penalty_ = 0.0;
+  float pre_boundary_penalty_ = 0.0;
+  float pre_macro_blockage_penalty_ = 0.0;
+  float pre_location_penalty_ = 0.0;
+  float pre_notch_penalty_ = 0.0;
 
 
-  float norm_area_;
-  float norm_wirelength_;
-  float norm_outline_penalty_;
-  float norm_boundary_penalty_;
-  float norm_macro_blockage_penalty_;
-  float norm_location_penalty_;
-  float norm_notch_penalty_;
+  float norm_area_ = 0.0;
+  float norm_wirelength_ = 0.0;
+  float norm_outline_penalty_ = 0.0;
+  float norm_boundary_penalty_ = 0.0;
+  float norm_macro_blockage_penalty_ = 0.0;
+  float norm_location_penalty_ = 0.0;
+  float norm_notch_penalty_ = 0.0;
 
   // These parameters are related to cost function
   float alpha_;                  // weight for area
