@@ -1631,7 +1631,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         initMazeCost_via_helper(net, false);
       }
       net->clear();
-
+      if (getDRIter() >= debugIter)
+      cout << "Routing net " << net << "\n";
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
@@ -1806,7 +1807,11 @@ void FlexDRWorker::routeNet_prep(
     list<pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
   frBox3D* tbx = nullptr;
+  if (getDRIter() >= debugIter)
+    cout << "Creating dest search points from pins:\n"; 
   for (auto& pin : net->getPins()) {
+    if (getDRIter() >= debugIter)
+      cout << "Pin " << pin->getName() << "\n";
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
       if (AUTO_TAPER_NDR_NETS
@@ -1839,6 +1844,10 @@ void FlexDRWorker::routeNet_prep(
     for (auto& ap : pin->getAccessPatterns()) {
       FlexMazeIdx mi;
       ap->getMazeIdx(mi);
+      if (getDRIter() >= debugIter) {
+        cout << "(" << mi.x() << " " << mi.y() << " " << mi.z() << " coords: " << 
+              ap->getPoint() << " " << ap->getBeginLayerNum() << "\n";
+      }
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
         realPinAPMazeIdx.insert(mi);
@@ -1905,11 +1914,16 @@ void FlexDRWorker::routeNet_setSrc(
   }
 
   unConnPins.erase(currPin);
-
+  if (getDRIter() >= debugIter)
+    cout << "Setting sources for path search\n";
   // first pin selection algorithm ends here
   for (auto& ap : currPin->getAccessPatterns()) {
     ap->getMazeIdx(mi);
     connComps.push_back(mi);
+    if (getDRIter() >= debugIter) {
+        cout << "(" << mi.x() << " " << mi.y() << " " << mi.z() << " coords: " << 
+              ap->getPoint() << " " << ap->getBeginLayerNum() << "\n";
+      }
     ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
                    min(ccMazeIdx1.y(), mi.y()),
                    min(ccMazeIdx1.z(), mi.z()));
