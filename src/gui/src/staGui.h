@@ -156,8 +156,8 @@ class TimingPathNode
   bool isPinBTerm() const { return pin_->getObjectType() == odb::dbObjectType::dbBTermObj; }
 
   odb::dbObject* getPin() const { return pin_; }
-  odb::dbITerm* getPinAsITerm() const { return static_cast<odb::dbITerm*>(pin_); }
-  odb::dbBTerm* getPinAsBTerm() const { return static_cast<odb::dbBTerm*>(pin_); }
+  odb::dbITerm* getPinAsITerm() const;
+  odb::dbBTerm* getPinAsBTerm() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }

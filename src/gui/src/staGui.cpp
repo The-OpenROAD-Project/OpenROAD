@@ -487,6 +487,24 @@ odb::dbInst* TimingPathNode::getInstance() const
   return nullptr;
 }
 
+odb::dbITerm* TimingPathNode::getPinAsITerm() const
+{
+  if (isPinITerm()) {
+    return static_cast<odb::dbITerm*>(pin_);
+  }
+
+  return nullptr;
+}
+
+odb::dbBTerm* TimingPathNode::getPinAsBTerm() const
+{
+  if (isPinBTerm()) {
+    return static_cast<odb::dbBTerm*>(pin_);
+  }
+
+  return nullptr;
+}
+
 /////////
 
 TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta, QObject* parent)
