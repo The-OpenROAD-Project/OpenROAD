@@ -62,6 +62,7 @@
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
 #include "search.h"
+#include "scriptWidget.h"
 #include "utl/Logger.h"
 
 #include "ruler.h"
@@ -391,6 +392,7 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(
     Options* options,
+    ScriptWidget* output_widget,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
@@ -399,6 +401,7 @@ LayoutViewer::LayoutViewer(
     : QWidget(parent),
       db_(nullptr),
       options_(options),
+      output_widget_(output_widget),
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
@@ -2242,6 +2245,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     return;
   }
 
+  // buffer outputs during paint to prevent recursive calls
+  output_widget_->bufferOutputs(true);
+
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
@@ -2304,6 +2310,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
+
+  // painting is done, okay to update outputs agai
+  output_widget_->bufferOutputs(false);
 }
 
 void LayoutViewer::fullRepaint()
