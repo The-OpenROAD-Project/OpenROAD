@@ -880,7 +880,8 @@ Resizer::repairNet(Net *net,
         // driver but so this is conservative.
         // Find max load cap that corresponds to max_slew.
         LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-        if (max_slew1 > 0.0 // medhi proofing
+        if (corner1
+            && max_slew1 > 0.0 // medhi proofing
             && drvr_port) {
           float max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
           max_cap = min(max_cap, max_cap1);
@@ -995,6 +996,9 @@ Resizer::checkSlew(const Pin *drvr_pin,
                    const Corner *&corner)
 {
   slack = INF;
+  limit = INF;
+  corner = nullptr;
+
   const Corner *corner1;
   const RiseFall *tr1;
   Slew slew1;
