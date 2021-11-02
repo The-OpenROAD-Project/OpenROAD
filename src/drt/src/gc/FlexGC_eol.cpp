@@ -439,8 +439,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       if (con->getWithinConstraint()->hasEndToEndConstraint()) {
         auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
         eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
-        if (endToEndCon->hasExtension())
-          eolWithin = std::max(eolWithin, endToEndCon->getExtension());
       }
     } break;
     default:
@@ -559,16 +557,6 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   gtl::set_points(rect1, edge1->low(), edge1->high());
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
-  if (endToEndCon->hasExtension()) {
-    frCoord ext = endToEndCon->getExtension();
-    if (edge1->getDir() == frDirEnum::W || edge1->getDir() == frDirEnum::E) {
-      gtl::bloat(rect1, gtl::orientation_2d_enum::HORIZONTAL, ext);
-      gtl::bloat(rect2, gtl::orientation_2d_enum::HORIZONTAL, ext);
-    } else {
-      gtl::bloat(rect1, gtl::orientation_2d_enum::VERTICAL, ext);
-      gtl::bloat(rect2, gtl::orientation_2d_enum::VERTICAL, ext);
-    }
-  }
   frCoord dist = gtl::euclidean_distance(rect1, rect2);
   if (checkMetalEndOfLine_eol_isEolEdge(edge2, constraint)) {
     if (dist < endSpace)
