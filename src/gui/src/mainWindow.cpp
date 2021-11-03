@@ -71,8 +71,10 @@ MainWindow::MainWindow(QWidget* parent)
       logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
+      script_(new ScriptWidget(this)),
       viewer_(new LayoutViewer(
           controls_,
+          script_,
           selected_,
           highlighted_,
           rulers_,
@@ -81,7 +83,6 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
       find_dialog_(new FindObjectDialog(this))

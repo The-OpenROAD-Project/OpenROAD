@@ -60,6 +60,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0),
       paused_(false),
       logger_(nullptr),
+      buffer_outputs_(false),
       sink_(nullptr)
 {
   setObjectName("scripting");  // for settings
@@ -364,7 +365,14 @@ void ScriptWidget::outputChanged()
   // ensure the new output is visible
   output_->ensureCursorVisible();
   // Make changes visible
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  if (!buffer_outputs_) {
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  }
+}
+
+void ScriptWidget::bufferOutputs(bool state)
+{
+  buffer_outputs_ = state;
 }
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)

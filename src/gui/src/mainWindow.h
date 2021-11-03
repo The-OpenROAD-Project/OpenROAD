@@ -231,10 +231,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   Inspector* inspector_;
+  ScriptWidget* script_;
   LayoutViewer* viewer_;  // owned by scroll_
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
-  ScriptWidget* script_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
 
