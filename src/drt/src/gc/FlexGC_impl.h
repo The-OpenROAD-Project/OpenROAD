@@ -58,7 +58,7 @@ class FlexGCWorkerRegionQuery
       const frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryPolygonEdge(
-      const frBox& box,
+      const Rect& box,
       const frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryMaxRectangle(const box_t& box,
@@ -67,7 +67,7 @@ class FlexGCWorkerRegionQuery
   void querySpcRectangle(const box_t& box,
                          const frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect>>& result) const;
-  void queryMaxRectangle(const frBox& box,
+  void queryMaxRectangle(const Rect& box,
                          const frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
   void queryMaxRectangle(const gtl::rectangle_data<frCoord>& box,
@@ -119,7 +119,7 @@ class FlexGCWorker::Impl
   // getters
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
-  const frBox& getExtBox() const { return extBox_; }
+  const Rect& getExtBox() const { return extBox_; }
   std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
   // others
   void init(const frDesign* design);
@@ -134,14 +134,14 @@ class FlexGCWorker::Impl
   Logger* logger_;
   FlexDRWorker* drWorker_;
 
-  frBox extBox_;
-  frBox drcBox_;
+  Rect extBox_;
+  Rect drcBox_;
 
   std::map<frBlockObject*, gcNet*> owner2nets_;  // no order is assumed
   std::vector<std::unique_ptr<gcNet>> nets_;
 
   std::vector<std::unique_ptr<frMarker>> markers_;
-  std::map<std::tuple<frBox,
+  std::map<std::tuple<Rect,
                       frLayerNum,
                       frConstraint*,
                       frBlockObject*,
@@ -171,7 +171,7 @@ class FlexGCWorker::Impl
 
   // init
   gcNet* getNet(frBlockObject* obj);
-  void initObj(const frBox& box,
+  void initObj(const Rect& box,
                frLayerNum layerNum,
                frBlockObject* obj,
                bool isFixed);
@@ -292,7 +292,7 @@ class FlexGCWorker::Impl
   void checkMetalShape_offGrid(gcPin* pin);
   void checkMetalShape_minEnclosedArea(gcPin* pin);
   void checkMetalShape_minStep(gcPin* pin);
-  void checkMetalShape_minStep_helper(const frBox& markerBox,
+  void checkMetalShape_minStep_helper(const Rect& markerBox,
                                       frLayerNum layerNum,
                                       gcNet* net,
                                       frMinStepConstraint* con,
@@ -480,7 +480,7 @@ class FlexGCWorker::Impl
   void patchMetalShape_helper();
 
   // utility
-  bool isCornerOverlap(gcCorner* corner, const frBox& box);
+  bool isCornerOverlap(gcCorner* corner, const Rect& box);
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);

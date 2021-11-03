@@ -103,17 +103,15 @@ void FlexGCWorkerRegionQuery::Impl::addMaxRectangle(
     gcRect* rect,
     vector<vector<rq_box_value_t<gcRect*>>>& allShapes)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
-  allShapes[rect->getLayerNum()].push_back(make_pair(boostb, rect));
+  Rect boostr(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  allShapes[rect->getLayerNum()].push_back(make_pair(boostr, rect));
 }
 
 void FlexGCWorkerRegionQuery::Impl::addSpcRectangle(
     gcRect* rect,
     vector<vector<rq_box_value_t<gcRect>>>& allShapes)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
+  Rect boostr(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
   allShapes[rect->getLayerNum()].push_back(make_pair(boostb, *rect));
 }
 
@@ -148,12 +146,12 @@ void FlexGCWorkerRegionQuery::queryPolygonEdge(
 }
 
 void FlexGCWorkerRegionQuery::queryPolygonEdge(
-    const frBox& box,
+    const Rect& box,
     const frLayerNum layerNum,
     vector<pair<segment_t, gcSegment*>>& result) const
 {
-  box_t boostb(point_t(box.left(), box.bottom()),
-               point_t(box.right(), box.top()));
+  box_t boostb(point_t(box.xMin(), box.yMin()),
+               point_t(box.xMax(), box.yMax()));
   queryPolygonEdge(boostb, layerNum, result);
 }
 
@@ -176,12 +174,12 @@ void FlexGCWorkerRegionQuery::querySpcRectangle(
 }
 
 void FlexGCWorkerRegionQuery::queryMaxRectangle(
-    const frBox& box,
+    const Rect& box,
     const frLayerNum layerNum,
     std::vector<rq_box_value_t<gcRect*>>& result) const
 {
-  box_t boostb(point_t(box.left(), box.bottom()),
-               point_t(box.right(), box.top()));
+  box_t boostb(point_t(box.xMin(), box.yMin()),
+               point_t(box.xMax(), box.yMax()));
   queryMaxRectangle(boostb, layerNum, result);
 }
 

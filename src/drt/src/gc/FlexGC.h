@@ -50,8 +50,8 @@ class FlexGCWorker
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
-  void setExtBox(const frBox& in);
-  void setDrcBox(const frBox& in);
+  void setExtBox(const Rect& in);
+  void setDrcBox(const Rect& in);
   bool setTargetNet(frBlockObject* in);
   void resetTargetNet();
   void setTargetObj(frBlockObject* in);

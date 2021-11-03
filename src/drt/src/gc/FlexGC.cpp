@@ -71,7 +71,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
 
 void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
-  frBox bbox;
+  Rect bbox;
   in->getBBox(bbox);
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
@@ -129,12 +129,12 @@ void FlexGCWorker::initPA1()
   impl_->initPA1();
 }
 
-void FlexGCWorker::setExtBox(const frBox& in)
+void FlexGCWorker::setExtBox(const Rect& in)
 {
   impl_->extBox_.set(in);
 }
 
-void FlexGCWorker::setDrcBox(const frBox& in)
+void FlexGCWorker::setDrcBox(const Rect& in)
 {
   impl_->drcBox_.set(in);
 }

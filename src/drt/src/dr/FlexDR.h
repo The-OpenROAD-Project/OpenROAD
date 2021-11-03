@@ -152,7 +152,7 @@ class FlexDR
 
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-  initDR_mergeBoundaryPin(int i, int j, int size, const frBox& routeBox);
+  initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
   void searchRepair(int iter,
                     int size,
                     int offset,
@@ -175,10 +175,10 @@ class FlexDRWorkerRegionQuery
   ~FlexDRWorkerRegionQuery();
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
-  void query(const frBox& box,
+  void query(const Rect& box,
              const frLayerNum layerNum,
              std::vector<drConnFig*>& result) const;
-  void query(const frBox& box,
+  void query(const Rect& box,
              const frLayerNum layerNum,
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
@@ -263,10 +263,10 @@ class FlexDRWorker
   {
   }
   // setters
-  void setRouteBox(const frBox& boxIn) { routeBox_.set(boxIn); }
-  void setExtBox(const frBox& boxIn) { extBox_.set(boxIn); }
-  void setDrcBox(const frBox& boxIn) { drcBox_.set(boxIn); }
-  void setGCellBox(const frBox& boxIn) { gcellBox_.set(boxIn); }
+  void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
+  void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
+  void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
+  void setGCellBox(const Rect& boxIn) { gcellBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
   void setDRIter(int in,
                  std::map<frNet*,
@@ -287,7 +287,7 @@ class FlexDRWorker
   void setMarkers(std::vector<frMarker>& in)
   {
     markers_.clear();
-    frBox box;
+    Rect box;
     for (auto& marker : in) {
       marker.getBBox(box);
       if (getDrcBox().overlaps(box)) {
@@ -298,7 +298,7 @@ class FlexDRWorker
   void setMarkers(const std::vector<std::unique_ptr<frMarker>>& in)
   {
     markers_.clear();
-    frBox box;
+    Rect box;
     for (auto& uMarker : in) {
       auto& marker = *uMarker;
       marker.getBBox(box);
@@ -310,7 +310,7 @@ class FlexDRWorker
   void setMarkers(std::vector<frMarker*>& in)
   {
     markers_.clear();
-    frBox box;
+    Rect box;
     for (auto& marker : in) {
       marker->getBBox(box);
       if (getDrcBox().overlaps(box)) {
@@ -331,15 +331,15 @@ class FlexDRWorker
 
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
-  void getRouteBox(frBox& boxIn) const { boxIn.set(routeBox_); }
-  const frBox& getRouteBox() const { return routeBox_; }
-  frBox& getRouteBox() { return routeBox_; }
-  void getExtBox(frBox& boxIn) const { boxIn.set(extBox_); }
-  const frBox& getExtBox() const { return extBox_; }
-  frBox& getExtBox() { return extBox_; }
-  const frBox& getDrcBox() const { return drcBox_; }
-  frBox& getDrcBox() { return drcBox_; }
-  const frBox& getGCellBox() const { return gcellBox_; }
+  void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
+  const Rect& getRouteBox() const { return routeBox_; }
+  Rect& getRouteBox() { return routeBox_; }
+  void getExtBox(Rect& boxIn) const { boxIn = extBox_; }
+  const Rect& getExtBox() const { return extBox_; }
+  Rect& getExtBox() { return extBox_; }
+  const Rect& getDrcBox() const { return drcBox_; }
+  Rect& getDrcBox() { return drcBox_; }
+  const Rect& getGCellBox() const { return gcellBox_; }
   bool isInitDR() const { return (drIter_ == 0); }
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
@@ -390,10 +390,10 @@ class FlexDRWorker
   FlexDRGraphics* graphics_;  // owned by FlexDR
   frDebugSettings* debugSettings_;
   const FlexDRViaData* via_data_;
-  frBox routeBox_;
-  frBox extBox_;
-  frBox drcBox_;
-  frBox gcellBox_;
+  Rect routeBox_;
+  Rect extBox_;
+  Rect drcBox_;
+  Rect gcellBox_;
   int drIter_;
   int mazeEndIter_;
   bool followGuide_ : 1;
@@ -638,13 +638,13 @@ class FlexDRWorker
   void modPathCost(drConnFig* connFig, int type);
   // minSpc
 
-  void modMinSpacingCostPlanar(const frBox& box,
+  void modMinSpacingCostPlanar(const Rect& box,
                                frMIdx z,
                                int type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr);
-  void modCornerToCornerSpacing(const frBox& box, frMIdx z, int type);
-  void modMinSpacingCostVia(const frBox& box,
+  void modCornerToCornerSpacing(const Rect& box, frMIdx z, int type);
+  void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
                             int type,
                             bool isUpperVia,
@@ -652,56 +652,56 @@ class FlexDRWorker
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
 
-  void modCornerToCornerSpacing_helper(const frBox& box, frMIdx z, int type);
+  void modCornerToCornerSpacing_helper(const Rect& box, frMIdx z, int type);
 
-  void modMinSpacingCostVia_eol(const frBox& box,
-                                const frBox& tmpBx,
+  void modMinSpacingCostVia_eol(const Rect& box,
+                                const Rect& tmpBx,
                                 int type,
                                 bool isUpperVia,
                                 const drEolSpacingConstraint& drCon,
                                 frMIdx i,
                                 frMIdx j,
                                 frMIdx z);
-  void modMinSpacingCostVia_eol_helper(const frBox& box,
-                                       const frBox& testBox,
+  void modMinSpacingCostVia_eol_helper(const Rect& box,
+                                       const Rect& testBox,
                                        int type,
                                        bool isUpperVia,
                                        frMIdx i,
                                        frMIdx j,
                                        frMIdx z);
   // eolSpc
-  void modEolSpacingCost_helper(const frBox& testbox,
+  void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
                                 int type,
                                 int eolType);
-  void modEolSpacingRulesCost(const frBox& box,
+  void modEolSpacingRulesCost(const Rect& box,
                               frMIdx z,
                               int type,
                               bool isSkipVia = false,
                               frNonDefaultRule* ndr = nullptr);
   // cutSpc
-  void modCutSpacingCost(const frBox& box,
+  void modCutSpacingCost(const Rect& box,
                          frMIdx z,
                          int type,
                          bool isBlockage = false);
-  void modInterLayerCutSpacingCost(const frBox& box,
+  void modInterLayerCutSpacingCost(const Rect& box,
                                    frMIdx z,
                                    int type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
   // adjCut
   void modAdjCutSpacingCost_fixedObj(const frDesign* design,
-                                     const frBox& box,
+                                     const Rect& box,
                                      frVia* origVia);
-  void modMinimumcutCostVia(const frBox& box,
+  void modMinimumcutCostVia(const Rect& box,
                             frMIdx z,
                             int type,
                             bool isUpperVia);
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
                               int type);
-  void modBlockedPlanar(const frBox& box, frMIdx z, bool setBlock);
-  void modBlockedVia(const frBox& box, frMIdx z, bool setBlock);
+  void modBlockedPlanar(const Rect& box, frMIdx z, bool setBlock);
+  void modBlockedVia(const Rect& box, frMIdx z, bool setBlock);
 
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);

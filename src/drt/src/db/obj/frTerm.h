@@ -100,7 +100,7 @@ class frTerm : public frBlockObject
     for (auto& uFig : in->getFigs()) {
       auto pinFig = uFig.get();
       if (pinFig->typeId() == frcRect) {
-        if (bbox_.width() == 0 && bbox_.length() == 0)
+        if (bbox_.dx() == 0 && bbox_.dy() == 0)
           bbox_ = static_cast<frRect*>(pinFig)->getBBox();
         else
           bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
@@ -152,7 +152,7 @@ class frTerm : public frBlockObject
       }
     }
   }
-  const frBox getBBox() const { return bbox_; }
+  const Rect getBBox() const { return bbox_; }
 
  protected:
   frString name_;  // A, B, Z, VSS, VDD
@@ -162,7 +162,7 @@ class frTerm : public frBlockObject
   dbSigType type_;
   dbIoType direction_;
   int _order_id;
-  frBox bbox_;
+  Rect bbox_;
 };
 }  // namespace fr
 

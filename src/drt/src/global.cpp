@@ -122,10 +122,10 @@ ostream& operator<<(ostream& os, const frRect& pinFigIn)
   //    pinFigIn.getPin()->getTerm()->getName()
   //       << " " << pinFigIn.getLayerNum() << endl;
   //  }
-  frBox tmpBox;
+  Rect tmpBox;
   pinFigIn.getBBox(tmpBox);
-  os << "  RECT " << tmpBox.left() << " " << tmpBox.bottom() << " "
-     << tmpBox.right() << " " << tmpBox.top();
+  os << "  RECT " << tmpBox.xMin() << " " << tmpBox.yMin() << " "
+     << tmpBox.xMax() << " " << tmpBox.yMax();
   return os;
 }
 
@@ -230,11 +230,11 @@ ostream& operator<<(ostream& os, const frViaDef& viaDefIn)
 
 ostream& operator<<(ostream& os, const frBlock& blockIn)
 {
-  frBox box;
+  Rect box;
   blockIn.getBBox(box);
   os << "MACRO " << blockIn.getName() << endl
-     << "  ORIGIN " << box.left() << " " << box.bottom() << endl
-     << "  SIZE " << box.right() << " " << box.top();
+     << "  ORIGIN " << box.xMin() << " " << box.yMin() << endl
+     << "  SIZE " << box.xMax() << " " << box.yMax();
   for (auto& m : blockIn.getTerms()) {
     os << endl << *m;
   }
@@ -258,10 +258,10 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frBox& box)
+ostream& operator<<(ostream& os, const Rect& box)
 {
-  os << "( " << box.left() << " " << box.bottom() << " ) ( " << box.right()
-     << " " << box.top() << " )";
+  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
+     << " " << box.yMax() << " )";
   return os;
 }
 
@@ -284,7 +284,7 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
     }
     case drcPatchWire: {
       auto p = static_cast<const drPatchWire*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "drPatchWire: " << b;
       break;
@@ -330,7 +330,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcPatchWire: {
       auto p = static_cast<const frPatchWire*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "frPatchWire: " << b;
       break;
@@ -342,7 +342,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcRect: {
       auto p = static_cast<const frRect*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "frRect: " << b;
       break;

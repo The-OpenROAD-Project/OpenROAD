@@ -28,37 +28,13 @@
 
 #include "db/infra/frBox.h"
 
-using namespace std;
-using namespace fr;
+//using namespace std;
+//using namespace fr;
 
-void frBox::transform(const dbTransform& xform)
+/*void frBox::bloat(const frCoord distance, Rect& boxOut) const
 {
-  xform.apply(ll_);
-  xform.apply(ur_);
-  set(ll_, ur_);
-}
-
-bool frBox::overlaps(const frBox& boxIn, bool incEdges) const
-{
-  if (incEdges) {
-    return !(right() < boxIn.left() ||  // left
-             top() < boxIn.bottom() ||  // bottom
-             left() > boxIn.right() ||  // right
-             bottom() > boxIn.top()     // top
-    );
-  } else {
-    return !(right() <= boxIn.left() ||  // left
-             top() <= boxIn.bottom() ||  // bottom
-             left() >= boxIn.right() ||  // right
-             bottom() >= boxIn.top()     // top
-    );
-  }
-}
-
-void frBox::bloat(const frCoord distance, frBox& boxOut) const
-{
-  boxOut.set(left() - distance,
-             bottom() - distance,
-             right() + distance,
-             top() + distance);
-}
+  boxOut.init(xMin() - distance,
+              yMin() - distance,
+              xMax() + distance,
+              yMax() + distance);
+}*/
