@@ -174,7 +174,7 @@ protected:
   dbBlock *block_;
   Logger *logger_;
   std::map<Cell*, dbMaster*> master_map_;
-  std::map<std::string, int> uniquify_id;
+  std::map<std::string, int> uniquify_id_; // key: module name
 };
 
 void
@@ -275,7 +275,7 @@ Verilog2db::makeUniqueDbModule(const char* name)
   dbModule* module;
   do {
     std::string full_name(name);
-    int& id = uniquify_id[name];
+    int& id = uniquify_id_[name];
     if (id > 0) {
       full_name += '-' + std::to_string(id);
     }
