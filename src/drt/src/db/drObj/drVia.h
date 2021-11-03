@@ -102,8 +102,8 @@ class drVia : public drRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getCutBBox(frBox& boxIn) const
@@ -131,8 +131,8 @@ class drVia : public drRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   void getLayer2BBox(frBox& boxIn) const
@@ -160,8 +160,8 @@ class drVia : public drRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     boxIn.transform(xform);
   }
   // setters
@@ -182,11 +182,11 @@ class drVia : public drRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  void getTransform(frTransform& xformIn) const override
+  void getTransform(dbTransform& xformIn) const override
   {
-    xformIn.set(origin_);
+    xformIn.setOffset(origin_);
   }
-  void setTransform(const frTransform& xformIn) override {}
+  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -285,8 +285,8 @@ class drVia : public drRef
       }
     }
     boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
+    dbTransform xform;
+    xform.setOffset(origin_);
     // cout <<"origin " <<origin.x() <<" " <<origin.y() <<endl;
     boxIn.transform(xform);
   }

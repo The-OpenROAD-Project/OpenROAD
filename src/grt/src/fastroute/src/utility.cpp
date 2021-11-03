@@ -735,7 +735,6 @@ void FastRouteCore::newLayerAssignmentV4()
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
     treeedges = sttrees_[netID].edges;
-    treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       treeedge = &(treeedges[edgeID]);
@@ -871,7 +870,6 @@ void FastRouteCore::newLA()
   TreeNode* treenodes;
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
-    treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 

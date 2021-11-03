@@ -98,6 +98,13 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     return currNet;
   }
 }
+gcNet* FlexGCWorker::Impl::getNet(frNet* net)
+{
+  auto it = owner2nets_.find(net);
+  if (it == owner2nets_.end())
+    return nullptr;
+  return it->second;
+}
 
 void FlexGCWorker::Impl::initObj(const frBox& box,
                                  frLayerNum layerNum,
@@ -202,7 +209,7 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
   }
 
   frBox box;
-  frTransform xform;
+  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
     auto pathSeg = static_cast<frPathSeg*>(obj);
@@ -268,7 +275,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     currNet = getNet(obj);
   }
   frBox box;
-  frTransform xform;
+  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);

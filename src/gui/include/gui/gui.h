@@ -327,10 +327,7 @@ class Selected
     return std::any();
   }
 
-  Descriptor::Actions getActions() const
-  {
-    return descriptor_->getActions(object_);
-  }
+  Descriptor::Actions getActions() const;
 
   Descriptor::Editors getEditors() const
   {

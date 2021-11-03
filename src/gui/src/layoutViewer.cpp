@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDateTime>
 #include <QFileDialog>
 #include <QFont>
 #include <QGridLayout>
@@ -61,6 +62,7 @@
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
 #include "search.h"
+#include "scriptWidget.h"
 #include "utl/Logger.h"
 
 #include "ruler.h"
@@ -161,9 +163,6 @@ class GuiPainter : public Painter
       case NONE:
         brush_pattern = Qt::NoBrush;
         break;
-      case SOLID:
-        brush_pattern = Qt::SolidPattern;
-        break;
       case DIAGONAL:
         brush_pattern = Qt::DiagCrossPattern;
         break;
@@ -172,6 +171,10 @@ class GuiPainter : public Painter
         break;
       case DOTS:
         brush_pattern = Qt::Dense6Pattern;
+        break;
+      case SOLID:
+      default:
+        brush_pattern = Qt::SolidPattern;
         break;
       }
     }
@@ -389,6 +392,7 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(
     Options* options,
+    ScriptWidget* output_widget,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
@@ -397,6 +401,7 @@ LayoutViewer::LayoutViewer(
     : QWidget(parent),
       db_(nullptr),
       options_(options),
+      output_widget_(output_widget),
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
@@ -702,6 +707,12 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   std::vector<Search::Box> boxes;
 
+  // get die bounding box
+  Rect bbox;
+  block->getDieArea(bbox);
+  boxes.push_back({{bbox.xMin(), bbox.yMin()},
+                   {bbox.xMax(), bbox.yMax()}});
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -954,14 +965,15 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
 
     int next_selection_idx;
+    const int selections_size = static_cast<int>(selections.size());
     // start at end of list and look for the selection item that is directly after a selected item.
-    for (next_selection_idx = selections.size(); next_selection_idx > 0; next_selection_idx--) {
+    for (next_selection_idx = selections_size; next_selection_idx > 0; next_selection_idx--) {
       // looking for true followed by false
-      if (is_selected[next_selection_idx-1] && !is_selected[next_selection_idx]) {
+      if (is_selected[next_selection_idx - 1] && !is_selected[next_selection_idx]) {
         break;
       }
     }
-    if (next_selection_idx == selections.size()) {
+    if (next_selection_idx == selections_size) {
       // found at the end of the list, loop around
       next_selection_idx = 0;
     }
@@ -1451,6 +1463,9 @@ void LayoutViewer::selection(const Selected& selection)
   inspector_selection_ = selection;
   if (selected_.size() > 1) {
     selectionAnimation(selection);
+  } else {
+    // stop animation
+    selectionAnimation(Selected());
   }
   inspector_focus_ = Selected(); // reset focus
   update();
@@ -1481,15 +1496,18 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
     animate_selection_->timer = std::make_unique<QTimer>();
     animate_selection_->timer->setInterval(update_interval);
 
+    const qint64 max_animate_time = QDateTime::currentMSecsSinceEpoch() + (animate_selection_->max_state_count + 2) * update_interval;
     connect(animate_selection_->timer.get(),
             &QTimer::timeout,
-            [this]() {
+            [this, max_animate_time]() {
               if (animate_selection_ == nullptr) {
                 return;
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->state_count == animate_selection_->max_state_count) {
+              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
+                  (animate_selection_->state_count == animate_selection_->max_state_count ||
+                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }
@@ -2227,6 +2245,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     return;
   }
 
+  // buffer outputs during paint to prevent recursive calls
+  output_widget_->bufferOutputs(true);
+
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
@@ -2289,6 +2310,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
+
+  // painting is done, okay to update outputs again
+  output_widget_->bufferOutputs(false);
 }
 
 void LayoutViewer::fullRepaint()

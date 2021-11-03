@@ -385,7 +385,7 @@ Verilog2db::getMaster(Cell *cell)
     else {
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell)
-        logger_->warn(ORD, 1012, "Liberty cell has no LEF master.", cell_name);
+        logger_->warn(ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
       // OpenSTA read_verilog warns about missing cells.
       master_map_[cell] = nullptr;
       return nullptr;

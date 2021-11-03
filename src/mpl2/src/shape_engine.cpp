@@ -53,6 +53,7 @@ using std::fstream;
 using std::getline;
 using std::ios;
 using std::log;
+using std::max;
 using std::pair;
 using std::pow;
 using std::sort;
@@ -370,14 +371,11 @@ void SimulatedAnnealingCore::FastSA()
   float cost = pre_cost;
   float delta_cost = 0.0;
   float best_cost = cost;
-  // vector<int> best_pos_seq = pos_seq_;
-  // vector<int> best_neg_seq = neg_seq_;
 
   float rej_num = 0.0;
   float T = init_T_;
   float rej_threshold = rej_ratio_ * perturb_per_step_;
 
-  // while(step <= max_num_step_ && rej_num <= rej_threshold) {
   while (step <= max_num_step_ && rej_num <= rej_threshold) {
     rej_num = 0.0;
     for (int i = 0; i < perturb_per_step_; i++) {
@@ -394,8 +392,6 @@ void SimulatedAnnealingCore::FastSA()
         pre_cost = cost;
         if (best_cost > cost) {
           best_cost = cost;
-          // best_pos_seq = pos_seq_;
-          // best_neg_seq = neg_seq_;
         }
       } else {
         cost = pre_cost;
@@ -404,15 +400,9 @@ void SimulatedAnnealingCore::FastSA()
       }
     }
     step++;
-    // if(step <= k_)
-    //    T = init_T_ / (step * c_);
-    // else
-    //    T = init_T_ / step;
     T = T * 0.995;
   }
 
-  // pos_seq_ = best_pos_seq;
-  // neg_seq_ = best_neg_seq;
   PackFloorplan();
 }
 
@@ -435,14 +425,44 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   vector<pair<float, float>> aspect_ratio;
 
   if (macros.size() == 1) {
-    float width = macros[0].GetWidth();
-    float height = macros[0].GetHeight();
-    float ar = height / width;
+    const float width = macros[0].GetWidth();
+    const float height = macros[0].GetHeight();
+    const float ar = height / width;
     final_area = height * width;
-    aspect_ratio.push_back(pair<float, float>(ar, ar));
+    aspect_ratio.push_back(pair<float, float>(width, height));
     return aspect_ratio;
   }
 
+  if(macros.size() >= 2) {
+    // If all the macros are the same,  we enumerate all the possible shapes
+    bool same_macro_flag = true;
+    const float width = macros[0].GetWidth();
+    const float height = macros[0].GetHeight();
+    for(int i = 1; i < macros.size(); i++) 
+      if(width != macros[i].GetWidth() || height != macros[i].GetHeight()) {
+        same_macro_flag = false;
+        break;
+      }
+    if(same_macro_flag == true) {
+      final_area = macros.size() * width * height;
+      for(int i = macros.size(); i >= 1; i--) {
+        const int num_col = i;
+        const int num_row = ceil(macros.size() * 1.0 / i);
+        const float temp_width = num_col * width;
+        const float temp_height = num_row * height;
+        bool valid_area = (num_col * num_row) <= (macros.size());
+        valid_area = valid_area && (temp_width <= outline_width);
+        valid_area = valid_area && (temp_height <= outline_height);
+        if(valid_area == true) {
+          aspect_ratio.push_back(pair<float, float>(temp_width, temp_height));
+          final_area = max(final_area, temp_width * temp_height);
+        }
+      }
+      return aspect_ratio;
+    }
+  }
+
+  // If the macros have different sizes, we try to find the tilings with minimum area
   // parameterse related to fastSA
   float init_prob = 0.6;
   float rej_ratio = 1.0;
@@ -469,9 +489,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     factor_list[0] = 1.0;
 
   if (num_thread > 1) {
-    // float step = 1.0 / (num_thread - 1);
-    // for (int i = 0; i < num_thread; i++)
-    //   factor_list[i] = pow(10.0, 1.0 - step * i);
     for (int i = 0; i < num_thread / 2; i++)
       factor_list[i] = 1.0 / (i + 1);
 
@@ -486,9 +503,8 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
       run_thread = remaining_run;
 
     for (int i = 0; i < run_thread; i++) {
-      float factor = factor_list[i];
-      float temp_outline_width = outline_width * factor;
-      float temp_outline_height
+      const float temp_outline_width = outline_width * factor_list[i];
+      const float temp_outline_height
           = outline_width * outline_height / temp_outline_width;
       // float temp_outline_height = outline_height;
       SimulatedAnnealingCore* sa
@@ -531,7 +547,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   }
 
   for (int i = 0; i < sa_vector.size(); i++) {
-    //string file_name = string("./rtl_mp/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
     string file_name = string(report_directory) + string("/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
     sa_vector[i]->WriteFloorplan(file_name);
   }
@@ -540,9 +555,9 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
 
   vector<pair<float, float>> footprints;
   for (int i = 0; i < sa_vector.size(); i++) {
-    int index = rank[i].first;
-    float width = sa_vector[index]->GetWidth();
-    float height = sa_vector[index]->GetHeight();
+    const int index = rank[i].first;
+    const float width = sa_vector[index]->GetWidth();
+    const float height = sa_vector[index]->GetHeight();
     if (width <= outline_width && height <= outline_height)
       footprints.push_back(pair<float, float>(width, height));
   }
@@ -556,32 +571,13 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     throw std::invalid_argument(std::string(
         "Invalid Floorplan.  Please increase the size of floorplan"));
 
-  float base_area = footprints[0].first * footprints[0].second;
+  const float base_area = footprints[0].first * footprints[0].second;
   final_area = base_area;
-  // vector<pair<float, float> > aspect_ratio;
-  vector<float> ar_list;
   for (int i = 0; i < footprints.size(); i++) {
     if (footprints[i].first * footprints[i].second <= base_area * 1.01) {
-      float ar = footprints[i].second / footprints[i].first;
-      ar_list.push_back(ar);
+      aspect_ratio.push_back(
+        pair<float, float>(footprints[i].first, footprints[i].second));
     }
-  }
-
-  sort(ar_list.begin(), ar_list.end());
-
-  vector<float> temp_ar_list;
-  temp_ar_list.push_back(ar_list[0]);
-  float temp_ar = ar_list[0];
-  for (int i = 1; i < ar_list.size(); i++) {
-    if (ar_list[i] > temp_ar) {
-      temp_ar = ar_list[i];
-      temp_ar_list.push_back(temp_ar);
-    }
-  }
-
-  for (int i = 0; i < temp_ar_list.size(); i++) {
-    aspect_ratio.push_back(
-        pair<float, float>(temp_ar_list[i], temp_ar_list[i]));
   }
 
   return aspect_ratio;
@@ -626,7 +622,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
   while (i < content.size()) {
     words = Split(content[i]);
     if (words.size() == 2 && words[0] == string("cluster:")) {
-      string name = words[words.size() - 1];
+      const string name = words[words.size() - 1];
       Cluster* cluster = new Cluster(name);
       clusters.push_back(cluster);
       i++;
@@ -636,7 +632,7 @@ void ParseBlockFile(vector<Cluster*>& clusters,
       i++;
       while (i < content.size() && (Split(content[i])).size() != 0) {
         temp_words = Split(content[i]);
-        string macro_name = temp_words[0];
+        const string macro_name = temp_words[0];
         float macro_width = stof(temp_words[1]);
         float macro_height = stof(temp_words[2]);
         macro_width += 2 * halo_width;
@@ -658,24 +654,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
       cluster->SortMacro();
     } else {
       i++;
-    }
-  }
-
-  float chip_area = outline_width * outline_height;
-  float std_cell_util
-      = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
-
-  logger->info(MPL, 1001, "Shape engine outline width: {}", outline_width);
-  logger->info(MPL, 1002, "Shape engine outline height: {}", outline_height);
-  logger->info(MPL, 1003, "Shape engine chip area: {}", chip_area);
-  logger->info(MPL, 1004, "Shape engine macro area: {}", macro_area);
-  logger->info(MPL, 1005, "Shape engine stdcell area: {}", std_cell_area);
-  logger->info(MPL, 1006, "Shape engine stdcell util: {}", std_cell_util);
-
-  for (int j = 0; j < clusters.size(); j++) {
-    if (clusters[j]->GetNumMacro() == 0) {
-      float area = clusters[j]->GetArea() / std_cell_util;
-      clusters[j]->SetArea(area);
     }
   }
 }
@@ -716,19 +694,16 @@ vector<Cluster*> ShapeEngine(float& outline_width,
   for (int i = 0; i < clusters.size(); i++)
     class_list[i] = -1;
 
-  for (int i = 0; i < clusters.size(); i++) {
+  for (int i = 0; i < clusters.size(); i++) 
     if (class_list[i] == -1) {
       class_list[i] = i;
-      for (int j = i + 1; j < clusters.size(); j++) {
-        if ((*clusters[i]) == (*clusters[j])) {
+      for (int j = i + 1; j < clusters.size(); j++) 
+        if ((*clusters[i]) == (*clusters[j])) 
           class_list[j] = i;
-        }
-      }
     }
-  }
 
   // Generate Aspect Ratio based on cluster types
-  for (int i = 0; i < clusters.size(); i++) {
+  for (int i = 0; i < clusters.size(); i++) 
     if (clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
       float final_area = 0.0;
       vector<pair<float, float>> aspect_ratio
@@ -744,23 +719,46 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       clusters[i]->SetAspectRatio(aspect_ratio);
       clusters[i]->SetArea(final_area);
     }
-  }
 
-  for (int i = 0; i < clusters.size(); i++) {
-    if (clusters[i]->GetNumMacro() == 0) {
+  for (int i = 0; i < clusters.size(); i++) 
+    if (clusters[i]->GetNumMacro() == 0) 
       clusters[i]->AddAspectRatio(
           pair<float, float>(min_aspect_ratio, max_aspect_ratio));
-    } else if (class_list[i] != i) {
+    else if (class_list[i] != i) {
       float area = clusters[class_list[i]]->GetArea();
       vector<pair<float, float>> aspect_ratio
           = clusters[class_list[i]]->GetAspectRatio();
       clusters[i]->SetAspectRatio(aspect_ratio);
       clusters[i]->SetArea(area);
-    } else {
-      ;
     }
-  }
 
+  const float chip_area = outline_width * outline_height;
+  float macro_area = 0.0;
+  float std_cell_area = 0.0;
+  for (int j = 0; j < clusters.size(); j++) {
+    float area = clusters[j]->GetArea();
+    if (clusters[j]->GetNumMacro() > 0) 
+      macro_area += area;
+    else 
+      std_cell_area += area;
+  }
+ 
+  float std_cell_util
+     = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
+ 
+  logger->info(MPL, 1001, "Shape engine outline width: {}", outline_width);
+  logger->info(MPL, 1002, "Shape engine outline height: {}", outline_height);
+  logger->info(MPL, 1003, "Shape engine chip area: {}", chip_area);
+  logger->info(MPL, 1004, "Shape engine macro area: {}", macro_area);
+  logger->info(MPL, 1005, "Shape engine stdcell area: {}", std_cell_area);
+  logger->info(MPL, 1006, "Shape engine stdcell util: {}", std_cell_util);
+ 
+  for (int j = 0; j < clusters.size(); j++) 
+    if (clusters[j]->GetNumMacro() == 0) {
+      float area = clusters[j]->GetArea() / std_cell_util;
+      clusters[j]->SetArea(area);
+    }
+  
   // Verify the results
   for (int i = 0; i < clusters.size(); i++) {
     string output_info = "Cluster: ";

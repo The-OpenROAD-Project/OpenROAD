@@ -319,7 +319,7 @@ class drPatchWire : public drShape
    */
   void getBBox(frBox& boxIn) const override
   {
-    frTransform xform(origin_);
+    dbTransform xform(origin_);
     boxIn.set(offsetBox_);
     boxIn.transform(xform);
   }
