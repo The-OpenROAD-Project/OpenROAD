@@ -36,6 +36,7 @@
 #include "db_sta/dbReadVerilog.hh"
 
 #include <map>
+#include <string>
 
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
@@ -58,6 +59,8 @@ using odb::dbBlock;
 using odb::dbTech;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModule;
+using odb::dbModInst;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbBTerm;
@@ -158,18 +161,20 @@ public:
   void makeDbNetlist();
 
 protected:
-  void makeDbInsts();
+  void makeDbModule(Instance* inst, dbModule* parent);
   dbIoType staToDb(PortDirection *dir);
   void recordBusPortsOrder();
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
   dbMaster *getMaster(Cell *cell);
-
+  dbModule *makeUniqueDbModule(const char* name);
+  
   Network *network_;
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
   std::map<Cell*, dbMaster*> master_map_;
+  std::map<std::string, int> uniquify_id;
 };
 
 void
@@ -221,6 +226,10 @@ Verilog2db::makeBlock()
     for (auto iter = bterms.begin(); iter != bterms.end(); ) {
       iter = dbBTerm::destroy(iter);
     }
+    auto mod_insts = block_->getTopModule()->getChildren();
+    for (auto iter = mod_insts.begin(); iter != mod_insts.end(); ) {
+      iter = dbModInst::destroy(iter);
+    }
   }
   else {
     const char *design = network_->name(network_->cell(network_->topInstance()));
@@ -235,7 +244,7 @@ void
 Verilog2db::makeDbNetlist()
 {
   recordBusPortsOrder();
-  makeDbInsts();
+  makeDbModule(network_->topInstance(), /* parent */ nullptr);
   makeDbNets(network_->topInstance());
 }
 
@@ -260,23 +269,76 @@ Verilog2db::recordBusPortsOrder()
   delete bus_iter;
 }
 
-void
-Verilog2db::makeDbInsts()
+dbModule*
+Verilog2db::makeUniqueDbModule(const char* name)
 {
-  LeafInstanceIterator *leaf_iter = network_->leafInstanceIterator();
-  while (leaf_iter->hasNext()) {
-    Instance *inst = leaf_iter->next();
-    const char *inst_name = network_->pathName(inst);
-    Cell *cell = network_->cell(inst);
-    dbMaster *master = getMaster(cell);
-    if (master)
-      dbInst::create(block_, master, inst_name);
-    else
-      logger_->warn(ORD, 1013, "instance {} LEF master {} not found.",
-                    inst_name,
-                    network_->name(cell));
+  dbModule* module;
+  do {
+    std::string full_name(name);
+    int& id = uniquify_id[name];
+    if (id > 0) {
+      full_name += '-' + std::to_string(id);
+    }
+    ++id;
+    module = dbModule::create(block_, full_name.c_str());
+  } while (module == nullptr);
+  return module;
+}
+
+void
+Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
+{
+  Cell* cell = network_->cell(inst);
+
+  dbModule* module;
+  if (parent == nullptr) {
+    module = block_->getTopModule();
+  } else {
+    module = makeUniqueDbModule(network_->name(cell));
+    dbModInst* modinst = dbModInst::create(parent, module,
+                                           network_->name(inst));
+    if (modinst == nullptr) {
+      logger_->warn(ORD,
+                     1014,
+                     "hierachical instance creation failed for {} of {}",
+                     network_->name(inst),
+                     network_->name(cell));
+      return;
+    }
   }
-  delete leaf_iter;
+  InstanceChildIterator* child_iter = network_->childIterator(inst);
+  while (child_iter->hasNext()) {
+    Instance* child = child_iter->next();
+    if (network_->isHierarchical(child)) {
+      makeDbModule(child, module);
+    } else {
+      const char *child_name = network_->pathName(child);
+      Cell *cell = network_->cell(child);
+      dbMaster *master = getMaster(cell);
+      if (master == nullptr) {
+        logger_->warn(ORD, 1013, "instance {} LEF master {} not found.",
+                       child_name,
+                       network_->name(cell));
+        continue;
+      }
+      auto db_inst = dbInst::create(block_, master, child_name);
+      if (db_inst == nullptr) {
+        logger_->warn(ORD,
+                       1015,
+                      "leaf instance creation failed for {} of {}",
+                       network_->name(child),
+                       module->getName());
+        continue;
+      }
+      module->addInst(db_inst);
+    }
+  }
+  delete child_iter;
+
+  if (module->getChildren().reversible() && module->getChildren().orderReversed())
+    module->getChildren().reverse();
+  if (module->getInsts().reversible() && module->getInsts().orderReversed())
+    module->getInsts().reverse();
 }
 
 dbIoType
