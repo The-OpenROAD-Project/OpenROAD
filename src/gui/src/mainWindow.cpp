@@ -123,6 +123,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          timing_widget_,
+          SLOT(setBlock(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));

@@ -181,6 +181,7 @@ class GuiPainter : public Painter
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
+
   void drawGeomShape(const odb::GeomShape* shape) override
   {
     std::vector<Point> points = shape->getPoints();

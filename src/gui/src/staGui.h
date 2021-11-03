@@ -107,15 +107,23 @@ class TimingPathsModel : public QAbstractTableModel
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
 
-  static const std::vector<std::string> _path_columns;
-  enum Column : int;
+  enum Column {
+    Clock,
+    Required,
+    Arrival,
+    Slack,
+    Start,
+    End
+  };
 };
 
-struct TimingPathNode
+class TimingPathNode
 {
+ public:
   TimingPathNode(odb::dbObject* pin,
                  bool is_clock,
                  bool is_rising,
+                 bool is_sink,
                  float arrival,
                  float required,
                  float delay,
@@ -125,27 +133,63 @@ struct TimingPathNode
       : pin_(pin),
         is_clock_(is_clock),
         is_rising_(is_rising),
+        is_sink_(is_sink),
         arrival_(arrival),
         required_(required),
         delay_(delay),
         slack_(slack),
         slew_(slew),
-        load_(load)
+        load_(load),
+        sink_node_(nullptr),
+        instance_node_(nullptr)
   {
   }
 
   std::string getNodeName(bool include_master = false) const;
   std::string getNetName() const;
 
+  odb::dbNet* getNet() const;
+  odb::dbInst* getInstance() const;
+  bool hasInstance() const { return getInstance() != nullptr; }
+
+  bool isPinITerm() const { return pin_->getObjectType() == odb::dbObjectType::dbITermObj; }
+  bool isPinBTerm() const { return pin_->getObjectType() == odb::dbObjectType::dbBTermObj; }
+
+  odb::dbObject* getPin() const { return pin_; }
+  odb::dbITerm* getPinAsITerm() const;
+  odb::dbBTerm* getPinAsBTerm() const;
+
+  bool isClock() const { return is_clock_; }
+  bool isRisingEdge() const { return is_rising_; }
+  bool isSink() const { return is_sink_; }
+  bool isSource() const { return !is_sink_; }
+
+  float getArrival() const { return arrival_; }
+  float getRequired() const { return required_; }
+  float getDelay() const { return delay_; }
+  float getSlack() const { return slack_; }
+  float getSlew() const { return slew_; }
+  float getLoad() const { return load_; }
+
+  void setSinkNode(const TimingPathNode* node) { sink_node_ = node; }
+  const TimingPathNode* getSinkNode() const { return sink_node_; }
+  void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
+  const TimingPathNode* getInstanceNode() const { return instance_node_; }
+
+ private:
   odb::dbObject* pin_;
   bool is_clock_;
   bool is_rising_;
+  bool is_sink_;
   float arrival_;
   float required_;
   float delay_;
   float slack_;
   float slew_;
   float load_;
+
+  const TimingPathNode* sink_node_;
+  const TimingPathNode* instance_node_;
 };
 
 class TimingPath
@@ -165,9 +209,9 @@ class TimingPath
   {
   }
 
-  using TimingNodeList = std::vector<std::unique_ptr<const TimingPathNode>>;
+  using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 
-  void appendNode(const TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<const TimingPathNode>(node)); }
+  void appendNode(TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node)); }
 
   void setStartClock(const char* name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
@@ -228,6 +272,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   QVariant headerData(int section,
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
 
   TimingPath* getPath() const { return path_; }
   TimingPath::TimingNodeList* getNodes() const { return nodes_; }
@@ -235,7 +280,8 @@ class TimingPathDetailModel : public QAbstractTableModel
   int getClockEndIndex() const { return is_capture_ ? path_->getClkCaptureEndIndex() : path_->getClkPathEndIndex(); }
 
   const TimingPathNode* getNodeAt(const QModelIndex& index) const;
-  bool shouldHide(const QModelIndex& index, bool expand_clock) const;
+  void setExpandClock(bool state) { expand_clock_ = state; }
+  bool shouldHide(const QModelIndex& index) const;
 
   bool isClockSummaryRow(const QModelIndex& index) const { return index.row() == clock_summary_row_; }
 
@@ -244,26 +290,33 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   sta::dbSta* sta_;
   bool is_capture_;
+  bool expand_clock_;
 
   TimingPath* path_;
   TimingPath::TimingNodeList* nodes_;
 
   // Unicode symbols
-  static const char* up_down_arrows;
-  static const char* up_arrow;
-  static const char* down_arrow;
-  static const std::vector<std::string> _path_details_columns;
-  enum Column : int;
+  static constexpr char up_down_arrows_[] = "\u21C5";
+  static constexpr char up_arrow_[] = "\u2191";
+  static constexpr char down_arrow_[] = "\u2193";
+  enum Column {
+    Pin,
+    RiseFall,
+    Time,
+    Delay,
+    Slew,
+    Load
+  };
   static constexpr int clock_summary_row_ = 1;
 };
 
 class TimingPathRenderer : public gui::Renderer
 {
  public:
-  TimingPathRenderer(sta::dbSta* sta);
+  TimingPathRenderer();
   void highlight(TimingPath* path);
 
-  void highlightNode(const TimingPathNode* node, TimingPath::TimingNodeList* nodes);
+  void highlightNode(const TimingPathNode* node);
   void clearHighlightNodes() { highlight_stage_.clear(); }
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
@@ -271,26 +324,16 @@ class TimingPathRenderer : public gui::Renderer
   TimingPath* getPathToRender() { return path_; }
 
  private:
-  void highlightInst(odb::dbInst* inst,
-                     gui::Painter& painter,
-                     const gui::Painter::Color& color);
   void highlightStage(gui::Painter& painter,
-                      const gui::Descriptor* net_descriptor);
-  void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
-  void highlightNet(odb::dbNet* net,
-                    bool is_clock,
-                    odb::dbObject* source_node,
-                    odb::dbObject* sink_node,
-                    gui::Painter& painter,
-                    const gui::Descriptor* net_descriptor,
-                    const Painter::Color& clock_color);
+                      const gui::Descriptor* net_descriptor,
+                      const gui::Descriptor* inst_descriptor);
 
   void drawNodesList(TimingPath::TimingNodeList* nodes,
                      gui::Painter& painter,
                      const gui::Descriptor* net_descriptor,
+                     const gui::Descriptor* inst_descriptor,
+                     const gui::Descriptor* bterm_descriptor,
                      const Painter::Color& clock_color);
-
-  sta::dbSta* sta_;
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
@@ -302,121 +345,102 @@ class TimingPathRenderer : public gui::Renderer
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
 
-  static gui::Painter::Color inst_highlight_color_;
-  static gui::Painter::Color path_inst_color_;
-  static gui::Painter::Color term_color_;
-  static gui::Painter::Color signal_color_;
-  static gui::Painter::Color clock_color_;
-  static gui::Painter::Color capture_clock_color_;
+  static const gui::Painter::Color inst_highlight_color_;
+  static const gui::Painter::Color path_inst_color_;
+  static const gui::Painter::Color term_color_;
+  static const gui::Painter::Color signal_color_;
+  static const gui::Painter::Color clock_color_;
+  static const gui::Painter::Color capture_clock_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), isDirty_(false) {}
+  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent), is_modified_(false) {}
 
-  void inDbInstCreate(odb::dbInst* inst) override
+  void inDbInstCreate(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstCreate", inst);
+    callback();
   }
-  void inDbInstDestroy(odb::dbInst* inst) override
+  void inDbInstDestroy(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstDestroy", inst);
+    callback();
   }
-  void inDbInstSwapMasterBefore(odb::dbInst* inst,
-                                odb::dbMaster* master) override
+  void inDbInstSwapMasterBefore(odb::dbInst* /* inst */,
+                                odb::dbMaster* /* master */) override
   {
-    callback("inDbInstSwapMasterBefore", inst, master);
+    callback();
   }
-  void inDbInstSwapMasterAfter(odb::dbInst* inst) override
+  void inDbInstSwapMasterAfter(odb::dbInst* /* inst */) override
   {
-    callback("inDbInstSwapMasterAfter", inst);
+    callback();
   }
-  void inDbNetCreate(odb::dbNet* net) override
+  void inDbNetCreate(odb::dbNet* /* net */) override
   {
-    callback("inDbNetCreate", net);
+    callback();
   }
-  void inDbNetDestroy(odb::dbNet* net) override
+  void inDbNetDestroy(odb::dbNet* /* net */) override
   {
-    callback("inDbNetDestroy", net);
+    callback();
   }
-  void inDbITermPostConnect(odb::dbITerm* iterm) override
+  void inDbITermPostConnect(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermPostConnect", iterm);
+    callback();
   }
-  void inDbITermPreDisconnect(odb::dbITerm* iterm) override
+  void inDbITermPreDisconnect(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermPreDisconnect", iterm);
+    callback();
   }
-  void inDbITermDestroy(odb::dbITerm* iterm) override
+  void inDbITermDestroy(odb::dbITerm* /* iterm */) override
   {
-    callback("inDbITermDestroy", iterm);
+    callback();
   }
-  void inDbBTermPostConnect(odb::dbBTerm* bterm) override
+  void inDbBTermPostConnect(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermPostConnect", bterm);
+    callback();
   }
-  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override
+  void inDbBTermPreDisconnect(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermPreDisconnect", bterm);
+    callback();
   }
-  void inDbBTermDestroy(odb::dbBTerm* bterm) override
+  void inDbBTermDestroy(odb::dbBTerm* /* bterm */) override
   {
-    callback("inDbBTermDestroy", bterm);
+    callback();
   }
-  void inDbWireCreate(odb::dbWire* wire) override
+  void inDbWireCreate(odb::dbWire* /* wire */) override
   {
-    callback("inDbWireCreate", wire);
+    callback();
   }
-  void inDbWireDestroy(odb::dbWire* wire) override
+  void inDbWireDestroy(odb::dbWire* /* wire */) override
   {
-    callback("inDbWireDestroy", wire);
+    callback();
   }
-  void inDbBlockageCreate(odb::dbBlockage* blockage) override
+  void inDbFillCreate(odb::dbFill* /* fill */) override
   {
-    callback("inDbBlockageCreate", blockage);
-  }
-  void inDbObstructionCreate(odb::dbObstruction* obstr) override
-  {
-    callback("inDbObstructionCreate", obstr);
-  }
-  void inDbObstructionDestroy(odb::dbObstruction* obstr) override
-  {
-    callback("inDbObstructionDestroy", obstr);
-  }
-  void inDbBlockStreamOutAfter(odb::dbBlock* block) override
-  {
-    callback("inDbBlockStreamOutAfter", block);
-  }
-  void inDbFillCreate(odb::dbFill* fill) override
-  {
-    callback("inDbFillCreate", fill);
+    callback();
   }
 
  signals:
-  void dbUpdated(const QString& update_type,
-                 const std::vector<odb::dbObject*>& update_objects);
+  void dbUpdated();
+
  public slots:
   void reset()
   {
-    isDirty_ = false;
+    is_modified_ = false;
     // call reset after gui refresh
   }
 
  private:
-  void callback(QString update_type,
-                odb::dbObject* obj1 = nullptr,
-                odb::dbObject* obj2 = nullptr)
+  void callback()
   {
-    if (isDirty_ == false) {
-      // send signal if dirty was false
-      std::vector<odb::dbObject*> objects{obj1, obj2};
-      emit dbUpdated(update_type, objects);
-      isDirty_ = true;
+    if (!is_modified_) {
+      emit dbUpdated();
+      is_modified_ = true;
     }
   }
-  bool isDirty_;
+
+  bool is_modified_;
 };
 
 }  // namespace gui
