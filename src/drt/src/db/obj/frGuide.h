@@ -111,7 +111,7 @@ class frGuide : public frConnFig
    */
   // needs to be updated
   void getBBox(frBox& boxIn) const override { boxIn.set(begin_, end_); }
-  void move(const frTransform& xform) override { ; }
+  void move(const dbTransform& xform) override { ; }
   bool overlaps(const frBox& box) const override { return false; }
 
  protected:

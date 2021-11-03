@@ -54,7 +54,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
     inst = instTerm->getInst();
   }
 
-  frTransform xform;
+  dbTransform xform;
   if (inst) {
     inst->getUpdatedXform(xform);
   }
@@ -844,6 +844,10 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   } else {
     ap->setAccess(dir, false);
   }
+
+  if (graphics_) {
+    graphics_->setPlanarAP(ap, ps.get(), gcWorker.getMarkers());
+  }
 }
 
 void FlexPA::prepPoint_pin_checkPoint_via(
@@ -1486,10 +1490,11 @@ void FlexPA::prepPattern()
 void FlexPA::revertAccessPoints()
 {
   for (auto& inst : uniqueInstances_) {
-    frTransform xform, revertXform;
+    dbTransform xform, revertXform;
     inst->getTransform(xform);
-    revertXform.set(-xform.xOffset(), -xform.yOffset());
-    revertXform.set(dbOrientType::R0);
+    Point offset(xform.getOffset());
+    revertXform.setOffset(Point(-offset.getX(), -offset.getY()));
+    revertXform.setOrient(dbOrientType::R0);
 
     auto paIdx = unique2paidx_[inst];
     for (auto& instTerm : inst->getInstTerms()) {
@@ -1762,7 +1767,7 @@ void FlexPA::addAccessPatternObj(
     std::vector<std::unique_ptr<frVia>>& vias,
     bool isPrev)
 {
-  frTransform xform;
+  dbTransform xform;
   inst->getUpdatedXform(xform, true);
   int accessPointIdx = 0;
   auto& accessPoints = accessPattern->getPattern();
@@ -1832,24 +1837,24 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
   if (in->getTerm()->getType().isSupply())
-      return true;
+    return true;
   if (!in->getNet() || in->getNet()->isSpecial()) {
-      auto instClass = inst2Class_[in->getInst()];
-      if (instClass != nullptr) {
-        for (auto& inst : *instClass) {
-            frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
-            if (!in->getNet()) {
-                if (it->getNet()) {
-                    return false;
-                }
-            } else if (in->getNet()->isSpecial()) {
-                if (it->getNet() && !it->getNet()->isSpecial()) {
-                    return false;
-                }
-            }
+    auto instClass = inst2Class_[in->getInst()];
+    if (instClass != nullptr) {
+      for (auto& inst : *instClass) {
+        frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
+        if (!in->getNet()) {
+          if (it->getNet()) {
+            return false;
+          }
+        } else if (in->getNet()->isSpecial()) {
+          if (it->getNet() && !it->getNet()->isSpecial()) {
+            return false;
+          }
         }
       }
-      return true;
+    }
+    return true;
   }
   return false;
 }
@@ -2010,9 +2015,9 @@ void FlexPA::genPatterns(
                   inst->getRefBlock()->getName());
     // int paIdx = unique2paidx[pins[0].second->getInst()];
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    frTransform shiftXform;
+    dbTransform shiftXform;
     inst->getTransform(shiftXform);
-    shiftXform.set(dbOrientType(dbOrientType::R0));
+    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
     ostringstream msg;
     msg << "  pin ordering (with ap): ";
     for (auto& [pin, instTerm] : pins) {
@@ -2213,7 +2218,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
     hasVio = (vioEdges[edgeIdx] == 1);
   } else {
     auto& currUniqueInst = uniqueInstances_[currUniqueInstIdx];
-    frTransform xform;
+    dbTransform xform;
     currUniqueInst->getUpdatedXform(xform, true);
     // check DRC
     vector<pair<frConnFig*, frBlockObject*>> objs;
@@ -2368,7 +2373,7 @@ bool FlexPA::genPatterns_commit(
         auto rvia = via.get();
         tempVias.push_back(std::move(via));
 
-        frTransform xform;
+        dbTransform xform;
         inst->getUpdatedXform(xform, true);
         Point pt(accessPoint->getPoint());
         xform.apply(pt);
@@ -2471,12 +2476,12 @@ void FlexPA::genPatterns_print_debug(
   auto currNode = &(nodes[currNodeIdx]);
   int pinCnt = pins.size();
 
-  frTransform xform;
+  dbTransform xform;
   auto& [pin, instTerm] = pins[0];
   if (instTerm) {
     frInst* inst = instTerm->getInst();
     inst->getTransform(xform);
-    xform.set(dbOrientType::R0);
+    xform.setOrient(dbOrientType::R0);
   }
 
   cout << "failed pattern:";

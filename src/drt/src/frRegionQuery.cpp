@@ -257,10 +257,10 @@ void frRegionQuery::Impl::add(frVia* via,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
   frBox frb;
-  frTransform xform;
+  dbTransform xform;
   Point origin;
   via->getOrigin(origin);
-  xform.set(origin);
+  xform.setOffset(origin);
   box_t boostb;
   for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
     auto shape = uShape.get();
@@ -350,7 +350,7 @@ void frRegionQuery::Impl::add(frInstTerm* instTerm,
   frBox frb;
   box_t boostb;
 
-  frTransform xform;
+  dbTransform xform;
   instTerm->getInst()->getUpdatedXform(xform);
 
   for (auto& pin : instTerm->getTerm()->getPins()) {
@@ -397,7 +397,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
   frBox frb;
   box_t boostb;
 
-  frTransform xform;
+  dbTransform xform;
   instBlk->getInst()->getUpdatedXform(xform);
   auto blk = instBlk->getBlockage();
   auto pin = blk->getPin();

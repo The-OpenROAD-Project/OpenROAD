@@ -51,9 +51,11 @@ namespace mpl2 {
 
 bool rtl_macro_placer_cmd(const char* config_file,
                           const char* report_directory,
-                          const char* report_file) {
+                          const char* report_file,
+                          const char* macro_blockage_file,
+                          const char* prefer_location_file) {
   auto macro_placer = getMacroPlacer2();
-  return macro_placer->place(config_file, report_directory, report_file);
+  return macro_placer->place(config_file, report_directory, report_file, macro_blockage_file, prefer_location_file);
 }
 
 } // namespace

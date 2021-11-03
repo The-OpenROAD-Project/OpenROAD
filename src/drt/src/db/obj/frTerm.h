@@ -70,7 +70,7 @@ class frTerm : public frBlockObject
       addPin(std::move(tmp));
     }
   }
-  frTerm(const frTerm& in, const frTransform& xform)
+  frTerm(const frTerm& in, const dbTransform& xform)
       : frBlockObject(),
         name_(in.name_),
         block_(in.block_),

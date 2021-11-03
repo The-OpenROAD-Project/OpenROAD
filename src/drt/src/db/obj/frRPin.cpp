@@ -27,11 +27,8 @@
  */
 
 #include "frRPin.h"
-// #include "db/obj/frAccess.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
-// #include "db/infra/frTransform.h"
-// #include "db/infra/frTransform.h"
 
 using namespace std;
 using namespace fr;
@@ -41,9 +38,9 @@ void frRPin::getBBox(frBox& in)
   Point pt;
   if (term->typeId() == frcInstTerm) {
     auto inst = static_cast<frInstTerm*>(term)->getInst();
-    frTransform shiftXform;
+    dbTransform shiftXform;
     inst->getTransform(shiftXform);
-    shiftXform.set(dbOrientType(dbOrientType::R0));
+    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
     accessPoint->getPoint(pt);
     shiftXform.apply(pt);

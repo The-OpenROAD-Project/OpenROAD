@@ -68,7 +68,7 @@ class frBoundary : public frFig
     }
     boxIn.set(llx, lly, urx, ury);
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);

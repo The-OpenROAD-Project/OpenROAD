@@ -130,8 +130,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   vector<frBlockObject*> result;
   box.set(bp, bp);
   rq->queryGRPin(box, result);
-  frTransform instXform;  // (0,0), R0
-  frTransform shiftXform;
+  dbTransform instXform;  // (0,0), R0
+  dbTransform shiftXform;
   frTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
@@ -141,7 +141,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
       }
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(dbOrientType(dbOrientType::R0));
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
     } else if (term->typeId() == frcTerm) {
@@ -230,8 +230,8 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
     box.set(ep, ep);
     rq->queryGRPin(box, result);
   }
-  frTransform instXform;  // (0,0), R0
-  frTransform shiftXform;
+  dbTransform instXform;  // (0,0), R0
+  dbTransform shiftXform;
   frTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
@@ -241,7 +241,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
       }
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
-      shiftXform.set(dbOrientType(dbOrientType::R0));
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
     } else if (term->typeId() == frcTerm) {

@@ -46,7 +46,8 @@ Trigger errors
 [ERROR PAD-0102] Incorrect value specified for -location center (x  292.000 Y  105.000), no value specified for y.
 [ERROR PAD-0102] Incorrect value specified for -location center (X  292.000 y  105.000), no value specified for x.
 [ERROR PAD-0099] Invalid orientation no, must be one of "R0 R90 R180 R270 MX MY MXR90 MYR90".
-[ERROR PAD-0008] Cannot find cell SIG in the database.
+[WARNING PAD-0251] Cannot find cell SIG in the database.
+[ERROR PAD-0130] Cell SIG not loaded into design.
 [ERROR PAD-0130] Cell PADCELL_VDD not loaded into design.
 [ERROR PAD-0130] Cell PADCELL_SIG not loaded into design.
 This one is correct

@@ -39,7 +39,6 @@
 #define FRINGE_UP_DOWN
 #endif
 // #define CHECK_SAME_NET
-//#define DEBUG_NET 208091
 //#define MIN_FOR_LOOPS
 
 namespace rcx {
@@ -3578,15 +3577,10 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2,
 }
 
 void extMeasure::measureRC(CoupleOptions& options) {
-  // return;
-
   _totSegCnt++;
 
   int rsegId1 = options[1];  // dbRSeg id for SRC segment
   int rsegId2 = options[2];  // dbRSeg id for Target segment
-
-  //  	if ((rsegId1<0)&&(rsegId2<0)) // power nets
-  //  		return;
 
   _rsegSrcId = rsegId1;
   _rsegTgtId = rsegId2;
@@ -3596,11 +3590,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
   if (_extMain->_lefRC)
     return;
 
-//_netId= 0;
-#ifdef DEBUG_NET
-  uint debugNetId = DEBUG_NET;
-#endif
-
   dbRSeg* rseg1 = NULL;
   dbNet* srcNet = NULL;
   uint netId1 = 0;
@@ -3608,11 +3597,7 @@ void extMeasure::measureRC(CoupleOptions& options) {
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
     srcNet = rseg1->getNet();
     netId1 = srcNet->getId();
-#ifdef DEBUG_NET
-    printNet(rseg1, debugNetId);
-#endif
   }
-  // fprintf(stdout, "net: %d %s\n", netId1, srcNet->getConstName());
   _netSrcId = netId1;
 
   dbRSeg* rseg2 = NULL;
@@ -3622,9 +3607,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
     rseg2 = dbRSeg::getRSeg(_block, rsegId2);
     tgtNet = rseg2->getNet();
     netId2 = tgtNet->getId();
-#ifdef DEBUG_NET
-    printNet(rseg2, debugNetId);
-#endif
   }
 #ifdef HI_ACC_1
   _sameNetFlag = (srcNet == tgtNet);
@@ -3694,8 +3676,6 @@ void extMeasure::measureRC(CoupleOptions& options) {
       _dist = _extMain->GetDBcoords2(_dist);
     _width = _extMain->GetDBcoords2(_width);
   }
-  // if (_dist>0)
-  //  _dist= 64;
 
   _netId = _extMain->_debug_net_id;
 

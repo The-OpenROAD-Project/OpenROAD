@@ -71,8 +71,10 @@ MainWindow::MainWindow(QWidget* parent)
       logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
+      script_(new ScriptWidget(this)),
       viewer_(new LayoutViewer(
           controls_,
+          script_,
           selected_,
           highlighted_,
           rulers_,
@@ -81,16 +83,14 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this)),
       timing_widget_(new TimingWidget(this)),
-      drc_viewer_(new DRCWidget(this))
+      drc_viewer_(new DRCWidget(this)),
+      find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
-
-  find_dialog_ = new FindObjectDialog(this);
 
   QFont font("Monospace");
   font.setStyleHint(QFont::Monospace);
@@ -123,6 +123,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          timing_widget_,
+          SLOT(setBlock(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
@@ -169,8 +173,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(removeSelected(const Selected&)),
           this,
           SLOT(removeSelected(const Selected&)));
-  connect(this, SIGNAL(selectionChanged()), inspector_, SLOT(update()));
-  connect(this, SIGNAL(rulersChanged()), inspector_, SLOT(update()));
+  connect(this, SIGNAL(selectionChanged(const Selected&)), inspector_, SLOT(update(const Selected&)));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           selection_browser_,
@@ -183,6 +186,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selectedItemChanged(const Selected&)),
           this,
           SLOT(updateSelectedStatus(const Selected&)));
+  connect(inspector_,
+          SIGNAL(selection(const Selected&)),
+          viewer_,
+          SLOT(selection(const Selected&)));
+  connect(inspector_,
+          SIGNAL(focus(const Selected&)),
+          viewer_,
+          SLOT(selectionFocus(const Selected&)));
 
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
@@ -324,7 +335,7 @@ void MainWindow::init(sta::dbSta* sta)
 
 void MainWindow::createStatusBar()
 {
-  location_ = new QLabel();
+  location_ = new QLabel(this);
   statusBar()->addPermanentWidget(location_);
 }
 
@@ -507,18 +518,35 @@ void MainWindow::addSelected(const Selected& selection)
 {
   if (selection) {
     selected_.emplace(selection);
-    emit selectionChanged();
+    emit selectionChanged(selection);
   }
   emit updateSelectedStatus(selection);
 }
 
 void MainWindow::removeSelected(const Selected& selection)
 {
-  auto itr = std::find_if_not(selected_.begin(), selected_.end(), [selection](auto& item) {
-    return item < selection;
-  });
+  auto itr = std::find(selected_.begin(), selected_.end(), selection);
   if (itr != selected_.end()) {
     selected_.erase(itr);
+    emit selectionChanged();
+  }
+}
+
+void MainWindow::removeSelectedByType(const std::string& type)
+{
+  bool changed = false;
+  for (auto itr = selected_.begin(); itr != selected_.end(); ) {
+    const auto& selection = *itr;
+
+    if (selection.getTypeName() == type) {
+      itr = selected_.erase(itr);
+      changed = true;
+    } else {
+      itr++;
+    }
+  }
+
+  if (changed) {
     emit selectionChanged();
   }
 }
@@ -586,7 +614,10 @@ void MainWindow::deleteRuler(const std::string& name)
   if (ruler_find != rulers_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
-    selected_.erase(remove_selected);
+    if (selected_.find(remove_selected) != selected_.end()) {
+      selected_.erase(remove_selected);
+      emit selectionChanged();
+    }
     rulers_.erase(ruler_find);
     emit rulersChanged();
   }

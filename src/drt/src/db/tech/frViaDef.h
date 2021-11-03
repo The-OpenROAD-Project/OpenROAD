@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <vector>
+#include <iostream>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"

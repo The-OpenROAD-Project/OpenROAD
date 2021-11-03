@@ -167,7 +167,7 @@ class frRect : public frShape
    */
   void getBBox(frBox& boxIn) const override { boxIn.set(box_); }
   const frBox& getBBox() const { return box_; }
-  void move(const frTransform& xform) override { box_.transform(xform); }
+  void move(const dbTransform& xform) override { box_.transform(xform); }
   bool overlaps(const frBox& box) const override
   {
     frBox rectBox;
@@ -285,14 +285,14 @@ class frPatchWire : public frShape
    */
   void getBBox(frBox& boxIn) const override
   {
-    frTransform xform(origin_);
+    dbTransform xform(origin_);
     boxIn.set(offsetBox_);
     boxIn.transform(xform);
   }
   void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
   void getOrigin(Point& in) const { in = origin_; }
   Point getOrigin() const { return origin_; }
-  void move(const frTransform& xform) override {}
+  void move(const dbTransform& xform) override {}
   bool overlaps(const frBox& box) const override
   {
     frBox rectBox;
@@ -406,7 +406,7 @@ class frPolygon : public frShape
     }
     boxIn.set(llx, lly, urx, ury);
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     for (auto& point : points_) {
       xform.apply(point);
@@ -577,7 +577,7 @@ class frPathSeg : public frShape
                 end_.y() + endExt);
     }
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     xform.apply(begin_);
     xform.apply(end_);

@@ -84,13 +84,7 @@ int FlexDRWorker::main(frDesign* design)
   init(design);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
-    FlexGCWorker gcWorker(design->getTech(), logger_, this);
-    gcWorker.setExtBox(getExtBox());
-    gcWorker.setDrcBox(getDrcBox());
-    gcWorker.init(design);
-    gcWorker.setEnableSurgicalFix(true);
-
-    route_queue(gcWorker);
+    route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();
@@ -1628,6 +1622,9 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
+  if (logger_->debugCheck(DRT, "drc", 1)) {
+    reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  }
 }
 
 void FlexDR::end(bool writeMetrics)
@@ -1766,18 +1763,18 @@ void FlexDR::end(bool writeMetrics)
   }
 }
 
-void FlexDR::reportDRC()
+void FlexDR::reportDRC(const string& file_name)
 {
   double dbu = getTech()->getDBUPerUU();
 
-  if (DRC_RPT_FILE == string("")) {
+  if (file_name == string("")) {
     if (VERBOSE > 0) {
       logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
 
-  ofstream drcRpt(DRC_RPT_FILE.c_str());
+  ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
     for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
       auto con = marker->getConstraint();
@@ -2357,7 +2354,7 @@ int FlexDR::main()
                false);
 
   if (DRC_RPT_FILE != string("")) {
-    reportDRC();
+    reportDRC(DRC_RPT_FILE);
   }
   if (VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
