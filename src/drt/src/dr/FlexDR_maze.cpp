@@ -1684,7 +1684,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
-        if (debugIter >= getDRIter() && !getGCWorker()->getMarkers().empty()) {
+        if (getDRIter() >= debugIter && !getGCWorker()->getMarkers().empty()) {
           cout << "Ending net " << net->getFrNet()->getName() << " with markers:\n";
           for (auto& marker : getGCWorker()->getMarkers()) {
               cout << *marker << "\n";

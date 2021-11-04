@@ -640,11 +640,12 @@ void FlexTAWorker::initFixedObjs()
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING
-        || getTech()->getLayer(layerNum)->getDir() != getDir()) {
+    frLayer* layer = getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::ROUTING
+        || layer->getDir() != getDir()) {
       continue;
     }
-    width = getTech()->getLayer(layerNum)->getWidth();
+    width = layer->getWidth();
     getRegionQuery()->query(getExtBox(), layerNum, result);
     for (auto& [bounds, obj] : result) {
       bounds.bloat(-1, box);
@@ -668,8 +669,7 @@ void FlexTAWorker::initFixedObjs()
           netPtr = static_cast<frVia*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
-        if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-            && getTech()->getLayer(layerNum)->getType()
+        if (layer->isUnidirectional() && layer->getType()
                    == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
@@ -679,9 +679,8 @@ void FlexTAWorker::initFixedObjs()
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
             via->getLayer2BBox(viaBox);
-            frCoord viaWidth = viaBox.width();
-            // only add for fat via
-            if (viaWidth > width) {
+            frCoord size = layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
+            if (size > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
               initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
@@ -695,9 +694,9 @@ void FlexTAWorker::initFixedObjs()
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
             via->getLayer1BBox(viaBox);
-            frCoord viaWidth = viaBox.width();
+            frCoord size = layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
             // only add for fat via
-            if (viaWidth > width) {
+            if (size > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
               initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
@@ -709,7 +708,7 @@ void FlexTAWorker::initFixedObjs()
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
 
-        if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+        if (layer->isUnidirectional()) {
           // block track for up-via and down-via for fat MACRO OBS
           bool isMacro = false;
           if (obj->typeId() == frcBlockage) {
@@ -776,7 +775,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
   }
 
   frCoord bloatDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = layer->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -790,6 +789,12 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
           obsWidth, viaWidth, viaWidth /*prl*/);
     }
   }
+  auto& eol = layer->getDrEolSpacingConstraint();
+  if (layer->isVertical()) {
+    if (viaBox.sizeY() < eol.eolWidth)
+      bloatDist = std::max(bloatDist, eol.eolSpace);
+  } else if (viaBox.sizeX() < eol.eolWidth)
+      bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following

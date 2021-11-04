@@ -101,6 +101,8 @@ class frBox
     frCoord ySpan = top() - bottom();
     return std::max(xSpan, ySpan);
   }
+  frCoord sizeX() { return ur_.x() - ll_.x();}
+  frCoord sizeY() { return ur_.y() - ll_.y();}
   frArea area() const
   {
     frCoord w = right() - left();
