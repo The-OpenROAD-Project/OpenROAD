@@ -4377,78 +4377,86 @@ PINS 269 ;
         + FIXED ( 3560000 5700322 ) N ;
 END PINS
 SPECIALNETS 183 ;
-    - DVDD_0 ( PIN DVDD_0 ) ( u_ddr_dq_8_io DVDD ) ( u_vdd_32 DVDD ) ( u_ddr_dq_9_io DVDD ) ( u_vss_32 DVDD ) ( u_ddr_dq_10_io DVDD ) ( u_v18_32 DVDD )
-      ( u_ddr_dq_11_io DVDD ) ( u_vzz_32 DVDD ) ( u_pwrdet16 DVDD ) ( u_ddr_dq_12_io DVDD ) ( u_vdd_31 DVDD ) ( u_ddr_dq_13_io DVDD ) ( u_vss_31 DVDD ) ( u_ddr_dq_14_io DVDD )
-      ( u_v18_31 DVDD ) ( u_ddr_dq_15_io DVDD ) ( u_vzz_31 DVDD ) ( u_ddr_dqs_p_0_io DVDD ) ( u_vdd_30 DVDD ) ( u_ddr_dqs_n_0_io DVDD ) ( u_vss_30 DVDD ) ( u_ddr_dm_0_o DVDD )
-      ( u_v18_30 DVDD ) ( u_ddr_dq_0_io DVDD ) ( u_vzz_30 DVDD ) ( u_ddr_dq_1_io DVDD ) ( u_pwrdet15 DVDD ) ( u_vdd_29 DVDD ) ( u_ddr_dq_2_io DVDD ) ( u_vss_29 DVDD )
-      ( u_ddr_dq_3_io DVDD ) ( u_v18_29 DVDD ) ( u_ddr_dq_4_io DVDD ) ( u_vzz_29 DVDD ) ( u_ddr_dq_5_io DVDD ) ( u_vdd_28 DVDD ) ( u_ddr_dq_6_io DVDD ) ( u_vss_28 DVDD )
-      ( u_ddr_dq_7_io DVDD ) ( u_v18_28 DVDD ) ( u_bsg_tag_data_o DVDD ) ( u_vzz_28 DVDD ) ( u_bsg_tag_clk_o DVDD ) ( u_pwrdet14 DVDD ) ( u_vdd_27 DVDD ) ( u_co2_0_o DVDD )
-      ( u_vss_27 DVDD ) ( u_co2_1_o DVDD ) ( u_v18_27 DVDD ) ( u_co2_2_o DVDD ) ( u_vzz_27 DVDD ) ( u_co2_3_o DVDD ) ( u_vdd_26 DVDD ) ( u_co2_4_o DVDD )
-      ( u_vss_26 DVDD ) ( u_co2_clk_o DVDD ) ( u_v18_26 DVDD ) ( u_co2_tkn_i DVDD ) ( u_vzz_26 DVDD ) ( u_co2_v_o DVDD ) ( u_pwrdet13 DVDD ) ( u_vdd_25 DVDD )
-      ( u_co2_5_o DVDD ) ( u_vss_25 DVDD ) ( u_co2_6_o DVDD ) ( u_v18_25 DVDD ) ( u_co2_7_o DVDD ) ( u_vzz_25 DVDD ) ( u_co2_8_o DVDD ) ( u_vdd_24 DVDD )
-      ( u_co_0_i DVDD ) ( u_vss_24 DVDD ) ( u_co_1_i DVDD ) ( u_v18_24 DVDD ) ( u_co_2_i DVDD ) ( u_vzz_24 DVDD ) ( u_pwrdet8 DVDD ) ( u_co_3_i DVDD )
-      ( u_vdd_23 DVDD ) ( u_co_4_i DVDD ) ( u_vss_23 DVDD ) ( u_co_clk_i DVDD ) ( u_v18_23 DVDD ) ( u_co_tkn_o DVDD ) ( u_vzz_23 DVDD ) ( u_co_v_i DVDD )
-      ( u_vdd_22 DVDD ) ( u_co_5_i DVDD ) ( u_vss_22 DVDD ) ( u_co_6_i DVDD ) ( u_v18_22 DVDD ) ( u_pwrdet9 DVDD ) ( u_co_7_i DVDD ) ( u_vzz_22 DVDD )
-      ( u_co_8_i DVDD ) ( u_vdd_21 DVDD ) ( u_clk_A_i DVDD ) ( u_vss_21 DVDD ) ( u_clk_B_i DVDD ) ( u_vdd_20 DVDD ) ( u_sel_0_i DVDD ) ( u_vss_20 DVDD )
-      ( u_sel_1_i DVDD ) ( u_v18_20 DVDD ) ( u_sel_2_i DVDD ) ( u_vzz_20 DVDD ) ( u_core_async_reset_i DVDD ) ( u_pwrdet11 DVDD ) ( u_vdd_19 DVDD ) ( u_ci2_0_o DVDD )
-      ( u_vss_19 DVDD ) ( u_ci2_1_o DVDD ) ( u_v18_19 DVDD ) ( u_ci2_2_o DVDD ) ( u_vzz_19 DVDD ) ( u_ci2_3_o DVDD ) ( u_vdd_18 DVDD ) ( u_ci2_4_o DVDD )
-      ( u_vss_18 DVDD ) ( u_ci2_clk_o DVDD ) ( u_v18_18 DVDD ) ( u_ci2_tkn_i DVDD ) ( u_vzz_18 DVDD ) ( u_ci2_v_o DVDD ) ( u_pwrdet12 DVDD ) ( u_vdd_17 DVDD )
-      ( u_ci2_5_o DVDD ) ( u_vss_17 DVDD ) ( u_ci2_6_o DVDD ) ( u_v18_17 DVDD ) ( u_ci2_7_o DVDD ) ( u_vzz_17 DVDD ) ( u_ci2_8_o DVDD ) ( u_ci_0_i DVDD )
-      ( u_vdd_16 DVDD ) ( u_ci_1_i DVDD ) ( u_vss_16 DVDD ) ( u_ci_2_i DVDD ) ( u_v18_16 DVDD ) ( u_ci_3_i DVDD ) ( u_vzz_16 DVDD ) ( u_pwrdet7 DVDD )
-      ( u_ci_4_i DVDD ) ( u_vdd_15 DVDD ) ( u_ci_clk_i DVDD ) ( u_vss_15 DVDD ) ( u_ci_tkn_o DVDD ) ( u_v18_15 DVDD ) ( u_ci_v_i DVDD ) ( u_vzz_15 DVDD )
-      ( u_ci_5_i DVDD ) ( u_vdd_14 DVDD ) ( u_ci_6_i DVDD ) ( u_vss_14 DVDD ) ( u_ci_7_i DVDD ) ( u_v18_14 DVDD ) ( u_ci_8_i DVDD ) ( u_vzz_14 DVDD )
-      ( u_bsg_tag_en_i DVDD ) ( u_pwrdet6 DVDD ) ( u_vdd_13 DVDD ) ( u_bsg_tag_data_i DVDD ) ( u_vss_13 DVDD ) ( u_bsg_tag_clk_i DVDD ) ( u_v18_13 DVDD ) ( u_ddr_dm_3_o DVDD )
-      ( u_vzz_13 DVDD ) ( u_ddr_dqs_p_3_io DVDD ) ( u_vdd_12 DVDD ) ( u_ddr_dqs_n_3_io DVDD ) ( u_vss_12 DVDD ) ( u_ddr_dq_24_io DVDD ) ( u_v18_12 DVDD ) ( u_ddr_dq_25_io DVDD )
-      ( u_vzz_12 DVDD ) ( u_ddr_dq_26_io DVDD ) ( u_vdd_11 DVDD ) ( u_pwrdet5 DVDD ) ( u_ddr_dq_27_io DVDD ) ( u_vss_11 DVDD ) ( u_ddr_dq_28_io DVDD ) ( u_v18_11 DVDD )
-      ( u_ddr_dq_29_io DVDD ) ( u_vzz_11 DVDD ) ( u_ddr_dq_30_io DVDD ) ( u_vdd_10 DVDD ) ( u_ddr_dq_31_io DVDD ) ( u_vss_10 DVDD ) ( u_ddr_dq_16_io DVDD ) ( u_v18_10 DVDD )
-      ( u_ddr_dq_17_io DVDD ) ( u_vzz_10 DVDD ) ( u_ddr_dq_18_io DVDD ) ( u_vdd_9 DVDD ) ( u_ddr_dq_19_io DVDD ) ( u_pwrdet4 DVDD ) ( u_vss_9 DVDD ) ( u_ddr_dq_20_io DVDD )
-      ( u_v18_9 DVDD ) ( u_ddr_dq_21_io DVDD ) ( u_vzz_9 DVDD ) ( u_ddr_dq_22_io DVDD ) ( u_vdd_8 DVDD ) ( u_ddr_dq_23_io DVDD ) ( u_vss_8 DVDD ) ( u_ddr_dm_2_o DVDD )
-      ( u_v18_8 DVDD ) ( u_ddr_dqs_p_2_io DVDD ) ( u_vzz_8 DVDD ) ( u_ddr_dqs_n_2_io DVDD ) ( u_vdd_7 DVDD ) ( u_ddr_ck_p_o DVDD ) ( u_vss_7 DVDD ) ( u_pwrdet3 DVDD )
-      ( u_ddr_ck_n_o DVDD ) ( u_v18_7 DVDD ) ( u_ddr_cke_o DVDD ) ( u_vzz_7 DVDD ) ( u_ddr_cs_n_o DVDD ) ( u_vdd_6 DVDD ) ( u_ddr_ras_n_o DVDD ) ( u_vss_6 DVDD )
-      ( u_ddr_cas_n_o DVDD ) ( u_v18_6 DVDD ) ( u_ddr_we_n_o DVDD ) ( u_vzz_6 DVDD ) ( u_ddr_reset_n_o DVDD ) ( u_vdd_5 DVDD ) ( u_ddr_odt_o DVDD ) ( u_vss_5 DVDD )
-      ( u_ddr_addr_0_o DVDD ) ( u_pwrdet2 DVDD ) ( u_v18_5 DVDD ) ( u_ddr_addr_1_o DVDD ) ( u_vzz_5 DVDD ) ( u_ddr_addr_2_o DVDD ) ( u_vdd_4 DVDD ) ( u_ddr_addr_3_o DVDD )
-      ( u_vss_4 DVDD ) ( u_ddr_addr_4_o DVDD ) ( u_v18_4 DVDD ) ( u_ddr_addr_5_o DVDD ) ( u_vzz_4 DVDD ) ( u_ddr_addr_6_o DVDD ) ( u_vdd_3 DVDD ) ( u_ddr_addr_7_o DVDD )
-      ( u_vss_3 DVDD ) ( u_ddr_addr_8_o DVDD ) ( u_v18_3 DVDD ) ( u_pwrdet1 DVDD ) ( u_ddr_addr_9_o DVDD ) ( u_vzz_3 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_vdd_2 DVDD )
-      ( u_ddr_addr_11_o DVDD ) ( u_vss_2 DVDD ) ( u_ddr_addr_12_o DVDD ) ( u_v18_2 DVDD ) ( u_ddr_addr_13_o DVDD ) ( u_vzz_2 DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_vdd_1 DVDD )
-      ( u_ddr_addr_15_o DVDD ) ( u_vss_1 DVDD ) ( u_ddr_ba_0_o DVDD ) ( u_v18_1 DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD ) ( u_vzz_1 DVDD ) ( u_ddr_ba_2_o DVDD )
-      ( u_vdd_0 DVDD ) ( u_ddr_dqs_p_1_io DVDD ) ( u_vss_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_v18_0 DVDD ) ( u_ddr_dm_1_o DVDD ) ( u_vzz_0 DVDD ) + USE POWER ;
+    - DVDD_0 ( PIN DVDD_0 ) ( bp_u_v18_32 PAD ) ( bp_u_v18_31 PAD ) ( bp_u_v18_30 PAD ) ( bp_u_v18_29 PAD ) ( bp_u_v18_28 PAD ) ( bp_u_v18_27 PAD )
+      ( bp_u_v18_26 PAD ) ( bp_u_v18_25 PAD ) ( bp_u_v18_24 PAD ) ( bp_u_v18_23 PAD ) ( bp_u_v18_22 PAD ) ( bp_u_v18_20 PAD ) ( bp_u_v18_19 PAD ) ( bp_u_v18_18 PAD )
+      ( bp_u_v18_17 PAD ) ( bp_u_v18_16 PAD ) ( bp_u_v18_15 PAD ) ( bp_u_v18_14 PAD ) ( bp_u_v18_13 PAD ) ( bp_u_v18_12 PAD ) ( bp_u_v18_11 PAD ) ( bp_u_v18_10 PAD )
+      ( bp_u_v18_9 PAD ) ( bp_u_v18_8 PAD ) ( bp_u_v18_7 PAD ) ( bp_u_v18_6 PAD ) ( bp_u_v18_5 PAD ) ( bp_u_v18_4 PAD ) ( bp_u_v18_3 PAD ) ( bp_u_v18_2 PAD )
+      ( bp_u_v18_1 PAD ) ( u_ddr_dq_8_io DVDD ) ( u_vdd_32 DVDD ) ( u_ddr_dq_9_io DVDD ) ( u_vss_32 DVDD ) ( u_ddr_dq_10_io DVDD ) ( u_v18_32 DVDD ) ( u_ddr_dq_11_io DVDD )
+      ( u_vzz_32 DVDD ) ( u_pwrdet16 DVDD ) ( u_ddr_dq_12_io DVDD ) ( u_vdd_31 DVDD ) ( u_ddr_dq_13_io DVDD ) ( u_vss_31 DVDD ) ( u_ddr_dq_14_io DVDD ) ( u_v18_31 DVDD )
+      ( u_ddr_dq_15_io DVDD ) ( u_vzz_31 DVDD ) ( u_ddr_dqs_p_0_io DVDD ) ( u_vdd_30 DVDD ) ( u_ddr_dqs_n_0_io DVDD ) ( u_vss_30 DVDD ) ( u_ddr_dm_0_o DVDD ) ( u_v18_30 DVDD )
+      ( u_ddr_dq_0_io DVDD ) ( u_vzz_30 DVDD ) ( u_ddr_dq_1_io DVDD ) ( u_pwrdet15 DVDD ) ( u_vdd_29 DVDD ) ( u_ddr_dq_2_io DVDD ) ( u_vss_29 DVDD ) ( u_ddr_dq_3_io DVDD )
+      ( u_v18_29 DVDD ) ( u_ddr_dq_4_io DVDD ) ( u_vzz_29 DVDD ) ( u_ddr_dq_5_io DVDD ) ( u_vdd_28 DVDD ) ( u_ddr_dq_6_io DVDD ) ( u_vss_28 DVDD ) ( u_ddr_dq_7_io DVDD )
+      ( u_v18_28 DVDD ) ( u_bsg_tag_data_o DVDD ) ( u_vzz_28 DVDD ) ( u_bsg_tag_clk_o DVDD ) ( u_pwrdet14 DVDD ) ( u_vdd_27 DVDD ) ( u_co2_0_o DVDD ) ( u_vss_27 DVDD )
+      ( u_co2_1_o DVDD ) ( u_v18_27 DVDD ) ( u_co2_2_o DVDD ) ( u_vzz_27 DVDD ) ( u_co2_3_o DVDD ) ( u_vdd_26 DVDD ) ( u_co2_4_o DVDD ) ( u_vss_26 DVDD )
+      ( u_co2_clk_o DVDD ) ( u_v18_26 DVDD ) ( u_co2_tkn_i DVDD ) ( u_vzz_26 DVDD ) ( u_co2_v_o DVDD ) ( u_pwrdet13 DVDD ) ( u_vdd_25 DVDD ) ( u_co2_5_o DVDD )
+      ( u_vss_25 DVDD ) ( u_co2_6_o DVDD ) ( u_v18_25 DVDD ) ( u_co2_7_o DVDD ) ( u_vzz_25 DVDD ) ( u_co2_8_o DVDD ) ( u_vdd_24 DVDD ) ( u_co_0_i DVDD )
+      ( u_vss_24 DVDD ) ( u_co_1_i DVDD ) ( u_v18_24 DVDD ) ( u_co_2_i DVDD ) ( u_vzz_24 DVDD ) ( u_pwrdet8 DVDD ) ( u_co_3_i DVDD ) ( u_vdd_23 DVDD )
+      ( u_co_4_i DVDD ) ( u_vss_23 DVDD ) ( u_co_clk_i DVDD ) ( u_v18_23 DVDD ) ( u_co_tkn_o DVDD ) ( u_vzz_23 DVDD ) ( u_co_v_i DVDD ) ( u_vdd_22 DVDD )
+      ( u_co_5_i DVDD ) ( u_vss_22 DVDD ) ( u_co_6_i DVDD ) ( u_v18_22 DVDD ) ( u_pwrdet9 DVDD ) ( u_co_7_i DVDD ) ( u_vzz_22 DVDD ) ( u_co_8_i DVDD )
+      ( u_vdd_21 DVDD ) ( u_clk_A_i DVDD ) ( u_vss_21 DVDD ) ( u_clk_B_i DVDD ) ( u_vdd_20 DVDD ) ( u_sel_0_i DVDD ) ( u_vss_20 DVDD ) ( u_sel_1_i DVDD )
+      ( u_v18_20 DVDD ) ( u_sel_2_i DVDD ) ( u_vzz_20 DVDD ) ( u_core_async_reset_i DVDD ) ( u_pwrdet11 DVDD ) ( u_vdd_19 DVDD ) ( u_ci2_0_o DVDD ) ( u_vss_19 DVDD )
+      ( u_ci2_1_o DVDD ) ( u_v18_19 DVDD ) ( u_ci2_2_o DVDD ) ( u_vzz_19 DVDD ) ( u_ci2_3_o DVDD ) ( u_vdd_18 DVDD ) ( u_ci2_4_o DVDD ) ( u_vss_18 DVDD )
+      ( u_ci2_clk_o DVDD ) ( u_v18_18 DVDD ) ( u_ci2_tkn_i DVDD ) ( u_vzz_18 DVDD ) ( u_ci2_v_o DVDD ) ( u_pwrdet12 DVDD ) ( u_vdd_17 DVDD ) ( u_ci2_5_o DVDD )
+      ( u_vss_17 DVDD ) ( u_ci2_6_o DVDD ) ( u_v18_17 DVDD ) ( u_ci2_7_o DVDD ) ( u_vzz_17 DVDD ) ( u_ci2_8_o DVDD ) ( u_ci_0_i DVDD ) ( u_vdd_16 DVDD )
+      ( u_ci_1_i DVDD ) ( u_vss_16 DVDD ) ( u_ci_2_i DVDD ) ( u_v18_16 DVDD ) ( u_ci_3_i DVDD ) ( u_vzz_16 DVDD ) ( u_pwrdet7 DVDD ) ( u_ci_4_i DVDD )
+      ( u_vdd_15 DVDD ) ( u_ci_clk_i DVDD ) ( u_vss_15 DVDD ) ( u_ci_tkn_o DVDD ) ( u_v18_15 DVDD ) ( u_ci_v_i DVDD ) ( u_vzz_15 DVDD ) ( u_ci_5_i DVDD )
+      ( u_vdd_14 DVDD ) ( u_ci_6_i DVDD ) ( u_vss_14 DVDD ) ( u_ci_7_i DVDD ) ( u_v18_14 DVDD ) ( u_ci_8_i DVDD ) ( u_vzz_14 DVDD ) ( u_bsg_tag_en_i DVDD )
+      ( u_pwrdet6 DVDD ) ( u_vdd_13 DVDD ) ( u_bsg_tag_data_i DVDD ) ( u_vss_13 DVDD ) ( u_bsg_tag_clk_i DVDD ) ( u_v18_13 DVDD ) ( u_ddr_dm_3_o DVDD ) ( u_vzz_13 DVDD )
+      ( u_ddr_dqs_p_3_io DVDD ) ( u_vdd_12 DVDD ) ( u_ddr_dqs_n_3_io DVDD ) ( u_vss_12 DVDD ) ( u_ddr_dq_24_io DVDD ) ( u_v18_12 DVDD ) ( u_ddr_dq_25_io DVDD ) ( u_vzz_12 DVDD )
+      ( u_ddr_dq_26_io DVDD ) ( u_vdd_11 DVDD ) ( u_pwrdet5 DVDD ) ( u_ddr_dq_27_io DVDD ) ( u_vss_11 DVDD ) ( u_ddr_dq_28_io DVDD ) ( u_v18_11 DVDD ) ( u_ddr_dq_29_io DVDD )
+      ( u_vzz_11 DVDD ) ( u_ddr_dq_30_io DVDD ) ( u_vdd_10 DVDD ) ( u_ddr_dq_31_io DVDD ) ( u_vss_10 DVDD ) ( u_ddr_dq_16_io DVDD ) ( u_v18_10 DVDD ) ( u_ddr_dq_17_io DVDD )
+      ( u_vzz_10 DVDD ) ( u_ddr_dq_18_io DVDD ) ( u_vdd_9 DVDD ) ( u_ddr_dq_19_io DVDD ) ( u_pwrdet4 DVDD ) ( u_vss_9 DVDD ) ( u_ddr_dq_20_io DVDD ) ( u_v18_9 DVDD )
+      ( u_ddr_dq_21_io DVDD ) ( u_vzz_9 DVDD ) ( u_ddr_dq_22_io DVDD ) ( u_vdd_8 DVDD ) ( u_ddr_dq_23_io DVDD ) ( u_vss_8 DVDD ) ( u_ddr_dm_2_o DVDD ) ( u_v18_8 DVDD )
+      ( u_ddr_dqs_p_2_io DVDD ) ( u_vzz_8 DVDD ) ( u_ddr_dqs_n_2_io DVDD ) ( u_vdd_7 DVDD ) ( u_ddr_ck_p_o DVDD ) ( u_vss_7 DVDD ) ( u_pwrdet3 DVDD ) ( u_ddr_ck_n_o DVDD )
+      ( u_v18_7 DVDD ) ( u_ddr_cke_o DVDD ) ( u_vzz_7 DVDD ) ( u_ddr_cs_n_o DVDD ) ( u_vdd_6 DVDD ) ( u_ddr_ras_n_o DVDD ) ( u_vss_6 DVDD ) ( u_ddr_cas_n_o DVDD )
+      ( u_v18_6 DVDD ) ( u_ddr_we_n_o DVDD ) ( u_vzz_6 DVDD ) ( u_ddr_reset_n_o DVDD ) ( u_vdd_5 DVDD ) ( u_ddr_odt_o DVDD ) ( u_vss_5 DVDD ) ( u_ddr_addr_0_o DVDD )
+      ( u_pwrdet2 DVDD ) ( u_v18_5 DVDD ) ( u_ddr_addr_1_o DVDD ) ( u_vzz_5 DVDD ) ( u_ddr_addr_2_o DVDD ) ( u_vdd_4 DVDD ) ( u_ddr_addr_3_o DVDD ) ( u_vss_4 DVDD )
+      ( u_ddr_addr_4_o DVDD ) ( u_v18_4 DVDD ) ( u_ddr_addr_5_o DVDD ) ( u_vzz_4 DVDD ) ( u_ddr_addr_6_o DVDD ) ( u_vdd_3 DVDD ) ( u_ddr_addr_7_o DVDD ) ( u_vss_3 DVDD )
+      ( u_ddr_addr_8_o DVDD ) ( u_v18_3 DVDD ) ( u_pwrdet1 DVDD ) ( u_ddr_addr_9_o DVDD ) ( u_vzz_3 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_vdd_2 DVDD ) ( u_ddr_addr_11_o DVDD )
+      ( u_vss_2 DVDD ) ( u_ddr_addr_12_o DVDD ) ( u_v18_2 DVDD ) ( u_ddr_addr_13_o DVDD ) ( u_vzz_2 DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_vdd_1 DVDD ) ( u_ddr_addr_15_o DVDD )
+      ( u_vss_1 DVDD ) ( u_ddr_ba_0_o DVDD ) ( u_v18_1 DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD ) ( u_vzz_1 DVDD ) ( u_ddr_ba_2_o DVDD ) ( u_vdd_0 DVDD )
+      ( u_ddr_dqs_p_1_io DVDD ) ( u_vss_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_v18_0 DVDD ) ( u_ddr_dm_1_o DVDD ) ( u_vzz_0 DVDD ) + USE POWER ;
     - DVDD_1 ( PIN DVDD_1 ) ( u_v18_21 DVDD ) ( u_clk_C_i DVDD ) ( u_vzz_21 DVDD ) ( u_clk_o DVDD ) ( u_pwrdet10 DVDD ) ( u_vdd_pll DVDD )
       ( u_clk_async_reset_i DVDD ) ( u_vss_pll DVDD ) ( u_misc_o DVDD ) + USE POWER ;
-    - DVSS_0 ( PIN DVSS_0 ) ( u_ddr_dq_8_io DVSS ) ( u_vdd_32 DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_vss_32 DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_v18_32 DVSS )
-      ( u_ddr_dq_11_io DVSS ) ( u_vzz_32 DVSS ) ( u_pwrdet16 DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_vdd_31 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_vss_31 DVSS ) ( u_ddr_dq_14_io DVSS )
-      ( u_v18_31 DVSS ) ( u_ddr_dq_15_io DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_vdd_30 DVSS ) ( u_ddr_dqs_n_0_io DVSS ) ( u_vss_30 DVSS ) ( u_ddr_dm_0_o DVSS )
-      ( u_v18_30 DVSS ) ( u_ddr_dq_0_io DVSS ) ( u_vzz_30 DVSS ) ( u_ddr_dq_1_io DVSS ) ( u_pwrdet15 DVSS ) ( u_vdd_29 DVSS ) ( u_ddr_dq_2_io DVSS ) ( u_vss_29 DVSS )
-      ( u_ddr_dq_3_io DVSS ) ( u_v18_29 DVSS ) ( u_ddr_dq_4_io DVSS ) ( u_vzz_29 DVSS ) ( u_ddr_dq_5_io DVSS ) ( u_vdd_28 DVSS ) ( u_ddr_dq_6_io DVSS ) ( u_vss_28 DVSS )
-      ( u_ddr_dq_7_io DVSS ) ( u_v18_28 DVSS ) ( u_bsg_tag_data_o DVSS ) ( u_vzz_28 DVSS ) ( u_bsg_tag_clk_o DVSS ) ( u_pwrdet14 DVSS ) ( u_vdd_27 DVSS ) ( u_co2_0_o DVSS )
-      ( u_vss_27 DVSS ) ( u_co2_1_o DVSS ) ( u_v18_27 DVSS ) ( u_co2_2_o DVSS ) ( u_vzz_27 DVSS ) ( u_co2_3_o DVSS ) ( u_vdd_26 DVSS ) ( u_co2_4_o DVSS )
-      ( u_vss_26 DVSS ) ( u_co2_clk_o DVSS ) ( u_v18_26 DVSS ) ( u_co2_tkn_i DVSS ) ( u_vzz_26 DVSS ) ( u_co2_v_o DVSS ) ( u_pwrdet13 DVSS ) ( u_vdd_25 DVSS )
-      ( u_co2_5_o DVSS ) ( u_vss_25 DVSS ) ( u_co2_6_o DVSS ) ( u_v18_25 DVSS ) ( u_co2_7_o DVSS ) ( u_vzz_25 DVSS ) ( u_co2_8_o DVSS ) ( u_vdd_24 DVSS )
-      ( u_co_0_i DVSS ) ( u_vss_24 DVSS ) ( u_co_1_i DVSS ) ( u_v18_24 DVSS ) ( u_co_2_i DVSS ) ( u_vzz_24 DVSS ) ( u_pwrdet8 DVSS ) ( u_co_3_i DVSS )
-      ( u_vdd_23 DVSS ) ( u_co_4_i DVSS ) ( u_vss_23 DVSS ) ( u_co_clk_i DVSS ) ( u_v18_23 DVSS ) ( u_co_tkn_o DVSS ) ( u_vzz_23 DVSS ) ( u_co_v_i DVSS )
-      ( u_vdd_22 DVSS ) ( u_co_5_i DVSS ) ( u_vss_22 DVSS ) ( u_co_6_i DVSS ) ( u_v18_22 DVSS ) ( u_pwrdet9 DVSS ) ( u_co_7_i DVSS ) ( u_vzz_22 DVSS )
-      ( u_co_8_i DVSS ) ( u_vdd_21 DVSS ) ( u_clk_A_i DVSS ) ( u_vss_21 DVSS ) ( u_clk_B_i DVSS ) ( u_vdd_20 DVSS ) ( u_sel_0_i DVSS ) ( u_vss_20 DVSS )
-      ( u_sel_1_i DVSS ) ( u_v18_20 DVSS ) ( u_sel_2_i DVSS ) ( u_vzz_20 DVSS ) ( u_core_async_reset_i DVSS ) ( u_pwrdet11 DVSS ) ( u_vdd_19 DVSS ) ( u_ci2_0_o DVSS )
-      ( u_vss_19 DVSS ) ( u_ci2_1_o DVSS ) ( u_v18_19 DVSS ) ( u_ci2_2_o DVSS ) ( u_vzz_19 DVSS ) ( u_ci2_3_o DVSS ) ( u_vdd_18 DVSS ) ( u_ci2_4_o DVSS )
-      ( u_vss_18 DVSS ) ( u_ci2_clk_o DVSS ) ( u_v18_18 DVSS ) ( u_ci2_tkn_i DVSS ) ( u_vzz_18 DVSS ) ( u_ci2_v_o DVSS ) ( u_pwrdet12 DVSS ) ( u_vdd_17 DVSS )
-      ( u_ci2_5_o DVSS ) ( u_vss_17 DVSS ) ( u_ci2_6_o DVSS ) ( u_v18_17 DVSS ) ( u_ci2_7_o DVSS ) ( u_vzz_17 DVSS ) ( u_ci2_8_o DVSS ) ( u_ci_0_i DVSS )
-      ( u_vdd_16 DVSS ) ( u_ci_1_i DVSS ) ( u_vss_16 DVSS ) ( u_ci_2_i DVSS ) ( u_v18_16 DVSS ) ( u_ci_3_i DVSS ) ( u_vzz_16 DVSS ) ( u_pwrdet7 DVSS )
-      ( u_ci_4_i DVSS ) ( u_vdd_15 DVSS ) ( u_ci_clk_i DVSS ) ( u_vss_15 DVSS ) ( u_ci_tkn_o DVSS ) ( u_v18_15 DVSS ) ( u_ci_v_i DVSS ) ( u_vzz_15 DVSS )
-      ( u_ci_5_i DVSS ) ( u_vdd_14 DVSS ) ( u_ci_6_i DVSS ) ( u_vss_14 DVSS ) ( u_ci_7_i DVSS ) ( u_v18_14 DVSS ) ( u_ci_8_i DVSS ) ( u_vzz_14 DVSS )
-      ( u_bsg_tag_en_i DVSS ) ( u_pwrdet6 DVSS ) ( u_vdd_13 DVSS ) ( u_bsg_tag_data_i DVSS ) ( u_vss_13 DVSS ) ( u_bsg_tag_clk_i DVSS ) ( u_v18_13 DVSS ) ( u_ddr_dm_3_o DVSS )
-      ( u_vzz_13 DVSS ) ( u_ddr_dqs_p_3_io DVSS ) ( u_vdd_12 DVSS ) ( u_ddr_dqs_n_3_io DVSS ) ( u_vss_12 DVSS ) ( u_ddr_dq_24_io DVSS ) ( u_v18_12 DVSS ) ( u_ddr_dq_25_io DVSS )
-      ( u_vzz_12 DVSS ) ( u_ddr_dq_26_io DVSS ) ( u_vdd_11 DVSS ) ( u_pwrdet5 DVSS ) ( u_ddr_dq_27_io DVSS ) ( u_vss_11 DVSS ) ( u_ddr_dq_28_io DVSS ) ( u_v18_11 DVSS )
-      ( u_ddr_dq_29_io DVSS ) ( u_vzz_11 DVSS ) ( u_ddr_dq_30_io DVSS ) ( u_vdd_10 DVSS ) ( u_ddr_dq_31_io DVSS ) ( u_vss_10 DVSS ) ( u_ddr_dq_16_io DVSS ) ( u_v18_10 DVSS )
-      ( u_ddr_dq_17_io DVSS ) ( u_vzz_10 DVSS ) ( u_ddr_dq_18_io DVSS ) ( u_vdd_9 DVSS ) ( u_ddr_dq_19_io DVSS ) ( u_pwrdet4 DVSS ) ( u_vss_9 DVSS ) ( u_ddr_dq_20_io DVSS )
-      ( u_v18_9 DVSS ) ( u_ddr_dq_21_io DVSS ) ( u_vzz_9 DVSS ) ( u_ddr_dq_22_io DVSS ) ( u_vdd_8 DVSS ) ( u_ddr_dq_23_io DVSS ) ( u_vss_8 DVSS ) ( u_ddr_dm_2_o DVSS )
-      ( u_v18_8 DVSS ) ( u_ddr_dqs_p_2_io DVSS ) ( u_vzz_8 DVSS ) ( u_ddr_dqs_n_2_io DVSS ) ( u_vdd_7 DVSS ) ( u_ddr_ck_p_o DVSS ) ( u_vss_7 DVSS ) ( u_pwrdet3 DVSS )
-      ( u_ddr_ck_n_o DVSS ) ( u_v18_7 DVSS ) ( u_ddr_cke_o DVSS ) ( u_vzz_7 DVSS ) ( u_ddr_cs_n_o DVSS ) ( u_vdd_6 DVSS ) ( u_ddr_ras_n_o DVSS ) ( u_vss_6 DVSS )
-      ( u_ddr_cas_n_o DVSS ) ( u_v18_6 DVSS ) ( u_ddr_we_n_o DVSS ) ( u_vzz_6 DVSS ) ( u_ddr_reset_n_o DVSS ) ( u_vdd_5 DVSS ) ( u_ddr_odt_o DVSS ) ( u_vss_5 DVSS )
-      ( u_ddr_addr_0_o DVSS ) ( u_pwrdet2 DVSS ) ( u_v18_5 DVSS ) ( u_ddr_addr_1_o DVSS ) ( u_vzz_5 DVSS ) ( u_ddr_addr_2_o DVSS ) ( u_vdd_4 DVSS ) ( u_ddr_addr_3_o DVSS )
-      ( u_vss_4 DVSS ) ( u_ddr_addr_4_o DVSS ) ( u_v18_4 DVSS ) ( u_ddr_addr_5_o DVSS ) ( u_vzz_4 DVSS ) ( u_ddr_addr_6_o DVSS ) ( u_vdd_3 DVSS ) ( u_ddr_addr_7_o DVSS )
-      ( u_vss_3 DVSS ) ( u_ddr_addr_8_o DVSS ) ( u_v18_3 DVSS ) ( u_pwrdet1 DVSS ) ( u_ddr_addr_9_o DVSS ) ( u_vzz_3 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_vdd_2 DVSS )
-      ( u_ddr_addr_11_o DVSS ) ( u_vss_2 DVSS ) ( u_ddr_addr_12_o DVSS ) ( u_v18_2 DVSS ) ( u_ddr_addr_13_o DVSS ) ( u_vzz_2 DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_vdd_1 DVSS )
-      ( u_ddr_addr_15_o DVSS ) ( u_vss_1 DVSS ) ( u_ddr_ba_0_o DVSS ) ( u_v18_1 DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS ) ( u_vzz_1 DVSS ) ( u_ddr_ba_2_o DVSS )
-      ( u_vdd_0 DVSS ) ( u_ddr_dqs_p_1_io DVSS ) ( u_vss_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_v18_0 DVSS ) ( u_ddr_dm_1_o DVSS ) ( u_vzz_0 DVSS ) + USE GROUND ;
+    - DVSS_0 ( PIN DVSS_0 ) ( bp_u_vzz_32 PAD ) ( bp_u_vzz_31 PAD ) ( bp_u_vzz_30 PAD ) ( bp_u_vzz_29 PAD ) ( bp_u_vzz_28 PAD ) ( bp_u_vzz_27 PAD )
+      ( bp_u_vzz_26 PAD ) ( bp_u_vzz_25 PAD ) ( bp_u_vzz_24 PAD ) ( bp_u_vzz_23 PAD ) ( bp_u_vzz_22 PAD ) ( bp_u_vzz_20 PAD ) ( bp_u_vzz_19 PAD ) ( bp_u_vzz_18 PAD )
+      ( bp_u_vzz_17 PAD ) ( bp_u_vzz_16 PAD ) ( bp_u_vzz_15 PAD ) ( bp_u_vzz_14 PAD ) ( bp_u_vzz_13 PAD ) ( bp_u_vzz_12 PAD ) ( bp_u_vzz_11 PAD ) ( bp_u_vzz_10 PAD )
+      ( bp_u_vzz_9 PAD ) ( bp_u_vzz_8 PAD ) ( bp_u_vzz_7 PAD ) ( bp_u_vzz_6 PAD ) ( bp_u_vzz_5 PAD ) ( bp_u_vzz_4 PAD ) ( bp_u_vzz_3 PAD ) ( bp_u_vzz_2 PAD )
+      ( bp_u_vzz_1 PAD ) ( u_ddr_dq_8_io DVSS ) ( u_vdd_32 DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_vss_32 DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_v18_32 DVSS ) ( u_ddr_dq_11_io DVSS )
+      ( u_vzz_32 DVSS ) ( u_pwrdet16 DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_vdd_31 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_vss_31 DVSS ) ( u_ddr_dq_14_io DVSS ) ( u_v18_31 DVSS )
+      ( u_ddr_dq_15_io DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_vdd_30 DVSS ) ( u_ddr_dqs_n_0_io DVSS ) ( u_vss_30 DVSS ) ( u_ddr_dm_0_o DVSS ) ( u_v18_30 DVSS )
+      ( u_ddr_dq_0_io DVSS ) ( u_vzz_30 DVSS ) ( u_ddr_dq_1_io DVSS ) ( u_pwrdet15 DVSS ) ( u_vdd_29 DVSS ) ( u_ddr_dq_2_io DVSS ) ( u_vss_29 DVSS ) ( u_ddr_dq_3_io DVSS )
+      ( u_v18_29 DVSS ) ( u_ddr_dq_4_io DVSS ) ( u_vzz_29 DVSS ) ( u_ddr_dq_5_io DVSS ) ( u_vdd_28 DVSS ) ( u_ddr_dq_6_io DVSS ) ( u_vss_28 DVSS ) ( u_ddr_dq_7_io DVSS )
+      ( u_v18_28 DVSS ) ( u_bsg_tag_data_o DVSS ) ( u_vzz_28 DVSS ) ( u_bsg_tag_clk_o DVSS ) ( u_pwrdet14 DVSS ) ( u_vdd_27 DVSS ) ( u_co2_0_o DVSS ) ( u_vss_27 DVSS )
+      ( u_co2_1_o DVSS ) ( u_v18_27 DVSS ) ( u_co2_2_o DVSS ) ( u_vzz_27 DVSS ) ( u_co2_3_o DVSS ) ( u_vdd_26 DVSS ) ( u_co2_4_o DVSS ) ( u_vss_26 DVSS )
+      ( u_co2_clk_o DVSS ) ( u_v18_26 DVSS ) ( u_co2_tkn_i DVSS ) ( u_vzz_26 DVSS ) ( u_co2_v_o DVSS ) ( u_pwrdet13 DVSS ) ( u_vdd_25 DVSS ) ( u_co2_5_o DVSS )
+      ( u_vss_25 DVSS ) ( u_co2_6_o DVSS ) ( u_v18_25 DVSS ) ( u_co2_7_o DVSS ) ( u_vzz_25 DVSS ) ( u_co2_8_o DVSS ) ( u_vdd_24 DVSS ) ( u_co_0_i DVSS )
+      ( u_vss_24 DVSS ) ( u_co_1_i DVSS ) ( u_v18_24 DVSS ) ( u_co_2_i DVSS ) ( u_vzz_24 DVSS ) ( u_pwrdet8 DVSS ) ( u_co_3_i DVSS ) ( u_vdd_23 DVSS )
+      ( u_co_4_i DVSS ) ( u_vss_23 DVSS ) ( u_co_clk_i DVSS ) ( u_v18_23 DVSS ) ( u_co_tkn_o DVSS ) ( u_vzz_23 DVSS ) ( u_co_v_i DVSS ) ( u_vdd_22 DVSS )
+      ( u_co_5_i DVSS ) ( u_vss_22 DVSS ) ( u_co_6_i DVSS ) ( u_v18_22 DVSS ) ( u_pwrdet9 DVSS ) ( u_co_7_i DVSS ) ( u_vzz_22 DVSS ) ( u_co_8_i DVSS )
+      ( u_vdd_21 DVSS ) ( u_clk_A_i DVSS ) ( u_vss_21 DVSS ) ( u_clk_B_i DVSS ) ( u_vdd_20 DVSS ) ( u_sel_0_i DVSS ) ( u_vss_20 DVSS ) ( u_sel_1_i DVSS )
+      ( u_v18_20 DVSS ) ( u_sel_2_i DVSS ) ( u_vzz_20 DVSS ) ( u_core_async_reset_i DVSS ) ( u_pwrdet11 DVSS ) ( u_vdd_19 DVSS ) ( u_ci2_0_o DVSS ) ( u_vss_19 DVSS )
+      ( u_ci2_1_o DVSS ) ( u_v18_19 DVSS ) ( u_ci2_2_o DVSS ) ( u_vzz_19 DVSS ) ( u_ci2_3_o DVSS ) ( u_vdd_18 DVSS ) ( u_ci2_4_o DVSS ) ( u_vss_18 DVSS )
+      ( u_ci2_clk_o DVSS ) ( u_v18_18 DVSS ) ( u_ci2_tkn_i DVSS ) ( u_vzz_18 DVSS ) ( u_ci2_v_o DVSS ) ( u_pwrdet12 DVSS ) ( u_vdd_17 DVSS ) ( u_ci2_5_o DVSS )
+      ( u_vss_17 DVSS ) ( u_ci2_6_o DVSS ) ( u_v18_17 DVSS ) ( u_ci2_7_o DVSS ) ( u_vzz_17 DVSS ) ( u_ci2_8_o DVSS ) ( u_ci_0_i DVSS ) ( u_vdd_16 DVSS )
+      ( u_ci_1_i DVSS ) ( u_vss_16 DVSS ) ( u_ci_2_i DVSS ) ( u_v18_16 DVSS ) ( u_ci_3_i DVSS ) ( u_vzz_16 DVSS ) ( u_pwrdet7 DVSS ) ( u_ci_4_i DVSS )
+      ( u_vdd_15 DVSS ) ( u_ci_clk_i DVSS ) ( u_vss_15 DVSS ) ( u_ci_tkn_o DVSS ) ( u_v18_15 DVSS ) ( u_ci_v_i DVSS ) ( u_vzz_15 DVSS ) ( u_ci_5_i DVSS )
+      ( u_vdd_14 DVSS ) ( u_ci_6_i DVSS ) ( u_vss_14 DVSS ) ( u_ci_7_i DVSS ) ( u_v18_14 DVSS ) ( u_ci_8_i DVSS ) ( u_vzz_14 DVSS ) ( u_bsg_tag_en_i DVSS )
+      ( u_pwrdet6 DVSS ) ( u_vdd_13 DVSS ) ( u_bsg_tag_data_i DVSS ) ( u_vss_13 DVSS ) ( u_bsg_tag_clk_i DVSS ) ( u_v18_13 DVSS ) ( u_ddr_dm_3_o DVSS ) ( u_vzz_13 DVSS )
+      ( u_ddr_dqs_p_3_io DVSS ) ( u_vdd_12 DVSS ) ( u_ddr_dqs_n_3_io DVSS ) ( u_vss_12 DVSS ) ( u_ddr_dq_24_io DVSS ) ( u_v18_12 DVSS ) ( u_ddr_dq_25_io DVSS ) ( u_vzz_12 DVSS )
+      ( u_ddr_dq_26_io DVSS ) ( u_vdd_11 DVSS ) ( u_pwrdet5 DVSS ) ( u_ddr_dq_27_io DVSS ) ( u_vss_11 DVSS ) ( u_ddr_dq_28_io DVSS ) ( u_v18_11 DVSS ) ( u_ddr_dq_29_io DVSS )
+      ( u_vzz_11 DVSS ) ( u_ddr_dq_30_io DVSS ) ( u_vdd_10 DVSS ) ( u_ddr_dq_31_io DVSS ) ( u_vss_10 DVSS ) ( u_ddr_dq_16_io DVSS ) ( u_v18_10 DVSS ) ( u_ddr_dq_17_io DVSS )
+      ( u_vzz_10 DVSS ) ( u_ddr_dq_18_io DVSS ) ( u_vdd_9 DVSS ) ( u_ddr_dq_19_io DVSS ) ( u_pwrdet4 DVSS ) ( u_vss_9 DVSS ) ( u_ddr_dq_20_io DVSS ) ( u_v18_9 DVSS )
+      ( u_ddr_dq_21_io DVSS ) ( u_vzz_9 DVSS ) ( u_ddr_dq_22_io DVSS ) ( u_vdd_8 DVSS ) ( u_ddr_dq_23_io DVSS ) ( u_vss_8 DVSS ) ( u_ddr_dm_2_o DVSS ) ( u_v18_8 DVSS )
+      ( u_ddr_dqs_p_2_io DVSS ) ( u_vzz_8 DVSS ) ( u_ddr_dqs_n_2_io DVSS ) ( u_vdd_7 DVSS ) ( u_ddr_ck_p_o DVSS ) ( u_vss_7 DVSS ) ( u_pwrdet3 DVSS ) ( u_ddr_ck_n_o DVSS )
+      ( u_v18_7 DVSS ) ( u_ddr_cke_o DVSS ) ( u_vzz_7 DVSS ) ( u_ddr_cs_n_o DVSS ) ( u_vdd_6 DVSS ) ( u_ddr_ras_n_o DVSS ) ( u_vss_6 DVSS ) ( u_ddr_cas_n_o DVSS )
+      ( u_v18_6 DVSS ) ( u_ddr_we_n_o DVSS ) ( u_vzz_6 DVSS ) ( u_ddr_reset_n_o DVSS ) ( u_vdd_5 DVSS ) ( u_ddr_odt_o DVSS ) ( u_vss_5 DVSS ) ( u_ddr_addr_0_o DVSS )
+      ( u_pwrdet2 DVSS ) ( u_v18_5 DVSS ) ( u_ddr_addr_1_o DVSS ) ( u_vzz_5 DVSS ) ( u_ddr_addr_2_o DVSS ) ( u_vdd_4 DVSS ) ( u_ddr_addr_3_o DVSS ) ( u_vss_4 DVSS )
+      ( u_ddr_addr_4_o DVSS ) ( u_v18_4 DVSS ) ( u_ddr_addr_5_o DVSS ) ( u_vzz_4 DVSS ) ( u_ddr_addr_6_o DVSS ) ( u_vdd_3 DVSS ) ( u_ddr_addr_7_o DVSS ) ( u_vss_3 DVSS )
+      ( u_ddr_addr_8_o DVSS ) ( u_v18_3 DVSS ) ( u_pwrdet1 DVSS ) ( u_ddr_addr_9_o DVSS ) ( u_vzz_3 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_vdd_2 DVSS ) ( u_ddr_addr_11_o DVSS )
+      ( u_vss_2 DVSS ) ( u_ddr_addr_12_o DVSS ) ( u_v18_2 DVSS ) ( u_ddr_addr_13_o DVSS ) ( u_vzz_2 DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_vdd_1 DVSS ) ( u_ddr_addr_15_o DVSS )
+      ( u_vss_1 DVSS ) ( u_ddr_ba_0_o DVSS ) ( u_v18_1 DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS ) ( u_vzz_1 DVSS ) ( u_ddr_ba_2_o DVSS ) ( u_vdd_0 DVSS )
+      ( u_ddr_dqs_p_1_io DVSS ) ( u_vss_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_v18_0 DVSS ) ( u_ddr_dm_1_o DVSS ) ( u_vzz_0 DVSS ) + USE GROUND ;
     - DVSS_1 ( PIN DVSS_1 ) ( u_v18_21 DVSS ) ( u_clk_C_i DVSS ) ( u_vzz_21 DVSS ) ( u_clk_o DVSS ) ( u_pwrdet10 DVSS ) ( u_vdd_pll DVSS )
       ( u_clk_async_reset_i DVSS ) ( u_vss_pll DVSS ) ( u_misc_o DVSS ) + USE GROUND ;
     - RETN_0 + USE SIGNAL ;
@@ -4555,143 +4563,151 @@ SPECIALNETS 183 ;
     - SNS_9 ( u_ci_0_i SNS ) ( u_vdd_16 SNS ) ( u_ci_1_i SNS ) ( u_vss_16 SNS ) ( u_ci_2_i SNS ) ( u_v18_16 SNS ) ( u_ci_3_i SNS )
       ( u_vzz_16 SNS ) ( u_pwrdet7 SNS ) ( u_ci_4_i SNS ) ( u_vdd_15 SNS ) ( u_ci_clk_i SNS ) ( u_vss_15 SNS ) ( u_ci_tkn_o SNS ) ( u_v18_15 SNS )
       ( u_ci_v_i SNS ) ( u_vzz_15 SNS ) ( u_ci_5_i SNS ) + USE SIGNAL ;
-    - VDD ( PIN VDD ) + USE POWER ;
-    - VSS ( PIN VSS ) + USE GROUND ;
-    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL ;
-    - p_ci2_0_o ( PIN p_ci2_0_o ) ( u_ci2_0_o PAD ) + USE SIGNAL ;
-    - p_ci2_1_o ( PIN p_ci2_1_o ) ( u_ci2_1_o PAD ) + USE SIGNAL ;
-    - p_ci2_2_o ( PIN p_ci2_2_o ) ( u_ci2_2_o PAD ) + USE SIGNAL ;
-    - p_ci2_3_o ( PIN p_ci2_3_o ) ( u_ci2_3_o PAD ) + USE SIGNAL ;
-    - p_ci2_4_o ( PIN p_ci2_4_o ) ( u_ci2_4_o PAD ) + USE SIGNAL ;
-    - p_ci2_5_o ( PIN p_ci2_5_o ) ( u_ci2_5_o PAD ) + USE SIGNAL ;
-    - p_ci2_6_o ( PIN p_ci2_6_o ) ( u_ci2_6_o PAD ) + USE SIGNAL ;
-    - p_ci2_7_o ( PIN p_ci2_7_o ) ( u_ci2_7_o PAD ) + USE SIGNAL ;
-    - p_ci2_8_o ( PIN p_ci2_8_o ) ( u_ci2_8_o PAD ) + USE SIGNAL ;
-    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( u_ci2_clk_o PAD ) + USE SIGNAL ;
-    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( u_ci2_tkn_i PAD ) + USE SIGNAL ;
-    - p_ci2_v_o ( PIN p_ci2_v_o ) ( u_ci2_v_o PAD ) + USE SIGNAL ;
-    - p_ci_0_i ( PIN p_ci_0_i ) ( u_ci_0_i PAD ) + USE SIGNAL ;
-    - p_ci_1_i ( PIN p_ci_1_i ) ( u_ci_1_i PAD ) + USE SIGNAL ;
-    - p_ci_2_i ( PIN p_ci_2_i ) ( u_ci_2_i PAD ) + USE SIGNAL ;
-    - p_ci_3_i ( PIN p_ci_3_i ) ( u_ci_3_i PAD ) + USE SIGNAL ;
-    - p_ci_4_i ( PIN p_ci_4_i ) ( u_ci_4_i PAD ) + USE SIGNAL ;
-    - p_ci_5_i ( PIN p_ci_5_i ) ( u_ci_5_i PAD ) + USE SIGNAL ;
-    - p_ci_6_i ( PIN p_ci_6_i ) ( u_ci_6_i PAD ) + USE SIGNAL ;
-    - p_ci_7_i ( PIN p_ci_7_i ) ( u_ci_7_i PAD ) + USE SIGNAL ;
-    - p_ci_8_i ( PIN p_ci_8_i ) ( u_ci_8_i PAD ) + USE SIGNAL ;
-    - p_ci_clk_i ( PIN p_ci_clk_i ) ( u_ci_clk_i PAD ) + USE SIGNAL ;
-    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( u_ci_tkn_o PAD ) + USE SIGNAL ;
-    - p_ci_v_i ( PIN p_ci_v_i ) ( u_ci_v_i PAD ) + USE SIGNAL ;
-    - p_clk_A_i ( PIN p_clk_A_i ) ( u_clk_A_i PAD ) + USE SIGNAL ;
-    - p_clk_B_i ( PIN p_clk_B_i ) ( u_clk_B_i PAD ) + USE SIGNAL ;
-    - p_clk_C_i ( PIN p_clk_C_i ) ( u_clk_C_i PAD ) + USE SIGNAL ;
-    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( u_clk_async_reset_i PAD ) + USE SIGNAL ;
-    - p_clk_o ( PIN p_clk_o ) ( u_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_0_o ( PIN p_co2_0_o ) ( u_co2_0_o PAD ) + USE SIGNAL ;
-    - p_co2_1_o ( PIN p_co2_1_o ) ( u_co2_1_o PAD ) + USE SIGNAL ;
-    - p_co2_2_o ( PIN p_co2_2_o ) ( u_co2_2_o PAD ) + USE SIGNAL ;
-    - p_co2_3_o ( PIN p_co2_3_o ) ( u_co2_3_o PAD ) + USE SIGNAL ;
-    - p_co2_4_o ( PIN p_co2_4_o ) ( u_co2_4_o PAD ) + USE SIGNAL ;
-    - p_co2_5_o ( PIN p_co2_5_o ) ( u_co2_5_o PAD ) + USE SIGNAL ;
-    - p_co2_6_o ( PIN p_co2_6_o ) ( u_co2_6_o PAD ) + USE SIGNAL ;
-    - p_co2_7_o ( PIN p_co2_7_o ) ( u_co2_7_o PAD ) + USE SIGNAL ;
-    - p_co2_8_o ( PIN p_co2_8_o ) ( u_co2_8_o PAD ) + USE SIGNAL ;
-    - p_co2_clk_o ( PIN p_co2_clk_o ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
-    - p_co2_v_o ( PIN p_co2_v_o ) ( u_co2_v_o PAD ) + USE SIGNAL ;
-    - p_co_0_i ( PIN p_co_0_i ) ( u_co_0_i PAD ) + USE SIGNAL ;
-    - p_co_1_i ( PIN p_co_1_i ) ( u_co_1_i PAD ) + USE SIGNAL ;
-    - p_co_2_i ( PIN p_co_2_i ) ( u_co_2_i PAD ) + USE SIGNAL ;
-    - p_co_3_i ( PIN p_co_3_i ) ( u_co_3_i PAD ) + USE SIGNAL ;
-    - p_co_4_i ( PIN p_co_4_i ) ( u_co_4_i PAD ) + USE SIGNAL ;
-    - p_co_5_i ( PIN p_co_5_i ) ( u_co_5_i PAD ) + USE SIGNAL ;
-    - p_co_6_i ( PIN p_co_6_i ) ( u_co_6_i PAD ) + USE SIGNAL ;
-    - p_co_7_i ( PIN p_co_7_i ) ( u_co_7_i PAD ) + USE SIGNAL ;
-    - p_co_8_i ( PIN p_co_8_i ) ( u_co_8_i PAD ) + USE SIGNAL ;
-    - p_co_clk_i ( PIN p_co_clk_i ) ( u_co_clk_i PAD ) + USE SIGNAL ;
-    - p_co_tkn_o ( PIN p_co_tkn_o ) ( u_co_tkn_o PAD ) + USE SIGNAL ;
-    - p_co_v_i ( PIN p_co_v_i ) ( u_co_v_i PAD ) + USE SIGNAL ;
-    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( u_core_async_reset_i PAD ) + USE SIGNAL ;
-    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL ;
-    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( u_ddr_cke_o PAD ) + USE SIGNAL ;
-    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( u_ddr_odt_o PAD ) + USE SIGNAL ;
-    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( u_ddr_we_n_o PAD ) + USE SIGNAL ;
-    - p_misc_o ( PIN p_misc_o ) ( u_misc_o PAD ) + USE SIGNAL ;
-    - p_sel_0_i ( PIN p_sel_0_i ) ( u_sel_0_i PAD ) + USE SIGNAL ;
-    - p_sel_1_i ( PIN p_sel_1_i ) ( u_sel_1_i PAD ) + USE SIGNAL ;
-    - p_sel_2_i ( PIN p_sel_2_i ) ( u_sel_2_i PAD ) + USE SIGNAL ;
+    - VDD ( PIN VDD ) ( bp_u_vdd_32 PAD ) ( bp_u_vdd_31 PAD ) ( bp_u_vdd_30 PAD ) ( bp_u_vdd_29 PAD ) ( bp_u_vdd_28 PAD ) ( bp_u_vdd_27 PAD )
+      ( bp_u_vdd_26 PAD ) ( bp_u_vdd_25 PAD ) ( bp_u_vdd_24 PAD ) ( bp_u_vdd_23 PAD ) ( bp_u_vdd_22 PAD ) ( bp_u_vdd_21 PAD ) ( bp_u_vdd_pll PAD ) ( bp_u_vdd_20 PAD )
+      ( bp_u_vdd_19 PAD ) ( bp_u_vdd_18 PAD ) ( bp_u_vdd_17 PAD ) ( bp_u_vdd_16 PAD ) ( bp_u_vdd_15 PAD ) ( bp_u_vdd_14 PAD ) ( bp_u_vdd_13 PAD ) ( bp_u_vdd_12 PAD )
+      ( bp_u_vdd_11 PAD ) ( bp_u_vdd_10 PAD ) ( bp_u_vdd_9 PAD ) ( bp_u_vdd_8 PAD ) ( bp_u_vdd_7 PAD ) ( bp_u_vdd_6 PAD ) ( bp_u_vdd_5 PAD ) ( bp_u_vdd_4 PAD )
+      ( bp_u_vdd_3 PAD ) ( bp_u_vdd_2 PAD ) ( bp_u_vdd_1 PAD ) + USE POWER ;
+    - VSS ( PIN VSS ) ( bp_u_vss_32 PAD ) ( bp_u_vss_31 PAD ) ( bp_u_vss_30 PAD ) ( bp_u_vss_29 PAD ) ( bp_u_vss_28 PAD ) ( bp_u_vss_27 PAD )
+      ( bp_u_vss_26 PAD ) ( bp_u_vss_25 PAD ) ( bp_u_vss_24 PAD ) ( bp_u_vss_23 PAD ) ( bp_u_vss_22 PAD ) ( bp_u_vss_21 PAD ) ( bp_u_vss_pll PAD ) ( bp_u_vss_20 PAD )
+      ( bp_u_vss_19 PAD ) ( bp_u_vss_18 PAD ) ( bp_u_vss_17 PAD ) ( bp_u_vss_16 PAD ) ( bp_u_vss_15 PAD ) ( bp_u_vss_14 PAD ) ( bp_u_vss_13 PAD ) ( bp_u_vss_12 PAD )
+      ( bp_u_vss_11 PAD ) ( bp_u_vss_10 PAD ) ( bp_u_vss_9 PAD ) ( bp_u_vss_8 PAD ) ( bp_u_vss_7 PAD ) ( bp_u_vss_6 PAD ) ( bp_u_vss_5 PAD ) ( bp_u_vss_4 PAD )
+      ( bp_u_vss_3 PAD ) ( bp_u_vss_2 PAD ) ( bp_u_vss_1 PAD ) + USE GROUND ;
+    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( bp_u_bsg_tag_clk_i PAD ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
+    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( bp_u_bsg_tag_clk_o PAD ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;
+    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( bp_u_bsg_tag_data_i PAD ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL ;
+    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( bp_u_bsg_tag_data_o PAD ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL ;
+    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( bp_u_bsg_tag_en_i PAD ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL ;
+    - p_ci2_0_o ( PIN p_ci2_0_o ) ( bp_u_ci2_0_o PAD ) ( u_ci2_0_o PAD ) + USE SIGNAL ;
+    - p_ci2_1_o ( PIN p_ci2_1_o ) ( bp_u_ci2_1_o PAD ) ( u_ci2_1_o PAD ) + USE SIGNAL ;
+    - p_ci2_2_o ( PIN p_ci2_2_o ) ( bp_u_ci2_2_o PAD ) ( u_ci2_2_o PAD ) + USE SIGNAL ;
+    - p_ci2_3_o ( PIN p_ci2_3_o ) ( bp_u_ci2_3_o PAD ) ( u_ci2_3_o PAD ) + USE SIGNAL ;
+    - p_ci2_4_o ( PIN p_ci2_4_o ) ( bp_u_ci2_4_o PAD ) ( u_ci2_4_o PAD ) + USE SIGNAL ;
+    - p_ci2_5_o ( PIN p_ci2_5_o ) ( bp_u_ci2_5_o PAD ) ( u_ci2_5_o PAD ) + USE SIGNAL ;
+    - p_ci2_6_o ( PIN p_ci2_6_o ) ( bp_u_ci2_6_o PAD ) ( u_ci2_6_o PAD ) + USE SIGNAL ;
+    - p_ci2_7_o ( PIN p_ci2_7_o ) ( bp_u_ci2_7_o PAD ) ( u_ci2_7_o PAD ) + USE SIGNAL ;
+    - p_ci2_8_o ( PIN p_ci2_8_o ) ( bp_u_ci2_8_o PAD ) ( u_ci2_8_o PAD ) + USE SIGNAL ;
+    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( bp_u_ci2_clk_o PAD ) ( u_ci2_clk_o PAD ) + USE SIGNAL ;
+    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( bp_u_ci2_tkn_i PAD ) ( u_ci2_tkn_i PAD ) + USE SIGNAL ;
+    - p_ci2_v_o ( PIN p_ci2_v_o ) ( bp_u_ci2_v_o PAD ) ( u_ci2_v_o PAD ) + USE SIGNAL ;
+    - p_ci_0_i ( PIN p_ci_0_i ) ( bp_u_ci_0_i PAD ) ( u_ci_0_i PAD ) + USE SIGNAL ;
+    - p_ci_1_i ( PIN p_ci_1_i ) ( bp_u_ci_1_i PAD ) ( u_ci_1_i PAD ) + USE SIGNAL ;
+    - p_ci_2_i ( PIN p_ci_2_i ) ( bp_u_ci_2_i PAD ) ( u_ci_2_i PAD ) + USE SIGNAL ;
+    - p_ci_3_i ( PIN p_ci_3_i ) ( bp_u_ci_3_i PAD ) ( u_ci_3_i PAD ) + USE SIGNAL ;
+    - p_ci_4_i ( PIN p_ci_4_i ) ( bp_u_ci_4_i PAD ) ( u_ci_4_i PAD ) + USE SIGNAL ;
+    - p_ci_5_i ( PIN p_ci_5_i ) ( bp_u_ci_5_i PAD ) ( u_ci_5_i PAD ) + USE SIGNAL ;
+    - p_ci_6_i ( PIN p_ci_6_i ) ( bp_u_ci_6_i PAD ) ( u_ci_6_i PAD ) + USE SIGNAL ;
+    - p_ci_7_i ( PIN p_ci_7_i ) ( bp_u_ci_7_i PAD ) ( u_ci_7_i PAD ) + USE SIGNAL ;
+    - p_ci_8_i ( PIN p_ci_8_i ) ( bp_u_ci_8_i PAD ) ( u_ci_8_i PAD ) + USE SIGNAL ;
+    - p_ci_clk_i ( PIN p_ci_clk_i ) ( bp_u_ci_clk_i PAD ) ( u_ci_clk_i PAD ) + USE SIGNAL ;
+    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( bp_u_ci_tkn_o PAD ) ( u_ci_tkn_o PAD ) + USE SIGNAL ;
+    - p_ci_v_i ( PIN p_ci_v_i ) ( bp_u_ci_v_i PAD ) ( u_ci_v_i PAD ) + USE SIGNAL ;
+    - p_clk_A_i ( PIN p_clk_A_i ) ( bp_u_clk_A_i PAD ) ( u_clk_A_i PAD ) + USE SIGNAL ;
+    - p_clk_B_i ( PIN p_clk_B_i ) ( bp_u_clk_B_i PAD ) ( u_clk_B_i PAD ) + USE SIGNAL ;
+    - p_clk_C_i ( PIN p_clk_C_i ) ( bp_u_clk_C_i PAD ) ( u_clk_C_i PAD ) + USE SIGNAL ;
+    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( bp_u_clk_async_reset_i PAD ) ( u_clk_async_reset_i PAD ) + USE SIGNAL ;
+    - p_clk_o ( PIN p_clk_o ) ( bp_u_clk_o PAD ) ( u_clk_o PAD ) + USE SIGNAL ;
+    - p_co2_0_o ( PIN p_co2_0_o ) ( bp_u_co2_0_o PAD ) ( u_co2_0_o PAD ) + USE SIGNAL ;
+    - p_co2_1_o ( PIN p_co2_1_o ) ( bp_u_co2_1_o PAD ) ( u_co2_1_o PAD ) + USE SIGNAL ;
+    - p_co2_2_o ( PIN p_co2_2_o ) ( bp_u_co2_2_o PAD ) ( u_co2_2_o PAD ) + USE SIGNAL ;
+    - p_co2_3_o ( PIN p_co2_3_o ) ( bp_u_co2_3_o PAD ) ( u_co2_3_o PAD ) + USE SIGNAL ;
+    - p_co2_4_o ( PIN p_co2_4_o ) ( bp_u_co2_4_o PAD ) ( u_co2_4_o PAD ) + USE SIGNAL ;
+    - p_co2_5_o ( PIN p_co2_5_o ) ( bp_u_co2_5_o PAD ) ( u_co2_5_o PAD ) + USE SIGNAL ;
+    - p_co2_6_o ( PIN p_co2_6_o ) ( bp_u_co2_6_o PAD ) ( u_co2_6_o PAD ) + USE SIGNAL ;
+    - p_co2_7_o ( PIN p_co2_7_o ) ( bp_u_co2_7_o PAD ) ( u_co2_7_o PAD ) + USE SIGNAL ;
+    - p_co2_8_o ( PIN p_co2_8_o ) ( bp_u_co2_8_o PAD ) ( u_co2_8_o PAD ) + USE SIGNAL ;
+    - p_co2_clk_o ( PIN p_co2_clk_o ) ( bp_u_co2_clk_o PAD ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
+    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( bp_u_co2_tkn_i PAD ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
+    - p_co2_v_o ( PIN p_co2_v_o ) ( bp_u_co2_v_o PAD ) ( u_co2_v_o PAD ) + USE SIGNAL ;
+    - p_co_0_i ( PIN p_co_0_i ) ( bp_u_co_0_i PAD ) ( u_co_0_i PAD ) + USE SIGNAL ;
+    - p_co_1_i ( PIN p_co_1_i ) ( bp_u_co_1_i PAD ) ( u_co_1_i PAD ) + USE SIGNAL ;
+    - p_co_2_i ( PIN p_co_2_i ) ( bp_u_co_2_i PAD ) ( u_co_2_i PAD ) + USE SIGNAL ;
+    - p_co_3_i ( PIN p_co_3_i ) ( bp_u_co_3_i PAD ) ( u_co_3_i PAD ) + USE SIGNAL ;
+    - p_co_4_i ( PIN p_co_4_i ) ( bp_u_co_4_i PAD ) ( u_co_4_i PAD ) + USE SIGNAL ;
+    - p_co_5_i ( PIN p_co_5_i ) ( bp_u_co_5_i PAD ) ( u_co_5_i PAD ) + USE SIGNAL ;
+    - p_co_6_i ( PIN p_co_6_i ) ( bp_u_co_6_i PAD ) ( u_co_6_i PAD ) + USE SIGNAL ;
+    - p_co_7_i ( PIN p_co_7_i ) ( bp_u_co_7_i PAD ) ( u_co_7_i PAD ) + USE SIGNAL ;
+    - p_co_8_i ( PIN p_co_8_i ) ( bp_u_co_8_i PAD ) ( u_co_8_i PAD ) + USE SIGNAL ;
+    - p_co_clk_i ( PIN p_co_clk_i ) ( bp_u_co_clk_i PAD ) ( u_co_clk_i PAD ) + USE SIGNAL ;
+    - p_co_tkn_o ( PIN p_co_tkn_o ) ( bp_u_co_tkn_o PAD ) ( u_co_tkn_o PAD ) + USE SIGNAL ;
+    - p_co_v_i ( PIN p_co_v_i ) ( bp_u_co_v_i PAD ) ( u_co_v_i PAD ) + USE SIGNAL ;
+    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( bp_u_core_async_reset_i PAD ) ( u_core_async_reset_i PAD ) + USE SIGNAL ;
+    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( bp_u_ddr_addr_0_o PAD ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( bp_u_ddr_addr_10_o PAD ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( bp_u_ddr_addr_11_o PAD ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( bp_u_ddr_addr_12_o PAD ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( bp_u_ddr_addr_13_o PAD ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( bp_u_ddr_addr_14_o PAD ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( bp_u_ddr_addr_15_o PAD ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( bp_u_ddr_addr_1_o PAD ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( bp_u_ddr_addr_2_o PAD ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( bp_u_ddr_addr_3_o PAD ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( bp_u_ddr_addr_4_o PAD ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( bp_u_ddr_addr_5_o PAD ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( bp_u_ddr_addr_6_o PAD ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( bp_u_ddr_addr_7_o PAD ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( bp_u_ddr_addr_8_o PAD ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( bp_u_ddr_addr_9_o PAD ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( bp_u_ddr_ba_0_o PAD ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( bp_u_ddr_ba_1_o PAD ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( bp_u_ddr_ba_2_o PAD ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( bp_u_ddr_cas_n_o PAD ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( bp_u_ddr_ck_n_o PAD ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( bp_u_ddr_ck_p_o PAD ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL ;
+    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( bp_u_ddr_cke_o PAD ) ( u_ddr_cke_o PAD ) + USE SIGNAL ;
+    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( bp_u_ddr_cs_n_o PAD ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( bp_u_ddr_dm_0_o PAD ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( bp_u_ddr_dm_1_o PAD ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( bp_u_ddr_dm_2_o PAD ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( bp_u_ddr_dm_3_o PAD ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL ;
+    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( bp_u_ddr_dq_0_io PAD ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( bp_u_ddr_dq_10_io PAD ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( bp_u_ddr_dq_11_io PAD ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( bp_u_ddr_dq_12_io PAD ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( bp_u_ddr_dq_13_io PAD ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( bp_u_ddr_dq_14_io PAD ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( bp_u_ddr_dq_15_io PAD ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( bp_u_ddr_dq_16_io PAD ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( bp_u_ddr_dq_17_io PAD ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( bp_u_ddr_dq_18_io PAD ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( bp_u_ddr_dq_19_io PAD ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( bp_u_ddr_dq_1_io PAD ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( bp_u_ddr_dq_20_io PAD ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( bp_u_ddr_dq_21_io PAD ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( bp_u_ddr_dq_22_io PAD ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( bp_u_ddr_dq_23_io PAD ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( bp_u_ddr_dq_24_io PAD ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( bp_u_ddr_dq_25_io PAD ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( bp_u_ddr_dq_26_io PAD ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( bp_u_ddr_dq_27_io PAD ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( bp_u_ddr_dq_28_io PAD ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( bp_u_ddr_dq_29_io PAD ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( bp_u_ddr_dq_2_io PAD ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( bp_u_ddr_dq_30_io PAD ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( bp_u_ddr_dq_31_io PAD ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( bp_u_ddr_dq_3_io PAD ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( bp_u_ddr_dq_4_io PAD ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( bp_u_ddr_dq_5_io PAD ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( bp_u_ddr_dq_6_io PAD ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( bp_u_ddr_dq_7_io PAD ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( bp_u_ddr_dq_8_io PAD ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( bp_u_ddr_dq_9_io PAD ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( bp_u_ddr_dqs_n_0_io PAD ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( bp_u_ddr_dqs_n_1_io PAD ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( bp_u_ddr_dqs_n_2_io PAD ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( bp_u_ddr_dqs_n_3_io PAD ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( bp_u_ddr_dqs_p_0_io PAD ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( bp_u_ddr_dqs_p_1_io PAD ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( bp_u_ddr_dqs_p_2_io PAD ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( bp_u_ddr_dqs_p_3_io PAD ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( bp_u_ddr_odt_o PAD ) ( u_ddr_odt_o PAD ) + USE SIGNAL ;
+    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( bp_u_ddr_ras_n_o PAD ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( bp_u_ddr_reset_n_o PAD ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( bp_u_ddr_we_n_o PAD ) ( u_ddr_we_n_o PAD ) + USE SIGNAL ;
+    - p_misc_o ( PIN p_misc_o ) ( bp_u_misc_o PAD ) ( u_misc_o PAD ) + USE SIGNAL ;
+    - p_sel_0_i ( PIN p_sel_0_i ) ( bp_u_sel_0_i PAD ) ( u_sel_0_i PAD ) + USE SIGNAL ;
+    - p_sel_1_i ( PIN p_sel_1_i ) ( bp_u_sel_1_i PAD ) ( u_sel_1_i PAD ) + USE SIGNAL ;
+    - p_sel_2_i ( PIN p_sel_2_i ) ( bp_u_sel_2_i PAD ) ( u_sel_2_i PAD ) + USE SIGNAL ;
 END SPECIALNETS
 NETS 215 ;
     - core_bsg_tag_clk_i ( u_bsg_tag_clk_i Y ) + USE SIGNAL ;

@@ -2520,7 +2520,17 @@ namespace eval ICeWall {
           set mterm [[$inst getMaster] findMTerm []]
           set pin_shape {}
           if {[has_library_pad_pin_name "bondpad"]} {
-            set pin_shape [get_pin_shape $inst [get_library_pad_pin_name "bondpad"]]
+            set pin_name [get_library_pad_pin_name "bondpad"]
+            set pin_shape [get_pin_shape $inst $pin_name]
+            set term [$block findBTerm [get_padcell_signal_name $padcell]]
+            if {$term != "NULL"} {
+              set net [$term getNet]
+              set mterm [[$inst getMaster] findMTerm $pin_name]
+              if {$mterm == "NULL"} {
+                utl::error "PAD" 252 "Bondpad cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
+              }
+              set pin [odb::dbITerm_connect $inst $net $mterm]
+            }
           }
           if {[llength $pin_shape] != 4} {
             set pin_shape $center
@@ -3291,7 +3301,17 @@ namespace eval ICeWall {
         if {$padcell != ""} {
           set pin_shape {}
           if {[has_library_pad_pin_name "bump"]} {
-            set pin_shape [get_pin_shape $inst [get_library_pad_pin_name "bump"]]
+            set pin_name [get_library_pad_pin_name "bump"]
+            set pin_shape [get_pin_shape $inst $pin_name]
+            set term [$block findBTerm [get_padcell_signal_name $padcell]]
+            if {$term != "NULL"} {
+              set net [$term getNet]
+              set mterm [[$inst getMaster] findMTerm $pin_name]
+              if {$mterm == "NULL"} {
+                utl::error "PAD" 253 "Bump cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
+              }
+              set pin [odb::dbITerm_connect $inst $net $mterm]
+            }
           }
           if {[llength $pin_shape] != 4} {
             set pin_shape [get_bump_center $row $col]
