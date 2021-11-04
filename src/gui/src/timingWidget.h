@@ -52,6 +52,7 @@ class TimingWidget : public QDockWidget
   Q_OBJECT
  public:
   TimingWidget(QWidget* parent = nullptr);
+  ~TimingWidget();
 
   void init(sta::dbSta* sta);
 
@@ -82,7 +83,8 @@ class TimingWidget : public QDockWidget
   void selectedCaptureRowChanged(const QItemSelection& prev_index,
                                  const QItemSelection& curr_index);
 
-  void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
+  void handleDbChange();
+  void setBlock(odb::dbBlock* block);
 
   void updateClockRows();
 
