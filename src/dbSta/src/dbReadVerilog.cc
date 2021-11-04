@@ -285,6 +285,10 @@ Verilog2db::makeUniqueDbModule(const char* name)
   return module;
 }
 
+// Recursively builds odb's dbModule/dbModInst hierarchy corresponding
+// to the sta network rooted at inst.  parent is the dbModule to build
+// the hierarchy under. If null the top module is used.
+
 void
 Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
 {
