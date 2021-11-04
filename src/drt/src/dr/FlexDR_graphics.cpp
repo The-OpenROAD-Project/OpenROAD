@@ -726,11 +726,6 @@ void FlexDRGraphics::endNet(drNet* net)
     return;
   }
   assert(net == net_);
-  if (!worker_->getGCWorker()->getMarkers().empty())
-    cout << "Ending net " << net->getFrNet()->getName() << " with markers:\n";
-  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
-       cout << *marker << "\n";
-  }
   int point_cnt = 0;
   for (auto& pts : points_by_layer_) {
     point_cnt += pts.size();

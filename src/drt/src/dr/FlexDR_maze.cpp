@@ -1528,7 +1528,7 @@ void FlexDRWorker::route_queue()
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= debugIter) {
-    cout << "Starting with " << markers_.size() << " markers\n";
+    cout << "Starting worker " << getRouteBox() << " with " << markers_.size() << " markers\n";
     for (auto& marker : markers_) {
       cout << marker << "\n";
     }
@@ -1632,7 +1632,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
       net->clear();
       if (getDRIter() >= debugIter)
-      cout << "Routing net " << net << "\n";
+      cout << "Routing net " << *net << "\n";
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
@@ -1684,7 +1684,12 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
-
+        if (debugIter >= getDRIter() && !getGCWorker()->getMarkers().empty()) {
+          cout << "Ending net " << net->getFrNet()->getName() << " with markers:\n";
+          for (auto& marker : getGCWorker()->getMarkers()) {
+              cout << *marker << "\n";
+          }
+        }
         didCheck = true;
       } else {
         logger_->error(DRT, 1006, "failed to setTargetNet");
