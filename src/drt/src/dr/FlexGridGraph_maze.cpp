@@ -236,7 +236,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // avoid propagating to location that will cause fobidden via spacing to
   // boundary pin
   if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
-    if (drWorker_ /*&& drWorker_->getDRIter() >= 30*/
+    if (drWorker_ && drWorker_->getDRIter() >= 20
         && drWorker_->getRipupMode() == 0) {
       auto layerNum = (gridZ + 1) * 2;
       auto layer = getTech()->getLayer(layerNum);

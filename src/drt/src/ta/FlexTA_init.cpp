@@ -679,7 +679,7 @@ void FlexTAWorker::initFixedObjs()
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
             via->getLayer2BBox(viaBox);
-            frCoord size = layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
+            frCoord size = viaBox.width();// layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
             if (size > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
@@ -694,7 +694,7 @@ void FlexTAWorker::initFixedObjs()
             frBox viaBox;
             auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
             via->getLayer1BBox(viaBox);
-            frCoord size = layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
+            frCoord size = viaBox.width();//layer->isVertical() ? viaBox.sizeX() : viaBox.sizeY();
             // only add for fat via
             if (size > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
@@ -789,12 +789,12 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
           obsWidth, viaWidth, viaWidth /*prl*/);
     }
   }
-  auto& eol = layer->getDrEolSpacingConstraint();
-  if (layer->isVertical()) {
-    if (viaBox.sizeY() < eol.eolWidth)
-      bloatDist = std::max(bloatDist, eol.eolSpace);
-  } else if (viaBox.sizeX() < eol.eolWidth)
-      bloatDist = std::max(bloatDist, eol.eolSpace);
+  // auto& eol = layer->getDrEolSpacingConstraint();
+  // if (layer->isVertical()) {
+  //   if (viaBox.sizeY() < eol.eolWidth)
+  //     bloatDist = std::max(bloatDist, eol.eolSpace);
+  // } else if (viaBox.sizeX() < eol.eolWidth)
+  //     bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following
