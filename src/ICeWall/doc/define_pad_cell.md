@@ -20,6 +20,8 @@ When specifying the orientation of padcells on a per-side basis, use keys bottom
 
 One or more libcells can be defined as type fill. When filling a gap between padcells, the largest fill cell that is has a width less than or equal to the gap width will be added. If the gap is too small to fit any fill cell, then the smallest fill cell will be added anyway, on the assumption that the library is designed such that the smallest fill cell is allowed to overlap with padcell instances. At least one libcell of type corner must be defined. For a wirebond design, if the library uses separate bondpad instances from the padcells, then a bondpad type must be defined. If the design is flipchip, then one libcell definition must be of type bump.
 
+A pin shape is added to the design to be co-incident with the pin specified by the -pad_pin_name option. If the cell has a type bump or bondpad, and the -pad_pin_name option is not specified, then a pin will be placed at the center of the cell instead.
+
 ## Options
 
 | Option | Description |

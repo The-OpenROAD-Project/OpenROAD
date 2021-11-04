@@ -104,6 +104,7 @@ define_pad_cell \
   -name DUMMY_BUMP \
   -cell_name DUMMY_BUMP \
   -type bump \
+  -pad_pin_name PAD \
   -physical_only
 
 define_pad_cell \

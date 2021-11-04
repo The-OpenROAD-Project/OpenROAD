@@ -419,7 +419,7 @@ int ActionLayout::requiredRows(int width) const
 int ActionLayout::itemWidth(QLayoutItem* item) const
 {
   const QWidget* wid = item->widget();
-  return item->sizeHint().width();
+  return wid->sizeHint().width();
 }
 
 void ActionLayout::setGeometry(const QRect& rect)
@@ -518,7 +518,6 @@ void ActionLayout::organizeItemsToRows(int width, std::vector<ItemList>& rows) c
     return;
   }
   // make rows approximately even
-  const int total_space = rows.size() * width;
   int total_width = 0;
   for (auto& row : rows) {
     total_width += rowWidth(row);
@@ -718,7 +717,7 @@ void Inspector::loadActions()
     {"Delete", ":/delete.png"},
     {"Zoom to", ":/zoom_to.png"}
   };
-  for (const auto [name, action] : selection_.getActions()) {
+  for (const auto& [name, action] : selection_.getActions()) {
     QPushButton* button = nullptr;
     for (const auto& [label, icon] : button_replacements) {
       if (name == label) {
