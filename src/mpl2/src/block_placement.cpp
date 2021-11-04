@@ -212,13 +212,13 @@ void Block::ChooseAspectRatioRandom()
     ar = ar_low + (ar_high - ar_low) * num;
   }
 
-  height_ = std::sqrt(area_ * ar);
+  height_ = sqrt(area_ * ar);
   width_ = area_ / height_;
 }
 
 void Block::SetAspectRatio(float aspect_ratio)
 {
-  height_ = std::sqrt(area_ * aspect_ratio);
+  height_ = sqrt(area_ * aspect_ratio);
   width_ = area_ / height_;
 }
 
@@ -954,7 +954,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   AlignMacro();
   vector<float> x_vec;
   vector<float> y_vec;
-  for(int i = 0; i < blocks_.size(); i++)
+  for(int i = 0; i < blocks_.size(); i++) {
     if(blocks_[i].GetNumMacro() > 0) {
       const float lx = blocks_[i].GetX();
       const float ly = blocks_[i].GetY();
@@ -965,6 +965,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
       y_vec.push_back(ly);
       y_vec.push_back(uy);
     }
+  }
 
   x_vec.push_back(0.0);
   y_vec.push_back(0.0);
@@ -981,32 +982,37 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   float temp_x = 0.0;
   x_grid.push_back(x_vec[0]);
   temp_x = x_vec[0];
-  for(int i = 1; i < x_vec.size(); i++)
+  for(int i = 1; i < x_vec.size(); i++) {
     if(x_vec[i] - temp_x > 0.0) {
       temp_x = x_vec[i];
       x_grid.push_back(x_vec[i]);
     }
+  }
 
   float temp_y = 0.0;
   y_grid.push_back(y_vec[0]);
   temp_y = y_vec[0];
-  for(int i = 1; i < y_vec.size(); i++)
+  for(int i = 1; i < y_vec.size(); i++) {
     if(y_vec[i] - temp_y > 0.0) {
       temp_y = y_vec[i];
       y_grid.push_back(y_vec[i]);
     }
+  }
 
   const int num_x = x_grid.size() - 1;
   const int num_y = y_grid.size() - 1;
   vector<vector<bool> > grid(num_x);
-  for(int i = 0; i < num_x; i++)
+  for (int i = 0; i < num_x; i++) {
     grid[i].resize(num_y);
+  }
 
-  for(int i = 0; i < num_x; i++)
-    for(int j = 0; j < num_y; j++)
+  for(int i = 0; i < num_x; i++) {
+    for(int j = 0; j < num_y; j++) {
         grid[i][j] = false;
+    }
+  }
 
-  for(int i = 0; i < blocks_.size(); i++)
+  for(int i = 0; i < blocks_.size(); i++) {
     if(blocks_[i].GetNumMacro() > 0) {
       const float lx = blocks_[i].GetX();
       const float ly = blocks_[i].GetY();
@@ -1033,21 +1039,24 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
           y_end = j;
       }
 
-      for(int k = x_start; k <= x_end; k++)
-        for(int l = y_start; l <= y_end; l++)
-            grid[k][l] = true;
+      for(int k = x_start; k <= x_end; k++) {
+        for(int l = y_start; l <= y_end; l++) {
+            grid[k][l] = true; 
+        }
+      }
     }
+  }
   // we define the notch threshold
   const float threshold_H = min(50.0, outline_width_ / 10.0);
   const float threshold_V = min(50.0, outline_height_ / 10.0);
   int num_notch = 0;
 
-  for(int i = 0; i < num_x; i++)
-    for(int j = 0; j < num_y; j++) {
+  for (int i = 0; i < num_x; i++) {
+    for (int j = 0; j < num_y; j++) {
       bool is_notch = false;
-      if (grid[i][j] == true)
+      if (grid[i][j] == true) {
         continue;
-      else {
+      } else {
         if(i == 0 && j==0) {
           if(grid[i+1][j] == true || grid[i][j+1] == true)
             is_notch = true;
