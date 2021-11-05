@@ -1,0 +1,13 @@
+[INFO ODB-0222] Reading LEF file: liberty1.lef
+[INFO ODB-0223]     Created 2 technology layers
+[INFO ODB-0225]     Created 6 library cells
+[INFO ODB-0226] Finished LEF file:  liberty1.lef
+top
+b1 block1
+b1/r1 snl_ffqx1
+b1/u1 snl_bufx1
+b1/u2 snl_bufx1
+b2 block1-1
+b2/r1 snl_ffqx1
+b2/u1 snl_bufx1
+b2/u2 snl_bufx1
