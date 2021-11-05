@@ -71,6 +71,9 @@ class frRegionQuery
   void addGRObj(grVia* in);
 
   // Queries
+  void query(const box_t& boostb,
+             const frLayerNum layerNum,
+             Objects<frBlockObject>& result) const;
   void query(const Rect& box,
              const frLayerNum layerNum,
              Objects<frBlockObject>& result) const;
@@ -88,6 +91,9 @@ class frRegionQuery
                  const frLayerNum layerNum,
                  Objects<frRPin>& result) const;
   void queryGRPin(const Rect& box, std::vector<frBlockObject*>& result) const;
+  void queryDRObj(const box_t& boostb,
+                  const frLayerNum layerNum,
+                  Objects<frBlockObject>& result) const;
   void queryDRObj(const Rect& box,
                   const frLayerNum layerNum,
                   Objects<frBlockObject>& result) const;

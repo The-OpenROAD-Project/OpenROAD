@@ -131,12 +131,12 @@ void FlexGCWorker::initPA1()
 
 void FlexGCWorker::setExtBox(const Rect& in)
 {
-  impl_->extBox_.set(in);
+  impl_->extBox_ = in;
 }
 
 void FlexGCWorker::setDrcBox(const Rect& in)
 {
-  impl_->drcBox_.set(in);
+  impl_->drcBox_ = in;
 }
 
 const std::vector<std::unique_ptr<frMarker>>& FlexGCWorker::getMarkers() const

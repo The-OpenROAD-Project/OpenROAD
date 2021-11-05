@@ -1635,12 +1635,15 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         if (graphics_) {
           graphics_->show(false);
         }
+        // TODO Rect can't be logged directly
+        stringstream routeBoxStringStream;
+        routeBoxStringStream << getRouteBox();
         logger_->error(DRT,
                        255,
                        "Maze Route cannot find path of net {} in "
                        "worker of routeBox {}.",
                        net->getFrNet()->getName(),
-                       getRouteBox());
+                       routeBoxStringStream.str());
       }
       mazeNetEnd(net);
       net->addNumReroutes();

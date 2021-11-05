@@ -1985,8 +1985,13 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
         workerRegionQuery.queryMaxRectangle(queryBox, secondLayerNum, result);
       }
       for (auto& [objBox, objPtr] : result) {
+        // TODO why isn't this auto-converted from Rect to box_t?
+        Rect queryRect(queryBox.min_corner().get<0>(),
+                       queryBox.min_corner().get<1>(),
+                       queryBox.max_corner().get<0>(),
+                       queryBox.max_corner().get<1>());
         if ((objPtr->getNet() == net1 || objPtr->getNet() == net2)
-            && objBox.contains(queryBox)) {
+            && objBox.contains(queryRect)) {
           return;
         }
       }

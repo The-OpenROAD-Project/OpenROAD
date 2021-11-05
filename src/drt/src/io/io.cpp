@@ -2078,7 +2078,10 @@ void io::Parser::readDb(odb::dbDatabase* db)
     design->getTopBlock()->getDieBox(dieBox);
     logger->report("Design:                   {}",
                    design->getTopBlock()->getName());
-    logger->report("Die area:                 {}", dieBox);
+    // TODO Rect can't be logged directly
+    stringstream dieBoxSStream;
+    dieBoxSStream << dieBox;
+    logger->report("Die area:                 {}", dieBoxSStream.str());
     logger->report("Number of track patterns: {}",
                    design->getTopBlock()->getTrackPatterns().size());
     logger->report("Number of DEF vias:       {}",

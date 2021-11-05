@@ -87,16 +87,14 @@ void FlexGCWorkerRegionQuery::Impl::addPolygonEdge(
 
 void FlexGCWorkerRegionQuery::addMaxRectangle(gcRect* rect)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
-  impl_->max_rectangles_[rect->getLayerNum()].insert(make_pair(boostb, rect));
+  Rect r(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  impl_->max_rectangles_[rect->getLayerNum()].insert(make_pair(r, rect));
 }
 
 void FlexGCWorkerRegionQuery::addSpcRectangle(gcRect* rect)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
-  impl_->spc_rectangles_[rect->getLayerNum()].insert(make_pair(boostb, *rect));
+  Rect r(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  impl_->spc_rectangles_[rect->getLayerNum()].insert(make_pair(r, *rect));
 }
 
 void FlexGCWorkerRegionQuery::Impl::addMaxRectangle(
@@ -111,8 +109,8 @@ void FlexGCWorkerRegionQuery::Impl::addSpcRectangle(
     gcRect* rect,
     vector<vector<rq_box_value_t<gcRect>>>& allShapes)
 {
-  Rect boostr(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
-  allShapes[rect->getLayerNum()].push_back(make_pair(boostb, *rect));
+  Rect box(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  allShapes[rect->getLayerNum()].push_back(make_pair(box, *rect));
 }
 
 void FlexGCWorkerRegionQuery::removePolygonEdge(gcSegment* edge)
@@ -124,16 +122,14 @@ void FlexGCWorkerRegionQuery::removePolygonEdge(gcSegment* edge)
 
 void FlexGCWorkerRegionQuery::removeMaxRectangle(gcRect* rect)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
-  impl_->max_rectangles_[rect->getLayerNum()].remove(make_pair(boostb, rect));
+  Rect r(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  impl_->max_rectangles_[rect->getLayerNum()].remove(make_pair(r, rect));
 }
 
 void FlexGCWorkerRegionQuery::removeSpcRectangle(gcRect* rect)
 {
-  box_t boostb(point_t(gtl::xl(*rect), gtl::yl(*rect)),
-               point_t(gtl::xh(*rect), gtl::yh(*rect)));
-  impl_->spc_rectangles_[rect->getLayerNum()].remove(make_pair(boostb, *rect));
+  Rect r(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
+  impl_->spc_rectangles_[rect->getLayerNum()].remove(make_pair(r, *rect));
 }
 
 void FlexGCWorkerRegionQuery::queryPolygonEdge(

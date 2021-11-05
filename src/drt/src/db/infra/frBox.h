@@ -30,75 +30,12 @@
 #define _FR_BOX_H_
 
 #include "db/infra/frPoint.h"
-#include "frBaseTypes.h"
 #include "odb/dbTransform.h"
 using odb::dbOrientType;
 using odb::dbTransform;
 using odb::Rect;
 
 namespace fr {
-class frBox : public Rect
-{
- public:
-  // constructor
-  frBox() : Rect() {}
-  frBox(const Rect& tmpBox) : Rect(tmpBox.ll(), tmpBox.ur()) {}
-  frBox(const box_t& in)
-  {
-    auto minCorner = in.min_corner();
-    auto maxCorner = in.max_corner();
-    init(minCorner.x(), minCorner.y(),
-         maxCorner.x(), maxCorner.y());
-  }
-  frBox(frCoord llx, frCoord lly, frCoord urx, frCoord ury)
-    : Rect(llx, lly, urx, ury) {}
-  frBox(const Point& tmpLowerLeft, const Point& tmpUpperRight)
-    : Rect(tmpLowerLeft, tmpUpperRight) {}
-  // setters
-  void set(const Rect& tmpBox) { *this = tmpBox; }
-  void set(const Point& tmpLowerLeft, const Point& tmpUpperRight)
-  {
-    init(tmpLowerLeft.getX(),
-         tmpLowerLeft.getY(),
-         tmpUpperRight.getX(),
-         tmpUpperRight.getY());
-  }
-  // getters
-  bool contains(const Rect& box) const
-  {
-    return Rect::contains(Rect(box.ll(), box.ur()));
-  }
-  bool intersects(const Point& in) const
-  {
-    return Rect::intersects(in);
-  }
-  void merge(const Rect& box) { Rect::merge(box); }
-  void moveDelta(int x, int y) { Rect::moveDelta(x, y); }
-  bool overlaps(const Rect& boxIn) const
-  {
-    return Rect::overlaps(Rect(boxIn.ll(), boxIn.ur()));
-  }
-  bool operator==(const Rect& boxIn) const
-  {
-    return (ll() == boxIn.ll()) && (ur() == boxIn.ur());
-  }
-  bool operator<(const Rect& boxIn) const
-  {
-    if (!(ll() == boxIn.ll())) {
-      return (ll() < boxIn.ll());
-    } else {
-      return (ur() < boxIn.ur());
-    }
-  }
-  void intersection(const Rect& b, Rect& result)
-  {
-    Rect r;
-    Rect in(b.ll(), b.ur());
-    Rect::intersection(in, r);
-    result.init(r.xMin(), r.yMin(), r.xMax(), r.yMax());
-  }
-};
-
 class frBox3D : public Rect
 {
  public:
