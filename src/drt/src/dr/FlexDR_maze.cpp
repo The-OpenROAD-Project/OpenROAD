@@ -1754,18 +1754,18 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType) {
 }
 //mods eol cost for an eol edge
 void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerDirIsIncreasing, frLayer* layer, int modType) {
-  frBox testBox;
+  Rect testBox;
   auto eol = layer->getDrEolSpacingConstraint();
   if (isVertical) {
     if (innerDirIsIncreasing)
-      testBox.set(line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
+      testBox.init(line - eol.eolSpace, low - eol.eolWithin, line, high + eol.eolWithin);
     else 
-      testBox.set(line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
+      testBox.init(line, low - eol.eolWithin, line + eol.eolSpace, high + eol.eolWithin);
   } else {
     if (innerDirIsIncreasing)
-      testBox.set(low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
+      testBox.init(low - eol.eolWithin, line - eol.eolSpace, high + eol.eolWithin, line);
     else 
-      testBox.set(low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
+      testBox.init(low - eol.eolWithin, line, high + eol.eolWithin, line + eol.eolSpace);
   }
   frMIdx z = gridGraph_.getMazeZIdx(layer->getLayerNum());
   modEolSpacingCost_helper(testBox, z, modType, 0);
