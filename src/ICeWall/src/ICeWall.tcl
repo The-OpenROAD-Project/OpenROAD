@@ -91,7 +91,7 @@ proc set_padring_options {args} {
   }
 
   if {[info exists flags(-allow_filler_overlap)] && [info exists flags(-reject_filler_overlap)]} {
-    utl::error PAD 257 "Options -allow_filler_overlap and -reject_filler_overlap are mutually exclusive"
+    utl::error PAD 258 "Options -allow_filler_overlap and -reject_filler_overlap are mutually exclusive"
   }
 
   if {[info exists keys(-type)]} {
