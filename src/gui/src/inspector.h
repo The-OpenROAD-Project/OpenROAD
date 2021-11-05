@@ -198,11 +198,17 @@ class Inspector : public QDockWidget
   int selectNext();
   int selectPrevious();
 
-  void focusIndex(const QModelIndex& index);
-
   void updateSelectedFields(const QModelIndex& index);
 
   void reload();
+
+ protected:
+  void leaveEvent(QEvent* event) override;
+
+ private slots:
+  void focusIndex();
+  void delayFocusIndex(const QModelIndex& index);
+  void stopHovertimer();
 
  private:
   void handleAction(QWidget* action);
@@ -230,10 +236,16 @@ class Inspector : public QDockWidget
   QLabel* selected_itr_label_;
   std::unique_ptr<QTimer> mouse_timer_;
 
+  // used to hold the item to emit when hover_timer times out.
+  Selected hover_selection_;
+  QTimer hover_timer_;
+
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 
   // used to finetune the double click interval
   static constexpr double mouse_double_click_scale_ = 0.75;
+  // used to delay emitting mouse hovering events.
+  static constexpr int mouse_hover_delay_ = 500; // milliseconds
 };
 
 }  // namespace gui

@@ -624,7 +624,19 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   connect(view_,
           SIGNAL(entered(const QModelIndex&)),
           this,
-          SLOT(focusIndex(const QModelIndex&)));
+          SLOT(delayFocusIndex(const QModelIndex&)));
+
+  hover_timer_.setInterval(mouse_hover_delay_);
+  hover_timer_.setSingleShot(true);
+  connect(&hover_timer_,
+          SIGNAL(timeout()),
+          this,
+          SLOT(focusIndex()));
+
+  connect(view_,
+          SIGNAL(viewportEntered()),
+          this,
+          SLOT(stopHovertimer()));
 }
 
 int Inspector::selectNext()
@@ -791,21 +803,40 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
   }
 }
 
-void Inspector::focusIndex(const QModelIndex& index)
+void Inspector::focusIndex()
 {
-  if (index.column() == 0) {
+  emit focus(hover_selection_);
+}
+
+void Inspector::delayFocusIndex(const QModelIndex& focus_index)
+{
+  stopHovertimer();
+
+  if (focus_index.column() == 0) {
     return;
   }
 
-  QStandardItem* item = model_->itemFromIndex(index);
+  focus(Selected());
+
+  QStandardItem* item = model_->itemFromIndex(focus_index);
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
     // emit the selected item as something to focus on
-    emit focus(item_data.value<Selected>());
-  } else {
-    emit focus(Selected());
+    hover_selection_ = item_data.value<Selected>();
+    hover_timer_.start();
   }
+}
+
+void Inspector::leaveEvent(QEvent* event)
+{
+  stopHovertimer();
+}
+
+void Inspector::stopHovertimer()
+{
+  hover_timer_.stop();
+  hover_selection_ = Selected();
 }
 
 void Inspector::update(const Selected& object)
