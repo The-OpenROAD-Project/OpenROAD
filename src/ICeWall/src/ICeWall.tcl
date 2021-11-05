@@ -1173,6 +1173,20 @@ namespace eval ICeWall {
     return $cell_list
   }
 
+  proc has_library_pad_pin_name {type} {
+    variable library
+
+    if {[dict exists $library types $type]} {
+      set cell_entry [dict get $library types $type]
+      if {[dict exists $library cells $cell_entry]} {
+        if {[dict exists $library cells $cell_entry pad_pin_name]} {
+          return 1
+        }
+      }
+    }
+    return 0    
+  }
+
   proc get_library_pad_pin_name {type} {
     variable library
 
@@ -2436,33 +2450,19 @@ namespace eval ICeWall {
       lappend pins_created $pin
       set layer [$tech findLayer [get_footprint_pad_pin_layer]]
 
-      if {[set mterm [[$inst getMaster] findMTerm [get_library_pad_pin_name [get_padcell_type $padcell]]]] == "NULL"} {
-        utl::warn "PAD" 20 "Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]."
-        return 0
-      } else {
-        set mpin [lindex [$mterm getMPins] 0]
-
-        foreach geometry [$mpin getGeometry] {
-          if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
-            set pin_box [pdngen::transform_box [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax] [$inst getOrigin] [$inst getOrient]]
-            odb::dbBox_create $pin $layer {*}$pin_box
-            $pin setPlacementStatus "FIRM"
-
-            return 1
-          }
-        }
-        if {[[$geometry getTechLayer] getName] != [get_footprint_pad_pin_layer]} {
-          utl::warn "PAD" 19 "Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]."
-          return 0
-        }
+      set pin_name [get_library_pad_pin_name [get_padcell_type $padcell]]
+      if {[llength [set pin_shape [get_pin_shape $inst $pin_name]]] == 4} {
+        odb::dbBox_create $pin $layer {*}$pin_shape
+        $pin setPlacementStatus "FIRM"
       }
-    }
-    if {[get_padcell_type $padcell] == "sig"} {
-      utl::warn "PAD" 4 "Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}."
+    } else {
+      if {[get_padcell_type $padcell] == "sig"} {
+        utl::warn "PAD" 4 "Cannot find a terminal [get_padcell_signal_name $padcell] for ${padcell}."
+      }
     }
   }
 
-  proc connect_to_bondpad_or_bump {inst center padcell} {
+  proc connect_to_bondpad_or_bump {inst pin_shape padcell} {
     variable block
     variable tech
     variable nets_created
@@ -2525,11 +2525,38 @@ namespace eval ICeWall {
     if {$layer == "NULL"} {
       utl::error PAD 78 "Layer [get_footprint_pad_pin_layer] not defined in technology."
     }
-    set x [dict get $center x]
-    set y [dict get $center y]
 
-    odb::dbBox_create $pin $layer [expr $x - [$layer getWidth] / 2] [expr $y - [$layer getWidth] / 2] [expr $x + [$layer getWidth] / 2] [expr $y + [$layer getWidth] / 2]
+    # The variable pin_shape is either a dictionary with keys x and y denoting the center of the pin, or else it is a list of four numbers which define 
+    # a rectangle
+    if {[dict exists $pin_shape x]} {
+      set x [dict get $pin_shape x]
+      set y [dict get $pin_shape y]
+      odb::dbBox_create $pin $layer [expr $x - [$layer getWidth] / 2] [expr $y - [$layer getWidth] / 2] [expr $x + [$layer getWidth] / 2] [expr $y + [$layer getWidth] / 2]
+    } else {
+      odb::dbBox_create $pin $layer {*}$pin_shape
+    }
     $pin setPlacementStatus "FIRM"
+  }
+
+  proc get_pin_shape {inst pin_name} {
+    variable tech
+    set layer [$tech findLayer [get_footprint_pad_pin_layer]]
+
+    if {[set mterm [[$inst getMaster] findMTerm $pin_name]] == "NULL"} {
+      return {}
+    } else {
+      set mpin [lindex [$mterm getMPins] 0]
+
+      foreach geometry [$mpin getGeometry] {
+        if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
+          set pin_box [pdngen::transform_box [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax] [$inst getOrigin] [$inst getOrient]]
+
+          return $pin_box
+        }
+      }
+      utl::warn "PAD" 19 "Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]."
+      return {}
+    }
   }
 
   proc place_bondpads {} {
@@ -2560,7 +2587,25 @@ namespace eval ICeWall {
           $inst setPlacementStatus "FIRM"
 
           set center [get_padcell_scaled_center $padcell bondpad]
-          connect_to_bondpad_or_bump $inst $center $padcell
+          set mterm [[$inst getMaster] findMTerm []]
+          set pin_shape {}
+          if {[has_library_pad_pin_name "bondpad"]} {
+            set pin_name [get_library_pad_pin_name "bondpad"]
+            set pin_shape [get_pin_shape $inst $pin_name]
+            set term [$block findBTerm [get_padcell_signal_name $padcell]]
+            if {$term != "NULL"} {
+              set net [$term getNet]
+              set mterm [[$inst getMaster] findMTerm $pin_name]
+              if {$mterm == "NULL"} {
+                utl::error "PAD" 252 "Bondpad cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
+              }
+              set pin [odb::dbITerm_connect $inst $net $mterm]
+            }
+          }
+          if {[llength $pin_shape] != 4} {
+            set pin_shape $center
+          }
+          connect_to_bondpad_or_bump $inst $pin_shape $padcell
         } else {
           if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
             utl::warn "PAD" 48 "No padcell instance found for $padcell."
@@ -3326,7 +3371,24 @@ namespace eval ICeWall {
 
         set padcell [get_padcell_at_row_col $row $col]
         if {$padcell != ""} {
-          connect_to_bondpad_or_bump $inst [get_bump_center $row $col] $padcell
+          set pin_shape {}
+          if {[has_library_pad_pin_name "bump"]} {
+            set pin_name [get_library_pad_pin_name "bump"]
+            set pin_shape [get_pin_shape $inst $pin_name]
+            set term [$block findBTerm [get_padcell_signal_name $padcell]]
+            if {$term != "NULL"} {
+              set net [$term getNet]
+              set mterm [[$inst getMaster] findMTerm $pin_name]
+              if {$mterm == "NULL"} {
+                utl::error "PAD" 253 "Bump cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
+              }
+              set pin [odb::dbITerm_connect $inst $net $mterm]
+            }
+          }
+          if {[llength $pin_shape] != 4} {
+            set pin_shape [get_bump_center $row $col]
+          }
+          connect_to_bondpad_or_bump $inst $pin_shape $padcell
         }
       }
     }
@@ -5920,6 +5982,7 @@ namespace eval ICeWall {
         }
       }
     }
+
     if {$physical_only != 1} {
       dict for {side name} $cell_name {
         check_pad_pin_name $name [dict get $cell_ref pad_pin_name]
