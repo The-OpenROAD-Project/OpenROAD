@@ -2576,7 +2576,7 @@ namespace eval ICeWall {
 
           set inst [odb::dbInst_create $block $cell "bp_${signal_name}"]
           if {$inst == "NULL"} {
-            utl::error "PAD" 256 "Cannot create bondpad instance bp_${signal_name}"
+            utl::error "PAD" 257 "Cannot create bondpad instance bp_${signal_name}"
           }
           lappend insts_created $inst
           # debug "inst $inst, block: $block, cell: $cell"
@@ -4613,12 +4613,12 @@ namespace eval ICeWall {
 
     if {[dict size $unfilled_padring_segments] > 0} {
       dict for {side gaps} $unfilled_padring_segments {
-        utl::info PAD 253 "Unfilled gaps in the padring on $side side"
+        utl::warn PAD 254 "Unfilled gaps in the padring on $side side"
         foreach gap $gaps {
-          utl::info PAD 254 "    [ord::dbu_to_microns [lindex $gap 0]] -> [ord::dbu_to_microns [lindex $gap 1]]"
+          utl::warn PAD 255 "    [ord::dbu_to_microns [lindex $gap 0]] -> [ord::dbu_to_microns [lindex $gap 1]]"
         }
       }
-      utl::error "PAD" 255 "Padcell ring cannot be filled"
+      utl::error "PAD" 256 "Padcell ring cannot be filled"
     }
   }
 
