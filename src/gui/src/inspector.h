@@ -192,9 +192,6 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
 
-  void indexClicked(const QModelIndex& index);
-  void indexDoubleClicked(const QModelIndex& index);
-
   int selectNext();
   int selectPrevious();
 
@@ -209,6 +206,9 @@ class Inspector : public QDockWidget
   void focusIndex();
   void delayFocusIndex(const QModelIndex& index);
   void stopHovertimer();
+
+  void indexClicked();
+  void indexDoubleClicked(const QModelIndex& index);
 
  private:
   void handleAction(QWidget* action);
@@ -234,7 +234,8 @@ class Inspector : public QDockWidget
   QPushButton* button_next_;
   QPushButton* button_prev_;
   QLabel* selected_itr_label_;
-  std::unique_ptr<QTimer> mouse_timer_;
+  QTimer mouse_timer_;
+  QModelIndex clicked_index_;
 
   // used to hold the item to emit when hover_timer times out.
   Selected hover_selection_;

@@ -563,8 +563,7 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       button_frame_(new QFrame(this)),
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
-      selected_itr_label_(new QLabel(this)),
-      mouse_timer_(nullptr)
+      selected_itr_label_(new QLabel(this))
 {
   setObjectName("inspector");  // for settings
   view_->setModel(model_);
@@ -637,6 +636,13 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(viewportEntered()),
           this,
           SLOT(stopHovertimer()));
+
+  mouse_timer_.setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
+  mouse_timer_.setSingleShot(true);
+  connect(&mouse_timer_,
+          SIGNAL(timeout()),
+          this,
+          SLOT(indexClicked()));
 }
 
 int Inspector::selectNext()
@@ -754,27 +760,19 @@ void Inspector::clicked(const QModelIndex& index)
 {
   // QT sends both single and double clicks, so they need to be handled with a timer to
   // be able to tell the difference
-  if (mouse_timer_ == nullptr) {
-    mouse_timer_ = std::make_unique<QTimer>(this);
-    mouse_timer_->setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
-    mouse_timer_->setSingleShot(true);
-
-    connect(mouse_timer_.get(), &QTimer::timeout, [this, index]() { emit indexClicked(index); });
-
-    mouse_timer_->start();
+  if (!mouse_timer_.isActive()) {
+    clicked_index_ = index;
+    mouse_timer_.start();
   } else {
-    mouse_timer_->stop();
-
+    mouse_timer_.stop();
     emit indexDoubleClicked(index);
   }
 }
 
-void Inspector::indexClicked(const QModelIndex& index)
+void Inspector::indexClicked()
 {
-  mouse_timer_ = nullptr;
-
   // handle single click event
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = model_->itemFromIndex(clicked_index_);
   auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
     // If shift is help add to the list instead of replacing list
@@ -789,8 +787,6 @@ void Inspector::indexClicked(const QModelIndex& index)
 
 void Inspector::indexDoubleClicked(const QModelIndex& index)
 {
-  mouse_timer_ = nullptr;
-
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant item_data = item->data(EditorItemDelegate::editor_);
