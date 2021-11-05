@@ -26,13 +26,14 @@ Larger designs may require better hardware.
 
 **WARNING**
 
-On CentOS 7 you need to manually make sure the PATH variable includes the
-new version of GCC/Clang. To enable GCC-8 or Clang-7 you need to run:
+On CentOS 7 you need to manually make sure the PATH variable includes at
+least one of the new version of GCC/Clang. To enable GCC-8 or Clang-7 you
+need to run:
 
 ```shell
-# enable gcc-8
+# to enable gcc-8
 source /opt/rh/devtoolset-8/enable
-# enable clang-7
+# or to enable clang-7
 source /opt/rh/llvm-toolset-7.0/enable
 ```
 

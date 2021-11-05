@@ -33,6 +33,7 @@
 using namespace std;
 using namespace fr;
 
+bool debugMaze = false;
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
@@ -147,7 +148,10 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     // add to wavefront
     wavefront_.push(nextWavefrontGrid);
   }
-
+  if (debugMaze)
+        cout << "Creating " << nextWavefrontGrid.x() << " " << nextWavefrontGrid.y() << " " << nextWavefrontGrid.z() << " coords: " << xCoords_[nextWavefrontGrid.x()] 
+                << " " << yCoords_[nextWavefrontGrid.y()] << 
+                  " cost " << nextWavefrontGrid.getCost() << " g " << nextWavefrontGrid.getPathCost() << "\n";
   return;
 }
 

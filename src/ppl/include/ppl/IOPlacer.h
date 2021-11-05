@@ -82,11 +82,14 @@ struct Interval
   Edge edge;
   int begin;
   int end;
+  int layer;
   Interval() = default;
-  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e) {}
+  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e), layer(-1) {}
+  Interval(Edge edg, int b, int e, int l) : edge(edg), begin(b), end(e), layer(l) {}
   Edge getEdge() { return edge; }
   int getBegin() { return begin; }
   int getEnd() { return end; }
+  int getLayer() { return layer; }
 };
 
 struct Constraint
@@ -160,7 +163,13 @@ class IOPlacer
                              int llx, int lly, int urx, int ury,
                              int width, int height, int keepout);
   int getTopLayer() { return top_grid_.layer; }
-  void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
+  void placePin(odb::dbBTerm* bterm,
+                int layer,
+                int x,
+                int y,
+                int width,
+                int height,
+                bool force_to_die_bound);
 
  private:
   Netlist netlist_;
@@ -227,7 +236,13 @@ class IOPlacer
 
   void updateOrientation(IOPin& pin);
   void updatePinArea(IOPin& pin);
-  bool checkBlocked(Edge edge, int pos);
+  void movePinToTrack(odb::Point& pos,
+                      int layer,
+                      int width,
+                      int height,
+                      const Rect& die_boundary);
+  Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
+  bool checkBlocked(Edge edge, int pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();

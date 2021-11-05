@@ -66,7 +66,10 @@ The `place_pin` command places a specific pin in the specified location, with th
 -   `-layer` defines the routing layer where the pin is placed.
 -   `-location` defines the center of the pin.
 -   `-pin_size` option defines the width and height of the pin.
+-   `-force_to_die_boundary`. When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary.
 
+It is recommended that the placement of individual pins be done before the `place_pins` command,
+as the routing tracks occupied by these individual pins will be blocked, preventing overlaps.
 
 ### Pin Constraints
 

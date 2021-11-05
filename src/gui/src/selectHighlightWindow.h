@@ -166,7 +166,7 @@ class SelectHighlightWindow : public QDockWidget
   void zoomInHighlightedItems();
 
  private:
-  Ui::SelectHighlightWidget* ui;
+  Ui::SelectHighlightWidget ui_;
   SelectionModel selection_model_;
   HighlightModel highlight_model_;
 

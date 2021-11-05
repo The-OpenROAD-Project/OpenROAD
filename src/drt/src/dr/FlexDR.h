@@ -39,6 +39,7 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "frDesign.h"
+#include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 
@@ -321,7 +322,7 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in) { gcWorker_ = in; }
+  void setGCWorker(FlexGCWorker* in) { gcWorker_ = unique_ptr<FlexGCWorker>(in); }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -366,9 +367,9 @@ class FlexDRWorker
   int getInitNumMarkers() const { return initNumMarkers_; }
   int getNumMarkers() const { return markers_.size(); }
   int getBestNumMarkers() const { return bestMarkers_.size(); }
-  FlexGCWorker* getGCWorker() { return gcWorker_; }
+  FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
-
+  const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
   void end(frDesign* design);
@@ -376,7 +377,7 @@ class FlexDRWorker
   Logger* getLogger() { return logger_; }
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
-
+  frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
  private:
   typedef struct
   {
@@ -422,7 +423,7 @@ class FlexDRWorker
   FlexDRWorkerRegionQuery rq_;
 
   // persistant gc worker
-  FlexGCWorker* gcWorker_;
+  unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
   vector<Point3D> specialAccessAPs;
@@ -611,8 +612,11 @@ class FlexDRWorker
   void initMarkers(const frDesign* design);
 
   // route_queue
-  void route_queue(FlexGCWorker& gcWorker);
+  void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  void modEolCosts_poly(gcNet* net, int modType);
+  void modEolCosts_poly(gcPin* shape, frLayer* layer, int modType);
+  void modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerIsHigh, frLayer* layer, int modType);
   void route_queue_resetRipup();
   void route_queue_markerCostDecay();
   void route_queue_addMarkerCost(
@@ -633,9 +637,9 @@ class FlexDRWorker
       std::queue<RouteQueueEntry>& rerouteQueue);
   bool canRipup(drNet* n);
   // route
-  void addPathCost(drConnFig* connFig);
-  void subPathCost(drConnFig* connFig);
-  void modPathCost(drConnFig* connFig, int type);
+  void addPathCost(drConnFig* connFig, bool modEol = false);
+  void subPathCost(drConnFig* connFig, bool modEol = false);
+  void modPathCost(drConnFig* connFig, int type, bool modEol = false);
   // minSpc
 
   void modMinSpacingCostPlanar(const Rect& box,
@@ -791,7 +795,6 @@ class FlexDRWorker
       drNet* net,
       const std::vector<FlexMazeIdx>& path,
       const std::map<FlexMazeIdx, frCoord>& areaMap);
-  frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, drNet* net);
   void routeNet_postAstarAddPatchMetal(drNet* net,
                                        const FlexMazeIdx& bpIdx,
                                        const FlexMazeIdx& epIdx,

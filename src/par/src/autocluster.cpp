@@ -23,9 +23,7 @@
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 
-#ifdef PARTITIONERS
 #include "MLPart.h"
-#endif
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -915,7 +913,6 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   for (int i = 0; i < num_col_idx; i++)
     colIdx[i] = col_idx[i];
 
-#ifdef PARTITIONERS
   // MLPart only support 2-way partition
   const int npart = 2;
   double balanceArray[2] = {0.5, 0.5};
@@ -936,7 +933,6 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
                 1,  // Number of Runs
                 0,  // Debug Level
                 seed);
-#endif
 
   const string name_part0 = cluster->getName() + string("_cluster_0");
   const string name_part1 = cluster->getName() + string("_cluster_1");
@@ -1493,7 +1489,7 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
       if(vertex_fanins_.find(fanin) != vertex_fanins_.end()) {
         std::unordered_map<Pin*, int> macro_fanin = vertex_fanins_[fanin];
         std::unordered_map<Pin*, int>::iterator map_iter = macro_fanin.begin();
-        for(map_iter; map_iter != macro_fanin.end(); map_iter++) {
+        for(; map_iter != macro_fanin.end(); map_iter++) {
           addFanin(vertex, map_iter->first, map_iter->second);
         }
       }
@@ -1605,14 +1601,14 @@ void AutoClusterMgr::addTimingWeight(float weight)
        
         std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
         std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-        for(map_it; map_it != pin_fanins.end(); map_it++) {
+        for(; map_it != pin_fanins.end(); map_it++) {
           virtual_vertex_map_[sink_id][map_it->first] = 1;
         }
       }
     }
 
     unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-    for(virtual_vertex_iter; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
+    for(; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
     {
       int src_id = 0;
       for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
@@ -1642,7 +1638,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
     
       std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
       std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-      for(map_it; map_it != pin_fanins.end(); map_it++) {
+      for(; map_it != pin_fanins.end(); map_it++) {
         virtual_vertex_map_[sink_id][map_it->first] = 1;
       }
     }
@@ -1650,7 +1646,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
 
 
   unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-  for(virtual_vertex_iter; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
+  for(; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
   {
     int src_id = 0;
     for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
@@ -1667,11 +1663,11 @@ void AutoClusterMgr::addTimingWeight(float weight)
   }
 
   unordered_map<int, unordered_map<int, int> >::iterator map_iter = virtual_timing_map_.begin();
-  for(map_iter; map_iter != virtual_timing_map_.end(); map_iter++) {
+  for(; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
     unordered_map<int, int> sinks = map_iter->second;
     unordered_map<int, int>::iterator map_it = sinks.begin();
-    for(map_it; map_it != sinks.end(); map_it++) {
+    for(; map_it != sinks.end(); map_it++) {
       float level_weight = weight;
       bool src_io = src_id <= bundled_io_map_.size();
       bool sink_io = map_it->first <= bundled_io_map_.size();

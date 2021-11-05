@@ -62,6 +62,7 @@
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
 #include "search.h"
+#include "scriptWidget.h"
 #include "utl/Logger.h"
 
 #include "ruler.h"
@@ -162,9 +163,6 @@ class GuiPainter : public Painter
       case NONE:
         brush_pattern = Qt::NoBrush;
         break;
-      case SOLID:
-        brush_pattern = Qt::SolidPattern;
-        break;
       case DIAGONAL:
         brush_pattern = Qt::DiagCrossPattern;
         break;
@@ -174,11 +172,16 @@ class GuiPainter : public Painter
       case DOTS:
         brush_pattern = Qt::Dense6Pattern;
         break;
+      case SOLID:
+      default:
+        brush_pattern = Qt::SolidPattern;
+        break;
       }
     }
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
+
   void drawGeomShape(const odb::GeomShape* shape) override
   {
     std::vector<Point> points = shape->getPoints();
@@ -390,6 +393,7 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(
     Options* options,
+    ScriptWidget* output_widget,
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
@@ -398,6 +402,7 @@ LayoutViewer::LayoutViewer(
     : QWidget(parent),
       db_(nullptr),
       options_(options),
+      output_widget_(output_widget),
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
@@ -703,6 +708,12 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   std::vector<Search::Box> boxes;
 
+  // get die bounding box
+  Rect bbox;
+  block->getDieArea(bbox);
+  boxes.push_back({{bbox.xMin(), bbox.yMin()},
+                   {bbox.xMax(), bbox.yMax()}});
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -955,14 +966,15 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     is_selected.push_back(is_selected[0]); // add first element to make it a "loop"
 
     int next_selection_idx;
+    const int selections_size = static_cast<int>(selections.size());
     // start at end of list and look for the selection item that is directly after a selected item.
-    for (next_selection_idx = selections.size(); next_selection_idx > 0; next_selection_idx--) {
+    for (next_selection_idx = selections_size; next_selection_idx > 0; next_selection_idx--) {
       // looking for true followed by false
-      if (is_selected[next_selection_idx-1] && !is_selected[next_selection_idx]) {
+      if (is_selected[next_selection_idx - 1] && !is_selected[next_selection_idx]) {
         break;
       }
     }
-    if (next_selection_idx == selections.size()) {
+    if (next_selection_idx == selections_size) {
       // found at the end of the list, loop around
       next_selection_idx = 0;
     }
@@ -1494,8 +1506,9 @@ void LayoutViewer::selectionAnimation(const Selected& selection, int repeats, in
               }
 
               animate_selection_->state_count++;
-              if (animate_selection_->state_count == animate_selection_->max_state_count ||
-                  QDateTime::currentMSecsSinceEpoch() > max_animate_time) {
+              if (animate_selection_->max_state_count != 0 && // if max_state_count == 0 animate until new animation is selected
+                  (animate_selection_->state_count == animate_selection_->max_state_count ||
+                   QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
                 animate_selection_->timer->stop();
                 animate_selection_ = nullptr;
               }
@@ -2233,6 +2246,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     return;
   }
 
+  // buffer outputs during paint to prevent recursive calls
+  output_widget_->bufferOutputs(true);
+
   if (!search_init_) {
     search_.init(block);
     search_init_ = true;
@@ -2295,6 +2311,9 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
+
+  // painting is done, okay to update outputs again
+  output_widget_->bufferOutputs(false);
 }
 
 void LayoutViewer::fullRepaint()
@@ -2551,7 +2570,7 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
   QString save_filepath;
   if (filepath.isEmpty()) {
     QString images_filter = "Images (";
-    for (const QString& ext : valid_extensions) {
+    for (const QByteArray& ext : valid_extensions) {
       images_filter += "*." + ext + " ";
     }
     images_filter += ")";
@@ -2666,28 +2685,28 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedInst(true); });
+          [this]() { selectHighlightConnectedInst(true); });
   connect(menu_actions_[SELECT_OUTPUT_NETS_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedNets(true, true, false); });
+          [this]() { selectHighlightConnectedNets(true, true, false); });
   connect(menu_actions_[SELECT_INPUT_NETS_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedNets(true, false, true); });
+          [this]() { selectHighlightConnectedNets(true, false, true); });
   connect(
       menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
-        this->selectHighlightConnectedNets(true, true, true);
+        selectHighlightConnectedNets(true, true, true);
       });
 
   connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedInst(false); });
+          [this]() { selectHighlightConnectedInst(false); });
   connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedNets(false, true, false); });
+          [this]() { selectHighlightConnectedNets(false, true, false); });
   connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
           &QAction::triggered,
           this,
@@ -2695,16 +2714,16 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedNets(false, true, true); });
+          [this]() { selectHighlightConnectedNets(false, true, true); });
 
   connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
-    this->zoomIn();
+    zoomIn();
   });
   connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, this, [this]() {
-    this->zoomOut();
+    zoomOut();
   });
   connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
-    this->fit();
+    fit();
   });
 
   connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
@@ -2716,17 +2735,17 @@ void LayoutViewer::addMenuAndActions()
   });
 
   connect(
-      menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, [this]() {
+      menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
         Gui::get()->clearSelections();
       });
   connect(
-      menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, [this]() {
+      menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, []() {
         Gui::get()->clearHighlights(-1);
       });
-  connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearSelections();
     Gui::get()->clearHighlights(-1);
     Gui::get()->clearRulers();

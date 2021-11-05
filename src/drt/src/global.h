@@ -34,6 +34,7 @@
 #include <string>
 
 #include "frBaseTypes.h"
+#include "db/obj/frMarker.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -166,6 +167,7 @@ std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
 std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
+std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
 #endif

@@ -98,6 +98,13 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     return currNet;
   }
 }
+gcNet* FlexGCWorker::Impl::getNet(frNet* net)
+{
+  auto it = owner2nets_.find(net);
+  if (it == owner2nets_.end())
+    return nullptr;
+  return it->second;
+}
 
 void FlexGCWorker::Impl::initObj(const Rect& box,
                                  frLayerNum layerNum,
