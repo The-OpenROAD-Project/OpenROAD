@@ -113,9 +113,11 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   }
 
   // fix the longest edge and break the loop
-  for (auto& [edge, blocked_positions] : edges_to_blocked_pos_map) {
+  if (!edges_to_blocked_pos_map.empty()) {
+    int edge = edges_to_blocked_pos_map.begin()->first;
+    std::vector<std::pair<short, short>>& blocked_positions
+        = edges_to_blocked_pos_map.begin()->second;
     fixOverlappingEdge(net_id, edge, blocked_positions);
-    break;
   }
 }
 
@@ -1245,6 +1247,13 @@ void FastRouteCore::reInitTree(const int netID)
   delete[] sttrees_[netID].edges;
 
   Tree rsmt;
+  const float net_alpha = stt_builder_->getAlpha(nets_[netID]->db_net);
+  // if failing tree was created with pd, fall back to flute with fluteNormal
+  // first so the structs necessary for fluteCongest are filled
+  if (net_alpha > 0.0) {
+    fluteNormal(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, rsmt);
+  }
+
   fluteCongest(netID, nets_[netID]->pinX, nets_[netID]->pinY, 2, 1.2, rsmt);
 
   if (nets_[netID]->deg > 3) {

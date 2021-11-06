@@ -34,11 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "par/PartitionMgr.h"
+#include "MLPart.h"
 #ifdef PARTITIONERS
 extern "C" {
 #include "main/ChacoWrapper.h"
 }
-#include "MLPart.h"
 #include "metis.h"
 #endif
 #include <time.h>
@@ -392,7 +392,6 @@ void PartitionMgr::runGpMetis()
 
 void PartitionMgr::runMlPart()
 {
-#ifdef PARTITIONERS
   logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), logger_);
@@ -516,7 +515,6 @@ void PartitionMgr::runMlPart()
                 "[MLPart] Run completed. Partition ID = {}. Total runs = {}.",
                 partitionId,
                 options_.getSeeds().size());
-#endif
 }
 
 void PartitionMgr::toHypergraph()
@@ -1096,7 +1094,6 @@ void PartitionMgr::runGpMetisClustering()
 
 void PartitionMgr::runMlPartClustering()
 {
-#ifdef PARTITIONERS
   logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), logger_);
@@ -1182,7 +1179,6 @@ void PartitionMgr::runMlPartClustering()
   clusResults_.push_back(currentResults);
 
   logger_->info(PAR, 64, "[MLPart] Run completed. Cluster ID = {}.", clusterId);
-#endif
 }
 
 unsigned PartitionMgr::generateClusterId() const
@@ -1369,12 +1365,6 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    const char* report_directory,
                                    const char* file_name)
 {
-#ifndef PARTITIONERS
-  logger_->error(PAR,
-                 404,
-                 "dbPartitionDesign can't run because OpenROAD wasn't compiled "
-                 "with LOAD_PARTITIONERS.");
-#endif
   auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,

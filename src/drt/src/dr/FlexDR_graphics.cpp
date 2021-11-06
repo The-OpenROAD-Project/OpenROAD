@@ -632,7 +632,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
 
   worker_ = in;
   net_ = nullptr;
-  grid_graph_ = nullptr;
+  grid_graph_ = &worker_->getGridGraph();
 
   points_by_layer_.resize(in->getTech()->getLayers().size());
 

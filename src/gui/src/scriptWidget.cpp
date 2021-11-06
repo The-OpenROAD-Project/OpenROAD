@@ -50,9 +50,9 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      output_(new QTextEdit),
-      input_(new TclCmdInputWidget),
-      pauser_(new QPushButton("Idle")),
+      output_(new QTextEdit(this)),
+      input_(new TclCmdInputWidget(this)),
+      pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
       interp_(nullptr),
       history_(),
@@ -60,6 +60,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0),
       paused_(false),
       logger_(nullptr),
+      buffer_outputs_(false),
       sink_(nullptr)
 {
   setObjectName("scripting");  // for settings
@@ -76,7 +77,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   layout->addWidget(output_, /* stretch */ 1);
   layout->addLayout(inner_layout);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
   connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
@@ -364,7 +365,14 @@ void ScriptWidget::outputChanged()
   // ensure the new output is visible
   output_->ensureCursorVisible();
   // Make changes visible
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  if (!buffer_outputs_) {
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  }
+}
+
+void ScriptWidget::bufferOutputs(bool state)
+{
+  buffer_outputs_ = state;
 }
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)

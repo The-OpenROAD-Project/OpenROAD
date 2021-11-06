@@ -191,12 +191,14 @@ proc clear_io_pin_constraints {} {
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
-                                  [-pin_size pin_size]
+                                  [-pin_size pin_size]\
+                                  [-force_to_die_boundary]
 }
 
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
-  keys {-pin_name -layer -location -pin_size}
+  keys {-pin_name -layer -location -pin_size}\
+  flags {-force_to_die_boundary}
 
   if [info exists keys(-pin_name)] {
     set pin_name $keys(-pin_name)
@@ -243,7 +245,7 @@ proc place_pin { args } {
 
   set layer_idx [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer_idx $x $y $width $height
+  ppl::place_pin $pin $layer_idx $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
