@@ -71,8 +71,10 @@ MainWindow::MainWindow(QWidget* parent)
       logger_(nullptr),
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, this)),
+      script_(new ScriptWidget(this)),
       viewer_(new LayoutViewer(
           controls_,
+          script_,
           selected_,
           highlighted_,
           rulers_,
@@ -81,7 +83,6 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
       find_dialog_(new FindObjectDialog(this))
@@ -122,6 +123,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          timing_widget_,
+          SLOT(setBlock(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));

@@ -68,6 +68,7 @@ namespace gui {
 
 class LayoutScroll;
 class Ruler;
+class ScriptWidget;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -110,6 +111,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
   LayoutViewer(Options* options,
+               ScriptWidget* output_widget,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
@@ -337,6 +339,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::dbDatabase* db_;
   Options* options_;
+  ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;

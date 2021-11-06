@@ -72,6 +72,8 @@ class ScriptWidget : public QDockWidget
 
   void setFont(const QFont& font);
 
+  void bufferOutputs(bool state);
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
@@ -130,6 +132,8 @@ class ScriptWidget : public QDockWidget
   int historyPosition_;
   bool paused_;
   utl::Logger* logger_;
+
+  bool buffer_outputs_;
 
   // Logger sink
   template <typename Mutex>

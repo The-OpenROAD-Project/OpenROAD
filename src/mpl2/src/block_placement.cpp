@@ -89,12 +89,12 @@ Block::Block(const std::string& name,
   is_soft_ = (num_macro_ == 0);
 
   aspect_ratio_ = aspect_ratio;
-  
+
   if(num_macro_ >= 1) {
     for (unsigned int i = 0; i < aspect_ratio_.size(); i++) {
       // height_limit_ is sorted in non-decreasing order
       height_limit_.push_back({aspect_ratio_[i].second, aspect_ratio_[i].second});
- 
+
       // width_limit_ is sorted in non-increasing order
       width_limit_.push_back({aspect_ratio_[i].first, aspect_ratio_[i].first});
     }
@@ -108,10 +108,10 @@ Block::Block(const std::string& name,
       const float width_high = area_ / height_low;
       const float height_high = std::sqrt(area_ * aspect_ratio_[i].second);
       const float width_low = area_ / height_high;
- 
+
       // height_limit_ is sorted in non-decreasing order
       height_limit_.push_back({height_low, height_high});
- 
+
       // width_limit_ is sorted in non-increasing order
       width_limit_.push_back({width_high, width_low});
     }
@@ -188,9 +188,9 @@ void Block::ChangeHeight(float height)
 
 void Block::ResizeHardBlock()
 {
-  if (num_macro_ == 0) 
+  if (num_macro_ == 0)
     return;
-  
+
   const int index1 = (int) (floor((*distribution_)(*generator_) * aspect_ratio_.size()));
   width_ = aspect_ratio_[index1].first;
   height_ = aspect_ratio_[index1].second;
@@ -343,7 +343,7 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
   }
 
   blocks_ = blocks;
-  
+
   for (unsigned int i = 0; i < blocks_.size(); i++) {
     blocks_[i].SetRandom(generator_, distribution_);
     block_map_.insert(std::pair<std::string, int>(blocks_[i].GetName(), i));
@@ -451,11 +451,11 @@ void SimulatedAnnealingCore::DoubleSwap()
   for(int i = 0; i < blocks_.size(); i++) {
     if(pos_seq_[index1] == neg_seq_[i])
       neg_index1 = i;
- 
+
     if(pos_seq_[index2] == neg_seq_[i])
       neg_index2 = i;
   }
- 
+
   swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
@@ -635,8 +635,8 @@ void SimulatedAnnealingCore::CalculateMacroBlockagePenalty()
   if (regions_.size() == 0)
     return;
 
-  for (Region* region : regions_) 
-    for (int i = 0; i < blocks_.size(); i++) 
+  for (Region* region : regions_)
+    for (int i = 0; i < blocks_.size(); i++)
       if (blocks_[i].GetNumMacro() > 0) {
         const float lx = blocks_[i].GetX();
         const float ly = blocks_[i].GetY();
@@ -667,25 +667,25 @@ void SimulatedAnnealingCore::CalculateLocationPenalty()
   location_penalty_ = 0.0;
   if(location_map_.size() == 0)
     return;
-  
-  for(auto map_iter = location_map_.begin(); 
+
+  for(auto map_iter = location_map_.begin();
     map_iter != location_map_.end(); map_iter++) {
     const float location_x = (locations_[map_iter->first]->lx_
                         + locations_[map_iter->first]->ux_) / 2.0;
     const float location_y = (locations_[map_iter->first]->ly_
                         + locations_[map_iter->first]->uy_) / 2.0;
-    const float location_width = locations_[map_iter->first]->ux_ 
+    const float location_width = locations_[map_iter->first]->ux_
                         - locations_[map_iter->first]->lx_;
-    const float location_height = locations_[map_iter->first]->uy_ 
+    const float location_height = locations_[map_iter->first]->uy_
                         - locations_[map_iter->first]->ly_;
     const float block_width = blocks_[map_iter->second].GetWidth();
     const float block_height = blocks_[map_iter->second].GetHeight();
     const float block_x = blocks_[map_iter->second].GetX() + block_width / 2.0;
     const float block_y = blocks_[map_iter->second].GetY() + block_height / 2.0;
- 
+
     float x_dist = abs(block_x - location_x);
     float y_dist = abs(block_y - location_y);
- 
+
     const float width = (block_width + location_width) / 2.0;
     const float height = (block_height + location_height) / 2.0;
     x_dist = x_dist - width > 0.0 ?  x_dist-width : 0.0;
@@ -695,15 +695,15 @@ void SimulatedAnnealingCore::CalculateLocationPenalty()
   }
 }
 
-// 
+//
 // Align macros to boundaires
 //
 void SimulatedAnnealingCore::AlignMacro()
 {
   // horizontal threshold, we use 10% as the threshold value
-  float threshold_H = outline_width_ / 10.0; 
+  float threshold_H = outline_width_ / 10.0;
   // vertical threshold, we use 10% as the threshold value
-  float threshold_V = outline_height_ / 10.0; 
+  float threshold_V = outline_height_ / 10.0;
   for (int i = 0; i < blocks_.size(); i++) {
     const int weight = blocks_[i].GetNumMacro();
     if (weight > 0) {
@@ -713,7 +713,7 @@ void SimulatedAnnealingCore::AlignMacro()
       threshold_V = min(threshold_V, height);
     }
   }
-  
+
   // Alignment macros to boundaries
   for (int i = 0; i < blocks_.size(); i++) {
     const int weight = blocks_[i].GetNumMacro();
@@ -723,22 +723,22 @@ void SimulatedAnnealingCore::AlignMacro()
       const float ux = lx + blocks_[i].GetWidth();
       const float uy = ly + blocks_[i].GetHeight();
 
-      if(lx < threshold_H) 
+      if(lx < threshold_H)
         blocks_[i].SetX(0.0);
-      else if(ux < outline_width_ && outline_width_  - ux < threshold_H) 
+      else if(ux < outline_width_ && outline_width_  - ux < threshold_H)
         blocks_[i].SetX(outline_width_ - blocks_[i].GetWidth());
-      
-  
-      if(ly < threshold_V) 
+
+
+      if(ly < threshold_V)
         blocks_[i].SetY(0.0);
-      else if(uy < outline_height_ && outline_height_ - uy < threshold_V) 
+      else if(uy < outline_height_ && outline_height_ - uy < threshold_V)
         blocks_[i].SetY(outline_height_ - blocks_[i].GetHeight());
     }
   }
 
   vector<int> macro_id_list;
   queue<int> macro_queue; // seeds for alignment
-  
+
   // Align macros according to X
   // left alignment
   for (int i = 0; i < blocks_.size(); i++) {
@@ -748,11 +748,11 @@ void SimulatedAnnealingCore::AlignMacro()
       if(blocks_[i].GetX() == 0.0) {
         macro_queue.push(i);
         blocks_[i].SetAlignFlag(true);
-      } else if(blocks_[i].GetX() + blocks_[i].GetWidth() >= outline_width_) 
-        blocks_[i].SetAlignFlag(true);  
+      } else if(blocks_[i].GetX() + blocks_[i].GetWidth() >= outline_width_)
+        blocks_[i].SetAlignFlag(true);
     }
   }
- 
+
   while(!macro_queue.empty()) {
     const int src = macro_queue.front();
     const float lx = blocks_[src].GetX();
@@ -760,7 +760,7 @@ void SimulatedAnnealingCore::AlignMacro()
     const float ly = blocks_[src].GetY();
     const float uy = blocks_[src].GetHeight() + ly;
     macro_queue.pop();
-    for(auto macro_id : macro_id_list) 
+    for(auto macro_id : macro_id_list)
       if (blocks_[macro_id].GetAlignFlag() == false) {
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
@@ -774,32 +774,33 @@ void SimulatedAnnealingCore::AlignMacro()
           continue;
         bool x_flag = false;
         if (lx_b >= lx && lx_b <= lx + threshold_H) {
-          blocks_[macro_id].SetX(lx);  
+          blocks_[macro_id].SetX(lx);
           x_flag = true;
         } else if(lx_b >= ux && lx_b <= ux + threshold_H) {
           blocks_[macro_id].SetX(ux);
           x_flag = true;
         }
 
-        if(x_flag == true) 
-          if(CalculateOverlap() == true) 
+        if(x_flag == true) {
+          if(CalculateOverlap() == true)
             blocks_[macro_id].SetX(lx_b);
           else {
             macro_queue.push(macro_id);
             blocks_[macro_id].SetAlignFlag(true);
           }
-      } 
+        }
+      }
   }
-  
+
 
   // right alignment
   for(auto macro_id : macro_id_list) {
     blocks_[macro_id].SetAlignFlag(false);
     if(blocks_[macro_id].GetX() + blocks_[macro_id].GetWidth() >= outline_width_) {
-      blocks_[macro_id].SetAlignFlag(true);  
+      blocks_[macro_id].SetAlignFlag(true);
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetX() == 0.0) 
-      blocks_[macro_id].SetAlignFlag(true);  
+    } else if(blocks_[macro_id].GetX() == 0.0)
+      blocks_[macro_id].SetAlignFlag(true);
   }
 
   while(!macro_queue.empty()) {
@@ -809,7 +810,7 @@ void SimulatedAnnealingCore::AlignMacro()
     const float ly = blocks_[src].GetY();
     const float uy = blocks_[src].GetHeight() + ly;
     macro_queue.pop();
-    for(auto macro_id : macro_id_list) 
+    for(auto macro_id : macro_id_list)
       if (blocks_[macro_id].GetAlignFlag() == false) {
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
@@ -823,30 +824,31 @@ void SimulatedAnnealingCore::AlignMacro()
           continue;
         bool x_flag = false;
         if(ux_b <= ux && ux_b >= ux - threshold_H) {
-          blocks_[macro_id].SetX(ux - (ux_b - lx_b));  
+          blocks_[macro_id].SetX(ux - (ux_b - lx_b));
           x_flag = true;
         } else if(ux_b <= lx && ux_b >= lx - threshold_H) {
           blocks_[macro_id].SetX(lx - (ux_b - lx_b));
           x_flag = true;
         }
-        if(x_flag == true) 
-          if(CalculateOverlap() == true) 
+        if (x_flag == true)  {
+          if (CalculateOverlap() == true)
             blocks_[macro_id].SetX(lx_b);
           else {
             macro_queue.push(macro_id);
             blocks_[macro_id].SetAlignFlag(true);
           }
+        }
       }
   }
- 
+
   // bottom alignment
   for(auto macro_id : macro_id_list) {
     blocks_[macro_id].SetAlignFlag(false);
     if(blocks_[macro_id].GetY() == 0.0) {
-      blocks_[macro_id].SetAlignFlag(true);  
+      blocks_[macro_id].SetAlignFlag(true);
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetY() + blocks_[macro_id].GetHeight() >= outline_height_) 
-      blocks_[macro_id].SetAlignFlag(true);  
+    } else if(blocks_[macro_id].GetY() + blocks_[macro_id].GetHeight() >= outline_height_)
+      blocks_[macro_id].SetAlignFlag(true);
   }
 
   while(!macro_queue.empty()) {
@@ -856,7 +858,7 @@ void SimulatedAnnealingCore::AlignMacro()
     const float ly = blocks_[src].GetY();
     const float uy = blocks_[src].GetHeight() + ly;
     macro_queue.pop();
-    for(auto macro_id : macro_id_list) 
+    for(auto macro_id : macro_id_list)
       if (blocks_[macro_id].GetAlignFlag() == false) {
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
@@ -876,24 +878,25 @@ void SimulatedAnnealingCore::AlignMacro()
           blocks_[macro_id].SetY(uy);
           y_flag = true;
         }
-        if(y_flag == true) 
-          if(CalculateOverlap() == true) 
+        if (y_flag == true) {
+          if (CalculateOverlap() == true)
             blocks_[macro_id].SetY(ly_b);
           else {
             macro_queue.push(macro_id);
             blocks_[macro_id].SetAlignFlag(true);
           }
+        }
       }
   }
- 
+
   // top alignment
   for(auto macro_id : macro_id_list) {
     blocks_[macro_id].SetAlignFlag(false);
     if(blocks_[macro_id].GetY() + blocks_[macro_id].GetHeight() >= outline_height_) {
-      blocks_[macro_id].SetAlignFlag(true);  
+      blocks_[macro_id].SetAlignFlag(true);
       macro_queue.push(macro_id);
-    } else if(blocks_[macro_id].GetY() == 0.0) 
-      blocks_[macro_id].SetAlignFlag(true);  
+    } else if(blocks_[macro_id].GetY() == 0.0)
+      blocks_[macro_id].SetAlignFlag(true);
   }
 
   while(!macro_queue.empty()) {
@@ -903,7 +906,7 @@ void SimulatedAnnealingCore::AlignMacro()
     const float ly = blocks_[src].GetY();
     const float uy = blocks_[src].GetHeight() + ly;
     macro_queue.pop();
-    for(auto macro_id : macro_id_list) 
+    for(auto macro_id : macro_id_list)
       if (blocks_[macro_id].GetAlignFlag() == false) {
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
@@ -923,24 +926,25 @@ void SimulatedAnnealingCore::AlignMacro()
           blocks_[macro_id].SetY(ly - (uy_b - ly_b));
           y_flag = true;
         }
-        if(y_flag == true) 
-          if(CalculateOverlap() == true) 
+        if (y_flag == true) {
+          if (CalculateOverlap() == true)
             blocks_[macro_id].SetY(ly_b);
           else {
             macro_queue.push(macro_id);
             blocks_[macro_id].SetAlignFlag(true);
           }
+        }
       }
   }
 }
 
 
 
-// 
+//
 // Calculate the penalty for dead space (or notch)
 //
 void SimulatedAnnealingCore::CalculateNotchPenalty()
-{ 
+{
   notch_penalty_ = 0.0;
   if(width_ > outline_width_ || height_ > outline_height_) {
       const float area = max(width_, outline_width_) * max(height_, outline_height_);
@@ -950,7 +954,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   AlignMacro();
   vector<float> x_vec;
   vector<float> y_vec;
-  for(int i = 0; i < blocks_.size(); i++) 
+  for(int i = 0; i < blocks_.size(); i++)
     if(blocks_[i].GetNumMacro() > 0) {
       const float lx = blocks_[i].GetX();
       const float ly = blocks_[i].GetY();
@@ -960,7 +964,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
       x_vec.push_back(ux);
       y_vec.push_back(ly);
       y_vec.push_back(uy);
-    }  
+    }
 
   x_vec.push_back(0.0);
   y_vec.push_back(0.0);
@@ -973,7 +977,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
 
   vector<float> x_grid;
   vector<float> y_grid;
- 
+
   float temp_x = 0.0;
   x_grid.push_back(x_vec[0]);
   temp_x = x_vec[0];
@@ -982,7 +986,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
       temp_x = x_vec[i];
       x_grid.push_back(x_vec[i]);
     }
- 
+
   float temp_y = 0.0;
   y_grid.push_back(y_vec[0]);
   temp_y = y_vec[0];
@@ -1002,7 +1006,7 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
     for(int j = 0; j < num_y; j++)
         grid[i][j] = false;
 
-  for(int i = 0; i < blocks_.size(); i++) 
+  for(int i = 0; i < blocks_.size(); i++)
     if(blocks_[i].GetNumMacro() > 0) {
       const float lx = blocks_[i].GetX();
       const float ly = blocks_[i].GetY();
@@ -1038,25 +1042,25 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   const float threshold_V = min(50.0, outline_height_ / 10.0);
   int num_notch = 0;
 
-  for(int i = 0; i < num_x; i++) 
+  for(int i = 0; i < num_x; i++)
     for(int j = 0; j < num_y; j++) {
       bool is_notch = false;
       if(grid[i][j] == true)
         continue;
       else {
-        if(i == 0 && j==0) 
+        if(i == 0 && j==0) {
           if(grid[i+1][j] == true || grid[i][j+1] == true)
             is_notch = true;
-        else if(i == num_x - 1 && j == 0) 
+        } else if(i == num_x - 1 && j == 0) {
           if(grid[i-1][j] == true || grid[i][j+1] == true)
             is_notch = true;
-        else if(i == 0 && j == num_y - 1) 
+        } else if(i == 0 && j == num_y - 1) {
           if(grid[i+1][j] == true || grid[i][j-1] == true)
             is_notch = true;
-        else if(i == num_x - 1 && j == num_y - 1) 
+        } else if(i == num_x - 1 && j == num_y - 1) {
           if(grid[i-1][j] == true || grid[i][j-1] == true)
             is_notch = true;
-        else if( j == 0 ) {
+        } else if( j == 0 ) {
           int result = 0 + grid[i-1][j] + grid[i+1][j]  + grid[i][j+1];
           if(result >= 2)
             is_notch = true;
@@ -1077,11 +1081,11 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
           if(result >= 3 )
             is_notch = true;
         }
- 
+
         if(is_notch == true) {
           const float width = x_grid[i + 1] - x_grid[i];
           const float height = y_grid[j+1] - y_grid[j];
-          if(width <= threshold_H || height <= threshold_V) {     
+          if(width <= threshold_H || height <= threshold_V) {
             num_notch += 1;
             notch_penalty_ += sqrt(width * height / (outline_width_ * outline_height_));
           }
@@ -1157,19 +1161,19 @@ float SimulatedAnnealingCore::NormCost(float area,
 {
   float cost = 0.0;
   cost += alpha_ * area / norm_area_;
-  if (norm_wirelength_ > 0.0) 
+  if (norm_wirelength_ > 0.0)
     cost += beta_ * wirelength / norm_wirelength_;
-  if (norm_outline_penalty_ > 0.0) 
+  if (norm_outline_penalty_ > 0.0)
     cost += gamma_ * outline_penalty / norm_outline_penalty_;
-  if (norm_boundary_penalty_ > 0.0) 
+  if (norm_boundary_penalty_ > 0.0)
     cost += boundary_weight_ * boundary_penalty / norm_boundary_penalty_;
-  if (norm_macro_blockage_penalty_ > 0.0) 
+  if (norm_macro_blockage_penalty_ > 0.0)
     cost += macro_blockage_weight_ * macro_blockage_penalty
             / norm_macro_blockage_penalty_;
-  if (norm_location_penalty_ > 0.0) 
+  if (norm_location_penalty_ > 0.0)
     cost += location_weight_ * location_penalty_ / norm_location_penalty_;
-  if (norm_notch_penalty_ > 0.0) 
-    cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;  
+  if (norm_notch_penalty_ > 0.0)
+    cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
   return cost;
 }
 
@@ -1284,9 +1288,9 @@ bool SimulatedAnnealingCore::IsFeasible() const
 
 void SimulatedAnnealingCore::ShrinkBlocks()
 {
-  for (int i = 0; i < blocks_.size(); i++) 
-    if (blocks_[i].GetNumMacro() == 0) 
-      blocks_[i].ShrinkSoftBlock(shrink_factor_, shrink_factor_);   
+  for (int i = 0; i < blocks_.size(); i++)
+    if (blocks_[i].GetNumMacro() == 0)
+      blocks_[i].ShrinkSoftBlock(shrink_factor_, shrink_factor_);
 }
 
 
@@ -1295,7 +1299,7 @@ bool SimulatedAnnealingCore::CalculateOverlap()
   vector<pair<float, float>> macro_block_x_list;
   vector<pair<float, float>> macro_block_y_list;
 
-  for (int i = 0; i < blocks_.size(); i++) 
+  for (int i = 0; i < blocks_.size(); i++)
     if (blocks_[i].GetNumMacro() > 0) {
       const float lx = blocks_[i].GetX();
       const float ux = lx + blocks_[i].GetWidth();
@@ -1304,16 +1308,16 @@ bool SimulatedAnnealingCore::CalculateOverlap()
       macro_block_x_list.push_back(pair<float, float>(lx, ux));
       macro_block_y_list.push_back(pair<float, float>(ly, uy));
     }
-  
+
 
   float overlap = 0.0;
-  for (int i = 0; i < macro_block_x_list.size(); i++) 
+  for (int i = 0; i < macro_block_x_list.size(); i++)
     for (int j = i + 1; j < macro_block_x_list.size(); j++) {
-      const float x1 = 
+      const float x1 =
           max(macro_block_x_list[i].first, macro_block_x_list[j].first);
-      const float x2 = 
+      const float x2 =
           min(macro_block_x_list[i].second, macro_block_x_list[j].second);
-      const float y1 
+      const float y1
           = max(macro_block_y_list[i].first, macro_block_y_list[j].first);
       const float y2
           = min(macro_block_y_list[i].second, macro_block_y_list[j].second);
@@ -1321,8 +1325,8 @@ bool SimulatedAnnealingCore::CalculateOverlap()
       const float y = 0.0;
       overlap += max(x2 - x1, x) * max(y2 - y1, y);
     }
-  
-    
+
+
   return overlap > 0.0;
 }
 
@@ -1517,7 +1521,7 @@ void ParseLocationFile(vector<Location*>& locations, const string& location_file
   // Check wether the file exists
   if (!(f.good()))
     return;
- 
+
   while (getline(f, line)) {
     vector<string> words = Split(line);
     const string name = words[0];
@@ -1606,13 +1610,13 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   word = string("TM");
   terminal_position[word]
       = pair<float, float>(outline_width / 2.0, outline_height);
-  
+
   vector<Net*> nets;
   ParseNetFile(nets, terminal_position, net_file);
 
   vector<Region*> regions;
   ParseRegionFile(regions, region_file);
-  
+
   vector<Location*> locations;
   ParseLocationFile(locations, location_file);
 
