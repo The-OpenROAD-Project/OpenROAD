@@ -68,8 +68,12 @@ struct GCFixture : public Fixture
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());
     TEST_ENUM_EQUAL(marker->getConstraint()->typeId(), type);
-    // TODO FIXME
-    //BOOST_TEST(bbox == expected_bbox);
+
+    // TODO this expression can't be evaluated directly likely due to lack of
+    // iostream support in odb. Try removing this workaround after dbStreams are
+    // replaced with iostreams
+    bool test = (bbox == expected_bbox);
+    BOOST_TEST(test);
   }
 
   void runGC()

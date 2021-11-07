@@ -723,7 +723,7 @@ void FlexTAWorker::initFixedObjs()
             }
           }
           bool isFatOBS = true;
-          if (bounds.minDXDY() <= 2 * width) {
+          if ((int)bounds.minDXDY() <= 2 * width) {
             isFatOBS = false;
           }
           if (isMacro && isFatOBS) {

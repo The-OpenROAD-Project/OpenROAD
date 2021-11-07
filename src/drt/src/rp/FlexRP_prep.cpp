@@ -1001,8 +1001,8 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     isVia1Above = false;
   }
   via1.getCutBBox(cutBox1);
-  auto width1 = viaBox1.minDXDY();
-  auto length1 = viaBox1.maxDXDY();
+  int width1 = viaBox1.minDXDY();
+  int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
@@ -1015,8 +1015,8 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     isVia2Above = false;
   }
   via2.getCutBBox(cutBox2);
-  auto width2 = viaBox2.minDXDY();
-  auto length2 = viaBox2.maxDXDY();
+  int width2 = viaBox2.minDXDY();
+  int length2 = viaBox2.maxDXDY();
 
   for (auto& con :
        getDesign()->getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
