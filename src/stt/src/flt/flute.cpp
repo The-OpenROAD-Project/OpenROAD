@@ -228,11 +228,6 @@ static int lut_valid_d = 0;
 extern std::string post9;
 extern std::string powv9;
 
-void ensureLUTsRead() {
-  if (LUT == nullptr)
-    readLUT();
-}
-
 static void readLUT() {
   makeLUT(LUT, numsoln);
 
@@ -376,6 +371,8 @@ initLUT(int to_d,
 
 static void
 ensureLUT(int d) {
+  if (LUT == nullptr)
+    readLUT();
   if (d > lut_valid_d && d <= FLUTE_D) {
     initLUT(FLUTE_D, LUT, numsoln);
   }
@@ -996,7 +993,6 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
     t.branch[1].y = y[1];
     t.branch[1].n = 1;
   } else {
-    ensureLUTsRead();
     ensureLUT(d);
                 
     xs.resize(d);
