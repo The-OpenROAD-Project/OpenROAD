@@ -3429,1026 +3429,1034 @@ END COMPONENTS
 PINS 269 ;
     - DVDD_0 + NET DVDD_0 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 860000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1526000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2114000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2780000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3368000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4034000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4622000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 5288000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 760000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1390000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1950000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3490000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4120000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4680000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5310000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 5134000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4504000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3944000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3314000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2754000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2124000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1564000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 934000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5414000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4784000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4224000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3594000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3034000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2474000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1844000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1284000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 654000 299786 ) N ;
     - DVDD_1 + NET DVDD_1 + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2580000 5873414 ) N ;
     - DVSS_0 + NET DVSS_0 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1008000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1674000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2262000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2928000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3516000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4182000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4770000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 5436000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 900000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1530000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2160000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3630000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4260000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4820000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5450000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4994000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4364000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3804000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3174000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2614000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1984000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1424000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 794000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5274000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4644000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4084000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3454000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2894000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2264000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1704000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1074000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 514000 299786 ) N ;
     - DVSS_1 + NET DVSS_1 + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2720000 5873414 ) N ;
     - VDD + NET VDD + DIRECTION INPUT + USE POWER
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 564000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1230000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1818000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2484000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3072000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3738000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4326000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4992000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 480000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1110000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1670000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2300000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2930000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3210000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3840000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4400000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5030000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 5414000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4784000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4224000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3594000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3034000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2474000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1844000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1284000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 654000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5134000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4504000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3944000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3314000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2754000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2124000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1564000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 934000 299786 ) N ;
     - VSS + NET VSS + DIRECTION INPUT + USE GROUND
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 712000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1378000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 1966000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 2632000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3220000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 3886000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 4474000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 299786 5140000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 620000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1250000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1810000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2440000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3070000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3350000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3980000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4540000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5170000 5873414 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 5274000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4644000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 4084000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 3454000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2894000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 2264000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1704000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 1074000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5700322 514000 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4994000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4364000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3804000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3174000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2614000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1984000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1424000 299786 ) N
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 794000 299786 ) N ;
     - p_bsg_tag_clk_i + NET p_bsg_tag_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3384000 ) N ;
     - p_bsg_tag_clk_o + NET p_bsg_tag_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3590000 ) N ;
     - p_bsg_tag_data_i + NET p_bsg_tag_data_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3524000 ) N ;
     - p_bsg_tag_data_o + NET p_bsg_tag_data_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3442000 ) N ;
     - p_bsg_tag_en_i + NET p_bsg_tag_en_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3734000 ) N ;
     - p_ci2_0_o + NET p_ci2_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3910000 5700322 ) N ;
     - p_ci2_1_o + NET p_ci2_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4050000 5700322 ) N ;
     - p_ci2_2_o + NET p_ci2_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4190000 5700322 ) N ;
     - p_ci2_3_o + NET p_ci2_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4330000 5700322 ) N ;
     - p_ci2_4_o + NET p_ci2_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4470000 5700322 ) N ;
     - p_ci2_5_o + NET p_ci2_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5100000 5700322 ) N ;
     - p_ci2_6_o + NET p_ci2_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5240000 5700322 ) N ;
     - p_ci2_7_o + NET p_ci2_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5380000 5700322 ) N ;
     - p_ci2_8_o + NET p_ci2_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5520000 5700322 ) N ;
     - p_ci2_clk_o + NET p_ci2_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4610000 5700322 ) N ;
     - p_ci2_tkn_i + NET p_ci2_tkn_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4750000 5700322 ) N ;
     - p_ci2_v_o + NET p_ci2_v_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4890000 5700322 ) N ;
     - p_ci_0_i + NET p_ci_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 5484000 ) N ;
     - p_ci_1_i + NET p_ci_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 5344000 ) N ;
     - p_ci_2_i + NET p_ci_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 5204000 ) N ;
     - p_ci_3_i + NET p_ci_3_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 5064000 ) N ;
     - p_ci_4_i + NET p_ci_4_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4854000 ) N ;
     - p_ci_5_i + NET p_ci_5_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4294000 ) N ;
     - p_ci_6_i + NET p_ci_6_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4154000 ) N ;
     - p_ci_7_i + NET p_ci_7_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4014000 ) N ;
     - p_ci_8_i + NET p_ci_8_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3874000 ) N ;
     - p_ci_clk_i + NET p_ci_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4714000 ) N ;
     - p_ci_tkn_o + NET p_ci_tkn_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4574000 ) N ;
     - p_ci_v_i + NET p_ci_v_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 4434000 ) N ;
     - p_clk_A_i + NET p_clk_A_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2370000 5700322 ) N ;
     - p_clk_B_i + NET p_clk_B_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2510000 5700322 ) N ;
     - p_clk_C_i + NET p_clk_C_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2650000 5700322 ) N ;
     - p_clk_async_reset_i + NET p_clk_async_reset_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3000000 5700322 ) N ;
     - p_clk_o + NET p_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2790000 5700322 ) N ;
     - p_co2_0_o + NET p_co2_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3812000 ) N ;
     - p_co2_1_o + NET p_co2_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3960000 ) N ;
     - p_co2_2_o + NET p_co2_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4108000 ) N ;
     - p_co2_3_o + NET p_co2_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4256000 ) N ;
     - p_co2_4_o + NET p_co2_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4400000 ) N ;
     - p_co2_5_o + NET p_co2_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 5066000 ) N ;
     - p_co2_6_o + NET p_co2_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 5214000 ) N ;
     - p_co2_7_o + NET p_co2_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 5362000 ) N ;
     - p_co2_8_o + NET p_co2_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 5510000 ) N ;
     - p_co2_clk_o + NET p_co2_clk_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4548000 ) N ;
     - p_co2_tkn_i + NET p_co2_tkn_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4696000 ) N ;
     - p_co2_v_o + NET p_co2_v_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 4844000 ) N ;
     - p_co_0_i + NET p_co_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 550000 5700322 ) N ;
     - p_co_1_i + NET p_co_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 690000 5700322 ) N ;
     - p_co_2_i + NET p_co_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 830000 5700322 ) N ;
     - p_co_3_i + NET p_co_3_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1040000 5700322 ) N ;
     - p_co_4_i + NET p_co_4_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1180000 5700322 ) N ;
     - p_co_5_i + NET p_co_5_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1740000 5700322 ) N ;
     - p_co_6_i + NET p_co_6_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1880000 5700322 ) N ;
     - p_co_7_i + NET p_co_7_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2090000 5700322 ) N ;
     - p_co_8_i + NET p_co_8_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2230000 5700322 ) N ;
     - p_co_clk_i + NET p_co_clk_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1320000 5700322 ) N ;
     - p_co_tkn_o + NET p_co_tkn_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1460000 5700322 ) N ;
     - p_co_v_i + NET p_co_v_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1600000 5700322 ) N ;
     - p_core_async_reset_i + NET p_core_async_reset_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3700000 5700322 ) N ;
     - p_ddr_addr_0_o + NET p_ddr_addr_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3734000 126586 ) N ;
     - p_ddr_addr_10_o + NET p_ddr_addr_10_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2194000 126586 ) N ;
     - p_ddr_addr_11_o + NET p_ddr_addr_11_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2054000 126586 ) N ;
     - p_ddr_addr_12_o + NET p_ddr_addr_12_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1914000 126586 ) N ;
     - p_ddr_addr_13_o + NET p_ddr_addr_13_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1774000 126586 ) N ;
     - p_ddr_addr_14_o + NET p_ddr_addr_14_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1634000 126586 ) N ;
     - p_ddr_addr_15_o + NET p_ddr_addr_15_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1494000 126586 ) N ;
     - p_ddr_addr_1_o + NET p_ddr_addr_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3524000 126586 ) N ;
     - p_ddr_addr_2_o + NET p_ddr_addr_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3384000 126586 ) N ;
     - p_ddr_addr_3_o + NET p_ddr_addr_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3244000 126586 ) N ;
     - p_ddr_addr_4_o + NET p_ddr_addr_4_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3104000 126586 ) N ;
     - p_ddr_addr_5_o + NET p_ddr_addr_5_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2964000 126586 ) N ;
     - p_ddr_addr_6_o + NET p_ddr_addr_6_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2824000 126586 ) N ;
     - p_ddr_addr_7_o + NET p_ddr_addr_7_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2684000 126586 ) N ;
     - p_ddr_addr_8_o + NET p_ddr_addr_8_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2544000 126586 ) N ;
     - p_ddr_addr_9_o + NET p_ddr_addr_9_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 2334000 126586 ) N ;
     - p_ddr_ba_0_o + NET p_ddr_ba_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1354000 126586 ) N ;
     - p_ddr_ba_1_o + NET p_ddr_ba_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1214000 126586 ) N ;
     - p_ddr_ba_2_o + NET p_ddr_ba_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 1004000 126586 ) N ;
     - p_ddr_cas_n_o + NET p_ddr_cas_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4294000 126586 ) N ;
     - p_ddr_ck_n_o + NET p_ddr_ck_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4854000 126586 ) N ;
     - p_ddr_ck_p_o + NET p_ddr_ck_p_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5064000 126586 ) N ;
     - p_ddr_cke_o + NET p_ddr_cke_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4714000 126586 ) N ;
     - p_ddr_cs_n_o + NET p_ddr_cs_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4574000 126586 ) N ;
     - p_ddr_dm_0_o + NET p_ddr_dm_0_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2040000 ) N ;
     - p_ddr_dm_1_o + NET p_ddr_dm_1_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 584000 126586 ) N ;
     - p_ddr_dm_2_o + NET p_ddr_dm_2_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5484000 126586 ) N ;
     - p_ddr_dm_3_o + NET p_ddr_dm_3_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3244000 ) N ;
     - p_ddr_dq_0_io + NET p_ddr_dq_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2188000 ) N ;
     - p_ddr_dq_10_io + NET p_ddr_dq_10_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 786000 ) N ;
     - p_ddr_dq_11_io + NET p_ddr_dq_11_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 934000 ) N ;
     - p_ddr_dq_12_io + NET p_ddr_dq_12_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1156000 ) N ;
     - p_ddr_dq_13_io + NET p_ddr_dq_13_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1304000 ) N ;
     - p_ddr_dq_14_io + NET p_ddr_dq_14_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1452000 ) N ;
     - p_ddr_dq_15_io + NET p_ddr_dq_15_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1600000 ) N ;
     - p_ddr_dq_16_io + NET p_ddr_dq_16_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1634000 ) N ;
     - p_ddr_dq_17_io + NET p_ddr_dq_17_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1494000 ) N ;
     - p_ddr_dq_18_io + NET p_ddr_dq_18_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1354000 ) N ;
     - p_ddr_dq_19_io + NET p_ddr_dq_19_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1214000 ) N ;
     - p_ddr_dq_1_io + NET p_ddr_dq_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2336000 ) N ;
     - p_ddr_dq_20_io + NET p_ddr_dq_20_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1004000 ) N ;
     - p_ddr_dq_21_io + NET p_ddr_dq_21_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 864000 ) N ;
     - p_ddr_dq_22_io + NET p_ddr_dq_22_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 724000 ) N ;
     - p_ddr_dq_23_io + NET p_ddr_dq_23_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 584000 ) N ;
     - p_ddr_dq_24_io + NET p_ddr_dq_24_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2824000 ) N ;
     - p_ddr_dq_25_io + NET p_ddr_dq_25_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2684000 ) N ;
     - p_ddr_dq_26_io + NET p_ddr_dq_26_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2544000 ) N ;
     - p_ddr_dq_27_io + NET p_ddr_dq_27_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2334000 ) N ;
     - p_ddr_dq_28_io + NET p_ddr_dq_28_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2194000 ) N ;
     - p_ddr_dq_29_io + NET p_ddr_dq_29_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2054000 ) N ;
     - p_ddr_dq_2_io + NET p_ddr_dq_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2558000 ) N ;
     - p_ddr_dq_30_io + NET p_ddr_dq_30_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1914000 ) N ;
     - p_ddr_dq_31_io + NET p_ddr_dq_31_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 1774000 ) N ;
     - p_ddr_dq_3_io + NET p_ddr_dq_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2706000 ) N ;
     - p_ddr_dq_4_io + NET p_ddr_dq_4_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 2854000 ) N ;
     - p_ddr_dq_5_io + NET p_ddr_dq_5_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3002000 ) N ;
     - p_ddr_dq_6_io + NET p_ddr_dq_6_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3146000 ) N ;
     - p_ddr_dq_7_io + NET p_ddr_dq_7_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 3294000 ) N ;
     - p_ddr_dq_8_io + NET p_ddr_dq_8_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 490000 ) N ;
     - p_ddr_dq_9_io + NET p_ddr_dq_9_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 638000 ) N ;
     - p_ddr_dqs_n_0_io + NET p_ddr_dqs_n_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1892000 ) N ;
     - p_ddr_dqs_n_1_io + NET p_ddr_dqs_n_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 724000 126586 ) N ;
     - p_ddr_dqs_n_2_io + NET p_ddr_dqs_n_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5204000 126586 ) N ;
     - p_ddr_dqs_n_3_io + NET p_ddr_dqs_n_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 2964000 ) N ;
     - p_ddr_dqs_p_0_io + NET p_ddr_dqs_p_0_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 126586 1748000 ) N ;
     - p_ddr_dqs_p_1_io + NET p_ddr_dqs_p_1_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 864000 126586 ) N ;
     - p_ddr_dqs_p_2_io + NET p_ddr_dqs_p_2_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 5344000 126586 ) N ;
     - p_ddr_dqs_p_3_io + NET p_ddr_dqs_p_3_io + DIRECTION INOUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -84000 -45000 ) ( 84000 45000 )
         + FIXED ( 5873414 3104000 ) N ;
     - p_ddr_odt_o + NET p_ddr_odt_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3874000 126586 ) N ;
     - p_ddr_ras_n_o + NET p_ddr_ras_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4434000 126586 ) N ;
     - p_ddr_reset_n_o + NET p_ddr_reset_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4014000 126586 ) N ;
     - p_ddr_we_n_o + NET p_ddr_we_n_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 4154000 126586 ) N ;
     - p_misc_o + NET p_misc_o + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3140000 5700322 ) N ;
     - p_sel_0_i + NET p_sel_0_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3280000 5700322 ) N ;
     - p_sel_1_i + NET p_sel_1_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3420000 5700322 ) N ;
     - p_sel_2_i + NET p_sel_2_i + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + LAYER metal10 ( -45000 -84000 ) ( 45000 84000 )
         + FIXED ( 3560000 5700322 ) N ;
 END PINS
 SPECIALNETS 183 ;
-    - DVDD_0 ( PIN DVDD_0 ) ( u_ddr_dq_8_io DVDD ) ( u_vdd_32 DVDD ) ( u_ddr_dq_9_io DVDD ) ( u_vss_32 DVDD ) ( u_ddr_dq_10_io DVDD ) ( u_v18_32 DVDD )
-      ( u_ddr_dq_11_io DVDD ) ( u_vzz_32 DVDD ) ( u_pwrdet16 DVDD ) ( u_ddr_dq_12_io DVDD ) ( u_vdd_31 DVDD ) ( u_ddr_dq_13_io DVDD ) ( u_vss_31 DVDD ) ( u_ddr_dq_14_io DVDD )
-      ( u_v18_31 DVDD ) ( u_ddr_dq_15_io DVDD ) ( u_vzz_31 DVDD ) ( u_ddr_dqs_p_0_io DVDD ) ( u_vdd_30 DVDD ) ( u_ddr_dqs_n_0_io DVDD ) ( u_vss_30 DVDD ) ( u_ddr_dm_0_o DVDD )
-      ( u_v18_30 DVDD ) ( u_ddr_dq_0_io DVDD ) ( u_vzz_30 DVDD ) ( u_ddr_dq_1_io DVDD ) ( u_pwrdet15 DVDD ) ( u_vdd_29 DVDD ) ( u_ddr_dq_2_io DVDD ) ( u_vss_29 DVDD )
-      ( u_ddr_dq_3_io DVDD ) ( u_v18_29 DVDD ) ( u_ddr_dq_4_io DVDD ) ( u_vzz_29 DVDD ) ( u_ddr_dq_5_io DVDD ) ( u_vdd_28 DVDD ) ( u_ddr_dq_6_io DVDD ) ( u_vss_28 DVDD )
-      ( u_ddr_dq_7_io DVDD ) ( u_v18_28 DVDD ) ( u_bsg_tag_data_o DVDD ) ( u_vzz_28 DVDD ) ( u_bsg_tag_clk_o DVDD ) ( u_pwrdet14 DVDD ) ( u_vdd_27 DVDD ) ( u_co2_0_o DVDD )
-      ( u_vss_27 DVDD ) ( u_co2_1_o DVDD ) ( u_v18_27 DVDD ) ( u_co2_2_o DVDD ) ( u_vzz_27 DVDD ) ( u_co2_3_o DVDD ) ( u_vdd_26 DVDD ) ( u_co2_4_o DVDD )
-      ( u_vss_26 DVDD ) ( u_co2_clk_o DVDD ) ( u_v18_26 DVDD ) ( u_co2_tkn_i DVDD ) ( u_vzz_26 DVDD ) ( u_co2_v_o DVDD ) ( u_pwrdet13 DVDD ) ( u_vdd_25 DVDD )
-      ( u_co2_5_o DVDD ) ( u_vss_25 DVDD ) ( u_co2_6_o DVDD ) ( u_v18_25 DVDD ) ( u_co2_7_o DVDD ) ( u_vzz_25 DVDD ) ( u_co2_8_o DVDD ) ( u_vdd_24 DVDD )
-      ( u_co_0_i DVDD ) ( u_vss_24 DVDD ) ( u_co_1_i DVDD ) ( u_v18_24 DVDD ) ( u_co_2_i DVDD ) ( u_vzz_24 DVDD ) ( u_pwrdet8 DVDD ) ( u_co_3_i DVDD )
-      ( u_vdd_23 DVDD ) ( u_co_4_i DVDD ) ( u_vss_23 DVDD ) ( u_co_clk_i DVDD ) ( u_v18_23 DVDD ) ( u_co_tkn_o DVDD ) ( u_vzz_23 DVDD ) ( u_co_v_i DVDD )
-      ( u_vdd_22 DVDD ) ( u_co_5_i DVDD ) ( u_vss_22 DVDD ) ( u_co_6_i DVDD ) ( u_v18_22 DVDD ) ( u_pwrdet9 DVDD ) ( u_co_7_i DVDD ) ( u_vzz_22 DVDD )
-      ( u_co_8_i DVDD ) ( u_vdd_21 DVDD ) ( u_clk_A_i DVDD ) ( u_vss_21 DVDD ) ( u_clk_B_i DVDD ) ( u_vdd_20 DVDD ) ( u_sel_0_i DVDD ) ( u_vss_20 DVDD )
-      ( u_sel_1_i DVDD ) ( u_v18_20 DVDD ) ( u_sel_2_i DVDD ) ( u_vzz_20 DVDD ) ( u_core_async_reset_i DVDD ) ( u_pwrdet11 DVDD ) ( u_vdd_19 DVDD ) ( u_ci2_0_o DVDD )
-      ( u_vss_19 DVDD ) ( u_ci2_1_o DVDD ) ( u_v18_19 DVDD ) ( u_ci2_2_o DVDD ) ( u_vzz_19 DVDD ) ( u_ci2_3_o DVDD ) ( u_vdd_18 DVDD ) ( u_ci2_4_o DVDD )
-      ( u_vss_18 DVDD ) ( u_ci2_clk_o DVDD ) ( u_v18_18 DVDD ) ( u_ci2_tkn_i DVDD ) ( u_vzz_18 DVDD ) ( u_ci2_v_o DVDD ) ( u_pwrdet12 DVDD ) ( u_vdd_17 DVDD )
-      ( u_ci2_5_o DVDD ) ( u_vss_17 DVDD ) ( u_ci2_6_o DVDD ) ( u_v18_17 DVDD ) ( u_ci2_7_o DVDD ) ( u_vzz_17 DVDD ) ( u_ci2_8_o DVDD ) ( u_ci_0_i DVDD )
-      ( u_vdd_16 DVDD ) ( u_ci_1_i DVDD ) ( u_vss_16 DVDD ) ( u_ci_2_i DVDD ) ( u_v18_16 DVDD ) ( u_ci_3_i DVDD ) ( u_vzz_16 DVDD ) ( u_pwrdet7 DVDD )
-      ( u_ci_4_i DVDD ) ( u_vdd_15 DVDD ) ( u_ci_clk_i DVDD ) ( u_vss_15 DVDD ) ( u_ci_tkn_o DVDD ) ( u_v18_15 DVDD ) ( u_ci_v_i DVDD ) ( u_vzz_15 DVDD )
-      ( u_ci_5_i DVDD ) ( u_vdd_14 DVDD ) ( u_ci_6_i DVDD ) ( u_vss_14 DVDD ) ( u_ci_7_i DVDD ) ( u_v18_14 DVDD ) ( u_ci_8_i DVDD ) ( u_vzz_14 DVDD )
-      ( u_bsg_tag_en_i DVDD ) ( u_pwrdet6 DVDD ) ( u_vdd_13 DVDD ) ( u_bsg_tag_data_i DVDD ) ( u_vss_13 DVDD ) ( u_bsg_tag_clk_i DVDD ) ( u_v18_13 DVDD ) ( u_ddr_dm_3_o DVDD )
-      ( u_vzz_13 DVDD ) ( u_ddr_dqs_p_3_io DVDD ) ( u_vdd_12 DVDD ) ( u_ddr_dqs_n_3_io DVDD ) ( u_vss_12 DVDD ) ( u_ddr_dq_24_io DVDD ) ( u_v18_12 DVDD ) ( u_ddr_dq_25_io DVDD )
-      ( u_vzz_12 DVDD ) ( u_ddr_dq_26_io DVDD ) ( u_vdd_11 DVDD ) ( u_pwrdet5 DVDD ) ( u_ddr_dq_27_io DVDD ) ( u_vss_11 DVDD ) ( u_ddr_dq_28_io DVDD ) ( u_v18_11 DVDD )
-      ( u_ddr_dq_29_io DVDD ) ( u_vzz_11 DVDD ) ( u_ddr_dq_30_io DVDD ) ( u_vdd_10 DVDD ) ( u_ddr_dq_31_io DVDD ) ( u_vss_10 DVDD ) ( u_ddr_dq_16_io DVDD ) ( u_v18_10 DVDD )
-      ( u_ddr_dq_17_io DVDD ) ( u_vzz_10 DVDD ) ( u_ddr_dq_18_io DVDD ) ( u_vdd_9 DVDD ) ( u_ddr_dq_19_io DVDD ) ( u_pwrdet4 DVDD ) ( u_vss_9 DVDD ) ( u_ddr_dq_20_io DVDD )
-      ( u_v18_9 DVDD ) ( u_ddr_dq_21_io DVDD ) ( u_vzz_9 DVDD ) ( u_ddr_dq_22_io DVDD ) ( u_vdd_8 DVDD ) ( u_ddr_dq_23_io DVDD ) ( u_vss_8 DVDD ) ( u_ddr_dm_2_o DVDD )
-      ( u_v18_8 DVDD ) ( u_ddr_dqs_p_2_io DVDD ) ( u_vzz_8 DVDD ) ( u_ddr_dqs_n_2_io DVDD ) ( u_vdd_7 DVDD ) ( u_ddr_ck_p_o DVDD ) ( u_vss_7 DVDD ) ( u_pwrdet3 DVDD )
-      ( u_ddr_ck_n_o DVDD ) ( u_v18_7 DVDD ) ( u_ddr_cke_o DVDD ) ( u_vzz_7 DVDD ) ( u_ddr_cs_n_o DVDD ) ( u_vdd_6 DVDD ) ( u_ddr_ras_n_o DVDD ) ( u_vss_6 DVDD )
-      ( u_ddr_cas_n_o DVDD ) ( u_v18_6 DVDD ) ( u_ddr_we_n_o DVDD ) ( u_vzz_6 DVDD ) ( u_ddr_reset_n_o DVDD ) ( u_vdd_5 DVDD ) ( u_ddr_odt_o DVDD ) ( u_vss_5 DVDD )
-      ( u_ddr_addr_0_o DVDD ) ( u_pwrdet2 DVDD ) ( u_v18_5 DVDD ) ( u_ddr_addr_1_o DVDD ) ( u_vzz_5 DVDD ) ( u_ddr_addr_2_o DVDD ) ( u_vdd_4 DVDD ) ( u_ddr_addr_3_o DVDD )
-      ( u_vss_4 DVDD ) ( u_ddr_addr_4_o DVDD ) ( u_v18_4 DVDD ) ( u_ddr_addr_5_o DVDD ) ( u_vzz_4 DVDD ) ( u_ddr_addr_6_o DVDD ) ( u_vdd_3 DVDD ) ( u_ddr_addr_7_o DVDD )
-      ( u_vss_3 DVDD ) ( u_ddr_addr_8_o DVDD ) ( u_v18_3 DVDD ) ( u_pwrdet1 DVDD ) ( u_ddr_addr_9_o DVDD ) ( u_vzz_3 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_vdd_2 DVDD )
-      ( u_ddr_addr_11_o DVDD ) ( u_vss_2 DVDD ) ( u_ddr_addr_12_o DVDD ) ( u_v18_2 DVDD ) ( u_ddr_addr_13_o DVDD ) ( u_vzz_2 DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_vdd_1 DVDD )
-      ( u_ddr_addr_15_o DVDD ) ( u_vss_1 DVDD ) ( u_ddr_ba_0_o DVDD ) ( u_v18_1 DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD ) ( u_vzz_1 DVDD ) ( u_ddr_ba_2_o DVDD )
-      ( u_vdd_0 DVDD ) ( u_ddr_dqs_p_1_io DVDD ) ( u_vss_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_v18_0 DVDD ) ( u_ddr_dm_1_o DVDD ) ( u_vzz_0 DVDD ) + USE POWER ;
+    - DVDD_0 ( PIN DVDD_0 ) ( bp_u_v18_32 PAD ) ( bp_u_v18_31 PAD ) ( bp_u_v18_30 PAD ) ( bp_u_v18_29 PAD ) ( bp_u_v18_28 PAD ) ( bp_u_v18_27 PAD )
+      ( bp_u_v18_26 PAD ) ( bp_u_v18_25 PAD ) ( bp_u_v18_24 PAD ) ( bp_u_v18_23 PAD ) ( bp_u_v18_22 PAD ) ( bp_u_v18_20 PAD ) ( bp_u_v18_19 PAD ) ( bp_u_v18_18 PAD )
+      ( bp_u_v18_17 PAD ) ( bp_u_v18_16 PAD ) ( bp_u_v18_15 PAD ) ( bp_u_v18_14 PAD ) ( bp_u_v18_13 PAD ) ( bp_u_v18_12 PAD ) ( bp_u_v18_11 PAD ) ( bp_u_v18_10 PAD )
+      ( bp_u_v18_9 PAD ) ( bp_u_v18_8 PAD ) ( bp_u_v18_7 PAD ) ( bp_u_v18_6 PAD ) ( bp_u_v18_5 PAD ) ( bp_u_v18_4 PAD ) ( bp_u_v18_3 PAD ) ( bp_u_v18_2 PAD )
+      ( bp_u_v18_1 PAD ) ( u_ddr_dq_8_io DVDD ) ( u_vdd_32 DVDD ) ( u_ddr_dq_9_io DVDD ) ( u_vss_32 DVDD ) ( u_ddr_dq_10_io DVDD ) ( u_v18_32 DVDD ) ( u_ddr_dq_11_io DVDD )
+      ( u_vzz_32 DVDD ) ( u_pwrdet16 DVDD ) ( u_ddr_dq_12_io DVDD ) ( u_vdd_31 DVDD ) ( u_ddr_dq_13_io DVDD ) ( u_vss_31 DVDD ) ( u_ddr_dq_14_io DVDD ) ( u_v18_31 DVDD )
+      ( u_ddr_dq_15_io DVDD ) ( u_vzz_31 DVDD ) ( u_ddr_dqs_p_0_io DVDD ) ( u_vdd_30 DVDD ) ( u_ddr_dqs_n_0_io DVDD ) ( u_vss_30 DVDD ) ( u_ddr_dm_0_o DVDD ) ( u_v18_30 DVDD )
+      ( u_ddr_dq_0_io DVDD ) ( u_vzz_30 DVDD ) ( u_ddr_dq_1_io DVDD ) ( u_pwrdet15 DVDD ) ( u_vdd_29 DVDD ) ( u_ddr_dq_2_io DVDD ) ( u_vss_29 DVDD ) ( u_ddr_dq_3_io DVDD )
+      ( u_v18_29 DVDD ) ( u_ddr_dq_4_io DVDD ) ( u_vzz_29 DVDD ) ( u_ddr_dq_5_io DVDD ) ( u_vdd_28 DVDD ) ( u_ddr_dq_6_io DVDD ) ( u_vss_28 DVDD ) ( u_ddr_dq_7_io DVDD )
+      ( u_v18_28 DVDD ) ( u_bsg_tag_data_o DVDD ) ( u_vzz_28 DVDD ) ( u_bsg_tag_clk_o DVDD ) ( u_pwrdet14 DVDD ) ( u_vdd_27 DVDD ) ( u_co2_0_o DVDD ) ( u_vss_27 DVDD )
+      ( u_co2_1_o DVDD ) ( u_v18_27 DVDD ) ( u_co2_2_o DVDD ) ( u_vzz_27 DVDD ) ( u_co2_3_o DVDD ) ( u_vdd_26 DVDD ) ( u_co2_4_o DVDD ) ( u_vss_26 DVDD )
+      ( u_co2_clk_o DVDD ) ( u_v18_26 DVDD ) ( u_co2_tkn_i DVDD ) ( u_vzz_26 DVDD ) ( u_co2_v_o DVDD ) ( u_pwrdet13 DVDD ) ( u_vdd_25 DVDD ) ( u_co2_5_o DVDD )
+      ( u_vss_25 DVDD ) ( u_co2_6_o DVDD ) ( u_v18_25 DVDD ) ( u_co2_7_o DVDD ) ( u_vzz_25 DVDD ) ( u_co2_8_o DVDD ) ( u_vdd_24 DVDD ) ( u_co_0_i DVDD )
+      ( u_vss_24 DVDD ) ( u_co_1_i DVDD ) ( u_v18_24 DVDD ) ( u_co_2_i DVDD ) ( u_vzz_24 DVDD ) ( u_pwrdet8 DVDD ) ( u_co_3_i DVDD ) ( u_vdd_23 DVDD )
+      ( u_co_4_i DVDD ) ( u_vss_23 DVDD ) ( u_co_clk_i DVDD ) ( u_v18_23 DVDD ) ( u_co_tkn_o DVDD ) ( u_vzz_23 DVDD ) ( u_co_v_i DVDD ) ( u_vdd_22 DVDD )
+      ( u_co_5_i DVDD ) ( u_vss_22 DVDD ) ( u_co_6_i DVDD ) ( u_v18_22 DVDD ) ( u_pwrdet9 DVDD ) ( u_co_7_i DVDD ) ( u_vzz_22 DVDD ) ( u_co_8_i DVDD )
+      ( u_vdd_21 DVDD ) ( u_clk_A_i DVDD ) ( u_vss_21 DVDD ) ( u_clk_B_i DVDD ) ( u_vdd_20 DVDD ) ( u_sel_0_i DVDD ) ( u_vss_20 DVDD ) ( u_sel_1_i DVDD )
+      ( u_v18_20 DVDD ) ( u_sel_2_i DVDD ) ( u_vzz_20 DVDD ) ( u_core_async_reset_i DVDD ) ( u_pwrdet11 DVDD ) ( u_vdd_19 DVDD ) ( u_ci2_0_o DVDD ) ( u_vss_19 DVDD )
+      ( u_ci2_1_o DVDD ) ( u_v18_19 DVDD ) ( u_ci2_2_o DVDD ) ( u_vzz_19 DVDD ) ( u_ci2_3_o DVDD ) ( u_vdd_18 DVDD ) ( u_ci2_4_o DVDD ) ( u_vss_18 DVDD )
+      ( u_ci2_clk_o DVDD ) ( u_v18_18 DVDD ) ( u_ci2_tkn_i DVDD ) ( u_vzz_18 DVDD ) ( u_ci2_v_o DVDD ) ( u_pwrdet12 DVDD ) ( u_vdd_17 DVDD ) ( u_ci2_5_o DVDD )
+      ( u_vss_17 DVDD ) ( u_ci2_6_o DVDD ) ( u_v18_17 DVDD ) ( u_ci2_7_o DVDD ) ( u_vzz_17 DVDD ) ( u_ci2_8_o DVDD ) ( u_ci_0_i DVDD ) ( u_vdd_16 DVDD )
+      ( u_ci_1_i DVDD ) ( u_vss_16 DVDD ) ( u_ci_2_i DVDD ) ( u_v18_16 DVDD ) ( u_ci_3_i DVDD ) ( u_vzz_16 DVDD ) ( u_pwrdet7 DVDD ) ( u_ci_4_i DVDD )
+      ( u_vdd_15 DVDD ) ( u_ci_clk_i DVDD ) ( u_vss_15 DVDD ) ( u_ci_tkn_o DVDD ) ( u_v18_15 DVDD ) ( u_ci_v_i DVDD ) ( u_vzz_15 DVDD ) ( u_ci_5_i DVDD )
+      ( u_vdd_14 DVDD ) ( u_ci_6_i DVDD ) ( u_vss_14 DVDD ) ( u_ci_7_i DVDD ) ( u_v18_14 DVDD ) ( u_ci_8_i DVDD ) ( u_vzz_14 DVDD ) ( u_bsg_tag_en_i DVDD )
+      ( u_pwrdet6 DVDD ) ( u_vdd_13 DVDD ) ( u_bsg_tag_data_i DVDD ) ( u_vss_13 DVDD ) ( u_bsg_tag_clk_i DVDD ) ( u_v18_13 DVDD ) ( u_ddr_dm_3_o DVDD ) ( u_vzz_13 DVDD )
+      ( u_ddr_dqs_p_3_io DVDD ) ( u_vdd_12 DVDD ) ( u_ddr_dqs_n_3_io DVDD ) ( u_vss_12 DVDD ) ( u_ddr_dq_24_io DVDD ) ( u_v18_12 DVDD ) ( u_ddr_dq_25_io DVDD ) ( u_vzz_12 DVDD )
+      ( u_ddr_dq_26_io DVDD ) ( u_vdd_11 DVDD ) ( u_pwrdet5 DVDD ) ( u_ddr_dq_27_io DVDD ) ( u_vss_11 DVDD ) ( u_ddr_dq_28_io DVDD ) ( u_v18_11 DVDD ) ( u_ddr_dq_29_io DVDD )
+      ( u_vzz_11 DVDD ) ( u_ddr_dq_30_io DVDD ) ( u_vdd_10 DVDD ) ( u_ddr_dq_31_io DVDD ) ( u_vss_10 DVDD ) ( u_ddr_dq_16_io DVDD ) ( u_v18_10 DVDD ) ( u_ddr_dq_17_io DVDD )
+      ( u_vzz_10 DVDD ) ( u_ddr_dq_18_io DVDD ) ( u_vdd_9 DVDD ) ( u_ddr_dq_19_io DVDD ) ( u_pwrdet4 DVDD ) ( u_vss_9 DVDD ) ( u_ddr_dq_20_io DVDD ) ( u_v18_9 DVDD )
+      ( u_ddr_dq_21_io DVDD ) ( u_vzz_9 DVDD ) ( u_ddr_dq_22_io DVDD ) ( u_vdd_8 DVDD ) ( u_ddr_dq_23_io DVDD ) ( u_vss_8 DVDD ) ( u_ddr_dm_2_o DVDD ) ( u_v18_8 DVDD )
+      ( u_ddr_dqs_p_2_io DVDD ) ( u_vzz_8 DVDD ) ( u_ddr_dqs_n_2_io DVDD ) ( u_vdd_7 DVDD ) ( u_ddr_ck_p_o DVDD ) ( u_vss_7 DVDD ) ( u_pwrdet3 DVDD ) ( u_ddr_ck_n_o DVDD )
+      ( u_v18_7 DVDD ) ( u_ddr_cke_o DVDD ) ( u_vzz_7 DVDD ) ( u_ddr_cs_n_o DVDD ) ( u_vdd_6 DVDD ) ( u_ddr_ras_n_o DVDD ) ( u_vss_6 DVDD ) ( u_ddr_cas_n_o DVDD )
+      ( u_v18_6 DVDD ) ( u_ddr_we_n_o DVDD ) ( u_vzz_6 DVDD ) ( u_ddr_reset_n_o DVDD ) ( u_vdd_5 DVDD ) ( u_ddr_odt_o DVDD ) ( u_vss_5 DVDD ) ( u_ddr_addr_0_o DVDD )
+      ( u_pwrdet2 DVDD ) ( u_v18_5 DVDD ) ( u_ddr_addr_1_o DVDD ) ( u_vzz_5 DVDD ) ( u_ddr_addr_2_o DVDD ) ( u_vdd_4 DVDD ) ( u_ddr_addr_3_o DVDD ) ( u_vss_4 DVDD )
+      ( u_ddr_addr_4_o DVDD ) ( u_v18_4 DVDD ) ( u_ddr_addr_5_o DVDD ) ( u_vzz_4 DVDD ) ( u_ddr_addr_6_o DVDD ) ( u_vdd_3 DVDD ) ( u_ddr_addr_7_o DVDD ) ( u_vss_3 DVDD )
+      ( u_ddr_addr_8_o DVDD ) ( u_v18_3 DVDD ) ( u_pwrdet1 DVDD ) ( u_ddr_addr_9_o DVDD ) ( u_vzz_3 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_vdd_2 DVDD ) ( u_ddr_addr_11_o DVDD )
+      ( u_vss_2 DVDD ) ( u_ddr_addr_12_o DVDD ) ( u_v18_2 DVDD ) ( u_ddr_addr_13_o DVDD ) ( u_vzz_2 DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_vdd_1 DVDD ) ( u_ddr_addr_15_o DVDD )
+      ( u_vss_1 DVDD ) ( u_ddr_ba_0_o DVDD ) ( u_v18_1 DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD ) ( u_vzz_1 DVDD ) ( u_ddr_ba_2_o DVDD ) ( u_vdd_0 DVDD )
+      ( u_ddr_dqs_p_1_io DVDD ) ( u_vss_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_v18_0 DVDD ) ( u_ddr_dm_1_o DVDD ) ( u_vzz_0 DVDD ) + USE POWER ;
     - DVDD_1 ( PIN DVDD_1 ) ( u_v18_21 DVDD ) ( u_clk_C_i DVDD ) ( u_vzz_21 DVDD ) ( u_clk_o DVDD ) ( u_pwrdet10 DVDD ) ( u_vdd_pll DVDD )
       ( u_clk_async_reset_i DVDD ) ( u_vss_pll DVDD ) ( u_misc_o DVDD ) + USE POWER ;
-    - DVSS_0 ( PIN DVSS_0 ) ( u_ddr_dq_8_io DVSS ) ( u_vdd_32 DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_vss_32 DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_v18_32 DVSS )
-      ( u_ddr_dq_11_io DVSS ) ( u_vzz_32 DVSS ) ( u_pwrdet16 DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_vdd_31 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_vss_31 DVSS ) ( u_ddr_dq_14_io DVSS )
-      ( u_v18_31 DVSS ) ( u_ddr_dq_15_io DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_vdd_30 DVSS ) ( u_ddr_dqs_n_0_io DVSS ) ( u_vss_30 DVSS ) ( u_ddr_dm_0_o DVSS )
-      ( u_v18_30 DVSS ) ( u_ddr_dq_0_io DVSS ) ( u_vzz_30 DVSS ) ( u_ddr_dq_1_io DVSS ) ( u_pwrdet15 DVSS ) ( u_vdd_29 DVSS ) ( u_ddr_dq_2_io DVSS ) ( u_vss_29 DVSS )
-      ( u_ddr_dq_3_io DVSS ) ( u_v18_29 DVSS ) ( u_ddr_dq_4_io DVSS ) ( u_vzz_29 DVSS ) ( u_ddr_dq_5_io DVSS ) ( u_vdd_28 DVSS ) ( u_ddr_dq_6_io DVSS ) ( u_vss_28 DVSS )
-      ( u_ddr_dq_7_io DVSS ) ( u_v18_28 DVSS ) ( u_bsg_tag_data_o DVSS ) ( u_vzz_28 DVSS ) ( u_bsg_tag_clk_o DVSS ) ( u_pwrdet14 DVSS ) ( u_vdd_27 DVSS ) ( u_co2_0_o DVSS )
-      ( u_vss_27 DVSS ) ( u_co2_1_o DVSS ) ( u_v18_27 DVSS ) ( u_co2_2_o DVSS ) ( u_vzz_27 DVSS ) ( u_co2_3_o DVSS ) ( u_vdd_26 DVSS ) ( u_co2_4_o DVSS )
-      ( u_vss_26 DVSS ) ( u_co2_clk_o DVSS ) ( u_v18_26 DVSS ) ( u_co2_tkn_i DVSS ) ( u_vzz_26 DVSS ) ( u_co2_v_o DVSS ) ( u_pwrdet13 DVSS ) ( u_vdd_25 DVSS )
-      ( u_co2_5_o DVSS ) ( u_vss_25 DVSS ) ( u_co2_6_o DVSS ) ( u_v18_25 DVSS ) ( u_co2_7_o DVSS ) ( u_vzz_25 DVSS ) ( u_co2_8_o DVSS ) ( u_vdd_24 DVSS )
-      ( u_co_0_i DVSS ) ( u_vss_24 DVSS ) ( u_co_1_i DVSS ) ( u_v18_24 DVSS ) ( u_co_2_i DVSS ) ( u_vzz_24 DVSS ) ( u_pwrdet8 DVSS ) ( u_co_3_i DVSS )
-      ( u_vdd_23 DVSS ) ( u_co_4_i DVSS ) ( u_vss_23 DVSS ) ( u_co_clk_i DVSS ) ( u_v18_23 DVSS ) ( u_co_tkn_o DVSS ) ( u_vzz_23 DVSS ) ( u_co_v_i DVSS )
-      ( u_vdd_22 DVSS ) ( u_co_5_i DVSS ) ( u_vss_22 DVSS ) ( u_co_6_i DVSS ) ( u_v18_22 DVSS ) ( u_pwrdet9 DVSS ) ( u_co_7_i DVSS ) ( u_vzz_22 DVSS )
-      ( u_co_8_i DVSS ) ( u_vdd_21 DVSS ) ( u_clk_A_i DVSS ) ( u_vss_21 DVSS ) ( u_clk_B_i DVSS ) ( u_vdd_20 DVSS ) ( u_sel_0_i DVSS ) ( u_vss_20 DVSS )
-      ( u_sel_1_i DVSS ) ( u_v18_20 DVSS ) ( u_sel_2_i DVSS ) ( u_vzz_20 DVSS ) ( u_core_async_reset_i DVSS ) ( u_pwrdet11 DVSS ) ( u_vdd_19 DVSS ) ( u_ci2_0_o DVSS )
-      ( u_vss_19 DVSS ) ( u_ci2_1_o DVSS ) ( u_v18_19 DVSS ) ( u_ci2_2_o DVSS ) ( u_vzz_19 DVSS ) ( u_ci2_3_o DVSS ) ( u_vdd_18 DVSS ) ( u_ci2_4_o DVSS )
-      ( u_vss_18 DVSS ) ( u_ci2_clk_o DVSS ) ( u_v18_18 DVSS ) ( u_ci2_tkn_i DVSS ) ( u_vzz_18 DVSS ) ( u_ci2_v_o DVSS ) ( u_pwrdet12 DVSS ) ( u_vdd_17 DVSS )
-      ( u_ci2_5_o DVSS ) ( u_vss_17 DVSS ) ( u_ci2_6_o DVSS ) ( u_v18_17 DVSS ) ( u_ci2_7_o DVSS ) ( u_vzz_17 DVSS ) ( u_ci2_8_o DVSS ) ( u_ci_0_i DVSS )
-      ( u_vdd_16 DVSS ) ( u_ci_1_i DVSS ) ( u_vss_16 DVSS ) ( u_ci_2_i DVSS ) ( u_v18_16 DVSS ) ( u_ci_3_i DVSS ) ( u_vzz_16 DVSS ) ( u_pwrdet7 DVSS )
-      ( u_ci_4_i DVSS ) ( u_vdd_15 DVSS ) ( u_ci_clk_i DVSS ) ( u_vss_15 DVSS ) ( u_ci_tkn_o DVSS ) ( u_v18_15 DVSS ) ( u_ci_v_i DVSS ) ( u_vzz_15 DVSS )
-      ( u_ci_5_i DVSS ) ( u_vdd_14 DVSS ) ( u_ci_6_i DVSS ) ( u_vss_14 DVSS ) ( u_ci_7_i DVSS ) ( u_v18_14 DVSS ) ( u_ci_8_i DVSS ) ( u_vzz_14 DVSS )
-      ( u_bsg_tag_en_i DVSS ) ( u_pwrdet6 DVSS ) ( u_vdd_13 DVSS ) ( u_bsg_tag_data_i DVSS ) ( u_vss_13 DVSS ) ( u_bsg_tag_clk_i DVSS ) ( u_v18_13 DVSS ) ( u_ddr_dm_3_o DVSS )
-      ( u_vzz_13 DVSS ) ( u_ddr_dqs_p_3_io DVSS ) ( u_vdd_12 DVSS ) ( u_ddr_dqs_n_3_io DVSS ) ( u_vss_12 DVSS ) ( u_ddr_dq_24_io DVSS ) ( u_v18_12 DVSS ) ( u_ddr_dq_25_io DVSS )
-      ( u_vzz_12 DVSS ) ( u_ddr_dq_26_io DVSS ) ( u_vdd_11 DVSS ) ( u_pwrdet5 DVSS ) ( u_ddr_dq_27_io DVSS ) ( u_vss_11 DVSS ) ( u_ddr_dq_28_io DVSS ) ( u_v18_11 DVSS )
-      ( u_ddr_dq_29_io DVSS ) ( u_vzz_11 DVSS ) ( u_ddr_dq_30_io DVSS ) ( u_vdd_10 DVSS ) ( u_ddr_dq_31_io DVSS ) ( u_vss_10 DVSS ) ( u_ddr_dq_16_io DVSS ) ( u_v18_10 DVSS )
-      ( u_ddr_dq_17_io DVSS ) ( u_vzz_10 DVSS ) ( u_ddr_dq_18_io DVSS ) ( u_vdd_9 DVSS ) ( u_ddr_dq_19_io DVSS ) ( u_pwrdet4 DVSS ) ( u_vss_9 DVSS ) ( u_ddr_dq_20_io DVSS )
-      ( u_v18_9 DVSS ) ( u_ddr_dq_21_io DVSS ) ( u_vzz_9 DVSS ) ( u_ddr_dq_22_io DVSS ) ( u_vdd_8 DVSS ) ( u_ddr_dq_23_io DVSS ) ( u_vss_8 DVSS ) ( u_ddr_dm_2_o DVSS )
-      ( u_v18_8 DVSS ) ( u_ddr_dqs_p_2_io DVSS ) ( u_vzz_8 DVSS ) ( u_ddr_dqs_n_2_io DVSS ) ( u_vdd_7 DVSS ) ( u_ddr_ck_p_o DVSS ) ( u_vss_7 DVSS ) ( u_pwrdet3 DVSS )
-      ( u_ddr_ck_n_o DVSS ) ( u_v18_7 DVSS ) ( u_ddr_cke_o DVSS ) ( u_vzz_7 DVSS ) ( u_ddr_cs_n_o DVSS ) ( u_vdd_6 DVSS ) ( u_ddr_ras_n_o DVSS ) ( u_vss_6 DVSS )
-      ( u_ddr_cas_n_o DVSS ) ( u_v18_6 DVSS ) ( u_ddr_we_n_o DVSS ) ( u_vzz_6 DVSS ) ( u_ddr_reset_n_o DVSS ) ( u_vdd_5 DVSS ) ( u_ddr_odt_o DVSS ) ( u_vss_5 DVSS )
-      ( u_ddr_addr_0_o DVSS ) ( u_pwrdet2 DVSS ) ( u_v18_5 DVSS ) ( u_ddr_addr_1_o DVSS ) ( u_vzz_5 DVSS ) ( u_ddr_addr_2_o DVSS ) ( u_vdd_4 DVSS ) ( u_ddr_addr_3_o DVSS )
-      ( u_vss_4 DVSS ) ( u_ddr_addr_4_o DVSS ) ( u_v18_4 DVSS ) ( u_ddr_addr_5_o DVSS ) ( u_vzz_4 DVSS ) ( u_ddr_addr_6_o DVSS ) ( u_vdd_3 DVSS ) ( u_ddr_addr_7_o DVSS )
-      ( u_vss_3 DVSS ) ( u_ddr_addr_8_o DVSS ) ( u_v18_3 DVSS ) ( u_pwrdet1 DVSS ) ( u_ddr_addr_9_o DVSS ) ( u_vzz_3 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_vdd_2 DVSS )
-      ( u_ddr_addr_11_o DVSS ) ( u_vss_2 DVSS ) ( u_ddr_addr_12_o DVSS ) ( u_v18_2 DVSS ) ( u_ddr_addr_13_o DVSS ) ( u_vzz_2 DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_vdd_1 DVSS )
-      ( u_ddr_addr_15_o DVSS ) ( u_vss_1 DVSS ) ( u_ddr_ba_0_o DVSS ) ( u_v18_1 DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS ) ( u_vzz_1 DVSS ) ( u_ddr_ba_2_o DVSS )
-      ( u_vdd_0 DVSS ) ( u_ddr_dqs_p_1_io DVSS ) ( u_vss_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_v18_0 DVSS ) ( u_ddr_dm_1_o DVSS ) ( u_vzz_0 DVSS ) + USE GROUND ;
+    - DVSS_0 ( PIN DVSS_0 ) ( bp_u_vzz_32 PAD ) ( bp_u_vzz_31 PAD ) ( bp_u_vzz_30 PAD ) ( bp_u_vzz_29 PAD ) ( bp_u_vzz_28 PAD ) ( bp_u_vzz_27 PAD )
+      ( bp_u_vzz_26 PAD ) ( bp_u_vzz_25 PAD ) ( bp_u_vzz_24 PAD ) ( bp_u_vzz_23 PAD ) ( bp_u_vzz_22 PAD ) ( bp_u_vzz_20 PAD ) ( bp_u_vzz_19 PAD ) ( bp_u_vzz_18 PAD )
+      ( bp_u_vzz_17 PAD ) ( bp_u_vzz_16 PAD ) ( bp_u_vzz_15 PAD ) ( bp_u_vzz_14 PAD ) ( bp_u_vzz_13 PAD ) ( bp_u_vzz_12 PAD ) ( bp_u_vzz_11 PAD ) ( bp_u_vzz_10 PAD )
+      ( bp_u_vzz_9 PAD ) ( bp_u_vzz_8 PAD ) ( bp_u_vzz_7 PAD ) ( bp_u_vzz_6 PAD ) ( bp_u_vzz_5 PAD ) ( bp_u_vzz_4 PAD ) ( bp_u_vzz_3 PAD ) ( bp_u_vzz_2 PAD )
+      ( bp_u_vzz_1 PAD ) ( u_ddr_dq_8_io DVSS ) ( u_vdd_32 DVSS ) ( u_ddr_dq_9_io DVSS ) ( u_vss_32 DVSS ) ( u_ddr_dq_10_io DVSS ) ( u_v18_32 DVSS ) ( u_ddr_dq_11_io DVSS )
+      ( u_vzz_32 DVSS ) ( u_pwrdet16 DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_vdd_31 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_vss_31 DVSS ) ( u_ddr_dq_14_io DVSS ) ( u_v18_31 DVSS )
+      ( u_ddr_dq_15_io DVSS ) ( u_vzz_31 DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_vdd_30 DVSS ) ( u_ddr_dqs_n_0_io DVSS ) ( u_vss_30 DVSS ) ( u_ddr_dm_0_o DVSS ) ( u_v18_30 DVSS )
+      ( u_ddr_dq_0_io DVSS ) ( u_vzz_30 DVSS ) ( u_ddr_dq_1_io DVSS ) ( u_pwrdet15 DVSS ) ( u_vdd_29 DVSS ) ( u_ddr_dq_2_io DVSS ) ( u_vss_29 DVSS ) ( u_ddr_dq_3_io DVSS )
+      ( u_v18_29 DVSS ) ( u_ddr_dq_4_io DVSS ) ( u_vzz_29 DVSS ) ( u_ddr_dq_5_io DVSS ) ( u_vdd_28 DVSS ) ( u_ddr_dq_6_io DVSS ) ( u_vss_28 DVSS ) ( u_ddr_dq_7_io DVSS )
+      ( u_v18_28 DVSS ) ( u_bsg_tag_data_o DVSS ) ( u_vzz_28 DVSS ) ( u_bsg_tag_clk_o DVSS ) ( u_pwrdet14 DVSS ) ( u_vdd_27 DVSS ) ( u_co2_0_o DVSS ) ( u_vss_27 DVSS )
+      ( u_co2_1_o DVSS ) ( u_v18_27 DVSS ) ( u_co2_2_o DVSS ) ( u_vzz_27 DVSS ) ( u_co2_3_o DVSS ) ( u_vdd_26 DVSS ) ( u_co2_4_o DVSS ) ( u_vss_26 DVSS )
+      ( u_co2_clk_o DVSS ) ( u_v18_26 DVSS ) ( u_co2_tkn_i DVSS ) ( u_vzz_26 DVSS ) ( u_co2_v_o DVSS ) ( u_pwrdet13 DVSS ) ( u_vdd_25 DVSS ) ( u_co2_5_o DVSS )
+      ( u_vss_25 DVSS ) ( u_co2_6_o DVSS ) ( u_v18_25 DVSS ) ( u_co2_7_o DVSS ) ( u_vzz_25 DVSS ) ( u_co2_8_o DVSS ) ( u_vdd_24 DVSS ) ( u_co_0_i DVSS )
+      ( u_vss_24 DVSS ) ( u_co_1_i DVSS ) ( u_v18_24 DVSS ) ( u_co_2_i DVSS ) ( u_vzz_24 DVSS ) ( u_pwrdet8 DVSS ) ( u_co_3_i DVSS ) ( u_vdd_23 DVSS )
+      ( u_co_4_i DVSS ) ( u_vss_23 DVSS ) ( u_co_clk_i DVSS ) ( u_v18_23 DVSS ) ( u_co_tkn_o DVSS ) ( u_vzz_23 DVSS ) ( u_co_v_i DVSS ) ( u_vdd_22 DVSS )
+      ( u_co_5_i DVSS ) ( u_vss_22 DVSS ) ( u_co_6_i DVSS ) ( u_v18_22 DVSS ) ( u_pwrdet9 DVSS ) ( u_co_7_i DVSS ) ( u_vzz_22 DVSS ) ( u_co_8_i DVSS )
+      ( u_vdd_21 DVSS ) ( u_clk_A_i DVSS ) ( u_vss_21 DVSS ) ( u_clk_B_i DVSS ) ( u_vdd_20 DVSS ) ( u_sel_0_i DVSS ) ( u_vss_20 DVSS ) ( u_sel_1_i DVSS )
+      ( u_v18_20 DVSS ) ( u_sel_2_i DVSS ) ( u_vzz_20 DVSS ) ( u_core_async_reset_i DVSS ) ( u_pwrdet11 DVSS ) ( u_vdd_19 DVSS ) ( u_ci2_0_o DVSS ) ( u_vss_19 DVSS )
+      ( u_ci2_1_o DVSS ) ( u_v18_19 DVSS ) ( u_ci2_2_o DVSS ) ( u_vzz_19 DVSS ) ( u_ci2_3_o DVSS ) ( u_vdd_18 DVSS ) ( u_ci2_4_o DVSS ) ( u_vss_18 DVSS )
+      ( u_ci2_clk_o DVSS ) ( u_v18_18 DVSS ) ( u_ci2_tkn_i DVSS ) ( u_vzz_18 DVSS ) ( u_ci2_v_o DVSS ) ( u_pwrdet12 DVSS ) ( u_vdd_17 DVSS ) ( u_ci2_5_o DVSS )
+      ( u_vss_17 DVSS ) ( u_ci2_6_o DVSS ) ( u_v18_17 DVSS ) ( u_ci2_7_o DVSS ) ( u_vzz_17 DVSS ) ( u_ci2_8_o DVSS ) ( u_ci_0_i DVSS ) ( u_vdd_16 DVSS )
+      ( u_ci_1_i DVSS ) ( u_vss_16 DVSS ) ( u_ci_2_i DVSS ) ( u_v18_16 DVSS ) ( u_ci_3_i DVSS ) ( u_vzz_16 DVSS ) ( u_pwrdet7 DVSS ) ( u_ci_4_i DVSS )
+      ( u_vdd_15 DVSS ) ( u_ci_clk_i DVSS ) ( u_vss_15 DVSS ) ( u_ci_tkn_o DVSS ) ( u_v18_15 DVSS ) ( u_ci_v_i DVSS ) ( u_vzz_15 DVSS ) ( u_ci_5_i DVSS )
+      ( u_vdd_14 DVSS ) ( u_ci_6_i DVSS ) ( u_vss_14 DVSS ) ( u_ci_7_i DVSS ) ( u_v18_14 DVSS ) ( u_ci_8_i DVSS ) ( u_vzz_14 DVSS ) ( u_bsg_tag_en_i DVSS )
+      ( u_pwrdet6 DVSS ) ( u_vdd_13 DVSS ) ( u_bsg_tag_data_i DVSS ) ( u_vss_13 DVSS ) ( u_bsg_tag_clk_i DVSS ) ( u_v18_13 DVSS ) ( u_ddr_dm_3_o DVSS ) ( u_vzz_13 DVSS )
+      ( u_ddr_dqs_p_3_io DVSS ) ( u_vdd_12 DVSS ) ( u_ddr_dqs_n_3_io DVSS ) ( u_vss_12 DVSS ) ( u_ddr_dq_24_io DVSS ) ( u_v18_12 DVSS ) ( u_ddr_dq_25_io DVSS ) ( u_vzz_12 DVSS )
+      ( u_ddr_dq_26_io DVSS ) ( u_vdd_11 DVSS ) ( u_pwrdet5 DVSS ) ( u_ddr_dq_27_io DVSS ) ( u_vss_11 DVSS ) ( u_ddr_dq_28_io DVSS ) ( u_v18_11 DVSS ) ( u_ddr_dq_29_io DVSS )
+      ( u_vzz_11 DVSS ) ( u_ddr_dq_30_io DVSS ) ( u_vdd_10 DVSS ) ( u_ddr_dq_31_io DVSS ) ( u_vss_10 DVSS ) ( u_ddr_dq_16_io DVSS ) ( u_v18_10 DVSS ) ( u_ddr_dq_17_io DVSS )
+      ( u_vzz_10 DVSS ) ( u_ddr_dq_18_io DVSS ) ( u_vdd_9 DVSS ) ( u_ddr_dq_19_io DVSS ) ( u_pwrdet4 DVSS ) ( u_vss_9 DVSS ) ( u_ddr_dq_20_io DVSS ) ( u_v18_9 DVSS )
+      ( u_ddr_dq_21_io DVSS ) ( u_vzz_9 DVSS ) ( u_ddr_dq_22_io DVSS ) ( u_vdd_8 DVSS ) ( u_ddr_dq_23_io DVSS ) ( u_vss_8 DVSS ) ( u_ddr_dm_2_o DVSS ) ( u_v18_8 DVSS )
+      ( u_ddr_dqs_p_2_io DVSS ) ( u_vzz_8 DVSS ) ( u_ddr_dqs_n_2_io DVSS ) ( u_vdd_7 DVSS ) ( u_ddr_ck_p_o DVSS ) ( u_vss_7 DVSS ) ( u_pwrdet3 DVSS ) ( u_ddr_ck_n_o DVSS )
+      ( u_v18_7 DVSS ) ( u_ddr_cke_o DVSS ) ( u_vzz_7 DVSS ) ( u_ddr_cs_n_o DVSS ) ( u_vdd_6 DVSS ) ( u_ddr_ras_n_o DVSS ) ( u_vss_6 DVSS ) ( u_ddr_cas_n_o DVSS )
+      ( u_v18_6 DVSS ) ( u_ddr_we_n_o DVSS ) ( u_vzz_6 DVSS ) ( u_ddr_reset_n_o DVSS ) ( u_vdd_5 DVSS ) ( u_ddr_odt_o DVSS ) ( u_vss_5 DVSS ) ( u_ddr_addr_0_o DVSS )
+      ( u_pwrdet2 DVSS ) ( u_v18_5 DVSS ) ( u_ddr_addr_1_o DVSS ) ( u_vzz_5 DVSS ) ( u_ddr_addr_2_o DVSS ) ( u_vdd_4 DVSS ) ( u_ddr_addr_3_o DVSS ) ( u_vss_4 DVSS )
+      ( u_ddr_addr_4_o DVSS ) ( u_v18_4 DVSS ) ( u_ddr_addr_5_o DVSS ) ( u_vzz_4 DVSS ) ( u_ddr_addr_6_o DVSS ) ( u_vdd_3 DVSS ) ( u_ddr_addr_7_o DVSS ) ( u_vss_3 DVSS )
+      ( u_ddr_addr_8_o DVSS ) ( u_v18_3 DVSS ) ( u_pwrdet1 DVSS ) ( u_ddr_addr_9_o DVSS ) ( u_vzz_3 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_vdd_2 DVSS ) ( u_ddr_addr_11_o DVSS )
+      ( u_vss_2 DVSS ) ( u_ddr_addr_12_o DVSS ) ( u_v18_2 DVSS ) ( u_ddr_addr_13_o DVSS ) ( u_vzz_2 DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_vdd_1 DVSS ) ( u_ddr_addr_15_o DVSS )
+      ( u_vss_1 DVSS ) ( u_ddr_ba_0_o DVSS ) ( u_v18_1 DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS ) ( u_vzz_1 DVSS ) ( u_ddr_ba_2_o DVSS ) ( u_vdd_0 DVSS )
+      ( u_ddr_dqs_p_1_io DVSS ) ( u_vss_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_v18_0 DVSS ) ( u_ddr_dm_1_o DVSS ) ( u_vzz_0 DVSS ) + USE GROUND ;
     - DVSS_1 ( PIN DVSS_1 ) ( u_v18_21 DVSS ) ( u_clk_C_i DVSS ) ( u_vzz_21 DVSS ) ( u_clk_o DVSS ) ( u_pwrdet10 DVSS ) ( u_vdd_pll DVSS )
       ( u_clk_async_reset_i DVSS ) ( u_vss_pll DVSS ) ( u_misc_o DVSS ) + USE GROUND ;
     - RETN_0 + USE SIGNAL ;
@@ -4555,143 +4563,151 @@ SPECIALNETS 183 ;
     - SNS_9 ( u_ci_0_i SNS ) ( u_vdd_16 SNS ) ( u_ci_1_i SNS ) ( u_vss_16 SNS ) ( u_ci_2_i SNS ) ( u_v18_16 SNS ) ( u_ci_3_i SNS )
       ( u_vzz_16 SNS ) ( u_pwrdet7 SNS ) ( u_ci_4_i SNS ) ( u_vdd_15 SNS ) ( u_ci_clk_i SNS ) ( u_vss_15 SNS ) ( u_ci_tkn_o SNS ) ( u_v18_15 SNS )
       ( u_ci_v_i SNS ) ( u_vzz_15 SNS ) ( u_ci_5_i SNS ) + USE SIGNAL ;
-    - VDD ( PIN VDD ) + USE POWER ;
-    - VSS ( PIN VSS ) + USE GROUND ;
-    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL ;
-    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL ;
-    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL ;
-    - p_ci2_0_o ( PIN p_ci2_0_o ) ( u_ci2_0_o PAD ) + USE SIGNAL ;
-    - p_ci2_1_o ( PIN p_ci2_1_o ) ( u_ci2_1_o PAD ) + USE SIGNAL ;
-    - p_ci2_2_o ( PIN p_ci2_2_o ) ( u_ci2_2_o PAD ) + USE SIGNAL ;
-    - p_ci2_3_o ( PIN p_ci2_3_o ) ( u_ci2_3_o PAD ) + USE SIGNAL ;
-    - p_ci2_4_o ( PIN p_ci2_4_o ) ( u_ci2_4_o PAD ) + USE SIGNAL ;
-    - p_ci2_5_o ( PIN p_ci2_5_o ) ( u_ci2_5_o PAD ) + USE SIGNAL ;
-    - p_ci2_6_o ( PIN p_ci2_6_o ) ( u_ci2_6_o PAD ) + USE SIGNAL ;
-    - p_ci2_7_o ( PIN p_ci2_7_o ) ( u_ci2_7_o PAD ) + USE SIGNAL ;
-    - p_ci2_8_o ( PIN p_ci2_8_o ) ( u_ci2_8_o PAD ) + USE SIGNAL ;
-    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( u_ci2_clk_o PAD ) + USE SIGNAL ;
-    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( u_ci2_tkn_i PAD ) + USE SIGNAL ;
-    - p_ci2_v_o ( PIN p_ci2_v_o ) ( u_ci2_v_o PAD ) + USE SIGNAL ;
-    - p_ci_0_i ( PIN p_ci_0_i ) ( u_ci_0_i PAD ) + USE SIGNAL ;
-    - p_ci_1_i ( PIN p_ci_1_i ) ( u_ci_1_i PAD ) + USE SIGNAL ;
-    - p_ci_2_i ( PIN p_ci_2_i ) ( u_ci_2_i PAD ) + USE SIGNAL ;
-    - p_ci_3_i ( PIN p_ci_3_i ) ( u_ci_3_i PAD ) + USE SIGNAL ;
-    - p_ci_4_i ( PIN p_ci_4_i ) ( u_ci_4_i PAD ) + USE SIGNAL ;
-    - p_ci_5_i ( PIN p_ci_5_i ) ( u_ci_5_i PAD ) + USE SIGNAL ;
-    - p_ci_6_i ( PIN p_ci_6_i ) ( u_ci_6_i PAD ) + USE SIGNAL ;
-    - p_ci_7_i ( PIN p_ci_7_i ) ( u_ci_7_i PAD ) + USE SIGNAL ;
-    - p_ci_8_i ( PIN p_ci_8_i ) ( u_ci_8_i PAD ) + USE SIGNAL ;
-    - p_ci_clk_i ( PIN p_ci_clk_i ) ( u_ci_clk_i PAD ) + USE SIGNAL ;
-    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( u_ci_tkn_o PAD ) + USE SIGNAL ;
-    - p_ci_v_i ( PIN p_ci_v_i ) ( u_ci_v_i PAD ) + USE SIGNAL ;
-    - p_clk_A_i ( PIN p_clk_A_i ) ( u_clk_A_i PAD ) + USE SIGNAL ;
-    - p_clk_B_i ( PIN p_clk_B_i ) ( u_clk_B_i PAD ) + USE SIGNAL ;
-    - p_clk_C_i ( PIN p_clk_C_i ) ( u_clk_C_i PAD ) + USE SIGNAL ;
-    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( u_clk_async_reset_i PAD ) + USE SIGNAL ;
-    - p_clk_o ( PIN p_clk_o ) ( u_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_0_o ( PIN p_co2_0_o ) ( u_co2_0_o PAD ) + USE SIGNAL ;
-    - p_co2_1_o ( PIN p_co2_1_o ) ( u_co2_1_o PAD ) + USE SIGNAL ;
-    - p_co2_2_o ( PIN p_co2_2_o ) ( u_co2_2_o PAD ) + USE SIGNAL ;
-    - p_co2_3_o ( PIN p_co2_3_o ) ( u_co2_3_o PAD ) + USE SIGNAL ;
-    - p_co2_4_o ( PIN p_co2_4_o ) ( u_co2_4_o PAD ) + USE SIGNAL ;
-    - p_co2_5_o ( PIN p_co2_5_o ) ( u_co2_5_o PAD ) + USE SIGNAL ;
-    - p_co2_6_o ( PIN p_co2_6_o ) ( u_co2_6_o PAD ) + USE SIGNAL ;
-    - p_co2_7_o ( PIN p_co2_7_o ) ( u_co2_7_o PAD ) + USE SIGNAL ;
-    - p_co2_8_o ( PIN p_co2_8_o ) ( u_co2_8_o PAD ) + USE SIGNAL ;
-    - p_co2_clk_o ( PIN p_co2_clk_o ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
-    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
-    - p_co2_v_o ( PIN p_co2_v_o ) ( u_co2_v_o PAD ) + USE SIGNAL ;
-    - p_co_0_i ( PIN p_co_0_i ) ( u_co_0_i PAD ) + USE SIGNAL ;
-    - p_co_1_i ( PIN p_co_1_i ) ( u_co_1_i PAD ) + USE SIGNAL ;
-    - p_co_2_i ( PIN p_co_2_i ) ( u_co_2_i PAD ) + USE SIGNAL ;
-    - p_co_3_i ( PIN p_co_3_i ) ( u_co_3_i PAD ) + USE SIGNAL ;
-    - p_co_4_i ( PIN p_co_4_i ) ( u_co_4_i PAD ) + USE SIGNAL ;
-    - p_co_5_i ( PIN p_co_5_i ) ( u_co_5_i PAD ) + USE SIGNAL ;
-    - p_co_6_i ( PIN p_co_6_i ) ( u_co_6_i PAD ) + USE SIGNAL ;
-    - p_co_7_i ( PIN p_co_7_i ) ( u_co_7_i PAD ) + USE SIGNAL ;
-    - p_co_8_i ( PIN p_co_8_i ) ( u_co_8_i PAD ) + USE SIGNAL ;
-    - p_co_clk_i ( PIN p_co_clk_i ) ( u_co_clk_i PAD ) + USE SIGNAL ;
-    - p_co_tkn_o ( PIN p_co_tkn_o ) ( u_co_tkn_o PAD ) + USE SIGNAL ;
-    - p_co_v_i ( PIN p_co_v_i ) ( u_co_v_i PAD ) + USE SIGNAL ;
-    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( u_core_async_reset_i PAD ) + USE SIGNAL ;
-    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL ;
-    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL ;
-    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( u_ddr_cke_o PAD ) + USE SIGNAL ;
-    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL ;
-    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL ;
-    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL ;
-    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL ;
-    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL ;
-    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( u_ddr_odt_o PAD ) + USE SIGNAL ;
-    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL ;
-    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( u_ddr_we_n_o PAD ) + USE SIGNAL ;
-    - p_misc_o ( PIN p_misc_o ) ( u_misc_o PAD ) + USE SIGNAL ;
-    - p_sel_0_i ( PIN p_sel_0_i ) ( u_sel_0_i PAD ) + USE SIGNAL ;
-    - p_sel_1_i ( PIN p_sel_1_i ) ( u_sel_1_i PAD ) + USE SIGNAL ;
-    - p_sel_2_i ( PIN p_sel_2_i ) ( u_sel_2_i PAD ) + USE SIGNAL ;
+    - VDD ( PIN VDD ) ( bp_u_vdd_32 PAD ) ( bp_u_vdd_31 PAD ) ( bp_u_vdd_30 PAD ) ( bp_u_vdd_29 PAD ) ( bp_u_vdd_28 PAD ) ( bp_u_vdd_27 PAD )
+      ( bp_u_vdd_26 PAD ) ( bp_u_vdd_25 PAD ) ( bp_u_vdd_24 PAD ) ( bp_u_vdd_23 PAD ) ( bp_u_vdd_22 PAD ) ( bp_u_vdd_21 PAD ) ( bp_u_vdd_pll PAD ) ( bp_u_vdd_20 PAD )
+      ( bp_u_vdd_19 PAD ) ( bp_u_vdd_18 PAD ) ( bp_u_vdd_17 PAD ) ( bp_u_vdd_16 PAD ) ( bp_u_vdd_15 PAD ) ( bp_u_vdd_14 PAD ) ( bp_u_vdd_13 PAD ) ( bp_u_vdd_12 PAD )
+      ( bp_u_vdd_11 PAD ) ( bp_u_vdd_10 PAD ) ( bp_u_vdd_9 PAD ) ( bp_u_vdd_8 PAD ) ( bp_u_vdd_7 PAD ) ( bp_u_vdd_6 PAD ) ( bp_u_vdd_5 PAD ) ( bp_u_vdd_4 PAD )
+      ( bp_u_vdd_3 PAD ) ( bp_u_vdd_2 PAD ) ( bp_u_vdd_1 PAD ) + USE POWER ;
+    - VSS ( PIN VSS ) ( bp_u_vss_32 PAD ) ( bp_u_vss_31 PAD ) ( bp_u_vss_30 PAD ) ( bp_u_vss_29 PAD ) ( bp_u_vss_28 PAD ) ( bp_u_vss_27 PAD )
+      ( bp_u_vss_26 PAD ) ( bp_u_vss_25 PAD ) ( bp_u_vss_24 PAD ) ( bp_u_vss_23 PAD ) ( bp_u_vss_22 PAD ) ( bp_u_vss_21 PAD ) ( bp_u_vss_pll PAD ) ( bp_u_vss_20 PAD )
+      ( bp_u_vss_19 PAD ) ( bp_u_vss_18 PAD ) ( bp_u_vss_17 PAD ) ( bp_u_vss_16 PAD ) ( bp_u_vss_15 PAD ) ( bp_u_vss_14 PAD ) ( bp_u_vss_13 PAD ) ( bp_u_vss_12 PAD )
+      ( bp_u_vss_11 PAD ) ( bp_u_vss_10 PAD ) ( bp_u_vss_9 PAD ) ( bp_u_vss_8 PAD ) ( bp_u_vss_7 PAD ) ( bp_u_vss_6 PAD ) ( bp_u_vss_5 PAD ) ( bp_u_vss_4 PAD )
+      ( bp_u_vss_3 PAD ) ( bp_u_vss_2 PAD ) ( bp_u_vss_1 PAD ) + USE GROUND ;
+    - p_bsg_tag_clk_i ( PIN p_bsg_tag_clk_i ) ( bp_u_bsg_tag_clk_i PAD ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
+    - p_bsg_tag_clk_o ( PIN p_bsg_tag_clk_o ) ( bp_u_bsg_tag_clk_o PAD ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;
+    - p_bsg_tag_data_i ( PIN p_bsg_tag_data_i ) ( bp_u_bsg_tag_data_i PAD ) ( u_bsg_tag_data_i PAD ) + USE SIGNAL ;
+    - p_bsg_tag_data_o ( PIN p_bsg_tag_data_o ) ( bp_u_bsg_tag_data_o PAD ) ( u_bsg_tag_data_o PAD ) + USE SIGNAL ;
+    - p_bsg_tag_en_i ( PIN p_bsg_tag_en_i ) ( bp_u_bsg_tag_en_i PAD ) ( u_bsg_tag_en_i PAD ) + USE SIGNAL ;
+    - p_ci2_0_o ( PIN p_ci2_0_o ) ( bp_u_ci2_0_o PAD ) ( u_ci2_0_o PAD ) + USE SIGNAL ;
+    - p_ci2_1_o ( PIN p_ci2_1_o ) ( bp_u_ci2_1_o PAD ) ( u_ci2_1_o PAD ) + USE SIGNAL ;
+    - p_ci2_2_o ( PIN p_ci2_2_o ) ( bp_u_ci2_2_o PAD ) ( u_ci2_2_o PAD ) + USE SIGNAL ;
+    - p_ci2_3_o ( PIN p_ci2_3_o ) ( bp_u_ci2_3_o PAD ) ( u_ci2_3_o PAD ) + USE SIGNAL ;
+    - p_ci2_4_o ( PIN p_ci2_4_o ) ( bp_u_ci2_4_o PAD ) ( u_ci2_4_o PAD ) + USE SIGNAL ;
+    - p_ci2_5_o ( PIN p_ci2_5_o ) ( bp_u_ci2_5_o PAD ) ( u_ci2_5_o PAD ) + USE SIGNAL ;
+    - p_ci2_6_o ( PIN p_ci2_6_o ) ( bp_u_ci2_6_o PAD ) ( u_ci2_6_o PAD ) + USE SIGNAL ;
+    - p_ci2_7_o ( PIN p_ci2_7_o ) ( bp_u_ci2_7_o PAD ) ( u_ci2_7_o PAD ) + USE SIGNAL ;
+    - p_ci2_8_o ( PIN p_ci2_8_o ) ( bp_u_ci2_8_o PAD ) ( u_ci2_8_o PAD ) + USE SIGNAL ;
+    - p_ci2_clk_o ( PIN p_ci2_clk_o ) ( bp_u_ci2_clk_o PAD ) ( u_ci2_clk_o PAD ) + USE SIGNAL ;
+    - p_ci2_tkn_i ( PIN p_ci2_tkn_i ) ( bp_u_ci2_tkn_i PAD ) ( u_ci2_tkn_i PAD ) + USE SIGNAL ;
+    - p_ci2_v_o ( PIN p_ci2_v_o ) ( bp_u_ci2_v_o PAD ) ( u_ci2_v_o PAD ) + USE SIGNAL ;
+    - p_ci_0_i ( PIN p_ci_0_i ) ( bp_u_ci_0_i PAD ) ( u_ci_0_i PAD ) + USE SIGNAL ;
+    - p_ci_1_i ( PIN p_ci_1_i ) ( bp_u_ci_1_i PAD ) ( u_ci_1_i PAD ) + USE SIGNAL ;
+    - p_ci_2_i ( PIN p_ci_2_i ) ( bp_u_ci_2_i PAD ) ( u_ci_2_i PAD ) + USE SIGNAL ;
+    - p_ci_3_i ( PIN p_ci_3_i ) ( bp_u_ci_3_i PAD ) ( u_ci_3_i PAD ) + USE SIGNAL ;
+    - p_ci_4_i ( PIN p_ci_4_i ) ( bp_u_ci_4_i PAD ) ( u_ci_4_i PAD ) + USE SIGNAL ;
+    - p_ci_5_i ( PIN p_ci_5_i ) ( bp_u_ci_5_i PAD ) ( u_ci_5_i PAD ) + USE SIGNAL ;
+    - p_ci_6_i ( PIN p_ci_6_i ) ( bp_u_ci_6_i PAD ) ( u_ci_6_i PAD ) + USE SIGNAL ;
+    - p_ci_7_i ( PIN p_ci_7_i ) ( bp_u_ci_7_i PAD ) ( u_ci_7_i PAD ) + USE SIGNAL ;
+    - p_ci_8_i ( PIN p_ci_8_i ) ( bp_u_ci_8_i PAD ) ( u_ci_8_i PAD ) + USE SIGNAL ;
+    - p_ci_clk_i ( PIN p_ci_clk_i ) ( bp_u_ci_clk_i PAD ) ( u_ci_clk_i PAD ) + USE SIGNAL ;
+    - p_ci_tkn_o ( PIN p_ci_tkn_o ) ( bp_u_ci_tkn_o PAD ) ( u_ci_tkn_o PAD ) + USE SIGNAL ;
+    - p_ci_v_i ( PIN p_ci_v_i ) ( bp_u_ci_v_i PAD ) ( u_ci_v_i PAD ) + USE SIGNAL ;
+    - p_clk_A_i ( PIN p_clk_A_i ) ( bp_u_clk_A_i PAD ) ( u_clk_A_i PAD ) + USE SIGNAL ;
+    - p_clk_B_i ( PIN p_clk_B_i ) ( bp_u_clk_B_i PAD ) ( u_clk_B_i PAD ) + USE SIGNAL ;
+    - p_clk_C_i ( PIN p_clk_C_i ) ( bp_u_clk_C_i PAD ) ( u_clk_C_i PAD ) + USE SIGNAL ;
+    - p_clk_async_reset_i ( PIN p_clk_async_reset_i ) ( bp_u_clk_async_reset_i PAD ) ( u_clk_async_reset_i PAD ) + USE SIGNAL ;
+    - p_clk_o ( PIN p_clk_o ) ( bp_u_clk_o PAD ) ( u_clk_o PAD ) + USE SIGNAL ;
+    - p_co2_0_o ( PIN p_co2_0_o ) ( bp_u_co2_0_o PAD ) ( u_co2_0_o PAD ) + USE SIGNAL ;
+    - p_co2_1_o ( PIN p_co2_1_o ) ( bp_u_co2_1_o PAD ) ( u_co2_1_o PAD ) + USE SIGNAL ;
+    - p_co2_2_o ( PIN p_co2_2_o ) ( bp_u_co2_2_o PAD ) ( u_co2_2_o PAD ) + USE SIGNAL ;
+    - p_co2_3_o ( PIN p_co2_3_o ) ( bp_u_co2_3_o PAD ) ( u_co2_3_o PAD ) + USE SIGNAL ;
+    - p_co2_4_o ( PIN p_co2_4_o ) ( bp_u_co2_4_o PAD ) ( u_co2_4_o PAD ) + USE SIGNAL ;
+    - p_co2_5_o ( PIN p_co2_5_o ) ( bp_u_co2_5_o PAD ) ( u_co2_5_o PAD ) + USE SIGNAL ;
+    - p_co2_6_o ( PIN p_co2_6_o ) ( bp_u_co2_6_o PAD ) ( u_co2_6_o PAD ) + USE SIGNAL ;
+    - p_co2_7_o ( PIN p_co2_7_o ) ( bp_u_co2_7_o PAD ) ( u_co2_7_o PAD ) + USE SIGNAL ;
+    - p_co2_8_o ( PIN p_co2_8_o ) ( bp_u_co2_8_o PAD ) ( u_co2_8_o PAD ) + USE SIGNAL ;
+    - p_co2_clk_o ( PIN p_co2_clk_o ) ( bp_u_co2_clk_o PAD ) ( u_co2_clk_o PAD ) + USE SIGNAL ;
+    - p_co2_tkn_i ( PIN p_co2_tkn_i ) ( bp_u_co2_tkn_i PAD ) ( u_co2_tkn_i PAD ) + USE SIGNAL ;
+    - p_co2_v_o ( PIN p_co2_v_o ) ( bp_u_co2_v_o PAD ) ( u_co2_v_o PAD ) + USE SIGNAL ;
+    - p_co_0_i ( PIN p_co_0_i ) ( bp_u_co_0_i PAD ) ( u_co_0_i PAD ) + USE SIGNAL ;
+    - p_co_1_i ( PIN p_co_1_i ) ( bp_u_co_1_i PAD ) ( u_co_1_i PAD ) + USE SIGNAL ;
+    - p_co_2_i ( PIN p_co_2_i ) ( bp_u_co_2_i PAD ) ( u_co_2_i PAD ) + USE SIGNAL ;
+    - p_co_3_i ( PIN p_co_3_i ) ( bp_u_co_3_i PAD ) ( u_co_3_i PAD ) + USE SIGNAL ;
+    - p_co_4_i ( PIN p_co_4_i ) ( bp_u_co_4_i PAD ) ( u_co_4_i PAD ) + USE SIGNAL ;
+    - p_co_5_i ( PIN p_co_5_i ) ( bp_u_co_5_i PAD ) ( u_co_5_i PAD ) + USE SIGNAL ;
+    - p_co_6_i ( PIN p_co_6_i ) ( bp_u_co_6_i PAD ) ( u_co_6_i PAD ) + USE SIGNAL ;
+    - p_co_7_i ( PIN p_co_7_i ) ( bp_u_co_7_i PAD ) ( u_co_7_i PAD ) + USE SIGNAL ;
+    - p_co_8_i ( PIN p_co_8_i ) ( bp_u_co_8_i PAD ) ( u_co_8_i PAD ) + USE SIGNAL ;
+    - p_co_clk_i ( PIN p_co_clk_i ) ( bp_u_co_clk_i PAD ) ( u_co_clk_i PAD ) + USE SIGNAL ;
+    - p_co_tkn_o ( PIN p_co_tkn_o ) ( bp_u_co_tkn_o PAD ) ( u_co_tkn_o PAD ) + USE SIGNAL ;
+    - p_co_v_i ( PIN p_co_v_i ) ( bp_u_co_v_i PAD ) ( u_co_v_i PAD ) + USE SIGNAL ;
+    - p_core_async_reset_i ( PIN p_core_async_reset_i ) ( bp_u_core_async_reset_i PAD ) ( u_core_async_reset_i PAD ) + USE SIGNAL ;
+    - p_ddr_addr_0_o ( PIN p_ddr_addr_0_o ) ( bp_u_ddr_addr_0_o PAD ) ( u_ddr_addr_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_10_o ( PIN p_ddr_addr_10_o ) ( bp_u_ddr_addr_10_o PAD ) ( u_ddr_addr_10_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_11_o ( PIN p_ddr_addr_11_o ) ( bp_u_ddr_addr_11_o PAD ) ( u_ddr_addr_11_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_12_o ( PIN p_ddr_addr_12_o ) ( bp_u_ddr_addr_12_o PAD ) ( u_ddr_addr_12_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_13_o ( PIN p_ddr_addr_13_o ) ( bp_u_ddr_addr_13_o PAD ) ( u_ddr_addr_13_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_14_o ( PIN p_ddr_addr_14_o ) ( bp_u_ddr_addr_14_o PAD ) ( u_ddr_addr_14_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_15_o ( PIN p_ddr_addr_15_o ) ( bp_u_ddr_addr_15_o PAD ) ( u_ddr_addr_15_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_1_o ( PIN p_ddr_addr_1_o ) ( bp_u_ddr_addr_1_o PAD ) ( u_ddr_addr_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_2_o ( PIN p_ddr_addr_2_o ) ( bp_u_ddr_addr_2_o PAD ) ( u_ddr_addr_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_3_o ( PIN p_ddr_addr_3_o ) ( bp_u_ddr_addr_3_o PAD ) ( u_ddr_addr_3_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_4_o ( PIN p_ddr_addr_4_o ) ( bp_u_ddr_addr_4_o PAD ) ( u_ddr_addr_4_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_5_o ( PIN p_ddr_addr_5_o ) ( bp_u_ddr_addr_5_o PAD ) ( u_ddr_addr_5_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_6_o ( PIN p_ddr_addr_6_o ) ( bp_u_ddr_addr_6_o PAD ) ( u_ddr_addr_6_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_7_o ( PIN p_ddr_addr_7_o ) ( bp_u_ddr_addr_7_o PAD ) ( u_ddr_addr_7_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_8_o ( PIN p_ddr_addr_8_o ) ( bp_u_ddr_addr_8_o PAD ) ( u_ddr_addr_8_o PAD ) + USE SIGNAL ;
+    - p_ddr_addr_9_o ( PIN p_ddr_addr_9_o ) ( bp_u_ddr_addr_9_o PAD ) ( u_ddr_addr_9_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_0_o ( PIN p_ddr_ba_0_o ) ( bp_u_ddr_ba_0_o PAD ) ( u_ddr_ba_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_1_o ( PIN p_ddr_ba_1_o ) ( bp_u_ddr_ba_1_o PAD ) ( u_ddr_ba_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_ba_2_o ( PIN p_ddr_ba_2_o ) ( bp_u_ddr_ba_2_o PAD ) ( u_ddr_ba_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_cas_n_o ( PIN p_ddr_cas_n_o ) ( bp_u_ddr_cas_n_o PAD ) ( u_ddr_cas_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_ck_n_o ( PIN p_ddr_ck_n_o ) ( bp_u_ddr_ck_n_o PAD ) ( u_ddr_ck_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_ck_p_o ( PIN p_ddr_ck_p_o ) ( bp_u_ddr_ck_p_o PAD ) ( u_ddr_ck_p_o PAD ) + USE SIGNAL ;
+    - p_ddr_cke_o ( PIN p_ddr_cke_o ) ( bp_u_ddr_cke_o PAD ) ( u_ddr_cke_o PAD ) + USE SIGNAL ;
+    - p_ddr_cs_n_o ( PIN p_ddr_cs_n_o ) ( bp_u_ddr_cs_n_o PAD ) ( u_ddr_cs_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_0_o ( PIN p_ddr_dm_0_o ) ( bp_u_ddr_dm_0_o PAD ) ( u_ddr_dm_0_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_1_o ( PIN p_ddr_dm_1_o ) ( bp_u_ddr_dm_1_o PAD ) ( u_ddr_dm_1_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_2_o ( PIN p_ddr_dm_2_o ) ( bp_u_ddr_dm_2_o PAD ) ( u_ddr_dm_2_o PAD ) + USE SIGNAL ;
+    - p_ddr_dm_3_o ( PIN p_ddr_dm_3_o ) ( bp_u_ddr_dm_3_o PAD ) ( u_ddr_dm_3_o PAD ) + USE SIGNAL ;
+    - p_ddr_dq_0_io ( PIN p_ddr_dq_0_io ) ( bp_u_ddr_dq_0_io PAD ) ( u_ddr_dq_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_10_io ( PIN p_ddr_dq_10_io ) ( bp_u_ddr_dq_10_io PAD ) ( u_ddr_dq_10_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_11_io ( PIN p_ddr_dq_11_io ) ( bp_u_ddr_dq_11_io PAD ) ( u_ddr_dq_11_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_12_io ( PIN p_ddr_dq_12_io ) ( bp_u_ddr_dq_12_io PAD ) ( u_ddr_dq_12_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_13_io ( PIN p_ddr_dq_13_io ) ( bp_u_ddr_dq_13_io PAD ) ( u_ddr_dq_13_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_14_io ( PIN p_ddr_dq_14_io ) ( bp_u_ddr_dq_14_io PAD ) ( u_ddr_dq_14_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_15_io ( PIN p_ddr_dq_15_io ) ( bp_u_ddr_dq_15_io PAD ) ( u_ddr_dq_15_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_16_io ( PIN p_ddr_dq_16_io ) ( bp_u_ddr_dq_16_io PAD ) ( u_ddr_dq_16_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_17_io ( PIN p_ddr_dq_17_io ) ( bp_u_ddr_dq_17_io PAD ) ( u_ddr_dq_17_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_18_io ( PIN p_ddr_dq_18_io ) ( bp_u_ddr_dq_18_io PAD ) ( u_ddr_dq_18_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_19_io ( PIN p_ddr_dq_19_io ) ( bp_u_ddr_dq_19_io PAD ) ( u_ddr_dq_19_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_1_io ( PIN p_ddr_dq_1_io ) ( bp_u_ddr_dq_1_io PAD ) ( u_ddr_dq_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_20_io ( PIN p_ddr_dq_20_io ) ( bp_u_ddr_dq_20_io PAD ) ( u_ddr_dq_20_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_21_io ( PIN p_ddr_dq_21_io ) ( bp_u_ddr_dq_21_io PAD ) ( u_ddr_dq_21_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_22_io ( PIN p_ddr_dq_22_io ) ( bp_u_ddr_dq_22_io PAD ) ( u_ddr_dq_22_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_23_io ( PIN p_ddr_dq_23_io ) ( bp_u_ddr_dq_23_io PAD ) ( u_ddr_dq_23_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_24_io ( PIN p_ddr_dq_24_io ) ( bp_u_ddr_dq_24_io PAD ) ( u_ddr_dq_24_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_25_io ( PIN p_ddr_dq_25_io ) ( bp_u_ddr_dq_25_io PAD ) ( u_ddr_dq_25_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_26_io ( PIN p_ddr_dq_26_io ) ( bp_u_ddr_dq_26_io PAD ) ( u_ddr_dq_26_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_27_io ( PIN p_ddr_dq_27_io ) ( bp_u_ddr_dq_27_io PAD ) ( u_ddr_dq_27_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_28_io ( PIN p_ddr_dq_28_io ) ( bp_u_ddr_dq_28_io PAD ) ( u_ddr_dq_28_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_29_io ( PIN p_ddr_dq_29_io ) ( bp_u_ddr_dq_29_io PAD ) ( u_ddr_dq_29_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_2_io ( PIN p_ddr_dq_2_io ) ( bp_u_ddr_dq_2_io PAD ) ( u_ddr_dq_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_30_io ( PIN p_ddr_dq_30_io ) ( bp_u_ddr_dq_30_io PAD ) ( u_ddr_dq_30_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_31_io ( PIN p_ddr_dq_31_io ) ( bp_u_ddr_dq_31_io PAD ) ( u_ddr_dq_31_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_3_io ( PIN p_ddr_dq_3_io ) ( bp_u_ddr_dq_3_io PAD ) ( u_ddr_dq_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_4_io ( PIN p_ddr_dq_4_io ) ( bp_u_ddr_dq_4_io PAD ) ( u_ddr_dq_4_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_5_io ( PIN p_ddr_dq_5_io ) ( bp_u_ddr_dq_5_io PAD ) ( u_ddr_dq_5_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_6_io ( PIN p_ddr_dq_6_io ) ( bp_u_ddr_dq_6_io PAD ) ( u_ddr_dq_6_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_7_io ( PIN p_ddr_dq_7_io ) ( bp_u_ddr_dq_7_io PAD ) ( u_ddr_dq_7_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_8_io ( PIN p_ddr_dq_8_io ) ( bp_u_ddr_dq_8_io PAD ) ( u_ddr_dq_8_io PAD ) + USE SIGNAL ;
+    - p_ddr_dq_9_io ( PIN p_ddr_dq_9_io ) ( bp_u_ddr_dq_9_io PAD ) ( u_ddr_dq_9_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_0_io ( PIN p_ddr_dqs_n_0_io ) ( bp_u_ddr_dqs_n_0_io PAD ) ( u_ddr_dqs_n_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_1_io ( PIN p_ddr_dqs_n_1_io ) ( bp_u_ddr_dqs_n_1_io PAD ) ( u_ddr_dqs_n_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_2_io ( PIN p_ddr_dqs_n_2_io ) ( bp_u_ddr_dqs_n_2_io PAD ) ( u_ddr_dqs_n_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_n_3_io ( PIN p_ddr_dqs_n_3_io ) ( bp_u_ddr_dqs_n_3_io PAD ) ( u_ddr_dqs_n_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_0_io ( PIN p_ddr_dqs_p_0_io ) ( bp_u_ddr_dqs_p_0_io PAD ) ( u_ddr_dqs_p_0_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_1_io ( PIN p_ddr_dqs_p_1_io ) ( bp_u_ddr_dqs_p_1_io PAD ) ( u_ddr_dqs_p_1_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_2_io ( PIN p_ddr_dqs_p_2_io ) ( bp_u_ddr_dqs_p_2_io PAD ) ( u_ddr_dqs_p_2_io PAD ) + USE SIGNAL ;
+    - p_ddr_dqs_p_3_io ( PIN p_ddr_dqs_p_3_io ) ( bp_u_ddr_dqs_p_3_io PAD ) ( u_ddr_dqs_p_3_io PAD ) + USE SIGNAL ;
+    - p_ddr_odt_o ( PIN p_ddr_odt_o ) ( bp_u_ddr_odt_o PAD ) ( u_ddr_odt_o PAD ) + USE SIGNAL ;
+    - p_ddr_ras_n_o ( PIN p_ddr_ras_n_o ) ( bp_u_ddr_ras_n_o PAD ) ( u_ddr_ras_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_reset_n_o ( PIN p_ddr_reset_n_o ) ( bp_u_ddr_reset_n_o PAD ) ( u_ddr_reset_n_o PAD ) + USE SIGNAL ;
+    - p_ddr_we_n_o ( PIN p_ddr_we_n_o ) ( bp_u_ddr_we_n_o PAD ) ( u_ddr_we_n_o PAD ) + USE SIGNAL ;
+    - p_misc_o ( PIN p_misc_o ) ( bp_u_misc_o PAD ) ( u_misc_o PAD ) + USE SIGNAL ;
+    - p_sel_0_i ( PIN p_sel_0_i ) ( bp_u_sel_0_i PAD ) ( u_sel_0_i PAD ) + USE SIGNAL ;
+    - p_sel_1_i ( PIN p_sel_1_i ) ( bp_u_sel_1_i PAD ) ( u_sel_1_i PAD ) + USE SIGNAL ;
+    - p_sel_2_i ( PIN p_sel_2_i ) ( bp_u_sel_2_i PAD ) ( u_sel_2_i PAD ) + USE SIGNAL ;
 END SPECIALNETS
 NETS 215 ;
     - core_bsg_tag_clk_i ( u_bsg_tag_clk_i Y ) + USE SIGNAL ;
