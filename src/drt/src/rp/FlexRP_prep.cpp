@@ -48,6 +48,7 @@ void FlexRP::prep()
   prep_viaForbiddenPlanarLen();
   prep_lineForbiddenLen();
   prep_eolForbiddenLen();
+  prep_cutSpcTbl();
   prep_viaForbiddenThrough();
   for (auto& ndr : tech_->nonDefaultRules) {
     prep_via2viaForbiddenLen(ndr.get());
@@ -302,6 +303,73 @@ void FlexRP::prep_eolForbiddenLen()
       prep_eolForbiddenLen_helper(layer, eolWidth, eolSpace, eolWithin);
       drEolSpacingConstraint drCon(eolWidth, eolSpace, eolWithin);
       ndr->setDrEolConstraint(drCon, z);
+    }
+  }
+}
+
+void FlexRP::prep_cutSpcTbl()
+{
+  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+
+  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
+    auto layer = tech_->getLayer(lNum);
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      auto viaDef = layer->getDefaultViaDef();
+      if (viaDef == nullptr)
+        continue;
+      frVia via(viaDef);
+      frBox tmpBx;
+      via.getCutBBox(tmpBx);
+      frString cutClass1 = "";
+      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.width(), tmpBx.length());
+      if (cutClassIdx1 >= 0)
+        cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
+      if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
+        auto con = layer->getLef58DiffNetCutSpcTblConstraint();
+        auto dbRule = con->getODBRule();
+        con->setDefaultSpacing(
+            {dbRule->getMaxSpacing(
+                 cutClass1,
+                 cutClass1,
+                 odb::dbTechLayerCutSpacingTableDefRule::FIRST),
+             dbRule->getMaxSpacing(
+                 cutClass1,
+                 cutClass1,
+                 odb::dbTechLayerCutSpacingTableDefRule::SECOND)});
+        con->setDefaultCenterToCenter(
+            dbRule->isCenterToCenter(cutClass1, cutClass1));
+        con->setDefaultCenterAndEdge(
+            dbRule->isCenterAndEdge(cutClass1, cutClass1));
+      }
+      if (layer->hasLef58DefaultInterCutSpcTblConstraint()) {
+        auto con = layer->getLef58DefaultInterCutSpcTblConstraint();
+        auto dbRule = con->getODBRule();
+        auto secondLayer = getDesign()->getTech()->getLayer(
+            dbRule->getSecondLayer()->getName());
+        viaDef = secondLayer->getDefaultViaDef();
+        if (viaDef != nullptr) {
+          via.getCutBBox(tmpBx);
+          frString cutClass2 = "";
+          auto cutClassIdx2
+              = secondLayer->getCutClassIdx(tmpBx.width(), tmpBx.length());
+          if (cutClassIdx2 >= 0)
+            cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
+          con->setDefaultSpacing(
+              {dbRule->getMaxSpacing(
+                   cutClass1,
+                   cutClass2,
+                   odb::dbTechLayerCutSpacingTableDefRule::FIRST),
+               dbRule->getMaxSpacing(
+                   cutClass1,
+                   cutClass2,
+                   odb::dbTechLayerCutSpacingTableDefRule::SECOND)});
+          con->setDefaultCenterToCenter(
+              dbRule->isCenterToCenter(cutClass1, cutClass2));
+          con->setDefaultCenterAndEdge(
+              dbRule->isCenterAndEdge(cutClass1, cutClass2));
+        }
+      }
     }
   }
 }

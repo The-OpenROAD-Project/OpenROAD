@@ -1261,10 +1261,10 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     if (cutClass2.find("/") != std::string::npos)
       cutClass2 = cutClass2.substr(0, cutClass2.find("/"));
     auto spc = table[0][0];
-    con->setDefaultSpacing(std::max(spc.first, spc.second));
+    con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(
-        rule->isCenterToCenter(cutClass1, cutClass2)
-        || rule->isCenterAndEdge(cutClass1, cutClass2));
+        rule->isCenterToCenter(cutClass1, cutClass2));
+    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());

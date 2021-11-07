@@ -81,7 +81,6 @@ class Parser
   void postProcess();
   void postProcessGuide();
   void initDefaultVias();
-  void initConstraints();
   void initRPin();
   std::map<frBlock*,
            std::map<dbOrientType,
