@@ -82,7 +82,7 @@ typedef struct csoln ***LUT_TYPE;
 typedef int **NUMSOLN_TYPE;
 
 // Dynamically allocate LUTs.
-LUT_TYPE LUT;
+LUT_TYPE LUT = nullptr;
 NUMSOLN_TYPE numsoln;
 
 struct point {
@@ -197,6 +197,8 @@ readLUTfiles(LUT_TYPE LUT,
 ////////////////////////////////////////////////////////////////
 
 static void
+readLUT();
+static void
 makeLUT(LUT_TYPE &LUT,
 	NUMSOLN_TYPE &numsoln);
 static void
@@ -206,6 +208,7 @@ static void
 initLUT(int to_d,
         LUT_TYPE LUT,
 	NUMSOLN_TYPE numsoln);
+static void readLUT();
 static void
 ensureLUT(int d);
 static std::string
@@ -225,7 +228,12 @@ static int lut_valid_d = 0;
 extern std::string post9;
 extern std::string powv9;
 
-void readLUT() {
+void ensureLUTsRead() {
+  if (LUT == nullptr)
+    readLUT();
+}
+
+static void readLUT() {
   makeLUT(LUT, numsoln);
 
 #if LUT_SOURCE==LUT_FILE
@@ -269,12 +277,14 @@ static void
 deleteLUT(LUT_TYPE &LUT,
 	  NUMSOLN_TYPE &numsoln)
 {
-  for (int d = 4; d <= FLUTE_D; d++) {
-    delete [] LUT[d];
-    delete [] numsoln[d];
+  if (LUT) {
+    for (int d = 4; d <= FLUTE_D; d++) {
+      delete [] LUT[d];
+      delete [] numsoln[d];
+    }
+    delete [] numsoln;
+    delete [] LUT;
   }
-  delete [] numsoln;
-  delete [] LUT;
 }
 
 static unsigned char
@@ -986,6 +996,7 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc) {
     t.branch[1].y = y[1];
     t.branch[1].n = 1;
   } else {
+    ensureLUTsRead();
     ensureLUT(d);
                 
     xs.resize(d);
