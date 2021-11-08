@@ -83,6 +83,13 @@ void Grid::clear()
   obstructions_.clear();
 }
 
+void Grid::addObstruction(int layer, const odb::Rect& obstruction)
+{
+  odb::Rect die_area(lower_left_x_, lower_left_y_, upper_right_x_, upper_right_y_);
+  odb::Rect obs_inside_die = die_area.intersect(obstruction);
+  obstructions_[layer].push_back(obs_inside_die);
+}
+
 odb::Point Grid::getPositionOnGrid(const odb::Point& position)
 {
   int x = position.x();
