@@ -3503,7 +3503,8 @@ class GrouteRenderer : public gui::Renderer
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
   void highlight(const odb::dbNet* net);
   void clear();
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+  virtual void drawLayer(odb::dbTechLayer* layer,
+                         gui::Painter& painter) override;
 
  private:
   GlobalRouter* groute_;
@@ -3545,23 +3546,27 @@ void GrouteRenderer::highlight(const odb::dbNet* net)
   redraw();
 }
 
-void GrouteRenderer::drawObjects(gui::Painter& painter)
+void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  painter.setPen(layer);
+  painter.setBrush(layer);
   for (const odb::dbNet* net : nets_) {
     NetRouteMap& routes = groute_->getRoutes();
     GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
     for (GSegment& seg : groute) {
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;
-      if (layer1 == layer2) {
-        odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
-        // Draw rect because drawLine does not have a way to set the pen
-        // thickness.
-        odb::Rect rect = groute_->globalRoutingToBox(seg);
-        painter.setPen(layer);
-        painter.setBrush(layer);
-        painter.drawRect(rect);
+      if (layer1 != layer2) {
+        continue;
       }
+      odb::dbTechLayer* seg_layer = tech_->findRoutingLayer(layer1);
+      if (seg_layer != layer) {
+        continue;
+      }
+      // Draw rect because drawLine does not have a way to set the pen
+      // thickness.
+      odb::Rect rect = groute_->globalRoutingToBox(seg);
+      painter.drawRect(rect);
     }
   }
 }
