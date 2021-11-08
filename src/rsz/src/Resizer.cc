@@ -843,8 +843,7 @@ Resizer::repairNet(Net *net,
         const RiseFall *tr1;
         sta_->checkCapacitance(drvr_pin, nullptr, max_,
                                corner1, tr1, cap1, max_cap1, cap_slack1);
-        if (max_cap1 > 0.0 // medhi proofing
-            && corner1) {
+        if (max_cap1 > 0.0 && corner1) {
           max_cap1 *= (1.0 - max_cap_margin / 100.0);
           max_cap = max_cap1;
           if (cap1 > max_cap1) {
@@ -858,8 +857,7 @@ Resizer::repairNet(Net *net,
         float fanout, fanout_slack;
         sta_->checkFanout(drvr_pin, max_,
                           fanout, max_fanout, fanout_slack);
-        if (max_fanout > 0.0 // medhi proofing
-            && fanout_slack < 0.0) {
+        if (max_fanout > 0.0 && fanout_slack < 0.0) {
           fanout_violations++;
           repair_fanout = true;
         }
@@ -881,8 +879,7 @@ Resizer::repairNet(Net *net,
         // Find max load cap that corresponds to max_slew.
         LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
         if (corner1
-            && max_slew1 > 0.0 // medhi proofing
-            && drvr_port) {
+            && max_slew1 > 0.0 && drvr_port) {
           float max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
           max_cap = min(max_cap, max_cap1);
           corner = corner1;
@@ -905,7 +902,7 @@ Resizer::repairNet(Net *net,
         checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
         // Even when there are no load violations we need max_load_slew for
         // sizing inserted buffers.
-        if (max_slew1 > 0.0) { // medhi proofing
+        if (max_slew1 > 0.0) {
           max_load_slew = max_slew1;
           debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_load_slew={}",
                      delayAsString(slew1, this, 3),

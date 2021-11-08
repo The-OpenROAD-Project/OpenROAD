@@ -48,7 +48,7 @@ class frBoundary : public frFig
   // others
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -66,7 +66,7 @@ class frBoundary : public frFig
       urx = (urx > point.x()) ? urx : point.x();
       ury = (ury > point.y()) ? ury : point.y();
     }
-    boxIn.set(llx, lly, urx, ury);
+    boxIn.init(llx, lly, urx, ury);
   }
   void move(const dbTransform& xform) override
   {
@@ -74,7 +74,7 @@ class frBoundary : public frFig
       xform.apply(point);
     }
   }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
  protected:
   std::vector<Point> points_;

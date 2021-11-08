@@ -103,7 +103,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
   // cout <<"  refBlock pin layer range done" <<endl;
 }
 
-bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
+bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 {
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
@@ -111,9 +111,9 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
                  + (frCoord)(tp->getTrackSpacing())
                        * ((frCoord)(tp->getNumTracks()) - 1);
   if (isVerticalTrack) {
-    return !(low > box.right() || high < box.left());
+    return !(low > box.xMax() || high < box.xMin());
   } else {
-    return !(low > box.top() || high < box.bottom());
+    return !(low > box.yMax() || high < box.yMin());
   }
 }
 
@@ -134,7 +134,7 @@ void FlexPA::initUniqueInstance_main(
     }
     Point origin;
     inst->getOrigin(origin);
-    frBox boundaryBBox;
+    Rect boundaryBBox;
     inst->getBoundaryBBox(boundaryBBox);
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
@@ -285,10 +285,10 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   gtl::polygon_90_set_data<frCoord> viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS1 += bboxRect;
   }
@@ -311,10 +311,10 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS2 += bboxRect;
   }

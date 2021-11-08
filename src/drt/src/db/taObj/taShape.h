@@ -164,7 +164,7 @@ class taPathSeg : public taShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -174,15 +174,15 @@ class taPathSeg : public taShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      boxIn.set(begin_.x() - beginExt,
-                begin_.y() - width / 2,
-                end_.x() + endExt,
-                end_.y() + width / 2);
+      boxIn.init(begin_.x() - beginExt,
+                 begin_.y() - width / 2,
+                 end_.x() + endExt,
+                 end_.y() + width / 2);
     } else {
-      boxIn.set(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+      boxIn.init(begin_.x() - width / 2,
+                 begin_.y() - beginExt,
+                 end_.x() + width / 2,
+                 end_.y() + endExt);
     }
   }
   void move(const dbTransform& xform) override
@@ -190,7 +190,7 @@ class taPathSeg : public taShape
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
  protected:
   Point begin_;  // begin always smaller than end, assumed
