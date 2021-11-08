@@ -663,7 +663,7 @@ class FlexGRCMap
       const std::vector<rq_box_value_t<frBlockObject*>>& results);
   frCoord calcBloatDist(frBlockObject* obj,
                         const frLayerNum lNum,
-                        const frBox& box,
+                        const Rect& box,
                         bool isOBS);
 };
 }  // namespace fr

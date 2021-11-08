@@ -511,7 +511,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
     return;
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -526,7 +526,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   marker->addVictim(
       net1->getOwner(),
       make_tuple(
-          edge1->getLayerNum(), frBox(llx, lly, urx, ury), edge1->isFixed()));
+          edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
   marker->addSrc(net2->getOwner());
   llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
@@ -535,7 +535,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   marker->addAggressor(
       net2->getOwner(),
       make_tuple(
-          edge2->getLayerNum(), frBox(llx, lly, urx, ury), edge2->isFixed()));
+          edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
 }
 
@@ -823,7 +823,7 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   gtl::generalized_intersect(markerRect, rect2);
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -835,12 +835,12 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   marker->addVictim(
       net1->getOwner(),
       make_tuple(
-          edge->getLayerNum(), frBox(llx, lly, urx, ury), edge->isFixed()));
+          edge->getLayerNum(), Rect(llx, lly, urx, ury), edge->isFixed()));
   marker->addSrc(net2->getOwner());
   marker->addAggressor(
       net2->getOwner(),
       make_tuple(
-          rect->getLayerNum(), frBox(llx2, lly2, urx2, ury2), rect->isFixed()));
+          rect->getLayerNum(), Rect(llx2, lly2, urx2, ury2), rect->isFixed()));
   addMarker(std::move(marker));
 }
 void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
@@ -1013,7 +1013,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   gtl::set_points(edgeRect, edge1->low(), edge1->high());
   gtl::generalized_intersect(markerRect, edgeRect);
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -1028,7 +1028,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   marker->addVictim(
       edge1->getNet()->getOwner(),
       make_tuple(
-          edge1->getLayerNum(), frBox(llx, lly, urx, ury), edge1->isFixed()));
+          edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
   marker->addSrc(edge2->getNet()->getOwner());
   llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
@@ -1037,7 +1037,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   marker->addAggressor(
       edge2->getNet()->getOwner(),
       make_tuple(
-          edge2->getLayerNum(), frBox(llx, lly, urx, ury), edge2->isFixed()));
+          edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
 }
 

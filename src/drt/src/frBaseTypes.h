@@ -43,6 +43,10 @@
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
+namespace odb {
+  class Rect;
+}
+
 namespace fr {
 using Logger = utl::Logger;
 const utl::ToolId DRT = utl::DRT;
@@ -258,10 +262,8 @@ typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
 typedef bg::model::box<point_t> box_t;
 typedef bg::model::segment<point_t> segment_t;
 
-class frBox;
-
 template <typename T>
-using rq_box_value_t = std::pair<frBox, T>;
+using rq_box_value_t = std::pair<odb::Rect, T>;
 
 struct frDebugSettings
 {

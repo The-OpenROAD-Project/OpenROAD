@@ -126,7 +126,7 @@ void FlexGRWorker::route_mazeIterInit()
             // this gcell
             Point gcellCenter;
             gridGraph_.getPoint(xIdx, yIdx, gcellCenter);
-            frBox gcellCenterBox(gcellCenter, gcellCenter);
+            Rect gcellCenterBox(gcellCenter, gcellCenter);
             result.clear();
             workerRegionQuery.query(gcellCenterBox, lNum, result);
             for (auto rptr : result) {
@@ -774,7 +774,7 @@ void FlexGRWorker::routeNet_postAstarWritePath(
       Point srcLoc;
       gridGraph_.getPoint(points.back().x(), points.back().y(), srcLoc);
       frLayerNum srcLNum = (points.back().z() + 1) * 2;
-      frBox srcBox(srcLoc, srcLoc);
+      Rect srcBox(srcLoc, srcLoc);
       vector<grConnFig*> result;
       workerRegionQuery.query(srcBox, srcLNum, result);
       for (auto rptr : result) {
