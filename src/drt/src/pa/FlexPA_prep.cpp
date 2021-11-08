@@ -77,11 +77,11 @@ void FlexPA::prepPoint_pin_mergePinShapes(
           != dbTechLayerType::ROUTING) {
         continue;
       }
-      frBox box;
+      Rect box;
       obj->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       gtl::rectangle_data<frCoord> rect(
-          box.left(), box.bottom(), box.right(), box.top());
+          box.xMin(), box.yMin(), box.xMax(), box.yMax());
       if (isShrink) {
         if (getDesign()->getTech()->getLayer(layerNum)->getDir()
             == dbTechLayerDir::HORIZONTAL) {
@@ -295,19 +295,19 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
       break;
     }
   }
-  frBox box;
+  Rect box;
   for (auto& viaDef : viaDefs) {
     frVia via(viaDef);
     via.getLayer1BBox(box);
-    auto viaWidth = box.right() - box.left();
-    auto viaHeight = box.top() - box.bottom();
+    auto viaWidth = box.xMax() - box.xMin();
+    auto viaHeight = box.yMax() - box.yMin();
     if (viaWidth > rectWidth || viaHeight > rectHeight) {
       // cout <<"@@@" <<viaDef->getName() <<" rect " <<rectWidth <<" "
       // <<rectHeight <<" via " <<viaWidth <<" " <<viaHeight <<endl;
       continue;
     }
     if (isCurrLayerHorz) {
-      auto coord = gtl::yh(rect) - (box.top() - 0);
+      auto coord = gtl::yh(rect) - (box.yMax() - 0);
       auto it = coords.find(coord);
       if (it == coords.end()) {
         // cout << coord / 2000.0 <<endl;
@@ -315,7 +315,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
-      coord = gtl::yl(rect) + (0 - box.bottom());
+      coord = gtl::yl(rect) + (0 - box.yMin());
       it = coords.find(coord);
       if (it == coords.end()) {
         // cout << coord / 2000.0 <<endl;
@@ -324,7 +324,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
     } else {
-      auto coord = gtl::xh(rect) - (box.right() - 0);
+      auto coord = gtl::xh(rect) - (box.xMax() - 0);
       auto it = coords.find(coord);
       if (it == coords.end()) {
         // cout << coord / 2000.0 <<endl;
@@ -332,7 +332,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
-      coord = gtl::xl(rect) + (0 - box.left());
+      coord = gtl::xl(rect) + (0 - box.xMin());
       it = coords.find(coord);
       if (it == coords.end()) {
         // cout << coord / 2000.0 <<endl;
@@ -813,7 +813,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
-  frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
+  Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
@@ -892,19 +892,19 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   }
 
   // check if ap is on the left/right boundary of the cell
-  frBox boundaryBBox;
+  Rect boundaryBBox;
   bool isLRBound = false;
   if (instTerm) {
     instTerm->getInst()->getBoundaryBBox(boundaryBBox);
     frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
-    if (bp.x() <= boundaryBBox.left() + 3 * width
-        || bp.x() >= boundaryBBox.right() - 3 * width) {
+    if (bp.x() <= boundaryBBox.xMin() + 3 * width
+        || bp.x() >= boundaryBBox.xMax() - 3 * width) {
       isLRBound = true;
     }
   }
 
   set<tuple<frCoord, int, frViaDef*>> validViaDefs;
-  frBox box;
+  Rect box;
   for (auto& [idx, viaDef] : viaDefs) {
     auto via = make_unique<frVia>(viaDef);
     via->setOrigin(bp);
@@ -912,7 +912,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     if (instTerm) {
       if (!boundaryBBox.contains(box))
         continue;
-      frBox layer2BBox;
+      Rect layer2BBox;
       via->getLayer2BBox(layer2BBox);
       if (!boundaryBBox.contains(layer2BBox))
         continue;
@@ -920,7 +920,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
 
     frCoord maxExt = 0;
     gtl::rectangle_data<frCoord> viarect(
-        box.left(), box.bottom(), box.right(), box.top());
+        box.xMin(), box.yMin(), box.xMax(), box.yMax());
     using namespace boost::polygon::operators;
     gtl::polygon_90_set_data<frCoord> intersection;
     intersection += viarect;
@@ -929,8 +929,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     vector<gtl::rectangle_data<frCoord>> intRects;
     intersection.get_rectangles(intRects, gtl::orientation_2d_enum::HORIZONTAL);
     for (auto& r : intRects) {
-      maxExt = max(maxExt, box.right() - gtl::xh(r));
-      maxExt = max(maxExt, gtl::xl(r) - box.left());
+      maxExt = max(maxExt, box.xMax() - gtl::xh(r));
+      maxExt = max(maxExt, gtl::xl(r) - box.xMin());
     }
     if (!isLRBound) {
       if (intRects.size() > 1) {
@@ -939,8 +939,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
                                     gtl::orientation_2d_enum::VERTICAL);
       }
       for (auto& r : intRects) {
-        maxExt = max(maxExt, box.top() - gtl::yh(r));
-        maxExt = max(maxExt, gtl::yl(r) - box.bottom());
+        maxExt = max(maxExt, box.yMax() - gtl::yh(r));
+        maxExt = max(maxExt, gtl::yl(r) - box.yMin());
       }
     }
     if (viainpin && maxExt)
@@ -974,7 +974,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
-  frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
+  Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
@@ -1145,14 +1145,14 @@ bool FlexPA::prepPoint_pin_helper(
     }
   }
   int nSparseAPs = (int) aps.size();
-  frBox tbx;
+  Rect tbx;
   for (int i = 0; i < (int) aps.size();
        i++) {  // not perfect but will do the job
     int r = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    tbx.set(aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
+    tbx.init(aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
     for (int j = i + 1; j < (int) aps.size(); j++) {
       if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
-          && tbx.contains(aps[j]->getPoint())) {
+          && tbx.intersects(aps[j]->getPoint())) {
         nSparseAPs--;
         break;
       }
@@ -1434,7 +1434,7 @@ void FlexPA::prepPattern()
   // gen rows of insts
   int prevYCoord = INT_MIN;
   int prevXEndCoord = INT_MIN;
-  frBox instBoundaryBox;
+  Rect instBoundaryBox;
   for (auto inst : insts) {
     Point origin;
     inst->getOrigin(origin);
@@ -1450,7 +1450,7 @@ void FlexPA::prepPattern()
     rowInsts.push_back(inst);
     prevYCoord = origin.y();
     inst->getBoundaryBBox(instBoundaryBox);
-    prevXEndCoord = instBoundaryBox.right();
+    prevXEndCoord = instBoundaryBox.xMax();
   }
   if (!rowInsts.empty()) {
     instRows.push_back(rowInsts);
@@ -2108,16 +2108,16 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
   frCoord lly = std::numeric_limits<frCoord>::max();
   frCoord urx = std::numeric_limits<frCoord>::min();
   frCoord ury = std::numeric_limits<frCoord>::min();
-  frBox bbox;
+  Rect bbox;
   for (auto& [connFig, owner] : objs) {
     connFig->getBBox(bbox);
-    llx = std::min(llx, bbox.left());
-    lly = std::min(llx, bbox.bottom());
-    urx = std::max(llx, bbox.right());
-    ury = std::max(llx, bbox.top());
+    llx = std::min(llx, bbox.xMin());
+    lly = std::min(llx, bbox.yMin());
+    urx = std::max(llx, bbox.xMax());
+    ury = std::max(llx, bbox.yMax());
   }
-  frBox extBox(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
-  // frBox extBox(llx - 1000, lly - 1000, urx + 1000, ury + 1000);
+  Rect extBox(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
+  // Rect extBox(llx - 1000, lly - 1000, urx + 1000, ury + 1000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
 

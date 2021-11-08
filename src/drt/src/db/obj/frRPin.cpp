@@ -33,7 +33,7 @@
 using namespace std;
 using namespace fr;
 
-void frRPin::getBBox(frBox& in)
+void frRPin::getBBox(Rect& in)
 {
   Point pt;
   if (term->typeId() == frcInstTerm) {
@@ -48,7 +48,7 @@ void frRPin::getBBox(frBox& in)
     accessPoint->getPoint(pt);
   }
 
-  in.set(pt.x(), pt.y(), pt.x(), pt.y());
+  in.init(pt.x(), pt.y(), pt.x(), pt.y());
 }
 
 frLayerNum frRPin::getLayerNum()

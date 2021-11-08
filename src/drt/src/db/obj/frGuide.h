@@ -110,9 +110,9 @@ class frGuide : public frConnFig
    * overlaps, incomplete
    */
   // needs to be updated
-  void getBBox(frBox& boxIn) const override { boxIn.set(begin_, end_); }
+  void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
  protected:
   Point begin_;

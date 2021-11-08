@@ -64,7 +64,7 @@ class frMarker : public frFig
   // setters
   void setConstraint(frConstraint* constraintIn) { constraint_ = constraintIn; }
 
-  void setBBox(const frBox& bboxIn) { bbox_ = bboxIn; }
+  void setBBox(const Rect& bboxIn) { bbox_ = bboxIn; }
 
   void setLayerNum(const frLayerNum& layerNumIn) { layerNum_ = layerNumIn; }
 
@@ -74,12 +74,12 @@ class frMarker : public frFig
 
   void addSrc(frBlockObject* srcIn) { srcs_.insert(srcIn); }
   void addAggressor(frBlockObject* obj,
-                    const std::tuple<frLayerNum, frBox, bool>& tupleIn)
+                    const std::tuple<frLayerNum, Rect, bool>& tupleIn)
   {
     aggressors_.push_back(std::make_pair(obj, tupleIn));
   }
   void addVictim(frBlockObject* obj,
-                 const std::tuple<frLayerNum, frBox, bool>& tupleIn)
+                 const std::tuple<frLayerNum, Rect, bool>& tupleIn)
   {
     victims_.push_back(std::make_pair(obj, tupleIn));
   }
@@ -91,21 +91,21 @@ class frMarker : public frFig
    * overlaps in .cpp
    */
 
-  void getBBox(frBox& bboxIn) const override { bboxIn.set(bbox_); }
-  const frBox& getBBox() const { return bbox_; }
+  void getBBox(Rect& bboxIn) const override { bboxIn = bbox_; }
+  const Rect& getBBox() const { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
 
   const std::set<frBlockObject*>& getSrcs() const { return srcs_; }
 
   const std::vector<
-      std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>&
+      std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
   getAggressors() const
   {
     return aggressors_;
   }
 
   const std::vector<
-      std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>&
+      std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
   getVictims() const
   {
     return victims_;
@@ -119,7 +119,7 @@ class frMarker : public frFig
 
   void move(const dbTransform& xform) override {}
 
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
   // others
   frBlockObjectEnum typeId() const override { return frcMarker; }
@@ -129,12 +129,12 @@ class frMarker : public frFig
 
  protected:
   frConstraint* constraint_;
-  frBox bbox_;
+  Rect bbox_;
   frLayerNum layerNum_;
   std::set<frBlockObject*> srcs_;
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>
+  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
       victims_;  // obj, isFixed
-  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>
+  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
       aggressors_;  // obj, isFixed
   frListIter<std::unique_ptr<frMarker>> iter_;
   bool vioHasDir_;

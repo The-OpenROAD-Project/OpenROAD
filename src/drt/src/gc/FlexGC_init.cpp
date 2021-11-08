@@ -106,7 +106,7 @@ gcNet* FlexGCWorker::Impl::getNet(frNet* net)
   return it->second;
 }
 
-void FlexGCWorker::Impl::initObj(const frBox& box,
+void FlexGCWorker::Impl::initObj(const Rect& box,
                                  frLayerNum layerNum,
                                  frBlockObject* obj,
                                  bool isFixed)
@@ -161,8 +161,8 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design)
   }
 
   auto& extBox = getExtBox();
-  box_t queryBox(point_t(extBox.left(), extBox.bottom()),
-                 point_t(extBox.right(), extBox.top()));
+  box_t queryBox(point_t(extBox.xMin(), extBox.yMin()),
+                 point_t(extBox.xMax(), extBox.yMax()));
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> queryResult;
   int cnt = 0;
@@ -208,7 +208,7 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     currNet = it->second;
   }
 
-  frBox box;
+  Rect box;
   dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
@@ -221,22 +221,22 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     via->getTransform(xform);
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       currNet->addRectangle(box, layerNum, false);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
-      frBox bbox;
+      Rect bbox;
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       currNet->addPolygon(box, layerNum, false);
     }
   } else if (obj->typeId() == frcPatchWire) {
@@ -248,7 +248,7 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
 void addNonTaperedPatches(gcNet* gNet,
                           const std::vector<unique_ptr<drConnFig>>& figs)
 {
-  frBox box;
+  Rect box;
   for (auto& obj : figs) {
     if (obj->typeId() == drcPatchWire) {
       auto pwire = static_cast<drPatchWire*>(obj.get());
@@ -274,15 +274,15 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  frBox box;
+  Rect box;
   dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
     pathSeg->getBBox(box);
     // debug
-    // if (pathSeg->getLayerNum() == 4 && box.left() < 470300 && box.right() >
-    // 470300 && box.bottom() < 100800 && box.top() > 100800) {
+    // if (pathSeg->getLayerNum() == 4 && box.xMin() < 470300 && box.xMax() >
+    // 470300 && box.yMin() < 100800 && box.yMax() > 100800) {
     //   cout << "  @@@ debug: initDRObj catches wire on M2 (";
     //   auto owner = currNet->getOwner();
     //   if (owner == nullptr) {
@@ -304,8 +304,8 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     //       cout <<"UNKNOWN";
     //     }
     //   }
-    //   cout <<  ") (" << box.left() << ", " << box.bottom() << ") - (" <<
-    //   box.right() << ", " << box.top() << ")\n";
+    //   cout <<  ") (" << box.xMin() << ", " << box.yMin() << ") - (" <<
+    //   box.xMax() << ", " << box.yMax() << ")\n";
     // }
     currNet->addPolygon(box, pathSeg->getLayerNum());
     if (pathSeg->isTapered())
@@ -319,7 +319,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     via->getTransform(xform);
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       if (via->isTapered())
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
@@ -330,14 +330,14 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       currNet->addRectangle(box, layerNum);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       fig->getBBox(box);
-      box.transform(xform);
+      xform.apply(box);
       if (via->isTapered())
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)

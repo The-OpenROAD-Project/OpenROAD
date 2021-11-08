@@ -67,23 +67,23 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // |                 |
     // -------------------
     if (isInitDR()
-        && (begin.x() == routeBox.left() || begin.x() == routeBox.right())) {
-      if (begin.y() < routeBox.bottom() || end.y() > routeBox.top()
+        && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
+      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
           || pathSeg->getBeginStyle() != frcTruncateEndStyle
           || pathSeg->getEndStyle() != frcTruncateEndStyle)
         return;
     }
-    bool condition2 = (begin.y() <= routeBox.top());  // orthogonal to wire
-    if (routeBox.left() <= begin.x() && begin.x() <= routeBox.right()
-        && !(begin.y() > routeBox.top() || end.y() < routeBox.bottom())) {
+    bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
+    if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
+        && !(begin.y() > routeBox.yMax() || end.y() < routeBox.yMin())) {
       // bottom seg to ext
-      if (begin.y() < routeBox.bottom()) {
+      if (begin.y() < routeBox.yMin()) {
         auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(end.x(), min(end.y(), routeBox.bottom()));
+        Point boundPt(end.x(), min(end.y(), routeBox.yMin()));
         uPathSeg->setPoints(begin, boundPt);
         // change boundary style to ext if orig pathSeg crosses boundary
-        if (end.y() > routeBox.bottom()) {
+        if (end.y() > routeBox.yMin()) {
           frSegStyle style;
           pathSeg->getStyle(style);
           style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
@@ -98,18 +98,18 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         auto lNum = sptr->getLayerNum();
 
         // only insert true boundary point
-        if (end.y() >= routeBox.bottom()) {
+        if (end.y() >= routeBox.yMin()) {
           boundPts.insert(make_pair(boundPt, lNum));
         }
       }
       // top seg to ext
-      if (end.y() > routeBox.top()) {
+      if (end.y() > routeBox.yMax()) {
         auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(begin.x(), max(begin.y(), routeBox.top()));
+        Point boundPt(begin.x(), max(begin.y(), routeBox.yMax()));
         uPathSeg->setPoints(boundPt, end);
         // change boundary style to ext if orig pathSeg crosses boundary
-        if (begin.y() < routeBox.top()) {
+        if (begin.y() < routeBox.yMax()) {
           frSegStyle style;
           pathSeg->getStyle(style);
           style
@@ -139,25 +139,25 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // horizontal seg
   } else if (begin.y() == end.y()) {
     if (isInitDR()
-        && (begin.y() == routeBox.bottom() || begin.y() == routeBox.top())) {
-      if (begin.x() < routeBox.left() || end.x() > routeBox.right()
+        && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
+      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
           || pathSeg->getBeginStyle() != frcTruncateEndStyle
           || pathSeg->getEndStyle() != frcTruncateEndStyle)
         return;
     }
     // if cross routeBBox
-    bool condition2 = /*isInitDR() ? (begin.x() < routeBox.right()):*/ (
-        begin.x() <= routeBox.right());  // orthogonal to wire
-    if (routeBox.bottom() <= begin.y() && begin.y() <= routeBox.top()
-        && !(begin.x() > routeBox.right() || end.x() < routeBox.left())) {
+    bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
+        begin.x() <= routeBox.xMax());  // orthogonal to wire
+    if (routeBox.yMin() <= begin.y() && begin.y() <= routeBox.yMax()
+        && !(begin.x() > routeBox.xMax() || end.x() < routeBox.xMin())) {
       // left seg to ext
-      if (begin.x() < routeBox.left()) {
+      if (begin.x() < routeBox.xMin()) {
         auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(min(end.x(), routeBox.left()), end.y());
+        Point boundPt(min(end.x(), routeBox.xMin()), end.y());
         uPathSeg->setPoints(begin, boundPt);
         // change boundary style to ext if orig pathSeg crosses boundary
-        if (end.x() > routeBox.left()) {
+        if (end.x() > routeBox.xMin()) {
           frSegStyle style;
           pathSeg->getStyle(style);
           style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
@@ -172,18 +172,18 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         auto lNum = sptr->getLayerNum();
 
         // only insert true boundary point
-        if (end.x() >= routeBox.left()) {
+        if (end.x() >= routeBox.xMin()) {
           boundPts.insert(make_pair(boundPt, lNum));
         }
       }
       // right seg to ext
-      if (end.x() > routeBox.right()) {
+      if (end.x() > routeBox.xMax()) {
         auto uPathSeg = make_unique<frPathSeg>(*pathSeg);
         auto ps = uPathSeg.get();
-        Point boundPt(max(begin.x(), routeBox.right()), begin.y());
+        Point boundPt(max(begin.x(), routeBox.xMax()), begin.y());
         uPathSeg->setPoints(boundPt, end);
         // change boundary style to ext if orig pathSeg crosses at boundary
-        if (begin.x() < routeBox.right()) {
+        if (begin.x() < routeBox.xMax()) {
           frSegStyle style;
           pathSeg->getStyle(style);
           style
@@ -217,13 +217,13 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
   Point viaPoint;
   via->getOrigin(viaPoint);
   if (isInitDR()
-      && (viaPoint.x() == gridBBox.left() || viaPoint.x() == gridBBox.right()
-          || viaPoint.y() == gridBBox.bottom()
-          || viaPoint.y() == gridBBox.top())) {
+      && (viaPoint.x() == gridBBox.xMin() || viaPoint.x() == gridBBox.xMax()
+          || viaPoint.y() == gridBBox.yMin()
+          || viaPoint.y() == gridBBox.yMax())) {
     return;
   }
-  if (viaPoint.x() >= gridBBox.left() && viaPoint.y() >= gridBBox.bottom()
-      && viaPoint.x() <= gridBBox.right() && viaPoint.y() <= gridBBox.top()) {
+  if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
+      && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
   }
@@ -237,12 +237,12 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
   Point origin;
   pwire->getOrigin(origin);
   if (isInitDR()
-      && (origin.x() == gridBBox.left() || origin.x() == gridBBox.right()
-          || origin.y() == gridBBox.bottom() || origin.y() == gridBBox.top())) {
+      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
+          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
     return;
   }
-  if (origin.x() >= gridBBox.left() && origin.y() >= gridBBox.bottom()
-      && origin.x() <= gridBBox.right() && origin.y() <= gridBBox.top()) {
+  if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
+      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }
@@ -330,7 +330,7 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     hasPatchMetal = false;
     bool skip = false;
     result.clear();
-    regionQuery->query(frBox(pt, pt), lNum, result);
+    regionQuery->query(Rect(pt, pt), lNum, result);
     for (auto& [bx, obj] : result) {
       if (obj->typeId() == frcInstTerm) {
         auto instTerm = static_cast<frInstTerm*>(obj);
@@ -359,7 +359,7 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     drObjs.clear();
     horzPathSegs.clear();
     vertPathSegs.clear();
-    regionQuery->queryDRObj(frBox(pt, pt), lNum, drObjs);
+    regionQuery->queryDRObj(Rect(pt, pt), lNum, drObjs);
     for (auto& obj : drObjs) {
       if (obj->typeId() == frcPathSeg) {
         auto ps = static_cast<frPathSeg*>(obj);
@@ -494,7 +494,7 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
 {
   auto regionQuery = design->getRegionQuery();
   auto topBlock = design->getTopBlock();
-  frBox mBox;
+  Rect mBox;
   // for (auto &m: getMarkers()) {
   for (auto& m : getBestMarkers()) {
     m.getBBox(mBox);

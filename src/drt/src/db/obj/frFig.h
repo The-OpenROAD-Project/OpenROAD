@@ -39,11 +39,11 @@ class frFig : public frBlockObject
 {
  public:
   // getters
-  virtual void getBBox(frBox& box) const = 0;
+  virtual void getBBox(Rect& box) const = 0;
   // setters
   // others
   virtual void move(const dbTransform& xform) = 0;
-  virtual bool overlaps(const frBox& box) const = 0;
+  virtual bool overlaps(const Rect& box) const = 0;
 
  protected:
   // constructors

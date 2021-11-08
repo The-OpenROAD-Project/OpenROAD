@@ -324,7 +324,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     auto net1 = viaRect1->getNet();
     auto net2 = viaRect2->getNet();
     auto marker = make_unique<frMarker>();
-    frBox box(gtl::xl(markerRect),
+    Rect box(gtl::xl(markerRect),
               gtl::yl(markerRect),
               gtl::xh(markerRect),
               gtl::yh(markerRect));
@@ -339,7 +339,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 
     marker->addVictim(
         net1->getOwner(),
-        make_tuple(layerNum1, frBox(llx, lly, urx, ury), viaRect1->isFixed()));
+        make_tuple(layerNum1, Rect(llx, lly, urx, ury), viaRect1->isFixed()));
     marker->addSrc(net2->getOwner());
     llx = gtl::xl(*viaRect2);
     lly = gtl::yl(*viaRect2);
@@ -347,7 +347,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     ury = gtl::xh(*viaRect2);
     marker->addAggressor(
         net2->getOwner(),
-        make_tuple(layerNum2, frBox(llx, lly, urx, ury), viaRect2->isFixed()));
+        make_tuple(layerNum2, Rect(llx, lly, urx, ury), viaRect2->isFixed()));
     addMarker(std::move(marker));
   }
 }

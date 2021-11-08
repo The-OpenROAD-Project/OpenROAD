@@ -51,24 +51,24 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
   //  but still overlapping.  So we expand pt to a min-width square when
   //  searching for the pin shape.
   auto half_min_width = getTech()->getLayer(lNum)->getMinWidth() / 2;
-  frBox query_box(pt.x() - half_min_width,
+  Rect query_box(pt.x() - half_min_width,
                   pt.y() - half_min_width,
                   pt.x() + half_min_width,
                   pt.y() + half_min_width);
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
-    if (isPathSeg && !bx.contains(pt))
+    if (isPathSeg && !bx.intersects(pt))
       continue;
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
       if (instTerm->getNet() == net) {
-        if (!isPathSeg && !bx.contains(pt)
+        if (!isPathSeg && !bx.intersects(pt)
             && !instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
           continue;
         pin2epMap[instTerm].insert(make_pair(pt, lNum));
       }
     } else if (rqObj->typeId() == frcTerm) {
-      if (!isPathSeg && !bx.contains(pt))
+      if (!isPathSeg && !bx.intersects(pt))
         continue;
       auto term = static_cast<frTerm*>(rqObj);
       if (term->getNet() == net) {
@@ -425,7 +425,7 @@ void FlexDRConnectivityChecker::finish(
       if (netRouteObjs[i]->typeId() == frcPathSeg) {
         auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[i]);
         // negative rule
-        frBox bbox;
+        Rect bbox;
         victimPathSeg->getBBox(bbox);
         addMarker(net, victimPathSeg->getLayerNum(), bbox);
 
@@ -434,7 +434,7 @@ void FlexDRConnectivityChecker::finish(
       } else if (netRouteObjs[i]->typeId() == frcVia) {
         auto victimVia = static_cast<frVia*>(netRouteObjs[i]);
         // negative rule
-        frBox bbox;
+        Rect bbox;
         victimVia->getLayer1BBox(bbox);
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
@@ -591,7 +591,7 @@ void FlexDRConnectivityChecker::finish(
     // shrink segment
     if (bp < minPt || maxPt < ep) {
       // negative rule
-      frBox bbox;
+      Rect bbox;
       ps->getBBox(bbox);
       addMarker(net, ps->getLayerNum(), bbox);
 
@@ -637,7 +637,7 @@ void FlexDRConnectivityChecker::finish(
     lNum = obj->getLayerNum();
     if (validPoints.find(make_pair(origin, lNum)) == validPoints.end()) {
       // negative rule
-      frBox bbox;
+      Rect bbox;
       obj->getBBox(bbox);
       addMarker(net, obj->getLayerNum(), bbox);
 
@@ -861,7 +861,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
 
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
-                                          const frBox& bbox)
+                                          const Rect& bbox)
 {
   auto regionQuery = getRegionQuery();
   auto marker = make_unique<frMarker>();
