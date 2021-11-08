@@ -48,10 +48,7 @@ namespace grt {
 class Grid
 {
  private:
-  long lower_left_x_;
-  long lower_left_y_;
-  long upper_right_x_;
-  long upper_right_y_;
+  odb::Rect die_area_;
   long tile_width_;
   long tile_height_;
   int x_grids_;
@@ -70,10 +67,7 @@ class Grid
   Grid() = default;
   ~Grid() = default;
 
-  void init(const long lower_left_x,
-            const long lower_left_y,
-            const long upper_right_x,
-            const long upper_right_y,
+  void init(const odb::Rect& die_area,
             const long tile_width,
             const long tile_height,
             const int x_grids,
@@ -95,14 +89,14 @@ class Grid
 
   void clear();
 
-  long getLowerLeftX() const { return lower_left_x_; }
-  long getLowerLeftY() const { return lower_left_y_; }
+  long getLowerLeftX() const { return die_area_.xMin(); }
+  long getLowerLeftY() const { return die_area_.yMin(); }
 
-  void setLowerLeftX(long x) { lower_left_x_ = x; }
-  void setLowerLeftY(long y) { lower_left_y_ = y; }
+  void setLowerLeftX(long x) { die_area_.set_xlo(x); }
+  void setLowerLeftY(long y) { die_area_.set_ylo(y); }
 
-  long getUpperRightX() const { return upper_right_x_; }
-  long getUpperRightY() const { return upper_right_y_; }
+  long getUpperRightX() const { return die_area_.xMax(); }
+  long getUpperRightY() const { return die_area_.yMax(); }
 
   long getTileWidth() const { return tile_width_; }
   long getTileHeight() const { return tile_height_; }

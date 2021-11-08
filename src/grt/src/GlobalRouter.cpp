@@ -2187,10 +2187,7 @@ void GlobalRouter::initGrid(int max_layer)
   std::vector<int> generic_vector(num_layers);
   std::map<int, std::vector<odb::Rect>> generic_map;
 
-  grid_->init(lower_leftX,
-              lower_leftY,
-              rect.xMax(),
-              rect.yMax(),
+  grid_->init(rect,
               tile_width,
               tile_height,
               x_grids,
