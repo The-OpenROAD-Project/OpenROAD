@@ -165,6 +165,20 @@ class ActionLayout : public QLayout
   QList<QLayoutItem*> actions_;
 };
 
+class ObjectTree : public QTreeView
+{
+  Q_OBJECT
+
+ public:
+  ObjectTree(QWidget* parent = nullptr);
+
+ signals:
+  void mouseExited();
+
+ protected:
+  void leaveEvent(QEvent* event) override;
+};
+
 // The inspector is to allow a single object to have it properties displayed.
 // It is generic and builds on the Selected and Descriptor classes.
 // The inspector knows how to handle SelectionSet and Selected objects
@@ -199,13 +213,9 @@ class Inspector : public QDockWidget
 
   void reload();
 
- protected:
-  void leaveEvent(QEvent* event) override;
-
  private slots:
-  void focusIndex();
-  void delayFocusIndex(const QModelIndex& index);
-  void stopHovertimer();
+  void focusIndex(const QModelIndex& index);
+  void defocus();
 
   void indexClicked();
   void indexDoubleClicked(const QModelIndex& index);
@@ -223,7 +233,7 @@ class Inspector : public QDockWidget
     Value
   };
 
-  QTreeView* view_;
+  ObjectTree* view_;
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
   ActionLayout* action_layout_;
@@ -237,16 +247,10 @@ class Inspector : public QDockWidget
   QTimer mouse_timer_;
   QModelIndex clicked_index_;
 
-  // used to hold the item to emit when hover_timer times out.
-  Selected hover_selection_;
-  QTimer hover_timer_;
-
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 
   // used to finetune the double click interval
   static constexpr double mouse_double_click_scale_ = 0.75;
-  // used to delay emitting mouse hovering events.
-  static constexpr int mouse_hover_delay_ = 500; // milliseconds
 };
 
 }  // namespace gui

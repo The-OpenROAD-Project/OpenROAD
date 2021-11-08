@@ -553,7 +553,7 @@ int ActionLayout::rowWidth(ItemList& row) const
 
 Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
     : QDockWidget("Inspector", parent),
-      view_(new QTreeView(this)),
+      view_(new ObjectTree(this)),
       model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
       layout_(new QVBoxLayout),
       action_layout_(new ActionLayout),
@@ -623,19 +623,16 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   connect(view_,
           SIGNAL(entered(const QModelIndex&)),
           this,
-          SLOT(delayFocusIndex(const QModelIndex&)));
-
-  hover_timer_.setInterval(mouse_hover_delay_);
-  hover_timer_.setSingleShot(true);
-  connect(&hover_timer_,
-          SIGNAL(timeout()),
-          this,
-          SLOT(focusIndex()));
+          SLOT(focusIndex(const QModelIndex&)));
 
   connect(view_,
           SIGNAL(viewportEntered()),
           this,
-          SLOT(stopHovertimer()));
+          SLOT(defocus()));
+  connect(view_,
+          SIGNAL(mouseExited()),
+          this,
+          SLOT(defocus()));
 
   mouse_timer_.setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
@@ -799,40 +796,22 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
   }
 }
 
-void Inspector::focusIndex()
+void Inspector::focusIndex(const QModelIndex& focus_index)
 {
-  emit focus(hover_selection_);
-}
-
-void Inspector::delayFocusIndex(const QModelIndex& focus_index)
-{
-  stopHovertimer();
-
-  if (focus_index.column() == 0) {
-    return;
-  }
-
-  focus(Selected());
+  defocus();
 
   QStandardItem* item = model_->itemFromIndex(focus_index);
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
     // emit the selected item as something to focus on
-    hover_selection_ = item_data.value<Selected>();
-    hover_timer_.start();
+    emit focus(item_data.value<Selected>());
   }
 }
 
-void Inspector::leaveEvent(QEvent* event)
+void Inspector::defocus()
 {
-  stopHovertimer();
-}
-
-void Inspector::stopHovertimer()
-{
-  hover_timer_.stop();
-  hover_selection_ = Selected();
+  emit focus(Selected());
 }
 
 void Inspector::update(const Selected& object)
@@ -914,6 +893,18 @@ void Inspector::updateSelectedFields(const QModelIndex& index)
   }
 
   view_->resizeColumnToContents(0);
+}
+
+////////////
+
+ObjectTree::ObjectTree(QWidget* parent) :
+    QTreeView(parent)
+{
+}
+
+void ObjectTree::leaveEvent(QEvent* event)
+{
+  emit mouseExited();
 }
 
 }  // namespace gui
