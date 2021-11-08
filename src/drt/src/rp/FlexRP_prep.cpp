@@ -319,10 +319,10 @@ void FlexRP::prep_cutSpcTbl()
       if (viaDef == nullptr)
         continue;
       frVia via(viaDef);
-      frBox tmpBx;
+      Rect tmpBx;
       via.getCutBBox(tmpBx);
       frString cutClass1 = "";
-      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.width(), tmpBx.length());
+      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
       if (cutClassIdx1 >= 0)
         cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
       if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
@@ -352,7 +352,7 @@ void FlexRP::prep_cutSpcTbl()
           via.getCutBBox(tmpBx);
           frString cutClass2 = "";
           auto cutClassIdx2
-              = secondLayer->getCutClassIdx(tmpBx.width(), tmpBx.length());
+              = secondLayer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
           if (cutClassIdx2 >= 0)
             cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
           con->setDefaultSpacing(
