@@ -843,7 +843,7 @@ Resizer::repairNet(Net *net,
         const RiseFall *tr1;
         sta_->checkCapacitance(drvr_pin, nullptr, max_,
                                corner1, tr1, cap1, max_cap1, cap_slack1);
-        if (corner1) {
+        if (max_cap1 > 0.0 && corner1) {
           max_cap1 *= (1.0 - max_cap_margin / 100.0);
           max_cap = max_cap1;
           if (cap1 > max_cap1) {
@@ -857,7 +857,7 @@ Resizer::repairNet(Net *net,
         float fanout, fanout_slack;
         sta_->checkFanout(drvr_pin, max_,
                           fanout, max_fanout, fanout_slack);
-        if (fanout_slack < 0.0) {
+        if (max_fanout > 0.0 && fanout_slack < 0.0) {
           fanout_violations++;
           repair_fanout = true;
         }
@@ -873,13 +873,13 @@ Resizer::repairNet(Net *net,
         const Corner *corner1;
         // Check slew at the driver.
         checkSlew(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
-
         // Max slew violations at the driver pin are repaired by reducing the
         // load capacitance. Wire resistance may shield capacitance from the
         // driver but so this is conservative.
         // Find max load cap that corresponds to max_slew.
         LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-        if (drvr_port) {
+        if (corner1
+            && max_slew1 > 0.0 && drvr_port) {
           float max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
           max_cap = min(max_cap, max_cap1);
           corner = corner1;
@@ -888,11 +888,11 @@ Resizer::repairNet(Net *net,
                      delayAsString(max_slew1, this, 3),
                      units_->capacitanceUnit()->asString(max_cap1, 3),
                      corner1->name());
+          if (slew_slack1 < 0.0)
+            repair_slew = true;
         }
-        if (slew_slack1 < 0.0) {
+        if (slew_slack1 < 0.0)
           slew_violations++;
-          repair_slew = true;
-        }
 
         // Check slew at the loads.
         // Note that many liberty libraries do not have max_transition attributes on
@@ -902,16 +902,18 @@ Resizer::repairNet(Net *net,
         checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
         // Even when there are no load violations we need max_load_slew for
         // sizing inserted buffers.
-        max_load_slew = max_slew1;
-        debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_load_slew={}",
-                   delayAsString(slew1, this, 3),
-                   delayAsString(max_load_slew, this, 3));
-        if (slew_slack1 < 0.0) {
-          // Don't double count violations on the same net.
-          if (!repair_slew)
-            slew_violations++;
-          corner = corner1;
-          repair_slew = true;
+        if (max_slew1 > 0.0) {
+          max_load_slew = max_slew1;
+          debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_load_slew={}",
+                     delayAsString(slew1, this, 3),
+                     delayAsString(max_load_slew, this, 3));
+          if (slew_slack1 < 0.0) {
+            // Don't double count violations on the same net.
+            if (!repair_slew)
+              slew_violations++;
+            corner = corner1;
+            repair_slew = true;
+          }
         }
       }
 
@@ -991,6 +993,9 @@ Resizer::checkSlew(const Pin *drvr_pin,
                    const Corner *&corner)
 {
   slack = INF;
+  limit = INF;
+  corner = nullptr;
+
   const Corner *corner1;
   const RiseFall *tr1;
   Slew slew1;

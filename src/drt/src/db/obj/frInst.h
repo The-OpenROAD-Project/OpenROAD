@@ -127,14 +127,14 @@ class frInst : public frRef
    * overlaps
    */
 
-  void getBBox(frBox& boxIn) const override;
+  void getBBox(Rect& boxIn) const override;
 
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
   // others
   void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);
-  void getBoundaryBBox(frBox& in) const;
+  void getBoundaryBBox(Rect& in) const;
   
   frInstTerm* getInstTerm(const std::string& name);
 

@@ -54,7 +54,7 @@ class frViaRuleGenerate
   const frString& getName() const { return name; }
   bool getDefault() const { return isDefault; }
   const Point& getLayer1Enc() const { return botEnc; }
-  const frBox& getCutRect() const { return cutRect; }
+  const Rect& getCutRect() const { return cutRect; }
   const Point& getCutSpacing() const { return cutSpacing; }
   const Point& getLayer2Enc() const { return topEnc; }
   frLayerNum getLayer1Num() const { return botLayerNum; }
@@ -63,7 +63,7 @@ class frViaRuleGenerate
   // setters
   void setDefault(bool in) { isDefault = in; }
   void setLayer1Enc(const Point& in) { botEnc = in; }
-  void setCutRect(const frBox& in) { cutRect = in; }
+  void setCutRect(const Rect& in) { cutRect = in; }
   void setCutSpacing(const Point& in) { cutSpacing = in; }
   void setLayer2Enc(const Point& in) { topEnc = in; }
   void setLayer1Num(frLayerNum in) { botLayerNum = in; }
@@ -74,7 +74,7 @@ class frViaRuleGenerate
   frString name;
   bool isDefault;
   Point botEnc;
-  frBox cutRect;
+  Rect cutRect;
   Point cutSpacing;
   Point topEnc;
   frLayerNum botLayerNum;

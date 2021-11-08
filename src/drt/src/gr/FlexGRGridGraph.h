@@ -285,7 +285,7 @@ class FlexGRGridGraph
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
-               frDirEnum dir /*, const frBox &box*/)
+               frDirEnum dir /*, const Rect &box*/)
   {
     bool sol = false;
     correct(x, y, z, dir);

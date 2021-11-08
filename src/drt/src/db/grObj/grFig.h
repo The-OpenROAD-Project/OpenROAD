@@ -41,7 +41,7 @@ class grFig : public grBlockObject
   // constructors
   grFig() : grBlockObject() {}
   // getters
-  virtual void getBBox(frBox& box) const = 0;
+  virtual void getBBox(Rect& box) const = 0;
   // setters
   // others
  protected:

@@ -39,7 +39,7 @@
 
 namespace bgi = boost::geometry::index;
 
-// Enable Point & frBox to be used with boost geometry
+// Enable Point & Rect to be used with boost geometry
 BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
                                          fr::frCoord,
                                          cs::cartesian,
@@ -48,6 +48,6 @@ BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
                                          setX,
                                          setY)
 
-BOOST_GEOMETRY_REGISTER_BOX(fr::frBox, odb::Point, lowerLeft(), upperRight())
+BOOST_GEOMETRY_REGISTER_BOX(odb::Rect, odb::Point, ll(), ur())
 
 #endif

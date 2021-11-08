@@ -96,7 +96,7 @@ class FlexPA
 
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
-  bool hasTrackPattern(frTrackPattern* tp, const frBox& box);
+  bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
 
