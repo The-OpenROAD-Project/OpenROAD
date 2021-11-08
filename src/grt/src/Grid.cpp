@@ -40,8 +40,8 @@
 namespace grt {
 
 void Grid::init(const odb::Rect& die_area,
-                const long tile_width,
-                const long tile_height,
+                const int tile_width,
+                const int tile_height,
                 const int x_grids,
                 const int y_grids,
                 const bool perfect_regular_x,
@@ -187,14 +187,13 @@ int Grid::computeTileReduce(const odb::Rect& obs,
 
 odb::Point Grid::getMiddle()
 {
-  return odb::Point((die_area_.xMin() + (die_area_.xMax() - die_area_.xMin()) / 2.0),
-                    (die_area_.yMin() + (die_area_.yMax() - die_area_.yMin()) / 2.0));
+  return odb::Point((die_area_.xMin() + (die_area_.dx() / 2.0)),
+                    (die_area_.yMin() + (die_area_.dy() / 2.0)));
 }
 
-odb::Rect Grid::getGridArea() const
+const odb::Rect& Grid::getGridArea() const
 {
-  return odb::Rect(
-      die_area_.xMin(), die_area_.yMin(), die_area_.xMax(), die_area_.yMax());
+  return die_area_;
 }
 
 }  // namespace grt

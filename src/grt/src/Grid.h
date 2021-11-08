@@ -49,8 +49,8 @@ class Grid
 {
  private:
   odb::Rect die_area_;
-  long tile_width_;
-  long tile_height_;
+  int tile_width_;
+  int tile_height_;
   int x_grids_;
   int y_grids_;
   bool perfect_regular_x_;
@@ -68,8 +68,8 @@ class Grid
   ~Grid() = default;
 
   void init(const odb::Rect& die_area,
-            const long tile_width,
-            const long tile_height,
+            const int tile_width,
+            const int tile_height,
             const int x_grids,
             const int y_grids,
             const bool perfect_regular_x,
@@ -89,17 +89,17 @@ class Grid
 
   void clear();
 
-  long getLowerLeftX() const { return die_area_.xMin(); }
-  long getLowerLeftY() const { return die_area_.yMin(); }
+  int getXMin() const { return die_area_.xMin(); }
+  int getYMin() const { return die_area_.yMin(); }
 
-  void setLowerLeftX(long x) { die_area_.set_xlo(x); }
-  void setLowerLeftY(long y) { die_area_.set_ylo(y); }
+  void setXMin(int x) { die_area_.set_xlo(x); }
+  void setYMin(int y) { die_area_.set_ylo(y); }
 
-  long getUpperRightX() const { return die_area_.xMax(); }
-  long getUpperRightY() const { return die_area_.yMax(); }
+  int getXMax() const { return die_area_.xMax(); }
+  int getYMax() const { return die_area_.yMax(); }
 
-  long getTileWidth() const { return tile_width_; }
-  long getTileHeight() const { return tile_height_; }
+  int getTileWidth() const { return tile_width_; }
+  int getTileHeight() const { return tile_height_; }
 
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
@@ -168,7 +168,7 @@ class Grid
                         odb::dbTechLayerDir direction);
 
   odb::Point getMiddle();
-  odb::Rect getGridArea() const;
+  const odb::Rect& getGridArea() const;
 };
 
 }  // namespace grt
