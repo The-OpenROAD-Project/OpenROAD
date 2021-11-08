@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-             frBox(100, 0, 350, 100));
+             Rect(100, 0, 350, 100));
 }
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
