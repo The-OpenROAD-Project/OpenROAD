@@ -80,7 +80,9 @@ void Grid::clear()
 void Grid::addObstruction(int layer, const odb::Rect& obstruction)
 {
   odb::Rect obs_inside_die = die_area_.intersect(obstruction);
-  obstructions_[layer].push_back(obs_inside_die);
+  if (!obs_inside_die.isInverted()) {
+    obstructions_[layer].push_back(obs_inside_die);
+  }
 }
 
 odb::Point Grid::getPositionOnGrid(const odb::Point& position)
