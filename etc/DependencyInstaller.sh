@@ -135,6 +135,7 @@ _installUbuntuRuntime() {
         libpython3.8 \
         libtcl \
         qt5-default \
+        qt5-image-formats-plugins \
         tcl-tclreadline
     # need the strip "hack" above to run on docker
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
@@ -180,7 +181,12 @@ _installCentosRuntime() {
     if [[ -z $(yum list installed epel-release) ]]; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     fi
-    yum install -y libgomp python36-libs qt5-qtbase-devel tcl-tclreadline
+    yum install -y \
+        libgomp \
+        python36-libs \
+        qt5-qtbase-devel \
+        qt5-qtimageformats \
+        tcl-tclreadline
     yum update -y
 }
 
