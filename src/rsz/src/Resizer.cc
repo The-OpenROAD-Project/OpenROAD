@@ -3416,9 +3416,11 @@ Resizer::findMaxWireLength()
 {
   double max_length = INF;
   for (const Corner *corner : *sta_->corners()) {
-    for (LibertyCell *buffer_cell : buffer_cells_) {
-      double buffer_length = findMaxWireLength(buffer_cell, corner);
-      max_length = min(max_length, buffer_length);
+    if (wireSignalResistance(corner) > 0.0) {
+      for (LibertyCell *buffer_cell : buffer_cells_) {
+        double buffer_length = findMaxWireLength(buffer_cell, corner);
+        max_length = min(max_length, buffer_length);
+      }
     }
   }
   return max_length;
