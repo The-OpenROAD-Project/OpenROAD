@@ -90,6 +90,7 @@ struct tmg_rc
 
 struct tmg_rcpt
 {
+  tmg_rcpt();
   int _x;  // nominal point
   int _y;
   dbTechLayer* _layer;
@@ -141,8 +142,7 @@ class tmg_conn
   tmg_conn_search* _search;
   tmg_conn_graph* _graph;
   std::vector<tmg_rc> _rcV;
-  tmg_rcpt* _ptV;
-  int _ptN;
+  std::vector<tmg_rcpt> _ptV;
   tmg_rcterm* _termV;
   tmg_rcterm** _tstackV;
   int _termN;
@@ -171,7 +171,6 @@ class tmg_conn
   tmg_rcpt* _first_for_clear;
 
  private:
-  int _ptNmax;
   int _termNmax;
   int _shortNmax;
   int _last_id;
@@ -225,7 +224,7 @@ class tmg_conn
   bool checkConnected();
   void checkVisited();
   void printDisconnect();
-  void allocPt();
+  tmg_rcpt* allocPt();
   void addRc(dbShape& s, int ifr, int ito);
   void addRc(int k,
              tmg_rc_sh& s,
