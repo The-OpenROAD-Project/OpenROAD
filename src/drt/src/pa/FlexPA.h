@@ -118,7 +118,7 @@ class FlexPA
   // prep
   void prep();
   void prepPoint();
-  void prepPoint_pin(frPin* pin, frInstTerm* instTerm = nullptr);
+  int prepPoint_pin(frPin* pin, frInstTerm* instTerm = nullptr);
   void prepPoint_pin_mergePinShapes(
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       frPin* pin,
