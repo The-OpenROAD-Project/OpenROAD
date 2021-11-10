@@ -1195,7 +1195,7 @@ bool FlexPA::prepPoint_pin_helper(
 }
 
 // first create all access points with costs
-void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
+int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
 {
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
@@ -1244,7 +1244,7 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       }
       if (prepPoint_pin_helper(
               aps, apset, pinShapes, pin, instTerm, lower, upper)) {
-        return;
+        return 0;
       }
     }
   }
@@ -1254,15 +1254,6 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   // stopped
   prepPoint_pin_updateStat(aps, pin, instTerm);
   if (aps.empty()) {
-    if (instTerm) {
-      logger_->error(DRT,
-                     73,
-                     "No ap for {}/{}.",
-                     instTerm->getInst()->getName(),
-                     instTerm->getTerm()->getName());
-    } else {
-      logger_->error(DRT, 74, "No ap for PIN/{}.", pin->getTerm()->getName());
-    }
     if (isStdCellPin) {
       stdCellPinNoApCnt_++;
     }
@@ -1293,6 +1284,7 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       }
     }
   }
+  return aps.size();
 }
 
 void FlexPA::prepPoint()
@@ -1319,8 +1311,16 @@ void FlexPA::prepPoint()
       if (isSkipInstTerm(instTerm.get())) {
         continue;
       }
+      int nAps = 0;
       for (auto& pin : instTerm->getTerm()->getPins()) {
-        prepPoint_pin(pin.get(), instTerm.get());
+        nAps += prepPoint_pin(pin.get(), instTerm.get());
+      }
+      if (!nAps) {
+        logger_->error(DRT,
+                        73,
+                        "No ap for {}/{}.",
+                        instTerm->getInst()->getName(),
+                        instTerm->getTerm()->getName());
       }
 #pragma omp critical
       {
@@ -1354,10 +1354,13 @@ void FlexPA::prepPoint()
     if (net == nullptr) {
       continue;
     }
-    // cout << term->getName() << endl;
+    int nAps = 0;
     for (auto& pin : term->getPins()) {
-      prepPoint_pin(pin.get(), nullptr);
+      nAps += prepPoint_pin(pin.get(), nullptr);
     }
+    if (!nAps) {
+        logger_->error(DRT, 74, "No ap for PIN/{}.", term->getName());
+      }
   }
 
   if (VERBOSE > 0) {
