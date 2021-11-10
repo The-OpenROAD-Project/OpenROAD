@@ -529,10 +529,11 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return false;
 }
 
-void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const
+void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
+                                          const odb::dbObject* sink,
+                                          std::vector<GraphTarget>& sources,
+                                          std::vector<GraphTarget>& sinks) const
 {
-  typedef std::pair<const odb::Rect, const odb::dbTechLayer*> GraphTarget;
-
   // gets all the shapes that make up the iterm
   auto get_graph_iterm_targets = [](odb::dbMTerm* mterm, const odb::dbTransform& transform, std::vector<GraphTarget>& targets) {
     for (auto* mpin : mterm->getMPins()) {
@@ -557,8 +558,6 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
   };
 
   // find sources and sinks on this net
-  std::vector<GraphTarget> sources;
-  std::vector<GraphTarget> sinks;
   for (auto* iterm : net->getITerms()) {
     if (iterm == sink) {
       odb::dbTransform transform;
@@ -588,14 +587,21 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
       get_graph_bterm_targets(bterm, sources);
     }
   }
+}
 
-  odb::dbWireGraph graph;
-  graph.decode(net->getWire());
+void DbNetDescriptor::findSourcesAndSinksInGraph(odb::dbNet* net,
+                                                 const odb::dbObject* sink,
+                                                 odb::dbWireGraph* graph,
+                                                 NodeList& source_nodes,
+                                                 NodeList& sink_nodes) const
+{
+  // find sources and sinks on this net
+  std::vector<GraphTarget> sources;
+  std::vector<GraphTarget> sinks;
+  findSourcesAndSinks(net, sink, sources, sinks);
 
   // find the nodes on the wire graph that intersect the sinks identified
-  NodeList source_nodes;
-  NodeList sink_nodes;
-  for (auto itr = graph.begin_nodes(); itr != graph.end_nodes(); itr++) {
+  for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
     const auto* node = *itr;
     int x, y;
     node->xy(x, y);
@@ -614,6 +620,21 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
       }
     }
   }
+}
+
+void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const
+{
+  odb::dbWireGraph graph;
+  graph.decode(net->getWire());
+
+  // find the nodes on the wire graph that intersect the sinks identified
+  NodeList source_nodes;
+  NodeList sink_nodes;
+  findSourcesAndSinksInGraph(net, sink, &graph, source_nodes, sink_nodes);
+
+  if (source_nodes.empty() || sink_nodes.empty()) {
+    return;
+  }
 
   // build connectivity map from the wire graph
   NodeMap node_map;
@@ -624,7 +645,6 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
 
   painter.savePenAndBrush();
   painter.setPen(highlight_color, true, 4);
-
   for (const auto* source_node : source_nodes) {
     for (const auto* sink_node : sink_nodes) {
       // find the shortest path from source to sink

@@ -141,8 +141,18 @@ class DbNetDescriptor : public Descriptor
   using Node = odb::dbWireGraph::Node;
   using NodeList = std::set<const Node*>;
   using NodeMap = std::map<const Node*, NodeList>;
+  using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
 
   void drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const;
+  void findSourcesAndSinksInGraph(odb::dbNet* net,
+                                  const odb::dbObject* sink,
+                                  odb::dbWireGraph* graph,
+                                  NodeList& source_nodes,
+                                  NodeList& sink_nodes) const;
+  void findSourcesAndSinks(odb::dbNet* net,
+                           const odb::dbObject* sink,
+                           std::vector<GraphTarget>& sources,
+                           std::vector<GraphTarget>& sinks) const;
   void findPath(NodeMap& graph,
                 const Node* source,
                 const Node* sink,
