@@ -1585,7 +1585,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
                       || route[i].final_layer < wire_via_layer))) {
             // remove all vias to this pin that doesn't connects two wires
             route.erase(route.begin() + i);
-            i = 0;
+            i--;
           }
         }
       }
@@ -1903,23 +1903,42 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
-      real_pin_position = getRectMiddle(pin_boxes[0]);
 
-      hor_segment = GSegment(real_pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer);
-      ver_segment = GSegment(pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             pin_position.y(),
-                             top_layer);
+      bool segment_overlaps_pin = false;
+      for (const odb::Rect& box : pin_boxes) {
+        if ((segment_overlaps_pin = box.overlaps(pin_position))) {
+          break;
+        }
+      }
 
-      route.push_back(hor_segment);
-      route.push_back(ver_segment);
+      // create the local connection only when the global segment
+      // doesn't overlap the pin, avoiding loops in the routing
+      if (!segment_overlaps_pin) {
+        int minimum_distance = std::numeric_limits<int>::max();
+        for (const odb::Rect& pin_box : pin_boxes) {
+          odb::Point pos = getRectMiddle(pin_box);
+          int distance = abs(pos.x() - pin_position.x()) + abs(pos.y() - pin_position.y());
+          if (distance < minimum_distance) {
+            minimum_distance = distance;
+            real_pin_position = pos;
+          }
+        }
+        hor_segment = GSegment(real_pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer);
+        ver_segment = GSegment(pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               pin_position.y(),
+                               top_layer);
+
+        route.push_back(hor_segment);
+        route.push_back(ver_segment);
+      }
     }
   }
 }
