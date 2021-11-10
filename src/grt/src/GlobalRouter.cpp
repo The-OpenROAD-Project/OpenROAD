@@ -1903,23 +1903,34 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
-      real_pin_position = getRectMiddle(pin_boxes[0]);
 
-      hor_segment = GSegment(real_pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer);
-      ver_segment = GSegment(pin_position.x(),
-                             real_pin_position.y(),
-                             top_layer,
-                             pin_position.x(),
-                             pin_position.y(),
-                             top_layer);
+      bool segment_overlaps_pin = false;
+      for (const odb::Rect& box : pin_boxes) {
+        if ((segment_overlaps_pin = box.overlaps(pin_position))) {
+          break;
+        }
+      }
 
-      route.push_back(hor_segment);
-      route.push_back(ver_segment);
+      // create the local connection only when the global segment
+      // doesn't overlap the pin, avoiding loops in the routing
+      if (!segment_overlaps_pin) {
+        real_pin_position = getRectMiddle(pin_boxes[0]);
+        hor_segment = GSegment(real_pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer);
+        ver_segment = GSegment(pin_position.x(),
+                               real_pin_position.y(),
+                               top_layer,
+                               pin_position.x(),
+                               pin_position.y(),
+                               top_layer);
+
+        route.push_back(hor_segment);
+        route.push_back(ver_segment);
+      }
     }
   }
 }
