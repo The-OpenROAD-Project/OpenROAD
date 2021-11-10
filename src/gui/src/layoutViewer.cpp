@@ -1391,10 +1391,12 @@ void LayoutViewer::drawRows(dbBlock* block,
     return;
   }
   int min_resolution = nominalViewableResolution();
-  // three possible draw cases:
+  if (options_->isDetailedVisibility()) {
+    min_resolution = 0;
+  }
+  // two possible draw cases:
   // 1) resolution allows for individual sites -> draw all
-  // 2) individual sites too small -> just draw row outlines
-  // 3) row is too small -> dont draw anything
+  // 2) row is too small -> dont draw anything
 
   QPen pen(options_->rowColor());
   pen.setCosmetic(true);
