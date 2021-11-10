@@ -1,5 +1,6 @@
 record_tests {
   cell_on_block1
+  cell_on_block2
   check1
   check2
   check3
