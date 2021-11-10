@@ -751,8 +751,10 @@ void DbNetDescriptor::findPath(NodeMap& graph,
       bool operator<(const DistNode& other) const { return dist > other.dist; }
   };
   std::priority_queue<DistNode> open_set;
+  std::set<const Node*> open_set_nodes;
   const int source_sink_dist = distance(source, sink);
   open_set.push({source, source_sink_dist});
+  open_set_nodes.insert(source);
 
   for (const auto& [node, nodes] : graph) {
     g_score[node] = std::numeric_limits<int>::max();
@@ -763,7 +765,10 @@ void DbNetDescriptor::findPath(NodeMap& graph,
 
   while (!open_set.empty()) {
     auto current = open_set.top().node;
+
     open_set.pop();
+    open_set_nodes.erase(current);
+
     if (current == sink) {
       // build path
       int x, y;
@@ -786,7 +791,10 @@ void DbNetDescriptor::findPath(NodeMap& graph,
         g_score[neighbor] = possible_g_score;
         f_score[neighbor] = new_f_score;
 
-        open_set.push({neighbor, new_f_score});
+        if (open_set_nodes.find(neighbor) == open_set_nodes.end()) {
+          open_set.push({neighbor, new_f_score});
+          open_set_nodes.insert(neighbor);
+        }
       }
     }
   }
