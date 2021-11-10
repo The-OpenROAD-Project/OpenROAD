@@ -31,39 +31,39 @@
 #include "frBlock.h"
 using namespace fr;
 
-void frInst::getBBox(frBox& boxIn) const
+void frInst::getBBox(Rect& boxIn) const
 {
   getRefBlock()->getBBox(boxIn);
   dbTransform xform;
   getTransform(xform);
-  Point s(boxIn.right(), boxIn.top());
+  Point s(boxIn.xMax(), boxIn.yMax());
   updateXform(xform, s);
-  boxIn.transform(xform);
+  xform.apply(boxIn);
 }
 
-void frInst::getBoundaryBBox(frBox& boxIn) const
+void frInst::getBoundaryBBox(Rect& boxIn) const
 {
   getRefBlock()->getDieBox(boxIn);
   dbTransform xform;
   getTransform(xform);
-  Point s(boxIn.right(), boxIn.top());
+  Point s(boxIn.xMax(), boxIn.yMax());
   updateXform(xform, s);
-  boxIn.transform(xform);
+  xform.apply(boxIn);
 }
 
 void frInst::getUpdatedXform(dbTransform& in, bool noOrient) const
 {
   getTransform(in);
-  frBox mbox;
+  Rect mbox;
   getRefBlock()->getDieBox(mbox);
-  Point origin(mbox.left(), mbox.bottom());
+  Point origin(mbox.xMin(), mbox.yMin());
   dbTransform(in.getOrient(), Point(0, 0)).apply(origin);
   Point offset(in.getOffset());
   offset.x() += origin.getX();
   offset.y() += origin.getY();
   in.setOffset(offset);
   if (!noOrient) {
-    Point s(mbox.right(), mbox.top());
+    Point s(mbox.xMax(), mbox.yMax());
     updateXform(in, s);
   } else {
     in.setOrient(dbOrientType(dbOrientType::R0));

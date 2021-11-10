@@ -40,11 +40,13 @@
 #include "gr/FlexGRGridGraph.h"
 namespace odb {
 class dbDatabase;
+class Rect;
 }
 namespace stt {
 class SteinerTreeBuilder;
 }
 namespace fr {
+using odb::Rect;
 
 class FlexGR
 {
@@ -243,10 +245,10 @@ class FlexGRWorkerRegionQuery
   void add(grConnFig* connFig,
            std::vector<std::vector<rq_box_value_t<grConnFig*>>>& allShapes);
   void remove(grConnFig* connFig);
-  void query(const frBox& box,
+  void query(const Rect& box,
              const frLayerNum layerNum,
              std::vector<grConnFig*>& result) const;
-  void query(const frBox& box,
+  void query(const Rect& box,
              const frLayerNum layerNum,
              std::vector<rq_box_value_t<grConnFig*>>& result) const;
   void init(bool includeExt = false);
@@ -297,8 +299,8 @@ class FlexGRWorker
   // setters
   void setRouteGCellIdxLL(const Point& in) { routeGCellIdxLL_ = in; }
   void setRouteGCellIdxUR(const Point& in) { routeGCellIdxUR_ = in; }
-  void setExtBox(const frBox& in) { extBox_.set(in); }
-  void setRouteBox(const frBox& in) { routeBox_.set(in); }
+  void setExtBox(const Rect& in) { extBox_ = in; }
+  void setRouteBox(const Rect& in) { routeBox_ = in; }
   void setGRIter(int in) { grIter_ = in; }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
   void setCongCost(int in) { workerCongCost_ = in; }
@@ -315,12 +317,12 @@ class FlexGRWorker
   Point& getRouteGCellIdxLL() { return routeGCellIdxLL_; }
   const Point& getRouteGCellIdxUR() const { return routeGCellIdxUR_; }
   Point& getRouteGCellIdxUR() { return routeGCellIdxUR_; }
-  void getExtBox(frBox& in) const { in.set(extBox_); }
-  const frBox& getExtBox() const { return extBox_; }
-  frBox& getExtBox() { return extBox_; }
-  void getRouteBox(frBox& in) const { in.set(routeBox_); }
-  const frBox& getRouteBox() const { return routeBox_; }
-  frBox& getRouteBox() { return routeBox_; }
+  void getExtBox(Rect& in) const { in = extBox_; }
+  const Rect& getExtBox() const { return extBox_; }
+  Rect& getExtBox() { return extBox_; }
+  void getRouteBox(Rect& in) const { in = routeBox_; }
+  const Rect& getRouteBox() const { return routeBox_; }
+  Rect& getRouteBox() { return routeBox_; }
   int getGRIter() const { return grIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
   double getCongThresh() const { return congThresh_; }
@@ -352,8 +354,8 @@ class FlexGRWorker
   FlexGR* gr_;
   Point routeGCellIdxLL_;
   Point routeGCellIdxUR_;
-  frBox extBox_;
-  frBox routeBox_;
+  Rect extBox_;
+  Rect routeBox_;
   int grIter_;
   int mazeEndIter_;
   int workerCongCost_;

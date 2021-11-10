@@ -77,11 +77,11 @@ class drVia : public drRef
   drVia(const frVia& in);
   // getters
   frViaDef* getViaDef() const { return viaDef_; }
-  void getLayer1BBox(frBox& boxIn) const
+  void getLayer1BBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getLayer1Figs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -89,28 +89,28 @@ class drVia : public drRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
+    boxIn.init(xl, yl, xh, yh);
     dbTransform xform;
     xform.setOffset(origin_);
-    boxIn.transform(xform);
+    xform.apply(boxIn);
   }
-  void getCutBBox(frBox& boxIn) const
+  void getCutBBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getCutFigs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -118,28 +118,28 @@ class drVia : public drRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
+    boxIn.init(xl, yl, xh, yh);
     dbTransform xform;
     xform.setOffset(origin_);
-    boxIn.transform(xform);
+    xform.apply(boxIn);
   }
-  void getLayer2BBox(frBox& boxIn) const
+  void getLayer2BBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getLayer2Figs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -147,22 +147,22 @@ class drVia : public drRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
+    boxIn.init(xl, yl, xh, yh);
     dbTransform xform;
     xform.setOffset(origin_);
-    boxIn.transform(xform);
+    xform.apply(boxIn);
   }
   // setters
   void setViaDef(frViaDef* in) { viaDef_ = in; }
@@ -228,13 +228,13 @@ class drVia : public drRef
    * overlaps
    */
 
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     auto& layer1Figs = viaDef_->getLayer1Figs();
     auto& layer2Figs = viaDef_->getLayer2Figs();
     auto& cutFigs = viaDef_->getCutFigs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -242,53 +242,53 @@ class drVia : public drRef
     for (auto& fig : layer1Figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
     for (auto& fig : layer2Figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
     for (auto& fig : cutFigs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
+    boxIn.init(xl, yl, xh, yh);
     dbTransform xform;
     xform.setOffset(origin_);
     // cout <<"origin " <<origin.x() <<" " <<origin.y() <<endl;
-    boxIn.transform(xform);
+    xform.apply(boxIn);
   }
 
   bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }

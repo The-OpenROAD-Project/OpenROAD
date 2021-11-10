@@ -153,9 +153,9 @@ class grVia : public grRef
    * overlaps
    */
 
-  void getBBox(frBox& in) const override
+  void getBBox(Rect& in) const override
   {
-    in.set(origin.x(), origin.y(), origin.x(), origin.y());
+    in.init(origin.x(), origin.y(), origin.x(), origin.y());
   }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter = in; }

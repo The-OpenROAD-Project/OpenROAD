@@ -336,7 +336,6 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
-  setMinimumWidth(375);
   congestion_dialog_ = new CongestionSetupDialog(this);
 
   connect(congestion_dialog_,

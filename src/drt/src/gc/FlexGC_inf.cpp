@@ -100,7 +100,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         gtl::rectangle_data<frCoord> markerRect(rect1);
         gtl::generalized_intersect(markerRect, rect2);
         auto marker = make_unique<frMarker>();
-        frBox box(gtl::xl(markerRect),
+        Rect box(gtl::xl(markerRect),
                   gtl::yl(markerRect),
                   gtl::xh(markerRect),
                   gtl::yh(markerRect));
@@ -111,7 +111,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->addSrc(rects[i]->getNet()->getOwner());
         marker->addVictim(rects[i]->getNet()->getOwner(),
                           make_tuple(lNum,
-                                     frBox(gtl::xl(rect1),
+                                     Rect(gtl::xl(rect1),
                                            gtl::yl(rect1),
                                            gtl::xh(rect1),
                                            gtl::yh(rect1)),
@@ -119,7 +119,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->addSrc(rects[j]->getNet()->getOwner());
         marker->addAggressor(rects[j]->getNet()->getOwner(),
                              make_tuple(lNum,
-                                        frBox(gtl::xl(rect2),
+                                        Rect(gtl::xl(rect2),
                                               gtl::yl(rect2),
                                               gtl::xh(rect2),
                                               gtl::yh(rect2)),

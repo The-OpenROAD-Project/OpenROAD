@@ -87,7 +87,7 @@ class dbTransform
   // Apply transform to this point
   void apply(Point& p) const;
 
-  // Apply transform to this point
+  // Apply transform to this Rect
   void apply(Rect& r) const;
 
   // Post multiply transform.
