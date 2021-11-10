@@ -643,7 +643,7 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
   Painter::Color highlight_color = painter.getPenColor();
   highlight_color.a = 255;
 
-  painter.savePenAndBrush();
+  painter.saveState();
   painter.setPen(highlight_color, true, 4);
   for (const auto* source_node : source_nodes) {
     for (const auto* sink_node : sink_nodes) {
@@ -672,7 +672,7 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink
       }
     }
   }
-  painter.restorePenAndBrush();
+  painter.restoreState();
 }
 
 void DbNetDescriptor::buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const
@@ -934,7 +934,7 @@ void DbNetDescriptor::highlight(std::any object,
     }
 
     if (!driver_locs.empty() && !sink_locs.empty()) {
-      painter.savePenAndBrush();
+      painter.saveState();
       auto color = painter.getPenColor();
       color.a = 255;
       painter.setPen(color, true);
@@ -943,7 +943,7 @@ void DbNetDescriptor::highlight(std::any object,
           painter.drawLine(driver, sink);
         }
       }
-      painter.restorePenAndBrush();
+      painter.restoreState();
     }
   }
 

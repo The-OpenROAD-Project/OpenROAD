@@ -109,8 +109,7 @@ class GuiPainter : public Painter
              int dbu_per_micron)
       : Painter(options, pixels_per_dbu),
         painter_(painter),
-        dbu_per_micron_(dbu_per_micron),
-        saved_pen_brush_()
+        dbu_per_micron_(dbu_per_micron)
   {
   }
 
@@ -185,17 +184,14 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
 
-  void savePenAndBrush() override
+  void saveState() override
   {
-    saved_pen_brush_.push_back({painter_->pen(), painter_->brush()});
+    painter_->save();
   }
 
-  void restorePenAndBrush() override
+  void restoreState() override
   {
-    const auto [pen, brush] = saved_pen_brush_.back();
-    saved_pen_brush_.pop_back();
-    painter_->setPen(pen);
-    painter_->setBrush(brush);
+    painter_->restore();
   }
 
   void drawGeomShape(const odb::GeomShape* shape) override
@@ -405,7 +401,6 @@ class GuiPainter : public Painter
  private:
   QPainter* painter_;
   int dbu_per_micron_;
-  std::deque<std::pair<QPen, QBrush>> saved_pen_brush_;
 };
 
 LayoutViewer::LayoutViewer(
@@ -2023,9 +2018,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     drawTracks(layer, block, painter, bounds);
     for (auto* renderer : renderers) {
-      gui_painter.savePenAndBrush();
+      gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
-      gui_painter.restorePenAndBrush();
+      gui_painter.restoreState();
     }
   }
 
@@ -2034,9 +2029,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawRows(block, painter, bounds);
   for (auto* renderer : renderers) {
-    gui_painter.savePenAndBrush();
+    gui_painter.saveState();
     renderer->drawObjects(gui_painter);
-    gui_painter.restorePenAndBrush();
+    gui_painter.restoreState();
   }
 
   drawCongestionMap(gui_painter, bounds);

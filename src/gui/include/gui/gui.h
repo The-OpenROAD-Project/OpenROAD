@@ -160,10 +160,10 @@ class Painter
     setBrush(color, style);
   }
 
-  // save the state of the pen and brush so it can be restored later
-  virtual void savePenAndBrush() = 0;
-  // restore the saved pen and brush
-  virtual void restorePenAndBrush() = 0;
+  // save the state of the painter so it can be restored later
+  virtual void saveState() = 0;
+  // restore the saved state of the painter
+  virtual void restoreState() = 0;
 
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
