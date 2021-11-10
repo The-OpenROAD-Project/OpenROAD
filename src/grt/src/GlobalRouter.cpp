@@ -1585,7 +1585,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
                       || route[i].final_layer < wire_via_layer))) {
             // remove all vias to this pin that doesn't connects two wires
             route.erase(route.begin() + i);
-            i = 0;
+            i--;
           }
         }
       }
