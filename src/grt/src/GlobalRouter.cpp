@@ -308,7 +308,7 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   computeSpacingsAndMinWidth(max_routing_layer);
   initObstructions();
 
-  fastroute_->setLowerLeft(grid_->getLowerLeftX(), grid_->getLowerLeftY());
+  fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileWidth(), grid_->getTileHeight());
   fastroute_->setGridsAndLayers(
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
@@ -618,9 +618,9 @@ void GlobalRouter::findPins(Net* net,
       pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
     }
 
-    int pinX = (int) ((pin_position.x() - grid_->getLowerLeftX())
+    int pinX = (int) ((pin_position.x() - grid_->getXMin())
                       / grid_->getTileWidth());
-    int pinY = (int) ((pin_position.y() - grid_->getLowerLeftY())
+    int pinY = (int) ((pin_position.y() - grid_->getYMin())
                       / grid_->getTileHeight());
 
     if (!(pinX < 0 || pinX >= grid_->getXGrids() || pinY < -1
@@ -778,7 +778,7 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
                                           int max_routing_layer)
 {
   odb::Point upper_die_bounds
-      = odb::Point(grid_->getUpperRightX(), grid_->getUpperRightY());
+      = odb::Point(grid_->getXMax(), grid_->getYMax());
   int h_space;
   int v_space;
 
@@ -845,7 +845,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
                                            int max_routing_layer)
 {
   odb::Point upper_die_bounds
-      = odb::Point(grid_->getUpperRightX(), grid_->getUpperRightY());
+      = odb::Point(grid_->getXMax(), grid_->getYMax());
   for (auto const& [level, layer] : routing_layers_) {
     int track_location;
     int num_init_adjustments = 0;
@@ -1174,10 +1174,10 @@ void GlobalRouter::computeObstructionsAdjustments()
       int track_space = grid_->getMinWidths()[level - 1];
 
       for (odb::Rect& obs : layer_obstructions) {
-        if (obs.xMax() <= grid_->getLowerLeftX()
-            || obs.xMin() >= grid_->getUpperRightX()
-            || obs.yMax() <= grid_->getLowerLeftY()
-            || obs.yMin() >= grid_->getUpperRightY()) {
+        if (obs.xMax() <= grid_->getXMin()
+            || obs.xMin() >= grid_->getXMax()
+            || obs.yMax() <= grid_->getYMin()
+            || obs.yMin() >= grid_->getYMax()) {
           logger_->info(
               GRT,
               209,
@@ -2007,14 +2007,14 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     if (pin.getOrientation() == PinOrientation::west) {
       new_x_position
           = pin_position.x() + (gcells_offset_ * grid_->getTileWidth());
-      if (new_x_position <= grid_->getUpperRightX()) {
+      if (new_x_position <= grid_->getXMax()) {
         pin_connection.init_x = new_x_position;
         pin_position.setX(new_x_position);
       }
     } else if (pin.getOrientation() == PinOrientation::east) {
       new_x_position
           = pin_position.x() - (gcells_offset_ * grid_->getTileWidth());
-      if (new_x_position >= grid_->getLowerLeftX()) {
+      if (new_x_position >= grid_->getXMin()) {
         pin_connection.init_x = new_x_position;
         pin_position.setX(new_x_position);
       }
@@ -2026,14 +2026,14 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     if (pin.getOrientation() == PinOrientation::south) {
       new_y_position
           = pin_position.y() + (gcells_offset_ * grid_->getTileHeight());
-      if (new_y_position <= grid_->getUpperRightY()) {
+      if (new_y_position <= grid_->getYMax()) {
         pin_connection.init_y = new_y_position;
         pin_position.setY(new_y_position);
       }
     } else if (pin.getOrientation() == PinOrientation::north) {
       new_y_position
           = pin_position.y() - (gcells_offset_ * grid_->getTileHeight());
-      if (new_y_position >= grid_->getLowerLeftY()) {
+      if (new_y_position >= grid_->getYMin()) {
         pin_connection.init_y = new_y_position;
         pin_position.setY(new_y_position);
       }
@@ -2187,10 +2187,7 @@ void GlobalRouter::initGrid(int max_layer)
   std::vector<int> generic_vector(num_layers);
   std::map<int, std::vector<odb::Rect>> generic_map;
 
-  grid_->init(lower_leftX,
-              lower_leftY,
-              rect.xMax(),
-              rect.yMax(),
+  grid_->init(rect,
               tile_width,
               tile_height,
               x_grids,
@@ -2929,10 +2926,10 @@ std::string getLayerName(int layer_idx, odb::dbDatabase* db)
 
 void GlobalRouter::initObstructions()
 {
-  odb::Rect die_area(grid_->getLowerLeftX(),
-                     grid_->getLowerLeftY(),
-                     grid_->getUpperRightX(),
-                     grid_->getUpperRightY());
+  odb::Rect die_area(grid_->getXMin(),
+                     grid_->getYMin(),
+                     grid_->getXMax(),
+                     grid_->getYMax());
   std::vector<int> layer_extensions;
 
   findLayerExtensions(layer_extensions);
@@ -3503,7 +3500,8 @@ class GrouteRenderer : public gui::Renderer
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
   void highlight(const odb::dbNet* net);
   void clear();
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+  virtual void drawLayer(odb::dbTechLayer* layer,
+                         gui::Painter& painter) override;
 
  private:
   GlobalRouter* groute_;
@@ -3545,23 +3543,27 @@ void GrouteRenderer::highlight(const odb::dbNet* net)
   redraw();
 }
 
-void GrouteRenderer::drawObjects(gui::Painter& painter)
+void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  painter.setPen(layer);
+  painter.setBrush(layer);
   for (const odb::dbNet* net : nets_) {
     NetRouteMap& routes = groute_->getRoutes();
     GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
     for (GSegment& seg : groute) {
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;
-      if (layer1 == layer2) {
-        odb::dbTechLayer* layer = tech_->findRoutingLayer(layer1);
-        // Draw rect because drawLine does not have a way to set the pen
-        // thickness.
-        odb::Rect rect = groute_->globalRoutingToBox(seg);
-        painter.setPen(layer);
-        painter.setBrush(layer);
-        painter.drawRect(rect);
+      if (layer1 != layer2) {
+        continue;
       }
+      odb::dbTechLayer* seg_layer = tech_->findRoutingLayer(layer1);
+      if (seg_layer != layer) {
+        continue;
+      }
+      // Draw rect because drawLine does not have a way to set the pen
+      // thickness.
+      odb::Rect rect = groute_->globalRoutingToBox(seg);
+      painter.drawRect(rect);
     }
   }
 }

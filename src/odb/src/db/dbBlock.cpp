@@ -753,8 +753,7 @@ void _dbBlock::initialize(_dbChip* chip,
   _chip = chip->getOID();
   _hier_delimeter = delimeter;
   // create top module
-  _dbModule* _top = (_dbModule*) dbModule::create(
-      (dbBlock*) this, (std::string(name) + "_top_module").c_str());
+  _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*) this, name);
   _top_module = _top->getOID();
   if (parent) {
     _def_units = parent->_def_units;

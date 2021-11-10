@@ -18,6 +18,7 @@ record_tests {
   resize6
   resize_slack1
   resize_slack2
+  resize_slack3
   remove_buffers1
   remove_buffers2
   repair_clk_nets1
@@ -25,6 +26,7 @@ record_tests {
   repair_cap1
   repair_cap2
   repair_cap3
+  repair_design1
   repair_fanout1
   repair_fanout2
   repair_fanout3

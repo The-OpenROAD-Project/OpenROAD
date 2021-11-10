@@ -29,7 +29,7 @@ library(fakeram45_64x7) {
     default_input_pin_cap : 0.0;
     default_output_pin_cap : 0.0;
     default_input_pin_cap : 0.0;
-    default_max_transition : 0.0;
+    default_max_transition : 0.2;
 
     default_operating_conditions : tt_1.0_25.0;
     default_leakage_power_density : 0.0;

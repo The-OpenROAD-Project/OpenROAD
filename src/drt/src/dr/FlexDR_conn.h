@@ -129,7 +129,7 @@ class FlexDRConnectivityChecker
                             const PathSegsByLayerAndTrackId& vertVictims,
                             const SpansByLayerAndTrackId& horzNewSegSpans,
                             const SpansByLayerAndTrackId& vertNewSegSpans);
-  void addMarker(frNet* net, frLayerNum lNum, const frBox& bbox);
+  void addMarker(frNet* net, frLayerNum lNum, const Rect& bbox);
   void merge_perform(const NetRouteObjs& netRouteObjs,
                      const std::vector<int>& indices,
                      std::vector<int>& victims,

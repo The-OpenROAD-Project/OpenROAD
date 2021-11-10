@@ -78,7 +78,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         continue;
       }
       painter.drawRect(
-          {b.first.left(), b.first.bottom(), b.first.right(), b.first.top()});
+          {b.first.xMin(), b.first.yMin(), b.first.xMax(), b.first.yMax()});
     }
   }
 
@@ -93,7 +93,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   for (auto via : pa_vias_) {
     auto* via_def = via->getViaDef();
-    frBox bbox;
+    Rect bbox;
     bool skip = false;
     if (via_def->getLayer1Num() == layerNum) {
       via->getLayer1BBox(bbox);
@@ -105,17 +105,17 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (!skip) {
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
     }
   }
 
   for (auto seg : pa_segs_) {
     if (seg->getLayerNum() == layerNum) {
-      frBox bbox;
+      Rect bbox;
       seg->getBBox(bbox);
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
     }
   }
 
@@ -124,10 +124,10 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setBrush(gui::Painter::transparent);
     for (auto& marker : *pa_markers_) {
       if (marker->getLayerNum() == layerNum) {
-        frBox bbox;
+        Rect bbox;
         marker->getBBox(bbox);
         painter.drawRect(
-            {bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+            {bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
       }
     }
   }
@@ -163,9 +163,9 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   pin_ = pin;
   inst_term_ = inst_term;
 
-  frBox box;
+  Rect box;
   inst_term->getInst()->getBBox(box);
-  gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   gui_->pause();
 }
 
@@ -220,16 +220,16 @@ void FlexPAGraphics::setViaAP(
   pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    frBox bbox;
+    Rect bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
                   119,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.left(),
-                  bbox.bottom(),
-                  bbox.right(),
-                  bbox.top());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();
@@ -255,16 +255,16 @@ void FlexPAGraphics::setPlanarAP(
   pa_segs_ = {seg};
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    frBox bbox;
+    Rect bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
                   292,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.left(),
-                  bbox.bottom(),
-                  bbox.right(),
-                  bbox.top());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();
@@ -297,16 +297,16 @@ void FlexPAGraphics::setObjsAndMakers(
   }
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    frBox bbox;
+    Rect bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
                   281,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.left(),
-                  bbox.bottom(),
-                  bbox.right(),
-                  bbox.top());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();

@@ -198,9 +198,9 @@ class grPathSeg : public grShape
    * getBBox
    */
   // needs to be updated
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
-    boxIn.set(begin.x(), begin.y(), end.x(), end.y());
+    boxIn.init(begin.x(), begin.y(), end.x(), end.y());
   }
 
   void setIter(frListIter<std::unique_ptr<grShape>>& in) override { iter = in; }

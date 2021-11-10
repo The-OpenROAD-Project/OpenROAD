@@ -162,7 +162,7 @@ void FlexGR::searchRepairMacro(int iter,
     cout << suffix << " optimization iteration for Macro..." << endl;
   }
 
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
@@ -175,10 +175,10 @@ void FlexGR::searchRepairMacro(int iter,
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
-      frBox macroBBox;
+      Rect macroBBox;
       inst->getBBox(macroBBox);
-      Point macroCenter((macroBBox.left() + macroBBox.right()) / 2,
-                          (macroBBox.bottom() + macroBBox.top()) / 2);
+      Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
+                          (macroBBox.yMin() + macroBBox.yMax()) / 2);
       Point macroCenterIdx;
       getDesign()->getTopBlock()->getGCellIdx(macroCenter, macroCenterIdx);
       if (cmap2D_->hasBlock(
@@ -193,11 +193,11 @@ void FlexGR::searchRepairMacro(int iter,
   // create separate worker for each macro
   for (auto macro : macros) {
     auto worker = make_unique<FlexGRWorker>(this);
-    frBox macroBBox;
+    Rect macroBBox;
     macro->getBBox(macroBBox);
     Point gcellIdxLL, gcellIdxUR;
-    Point macroLL(macroBBox.left(), macroBBox.bottom());
-    Point macroUR(macroBBox.right(), macroBBox.top());
+    Point macroLL(macroBBox.xMin(), macroBBox.yMin());
+    Point macroUR(macroBBox.xMax(), macroBBox.yMax());
     getDesign()->getTopBlock()->getGCellIdx(macroLL, gcellIdxLL);
     getDesign()->getTopBlock()->getGCellIdx(macroUR, gcellIdxUR);
 
@@ -206,18 +206,18 @@ void FlexGR::searchRepairMacro(int iter,
     gcellIdxUR.set(min((int) gcellIdxUR.x() + size, (int) xgp.getCount()),
                    min((int) gcellIdxUR.y() + size, (int) ygp.getCount()));
 
-    frBox routeBox1;
+    Rect routeBox1;
     getDesign()->getTopBlock()->getGCellBox(gcellIdxLL, routeBox1);
-    frBox routeBox2;
+    Rect routeBox2;
     getDesign()->getTopBlock()->getGCellBox(gcellIdxUR, routeBox2);
-    frBox extBox(routeBox1.left(),
-                 routeBox1.bottom(),
-                 routeBox2.right(),
-                 routeBox2.top());
-    frBox routeBox((routeBox1.left() + routeBox1.right()) / 2,
-                   (routeBox1.bottom() + routeBox1.top()) / 2,
-                   (routeBox2.left() + routeBox2.right()) / 2,
-                   (routeBox2.bottom() + routeBox2.top()) / 2);
+    Rect extBox(routeBox1.xMin(),
+                 routeBox1.yMin(),
+                 routeBox2.xMax(),
+                 routeBox2.yMax());
+    Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                   (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                   (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                   (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
     worker->setRouteGCellIdxLL(gcellIdxLL);
     worker->setRouteGCellIdxUR(gcellIdxUR);
@@ -272,7 +272,7 @@ void FlexGR::searchRepair(int iter,
     cout << suffix << " optimization iteration ..." << endl;
   }
 
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
@@ -283,8 +283,8 @@ void FlexGR::searchRepair(int iter,
     cout << "search and repair test mode" << endl << flush;
 
     FlexGRWorker worker(this);
-    frBox extBox(1847999, 440999, 1857000, 461999);
-    frBox routeBox(1849499, 442499, 1855499, 460499);
+    Rect extBox(1847999, 440999, 1857000, 461999);
+    Rect routeBox(1849499, 442499, 1855499, 460499);
     Point gcellIdxLL(616, 147);
     Point gcellIdxUR(618, 153);
 
@@ -324,18 +324,18 @@ void FlexGR::searchRepair(int iter,
             = Point(min((int) xgp.getCount() - 1, i + size - 1),
                       min((int) ygp.getCount(), j + size - 1));
 
-        frBox routeBox1;
+        Rect routeBox1;
         getDesign()->getTopBlock()->getGCellBox(gcellIdxLL, routeBox1);
-        frBox routeBox2;
+        Rect routeBox2;
         getDesign()->getTopBlock()->getGCellBox(gcellIdxUR, routeBox2);
-        frBox extBox(routeBox1.left(),
-                     routeBox1.bottom(),
-                     routeBox2.right(),
-                     routeBox2.top());
-        frBox routeBox((routeBox1.left() + routeBox1.right()) / 2,
-                       (routeBox1.bottom() + routeBox1.top()) / 2,
-                       (routeBox2.left() + routeBox2.right()) / 2,
-                       (routeBox2.bottom() + routeBox2.top()) / 2);
+        Rect extBox(routeBox1.xMin(),
+                     routeBox1.yMin(),
+                     routeBox2.xMax(),
+                     routeBox2.yMax());
+        Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                       (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                       (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                       (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
         // worker->setGCellIdx(gcellIdxLL, gcellIdxUR);
         worker->setRouteGCellIdxLL(gcellIdxLL);
@@ -653,10 +653,10 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
       xgp->getStartCoord(), xgp->getCount(), xgp->getSpacing());
   gcell->addGridPatternY(
       ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
-  frBox dieBox;
+  Rect dieBox;
   design_->getTopBlock()->getDieBox(dieBox);
-  gcell->addGridPatternX(dieBox.right(), 1, 0);
-  gcell->addGridPatternY(dieBox.top(), 1, 0);
+  gcell->addGridPatternX(dieBox.xMax(), 1, 0);
+  gcell->addGridPatternY(dieBox.yMax(), 1, 0);
   unsigned cmapLayerIdx = 0;
   for (auto& [layerNum, dir] : cmap->getZMap()) {
     string layerName(design_->getTech()->getLayer(layerNum)->getName());
@@ -1650,13 +1650,13 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       }
     }
 
-    frBox gcellBox;
+    Rect gcellBox;
     auto gcellNode = make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
     design_->getTopBlock()->getGCellBox(
         Point(gcellIdx.first, gcellIdx.second), gcellBox);
-    Point loc((gcellBox.left() + gcellBox.right()) / 2,
-                (gcellBox.bottom() + gcellBox.top()) / 2);
+    Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
+                (gcellBox.yMin() + gcellBox.yMax()) / 2);
     gcellNode->setLayerNum(2);
     gcellNode->setLoc(loc);
     if (!hasRoot) {
@@ -1848,12 +1848,12 @@ void FlexGR::layerAssign()
     frCoord urx = INT_MIN;
     frCoord ury = INT_MIN;
     for (auto& rpin : net->getRPins()) {
-      frBox bbox;
+      Rect bbox;
       rpin->getBBox(bbox);
-      llx = min(bbox.left(), llx);
-      lly = min(bbox.bottom(), lly);
-      urx = max(bbox.right(), urx);
-      ury = max(bbox.top(), ury);
+      llx = min(bbox.xMin(), llx);
+      lly = min(bbox.yMin(), lly);
+      urx = max(bbox.xMax(), urx);
+      ury = max(bbox.yMax(), ury);
     }
     int numRPins = net->getRPins().size();
     int ratio = ((urx - llx) + (ury - lly)) / (numRPins);
@@ -2509,7 +2509,7 @@ void FlexGR::writeGuideFile()
         Point bpIdx, epIdx;
         design_->getTopBlock()->getGCellIdx(bp, bpIdx);
         design_->getTopBlock()->getGCellIdx(ep, epIdx);
-        frBox bbox, ebox;
+        Rect bbox, ebox;
         design_->getTopBlock()->getGCellBox(bpIdx, bbox);
         design_->getTopBlock()->getGCellBox(epIdx, ebox);
         frLayerNum bNum = guide->getBeginLayerNum();
@@ -2519,14 +2519,14 @@ void FlexGR::writeGuideFile()
           for (auto lNum = min(bNum, eNum); lNum <= max(bNum, eNum);
                lNum += 2) {
             auto layerName = design_->getTech()->getLayer(lNum)->getName();
-            outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                        << bbox.right() << " " << bbox.top() << " " << layerName
+            outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                        << bbox.xMax() << " " << bbox.yMax() << " " << layerName
                         << endl;
           }
         } else {
           auto layerName = design_->getTech()->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << ebox.right() << " " << ebox.top() << " " << layerName
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << ebox.xMax() << " " << ebox.yMax() << " " << layerName
                       << endl;
         }
       }

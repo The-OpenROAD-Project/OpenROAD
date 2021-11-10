@@ -165,6 +165,20 @@ class ActionLayout : public QLayout
   QList<QLayoutItem*> actions_;
 };
 
+class ObjectTree : public QTreeView
+{
+  Q_OBJECT
+
+ public:
+  ObjectTree(QWidget* parent = nullptr);
+
+ signals:
+  void mouseExited();
+
+ protected:
+  void leaveEvent(QEvent* event) override;
+};
+
 // The inspector is to allow a single object to have it properties displayed.
 // It is generic and builds on the Selected and Descriptor classes.
 // The inspector knows how to handle SelectionSet and Selected objects
@@ -192,17 +206,19 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
 
-  void indexClicked(const QModelIndex& index);
-  void indexDoubleClicked(const QModelIndex& index);
-
   int selectNext();
   int selectPrevious();
-
-  void focusIndex(const QModelIndex& index);
 
   void updateSelectedFields(const QModelIndex& index);
 
   void reload();
+
+ private slots:
+  void focusIndex(const QModelIndex& index);
+  void defocus();
+
+  void indexClicked();
+  void indexDoubleClicked(const QModelIndex& index);
 
  private:
   void handleAction(QWidget* action);
@@ -217,7 +233,7 @@ class Inspector : public QDockWidget
     Value
   };
 
-  QTreeView* view_;
+  ObjectTree* view_;
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
   ActionLayout* action_layout_;
@@ -228,7 +244,8 @@ class Inspector : public QDockWidget
   QPushButton* button_next_;
   QPushButton* button_prev_;
   QLabel* selected_itr_label_;
-  std::unique_ptr<QTimer> mouse_timer_;
+  QTimer mouse_timer_;
+  QModelIndex clicked_index_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 
