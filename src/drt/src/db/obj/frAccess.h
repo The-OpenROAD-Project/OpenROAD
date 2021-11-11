@@ -52,6 +52,11 @@ class frAccessPoint : public frBlockObject
         typeH_(frAccessPointEnum::OnGrid),
         aps_(nullptr)
   {
+    if (layerNum == (int) 21845) {
+      std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+      Point* pt = nullptr;
+      pt->x();
+    }
   }
   // getters
   void getPoint(Point& in) const { in = point_; }
