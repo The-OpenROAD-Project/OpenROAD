@@ -258,13 +258,6 @@ proc global_placement { args } {
     gpl::set_pad_right_cmd $pad_right
   }
 
-  if { ![info exists flags(-skip_nesterov_place) ] } {
-    set block [ord::get_db_block]
-    if {[llength [$block getInsts]] <= 250 } {
-      utl::warn GPL 140 "RePlAce is not designed for this trivial design. (#inst <= 500). Please use RePlAce with your risk and for your references. If RePlAce diverges, please consider '-skip_nesterov_place' option. (Only BiCGSTAB QP solver will be executed)" 
-    }
-  }
-
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
   
@@ -274,7 +267,21 @@ proc global_placement { args } {
       gpl::replace_initial_place_cmd
 
       if { ![info exists flags(-skip_nesterov_place)] } {
-        gpl::replace_nesterov_place_cmd
+        catch {gpl::replace_nesterov_place_cmd} error
+        set block [ord::get_db_block]
+
+        set diverge_codes [list "0304" "0305" "0306" "0307"]
+        set is_diverged 0
+        foreach code $diverge_codes {
+          if {[string first $code $error] != -1 } {
+            set is_diverged 1
+          }
+        }
+        if {$is_diverged && [llength [$block getInsts]] <= 500} {
+          utl::warn GPL 140 "RePlAce divergence detected. Rerun RePlAce up to BiCGSTAB."
+          gpl::replace_reset_cmd
+          gpl::replace_initial_place_cmd
+        }
       }
     }
     gpl::replace_reset_cmd
