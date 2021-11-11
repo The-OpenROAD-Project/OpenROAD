@@ -138,6 +138,7 @@ using sta::fuzzyLess;
 using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
+using sta::delayInf;
 using sta::stringPrint;
 using sta::Unit;
 using sta::ArcDelayCalc;
@@ -2834,7 +2835,9 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
           Delay buffer_delay = bufferHoldDelay(buffer_cell);
           Delay max_insert = min(drvr_slacks[RiseFall::riseIndex()][max_index],
                                  drvr_slacks[RiseFall::fallIndex()][max_index]);
-          int max_insert_count = (max_insert - buffer_delay1) / buffer_delay + 1;
+          int max_insert_count = delayInf(max_insert)
+            ? 1
+            : (max_insert - buffer_delay1) / buffer_delay + 1;
           int hold_buffer_count = (-drvr_hold_slack > buffer_delay1)
             ? std::ceil((-drvr_hold_slack-buffer_delay1)/buffer_delay)+1
             : 1;
@@ -2986,10 +2989,15 @@ Resizer::makeHoldDelay(Vertex *drvr,
   }
 
   for (Pin *load_pin : load_pins) {
-    Instance *load = db_network_->instance(load_pin);
-    Port *load_port = db_network_->port(load_pin);
-    sta_->disconnectPin(load_pin);
-    sta_->connectPin(load, load_port, out_net);
+    Net *load_net = network_->isTopLevelPort(load_pin)
+      ? network_->net(network_->term(load_pin))
+      : network_->net(load_pin);
+    if (load_net != out_net) {
+      Instance *load = db_network_->instance(load_pin);
+      Port *load_port = db_network_->port(load_pin);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load, load_port, out_net);
+    }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
   resizeToTargetSlew(buffer_out_pin, false);
