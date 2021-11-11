@@ -1244,7 +1244,7 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       }
       if (prepPoint_pin_helper(
               aps, apset, pinShapes, pin, instTerm, lower, upper)) {
-        return 0;
+        return aps.size();
       }
     }
   }
@@ -1253,7 +1253,8 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   // IO term aps are are written back in prepPoint_pin_helper and always early
   // stopped
   prepPoint_pin_updateStat(aps, pin, instTerm);
-  if (aps.empty()) {
+  int nAps = aps.size();
+  if (nAps == 0) {
     if (isStdCellPin) {
       stdCellPinNoApCnt_++;
     }
@@ -1284,7 +1285,7 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       }
     }
   }
-  return aps.size();
+  return nAps;
 }
 
 void FlexPA::prepPoint()
@@ -1694,14 +1695,16 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
         for (int i = 0; i < (int) (instTerm->getTerm()->getPins().size());
              i++) {
           auto& accessPoint = accessPoints[accessPointIdx];
-
-          Point pt(accessPoint->getPoint());
-          if (instTerm->hasNet()) {
-            cout << " gcclean2via " << inst->getName() << " "
-                 << instTerm->getTerm()->getName() << " "
-                 << accessPoint->getViaDef()->getName() << " " << pt.x() << " "
-                 << pt.y() << " " << inst->getOrient().getString() << "\n";
-            instTermValidViaApCnt_++;
+          if (accessPoint) {
+            Point pt(accessPoint->getPoint());
+            if (instTerm->hasNet()) {
+              cout << " gcclean2via " << inst->getName() << " "
+                   << instTerm->getTerm()->getName() << " "
+                   << accessPoint->getViaDef()->getName() << " " << pt.x()
+                   << " " << pt.y() << " " << inst->getOrient().getString()
+                   << "\n";
+              instTermValidViaApCnt_++;
+            }
           }
           accessPointIdx++;
         }
@@ -1787,7 +1790,8 @@ void FlexPA::addAccessPatternObj(
       //      <<accessPoint <<", leftAPoint "
       //      <<accessPattern->getBoundaryAP(true) <<", rightAPoint "
       //      <<accessPattern->getBoundaryAP(false) <<endl <<flush;
-      if (isPrev && accessPoint != accessPattern->getBoundaryAP(false)) {
+      if (!accessPoint
+          || (isPrev && accessPoint != accessPattern->getBoundaryAP(false))) {
         accessPointIdx++;
         continue;
       }
@@ -1872,7 +1876,7 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
     if (isSkipInstTerm(instTerm.get())) {
       continue;
     }
-
+    int nAps = 0;
     for (auto& pin : instTerm->getTerm()->getPins()) {
       // container of access points
       auto pinAccess = pin->getPinAccess(paIdx);
@@ -1885,14 +1889,15 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
         sumYCoord += accessPoint->getPoint().y();
         cnt++;
       }
+      nAps += cnt;
       if (cnt != 0) {
         pins.push_back(
             std::make_pair((sumXCoord + 0.0 * sumYCoord) / cnt,
                            std::make_pair(pin.get(), instTerm.get())));
-      } else {
-        logger_->error(DRT, 86, "Pin does not have an access point.");
       }
     }
+    if (nAps == 0 && instTerm->getTerm()->getPins().size())
+      logger_->error(DRT, 86, "Pin does not have an access point.");
   }
   std::sort(pins.begin(),
             pins.end(),
@@ -2401,9 +2406,11 @@ bool FlexPA::genPatterns_commit(
       if (isSkipInstTerm(instTerm.get())) {
         continue;
       }
+      long unsigned int nNoApPins = 0;
       for (auto& pin : instTerm->getTerm()->getPins()) {
         if (pin2AP.find(pin.get()) == pin2AP.end()) {
-          logger_->error(DRT, 91, "Pin does not have valid ap.");
+          nNoApPins++;
+          pinAccessPattern->addAccessPoint(nullptr);
         } else {
           auto& ap = pin2AP[pin.get()];
           ap->getPoint(tmpPt);
@@ -2418,6 +2425,8 @@ bool FlexPA::genPatterns_commit(
           pinAccessPattern->addAccessPoint(ap);
         }
       }
+      if (nNoApPins == instTerm->getTerm()->getPins().size())
+        logger_->error(DRT, 91, "Pin does not have valid ap.");
     }
     // if (leftAP == nullptr) {
     //   cout <<"@@@Warning leftAP == nullptr " <<instTerm->getInst()->getName()

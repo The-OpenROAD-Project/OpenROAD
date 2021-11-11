@@ -352,7 +352,8 @@ class FlexPinAccessPattern
   {
     cost_ = 0;
     for (auto& ap : pattern_) {
-      cost_ += ap->getCost();
+      if (ap)
+        cost_ += ap->getCost();
     }
   }
 
