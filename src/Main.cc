@@ -83,8 +83,8 @@ extern "C"
 }
 #endif
 
-static int cmd_argc;
-static char **cmd_argv;
+int cmd_argc;
+char **cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 

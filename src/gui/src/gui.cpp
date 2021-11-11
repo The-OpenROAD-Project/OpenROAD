@@ -57,6 +57,9 @@
 #include "drcWidget.h"
 #include "ruler.h"
 
+extern int cmd_argc;
+extern char **cmd_argv;
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -562,17 +565,11 @@ void Gui::showGui(const std::string& cmds, bool interactive)
     return;
   }
 
-  int argc = 1;
-  char* argv = new char[9];
-  strcpy(argv, "openroad");
-
   // OR already running, so GUI should not set anything up
-  // passing in 1 and "openroad" to meet Qt application requirement for arguments
+  // passing in cmd_argc and cmd_argv to meet Qt application requirement for arguments
   // nullptr for tcl interp to indicate nothing to setup
   // and commands and interactive setting
-  startGui(argc, &argv, nullptr, cmds, interactive);
-
-  delete[] argv;
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
 }
 
 //////////////////////////////////////////////////
