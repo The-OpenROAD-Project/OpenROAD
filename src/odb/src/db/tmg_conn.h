@@ -32,6 +32,9 @@
 
 #pragma once
 
+#include <vector>
+#include <array>
+
 #include "db.h"
 #include "dbWireCodec.h"
 #include "geom.h"
@@ -164,8 +167,8 @@ class tmg_conn
   int _cut_length;
   int _cut_end_extMin;
   int _need_short_wire_id;
-  tmg_connect_shape** _csVV;
-  tmg_connect_shape* _csV;
+  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
+  std::array<tmg_connect_shape, 32>* _csV;
   int* _csNV;
   int _csN;
   tmg_rcpt* _first_for_clear;

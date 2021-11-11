@@ -115,11 +115,9 @@ tmg_conn::tmg_conn()
   _termNmax = 1024;
   _termV = (tmg_rcterm*) malloc(_termNmax * sizeof(tmg_rcterm));
   _tstackV = (tmg_rcterm**) malloc(_termNmax * sizeof(tmg_rcterm*));
-  _csVV = (tmg_connect_shape**) malloc(_termNmax * sizeof(tmg_connect_shape*));
+  _csVV.resize(_termNmax);
   _csNV = (int*) malloc(_termNmax * sizeof(int));
   int j;
-  for (j = 0; j < _termNmax; j++)
-    _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
   _shortNmax = 1024;
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
   _search = NULL;
@@ -254,10 +252,7 @@ void tmg_conn::addITerm(dbITerm* iterm)
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV
         = (tmg_rcterm**) realloc(_tstackV, _termNmax * sizeof(tmg_rcterm*));
-    _csVV = (tmg_connect_shape**) realloc(
-        _csVV, _termNmax * sizeof(tmg_connect_shape*));
-    for (j = j0; j < _termNmax; j++)
-      _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
+    _csVV.resize(_termNmax);
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
@@ -275,10 +270,7 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV
         = (tmg_rcterm**) realloc(_tstackV, _termNmax * sizeof(tmg_rcterm*));
-    _csVV = (tmg_connect_shape**) realloc(
-        _csVV, _termNmax * sizeof(tmg_connect_shape*));
-    for (j = j0; j < _termNmax; j++)
-      _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
+    _csVV.resize(_termNmax);
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
@@ -957,7 +949,7 @@ void tmg_conn::findConnections(bool verbose)
   // connect pins
   Rect rect;
   for (int j = 0; j < _termN; j++) {
-    _csV = _csVV[j];
+    _csV = &_csVV[j];
     _csN = 0;
     tmg_rcterm* x = _termV + j;
     if (x->_iterm) {
@@ -995,15 +987,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt_t;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt_t;
                   _csN++;
                 }
               rt_b = tv->getBottomLayer()->getRoutingLevel();
@@ -1017,15 +1009,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt_b;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt_b;
                   _csN++;
                 }
             } else if (ipass == 0 && !box->isVia()) {
@@ -1043,15 +1035,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN && _csN >= 8)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt;
                   _csN++;
                 }
             }
@@ -1086,15 +1078,15 @@ void tmg_conn::findConnections(bool verbose)
               klast = k;
               int ii;
               for (ii = 0; ii < _csN; ii++)
-                if (k == _csV[ii].k)
+                if (k == (*_csV)[ii].k)
                   break;
               if (ii < _csN)
                 continue;
               if (_csN == 32)
                 break;
-              _csV[_csN].k = k;
-              _csV[_csN].rect = rect;
-              _csV[_csN].rtlev = rt;
+              (*_csV)[_csN].k = k;
+              (*_csV)[_csN].rect = rect;
+              (*_csV)[_csN].rtlev = rt;
               _csN++;
             }
         }
@@ -1255,7 +1247,7 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
 
 void tmg_conn::connectTerm(int j, bool soft)
 {
-  _csV = _csVV[j];
+  _csV = &_csVV[j];
   _csN = _csNV[j];
   if (!_csN)
     return;
@@ -1269,12 +1261,12 @@ void tmg_conn::connectTerm(int j, bool soft)
   _first_for_clear = NULL;
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
     tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
     Point afr(pfr->_x, pfr->_y);
-    if (_csV[ii].rtlev == pfr->_layer->getRoutingLevel()
-        && _csV[ii].rect.intersects(afr)) {
+    if ((*_csV)[ii].rtlev == pfr->_layer->getRoutingLevel()
+        && (*_csV)[ii].rect.intersects(afr)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
         _first_for_clear = pfr;
@@ -1288,8 +1280,8 @@ void tmg_conn::connectTerm(int j, bool soft)
       pto->_c2pinpt = 1;
     }
     Point ato(pto->_x, pto->_y);
-    if (_csV[ii].rtlev == pto->_layer->getRoutingLevel()
-        && _csV[ii].rect.intersects(ato)) {
+    if ((*_csV)[ii].rtlev == pto->_layer->getRoutingLevel()
+        && (*_csV)[ii].rect.intersects(ato)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
         _first_for_clear = pfr;
@@ -1350,7 +1342,7 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
     tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
     if (pfr->_c2pinpt) {
@@ -1374,7 +1366,7 @@ void tmg_conn::connectTerm(int j, bool soft)
   notice(0,"\n");
   int p[64], pN=0, m;
   for (ii=0;ii<_csN;ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     int bfr = _rcV[k]._ifr;
     int bto = _rcV[k]._ito;
     for (m=0;m<pN;m++) if (bfr==p[m]) break;
@@ -1391,7 +1383,7 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     int bfr = _rcV[k]._ifr;
     int bto = _rcV[k]._ito;
     tmg_rcpt *pt, *pother;
@@ -1399,7 +1391,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     bool cto = _ptV[bto]._pinpt;
     if (soft && !cfr && !cto) {
       if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
-        connectTermSoft(j, _csV[ii].rtlev, _csV[ii].rect, _csV[ii].k);
+        connectTermSoft(j, (*_csV)[ii].rtlev, (*_csV)[ii].rect, (*_csV)[ii].k);
       continue;
     }
     if (cfr && !cto) {
@@ -1489,7 +1481,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     }
     //  else if (soft) {
     //   if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
-    //     connectTermSoft(j,_csV[ii].rtlev,_csV[ii].rect,_csV[ii].k);
+    //     connectTermSoft(j,(*_csV)[ii].rtlev,(*_csV)[ii].rect,(*_csV)[ii].k);
     // }
   }
   for (pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
