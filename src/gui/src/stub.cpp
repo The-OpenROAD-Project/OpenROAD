@@ -125,7 +125,7 @@ std::string Descriptor::Property::toString(const std::any& /* value */)
 }
 
 // using namespace odb;
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
