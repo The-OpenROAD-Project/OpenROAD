@@ -10,7 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO ODB-0134] Finished DEF file: ./diverge02.def
-[WARNING GPL-0140] RePlAce is not designed for this trivial design. (#inst <= 500). Please use RePlAce with your risk and for your references. If RePlAce diverges, please consider '-skip_nesterov_place' option. (Only BiCGSTAB QP solver will be executed)
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
@@ -43,4 +42,30 @@
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
 [ERROR GPL-0304] RePlAce diverged at initial iteration. Re-run with a smaller init_density_penalty value.
-GPL-0304
+[WARNING GPL-0140] RePlAce divergence detected. Rerun RePlAce up to BiCGSTAB.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 61940 61600
+[INFO GPL-0006] NumInstances: 1
+[INFO GPL-0007] NumPlaceInstances: 1
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 2
+[INFO GPL-0011] NumPins: 4
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 61940 61600
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 61940 61600
+[INFO GPL-0016] CoreArea: 3815504000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 7448000
+[INFO GPL-0019] Util(%): 0.20
+[INFO GPL-0020] StdInstsArea: 7448000
+[INFO GPL-0021] MacroInstsArea: 0
+[InitialPlace]  Iter: 1 CG Error: 0.00000000 HPWL: 11560
+[InitialPlace]  Iter: 2 CG Error: 0.00000000 HPWL: 10920
+[InitialPlace]  Iter: 3 CG Error: 0.00000000 HPWL: 10920
+[InitialPlace]  Iter: 4 CG Error: 0.00000000 HPWL: 10920
+[InitialPlace]  Iter: 5 CG Error: 0.00000000 HPWL: 10920
+
