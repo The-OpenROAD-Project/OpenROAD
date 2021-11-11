@@ -33,6 +33,7 @@
 
 sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
+  [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
@@ -75,6 +76,7 @@ proc global_placement { args } {
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
+      -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
       -disable_timing_driven \
@@ -256,6 +258,13 @@ proc global_placement { args } {
     gpl::set_pad_right_cmd $pad_right
   }
 
+  if { ![info exists flags(-skip_nesterov_place) ] } {
+    set block [ord::get_db_block]
+    if {[llength [$block getInsts]] <= 250 } {
+      utl::warn GPL 140 "RePlAce is not designed for this trivial design. (#inst <= 500). Please use RePlAce with your risk and for your references. If RePlAce diverges, please consider '-skip_nesterov_place' option. (Only BiCGSTAB QP solver will be executed)" 
+    }
+  }
+
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
   
@@ -263,7 +272,10 @@ proc global_placement { args } {
       gpl::replace_incremental_place_cmd
     } else {
       gpl::replace_initial_place_cmd
-      gpl::replace_nesterov_place_cmd
+
+      if { ![info exists flags(-skip_nesterov_place)] } {
+        gpl::replace_nesterov_place_cmd
+      }
     }
     gpl::replace_reset_cmd
   } else {
