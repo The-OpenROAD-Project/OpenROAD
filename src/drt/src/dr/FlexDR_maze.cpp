@@ -1102,7 +1102,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 /*inline*/ void FlexDRWorker::modCutSpacingCost(const frBox& box,
                                                 frMIdx z,
                                                 int type,
-                                                bool isBlockage)
+                                                bool isBlockage, int avoidI, int avoidJ)
 {
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
@@ -1156,6 +1156,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+        if (i == avoidI && j == avoidJ)
+            continue;
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
@@ -2532,7 +2534,7 @@ void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
         auto rect = static_cast<frRect*>(uFig.get());
         rect->getBBox(box);
         box.transform(xform);
-        modCutSpacingCost(box, z, 1);
+        modCutSpacingCost(box, z, 1, false, path[i].x(), path[i].y());
       }
     }
   }

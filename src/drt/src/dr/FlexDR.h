@@ -687,7 +687,7 @@ class FlexDRWorker
   void modCutSpacingCost(const frBox& box,
                          frMIdx z,
                          int type,
-                         bool isBlockage = false);
+                         bool isBlockage = false, int avoidI = -1, int avoidJ = -1);
   void modInterLayerCutSpacingCost(const frBox& box,
                                    frMIdx z,
                                    int type,
