@@ -3009,7 +3009,9 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
   for (auto& marker : markers_) {
     results.clear();
     if (marker->getConstraint()->typeId()
-        != frConstraintTypeEnum::frcMinStepConstraint) {
+        != frConstraintTypeEnum::frcMinStepConstraint &&
+        marker->getConstraint()->typeId()
+        != frConstraintTypeEnum::frcLef58MinStepConstraint) {
       continue;
     }
     auto lNum = marker->getLayerNum();
