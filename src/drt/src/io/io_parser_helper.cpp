@@ -792,7 +792,8 @@ void io::Parser::initRPin_rpin()
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
                           ->getAccessPoints())[0]
                          .get();
-          }
+          } else
+            continue;
         }
 
         if (prefAp == nullptr) {
