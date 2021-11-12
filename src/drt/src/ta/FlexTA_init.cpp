@@ -669,7 +669,8 @@ void FlexTAWorker::initFixedObjs()
           netPtr = static_cast<frVia*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
-        if (layer->isUnidirectional() && layer->getType()
+        if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
+            && getTech()->getLayer(layerNum)->getType()
                    == dbTechLayerType::ROUTING) {
           // down-via
           if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
@@ -708,7 +709,7 @@ void FlexTAWorker::initFixedObjs()
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
 
-        if (layer->isUnidirectional()) {
+        if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
           // block track for up-via and down-via for fat MACRO OBS
           bool isMacro = false;
           if (obj->typeId() == frcBlockage) {
@@ -789,12 +790,12 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
           obsWidth, viaWidth, viaWidth /*prl*/);
     }
   }
-  // auto& eol = layer->getDrEolSpacingConstraint();
-  // if (layer->isVertical()) {
-  //   if (viaBox.sizeY() < eol.eolWidth)
-  //     bloatDist = std::max(bloatDist, eol.eolSpace);
-  // } else if (viaBox.sizeX() < eol.eolWidth)
-  //     bloatDist = std::max(bloatDist, eol.eolSpace);
+   auto& eol = layer->getDrEolSpacingConstraint();
+   if (layer->isVertical()) {
+     if (viaBox.sizeY() < eol.eolWidth)
+       bloatDist = std::max(bloatDist, eol.eolSpace);
+   } else if (viaBox.sizeX() < eol.eolWidth)
+       bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following

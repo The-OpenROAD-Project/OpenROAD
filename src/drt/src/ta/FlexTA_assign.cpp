@@ -83,6 +83,24 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
     bloatDist
         = max(bloatDist,
               fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+
+//  frLayer* layer = design_->getTech()->getLayer(lNum);
+//  if (layer->isUnidirectional() && fig->typeId() == frBlockObjectEnum::tacPathSeg) {
+//    const frBox& bbox = layer->getDefaultViaDef()->getShapeBox(lNum);
+//    if (design_->isVerticalLayer(lNum)) {
+//      if (bbox.sizeX() > layer->getWidth()) {
+//        if (bbox.sizeY() < layer->getDrEolSpacingConstraint().eolWidth)
+//          bloatDist = max(bloatDist, layer->getDrEolSpacingConstraint().eolSpace);
+//        bloatDist += bbox.sizeX()/2 - layer->getWidth()/2;
+//      }
+//    } else {
+//      if (bbox.sizeY() > layer->getWidth()) {
+//        if (bbox.sizeX() < layer->getDrEolSpacingConstraint().eolWidth)
+//          bloatDist = max(bloatDist, layer->getDrEolSpacingConstraint().eolSpace);
+//        bloatDist += bbox.sizeY()/2 - layer->getWidth()/2;
+//      }
+//    }
+//  }
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -716,7 +734,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
             / 2;
     r += iroute->getGuide()->getNet()->getNondefaultRule()->getSpacing(lNum / 2
                                                                        - 1);
-    box.bloat(r, box);
+                                                                       box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
   bool isCut = false;
