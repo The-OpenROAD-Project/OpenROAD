@@ -45,7 +45,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   int degree = pinGCellNodes.size();
   std::vector<int> xs(degree);
   std::vector<int> ys(degree);
-  frPoint loc;
+  Point loc;
   for (int i = 0; i < (int) pinGCellNodes.size(); i++) {
     auto gcellNode = pinGCellNodes[i];
     gcellNode->getLoc(loc);
@@ -56,11 +56,11 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   stt_builder_->setAlpha(0);
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
 
-  map<frPoint, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
   map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
       adjacencyList;
 
-  frPoint pinGCellLoc;
+  Point pinGCellLoc;
   for (auto pinNode : pinGCellNodes) {
     pinNode->getLoc(pinGCellLoc);
     pinGCell2Nodes[pinGCellLoc] = pinNode;
@@ -71,8 +71,8 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     auto& branch1 = fluteTree.branch[i];
     auto& branch2 = fluteTree.branch[branch1.n];
 
-    frPoint bp(branch1.x, branch1.y);
-    frPoint ep(branch2.x, branch2.y);
+    Point bp(branch1.x, branch1.y);
+    Point ep(branch2.x, branch2.y);
 
     if (bp == ep) {
       continue;
@@ -172,7 +172,7 @@ void FlexGR::genMSTTopology_PD(vector<frNode*>& nodes, double alpha)
     for (int j = i; j < (int) nodes.size(); j++) {
       auto node1 = nodes[i];
       auto node2 = nodes[j];
-      frPoint loc1, loc2;
+      Point loc1, loc2;
       node1->getLoc(loc1);
       node2->getLoc(loc2);
       int dist = abs(loc2.x() - loc1.x()) + abs(loc2.y() - loc1.y());
@@ -349,7 +349,7 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
   map<frCoord, boost::icl::interval_map<frCoord, set<frNode*>>> vertIntvMaps;
 
   pair<frCoord, frCoord> horzIntv, vertIntv;
-  frPoint turnLoc;
+  Point turnLoc;
 
   // connection to parent if exists
   auto parent = currNode->getParent();
@@ -409,28 +409,28 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
     bool isCurrU,
     pair<frCoord, frCoord>& horzIntv,
     pair<frCoord, frCoord>& vertIntv,
-    frPoint& turnLoc)
+    Point& turnLoc)
 {
-  frPoint parentLoc, childLoc;
+  Point parentLoc, childLoc;
   parent->getLoc(parentLoc);
   child->getLoc(childLoc);
 
   if (isCurrU) {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = frPoint(min(childLoc.x(), parentLoc.x()),
+      turnLoc = Point(min(childLoc.x(), parentLoc.x()),
                         max(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = frPoint(max(childLoc.x(), parentLoc.x()),
+      turnLoc = Point(max(childLoc.x(), parentLoc.x()),
                         max(childLoc.y(), parentLoc.y()));
     }
   } else {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = frPoint(max(childLoc.x(), parentLoc.x()),
+      turnLoc = Point(max(childLoc.x(), parentLoc.x()),
                         min(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = frPoint(min(childLoc.x(), parentLoc.x()),
+      turnLoc = Point(min(childLoc.x(), parentLoc.x()),
                         min(childLoc.y(), parentLoc.y()));
     }
   }
@@ -502,11 +502,11 @@ void FlexGR::genSTTopology_build_tree(vector<frNode*>& pinNodes,
                                       vector<frNode*>& steinerNodes)
 {
   map<frCoord, boost::icl::interval_set<frCoord>> horzIntvs, vertIntvs;
-  map<frPoint, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
 
   genSTTopology_build_tree_mergeSeg(pinNodes, isU, horzIntvs, vertIntvs);
 
-  frPoint pinGCellLoc;
+  Point pinGCellLoc;
   for (auto pinNode : pinNodes) {
     pinNode->getLoc(pinGCellLoc);
     pinGCell2Nodes[pinGCellLoc] = pinNode;
@@ -541,7 +541,7 @@ void FlexGR::genSTTopology_build_tree_mergeSeg(
     map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
     map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs)
 {
-  frPoint turnLoc;
+  Point turnLoc;
   pair<frCoord, frCoord> horzIntv, vertIntv;
   for (int i = 1; i < (int) pinNodes.size(); i++) {
     genSTTopology_HVW_levelOvlp_helper(pinNodes[i],
@@ -563,10 +563,10 @@ void FlexGR::genSTTopology_build_tree_mergeSeg(
 
 void FlexGR::genSTTopology_build_tree_splitSeg(
     vector<frNode*>& pinNodes,
-    map<frPoint, frNode*>& pinGCell2Nodes,
+    map<Point, frNode*>& pinGCell2Nodes,
     map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
     map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs,
-    map<frPoint, frNode*>& steinerGCell2Nodes,
+    map<Point, frNode*>& steinerGCell2Nodes,
     vector<frNode*>& steinerNodes)
 {
   map<frCoord, set<pair<frCoord, frCoord>>> horzSegs, vertSegs;
@@ -670,8 +670,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from horz segs
   for (auto& [trackIdx, intvs] : horzSegs) {
     for (auto& intv : intvs) {
-      frPoint bp(intv.first, trackIdx);
-      frPoint ep(intv.second, trackIdx);
+      Point bp(intv.first, trackIdx);
+      Point ep(intv.second, trackIdx);
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
@@ -701,8 +701,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from vert segs
   for (auto& [trackIdx, intvs] : vertSegs) {
     for (auto& intv : intvs) {
-      frPoint bp(trackIdx, intv.first);
-      frPoint ep(trackIdx, intv.second);
+      Point bp(trackIdx, intv.first);
+      Point ep(trackIdx, intv.second);
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
@@ -734,8 +734,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from horz segs
   for (auto& [trackIdx, intvs] : horzSegs) {
     for (auto& intv : intvs) {
-      frPoint bp(intv.first, trackIdx);
-      frPoint ep(intv.second, trackIdx);
+      Point bp(intv.first, trackIdx);
+      Point ep(intv.second, trackIdx);
       frNode* bpNode = nullptr;
       frNode* epNode = nullptr;
       if (pinGCell2Nodes.find(bp) != pinGCell2Nodes.end()) {
@@ -764,8 +764,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // from vert segs
   for (auto& [trackIdx, intvs] : vertSegs) {
     for (auto& intv : intvs) {
-      frPoint bp(trackIdx, intv.first);
-      frPoint ep(trackIdx, intv.second);
+      Point bp(trackIdx, intv.first);
+      Point ep(trackIdx, intv.second);
       frNode* bpNode = nullptr;
       frNode* epNode = nullptr;
       if (pinGCell2Nodes.find(bp) != pinGCell2Nodes.end()) {

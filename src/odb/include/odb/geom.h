@@ -68,6 +68,7 @@ class Point
   int getY() const;
   void setX(int x);
   void setY(int y);
+  void set(int x, int y);
 
   void rotate90();
   void rotate180();
@@ -330,11 +331,11 @@ class Rect : public GeomShape
   void mergeInit();
 
   // Indicates if the box has a negative width or height
-  bool isInverted();
+  bool isInverted() const;
 
-  uint minDXDY();
-  uint maxDXDY();
-  int getDir();
+  uint minDXDY() const;
+  uint maxDXDY() const;
+  int getDir() const;
 
   void set_xlo(int x1);
   void set_xhi(int x1);
@@ -396,14 +397,17 @@ class Rect : public GeomShape
 
   void merge(GeomShape* s);
 
-  // Compute the intersection of these two rectangles.
-  void intersection(const Rect& r, Rect& result);
+  // Bloat each side of the rectangle by the margin.
+  void bloat(int margin, Rect& result) const;
 
   // Compute the intersection of these two rectangles.
-  Rect intersect(const Rect& r);
+  void intersection(const Rect& r, Rect& result) const;
 
-  uint64 area();
-  uint64 margin();
+  // Compute the intersection of these two rectangles.
+  Rect intersect(const Rect& r) const;
+
+  uint64 area() const;
+  uint64 margin() const;
 
   void notice(const char* prefix = "");
   void printf(FILE* fp, const char* prefix = "");
@@ -465,6 +469,12 @@ inline void Point::setX(int x)
 
 inline void Point::setY(int y)
 {
+  _y = y;
+}
+
+inline void Point::set(int x, int y)
+{
+  _x = x;
   _y = y;
 }
 
@@ -674,7 +684,7 @@ inline bool Rect::operator!=(const Rect& r) const
          || (_yhi != r._yhi);
 }
 
-inline uint Rect::minDXDY()
+inline uint Rect::minDXDY() const
 {
   uint DX = dx();
   uint DY = dy();
@@ -683,7 +693,7 @@ inline uint Rect::minDXDY()
   else
     return DY;
 }
-inline uint Rect::maxDXDY()
+inline uint Rect::maxDXDY() const
 {
   uint DX = dx();
   uint DY = dy();
@@ -692,7 +702,7 @@ inline uint Rect::maxDXDY()
   else
     return DY;
 }
-inline int Rect::getDir()
+inline int Rect::getDir() const
 {
   uint DX = dx();
   uint DY = dy();
@@ -814,8 +824,17 @@ inline void Rect::merge(GeomShape* s)
   _yhi = MAX(_yhi, s->yMax());
 }
 
+// Bloat each side of the rectangle by the margin.
+inline void Rect::bloat(int margin, Rect& result) const
+{
+  result._xlo = _xlo - margin;
+  result._ylo = _ylo - margin;
+  result._xhi = _xhi + margin;
+  result._yhi = _yhi + margin;
+}
+
 // Compute the intersection of these two rectangles.
-inline void Rect::intersection(const Rect& r, Rect& result)
+inline void Rect::intersection(const Rect& r, Rect& result) const
 {
   if (!intersects(r)) {
     result._xlo = 0;
@@ -831,7 +850,7 @@ inline void Rect::intersection(const Rect& r, Rect& result)
 }
 
 // Compute the intersection of these two rectangles.
-inline Rect Rect::intersect(const Rect& r)
+inline Rect Rect::intersect(const Rect& r) const
 {
   assert(intersects(r));
   Rect result;
@@ -842,14 +861,14 @@ inline Rect Rect::intersect(const Rect& r)
   return result;
 }
 
-inline uint64 Rect::area()
+inline uint64 Rect::area() const
 {
   uint64 a = dx();
   uint64 b = dy();
   return a * b;
 }
 
-inline uint64 Rect::margin()
+inline uint64 Rect::margin() const
 {
   uint64 DX = dx();
   uint64 DY = dy();
@@ -864,7 +883,7 @@ inline void Rect::mergeInit()
   _yhi = INT_MIN;
 }
 
-inline bool Rect::isInverted()
+inline bool Rect::isInverted() const
 {
   return _xlo > _xhi || _ylo > _yhi;
 }

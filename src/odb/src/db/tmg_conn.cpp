@@ -42,6 +42,23 @@
 
 namespace odb {
 
+tmg_rcpt::tmg_rcpt()
+  : _x(0),
+    _y(0),
+    _layer(nullptr),
+    _tindex(-1),
+    _next_for_term(nullptr),
+    _t_alt(nullptr),
+    _next_for_clear(nullptr),
+    _sring(nullptr),
+    _dbwire_id(-1),
+    _fre(false),
+    _jct(false),
+    _pinpt(false),
+    _c2pinpt(false)
+{
+}
+
 void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 {
   *iterm = NULL;
@@ -95,16 +112,12 @@ void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 tmg_conn::tmg_conn()
 {
   _rcV.reserve(1024);
-  _ptNmax = 1024;
-  _ptV = (tmg_rcpt*) malloc(_ptNmax * sizeof(tmg_rcpt));
   _termNmax = 1024;
   _termV = (tmg_rcterm*) malloc(_termNmax * sizeof(tmg_rcterm));
   _tstackV = (tmg_rcterm**) malloc(_termNmax * sizeof(tmg_rcterm*));
-  _csVV = (tmg_connect_shape**) malloc(_termNmax * sizeof(tmg_connect_shape*));
+  _csVV.resize(_termNmax);
   _csNV = (int*) malloc(_termNmax * sizeof(int));
   int j;
-  for (j = 0; j < _termNmax; j++)
-    _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
   _shortNmax = 1024;
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
   _search = NULL;
@@ -125,12 +138,10 @@ int tmg_conn::ptDist(int fr, int to)
   return dist;
 }
 
-void tmg_conn::allocPt()
+tmg_rcpt* tmg_conn::allocPt()
 {
-  if (_ptN + 2 >= _ptNmax) {
-    _ptNmax *= 2;
-    _ptV = (tmg_rcpt*) realloc(_ptV, _ptNmax * sizeof(tmg_rcpt));
-  }
+  _ptV.emplace_back();
+  return &_ptV.back();
 }
 
 void tmg_conn::addRc(dbShape& s, int ifr, int ito)
@@ -241,10 +252,7 @@ void tmg_conn::addITerm(dbITerm* iterm)
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV
         = (tmg_rcterm**) realloc(_tstackV, _termNmax * sizeof(tmg_rcterm*));
-    _csVV = (tmg_connect_shape**) realloc(
-        _csVV, _termNmax * sizeof(tmg_connect_shape*));
-    for (j = j0; j < _termNmax; j++)
-      _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
+    _csVV.resize(_termNmax);
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
@@ -262,10 +270,7 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV
         = (tmg_rcterm**) realloc(_tstackV, _termNmax * sizeof(tmg_rcterm*));
-    _csVV = (tmg_connect_shape**) realloc(
-        _csVV, _termNmax * sizeof(tmg_connect_shape*));
-    for (j = j0; j < _termNmax; j++)
-      _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
+    _csVV.resize(_termNmax);
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
@@ -313,7 +318,7 @@ void tmg_conn::loadNet(dbNet* net)
   // notice(0, "tmg_conn::loadNet(%s)\n",net->getName().c_str());
   _net = net;
   _rcV.clear();
-  _ptN = 0;
+  _ptV.clear();
   _termN = 0;
   _shortN = 0;
   _first_for_clear = NULL;
@@ -395,37 +400,20 @@ void tmg_conn::loadSWire(dbNet* net)
         shape.setSegment(layer1, rect);
       }
 
-      if (_ptN + 2 >= _ptNmax)
-        allocPt();
-      pt = _ptV + _ptN;
-      pt->_x = x1;
-      pt->_y = y1;
-      pt->_layer = layer1;
-      pt->_tindex = -1;
-      pt->_t_alt = NULL;
-      pt->_next_for_term = NULL;
-      pt->_pinpt = 0;
-      pt->_c2pinpt = 0;
-      pt->_next_for_clear = NULL;
-      if (_ptN == 0 || pt->_layer != _ptV[_ptN - 1]._layer
-          || pt->_x != _ptV[_ptN - 1]._x || pt->_y != _ptV[_ptN - 1]._y)
-        _ptN++;
+      if (_ptV.empty() || layer1 != _ptV.back()._layer
+          || x1 != _ptV.back()._x || y1 != _ptV.back()._y) {
+        pt = allocPt();
+        pt->_x = x1;
+        pt->_y = y1;
+        pt->_layer = layer1;
+      }
 
-      if (_ptN + 2 >= _ptNmax)
-        allocPt();
-      pt = _ptV + _ptN;
+      pt = allocPt();
       pt->_x = x2;
       pt->_y = y2;
       pt->_layer = layer2;
-      pt->_tindex = -1;
-      pt->_t_alt = NULL;
-      pt->_next_for_term = NULL;
-      pt->_pinpt = 0;
-      pt->_c2pinpt = 0;
-      pt->_next_for_clear = NULL;
-      addRc(shape, _ptN - 1, _ptN);
+      addRc(shape, _ptV.size() - 2, _ptV.size() - 1);
       _rcV.back()._shape._rule = NULL;
-      _ptN++;
     }
   }
 }
@@ -436,62 +424,28 @@ void tmg_conn::loadWire(dbWire* wire)
   dbWirePath path;
   dbWirePathShape pathShape;
   tmg_rcpt* pt;
-  _ptN = 0;
+  _ptV.clear();
   pitr.begin(wire);
   while (pitr.getNextPath(path)) {
-    if (_ptN + 2 >= _ptNmax)
-      allocPt();
-    pt = _ptV + _ptN;
-    pt->_x = path.point.getX();
-    pt->_y = path.point.getY();
-    pt->_layer = path.layer;
-    pt->_tindex = -1;
-    pt->_t_alt = NULL;
-    pt->_next_for_term = NULL;
-    pt->_pinpt = 0;
-    pt->_c2pinpt = 0;
-    pt->_next_for_clear = NULL;
-    if (_ptN == 0 || pt->_layer != _ptV[_ptN - 1]._layer
-        || pt->_x != _ptV[_ptN - 1]._x || pt->_y != _ptV[_ptN - 1]._y)
-      _ptN++;
+    if (_ptV.empty() || path.layer != _ptV.back()._layer
+        || path.point.getX() != _ptV.back()._x
+        || path.point.getY() != _ptV.back()._y) {
+      pt = allocPt();
+      pt->_x = path.point.getX();
+      pt->_y = path.point.getY();
+      pt->_layer = path.layer;
+    }
     while (pitr.getNextShape(pathShape)) {
-      if (_ptN + 2 >= _ptNmax)
-        allocPt();
-      pt = _ptV + _ptN;
+      pt = allocPt();
       pt->_x = pathShape.point.getX();
       pt->_y = pathShape.point.getY();
       pt->_layer = pathShape.layer;
-      pt->_tindex = -1;
-      pt->_t_alt = NULL;
-      pt->_next_for_term = NULL;
-      pt->_pinpt = 0;
-      pt->_c2pinpt = 0;
-      pt->_next_for_clear = NULL;
-      addRc(pathShape.shape, _ptN - 1, _ptN);
+      addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1);
       _rcV.back()._shape._rule = path.rule;
-      _ptN++;
     }
   }
 
   loadSWire(wire->getNet());
-
-#if 0
-  int j,k=0;
-  for (j=0;j<_ptN;j++) {
-    if (_rcV[k]._ifr == j-1 && _rcV[k]._ito == j) {
-      notice(0, "rcV[%d] ",k); print_shape(_rcV[k]._shape);
-      if (!_rcV[k]._shape.isVia()) {
-        int dx = _rcV[k]._shape.getDX();
-        int dy = _rcV[k]._shape.getDY();
-        notice(0, "  w %d",(dx<dy?dx:dy));
-      }
-      if (_rcV[k]._shape._rule) notice(0, " %s",_rcV[k]._shape._rule->getName().c_str());
-      notice(0, "\n");
-      k++;
-    } else notice(0, "\n");
-    notice(0, "ptV[%d] %s (%d %d)\n",j,_ptV[j]._layer->getName().c_str(), _ptV[j]._x,_ptV[j]._y);
-  }
-#endif
 }
 
 void tmg_conn::splitBySj(bool verbose,
@@ -522,9 +476,8 @@ void tmg_conn::splitBySj(bool verbose,
       nxmax = sk->xMax();
       nymin = sk->yMin();
       nymax = sk->yMax();
-      if (_ptN + 2 >= _ptNmax)
-        allocPt();
-      pt = _ptV + _ptN;
+      int x;
+      int y;
       if (_rcV[k]._vert) {
         if (sjyMin - sk->yMin() < _rcV[k]._width)
           continue;
@@ -553,8 +506,8 @@ void tmg_conn::splitBySj(bool verbose,
                 0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, sk->yMax());
           nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
         }
-        pt->_x = _ptV[_rcV[k]._ifr]._x;
-        pt->_y = _ptV[_rcV[j]._ifr]._y;
+        x = _ptV[_rcV[k]._ifr]._x;
+        y = _ptV[_rcV[j]._ifr]._y;
       } else {
         if (sjxMin - sk->xMin() < _rcV[k]._width)
           continue;
@@ -585,10 +538,13 @@ void tmg_conn::splitBySj(bool verbose,
                 0, "      ( %d %d %d %d )\n", nxmin, nymin, sk->xMax(), nymax);
           nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
         }
-        pt->_x = _ptV[_rcV[j]._ifr]._x;
-        pt->_y = _ptV[_rcV[k]._ifr]._y;
+        x = _ptV[_rcV[j]._ifr]._x;
+        y = _ptV[_rcV[k]._ifr]._y;
       }
       klast = k;
+      pt = allocPt();
+      pt->_x = x;
+      pt->_y = y;
       pt->_layer = tlayer;
       pt->_tindex = -1;
       pt->_t_alt = NULL;
@@ -598,10 +554,9 @@ void tmg_conn::splitBySj(bool verbose,
       pt->_next_for_clear = NULL;
       pt->_sring = NULL;
       endTo = _rcV[k]._ito;
-      _rcV[k]._ito = _ptN;
+      _rcV[k]._ito = _ptV.size() - 1;
       // create new tmg_rc
-      addRc(k, _rcV[k]._shape, _ptN, endTo, nxmin, nymin, nxmax, nymax);
-      _ptN++;
+      addRc(k, _rcV[k]._shape, _ptV.size() - 1, endTo, nxmin, nymin, nxmax, nymax);
       _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
       if (verbose || _gVerbose)
         notice(0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, nymax);
@@ -687,8 +642,8 @@ void tmg_conn::setSring()
   int ii;
   for (ii = 0; ii < _shortN; ii++)
     if (!_shortV[ii]._skip) {
-      tmg_rcpt* pfr = _ptV + _shortV[ii]._i0;
-      tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
+      tmg_rcpt* pfr = &_ptV[_shortV[ii]._i0];
+      tmg_rcpt* pto = &_ptV[_shortV[ii]._i1];
       tmg_rcpt* x;
       if (pfr == pto) {
         notice(0, "WHAT?\n");
@@ -826,7 +781,7 @@ void tmg_conn::findConnections(bool verbose)
 {
   // void tmg_conn_search::addShape(int lyr,int xlo,int ylo,int xhi,int yhi,int
   // id)
-  if (!_ptN)
+  if (_ptV.empty())
     return;
   if (!_search)
     _search = new tmg_conn_search();
@@ -838,7 +793,7 @@ void tmg_conn::findConnections(bool verbose)
   int via_x, via_y;
   dbSet<dbBox> boxes;
 
-  for (int j = 0; j < _ptN; j++) {
+  for (int j = 0; j < _ptV.size(); j++) {
     _ptV[j]._fre = 1;
     _ptV[j]._jct = 0;
     _ptV[j]._pinpt = 0;
@@ -994,7 +949,7 @@ void tmg_conn::findConnections(bool verbose)
   // connect pins
   Rect rect;
   for (int j = 0; j < _termN; j++) {
-    _csV = _csVV[j];
+    _csV = &_csVV[j];
     _csN = 0;
     tmg_rcterm* x = _termV + j;
     if (x->_iterm) {
@@ -1032,15 +987,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt_t;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt_t;
                   _csN++;
                 }
               rt_b = tv->getBottomLayer()->getRoutingLevel();
@@ -1054,15 +1009,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt_b;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt_b;
                   _csN++;
                 }
             } else if (ipass == 0 && !box->isVia()) {
@@ -1080,15 +1035,15 @@ void tmg_conn::findConnections(bool verbose)
                   klast = k;
                   int ii;
                   for (ii = 0; ii < _csN; ii++)
-                    if (k == _csV[ii].k)
+                    if (k == (*_csV)[ii].k)
                       break;
                   if (ii < _csN && _csN >= 8)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k = k;
-                  _csV[_csN].rect = rect;
-                  _csV[_csN].rtlev = rt;
+                  (*_csV)[_csN].k = k;
+                  (*_csV)[_csN].rect = rect;
+                  (*_csV)[_csN].rtlev = rt;
                   _csN++;
                 }
             }
@@ -1123,15 +1078,15 @@ void tmg_conn::findConnections(bool verbose)
               klast = k;
               int ii;
               for (ii = 0; ii < _csN; ii++)
-                if (k == _csV[ii].k)
+                if (k == (*_csV)[ii].k)
                   break;
               if (ii < _csN)
                 continue;
               if (_csN == 32)
                 break;
-              _csV[_csN].k = k;
-              _csV[_csN].rect = rect;
-              _csV[_csN].rtlev = rt;
+              (*_csV)[_csN].k = k;
+              (*_csV)[_csN].rect = rect;
+              (*_csV)[_csN].rtlev = rt;
               _csN++;
             }
         }
@@ -1140,8 +1095,8 @@ void tmg_conn::findConnections(bool verbose)
     _csNV[j] = _csN;
   }
 
-  for (int j = 0; j < _ptN; j++) {
-    tmg_rcpt* pc = _ptV + j;
+  for (int j = 0; j < _ptV.size(); j++) {
+    tmg_rcpt* pc = &_ptV[j];
     pc->_pinpt = 0;
     pc->_c2pinpt = 0;
     pc->_next_for_clear = NULL;
@@ -1292,7 +1247,7 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
 
 void tmg_conn::connectTerm(int j, bool soft)
 {
-  _csV = _csVV[j];
+  _csV = &_csVV[j];
   _csN = _csNV[j];
   if (!_csN)
     return;
@@ -1306,12 +1261,12 @@ void tmg_conn::connectTerm(int j, bool soft)
   _first_for_clear = NULL;
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
-    tmg_rcpt* pfr = _ptV + _rcV[k]._ifr;
-    tmg_rcpt* pto = _ptV + _rcV[k]._ito;
+    int k = (*_csV)[ii].k;
+    tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
+    tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
     Point afr(pfr->_x, pfr->_y);
-    if (_csV[ii].rtlev == pfr->_layer->getRoutingLevel()
-        && _csV[ii].rect.intersects(afr)) {
+    if ((*_csV)[ii].rtlev == pfr->_layer->getRoutingLevel()
+        && (*_csV)[ii].rect.intersects(afr)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
         _first_for_clear = pfr;
@@ -1325,8 +1280,8 @@ void tmg_conn::connectTerm(int j, bool soft)
       pto->_c2pinpt = 1;
     }
     Point ato(pto->_x, pto->_y);
-    if (_csV[ii].rtlev == pto->_layer->getRoutingLevel()
-        && _csV[ii].rect.intersects(ato)) {
+    if ((*_csV)[ii].rtlev == pto->_layer->getRoutingLevel()
+        && (*_csV)[ii].rect.intersects(ato)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
         _first_for_clear = pfr;
@@ -1387,9 +1342,9 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
-    tmg_rcpt* pfr = _ptV + _rcV[k]._ifr;
-    tmg_rcpt* pto = _ptV + _rcV[k]._ito;
+    int k = (*_csV)[ii].k;
+    tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
+    tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
     if (pfr->_c2pinpt) {
       if (!(pto->_pinpt || pto->_c2pinpt)) {
         pto->_next_for_clear = _first_for_clear;
@@ -1411,7 +1366,7 @@ void tmg_conn::connectTerm(int j, bool soft)
   notice(0,"\n");
   int p[64], pN=0, m;
   for (ii=0;ii<_csN;ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     int bfr = _rcV[k]._ifr;
     int bto = _rcV[k]._ito;
     for (m=0;m<pN;m++) if (bfr==p[m]) break;
@@ -1428,7 +1383,7 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int k = _csV[ii].k;
+    int k = (*_csV)[ii].k;
     int bfr = _rcV[k]._ifr;
     int bto = _rcV[k]._ito;
     tmg_rcpt *pt, *pother;
@@ -1436,12 +1391,12 @@ void tmg_conn::connectTerm(int j, bool soft)
     bool cto = _ptV[bto]._pinpt;
     if (soft && !cfr && !cto) {
       if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
-        connectTermSoft(j, _csV[ii].rtlev, _csV[ii].rect, _csV[ii].k);
+        connectTermSoft(j, (*_csV)[ii].rtlev, (*_csV)[ii].rect, (*_csV)[ii].k);
       continue;
     }
     if (cfr && !cto) {
-      pt = _ptV + bfr;
-      pother = _ptV + bto;
+      pt = &_ptV[bfr];
+      pother = &_ptV[bto];
       if (pt->_tindex == j)
         continue;
       if (pt->_tindex >= 0 && pt->_t_alt && pt->_t_alt->_tindex < 0) {
@@ -1466,8 +1421,8 @@ void tmg_conn::connectTerm(int j, bool soft)
       addPointToTerm(pt, x);
 
     } else if (cto && !cfr) {
-      pt = _ptV + bto;
-      pother = _ptV + bfr;
+      pt = &_ptV[bto];
+      pother = &_ptV[bfr];
       if (pt->_tindex == j)
         continue;
       if (pt->_tindex >= 0 && pt->_t_alt && pt->_t_alt->_tindex < 0) {
@@ -1495,13 +1450,13 @@ void tmg_conn::connectTerm(int j, bool soft)
       if (_ptV[bfr]._tindex == j || _ptV[bto]._tindex == j)
         continue;
       if (_ptV[bfr]._tindex >= 0 && _ptV[bto]._tindex < 0) {
-        pt = _ptV + bto;
+        pt = &_ptV[bto];
         pt->_tindex = j;
         addPointToTerm(pt, x);
         continue;
       }
-      pt = _ptV + bfr;
-      pother = _ptV + bto;
+      pt = &_ptV[bfr];
+      pother = &_ptV[bto];
       if (pt->_tindex >= 0 && pt->_t_alt && pt->_t_alt->_tindex < 0) {
         int oldt = pt->_tindex;
         removePointFromTerm(pt, _termV + oldt);
@@ -1526,7 +1481,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     }
     //  else if (softm {
     //   if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
-    //     connectTermSoft(j,_csV[ii].rtlev,_csV[ii].rect,_csV[ii].k);
+    //     connectTermSoft(j,(*_csV)[ii].rtlev,(*_csV)[ii].rect,(*_csV)[ii].k);
     // }
   }
   for (pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
@@ -1569,8 +1524,8 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
     if (abs(dbfr - dbto) > 5000)
       has_alt = false;
   }
-  tmg_rcpt* pt = _ptV + (choose_bfr ? bfr : bto);
-  tmg_rcpt* pother = _ptV + (choose_bfr ? bto : bfr);
+  tmg_rcpt* pt = &_ptV[choose_bfr ? bfr : bto];
+  tmg_rcpt* pother = &_ptV[choose_bfr ? bto : bfr];
   if (pt->_tindex == j) {
     // notice(0, "already connected\n");
     return;
@@ -1638,7 +1593,7 @@ void tmg_conn::printConnections()
          _net->getName().c_str());
 
   int k = 0;
-  for (j = 0; j < _ptN; j++) {
+  for (j = 0; j < _ptV.size(); j++) {
     if (_rcV[k]._ifr == j - 1 && _rcV[k]._ito == j) {
       notice(0, "  ");
       print_shape(_rcV[k]._shape);
@@ -1706,7 +1661,7 @@ int tmg_conn::getStartNode()
     if (x->_iterm == it_drv && x->_bterm == bt_drv) {
       if (!x->_pt)
         return 0;
-      return (x->_pt - _ptV);
+      return (x->_pt - &_ptV[0]);
     }
   }
   return 0;
@@ -1730,7 +1685,7 @@ void tmg_conn::analyzeNet(dbNet* net,
     loadNet(net);
     if (net->getWire())
       loadWire(net->getWire());
-    if (!_ptN) {
+    if (_ptV.empty()) {
       // ignoring this net
       net->setDisconnected(false);
       net->setWireOrdered(false);
@@ -1766,7 +1721,7 @@ void tmg_conn::analyzeNet(dbNet* net,
 
 void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
 {
-  if (!_ptN) {
+  if (_ptV.empty()) {
     // ignoring this net
     _net->setDisconnected(false);
     _net->setWireOrdered(false);
@@ -1827,7 +1782,7 @@ bool tmg_conn::checkConnected()
         x = _termV + _ptV[jto]._tindex;
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
-          removePointFromTerm(_ptV + jto, _termV + _ptV[jto]._tindex);
+          removePointFromTerm(&_ptV[jto], _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
           _ptV[jto]._t_alt = NULL;
         } else if (x->_pt && x->_pt->_next_for_term) {
@@ -1840,12 +1795,12 @@ bool tmg_conn::checkConnected()
         if (_ptV[jfr]._tindex >= 0) {
           x = _termV + _ptV[jfr]._tindex;
           if (x->_first_pt == NULL)
-            x->_first_pt = _ptV + jfr;
+            x->_first_pt = &_ptV[jfr];
         }
         if (_ptV[jto]._tindex >= 0) {
           x = _termV + _ptV[jto]._tindex;
           if (x->_first_pt == NULL)
-            x->_first_pt = _ptV + jto;
+            x->_first_pt = &_ptV[jto];
         }
       }
     }
@@ -1855,7 +1810,7 @@ bool tmg_conn::checkConnected()
     while (tstack0 < tstackN && !pt) {
       x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term)
-        if (!isVisited(pt - _ptV))
+        if (!isVisited(pt - &_ptV[0]))
           break;
     }
     if (pt) {
@@ -1864,7 +1819,7 @@ bool tmg_conn::checkConnected()
     if (!pt) {
       break;
     }
-    jstart = pt - _ptV;
+    jstart = pt - &_ptV[0];
     if (!dfsStart(jstart)) {
       return false;
     }
@@ -1883,7 +1838,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
 {
   _connected = true;
   _need_short_wire_id = 0;
-  if (!_ptN)
+  if (_ptV.empty())
     return;
   _newWire = NULL;
   _last_id = -1;
@@ -1893,7 +1848,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     if (!_newWire)
       _newWire = dbWire::create(_net);
     _encoder.begin(_newWire);
-    for (j = 0; j < _ptN; j++)
+    for (j = 0; j < _ptV.size(); j++)
       _ptV[j]._dbwire_id = -1;
   }
   tmg_rcterm *x, *xstart;
@@ -1901,7 +1856,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     x = _termV + j;
     x->_first_pt = NULL;
     if (verbose) {
-      notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - _ptV) : 0);
+      notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - &_ptV[0]) : 0);
       print_rcterm(x);
       notice(0, "\n");
     }
@@ -1965,7 +1920,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         x = _termV + _ptV[jto]._tindex;
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
-          removePointFromTerm(_ptV + jto, _termV + _ptV[jto]._tindex);
+          removePointFromTerm(&_ptV[jto], _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
           _ptV[jto]._t_alt = NULL;
         } else if (x->_pt && x->_pt->_next_for_term) {
@@ -1992,12 +1947,12 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         if (_ptV[jfr]._tindex >= 0) {
           x = _termV + _ptV[jfr]._tindex;
           if (x->_first_pt == NULL)
-            x->_first_pt = _ptV + jfr;
+            x->_first_pt = &_ptV[jfr];
         }
         if (_ptV[jto]._tindex >= 0) {
           x = _termV + _ptV[jto]._tindex;
           if (x->_first_pt == NULL)
-            x->_first_pt = _ptV + jto;
+            x->_first_pt = &_ptV[jto];
         }
       }
     }
@@ -2007,7 +1962,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     while (tstack0 < tstackN && !pt) {
       x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term)
-        if (!isVisited(pt - _ptV))
+        if (!isVisited(pt - &_ptV[0]))
           break;
     }
     if (pt) {
@@ -2023,7 +1978,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
     if (!pt) {
       for (j = last_term_index; j < _termN; j++) {
         x = _termV + j;
-        if (x->_pt && !isVisited(x->_pt - _ptV))
+        if (x->_pt && !isVisited(x->_pt - &_ptV[0]))
           break;
       }
       last_term_index = j;
@@ -2037,11 +1992,11 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
         jstart = getDisconnectedStart();
         if (jstart < 0)
           break;  // normal exit, no more subtrees
-        pt = _ptV + jstart;
+        pt = &_ptV[jstart];
         _last_id = -1;
       }
     }
-    jstart = pt - _ptV;
+    jstart = pt - &_ptV[0];
     if (!dfsStart(jstart)) {
       warning(0, "cannot order %s\n", _net->getConstName());
       return;
@@ -2059,12 +2014,12 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
 int tmg_conn::getExtension(int ipt, tmg_rc* rc)
 {
   int ext = rc->_default_ext;
-  tmg_rcpt* p = _ptV + ipt;
+  tmg_rcpt* p = &_ptV[ipt];
   tmg_rcpt* pto;
   if (ipt == rc->_ifr)
-    pto = _ptV + rc->_ito;
+    pto = &_ptV[rc->_ito];
   else if (ipt == rc->_ito)
-    pto = _ptV + rc->_ifr;
+    pto = &_ptV[rc->_ifr];
   else {
     notice(0, "error, addPoint(int,rc)\n");
     exit(0);
@@ -2084,7 +2039,7 @@ int tmg_conn::getExtension(int ipt, tmg_rc* rc)
 int tmg_conn::addPoint(int ipt, tmg_rc* rc)
 {
   int wire_id, ext;
-  tmg_rcpt* p = _ptV + ipt;
+  tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
   if (ext == rc->_default_ext) {
     // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
@@ -2099,7 +2054,7 @@ int tmg_conn::addPoint(int ipt, tmg_rc* rc)
 int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
 {
   int wire_id, ext;
-  tmg_rcpt* p = _ptV + ipt;
+  tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
   if (_max_length) {
     int fx = _ptV[ifr]._x;
@@ -2190,7 +2145,7 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
   // for first wire after a via, need to add a point
   // only if the extension is not the default ext
   int wire_id = 0, ext;
-  tmg_rcpt* p = _ptV + ipt;
+  tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
   if (ext != rc->_default_ext) {
     // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
@@ -2293,7 +2248,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
       if (x->_first_pt == NULL)
-        x->_first_pt = _ptV + fr;
+        x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
       else
@@ -2328,7 +2283,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
       if (x->_first_pt == NULL)
-        x->_first_pt = _ptV + fr;
+        x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
       else
@@ -2363,7 +2318,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
       if (x->_first_pt == NULL)
-        x->_first_pt = _ptV + fr;
+        x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
       else
@@ -2394,7 +2349,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 
   if (_ptV[to]._tindex >= 0 && _ptV[to]._tindex != _ptV[fr]._tindex
       && _ptV[to]._t_alt && _ptV[to]._t_alt->_tindex < 0
-      && !isVisited(_ptV[to]._t_alt - _ptV)) {
+      && !isVisited(_ptV[to]._t_alt - &_ptV[0])) {
     // move an ambiguous connection to the later point
     // this is for receiver; we should not get here for driver
     tmg_rcpt* pother = _ptV[to]._t_alt;
@@ -2405,7 +2360,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   if (_ptV[to]._tindex >= 0) {
     x = _termV + _ptV[to]._tindex;
     if (x->_first_pt == NULL)
-      x->_first_pt = _ptV + to;
+      x->_first_pt = &_ptV[to];
     if (verbose)
       notice(0, "term at id=%d\n", to_id);
     if (x->_iterm)

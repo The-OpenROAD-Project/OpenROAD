@@ -82,22 +82,22 @@ void io::Parser::initDefaultVias()
     if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
       auto techDefautlViaDef = tech->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
-      frBox layer1Box;
-      frBox layer2Box;
+      Rect layer1Box;
+      Rect layer2Box;
       frLayerNum layer1Num;
       frLayerNum layer2Num;
       via.getLayer1BBox(layer1Box);
       via.getLayer2BBox(layer2Box);
       layer1Num = techDefautlViaDef->getLayer1Num();
       layer2Num = techDefautlViaDef->getLayer2Num();
-      bool isLayer1Square = (layer1Box.right() - layer1Box.left())
-                            == (layer1Box.top() - layer1Box.bottom());
-      bool isLayer2Square = (layer2Box.right() - layer2Box.left())
-                            == (layer2Box.top() - layer2Box.bottom());
-      bool isLayer1EncHorz = (layer1Box.right() - layer1Box.left())
-                             > (layer1Box.top() - layer1Box.bottom());
-      bool isLayer2EncHorz = (layer2Box.right() - layer2Box.left())
-                             > (layer2Box.top() - layer2Box.bottom());
+      bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
+                            == (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
+                            == (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
+                             > (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
+                             > (layer2Box.yMax() - layer2Box.yMin());
       bool isLayer1Horz
           = (tech->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz
@@ -122,16 +122,16 @@ void io::Parser::initDefaultVias()
         // routing layer shape
         // rotate if needed
         if (isLayer1EncHorz != isLayer1Horz) {
-          layer1Box.set(layer1Box.bottom(),
-                        layer1Box.left(),
-                        layer1Box.top(),
-                        layer1Box.right());
+          layer1Box.init(layer1Box.yMin(),
+                         layer1Box.xMin(),
+                         layer1Box.yMax(),
+                         layer1Box.xMax());
         }
         if (isLayer2EncHorz != isLayer2Horz) {
-          layer2Box.set(layer2Box.bottom(),
-                        layer2Box.left(),
-                        layer2Box.top(),
-                        layer2Box.right());
+          layer2Box.init(layer2Box.yMin(),
+                         layer2Box.xMin(),
+                         layer2Box.yMax(),
+                         layer2Box.xMax());
         }
 
         unique_ptr<frShape> uBotFig = make_unique<frRect>();
@@ -147,7 +147,7 @@ void io::Parser::initDefaultVias()
         // cut layer shape
         unique_ptr<frShape> uCutFig = make_unique<frRect>();
         auto cutFig = static_cast<frRect*>(uCutFig.get());
-        frBox cutBox;
+        Rect cutBox;
         via.getCutBBox(cutBox);
         cutFig->setBBox(cutBox);
         cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
@@ -334,9 +334,9 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
   PolygonSet viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
-    Rectangle bboxRect(bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+    Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS1 += bboxRect;
   }
   Rectangle layer1Rect;
@@ -354,9 +354,9 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
-    Rectangle bboxRect(bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+    Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS2 += bboxRect;
   }
   Rectangle layer2Rect;
@@ -633,6 +633,50 @@ void io::Parser::initDefaultVias_N16(const string& node)
   }
 }
 
+void io::Parser::initConstraints()
+{
+  for (auto& layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      auto viaDef = layer->getDefaultViaDef();
+      if (viaDef == nullptr)
+        continue;
+      frVia via(viaDef);
+      Rect tmpBx;
+      via.getCutBBox(tmpBx);
+      frString cutClass1 = "";
+      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
+      if (cutClassIdx1 >= 0)
+        cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
+      if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
+        auto con = layer->getLef58DiffNetCutSpcTblConstraint();
+        auto dbRule = con->getODBRule();
+        con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass1));
+        con->setDefaultCenterToCenter(
+            dbRule->isCenterToCenter(cutClass1, cutClass1)
+            || dbRule->isCenterAndEdge(cutClass1, cutClass1));
+      }
+      if (layer->hasLef58DefaultInterCutSpcTblConstraint()) {
+        auto con = layer->getLef58DefaultInterCutSpcTblConstraint();
+        auto dbRule = con->getODBRule();
+        auto secondLayer = tech->getLayer(dbRule->getSecondLayer()->getName());
+        viaDef = secondLayer->getDefaultViaDef();
+        if (viaDef != nullptr) {
+          via.getCutBBox(tmpBx);
+          frString cutClass2 = "";
+          auto cutClassIdx2
+              = secondLayer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
+          if (cutClassIdx2 >= 0)
+            cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
+          con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass2));
+          con->setDefaultCenterToCenter(
+              dbRule->isCenterToCenter(cutClass1, cutClass2)
+              || dbRule->isCenterAndEdge(cutClass1, cutClass2));
+        }
+      }
+    }
+  }
+}
+
 void io::Parser::postProcess()
 {
   initDefaultVias();
@@ -645,10 +689,10 @@ void io::Parser::postProcess()
   }
   initCutLayerWidth();
   initConstraintLayerIdx();
+  initConstraints();
   tech->printDefaultVias(logger);
 
   instAnalysis();
-
   // init region query
   logger->info(DRT, 168, "Init region query.");
   design->getRegionQuery()->init();
@@ -810,12 +854,12 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
-      frBox guideBBox;
+      Rect guideBBox;
       rect.getBBox(guideBBox);
       frCoord guideWidth
           = (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
-                ? (guideBBox.top() - guideBBox.bottom())
-                : (guideBBox.right() - guideBBox.left());
+                ? (guideBBox.yMax() - guideBBox.yMin())
+                : (guideBBox.xMax() - guideBBox.xMin());
       if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
@@ -869,10 +913,10 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       // frLayerNum layerNum = rect.getLayerNum();
-      frBox guideBBox;
+      Rect guideBBox;
       rect.getBBox(guideBBox);
-      frCoord guideXOffset = guideBBox.left() % GCELLGRIDX;
-      frCoord guideYOffset = guideBBox.bottom() % GCELLGRIDY;
+      frCoord guideXOffset = guideBBox.xMin() % GCELLGRIDX;
+      frCoord guideYOffset = guideBBox.yMin() % GCELLGRIDY;
       if (guideXOffset < 0) {
         guideXOffset = GCELLGRIDX - guideXOffset;
       }
@@ -922,7 +966,7 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
 void io::Parser::buildGCellPatterns()
 {
   // horizontal = false is gcell lines along y direction (x-grid)
-  frBox dieBox;
+  Rect dieBox;
   design->getTopBlock()->getDieBox(dieBox);
 
   frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
@@ -930,35 +974,35 @@ void io::Parser::buildGCellPatterns()
 
   frGCellPattern xgp;
   xgp.setHorizontal(false);
-  // find first coord >= dieBox.left()
+  // find first coord >= dieBox.xMin()
   frCoord startCoordX
-      = dieBox.left() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
+      = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
         + GCELLOFFSETX;
-  if (startCoordX > dieBox.left()) {
+  if (startCoordX > dieBox.xMin()) {
     startCoordX -= (frCoord) GCELLGRIDX;
   }
   xgp.setStartCoord(startCoordX);
   xgp.setSpacing(GCELLGRIDX);
-  if ((dieBox.right() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+  if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
     logger->error(DRT, 174, "GCell cnt x < 1.");
   }
-  xgp.setCount((dieBox.right() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
+  xgp.setCount((dieBox.xMax() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
 
   frGCellPattern ygp;
   ygp.setHorizontal(true);
-  // find first coord >= dieBox.bottom()
+  // find first coord >= dieBox.yMin()
   frCoord startCoordY
-      = dieBox.bottom() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
+      = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
         + GCELLOFFSETY;
-  if (startCoordY > dieBox.bottom()) {
+  if (startCoordY > dieBox.yMin()) {
     startCoordY -= (frCoord) GCELLGRIDY;
   }
   ygp.setStartCoord(startCoordY);
   ygp.setSpacing(GCELLGRIDY);
-  if ((dieBox.top() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+  if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
     logger->error(DRT, 175, "GCell cnt y < 1.");
   }
-  ygp.setCount((dieBox.top() - startCoordY) / (frCoord) GCELLGRIDY);
+  ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
 
   if (VERBOSE > 0) {
     logger->info(DRT,
@@ -981,12 +1025,12 @@ void io::Parser::buildGCellPatterns()
        layerNum += 2) {
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
-        frBox gcellBox;
-        design->getTopBlock()->getGCellBox(frPoint(i, j), gcellBox);
+        Rect gcellBox;
+        design->getTopBlock()->getGCellBox(Point(i, j), gcellBox);
         bool isH = (tech->getLayers().at(layerNum)->getDir()
                     == dbTechLayerDir::HORIZONTAL);
-        frCoord gcLow = isH ? gcellBox.bottom() : gcellBox.right();
-        frCoord gcHigh = isH ? gcellBox.top() : gcellBox.left();
+        frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
+        frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
         int trackCnt = 0;
         for (auto& tp : design->getTopBlock()->getTrackPatterns(layerNum)) {
           if ((tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
@@ -1025,12 +1069,12 @@ void io::Parser::writeGuideFile()
       outputGuide << netName << endl;
       outputGuide << "(\n";
       for (auto& guide : net->getGuides()) {
-        frPoint bp, ep;
+        Point bp, ep;
         guide->getPoints(bp, ep);
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design->getTopBlock()->getGCellIdx(bp, bpIdx);
         design->getTopBlock()->getGCellIdx(ep, epIdx);
-        frBox bbox, ebox;
+        Rect bbox, ebox;
         design->getTopBlock()->getGCellBox(bpIdx, bbox);
         design->getTopBlock()->getGCellBox(epIdx, ebox);
         frLayerNum bNum = guide->getBeginLayerNum();
@@ -1038,13 +1082,13 @@ void io::Parser::writeGuideFile()
         // append unit guide in case of stacked via
         if (bNum != eNum) {
           auto startLayerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << bbox.right() << " " << bbox.top() << " "
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << bbox.xMax() << " " << bbox.yMax() << " "
                       << startLayerName << ".5" << endl;
         } else {
           auto layerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << ebox.right() << " " << ebox.top() << " " << layerName
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << ebox.xMax() << " " << ebox.yMax() << " " << layerName
                       << endl;
         }
       }

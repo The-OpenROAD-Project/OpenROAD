@@ -33,7 +33,6 @@
 
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frTransform.h"
 
 namespace fr {
 class grFig : public grBlockObject
@@ -42,7 +41,7 @@ class grFig : public grBlockObject
   // constructors
   grFig() : grBlockObject() {}
   // getters
-  virtual void getBBox(frBox& box) const = 0;
+  virtual void getBBox(Rect& box) const = 0;
   // setters
   // others
  protected:

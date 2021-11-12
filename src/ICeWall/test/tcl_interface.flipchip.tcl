@@ -104,6 +104,13 @@ define_pad_cell \
   -name DUMMY_BUMP \
   -cell_name DUMMY_BUMP \
   -type bump \
+  -pad_pin_name PAD \
+  -physical_only
+
+define_pad_cell \
+  -name CELL_DOESNT_EXIST \
+  -cell_name NOT_FOUND \
+  -type bump1 \
   -physical_only
 
 set_bump_options \

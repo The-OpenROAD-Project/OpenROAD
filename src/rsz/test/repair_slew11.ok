@@ -1,0 +1,47 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: repair_wire7.def
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 3 components and 12 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 4 nets and 6 connections.
+[INFO ODB-0134] Finished DEF file: repair_wire7.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/A                                    0.10    0.42   -0.32 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+in1                                    60.65  105.52  -44.87 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 1003um.
+[INFO RSZ-0034] Found 2 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0038] Inserted 5 buffers in 1 nets.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/A                                    0.10    0.04    0.06 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+repeater1/Z                            60.65   18.93   41.72 (MET)
+
+Net in1
+Driver pins
+ in1 input port (0, 0)
+
+Load pins
+ repeater5/A input (BUF_X1) (283, 1)

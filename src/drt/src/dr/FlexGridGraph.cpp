@@ -86,22 +86,22 @@ void FlexGridGraph::initGrids(
 bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx y,
                                 frMIdx z,
-                                const frBox& dieBox)
+                                const Rect& dieBox)
 {
   frViaDef* via = getTech()->getLayer(getLayerNum(z) + 1)->getDefaultViaDef();
-  frBox viaBox(via->getLayer1ShapeBox());
+  Rect viaBox(via->getLayer1ShapeBox());
   viaBox.merge(via->getLayer2ShapeBox());
-  viaBox.shift(xCoords_[x], yCoords_[y]);
+  viaBox.moveDelta(xCoords_[x], yCoords_[y]);
   return !dieBox.contains(viaBox);
 }
 
 bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
 {
   if (isVert)
-    return xCoords_[v] == drWorker_->getRouteBox().left()
-           || xCoords_[v] == drWorker_->getRouteBox().right();
-  return yCoords_[v] == drWorker_->getRouteBox().bottom()
-         || yCoords_[v] == drWorker_->getRouteBox().top();
+    return xCoords_[v] == drWorker_->getRouteBox().xMin()
+           || xCoords_[v] == drWorker_->getRouteBox().xMax();
+  return yCoords_[v] == drWorker_->getRouteBox().yMin()
+         || yCoords_[v] == drWorker_->getRouteBox().yMax();
 }
 bool FlexGridGraph::hasAlignedUpDefTrack(
     frLayerNum layerNum,
@@ -130,7 +130,7 @@ void FlexGridGraph::initEdges(
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
     const map<frLayerNum, dbTechLayerDir>& zMap,
-    const frBox& bbox,
+    const Rect& bbox,
     bool initDR)
 {
   frMIdx xDim, yDim, zDim;
@@ -294,8 +294,8 @@ void FlexGridGraph::initEdges(
 
 // initialization: update grid graph topology, does not assign edge cost
 void FlexGridGraph::init(const frDesign* design,
-                         const frBox& routeBBox,
-                         const frBox& extBBox,
+                         const Rect& routeBBox,
+                         const Rect& extBBox,
                          map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
                          map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
                          bool initDR,
@@ -322,7 +322,7 @@ void FlexGridGraph::initTracks(
     map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
     map<frLayerNum, dbTechLayerDir>& zMap,
-    const frBox& bbox)
+    const Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
     if (layer->getType() != dbTechLayerType::ROUTING) {
@@ -339,19 +339,19 @@ void FlexGridGraph::initTracks(
                                 && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)
                       : true;
       if (flag) {
-        int trackNum = ((tp->isHorizontal() ? bbox.left() : bbox.bottom())
+        int trackNum = ((tp->isHorizontal() ? bbox.xMin() : bbox.yMin())
                         - tp->getStartCoord())
                        / (int) tp->getTrackSpacing();
         if (trackNum < 0) {
           trackNum = 0;
         }
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-            < (tp->isHorizontal() ? bbox.left() : bbox.bottom())) {
+            < (tp->isHorizontal() ? bbox.xMin() : bbox.yMin())) {
           ++trackNum;
         }
         for (; trackNum < (int) tp->getNumTracks()
                && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                      < (tp->isHorizontal() ? bbox.right() : bbox.top());
+                      < (tp->isHorizontal() ? bbox.xMax() : bbox.yMax());
              ++trackNum) {
           frCoord trackLoc
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
@@ -395,11 +395,11 @@ void FlexGridGraph::print() const
   ofstream mazeLog(OUT_MAZE_FILE.c_str());
   if (mazeLog.is_open()) {
     // print edges
-    frBox gridBBox;
+    Rect gridBBox;
     getBBox(gridBBox);
-    mazeLog << "printing Maze grid (" << gridBBox.left() << ", "
-            << gridBBox.bottom() << ") -- (" << gridBBox.right() << ", "
-            << gridBBox.top() << ")\n";
+    mazeLog << "printing Maze grid (" << gridBBox.xMin() << ", "
+            << gridBBox.yMin() << ") -- (" << gridBBox.xMax() << ", "
+            << gridBBox.yMax() << ")\n";
     frMIdx xDim, yDim, zDim;
     getDim(xDim, yDim, zDim);
 
@@ -411,7 +411,7 @@ void FlexGridGraph::print() const
            << zDim << ")\n";
     }
 
-    frPoint p;
+    Point p;
     for (frMIdx xIdx = 0; xIdx < xDim; ++xIdx) {
       for (frMIdx yIdx = 0; yIdx < yDim; ++yIdx) {
         for (frMIdx zIdx = 0; zIdx < zDim; ++zIdx) {

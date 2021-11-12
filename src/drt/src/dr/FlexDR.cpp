@@ -34,9 +34,11 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
@@ -64,31 +66,25 @@ void FlexDR::setDebug(frDebugSettings* settings)
 
 int FlexDRWorker::main(frDesign* design)
 {
-  ProfileTask profile("DR:main");
+  ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
-    frBox scaledBox;
+    Rect scaledBox;
     stringstream ss;
     ss << endl
        << "start DR worker (BOX) "
-       << "( " << routeBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << routeBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
+       << "( " << routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU() << " "
+       << routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
+       << routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU() << " "
+       << routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
     cout << ss.str() << flush;
   }
 
   init(design);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
-    FlexGCWorker gcWorker(design->getTech(), logger_, this);
-    gcWorker.setExtBox(getExtBox());
-    gcWorker.setDrcBox(getDrcBox());
-    gcWorker.init(design);
-    gcWorker.setEnableSurgicalFix(true);
-
-    route_queue(gcWorker);
+    route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();
@@ -117,7 +113,7 @@ void FlexDR::initFromTA()
         if (connFig->typeId() == frcPathSeg) {
           unique_ptr<frShape> ps = make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
-          frPoint bp, ep;
+          Point bp, ep;
           static_cast<frPathSeg*>(ps.get())->getPoints(bp, ep);
           if (ep.x() - bp.x() + ep.y() - bp.y() == 1) {
             ;  // skip TA dummy segment
@@ -135,16 +131,16 @@ void FlexDR::initFromTA()
 void FlexDR::initGCell2BoundaryPin()
 {
   // initiailize size
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   auto tmpVec
-      = vector<map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>>(
+      = vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>(
           (int) ygp.getCount());
   gcell2BoundaryPin_ = vector<
-      vector<map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>>>(
+      vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>>(
       (int) xgp.getCount(), tmpVec);
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     auto netPtr = net.get();
@@ -153,7 +149,7 @@ void FlexDR::initGCell2BoundaryPin()
         if (connFig->typeId() == frcPathSeg) {
           auto ps = static_cast<frPathSeg*>(connFig.get());
           frLayerNum layerNum;
-          frPoint bp, ep;
+          Point bp, ep;
           ps->getPoints(bp, ep);
           layerNum = ps->getLayerNum();
           // skip TA dummy segment
@@ -161,7 +157,7 @@ void FlexDR::initGCell2BoundaryPin()
               || ep.x() - bp.x() + ep.y() - bp.y() == 0) {
             continue;
           }
-          frPoint idx1, idx2;
+          Point idx1, idx2;
           getDesign()->getTopBlock()->getGCellIdx(bp, idx1);
           getDesign()->getTopBlock()->getGCellIdx(ep, idx2);
           // update gcell2BoundaryPin
@@ -171,10 +167,10 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              frBox gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(frPoint(x, y), gcellBox);
-              frCoord leftBound = gcellBox.left();
-              frCoord rightBound = gcellBox.right();
+              Rect gcellBox;
+              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
+              frCoord leftBound = gcellBox.xMin();
+              frCoord rightBound = gcellBox.xMax();
               bool hasLeftBound = true;
               bool hasRightBound = true;
               if (bp.x() < leftBound) {
@@ -188,12 +184,12 @@ void FlexDR::initGCell2BoundaryPin()
                 hasRightBound = false;
               }
               if (hasLeftBound) {
-                frPoint boundaryPt(leftBound, bp.y());
+                Point boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
               if (hasRightBound) {
-                frPoint boundaryPt(rightBound, ep.y());
+                Point boundaryPt(rightBound, ep.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
@@ -203,10 +199,10 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              frBox gcellBox;
-              getDesign()->getTopBlock()->getGCellBox(frPoint(x, y), gcellBox);
-              frCoord bottomBound = gcellBox.bottom();
-              frCoord topBound = gcellBox.top();
+              Rect gcellBox;
+              getDesign()->getTopBlock()->getGCellBox(Point(x, y), gcellBox);
+              frCoord bottomBound = gcellBox.yMin();
+              frCoord topBound = gcellBox.yMax();
               bool hasBottomBound = true;
               bool hasTopBound = true;
               if (bp.y() < bottomBound) {
@@ -220,12 +216,12 @@ void FlexDR::initGCell2BoundaryPin()
                 hasTopBound = false;
               }
               if (hasBottomBound) {
-                frPoint boundaryPt(bp.x(), bottomBound);
+                Point boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
               if (hasTopBound) {
-                frPoint boundaryPt(ep.x(), topBound);
+                Point boundaryPt(ep.x(), topBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
               }
@@ -255,7 +251,7 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  frBox viaBox1, cutBox1;
+  Rect viaBox1, cutBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
     isVia1Above = true;
@@ -264,12 +260,12 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
     isVia1Above = false;
   }
   via1.getCutBBox(cutBox1);
-  auto width1 = viaBox1.width();
-  auto length1 = viaBox1.length();
+  int width1 = viaBox1.minDXDY();
+  int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  frBox viaBox2, cutBox2;
+  Rect viaBox2, cutBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
     isVia2Above = true;
@@ -278,8 +274,8 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
     isVia2Above = false;
   }
   via2.getCutBBox(cutBox2);
-  auto width2 = viaBox2.width();
-  auto length2 = viaBox2.length();
+  int width2 = viaBox2.minDXDY();
+  int length2 = viaBox2.maxDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
     if ((!con->hasLength() || (con->hasLength() && length1 > con->getLength()))
@@ -302,13 +298,13 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
       if (isH) {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox2.right() - 0 + 0 - viaBox1.left(),
-                            viaBox1.right() - 0 + 0 - cutBox2.left()));
+                      + max(cutBox2.xMax() - 0 + 0 - viaBox1.xMin(),
+                            viaBox1.xMax() - 0 + 0 - cutBox2.xMin()));
       } else {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox2.top() - 0 + 0 - viaBox1.bottom(),
-                            viaBox1.top() - 0 + 0 - cutBox2.bottom()));
+                      + max(cutBox2.yMax() - 0 + 0 - viaBox1.yMin(),
+                            viaBox1.yMax() - 0 + 0 - cutBox2.yMin()));
       }
     }
     // check via1cut to via2metal
@@ -332,13 +328,13 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
       if (isH) {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox1.right() - 0 + 0 - viaBox2.left(),
-                            viaBox2.right() - 0 + 0 - cutBox1.left()));
+                      + max(cutBox1.xMax() - 0 + 0 - viaBox2.xMin(),
+                            viaBox2.xMax() - 0 + 0 - cutBox1.xMin()));
       } else {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox1.top() - 0 + 0 - viaBox2.bottom(),
-                            viaBox2.top() - 0 + 0 - cutBox1.bottom()));
+                      + max(cutBox1.yMax() - 0 + 0 - viaBox2.yMin(),
+                            viaBox2.yMax() - 0 + 0 - cutBox1.yMin()));
       }
     }
   }
@@ -362,7 +358,7 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  frBox viaBox1, cutBox1;
+  Rect viaBox1, cutBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
     isVia1Above = true;
@@ -371,11 +367,11 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     isVia1Above = false;
   }
   via1.getCutBBox(cutBox1);
-  auto width1 = viaBox1.width();
+  int width1 = viaBox1.minDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  frBox viaBox2, cutBox2;
+  Rect viaBox2, cutBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
     isVia2Above = true;
@@ -384,7 +380,7 @@ bool FlexDR::init_via2viaMinLen_minimumcut2(frLayerNum lNum,
     isVia2Above = false;
   }
   via2.getCutBBox(cutBox2);
-  auto width2 = viaBox2.width();
+  int width2 = viaBox2.minDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
     if (con->hasLength()) {
@@ -452,30 +448,30 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef1);
-  frBox viaBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
   } else {
     via1.getLayer2BBox(viaBox1);
   }
-  auto width1 = viaBox1.width();
-  bool isVia1Fat = isH ? (viaBox1.top() - viaBox1.bottom() > defaultWidth)
-                       : (viaBox1.right() - viaBox1.left() > defaultWidth);
-  auto prl1 = isH ? (viaBox1.top() - viaBox1.bottom())
-                  : (viaBox1.right() - viaBox1.left());
+  auto width1 = viaBox1.minDXDY();
+  bool isVia1Fat = isH ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
+                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
+  auto prl1 = isH ? (viaBox1.yMax() - viaBox1.yMin())
+                  : (viaBox1.xMax() - viaBox1.xMin());
 
   frVia via2(viaDef2);
-  frBox viaBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
   } else {
     via2.getLayer2BBox(viaBox2);
   }
-  auto width2 = viaBox2.width();
-  bool isVia2Fat = isH ? (viaBox2.top() - viaBox2.bottom() > defaultWidth)
-                       : (viaBox2.right() - viaBox2.left() > defaultWidth);
-  auto prl2 = isH ? (viaBox2.top() - viaBox2.bottom())
-                  : (viaBox2.right() - viaBox2.left());
+  auto width2 = viaBox2.minDXDY();
+  bool isVia2Fat = isH ? (viaBox2.yMax() - viaBox2.yMin() > defaultWidth)
+                       : (viaBox2.xMax() - viaBox2.xMin() > defaultWidth);
+  auto prl2 = isH ? (viaBox2.yMax() - viaBox2.yMin())
+                  : (viaBox2.xMax() - viaBox2.xMin());
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
@@ -494,11 +490,11 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
       }
     }
     if (isH) {
-      reqDist += max((viaBox1.right() - 0), (0 - viaBox1.left()));
-      reqDist += max((viaBox2.right() - 0), (0 - viaBox2.left()));
+      reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
+      reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
     } else {
-      reqDist += max((viaBox1.top() - 0), (0 - viaBox1.bottom()));
-      reqDist += max((viaBox2.top() - 0), (0 - viaBox2.bottom()));
+      reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
+      reqDist += max((viaBox2.yMax() - 0), (0 - viaBox2.yMin()));
     }
     sol = max(sol, reqDist);
   }
@@ -515,9 +511,9 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
     via1.getLayer1BBox(viaBox1);
     lNum = lNum - 2;
   }
-  width1 = viaBox1.width();
-  prl1 = isH ? (viaBox1.top() - viaBox1.bottom())
-             : (viaBox1.right() - viaBox1.left());
+  width1 = viaBox1.minDXDY();
+  prl1 = isH ? (viaBox1.yMax() - viaBox1.yMin())
+             : (viaBox1.xMax() - viaBox1.xMin());
   reqDist = 0;
   auto con = getTech()->getLayer(lNum)->getMinSpacing();
   if (con) {
@@ -534,9 +530,9 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
     }
   }
   if (isH) {
-    reqDist += (viaBox1.right() - 0) + (0 - viaBox1.left());
+    reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
-    reqDist += (viaBox1.top() - 0) + (0 - viaBox1.bottom());
+    reqDist += (viaBox1.yMax() - 0) + (0 - viaBox1.yMin());
   }
   sol = max(sol, reqDist);
 
@@ -644,7 +640,7 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
-  frBox viaBox1, cutBox1;
+  Rect viaBox1, cutBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
     isVia1Above = true;
@@ -653,12 +649,12 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
     isVia1Above = false;
   }
   via1.getCutBBox(cutBox1);
-  auto width1 = viaBox1.width();
-  auto length1 = viaBox1.length();
+  int width1 = viaBox1.minDXDY();
+  int length1 = viaBox1.maxDXDY();
 
   bool isVia2Above = false;
   frVia via2(viaDef2);
-  frBox viaBox2, cutBox2;
+  Rect viaBox2, cutBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
     isVia2Above = true;
@@ -667,8 +663,8 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
     isVia2Above = false;
   }
   via2.getCutBBox(cutBox2);
-  auto width2 = viaBox2.width();
-  auto length2 = viaBox2.length();
+  int width2 = viaBox2.minDXDY();
+  int length2 = viaBox2.maxDXDY();
 
   for (auto& con : getTech()->getLayer(lNum)->getMinimumcutConstraints()) {
     // check via2cut to via1metal
@@ -693,13 +689,13 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
       if (isCurrDirX) {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox2.right() - 0 + 0 - viaBox1.left(),
-                            viaBox1.right() - 0 + 0 - cutBox2.left()));
+                      + max(cutBox2.xMax() - 0 + 0 - viaBox1.xMin(),
+                            viaBox1.xMax() - 0 + 0 - cutBox2.xMin()));
       } else {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox2.top() - 0 + 0 - viaBox1.bottom(),
-                            viaBox1.top() - 0 + 0 - cutBox2.bottom()));
+                      + max(cutBox2.yMax() - 0 + 0 - viaBox1.yMin(),
+                            viaBox1.yMax() - 0 + 0 - cutBox2.yMin()));
       }
     }
     // check via1cut to via2metal
@@ -723,13 +719,13 @@ frCoord FlexDR::init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
       if (isCurrDirX) {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox1.right() - 0 + 0 - viaBox2.left(),
-                            viaBox2.right() - 0 + 0 - cutBox1.left()));
+                      + max(cutBox1.xMax() - 0 + 0 - viaBox2.xMin(),
+                            viaBox2.xMax() - 0 + 0 - cutBox1.xMin()));
       } else {
         sol = max(sol,
                   (con->hasLength() ? con->getDistance() : 0)
-                      + max(cutBox1.top() - 0 + 0 - viaBox2.bottom(),
-                            viaBox2.top() - 0 + 0 - cutBox1.bottom()));
+                      + max(cutBox1.yMax() - 0 + 0 - viaBox2.yMin(),
+                            viaBox2.yMax() - 0 + 0 - cutBox1.yMin()));
       }
     }
   }
@@ -753,32 +749,32 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef1);
-  frBox viaBox1;
+  Rect viaBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
   } else {
     via1.getLayer2BBox(viaBox1);
   }
-  auto width1 = viaBox1.width();
+  auto width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.top() - viaBox1.bottom() > defaultWidth)
-                       : (viaBox1.right() - viaBox1.left() > defaultWidth);
-  auto prl1 = isCurrDirX ? (viaBox1.top() - viaBox1.bottom())
-                         : (viaBox1.right() - viaBox1.left());
+                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
+                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
+  auto prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
+                         : (viaBox1.xMax() - viaBox1.xMin());
 
   frVia via2(viaDef2);
-  frBox viaBox2;
+  Rect viaBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
   } else {
     via2.getLayer2BBox(viaBox2);
   }
-  auto width2 = viaBox2.width();
+  auto width2 = viaBox2.minDXDY();
   bool isVia2Fat = isCurrDirX
-                       ? (viaBox2.top() - viaBox2.bottom() > defaultWidth)
-                       : (viaBox2.right() - viaBox2.left() > defaultWidth);
-  auto prl2 = isCurrDirX ? (viaBox2.top() - viaBox2.bottom())
-                         : (viaBox2.right() - viaBox2.left());
+                       ? (viaBox2.yMax() - viaBox2.yMin() > defaultWidth)
+                       : (viaBox2.xMax() - viaBox2.xMin() > defaultWidth);
+  auto prl2 = isCurrDirX ? (viaBox2.yMax() - viaBox2.yMin())
+                         : (viaBox2.xMax() - viaBox2.xMin());
 
   frCoord reqDist = 0;
   if (isVia1Fat && isVia2Fat) {
@@ -797,11 +793,11 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
       }
     }
     if (isCurrDirX) {
-      reqDist += max((viaBox1.right() - 0), (0 - viaBox1.left()));
-      reqDist += max((viaBox2.right() - 0), (0 - viaBox2.left()));
+      reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
+      reqDist += max((viaBox2.xMax() - 0), (0 - viaBox2.xMin()));
     } else {
-      reqDist += max((viaBox1.top() - 0), (0 - viaBox1.bottom()));
-      reqDist += max((viaBox2.top() - 0), (0 - viaBox2.bottom()));
+      reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
+      reqDist += max((viaBox2.yMax() - 0), (0 - viaBox2.yMin()));
     }
     sol = max(sol, reqDist);
   }
@@ -818,9 +814,9 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
     via1.getLayer1BBox(viaBox1);
     lNum = lNum - 2;
   }
-  width1 = viaBox1.width();
-  prl1 = isCurrDirX ? (viaBox1.top() - viaBox1.bottom())
-                    : (viaBox1.right() - viaBox1.left());
+  width1 = viaBox1.minDXDY();
+  prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
+                    : (viaBox1.xMax() - viaBox1.xMin());
   reqDist = 0;
   auto con = getTech()->getLayer(lNum)->getMinSpacing();
   if (con) {
@@ -837,9 +833,9 @@ frCoord FlexDR::init_via2viaMinLenNew_minSpc(frLayerNum lNum,
     }
   }
   if (isCurrDirX) {
-    reqDist += (viaBox1.right() - 0) + (0 - viaBox1.left());
+    reqDist += (viaBox1.xMax() - 0) + (0 - viaBox1.xMin());
   } else {
-    reqDist += (viaBox1.top() - 0) + (0 - viaBox1.bottom());
+    reqDist += (viaBox1.yMax() - 0) + (0 - viaBox1.yMin());
   }
   sol = max(sol, reqDist);
 
@@ -859,7 +855,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
 
   // check min len in lNum assuming pre dir routing
   frVia via1(viaDef1);
-  frBox viaBox1, cutBox1;
+  Rect viaBox1, cutBox1;
   if (viaDef1->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
   } else {
@@ -868,15 +864,15 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   via1.getCutBBox(cutBox1);
 
   frVia via2(viaDef2);
-  frBox viaBox2, cutBox2;
+  Rect viaBox2, cutBox2;
   if (viaDef2->getLayer1Num() == lNum) {
     via2.getLayer1BBox(viaBox2);
   } else {
     via2.getLayer2BBox(viaBox2);
   }
   via2.getCutBBox(cutBox2);
-  auto boxLength = isCurrDirY ? (cutBox1.top() - cutBox1.bottom())
-                              : (cutBox1.right() - cutBox1.left());
+  auto boxLength = isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
+                              : (cutBox1.xMax() - cutBox1.xMin());
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
     auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
@@ -977,14 +973,14 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
     viaDef2 = viaDef1;
     viaDef1 = tempViaDef;
     // swap boxes
-    frBox tempCutBox(cutBox2);
-    cutBox2.set(cutBox1);
-    cutBox1.set(tempCutBox);
+    Rect tempCutBox(cutBox2);
+    cutBox2 = cutBox1;
+    cutBox1 = tempCutBox;
   }
   auto layer1 = getTech()->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = getTech()->getLayer(viaDef2->getCutLayerNum());
-  auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.width(), cutBox1.length());
-  auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.width(), cutBox2.length());
+  auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.minDXDY(), cutBox1.maxDXDY());
+  auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
   frString cutClass1, cutClass2;
   if (cutClassIdx1 != -1)
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
@@ -993,15 +989,15 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
-    isSide1 = (cutBox1.right() - cutBox1.left())
-              > (cutBox1.top() - cutBox1.bottom());
-    isSide2 = (cutBox2.right() - cutBox2.left())
-              > (cutBox2.top() - cutBox2.bottom());
+    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
+              > (cutBox1.yMax() - cutBox1.yMin());
+    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
+              > (cutBox2.yMax() - cutBox2.yMin());
   } else {
-    isSide1 = (cutBox1.right() - cutBox1.left())
-              < (cutBox1.top() - cutBox1.bottom());
-    isSide2 = (cutBox2.right() - cutBox2.left())
-              < (cutBox2.top() - cutBox2.bottom());
+    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
+              < (cutBox1.yMax() - cutBox1.yMin());
+    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
+              < (cutBox2.yMax() - cutBox2.yMin());
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
@@ -1015,7 +1011,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       auto dbRule = lef58con->getODBRule();
       auto reqSpcVal
           = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+      if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         reqSpcVal += boxLength;
       }
       sol = max(sol, reqSpcVal);
@@ -1026,13 +1023,12 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
       con = layer1->getLef58SameMetalInterCutSpcTblConstraint();
     else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
       con = layer1->getLef58SameNetInterCutSpcTblConstraint();
-    else if (layer1->hasLef58DefaultInterCutSpcTblConstraint())
-      con = layer1->getLef58DefaultInterCutSpcTblConstraint();
     if (con != nullptr) {
       auto dbRule = con->getODBRule();
       auto reqSpcVal
           = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-      if (reqSpcVal != 0 && !dbRule->isCenterToCenter(cutClass1, cutClass2)) {
+      if (reqSpcVal != 0 && !dbRule->isCenterToCenter(cutClass1, cutClass2)
+          && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         reqSpcVal += boxLength;
       }
       sol = max(sol, reqSpcVal);
@@ -1190,12 +1186,12 @@ void FlexDR::init_halfViaEncArea()
         && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
       frVia via(viaDef);
-      frBox layer1Box;
-      frBox layer2Box;
+      Rect layer1Box;
+      Rect layer2Box;
       via.getLayer1BBox(layer1Box);
       via.getLayer2BBox(layer2Box);
-      auto layer1HalfArea = layer1Box.width() * layer1Box.length() / 2;
-      auto layer2HalfArea = layer2Box.width() * layer2Box.length() / 2;
+      auto layer1HalfArea = layer1Box.minDXDY() * layer1Box.maxDXDY() / 2;
+      auto layer2HalfArea = layer2Box.minDXDY() * layer2Box.maxDXDY() / 2;
       halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
     } else {
       halfViaEncArea.push_back(make_pair(0, 0));
@@ -1218,18 +1214,18 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef);
-  frBox viaBox1;
+  Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
   } else {
     via1.getLayer2BBox(viaBox1);
   }
-  auto width1 = viaBox1.width();
+  int width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.top() - viaBox1.bottom() > defaultWidth)
-                       : (viaBox1.right() - viaBox1.left() > defaultWidth);
-  auto prl1 = isCurrDirX ? (viaBox1.top() - viaBox1.bottom())
-                         : (viaBox1.right() - viaBox1.left());
+                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
+                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
+  auto prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
+                         : (viaBox1.xMax() - viaBox1.xMin());
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
@@ -1248,10 +1244,10 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
       }
     }
     if (isCurrDirX) {
-      reqDist += max((viaBox1.right() - 0), (0 - viaBox1.left()));
+      reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
       reqDist += defaultWidth;
     } else {
-      reqDist += max((viaBox1.top() - 0), (0 - viaBox1.bottom()));
+      reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
       reqDist += defaultWidth;
     }
     sol = max(sol, reqDist);
@@ -1275,15 +1271,15 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef);
-  frBox viaBox1;
+  Rect viaBox1;
   if (viaDef->getLayer1Num() == lNum) {
     via1.getLayer1BBox(viaBox1);
   } else {
     via1.getLayer2BBox(viaBox1);
   }
   bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.top() - viaBox1.bottom() > defaultWidth)
-                       : (viaBox1.right() - viaBox1.left() > defaultWidth);
+                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
+                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
@@ -1292,10 +1288,10 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
         && con->hasMaxEdges()) {  // currently only consider maxedge violation
       reqDist = con->getMinStepLength();
       if (isCurrDirX) {
-        reqDist += max((viaBox1.right() - 0), (0 - viaBox1.left()));
+        reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
         reqDist += defaultWidth;
       } else {
-        reqDist += max((viaBox1.top() - 0), (0 - viaBox1.bottom()));
+        reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
         reqDist += defaultWidth;
       }
       sol = max(sol, reqDist);
@@ -1394,13 +1390,13 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>
+map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
-                                const frBox& routeBox)
+                                const Rect& routeBox)
 {
-  map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp> bp;
+  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -1409,8 +1405,8 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
       auto& currBp = gcell2BoundaryPin_[i][j];
       for (auto& [net, s] : currBp) {
         for (auto& [pt, lNum] : s) {
-          if (pt.x() == routeBox.left() || pt.x() == routeBox.right()
-              || pt.y() == routeBox.bottom() || pt.y() == routeBox.top()) {
+          if (pt.x() == routeBox.xMin() || pt.x() == routeBox.xMax()
+              || pt.y() == routeBox.yMin() || pt.y() == routeBox.yMax()) {
             bp[net].insert(make_pair(pt, lNum));
           }
         }
@@ -1480,7 +1476,7 @@ void FlexDR::searchRepair(int iter,
   if (graphics_) {
     graphics_->startIter(iter);
   }
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
@@ -1504,28 +1500,28 @@ void FlexDR::searchRepair(int iter,
   for (int i = offset; i < (int) xgp.getCount(); i += clipSize) {
     for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
       auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
-      frBox routeBox1;
-      getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
-      frBox routeBox2;
+      Rect routeBox1;
+      getDesign()->getTopBlock()->getGCellBox(Point(i, j), routeBox1);
+      Rect routeBox2;
       const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
       const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
-      getDesign()->getTopBlock()->getGCellBox(frPoint(max_i, max_j), routeBox2);
-      frBox routeBox(routeBox1.left(),
-                     routeBox1.bottom(),
-                     routeBox2.right(),
-                     routeBox2.top());
-      frBox extBox;
-      frBox drcBox;
+      getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
+      Rect routeBox(routeBox1.xMin(),
+                     routeBox1.yMin(),
+                     routeBox2.xMax(),
+                     routeBox2.yMax());
+      Rect extBox;
+      Rect drcBox;
       routeBox.bloat(MTSAFEDIST, extBox);
       routeBox.bloat(DRCSAFEDIST, drcBox);
       worker->setRouteBox(routeBox);
       worker->setExtBox(extBox);
       worker->setDrcBox(drcBox);
-      worker->setGCellBox(frBox(i, j, max_i, max_j));
+      worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
       if (!iter) {
-        // if (routeBox.left() == 441000 && routeBox.bottom() == 816100) {
+        // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
         //   cout << "@@@ debug: " << i << " " << j << endl;
         // }
         // set boundary pin
@@ -1558,7 +1554,9 @@ void FlexDR::searchRepair(int iter,
     ProfileTask profile("DR:checkerboard");
     for (auto& workersInBatch : workerBatch) {
       {
-        ProfileTask profile("DR:batch");
+        const std::string batch_name = std::string("DR:batch<")
+          + std::to_string(workersInBatch.size()) + ">";
+        ProfileTask profile(batch_name.c_str());
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
@@ -1612,7 +1610,8 @@ void FlexDR::searchRepair(int iter,
       }
     }
   }
-  checkConnectivity(iter);
+  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     logger_->info(DRT,
@@ -1623,17 +1622,18 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
+  if (logger_->debugCheck(DRT, "drc", 1)) {
+    reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
+  }
 }
 
 void FlexDR::end(bool writeMetrics)
 {
-  vector<unsigned long long> wlen(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> sCut(getTech()->getLayers().size(), 0);
-  vector<unsigned long long> mCut(getTech()->getLayers().size(), 0);
-  unsigned long long totWlen = 0;
-  unsigned long long totSCut = 0;
-  unsigned long long totMCut = 0;
-  frPoint bp, ep;
+  using ULL = unsigned long long;
+  vector<ULL> wlen(getTech()->getLayers().size(), 0);
+  vector<ULL> sCut(getTech()->getLayers().size(), 0);
+  vector<ULL> mCut(getTech()->getLayers().size(), 0);
+  Point bp, ep;
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
@@ -1642,20 +1642,22 @@ void FlexDR::end(bool writeMetrics)
         auto lNum = obj->getLayerNum();
         frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
         wlen[lNum] += psLen;
-        totWlen += psLen;
       }
     }
     for (auto& via : net->getVias()) {
       auto lNum = via->getViaDef()->getCutLayerNum();
       if (via->getViaDef()->isMultiCut()) {
         ++mCut[lNum];
-        ++totMCut;
       } else {
         ++sCut[lNum];
-        ++totSCut;
       }
     }
   }
+
+  const ULL totWlen = std::accumulate(wlen.begin(), wlen.end(), ULL(0));
+  const ULL totSCut = std::accumulate(sCut.begin(), sCut.end(), ULL(0));
+  const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
+
 
   if (writeMetrics) {
     logger_->metric("drt::wire length::total",
@@ -1761,18 +1763,18 @@ void FlexDR::end(bool writeMetrics)
   }
 }
 
-void FlexDR::reportDRC()
+void FlexDR::reportDRC(const string& file_name)
 {
   double dbu = getTech()->getDBUPerUU();
 
-  if (DRC_RPT_FILE == string("")) {
+  if (file_name == string("")) {
     if (VERBOSE > 0) {
       logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
 
-  ofstream drcRpt(DRC_RPT_FILE.c_str());
+  ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
     for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
       auto con = marker->getConstraint();
@@ -1969,11 +1971,11 @@ void FlexDR::reportDRC()
       }
       drcRpt << "\n";
       // get violation bbox
-      frBox bbox;
+      Rect bbox;
       marker->getBBox(bbox);
-      drcRpt << "    bbox = ( " << bbox.left() / dbu << ", "
-             << bbox.bottom() / dbu << " ) - ( " << bbox.right() / dbu << ", "
-             << bbox.top() / dbu << " ) on Layer ";
+      drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
+             << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
+             << bbox.yMax() / dbu << " ) on Layer ";
       if (getTech()->getLayer(marker->getLayerNum())->getType()
               == dbTechLayerType::CUT
           && marker->getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {
@@ -2352,7 +2354,7 @@ int FlexDR::main()
                false);
 
   if (DRC_RPT_FILE != string("")) {
-    reportDRC();
+    reportDRC(DRC_RPT_FILE);
   }
   if (VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");

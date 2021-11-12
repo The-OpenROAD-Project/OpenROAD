@@ -84,26 +84,31 @@ class frRect : public frShape
       : frShape(in), box_(in.box_), layer_(in.layer_), owner_(in.owner_)
   {
   }
+  frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
+      : frShape(), box_(xl, yl, xh, yh), layer_(lNum), owner_(owner)
+  {
+  }
+
   // setters
-  void setBBox(const frBox& boxIn) { box_.set(boxIn); }
+  void setBBox(const Rect& boxIn) { box_ = boxIn; }
   // getters
   // others
   bool isHor() const
   {
-    frCoord xSpan = box_.right() - box_.left();
-    frCoord ySpan = box_.top() - box_.bottom();
+    frCoord xSpan = box_.xMax() - box_.xMin();
+    frCoord ySpan = box_.yMax() - box_.yMin();
     return (xSpan >= ySpan) ? true : false;
   }
   frCoord width() const
   {
-    frCoord xSpan = box_.right() - box_.left();
-    frCoord ySpan = box_.top() - box_.bottom();
+    frCoord xSpan = box_.xMax() - box_.xMin();
+    frCoord ySpan = box_.yMax() - box_.yMin();
     return (xSpan > ySpan) ? ySpan : xSpan;
   }
   frCoord length() const
   {
-    frCoord xSpan = box_.right() - box_.left();
-    frCoord ySpan = box_.top() - box_.bottom();
+    frCoord xSpan = box_.xMax() - box_.xMin();
+    frCoord ySpan = box_.yMax() - box_.yMin();
     return (xSpan < ySpan) ? ySpan : xSpan;
   }
   frBlockObjectEnum typeId() const override { return frcRect; }
@@ -160,11 +165,12 @@ class frRect : public frShape
    * move, in .cpp
    * overlaps in .cpp
    */
-  void getBBox(frBox& boxIn) const override { boxIn.set(box_); }
-  void move(const frTransform& xform) override { box_.transform(xform); }
-  bool overlaps(const frBox& box) const override
+  void getBBox(Rect& boxIn) const override { boxIn = box_; }
+  const Rect& getBBox() const { return box_; }
+  void move(const dbTransform& xform) override { xform.apply(box_); }
+  bool overlaps(const Rect& box) const override
   {
-    frBox rectBox;
+    Rect rectBox;
     getBBox(rectBox);
     return rectBox.overlaps(box);
   }
@@ -177,9 +183,21 @@ class frRect : public frShape
   {
     return iter_;
   }
-
+  void shift(int x, int y) { box_.moveDelta(x, y); }
+  void setLeft(frCoord v) {
+      box_.set_xlo(v);
+  }
+  void setRight(frCoord v) {
+      box_.set_xhi(v);
+  }
+  void setTop(frCoord v) {
+      box_.set_yhi(v);
+  }
+  void setBottom(frCoord v) {
+      box_.set_ylo(v);
+  }
  protected:
-  frBox box_;
+  Rect box_;
   frLayerNum layer_;
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
@@ -202,8 +220,8 @@ class frPatchWire : public frShape
   }
   frPatchWire(const drPatchWire& in);
   // setters
-  void setOffsetBox(const frBox& in) { offsetBox_.set(in); }
-  void setOrigin(const frPoint& in) { origin_.set(in); }
+  void setOffsetBox(const Rect& in) { offsetBox_ = in; }
+  void setOrigin(const Point& in) { origin_ = in; }
   // getters
   // others
   frBlockObjectEnum typeId() const override { return frcPatchWire; }
@@ -260,18 +278,19 @@ class frPatchWire : public frShape
    * move, in .cpp
    * overlaps in .cpp
    */
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
-    frTransform xform(origin_);
-    boxIn.set(offsetBox_);
-    boxIn.transform(xform);
+    dbTransform xform(origin_);
+    boxIn = offsetBox_;
+    xform.apply(boxIn);
   }
-  void getOffsetBox(frBox& boxIn) const { boxIn.set(offsetBox_); }
-  void getOrigin(frPoint& in) const { in.set(origin_); }
-  void move(const frTransform& xform) override {}
-  bool overlaps(const frBox& box) const override
+  void getOffsetBox(Rect& boxIn) const { boxIn = offsetBox_; }
+  void getOrigin(Point& in) const { in = origin_; }
+  Point getOrigin() const { return origin_; }
+  void move(const dbTransform& xform) override {}
+  bool overlaps(const Rect& box) const override
   {
-    frBox rectBox;
+    Rect rectBox;
     getBBox(rectBox);
     return rectBox.overlaps(box);
   }
@@ -286,9 +305,9 @@ class frPatchWire : public frShape
   }
 
  protected:
-  // frBox          box_;
-  frBox offsetBox_;
-  frPoint origin_;
+  // Rect          box_;
+  Rect offsetBox_;
+  Point origin_;
   frLayerNum layer_;
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
@@ -304,9 +323,9 @@ class frPolygon : public frShape
   {
   }
   // setters
-  void setPoints(const std::vector<frPoint>& pointsIn) { points_ = pointsIn; }
+  void setPoints(const std::vector<Point>& pointsIn) { points_ = pointsIn; }
   // getters
-  const std::vector<frPoint>& getPoints() const { return points_; }
+  const std::vector<Point>& getPoints() const { return points_; }
   // others
   frBlockObjectEnum typeId() const override { return frcPolygon; }
 
@@ -362,7 +381,7 @@ class frPolygon : public frShape
    * move, in .cpp
    * overlaps, in .cpp
    */
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -380,15 +399,15 @@ class frPolygon : public frShape
       urx = (urx > point.x()) ? urx : point.x();
       ury = (ury > point.y()) ? ury : point.y();
     }
-    boxIn.set(llx, lly, urx, ury);
+    boxIn.init(llx, lly, urx, ury);
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     for (auto& point : points_) {
-      point.transform(xform);
+      xform.apply(point);
     }
   }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -400,7 +419,7 @@ class frPolygon : public frShape
   }
 
  protected:
-  std::vector<frPoint> points_;
+  std::vector<Point> points_;
   frLayerNum layer_;
   frBlockObject* owner_;
   frListIter<std::unique_ptr<frShape>> iter_;
@@ -432,13 +451,17 @@ class frPathSeg : public frShape
   frPathSeg(const drPathSeg& in);
   frPathSeg(const taPathSeg& in);
   // getters
-  void getPoints(frPoint& beginIn, frPoint& endIn) const
+  void getPoints(Point& beginIn, Point& endIn) const
   {
-    beginIn.set(begin_);
-    endIn.set(end_);
+    beginIn = begin_;
+    endIn = end_;
   }
-  const frPoint& getBeginPoint() const { return begin_; }
-  const frPoint& getEndPoint() const { return end_; }
+  std::pair<Point, Point> getPoints() const
+  {
+    return {begin_, end_};
+  }
+  const Point& getBeginPoint() const { return begin_; }
+  const Point& getEndPoint() const { return end_; }
   void getStyle(frSegStyle& styleIn) const
   {
     styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
@@ -453,10 +476,10 @@ class frPathSeg : public frShape
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
   // setters
-  void setPoints(const frPoint& beginIn, const frPoint& endIn)
+  void setPoints(const Point& beginIn, const Point& endIn)
   {
-    begin_.set(beginIn);
-    end_.set(endIn);
+    begin_ = beginIn;
+    end_ = endIn;
   }
   void setStyle(const frSegStyle& styleIn)
   {
@@ -528,7 +551,7 @@ class frPathSeg : public frShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -538,23 +561,23 @@ class frPathSeg : public frShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      boxIn.set(begin_.x() - beginExt,
-                begin_.y() - width / 2,
-                end_.x() + endExt,
-                end_.y() + width / 2);
+      boxIn.init(begin_.x() - beginExt,
+                 begin_.y() - width / 2,
+                 end_.x() + endExt,
+                 end_.y() + width / 2);
     } else {
-      boxIn.set(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+      boxIn.init(begin_.x() - width / 2,
+                 begin_.y() - beginExt,
+                 end_.x() + width / 2,
+                 end_.y() + endExt);
     }
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
-    begin_.transform(xform);
-    end_.transform(xform);
+    xform.apply(begin_);
+    xform.apply(end_);
   }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -566,14 +589,16 @@ class frPathSeg : public frShape
   }
   void setTapered(bool t) { tapered_ = t; }
   bool isTapered() const { return tapered_; }
-  
-  bool intersectsCenterLine(const frPoint& pt) {
-      return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y() 
-              && pt.y() <= end_.y();
+
+  bool intersectsCenterLine(const Point& pt)
+  {
+    return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y()
+           && pt.y() <= end_.y();
   }
+
  protected:
-  frPoint begin_;  // begin always smaller than end, assumed
-  frPoint end_;
+  Point begin_;  // begin always smaller than end, assumed
+  Point end_;
   frLayerNum layer_;
   frSegStyle style_;
   frBlockObject* owner_;

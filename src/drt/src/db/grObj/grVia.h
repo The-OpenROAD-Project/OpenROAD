@@ -79,10 +79,12 @@ class grVia : public grRef
 
   dbOrientType getOrient() const override { return dbOrientType(); }
   void setOrient(const dbOrientType& in) override { ; }
-  void getOrigin(frPoint& in) const override { in.set(origin); }
-  void setOrigin(const frPoint& in) override { origin.set(in); }
-  void getTransform(frTransform& in) const override { in.set(origin); }
-  void setTransform(const frTransform& in) override { ; }
+  void getOrigin(Point& in) const override { in = origin; }
+  void setOrigin(const Point& in) override { origin = in; }
+
+  // TODO this looks like a bug, shouldn't it also setOrient?
+  void getTransform(dbTransform& in) const override { in.setOffset(origin); }
+  void setTransform(const dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin
@@ -151,16 +153,16 @@ class grVia : public grRef
    * overlaps
    */
 
-  void getBBox(frBox& in) const override
+  void getBBox(Rect& in) const override
   {
-    in.set(origin.x(), origin.y(), origin.x(), origin.y());
+    in.init(origin.x(), origin.y(), origin.x(), origin.y());
   }
 
   void setIter(frListIter<std::unique_ptr<grVia>>& in) { iter = in; }
   frListIter<std::unique_ptr<grVia>> getIter() const { return iter; }
 
  protected:
-  frPoint origin;
+  Point origin;
   frViaDef* viaDef;
   frBlockObject* child;
   frBlockObject* parent;

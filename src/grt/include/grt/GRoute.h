@@ -107,7 +107,6 @@ struct cmpById
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
-
 void print(GRoute& groute);
 
 }  // namespace grt

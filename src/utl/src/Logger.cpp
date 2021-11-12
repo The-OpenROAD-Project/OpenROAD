@@ -123,4 +123,19 @@ void Logger::addSink(spdlog::sink_ptr sink)
   logger_->set_pattern(pattern_); // updates the new sink
 }
 
+void Logger::removeSink(spdlog::sink_ptr sink)
+{
+  // remove from local list of sinks_
+  auto sinks_find = std::find(sinks_.begin(), sinks_.end(), sink);
+  if (sinks_find != sinks_.end()) {
+    sinks_.erase(sinks_find);
+  }
+  // remove from spdlog list of sinks
+  auto& logger_sinks = logger_->sinks();
+  auto logger_find = std::find(logger_sinks.begin(), logger_sinks.end(), sink);
+  if (logger_find != logger_sinks.end()) {
+    logger_sinks.erase(logger_find);
+  }
+}
+
 }  // namespace

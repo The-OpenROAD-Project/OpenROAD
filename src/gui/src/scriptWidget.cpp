@@ -41,8 +41,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 
@@ -50,16 +50,18 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      output_(new QTextEdit),
-      input_(new TclCmdInputWidget),
-      pauser_(new QPushButton("Idle")),
+      output_(new QTextEdit(this)),
+      input_(new TclCmdInputWidget(this)),
+      pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
       interp_(nullptr),
       history_(),
       history_buffer_last_(),
       historyPosition_(0),
       paused_(false),
-      logger_(nullptr)
+      logger_(nullptr),
+      buffer_outputs_(false),
+      sink_(nullptr)
 {
   setObjectName("scripting");  // for settings
 
@@ -75,10 +77,8 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   layout->addWidget(output_, /* stretch */ 1);
   layout->addLayout(inner_layout);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   container->setLayout(layout);
-
-  QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
   connect(input_, SIGNAL(completeCommand(const QString&)), this, SLOT(executeCommand(const QString&)));
   connect(this, SIGNAL(commandExecuted(int)), input_, SLOT(commandExecuted(int)));
@@ -92,48 +92,17 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   setWidget(container);
 }
 
-int channelClose(ClientData instance_data, Tcl_Interp* interp)
+ScriptWidget::~ScriptWidget()
 {
-  // This channel should never be closed
-  return EINVAL;
-}
+  if (logger_ != nullptr) {
+    // make sure to remove the Gui sink from logger
+    logger_->removeSink(sink_);
+  }
 
-int ScriptWidget::channelOutput(ClientData instance_data,
-                                const char* buf,
-                                int to_write,
-                                int* error_code)
-{
-  // Buffer up the output
-  ScriptWidget* widget = (ScriptWidget*) instance_data;
-  widget->logger_->report(std::string(buf, to_write));
-  return to_write;
+  // restore old exit
+  Tcl_DeleteCommand(interp_, "exit");
+  Tcl_Eval(interp_, "rename ::tcl::openroad::exit exit");
 }
-
-void channelWatch(ClientData instance_data, int mask)
-{
-  // watch is not supported inside OpenROAD GUI
-}
-
-Tcl_ChannelType ScriptWidget::stdout_channel_type_ = {
-    // Tcl stupidly defines this a non-cost char*
-    ((char*) "stdout_channel"),  /* typeName */
-    TCL_CHANNEL_VERSION_2,       /* version */
-    channelClose,                /* closeProc */
-    nullptr,                     /* inputProc */
-    ScriptWidget::channelOutput, /* outputProc */
-    nullptr,                     /* seekProc */
-    nullptr,                     /* setOptionProc */
-    nullptr,                     /* getOptionProc */
-    channelWatch,                /* watchProc */
-    nullptr,                     /* getHandleProc */
-    nullptr,                     /* close2Proc */
-    nullptr,                     /* blockModeProc */
-    nullptr,                     /* flushProc */
-    nullptr,                     /* handlerProc */
-    nullptr,                     /* wideSeekProc */
-    nullptr,                     /* threadActionProc */
-    nullptr                      /* truncateProc */
-};
 
 int ScriptWidget::tclExitHandler(ClientData instance_data,
                                  Tcl_Interp *interp,
@@ -142,54 +111,42 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   ScriptWidget* widget = (ScriptWidget*) instance_data;
   // announces exit to Qt
   emit widget->tclExiting();
-  // does not matter from here on, since GUI is getting ready exit
+
   return TCL_OK;
 }
 
-void ScriptWidget::setupTcl()
+void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad)
 {
-  interp_ = Tcl_CreateInterp();
-
-  Tcl_Channel stdout_channel = Tcl_CreateChannel(
-      &stdout_channel_type_, "stdout", (ClientData) this, TCL_WRITABLE);
-  if (stdout_channel) {
-    Tcl_SetChannelOption(nullptr, stdout_channel, "-translation", "lf");
-    Tcl_SetChannelOption(nullptr, stdout_channel, "-buffering", "none");
-    Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
-    Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
-  }
+  interp_ = interp;
 
   // Overwrite exit to allow Qt to handle exit
+  Tcl_Eval(interp_, "rename exit ::tcl::openroad::exit");
   Tcl_CreateCommand(interp_, "exit", ScriptWidget::tclExitHandler, this, nullptr);
 
-  // Ensures no newlines are present in stdout stream when using logger, but normal behavior in file writing
-  Tcl_Eval(interp_, "rename puts ::tcl::openroad::puts");
-  Tcl_Eval(interp_, "proc puts { args } { if {[llength $args] == 1} { ::tcl::openroad::puts -nonewline {*}$args } else { ::tcl::openroad::puts {*}$args } }");
+  if (do_init_openroad) {
+    // OpenRoad is not initialized
+    pauser_->setText("Running");
+    pauser_->setStyleSheet("background-color: red");
+    int setup_tcl_result = ord::tclAppInit(interp_);
+    pauser_->setText("Idle");
+    pauser_->setStyleSheet("");
 
-  pauser_->setText("Running");
-  pauser_->setStyleSheet("background-color: red");
-  ord::tclAppInit(interp_);
-  pauser_->setText("Idle");
-  pauser_->setStyleSheet("");
-
-  // TODO: tclAppInit should return the status which we could
-  // pass to updateOutput
-  addTclResultToOutput(TCL_OK);
+    addTclResultToOutput(setup_tcl_result);
+  } else {
+    Gui::get()->load_design();
+  }
 
   input_->init(interp_);
 }
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)
 {
-  pauser_->setText("Running");
-  pauser_->setStyleSheet("background-color: red");
-
   if (echo) {
     // Show the command that we executed
     addCommandToOutput(command);
   }
 
-  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
+  int return_code = executeTclCommand(command);
 
   // Show its output
   addTclResultToOutput(return_code);
@@ -212,10 +169,26 @@ void ScriptWidget::executeCommand(const QString& command, bool echo)
     historyPosition_ = history_.size();
   }
 
+  emit commandExecuted(return_code);
+}
+
+void ScriptWidget::executeSilentCommand(const QString& command)
+{
+  int return_code = executeTclCommand(command);
+  emit commandExecuted(return_code);
+}
+
+int ScriptWidget::executeTclCommand(const QString& command)
+{
+  pauser_->setText("Running");
+  pauser_->setStyleSheet("background-color: red");
+
+  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
+
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
 
-  emit commandExecuted(return_code);
+  return return_code;
 }
 
 void ScriptWidget::addCommandToOutput(const QString& cmd)
@@ -274,12 +247,6 @@ void ScriptWidget::addToOutput(const QString& text, const QColor& color)
   }
   // output new text
   output_->append(output.join("\n"));
-}
-
-ScriptWidget::~ScriptWidget()
-{
-  // TODO: I am being lazy and not cleaning up the tcl interpreter.
-  // We are likely exiting anyways
 }
 
 void ScriptWidget::goForwardHistory()
@@ -398,7 +365,14 @@ void ScriptWidget::outputChanged()
   // ensure the new output is visible
   output_->ensureCursorVisible();
   // Make changes visible
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  if (!buffer_outputs_) {
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  }
+}
+
+void ScriptWidget::bufferOutputs(bool state)
+{
+  buffer_outputs_ = state;
 }
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)
@@ -450,8 +424,9 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
+  sink_ = std::make_shared<GuiSink<std::mutex>>(this);
   logger_ = logger;
-  logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
+  logger->addSink(sink_);
 }
 
 }  // namespace gui

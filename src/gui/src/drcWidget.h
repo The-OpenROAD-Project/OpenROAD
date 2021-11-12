@@ -108,8 +108,10 @@ class DRCViolation {
 class DRCDescriptor : public Descriptor
 {
   public:
+    DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+
     std::string getName(std::any object) const override;
-    std::string getTypeName(std::any object) const override;
+    std::string getTypeName() const override;
     bool getBBox(std::any object, odb::Rect& bbox) const override;
 
     void highlight(std::any object,
@@ -119,6 +121,11 @@ class DRCDescriptor : public Descriptor
     Properties getProperties(std::any object) const override;
     Selected makeSelected(std::any object, void* additional_data) const override;
     bool lessThan(std::any l, std::any r) const override;
+
+    bool getAllObjects(SelectionSet& objects) const override;
+
+  private:
+    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
 };
 
 class DRCItemModel : public QStandardItemModel
@@ -128,7 +135,20 @@ class DRCItemModel : public QStandardItemModel
     QVariant data(const QModelIndex& index, int role) const override;
 };
 
-class DRCWidget : public QDockWidget, public Renderer
+class DRCRenderer : public Renderer
+{
+  public:
+    DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+
+    // Renderer
+    void drawObjects(Painter& painter) override;
+    SelectionSet select(odb::dbTechLayer* layer, const odb::Rect& region) override;
+
+  private:
+    const std::vector<std::unique_ptr<DRCViolation>>& violations_;
+};
+
+class DRCWidget : public QDockWidget
 {
   Q_OBJECT
 
@@ -137,10 +157,6 @@ class DRCWidget : public QDockWidget, public Renderer
     ~DRCWidget() {}
 
     void setLogger(utl::Logger* logger);
-
-    // Renderer
-    void drawObjects(Painter& painter) override;
-    SelectionSet select(odb::dbTechLayer* layer, const odb::Point& point) override;
 
   signals:
     void selectDRC(const Selected& selected);
@@ -161,7 +177,7 @@ class DRCWidget : public QDockWidget, public Renderer
 
   private:
     void loadTRReport(const QString& filename);
-    void loadASCIIReport(const QString& filename);
+    void loadJSONReport(const QString& filename);
     void updateModel();
 
     utl::Logger* logger_;
@@ -172,6 +188,8 @@ class DRCWidget : public QDockWidget, public Renderer
     odb::dbBlock* block_;
 
     QPushButton* load_;
+
+    std::unique_ptr<DRCRenderer> renderer_;
 
     std::vector<std::unique_ptr<DRCViolation>> violations_;
 };

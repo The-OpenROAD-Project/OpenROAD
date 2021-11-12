@@ -41,6 +41,7 @@
 #include <QPixmap>
 #include <QScrollArea>
 #include <QShortcut>
+#include <QTimer>
 #include <map>
 #include <memory>
 #include <vector>
@@ -67,6 +68,7 @@ namespace gui {
 
 class LayoutScroll;
 class Ruler;
+class ScriptWidget;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -109,16 +111,20 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
   LayoutViewer(Options* options,
+               ScriptWidget* output_widget,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
+  ~LayoutViewer();
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
+
+  void restoreTclCommands(std::vector<std::string>& cmds);
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -127,7 +133,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QPointF dbuToScreen(const odb::Point& dbu_point);
 
   // save image of the layout
-  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect());
+  void saveImage(const QString& filepath, const odb::Rect& rect = odb::Rect(), double dbu_per_pixel = 0);
 
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;
@@ -164,6 +170,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   // add additional object to selected set
   void addSelected(const Selected& selected);
+  void addSelected(const SelectionSet& selected);
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
@@ -219,6 +226,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void startRulerBuild();
   void cancelRulerBuild();
+
+  void selectArea(const odb::Rect& area, bool append);
+
+  void selection(const Selected& selection);
+  void selectionFocus(const Selected& focus);
+  void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
+  void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
  private:
   struct Boxes
@@ -279,11 +293,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
-  void drawPinMarkers(QPainter* painter,
+  void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
+  void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
+  SelectionSet selectAt(odb::Rect region_dbu);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
@@ -296,6 +312,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
+  int instanceSizeLimit();
+  int shapeSizeLimit();
 
   void generateCutLayerMaximumSizes();
 
@@ -321,6 +339,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::dbDatabase* db_;
   Options* options_;
+  ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
@@ -349,6 +368,19 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool snap_edge_showing_;
   Edge snap_edge_;
 
+  // keeps track of inspector selection and focus items
+  Selected inspector_selection_;
+  Selected inspector_focus_;
+  // Timer used to handle blinking objects in the layout
+  struct AnimatedSelected {
+    const Selected selection;
+    int state_count;
+    const int max_state_count;
+    const int state_modulo;
+    std::unique_ptr<QTimer> timer;
+  };
+  std::unique_ptr<AnimatedSelected> animate_selection_;
+
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
 
@@ -371,6 +403,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
+
+  // parameters used to animate the selection of objects
+  static constexpr int animation_repeats_ = 6;
+  static constexpr int animation_interval_ = 300;
 
   const QColor background_ = Qt::black;
 };

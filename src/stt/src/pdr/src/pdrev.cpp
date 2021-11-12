@@ -339,8 +339,8 @@ reportXY(std::vector<int> x,
 void
 PdRev::highlightGraph()
 {
-  gui::Gui *gui = gui::Gui::get();
-  if (gui) {
+  if (gui::Gui::enabled()) {
+    gui::Gui *gui = gui::Gui::get();
     if (stt::LinesRenderer::lines_renderer == nullptr) {
       stt::LinesRenderer::lines_renderer = new stt::LinesRenderer();
       gui->registerRenderer(stt::LinesRenderer::lines_renderer);

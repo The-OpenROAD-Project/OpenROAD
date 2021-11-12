@@ -18,14 +18,18 @@ record_tests {
   ndr_1w_3s
   ndr_2w_3s
   no_tracks
+  obs_out_of_die
   pd1
   pd2
   pd3
   pd4
+  pre_routed1
   region_adjustment
   repair_antennas1
   repair_antennas2
   repair_antennas3
   repair_antennas_error1
   repair_antennas_error2
+  tracks1
+  tracks2
 }

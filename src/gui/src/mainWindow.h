@@ -33,12 +33,11 @@
 #pragma once
 
 #include <QAction>
+#include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
 #include <QToolBar>
 #include <memory>
-#include <typeindex>
-#include <unordered_map>
 
 #include "findDialog.h"
 #include "gui/gui.h"
@@ -72,9 +71,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
  public:
   MainWindow(QWidget* parent = nullptr);
+  ~MainWindow();
+
+  void setDatabase(odb::dbDatabase* db);
+  void init(sta::dbSta* sta);
 
   odb::dbDatabase* getDb() const { return db_; }
-  void setDb(odb::dbDatabase* db);
 
   // From ord::OpenRoad::Observer
   virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -87,14 +89,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Fit design in window
   void fit();
 
-  void registerDescriptor(const std::type_info& type,
-                          const Descriptor* descriptor);
-
   DisplayControls* getControls() const { return controls_; }
   LayoutViewer* getLayoutViewer() const { return viewer_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
+  ScriptWidget* getScriptWidget() const { return script_; }
+  Inspector* getInspector() const { return inspector_; }
 
-  const std::vector<std::unique_ptr<Ruler>>& getRulers() { return rulers_; }
+  const std::vector<std::string> getRestoreTclCommands();
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -104,6 +105,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The user chose the exit action; notify the app
   void exit();
 
+  // The user chose to hide the gui
+  void hide();
+
   // Trigger a redraw (used by Renderers)
   void redraw();
 
@@ -112,7 +116,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void pause(int timeout);
 
   // The selected set of objects has changed
-  void selectionChanged();
+  void selectionChanged(const Selected& selection = Selected());
 
   // The highlight set of objects has changed
   void highlightChanged();
@@ -136,9 +140,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add the selections to the current selections
   void addSelected(const SelectionSet& selections);
 
-  // Make an Selected from object with a known descriptor
-  Selected makeSelected(std::any object,
-                        void* additional_data = nullptr);
+  // Remove a selection from the set of selections
+  void removeSelected(const Selected& selection);
+
+  // Remove a selection type from the set of selections
+  void removeSelectedByType(const std::string& type);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection, bool show_connectivity = false);
@@ -203,6 +209,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     int highlight_group = 0);
 
  protected:
+  // used to check if user intends to close Openroad or just the GUI.
+  void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
 
  private:
@@ -223,12 +231,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   Inspector* inspector_;
+  ScriptWidget* script_;
   LayoutViewer* viewer_;  // owned by scroll_
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
-  ScriptWidget* script_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
+
+  FindObjectDialog* find_dialog_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -238,6 +248,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QToolBar* view_tool_bar_;
 
   QAction* exit_;
+  QAction* hide_option_;
+  QAction* hide_;
   QAction* fit_;
   QAction* find_;
   QAction* inspect_;
@@ -250,11 +262,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* congestion_setup_;
 
   QLabel* location_;
-
-  FindObjectDialog* find_dialog_;
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index, const Descriptor*> descriptors_;
 
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;

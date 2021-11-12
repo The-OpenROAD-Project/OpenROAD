@@ -422,7 +422,7 @@ dbu_to_microns(int dbu)
 int
 microns_to_dbu(double microns)
 {
-  return microns * getDb()->getTech()->getLefUnits();
+  return std::round(microns * getDb()->getTech()->getLefUnits());
 }
 
 // Common check for placement tools.

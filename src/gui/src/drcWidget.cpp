@@ -40,6 +40,8 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QVBoxLayout>
+#include <boost/property_tree/json_parser.hpp>
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -67,8 +69,8 @@ DRCViolation::DRCViolation(const std::string& name,
       shapes_(shapes),
       layer_(layer),
       comment_(comment),
-      viewed_(false),
-      file_line_(file_line)
+      file_line_(file_line),
+      viewed_(false)
 {
   computeBBox();
 }
@@ -121,13 +123,18 @@ void DRCViolation::paint(Painter& painter)
 
 ///////
 
+DRCDescriptor::DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
+    violations_(violations)
+{
+}
+
 std::string DRCDescriptor::getName(std::any object) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
   return vio->getType();
 }
 
-std::string DRCDescriptor::getTypeName(std::any object) const
+std::string DRCDescriptor::getTypeName() const
 {
   return "DRC";
 }
@@ -152,14 +159,15 @@ Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
   auto vio = std::any_cast<DRCViolation*>(object);
   Properties props;
 
+  auto gui = Gui::get();
+
   auto layer = vio->getLayer();
   if (layer != nullptr) {
-    props.push_back({"Layer", layer->getName()});
+    props.push_back({"Layer", gui->makeSelected(layer)});
   }
 
   auto srcs = vio->getSources();
   if (!srcs.empty()) {
-    auto gui = Gui::get();
     SelectionSet sources;
     for (auto src : srcs) {
       auto select = gui->makeSelected(src);
@@ -199,6 +207,14 @@ bool DRCDescriptor::lessThan(std::any l, std::any r) const
   return l_drc < r_drc;
 }
 
+bool DRCDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto& violation : violations_) {
+    objects.insert(makeSelected(violation.get(), nullptr));
+  }
+  return true;
+}
+
 ///////
 
 QVariant DRCItemModel::data(const QModelIndex& index, int role) const
@@ -224,7 +240,8 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new QTreeView(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
-      load_(new QPushButton("Load..."))
+      load_(new QPushButton("Load...", this)),
+      renderer_(std::make_unique<DRCRenderer>(violations_))
 {
   setObjectName("drc_viewer");  // for settings
 
@@ -235,7 +252,7 @@ DRCWidget::DRCWidget(QWidget* parent)
   header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(1, QHeaderView::Stretch);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(view_);
   layout->addWidget(load_);
@@ -252,6 +269,8 @@ DRCWidget::DRCWidget(QWidget* parent)
           this,
           SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
   connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
+
+  Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
 }
 
 void DRCWidget::setLogger(utl::Logger* logger)
@@ -261,11 +280,12 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
+  // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
   QString filename = QFileDialog::getOpenFileName(
       this,
       tr("DRC Report"),
       QString(),
-      tr("DRC Report (*.rpt *.ascii);;TritonRoute Report (*.rpt);;RVE (*.ascii);;All (*)"));
+      tr("DRC Report (*.rpt *.drc *.json);;TritonRoute Report (*.rpt *.drc);;JSON (*.json);;All (*)"));
   if (!filename.isEmpty()) {
     loadReport(filename);
   }
@@ -313,15 +333,15 @@ void DRCWidget::hideEvent(QHideEvent* event)
 
 void DRCWidget::toggleRenderer(bool visible)
 {
-  auto gui = Gui::get();
-  if (gui == nullptr) {
+  if (!Gui::enabled()) {
     return;
   }
 
+  auto gui = Gui::get();
   if (visible) {
-    gui->registerRenderer(this);
+    gui->registerRenderer(renderer_.get());
   } else {
-    gui->unregisterRenderer(this);
+    gui->unregisterRenderer(renderer_.get());
   }
 }
 
@@ -363,48 +383,7 @@ void DRCWidget::updateModel()
   }
 
   toggleRenderer(!this->isHidden());
-  redraw();
-}
-
-void DRCWidget::drawObjects(Painter& painter)
-{
-  int min_box = 20.0 / painter.getPixelsPerDBU();
-  Painter::Color pen_color = Painter::white;
-  Painter::Color brush_color = pen_color;
-  brush_color.a = 50;
-
-  painter.setPen(pen_color, true, 0);
-  painter.setHashedBrush(brush_color);
-  for (const auto& violation : violations_) {
-    const odb::Rect& box = violation->getBBox();
-    if (std::max(box.dx(), box.dy()) < min_box) {
-      // box is too small to be useful, so draw X instead
-      odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
-                       {center.x() + min_box / 2, center.y() + min_box / 2});
-      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
-                       {center.x() + min_box / 2, center.y() - min_box / 2});
-    } else {
-      violation->paint(painter);
-    }
-  }
-}
-
-SelectionSet DRCWidget::select(odb::dbTechLayer* layer, const odb::Point& point)
-{
-  if (layer != nullptr) {
-    return SelectionSet();
-  }
-
-  auto gui = Gui::get();
-
-  SelectionSet selections;
-  for (const auto& violation : violations_) {
-    if (violation->getBBox().intersects(point)) {
-      selections.insert(gui->makeSelected(violation.get()));
-    }
-  }
-  return selections;
+  renderer_->redraw();
 }
 
 void DRCWidget::updateSelection(const Selected& selection)
@@ -418,13 +397,16 @@ void DRCWidget::updateSelection(const Selected& selection)
 
 void DRCWidget::loadReport(const QString& filename)
 {
+  Gui::get()->removeSelected<DRCViolation*>();
+
   violations_.clear();
 
   try {
-    if (filename.endsWith(".rpt")) {
+    // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
+    if (filename.endsWith(".rpt") || filename.endsWith(".drc")) {
       loadTRReport(filename);
-    } else if (filename.endsWith(".ascii")) {
-      loadASCIIReport(filename);
+    } else if (filename.endsWith(".json")) {
+      loadJSONReport(filename);
     } else {
       logger_->error(utl::GUI,
                      32,
@@ -435,6 +417,7 @@ void DRCWidget::loadReport(const QString& filename)
   }  // catch errors
 
   updateModel();
+  raise();
 }
 
 void DRCWidget::loadTRReport(const QString& filename)
@@ -614,9 +597,103 @@ void DRCWidget::loadTRReport(const QString& filename)
   report.close();
 }
 
-void DRCWidget::loadASCIIReport(const QString& filename)
+void DRCWidget::loadJSONReport(const QString& filename)
 {
-  logger_->error(utl::GUI, 31, "ASCII databases not supported.");
+  boost::property_tree::ptree tree;
+  try {
+    boost::property_tree::json_parser::read_json(filename.toStdString(), tree);
+  }
+  catch (const boost::property_tree::json_parser_error& e1) {
+    logger_->error(utl::GUI, 55, "Unable to parse JSON file {}: {}", filename.toStdString(), e1.what());
+  }
+
+  for (const auto& rule : tree.get_child("DRC")) {
+    auto& drc_rule = rule.second;
+
+    const std::string violation_type = drc_rule.get<std::string>("name");
+    const std::string violation_text = drc_rule.get<std::string>("description");
+
+    int  i = 0;
+    for (const auto& violation_shape : drc_rule.get_child("violations")) {
+      auto& shape = violation_shape.second;
+
+      std::vector<odb::Point> shape_points;
+      for (const auto& shape_pt : shape.get_child("shape")) {
+        auto& pt = shape_pt.second;
+        shape_points.push_back(odb::Point(
+            pt.get<double>("x") * block_->getDbUnitsPerMicron(),
+            pt.get<double>("y") * block_->getDbUnitsPerMicron()));
+      }
+
+      std::vector<DRCViolation::DRCShape> shapes;
+      const std::string shape_type = shape.get<std::string>("type");
+      if (shape_type == "box") {
+        shapes.push_back(DRCViolation::DRCRect(shape_points[0], shape_points[1]));
+      } else if (shape_type == "edge") {
+        shapes.push_back(DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+      } else if (shape_type == "polygon") {
+        shapes.push_back(DRCViolation::DRCPoly(shape_points));
+      } else {
+        logger_->error(utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
+      }
+
+      std::string name = violation_type + " - " + std::to_string(++i);
+      violations_.push_back(std::make_unique<DRCViolation>(
+          name,
+          violation_type,
+          shapes,
+          violation_text,
+          0));
+    }
+  }
+}
+
+////////
+
+DRCRenderer::DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations) :
+    violations_(violations)
+{
+}
+
+void DRCRenderer::drawObjects(Painter& painter)
+{
+  int min_box = 20.0 / painter.getPixelsPerDBU();
+  Painter::Color pen_color = Painter::white;
+  Painter::Color brush_color = pen_color;
+  brush_color.a = 50;
+
+  painter.setPen(pen_color, true, 0);
+  painter.setBrush(brush_color, Painter::Brush::DIAGONAL);
+  for (const auto& violation : violations_) {
+    const odb::Rect& box = violation->getBBox();
+    if (std::max(box.dx(), box.dy()) < min_box) {
+      // box is too small to be useful, so draw X instead
+      odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
+      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
+                       {center.x() + min_box / 2, center.y() + min_box / 2});
+      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
+                       {center.x() + min_box / 2, center.y() - min_box / 2});
+    } else {
+      violation->paint(painter);
+    }
+  }
+}
+
+SelectionSet DRCRenderer::select(odb::dbTechLayer* layer, const odb::Rect& region)
+{
+  if (layer != nullptr) {
+    return SelectionSet();
+  }
+
+  auto gui = Gui::get();
+
+  SelectionSet selections;
+  for (const auto& violation : violations_) {
+    if (violation->getBBox().intersects(region)) {
+      selections.insert(gui->makeSelected(violation.get()));
+    }
+  }
+  return selections;
 }
 
 }  // namespace gui

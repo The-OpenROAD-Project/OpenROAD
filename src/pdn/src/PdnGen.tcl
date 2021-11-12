@@ -1360,9 +1360,10 @@ proc complete_macro_grid_specifications {} {
       }
       set pin_layers [lsort -unique $pin_layers]
 
+      set connect_list [dict get $grid connect]
       foreach pin_layer $pin_layers {
         set new_connections {}
-        foreach connect [dict get $grid connect] {
+        foreach connect $connect_list {
           if {[lindex $connect 0] == $pin_layer} {
             set connect [lreplace $connect 0 0 ${pin_layer}_PIN_$direction]
           }
@@ -1371,8 +1372,9 @@ proc complete_macro_grid_specifications {} {
           }
           lappend new_connections $connect
         }
-        dict set design_data grid macro $grid_name connect $new_connections
+        set connect_list $new_connections
       }
+      dict set design_data grid macro $grid_name connect $connect_list
     }
     
     if {[dict exists $grid straps]} {
@@ -2579,6 +2581,8 @@ proc via_generate_array_rule {viarule_name via_info rule_name rows columns} {
         [dict get $upper_enc xEnclosure] \
         [dict get $upper_enc yEnclosure] \
       ] \
+      lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
+      upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -6349,6 +6353,7 @@ proc core_area_boundary {} {
 
   # Add blockages around the outside of the core area in order to trim back the templates.
   #
+  set blockages {}
   set boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]]]

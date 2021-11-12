@@ -81,6 +81,7 @@ class Parser
   void postProcess();
   void postProcessGuide();
   void initDefaultVias();
+  void initConstraints();
   void initRPin();
   std::map<frBlock*,
            std::map<dbOrientType,
@@ -136,7 +137,7 @@ class Parser
   int readLayerCnt;
   std::string masterSliceLayerName;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
-  std::vector<std::pair<frBlockObject*, frPoint>> tmpGRPins;
+  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins;
   std::map<frBlock*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
@@ -173,53 +174,60 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  static int distL1(const Rect& b, const Point& p);
+  static void getClosestPoint(const frRect& r, const Point3D& p, Point3D& result);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void checkPinForGuideEnclosure(frBlockObject* pin,
+                                 frNet* net,
+                                 std::vector<frRect>& guides);
   void genGuides_merge(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
   void genGuides_split(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
-      std::map<std::pair<frPoint, frLayerNum>,
+      std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       std::map<frBlockObject*,
-               std::set<std::pair<frPoint, frLayerNum>>,
+               std::set<std::pair<Point, frLayerNum>>,
                frBlockObjectComp>& pin2GCellMap,
       bool isRetry);
   void genGuides_gCell2PinMap(
       frNet* net,
-      std::map<std::pair<frPoint, frLayerNum>,
+      std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
   void genGuides_gCell2TermMap(
-      std::map<std::pair<frPoint, frLayerNum>,
+      std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       frTerm* term,
       frBlockObject* origTerm);
   bool genGuides_gCell2APInstTermMap(
-      std::map<std::pair<frPoint, frLayerNum>,
+      std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       frInstTerm* instTerm);
   bool genGuides_gCell2APTermMap(
-      std::map<std::pair<frPoint, frLayerNum>,
+      std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       frTerm* instTerm);
   void genGuides_initPin2GCellMap(
       frNet* net,
       std::map<frBlockObject*,
-               std::set<std::pair<frPoint, frLayerNum>>,
+               std::set<std::pair<Point, frLayerNum>>,
                frBlockObjectComp>& pin2GCellMap);
   void genGuides_buildNodeMap(
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
+      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
       int& gCnt,
       int& nCnt,
       std::vector<frRect>& rects,
       std::map<frBlockObject*,
-               std::set<std::pair<frPoint, frLayerNum>>,
+               std::set<std::pair<Point, frLayerNum>>,
                frBlockObjectComp>& pin2GCellMap);
   bool genGuides_astar(
       frNet* net,
       std::vector<bool>& adjVisited,
       std::vector<int>& adjPrevIdx,
-      std::map<std::pair<frPoint, frLayerNum>, std::set<int>>& nodeMap,
+      std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
       int& gCnt,
       int& nCnt,
       bool forceFeedThrough,
@@ -231,7 +239,7 @@ class Parser
                        int gCnt,
                        int nCnt,
                        std::map<frBlockObject*,
-                                std::set<std::pair<frPoint, frLayerNum>>,
+                                std::set<std::pair<Point, frLayerNum>>,
                                 frBlockObjectComp>& pin2GCellMap);
 
   // temp init functions

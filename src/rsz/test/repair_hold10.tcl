@@ -31,4 +31,3 @@ set_routing_layers -signal met1-met5
 global_route
 estimate_parasitics -global_routing
 report_worst_slack -min
-

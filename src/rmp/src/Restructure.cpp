@@ -92,20 +92,22 @@ void Restructure::reset()
 void Restructure::run(char* liberty_file_name,
                       float slack_threshold,
                       unsigned max_depth,
-                      char* workdir_name)
+                      char* workdir_name,
+                      char* abc_logfile)
 {
   reset();
   block_ = db_->getChip()->getBlock();
   if (!block_)
     return;
 
+  logfile_ = abc_logfile;
   sta::Slack worst_slack = slack_threshold;
 
   lib_file_names_.emplace_back(liberty_file_name);
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
 
-  if (!is_area_mode_) // Only in area mode
+  if (is_area_mode_) // Only in area mode
     removeConstCells();
 
   getBlob(max_depth);
@@ -134,7 +136,7 @@ void Restructure::getBlob(unsigned max_depth)
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       open_sta_->getDbNetwork()->staToDb(pin, term, port);
-      if (term && term->getInst()->getITerms().size() < 10)
+      if (term && !term->getInst()->getMaster()->isBlock())
         path_insts_.insert(term->getInst());
     }
     logger_->report("Found {} instances for restructuring.",
@@ -213,10 +215,10 @@ void Restructure::runABC()
                  "Writing ABC script file {}.",
                  abc_script_file);
       if (writeAbcScript(abc_script_file)) {
-        std::string abc_command = std::string("yosys-abc < ") + abc_script_file;
+        std::string abc_command = std::string("yosys-abc -F ") + abc_script_file;
         if (logfile_ != "")
           abc_command
-              = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
+              = abc_command + " >& " + logfile_ + std::to_string(temp_mode_idx);
 
         pid_t child_pid = fork();
         if (child_pid == 0) {  // Begin child
@@ -303,7 +305,7 @@ void Restructure::runABC()
           }
         } else {
           // Using only DELAY_4 for delay based gain since other modes not showing good gains
-          if ((modes[curr_mode_idx] == Mode::DELAY_4)) {
+          if (modes[curr_mode_idx] == Mode::DELAY_4) {
             best_delay_gain = delay;
             best_blif = output_blif_file_name_;
           }
@@ -394,31 +396,35 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   }
 
   // unconstrained end points
-  auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
-                                       false /*no_output_delay*/,
-                                       false /*reg_multiple_clks*/,
-                                       true /*reg_no_clks*/,
-                                       true /*unconstrained_endpoints*/,
-                                       false /*loops*/,
-                                       false /*generated_clks*/);
-  debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
-  if (errors.size() && errors[0]->size() > 1) {
-    sta::CheckError* error = errors[0];
-    bool first = true;
-    for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
-      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+  if (is_area_mode_) {
+    auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
+                                        false /*no_output_delay*/,
+                                        false /*reg_multiple_clks*/,
+                                        true /*reg_no_clks*/,
+                                        true /*unconstrained_endpoints*/,
+                                        false /*loops*/,
+                                        false /*generated_clks*/);
+    debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
+    if (errors.size() && errors[0]->size() > 1) {
+      sta::CheckError* error = errors[0];
+      bool first = true;
+      for (auto pinName : *error) {
+        debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        }
+        first = false;
       }
     }
-  }
-  if (errors.size() > 1 && errors[1]->size() > 1) {
-    sta::CheckError* error = errors[1];
-    bool first = true;
-    for (auto pinName : *error) {
-      debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-      if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-        ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+    if (errors.size() > 1 && errors[1]->size() > 1) {
+      sta::CheckError* error = errors[1];
+      bool first = true;
+      for (auto pinName : *error) {
+        debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        }
+        first = false;
       }
     }
   }
@@ -651,11 +657,6 @@ void Restructure::setMode(const char* mode_name)
   else {
     logger_->warn(RMP, 36, "Mode {} not recognized.", mode_name);
   }
-}
-
-void Restructure::setLogfile(const char* logfile)
-{
-  logfile_ = logfile;
 }
 
 void Restructure::setTieHiPort(sta::LibertyPort* tieHiPort)

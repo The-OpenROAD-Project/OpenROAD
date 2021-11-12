@@ -83,9 +83,8 @@ extern "C"
 }
 #endif
 
-static int cmd_argc;
-static char **cmd_argv;
-bool gui_mode = false;
+int cmd_argc;
+char **cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 
@@ -176,21 +175,15 @@ main(int argc,
     remove(metrics_filename);
   }
 
+  cmd_argc = argc;
+  cmd_argv = argv;
 #ifdef ENABLE_PYTHON3
   // Capture the current SIGINT handler before python changes it.
   struct sigaction orig_sigint_handler;
   sigaction(SIGINT, NULL, &orig_sigint_handler);
 
   initPython();
-#endif
 
-  cmd_argc = argc;
-  cmd_argv = argv;
-  if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
-    gui_mode = true;
-    return gui::startGui(cmd_argc, cmd_argv);
-  }
-#ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
@@ -218,6 +211,7 @@ main(int argc,
     sigaction(SIGINT, &orig_sigint_handler, NULL);
   }
 #endif
+
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
@@ -249,22 +243,27 @@ tclReadlineInit(Tcl_Interp *interp)
 
 // Tcl init executed inside Tcl_Main.
 static int
-tclAppInit(int argc,
+tclAppInit(int& argc,
            char *argv[],
            const char *init_filename,
            Tcl_Interp *interp)
 {
-  // source init.tcl
-  if (Tcl_Init(interp) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
+  // first check if gui was requested and launch.
+  // gui will call this function again as part of setup
+  // ensuring the else {} will be utilized to initialize tcl and OR.
+  if (findCmdLineFlag(argc, argv, "-gui")) {
+    gui::startGui(argc, argv, interp);
+  } else {
+    // init tcl
+    if (Tcl_Init(interp) == TCL_ERROR) {
+      return TCL_ERROR;
+    }
 #ifdef ENABLE_TCLX
-  if (Tclx_Init(interp) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
+    if (Tclx_Init(interp) == TCL_ERROR) {
+      return TCL_ERROR;
+    }
 #endif
 #ifdef ENABLE_READLINE
-  if (!gui_mode) {
     if (Tclreadline_Init(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
@@ -272,56 +271,81 @@ tclAppInit(int argc,
     if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
       printf("Failed to load tclreadline\n");
     }
-  }
 #endif
-  ord::initOpenRoad(interp);
 
-  if (!findCmdLineFlag(argc, argv, "-no_splash"))
-    showSplash();
+    ord::initOpenRoad(interp);
 
-  const char* threads = findCmdLineKey(argc, argv, "-threads");
-  if (threads) {
-    ord::OpenRoad::openRoad()->setThreadCount(threads);
-  } else {
-    // set to default number of threads
-    ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount(), false);
-  }
-
-  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
-
-  if (!findCmdLineFlag(argc, argv, "-no_init")) {
-#ifdef USE_STD_FILESYSTEM
-    std::filesystem::path init(getenv("HOME"));
-    init /= init_filename;
-    if (std::filesystem::is_regular_file(init)) {
-      sourceTclFile(init.c_str(), true, true, interp);
+    if (!findCmdLineFlag(argc, argv, "-no_splash")) {
+      showSplash();
     }
-#else
-    string init_path = getenv("HOME");
-    init_path += "/";
-    init_path += init_filename;
-    if (is_regular_file(init_path.c_str()))
-      sourceTclFile(init_path.c_str(), true, true, interp);
-#endif
-  }
 
-  if (argc > 2 ||
-      (argc > 1 && argv[1][0] == '-'))
-    showUsage(argv[0], init_filename);
-  else {
-    if (argc == 2) {
-      char *cmd_file = argv[1];
-      if (cmd_file) {
-        int result = sourceTclFile(cmd_file, false, false, interp);
-        if (exit_after_cmd_file) {
-          int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
-          exit(exit_code);
+    const char* threads = findCmdLineKey(argc, argv, "-threads");
+    if (threads) {
+      ord::OpenRoad::openRoad()->setThreadCount(threads);
+    } else {
+      // set to default number of threads
+      ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount(), false);
+    }
+
+    bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+
+    const bool gui_enabled = gui::Gui::enabled();
+
+    if (!findCmdLineFlag(argc, argv, "-no_init")) {
+      const char* restore_state_cmd = "source -echo -verbose {{{}}}";
+#ifdef USE_STD_FILESYSTEM
+      std::filesystem::path init(getenv("HOME"));
+      init /= init_filename;
+      if (std::filesystem::is_regular_file(init)) {
+        if (!gui_enabled) {
+          sourceTclFile(init.c_str(), true, true, interp);
+        } else {
+          // need to delay loading of file until after GUI is completed initialized
+          gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, init.string()));
+        }
+      }
+#else
+      string init_path = getenv("HOME");
+      init_path += "/";
+      init_path += init_filename;
+      if (is_regular_file(init_path.c_str())) {
+        if (!gui_enabled) {
+          sourceTclFile(init_path.c_str(), true, true, interp);
+        } else {
+          // need to delay loading of file until after GUI is completed initialized
+          gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, init_path));
+        }
+      }
+#endif
+    }
+
+    if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
+      showUsage(argv[0], init_filename);
+    }
+    else {
+      if (argc == 2) {
+        char *cmd_file = argv[1];
+        if (cmd_file) {
+          if (!gui_enabled) {
+            int result = sourceTclFile(cmd_file, false, false, interp);
+            if (exit_after_cmd_file) {
+              int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+              exit(exit_code);
+            }
+          } else {
+            // need to delay loading of file until after GUI is completed initialized
+            const char* restore_state_cmd = "source {{{}}}";
+            gui::Gui::get()->addRestoreStateCommand(fmt::format(restore_state_cmd, cmd_file));
+            if (exit_after_cmd_file) {
+              gui::Gui::get()->addRestoreStateCommand("exit");
+            }
+          }
         }
       }
     }
   }
 #ifdef ENABLE_READLINE
-  if (!gui_mode) {
+  if (!gui::Gui::enabled()) {
     return tclReadlineInit(interp);
   }
 #endif

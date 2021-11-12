@@ -37,6 +37,7 @@
 #include "gui/gui.h"
 
 namespace odb {
+class dbDatabase;
 class Point;
 }  // namespace odb
 
@@ -56,7 +57,9 @@ class Ruler
   const std::string getLabel() const { return label_; }
   void setLabel(const std::string& label) { label_ = label; }
 
-  bool fuzzyIntersection(const odb::Point& pt, int margin) const;
+  std::string getTclCommand(double dbu_to_microns) const;
+
+  bool fuzzyIntersection(const odb::Rect& region, int margin) const;
 
   bool operator ==(const Ruler& other) const;
 
@@ -71,10 +74,10 @@ class Ruler
 class RulerDescriptor : public Descriptor
 {
  public:
-  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers);
+  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers, odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -87,10 +90,13 @@ class RulerDescriptor : public Descriptor
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
+  bool getAllObjects(SelectionSet& objects) const override;
+
  private:
   static bool editPoint(std::any value, int dbu_per_uu, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
+  odb::dbDatabase* db_;
 };
 
 }  // namespace gui

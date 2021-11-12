@@ -113,7 +113,7 @@ class Parameters
   float horizontal_length_ = -1;
   float vertical_length_ = -1;
   double rand_seed_ = 42.0;
-  int corner_avoidance_;
+  int corner_avoidance_ = 0;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
 };
