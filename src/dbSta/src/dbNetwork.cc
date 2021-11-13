@@ -365,14 +365,9 @@ DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-Network *
-makedbNetwork()
-{
-  return new dbNetwork;
-}
-
-dbNetwork::dbNetwork() :
+dbNetwork::dbNetwork(Logger *logger) :
   db_(nullptr),
+  logger_(logger),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
@@ -394,12 +389,6 @@ dbNetwork::setBlock(dbBlock *block)
   db_ = block->getDataBase();
   block_ = block;
   readDbNetlistAfter();
-}
-
-void
-dbNetwork::setLogger(Logger *logger)
-{
-  logger_ = logger;
 }
 
 void
