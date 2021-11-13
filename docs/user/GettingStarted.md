@@ -102,8 +102,7 @@ directory.
 
 ### Adding a New Platform
 
-At this time, we recommend looking at the
-[Nangate45](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms/nangate45)
+Refer to the [PlatformBringUp][../contrib/PlatformBringUp.md] documentation
 as an example of how to set up a new platform for OpenROAD-flow-scripts.
 
 ## Implement the Design
