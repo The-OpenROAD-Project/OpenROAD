@@ -261,7 +261,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
-  odb::dbBlock* getBlock();
+  odb::dbBlock* getBlock() const;
   void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
@@ -306,6 +306,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+
+  bool hasDesign() const;
 
   odb::Point getVisibleCenter();
 

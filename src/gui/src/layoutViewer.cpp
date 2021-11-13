@@ -452,7 +452,7 @@ void LayoutViewer::setLogger(utl::Logger* logger)
   logger_ = logger;
 }
 
-dbBlock* LayoutViewer::getBlock()
+dbBlock* LayoutViewer::getBlock() const
 {
   if (!db_) {
     return nullptr;
@@ -1195,6 +1195,10 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
 void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
+  if (!hasDesign()) {
+    return;
+  }
+
   dbBlock* block = getBlock();
   if (block != nullptr) {
     const QSize new_layout_size = event->size();
@@ -2232,8 +2236,7 @@ void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
-  dbBlock* block = getBlock();
-  if (!block) {
+  if (!hasDesign()) {
     return;
   }
 
@@ -2245,12 +2248,10 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setBrush(background_);
   painter.drawRect(event->rect());
 
-  if (!design_loaded_) {
-    return;
-  }
-
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
+
+  dbBlock* block = getBlock();
 
   if (!search_init_) {
     search_.init(block);
@@ -2542,8 +2543,7 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 
 void LayoutViewer::viewportUpdated()
 {
-  odb::dbBlock* block = getBlock();
-  if (block == nullptr) {
+  if (!hasDesign()) {
     return;
   }
 
@@ -2552,7 +2552,7 @@ void LayoutViewer::viewportUpdated()
   // determine new fit_pixels_per_dbu_ based on current viewport size
   fit_pixels_per_dbu_ = computePixelsPerDBU(
       scroller_->maximumViewportSize(),
-      getPaddedRect(getBounds(block)));
+      getPaddedRect(getBounds(getBlock())));
 
   // when zoomed in don't update size,
   // else update size of window
@@ -2765,6 +2765,25 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
 
     cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
   }
+}
+
+bool LayoutViewer::hasDesign() const
+{
+  if (!design_loaded_) {
+    return false;
+  }
+
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  const Rect bounds = getBounds(block);
+  if (bounds.dx() == 0 || bounds.dy() == 0) {
+    return false;
+  }
+
+  return true;
 }
 
 ////// LayoutScroll ///////
