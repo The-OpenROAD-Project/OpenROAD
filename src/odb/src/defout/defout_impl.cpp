@@ -158,6 +158,8 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
     fprintf(_out, "VERSION 5.5 ;\n");
   } else if (_version == defout::DEF_5_6) {
     fprintf(_out, "VERSION 5.6 ;\n");
+  } else if (_version == defout::DEF_5_7) {
+    fprintf(_out, "VERSION 5.7 ;\n");
   } else if (_version == defout::DEF_5_8) {
     fprintf(_out, "VERSION 5.8 ;\n");
   }

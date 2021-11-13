@@ -53,6 +53,7 @@ class defout
     DEF_5_4,
     DEF_5_5,
     DEF_5_6,
+    DEF_5_7,
     DEF_5_8
   };
 
