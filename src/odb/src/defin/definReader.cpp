@@ -1290,7 +1290,7 @@ int definReader::technologyCallback(defrCallbackType_e /* unused: type */,
                                     defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  UNSUPPORTED("TECHNOLOGY is unsupported");
+  reader->_logger->warn(utl::ODB, 293, "TECHNOLOGY is ignored");
   return PARSE_OK;
 }
 
