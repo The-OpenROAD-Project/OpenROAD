@@ -1,0 +1,5 @@
+[INFO ODB-0222] Reading LEF file: read_liberty1.lef
+[INFO ODB-0223]     Created 4 technology layers
+[INFO ODB-0225]     Created 2 library cells
+[INFO ODB-0226] Finished LEF file:  read_liberty1.lef
+[WARNING ORD-1002] Liberty cell snl_bufx1 pin A missing from LEF macro.

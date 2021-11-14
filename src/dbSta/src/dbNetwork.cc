@@ -365,14 +365,9 @@ DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-Network *
-makedbNetwork()
-{
-  return new dbNetwork;
-}
-
-dbNetwork::dbNetwork() :
+dbNetwork::dbNetwork(Logger *logger) :
   db_(nullptr),
+  logger_(logger),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
@@ -394,12 +389,6 @@ dbNetwork::setBlock(dbBlock *block)
   db_ = block->getDataBase();
   block_ = block;
   readDbNetlistAfter();
-}
-
-void
-dbNetwork::setLogger(Logger *logger)
-{
-  logger_ = logger;
 }
 
 void
@@ -905,7 +894,8 @@ dbNetwork::makeCell(Library *library,
 	cport->setLibertyPort(lib_port);
 	lib_port->setExtPort(mterm);
       }
-      else if (!dir->isPowerGround())
+      else if (!dir->isPowerGround()
+               && !lib_cell->findPgPort(port_name))
 	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
@@ -1018,7 +1008,8 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 		cport->setLibertyPort(lport);
 		lport->setExtPort(cport->extPort());
 	      }
-	      else if (!cport->direction()->isPowerGround())
+	      else if (!cport->direction()->isPowerGround()
+                       && !lcell->findPgPort(port_name))
 		logger_->warn(ORD, 1002,
                               "Liberty cell {} pin {} missing from LEF macro.",
 			      lcell->name(),
