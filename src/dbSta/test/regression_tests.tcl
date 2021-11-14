@@ -15,6 +15,8 @@ record_tests {
   report_json1
   power1
 
+  read_liberty1
+
   read_verilog1
   read_verilog2
   read_verilog3
