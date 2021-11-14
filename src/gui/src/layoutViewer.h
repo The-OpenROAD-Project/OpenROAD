@@ -339,6 +339,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // build a cache of the layout to speed up future repainting
   void updateBlockPainting(const QRect& area, odb::dbBlock* block);
 
+  void updateScaleAndCentering(const QSize& new_size);
+
   odb::dbDatabase* db_;
   Options* options_;
   ScriptWidget* output_widget_;

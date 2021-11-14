@@ -427,7 +427,6 @@ LayoutViewer::LayoutViewer(
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
-  resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
 }
@@ -1195,23 +1194,26 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
 void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
-  if (!hasDesign()) {
-    return;
-  }
+  fullRepaint();
 
+  if (hasDesign()) {
+    updateScaleAndCentering(event->size());
+  }
+}
+
+void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
+{
   dbBlock* block = getBlock();
   if (block != nullptr) {
-    const QSize new_layout_size = event->size();
-
     const odb::Rect block_bounds = getBounds(block);
 
     // compute new pixels_per_dbu_
-    pixels_per_dbu_ = computePixelsPerDBU(new_layout_size, getPaddedRect(block_bounds));
+    pixels_per_dbu_ = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
 
     // compute new centering shift
     // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
-    const QSize new_area = new_layout_size.expandedTo(scroller_->size());
+    const QSize new_area = new_size.expandedTo(scroller_->size());
     centering_shift_ = QPoint(
         (new_area.width()  - block_bounds.dx() * pixels_per_dbu_) / 2,
         (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
@@ -2236,10 +2238,6 @@ void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
-  if (!hasDesign()) {
-    return;
-  }
-
   QPainter painter(this);
   painter.setRenderHints(QPainter::Antialiasing);
 
@@ -2247,6 +2245,10 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setPen(QPen(background_, 0));
   painter.setBrush(background_);
   painter.drawRect(event->rect());
+
+  if (!hasDesign()) {
+    return;
+  }
 
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
@@ -2528,6 +2530,7 @@ void LayoutViewer::designLoaded(dbBlock* block)
 {
   design_loaded_ = true;
   addOwner(block);  // register as a callback object
+  updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
 
@@ -2544,6 +2547,7 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 void LayoutViewer::viewportUpdated()
 {
   if (!hasDesign()) {
+    resize(scroller_->maximumViewportSize());
     return;
   }
 
@@ -2943,6 +2947,7 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
 {
   // This happens when initialize_floorplan is run and it make sense
   // to fit as current zoom will be on a zero sized block.
+  updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
 
