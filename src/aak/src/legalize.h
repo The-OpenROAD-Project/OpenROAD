@@ -33,12 +33,14 @@ public:
     LegalizeParams():
         m_onlyCheckPlacement( false ), 
         m_skipLegalization( false ),
-        m_ut( 1.0 )
+        m_targetMaxMovement( std::numeric_limits<double>::max() ), // No limit.
+        m_targetUt( 1.0 ) // No limit.
     {}
 public:
     bool        m_onlyCheckPlacement;
     bool        m_skipLegalization;
-    double      m_ut;
+    double      m_targetMaxMovement;
+    double      m_targetUt;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

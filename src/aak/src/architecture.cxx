@@ -31,8 +31,8 @@ namespace aak
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Architecture():
-    m_useSpacingTable( true ),
-    m_usePadding( true )
+    m_useSpacingTable( false ),
+    m_usePadding( false )
 {
     m_xmin = std::numeric_limits<double>::max();
     m_xmax = -std::numeric_limits<double>::max();
@@ -56,11 +56,28 @@ Architecture::~Architecture()
     }
     m_regions.clear();
 
-    for( int i = 0; i < m_cellSpacings.size(); i++ )
+    clearSpacingTable();
+}
+
+void Architecture::clearSpacingTable( void )
+{
+    for( size_t i = 0; i < m_cellSpacings.size(); i++ )
     {
         delete m_cellSpacings[i];
     }
     m_cellSpacings.clear();
+}
+
+bool Architecture::isSingleHeightCell( Node* ndi ) const
+{
+    int spanned = (int)(ndi->getHeight() / m_rows[0]->getH() + 0.5);
+    return spanned == 1;
+}
+
+bool Architecture::isMultiHeightCell( Node* ndi ) const
+{
+    int spanned = (int)(ndi->getHeight() / m_rows[0]->getH() + 0.5);
+    return spanned != 1;
 }
 
 bool Architecture::uniform()
@@ -420,7 +437,7 @@ void Architecture::create_peanut_nodes( Network* network, RoutingParams* rt )
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void Architecture::addCellSpacingUsingEdgeTypes( 
+void Architecture::addCellSpacingUsingTable( 
     int firstEdge, int secondEdge, double sep )
 {
     m_cellSpacings.push_back( 
@@ -460,13 +477,18 @@ double Architecture::getCellSpacing( Node* leftNode, Node* rightNode )
     // Return the required separation between the two cells.  We use
     // either spacing tables or padding information, or both.  If 
     // we use both, then we return the largest spacing.
+    //
+    // I've updated this as well to account for the situation where
+    // one of the provided cells is null.  Even in the case of null,
+    // I suppose that we should account for padding; e.g., we might
+    // be at the end of a segment.
     double retval = 0.;
     if( m_useSpacingTable )
     {
-        retval = std::max( retval, 
-            getCellSpacingUsingEdgeTypes( 
-                leftNode->getRightEdgeType(), rightNode->getLeftEdgeType() )
-                );
+        // Don't need this if one of the cells is null.
+        int i1 = (leftNode == 0) ? -1 : leftNode->getRightEdgeType();
+        int i2 = (rightNode == 0) ? -1 : rightNode->getLeftEdgeType();
+        retval = std::max( retval, getCellSpacingUsingTable( i1, i2 ) );
     }
     if( m_usePadding )
     {
@@ -475,13 +497,19 @@ double Architecture::getCellSpacing( Node* leftNode, Node* rightNode )
         std::map<int,std::pair<double,double> >::iterator it;
 
         double separation = 0.;
-        if( m_cellPaddings.end() != (it = m_cellPaddings.find( leftNode->getId() )) )
+        if( leftNode != 0 )
         {
-            separation += it->second.second;
+            if( m_cellPaddings.end() != (it = m_cellPaddings.find( leftNode->getId() )) )
+            {
+                separation += it->second.second;
+            }
         }
-        if( m_cellPaddings.end() != (it = m_cellPaddings.find( rightNode->getId() )) )
+        if( rightNode != 0 )
         {
-            separation += it->second.first ;
+            if( m_cellPaddings.end() != (it = m_cellPaddings.find( rightNode->getId() )) )
+            {
+                separation += it->second.first ;
+            }
         }
         retval = std::max( retval, separation );
     }
@@ -490,23 +518,59 @@ double Architecture::getCellSpacing( Node* leftNode, Node* rightNode )
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Architecture::getCellSpacingUsingEdgeTypes( int i1, int i2 )
+double Architecture::getCellSpacingUsingTable( int i1, int i2 )
 {
-    int spacing_minimum = 0.0;
+    // In the event that one of the left or right indices is
+    // void (-1), return the worst possible spacing.  This
+    // is very pessimistic, but will ensure all issues are
+    // resolved.
+
+    double spacing = 0.0;
+
+    if( i1 == -1 && i2 == -1 )
+    {
+        for( int i = 0; i < m_cellSpacings.size(); i++ )
+        {
+            Architecture::Spacing* ptr = m_cellSpacings[i];
+            spacing = std::max( spacing, ptr->getSeparation() );
+        }
+        return spacing;
+    }
+    else if( i1 == -1 )
+    {
+        for( int i = 0; i < m_cellSpacings.size(); i++ )
+        {
+            Architecture::Spacing* ptr = m_cellSpacings[i];
+            if( ptr->getFirstEdge() == i2 || ptr->getSecondEdge() == i2 )
+            {
+                spacing = std::max( spacing, ptr->getSeparation() );
+            }
+        }
+        return spacing;
+    }
+    else if( i2 == -1 )
+    {
+        for( int i = 0; i < m_cellSpacings.size(); i++ )
+        {
+            Architecture::Spacing* ptr = m_cellSpacings[i];
+            if( ptr->getFirstEdge() == i1 || ptr->getSecondEdge() == i1 )
+            {
+                spacing = std::max( spacing, ptr->getSeparation() );
+            }
+        }
+        return spacing;
+    }
+
     for( int i = 0; i < m_cellSpacings.size(); i++ )
     {
         Architecture::Spacing* ptr = m_cellSpacings[i];
-        if( (ptr->m_i1 == i1 && ptr->m_i2 == i2) || (ptr->m_i1 == i2 && ptr->m_i2 == i1) ) 
+        if( (ptr->getFirstEdge() == i1 && ptr->getSecondEdge() == i2) || 
+            (ptr->getFirstEdge() == i2 && ptr->getSecondEdge() == i1) ) 
         {
-            if( ptr->m_sep < 1.0e-3 )
-            {
-                return spacing_minimum;
-                
-            }
-            return ptr->m_sep;
+            spacing = std::max( spacing, ptr->getSeparation() );
         }
     }
-    return spacing_minimum;
+    return spacing;
 }
 
 void Architecture::clear_edge_type()

@@ -51,6 +51,12 @@ public:
     Architecture();
     virtual ~Architecture();
 
+    int getNumRows( void ) const { return m_rows.size(); }
+    Architecture::Row* getRow( int r ) const { return m_rows[r]; }
+
+    bool isSingleHeightCell( Node* ndi ) const;
+    bool isMultiHeightCell( Node* ndi ) const;
+
     bool post_process();
     //void mark_sites_unoccupied();
     //void mark_sites_occupied( Network* network );
@@ -82,13 +88,25 @@ public:
 
     bool    power_compatible( Node* ndi, Row* row, bool& flip );
 
+    // Well, sometimes I see padding used and other times I see
+    // spacing tables used.  I don't think both should be used.
+    // We need to give priority to one over the other in the
+    // event that both are set to true!
+
+    // Using tables...
     void    setUseSpacingTable( bool val = true ) { m_useSpacingTable = val; }
+    bool    getUseSpacingTable( void ) const { return m_useSpacingTable; }
+    void    clearSpacingTable( void );
+    double  getCellSpacingUsingTable( int firstEdge, int secondEdge );
+    void    addCellSpacingUsingTable( int firstEdge, int secondEdge, double sep );
+
+    // Using padding...
     void    setUsePadding( bool val = true ) { m_usePadding = val; }
-    double  getCellSpacing( Node* leftNode, Node* rightNode );
-    double  getCellSpacingUsingEdgeTypes( int firstEdge, int secondEdge );
-    void    addCellSpacingUsingEdgeTypes( int firstEdge, int secondEdge, double sep );
+    bool    getUsePadding( void ) const { return m_usePadding; }
     void    addCellPadding( Node* ndi, double leftPadding, double rightPadding );
     bool    getCellPadding( Node* ndi, double& leftPadding, double& rightPadding );
+
+    double  getCellSpacing( Node* leftNode, Node* rightNode );
 
 protected:
     void create_filler_nodes( Network* network );
@@ -121,6 +139,10 @@ class Architecture::Spacing
 public:
     Spacing( int i1, int i2, double sep );
     virtual ~Spacing();
+
+    int getFirstEdge( void )    const { return m_i1; }
+    int getSecondEdge( void )   const { return m_i2; }
+    double getSeparation( void )   const { return m_sep; }
 public:
     int m_i1;
     int m_i2;

@@ -62,8 +62,13 @@ target_sources(aak
     src/detailed.cxx
     src/detailed_manager.cxx
     src/detailed_mis.cxx
+    src/detailed_interleaving.cxx
+    src/detailed_reorder.cxx
+    src/detailed_global.cxx
+    src/detailed_vertical.cxx
     src/detailed_displacement.cxx
     src/detailed_hpwl.cxx
+    src/detailed_abu.cxx
     src/detailed_random.cxx
     src/detailed_orient.cxx
 )

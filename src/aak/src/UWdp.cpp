@@ -198,6 +198,7 @@ UWdp::import()
   initCellSpacingTable();   // Does nothing.
   createLayerMap();
   createNdrMap();
+  setupMasterPowers();      // Need to do before network, arch creation.
   createNetwork();
   createArchitecture();
   createRouteGrid();
@@ -225,10 +226,28 @@ UWdp::updateDbInstLocations()
     if( instMap_.end() != it_n )
     {
       Node* nd = it_n->second;
-      // Need to figure out orientation.
+      // XXX: Need to figure out orientation.
       int lx = (int)(nd->getX() - 0.5 * nd->getWidth());
       int yb = (int)(nd->getY() - 0.5 * nd->getHeight());
       inst->setLocation( lx, yb );
+
+      double xmin = nd->getX() - 0.5 * nd->getWidth();
+      double xmax = nd->getX() + 0.5 * nd->getWidth();
+      double ymin = nd->getY() - 0.5 * nd->getHeight();
+      double ymax = nd->getY() + 0.5 * nd->getHeight();
+    
+      //std::cout << "Cell " << nw_->m_nodeNames[nd->getId()].c_str()
+      //  << " @ "
+      //  << "(" << lx << "," << yb << ")"
+      //  << " - "
+      //  << "(" << xmin << "," << ymin << ")"
+      //  << " -> "
+      //  << "(" << xmax << "," << ymax << ")"
+      //  << ", "
+      //  << "Fixed? " << (inst->isFixed() ? "Y" : "N")
+      //  << ", "
+      //  << "Fixed? " << ((nd->getFixed() == NodeFixed_FIXED_XY) ? "Y" : "N")
+      //  << std::endl;
     }
   }
 }
@@ -250,7 +269,7 @@ UWdp::initCellSpacingTable()
 void
 UWdp::initPadding()
 {
-  logger_->report( "Initializing cell padding." );;
+  logger_->report( "Initializing cell padding." );
 
   // Grab information from OpenDP.
   dpl::Opendp* opendp = openroad_->getOpendp();
@@ -296,7 +315,7 @@ UWdp::initPadding()
 void
 UWdp::createLayerMap()
 {
-  logger_->report( "createLayerMap() - not yet implemented, maybe not needed yet." );
+  logger_->report( "Skipping layer map creation." );
 
   // Relates to pin blockages, etc. Maybe not needed right now.
   ;
@@ -305,161 +324,43 @@ UWdp::createLayerMap()
 void
 UWdp::createNdrMap()
 {
-  logger_->report( "createNdrMap() - not yet implemented, maybe not needed yet." );
+  logger_->report( "Skipping non-default routing rules creation." );
 
   // Relates to pin blockages, etc. Maybe not needed right now.
   ;
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createNetwork()
+UWdp::setupMasterPowers()
 {
-  logger_->report( "createNetwork() - only partially done." );
-
-  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  std::unordered_map<odb::dbNet*, Edge*>::iterator it_e;
-  std::unordered_map<odb::dbBTerm*, Node*>::iterator it_p;
-
+  // Need to try and figure out which voltages are on the
+  // top and bottom of the masters/insts in order to set
+  // stuff up for proper row alignment of multi-height
+  // cells.  What I do it look at the individual ports 
+  // (MTerms) and see which ones correspond to POWER and
+  // GROUND and then figure out which one is on top and
+  // which one is on bottom.  I also record the layers
+  // and use that information later when setting up the
+  // row powers.
   dbBlock* block = db_->getChip()->getBlock();
+  std::vector<dbMaster*> masters;
+  block->getMasters( masters );
 
-  pwrLayers_.clear();
-  gndLayers_.clear();
-
-  // I allocate some things statically, so first I need to do some counting.
-
-  dbSet<dbInst> insts = block->getInsts();
-  int nNodes = 0;
-  int nEdges = 0;
-  int nPins = 0;
-  int nIPins = 0;
-  int nBPins = 0;
-  for(dbInst* inst : insts) 
+  for( size_t i = 0; i < masters.size(); i++ )
   {
-    auto type = inst->getMaster()->getType();
-    if(!type.isCore() && !type.isBlock()) 
-    {
-      continue;
-    }
+    dbMaster* master = masters[i];
 
-    ++nNodes;
-  }
-  // Should the IO terminals come from looking at the nets, or are
-  // they dbBTerm found on the block?  Or, either?
-
-  dbSet<dbNet> nets = block->getNets();
-  for(dbNet* net : nets) 
-  {
-    dbSigType netType = net->getSigType();
-    ++nEdges;
-
-    for(dbITerm* iTerm : net->getITerms()) 
-    {
-      ++nIPins;
-      ++nPins;
-    }
-    for(dbBTerm* bTerm : net->getBTerms()) 
-    {
-      ++nBPins;
-      ++nPins;
-    }
-  }
-
-  // I need fakes nodes for the boundary pins.
-  nw_->m_nodeNames.resize( nNodes + nBPins );
-  nw_->m_nodes.resize( nNodes + nBPins );
-  nw_->m_shapes.resize( nNodes + nBPins );
-  for( size_t i = 0; i < nw_->m_shapes.size(); i++ )
-  {
-    nw_->m_shapes[i] = std::vector<Node*>();
-  }
-  nw_->m_edgeNames.resize( nEdges );
-  nw_->m_edges.resize( nEdges );
-  nw_->m_pins.resize( nPins );
-  nw_->m_edgePins.resize( nPins );
-  nw_->m_nodePins.resize( nPins );
-
-  // ...  Need to consider orientation and symmetry a bit more within
-  // detailed placement...
-
-  int errors = 0;
-  // Populate nodes.
-  int n = 0;
-  for(dbInst* inst : insts) 
-  {
-    auto type = inst->getMaster()->getType();
-    if(!type.isCore() && !type.isBlock()) 
-    {
-      continue;
-    }
-    instMap_[inst] = &(nw_->m_nodes[n]);
-
-    // Return everything to R0.  I think this is easier, although it means
-    // I need to fix this somewhere to ensure orientations are, in fact,
-    // correct at the end of detailed placement.
-    inst->setLocationOrient( dbOrientType::R0 );
-
-    nw_->m_nodeNames[n] = inst->getName();
-
-    // Fill in data.
-    nw_->m_nodes[n].setType( NodeType_CELL );
-    nw_->m_nodes[n].setId( n );
-    nw_->m_nodes[n].setFixed( NodeFixed_NOT_FIXED );
-    if( inst->isFixed() )
-    {
-        nw_->m_nodes[n].setFixed( NodeFixed_FIXED_XY );
-    }
-    nw_->m_nodes[n].setAttributes( NodeAttributes_EMPTY );
-
-    // I reset the inst orientiation to R0 which, I think, corresponds
-    // to my Orientation_N.  Should I also update to account for R90,
-    // etc.???
-    unsigned orientations = Orientation_N;
-    if( inst->getMaster()->getSymmetryX() && inst->getMaster()->getSymmetryY() )
-    {
-        orientations |= Orientation_FN;
-        orientations |= Orientation_FS;
-        orientations |= Orientation_S;
-    }
-    else if( inst->getMaster()->getSymmetryX() )
-    {
-        orientations |= Orientation_FS;
-    }
-    else if( inst->getMaster()->getSymmetryY() )
-    {
-        orientations |= Orientation_FN;
-    }
-    // else...  Account for R90?
-    nw_->m_nodes[n].setAvailOrient( orientations );
-    nw_->m_nodes[n].setCurrOrient( Orientation_N );
-    nw_->m_nodes[n].setHeight( inst->getMaster()->getHeight() );
-    nw_->m_nodes[n].setWidth( inst->getMaster()->getWidth() );
-    // I use cell centers, unfortunately.
-    double xc = inst->getBBox()->xMin() + 0.5 * inst->getMaster()->getWidth();
-    double yc = inst->getBBox()->yMin() + 0.5 * inst->getMaster()->getHeight();
-    nw_->m_nodes[n].setOrigX( xc );
-    nw_->m_nodes[n].setOrigY( yc );
-    nw_->m_nodes[n].setX( xc );
-    nw_->m_nodes[n].setY( yc );
-    // Not correct.
-    nw_->m_nodes[n].setRightEdgeType( EDGETYPE_DEFAULT );
-    nw_->m_nodes[n].setLeftEdgeType( EDGETYPE_DEFAULT );
-
-    // Need to determine power at the top and bottom of the inst.  Grab
-    // the master and look at the MTerms.  Figure our whether power is 
-    // above or below ground and then set according to that.
-    nw_->m_nodes[n].setBottomPower( RowPower_UNK );
-    nw_->m_nodes[n].setTopPower( RowPower_UNK );
-    dbMaster* master = inst->getMaster();
     double maxPwr = -std::numeric_limits<double>::max();
     double minPwr =  std::numeric_limits<double>::max();
     double maxGnd = -std::numeric_limits<double>::max();
     double minGnd =  std::numeric_limits<double>::max();
+
     bool isVdd = false;
     bool isGnd = false;
     for(dbMTerm* mterm : master->getMTerms())
     {
-      // Do I need to look at the individual ports; i.e., the MTerms?
-      // to see which one is on top, or is the surrounding box enough?
+      // XXX: Do I need to look at ports, or would the surrounding 
+      // box be enough?
       if( mterm->getSigType() == dbSigType::POWER )
       {
         isVdd = true;
@@ -469,7 +370,6 @@ UWdp::createNetwork()
           double y = 0.5 * (mpin->getBBox().yMin() + mpin->getBBox().yMax());
           minPwr = std::min( minPwr, y );
           maxPwr = std::max( maxPwr, y );
-
 
           for(dbBox* mbox : mpin->getGeometry())
           {
@@ -496,69 +396,235 @@ UWdp::createNetwork()
         }
       }
     }
+    int topPwr = RowPower_UNK;
+    int botPwr = RowPower_UNK;
     if( isVdd && isGnd )
     {
-      nw_->m_nodes[n].setBottomPower( minPwr < minGnd ? RowPower_VDD : RowPower_VSS  );
-      nw_->m_nodes[n].setTopPower( maxPwr > maxGnd ? RowPower_VDD : RowPower_VSS );
+      topPwr = (maxPwr > maxGnd) ? RowPower_VDD : RowPower_VSS;
+      botPwr = (minPwr < minGnd) ? RowPower_VDD : RowPower_VSS;
     }
 
-    // Set later.
-    nw_->m_nodes[n].setRegionId( 0 ); 
+    masterPwrs_[master] = std::make_pair( topPwr, botPwr );
+  }
+}
+
+////////////////////////////////////////////////////////////////
+void
+UWdp::createNetwork()
+{
+  logger_->report( "Creating network." );
+
+  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
+  std::unordered_map<odb::dbNet*, Edge*>::iterator it_e;
+  std::unordered_map<odb::dbBTerm*, Node*>::iterator it_p;
+  std::unordered_map<dbMaster*,std::pair<int,int> >::iterator it_m;
+
+  dbBlock* block = db_->getChip()->getBlock();
+
+  pwrLayers_.clear();
+  gndLayers_.clear();
+
+  // I allocate things statically, so I need to do some counting.
+
+  dbSet<dbInst> insts = block->getInsts();
+  dbSet<dbNet> nets = block->getNets();
+  dbSet<dbBTerm> bterms = block->getBTerms();
+
+
+  int errors = 0;
+
+  // Number of this and that.
+  int nTerminals = bterms.size();
+  int nNodes = 0;
+  int nEdges = 0;
+  int nPins  = 0;
+  for(dbInst* inst : insts) 
+  {
+    dbMasterType type = inst->getMaster()->getType();
+    if(!type.isCore() && !type.isBlock()) 
+    {
+      continue;
+    }
+    ++nNodes;
+  }
+
+  for(dbNet* net : nets) 
+  {
+    dbSigType netType = net->getSigType();
+    // Should probably skip global nets.
+    ++nEdges;
+
+    nPins += net->getITerms().size();
+    nPins += net->getBTerms().size();
+  }
+
+  std::cout << "Cells " << nNodes << ", "
+    << "Terminals " << nTerminals << ", "
+    << "Edges " << nEdges << ", "
+    << "Pins: " << nPins 
+    << std::endl;
+
+
+  // Create and allocate the nodes.  I require nodes for
+  // placeable instances as well as terminals.
+  nw_->m_nodeNames.resize( nNodes + nTerminals );
+  nw_->m_nodes.resize( nNodes + nTerminals );
+  nw_->m_shapes.resize( nNodes + nTerminals );
+  for( size_t i = 0; i < nw_->m_shapes.size(); i++ )
+  {
+    nw_->m_shapes[i] = std::vector<Node*>();
+  }
+  nw_->m_edgeNames.resize( nEdges );
+  nw_->m_edges.resize( nEdges );
+  nw_->m_pins.resize( nPins );
+  nw_->m_edgePins.resize( nPins );
+  nw_->m_nodePins.resize( nPins );
+
+
+  // XXX: NEED TO DO BETTER WITH ORIENTATIONS AND SYMMETRY...
+
+  // Return instances to a north orientation.  This makes 
+  // importing easier.
+  for(dbInst* inst : insts) 
+  {
+    dbMasterType type = inst->getMaster()->getType();
+    if(!type.isCore() && !type.isBlock()) 
+    {
+      continue;
+    }
+    inst->setLocationOrient( dbOrientType::R0 );
+  }
+
+  // Populate nodes.
+  int n = 0;
+  for(dbInst* inst : insts) 
+  {
+    auto type = inst->getMaster()->getType();
+    if(!type.isCore() && !type.isBlock()) 
+    {
+      continue;
+    }
+
+    Node* ndi = &(nw_->m_nodes[n]);
+    instMap_[inst] = ndi;
+
+    double xc = inst->getBBox()->xMin() + 0.5 * inst->getMaster()->getWidth() ;
+    double yc = inst->getBBox()->yMin() + 0.5 * inst->getMaster()->getHeight();
+
+    // Name of inst.
+    nw_->m_nodeNames[n] = inst->getName();
+
+    // Fill in data.
+    ndi->setType( NodeType_CELL );
+    ndi->setId( n );
+    ndi->setFixed( inst->isFixed() ? NodeFixed_FIXED_XY : NodeFixed_NOT_FIXED );
+    ndi->setAttributes( NodeAttributes_EMPTY );
+
+    // XXX: Once again, need to think more about orientiation.  I
+    // reset everything to R0 (my Orientation_N).  Should also 
+    // think about R90, etc.
+    unsigned orientations = Orientation_N;
+    if( inst->getMaster()->getSymmetryX() && inst->getMaster()->getSymmetryY() )
+    {
+        orientations |= Orientation_FN;
+        orientations |= Orientation_FS;
+        orientations |= Orientation_S;
+    }
+    else if( inst->getMaster()->getSymmetryX() )
+    {
+        orientations |= Orientation_FS;
+    }
+    else if( inst->getMaster()->getSymmetryY() )
+    {
+        orientations |= Orientation_FN;
+    }
+    // else...  Account for R90?
+    ndi->setAvailOrient( orientations );
+    ndi->setCurrOrient( Orientation_N );
+    ndi->setHeight( inst->getMaster()->getHeight() );
+    ndi->setWidth( inst->getMaster()->getWidth() );
+    
+    ndi->setOrigX( xc );
+    ndi->setOrigY( yc );
+    ndi->setX( xc );
+    ndi->setY( yc );
+
+    // Won't use edge types.
+    ndi->setRightEdgeType( EDGETYPE_DEFAULT );
+    ndi->setLeftEdgeType( EDGETYPE_DEFAULT );
+
+    // Set the top and bottom power.
+    it_m = masterPwrs_.find( inst->getMaster() );
+    if( masterPwrs_.end() == it_m )
+    {
+        ndi->setBottomPower( RowPower_UNK );
+        ndi->setTopPower( RowPower_UNK );
+    }
+    else
+    {
+        ndi->setBottomPower( it_m->second.second );
+        ndi->setTopPower( it_m->second.first );
+    }
+
+    // Regions setup later!
+    ndi->setRegionId( 0 ); 
 
 
     ++n; // Next node.
   }
-  for(dbNet* net : nets) 
+  for(dbBTerm* bterm : bterms) 
   {
-    for(dbBTerm* bTerm : net->getBTerms()) 
-    {
-      pinMap_[bTerm] = &(nw_->m_nodes[n]);
+    Node* ndi = &(nw_->m_nodes[n]);
+    termMap_[bterm] = ndi;
 
-      nw_->m_nodeNames[n] = "FakeForExtPins" + std::to_string(n);
-
-      // Fill in data.
-      nw_->m_nodes[n].setId( n );
-      nw_->m_nodes[n].setType( NodeType_TERMINAL_NI );
-      nw_->m_nodes[n].setFixed( NodeFixed_FIXED_XY );
-      nw_->m_nodes[n].setAttributes( NodeAttributes_EMPTY );
-      nw_->m_nodes[n].setAvailOrient( Orientation_N );
-      nw_->m_nodes[n].setCurrOrient( Orientation_N );
-
-      double ww = (bTerm->getBBox().xMax() - bTerm->getBBox().xMin());
-      double hh = (bTerm->getBBox().yMax() - bTerm->getBBox().yMax());
-      double xx = (bTerm->getBBox().xMax() + bTerm->getBBox().xMin()) * 0.5;
-      double yy = (bTerm->getBBox().yMax() + bTerm->getBBox().yMax()) * 0.5;
-
-      nw_->m_nodes[n].setHeight( hh );
-      nw_->m_nodes[n].setWidth( ww );
-
-      // Correct?  I do not think so...
-      double xc = bTerm->getBlock()->getBBox()->xMin() + xx;
-      double yc = bTerm->getBlock()->getBBox()->yMin() + yy;
-
-      nw_->m_nodes[n].setOrigX( xc );
-      nw_->m_nodes[n].setOrigY( yc );
-      nw_->m_nodes[n].setX( xc );
-      nw_->m_nodes[n].setY( yc );
-
-      // Not correct.
-      nw_->m_nodes[n].setRightEdgeType( EDGETYPE_DEFAULT );
-      nw_->m_nodes[n].setLeftEdgeType( EDGETYPE_DEFAULT );
-
-      nw_->m_nodes[n].setBottomPower( RowPower_UNK );
-      nw_->m_nodes[n].setTopPower( RowPower_UNK );
-      nw_->m_nodes[n].setRegionId( 0 ); // Set in another routine.
+    // Name of terminal.
+    nw_->m_nodeNames[n] = bterm->getName();
 
 
-      ++n; // Next node.
-    }
+    // Fill in data.
+    ndi->setId( n );
+    ndi->setType( NodeType_TERMINAL_NI );
+    ndi->setFixed( NodeFixed_FIXED_XY );
+    ndi->setAttributes( NodeAttributes_EMPTY );
+    ndi->setAvailOrient( Orientation_N );
+    ndi->setCurrOrient( Orientation_N );
+
+    double ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
+    double hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
+    double xx = (bterm->getBBox().xMax() + bterm->getBBox().xMin()) * 0.5;
+    double yy = (bterm->getBBox().yMax() + bterm->getBBox().yMax()) * 0.5;
+
+    //std::cout << "BTerm: " << nw_->m_nodeNames[n].c_str() << " @ "
+    //    << "(" << xx << "," << yy << ")" 
+    //    << ", Width is " << ww << ", Height is " << hh << std::endl;
+
+    ndi->setHeight( hh );
+    ndi->setWidth( ww );
+
+    ndi->setOrigX( xx );
+    ndi->setOrigY( yy );
+    ndi->setX( xx );
+    ndi->setY( yy );
+
+    // Not relevant for terminal.
+    ndi->setRightEdgeType( EDGETYPE_DEFAULT );
+    ndi->setLeftEdgeType( EDGETYPE_DEFAULT );
+
+    // Not relevant for terminal.
+    ndi->setBottomPower( RowPower_UNK );
+    ndi->setTopPower( RowPower_UNK );
+
+    // Not relevant for terminal.
+    ndi->setRegionId( 0 ); // Set in another routine.
+
+    ++n; // Next node.
   }
-  if( n != nNodes+nBPins )
+  if( n != nNodes+nTerminals )
   {
     ++errors;
   }
 
-  // Populate edges.
+  // Populate edges and pins.
   int e = 0;
   int p = 0;
   for(dbNet* net : nets) 
@@ -566,22 +632,28 @@ UWdp::createNetwork()
     // Skip globals and pre-routes?
     //dbSigType netType = net->getSigType();
 
+    Edge* edi = &(nw_->m_edges[e]);
+    netMap_[net] = edi;
+
+    // Name of edge.
     nw_->m_edgeNames[e] = net->getName(); 
 
-    nw_->m_edges[e].setId( e );
+    edi->setId( e );
 
-    netMap_[net] = &(nw_->m_edges[e]);
     for(dbITerm* iTerm : net->getITerms()) 
     {
       it_n = instMap_.find(iTerm->getInst());
       if( instMap_.end() != it_n )
       {
-        n = it_n->second->getId(); // which node.
-        nw_->m_pins[p].setId( p );
-        nw_->m_pins[p].setEdgeId( e );
-        nw_->m_pins[p].setNodeId( n );
+        n = it_n->second->getId(); // The node id.
 
-        // Is this correct? 
+        Pin* ptr = &(nw_->m_pins[p]);
+
+        ptr->setId( p );
+        ptr->setEdgeId( e );
+        ptr->setNodeId( n );
+
+        // Pin offset.  Correct?
         dbMTerm* mTerm = iTerm->getMTerm();
         dbMaster* master = mTerm->getMaster();
         // Due to old bookshelf, my offsets are from the 
@@ -594,14 +666,13 @@ UWdp::createNetwork()
         double dx = xx - ((double)master->getWidth() / 2.); 
         double dy = yy - ((double)master->getHeight() / 2.); 
 
-        nw_->m_pins[p].setOffsetX( dx );
-        nw_->m_pins[p].setOffsetY( dy );
-        nw_->m_pins[p].setPinHeight( hh );
-        nw_->m_pins[p].setPinWidth( ww );
+        ptr->setOffsetX( dx );
+        ptr->setOffsetY( dy );
+        ptr->setPinHeight( hh );
+        ptr->setPinWidth( ww );
 
-        // Not done...
-        nw_->m_pins[p].setPinLayer( 0 );
-
+        // XXX: Not correct, but okay for now!
+        ptr->setPinLayer( 0 );
 
         ++p; // next pin.
       }
@@ -612,23 +683,25 @@ UWdp::createNetwork()
     }
     for(dbBTerm* bTerm : net->getBTerms()) 
     {
-      it_p = pinMap_.find(bTerm);
-      if( pinMap_.end() != it_p )
+      it_p = termMap_.find(bTerm);
+      if( termMap_.end() != it_p )
       {
-        n = it_p->second->getId(); // which node.
-        nw_->m_pins[p].setId( p );
-        nw_->m_pins[p].setEdgeId( e );
-        nw_->m_pins[p].setNodeId( n );
+        n = it_p->second->getId(); // The node id.
 
-        // Boundary pins don't need offsets and size.
-        nw_->m_pins[p].setOffsetX( 0.0 );
-        nw_->m_pins[p].setOffsetY( 0.0 );
-        nw_->m_pins[p].setPinHeight( 0.0 );
-        nw_->m_pins[p].setPinWidth( 0.0 );
+        Pin* ptr = &(nw_->m_pins[p]);
 
-        // Not done...
-        nw_->m_pins[p].setPinLayer( 0 );
+        ptr->setId( p );
+        ptr->setEdgeId( e );
+        ptr->setNodeId( n );
 
+        // These don't need an offset.
+        ptr->setOffsetX( 0.0 );
+        ptr->setOffsetY( 0.0 );
+        ptr->setPinHeight( 0.0 );
+        ptr->setPinWidth( 0.0 );
+
+        // XXX: Not correct, but okay for now!
+        ptr->setPinLayer( 0 );
 
         ++p; // next pin.
       }
@@ -637,7 +710,6 @@ UWdp::createNetwork()
         ++errors;
       }
     }
-
 
     ++e; // next edge.
   }
@@ -692,11 +764,11 @@ UWdp::createNetwork()
 
   if( errors != 0 )
   {
-    logger_->error( AAK, 1, "something went wrong creating network for legalization." );
+    logger_->error( AAK, 1, "Error creating network." );
   }
   else
   {
-    logger_->info( AAK, 100, "network inst {}, edges {}, pins {}",
+    logger_->info( AAK, 100, "Network stats: inst {}, edges {}, pins {}",
         nw_->m_nodes.size(), 
         nw_->m_edges.size(),
         nw_->m_pins.size() 

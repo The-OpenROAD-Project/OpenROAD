@@ -47,6 +47,11 @@ public:
         exit(-1);
     }
 
+    virtual void init( DetailedMgr* mgr )
+    {
+        std::cout << "Error." << std::endl;
+    }
+
 protected:
 };
 

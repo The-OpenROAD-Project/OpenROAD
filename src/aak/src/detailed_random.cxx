@@ -25,6 +25,9 @@
 #include "detailed_objective.h"
 #include "detailed_hpwl.h"
 #include "detailed_displacement.h"
+#include "detailed_abu.h"
+#include "detailed_vertical.h"
+#include "detailed_global.h"
 //#include "detailed_drc.h"
 //#include "detailed_abu.h"
 //#include "detailed_pin.h"
@@ -176,10 +179,18 @@ void DetailedRandom::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
 
         for( size_t i = 0; i < gens.size(); i++ )
         {
-            if( gens[i] == "ro" )       std::cout << "reorder generator requested." << std::endl;
-            else if( gens[i] == "mis" ) std::cout << "set matching generator requested." << std::endl;
-            else if( gens[i] == "gs" )  std::cout << "global swap generator requested." << std::endl;
-            else if( gens[i] == "vs" )  std::cout << "vertical swap generator requested." << std::endl;
+            //if( gens[i] == "ro" )       std::cout << "reorder generator requested." << std::endl;
+            //else if( gens[i] == "mis" ) std::cout << "set matching generator requested." << std::endl;
+            if( gens[i] == "gs" )
+            {
+                std::cout << "global swap generator requested." << std::endl;
+                m_generators.push_back( new DetailedGlobalSwap() );
+            }
+            else if( gens[i] == "vs" )
+            {
+                std::cout << "vertical swap generator requested." << std::endl;
+                m_generators.push_back( new DetailedVerticalSwap() );
+            }
             else if( gens[i] == "rng" )
             {
                 std::cout << "random generator requested." << std::endl;
@@ -197,6 +208,10 @@ void DetailedRandom::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
     {
         // Default generator.
         m_generators.push_back( new RandomGenerator() );
+    }
+    for( size_t i = 0; i < m_generators.size(); i++ )
+    {
+        m_generators[i]->init( m_mgrPtr );
     }
 
     // Objectives.
@@ -225,8 +240,14 @@ void DetailedRandom::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
 
         for( size_t i = 0; i < objs.size(); i++ )
         {
-            if( objs[i] == "abu" )        std::cout << "abu metric objective requested." << std::endl;
-            else if( objs[i] == "drc" )   std::cout << "drc objective requested." << std::endl;
+            //else if( objs[i] == "drc" )   std::cout << "drc objective requested." << std::endl;
+            if( objs[i] == "abu" ) 
+            {
+                std::cout << "abu metric objective requested." << std::endl;
+                DetailedABU* objABU = new DetailedABU( m_arch, m_network, m_rt );
+                objABU->init( m_mgrPtr, NULL );
+                m_objectives.push_back( objABU );
+            }
             else if( objs[i] == "disp" )
             {
                 std::cout << "displacement objective requested." << std::endl;
@@ -264,9 +285,8 @@ void DetailedRandom::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
         // XXX: Work in progress to make things more generic...
         std::cout << "Cost string: " << costStr << std::endl;
 
-        // Remove any parentheses.
-        costStr.erase( std::remove( costStr.begin(), costStr.end(), '(' ), costStr.end() );
-        costStr.erase( std::remove( costStr.begin(), costStr.end(), ')' ), costStr.end() );
+        //costStr.erase( std::remove( costStr.begin(), costStr.end(), '(' ), costStr.end() );
+        //costStr.erase( std::remove( costStr.begin(), costStr.end(), ')' ), costStr.end() );
 
         std::cout << "Cost string: " << costStr << std::endl;
 
@@ -296,14 +316,17 @@ void DetailedRandom::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
         m_expr.clear();
         for( std::string::iterator it = costStr.begin(); it != costStr.end(); ++it )
         {
-            if( isOperator( *it ) || isObjective( *it ) )
+            if( *it == '(' || *it == ')' )
+            {
+            }
+            else if( isOperator( *it ) || isObjective( *it ) )
             {
                 m_expr.push_back( std::string( 1, *it ) );
             }
             else
             {
                 std::string val;
-                while( !isOperator( *it ) && !isObjective( *it ) && it != costStr.end() )
+                while( !isOperator( *it ) && !isObjective( *it ) && it != costStr.end() && *it != '(' && *it != ')' )
                 {
                     val.append( 1, *it );
                     ++it;
@@ -442,6 +465,15 @@ double DetailedRandom::go( void )
         m_initCost[i] = m_objectives[i]->curr();
         m_currCost[i] = m_initCost[i];
         m_nextCost[i] = m_initCost[i];
+
+        if( m_objectives[i]->getName() == "abu" )
+        {
+            DetailedABU* ptr = dynamic_cast<DetailedABU*>(m_objectives[i]);
+            if( ptr != 0 )
+            {
+                ptr->measureABU( true );
+            }
+        }
     }
 
     // Test.
@@ -473,7 +505,6 @@ double DetailedRandom::go( void )
         // or reject it.  Scan over the objective functions and use the move
         // information to compute the weighted deltas; an overall weighted delta
         // better than zero implies improvement.
-        //double delta = 0.;
         for( size_t i = 0; i < m_objectives.size(); i++ )
         {
             // XXX: NEED TO WEIGHT EACH OBJECTIVE!
@@ -486,10 +517,6 @@ double DetailedRandom::go( void )
 
             m_deltaCost[i] = change;
             m_nextCost[i]  = m_currCost[i] - m_deltaCost[i]; // -delta is +ve is less.
-        //    if( m_objectives[i]->getName() == "disp" )
-        //    {
-        //        delta += change;
-        //    }
         }
         nextTotalCost = eval( m_nextCost, m_expr );
 
@@ -500,22 +527,27 @@ double DetailedRandom::go( void )
         if( nextTotalCost <= currTotalCost )
         {
             m_mgrPtr->acceptMove();
-
-// Expensive...  Check for overlaps.
-//            if( m_mgrPtr->checkOverlapInSegments( 1 ) != 0 )
-//            {
-//                std::cout << "Move generated an overlap!" << std::endl;
-//                m_mgrPtr->printMove();
-//                exit(-1);
-//            }
-
+            for( size_t i = 0; i < m_objectives.size(); i++ )
+            {
+                m_objectives[i]->accept();
+            }
 
             // A great, but time-consuming, check here is to recompute the costs from
             // scratch and make sure they are the same as the incrementally computed
             // costs.  Very useful for debugging!  Could do this check ever so often
             // or just at the end...
+            ;
             for( size_t i = 0; i < m_objectives.size(); i++ )
             {
+                //if( m_objectives[i]->getName() == "abu" )
+                //{
+                //    double temp = m_objectives[i]->curr();
+                //    std::cout << boost::format( "ABU: curr %.6e, delta %.6e, next %.6e, scratch %.6e, diff? %s" )
+                //        % m_currCost[i] % m_deltaCost[i] % m_nextCost[i]  
+                //        % temp % ( (std::fabs(temp-m_nextCost[i])>1.e-3) ? "Y" : "N" )
+                //        << std::endl;
+                //}
+
                 m_currCost[i] = m_nextCost[i];
             }
             currTotalCost = nextTotalCost;
@@ -523,6 +555,10 @@ double DetailedRandom::go( void )
         else
         {
             m_mgrPtr->rejectMove();
+            for( size_t i = 0; i < m_objectives.size(); i++ )
+            {
+                m_objectives[i]->reject();
+            }
         }
     }
     std::cout << "Generator usage:";
@@ -551,6 +587,15 @@ double DetailedRandom::go( void )
            % m_currCost[i] 
            % (error?"MISMATCH":"OKAY")
            << std::endl;
+
+        if( m_objectives[i]->getName() == "abu" )
+        {
+            DetailedABU* ptr = dynamic_cast<DetailedABU*>(m_objectives[i]);
+            if( ptr != 0 )
+            {
+                ptr->measureABU( true );
+            }
+        }
     }
     nextTotalCost = eval( m_nextCost, m_expr );
     std::cout << boost::format( "Total cost(Scratch): %.2lf, Incr: %.2lf" )

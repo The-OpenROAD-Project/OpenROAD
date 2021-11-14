@@ -55,6 +55,7 @@ public:
                     std::vector<double>& newX, std::vector<double>& newY, 
                     std::vector<unsigned>& newOri
                 );
+
     void       getCandidates( std::vector<Node*>& candidates );
 
     // Other.

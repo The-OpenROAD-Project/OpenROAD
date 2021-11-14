@@ -1,0 +1,624 @@
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Includes.
+////////////////////////////////////////////////////////////////////////////////
+#include <stdio.h>
+#include <strings.h>
+#include <string.h>
+#include <stdlib.h>
+#include <iostream>
+#include <algorithm>
+#include <stack>
+#include <utility>
+#include <cmath>
+#include <boost/tokenizer.hpp>
+#include <boost/format.hpp>
+#include "utility.h"
+#include "rectangle.h"
+#include "detailed_segment.h"
+#include "detailed_manager.h"
+#include "detailed_orient.h"
+#include "detailed_global.h"
+#include "detailed_hpwl.h"
+#ifdef USE_OPENMP
+#include "omp.h"
+#include <parallel/algorithm>
+#endif
+
+
+namespace aak
+{
+
+////////////////////////////////////////////////////////////////////////////////
+// Defines.
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Classes.
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+DetailedGlobalSwap::DetailedGlobalSwap( Architecture* arch, Network* network, RoutingParams* rt ):
+    DetailedGenerator(),
+    m_mgr( 0 ),
+    m_arch( arch ),
+    m_network( network ),
+    m_rt( rt ),
+    m_skipNetsLargerThanThis( 100 )
+{
+    m_attempts = 0;
+    m_moves = 0;
+    m_swaps = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+DetailedGlobalSwap::DetailedGlobalSwap( void ):
+    DetailedGenerator(),
+    m_mgr( 0 ),
+    m_arch( 0 ),
+    m_network( 0 ),
+    m_rt( 0 ),
+    m_skipNetsLargerThanThis( 100 )
+{
+    m_attempts = 0;
+    m_moves = 0;
+    m_swaps = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+DetailedGlobalSwap::~DetailedGlobalSwap( void )
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+void DetailedGlobalSwap::run( DetailedMgr* mgrPtr, std::string command )
+{
+    // A temporary interface to allow for a string which we will decode to create
+    // the arguments.
+    std::string scriptString = command;
+    boost::char_separator<char> separators( " \r\t\n;" );
+    boost::tokenizer<boost::char_separator<char> > tokens( scriptString, separators );
+    std::vector<std::string> args;
+    for( boost::tokenizer<boost::char_separator<char> >::iterator it = tokens.begin();
+            it != tokens.end();
+            it++ )
+    {
+        args.push_back( *it );
+    }
+    run( mgrPtr, args );
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+void DetailedGlobalSwap::run( DetailedMgr* mgrPtr, std::vector<std::string>& args )
+{
+    // Given the arguments, figure out which routine to run to do the reordering.
+
+    m_mgr = mgrPtr;
+    m_arch = m_mgr->getArchitecture();
+    m_network = m_mgr->getNetwork();
+    m_rt = m_mgr->getRoutingParams();
+
+    int passes = 1;
+    double tol = 0.01;
+    for( size_t i = 1; i < args.size(); i++ )
+    {
+        if( args[i] == "-p" && i+1<args.size() )
+        {
+            passes = std::atoi( args[++i].c_str() );
+        }
+        else if( args[i] == "-t" && i+1<args.size() )
+        {
+            tol = std::atof( args[++i].c_str() );
+        }
+    }
+    passes = std::max( passes, 1 );
+    tol = std::max( tol, 0.01 );
+
+    double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
+
+    curr_hpwl = Utility::hpwl( m_network, hpwl_x, hpwl_y );
+    init_hpwl = curr_hpwl;
+    for( int p = 1; p <= passes; p++ )
+    {
+        last_hpwl = curr_hpwl;
+
+        // XXX: Actually, global swapping is nothing more than random
+        // greedy improvement in which the move generating is done
+        // using this object to generate a target which is the optimal
+        // region for each candidate cell.
+        globalSwap();
+
+        curr_hpwl = Utility::hpwl( m_network, hpwl_x, hpwl_y );
+
+        std::cout << boost::format( "Pass %3d of global swap; hpwl is %.6e\n" ) % p % curr_hpwl;
+
+        if( std::fabs( curr_hpwl - last_hpwl ) / last_hpwl <= tol )
+        {
+            std::cout << "Terminating due to low improvement." << std::endl;
+            break;
+        }
+    }
+    std::cout << boost::format( "End of passes for global swap; hpwl is %.6e, total imp is %.2lf%%\n" )
+            % curr_hpwl % (((init_hpwl-curr_hpwl)/init_hpwl)*100.) ;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void DetailedGlobalSwap::globalSwap()
+{
+    // Nothing for than random greedy improvement with only a hpwl objective
+    // and done such that every candidate cell is considered once!!!
+    
+    m_traversal = 0;
+    m_edgeMask.resize( m_network->m_edges.size() );
+    std::fill( m_edgeMask.begin(), m_edgeMask.end(), 0 );
+
+    m_mgr->resortSegments();
+
+    // Get candidate cells.
+    std::vector<Node*> candidates = m_mgr->m_singleHeightCells;
+    Utility::random_shuffle( candidates.begin(), candidates.end(), m_mgr->m_rng );
+
+    // Wirelength objective.
+    DetailedHPWL hpwlObj( m_arch, m_network, m_rt );
+    hpwlObj.init( m_mgr, NULL ); // Ignore orientation.
+
+    double currHpwl = hpwlObj.curr();
+    double nextHpwl = 0.;
+    // Consider each candidate cell once.
+    for( int attempt = 0; attempt < candidates.size(); attempt++ ) 
+    {
+        Node* ndi = candidates[attempt];
+
+        if( generate( ndi ) == false )
+        {
+            continue;
+        }
+
+        double delta = hpwlObj.delta( m_mgr->m_nMoved,
+                            m_mgr->m_movedNodes,
+                            m_mgr->m_curX, m_mgr->m_curY,
+                            m_mgr->m_curOri,
+                            m_mgr->m_newX, m_mgr->m_newY,
+                            m_mgr->m_newOri );
+
+        nextHpwl = currHpwl - delta; // -delta is +ve is less.
+
+        if( nextHpwl <= currHpwl )
+        {
+            m_mgr->acceptMove();
+
+            currHpwl = nextHpwl;
+        }
+        else
+        {
+            m_mgr->rejectMove();
+        }
+    }
+    return;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::getRange( Node* nd, Rectangle& nodeBbox )
+{
+    // Determines the median location for a node.
+
+    double curX, curY;
+    Edge* ed;
+    unsigned mid;
+    unsigned n;
+
+    Pin* pin;
+    unsigned t = 0;
+
+    m_xpts.erase( m_xpts.begin(), m_xpts.end() );
+    m_ypts.erase( m_ypts.begin(), m_ypts.end() );
+    for( n = nd->m_firstPin; n < nd->m_lastPin; n++ ) 
+    {
+        pin = m_network->m_nodePins[n];
+
+        ed = &(m_network->m_edges[pin->m_edgeId]);
+
+        nodeBbox.m_xmin =  std::numeric_limits<float>::max();
+        nodeBbox.m_xmax = -std::numeric_limits<float>::max();
+        nodeBbox.m_ymin =  std::numeric_limits<float>::max();
+        nodeBbox.m_ymax = -std::numeric_limits<float>::max();
+
+        int numPins = ed->m_lastPin - ed->m_firstPin;
+        if( numPins <= 1 ) 
+        {
+            continue;
+        }
+        else if( numPins > m_skipNetsLargerThanThis ) 
+        {
+            continue;
+        }
+        else {
+            if( !calculateEdgeBB( ed, nd, nodeBbox ) ) 
+            {
+                continue;
+            }
+        }
+
+        // We've computed an interval for the pin.  We need to alter it to work for the cell center.
+        // Also, we need to avoid going off the edge of the chip.
+        nodeBbox.m_xmin = std::min( std::max( m_arch->m_xmin, nodeBbox.m_xmin - pin->m_offsetX ), m_arch->m_xmax );
+        nodeBbox.m_xmax = std::max( std::min( m_arch->m_xmax, nodeBbox.m_xmax - pin->m_offsetX ), m_arch->m_xmin );
+        nodeBbox.m_ymin = std::min( std::max( m_arch->m_ymin, nodeBbox.m_ymin - pin->m_offsetY ), m_arch->m_ymax );
+        nodeBbox.m_ymax = std::max( std::min( m_arch->m_ymax, nodeBbox.m_ymax - pin->m_offsetY ), m_arch->m_ymin );
+
+        // Record the location and pin offset used to generate this point.
+
+        m_xpts.push_back( nodeBbox.m_xmin );
+        m_xpts.push_back( nodeBbox.m_xmax );
+
+        m_ypts.push_back( nodeBbox.m_ymin );
+        m_ypts.push_back( nodeBbox.m_ymax );
+
+        ++t;
+        ++t;
+    }
+
+    // If, for some weird reason, we didn't find anything connected, then
+    // return false to indicate that there's nowhere to move the cell.
+    if( t <= 1 ) 
+    {
+        return false;
+    }
+
+    // Get the median values.
+    mid = t / 2;
+
+    std::sort( m_xpts.begin(), m_xpts.end() );
+    std::sort( m_ypts.begin(), m_ypts.end() );
+
+    nodeBbox.m_xmin = m_xpts[mid-1];
+    nodeBbox.m_xmax = m_xpts[mid];
+
+    nodeBbox.m_ymin = m_ypts[mid-1];
+    nodeBbox.m_ymax = m_ypts[mid];
+
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::calculateEdgeBB( Edge* ed, Node* nd, Rectangle& bbox )
+{
+    // Computes the bounding box of an edge.  Node 'nd' is the node to SKIP.  
+    double curX, curY;
+
+    bbox.m_xmin =  std::numeric_limits<float>::max();
+    bbox.m_xmax = -std::numeric_limits<float>::max();
+    bbox.m_ymin =  std::numeric_limits<float>::max();
+    bbox.m_ymax = -std::numeric_limits<float>::max();
+
+    int count = 0;
+    for( int pe = ed->m_firstPin; pe < ed->m_lastPin; pe++ )
+    {
+        Pin* pin = m_network->m_edgePins[pe];
+
+        Node* other = &(m_network->m_nodes[pin->m_nodeId]);
+        if( other == nd )
+        {
+            continue;
+        }
+        curX = other->getX() + pin->m_offsetX;
+        curY = other->getY() + pin->m_offsetY;
+
+        bbox.m_xmin = std::min( curX, bbox.m_xmin );
+        bbox.m_xmax = std::max( curX, bbox.m_xmax );
+        bbox.m_ymin = std::min( curY, bbox.m_ymin );
+        bbox.m_ymax = std::max( curY, bbox.m_ymax );
+
+        ++count;
+    }
+
+    return (count == 0) ? false : true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+double DetailedGlobalSwap::delta( Node* ndi, double new_x, double new_y )
+{
+    // Compute change in wire length for moving node to new position.
+
+    double old_wl = 0.;
+    double new_wl = 0.;
+    double x, y;
+    double old_xmin, old_xmax, old_ymin, old_ymax;
+    double new_xmin, new_xmax, new_ymin, new_ymax;
+
+    ++m_traversal;
+    for( int pi = ndi->m_firstPin; pi < ndi->m_lastPin; pi++ )
+    {
+        Pin* pini = m_network->m_nodePins[pi];
+
+        Edge* edi = &(m_network->m_edges[pini->m_edgeId]);
+
+        int npins = edi->m_lastPin - edi->m_firstPin;
+        if( npins <= 1 || npins >= m_skipNetsLargerThanThis )
+        {
+            continue;
+        }
+        if( m_edgeMask[edi->getId()] == m_traversal )
+        {
+            continue;
+        }
+        m_edgeMask[edi->getId()] = m_traversal;
+
+        old_xmin =  std::numeric_limits<double>::max();
+        old_xmax = -std::numeric_limits<double>::max();
+        old_ymin =  std::numeric_limits<double>::max();
+        old_ymax = -std::numeric_limits<double>::max();
+
+        new_xmin =  std::numeric_limits<double>::max();
+        new_xmax = -std::numeric_limits<double>::max();
+        new_ymin =  std::numeric_limits<double>::max();
+        new_ymax = -std::numeric_limits<double>::max();
+
+        for( int pj = edi->m_firstPin; pj < edi->m_lastPin; pj++ )
+        {
+            Pin* pinj = m_network->m_edgePins[pj];
+
+            Node* ndj = &(m_network->m_nodes[pinj->m_nodeId]);
+
+            x = ndj->getX() + pinj->m_offsetX;
+            y = ndj->getY() + pinj->m_offsetY;
+
+            old_xmin = std::min( old_xmin, x );
+            old_xmax = std::max( old_xmax, x );
+            old_ymin = std::min( old_ymin, y );
+            old_ymax = std::max( old_ymax, y );
+
+            if( ndj == ndi )
+            {
+                x = new_x + pinj->m_offsetX;
+                y = new_y + pinj->m_offsetY;
+            }
+            new_xmin = std::min( new_xmin, x );
+            new_xmax = std::max( new_xmax, x );
+            new_ymin = std::min( new_ymin, y );
+            new_ymax = std::max( new_ymax, y );
+
+        }
+        old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
+        new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+    }
+    return old_wl - new_wl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+double DetailedGlobalSwap::delta( Node* ndi, Node* ndj )
+{
+    // Compute change in wire length for swapping the two nodes.
+
+    double old_wl = 0.;
+    double new_wl = 0.;
+    double x, y;
+    double old_xmin, old_xmax, old_ymin, old_ymax;
+    double new_xmin, new_xmax, new_ymin, new_ymax;
+    Node* nodes[2];
+    nodes[0] = ndi;
+    nodes[1] = ndj;
+
+
+    ++m_traversal;
+    for( int c = 0; c <= 1; c++ )
+    {
+        Node* ndi = nodes[c];
+        for( int pi = ndi->m_firstPin; pi < ndi->m_lastPin; pi++ )
+        {
+            Pin* pini = m_network->m_nodePins[pi];
+
+            Edge* edi = &(m_network->m_edges[pini->m_edgeId]);
+
+            int npins = edi->m_lastPin - edi->m_firstPin;
+            if( npins <= 1 || npins >= m_skipNetsLargerThanThis )
+            {
+                continue;
+            }
+            if( m_edgeMask[edi->getId()] == m_traversal )
+            {
+                continue;
+            }
+            m_edgeMask[edi->getId()] = m_traversal;
+
+            old_xmin =  std::numeric_limits<double>::max();
+            old_xmax = -std::numeric_limits<double>::max();
+            old_ymin =  std::numeric_limits<double>::max();
+            old_ymax = -std::numeric_limits<double>::max();
+
+            new_xmin =  std::numeric_limits<double>::max();
+            new_xmax = -std::numeric_limits<double>::max();
+            new_ymin =  std::numeric_limits<double>::max();
+            new_ymax = -std::numeric_limits<double>::max();
+
+            for( int pj = edi->m_firstPin; pj < edi->m_lastPin; pj++ )
+            {
+                Pin* pinj = m_network->m_edgePins[pj];
+
+                Node* ndj = &(m_network->m_nodes[pinj->m_nodeId]);
+
+                x = ndj->getX() + pinj->m_offsetX;
+                y = ndj->getY() + pinj->m_offsetY;
+
+                old_xmin = std::min( old_xmin, x );
+                old_xmax = std::max( old_xmax, x );
+                old_ymin = std::min( old_ymin, y );
+                old_ymax = std::max( old_ymax, y );
+
+                if     ( ndj == nodes[0] )
+                {
+                    ndj = nodes[1];
+                }
+                else if( ndj == nodes[1] )
+                {
+                    ndj = nodes[0];
+                }
+
+                x = ndj->getX() + pinj->m_offsetX;
+                y = ndj->getY() + pinj->m_offsetY;
+
+                new_xmin = std::min( new_xmin, x );
+                new_xmax = std::max( new_xmax, x );
+                new_ymin = std::min( new_ymin, y );
+                new_ymax = std::max( new_ymax, y );
+            }
+
+            old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
+            new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+        }
+    }
+    return old_wl - new_wl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::generate( Node* ndi )
+{
+    double xi = ndi->getX();
+    double yi = ndi->getY();
+
+    // Determine optimal region.
+    Rectangle bbox;
+    if( !getRange( ndi, bbox ) ) 
+    {
+        return false;
+    }
+    // If cell inside box, do nothing.
+    if( xi >= bbox.xmin() && xi <= bbox.xmax() && yi >= bbox.ymin() && yi <= bbox.ymax() )
+    {
+        return false;
+    }
+
+    if( m_mgr->m_reverseCellToSegs[ndi->getId()].size() != 1 )
+    {
+        return false;
+    }
+    int si = m_mgr->m_reverseCellToSegs[ndi->getId()][0]->getSegId();
+
+
+    // We can move the cell to anywhere within the optimal box so what
+    // should we do?  I think right now I will simply try to move or
+    // swap it with something near the center of its box.  With regions,
+    // this might not work too well if the box is outside of the region.
+    //
+    // Another choice would be to try a few times with random points
+    // within the optimal region.  Consider this in the future...
+    {
+        double xj = 0.5 * (bbox.xmin() + bbox.xmax());
+        double yj = 0.5 * (bbox.ymin() + bbox.ymax());
+
+        // Row and segment for the destination.
+        int rj = m_arch->find_closest_row( yj - 0.5 * ndi->getHeight() );
+        yj = m_arch->getRow(rj)->getY() + 0.5 * ndi->getHeight();
+        int sj = -1;
+        for( int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++ )
+        {
+            DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
+            if( xj >= segPtr->m_xmin && xj <= segPtr->m_xmax )
+            {
+                sj = segPtr->m_segId;
+                break;
+            }
+        }
+        if( sj == -1 )
+        {
+            return false;
+        }
+        if( ndi->getRegionId() != m_mgr->m_segments[sj]->getRegId() )
+        {
+            return false;
+        }
+
+        bool isMoveOkay = false;
+        if( !isMoveOkay )
+        {
+            if( si != sj )
+            {
+                isMoveOkay |= m_mgr->tryMove1( ndi, xi, yi, si, xj, yj, sj );
+            }
+            else
+            {
+                isMoveOkay |= m_mgr->tryMove2( ndi, xi, yi, si, xj, yj, sj );
+            }
+        }
+        if( isMoveOkay )
+        {
+            ++m_moves;
+            return true;
+        }
+
+        bool isSwapOkay = false;
+        if( !isSwapOkay )
+        {
+            isSwapOkay |= m_mgr->trySwap1( ndi, xi, yi, si, xj, yj, sj );
+        }
+        if( isSwapOkay )
+        {
+            ++m_swaps;
+            return true;
+        }
+    }
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void DetailedGlobalSwap::init( DetailedMgr* mgr )
+{
+    m_mgr = mgr;
+    m_arch = mgr->getArchitecture();
+    m_network = mgr->getNetwork();
+    m_rt = mgr->getRoutingParams();
+
+    m_traversal = 0;
+    m_edgeMask.resize( m_network->m_edges.size() );
+    std::fill( m_edgeMask.begin(), m_edgeMask.end(), 0 );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::generate( DetailedMgr* mgr, std::vector<Node*>& candidates )
+{
+    ++m_attempts;
+
+    m_mgr = mgr;
+    m_arch = mgr->getArchitecture();
+    m_network = mgr->getNetwork();
+    m_rt = mgr->getRoutingParams();
+
+    Node* ndi = candidates[ (*(m_mgr->m_rng))() % (candidates.size()) ];
+
+    return generate( ndi );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void DetailedGlobalSwap::stats( void )
+{
+    std::cout << "Global swap generator, attempts " << m_attempts << ", "
+        << "moves " << m_moves << ", "
+        << "swaps " << m_swaps
+        << std::endl;
+}
+
+
+} // namespace aak

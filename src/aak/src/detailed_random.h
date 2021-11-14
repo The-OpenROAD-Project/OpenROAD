@@ -103,6 +103,7 @@ public:
 public:
    virtual bool generate( DetailedMgr* mgr, std::vector<Node*>& candiates );
    virtual void stats( void );
+   virtual void init( DetailedMgr* mgr ) { (void)mgr; }
 protected:
     DetailedMgr*        m_mgr;
     Architecture*       m_arch;
@@ -122,6 +123,7 @@ public:
 public:
    virtual bool generate( DetailedMgr* mgr, std::vector<Node*>& candiates );
    virtual void stats( void );
+   virtual void init( DetailedMgr* mgr ) { (void)mgr; }
 protected:
     DetailedMgr*        m_mgr;
     Architecture*       m_arch;

@@ -22,13 +22,16 @@
 // Detailed placement algorithms.
 #include "detailed.h"
 #include "detailed_mis.h"
+#include "detailed_interleaving.h"
+#include "detailed_reorder.h"
+#include "detailed_vertical.h"
+#include "detailed_global.h"
 #include "detailed_random.h"
 // Other.
 #include "detailed_orient.h"
 
 // Other things not ready.
 //#include "detailed_global_vertical.h"
-//#include "detailed_reorder.h"
 // Detailed placement objectives.
 //#include "detailed_hpwl.h"
 //#include "detailed_drc.h"
@@ -36,7 +39,6 @@
 //#include "detailed_pin.h"
 
 // Algorithms.
-//#include "detailed_lillis.h"
 
 
 
@@ -163,31 +165,35 @@ void Detailed::doDetailedCommand( std::vector<std::string>& args )
     // include some samples...
 
     // Comment out some algos I haven't confirmed as working.
-    /*
-    if( strcmp( args[0].c_str(), "gs" ) == 0 )
-    {
-        std::cout << "Running global swap." << std::endl;
-        DetailedGsVs gs( m_arch, m_network, m_rt );
-        gs.run( m_mgr, args );
-    }
-    else if( strcmp( args[0].c_str(), "vs" ) == 0 )
-    {
-        std::cout << "Running vertical swap." << std::endl;
-        DetailedGsVs vs( m_arch, m_network, m_rt );
-        vs.run( m_mgr, args );
-    }
-    else if( strcmp( args[0].c_str(), "ro" ) == 0 )
-    {
-        std::cout << "Running single row optimal reordering." << std::endl;
-        DetailedReorderer ro( m_arch, m_network, m_rt );
-        ro.run( m_mgr, args );
-    }
-    */
     if( strcmp( args[0].c_str(), "mis" ) == 0 )
     {
         std::cout << "Running independent set matching." << std::endl;
         DetailedMis mis( m_arch, m_network, m_rt );
         mis.run( m_mgr, args );
+    }
+    else if( strcmp( args[0].c_str(), "gs" ) == 0 )
+    {
+        std::cout << "Running global swaps." << std::endl;
+        DetailedGlobalSwap gs( m_arch, m_network, m_rt );
+        gs.run( m_mgr, args );
+    }
+    else if( strcmp( args[0].c_str(), "vs" ) == 0 )
+    {
+        std::cout << "Running vertical swaps." << std::endl;
+        DetailedVerticalSwap vs( m_arch, m_network, m_rt );
+        vs.run( m_mgr, args );
+    }
+    else if( strcmp( args[0].c_str(), "interleave" ) == 0 )
+    {
+        std::cout << "Running interleaving." << std::endl;
+        DetailedInterleave interleave( m_arch, m_network, m_rt );
+        interleave.run( m_mgr, args );
+    }
+    else if( strcmp( args[0].c_str(), "ro" ) == 0 )
+    {
+        std::cout << "Running reordering." << std::endl;
+        DetailedReorderer ro( m_arch, m_network, m_rt );
+        ro.run( m_mgr, args );
     }
     else if( strcmp( args[0].c_str(), "default" ) == 0 )
     {

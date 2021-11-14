@@ -52,6 +52,9 @@ public:
         return 0.0;
     }
 
+    virtual void accept( void ) {}
+    virtual void reject( void ) {}
+
 protected:
     std::string m_name;
 };

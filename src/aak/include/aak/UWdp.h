@@ -123,6 +123,7 @@ protected:
   void initPadding();
   void createLayerMap();
   void createNdrMap();
+  void setupMasterPowers();
   void createNetwork();
   void createArchitecture();
   void createRouteGrid();
@@ -138,11 +139,16 @@ protected:
   Architecture *arch_;
   Network *nw_;
   RoutingParams *rt_;
+
+  // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
   std::unordered_map<odb::dbNet*, Edge*> netMap_;
-  std::unordered_map<odb::dbBTerm*, Node*> pinMap_;
+  std::unordered_map<odb::dbBTerm*, Node*> termMap_;
+
+  // For monitoring power alignment.
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;
   std::unordered_set<odb::dbTechLayer*> gndLayers_;
+  std::unordered_map<odb::dbMaster*,std::pair<int,int> > masterPwrs_; // top,bot
 };
 
 }  // namespace

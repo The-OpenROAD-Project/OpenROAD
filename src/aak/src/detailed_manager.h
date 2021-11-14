@@ -113,6 +113,8 @@ public:
     double              measureMaximumDisplacement( bool print, bool& violated );
     void                removeOverlapMinimumShift( void );
 
+    inline size_t       getNumSegments() const { return m_segments.size(); }
+    DetailedSeg*        getSegment( int s ) const { return m_segments[s]; }
     inline int          getNumSingleHeightRows( void ) const { return m_numSingleHeightRows; }
     inline int          getSingleRowHeight( void ) const { return m_singleRowHeight; }
 
@@ -131,7 +133,21 @@ public:
 
     void                debugSegments( void );
 
+    double              getTargetUt( void ) const { return m_targetUt; }
+    void                setTargetUt( double ut ) { m_targetUt = ut; }
+
+    double              getMaxMovement( void ) const { return m_targetMaxMovement; }
+    void                setTargetMaxMovement( double movement ) { m_targetMaxMovement = movement; }
+
     bool alignPos( Node* ndi, double& xi, double xl, double xr );
+    bool shift( 
+            std::vector<Node*>& cells, 
+            std::vector<double>& tarX, 
+            std::vector<double>& posX,
+            double left, double right,
+            int segId, int rowId
+            );
+
     bool tryMove1( Node* ndi, double xi, double yi, int si, double xj, double yj, int sj );
     bool tryMove2( Node* ndi, double xi, double yi, int si, double xj, double yj, int sj );
     bool tryMove3( Node* ndi, double xi, double yi, int si, double xj, double yj, int sj );
@@ -183,13 +199,17 @@ public:
 
 protected:
     // Standard stuff.
-    Architecture*           m_arch;
-    Network*                m_network;
-    RoutingParams*          m_rt;
+    Architecture*                               m_arch;
+    Network*                                    m_network;
+    RoutingParams*                              m_rt;
 
     // Info about rows.
-    int                     m_numSingleHeightRows;
-    double                  m_singleRowHeight;
+    int                                         m_numSingleHeightRows;
+    double                                      m_singleRowHeight;
+    
+    // Generic place for utilization.
+    double                                      m_targetUt;
+    double                                      m_targetMaxMovement;
 
 public:
     // Blockages and segments.
