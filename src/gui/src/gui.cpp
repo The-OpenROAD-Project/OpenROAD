@@ -57,6 +57,9 @@
 #include "drcWidget.h"
 #include "ruler.h"
 
+extern int cmd_argc;
+extern char **cmd_argv;
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -563,16 +566,17 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   }
 
   // OR already running, so GUI should not set anything up
-  // passing in 0, nullptr, nullptr to indicate such
-  // pass cmds and interactive along
-  startGui(0, nullptr, nullptr, cmds, interactive);
+  // passing in cmd_argc and cmd_argv to meet Qt application requirement for arguments
+  // nullptr for tcl interp to indicate nothing to setup
+  // and commands and interactive setting
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
 }
 
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false

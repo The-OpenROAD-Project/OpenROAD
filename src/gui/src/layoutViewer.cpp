@@ -1391,6 +1391,9 @@ void LayoutViewer::drawRows(dbBlock* block,
     return;
   }
   int min_resolution = nominalViewableResolution();
+  if (options_->isDetailedVisibility()) {
+    min_resolution = 0;
+  }
   // three possible draw cases:
   // 1) resolution allows for individual sites -> draw all
   // 2) individual sites too small -> just draw row outlines

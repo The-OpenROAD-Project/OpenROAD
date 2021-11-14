@@ -615,6 +615,6 @@ class Gui
 };
 
 // The main entry point
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
 
 }  // namespace gui

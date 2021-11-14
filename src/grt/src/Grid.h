@@ -48,12 +48,9 @@ namespace grt {
 class Grid
 {
  private:
-  long lower_left_x_;
-  long lower_left_y_;
-  long upper_right_x_;
-  long upper_right_y_;
-  long tile_width_;
-  long tile_height_;
+  odb::Rect die_area_;
+  int tile_width_;
+  int tile_height_;
   int x_grids_;
   int y_grids_;
   bool perfect_regular_x_;
@@ -70,12 +67,9 @@ class Grid
   Grid() = default;
   ~Grid() = default;
 
-  void init(const long lower_left_x,
-            const long lower_left_y,
-            const long upper_right_x,
-            const long upper_right_y,
-            const long tile_width,
-            const long tile_height,
+  void init(const odb::Rect& die_area,
+            const int tile_width,
+            const int tile_height,
             const int x_grids,
             const int y_grids,
             const bool perfect_regular_x,
@@ -95,17 +89,17 @@ class Grid
 
   void clear();
 
-  long getLowerLeftX() const { return lower_left_x_; }
-  long getLowerLeftY() const { return lower_left_y_; }
+  int getXMin() const { return die_area_.xMin(); }
+  int getYMin() const { return die_area_.yMin(); }
 
-  void setLowerLeftX(long x) { lower_left_x_ = x; }
-  void setLowerLeftY(long y) { lower_left_y_ = y; }
+  void setXMin(int x) { die_area_.set_xlo(x); }
+  void setYMin(int y) { die_area_.set_ylo(y); }
 
-  long getUpperRightX() const { return upper_right_x_; }
-  long getUpperRightY() const { return upper_right_y_; }
+  int getXMax() const { return die_area_.xMax(); }
+  int getYMax() const { return die_area_.yMax(); }
 
-  long getTileWidth() const { return tile_width_; }
-  long getTileHeight() const { return tile_height_; }
+  int getTileWidth() const { return tile_width_; }
+  int getTileHeight() const { return tile_height_; }
 
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
@@ -158,10 +152,8 @@ class Grid
   {
     return obstructions_;
   }
-  void addObstruction(int layer, const odb::Rect& obstruction)
-  {
-    obstructions_[layer].push_back(obstruction);
-  }
+
+  void addObstruction(int layer, const odb::Rect& obstruction);
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
@@ -176,7 +168,7 @@ class Grid
                         odb::dbTechLayerDir direction);
 
   odb::Point getMiddle();
-  odb::Rect getGridArea() const;
+  const odb::Rect& getGridArea() const;
 };
 
 }  // namespace grt
