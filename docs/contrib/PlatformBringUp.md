@@ -32,7 +32,7 @@
 
 # Overview <a name="Overview"></a>
 
-This document is a guide for foundry and third party IP providers to easily integrate and test a new technology into the OpenROAD RTL to GDS flow. OpenROAD allows you to integrate any public PDK (Process Design Kit) for any feature size and implement a fully open-sourced RTL-GDSII flow (synthesizable Verilog to merged GDSII). The OpenROAD flow has been validated for feature sizes up to 7nm and used to design and tapeout over 100 ASIC and SoCs to date.
+This document is a guide for foundry and third party IP providers to easily integrate and test a new technology in to the OpenROAD RTL to GDS flow. OpenROAD allows you to integrate any PDK (Process Design Kit) for any feature size and implement a fully open-sourced RTL-GDSII flow (synthesizable Verilog to merged GDSII). The OpenROAD flow has been validated for feature sizes down to 7nm and used to design and tapeout over 100 ASIC and SoCs to date.
 
 
 # Prerequisites <a name="Prerequisites"></a>
@@ -42,21 +42,21 @@ To build and add a new platform for OpenROAD, key technology and library compone
 They include :
 
 * A standard cell library
-    * GDS files of all standard cells in the library (or a way to generate them from the layout files, eg. Magic VLSI layout tool)
+    * GDS files of all standard cells in the library (or a way to generate them from the layout files, e.g., Magic VLSI layout tool)
 * A technology LEF file of the PDK being used that includes all relevant information regarding metal layers, vias, and spacing requirements. 
-    * Can be generated through the commercial tool Cadence Abstract.
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.tech.lef` as an example tech LEF file.
 * A macro LEF file of the standard cell kit that includes MACRO definitions of every cell, pin designations (input/output/inout), and size data of metal layers with port connections.
     * Can be generated through the commercial tool Cadence Abstract.
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.macro.lef `as an example macro LEF file.
 * A Liberty file of the standard cell library with PVT characterization, input and output characteristics, timing and power definitions for each cell.
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib `as an example liberty file.
+* For KLayout: A mapping from LEF/DEF to GDS layers:datatypes
 
 Adding a new platform additionally requires the following: 
 
 * A validated installation of the OpenROAD flow scripts is available. See instructions [here](https://openroad.readthedocs.io/en/latest/user/GettingStarted.html#building-and-installing-the-software).:
 * A general knowledge of VLSI design and RTL to GDS flows.  \
-OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts flow and the scripts provided to enable debugging in case of problems.Add a flow section briefly describing the OR or ORFS flow steps to add the platform a platform here
+OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts flow to enable debugging in case of problems.
 
 
 # Adding a New Platform to OpenROAD <a name="ANPOpenROAD"></a>
@@ -71,7 +71,7 @@ This section describes the necessary files and  directories needed to build the 
 
 Make the following edits  to the Makefile (located in `OpenROAD-flow-scripts/flow/Makefile`) so that OpenROAD can run the flow on a design using the new platform.
 
-1. At  the beginning of the Makefile, there is a block of `DESIGN_CONFIG` variables that are commented out. These variables tell OpenROAD which design to run and on what platform. `DESIGN_CONFIG` specifically points to a `config.mk` file located in the designs directory for the respective platform. A `DESIGN_CONFIG` variable must be added for the new platform using a specific design. OpenROAD has multiple verilog designs already made which can be used with any platform (see `OpenROAD-flow-scripts/flow/designs/src` for a list of usable designs). For example, a `DESIGN_CONFIG` variable using the `riscv32i` design on a new platform would look as follows:
+1. At  the beginning of the Makefile, there is a block of `DESIGN_CONFIG` variables that are commented out. These variables tell OpenROAD which design to run and on what platform. `DESIGN_CONFIG` specifically points to a `config.mk` file located in the designs directory for the respective platform. A `DESIGN_CONFIG` variable must be added for the new platform using a specific design. OpenROAD has multiple Verilog designs already made which can be used with any platform (see `OpenROAD-flow-scripts/flow/designs/src` for a list of usable designs). For example, a `DESIGN_CONFIG` variable using the `riscv32i` design on a new platform would look as follows:
 
 
 ```
@@ -95,25 +95,25 @@ $ mkdir OpenROAD-flow-scripts/flow/platforms/MyNewPlatform
 
 ## Design Directory <a name="DesignDirectory"></a>
 
-The design directory contains the configuration files for all the designs of a specific platform. Create a directory for the new platform in OpenROAD-flow-scripts/flow/designs to contain the relevant files and directories for all the designs for the flow in that specific platform. Each design requires it’s own config.mk and constraints.sdc files. 
+The design directory contains the configuration files for all the designs of a specific platform. Create a directory for the new platform in OpenROAD-flow-scripts/flow/designs to contain the relevant files and directories for all the designs for the flow in that specific platform. Each design requires its own `config.mk` and `constraints.sdc` files. 
 
-Follow the steps below to create the necessary directories and files:
+Follow the steps below to create the necessary directories and files. **NOTE: riscv32i is just an example and not a required name.**:
 
 
 ```
 $ mkdir OpenROAD-flow-scripts/flow/designs/MyNewPlatform
 $ mkdir OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i
-$ touch   OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/config.mk
+$ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/config.mk
 $ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/constraints.sdc
 ```
 
 
-This creates two directories MyNewPlatform and riscv32i and two empty files config.mk and constraints.sdc in OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i. 
+This creates two directories MyNewPlatform and riscv32i and two empty files `config.mk` and `constraints.sdc` in OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i. 
 
 
 ## Platform Configuration <a name="PlatformConfiguration"></a>
 
-This section describes the necessary files in the platform directory needed for the OpenROAD flow. Specifically the config.mk file in the platform directory has all of the configuration variables that the flow uses. Refer to the OpenROAD-flow-scripts documentation for a full list of configuration variables that can be setSpecifically the config.mk file in the platform directory has all of the configuration variables that the flow uses. Refer to the OpenROAD-flow-scripts documentation for a full list of configuration variables that can be set. 
+This section describes the necessary files in the platform directory needed for the OpenROAD flow. Specifically the `config.mk` file in the platform directory has all of the configuration variables that the flow uses. Refer to the OpenROAD-flow-scripts documentation for a full list of configuration variables that can be set.
 
 For an example of a platform config.mk file, refer to `OpenROAD-flow-scripts/flow/platforms/sky130hd/config.mk.`
 
@@ -141,6 +141,8 @@ For Example:
     PLACE_DENSITY
 ```
 
+Alternatively, in place of `CORE_UTILIZATION` and `CORE_ASPECT_RATIO`, `DIE_AREA` and `CORE_AREA` can be specified instead.
+
 
 Following is a sample `config.mk` file for the `riscv32i` design:
 
@@ -162,12 +164,12 @@ export PLACE_DENSITY     = 0.70
 ```
 
 
-Change these variables to suit the needs of the specific design being made.
+Refer to the [OpenSTA][https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/doc/OpenSTA.pdf] documenation to change these variables to suit the needs of the specific design being made.
 
 
 ## constraint.sdc <a name="constraintsdc"></a>
 
-The `constraint.sdc` file defines timing constraints for the design. Here’s an example of a constraint.sdc file which defines a clock `clk `with a period of 8.4 nanoseconds.
+The `constraint.sdc` file defines timing constraints for the design. Here’s an example of a constraint.sdc file which defines a clock `clk` with a period of 8.4 nanoseconds.
 
 
 ```
@@ -195,7 +197,7 @@ create_clock -period <float> -waveform {rising_edge falling_edge} <netlist clock
 
 ## Liberty, LEF, and GDS Files <a name="LibertyLEFGDSFiles"></a>
 
-The liberty, LEF, and GDS files do not technically have to reside inside the platform directory of respective technology as long as the paths set in the `config.mk` file point to the correct files. However, it is good practice to have all relevant files in one localized directory. The` .lib, .lef, .gds `reside in directories named respectively for the specific technology.
+The liberty, LEF, and GDS files do not technically have to reside inside the platform directory of respective technology as long as the paths set in the `config.mk` file point to the correct files. However, it is good practice to have all relevant files in one localized directory. The `.lib`, `.lef`, and `.gds` reside in directories named respectively for the specific technology.
 
 For example:
 
@@ -207,39 +209,14 @@ $ mdkir OpenROAD-flow-scripts/flow/platforms/MyNewPlatform/gds
 ```
 
 
-A merged gds file may be used instead of adding every individual .gds file from the standard cell library. This can be done using calibredrv using the following Tcl script:
+A merged GDS file may be used instead of adding every individual `.gds` file from the standard cell library.
 
-
-```
-# merge_gds.tcl
-######################
-layout filemerge -in <gds file of Liberty, LEF, and GDS Filescell 1> \
- -in <gds file of cell 2> \
- -in <gds file of cell 3> \
- .
- .
- .
- -in <gds file of cell n> \ 
- -out merged.gds
-```
-
-
-Run this in a tcl command shell to create a `merged.gds`:
-
-
-```
-$ calibredrv merged_gds.tcl
-```
-
-
-	
-
-Once the liberty file, tech and macro lef files, and either the merged standard cell gds or individual standard cell gds files have been generated, place them in their respective directories and set the lib, lef, and gds variables in the platform `config.mk` file to the correct paths.
+Once the liberty file, tech and macro LEF files, and either the merged standard cell GDS or individual standard cell GDS files have been generated, place them in their respective directories and set the `lib`, `lef`, and `gds` variables in the platform `config.mk` file to the correct paths.
 
 
 ## Behavioral Models <a name="BehavioralModels"></a>
 
-OpenROAD requires behavioral verilog modules for a latch and a gated clock.These modules are used during synthesis and follow a specific naming convention.
+OpenROAD requires behavioral Verilog modules for a latch and a gated clock. These modules are used during synthesis and follow a specific naming convention.
 
 
 ## Gated Clock <a name="GatedClock"></a>
@@ -267,7 +244,7 @@ endmodule
 
 ## Latch <a name="Latch"></a>
 
-Next is the generic latch. Once again, this requires a latch standard cell to be used. The structure of this module differs slightly from the clkgate module seen previously. Following is the generic structure of the behavioral latch module:
+Next is the generic latch. Once again, this requires a latch standard cell to be used. The structure of this module differs slightly from the `clkgate` module seen previously. Following is the generic structure of the behavioral latch module:
 
 		
 
@@ -293,12 +270,12 @@ endmodule
 ```
 
 
-This file contains two modules, $_DLATCH_P_ and $_DLATCH_N_. Notice that $_DLATCH_N_ has it’s gate input is negated making it enable on a low signal while $_DLATCH_P_ has a non-negated gate input making it enable on a high signal.
+This file contains two modules, `$_DLATCH_P_` and `$_DLATCH_N_`. Notice that `$_DLATCH_N_` has it’s gate input is negated making it enable on a low signal while `$_DLATCH_P_` has a non-negated gate input making it enable on a high signal.
 
 
 ## FastRoute Configuration <a name="FastRouteConfiguration"></a>
 
-FastRoute is the tool used to global-route the design. FastRoute requires a Tcl file to set which routing layers will be used for signals, adjust routing layer resources, set which routing heuristic to use when routing, etc. It’s recommended to use the default fastroute.tcl due to its simplicity and effectiveness. Following is the default FastRoute configuration file.
+FastRoute is the tool used to global-route the design. FastRoute requires a Tcl file to set which routing layers will be used for signals, adjust routing layer resources, set which routing heuristic to use when routing, etc. It’s recommended to use the default `fastroute.tcl` due to its simplicity and effectiveness. Following is the default FastRoute configuration file.
 
 
 ```
@@ -439,7 +416,7 @@ tapcell \
 ## setRC Configuration <a name="setRCConfiguration"></a>
 
 
-setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command.. This is useful when these values are missing from the tech file. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, 4 vias, one signal wire, and one clock wire.
+setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
 
 
 ```
@@ -479,18 +456,18 @@ Follow these steps to generate the  KLayout properties file:
 	    2. Manage Packages
 	    3. Install New Packages
 	    4. Select tf_import
-	        1. If the source of the package is from github, then the file “” needs to be edited to include “source stdio”
+	        1. If the source of the package is from GitHub, then the file “” needs to be edited to include “source stdio”
 	3. Re-start KLayout
-	4. File -> Import some LEF. Doesn't matter what; you will just get an error message without one.
+	4. File -> Import some LEF. Does not matter what LEF; you will just get an error message without one.
 		1. Once selected, go to Options at the bottom left
 		2. Select your layer map file under the Production tab
-		3. Go to the LEF+Macro Files tab, then add under Additional LEF files, the merged (original) lef file in your platform directory
-		4. Under Macro Layout Files, add the gds file in your platform directory
+		3. Go to the LEF+Macro Files tab, then add under Additional LEF files, the merged (original) LEF file in your platform directory
+		4. Under Macro Layout Files, add the GDS file in your platform directory
 	5. File -> Import Cadence tech file
 	    1. You have to select a tech file (found in the PDK, usually inside the Virtuoso folder)
 	    2. KLayout also needs a .drf file which is automatically included if it resides in the same directory the cadence tech file was found in (found in the PDK’s Virtuoso folder).
 	6. File -> Save Layer Properties
-    	1. Save as a .lyp file in your platform directory
+    	1. Save as a `.lyp` file in your platform directory
 
 
 ## KLayout tech file <a name="KLayouttechfile"></a>
@@ -507,7 +484,7 @@ Follow these steps to generate the Klayout tech file:
     6. Set the base path your platform directory and load the .lyp layer properties file that was generated earlier
     7. On the left hand side under your new technology click Reader Options and then click LEF/DEF on the top bar
     8. In the LEF+Macro Files section, you add the LEF files by clicking the + button on the right hand side of the box
-        1. Only add your original merged lef file. Make sure it includes the full path to the lef file
+        1. Only add your original merged LEF file. Make sure it includes the full path to the LEF file
     9. In the Production section, scroll down and add the layer map file by hitting the Load File button
         2. Make sure it includes the full path
     10. Above in the same section, change the layer name suffix and GDS data type to correspond with the layer map
