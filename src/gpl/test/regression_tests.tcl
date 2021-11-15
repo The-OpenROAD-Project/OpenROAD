@@ -9,6 +9,8 @@ record_tests {
   simple04
   simple05
   simple06
+  simple07
+  simple08
   core01
   ar01
   ar02

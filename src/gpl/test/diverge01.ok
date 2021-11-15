@@ -215,7 +215,7 @@
 [NesterovSolve] Iter: 1720 overflow: 0.96303 HPWL: 3009930
 [NesterovSolve] Iter: 1730 overflow: 0.96303 HPWL: 3009930
 [ERROR GPL-0305] RePlAce diverged at newStepLength.
-[WARNING GPL-0140] RePlAce divergence detected. Rerun RePlAce up to BiCGSTAB.
+[WARNING GPL-0140] RePlAce divergence detected. Rerunning RePlAce up to BiCGSTAB due to a design size <= 500 instances. This warning can be avoided by using the '-skip_nesterov_place' flag
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0

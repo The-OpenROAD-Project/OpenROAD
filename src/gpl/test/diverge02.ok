@@ -42,7 +42,7 @@
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
 [ERROR GPL-0304] RePlAce diverged at initial iteration. Re-run with a smaller init_density_penalty value.
-[WARNING GPL-0140] RePlAce divergence detected. Rerun RePlAce up to BiCGSTAB.
+[WARNING GPL-0140] RePlAce divergence detected. Rerunning RePlAce up to BiCGSTAB due to a design size <= 500 instances. This warning can be avoided by using the '-skip_nesterov_place' flag
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
