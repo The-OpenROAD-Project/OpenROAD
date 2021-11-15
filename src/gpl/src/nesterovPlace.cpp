@@ -185,6 +185,8 @@ void NesterovPlace::init() {
     static_cast<float>(nb_->overflowArea()) 
         / static_cast<float>(nb_->nesterovInstsArea());
 
+  debugPrint(log_, GPL, "replace", 3, "npinit: OverflowArea: {}", nb_->overflowArea());
+  debugPrint(log_, GPL, "replace", 3, "npinit: NesterovInstArea: {}", nb_->nesterovInstsArea());
   debugPrint(log_, GPL, "replace", 3, "npinit: InitSumOverflow: {:g}", sumOverflow_);
 
   updateWireLengthCoef(sumOverflow_);
@@ -240,6 +242,13 @@ void NesterovPlace::init() {
     = getStepLength (prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
+
+  if( pb_->insts().size() < 500 && isnan(stepLength_) ) {
+    npVars_.initialPrevCoordiUpdateCoef *= 10;
+    log_->warn(GPL, 321, "steplength = 0 detected. Rerun Nesterov::init() with initSLPCoef:{:g}",
+        npVars_.initialPrevCoordiUpdateCoef);
+    init();
+  }
 
   if( isnan(stepLength_) || isinf(stepLength_) ) {
     log_->error(GPL, 304, "RePlAce diverged at initial iteration. "
@@ -374,6 +383,21 @@ NesterovPlace::updateGradients(
   debugPrint(log_, GPL, "replace", 3, "updateGrad:  WireLengthGradSum: {:g}", wireLengthGradSum_);
   debugPrint(log_, GPL, "replace", 3, "updateGrad:  DensityGradSum: {:g}", densityGradSum_);
   debugPrint(log_, GPL, "replace", 3, "updateGrad:  GradSum: {:g}", gradSum);
+
+  // sometimes wirelength gradient is zero when design is too small
+  if( wireLengthGradSum_ == 0 ) {
+    wireLengthCoefX_ *= 0.5;
+    wireLengthCoefY_ *= 0.5;
+    baseWireLengthCoef_ *= 0.5;
+    log_->warn(GPL, 320, "sum(WL gradient) = 0, try again with {:g} {:g}", 
+        wireLengthCoefX_, wireLengthCoefY_);
+
+    // update WL forces
+    nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+
+    // recursive call again with smaller wirelength coef
+    updateGradients(sumGrads, wireLengthGrads, densityGrads);
+  }
   
   // divergence detection on 
   // Wirelength / density gradient calculation
@@ -707,10 +731,12 @@ NesterovPlace::doNesterovPlace(int start_iter) {
       }
     }
 
-    // minimum iteration is 50
-    if( iter > 50 && sumOverflow_ <= npVars_.targetOverflow) {
-      log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
-      break;
+    // 1. to non-trivial design --> assign minimum 50 iterations.
+    // 2. to trivial design --> not assign minimum iterations.
+    if( pb_->insts().size() >= 500 && iter >= 50 && sumOverflow_ <= npVars_.targetOverflow ||
+        pb_->insts().size() < 500 && sumOverflow_ <= npVars_.targetOverflow ) {
+       log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
+       break;
     }
   }
  
