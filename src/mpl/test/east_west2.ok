@@ -43,24 +43,17 @@
 [INFO GPL-0028] BinCnt: 2 2
 [INFO GPL-0029] BinSize: 58140 56000
 [INFO GPL-0030] NumBins: 4
-[NesterovSolve] Iter: 1 overflow: 0 HPWL: 894728
-[NesterovSolve] Iter: 10 overflow: 0 HPWL: 894728
-[NesterovSolve] Iter: 20 overflow: 0 HPWL: 894728
-[NesterovSolve] Iter: 30 overflow: 0 HPWL: 894728
-[NesterovSolve] Iter: 40 overflow: 0 HPWL: 894728
-[NesterovSolve] Iter: 50 overflow: 0 HPWL: 894728
-[NesterovSolve] Finished with Overflow: 0.000000
 [INFO MPL-0005] Found 2 macros.
 [INFO MPL-0009] West pins 8.
 [INFO MPL-0009] East pins 7.
 [INFO MPL-0009] North pins 0.
 [INFO MPL-0009] South pins 0.
-[INFO MPL-0069] Initial weighted wire length 309.838.
+[INFO MPL-0069] Initial weighted wire length 483.757.
 Begin one level partition.
 [INFO MPL-0076] Partition 2 macros.
 [INFO MPL-0077] Using 2 cut lines.
-[INFO MPL-0079] Cut line 14.63.
-[INFO MPL-0079] Cut line 31.73.
+[INFO MPL-0079] Cut line 0.00.
+[INFO MPL-0079] Cut line 6.08.
 End one level partition.
 Begin horizontal partition.
 Begin east partition.
@@ -70,23 +63,22 @@ End east partition.
 Begin west partition.
 [INFO MPL-0076] Partition 2 macros.
 [INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0079] Cut line 0.00.
 End west partition.
 End horizontal partition.
 Begin horizontal partition.
 Begin east partition.
-[INFO MPL-0076] Partition 1 macros.
-[INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0076] Partition 0 macros.
+[INFO MPL-0077] Using 0 cut lines.
 End east partition.
 Begin west partition.
-[INFO MPL-0076] Partition 1 macros.
+[INFO MPL-0076] Partition 2 macros.
 [INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0079] Cut line 0.00.
 End west partition.
 End horizontal partition.
 [INFO MPL-0070] Using 2 partition sets.
 [INFO MPL-0071] Solution 1 weighted wire length 520.69.
-[INFO MPL-0071] Solution 2 weighted wire length 165.436.
+[INFO MPL-0071] Solution 2 weighted wire length 520.69.
 [INFO MPL-0073] Best weighted wire length 520.69.
 No differences found.

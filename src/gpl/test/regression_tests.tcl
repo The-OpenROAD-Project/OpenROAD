@@ -15,7 +15,6 @@ record_tests {
   incremental02
   error01
   diverge01
-  diverge02
   macro04
   density01
 }

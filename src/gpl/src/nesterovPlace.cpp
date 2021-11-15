@@ -185,6 +185,10 @@ void NesterovPlace::init() {
     static_cast<float>(nb_->overflowArea()) 
         / static_cast<float>(nb_->nesterovInstsArea());
 
+  if (sumOverflow_ <= npVars_.targetOverflow) {
+    return; // we have already met our goal
+  }
+
   debugPrint(log_, GPL, "replace", 3, "npinit: InitSumOverflow: {:g}", sumOverflow_);
 
   updateWireLengthCoef(sumOverflow_);
@@ -198,6 +202,14 @@ void NesterovPlace::init() {
   updateGradients(
       curSLPSumGrads_, curSLPWireLengthGrads_,
       curSLPDensityGrads_);
+
+  if (wireLengthGradSum_ == 0 && densityPenalty_ == 0) {
+    // Give density a chance a gradient since there is no wire length
+    // gradient.
+    densityPenalty_ = npVars_.initDensityPenalty;
+    updateGradients(curSLPSumGrads_, curSLPWireLengthGrads_,
+                    curSLPDensityGrads_);
+  }
 
   if( isDiverged_ ) {
     return;
@@ -224,9 +236,10 @@ void NesterovPlace::init() {
   debugPrint(log_, GPL, "replace", 3, "npinit: WireLengthGradSum {:g}", wireLengthGradSum_);
   debugPrint(log_, GPL, "replace", 3, "npinit: DensityGradSum {:g}", densityGradSum_);
 
-  densityPenalty_ 
-    = (wireLengthGradSum_ / densityGradSum_ )
-    * npVars_.initDensityPenalty; 
+  if (wireLengthGradSum_ > 0) {
+    densityPenalty_ 
+      = (wireLengthGradSum_ / densityGradSum_ ) * npVars_.initDensityPenalty;
+  }
   
   debugPrint(log_, GPL, "replace", 3, "npinit: InitDensityPenalty {:g}", densityPenalty_);
   
@@ -235,7 +248,7 @@ void NesterovPlace::init() {
         / static_cast<float>(nb_->nesterovInstsArea());
   
   debugPrint(log_, GPL, "replace", 3, "npinit: PrevSumOverflow {:g}", sumOverflow_);
-  
+
   stepLength_  
     = getStepLength (prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 
@@ -387,6 +400,9 @@ NesterovPlace::updateGradients(
 
 int
 NesterovPlace::doNesterovPlace(int start_iter) {
+  if (sumOverflow_ <= npVars_.targetOverflow) {
+    return 0; // we have already met our goal
+  }
 
   // if replace diverged in init() function, 
   // replace must be skipped.
