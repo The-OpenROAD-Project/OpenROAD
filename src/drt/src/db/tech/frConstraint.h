@@ -734,7 +734,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   // getters
   bool hasOppositeWidth() const { return hOppositeWidth; }
   frCoord getOppositeWidth() const { return oppositeWidth; }
-  frCoord getEolWithin() const { return eolWithin; }
+  frCoord getEolWithin() const { return sameMask ? 0 :eolWithin; }
   frCoord getWrongDirWithin() const { return wrongDirWithin; }
   bool hasSameMask() const { return sameMask; }
   bool hasExceptExactWidth() const
@@ -1195,12 +1195,13 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   // constructor
   frLef58CutSpacingTableConstraint(
       odb::dbTechLayerCutSpacingTableDefRule* dbRule)
-      : db_rule_(dbRule), default_spacing_(0), default_center2center_(false)
+      : db_rule_(dbRule), default_spacing_({0, 0}), default_center2center_(false), default_centerAndEdge_(false)
   {
   }
   // setter
-  void setDefaultSpacing(frCoord value) { default_spacing_ = value; }
+  void setDefaultSpacing(const std::pair<frCoord, frCoord>& value) { default_spacing_ = value; }
   void setDefaultCenterToCenter(bool value) { default_center2center_ = value; }
+  void setDefaultCenterAndEdge(bool value) { default_centerAndEdge_ = value; }
   // getter
   odb::dbTechLayerCutSpacingTableDefRule* getODBRule() const
   {
@@ -1210,8 +1211,9 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   {
     logger->report("CUTSPACINGTABLE");
   }
-  frCoord getDefaultSpacing() const { return default_spacing_; }
+  std::pair<frCoord, frCoord> getDefaultSpacing() const { return default_spacing_; }
   bool getDefaultCenterToCenter() const { return default_center2center_; }
+  bool getDefaultCenterAndEdge() const { return default_centerAndEdge_; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -1220,8 +1222,8 @@ class frLef58CutSpacingTableConstraint : public frConstraint
 
  private:
   odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
-  frCoord default_spacing_;
-  bool default_center2center_;
+  std::pair<frCoord, frCoord> default_spacing_;
+  bool default_center2center_, default_centerAndEdge_;
 };
 
 // new SPACINGTABLE Constraints

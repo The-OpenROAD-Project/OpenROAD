@@ -81,6 +81,7 @@ class FlexRP
                                    frCoord& eolSpace,
                                    frCoord& eolWithin);
   void prep_eolForbiddenLen();
+  void prep_cutSpcTbl();
   void prep_lineForbiddenLen_helper(const frLayerNum& lNum,
                                     const int& tableLayerIdx,
                                     const int& tableEntryIdx,
