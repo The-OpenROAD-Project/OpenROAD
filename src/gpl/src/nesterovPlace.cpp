@@ -249,7 +249,7 @@ void NesterovPlace::init() {
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
   if( pb_->insts().size() < npVars_.smallDesignInstCnt 
-      && isnan(stepLength_) 
+      && isnan(stepLength_) || isinf(stepLength_)  
       && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef ) {
     npVars_.initialPrevCoordiUpdateCoef *= 10;
     debugPrint(log_, GPL, "replace", 3, 
