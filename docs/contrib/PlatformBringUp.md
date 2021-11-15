@@ -407,7 +407,7 @@ A simple, yet effective `tapcell.tcl` file is given below:
 tapcell \
   -endcap_cpp "2" \
   -distance 120 \
-  -tapcell_master "FILL1" \
+  -tapcell_master "TAP1" \
   -endcap_master "FILL1"
 ```
 
@@ -465,7 +465,7 @@ Follow these steps to generate the  KLayout properties file:
 		4. Under Macro Layout Files, add the GDS file in your platform directory
 	5. File -> Import Cadence tech file
 	    1. You have to select a tech file (found in the PDK, usually inside the Virtuoso folder)
-	    2. KLayout also needs a .drf file which is automatically included if it resides in the same directory the cadence tech file was found in (found in the PDK’s Virtuoso folder).
+	    2. KLayout also needs a `.drf` file which is automatically included if it resides in the same directory the cadence tech file was found in (found in the PDK’s Virtuoso folder).
 	6. File -> Save Layer Properties
     	1. Save as a `.lyp` file in your platform directory
 
