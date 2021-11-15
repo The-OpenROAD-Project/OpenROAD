@@ -33,8 +33,8 @@
 #############################################################################
 
 sta::define_cmd_args "create_toolbar_button" {[-name name] \
-                                              [-text button_text] \
-                                              [-script tcl_script] \
+                                              -text button_text \
+                                              -script tcl_script \
                                               [-echo]
 }
 
@@ -62,10 +62,10 @@ proc create_toolbar_button { args } {
 }
 
 sta::define_cmd_args "create_menu_item" {[-name name] \
-                                         [-text button_text] \
+                                         -text item_text \
+                                         -script tcl_script \
                                          [-path menu_path] \
-                                         [-script tcl_script] \
-                                         [-shortcut key_shortcut]
+                                         [-shortcut key_shortcut] \
                                          [-echo]
 }
 
