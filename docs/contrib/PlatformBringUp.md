@@ -1,41 +1,41 @@
 # User Guide to Integrate a New Platform into the OpenROAD Flow
 
-# Table of Contents <a name="TOC"></a>
+# Table of Contents
 
-- [Table of Contents](#TOC)
+- [Table of Contents](#table-of-contents)
 - [Overview](#Overview)
 - [Prerequisites](#Prerequisites)
-- [Adding a new Platform to OpenROAD](#APOpenROAD)
+- [Adding a new Platform to OpenROAD](#adding-a-new-platform-to-openroad)
 	- [Setup](#Setup)
 		- [Makefile](#Makefile)
-		- [Platform Directory](#PlatformDirectory)
-		- [Design Directory](#DesignDirectory)
-	- [Platform Configuration](#PlatformConfiguration)
-	- [Design Configuration](#DesignConfiguration)
+		- [Platform Directory](#platform-directory)
+		- [Design Directory](#design-directory)
+	- [Platform Configuration](#platform-configuration)
+	- [Design Configuration](#design-configuration)
 		- [config.mk](#configmk)
 		- [constraint.sdc](#constraintsdc)
-		- [Liberty, LEF, and GDS Files](#LibertyLEFGDSFiles)
-	- [Behavioral Models](#BehavioralModels)
-		- [Gated Clock](#GatedClock)
-		- [Latch](#Latch)
-	- [FastRoute Configuration](#FastRouteConfiguration)
-	- [Metal Tracks Configuration](#MetalTracksConfiguration)
-	- [PDN Configuration](#PDNConfiguration)
-	- [Tapcell Configuration](#TapcellConfiguration)
-	- [setRC Configuration](#setRCConfiguration)
-	- [KLayout](#KLayout)
-		- [KLayout properties file](#KLayoutpropertiesfile)
-		- [KLayout tech file](#KLayouttechfile)
-- [Validating the New Platform](#ValidatingPlatform)
-- [Authors/Contributors](#AuthorsContributors)
+		- [Liberty, LEF, and GDS Files](#liberty-lef-and-gds-files)
+	- [Behavioral Models](#behavioral-models)
+		- [Gated Clock](#gated-clock)
+		- [Latch](#latch)
+	- [FastRoute Configuration](#fastroute-configuration)
+	- [Metal Tracks Configuration](#metal-tracks-configuration)
+	- [PDN Configuration](#pdn-configuration)
+	- [Tapcell Configuration](#tapcell-configuration)
+	- [setRC Configuration](#setrc-configuration)
+	- [KLayout](#klayout)
+		- [KLayout properties file](#klayout-properties-file)
+		- [KLayout tech file](#klayout-tech-file)
+- [Validating the New Platform](#validating-the-new-platform)
+- [Authors/Contributors](#authorscontributors)
 
 
-# Overview <a name="Overview"></a>
+# Overview
 
 This document is a guide for foundry and third party IP providers to easily integrate and test a new technology in to the OpenROAD RTL to GDS flow. OpenROAD allows you to integrate any PDK (Process Design Kit) for any feature size and implement a fully open-sourced RTL-GDSII flow (synthesizable Verilog to merged GDSII). The OpenROAD flow has been validated for feature sizes down to 7nm and used to design and tapeout over 100 ASIC and SoCs to date.
 
 
-# Prerequisites <a name="Prerequisites"></a>
+# Prerequisites
 
 To build and add a new platform for OpenROAD, key technology and library components must be provided based on the technology node. These are generally available as part of the standard design kit provided by a foundry or a third-party IP provider.  
 
@@ -45,8 +45,7 @@ They include :
     * GDS files of all standard cells in the library (or a way to generate them from the layout files, e.g., Magic VLSI layout tool)
 * A technology LEF file of the PDK being used that includes all relevant information regarding metal layers, vias, and spacing requirements. 
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.tech.lef` as an example tech LEF file.
-* A macro LEF file of the standard cell kit that includes MACRO definitions of every cell, pin designations (input/output/inout), and size data of metal layers with port connections.
-    * Can be generated through the commercial tool Cadence Abstract.
+* A macro LEF file of the standard cell kit that includes MACRO definitions of every cell, pin designations (input/output/inout).
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.macro.lef `as an example macro LEF file.
 * A Liberty file of the standard cell library with PVT characterization, input and output characteristics, timing and power definitions for each cell.
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib `as an example liberty file.
@@ -59,15 +58,15 @@ Adding a new platform additionally requires the following:
 OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts flow to enable debugging in case of problems.
 
 
-# Adding a New Platform to OpenROAD <a name="ANPOpenROAD"></a>
+# Adding a New Platform to OpenROAD
 
 
-## Setup <a name="Setup"></a>
+## Setup
 
 This section describes the necessary files and  directories needed to build the platform.  All files and directories made/edited are independent of each other unless otherwise stated.
 
 
-## Makefile <a name="Makefile"></a>
+## Makefile
 
 Make the following edits  to the Makefile (located in `OpenROAD-flow-scripts/flow/Makefile`) so that OpenROAD can run the flow on a design using the new platform.
 
@@ -82,7 +81,7 @@ DESIGN_CONFIG=./designs/MyNewPlatform/riscv32i/config.mk
 The `config.mk` file will be generated later in the [Design Directory](#DesignDirectory) section of this document.
 
 
-## Platform Directory <a name="PlatformDirectory"></a>
+## Platform Directory
 
 Create a directory for the new technology inside `OpenROAD-flow-scripts/flow/platforms` to contain the necessary files for the OpenROAD flow.
 
@@ -93,7 +92,7 @@ $ mkdir OpenROAD-flow-scripts/flow/platforms/MyNewPlatform
 
 
 
-## Design Directory <a name="DesignDirectory"></a>
+## Design Directory
 
 The design directory contains the configuration files for all the designs of a specific platform. Create a directory for the new platform in OpenROAD-flow-scripts/flow/designs to contain the relevant files and directories for all the designs for the flow in that specific platform. Each design requires its own `config.mk` and `constraints.sdc` files. 
 
@@ -101,8 +100,7 @@ Follow the steps below to create the necessary directories and files. **NOTE: ri
 
 
 ```
-$ mkdir OpenROAD-flow-scripts/flow/designs/MyNewPlatform
-$ mkdir OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i
+$ mkdir -p OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i
 $ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/config.mk
 $ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/constraints.sdc
 ```
@@ -111,19 +109,19 @@ $ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/constraints.sd
 This creates two directories MyNewPlatform and riscv32i and two empty files `config.mk` and `constraints.sdc` in OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i. 
 
 
-## Platform Configuration <a name="PlatformConfiguration"></a>
+## Platform Configuration
 
 This section describes the necessary files in the platform directory needed for the OpenROAD flow. Specifically the `config.mk` file in the platform directory has all of the configuration variables that the flow uses. Refer to the OpenROAD-flow-scripts documentation for a full list of configuration variables that can be set.
 
 For an example of a platform config.mk file, refer to `OpenROAD-flow-scripts/flow/platforms/sky130hd/config.mk.`
 
 
-## Design Configuration <a name="DesignConfiguration"></a>
+## Design Configuration
 
 This section describes files in the design directory.
 
 
-## config.mk <a name="configmk"></a>
+## config.mk
 
 The `config.mk` file describes design-specific variables.
 
@@ -167,7 +165,7 @@ export PLACE_DENSITY     = 0.70
 Refer to the [OpenSTA][https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/doc/OpenSTA.pdf] documenation to change these variables to suit the needs of the specific design being made.
 
 
-## constraint.sdc <a name="constraintsdc"></a>
+## constraint.sdc
 
 The `constraint.sdc` file defines timing constraints for the design. Here’s an example of a constraint.sdc file which defines a clock `clk` with a period of 8.4 nanoseconds.
 
@@ -195,7 +193,7 @@ create_clock -period <float> -waveform {rising_edge falling_edge} <netlist clock
 
 
 
-## Liberty, LEF, and GDS Files <a name="LibertyLEFGDSFiles"></a>
+## Liberty, LEF, and GDS Files
 
 The liberty, LEF, and GDS files do not technically have to reside inside the platform directory of respective technology as long as the paths set in the `config.mk` file point to the correct files. However, it is good practice to have all relevant files in one localized directory. The `.lib`, `.lef`, and `.gds` reside in directories named respectively for the specific technology.
 
@@ -214,12 +212,12 @@ A merged GDS file may be used instead of adding every individual `.gds` file fro
 Once the liberty file, tech and macro LEF files, and either the merged standard cell GDS or individual standard cell GDS files have been generated, place them in their respective directories and set the `lib`, `lef`, and `gds` variables in the platform `config.mk` file to the correct paths.
 
 
-## Behavioral Models <a name="BehavioralModels"></a>
+## Behavioral Models
 
 OpenROAD requires behavioral Verilog modules for a latch and a gated clock. These modules are used during synthesis and follow a specific naming convention.
 
 
-## Gated Clock <a name="GatedClock"></a>
+## Gated Clock
 
 To create this module, a gated clock standard cell is required. This standard cell is used to create the OpenROAD specific module. Following is the generic structure of the behavioral latch module:
 
@@ -242,7 +240,7 @@ endmodule
 
 
 
-## Latch <a name="Latch"></a>
+## Latch
 
 Next is the generic latch. Once again, this requires a latch standard cell to be used. The structure of this module differs slightly from the `clkgate` module seen previously. Following is the generic structure of the behavioral latch module:
 
@@ -273,7 +271,7 @@ endmodule
 This file contains two modules, `$_DLATCH_P_` and `$_DLATCH_N_`. Notice that `$_DLATCH_N_` has it’s gate input is negated making it enable on a low signal while `$_DLATCH_P_` has a non-negated gate input making it enable on a high signal.
 
 
-## FastRoute Configuration <a name="FastRouteConfiguration"></a>
+## FastRoute Configuration
 
 FastRoute is the tool used to global-route the design. FastRoute requires a Tcl file to set which routing layers will be used for signals, adjust routing layer resources, set which routing heuristic to use when routing, etc. It’s recommended to use the default `fastroute.tcl` due to its simplicity and effectiveness. Following is the default FastRoute configuration file.
 
@@ -292,7 +290,7 @@ The first command, set_global_routing_layer_adjustment, adjusts the routing reso
 More customization can be done to increase the efficiency of global and detail route. Refer to the [OpenROAD documentation](https://openroad.readthedocs.io/_/downloads/en/latest/pdf/).
 
 
-## Metal Tracks Configuration <a name="MetalTracksConfiguration"></a>
+## Metal Tracks Configuration
 
 OpenROAD requires a metal track configuration file for use in floorplanning. For each metal layer, the x and y offset as well as the x and y pitch are defined. To find the pitch and offset for both x and y, refer to the tech LEF. Following is a generalized metal tracks configuration file with five metal tracks defined.
 
@@ -311,109 +309,18 @@ make_tracks metal5 -x_offset 0.28 -x_pitch 0.82 -y_offset 0.28 -y_pitch 0.82
 Refer to the tech file to determine the x and y pitch and the offset.
 
 
-## PDN Configuration <a name="PDNConfiguration"></a>
+## PDN Configuration
 
-PDN is a utility that simplifies adding a power grid into the floorplan. With specifications given in the PDN configuration file, like which layer to use, stripe width and spacing, the utility can generate the metal straps used for the power grid. To create and configure a power grid, refer to [OpenROAD documentation](https://openroad.readthedocs.io/_/downloads/en/latest/pdf/) on pdngen. Following is a generic PDN configuration file:
+PDN is a utility that simplifies adding a power grid into the floorplan. With specifications given in the PDN configuration file, like which layer to use, stripe width and spacing, the utility can generate the metal straps used for the power grid. To create and configure a power grid, refer to [OpenROAD documentation](https://github.com/The-OpenROAD-Project/OpenROAD/blob/f864efbae4ffd4cc533f0e22c57cc7ab89618c44/src/pdn/doc/PDN.md) on pdngen.
 
 
-```
-# pdn.cfg
-###############################
-# POWER or GROUND #Std. cell rails starting with power or ground rails at the bottom of the core area
-set ::rails_start_with "POWER" ;
+## Tapcell Configuration
 
-# POWER or GROUND #Upper Mal stripes starting with power or ground rails at the left/bottom of the core area
-set ::stripes_start_with "POWER" ;
-
-# Power nets
-set ::power_nets "VDD"
-set ::ground_nets "VSS"
-
-set pdngen::global_connections {
-VDD {
-  {inst_name .* pin_name VPWR}
-  {inst_name .* pin_name VPB}
-}
-VSS {
-  {inst_name .* pin_name VGND}
-  {inst_name .* pin_name VNB}
-}
-}
-#===> Power grid strategy
-# Ensure pitches and offsets will make the stripes fall on track
-pdngen::specify_grid stdcell {
-  name grid
-  rails {
-      M1 {width 1.04 offset 0}
-  }
-  straps {
-      M4 {width 2.08 pitch 20.28 offset 0}
-      M5 {width 2.08 pitch 20.28 offset 0}
-  }
-  connect {{M1 M4} {M4 M5}}
-}
-
-pdngen::specify_grid macro {
-  orient {R0 R180 MX MY}
-  power_pins "VPWR"
-  ground_pins "VGND"
-  blockages "M1 M2 M3 M4"
-  connect {{M4_PIN_ver M5}}
-}
-
-pdngen::specify_grid macro {
-  orient {R90 R270 MXR90 MYR90}
-  power_pins "VPWR"
-  ground_pins "VGND"
-  blockages "M1 M2 M3 M4"
-  connect {{M4_PIN_hor M5}}
-}
-```
+The tapcell configuration file is used to insert tapcells and endcaps into the design. Refer to the [Tapcell][https://github.com/The-OpenROAD-Project/OpenROAD/blob/f864efbae4ffd4cc533f0e22c57cc7ab89618c44/src/tap/README.md] documentation on how to construct this file.
 
 
 
-## Tapcell Configuration <a name="TapcellConfiguration"></a>
-
-The tapcell configuration file is used to insert tapcells and endcaps into the design. The tapcell command has the following list of options:
-
-
-```
-    tapcell [-tapcell_master tapcell_master]
-    [-endcap_master endcap_master]
-    [-distance dist]
-    [-halo_width_x halo_x]
-    [-halo_width_y halo_y]
-    [-tap_nwin2_master tap_nwin2_master]
-    [-tap_nwin3_master tap_nwin3_master]
-    [-tap_nwout2_master tap_nwout2_master]
-    [-tap_nwout3_master tap_nwout3_master]
-    [-tap_nwintie_master tap_nwintie_master]
-    [-tap_nwouttie_master tap_nwouttie_master]
-    [-cnrcap_nwin_master cnrcap_nwin_master]
-    [-cnrcap_nwout_master cnrcap_nwout_master]
-    [-incnrcap_nwin_master incnrcap_nwin_master]
-    [-incnrcap_nwout_master incnrcap_nwout_master]
-    [-tap_prefix tap_prefix]
-    [-endcap_prefix endcap_prefix]
-```
-
-
-A simple, yet effective `tapcell.tcl` file is given below:
-
-
-```
-# tapcell.tcl
-###################
-tapcell \
-  -endcap_cpp "2" \
-  -distance 120 \
-  -tapcell_master "TAP1" \
-  -endcap_master "FILL1"
-```
-
-
-
-## setRC Configuration <a name="setRCConfiguration"></a>
+## setRC Configuration
 
 
 setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
@@ -439,12 +346,12 @@ set_wire_rc -clock -layer M5
 
 
 
-## KLayout <a name="KLayout"></a>
+## KLayout
 
 KLayout is used in OpenROAD to provide GDS merging, DRC, and LVS. Two files are required for KLayout and they are generated within the KLayout GUI. Install KLayout on the host machine since it is not included in the OpenROAD build process. Then create the properties and tech files as explained below.
 
 
-## KLayout properties file <a name="KLayoutpropertiesfile"></a>
+## KLayout properties file
 
 Follow these steps to generate the  KLayout properties file:
 
@@ -470,7 +377,7 @@ Follow these steps to generate the  KLayout properties file:
     	1. Save as a `.lyp` file in your platform directory
 
 
-## KLayout tech file <a name="KLayouttechfile"></a>
+## KLayout tech file
 
 Follow these steps to generate the Klayout tech file:
 
@@ -492,12 +399,12 @@ Follow these steps to generate the Klayout tech file:
         3. Save with the extension .lyt
 
 
-# Validating the New Platform <a name="ValidatingPlatform"><a>
+# Validating the New Platform
 
 To validate the new platform, simply run a design through the flow using the new platform. The Makefile should already include the `DESIGN_CONFIG` variables for the new platform which were generated in the Setup section of the document. Simply uncomment a `DESIGN_CONFIG` variable for the new platform in the Makefile, save, and then run `make` in the terminal to run the design through the flow. Try a small design first (i.e. gcd) so that run time is small and you can identify and fix errors faster.
 
 
-# Authors/Contributors <a name="AuthorsContributors"></a>
+# Authors/Contributors
 
 
 
