@@ -115,12 +115,7 @@ GCell::setInstance(Instance* inst) {
 
 Instance*
 GCell::instance() const {
-  if( insts_.size() == 0 ) {
-    return nullptr;
-  }
-  else {
-    return *insts_.begin();
-  }
+  return insts_.empty() ? nullptr : *insts_.begin();
 }
 
 void

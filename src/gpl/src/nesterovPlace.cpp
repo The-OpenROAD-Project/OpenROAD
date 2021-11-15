@@ -79,6 +79,7 @@ NesterovPlaceVars::reset() {
   initialPrevCoordiUpdateCoef = 100;
   referenceHpwl = 446000000;
   routabilityCheckOverflow = 0.20;
+  smallDesignInstCnt = 500;
   timingDrivenMode = true;
   routabilityDrivenMode = true;
   debug = false;
@@ -243,9 +244,10 @@ void NesterovPlace::init() {
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
-  if( pb_->insts().size() < 500 && isnan(stepLength_) ) {
+  if( pb_->insts().size() < npVars_.smallDesignInstCnt && isnan(stepLength_) ) {
     npVars_.initialPrevCoordiUpdateCoef *= 10;
-    log_->warn(GPL, 321, "steplength = 0 detected. Rerun Nesterov::init() with initSLPCoef:{:g}",
+    debugPrint(log_, GPL, "replace", 3, 
+        "npinit: steplength = 0 detected. Rerunning Nesterov::init() with initPrevSLPCoef {:g}",
         npVars_.initialPrevCoordiUpdateCoef);
     init();
   }
@@ -389,7 +391,8 @@ NesterovPlace::updateGradients(
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
-    log_->warn(GPL, 320, "sum(WL gradient) = 0, try again with {:g} {:g}", 
+    debugPrint(log_, GPL, "replace", 3, 
+        "updateGrad:  sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}", 
         wireLengthCoefX_, wireLengthCoefY_);
 
     // update WL forces
@@ -733,8 +736,10 @@ NesterovPlace::doNesterovPlace(int start_iter) {
 
     // 1. to non-trivial design --> assign minimum 50 iterations.
     // 2. to trivial design --> not assign minimum iterations.
-    if( pb_->insts().size() >= 500 && iter >= 50 && sumOverflow_ <= npVars_.targetOverflow ||
-        pb_->insts().size() < 500 && sumOverflow_ <= npVars_.targetOverflow ) {
+    if( pb_->insts().size() >= npVars_.smallDesignInstCnt 
+          && iter >= 50 && sumOverflow_ <= npVars_.targetOverflow ||
+        pb_->insts().size() < npVars_.smallDesignInstCnt 
+          && sumOverflow_ <= npVars_.targetOverflow ) {
        log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
        break;
     }

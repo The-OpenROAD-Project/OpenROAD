@@ -69,6 +69,8 @@ class NesterovPlaceVars {
 
   int routabilityMaxBloatIter;
   int routabilityMaxInflationIter;
+  
+  int smallDesignInstCnt;
 
   bool timingDrivenMode;
   bool routabilityDrivenMode;
