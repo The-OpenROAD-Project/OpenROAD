@@ -465,6 +465,7 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
   } else {
     if (buttons_.count(name) != 0) {
       logger_->error(utl::GUI, 22, "Button {} already defined.", name);
+      removeToolbarButton(name);
     }
     key = name;
   }
