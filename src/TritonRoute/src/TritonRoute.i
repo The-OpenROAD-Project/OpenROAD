@@ -35,6 +35,7 @@
 
 %{
 
+#include <string>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  
@@ -63,7 +64,8 @@ void detailed_route_cmd(const char* guideFile,
                         double orK,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
-                        int verbose)
+                        int verbose,
+                        const char* distributed)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -80,6 +82,13 @@ void detailed_route_cmd(const char* guideFile,
                     bottomRoutingLayer,
                     topRoutingLayer,
                     verbose});
+  std::string ip_port = distributed;
+  if(ip_port == "")
+    router->setDistributed(false);
+  else {
+    router->setDistributed(true);
+    router->setDistIpPort(distributed);
+  }
   router->main();
 }
 

@@ -97,16 +97,18 @@ class frMarker : public frFig
 
   const std::set<frBlockObject*>& getSrcs() const { return srcs_; }
 
-  const std::vector<
+  void setSrcs(const std::set<frBlockObject*>& srcs) { srcs_ = srcs; }
+
+  std::vector<
       std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>&
-  getAggressors() const
+  getAggressors()
   {
     return aggressors_;
   }
 
-  const std::vector<
+  std::vector<
       std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool>>>&
-  getVictims() const
+  getVictims()
   {
     return victims_;
   }

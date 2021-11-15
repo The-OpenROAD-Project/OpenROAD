@@ -61,7 +61,8 @@ extern int Tritonroute_Init(Tcl_Interp* interp);
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       num_drvs_(-1),
-      gui_(gui::Gui::get())
+      gui_(gui::Gui::get()),
+      distributed_(false)
 {
 }
 
@@ -87,6 +88,26 @@ void TritonRoute::setDebugMaze(bool on)
 void TritonRoute::setDebugPA(bool on)
 {
   debug_->debugPA = on;
+}
+
+void TritonRoute::setDistributed(bool on)
+{
+  distributed_ = on;
+  debug_->dist = on;
+}
+
+void TritonRoute::setDistIpPort(std::string ip_port)
+{
+  size_t pos = ip_port.find("/");
+  if(pos == std::string::npos)
+  {
+    return;
+  } else {
+    dist_ip_ = ip_port.substr(0, pos);
+    try {
+      dist_port_ = stoi(ip_port.substr(pos+1, ip_port.length() - pos));
+    } catch(std::exception& e) {}
+  }
 }
 
 void TritonRoute::setDebugNetName(const char* name)
@@ -123,7 +144,7 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-void TritonRoute::runDRWorker(const char* file_name)
+std::string TritonRoute::runDRWorker(const char* file_name)
 {
   // must be at this scope to persist to the end of the method
   std::unique_ptr<FlexDRGraphics> graphics;
@@ -131,20 +152,19 @@ void TritonRoute::runDRWorker(const char* file_name)
     graphics = std::make_unique<FlexDRGraphics>(
         debug_.get(), design_.get(), db_, logger_);
   }
-
   auto worker = FlexDRWorker::load(
       file_name, logger_, debug_.get(), db_, graphics.get());
 
   // Replace the stub tech with the reloaded one for the gui
   std::unique_ptr<frTechObject> tech(worker->getTech());
-  graphics->setTech(tech.get(), db_);
+  if(graphics)
+    graphics->setTech(tech.get(), db_);
   design_->setTech(std::move(tech));
 
   if (graphics) {
     graphics->startIter(worker->getDRIter());
   }
-
-  worker->reloadedMain();
+  return worker->reloadedMain();
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,
@@ -158,6 +178,14 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   FlexDRGraphics::init();
+}
+
+void TritonRoute::init(odb::dbDatabase* db,
+                       Logger* logger)
+{
+  db_ = db;
+  logger_ = logger;
+  design_ = std::make_unique<frDesign>(logger_);
 }
 
 void TritonRoute::init()
@@ -238,6 +266,7 @@ void TritonRoute::dr()
   num_drvs_ = -1;
   FlexDR dr(getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
+  dr.setDistributed(distributed_, dist_ip_, dist_port_);
   dr.main();
 }
 

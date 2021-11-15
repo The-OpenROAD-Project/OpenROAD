@@ -124,6 +124,10 @@ namespace utl {
 class Logger;
 }
 
+namespace dst {
+class Distributed;
+}
+
 namespace ord {
 
 using std::string;
@@ -162,6 +166,7 @@ public:
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen *getPdnGen() { return pdngen_; }
+  dst::Distributed *getDistributed() { return distributer_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -249,6 +254,7 @@ private:
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
+  dst::Distributed *distributer_;
 
   std::set<Observer *> observers_;
 

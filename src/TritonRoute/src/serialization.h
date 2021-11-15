@@ -40,9 +40,29 @@
 #include <boost/serialization/weak_ptr.hpp>
 
 #include "db/obj/frShape.h"
+#include "db/obj/frNet.h"
 #include "db/tech/frConstraint.h"
 #include "global.h"
-
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcShape.h"
+#include "db/drObj/drMarker.h"
+#include "db/drObj/drNet.h"
+#include "db/drObj/drPin.h"
+#include "db/obj/frAccess.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frBoundary.h"
+#include "db/obj/frGCellPattern.h"
+#include "db/obj/frGuide.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frMarker.h"
+#include "db/obj/frNode.h"
+#include "db/obj/frPin.h"
+#include "db/obj/frRPin.h"
+#include "db/obj/frVia.h"
+#include "db/obj/frTrackPattern.h"
+#include "db/infra/frBox.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -279,6 +299,8 @@ void register_types(Archive& ar)
   ar.template register_type<frPatchWire>();
   ar.template register_type<frPolygon>();
   ar.template register_type<frInstTerm>();
+  ar.template register_type<frTerm>();
+  ar.template register_type<frNet>();
 
   ar.template register_type<frLef58CutClassConstraint>();
   ar.template register_type<frRecheckConstraint>();
@@ -324,6 +346,32 @@ void register_types(Archive& ar)
   ar.template register_type<drPathSeg>();
   ar.template register_type<drVia>();
   ar.template register_type<drPatchWire>();
+
+  ar.template register_type<drMazeMarker>();
+  ar.template register_type<drNet>();
+  ar.template register_type<drPin>();
+
+  ar.template register_type<gcNet>();
+  ar.template register_type<gcPin>();
+  ar.template register_type<gcSegment>();
+  ar.template register_type<gcPolygon>();
+  ar.template register_type<gcRect>();
+  ar.template register_type<frAccessPoint>();
+  ar.template register_type<frPinAccess>();
+  ar.template register_type<frBlockage>();
+  ar.template register_type<frBoundary>();
+  ar.template register_type<frGCellPattern>();
+  ar.template register_type<frGuide>();
+  ar.template register_type<frInst>();
+  ar.template register_type<frInstBlockage>();
+  ar.template register_type<frMarker>();
+  ar.template register_type<frNode>();
+  ar.template register_type<frPin>();
+  ar.template register_type<frRPin>();
+  ar.template register_type<frVia>();
+  ar.template register_type<frTrackPattern>();
+  ar.template register_type<frBox3D>();
+  // ar.template register_type<frBlock>();
 }
 
 template <class Archive>

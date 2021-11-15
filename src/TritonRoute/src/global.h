@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "db/drObj/drFig.h"
@@ -100,6 +101,7 @@ extern int MISALIGNMENTCOST;
 extern int HISTCOST;
 extern int CONGCOST;
 
+extern std::mutex MUTEX;
 #define DIRBITSIZE 3
 #define WAVEFRONTBUFFERSIZE 2
 #define WAVEFRONTBITSIZE (WAVEFRONTBUFFERSIZE * DIRBITSIZE)

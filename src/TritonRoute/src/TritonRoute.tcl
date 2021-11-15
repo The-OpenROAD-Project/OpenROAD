@@ -49,6 +49,7 @@ sta::define_cmd_args "detailed_route" {
     [-top_routing_layer layer]
     [-verbose level]
     [-param filename]
+    [-distributed ip_port]
 }
 
 proc detailed_route { args } {
@@ -56,7 +57,7 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
       -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose}
+      -top_routing_layer -verbose -distributed}
   sta::check_argc_eq0 "detailed_route" $args
 
   if { [info exists keys(-param)] } {
@@ -140,10 +141,15 @@ proc detailed_route { args } {
     } else {
       set verbose 1
     }
+    if { [info exists keys(-distributed)] } {
+      set distributed $keys(-distributed)
+    } else {
+      set distributed ""
+    }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $droute_end_iter \
       $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
-      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
+      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose $distributed
   }
 }
 

@@ -136,6 +136,7 @@ add_subdirectory(TritonRoute)
 add_subdirectory(utl)
 add_subdirectory(pdrev)
 add_subdirectory(pdngen)
+add_subdirectory(dst)
 
 ################################################################
 
@@ -178,6 +179,7 @@ target_link_libraries(openroad
   tap
   gui
   TritonRoute
+  dst
   mpl
   psm
   ant

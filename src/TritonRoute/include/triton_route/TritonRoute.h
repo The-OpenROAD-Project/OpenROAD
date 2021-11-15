@@ -73,6 +73,7 @@ class TritonRoute
   TritonRoute();
   ~TritonRoute();
   void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
+  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   fr::frDesign* getDesign() const { return design_.get(); }
 
@@ -89,6 +90,8 @@ class TritonRoute
   void setDebugGCell(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDistributed(bool on = true);
+  void setDistIpPort(std::string ip_port);
   void reportConstraints();
 
   void readParams(const std::string& fileName);
@@ -96,7 +99,7 @@ class TritonRoute
 
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
-  void runDRWorker(const char* file_name);
+  std::string runDRWorker(const char* file_name);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;
@@ -105,6 +108,9 @@ class TritonRoute
   utl::Logger* logger_;
   int num_drvs_;
   gui::Gui* gui_;
+  bool distributed_;
+  std::string dist_ip_;
+  unsigned short dist_port_;
 
   void init();
   void prep();

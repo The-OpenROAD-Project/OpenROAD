@@ -361,7 +361,8 @@ struct frDebugSettings
         gcellX(-1),
         gcellY(-1),
         iter(0),
-        paMarkers(false)
+        paMarkers(false),
+        dist(false)
   {
   }
 
@@ -379,6 +380,7 @@ struct frDebugSettings
   int gcellY;
   int iter;
   bool paMarkers;
+  bool dist;
 };
 
 // Avoids the need to split the whole serializer like

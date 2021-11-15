@@ -30,7 +30,7 @@
 #include "db/drObj/drFig.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
-
+#include <mutex>
 #include <iostream>
 
 using namespace std;
@@ -97,6 +97,8 @@ int MISALIGNMENTCOST = 8;
 
 int CONGCOST = 8;
 int HISTCOST = 32;
+
+std::mutex MUTEX;
 
 namespace fr {
 

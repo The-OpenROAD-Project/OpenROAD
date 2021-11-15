@@ -134,8 +134,7 @@ void frTerm::serialize(Archive& ar, const unsigned int version)
   (ar) & type_;
   (ar) & direction_;
   (ar) & order_id_;
-
-  if (net_) {
+  if(fr::is_loading(ar) && net_) {
     net_->addTerm(this);
   }
 }

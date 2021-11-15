@@ -26,22 +26,52 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <omp.h>
 
+#include <boost/asio.hpp>
 #include <boost/io/ios_state.hpp>
 #include <chrono>
 #include <fstream>
 #include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
+using namespace boost::asio;
+using ip::tcp;
+
 using namespace std;
 using namespace fr;
+
+bool send(tcp::socket& socket, const std::string& msg)
+{
+  boost::system::error_code error;
+  boost::asio::write(socket, boost::asio::buffer(msg), error);
+  if (!error) {
+    return true;
+  } else {
+    return false;
+  }
+}
+bool read(tcp::socket& socket, std::string& dataStr)
+{
+  boost::system::error_code error;
+  boost::asio::streambuf receive_buffer;
+  boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
+  if (error && error != boost::asio::error::eof) {
+    return false;
+  } else {
+    const char* data
+        = boost::asio::buffer_cast<const char*>(receive_buffer.data());
+    dataStr = data;
+    return true;
+  }
+}
 
 enum class SerializationType
 {
@@ -53,18 +83,23 @@ static void serialize_worker(SerializationType type,
                              FlexDRWorker* worker,
                              const std::string& name)
 {
-  if (type == SerializationType::READ) {
-    std::ifstream file(name);
-    InputArchive ar(file);
-    register_types(ar);
-    serialize_globals(ar);
-    ar >> *worker;
-  } else {
-    std::ofstream file(name);
-    OutputArchive ar(file);
-    register_types(ar);
-    serialize_globals(ar);
-    ar << *worker;
+  // #pragma omp critical
+  {
+    if (type == SerializationType::READ) {
+      std::ifstream file(name);
+      InputArchive ar(file);
+      register_types(ar);
+      serialize_globals(ar);
+      ar >> *worker;
+      file.close();
+    } else {
+      std::ofstream file(name);
+      OutputArchive ar(file);
+      register_types(ar);
+      serialize_globals(ar);
+      ar << *worker;
+      file.close();
+    }
   }
 }
 
@@ -91,9 +126,18 @@ void FlexDR::setDebug(frDebugSettings* settings)
 // been run. We don't support end() in this case as it is intended for
 // debugging route_queue().  The gc worker will have beeen reloaded
 // from the serialization.
-void FlexDRWorker::reloadedMain()
+std::string FlexDRWorker::reloadedMain()
 {
   route_queue();
+  setGCWorker(nullptr);
+  cleanup();
+  std::string name = fmt::format("iter{}_x{}_y{}.worker.out",
+                                 getDRIter(),
+                                 getGCellBox().left(),
+                                 getGCellBox().bottom());
+  serialize_worker(SerializationType::WRITE, this, name);
+  return name;
+  // reply with file path
 }
 
 int FlexDRWorker::main(frDesign* design)
@@ -155,6 +199,202 @@ int FlexDRWorker::main(frDesign* design)
   }
 
   return 0;
+}
+
+inline frBlockObject* getEqObject(frBlockObject* srObj, frDesign* design)
+{
+  switch (srObj->typeId()) {
+    case frcNet: {
+      frNet* srNet = (static_cast<frNet*>(srObj));
+      auto net = design->getTopBlock()->findNet(srNet->getName());
+      return net;
+    }
+    case frcInstTerm: {
+      frInstTerm* srTerm = (static_cast<frInstTerm*>(srObj));
+      auto srInst = srTerm->getInst();
+      auto inst = design->getTopBlock()->findInst(srInst->getName());
+      if (inst == nullptr)
+        return nullptr;
+      for (auto& term : inst->getInstTerms())
+        if (term->getId() == srTerm->getId())
+          return term.get();
+      return nullptr;
+    }
+    case frcTerm: {
+      frTerm* srTerm = (static_cast<frTerm*>(srObj));
+      return design->getTopBlock()->getTerm(srTerm->getName());
+    }
+    case frcInstBlockage: {
+      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(srObj));
+      auto srInst = srBlkg->getInst();
+      auto inst = design->getTopBlock()->findInst(srInst->getName());
+      if (inst == nullptr)
+        return nullptr;
+      for (auto& blkg : inst->getInstBlockages())
+        if (blkg->getId() == srBlkg->getId())
+          return blkg.get();
+      return nullptr;
+    }
+    case frcBlockage: {
+      frBlockage* srBlkg = (static_cast<frBlockage*>(srObj));
+      for (auto& blkg : design->getTopBlock()->getBlockages())
+        if (blkg->getId() == srBlkg->getId())
+          return blkg.get();
+    }
+    default:
+      return nullptr;
+  }
+}
+void FlexDRWorker::updateDesign(frDesign* design)
+{
+  tech_ = design->getTech();
+  for (auto& drNet_ : nets_) {
+    auto frNet_ = design->getTopBlock()->findNet(drNet_->getFrNet()->getName());
+    if (frNet_ != nullptr) {
+      if (drNet_->getFrNet()->isModified())
+        frNet_->setModified(true);
+      drNet_->setFrNet(frNet_);
+    } else {
+      logger_->error(DRT,
+                     501,
+                     "No matching net in design for net {}",
+                     drNet_->getFrNet()->getName());
+    }
+  }
+  map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp> bp;
+  for (auto [net, value] : boundaryPin_) {
+    auto frNet_ = design->getTopBlock()->findNet(net->getName());
+    if (frNet_ != nullptr) {
+      bp[frNet_] = value;
+    } else {
+      logger_->error(
+          DRT, 502, "No matching net in design for net {}", net->getName());
+    }
+  }
+  setBoundaryPins(bp);
+  std::vector<frMarker>& markers = getBestMarkers();
+  for (auto& marker : markers) {
+    std::set<frBlockObject*> newSrcs;
+    for (auto src : marker.getSrcs()) {
+      if (src != nullptr) {
+        auto newSrc = getEqObject(src, design);
+        if (newSrc == nullptr)
+          logger_->error(DRT, 503, "Fail in mapping serialized marker src");
+        newSrcs.insert(newSrc);
+      } else
+        newSrcs.insert(nullptr);
+    }
+    marker.setSrcs(newSrcs);
+    for (auto& [obj, value] : marker.getVictims()) {
+      if (obj != nullptr) {
+        auto newObj = getEqObject(obj, design);
+        if (newObj == nullptr)
+          logger_->error(DRT, 504, "Fail in mapping serialized marker victim");
+        obj = newObj;
+      }
+    }
+    for (auto& [obj, value] : marker.getAggressors()) {
+      if (obj != nullptr) {
+        auto newObj = getEqObject(obj, design);
+        if (newObj == nullptr)
+          logger_->error(
+              DRT, 505, "Fail in mapping serialized marker aggressor");
+        obj = newObj;
+      }
+    }
+  }
+}
+
+void FlexDRWorker::distributedMain(frDesign* design)
+{
+  ProfileTask profile("DR:main");
+  if (VERBOSE > 1) {
+    frBox scaledBox;
+    stringstream ss;
+    ss << endl
+       << "start DR worker (BOX) "
+       << "( " << routeBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
+       << routeBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
+       << routeBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
+       << routeBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
+    cout << ss.str() << flush;
+  }
+
+  init(design);
+  if (skipRouting_)
+    return;
+  FlexGCWorker gcWorker(design->getTech(), logger_, this);
+  gcWorker.setExtBox(getExtBox());
+  gcWorker.setDrcBox(getDrcBox());
+  gcWorker.init(design);
+  gcWorker.setEnableSurgicalFix(true);
+  setGCWorker(&gcWorker);
+
+  // Save the worker in its fully initialized state
+  frPoint debugGCell(debugSettings_->gcellX, debugSettings_->gcellY);
+  std::string name = fmt::format("iter{}_x{}_y{}.worker.in",
+                                 getDRIter(),
+                                 getGCellBox().left(),
+                                 getGCellBox().bottom());
+  serialize_worker(SerializationType::WRITE, this, name);
+  boost::asio::io_service io_service;
+  tcp::socket socket(io_service);
+  socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(dist_ip_),
+                               dist_port_));
+  // logger_->info(DRT, 501, "Worker {}", name);
+  send(socket, name + " \n");
+  std::string result;
+  if (read(socket, result)) {
+    socket.close();
+    serialize_worker(SerializationType::READ, this, result);
+    updateDesign(design);
+  } else {
+    logger_->error(utl::DRT, 500, "NO MATCH {} : {}", result, name);
+  }
+}
+
+template <class Archive>
+void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
+{
+  // // We always serialize before calling main on the work unit so various
+  // // fields are empty and don't need to be serialized.  I skip these to
+  // // save having to write lots of serializers that will never be called.
+  // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+  //     || !rq_.isEmpty() || gcWorker_) {
+  //   logger_->error(DRT, 999, "Can't serialize used worker");
+  // }
+
+  // The logger_, graphics_ and debugSettings_ are handled by the caller to
+  // use the current ones.
+  (ar) & tech_;
+  (ar) & via_data_;
+  (ar) & routeBox_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & gcellBox_;
+  (ar) & drIter_;
+  (ar) & mazeEndIter_;
+  (ar) & followGuide_;
+  (ar) & needRecheck_;
+  (ar) & skipRouting_;
+  (ar) & ripupMode_;
+  (ar) & workerDRCCost_;
+  (ar) & workerMarkerCost_;
+  (ar) & boundaryPin_;
+  (ar) & pinCnt_;
+  (ar) & initNumMarkers_;
+  (ar) & apSVia_;
+  (ar) & fixedObjs_;
+  (ar) & planarHistoryMarkers_;
+  (ar) & viaHistoryMarkers_;
+  (ar) & historyMarkers_;
+  (ar) & nets_;
+  (ar) & owner2nets_;
+  (ar) & gridGraph_;
+  (ar) & markers_;
+  (ar) & bestMarkers_;
+  (ar) & rq_;
+  (ar) & gcWorker_;
 }
 
 void FlexDR::initFromTA()
@@ -1511,6 +1751,7 @@ void FlexDR::searchRepair(int iter,
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
       worker->setDebug(debugSettings_);
+      worker->setDistributed(dist_, dist_ip_, dist_port_);
       if (!iter) {
         // set boundary pin
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
@@ -1546,7 +1787,10 @@ void FlexDR::searchRepair(int iter,
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main(getDesign());
+          if (dist_)
+            workersInBatch[i]->distributedMain(getDesign());
+          else
+            workersInBatch[i]->main(getDesign());
 #pragma omp critical
           {
             cnt++;

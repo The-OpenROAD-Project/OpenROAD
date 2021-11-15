@@ -84,14 +84,15 @@ class frInstTerm : public frBlockObject
     (ar) & term_;
     (ar) & net_;
     (ar) & ap_;
+    if(fr::is_loading(ar)) {
+      if (inst_) {
+        std::unique_ptr<frInstTerm> ptr(this);
+        inst_->addInstTerm(std::move(ptr));
+      }
 
-    if (inst_) {
-      std::unique_ptr<frInstTerm> ptr(this);
-      inst_->addInstTerm(std::move(ptr));
-    }
-
-    if (net_) {
-      net_->addInstTerm(this);
+      if (net_) {
+        net_->addInstTerm(this);
+      }
     }
   }
 
