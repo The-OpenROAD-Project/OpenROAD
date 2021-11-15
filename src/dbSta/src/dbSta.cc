@@ -211,9 +211,9 @@ makeBlockSta(ord::OpenRoad *openroad,
   dbSta *sta = openroad->getSta();
   dbSta *sta2 = new dbSta;
   sta2->makeComponents();
+  sta2->initVars(sta->tclInterp(), openroad->getDb(), gui::Gui::get(),
+                 openroad->getLogger());
   sta2->getDbNetwork()->setBlock(block);
-  sta2->setTclInterp(sta->tclInterp());
-  sta2->getDbReport()->setLogger(openroad->getLogger());
   sta2->copyUnits(sta->units());
   return sta2;
 }
@@ -244,26 +244,28 @@ dbSta::init(Tcl_Interp *tcl_interp,
             Logger *logger)
 {
   initSta();
+  initVars(tcl_interp, db, gui, logger);
   Sta::setSta(this);
-  db_ = db;
-  gui_ = gui;
-  logger_ = logger;
-  makeComponents();
-  setTclInterp(tcl_interp);
-  db_report_->setLogger(logger);
-  db_cbk_ = new dbStaCbk(this, logger);
   // Define swig TCL commands.
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   evalTclInit(tcl_interp, dbSta_tcl_inits);
 }
 
-// Wrapper to init network db.
 void
-dbSta::makeComponents()
+dbSta::initVars(Tcl_Interp *tcl_interp,
+                dbDatabase *db,
+                gui::Gui *gui,
+                Logger *logger)
 {
-  Sta::makeComponents();
-  db_network_->setDb(db_);
+  db_ = db;
+  gui_ = gui;
+  logger_ = logger;
+  makeComponents();
+  setTclInterp(tcl_interp);
+  db_report_->setLogger(logger);
+  db_network_->init(db, logger);
+  db_cbk_ = new dbStaCbk(this, logger);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -278,7 +280,7 @@ dbSta::makeReport()
 void
 dbSta::makeNetwork()
 {
-  db_network_ = new class dbNetwork(logger_);
+  db_network_ = new class dbNetwork();
   network_ = db_network_;
 }
 

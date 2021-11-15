@@ -365,9 +365,11 @@ DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-dbNetwork::dbNetwork(Logger *logger) :
+dbNetwork::dbNetwork() :
+  ConcreteNetwork(),
   db_(nullptr),
-  logger_(logger),
+  block_(nullptr),
+  logger_(nullptr),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
@@ -378,15 +380,16 @@ dbNetwork::~dbNetwork()
 }
 
 void
-dbNetwork::setDb(dbDatabase *db)
+dbNetwork::init(dbDatabase *db,
+                Logger *logger)
 {
   db_ = db;
+  logger_ = logger;
 }
 
 void
 dbNetwork::setBlock(dbBlock *block)
 {
-  db_ = block->getDataBase();
   block_ = block;
   readDbNetlistAfter();
 }
