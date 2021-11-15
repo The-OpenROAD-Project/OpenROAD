@@ -342,6 +342,26 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
+const std::string Gui::addMenuItem(const std::string& name,
+                                   const std::string& path,
+                                   const std::string& text,
+                                   const std::string& script,
+                                   const std::string& shortcut,
+                                   bool echo)
+{
+  return main_window->addMenuItem(name,
+                                  QString::fromStdString(path),
+                                  QString::fromStdString(text),
+                                  QString::fromStdString(script),
+                                  QString::fromStdString(shortcut),
+                                  echo);
+}
+
+void Gui::removeMenuItem(const std::string& name)
+{
+  main_window->removeMenuItem(name);
+}
+
 const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));

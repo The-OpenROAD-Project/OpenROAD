@@ -61,6 +61,45 @@ proc create_toolbar_button { args } {
   return [gui::create_toolbar_button $name $button_text $tcl_script $echo]
 }
 
+sta::define_cmd_args "create_menu_item" {[-name name] \
+                                         [-text button_text] \
+                                         [-path menu_path] \
+                                         [-script tcl_script] \
+                                         [-shortcut key_shortcut]
+                                         [-echo]
+}
+
+proc create_menu_item { args } {
+  sta::parse_key_args "create_menu_item" args \
+    keys {-name -text -script -shortcut -path} flags {-echo}
+
+  if { [info exists keys(-text)] } {
+    set action_text $keys(-text)
+  } else {
+    utl::error GUI 26 "The -text argument must be specified."
+  }
+  if { [info exists keys(-script)] } {
+    set tcl_script $keys(-script)
+  } else {
+    utl::error GUI 27 "The -script argument must be specified."
+  }
+  set name ""
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+  set shortcut ""
+  if { [info exists keys(-shortcut)] } {
+    set shortcut $keys(-shortcut)
+  }
+  set path ""
+  if { [info exists keys(-path)] } {
+    set path $keys(-path)
+  }
+  set echo [info exists flags(-echo)]
+
+  return [gui::create_menu_item $name $path $action_text $tcl_script $shortcut $echo]
+}
+
 sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
