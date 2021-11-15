@@ -70,7 +70,6 @@ class NesterovPlaceVars {
   int routabilityMaxBloatIter;
   int routabilityMaxInflationIter;
   
-  int smallDesignInstCnt;
   int maxRecursionWlCoef;
   int maxRecursionInitSLPCoef;
 

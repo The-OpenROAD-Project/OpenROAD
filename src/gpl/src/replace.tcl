@@ -267,19 +267,7 @@ proc global_placement { args } {
       gpl::replace_initial_place_cmd
 
       if { ![info exists flags(-skip_nesterov_place)] } {
-        catch {gpl::replace_nesterov_place_cmd} error
-        set block [ord::get_db_block]
-
-        set diverge_codes [list "GPL-0304" "GPL-0305" "GPL-0306" "GPL-0307"]
-        set is_diverged 0
-        if {[lsearch -exact $diverge_codes $error] >= 0} {
-          set is_diverged 1
-        }
-        if {$is_diverged && [llength [$block getInsts]] <= 500} {
-          utl::warn GPL 140 "RePlAce divergence detected. Rerunning RePlAce up to BiCGSTAB due to a design size <= 500 instances. This warning can be avoided by using the '-skip_nesterov_place' flag"
-          gpl::replace_reset_cmd
-          gpl::replace_initial_place_cmd
-        }
+        gpl::replace_nesterov_place_cmd
       }
     }
     gpl::replace_reset_cmd

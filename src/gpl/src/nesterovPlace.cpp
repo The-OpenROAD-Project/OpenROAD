@@ -79,7 +79,6 @@ NesterovPlaceVars::reset() {
   initialPrevCoordiUpdateCoef = 100;
   referenceHpwl = 446000000;
   routabilityCheckOverflow = 0.20;
-  smallDesignInstCnt = 500;
   maxRecursionWlCoef = 10;
   maxRecursionInitSLPCoef = 10;
   timingDrivenMode = true;
@@ -248,8 +247,7 @@ void NesterovPlace::init() {
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
-  if( pb_->insts().size() < npVars_.smallDesignInstCnt 
-      && isnan(stepLength_) || isinf(stepLength_)  
+  if( isnan(stepLength_) || isinf(stepLength_)  
       && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef ) {
     npVars_.initialPrevCoordiUpdateCoef *= 10;
     debugPrint(log_, GPL, "replace", 3, 
@@ -746,12 +744,8 @@ NesterovPlace::doNesterovPlace(int start_iter) {
       }
     }
 
-    // 1. to non-trivial design --> assign minimum 50 iterations.
-    // 2. to trivial design --> not assign minimum iterations.
-    if( pb_->insts().size() >= npVars_.smallDesignInstCnt 
-          && iter >= 50 && sumOverflow_ <= npVars_.targetOverflow ||
-        pb_->insts().size() < npVars_.smallDesignInstCnt 
-          && sumOverflow_ <= npVars_.targetOverflow ) {
+    // if it reached target overflow
+    if( sumOverflow_ <= npVars_.targetOverflow ) {
        log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
        break;
     }
