@@ -427,7 +427,6 @@ LayoutViewer::LayoutViewer(
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
-  resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
 }
@@ -452,7 +451,7 @@ void LayoutViewer::setLogger(utl::Logger* logger)
   logger_ = logger;
 }
 
-dbBlock* LayoutViewer::getBlock()
+dbBlock* LayoutViewer::getBlock() const
 {
   if (!db_) {
     return nullptr;
@@ -1195,19 +1194,26 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
 void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
+  fullRepaint();
+
+  if (hasDesign()) {
+    updateScaleAndCentering(event->size());
+  }
+}
+
+void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
+{
   dbBlock* block = getBlock();
   if (block != nullptr) {
-    const QSize new_layout_size = event->size();
-
     const odb::Rect block_bounds = getBounds(block);
 
     // compute new pixels_per_dbu_
-    pixels_per_dbu_ = computePixelsPerDBU(new_layout_size, getPaddedRect(block_bounds));
+    pixels_per_dbu_ = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
 
     // compute new centering shift
     // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
-    const QSize new_area = new_layout_size.expandedTo(scroller_->size());
+    const QSize new_area = new_size.expandedTo(scroller_->size());
     centering_shift_ = QPoint(
         (new_area.width()  - block_bounds.dx() * pixels_per_dbu_) / 2,
         (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
@@ -2232,11 +2238,6 @@ void LayoutViewer::updateBlockPainting(const QRect& area, odb::dbBlock* block)
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
-  dbBlock* block = getBlock();
-  if (!block) {
-    return;
-  }
-
   QPainter painter(this);
   painter.setRenderHints(QPainter::Antialiasing);
 
@@ -2245,12 +2246,14 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.setBrush(background_);
   painter.drawRect(event->rect());
 
-  if (!design_loaded_) {
+  if (!hasDesign()) {
     return;
   }
 
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
+
+  dbBlock* block = getBlock();
 
   if (!search_init_) {
     search_.init(block);
@@ -2527,6 +2530,7 @@ void LayoutViewer::designLoaded(dbBlock* block)
 {
   design_loaded_ = true;
   addOwner(block);  // register as a callback object
+  updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
 
@@ -2542,8 +2546,8 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 
 void LayoutViewer::viewportUpdated()
 {
-  odb::dbBlock* block = getBlock();
-  if (block == nullptr) {
+  if (!hasDesign()) {
+    resize(scroller_->maximumViewportSize());
     return;
   }
 
@@ -2552,7 +2556,7 @@ void LayoutViewer::viewportUpdated()
   // determine new fit_pixels_per_dbu_ based on current viewport size
   fit_pixels_per_dbu_ = computePixelsPerDBU(
       scroller_->maximumViewportSize(),
-      getPaddedRect(getBounds(block)));
+      getPaddedRect(getBounds(getBlock())));
 
   // when zoomed in don't update size,
   // else update size of window
@@ -2767,6 +2771,25 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
   }
 }
 
+bool LayoutViewer::hasDesign() const
+{
+  if (!design_loaded_) {
+    return false;
+  }
+
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  const Rect bounds = getBounds(block);
+  if (bounds.dx() == 0 || bounds.dy() == 0) {
+    return false;
+  }
+
+  return true;
+}
+
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
     : QScrollArea(parent), viewer_(viewer)
@@ -2924,6 +2947,7 @@ void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
 {
   // This happens when initialize_floorplan is run and it make sense
   // to fit as current zoom will be on a zero sized block.
+  updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
 
