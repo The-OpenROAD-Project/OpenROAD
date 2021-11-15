@@ -80,6 +80,8 @@ NesterovPlaceVars::reset() {
   referenceHpwl = 446000000;
   routabilityCheckOverflow = 0.20;
   smallDesignInstCnt = 500;
+  maxRecursionWlCoef = 10;
+  maxRecursionInitSLPCoef = 10;
   timingDrivenMode = true;
   routabilityDrivenMode = true;
   debug = false;
@@ -103,7 +105,9 @@ NesterovPlace::NesterovPlace()
   prevHpwl_(0),
   isDiverged_(false),
   isRoutabilityNeed_(true),
-  divergeCode_(0) {}
+  divergeCode_(0),
+  recursionCntWlCoef_(0),
+  recursionCntInitSLPCoef_(0) {}
 
 NesterovPlace::NesterovPlace(
     NesterovPlaceVars npVars,
@@ -244,11 +248,14 @@ void NesterovPlace::init() {
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
-  if( pb_->insts().size() < npVars_.smallDesignInstCnt && isnan(stepLength_) ) {
+  if( pb_->insts().size() < npVars_.smallDesignInstCnt 
+      && isnan(stepLength_) 
+      && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef ) {
     npVars_.initialPrevCoordiUpdateCoef *= 10;
     debugPrint(log_, GPL, "replace", 3, 
-        "npinit: steplength = 0 detected. Rerunning Nesterov::init() with initPrevSLPCoef {:g}",
-        npVars_.initialPrevCoordiUpdateCoef);
+      "npinit: steplength = 0 detected. Rerunning Nesterov::init() with initPrevSLPCoef {:g}",
+      npVars_.initialPrevCoordiUpdateCoef);
+    recursionCntInitSLPCoef_++;
     init();
   }
 
@@ -316,6 +323,9 @@ void NesterovPlace::reset() {
   
   divergeMsg_ = "";
   divergeCode_ = 0;
+
+  recursionCntWlCoef_ = 0;
+  recursionCntInitSLPCoef_ = 0;
 }
 
 // to execute following function,
@@ -387,7 +397,8 @@ NesterovPlace::updateGradients(
   debugPrint(log_, GPL, "replace", 3, "updateGrad:  GradSum: {:g}", gradSum);
 
   // sometimes wirelength gradient is zero when design is too small
-  if( wireLengthGradSum_ == 0 ) {
+  if( wireLengthGradSum_ == 0 
+      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -399,6 +410,7 @@ NesterovPlace::updateGradients(
     nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
     // recursive call again with smaller wirelength coef
+    recursionCntWlCoef_++;
     updateGradients(sumGrads, wireLengthGrads, densityGrads);
   }
   

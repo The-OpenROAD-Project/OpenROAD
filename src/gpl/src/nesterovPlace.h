@@ -71,6 +71,8 @@ class NesterovPlaceVars {
   int routabilityMaxInflationIter;
   
   int smallDesignInstCnt;
+  int maxRecursionWlCoef;
+  int maxRecursionInitSLPCoef;
 
   bool timingDrivenMode;
   bool routabilityDrivenMode;
@@ -191,6 +193,9 @@ private:
 
   std::string divergeMsg_;
   int divergeCode_; 
+
+  int recursionCntWlCoef_;
+  int recursionCntInitSLPCoef_;
 
   void cutFillerCoordinates();
 
