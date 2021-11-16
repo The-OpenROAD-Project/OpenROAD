@@ -94,7 +94,6 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
-      unsigned pointCounter = 0;
       for (long int i = 0; i < cluster.size(); i++) {
         const std::pair<double, double>& point = points[cluster[i]];
         Point<double> mapPoint(point.first, point.second);
@@ -105,8 +104,8 @@ void HTreeBuilder::preSinkClustering(
         }
         clusterClockInsts.push_back(_mapLocationToSink[mapPoint]);
         // clock inst needs to be added to the new subnet
-        pointCounter++;
       }
+      unsigned pointCounter = cluster.size();
       float normCenterX = (xSum / (float) pointCounter);
       float normCenterY = (ySum / (float) pointCounter);
       int centerX = normCenterX * _wireSegmentUnit;  // geometric center of cluster

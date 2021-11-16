@@ -73,6 +73,7 @@ clustering::clustering(const std::vector<std::pair<float, float>>& sinks,
   }
   srand(56);
 
+  segmentLength = 0.0;
   branchingPoint = {xBranch, yBranch};
   _logger = logger;
 }
