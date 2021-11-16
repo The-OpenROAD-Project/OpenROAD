@@ -465,7 +465,6 @@ const std::string MainWindow::addToolbarButton(const std::string& name,
   } else {
     if (buttons_.count(name) != 0) {
       logger_->error(utl::GUI, 22, "Button {} already defined.", name);
-      removeToolbarButton(name);
     }
     key = name;
   }
@@ -513,36 +512,25 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
   QString compare_name = cleanupText(top_name);
   path.pop_front();
 
+  QList<QAction*> actions;
   if (parent == nullptr) {
-    // loop through menu bar
-    QMenu* menu = nullptr;
-    auto* menubar = menuBar();
-    for (auto* action : menubar->actions()) {
-      if (cleanupText(action->text()) == compare_name) {
-        menu = action->menu();
-      }
-    }
-
-    if (menu == nullptr) {
-      menu = menubar->addMenu(top_name);
-    }
-
-    return findMenu(path, menu);
+    actions = menuBar()->actions();
   } else {
-    // loop through parent
-    QMenu* menu = nullptr;
-    for (auto* action : parent->actions()) {
-      if (cleanupText(action->text()) == compare_name) {
-        menu = action->menu();
-      }
-    }
-
-    if (menu == nullptr) {
-      menu = parent->addMenu(top_name);
-    }
-
-    return findMenu(path, menu);
+    actions = parent->actions();
   }
+
+  QMenu* menu = nullptr;
+  for (auto* action : actions) {
+    if (cleanupText(action->text()) == compare_name) {
+      menu = action->menu();
+    }
+  }
+
+  if (menu == nullptr) {
+    menu = parent->addMenu(top_name);
+  }
+
+  return findMenu(path, menu);
 }
 
 const std::string MainWindow::addMenuItem(const std::string& name,
@@ -564,14 +552,13 @@ const std::string MainWindow::addMenuItem(const std::string& name,
   } else {
     if (menu_actions_.count(name) != 0) {
       logger_->error(utl::GUI, 25, "Menu action {} already defined.", name);
-      removeMenuItem(name);
     }
     key = name;
   }
 
   QStringList path_parts;
   for (const auto& part : path.split("/")) {
-    QString path_part = part.trimmed();
+    const QString path_part = part.trimmed();
     if (!path_part.isEmpty()) {
       path_parts.append(path_part);
     }
