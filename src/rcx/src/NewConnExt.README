@@ -1,5 +1,15 @@
 Author: Dimitris Fotakis -- dimitris@nefelus.com
+Outline of New Connectivity Extractor
 Doc Version: 1.0.0 - 11/14/21
+
+2 global flags on object extMain and set on ext.cc allow the following modes: (_newConnExt, _skip_order_wires)
+- Use new Connectivity Extractor Only -- DEFAULT
+- Use order_wires Only
+- Use both, order_wires first and New on disconnected nets Only
+
+
+TODO: add Tcl level flags
+
 
 extDebugNet::checkNet -- extDebugConn.cpp
 
