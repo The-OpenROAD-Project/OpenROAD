@@ -49,3 +49,7 @@ extDebugNet::checkNet -- extDebugConn.cpp
 		extCapNodeHash::traverse: depth first traversal to mark all terms
 			Counts and reports if any, all non marked terms
 
+	getInitialRCvalues: Calculates initial Resistance and Capacitance values for a Wire and Via
+	------------------
+		Called from netRC.cpp:2720
+		
