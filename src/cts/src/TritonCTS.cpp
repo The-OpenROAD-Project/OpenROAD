@@ -601,7 +601,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     if (outputPin == nullptr) {
       outputPinFound = false;
     }
-    odb::dbITerm::connect(outputPin, clkSubNet);
+    if (outputPinFound) {
+      odb::dbITerm::connect(outputPin, clkSubNet);
+    }
 
     if (subNet.getNumSinks() == 0) {
       inputPinFound = false;
@@ -622,7 +624,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
           inputPinFound = false;
         }
       }
-      odb::dbITerm::connect(inputPin, clkSubNet);
+      if (inputPinFound) {
+        odb::dbITerm::connect(inputPin, clkSubNet);
+      }
     });
 
     if (leafLevelNet) {
