@@ -67,7 +67,7 @@ using odb::Point;
 class dbNetwork : public ConcreteNetwork
 {
 public:
-  dbNetwork(Logger *logger);
+  dbNetwork();
   virtual ~dbNetwork();
   void init(dbDatabase *db,
             Logger *logger);

@@ -280,7 +280,7 @@ dbSta::makeReport()
 void
 dbSta::makeNetwork()
 {
-  db_network_ = new class dbNetwork(logger_);
+  db_network_ = new class dbNetwork();
   network_ = db_network_;
 }
 
