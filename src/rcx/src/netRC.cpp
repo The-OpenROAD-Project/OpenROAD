@@ -2655,7 +2655,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       powerRCGen();
       return 1;
     }
-    bool newConnExt= true;
+    bool newConnExt= this->_newConnExt;
     extDebugNet *dbgNet= new extDebugNet(NULL, _block);
     extDebugNet *dbgNet1= new extDebugNet(NULL, _block);
     extDebugNet *opens= new extDebugNet(NULL, _block);
@@ -2686,7 +2686,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
       dbSet<dbITerm> iterms= net->getITerms();
       dbSet<dbBTerm> bterms = net->getBTerms();
 
-      if (!newConnExt) {
+      if (!newConnExt) { // OLD order_wires flow
         cnt += makeNetRCsegs(net);
 
         uint tt;
@@ -2700,50 +2700,34 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag, const char* cmp_file,
 
       //if (net->isDisconnected() && _debug_net_id==netId){
       //if (net->isDisconnected() && termCnt<100){
-      if (net->isDisconnected()){
+      if (this->_skip_order_wires || (!this->_skip_order_wires && net->isDisconnected()) ){
         orderWireWarnCnt ++;
         dbgNet->setNet(net);
       
-        if (termCnt<100) {
-            //dbgNet->checkNet(_debug_net_id);
-            // if (netId==4963)
-           
-            if (netId==_debug_net_id)
+        if (netId==_debug_net_id)
                   dbgNet->_debug= true;
-            if (dbgNet->checkNet(0) == 0) {
+        if (dbgNet->checkNet(0) == 0) {
                 orderWireFixedCnt ++;
                 dbgNet->netStats(openNetsFP, "--------------- Disconnected Net FIXED:");
-            } else {
+        } else {
                 dbgNet->netStats(openNetsFP, "--------------- Disconnected Net NOT FIXED:");
-            }
-            getInitialRCvalues(net);
-            if (netId==_debug_net_id)
+        }
+        getInitialRCvalues(net);
+        if (netId==_debug_net_id)
                 dbgNet->_debug= false;
             // dbgNet->checkNet(0);
-        }
+      
         continue;
       } else {
-/* HERE 
-      opens->setNet(net);
-      disconnectedTermCout += opens->CheckConnectivity(verbose);
 
+          cnt += makeNetRCsegs(net);
 
-
-      dbgNet->setNet(net);
-      dbgNet->checkNet(_debug_net_id);
-*/
-      // if (_debug_net_id!=netId)
-
-      cnt += makeNetRCsegs(net);
-
-      bool verbose1= false;
-      dbgNet1->setNet(net);
-      if (dbgNet1->CheckConnectivity(verbose1)==0)
-        orderWireConnCnt ++;
-      else 
-        orderWireFailedConnCnt ++;
-      // dbgNet1->setNet(net);
-      // dbgNet1->checkNet(_debug_net_id);
+          bool verbose1= false;
+          dbgNet1->setNet(net);
+          if (dbgNet1->CheckConnectivity(verbose1)==0)
+            orderWireConnCnt ++;
+          else 
+            orderWireFailedConnCnt ++;
       }
 
     // HERE opens->setNet(net);

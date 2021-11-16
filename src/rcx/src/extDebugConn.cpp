@@ -1886,19 +1886,14 @@ uint extDebugNet::checkNet(int debug_net_id)
       cnt++;
     }
   }
-  //
-  _nodeMap->init(_net, this, _connFP);
-  if (_debug)
-    _nodeMap->print(_connFP);
-  _nodeMap->_debug = _debug;
-  return _nodeMap->traverse();
+  return CheckConnectivity(true);
 }
 uint extDebugNet::CheckConnectivity(bool verbose)
 {
   if (_net->getTermCount() > 2)
     return 0;
   _nodeMap->init(_net, this, _connFP);
-  if (verbose)
+  if (_debug)
     _nodeMap->print(_connFP);
   uint cnt = _nodeMap->traverse();
   return cnt;

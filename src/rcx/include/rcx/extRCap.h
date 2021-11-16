@@ -1992,6 +1992,8 @@ class extMain
 
  public:
   bool _lef_res;
+  bool _newConnExt;
+  bool _skip_order_wires;
 
   void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
