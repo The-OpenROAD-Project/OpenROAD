@@ -481,8 +481,6 @@ void extDebugNet::getRects()
       "------------------------------\n");
   if (_useBinaryArrays)
     makeBinaryArrays();
-
-  termsViasWiresWires();
 }
 void extDebugNet::vias2vias2wires2terms2wires()
 {
@@ -1846,13 +1844,14 @@ uint extDebugNet::checkNet(int debug_net_id)
   }
   if (_debug) {
     _net->printWnP("net");
-    checkConnOrdered(_net, verbose);
+    checkConnOrdered(_net, verbose); // order_wire
   }
 
   printShapes(false);
   printShapes(true);
 
   getRects();
+  termsViasWiresWires();
   makeRsegs(_shapes);
 
   for (uint ii = 0; ii < _shapes->getCnt(); ii++) {
@@ -1887,6 +1886,7 @@ uint extDebugNet::checkNet(int debug_net_id)
       cnt++;
     }
   }
+  //
   _nodeMap->init(_net, this, _connFP);
   if (_debug)
     _nodeMap->print(_connFP);

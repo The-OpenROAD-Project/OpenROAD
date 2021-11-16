@@ -1,0 +1,51 @@
+Author: Dimitris Fotakis -- dimitris@nefelus.com
+Doc Version: 1.0.0 - 11/14/21
+
+extDebugNet::checkNet -- extDebugConn.cpp
+
+	This is the main function of the New Connectivity Extractor
+	It is invoked for every Signal net in file netRC.cpp:2714
+	Note: if _debug of extDebugNet is set to true, many print statements are enabled to help debugging
+
+	Here are the main Methods called sequentially
+	
+	getRects: Read vias and wires from odb into local arrays
+	--------
+
+		Read all dbShape Objects from dbnet/dbWire object into Arrays of extListWire
+		Organized per Routing Level and Wire/Via
+		Create Binary Search Arrays for faster Rect Overlaps
+		Note 1: extListWire and array objects are all temporary objects and are recycled net after net 
+			to optimize memory comsumption and fragmentation
+		Note 2: Binary Search Trees and Arraus are used to optimize random rect overlap
+
+	termsViasWiresWires: Perform Rect Overlap Operations between term shapes, Vias and Wires
+	------------------
+		
+		The Following functions are called in Sequence; 
+		Sequence matters and will affect cap node numbers as they appear in SPEF
+		These functions iterate through metal levels lowest to highest and perform Rect Overlaps.
+		For every via and wire there is extListWire object that is annotated with _src and _dst Node numbers;
+		The Node Numbers implicitly establish connectivity between Rects at their ends.
+
+		connectIterms: Connectivity between Instance Term Shapes and Vias or Wires
+  		connectBterms: Connectivity between Block Term Shapes and Vias or Wires
+		intersectVias: Connectivity between Stacked Vias
+		intersectRects_top: Connectivity between Vias and Wires by top via metal
+  		intersectRects_bottom: Connectivity between Vias and Wires by Bottom via metal
+		intersectRect2Rect_binary/intersectRect2Rect: Connectivity between Wires
+
+	makeRsegs: Create odb dbRSeg abd dpCapNode Objects 
+	---------
+		For each extListWire object, a dbRSeg object is created that points to the dbShape (odb).
+		For each Node Number in extListWire, a dbCapNode object is create
+		dbRSeg objects point to dbCapNode objects and thus establish explicit Connectivity.
+		The extListWire Node Numbers appear in the SPEF representation of the net
+
+	CheckConnectivity: Checks existence of RC path between all terms on the net
+	-----------------
+		Main functions that are called:
+		extCapNodeHash::init: For each dbRSeg a extListNode object is created.
+		extCapNodeHash::traverse: depth first traversal to mark all terms
+			Counts and reports if any, all non marked terms
+
