@@ -274,7 +274,7 @@ private:
                    int y,
                    int x_end,
                    int y_end) const;
-  bool shiftMove(Cell *cell);
+  void shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell,
                Point grid_pt);

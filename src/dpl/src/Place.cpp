@@ -583,7 +583,7 @@ Opendp::mapMove(Cell *cell,
   return false;
 }
 
-bool
+void
 Opendp::shiftMove(Cell *cell)
 {
   Point grid_pt = legalGridPt(cell, true);
@@ -612,23 +612,18 @@ Opendp::shiftMove(Cell *cell)
   }
 
   // place target cell
-  if (!mapMove(cell)) {
-    logger_->warn(DPL, 18, "detailed placement failed on {}.",
-                  cell->name());
-    return false;
-  }
+  if (!mapMove(cell))
+    logger_->error(DPL, 18, "detailed placement failed on {}.",
+                   cell->name());
 
   // re-place erased cells
   for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      if (!mapMove(around_cell)) {
-        logger_->warn(DPL, 19, "detailed placement failed on {}",
-                      around_cell->name());
-        return false;
-      }
+      if (!mapMove(around_cell))
+        logger_->error(DPL, 19, "detailed placement failed on {}",
+                       around_cell->name());
     }
   }
-  return true;
 }
 
 bool
