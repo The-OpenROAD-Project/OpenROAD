@@ -370,6 +370,29 @@ void remove_toolbar_button(const char* name)
   gui->removeToolbarButton(name);
 }
 
+const std::string create_menu_item(const char* name, 
+                                   const char* path, 
+                                   const char* text, 
+                                   const char* script, 
+                                   const char* shortcut, 
+                                   bool echo)
+{
+  if (!check_gui("create_menu_item")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  return gui->addMenuItem(name, path, text, script, shortcut, echo);
+}
+
+void remove_menu_item(const char* name)
+{
+  if (!check_gui("remove_menu_item")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->removeMenuItem(name);
+}
+
 const std::string input_dialog(const char* title, const char* question)
 {
   if (!check_gui("input_dialog")) {

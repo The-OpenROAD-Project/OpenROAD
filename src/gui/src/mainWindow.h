@@ -198,6 +198,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // add/remove menu actions
+  const std::string addMenuItem(const std::string& name,
+                                const QString& path,
+                                const QString& text,
+                                const QString& script,
+                                const QString& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const QString& title, const QString& question);
 
@@ -218,6 +227,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void createActions();
   void createToolbars();
   void createStatusBar();
+
+  QMenu* findMenu(QStringList& path, QMenu* parent = nullptr);
+  void removeMenu(QMenu* menu);
 
   odb::dbBlock* getBlock();
 
@@ -265,6 +277,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;
+
+  // created menu actions
+  std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
 };
 
 }  // namespace gui
