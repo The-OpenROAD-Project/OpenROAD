@@ -41,6 +41,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
+#include <stdio.h>
 
 using namespace boost::asio;
 using ip::tcp;
@@ -48,15 +49,20 @@ using ip::tcp;
 using namespace std;
 using namespace fr;
 
+#define MAX_TRIALS 5
+
 bool send(tcp::socket& socket, const std::string& msg)
 {
-  boost::system::error_code error;
-  boost::asio::write(socket, boost::asio::buffer(msg), error);
-  if (!error) {
-    return true;
-  } else {
-    return false;
+  int trials = 0;
+  while (trials < MAX_TRIALS)
+  {
+    boost::system::error_code error;
+    boost::asio::write(socket, boost::asio::buffer(msg), error);
+    if (!error) {
+      return true;
+    }
   }
+  return false;  
 }
 bool read(tcp::socket& socket, std::string& dataStr)
 {
@@ -79,28 +85,30 @@ enum class SerializationType
   WRITE
 };
 
-static void serialize_worker(SerializationType type,
+static bool serialize_worker(SerializationType type,
                              FlexDRWorker* worker,
                              const std::string& name)
 {
-  // #pragma omp critical
-  {
-    if (type == SerializationType::READ) {
-      std::ifstream file(name);
-      InputArchive ar(file);
-      register_types(ar);
-      serialize_globals(ar);
-      ar >> *worker;
-      file.close();
-    } else {
-      std::ofstream file(name);
-      OutputArchive ar(file);
-      register_types(ar);
-      serialize_globals(ar);
-      ar << *worker;
-      file.close();
-    }
+  if (type == SerializationType::READ) {
+    std::ifstream file(name);
+    if(!file.good())
+      return false;
+    InputArchive ar(file);
+    register_types(ar);
+    serialize_globals(ar);
+    ar >> *worker;
+    file.close();
+  } else {
+    std::ofstream file(name);
+    if(!file.good())
+      return false;
+    OutputArchive ar(file);
+    register_types(ar);
+    serialize_globals(ar);
+    ar << *worker;
+    file.close();
   }
+  return true;
 }
 
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
@@ -337,20 +345,38 @@ void FlexDRWorker::distributedMain(frDesign* design)
                                  getGCellBox().left(),
                                  getGCellBox().bottom());
   serialize_worker(SerializationType::WRITE, this, name);
-  boost::asio::io_service io_service;
-  tcp::socket socket(io_service);
-  socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(dist_ip_),
-                               dist_port_));
-  // logger_->info(DRT, 501, "Worker {}", name);
-  send(socket, name + " \n");
-  std::string result;
-  if (read(socket, result)) {
-    socket.close();
-    serialize_worker(SerializationType::READ, this, result);
+  int trials = 0;
+  while (trials < MAX_TRIALS)
+  {
+    trials++;
+    bool ok;
+    boost::asio::io_service io_service;
+    tcp::socket socket(io_service);
+    socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(dist_ip_),
+                                dist_port_));
+    ok = send(socket, name + " \n");
+    if(!ok) {
+      logger_->warn(DRT, 505, "Write Error {}", name);
+      continue;
+    }
+    std::string result;
+    ok = read(socket, result);
+    if(!ok) {
+      logger_->warn(DRT, 505, "Read Error {}", name);
+      continue;
+    }
+    if(socket.is_open())
+      socket.close();
+    
+    ok = serialize_worker(SerializationType::READ, this, result);
+    if(!ok)
+      continue;
+    std::remove(name.c_str());
+    std::remove(result.c_str());
     updateDesign(design);
-  } else {
-    logger_->error(utl::DRT, 500, "NO MATCH {} : {}", result, name);
+    return;
   }
+  logger_->error(utl::DRT, 500, "Worker {} failed", name);  
 }
 
 template <class Archive>

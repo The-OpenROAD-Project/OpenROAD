@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include "utl/Logger.h"
+#include <unistd.h>
 
 #include "triton_route/TritonRoute.h"
 using namespace boost::asio;
@@ -43,14 +44,23 @@ void WorkerConHandler::handle_read(boost::system::error_code const& err,
 {
   if (!err) {
     std::istream stream(&in_packet_);
+    boost::system::error_code error;
     std::string data;
     stream >> data;
+    if(access( data.c_str(), F_OK ) == -1)
+    {
+      logger_->warn(utl::DST, 10, "Worker file {} not found from port {}", data, sock.remote_endpoint().port());
+      boost::asio::write(sock, boost::asio::buffer("0"), error);
+      sock.close();
+      return;
+    }
     triton_route::TritonRoute* router = new triton_route::TritonRoute();
     router->init(db_, logger_);
+    
     logger_->info(utl::DST, 2, "running worker {} from port {}", data, sock.remote_endpoint().port());
     data = router->runDRWorker(data.c_str());
     logger_->info(utl::DST, 3, "worker {} is done", data);
-    boost::system::error_code error;
+    
     boost::asio::write(sock, boost::asio::buffer(data), error);
   } else {
     logger_->warn(utl::DST, 4, "Routing conhandler failed with message: {}", err.message());
