@@ -508,8 +508,8 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
     return text_cpy;
   };
 
-  QString top_name = path[0];
-  QString compare_name = cleanupText(top_name);
+  const QString top_name = path[0];
+  const QString compare_name = cleanupText(top_name);
   path.pop_front();
 
   QList<QAction*> actions;
@@ -527,7 +527,11 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
   }
 
   if (menu == nullptr) {
-    menu = parent->addMenu(top_name);
+    if (parent == nullptr) {
+      menu = menuBar()->addMenu(top_name);
+    } else {
+      menu = parent->addMenu(top_name);
+    }
   }
 
   return findMenu(path, menu);
