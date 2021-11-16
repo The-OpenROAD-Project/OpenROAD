@@ -119,7 +119,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                QWidget* parent = nullptr);
   ~LayoutViewer();
 
-  void setDb(odb::dbDatabase* db);
+  void setBlock(odb::dbBlock* block);
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -261,17 +261,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
-  odb::dbBlock* getBlock();
   void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
-                 odb::dbBlock* block,
                  int depth);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
   void drawTracks(odb::dbTechLayer* layer,
-                  odb::dbBlock* block,
                   QPainter* painter,
                   const odb::Rect& bounds);
 
@@ -287,17 +284,15 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawObstructions(odb::dbTechLayer* layer,
                         QPainter* painter,
                         const odb::Rect& bounds);
-  void drawRows(odb::dbBlock* block,
-                QPainter* painter,
+  void drawRows(QPainter* painter,
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   void drawPinMarkers(Painter& painter,
-                      const odb::Rect& bounds,
-                      odb::dbBlock* block);
+                      const odb::Rect& bounds);
   void drawRulers(Painter& painter);
-  void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
+  void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
   Selected selectAtPoint(odb::Point pt_dbu);
@@ -305,7 +300,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
+  odb::Rect getBounds() const;
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+
+  bool hasDesign() const;
 
   odb::Point getVisibleCenter();
 
@@ -335,9 +333,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::Point findNextRulerPoint(const odb::Point& mouse);
 
   // build a cache of the layout to speed up future repainting
-  void updateBlockPainting(const QRect& area, odb::dbBlock* block);
+  void updateBlockPainting(const QRect& area);
 
-  odb::dbDatabase* db_;
+  void updateScaleAndCentering(const QSize& new_size);
+
+  odb::dbBlock* block_;
   Options* options_;
   ScriptWidget* output_widget_;
   const SelectionSet& selected_;
@@ -385,7 +385,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::unique_ptr<QPixmap> block_drawing_;
 
   utl::Logger* logger_;
-  bool design_loaded_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

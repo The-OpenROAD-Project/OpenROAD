@@ -69,7 +69,8 @@ class dbNetwork : public ConcreteNetwork
 public:
   dbNetwork(Logger *logger);
   virtual ~dbNetwork();
-  void setDb(dbDatabase *db);
+  void init(dbDatabase *db,
+            Logger *logger);
   void setBlock(dbBlock *block);
   virtual void clear();
 

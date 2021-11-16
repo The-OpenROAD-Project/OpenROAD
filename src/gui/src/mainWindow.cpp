@@ -312,7 +312,11 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   // set database and pass along
   db_ = db;
   controls_->setDb(db_);
-  viewer_->setDb(db_);
+
+  auto* chip = db->getChip();
+  if (chip != nullptr) {
+    viewer_->setBlock(chip->getBlock());
+  }
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -494,6 +498,136 @@ void MainWindow::removeToolbarButton(const std::string& name)
 
   view_tool_bar_->removeAction(buttons_[name].get());
   buttons_.erase(name);
+}
+
+QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
+{
+  if (path.isEmpty()) {
+    return parent;
+  }
+
+  auto cleanupText = [](const QString& text) -> QString {
+    QString text_cpy = text;
+    text_cpy.replace(QRegExp("&(?!&)"), ""); // remove single &, but keep &&
+    return text_cpy;
+  };
+
+  const QString top_name = path[0];
+  const QString compare_name = cleanupText(top_name);
+  path.pop_front();
+
+  QList<QAction*> actions;
+  if (parent == nullptr) {
+    actions = menuBar()->actions();
+  } else {
+    actions = parent->actions();
+  }
+
+  QMenu* menu = nullptr;
+  for (auto* action : actions) {
+    if (cleanupText(action->text()) == compare_name) {
+      menu = action->menu();
+    }
+  }
+
+  if (menu == nullptr) {
+    if (parent == nullptr) {
+      menu = menuBar()->addMenu(top_name);
+    } else {
+      menu = parent->addMenu(top_name);
+    }
+  }
+
+  return findMenu(path, menu);
+}
+
+const std::string MainWindow::addMenuItem(const std::string& name,
+                                          const QString& path,
+                                          const QString& text,
+                                          const QString& script,
+                                          const QString& shortcut,
+                                          bool echo)
+{
+  // ensure key is unique
+  std::string key;
+  if (name.empty()) {
+    int key_idx = 0;
+    do {
+      // default to "actionX" naming
+      key = "action" + std::to_string(key_idx);
+      key_idx++;
+    } while (menu_actions_.count(key) != 0);
+  } else {
+    if (menu_actions_.count(name) != 0) {
+      logger_->error(utl::GUI, 25, "Menu action {} already defined.", name);
+    }
+    key = name;
+  }
+
+  QStringList path_parts;
+  for (const auto& part : path.split("/")) {
+    const QString path_part = part.trimmed();
+    if (!path_part.isEmpty()) {
+      path_parts.append(path_part);
+    }
+  }
+  if (path_parts.isEmpty()) {
+    path_parts.append("&Custom Scripts");
+  }
+  QMenu* menu = findMenu(path_parts);
+
+  auto action = menu->addAction(text);
+  if (!shortcut.isEmpty()) {
+    action->setShortcut(shortcut);
+  }
+  // save the command so it can be restored later
+  QString cmd = "gui::create_menu_item ";
+  cmd += "{" + QString::fromStdString(name) + "} ";
+  cmd += "{" + path_parts.join("/") + "} ";
+  cmd += "{" + text + "} ";
+  cmd += "{" + script + "} ";
+  cmd += "{" + shortcut + "} ";
+  cmd += echo ? "true" : "false";
+  action->setData(cmd);
+
+  connect(action, &QAction::triggered, [script, echo, this]() {
+    script_->executeCommand(script, echo);
+  });
+
+  menu_actions_[key] = std::unique_ptr<QAction>(action);
+
+  return key;
+}
+
+void MainWindow::removeMenu(QMenu* menu)
+{
+  if (!menu->isEmpty()) {
+    return;
+  }
+
+  auto* parent = menu->parent();
+  if (parent != menuBar()) {
+    QMenu* parent_menu = qobject_cast<QMenu*>(parent);
+    parent_menu->removeAction(menu->menuAction());
+    removeMenu(parent_menu);
+  } else {
+    menuBar()->removeAction(menu->menuAction());
+  }
+}
+
+void MainWindow::removeMenuItem(const std::string& name)
+{
+  if (menu_actions_.count(name) == 0) {
+    return;
+  }
+
+  auto* action = menu_actions_[name].get();
+  QMenu* menu = qobject_cast<QMenu*>(action->parent());
+  menu->removeAction(action);
+
+  removeMenu(menu);
+
+  menu_actions_.erase(name);
 }
 
 const std::string MainWindow::requestUserInput(const QString& title, const QString& question)
@@ -931,6 +1065,10 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
     if (cmd.isValid()) {
       cmds.push_back(cmd.toString().toStdString());
     }
+  }
+  // Save menu actions
+  for (const auto& [name, action] : menu_actions_) {
+    cmds.push_back(action->data().toString().toStdString());
   }
   // save display settings
   controls_->restoreTclCommands(cmds);

@@ -275,7 +275,7 @@ class Clock
   std::deque<SubNet> _subNets;
   std::unordered_map<std::string, ClockInst*> _mapNameToInst;
 
-  odb::dbNet* _netObj;
+  odb::dbNet* _netObj = nullptr;
   odb::dbObject* _driverPin = nullptr;
 
   unsigned _numLevels = 0;

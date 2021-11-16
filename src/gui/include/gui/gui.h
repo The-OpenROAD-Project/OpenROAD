@@ -516,6 +516,15 @@ class Gui
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // adding custom menu items to menu bar
+  const std::string addMenuItem(const std::string& name,
+                                const std::string& path,
+                                const std::string& text,
+                                const std::string& script,
+                                const std::string& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 

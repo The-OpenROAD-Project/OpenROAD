@@ -71,7 +71,9 @@ TechChar::TechChar(CtsOptions* options,
   _openSta(sta),
   _openStaChar(nullptr),
   _db_network(db_network),
-  _logger(logger)
+  _logger(logger),
+  _resPerDBU(0.0),
+  _capPerDBU(0.0)
 {
 }
 

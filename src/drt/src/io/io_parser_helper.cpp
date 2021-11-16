@@ -633,50 +633,6 @@ void io::Parser::initDefaultVias_N16(const string& node)
   }
 }
 
-void io::Parser::initConstraints()
-{
-  for (auto& layer : tech->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
-      auto viaDef = layer->getDefaultViaDef();
-      if (viaDef == nullptr)
-        continue;
-      frVia via(viaDef);
-      Rect tmpBx;
-      via.getCutBBox(tmpBx);
-      frString cutClass1 = "";
-      auto cutClassIdx1 = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
-      if (cutClassIdx1 >= 0)
-        cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
-      if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
-        auto con = layer->getLef58DiffNetCutSpcTblConstraint();
-        auto dbRule = con->getODBRule();
-        con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass1));
-        con->setDefaultCenterToCenter(
-            dbRule->isCenterToCenter(cutClass1, cutClass1)
-            || dbRule->isCenterAndEdge(cutClass1, cutClass1));
-      }
-      if (layer->hasLef58DefaultInterCutSpcTblConstraint()) {
-        auto con = layer->getLef58DefaultInterCutSpcTblConstraint();
-        auto dbRule = con->getODBRule();
-        auto secondLayer = tech->getLayer(dbRule->getSecondLayer()->getName());
-        viaDef = secondLayer->getDefaultViaDef();
-        if (viaDef != nullptr) {
-          via.getCutBBox(tmpBx);
-          frString cutClass2 = "";
-          auto cutClassIdx2
-              = secondLayer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
-          if (cutClassIdx2 >= 0)
-            cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
-          con->setDefaultSpacing(dbRule->getMaxSpacing(cutClass1, cutClass2));
-          con->setDefaultCenterToCenter(
-              dbRule->isCenterToCenter(cutClass1, cutClass2)
-              || dbRule->isCenterAndEdge(cutClass1, cutClass2));
-        }
-      }
-    }
-  }
-}
-
 void io::Parser::postProcess()
 {
   initDefaultVias();
@@ -689,7 +645,6 @@ void io::Parser::postProcess()
   }
   initCutLayerWidth();
   initConstraintLayerIdx();
-  initConstraints();
   tech->printDefaultVias(logger);
 
   instAnalysis();
