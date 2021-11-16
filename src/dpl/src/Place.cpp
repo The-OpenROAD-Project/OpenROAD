@@ -982,7 +982,7 @@ Opendp::moveHopeless(int& grid_x, int& grid_y) const
       break;
     }
   }
-  for (int y = grid_y + 1; y < row_site_count_; ++y) { // above
+  for (int y = grid_y + 1; y < row_count_; ++y) { // above
     if (grid_[y][grid_x].is_valid) {
       int dist = (y - grid_y) * row_height_;
       if (dist < best_dist) {
