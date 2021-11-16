@@ -2734,7 +2734,7 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
   cmds.push_back(fmt::format("gui::set_resolution {}", 1.0 / pixels_per_dbu_));
 
   if (block_ != nullptr) {
-    double dbu_per_micron = block_->getDbUnitsPerMicron();
+    const double dbu_per_micron = block_->getDbUnitsPerMicron();
 
     cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
   }
