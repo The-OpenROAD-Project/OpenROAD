@@ -1922,8 +1922,6 @@ void FlexDRWorker::routeNet_setSrc(
   }
 
   unConnPins.erase(currPin);
-  if (getDRIter() >= beginDebugIter)
-    cout << "Setting sources for path search\n";
   // first pin selection algorithm ends here
   for (auto& ap : currPin->getAccessPatterns()) {
     ap->getMazeIdx(mi);
