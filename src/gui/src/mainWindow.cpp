@@ -312,7 +312,11 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   // set database and pass along
   db_ = db;
   controls_->setDb(db_);
-  viewer_->setDb(db_);
+
+  auto* chip = db->getChip();
+  if (chip != nullptr) {
+    viewer_->setBlock(chip->getBlock());
+  }
 }
 
 void MainWindow::init(sta::dbSta* sta)
