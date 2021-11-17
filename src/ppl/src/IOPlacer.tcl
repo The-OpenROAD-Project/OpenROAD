@@ -188,6 +188,23 @@ proc clear_io_pin_constraints {} {
   ppl::clear_constraints
 }
 
+sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
+                                       [-ver_length v_length]
+}
+
+proc set_pin_length { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_length -ver_length}
+
+  if [info exists keys(-hor_length)] {
+    ppl::set_hor_length $keys(-hor_length)
+  }
+
+  if [info exists keys(-ver_length)] {
+    ppl::set_ver_length $keys(-ver_length)
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
