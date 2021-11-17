@@ -183,6 +183,14 @@ UWdp::improvePlacement()
 
   // Write solution back.
   updateDbInstLocations();
+
+  // Cleanup.
+  if( nw_ ) delete nw_;
+  if( arch_ ) delete arch_;
+  if( rt_ ) delete rt_;
+  nw_ = 0;
+  arch_ = 0;
+  rt_ = 0;
 }
 ////////////////////////////////////////////////////////////////
 void
