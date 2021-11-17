@@ -222,6 +222,23 @@ proc set_pin_length_extension { args } {
   }
 }
 
+sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
+                                                 [-ver_multiplier v_mult]
+}
+
+proc set_pin_thick_multiplier { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_multiplier -ver_multiplier}
+
+  if [info exists keys(-hor_multiplier)] {
+    ppl::set_hor_thick_multiplier $keys(-hor_multiplier)
+  }
+
+  if [info exists keys(-ver_multiplier)] {
+    ppl::set_ver_thick_multiplier $keys(-ver_multiplier)
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
