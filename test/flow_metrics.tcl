@@ -142,9 +142,8 @@ proc check_test_metrics { test } {
       set value [dict get $metrics_dict $json_key]
       if { [dict exists $metrics_limits_dict $json_key] } {
         set limit [dict get $metrics_limits_dict $json_key]
-puts "MATT |$name| |$value| |$cmp_op| |$limit|"
         if { ![expr $value $cmp_op $limit] } {
-            fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
         }
       } else {
         fail "missing $name in metric limits"
