@@ -188,6 +188,57 @@ proc clear_io_pin_constraints {} {
   ppl::clear_constraints
 }
 
+sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
+                                       [-ver_length v_length]
+}
+
+proc set_pin_length { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_length -ver_length}
+
+  if [info exists keys(-hor_length)] {
+    ppl::set_hor_length $keys(-hor_length)
+  }
+
+  if [info exists keys(-ver_length)] {
+    ppl::set_ver_length $keys(-ver_length)
+  }
+}
+
+sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
+                                                 [-ver_extension v_ext]
+}
+
+proc set_pin_length_extension { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_extension -ver_extension}
+
+  if [info exists keys(-hor_extension)] {
+    ppl::set_hor_length_extend $keys(-hor_extension)
+  }
+
+  if [info exists keys(-ver_extension)] {
+    ppl::set_ver_length_extend $keys(-ver_extension)
+  }
+}
+
+sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
+                                                 [-ver_multiplier v_mult]
+}
+
+proc set_pin_thick_multiplier { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_multiplier -ver_multiplier}
+
+  if [info exists keys(-hor_multiplier)] {
+    ppl::set_hor_thick_multiplier $keys(-hor_multiplier)
+  }
+
+  if [info exists keys(-ver_multiplier)] {
+    ppl::set_ver_thick_multiplier $keys(-ver_multiplier)
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
