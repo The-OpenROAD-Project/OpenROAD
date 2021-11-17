@@ -47,7 +47,7 @@
 
 
 
-#include "aak/UWdp.h"
+#include "dpo/UWdp.h"
 
 #include <iostream>
 #include <cfloat>
@@ -69,7 +69,7 @@
 #include "legalize.h"
 #include "detailed.h"
 
-namespace aak {
+namespace dpo {
 
 using std::round;
 using std::string;
@@ -133,8 +133,8 @@ UWdp::improvePlacement()
 
   import();
 
-  aak::DetailedMgr mgr( arch_, nw_, rt_ );
-  aak::LegalizeParams lgParams;
+  dpo::DetailedMgr mgr( arch_, nw_, rt_ );
+  dpo::LegalizeParams lgParams;
   // The following will result in the legalizer taking whatever
   // it is given and do nothing other than snap the cells to
   // rows (segments) and do a cluming shift to remove overlap.
@@ -142,7 +142,7 @@ UWdp::improvePlacement()
   // legalizer should really do nothing other than set up the
   // data structures for use by the detailed placer.
   lgParams.m_skipLegalization = true;
-  aak::Legalize lg( lgParams );
+  dpo::Legalize lg( lgParams );
   lg.legalize( mgr );
 
   // The following is the detailed placer.  Currently it has
@@ -168,7 +168,7 @@ UWdp::improvePlacement()
   // etc.
 
   // XXX: Perform detailed improvement.
-  aak::DetailedParams dtParams;
+  dpo::DetailedParams dtParams;
   dtParams.m_script = "";
   // Set matching for displacement.
   //dtParams.m_script += "mis -p 10 -t 0.01 -d"; // Not hpwl, but displacement.
@@ -178,7 +178,7 @@ UWdp::improvePlacement()
   // Random moves and swaps with cost = hpwl*(1.0+disp).
   //dtParams.m_script += "default -p 5 -f 20 -gen rng:disp -obj hpwl:disp -cost (hpwl)(1.0)(disp(+)(*))";
   dtParams.m_script += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl)"; // Only hpwl.
-  aak::Detailed dt( dtParams );
+  dpo::Detailed dt( dtParams );
   dt.improve( mgr );
 
   // Write solution back.

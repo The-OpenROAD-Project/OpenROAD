@@ -35,10 +35,10 @@
 %{
 
 #include "ord/OpenRoad.hh"
-#include "aak/UWdp.h"
+#include "dpo/UWdp.h"
 #include "utl/Logger.h"
 
-namespace aak {
+namespace dpo {
 
 using std::vector;
 
@@ -77,12 +77,12 @@ tclListSeq(Tcl_Obj *const source,
 
 %inline %{
 
-namespace aak {
+namespace dpo {
 
 void
 improve_placement_cmd()
 {
-  aak::UWdp *uwdp = ord::OpenRoad::openRoad()->getUWdp();
+  dpo::UWdp *uwdp = ord::OpenRoad::openRoad()->getUWdp();
   uwdp->improvePlacement();
 }
 

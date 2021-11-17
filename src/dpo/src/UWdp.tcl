@@ -36,8 +36,8 @@ sta::define_cmd_args "improve_placement" {}
 
 proc improve_placement { args } {
   sta::check_argc_eq0 "improve_placement" $args
-  aak::improve_placement_cmd
+  dpo::improve_placement_cmd
 }
 
-namespace eval aak {
+namespace eval dpo {
 }

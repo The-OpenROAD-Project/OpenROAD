@@ -38,13 +38,13 @@
 
 include("openroad")
 
-swig_lib(NAME         aak
-         NAMESPACE    aak
+swig_lib(NAME         dpo
+         NAMESPACE    dpo
          I_FILE       src/UWdp.i
          SCRIPTS      src/UWdp.tcl
 )
 
-target_sources(aak
+target_sources(dpo
   PRIVATE
     src/UWdp.cpp
     src/MakeUWdp.cpp
@@ -73,12 +73,12 @@ target_sources(aak
     src/detailed_orient.cxx
 )
 
-target_include_directories(aak
+target_include_directories(dpo
   PUBLIC
     include
 )
 
-target_link_libraries(aak
+target_link_libraries(dpo
   PRIVATE
     odb
     OpenSTA
@@ -87,13 +87,13 @@ target_link_libraries(aak
 )
 
 messages(
-  TARGET aak
+  TARGET dpo
 )
 
 ################################################################
 
 add_custom_target(uwdp_tags etags -o TAGS
   ${UWDP_SRC}
-  ${UWDP_HOME}/include/aak/*.h
+  ${UWDP_HOME}/include/dpo/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

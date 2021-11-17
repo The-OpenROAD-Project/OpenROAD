@@ -1,3 +1,34 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2021, Andrew Kennings
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 
 
@@ -27,6 +58,7 @@
 #include "detailed_manager.h"
 #include "legalize_flow_single.h"
 #include "legalize_dwsm.h"
+#include "legalize_abacus.h"
 #include "min_movement_floorplanner.h"
 
 #include "detailed_random.h"
@@ -47,7 +79,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-namespace aak
+namespace dpo
 {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +122,9 @@ void Legalize::legalize( DetailedMgr& mgr )
     m_arch = mgr.getArchitecture();
     m_network = mgr.getNetwork();
     m_rt = mgr.getRoutingParams();
+
+    AbacusLegalizerParams abacusParams;
+    AbacusLegalizer abacus( abacusParams );
 
     DwsmLegalizerParams dwsmParams;
     DwsmLegalizer dwsm( dwsmParams );
@@ -266,57 +301,86 @@ void Legalize::legalize( DetailedMgr& mgr )
             std::cout << boost::format( "Region %3d, Single height cells is %d, Multi-height cells is %d" )
                     % regId % single.size() % multi.size() << std::endl;
 
+            // Right now, my abacus legalizer only understands single height cells.
+            // Use abacus if possible, otherwise default to the dwsm which uses 
+            // more complex tetris legalization, but doesn't seem to work that well.
 
-            dwsm.legalize( mgr, regId );
-
-            mgr.assignCellsToSegments( single );
-            mgr.assignCellsToSegments( multi );
-
-            // Test the region which means to imply that overlap can be removed with a shift.
-            // If not, then we might want to consider trying to repair the region using 
-            // a horizontal constraint graph.  However, this is that effective so we should
-            // only try if we have multi-height cells.
-            if( !mmf.test( mgr, regId ) && multi.size() != 0 )
+            if( m_plotter != 0 )
             {
-                std::cout << "Test failed.  Testing only multi-height cells." << std::endl;
-                if( !mmf.test( mgr, regId, true ) )
-                {
-                    // It's over.  We could not even legalize the multi-height cells.
-                    std::cout << "Test failed for multi-height cells." << std::endl;
-                }
-                else
-                {
-                    std::cout << "Test passed for multi-height cells.  Possible to repair." << std::endl;
-                    // Following code is not that good!
-                    mmf.repair( mgr, regId );
-                }
+                sprintf( &buf[0], "Bef abacus/dwsm" );
+                m_plotter->Draw( m_network, m_arch, buf );
             }
 
-            // The final test.  Use shifting if possible.  Note that the
-            // cells are positioned in segments in sorted order.  The 
-            // shifting uses that order since it is the order which will
-            // result in a legal solution.  However, when we shift, we
-            // should shift towards the original cell positions; i.e.,
-            // the ordering constraints come from the segments, but the
-            // objective targets come from the original positions.
-            if( mmf.test( mgr, regId ) )
+            if( multi.size() == 0 )
             {
-                std::cout << boost::format( "Region %3d, can be solved with a shift." ) % regId << std::endl;
+                // The abacus legalizer _does_ assign cells directly into segments.
+                abacus.legalize( mgr, regId );
 
-                solved[regId] = true;
-
-                mmf.shift( mgr, regId );
+                // It is possible that abacus results in overfilled segments.  We
+                // _should_ be able to resolve these issues with flow, although
+                // there might be better ways.
+                flow.legalize( &mgr, regId );
             }
             else
             {
-                std::cout << boost::format( "Region %3d, cannot be solved with a shift." ) % regId << std::endl;
+                // The dwsm legalize _does_not_ assign cells directly into segments.
+                dwsm.legalize( mgr, regId );
 
-                solved[regId] = false;
+                mgr.assignCellsToSegments( single );
+                mgr.assignCellsToSegments( multi );
 
-                mmf.shift( mgr, regId );
+                // Test the region which means to imply that overlap can be removed with a shift.
+                // If not, then we might want to consider trying to repair the region using 
+                // a horizontal constraint graph.  However, this is that effective so we should
+                // only try if we have multi-height cells.
+                if( !mmf.test( mgr, regId ) && multi.size() != 0 )
+                {
+                    std::cout << "Test failed.  Testing only multi-height cells." << std::endl;
+                    if( !mmf.test( mgr, regId, true ) )
+                    {
+                        // It's over.  We could not even legalize the multi-height cells.
+                        std::cout << "Test failed for multi-height cells." << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << "Test passed for multi-height cells.  Possible to repair." << std::endl;
+                        // Following code is not that good!
+                        mmf.repair( mgr, regId );
+                    }
+                }
+
+                // The final test.  Use shifting if possible.  Note that the
+                // cells are positioned in segments in sorted order.  The 
+                // shifting uses that order since it is the order which will
+                // result in a legal solution.  However, when we shift, we
+                // should shift towards the original cell positions; i.e.,
+                // the ordering constraints come from the segments, but the
+                // objective targets come from the original positions.
+                if( mmf.test( mgr, regId ) )
+                {
+                    std::cout << boost::format( "Region %3d, can be solved with a shift." ) % regId << std::endl;
+
+                    solved[regId] = true;
+
+                    mmf.shift( mgr, regId );
+                }
+                else
+                {
+                    std::cout << boost::format( "Region %3d, cannot be solved with a shift." ) % regId << std::endl;
+
+                    solved[regId] = false;
+
+                    mmf.shift( mgr, regId );
+                }
+
+                flow.legalize( &mgr, regId );
             }
 
-            flow.legalize( &mgr, regId );
+            if( m_plotter != 0 )
+            {
+                sprintf( &buf[0], "Aft abacus/dwsm" );
+                m_plotter->Draw( m_network, m_arch, buf );
+            }
         }
 
         err1 = mgr.checkRegionAssignment(); 
@@ -1475,4 +1539,4 @@ void Legalize::doClumping( Clump* r, std::vector<Clump>& clumps, double xmin, do
 }
 
 
-} // namespace aak
+} // namespace dpo

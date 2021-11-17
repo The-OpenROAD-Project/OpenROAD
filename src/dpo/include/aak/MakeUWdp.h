@@ -34,7 +34,7 @@
 
 #pragma once
 
-namespace aak {
+namespace dpo {
 class UWdp;
 }
 
@@ -42,11 +42,11 @@ namespace ord {
 
 class OpenRoad;
 
-aak::UWdp *
+dpo::UWdp *
 makeUWdp();
 void
 initUWdp(OpenRoad *openroad);
 void
-deleteUWdp(aak::UWdp *uwp);
+deleteUWdp(dpo::UWdp *uwp);
 
 }  // namespace ord

@@ -67,7 +67,7 @@
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"
-#include "aak/MakeUWdp.h"
+#include "dpo/MakeUWdp.h"
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "mpl2/MakeMacroPlacer.h"

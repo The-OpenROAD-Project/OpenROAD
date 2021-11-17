@@ -121,7 +121,7 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
-add_subdirectory(aak)
+add_subdirectory(dpo)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -166,7 +166,7 @@ target_link_libraries(openroad
   openroad_swig
   gpl
   dpl
-  aak
+  dpo
   fin
   rsz
   ppl

@@ -32,17 +32,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "aak/MakeUWdp.h"
+#include "dpo/MakeUWdp.h"
 
 #include <tcl.h>
 
-#include "aak/UWdp.h"
+#include "dpo/UWdp.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *aak_tcl_inits[];
+extern const char *dpo_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
@@ -52,14 +52,14 @@ Aak_Init(Tcl_Interp *interp);
 
 namespace ord {
 
-aak::UWdp *
+dpo::UWdp *
 makeUWdp()
 {
-  return new aak::UWdp;
+  return new dpo::UWdp;
 }
 
 void
-deleteUWdp(aak::UWdp *uwdp)
+deleteUWdp(dpo::UWdp *uwdp)
 {
   delete uwdp;
 }
@@ -71,7 +71,7 @@ initUWdp(OpenRoad *openroad)
   // Define swig TCL commands.
   Aak_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::aak_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::dpo_tcl_inits);
   openroad->getUWdp()->init(openroad);
 }
 
