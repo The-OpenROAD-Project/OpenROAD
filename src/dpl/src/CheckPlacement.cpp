@@ -48,7 +48,7 @@ using odb::dbPlacementStatus;
 
 using utl::DPL;
 
-int
+void
 Opendp::checkPlacement(bool verbose)
 {
   importDb();
@@ -88,11 +88,13 @@ Opendp::checkPlacement(bool verbose)
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
   reportFailures(power_line_failures, 7, "Power line", verbose);
 
-  return power_line_failures.size()
-    + placed_failures.size()
-    + in_rows_failures.size()
-    + overlap_failures.size()
-    + site_align_failures.size();
+  if (power_line_failures.size()
+      + placed_failures.size()
+      + in_rows_failures.size()
+      + overlap_failures.size()
+      + site_align_failures.size() > 0) {
+    logger_->error(DPL, 33, "detailed placement checks failed.");
+  }
 }
 
 void

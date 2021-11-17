@@ -202,7 +202,7 @@ public:
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
   // Return error count.
-  int checkPlacement(bool verbose);
+  void checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
   int64_t hpwl() const;
