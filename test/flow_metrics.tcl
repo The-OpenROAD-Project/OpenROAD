@@ -100,7 +100,6 @@ define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * .2}
 define_metric "max_slew_violations" "max_slew" "%8d" "<=" {0}
 define_metric "max_capacitance_violations" "max_cap" "%7d" "<=" {0}
 define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
-define_metric "DPL::errors" "DPL" "%3d" "<=" {0}
 define_metric "ANT::errors" "ANT" "%3d" "<=" {0}
 define_metric "DRT::drv" "drv" "%3d" "<=" {0}
 define_metric "clock_period" "" "%.2f" "<=" {$clock_period}
@@ -143,8 +142,9 @@ proc check_test_metrics { test } {
       set value [dict get $metrics_dict $json_key]
       if { [dict exists $metrics_limits_dict $json_key] } {
         set limit [dict get $metrics_limits_dict $json_key]
+puts "MATT |$name| |$value| |$cmp_op| |$limit|"
         if { ![expr $value $cmp_op $limit] } {
-          fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
+            fail "$name [format [metric_format $name] $value] [cmp_op_negated $cmp_op] [format [metric_format $name] $limit]"
         }
       } else {
         fail "missing $name in metric limits"

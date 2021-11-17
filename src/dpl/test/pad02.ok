@@ -10,15 +10,5 @@
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO ODB-0134] Finished DEF file: simple01.def
-[WARNING DPL-0015] instance _277_ does not fit inside the ROW core area.
-Placement Analysis
----------------------------------
-total displacement          0.0 u
-average displacement        0.0 u
-max displacement            0.0 u
-original HPWL               2.3 u
-legalized HPWL              2.3 u
-delta HPWL                    0 %
-
-[WARNING DPL-0004] Placed in rows check failed (1).
- _277_
+[ERROR DPL-0015] instance _277_ does not fit inside the ROW core area.
+DPL-0015
