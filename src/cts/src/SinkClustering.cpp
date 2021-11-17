@@ -51,7 +51,8 @@ SinkClustering::SinkClustering(CtsOptions* options, TechChar* techChar) :
     _options(options), _logger(options->getLogger()),
     _techChar(techChar),
     _maxInternalDiameter(10), _capPerUnit(0.0),
-    _useMaxCapLimit(options->getSinkClusteringUseMaxCap())
+    _useMaxCapLimit(options->getSinkClusteringUseMaxCap()),
+    _scaleFactor(1)
 {
 }
 

@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <limits>
 
 #include "Graphics.h"
 #include "utl/Logger.h"
@@ -582,7 +583,7 @@ Opendp::mapMove(Cell *cell,
   return false;
 }
 
-bool
+void
 Opendp::shiftMove(Cell *cell)
 {
   Point grid_pt = legalGridPt(cell, true);
@@ -611,23 +612,18 @@ Opendp::shiftMove(Cell *cell)
   }
 
   // place target cell
-  if (!mapMove(cell)) {
-    logger_->warn(DPL, 18, "detailed placement failed on {}.",
-                  cell->name());
-    return false;
-  }
+  if (!mapMove(cell))
+    logger_->error(DPL, 18, "detailed placement failed on {}.",
+                   cell->name());
 
   // re-place erased cells
   for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      if (!mapMove(around_cell)) {
-        logger_->warn(DPL, 19, "detailed placement failed on {}",
-                      around_cell->name());
-        return false;
-      }
+      if (!mapMove(around_cell))
+        logger_->error(DPL, 19, "detailed placement failed on {}",
+                       around_cell->name());
     }
   }
-  return true;
 }
 
 bool
@@ -906,10 +902,108 @@ Opendp::legalGridPt(const Cell *cell,
   return Point(gridX(legal.getX()), gridY(legal.getY()));
 }
 
+Point
+Opendp::nearestBlockEdge(const Cell *cell,
+                         const Point& legal_pt,
+                         const Rect& block_bbox) const
+{
+  const int legal_x = legal_pt.getX();
+  const int legal_y = legal_pt.getY();
+  const int x_min_dist = abs(legal_x - block_bbox.xMin());
+  const int x_max_dist = abs(block_bbox.xMax() - (legal_x + cell->width_));
+  const int y_min_dist = abs(legal_y - block_bbox.yMin());
+  const int y_max_dist = abs(block_bbox.yMax() - (legal_y + cell->height_));
+  if (x_min_dist < x_max_dist
+      && x_min_dist < y_min_dist
+      && x_min_dist < y_max_dist) {
+    // left of block
+    return legalPt(cell,
+                   Point(block_bbox.xMin() - cell->width_, legal_pt.getY()));
+  }
+  else if (x_max_dist <= x_min_dist
+           && x_max_dist <= y_min_dist
+           && x_max_dist <= y_max_dist) {
+    // right of block
+    return legalPt(cell,
+                   Point(block_bbox.xMax(), legal_pt.getY()));
+  }
+  else if (y_min_dist <= x_min_dist
+           && y_min_dist <= x_max_dist
+           && y_min_dist <= y_max_dist) {
+    // below block
+    return legalPt(cell,
+                   Point(legal_pt.getX(),
+                         divFloor(block_bbox.yMin(), row_height_)
+                         *row_height_-cell->height_));
+  }
+  // above block
+  return legalPt(cell,
+                 Point(legal_pt.getX(),
+                       divCeil(block_bbox.yMax(), row_height_) * row_height_));
+}
+
+// Find the nearest valid site left/right/above/below, if any.
+// The site doesn't need to be empty but mearly valid.  That should
+// be a reasonable place to start the search.
+void
+Opendp::moveHopeless(int& grid_x, int& grid_y) const
+{
+  int best_x = grid_x;
+  int best_y = grid_y;
+  int best_dist = std::numeric_limits<int>::max();
+  for (int x = grid_x - 1; x >= 0; --x) { // left
+    int dist = (grid_x - x) * site_width_;
+    if (grid_[grid_y][x].is_valid) {
+      best_dist = dist;
+      best_x = x;
+      best_y = grid_y;
+      break;
+    }
+  }
+  for (int x = grid_x + 1; x < row_site_count_; ++x) { // right
+    if (grid_[grid_y][x].is_valid) {
+      int dist = (x - grid_x) * site_width_;
+      if (dist < best_dist) {
+        best_dist = dist;
+        best_x = x;
+        best_y = grid_y;
+      }
+      break;
+    }
+  }
+  for (int y = grid_y - 1; y >= 0; --y) { // below
+    if (grid_[y][grid_x].is_valid) {
+      int dist = (grid_y - y) * row_height_;
+      if (dist < best_dist) {
+        best_dist = dist;
+        best_x = grid_x;
+        best_y = y;
+      }
+      break;
+    }
+  }
+  for (int y = grid_y + 1; y < row_count_; ++y) { // above
+    if (grid_[y][grid_x].is_valid) {
+      int dist = (y - grid_y) * row_height_;
+      if (dist < best_dist) {
+        best_dist = dist;
+        best_x = grid_x;
+        best_y = y;
+      }
+      break;
+    }
+  }
+  if (best_dist != std::numeric_limits<int>::max()) {
+    grid_x = best_x;
+    grid_y = best_y;
+  }
+}
+
 // Legalize pt origin for cell
 //  inside the core
 //  row site
 //  not on top of a macro
+//  not in a hopeless site
 Point
 Opendp::legalPt(const Cell *cell,
                 bool padded) const
@@ -919,59 +1013,38 @@ Opendp::legalPt(const Cell *cell,
 
   Point init = initialLocation(cell, padded);
   Point legal_pt = legalPt(cell, init);
+  int grid_x = gridX(legal_pt.getX());
+  int grid_y = gridY(legal_pt.getY());
 
-  // Move std cells off of macros.
-  Pixel *pixel = gridPixel(gridX(legal_pt.getX()), gridY(legal_pt.getY()));
+  Pixel *pixel = gridPixel(grid_x, grid_y);
   if (pixel) {
     const Cell *block = pixel->cell;
-    if (block
-        && isBlock(block)) {
-      Rect block_bbox(block->x_, block->y_,
-                      block->x_ + block->width_, block->y_ + block->height_);
-      int legal_x = legal_pt.getX();
-      int legal_y = legal_pt.getY();
+    // Move std cells off of macros.
+    if (block && isBlock(block)) {
+      const Rect block_bbox(block->x_,
+                            block->y_,
+                            block->x_ + block->width_,
+                            block->y_ + block->height_);
+      const int legal_x = legal_pt.getX();
+      const int legal_y = legal_pt.getY();
       if ((legal_x + cell->width_) >= block_bbox.xMin()
           && legal_x <= block_bbox.xMax()
           && (legal_y + cell->height_) >= block_bbox.yMin()
           && legal_y <= block_bbox.yMax()) {
-        int x_min_dist = abs(legal_x - block_bbox.xMin());
-        int x_max_dist = abs(block_bbox.xMax() - (legal_x + cell->width_));
-        int y_min_dist = abs(legal_y - block_bbox.yMin());
-        int y_max_dist = abs(block_bbox.yMax() - (legal_y + cell->height_));
-        if (x_min_dist < x_max_dist
-            && x_min_dist < y_min_dist
-            && x_min_dist < y_max_dist) {
-          // left of block
-          return legalPt(cell,
-                         Point(block_bbox.xMin() - cell->width_, legal_pt.getY()));
-        }
-        else if (x_max_dist <= x_min_dist
-                 && x_max_dist <= y_min_dist
-                 && x_max_dist <= y_max_dist) {
-          // right of block
-          return legalPt(cell,
-                         Point(block_bbox.xMax(), legal_pt.getY()));
-        }
-        else if (y_min_dist <= x_min_dist
-                 && y_min_dist <= x_max_dist
-                 && y_min_dist <= y_max_dist) {
-          // below block
-          return legalPt(cell,
-                         Point(legal_pt.getX(),
-                               divFloor(block_bbox.yMin(), row_height_)
-                               *row_height_-cell->height_));
-        }
-        else if (y_max_dist <= x_min_dist
-                 && y_max_dist <= x_max_dist
-                 && y_max_dist <= y_min_dist) {
-          // above block
-          return legalPt(cell,
-                         Point(legal_pt.getX(),
-                               divCeil(block_bbox.yMax(), row_height_) * row_height_));
-        }
+        legal_pt = nearestBlockEdge(cell, legal_pt, block_bbox);
+
+        grid_x = gridX(legal_pt.getX());
+        grid_y = gridY(legal_pt.getY());
+        pixel = gridPixel(grid_x, grid_y);
       }
     }
+
+    if (pixel->is_hopeless) {
+      moveHopeless(grid_x, grid_y);
+      legal_pt = Point(grid_x * site_width_, grid_y * row_height_);
+    }
   }
+
   return legal_pt;
 }
 

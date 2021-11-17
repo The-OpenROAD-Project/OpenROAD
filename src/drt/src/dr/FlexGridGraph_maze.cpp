@@ -749,12 +749,12 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
       // if the expansion goes parallel to a die border and the wire goes out of
       // the die box, forbid expansion
       if (dir == frDirEnum::N || dir == frDirEnum::S) {
-        if (xCoords_[currGrid.x()] - halfWidth < dieBox_.left()
-            || xCoords_[currGrid.x()] + halfWidth > dieBox_.right())
+        if (xCoords_[currGrid.x()] - halfWidth < dieBox_.xMin()
+            || xCoords_[currGrid.x()] + halfWidth > dieBox_.xMax())
           return false;
       } else if (dir == frDirEnum::E || dir == frDirEnum::W) {
-        if (yCoords_[currGrid.y()] - halfWidth < dieBox_.bottom()
-            || yCoords_[currGrid.y()] + halfWidth > dieBox_.top())
+        if (yCoords_[currGrid.y()] - halfWidth < dieBox_.yMin()
+            || yCoords_[currGrid.y()] + halfWidth > dieBox_.yMax())
           return false;
       }
     }

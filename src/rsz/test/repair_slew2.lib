@@ -34,7 +34,7 @@
 *
 ****************************************************************************/
 
-library (repair_max_slew2) {
+library (repair_slew2) {
 
   /* Documentation Attributes */
   date                    		: "Thu 10 Feb 2011, 18:11:20";

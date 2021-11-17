@@ -198,6 +198,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // add/remove menu actions
+  const std::string addMenuItem(const std::string& name,
+                                const QString& path,
+                                const QString& text,
+                                const QString& script,
+                                const QString& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const QString& title, const QString& question);
 
@@ -219,6 +228,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void createToolbars();
   void createStatusBar();
 
+  QMenu* findMenu(QStringList& path, QMenu* parent = nullptr);
+  void removeMenu(QMenu* menu);
+
   odb::dbBlock* getBlock();
 
   odb::dbDatabase* db_;
@@ -231,12 +243,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   Inspector* inspector_;
+  ScriptWidget* script_;
   LayoutViewer* viewer_;  // owned by scroll_
   SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
-  ScriptWidget* script_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
+
+  FindObjectDialog* find_dialog_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -261,10 +275,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QLabel* location_;
 
-  FindObjectDialog* find_dialog_;
-
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;
+
+  // created menu actions
+  std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
 };
 
 }  // namespace gui

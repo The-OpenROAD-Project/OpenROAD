@@ -35,7 +35,7 @@ For a technical description of the OpenROAD flow, please refer to our DAC-2019 p
 [Toward an Open-Source Digital Flow: First Learnings from the OpenROAD Project](https://vlsicad.ucsd.edu/Publications/Conferences/371/c371.pdf).
 The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10.1145/3316781.3326334).
 Other publications and presentations are
-[linked here](https://theopenroadproject.org/publications/).
+linked [here](https://theopenroadproject.org/publications/).
 
 ## Code of conduct
 
@@ -51,14 +51,14 @@ The application is a standalone binary capable of performing RTL-to-GDSII SoC de
 from logic synthesis and floorplanning through detailed routing with metal fill insertion,
 signoff parasitic extraction and timing analysis.
 
-See documentation for the [application here](../README.md).
+See documentation for the application [here](../README.md).
 
 ### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 
 The flow is a set of integrated scripts that allow for RTL-to-GDSII flow
 using open-source tools.
 
-See documentation for the [flow here](user/GettingStarted.md).
+See documentation for the flow [here](user/GettingStarted.md).
 
 ## How to contribute
 

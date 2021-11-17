@@ -57,6 +57,9 @@
 #include "drcWidget.h"
 #include "ruler.h"
 
+extern int cmd_argc;
+extern char **cmd_argv;
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -111,6 +114,10 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
+  if (renderers_.count(renderer) == 0) {
+    return;
+  }
+
   main_window->getControls()->unregisterRenderer(renderer);
 
   renderers_.erase(renderer);
@@ -333,6 +340,26 @@ const std::string Gui::addToolbarButton(const std::string& name,
 void Gui::removeToolbarButton(const std::string& name)
 {
   main_window->removeToolbarButton(name);
+}
+
+const std::string Gui::addMenuItem(const std::string& name,
+                                   const std::string& path,
+                                   const std::string& text,
+                                   const std::string& script,
+                                   const std::string& shortcut,
+                                   bool echo)
+{
+  return main_window->addMenuItem(name,
+                                  QString::fromStdString(path),
+                                  QString::fromStdString(text),
+                                  QString::fromStdString(script),
+                                  QString::fromStdString(shortcut),
+                                  echo);
+}
+
+void Gui::removeMenuItem(const std::string& name)
+{
+  main_window->removeMenuItem(name);
 }
 
 const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
@@ -559,16 +586,17 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   }
 
   // OR already running, so GUI should not set anything up
-  // passing in 0, nullptr, nullptr to indicate such
-  // pass cmds and interactive along
-  startGui(0, nullptr, nullptr, cmds, interactive);
+  // passing in cmd_argc and cmd_argv to meet Qt application requirement for arguments
+  // nullptr for tcl interp to indicate nothing to setup
+  // and commands and interactive setting
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
 }
 
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -705,6 +733,24 @@ Descriptor::Properties Selected::getProperties() const
   }
 
   return props;
+}
+
+Descriptor::Actions Selected::getActions() const
+{
+  auto actions = descriptor_->getActions(object_);
+
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    actions.push_back({
+      "Zoom to",
+      [this, bbox]() -> Selected {
+        auto gui = Gui::get();
+        gui->zoomTo(bbox);
+        return *this;
+      }});
+  }
+
+  return actions;
 }
 
 std::string Descriptor::Property::toString(const std::any& value)

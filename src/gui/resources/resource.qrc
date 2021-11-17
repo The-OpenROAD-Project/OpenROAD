@@ -1,5 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
   <file>icon.png</file>
+  <file alias="delete.png">google_icons/round_delete_black_36dp.png</file>
+  <file alias="zoom_to.png">google_icons/round_zoom_in_black_36dp.png</file>
 </qresource>
 </RCC>

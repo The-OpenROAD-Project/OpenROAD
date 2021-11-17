@@ -73,6 +73,7 @@ Opendp::initGrid()
       pixel.group_ = nullptr;
       pixel.util = 0.0;
       pixel.is_valid = false;
+      pixel.is_hopeless = true;
     }
   }
 
@@ -81,12 +82,26 @@ Opendp::initGrid()
     int orig_x, orig_y;
     db_row->getOrigin(orig_x, orig_y);
 
-    int x_start = (orig_x - core_.xMin()) / site_width_;
-    int x_end = x_start + db_row->getSiteCount();
-    int y = (orig_y - core_.yMin()) / row_height_;
+    const int x_start = (orig_x - core_.xMin()) / site_width_;
+    const int x_end = x_start + db_row->getSiteCount();
+    const int y_row = (orig_y - core_.yMin()) / row_height_;
 
     for (int x = x_start; x < x_end; x++) {
-      grid_[y][x].is_valid = true;
+      grid_[y_row][x].is_valid = true;
+    }
+
+    // The safety margin is to avoid having only a very few sites
+    // within the diamond search that may still lead to failures.
+    const int safety = 20;
+    const int xl = std::max(0, x_start - max_displacement_x_ + safety);
+    const int xh = std::min(row_site_count_,
+                            x_end + max_displacement_x_ - safety);
+    const int yl = std::max(0, y_row - max_displacement_y_ + safety);
+    const int yh = std::min(row_count_, y_row + max_displacement_y_ - safety);
+    for (int y = yl; y < yh; y++) {
+      for (int x = xl; x < xh; x++) {
+        grid_[y][x].is_hopeless = false;
+      }
     }
   }
 }

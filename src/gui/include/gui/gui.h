@@ -153,6 +153,13 @@ class Painter
   };
   virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
 
+  // Set the pen to an RGBA value and the brush
+  void setPenAndBrush(const Color& color, bool cosmetic = false, const Brush& style = SOLID)
+  {
+    setPen(color, cosmetic);
+    setBrush(color, style);
+  }
+
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
   virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
@@ -327,10 +334,7 @@ class Selected
     return std::any();
   }
 
-  Descriptor::Actions getActions() const
-  {
-    return descriptor_->getActions(object_);
-  }
+  Descriptor::Actions getActions() const;
 
   Descriptor::Editors getEditors() const
   {
@@ -512,6 +516,15 @@ class Gui
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // adding custom menu items to menu bar
+  const std::string addMenuItem(const std::string& name,
+                                const std::string& path,
+                                const std::string& text,
+                                const std::string& script,
+                                const std::string& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
@@ -611,6 +624,6 @@ class Gui
 };
 
 // The main entry point
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
 
 }  // namespace gui

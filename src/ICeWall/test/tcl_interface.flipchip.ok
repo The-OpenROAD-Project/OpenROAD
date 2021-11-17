@@ -7,6 +7,7 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1885 rows of 13893 sites.
+[WARNING PAD-0251] Cannot find cell NOT_FOUND in the database.
 Trigger errors
 [ERROR PAD-0105] Specification of bondpads is only allowed for wirebond padring layouts.
 No more errors expected

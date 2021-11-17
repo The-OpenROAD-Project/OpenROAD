@@ -34,11 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "par/PartitionMgr.h"
+#include "MLPart.h"
 #ifdef PARTITIONERS
 extern "C" {
 #include "main/ChacoWrapper.h"
 }
-#include "MLPart.h"
 #include "metis.h"
 #endif
 #include <time.h>
@@ -53,6 +53,7 @@ extern "C" {
 #include "autocluster.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
 
 using utl::PAR;
 
@@ -72,11 +73,13 @@ PartitionMgr::~PartitionMgr()
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
                         ord::dbVerilogNetwork* network,
+                        sta::dbSta* sta,
                         Logger* logger)
 {
   db_ = db;
   db_network_ = db_network;
   network_ = network;
+  _sta = sta;
   logger_ = logger;
 }
 
@@ -389,7 +392,6 @@ void PartitionMgr::runGpMetis()
 
 void PartitionMgr::runMlPart()
 {
-#ifdef PARTITIONERS
   logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), logger_);
@@ -513,7 +515,6 @@ void PartitionMgr::runMlPart()
                 "[MLPart] Run completed. Partition ID = {}. Total runs = {}.",
                 partitionId,
                 options_.getSeeds().size());
-#endif
 }
 
 void PartitionMgr::toHypergraph()
@@ -1093,7 +1094,6 @@ void PartitionMgr::runGpMetisClustering()
 
 void PartitionMgr::runMlPartClustering()
 {
-#ifdef PARTITIONERS
   logger_->report("Running MLPart.");
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(getDbBlock(), logger_);
@@ -1179,7 +1179,6 @@ void PartitionMgr::runMlPartClustering()
   clusResults_.push_back(currentResults);
 
   logger_->info(PAR, 64, "[MLPart] Run completed. Cluster ID = {}.", clusterId);
-#endif
 }
 
 unsigned PartitionMgr::generateClusterId() const
@@ -1360,16 +1359,13 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    unsigned int net_threshold,
                                    unsigned int ignore_net_threshold,
                                    unsigned int virtual_weight,
+                                   unsigned int num_hops,
+                                   unsigned int timing_weight,
+                                   bool std_cell_timing_flag,
                                    const char* report_directory,
                                    const char* file_name)
 {
-#ifndef PARTITIONERS
-  logger_->error(PAR,
-                 404,
-                 "dbPartitionDesign can't run because OpenROAD wasn't compiled "
-                 "with LOAD_PARTITIONERS.");
-#endif
-  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, logger_);
+  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,
@@ -1377,6 +1373,9 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                              net_threshold,
                              ignore_net_threshold,
                              virtual_weight,
+                             num_hops,
+                             timing_weight,
+                             std_cell_timing_flag,
                              report_directory,
                              file_name);
 }
