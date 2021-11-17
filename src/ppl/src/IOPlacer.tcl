@@ -205,6 +205,23 @@ proc set_pin_length { args } {
   }
 }
 
+sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
+                                                 [-ver_extension v_ext]
+}
+
+proc set_pin_length_extension { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_extension -ver_extension}
+
+  if [info exists keys(-hor_extension)] {
+    ppl::set_hor_length_extend $keys(-hor_extension)
+  }
+
+  if [info exists keys(-ver_extension)] {
+    ppl::set_ver_length_extend $keys(-ver_extension)
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
