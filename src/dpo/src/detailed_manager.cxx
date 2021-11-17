@@ -395,7 +395,7 @@ void DetailedMgr::findSegments( void )
     {
         Architecture::Region* regPtr = m_arch->m_regions[reg];
 
-        std::cout << "Finding intervals spanned by region " << regPtr->m_id << " of " << m_arch->m_regions.size() << std::endl;
+        //std::cout << "Finding intervals spanned by region " << regPtr->m_id << " of " << m_arch->m_regions.size() << std::endl;
 
         findRegionIntervals( regPtr->m_id, intervals );
 
@@ -530,11 +530,11 @@ void DetailedMgr::findSegments( void )
             }
         }
 
-        if( split != 0 )
-        {
-            std::cout << "Region " << reg << " resulted in spliting segments; "
-                << "Created " << split << " new segments." << std::endl;
-        }
+        //if( split != 0 )
+        //{
+        //    std::cout << "Region " << reg << " resulted in spliting segments; "
+        //        << "Created " << split << " new segments." << std::endl;
+        //}
     }
 
     // Make sure segment boundaries line up with sites.

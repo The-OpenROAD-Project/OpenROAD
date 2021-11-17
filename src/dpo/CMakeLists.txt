@@ -40,25 +40,21 @@ include("openroad")
 
 swig_lib(NAME         dpo
          NAMESPACE    dpo
-         I_FILE       src/UWdp.i
-         SCRIPTS      src/UWdp.tcl
+         I_FILE       src/Optdp.i
+         SCRIPTS      src/Optdp.tcl
 )
 
 target_sources(dpo
   PRIVATE
-    src/UWdp.cpp
-    src/MakeUWdp.cpp
+    src/Optdp.cpp
+    src/MakeOptdp.cpp
     src/architecture.cxx
     src/network.cxx
     src/router.cxx
     src/utility.cxx
     src/plotgnu.cxx
     src/mer.cxx
-    src/legalize.cxx
-    src/legalize_dwsm.cxx
-    src/legalize_flow_single.cxx
-    src/min_movement_floorplanner.cxx
-    src/seq_pair.cxx
+    src/legalize_shift.cxx
     src/detailed.cxx
     src/detailed_manager.cxx
     src/detailed_mis.cxx
@@ -92,8 +88,8 @@ messages(
 
 ################################################################
 
-add_custom_target(uwdp_tags etags -o TAGS
-  ${UWDP_SRC}
-  ${UWDP_HOME}/include/dpo/*.h
+add_custom_target(optdp_tags etags -o TAGS
+  ${OPTDP_SRC}
+  ${OPTDP_HOME}/include/dpo/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

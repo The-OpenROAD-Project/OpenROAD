@@ -32,11 +32,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dpo/MakeUWdp.h"
+#include "dpo/MakeOptdp.h"
 
 #include <tcl.h>
 
-#include "dpo/UWdp.h"
+#include "dpo/Optdp.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -47,32 +47,32 @@ extern const char *dpo_tcl_inits[];
 
 extern "C" {
 extern int
-Aak_Init(Tcl_Interp *interp);
+Dpo_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
 
-dpo::UWdp *
-makeUWdp()
+dpo::Optdp *
+makeOptdp()
 {
-  return new dpo::UWdp;
+  return new dpo::Optdp;
 }
 
 void
-deleteUWdp(dpo::UWdp *uwdp)
+deleteOptdp(dpo::Optdp *optdp)
 {
-  delete uwdp;
+  delete optdp;
 }
 
 void
-initUWdp(OpenRoad *openroad)
+initOptdp(OpenRoad *openroad)
 {
   Tcl_Interp *tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Aak_Init(tcl_interp);
+  Dpo_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpo_tcl_inits);
-  openroad->getUWdp()->init(openroad);
+  openroad->getOptdp()->init(openroad);
 }
 
 }  // namespace ord

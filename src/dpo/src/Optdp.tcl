@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2021, Andrew Kennings
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,62 +29,13 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
-%{
+sta::define_cmd_args "improve_placement" {}
 
-#include "ord/OpenRoad.hh"
-#include "dpo/UWdp.h"
-#include "utl/Logger.h"
-
-namespace dpo {
-
-using std::vector;
-
-// Swig vector type in does not seem to work at all.
-// (see odb/src/swig/common/polgon.i)
-// Copied from opensta/tcl/StaTcl.i
-template <class TYPE>
-vector<TYPE> *
-tclListSeq(Tcl_Obj *const source,
-	   swig_type_info *swig_type,
-	   Tcl_Interp *interp)
-{
-  int argc;
-  Tcl_Obj **argv;
-
-  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
-      && argc > 0) {
-    vector<TYPE> *seq = new vector<TYPE>;
-    for (int i = 0; i < argc; i++) {
-      void *obj;
-      // Ignore returned TCL_ERROR because can't get swig_type_info.
-      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
-      seq->push_back(reinterpret_cast<TYPE>(obj));
-    }
-    return seq;
-  }
-  else
-    return nullptr;
-}
-  
+proc improve_placement { args } {
+  sta::check_argc_eq0 "improve_placement" $args
+  dpo::improve_placement_cmd
 }
 
-%}
-
-%include "../../Exception.i"
-
-%inline %{
-
-namespace dpo {
-
-void
-improve_placement_cmd()
-{
-  dpo::UWdp *uwdp = ord::OpenRoad::openRoad()->getUWdp();
-  uwdp->improvePlacement();
+namespace eval dpo {
 }
-
-} // namespace
-
-%} // inline

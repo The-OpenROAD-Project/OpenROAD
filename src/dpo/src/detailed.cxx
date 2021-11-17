@@ -73,7 +73,7 @@
 
 
 
-namespace pdo
+namespace dpo
 {
 
 
@@ -246,4 +246,4 @@ void Detailed::doDetailedCommand( std::vector<std::string>& args )
 }
 
 
-} // namespace pdo
+} // namespace dpo

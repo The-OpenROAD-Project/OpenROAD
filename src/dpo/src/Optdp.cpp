@@ -1,14 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2021, Andrew Kennings
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,19 +29,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
-
-
-// TODO:
-// network creation - need to properly set position, orientation and power
-//  information.  need to properly set pin offsets, size, etc.
-// architecture creation - need to properly set power information on rows.
-// other - need to properly figure out edge spacing information for cell gaps.
 
 
 
-
-#include "dpo/UWdp.h"
+#include "dpo/Optdp.h"
 
 #include <iostream>
 #include <cfloat>
@@ -66,7 +51,7 @@
 #include "architecture.h"
 #include "router.h"
 #include "detailed_manager.h"
-#include "legalize.h"
+#include "legalize_shift.h"
 #include "detailed.h"
 
 namespace dpo {
@@ -74,7 +59,7 @@ namespace dpo {
 using std::round;
 using std::string;
 
-using utl::AAK;
+using utl::DPO;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -101,7 +86,7 @@ swapWidthHeight(dbOrientType orient);
 
 
 ////////////////////////////////////////////////////////////////
-UWdp::UWdp():
+Optdp::Optdp():
     nw_(nullptr),
     arch_(nullptr),
     rt_(nullptr)
@@ -109,7 +94,7 @@ UWdp::UWdp():
 }
 
 ////////////////////////////////////////////////////////////////
-UWdp::~UWdp()
+Optdp::~Optdp()
 {
     if( nw_ ) delete nw_;
     if( arch_ ) delete arch_;
@@ -118,7 +103,7 @@ UWdp::~UWdp()
 
 ////////////////////////////////////////////////////////////////
 void
-UWdp::init(ord::OpenRoad* openroad )
+Optdp::init(ord::OpenRoad* openroad )
 {
   openroad_ = openroad;
   db_ = openroad->getDb();
@@ -127,22 +112,22 @@ UWdp::init(ord::OpenRoad* openroad )
 
 ////////////////////////////////////////////////////////////////
 void
-UWdp::improvePlacement()
+Optdp::improvePlacement()
 {
-  logger_->report( "UW legalization and detailed placement." );
+  logger_->report( "Opt legalization and detailed placement." );
 
   import();
 
+  // A manager to track cells.
   dpo::DetailedMgr mgr( arch_, nw_, rt_ );
-  dpo::LegalizeParams lgParams;
-  // The following will result in the legalizer taking whatever
-  // it is given and do nothing other than snap the cells to
-  // rows (segments) and do a cluming shift to remove overlap.
-  // In other words, if the placement is already legal, my
-  // legalizer should really do nothing other than set up the
-  // data structures for use by the detailed placer.
-  lgParams.m_skipLegalization = true;
-  dpo::Legalize lg( lgParams );
+
+  // Legalization.  Doesn't particularly do much.  It only
+  // populates the data structures required for detailed
+  // improvement.  If it errors or prints a warning when
+  // given a legal placement, that likely means there is
+  // a bug in my code somewhere.
+  dpo::ShiftLegalizerParams lgParams;
+  dpo::ShiftLegalizer lg( lgParams );
   lg.legalize( mgr );
 
   // The following is the detailed placer.  Currently it has
@@ -194,7 +179,7 @@ UWdp::improvePlacement()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::import()
+Optdp::import()
 {
   logger_->report( "import()" );
 
@@ -218,7 +203,7 @@ UWdp::import()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::updateDbInstLocations()
+Optdp::updateDbInstLocations()
 {
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   dbBlock* block = db_->getChip()->getBlock();
@@ -261,21 +246,21 @@ UWdp::updateDbInstLocations()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::initEdgeTypes()
+Optdp::initEdgeTypes()
 {
   // Do nothing.  Use padding instead.
   ;
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::initCellSpacingTable()
+Optdp::initCellSpacingTable()
 {
   // Do nothing.  Use padding instead.
   ;
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::initPadding()
+Optdp::initPadding()
 {
   logger_->report( "Initializing cell padding." );
 
@@ -321,7 +306,7 @@ UWdp::initPadding()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createLayerMap()
+Optdp::createLayerMap()
 {
   logger_->report( "Skipping layer map creation." );
 
@@ -330,7 +315,7 @@ UWdp::createLayerMap()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createNdrMap()
+Optdp::createNdrMap()
 {
   logger_->report( "Skipping non-default routing rules creation." );
 
@@ -339,7 +324,7 @@ UWdp::createNdrMap()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::setupMasterPowers()
+Optdp::setupMasterPowers()
 {
   // Need to try and figure out which voltages are on the
   // top and bottom of the masters/insts in order to set
@@ -418,7 +403,7 @@ UWdp::setupMasterPowers()
 
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createNetwork()
+Optdp::createNetwork()
 {
   logger_->report( "Creating network." );
 
@@ -772,11 +757,11 @@ UWdp::createNetwork()
 
   if( errors != 0 )
   {
-    logger_->error( AAK, 1, "Error creating network." );
+    logger_->error( DPO, 1, "Error creating network." );
   }
   else
   {
-    logger_->info( AAK, 100, "Network stats: inst {}, edges {}, pins {}",
+    logger_->info( DPO, 100, "Network stats: inst {}, edges {}, pins {}",
         nw_->m_nodes.size(), 
         nw_->m_edges.size(),
         nw_->m_pins.size() 
@@ -785,7 +770,7 @@ UWdp::createNetwork()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createArchitecture()
+Optdp::createArchitecture()
 {
   logger_->report( "createArchitecture() - only partially done." );
 
@@ -947,7 +932,7 @@ UWdp::createArchitecture()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::createRouteGrid()
+Optdp::createRouteGrid()
 {
   logger_->report( "createRouteGrid() - not yet implemented, maybe not needed yet." );
 
@@ -956,7 +941,7 @@ UWdp::createRouteGrid()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::setUpNdrRules()
+Optdp::setUpNdrRules()
 {
   logger_->report( "setUpNdrRules - not yet implemented, maybe not needed yet." );
 
@@ -965,7 +950,7 @@ UWdp::setUpNdrRules()
 }
 ////////////////////////////////////////////////////////////////
 void
-UWdp::setUpPlacementRegions()
+Optdp::setUpPlacementRegions()
 {
   logger_->report( "setUpPlacementRegions - implemented." );
 
@@ -1056,7 +1041,7 @@ UWdp::setUpPlacementRegions()
     ++arch_->m_numNodesInRegion[regId];
   }
   
-  logger_->info( AAK, 101, "regions {}", arch_->m_regions.size() );
+  logger_->info( DPO, 101, "regions {}", arch_->m_regions.size() );
   for( size_t r = 0; r < arch_->m_regions.size(); r++ )
   {
     rptr = arch_->m_regions[r];
@@ -1068,7 +1053,7 @@ UWdp::setUpPlacementRegions()
   //    std::cout << boost::format( "  Rect %d, %.2lf %.2lf %.2lf %.2lf" ) 
   //        % b % rect.xmin() % rect.ymin() % rect.xmax() % rect.ymax() << std::endl;
   //  }
-    logger_->info( AAK, 102, "region {}, instances is {}", 
+    logger_->info( DPO, 102, "region {}, instances is {}", 
         r, arch_->m_numNodesInRegion[r] );
   }
 }

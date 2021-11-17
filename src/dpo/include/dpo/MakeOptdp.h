@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2021, Andrew Kennings
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,23 +29,22 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 namespace dpo {
-class UWdp;
+class Optdp;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-dpo::UWdp *
-makeUWdp();
+dpo::Optdp *
+makeOptdp();
 void
-initUWdp(OpenRoad *openroad);
+initOptdp(OpenRoad *openroad);
 void
-deleteUWdp(dpo::UWdp *uwp);
+deleteOptdp(dpo::Optdp *opt);
 
 }  // namespace ord
