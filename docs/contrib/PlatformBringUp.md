@@ -46,16 +46,16 @@ They include :
 * A technology LEF file of the PDK being used that includes all relevant information regarding metal layers, vias, and spacing requirements. 
     * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.tech.lef` as an example tech LEF file.
 * A macro LEF file of the standard cell kit that includes MACRO definitions of every cell, pin designations (input/output/inout).
-    * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.macro.lef `as an example macro LEF file.
+    * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.macro.lef` as an example macro LEF file.
 * A Liberty file of the standard cell library with PVT characterization, input and output characteristics, timing and power definitions for each cell.
-    * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib `as an example liberty file.
+    * See `OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib` as an example liberty file.
 * For KLayout: A mapping from LEF/DEF to GDS layers:datatypes
 
 Adding a new platform additionally requires the following: 
 
 * A validated installation of the OpenROAD flow scripts is available. See instructions [here](https://openroad.readthedocs.io/en/latest/user/GettingStarted.html#building-and-installing-the-software).:
 * A general knowledge of VLSI design and RTL to GDS flows.  \
-OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts flow to enable debugging in case of problems.
+OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts to debug problems.
 
 
 # Adding a New Platform to OpenROAD
@@ -70,11 +70,12 @@ This section describes the necessary files and  directories needed to build the 
 
 Make the following edits  to the Makefile (located in `OpenROAD-flow-scripts/flow/Makefile`) so that OpenROAD can run the flow on a design using the new platform.
 
-1. At  the beginning of the Makefile, there is a block of `DESIGN_CONFIG` variables that are commented out. These variables tell OpenROAD which design to run and on what platform. `DESIGN_CONFIG` specifically points to a `config.mk` file located in the designs directory for the respective platform. A `DESIGN_CONFIG` variable must be added for the new platform using a specific design. OpenROAD has multiple Verilog designs already made which can be used with any platform (see `OpenROAD-flow-scripts/flow/designs/src` for a list of usable designs). For example, a `DESIGN_CONFIG` variable using the `riscv32i` design on a new platform would look as follows:
+1. At  the beginning of the Makefile, there is a block of `DESIGN_CONFIG` variables that are commented out. These variables tell OpenROAD which design to run and on what platform. `DESIGN_CONFIG` specifically points to a `config.mk` file located in the designs directory for the respective platform. It is not required to add a `DESIGN_CONFIG` variable for a design in the respective platform directly into the Makefile. It is merely a convenience to add a `DESIGN_CONFIG` variable in the `Makefile` and can instead be set when invoking make. OpenROAD has multiple Verilog designs already made which can be used with any platform (see `OpenROAD-flow-scripts/flow/designs/src` for a list of usable designs). For example, a `DESIGN_CONFIG` variable using the `gcd` design on a new platform would look as follows:
 
 
 ```
-DESIGN_CONFIG=./designs/MyNewPlatform/riscv32i/config.mk
+#Makefile
+DESIGN_CONFIG=./designs/MyNewPlatform/gcd/config.mk
 ```
 
 
@@ -94,19 +95,19 @@ $ mkdir OpenROAD-flow-scripts/flow/platforms/MyNewPlatform
 
 ## Design Directory
 
-The design directory contains the configuration files for all the designs of a specific platform. Create a directory for the new platform in OpenROAD-flow-scripts/flow/designs to contain the relevant files and directories for all the designs for the flow in that specific platform. Each design requires its own `config.mk` and `constraints.sdc` files. 
+The design directory contains the configuration files for all the designs of a specific platform. Create a directory for the new platform in OpenROAD-flow-scripts/flow/designs to contain the relevant files and directories for all the designs for the flow in that specific platform. Each design requires its own `config.mk` and `constraint.sdc` files. 
 
-Follow the steps below to create the necessary directories and files. **NOTE: riscv32i is just an example and not a required name.**:
+Follow the steps below to create the necessary directories and files. **NOTE: gcd is just an example and not a required name.**:
 
 
 ```
-$ mkdir -p OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i
-$ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/config.mk
-$ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i/constraints.sdc
+$ mkdir -p OpenROAD-flow-scripts/flow/designs/MyNewPlatform/gcd
+$ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/gcd/config.mk
+$ touch OpenROAD-flow-scripts/flow/designs/MyNewPlatform/gcd/constraint.sdc
 ```
 
 
-This creates two directories MyNewPlatform and riscv32i and two empty files `config.mk` and `constraints.sdc` in OpenROAD-flow-scripts/flow/designs/MyNewPlatform/riscv32i. 
+This creates two directories MyNewPlatform and gcd and two empty files `config.mk` and `constraint.sdc` in `OpenROAD-flow-scripts/flow/designs/MyNewPlatform/gcd`. 
 
 
 ## Platform Configuration
@@ -139,21 +140,21 @@ For Example:
     PLACE_DENSITY
 ```
 
-Alternatively, in place of `CORE_UTILIZATION` and `CORE_ASPECT_RATIO`, `DIE_AREA` and `CORE_AREA` can be specified instead.
+Alternatively, `DIE_AREA` and `CORE_AREA` can be specified instead of `CORE_UTILIZATION`, `CORE_ASPECT_RATIO`, and `CORE_MARGIN`.
 
 
-Following is a sample `config.mk` file for the `riscv32i` design:
+Following is a sample `config.mk` file for the `gcd` design:
 
 
 ```
 #config.mk
 ###########################
-export DESIGN_NAME     = riscv
+export DESIGN_NAME     = gcd
 export PLATFORM        = sky130hd
 
-export VERILOG_FILES = $(sort $(wildcard ./designs/src/$(DESIGN_NICKNAME)/*.v))
+export VERILOG_FILES = $(sort $(wildcard ./designs/src/$(DESIGN_NAME)/*.v))
 
-export SDC_FILE = ./designs/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
+export SDC_FILE = ./designs/$(PLATFORM)/$(DESIGN_NAME)/constraint.sdc
 
 export CORE_UTILIZATION  = 30
 export CORE_ASPECT_RATIO = 1
@@ -162,35 +163,19 @@ export PLACE_DENSITY     = 0.70
 ```
 
 
-Refer to the [OpenSTA][https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/doc/OpenSTA.pdf] documenation to change these variables to suit the needs of the specific design being made.
-
-
 ## constraint.sdc
 
-The `constraint.sdc` file defines timing constraints for the design. Here’s an example of a constraint.sdc file which defines a clock `clk` with a period of 8.4 nanoseconds.
+The `constraint.sdc` file defines timing constraints for the design. The `create_clock` command allows you to define clocks that are either connected to nets or are virtual and can be customized. The units for `create_clock` are in nanoseconds. Here’s an example of a `constraint.sdc` file which defines a clock `clk` with a period of 8.4 nanoseconds.
+
 
 
 ```
 #constraint.sdc
 ############################
-create_clock [get_ports clk] -period 8.4
+create_clock [get_ports clk] -period 8.4  #Units are in nanoseconds
 ```
 
-
-The `create_clock` command allows you to define clocks that are either connected to nets  or are virtual and can be customized.
-
-
-```
-#Create a netlist clock
-create_clock -period <float> <netlist clock list of regexes>
-
-#Create a virtual clock
-create_clock -period <float> -name <virtual clock name>
-
-#Create a netlist clock with custom waveform/duty-cycle
-create_clock -period <float> -waveform {rising_edge falling_edge} <netlist clock list of regexes>
-```
-
+Refer to the [OpenSTA][https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/doc/OpenSTA.pdf] for the full documentation of the `create_clock` command.
 
 
 ## Liberty, LEF, and GDS Files
@@ -214,7 +199,7 @@ Once the liberty file, tech and macro LEF files, and either the merged standard 
 
 ## Behavioral Models
 
-OpenROAD requires behavioral Verilog modules for a latch and a gated clock. These modules are used during synthesis and follow a specific naming convention.
+Yosys requires behavioral Verilog modules for a latch and a gated clock. These modules are used during synthesis and follow a specific naming convention.
 
 
 ## Gated Clock
@@ -268,7 +253,7 @@ endmodule
 ```
 
 
-This file contains two modules, `$_DLATCH_P_` and `$_DLATCH_N_`. Notice that `$_DLATCH_N_` has it’s gate input is negated making it enable on a low signal while `$_DLATCH_P_` has a non-negated gate input making it enable on a high signal.
+This file contains two modules, `$_DLATCH_P_` and `$_DLATCH_N_`. Notice that `$_DLATCH_N_` has its gate input is negated making it enable on a low signal while `$_DLATCH_P_` has a non-negated gate input making it enable on a high signal.
 
 
 ## FastRoute Configuration
@@ -285,14 +270,14 @@ set_routing_layers -signal $::env(MIN_ROUTING_LAYER)-$::env(MAX_ROUTING_LAYER)
 ```
 
 
-The first command, set_global_routing_layer_adjustment, adjusts the routing resources of the design. This effectively reduces the number of routing tracks that the global router assumes to exist. By setting it to the value of 0.5, this reduced the routing resources of all routing layers to 50% which can help with congestion and reduce the challenges for detail routing. The second command, set_routing_layers, sets the minimum and maximum routing layers for signal nets by using the -signal option.
+The first command, `set_global_routing_layer_adjustment`, adjusts the routing resources of the design. This effectively reduces the number of routing tracks that the global router assumes to exist. By setting it to the value of 0.5, this reduced the routing resources of all routing layers to 50% which can help with congestion and reduce the challenges for detail routing. The second command, `set_routing_layers`, sets the minimum and maximum routing layers for signal nets by using the `-signal` option.
 
-More customization can be done to increase the efficiency of global and detail route. Refer to the [OpenROAD documentation](https://openroad.readthedocs.io/_/downloads/en/latest/pdf/).
+More customization can be done to increase the efficiency of global and detail route. Refer to the [FastRoute documentation](https://openroad.readthedocs.io/en/latest/main/src/grt/README.html)
 
 
 ## Metal Tracks Configuration
 
-OpenROAD requires a metal track configuration file for use in floorplanning. For each metal layer, the x and y offset as well as the x and y pitch are defined. To find the pitch and offset for both x and y, refer to the tech LEF. Following is a generalized metal tracks configuration file with five metal tracks defined.
+OpenROAD requires a metal track configuration file for use in floorplanning. For each metal layer, the x and y offset as well as the x and y pitch are defined. To find the pitch and offset for both x and y, refer to the `LAYER` definition section for each metal in the tech LEF. Following is a generalized metal tracks configuration file with five metal tracks defined. **Units are in microns**.
 
 
 ```
@@ -305,9 +290,43 @@ make_tracks metal4 -x_offset 0.28 -x_pitch 0.82 -y_offset 0.28 -y_pitch 0.82
 make_tracks metal5 -x_offset 0.28 -x_pitch 0.82 -y_offset 0.28 -y_pitch 0.82
 ```
 
+Following is the `LAYER` definition for metal1 in the sky130hd tech lef.
 
-Refer to the tech file to determine the x and y pitch and the offset.
+```
+LAYER met1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
 
+  PITCH 0.34 ;
+  OFFSET 0.17 ;
+
+  WIDTH 0.14 ;                     # Met1 1
+  # SPACING 0.14 ;                 # Met1 2
+  # SPACING 0.28 RANGE 3.001 100 ; # Met1 3b
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.14
+     WIDTH 3 0.28 ;
+  AREA 0.083 ;                     # Met1 6
+  THICKNESS 0.35 ;
+  MINENCLOSEDAREA 0.14 ;
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+
+  EDGECAPACITANCE 40.567E-6 ;
+  CAPACITANCE CPERSQDIST 25.7784E-6 ;
+  DCCURRENTDENSITY AVERAGE 2.8 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 6.1 ; # mA/um Irms_max at Tj = 90oC
+  MAXIMUMDENSITY 70 ;
+  DENSITYCHECKWINDOW 700 700 ;
+  DENSITYCHECKSTEP 70 ;
+
+  RESISTANCE RPERSQ 0.125 ;
+END met1
+```
+
+In the example above, the x and y pitch for `met1` would be 0.34 and the x and y offset would be 0.17.
 
 ## PDN Configuration
 
@@ -323,7 +342,7 @@ The tapcell configuration file is used to insert tapcells and endcaps into the d
 ## setRC Configuration
 
 
-setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
+setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Often, per-unit-length values are available in the PDK user guide. For `set_layer_rc`, Liberty units need to be used. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
 
 
 ```
@@ -348,55 +367,53 @@ set_wire_rc -clock -layer M5
 
 ## KLayout
 
-KLayout is used in OpenROAD to provide GDS merging, DRC, and LVS. Two files are required for KLayout and they are generated within the KLayout GUI. Install KLayout on the host machine since it is not included in the OpenROAD build process. Then create the properties and tech files as explained below.
-
-
-## KLayout properties file
-
-Follow these steps to generate the  KLayout properties file:
-
-
-
-	1. Open KLayout
-	2. Install the tf_import package
-	    1. Inside KLayout, go to Tools
-	    2. Manage Packages
-	    3. Install New Packages
-	    4. Select tf_import
-	        1. If the source of the package is from GitHub, then the file “” needs to be edited to include “source stdio”
-	3. Re-start KLayout
-	4. File -> Import some LEF. Does not matter what LEF; you will just get an error message without one.
-		1. Once selected, go to Options at the bottom left
-		2. Select your layer map file under the Production tab
-		3. Go to the LEF+Macro Files tab, then add under Additional LEF files, the merged (original) LEF file in your platform directory
-		4. Under Macro Layout Files, add the GDS file in your platform directory
-	5. File -> Import Cadence tech file
-	    1. You have to select a tech file (found in the PDK, usually inside the Virtuoso folder)
-	    2. KLayout also needs a `.drf` file which is automatically included if it resides in the same directory the cadence tech file was found in (found in the PDK’s Virtuoso folder).
-	6. File -> Save Layer Properties
-    	1. Save as a `.lyp` file in your platform directory
+KLayout is used in the OpenROAD flow to provide GDS merging, DRC, and LVS. Two files are required for KLayout and they are generated within the KLayout GUI. Install KLayout on the host machine since it is not included in the OpenROAD build process. Then create the properties and tech files as explained below.
 
 
 ## KLayout tech file
 
 Follow these steps to generate the Klayout tech file:
 
+1. Open klayout in a terminal
+2. Go to Tools -> Manage Technologies
+3. Click the + in the bottom left corner to create a new technology
+4. Set the name for the technology in the box that pops up. You should now see the technology name in the list on the left hand side
+5. Expand the technology by hitting the arrow and click on General
+6. Set the base path your platform directory and load the `.lyp` layer properties file that was generated earlier
+7. On the left hand side under your new technology click Reader Options and then click LEF/DEF on the top bar
+8. In the LEF+Macro Files section, you add the LEF files by clicking the + button on the right hand side of the box
+    1. **Note**: Only add your original merged LEF file. Make sure it includes the full path to the LEF file
+9. In the Production section, scroll down and add the layer map file by hitting the Load File button
+    1. **Note**: Make sure it includes the full path
+10. Above in the same section, change the layer name suffix and GDS data type to correspond with the layer map
+11. Generate the `.lyt` file by right clicking on the new technology name and click on Export Technology
+12. Save with the extension `.lyt`
 
 
-    1. Open klayout in a terminal
-    2. Go to Tools -> Manage Technologies
-    3. Click the + in the bottom left corner to create a new technology
-    4. Set the name for the technology in the box that pops up. You should now see the technology name in the list on the left hand side
-    5. Expand the technology by hitting the arrow and click on General
-    6. Set the base path your platform directory and load the .lyp layer properties file that was generated earlier
-    7. On the left hand side under your new technology click Reader Options and then click LEF/DEF on the top bar
-    8. In the LEF+Macro Files section, you add the LEF files by clicking the + button on the right hand side of the box
-        1. Only add your original merged LEF file. Make sure it includes the full path to the LEF file
-    9. In the Production section, scroll down and add the layer map file by hitting the Load File button
-        2. Make sure it includes the full path
-    10. Above in the same section, change the layer name suffix and GDS data type to correspond with the layer map
-    11. Generate the .lyt file by right clicking on the new technology name and click on Export Technology
-        3. Save with the extension .lyt
+## KLayout properties file
+
+The properties file is not required to obtain a GDS and is merely used for styling purposes inside. Follow these steps to generate the KLayout properties file:
+
+1. Open KLayout
+2. Install the tf_import package
+    1. Inside KLayout, go to Tools
+    2. Manage Packages
+    3. Install New Packages
+    4. Select tf_import
+        1. If the source of the package is from GitHub, then the file “” needs to be edited to include “source stdio”
+3. Re-start KLayout
+4. File -> Import some LEF. Does not matter what LEF; you will just get an error message without one.
+	1. Once selected, go to Options at the bottom left
+	2. Select your layer map file under the Production tab
+	3. Go to the LEF+Macro Files tab, then add under Additional LEF files, the merged (original) LEF file in your platform directory
+	4. Under Macro Layout Files, add the GDS file in your platform directory
+5. File -> Import Cadence tech file
+    1. You have to select a tech file (found in the PDK, usually inside the Virtuoso folder)
+    2. KLayout also needs a `.drf` file which is automatically included if it resides in the same directory the cadence tech file was found in (found in the PDK’s Virtuoso folder).
+6. File -> Save Layer Properties
+	1. Save as a `.lyp` file in your platform directory
+
+
 
 
 # Validating the New Platform
@@ -406,10 +423,8 @@ To validate the new platform, simply run a design through the flow using the new
 
 # Authors/Contributors
 
-
-
 * James Stine - Oklahoma State University
-* Teo Ene
-* Ricardo Hernandez
-* Ryan Ridley
-* Indira Iyer
+* Teo Ene - Oklahoma State University
+* Ricardo Hernandez - Oklahoma State University
+* Ryan Ridley - Oklahoma State University
+* Indira Iyer - TODO
