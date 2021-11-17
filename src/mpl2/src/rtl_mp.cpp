@@ -94,57 +94,57 @@ bool rtl_macro_placer(const char* config_file,
   string block_file = string(report_directory) + '/' + report_file + ".block";
   string net_file = string(report_directory) + '/' + report_file + ".net";
 
-  // parameters defined in config_file
+  //
+  //  Default for Parameters
+  //  
   // These parameters are related to shape engine
-  float min_aspect_ratio = 0.33;
-  float dead_space = 0.1;
+  float min_aspect_ratio = 0.40;
+  float dead_space = 0.05;
   float halo_width = 2.0;
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
 
   // These parameters are related to multi-start in shape engine
-  int num_thread = 5;
-  int num_run = 5;
+  int num_thread = 10;
+  int num_run = 10;
 
   unsigned seed = 0;
 
   // These parameters are related to "Go with the winner"
   float heat_rate = 0.5;
-  int num_level = 5;
+  int num_level = 2;
   int num_worker = 10;
 
   // These parameters are related to cost function
-  float alpha = 0.4;                   // weight for area
-  float beta = 0.3;                    // weight for wirelength
-  float gamma = 0.3;                   // weight for outline penalty
-  float boundary_weight = 0.06;        // weight for pushing macros to boundary
-  float macro_blockage_weight = 0.08;  // weight for macro blockage
-  float location_weight = 0.05;        // weight for preferred location
-  float notch_weight = 0.05;           // weight for notch
-
-
+  float alpha = 0.01;                   // weight for area
+  float beta = 54.7;                    // weight for wirelength auto tuned value
+  float gamma = 74.71;                  // weight for outline penalty - auto tuned value
+  float boundary_weight = 100.0;        // weight for pushing macros to boundary
+  float macro_blockage_weight = 50.0;   // weight for macro blockage
+  float location_weight = 100.0;        // weight for preferred location
+  float notch_weight = 100.0;           // weight for notch
 
   float learning_rate
-      = 0.01;  // learning rate for dynamic weight in cost function
+      = 0.00;  // learning rate for dynamic weight in cost function
   float shrink_factor
-      = 0.995;  // shrink factor for soft blocks in simulated annealing
+      = 0.999;  // shrink factor for soft blocks in simulated annealing
   float shrink_freq
-      = 0.01;  // shrink frequency for soft blocks in simulated annealing
+      = 0.1;  // shrink frequency for soft blocks in simulated annealing
 
   // These parameters are related to action probabilities in each step
-  float resize_prob = 0.4;
-  float pos_swap_prob = 0.2;
-  float neg_swap_prob = 0.2;
-  float double_swap_prob = 0.2;
+  float resize_prob = 0.1;
+  float pos_swap_prob = 0.3;
+  float neg_swap_prob = 0.3;
+  float double_swap_prob = 0.3;
 
   // These parameters are related to fastSA
   float init_prob = 0.95;
   float rej_ratio = 0.95;
-  int k = 50;
-  float c = 100;
-  int max_num_step = 300;
-  int perturb_per_step = 3000;
+  int k = 5000000;
+  float c = 1000.0;
+  int max_num_step = 4000;
+  int perturb_per_step = 1000;
 
   int snap_layer = 4;
 

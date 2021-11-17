@@ -31,16 +31,26 @@
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ############################################################################
 
-sta::define_cmd_args "rtl_macro_placer" { -config_file config_file \
+sta::define_cmd_args "rtl_macro_placer" { [-config_file config_file] \
                                          [-report_directory report_file] \
-                                         -report_file report_file \
+                                         [-area_weight area_wt] \
+                                         [-wirelength_weight wirelength_wt] \
+                                         [-outline_weight outline_wt] \
+                                         [-boundary_weight boundary_wt] \
+                                         [-macro_blockage_weight macro_blockage_wt] \
+                                         [-location_weight location_wt] \
+                                         [-notch_weight notch_wt] \
+                                         [-report_file report_file] \
                                          [-macro_blockage_file macro_blockage_file] \
                                          [-prefer_location_file prefer_location_file] \
                               }
 proc rtl_macro_placer { args } {
-    sta::parse_key_args "rtl_macro_placer" args keys { -config_file
-       -report_directory -report_file -macro_blockage_file -prefer_location_file } flag {  }
+    sta::parse_key_args "rtl_macro_placer" args keys { -config_file -report_directory
+       -area_weight -wirelength_weight -outline_weight
+       -boundary_weight -macro_blockage_weight -location_weight -notch_weight
+       -report_file -macro_blockage_file -prefer_location_file } flag {  }
 
+/****
     if { ![info exists keys(-config_file)] } {
         utl::error MPL 2 "Missing mandatory -config_file file"
     }
@@ -48,12 +58,49 @@ proc rtl_macro_placer { args } {
     if { ![info exists keys(-report_file)] } {
         utl::error MPL 3 "Missing mandatory argument -report_file file"
     }
+****/
 
     set config_file $keys(-config_file)
     set report_file $keys(-report_file)
+    set area_wt 0.01
+    set wirelength_wt 54.7
+    set outline_wt 74.71
+    set boundary_wt 100.0
+    set macro_blockage_wt 50.0
+    set location_wt 100.0
+    set notch_wt 100.0
+
     set report_directory "rtl_mp"
     set macro_blockage_file "macro_blockage.txt"
     set prefer_location_file "location.txt"
+
+    if { [info exists keys(-area_weight)] } {
+        set area_wt $keys(-area_weight)
+    }
+
+    if { [info exists keys(-wirelength_weight)] } {
+        set wirelength_wt $keys(-wirelength_weight)
+    }
+
+    if { [info exists keys(-outline_weight)] } {
+        set outline_wt $keys(-outline_weight)
+    }
+
+    if { [info exists keys(-boundary_weight)] } {
+        set boundary_wt $keys(-boundary_weight)
+    }
+
+    if { [info exists keys(-macro_blockage_weight)] } {
+        set macro_blockage_wt $keys(-macro_blockage_weight)
+    }
+
+    if { [info exists keys(-location_weight)] } {
+        set location_wt $keys(-location_weight)
+    }
+
+    if { [info exists keys(-notch_weight)] } {
+        set notch_wt $keys(-notch_weight)
+    }
 
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
