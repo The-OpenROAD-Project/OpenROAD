@@ -47,6 +47,7 @@
 
 #include "dbDescriptors.h"
 #include "displayControls.h"
+#include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
@@ -70,7 +71,7 @@ MainWindow::MainWindow(QWidget* parent)
       db_(nullptr),
       logger_(nullptr),
       controls_(new DisplayControls(this)),
-      inspector_(new Inspector(selected_, this)),
+      inspector_(new Inspector(selected_, highlighted_, this)),
       script_(new ScriptWidget(this)),
       viewer_(new LayoutViewer(
           controls_,
@@ -194,6 +195,18 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(focus(const Selected&)),
           viewer_,
           SLOT(selectionFocus(const Selected&)));
+  connect(this,
+          SIGNAL(highlightChanged()),
+          inspector_,
+          SLOT(highlightChanged()));
+  connect(inspector_,
+          SIGNAL(removeHighlight(const QList<const Selected*>&)),
+          this,
+          SLOT(removeFromHighlighted(const QList<const Selected*>&)));
+  connect(inspector_,
+          SIGNAL(addHighlight(const SelectionSet&)),
+          this,
+          SLOT(addHighlighted(const SelectionSet&)));
 
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
@@ -232,9 +245,9 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
   connect(selection_browser_,
-          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&, int)),
+          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
           this,
-          SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
+          SLOT(updateHighlightedSet(const QList<const Selected*>&)));
 
   connect(timing_widget_,
           SIGNAL(highlightTimingPath(TimingPath*)),
@@ -710,9 +723,14 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
 void MainWindow::addHighlighted(const SelectionSet& highlights,
                                 int highlight_group)
 {
-  if (highlight_group >= 7) {
+  if (highlight_group < 0) {
+    highlight_group = requestHighlightGroup();
+  }
+
+  if (highlight_group >= highlighted_.size()) {
     return;
   }
+
   auto& group = highlighted_[highlight_group];
   for (const auto& highlight : highlights) {
     if (highlight) {
@@ -757,11 +775,24 @@ void MainWindow::deleteRuler(const std::string& name)
   }
 }
 
+int MainWindow::requestHighlightGroup()
+{
+  HighlightGroupDialog dlg;
+  dlg.exec();
+  return dlg.getSelectedHighlightGroup();
+}
+
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
                                       int highlight_group)
 {
-  if (highlight_group >= 7)
+  if (highlight_group < 0) {
+    highlight_group = requestHighlightGroup();
+  }
+
+  if (highlight_group >= highlighted_.size()) {
     return;
+  }
+
   for (auto item : items) {
     highlighted_[highlight_group].insert(*item);
   }
@@ -778,7 +809,7 @@ void MainWindow::clearHighlighted(int highlight_group)
       num_items_cleared += highlighted_set.size();
       highlighted_set.clear();
     }
-  } else if (highlight_group < 7) {
+  } else if (highlight_group < highlighted_.size()) {
     num_items_cleared += highlighted_[highlight_group].size();
     highlighted_[highlight_group].clear();
   }
@@ -814,7 +845,7 @@ void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
       for (auto& highlighted_set : highlighted_)
         highlighted_set.erase(*item);
     }
-  } else if (highlight_group < 7) {
+  } else if (highlight_group < highlighted_.size()) {
     for (auto& item : items) {
       highlighted_[highlight_group].erase(*item);
     }

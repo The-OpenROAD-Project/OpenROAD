@@ -190,7 +190,7 @@ class Inspector : public QDockWidget
   Q_OBJECT
 
  public:
-  Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
+  Inspector(const SelectionSet& selected, const HighlightSet& highlighted, QWidget* parent = nullptr);
 
   const Selected& getSelection() { return selection_; }
 
@@ -202,10 +202,14 @@ class Inspector : public QDockWidget
   void selection(const Selected& selected);
   void focus(const Selected& selected);
 
+  void addHighlight(const SelectionSet& selection);
+  void removeHighlight(const QList<const Selected*>& selected);
+
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
+  void highlightChanged();
 
   int selectNext();
   int selectPrevious();
@@ -227,6 +231,10 @@ class Inspector : public QDockWidget
 
   int getSelectedIteratorPosition();
 
+  bool isHighlighted(const Selected& selected);
+
+  void makeAction(const Descriptor::Action& action);
+
   // The columns in the tree view
   enum Column
   {
@@ -247,6 +255,8 @@ class Inspector : public QDockWidget
   QLabel* selected_itr_label_;
   QTimer mouse_timer_;
   QModelIndex clicked_index_;
+
+  const HighlightSet& highlighted_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 

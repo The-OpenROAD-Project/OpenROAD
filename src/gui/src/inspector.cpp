@@ -568,7 +568,7 @@ int ActionLayout::rowWidth(ItemList& row) const
 
 ////////
 
-Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
+Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlighted, QWidget* parent)
     : QDockWidget("Inspector", parent),
       view_(new ObjectTree(this)),
       model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
@@ -580,7 +580,10 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
       button_frame_(new QFrame(this)),
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
-      selected_itr_label_(new QLabel(this))
+      selected_itr_label_(new QLabel(this)),
+      mouse_timer_(),
+      clicked_index_(),
+      highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings
   view_->setModel(model_);
@@ -729,6 +732,11 @@ void Inspector::reload()
   model_->updateObject();
 }
 
+void Inspector::highlightChanged()
+{
+  loadActions();
+}
+
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
@@ -745,29 +753,50 @@ void Inspector::loadActions()
   }
 
   // add action buttons
+  for (const auto& action : selection_.getActions()) {
+    makeAction(action);
+  }
+  if (isHighlighted(selection_)) {
+    makeAction({"Remove from highlight", [this]() -> Selected {
+      emit removeHighlight({&selection_});
+      return selection_;
+    }});
+  } else {
+    makeAction({"Add to highlight", [this]() -> Selected {
+      emit addHighlight({selection_});
+      return selection_;
+    }});
+  }
+}
+
+void Inspector::makeAction(const Descriptor::Action& action)
+{
   std::vector<std::pair<std::string, QString>> button_replacements{
     {"Delete", ":/delete.png"},
-    {"Zoom to", ":/zoom_to.png"}
+    {"Zoom to", ":/zoom_to.png"},
+    {"Remove from highlight", ":/highlight_off.png"},
+    {"Add to highlight", ":/highlight_on.png"}
   };
-  for (const auto& [name, action] : selection_.getActions()) {
-    QPushButton* button = nullptr;
-    for (const auto& [label, icon] : button_replacements) {
-      if (name == label) {
-        button = new QPushButton(QIcon(icon), "", this);
-        button->setToolTip(QString::fromStdString(name)); // set tool since
-        break;
-      }
-    }
 
-    if (button == nullptr) {
-      button = new QPushButton(QString::fromStdString(name), this);
+  const std::string& name = action.name;
+
+  QPushButton* button = nullptr;
+  for (const auto& [label, icon] : button_replacements) {
+    if (name == label) {
+      button = new QPushButton(QIcon(icon), "", this);
+      button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
+      break;
     }
-    connect(button, &QPushButton::released, [this, button]() {
-      handleAction(button);
-    });
-    action_layout_->addWidget(button);
-    actions_[button] = action;
   }
+
+  if (button == nullptr) {
+    button = new QPushButton(QString::fromStdString(name), this);
+  }
+  connect(button, &QPushButton::released, [this, button]() {
+    handleAction(button);
+  });
+  action_layout_->addWidget(button);
+  actions_[button] = action.callback;
 }
 
 void Inspector::clicked(const QModelIndex& index)
@@ -910,6 +939,17 @@ void Inspector::updateSelectedFields(const QModelIndex& index)
   }
 
   view_->resizeColumnToContents(0);
+}
+
+bool Inspector::isHighlighted(const Selected& selected)
+{
+  for (const auto& highlight_set : highlighted_) {
+    if (highlight_set.find(selected) != highlight_set.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 ////////////

@@ -40,7 +40,6 @@
 #include <string>
 
 #include "gui/gui.h"
-#include "highlightGroupDialog.h"
 #include "selectHighlightWindow.h"
 
 namespace gui {
@@ -155,7 +154,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   else if (role == Qt::BackgroundRole && index.column() == 3) {
     auto highlight_color
         = Painter::highlightColors[table_data_[index.row()].first];
-    return QColor(highlight_color.r, highlight_color.g, highlight_color.b, 100);
+    return QColor(highlight_color.r, highlight_color.g, highlight_color.b, highlight_color.a);
   }
   unsigned int row_index = index.row();
   if (row_index > table_data_.size())
@@ -435,14 +434,12 @@ void SelectHighlightWindow::deselectItems()
 }
 void SelectHighlightWindow::highlightSelectedItems()
 {
-  HighlightGroupDialog dlg;
-  dlg.exec();
   auto sel_indices = ui_.selTableView->selectionModel()->selectedRows();
   QList<const Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
     sel_items << selection_model_.getItemAt(sel_item.row());
   }
-  emit highlightSelectedItemsSig(sel_items, dlg.getSelectedHighlightGroup());
+  emit highlightSelectedItemsSig(sel_items);
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()

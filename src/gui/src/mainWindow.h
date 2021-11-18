@@ -150,7 +150,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
+  void addHighlighted(const SelectionSet& selection, int highlight_group = -1);
 
   // Add Ruler to Layout View
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
@@ -160,7 +160,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Add the selections(List) to highlight set
   void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
-                            int highlight_group = 0);
+                            int highlight_group = -1);
 
   // Higlight set will be cleared with this explicit call
   void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
@@ -230,6 +230,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QMenu* findMenu(QStringList& path, QMenu* parent = nullptr);
   void removeMenu(QMenu* menu);
+
+  int requestHighlightGroup();
 
   odb::dbBlock* getBlock();
 

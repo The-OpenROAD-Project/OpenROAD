@@ -77,6 +77,9 @@ class Painter
     constexpr Color(int r, int g, int b, int a = 255) : r(r), g(g), b(b), a(a)
     {
     }
+    constexpr Color(const Color& color, int a) : r(color.r), g(color.g), b(color.b), a(a)
+    {
+    }
 
     int r;
     int g;
@@ -112,14 +115,14 @@ class Painter
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
   static inline const std::array<Painter::Color, 8> highlightColors{
-      Painter::green,
-      Painter::yellow,
-      Painter::cyan,
-      Painter::magenta,
-      Painter::red,
-      Painter::dark_green,
-      Painter::dark_magenta,
-      Painter::blue};
+    Color(Painter::green, 100),
+    Color(Painter::yellow, 100),
+    Color(Painter::cyan, 100),
+    Color(Painter::magenta, 100),
+    Color(Painter::red, 100),
+    Color(Painter::dark_green, 100),
+    Color(Painter::dark_magenta, 100),
+    Color(Painter::blue, 100)};
 
   // The color to highlight in
   static inline const Color highlight = yellow;
