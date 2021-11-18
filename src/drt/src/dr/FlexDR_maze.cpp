@@ -1104,7 +1104,9 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 /*inline*/ void FlexDRWorker::modCutSpacingCost(const Rect& box,
                                                 frMIdx z,
                                                 int type,
-                                                bool isBlockage, int avoidI, int avoidJ)
+                                                bool isBlockage, 
+                                                int avoidI, 
+                                                int avoidJ)
 {
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
@@ -1660,7 +1662,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
       net->clear();
       if (getDRIter() >= beginDebugIter)
-      cout << "Routing net " << *net << "\n";
+        cout << "Routing net " << *net << "\n";
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
