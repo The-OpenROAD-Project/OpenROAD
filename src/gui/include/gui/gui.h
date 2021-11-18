@@ -90,6 +90,14 @@ class Painter
              (b == other.b) &&
              (a == other.a);
     }
+
+    static const Color copyWithAlpha(const Color& color, int a)
+    {
+      return {color.r,
+              color.g,
+              color.b,
+              a};
+    }
   };
 
   static inline const Color black{0x00, 0x00, 0x00, 0xff};
@@ -112,14 +120,14 @@ class Painter
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
   static inline const std::array<Painter::Color, 8> highlightColors{
-      Painter::green,
-      Painter::yellow,
-      Painter::cyan,
-      Painter::magenta,
-      Painter::red,
-      Painter::dark_green,
-      Painter::dark_magenta,
-      Painter::blue};
+    Color::copyWithAlpha(Painter::green, 100),
+    Color::copyWithAlpha(Painter::yellow, 100),
+    Color::copyWithAlpha(Painter::cyan, 100),
+    Color::copyWithAlpha(Painter::magenta, 100),
+    Color::copyWithAlpha(Painter::red, 100),
+    Color::copyWithAlpha(Painter::dark_green, 100),
+    Color::copyWithAlpha(Painter::dark_magenta, 100),
+    Color::copyWithAlpha(Painter::blue, 100)};
 
   // The color to highlight in
   static inline const Color highlight = yellow;
