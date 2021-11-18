@@ -30,24 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
 #pragma once
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <vector>
 #include <deque>
+#include <vector>
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
 
-
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
@@ -58,47 +52,42 @@ class DetailedMgr;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedParams
-{
-public:
-    DetailedParams():
-        m_targetMaxMovement( std::numeric_limits<double>::max() ),
-        m_targetUt( 1.0 )
-    {
-        m_script = "";
+class DetailedParams {
+ public:
+  DetailedParams()
+      : m_targetMaxMovement(std::numeric_limits<double>::max()),
+        m_targetUt(1.0) {
+    m_script = "";
+  }
+  virtual ~DetailedParams() {}
 
-    }
-    virtual ~DetailedParams() {}
-public:
-    std::string         m_script;
-    double              m_targetMaxMovement;
-    double              m_targetUt;
+ public:
+  std::string m_script;
+  double m_targetMaxMovement;
+  double m_targetUt;
 };
 
-class Detailed
-{
-public:
+class Detailed {
+ public:
+ public:
+  Detailed(DetailedParams& params) : m_params(params) {}
+  virtual ~Detailed(void);
 
-public:
-    Detailed( DetailedParams& params ):m_params( params ) {}
-    virtual ~Detailed( void );
+  // Interface for script.
+  // bool improve( Architecture* arch, Network* network, RoutingParams* rt );
+  bool improve(DetailedMgr& mgr);
 
-    // Interface for script.
-    //bool improve( Architecture* arch, Network* network, RoutingParams* rt );
-    bool improve( DetailedMgr& mgr );
+ protected:
+  void doDetailedCommand(std::vector<std::string>& args);
 
-protected:
-    void        doDetailedCommand( std::vector<std::string>& args );
+ public:
+  DetailedParams& m_params;
 
+  DetailedMgr* m_mgr;
 
-public:
-    DetailedParams&         m_params;
-
-    DetailedMgr*            m_mgr;
-
-    Architecture*           m_arch;
-    Network*                m_network;
-    RoutingParams*          m_rt;
+  Architecture* m_arch;
+  Network* m_network;
+  RoutingParams* m_rt;
 };
 
-} // namespace dpo
+}  // namespace dpo

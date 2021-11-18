@@ -30,61 +30,49 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 #pragma once
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <vector>
 #include <deque>
+#include <vector>
 #include "architecture.h"
+#include "detailed_manager.h"
+#include "detailed_segment.h"
 #include "network.h"
 #include "router.h"
-#include "detailed_segment.h"
-#include "detailed_manager.h"
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedGenerator
-{
-public:
-    DetailedGenerator( void ) {}
-    virtual ~DetailedGenerator( void ) {}
+class DetailedGenerator {
+ public:
+  DetailedGenerator(void) {}
+  virtual ~DetailedGenerator(void) {}
 
-    // Different methods for generating moves.  We _must_ overload these.  The
-    // generated move should be stored in the manager.
-    virtual bool generate( DetailedMgr* mgr, std::vector<Node*>& candiates ) 
-    { 
-        std::cout << "Error." << std::endl; 
-        exit(-1);
-        return false;
-    };
+  // Different methods for generating moves.  We _must_ overload these.  The
+  // generated move should be stored in the manager.
+  virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) {
+    std::cout << "Error." << std::endl;
+    exit(-1);
+    return false;
+  };
 
-    virtual void stats( void ) 
-    {
-        std::cout << "Error." << std::endl;
-        exit(-1);
-    }
+  virtual void stats(void) {
+    std::cout << "Error." << std::endl;
+    exit(-1);
+  }
 
-    virtual void init( DetailedMgr* mgr )
-    {
-        std::cout << "Error." << std::endl;
-    }
+  virtual void init(DetailedMgr* mgr) { std::cout << "Error." << std::endl; }
 
-protected:
+ protected:
 };
 
-} // namespace dpo
-
+}  // namespace dpo

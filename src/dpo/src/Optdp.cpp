@@ -120,6 +120,7 @@ Optdp::improvePlacement()
 
   // A manager to track cells.
   dpo::DetailedMgr mgr( arch_, nw_, rt_ );
+  mgr.setLogger( logger_ );
 
   // Legalization.  Doesn't particularly do much.  It only
   // populates the data structures required for detailed
@@ -733,10 +734,10 @@ Optdp::createNetwork()
     {
       Node& nd = nw_->m_nodes[n];
 
-      nd.m_firstPin = p;
+      nd.setFirstPinIdx(p);
       while( p < nw_->m_nodePins.size() && nw_->m_nodePins[p]->getNodeId() == n )
         ++p;
-      nd.m_lastPin = p;
+      nd.setLastPinIdx(p);
     }
 
     std::stable_sort( 
@@ -748,10 +749,10 @@ Optdp::createNetwork()
     {
       Edge& ed = nw_->m_edges[e];
 
-      ed.m_firstPin = p;
+      ed.setFirstPinIdx(p);
       while( p < nw_->m_edgePins.size() && nw_->m_edgePins[p]->getEdgeId() == e )
         ++p;
-      ed.m_lastPin = p;
+      ed.setLastPinIdx(p);
     }
   }
 

@@ -30,20 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // File: orientation.h
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #pragma once
 
-
-
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
@@ -52,15 +45,14 @@ namespace dpo
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-const unsigned Orientation_UNKNOWN                  = 0x00000000;
-const unsigned Orientation_N                        = 0x00000001;
-const unsigned Orientation_S                        = 0x00000002;
-const unsigned Orientation_E                        = 0x00000004;
-const unsigned Orientation_W                        = 0x00000008;
-const unsigned Orientation_FN                       = 0x00000010;
-const unsigned Orientation_FS                       = 0x00000020;
-const unsigned Orientation_FE                       = 0x00000040;
-const unsigned Orientation_FW                       = 0x00000080;
+const unsigned Orientation_UNKNOWN = 0x00000000;
+const unsigned Orientation_N = 0x00000001;
+const unsigned Orientation_S = 0x00000002;
+const unsigned Orientation_E = 0x00000004;
+const unsigned Orientation_W = 0x00000008;
+const unsigned Orientation_FN = 0x00000010;
+const unsigned Orientation_FS = 0x00000020;
+const unsigned Orientation_FE = 0x00000040;
+const unsigned Orientation_FW = 0x00000080;
 
-
-} // namespace dpo
+}  // namespace dpo

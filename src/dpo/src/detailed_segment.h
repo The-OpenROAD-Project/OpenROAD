@@ -30,72 +30,63 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
 
 #pragma once
 
-
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
 ////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedSeg
-{
-public:
-    DetailedSeg():
-            m_segId(-1), m_rowId(-1), m_regId(0),
-            m_xmin( std::numeric_limits<double>::max() ),
-            m_xmax( std::numeric_limits<double>::min() ),
-            m_util( 0.0 ), m_gapu( 0.0 )
-    {}
-    virtual ~DetailedSeg()
-    {}
+class DetailedSeg {
+ public:
+  DetailedSeg()
+      : m_segId(-1),
+        m_rowId(-1),
+        m_regId(0),
+        m_xmin(std::numeric_limits<double>::max()),
+        m_xmax(std::numeric_limits<double>::min()),
+        m_util(0.0),
+        m_gapu(0.0) {}
+  virtual ~DetailedSeg() {}
 
-    void        setSegId( int segId ) { m_segId = segId; }
-    int         getSegId( void ) const { return m_segId; }
+  void setSegId(int segId) { m_segId = segId; }
+  int getSegId(void) const { return m_segId; }
 
-    void        setRowId( int rowId ) { m_rowId = rowId; }
-    int         getRowId( void ) const { return m_rowId; }
+  void setRowId(int rowId) { m_rowId = rowId; }
+  int getRowId(void) const { return m_rowId; }
 
-    void        setRegId( int regId ) { m_regId = regId; }
-    int         getRegId( void ) const { return m_regId; }
-public:
-    int             m_segId;
-    int             m_rowId;
-    int             m_regId; // AAK: Added for regions.
-    double          m_xmin;
-    double          m_xmax;
-    double          m_util;
-    double          m_gapu;
+  void setRegId(int regId) { m_regId = regId; }
+  int getRegId(void) const { return m_regId; }
+
+ public:
+  int m_segId;
+  int m_rowId;
+  int m_regId;  // AAK: Added for regions.
+  double m_xmin;
+  double m_xmax;
+  double m_util;
+  double m_gapu;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace dpo
-
+}  // namespace dpo

@@ -30,64 +30,54 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
-
 #pragma once
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <vector>
 #include <deque>
+#include <vector>
 #include "architecture.h"
+#include "detailed_manager.h"
+#include "detailed_segment.h"
 #include "network.h"
 #include "router.h"
-#include "detailed_segment.h"
-#include "detailed_manager.h"
 
-
-
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedObjective
-{
-public:
-    DetailedObjective( void ) { m_name = "objective"; }
-    virtual ~DetailedObjective( void ) {}
+class DetailedObjective {
+ public:
+  DetailedObjective(void) { m_name = "objective"; }
+  virtual ~DetailedObjective(void) {}
 
-    virtual const std::string& getName( void ) const { return m_name; }
+  virtual const std::string& getName(void) const { return m_name; }
 
-    virtual double curr( void ) { return 0.0; }
+  virtual double curr(void) { return 0.0; }
 
-    // Different methods for generating moves.  We _must_ overload these.  The
-    // generated move should be stored in the manager.
-    virtual double  delta( int n, std::vector<Node*>& nodes,
-                    std::vector<double>& curX, std::vector<double>& curY,
-                    std::vector<unsigned>& curOri,
-                    std::vector<double>& newX, std::vector<double>& newY,
-                    std::vector<unsigned>& newOri
-                )
-    { 
-        std::cout << "Error." << std::endl; 
-        exit(-1);
-        return 0.0;
-    }
+  // Different methods for generating moves.  We _must_ overload these.  The
+  // generated move should be stored in the manager.
+  virtual double delta(int n, std::vector<Node*>& nodes,
+                       std::vector<double>& curX, std::vector<double>& curY,
+                       std::vector<unsigned>& curOri, std::vector<double>& newX,
+                       std::vector<double>& newY,
+                       std::vector<unsigned>& newOri) {
+    std::cout << "Error." << std::endl;
+    exit(-1);
+    return 0.0;
+  }
 
-    virtual void accept( void ) {}
-    virtual void reject( void ) {}
+  virtual void accept(void) {}
+  virtual void reject(void) {}
 
-protected:
-    std::string m_name;
+ protected:
+  std::string m_name;
 };
 
-} // namespace dpo
+}  // namespace dpo

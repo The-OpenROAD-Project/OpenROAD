@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Description:
 //
@@ -40,20 +38,18 @@
 
 #pragma once
 
-
 //////////////////////////////////////////////////////////////////////////////
 // Includes.
 //////////////////////////////////////////////////////////////////////////////
 #include <cmath>
 #include <map>
-#include <vector>
 #include <set>
+#include <vector>
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
 
-namespace dpo 
-{
+namespace dpo {
 
 //////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
@@ -65,66 +61,57 @@ class DetailedMgr;
 // Classes.
 //////////////////////////////////////////////////////////////////////////////
 
+class ShiftLegalizerParams {
+ public:
+  ShiftLegalizerParams(void) {}
 
-class ShiftLegalizerParams
-{
-public:
-    ShiftLegalizerParams( void ) {}
-public:
+ public:
 };
 
-class ShiftLegalizer
-{
-public:
-    ShiftLegalizer( ShiftLegalizerParams& params );
-    virtual ~ShiftLegalizer( void );
+class ShiftLegalizer {
+ public:
+  ShiftLegalizer(ShiftLegalizerParams& params);
+  virtual ~ShiftLegalizer(void);
 
-    bool legalize( DetailedMgr& mgr );
+  bool legalize(DetailedMgr& mgr);
 
-protected:
-    class Clump
-    {
-    public:
-        Clump() {}
-        virtual ~Clump() {}
-    public:
-        int m_id;
-        double m_weight;
-        double m_wposn;
-        double m_width;
-        double m_posn;
-        std::vector<Node*> m_nodes;
-    };
+ protected:
+  class Clump {
+   public:
+    Clump() {}
+    virtual ~Clump() {}
 
-protected:
-    double shift( std::vector<Node*>& cells );
-    double clump( std::vector<Node*>& order );
-    void merge( Clump* r );
-    bool violated( Clump* r, Clump*& l, double& dist );
+   public:
+    int m_id;
+    double m_weight;
+    double m_wposn;
+    double m_width;
+    double m_posn;
+    std::vector<Node*> m_nodes;
+  };
 
-protected:
-    ShiftLegalizerParams&           m_params;
-    
-    DetailedMgr*                    m_mgr;
-    Architecture*                   m_arch;
-    Network*                        m_network;
-    RoutingParams*                  m_rt;
+ protected:
+  double shift(std::vector<Node*>& cells);
+  double clump(std::vector<Node*>& order);
+  void merge(Clump* r);
+  bool violated(Clump* r, Clump*& l, double& dist);
 
-    // For clumping.
-    std::vector<Clump>              m_clumps;
-    std::vector<double>             m_offset;
-    std::vector<Clump*>             m_ptr;
-    std::vector<std::vector<int> >  m_outgoing;
-    std::vector<std::vector<int> >  m_incoming;
-    std::vector<Node*>              m_dummiesRight;
-    std::vector<Node*>              m_dummiesLeft;
+ protected:
+  ShiftLegalizerParams& m_params;
+
+  DetailedMgr* m_mgr;
+  Architecture* m_arch;
+  Network* m_network;
+  RoutingParams* m_rt;
+
+  // For clumping.
+  std::vector<Clump> m_clumps;
+  std::vector<double> m_offset;
+  std::vector<Clump*> m_ptr;
+  std::vector<std::vector<int> > m_outgoing;
+  std::vector<std::vector<int> > m_incoming;
+  std::vector<Node*> m_dummiesRight;
+  std::vector<Node*> m_dummiesLeft;
 };
 
-} // namespace dpo
-
-
-
-
-
-
-
+}  // namespace dpo

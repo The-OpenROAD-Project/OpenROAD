@@ -30,79 +30,67 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 // Description:
 // Various routines related to cell orientation and cell flipping.
 
-
 #pragma once
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include <vector>
 #include <deque>
+#include <vector>
 #include "architecture.h"
 #include "network.h"
 #include "router.h"
 
-
-namespace dpo
-{
+namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
 ////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 class DetailedMgr;
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class DetailedOrient
-{
-public:
-    DetailedOrient( Architecture* arch, Network* network, RoutingParams* rt );
-    virtual ~DetailedOrient( void );
+class DetailedOrient {
+ public:
+  DetailedOrient(Architecture* arch, Network* network, RoutingParams* rt);
+  virtual ~DetailedOrient(void);
 
-    void run( DetailedMgr* mgrPtr, std::string command );
-    void run( DetailedMgr* mgrPtr, std::vector<std::string>& args );
+  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
-    int         flipCells( void );
-    int         orientCellsForRow( void );
+  int flipCells(void);
+  int orientCellsForRow(void);
 
-    bool        orientCellForRow( Node* ndi, int row );
-    bool        orientAdjust( Node* ndi, unsigned newOri );
-    unsigned    orientFind( Node* ndi, int row );
-    bool        isLegalSym( unsigned rowOri, unsigned siteSym, unsigned cellOri );
+  bool orientCellForRow(Node* ndi, int row);
+  bool orientAdjust(Node* ndi, unsigned newOri);
+  unsigned orientFind(Node* ndi, int row);
+  bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
 
-    // XXX: Couple more routines that _should_ go here.
-protected:
-    Architecture*               m_arch;
-    Network*                    m_network;
-    RoutingParams*              m_rt;
+  // XXX: Couple more routines that _should_ go here.
+ protected:
+  Architecture* m_arch;
+  Network* m_network;
+  RoutingParams* m_rt;
 
-    DetailedMgr*                m_mgrPtr;
+  DetailedMgr* m_mgrPtr;
 
-    int                         m_skipNetsLargerThanThis;
-    int                         m_traversal;
-    std::vector<int>            m_edgeMask;
+  int m_skipNetsLargerThanThis;
+  int m_traversal;
+  std::vector<int> m_edgeMask;
 };
 
-
-
-} // namespace dpo
+}  // namespace dpo
