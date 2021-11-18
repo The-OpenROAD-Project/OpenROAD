@@ -70,7 +70,7 @@ MainWindow::MainWindow(QWidget* parent)
       db_(nullptr),
       logger_(nullptr),
       controls_(new DisplayControls(this)),
-      inspector_(new Inspector(selected_, this)),
+      inspector_(new Inspector(selected_, highlighted_, this)),
       script_(new ScriptWidget(this)),
       viewer_(new LayoutViewer(
           controls_,
