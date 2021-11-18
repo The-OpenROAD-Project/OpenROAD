@@ -66,7 +66,7 @@ SelectedItemModel::SelectedItemModel(const Selected& object,
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ForegroundRole) {
-    bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+    const bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
 
     if (has_selected){
       return QBrush(selectable_item_);
@@ -74,7 +74,7 @@ QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
   } else {
     if (index.column() == 1) {
       if (role == Qt::BackgroundRole) {
-        bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+        const bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
 
         if (has_editor) {
           return QBrush(editable_item_);
