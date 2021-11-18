@@ -34,4 +34,6 @@ DPL-0018
  _276_
 [WARNING DPL-0007] Power line check failed (1).
  _281_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033
 No differences found.

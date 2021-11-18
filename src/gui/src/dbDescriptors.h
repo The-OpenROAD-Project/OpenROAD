@@ -142,6 +142,7 @@ class DbITermDescriptor : public Descriptor
   DbITermDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
+  std::string getShortName(std::any object) const override;
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
