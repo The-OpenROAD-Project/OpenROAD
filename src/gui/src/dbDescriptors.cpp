@@ -202,9 +202,16 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
                   {"X", x / dbuPerUU},
                   {"Y", y / dbuPerUU}});
   }
-  SelectionSet iterms;
+  Descriptor::PropertyList iterms;
   for (auto iterm : inst->getITerms()) {
-    iterms.insert(gui->makeSelected(iterm));
+    auto* net = iterm->getNet();
+    std::any net_value;
+    if (net == nullptr) {
+      net_value = "<none>";
+    } else {
+      net_value = gui->makeSelected(net);
+    }
+    iterms.push_back({gui->makeSelected(iterm), net_value});
   }
   props.push_back({"ITerms", iterms});
   return props;
@@ -721,6 +728,12 @@ std::string DbITermDescriptor::getName(std::any object) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
   return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
+}
+
+std::string DbITermDescriptor::getShortName(std::any object) const
+{
+  auto iterm = std::any_cast<odb::dbITerm*>(object);
+  return iterm->getMTerm()->getName();
 }
 
 std::string DbITermDescriptor::getTypeName() const
