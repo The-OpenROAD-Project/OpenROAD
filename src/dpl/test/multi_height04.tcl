@@ -5,7 +5,9 @@ read_lef multi_height_tech_cells.lef
 read_def multi_height04.def
 catch {detailed_placement} msg
 puts $msg
-check_placement -verbose
+catch {check_placement -verbose} error
+puts $error
+
 
 set def_file [make_result_file multi_height04.def]
 write_def $def_file

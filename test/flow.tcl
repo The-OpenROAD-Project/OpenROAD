@@ -165,8 +165,7 @@ detailed_placement
 utl::metric "utilization" [format %.1f [expr [rsz::utilization] * 100]]
 utl::metric "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
-set dpl_errors [check_placement -verbose]
-utl::metric "DPL::errors" $dpl_errors
+check_placement -verbose
 
 ################################################################
 # Global routing
