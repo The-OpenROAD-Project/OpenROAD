@@ -474,6 +474,14 @@ void extDebugNet::getRects()
     else
       _vias[a->level()]->add(a);
 
+
+    bool debug_shapes=false;
+    if (_debug && debug_shapes) {
+        dbShape s;
+        wire->getShape(a->_shapeId, s);
+        printShape(s, a->_shapeId, false);
+    }
+
   _shapes->add(a);
   }
   printViasWires(
@@ -652,9 +660,11 @@ bool extDebugNet::intersectRect(dbBTerm* b, dbShape& s, bool openEndedWires)
     extListWire* t = _rects[level]->get(kk);
     if (openEndedWires && (t->_src == 0 || t->_dst == 0)) {
       if (t->overlapPinShape(b->getId(), pinRect)) {
+        if (_debug) {
         fprintf(_connFP, "\nBterm Wire Conn ------------------------------\n");
         printRect(pinRect, b->getId(), "BTERM", level, 0, true);
         t->printRect(_connFP, true);
+        }
         found = true;
         break;
       }
@@ -750,9 +760,11 @@ bool extDebugNet::intersectRect(dbITerm* b, dbShape& s, bool openEndedWires)
     }
     // if (t->overlapItermShape(b->getId(), pinRect)) {
     if (t->overlapItermShape_via(b->getId(), pinRect, level == t->level())) {
+      if (_debug) {
       fprintf(_connFP, "\nIterm Wire Conn ------------------------------\n");
       printRect(pinRect, b->getId(), "iTERM", level, 0, true);
       t->printRect(_connFP, true);
+      }
       found = true;
       break;
     }
@@ -769,9 +781,11 @@ bool extDebugNet::intersectRect(dbITerm* b, dbShape& s, bool openEndedWires)
     }
     if (openEndedWires && (t->_src == 0 || t->_dst == 0)) {
       if (t->overlapItermShape(b->getId(), pinRect)) {
+        if (_debug) {
         fprintf(_connFP, "\nIterm Wire Conn ------------------------------\n");
         printRect(pinRect, b->getId(), "I TERM", level, 0, true);
         t->printRect(_connFP, true);
+        }
         found = true;
         break;
       }
@@ -896,13 +910,14 @@ void extDebugNet::makeRsegs(Ath__array1D<extListWire*>* rects)
   for (uint ii = 0; ii < rects->getCnt(); ii++) {
     extListWire* a = rects->get(ii);
 
-    /*
-    dbShape s;
-    dbWire* w = _net->getWire();
+    bool debug_shapes=false;
+    if (_debug && debug_shapes) {
+        dbShape s;
+        dbWire* w = _net->getWire();
 
-    w->getShape(a->_shapeId, s);
-    printShape(s, a->_shapeId, false);
-    */
+        w->getShape(a->_shapeId, s);
+        printShape(s, a->_shapeId, false);
+    }
 
     if (a->_src == 0 && a->_dst == 0)
       continue;  // TODO
@@ -1890,9 +1905,10 @@ uint extDebugNet::checkNet(int debug_net_id)
 }
 uint extDebugNet::CheckConnectivity(bool verbose)
 {
-  if (_net->getTermCount() > 2)
+  if (_net->getTermCount() < 2)
     return 0;
   _nodeMap->init(_net, this, _connFP);
+  _nodeMap->_debug= _debug;
   if (_debug)
     _nodeMap->print(_connFP);
   uint cnt = _nodeMap->traverse();
@@ -2058,6 +2074,8 @@ uint extCapNodeHash::traverse()
     dbSet<dbRSeg> rSet = _net->getRSegs();
     uint wireCnt = 0;
     uint viaCnt = 0;
+    _debug = true;
+    if (_debug) {
     fprintf(_connFP,
             "\nNET termCount=%d wireCnt=%d viaCnt=%d rCnt=%d %d %s\n",
             _net->getTermCount(),
@@ -2066,10 +2084,12 @@ uint extCapNodeHash::traverse()
             rSet.size(),
             _net->getId(),
             _net->getConstName());
+    }
     unmarkAllTerms();
     resetVisited();
-    _debug = true;
+    
     dfs(_sourceIndex);
+    _debug = false;
   }
   unmarkAllTerms();
 

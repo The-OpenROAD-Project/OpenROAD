@@ -1120,7 +1120,7 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype) {
   }
   return cnt;
 }
-void extMain::getInitialRCvalues(dbNet* net)
+uint extMain::getInitialRCvalues(dbNet* net)
 {
      uint cnt = 0;
   //	uint wireId= wire->getId();
@@ -1153,6 +1153,7 @@ void extMain::getInitialRCvalues(dbNet* net)
       updateRes(rc, res, ii);
     }
   }
+  return cnt;
 }
 
 uint extMain::addRSegsOnSearch(dbNet* net,
@@ -1347,11 +1348,18 @@ uint extMain::addSignalNets(uint dir, int* bb_ll, int* bb_ur, uint wtype,
       // bool newConnExt= net->isDisconnected() && termCnt<100;
       bool newConnExt= this->_newConnExt ;
 // ---------------------------------------------------------------
+  bool disconnect= net->isDisconnected();
    uint rseg_type= 19; // wire=9
-   if (!newConnExt)
+   if (this->_newConnExt && (this->_skip_order_wires || (!this->_skip_order_wires && disconnect)) )
+      cnt += addRSegsOnSearch(net, dir, bb_ll, bb_ur, rseg_type, fp, createDbNet);
+   else
+      cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
+   /*
+   if (!newConnExt || net->isDisconnected())
       cnt += addNetShapesOnSearch(net, dir, bb_ll, bb_ur, wtype, fp, createDbNet);
     else 
       cnt += addRSegsOnSearch(net, dir, bb_ll, bb_ur, rseg_type, fp, createDbNet);
+    */
   }
   if (createDbNet == NULL)
     _search->adjustOverlapMakerEnd();

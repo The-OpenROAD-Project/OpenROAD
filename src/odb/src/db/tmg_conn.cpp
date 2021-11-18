@@ -1149,6 +1149,8 @@ void tmg_conn::findConnections(bool verbose)
   }
   setSring();
 
+  bool skip_term_connect= true;
+  if (!skip_term_connect) {
   for (int j = 0; j < _termN; j++) {
     connectTerm(j, false);
   }
@@ -1157,6 +1159,7 @@ void tmg_conn::findConnections(bool verbose)
     for (int j = 0; j < _termN; j++) {
       connectTerm(j, true);
     }
+  }
   }
 
   // make terms of shorted points consistent
@@ -1762,6 +1765,8 @@ void tmg_conn::analyzeNet(dbNet* net,
     if (verbose)
       printDisconnect();  // this is not complete
   }
+  //  net->setDisconnected(true);
+
 }
 
 void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)

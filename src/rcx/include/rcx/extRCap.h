@@ -2407,7 +2407,7 @@ class extMain
                   odb::dbShape& s,
                   odb::Point& prevPoint,
                   odb::dbWirePathShape& pshape, dbRSeg *rc=NULL);
-  void getInitialRCvalues(dbNet* net);
+  uint getInitialRCvalues(dbNet* net);
   void setResAndCap(odb::dbRSeg* rc, double* restbl, double* captbl);
   void setBranchCapNodeId(odb::dbNet* net, uint junction);
   odb::dbRSeg* addRSeg(odb::dbNet* net,
