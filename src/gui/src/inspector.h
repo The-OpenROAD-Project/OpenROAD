@@ -202,10 +202,14 @@ class Inspector : public QDockWidget
   void selection(const Selected& selected);
   void focus(const Selected& selected);
 
+  void addHighlight(const SelectionSet& selection);
+  void removeHighlight(const QList<const Selected*>& selected);
+
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
+  void highlightChanged();
 
   int selectNext();
   int selectPrevious();

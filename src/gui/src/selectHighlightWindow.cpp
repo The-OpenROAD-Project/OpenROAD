@@ -40,7 +40,6 @@
 #include <string>
 
 #include "gui/gui.h"
-#include "highlightGroupDialog.h"
 #include "selectHighlightWindow.h"
 
 namespace gui {
@@ -435,14 +434,12 @@ void SelectHighlightWindow::deselectItems()
 }
 void SelectHighlightWindow::highlightSelectedItems()
 {
-  HighlightGroupDialog dlg;
-  dlg.exec();
   auto sel_indices = ui_.selTableView->selectionModel()->selectedRows();
   QList<const Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
     sel_items << selection_model_.getItemAt(sel_item.row());
   }
-  emit highlightSelectedItemsSig(sel_items, dlg.getSelectedHighlightGroup());
+  emit highlightSelectedItemsSig(sel_items);
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()

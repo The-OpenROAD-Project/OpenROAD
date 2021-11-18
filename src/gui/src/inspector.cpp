@@ -732,6 +732,11 @@ void Inspector::reload()
   model_->updateObject();
 }
 
+void Inspector::highlightChanged()
+{
+  loadActions();
+}
+
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
@@ -750,6 +755,17 @@ void Inspector::loadActions()
   // add action buttons
   for (const auto& action : selection_.getActions()) {
     makeAction(action);
+  }
+  if (isHighlighted(selection_)) {
+    makeAction({"Remove from highlight", [this]() -> Selected {
+      emit removeHighlight({&selection_});
+      return selection_;
+    }});
+  } else {
+    makeAction({"Add to highlight", [this]() -> Selected {
+      emit addHighlight({selection_});
+      return selection_;
+    }});
   }
 }
 
