@@ -110,12 +110,13 @@ class SelectedItemModel : public QStandardItemModel
 
  private:
   void makePropertyItem(const Descriptor::Property& property, QStandardItem*& name_item, QStandardItem*& value_item);
-  QStandardItem* makeItem(const Selected& selected);
   QStandardItem* makeItem(const QString& name);
-  QStandardItem* makeItem(const std::any& item);
+  QStandardItem* makeItem(const std::any& item, bool short_name = false);
 
   template<typename Iterator>
-  QStandardItem* makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
+  QStandardItem* makeList(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
+  template<typename Iterator>
+  QStandardItem* makePropertyList(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
 
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,

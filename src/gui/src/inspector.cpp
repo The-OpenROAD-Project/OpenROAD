@@ -65,18 +65,20 @@ SelectedItemModel::SelectedItemModel(const Selected& object,
 
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
-  if (index.column() == 1) {
-    if (role == Qt::BackgroundRole) {
-      bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+  if (role == Qt::ForegroundRole) {
+    const bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
 
-      if (has_editor) {
-        return QBrush(editable_item_);
-      }
-    } else if (role == Qt::ForegroundRole) {
-      bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+    if (has_selected){
+      return QBrush(selectable_item_);
+    }
+  } else {
+    if (index.column() == 1) {
+      if (role == Qt::BackgroundRole) {
+        const bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
 
-      if (has_selected){
-        return QBrush(selectable_item_);
+        if (has_editor) {
+          return QBrush(editable_item_);
+        }
       }
     }
   }
@@ -128,16 +130,16 @@ void SelectedItemModel::makePropertyItem(const Descriptor::Property& property, Q
 
   // For a SelectionSet a row is created with the set items
   // as children rows
-  if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
-    value_item = makeItem(name_item, sel_set->begin(), sel_set->end());
+  if (auto sel_set = std::any_cast<Descriptor::PropertyList>(&value)) {
+    value_item = makePropertyList(name_item, sel_set->begin(), sel_set->end());
+  } else if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
+    value_item = makeList(name_item, sel_set->begin(), sel_set->end());
   } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
-    value_item = makeItem(name_item, v_list->begin(), v_list->end());
+    value_item = makeList(name_item, v_list->begin(), v_list->end());
   } else if (auto v_set = std::any_cast<std::set<std::any>>(&value)) {
-    value_item = makeItem(name_item, v_set->begin(), v_set->end());
-  } else if (auto selected = std::any_cast<Selected>(&value)) {
-    value_item = makeItem(*selected);
+    value_item = makeList(name_item, v_set->begin(), v_set->end());
   } else {
-    value_item = makeItem(QString::fromStdString(property.toString()));
+    value_item = makeItem(value);
   }
 }
 
@@ -149,20 +151,24 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   return item;
 }
 
-QStandardItem* SelectedItemModel::makeItem(const std::any& item)
+QStandardItem* SelectedItemModel::makeItem(const std::any& item, bool short_name)
 {
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
-}
-
-QStandardItem* SelectedItemModel::makeItem(const Selected& selected)
-{
-  auto item = makeItem(QString::fromStdString(selected.getName()));
-  item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
-  return item;
+  if (auto selected = std::any_cast<Selected>(&item)) {
+    QStandardItem* item = nullptr;
+    if (short_name) {
+      item = makeItem(QString::fromStdString(selected->getShortName()));
+    } else {
+      item = makeItem(QString::fromStdString(selected->getName()));
+    }
+    item->setData(QVariant::fromValue(*selected), EditorItemDelegate::selected_);
+    return item;
+  } else {
+    return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
+  }
 }
 
 template<typename Iterator>
-QStandardItem* SelectedItemModel::makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
 {
   int index = 0;
   for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
@@ -172,6 +178,17 @@ QStandardItem* SelectedItemModel::makeItem(QStandardItem* name_item, const Itera
   }
 
   return makeItem(QString::number(index) + " items");
+}
+
+template<typename Iterator>
+QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+{
+  for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
+    auto& [name, value] = *use_itr;
+    name_item->appendRow({makeItem(name, true), makeItem(value)});
+  }
+
+  return makeItem(QString::number(name_item->rowCount()) + " items");
 }
 
 void SelectedItemModel::makeItemEditor(const std::string& name,
