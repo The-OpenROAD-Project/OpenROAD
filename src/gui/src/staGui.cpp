@@ -65,14 +65,14 @@
 
 namespace gui {
 
-const gui::Painter::Color TimingPathRenderer::inst_highlight_color_
-    = gui::Painter::Color::copyWithAlpha(gui::Painter::highlight, 100);
-const gui::Painter::Color TimingPathRenderer::path_inst_color_
-    = gui::Painter::Color::copyWithAlpha(gui::Painter::magenta, 100);
-const gui::Painter::Color TimingPathRenderer::term_color_ = gui::Painter::Color::copyWithAlpha(gui::Painter::blue, 100);
-const gui::Painter::Color TimingPathRenderer::signal_color_ = gui::Painter::Color::copyWithAlpha(gui::Painter::red, 100);
-const gui::Painter::Color TimingPathRenderer::clock_color_ = gui::Painter::Color::copyWithAlpha(gui::Painter::cyan, 100);
-const gui::Painter::Color TimingPathRenderer::capture_clock_color_ = gui::Painter::Color::copyWithAlpha(gui::Painter::green, 100);
+const Painter::Color TimingPathRenderer::inst_highlight_color_
+    = Painter::Color(gui::Painter::highlight, 100);
+const Painter::Color TimingPathRenderer::path_inst_color_
+    = Painter::Color(gui::Painter::magenta, 100);
+const Painter::Color TimingPathRenderer::term_color_ = Painter::Color(gui::Painter::blue, 100);
+const Painter::Color TimingPathRenderer::signal_color_ = Painter::Color(gui::Painter::red, 100);
+const Painter::Color TimingPathRenderer::clock_color_ = Painter::Color(gui::Painter::cyan, 100);
+const Painter::Color TimingPathRenderer::capture_clock_color_ = Painter::Color(gui::Painter::green, 100);
 
 /////////
 
