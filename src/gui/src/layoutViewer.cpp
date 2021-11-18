@@ -1548,7 +1548,6 @@ void LayoutViewer::drawHighlighted(Painter& painter)
   int highlight_group = 0;
   for (auto& highlight_set : highlighted_) {
     auto highlight_color = Painter::highlightColors[highlight_group];
-    highlight_color.a = 100;
 
     for (auto& highlighted : highlight_set) {
       highlighted.highlight(painter,
