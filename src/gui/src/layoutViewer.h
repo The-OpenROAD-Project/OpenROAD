@@ -316,7 +316,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void generateCutLayerMaximumSizes();
 
   void addMenuAndActions();
-  void updateShapes();
 
   using Edge = std::pair<odb::Point, odb::Point>;
   struct Edges {
@@ -354,7 +353,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   int min_depth_;
   int max_depth_;
   Search search_;
-  bool search_init_;
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   QPoint mouse_press_pos_;

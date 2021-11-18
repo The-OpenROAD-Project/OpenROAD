@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <QObject>
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
@@ -48,8 +49,10 @@ namespace bgi = boost::geometry::index;
 //
 // Currently this class is static once built and doesn't follow
 // db changes.  TODO: this should be into an observer of OpenDB.
-class Search
+class Search : public QObject
 {
+  Q_OBJECT
+
   template <typename T>
   class MinSizePredicate;
 
@@ -92,8 +95,10 @@ class Search
   using ObstructionRange = Range<odb::dbObstruction*>;
   using BlockageRange = Range<odb::dbBlockage*>;
 
+  Search();
+
   // Build the structure for the given block.
-  void init(odb::dbBlock* block);
+  void setBlock(odb::dbBlock* block);
 
   // Find all shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -136,7 +141,14 @@ class Search
                                       int y_hi,
                                       int min_size = 0);
 
-  void clear();
+  void clearShapes();
+  void clearFills();
+  void clearInsts();
+  void clearBlockages();
+  void clearObstructions();
+
+ signals:
+  void modified();
 
  private:
   void addSNet(odb::dbNet* net);
@@ -146,12 +158,27 @@ class Search
   void addBlockage(odb::dbBlockage* blockage);
   void addObstruction(odb::dbObstruction* obstruction);
 
+  void updateShapes();
+  void updateFills();
+  void updateInsts();
+  void updateBlockages();
+  void updateObstructions();
+
+  void clear();
+
+  odb::dbBlock* block_;
+
   // The net is used for filter shapes by net type
   std::map<odb::dbTechLayer*, Rtree<odb::dbNet*>> shapes_;
+  bool shapes_init_;
   std::map<odb::dbTechLayer*, Rtree<odb::dbFill*>> fills_;
+  bool fills_init_;
   Rtree<odb::dbInst*> insts_;
+  bool insts_init_;
   Rtree<odb::dbBlockage*> blockages_;
+  bool blockages_init_;
   std::map<odb::dbTechLayer*, Rtree<odb::dbObstruction*>> obstructions_;
+  bool obstructions_init_;
 };
 
 }  // namespace gui

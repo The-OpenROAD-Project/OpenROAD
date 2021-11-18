@@ -398,7 +398,6 @@ LayoutViewer::LayoutViewer(
       fit_pixels_per_dbu_(1.0),
       min_depth_(0),
       max_depth_(99),
-      search_init_(false),
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       building_ruler_(false),
@@ -415,6 +414,11 @@ LayoutViewer::LayoutViewer(
   setMouseTracking(true);
 
   addMenuAndActions();
+
+  connect(&search_,
+          SIGNAL(modified()),
+          this,
+          SLOT(fullRepaint()));
 }
 
 LayoutViewer::~LayoutViewer()
@@ -436,6 +440,7 @@ void LayoutViewer::setBlock(odb::dbBlock* block)
   }
   block_ = block;
 
+  search_.setBlock(block);
   updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
@@ -2234,11 +2239,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
 
-  if (!search_init_) {
-    search_.init(block_);
-    search_init_ = true;
-  }
-
   if (cut_maximum_size_.empty()) {
     generateCutLayerMaximumSizes();
   }
@@ -2412,17 +2412,6 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
       painter->drawLine(p1, p2);
     }
   }
-}
-
-void LayoutViewer::updateShapes()
-{
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  fullRepaint();
 }
 
 void LayoutViewer::fit()
@@ -2828,20 +2817,20 @@ void LayoutViewer::generateCutLayerMaximumSizes()
 
 void LayoutViewer::inDbNetDestroy(dbNet* net)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbInstDestroy(dbInst* inst)
 {
   if (inst->isPlaced()) {
-    updateShapes();
+    search_.clearInsts();
   }
 }
 
 void LayoutViewer::inDbInstSwapMasterAfter(dbInst* inst)
 {
   if (inst->isPlaced()) {
-    updateShapes();
+    search_.clearInsts();
   }
 }
 
@@ -2850,60 +2839,60 @@ void LayoutViewer::inDbInstPlacementStatusBefore(
     const dbPlacementStatus& status)
 {
   if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
-    updateShapes();
+    search_.clearInsts();
   }
 }
 
 void LayoutViewer::inDbPostMoveInst(dbInst* inst)
 {
   if (inst->isPlaced()) {
-    updateShapes();
+    search_.clearInsts();
   }
 }
 
 void LayoutViewer::inDbBPinDestroy(dbBPin* pin)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbFillCreate(dbFill* fill)
 {
-  updateShapes();
+  search_.clearFills();
 }
 
 void LayoutViewer::inDbWireCreate(dbWire* wire)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbWireDestroy(dbWire* wire)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbSWireCreate(dbSWire* wire)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
 {
-  updateShapes();
+  search_.clearShapes();
 }
 
 void LayoutViewer::inDbBlockageCreate(odb::dbBlockage* blockage)
 {
-  updateShapes();
+  search_.clearBlockages();
 }
 
 void LayoutViewer::inDbObstructionCreate(odb::dbObstruction* obs)
 {
-  updateShapes();
+  search_.clearObstructions();
 }
 
 void LayoutViewer::inDbObstructionDestroy(odb::dbObstruction* obs)
 {
-  updateShapes();
+  search_.clearObstructions();
 }
 
 void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
