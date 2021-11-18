@@ -54,11 +54,112 @@ Search::Search() :
 {
 }
 
+Search::~Search()
+{
+  if (block_ != nullptr) {
+    removeOwner(); // unregister as a callback object
+  }
+}
+
+void Search::inDbNetDestroy(odb::dbNet* net)
+{
+  clearShapes();
+}
+
+void Search::inDbInstDestroy(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbInstSwapMasterAfter(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbInstPlacementStatusBefore(odb::dbInst* inst,
+                                           const odb::dbPlacementStatus& status)
+{
+  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbPostMoveInst(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbBPinDestroy(odb::dbBPin* pin)
+{
+  clearShapes();
+}
+
+void Search::inDbFillCreate(odb::dbFill* fill)
+{
+  clearFills();
+}
+
+void Search::inDbWireCreate(odb::dbWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbWireDestroy(odb::dbWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbSWireCreate(odb::dbSWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbSWireDestroy(odb::dbSWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbBlockageCreate(odb::dbBlockage* blockage)
+{
+  clearBlockages();
+}
+
+void Search::inDbObstructionCreate(odb::dbObstruction* obs)
+{
+  clearObstructions();
+}
+
+void Search::inDbObstructionDestroy(odb::dbObstruction* obs)
+{
+  clearObstructions();
+}
+
+void Search::inDbBlockSetDieArea(odb::dbBlock* block)
+{
+  setBlock(block);
+}
+
 void Search::setBlock(odb::dbBlock* block)
 {
-  clear();
+  if (block_ != block) {
+    clear();
+
+    if (block_ != nullptr) {
+      removeOwner();
+    }
+
+    addOwner(block);  // register as a callback object
+  }
 
   block_ = block;
+
+  emit newBlock(block);
 }
 
 void Search::clear()

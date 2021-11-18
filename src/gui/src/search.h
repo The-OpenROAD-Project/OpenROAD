@@ -37,6 +37,7 @@
 #include <boost/geometry/index/rtree.hpp>
 
 #include "db.h"
+#include "odb/dbBlockCallBackObj.h"
 
 namespace gui {
 
@@ -49,7 +50,7 @@ namespace bgi = boost::geometry::index;
 //
 // Currently this class is static once built and doesn't follow
 // db changes.  TODO: this should be into an observer of OpenDB.
-class Search : public QObject
+class Search : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
 
@@ -96,6 +97,7 @@ class Search : public QObject
   using BlockageRange = Range<odb::dbBlockage*>;
 
   Search();
+  ~Search();
 
   // Build the structure for the given block.
   void setBlock(odb::dbBlock* block);
@@ -147,8 +149,27 @@ class Search : public QObject
   void clearBlockages();
   void clearObstructions();
 
+  // From dbBlockCallBackObj
+  virtual void inDbNetDestroy(odb::dbNet* net) override;
+  virtual void inDbInstDestroy(odb::dbInst* inst) override;
+  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
+  virtual void inDbInstPlacementStatusBefore(odb::dbInst* inst,
+                                             const odb::dbPlacementStatus& status) override;
+  virtual void inDbPostMoveInst(odb::dbInst* inst) override;
+  virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
+  virtual void inDbFillCreate(odb::dbFill* fill) override;
+  virtual void inDbWireCreate(odb::dbWire* wire) override;
+  virtual void inDbWireDestroy(odb::dbWire* wire) override;
+  virtual void inDbSWireCreate(odb::dbSWire* wire) override;
+  virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
+  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
+  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
+  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
+
  signals:
   void modified();
+  void newBlock(odb::dbBlock* block);
 
  private:
   void addSNet(odb::dbNet* net);

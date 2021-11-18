@@ -419,28 +419,17 @@ LayoutViewer::LayoutViewer(
           SIGNAL(modified()),
           this,
           SLOT(fullRepaint()));
-}
 
-LayoutViewer::~LayoutViewer()
-{
-  if (block_ != nullptr) {
-    removeOwner(); // unregister as a callback object
-  }
+  connect(&search_,
+          SIGNAL(newBlock(odb::dbBlock*)),
+          this,
+          SLOT(setBlock(odb::dbBlock*)));
 }
 
 void LayoutViewer::setBlock(odb::dbBlock* block)
 {
-  if (block_ != block) {
-    if (block_ != nullptr) {
-      removeOwner();
-    }
-
-    addOwner(block);  // register as a callback object
-    fullRepaint();
-  }
   block_ = block;
 
-  search_.setBlock(block);
   updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
 }
@@ -2490,7 +2479,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
-  setBlock(block);
+  search_.setBlock(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)
@@ -2813,93 +2802,6 @@ void LayoutViewer::generateCutLayerMaximumSizes()
       cut_maximum_size_[layer] = width;
     }
   }
-}
-
-void LayoutViewer::inDbNetDestroy(dbNet* net)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbInstDestroy(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    search_.clearInsts();
-  }
-}
-
-void LayoutViewer::inDbInstSwapMasterAfter(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    search_.clearInsts();
-  }
-}
-
-void LayoutViewer::inDbInstPlacementStatusBefore(
-    dbInst* inst,
-    const dbPlacementStatus& status)
-{
-  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
-    search_.clearInsts();
-  }
-}
-
-void LayoutViewer::inDbPostMoveInst(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    search_.clearInsts();
-  }
-}
-
-void LayoutViewer::inDbBPinDestroy(dbBPin* pin)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbFillCreate(dbFill* fill)
-{
-  search_.clearFills();
-}
-
-void LayoutViewer::inDbWireCreate(dbWire* wire)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbWireDestroy(dbWire* wire)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbSWireCreate(dbSWire* wire)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
-{
-  search_.clearShapes();
-}
-
-void LayoutViewer::inDbBlockageCreate(odb::dbBlockage* blockage)
-{
-  search_.clearBlockages();
-}
-
-void LayoutViewer::inDbObstructionCreate(odb::dbObstruction* obs)
-{
-  search_.clearObstructions();
-}
-
-void LayoutViewer::inDbObstructionDestroy(odb::dbObstruction* obs)
-{
-  search_.clearObstructions();
-}
-
-void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
-{
-  // This happens when initialize_floorplan is run and it make sense
-  // to fit as current zoom will be on a zero sized block.
-  setBlock(block);
 }
 
 inline int LayoutViewer::instanceSizeLimit()

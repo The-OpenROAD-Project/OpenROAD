@@ -47,7 +47,6 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 
@@ -78,7 +77,7 @@ class ScriptWidget;
 //
 // This object resizes with zooming but only the visible
 // portion of this widget is ever drawn.
-class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
+class LayoutViewer : public QWidget
 {
   Q_OBJECT
 
@@ -117,9 +116,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
-  ~LayoutViewer();
 
-  void setBlock(odb::dbBlock* block);
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -141,25 +138,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void mousePressEvent(QMouseEvent* event) override;
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
-
-  // From dbBlockCallBackObj
-  virtual void inDbNetDestroy(odb::dbNet* net) override;
-  virtual void inDbInstDestroy(odb::dbInst* inst) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
-  virtual void inDbInstPlacementStatusBefore(
-      odb::dbInst* inst,
-      const odb::dbPlacementStatus& status) override;
-  virtual void inDbPostMoveInst(odb::dbInst* inst) override;
-  virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
-  virtual void inDbFillCreate(odb::dbFill* fill) override;
-  virtual void inDbWireCreate(odb::dbWire* wire) override;
-  virtual void inDbWireDestroy(odb::dbWire* wire) override;
-  virtual void inDbSWireCreate(odb::dbSWire* wire) override;
-  virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
-  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
-  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
-  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
-  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
 
  signals:
   // indicates the current location of the mouse
@@ -233,6 +211,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void selectionFocus(const Selected& focus);
   void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
   void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
+
+ private slots:
+  void setBlock(odb::dbBlock* block);
 
  private:
   struct Boxes
