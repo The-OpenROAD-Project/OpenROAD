@@ -773,7 +773,9 @@ void Inspector::makeAction(const Descriptor::Action& action)
 {
   std::vector<std::pair<std::string, QString>> button_replacements{
     {"Delete", ":/delete.png"},
-    {"Zoom to", ":/zoom_to.png"}
+    {"Zoom to", ":/zoom_to.png"},
+    {"Remove from highlight", ":/highlight_off.png"},
+    {"Add to highlight", ":/highlight_on.png"}
   };
 
   const std::string& name = action.name;
