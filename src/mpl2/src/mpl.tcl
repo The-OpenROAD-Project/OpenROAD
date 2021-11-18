@@ -31,8 +31,8 @@
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ############################################################################
 
-sta::define_cmd_args "rtl_macro_placer" { [-config_file config_file] \
-                                         [-report_directory report_file] \
+sta::define_cmd_args "rtl_macro_placer" { -report_directory report_dir \
+                                         [-config_file config_file]
                                          [-area_weight area_wt] \
                                          [-wirelength_weight wirelength_wt] \
                                          [-outline_weight outline_wt] \
@@ -50,18 +50,13 @@ proc rtl_macro_placer { args } {
        -boundary_weight -macro_blockage_weight -location_weight -notch_weight
        -report_file -macro_blockage_file -prefer_location_file } flag {  }
 
-/****
-    if { ![info exists keys(-config_file)] } {
-        utl::error MPL 2 "Missing mandatory -config_file file"
+    if { ![info exists keys(-report_directory)] } {
+        utl::error MPL 2 "Missing mandatory -report_directory for RTLMP"
     }
 
-    if { ![info exists keys(-report_file)] } {
-        utl::error MPL 3 "Missing mandatory argument -report_file file"
-    }
-****/
-
-    set config_file $keys(-config_file)
-    set report_file $keys(-report_file)
+#
+#  Default values for the weights
+#
     set area_wt 0.01
     set wirelength_wt 54.7
     set outline_wt 74.71
@@ -71,6 +66,8 @@ proc rtl_macro_placer { args } {
     set notch_wt 100.0
 
     set report_directory "rtl_mp"
+    set report_file "partition.txt"
+    set config_file "" 
     set macro_blockage_file "macro_blockage.txt"
     set prefer_location_file "location.txt"
 
@@ -106,6 +103,10 @@ proc rtl_macro_placer { args } {
         set report_directory $keys(-report_directory)
     }
 
+    if { [info exists keys(-config_file)] } {
+        set config_file $keys(-config_file)
+    }
+
     if { [info exists keys(-macro_blockage_file)] } {
         set macro_blockage_file $keys(-macro_blockage_file)
     }
@@ -114,7 +115,9 @@ proc rtl_macro_placer { args } {
         set prefer_location_file $keys(-prefer_location_file)
     }
 
-    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $report_file $macro_blockage_file $prefer_location_file]} {
+    if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $area_wt $wirelength_wt \
+                    $outline_wt $boundary_wt $macro_blockage_wt $location_wt $notch_wt \
+                    $report_file $macro_blockage_file $prefer_location_file]} {
         return false
     }
 

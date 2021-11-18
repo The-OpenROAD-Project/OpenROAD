@@ -85,6 +85,13 @@ bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
                       dbDatabase* db,
                       const char* report_directory,
+                      const float area_wt, 
+                      const float wirelength_wt, 
+                      const float outline_wt,
+                      const float boundary_wt, 
+                      const float macro_blockage_wt, 
+                      const float location_wt, 
+                      const float notch_wt,
                       const char* report_file,
                       const char* macro_blockage_file, 
                       const char* prefer_location_file)
@@ -100,7 +107,7 @@ bool rtl_macro_placer(const char* config_file,
   // These parameters are related to shape engine
   float min_aspect_ratio = 0.40;
   float dead_space = 0.05;
-  float halo_width = 2.0;
+  float halo_width = 10.0;
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
@@ -117,13 +124,13 @@ bool rtl_macro_placer(const char* config_file,
   int num_worker = 10;
 
   // These parameters are related to cost function
-  float alpha = 0.01;                   // weight for area
-  float beta = 54.7;                    // weight for wirelength auto tuned value
-  float gamma = 74.71;                  // weight for outline penalty - auto tuned value
-  float boundary_weight = 100.0;        // weight for pushing macros to boundary
-  float macro_blockage_weight = 50.0;   // weight for macro blockage
-  float location_weight = 100.0;        // weight for preferred location
-  float notch_weight = 100.0;           // weight for notch
+  float alpha = area_wt;                             // weight for area
+  float beta = wirelength_wt;                        // weight for wirelength auto tuned value
+  float gamma = outline_wt;                          // weight for outline penalty - auto tuned value
+  float boundary_weight = boundary_wt;               // weight for pushing macros to boundary
+  float macro_blockage_weight = macro_blockage_wt;   // weight for macro blockage
+  float location_weight = location_wt;               // weight for preferred location
+  float notch_weight = notch_wt;                     // weight for notch
 
   float learning_rate
       = 0.00;  // learning rate for dynamic weight in cost function
@@ -148,40 +155,46 @@ bool rtl_macro_placer(const char* config_file,
 
   int snap_layer = 4;
 
-  unordered_map<string, string> params = ParseConfigFile(config_file);
+  //
+  // config_file is not required in the default flow. 
+  // It is still supported for developer tuning of the parameters
+  //
+  if (strcmp(config_file, "") != 0) {
+    unordered_map<string, string> params = ParseConfigFile(config_file);
 
-  get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
-  get_param(params, "dead_space", dead_space, logger);
-  get_param(params, "learning_rate", learning_rate, logger);
-  get_param(params, "shrink_factor", shrink_factor, logger);
-  get_param(params, "shrink_freq", shrink_freq, logger);
-  get_param(params, "halo_width", halo_width, logger);
-  get_param(params, "region_file", region_file, logger);
-  get_param(params, "location_file", location_file, logger);
-  get_param(params, "num_thread", num_thread, logger);
-  get_param(params, "num_run", num_run, logger);
-  get_param(params, "heat_rate", heat_rate, logger);
-  get_param(params, "num_level", num_level, logger);
-  get_param(params, "num_worker", num_worker, logger);
-  get_param(params, "alpha", alpha, logger);
-  get_param(params, "beta", beta, logger);
-  get_param(params, "gamma", gamma, logger);
-  get_param(params, "boundary_weight", boundary_weight, logger);
-  get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
-  get_param(params, "location_weight", location_weight, logger);
-  get_param(params, "notch_weight", notch_weight, logger);
-  get_param(params, "resize_prob", resize_prob, logger);
-  get_param(params, "pos_swap_prob", pos_swap_prob, logger);
-  get_param(params, "neg_swap_prob", neg_swap_prob, logger);
-  get_param(params, "double_swap_prob", double_swap_prob, logger);
-  get_param(params, "init_prob", init_prob, logger);
-  get_param(params, "rej_ratio", rej_ratio, logger);
-  get_param(params, "k", k, logger);
-  get_param(params, "c", c, logger);
-  get_param(params, "snap_layer", snap_layer, logger);
-  get_param(params, "max_num_step", max_num_step, logger);
-  get_param(params, "perturb_per_step", perturb_per_step, logger);
-  get_param(params, "seed", seed, logger);
+    get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
+    get_param(params, "dead_space", dead_space, logger);
+    get_param(params, "learning_rate", learning_rate, logger);
+    get_param(params, "shrink_factor", shrink_factor, logger);
+    get_param(params, "shrink_freq", shrink_freq, logger);
+    get_param(params, "halo_width", halo_width, logger);
+    get_param(params, "region_file", region_file, logger);
+    get_param(params, "location_file", location_file, logger);
+    get_param(params, "num_thread", num_thread, logger);
+    get_param(params, "num_run", num_run, logger);
+    get_param(params, "heat_rate", heat_rate, logger);
+    get_param(params, "num_level", num_level, logger);
+    get_param(params, "num_worker", num_worker, logger);
+    get_param(params, "alpha", alpha, logger);
+    get_param(params, "beta", beta, logger);
+    get_param(params, "gamma", gamma, logger);
+    get_param(params, "boundary_weight", boundary_weight, logger);
+    get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
+    get_param(params, "location_weight", location_weight, logger);
+    get_param(params, "notch_weight", notch_weight, logger);
+    get_param(params, "resize_prob", resize_prob, logger);
+    get_param(params, "pos_swap_prob", pos_swap_prob, logger);
+    get_param(params, "neg_swap_prob", neg_swap_prob, logger);
+    get_param(params, "double_swap_prob", double_swap_prob, logger);
+    get_param(params, "init_prob", init_prob, logger);
+    get_param(params, "rej_ratio", rej_ratio, logger);
+    get_param(params, "k", k, logger);
+    get_param(params, "c", c, logger);
+    get_param(params, "snap_layer", snap_layer, logger);
+    get_param(params, "max_num_step", max_num_step, logger);
+    get_param(params, "perturb_per_step", perturb_per_step, logger);
+    get_param(params, "seed", seed, logger);
+  }
 
   float outline_width = 0.0;
   float outline_height = 0.0;
@@ -394,11 +407,21 @@ void MacroPlacer2::init(dbDatabase* db, Logger* logger)
 
 bool MacroPlacer2::place(const char* config_file,
                          const char* report_directory,
+                         const float area_wt,
+                         const float wirelength_wt,
+                         const float outline_wt,
+                         const float boundary_wt,
+                         const float macro_blockage_wt,
+                         const float location_wt,
+                         const float notch_wt,
                          const char* report_file,
                          const char* macro_blockage_file,
                          const char* prefer_location_file)
 {
-  return rtl_macro_placer(config_file, logger_, db_,  report_directory, report_file, macro_blockage_file, prefer_location_file);
+  return rtl_macro_placer(config_file, logger_, db_,  report_directory, 
+                area_wt, wirelength_wt, outline_wt,
+                boundary_wt, macro_blockage_wt, location_wt, notch_wt,
+                report_file, macro_blockage_file, prefer_location_file);
 }
 
 }  // namespace mpl
