@@ -48,6 +48,7 @@
 #include "util.h"
 #include "utl/Logger.h"
 #include "odb/db.h"
+#include "ord/OpenRoad.hh"
 
 using utl::PAR;
 
@@ -113,7 +114,7 @@ bool rtl_macro_placer(const char* config_file,
   string location_file = string(prefer_location_file);
 
   // These parameters are related to multi-start in shape engine
-  int num_thread = 10;
+  int num_thread = ord::OpenRoad::openRoad()->getThreadCount();  // set to max threads in OpenROAD
   int num_run = 10;
 
   unsigned seed = 0;

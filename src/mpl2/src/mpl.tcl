@@ -32,7 +32,6 @@
 ############################################################################
 
 sta::define_cmd_args "rtl_macro_placer" { -report_directory report_dir \
-                                         [-config_file config_file]
                                          [-area_weight area_wt] \
                                          [-wirelength_weight wirelength_wt] \
                                          [-outline_weight outline_wt] \
