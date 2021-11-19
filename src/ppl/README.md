@@ -34,7 +34,7 @@ place_pins [-hor_layers <h_layers>]
 -   `-random_seed`. Specify the seed for random operations.
 -   `-exclude`. Specify an interval in one of the four edges of the die
     boundary where pins cannot be placed. Can be used multiple times.
-    The interval is defined in microns
+    The interval is defined in microns.
 -   `-random`. When this flag is enabled, the pin placement is random.
 -   `-group_pins`. Specify a list of pins to be placed together on the
     die boundary.
@@ -120,7 +120,7 @@ define_pin_shape_pattern [-layer <layer>]
 -   The `-layer` option defines a single top-most routing layer of the
     placement grid.
 -   The `-region` option defines the `{llx, lly, urx, ury}` region of the
-    placement grid, in microns.
+    placement grid in microns.
 -   The `-x_step` and `-y_step` options define the distance (in microns) between each
     valid position on the grid, in the x- and y-directions, respectively.
 -   The `-size` option defines the width and height (in microns) of the pins assigned
