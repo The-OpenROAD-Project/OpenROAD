@@ -337,7 +337,7 @@ class GlobalRouter
   GrouteRenderer* groute_renderer_;
   NetRouteMap routes_;
 
-  std::map<odb::dbNet*, Net*> db_net_map_;
+  std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks>* routing_tracks_;
