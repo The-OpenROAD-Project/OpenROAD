@@ -283,7 +283,7 @@ Opendp::place()
     if (!(isFixed(&cell) || cell.inGroup() || cell.is_placed_)) {
       sorted_cells.push_back(&cell);
       if (!cellFitsInCore(&cell)) {
-        logger_->warn(DPL, 15, "instance {} does not fit inside the ROW core area.",
+        logger_->error(DPL, 15, "instance {} does not fit inside the ROW core area.",
                       cell.name());
       }
     }
@@ -408,7 +408,7 @@ Opendp::brickPlace1(const Group *group)
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
     if (!mapMove(cell, legal)) {
-      logger_->warn(DPL, 16, "cannot place instance {}.", cell->name());
+      logger_->error(DPL, 16, "cannot place instance {}.", cell->name());
     }
   }
 }
@@ -468,7 +468,7 @@ Opendp::brickPlace2(const Group *group)
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
       if (!mapMove(cell, legal))
-        logger_->warn(DPL, 17, "cannot place instance {}.", cell->name());
+        logger_->error(DPL, 17, "cannot place instance {}.", cell->name());
     }
   }
 }
@@ -982,7 +982,7 @@ Opendp::moveHopeless(int& grid_x, int& grid_y) const
       break;
     }
   }
-  for (int y = grid_y + 1; y < row_site_count_; ++y) { // above
+  for (int y = grid_y + 1; y < row_count_; ++y) { // above
     if (grid_[y][grid_x].is_valid) {
       int dist = (y - grid_y) * row_height_;
       if (dist < best_dist) {

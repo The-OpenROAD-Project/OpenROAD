@@ -3,13 +3,13 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  ./nangate45.lef
-[INFO ODB-0127] Reading DEF file: ./diverge02.def
+[INFO ODB-0127] Reading DEF file: ./simple09.def
 [INFO ODB-0128] Design: single_cell
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO ODB-0134] Finished DEF file: ./diverge02.def
+[INFO ODB-0134] Finished DEF file: ./simple09.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
@@ -41,5 +41,6 @@
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-[ERROR GPL-0304] RePlAce diverged at initial iteration. Re-run with a smaller init_density_penalty value.
-GPL-0304
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 10073
+[NesterovSolve] Finished with Overflow: 0.000000
+No differences found.

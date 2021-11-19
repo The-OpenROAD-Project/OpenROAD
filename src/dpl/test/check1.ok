@@ -12,3 +12,5 @@
 [INFO ODB-0134] Finished DEF file: simple01.def
 [WARNING DPL-0004] Placed in rows check failed (1).
  _277_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033

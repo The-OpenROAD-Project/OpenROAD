@@ -150,6 +150,48 @@ constraints and pin shape patterns created with `set_io_pin_constraint` or
 clear_io_pin_constraints
 ```
 
+### Pin dimension
+
+#### Set Pin Length
+
+The `set_pin_length` command defines the length of all vertical and horizontal
+pins.
+
+```
+set_pin_length [-hor_length h_length]
+               [-ver_length v_length]
+```
+
+-   The `-hor_length` option defines the length of the horizontal pins.
+-   The `-ver_length` option defines the length of the vertical pins.
+
+#### Set Pin Extension
+
+The `set_pin_length_extension` command defines the an extension of the length
+of all vertical and horizontal pins. Note that this command may generate pins
+partially outside the die area.
+
+```
+set_pin_length_extension [-hor_extension h_extension]
+                         [-ver_extension v_extension]
+```
+
+-   The `-hor_extension` option defines the extension length for the horizontal pins.
+-   The `-ver_extension` option defines the extension length for the vertical pins.
+
+#### Set Pin Thick Multiplier
+
+The `set_pin_thick_multiplier` command defines a multiplier for the thickness of all
+vertical and horizontal pins.
+
+```
+set_pin_thick_multiplier [-hor_multiplier h_mult]
+                         [-ver_multiplier v_mult]
+```
+
+-   The `-hor_multiplier` option defines the thickness multiplier for the horizontal pins.
+-   The `-ver_multiplier` option defines the thickness multiplier for the vertical pins.
+
 ## Example scripts
 
 ## Regression tests

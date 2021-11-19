@@ -1785,6 +1785,7 @@ bool definReader::createBlock(const char* file)
     defrSetNetCbk(netCallback);
     defrSetSNetCbk(specialNetCallback);
     defrSetViaCbk(viaCallback);
+    defrSetBlockageCbk(blockageCallback);
 
     defrSetAddPathToNet();
   }
@@ -1793,7 +1794,6 @@ bool definReader::createBlock(const char* file)
     defrSetPropCbk(propCallback);
     defrSetPropDefEndCbk(propEndCallback);
     defrSetPropDefStartCbk(propStartCallback);
-    defrSetBlockageCbk(blockageCallback);
 
     defrSetExtensionCbk(extensionCallback);
     defrSetFillStartCbk(fillsCallback);

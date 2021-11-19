@@ -77,6 +77,9 @@ class Painter
     constexpr Color(int r, int g, int b, int a = 255) : r(r), g(g), b(b), a(a)
     {
     }
+    constexpr Color(const Color& color, int a) : r(color.r), g(color.g), b(color.b), a(a)
+    {
+    }
 
     int r;
     int g;
@@ -112,14 +115,14 @@ class Painter
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
   static inline const std::array<Painter::Color, 8> highlightColors{
-      Painter::green,
-      Painter::yellow,
-      Painter::cyan,
-      Painter::magenta,
-      Painter::red,
-      Painter::dark_green,
-      Painter::dark_magenta,
-      Painter::blue};
+    Color(Painter::green, 100),
+    Color(Painter::yellow, 100),
+    Color(Painter::cyan, 100),
+    Color(Painter::magenta, 100),
+    Color(Painter::red, 100),
+    Color(Painter::dark_green, 100),
+    Color(Painter::dark_magenta, 100),
+    Color(Painter::blue, 100)};
 
   // The color to highlight in
   static inline const Color highlight = yellow;
@@ -159,6 +162,11 @@ class Painter
     setPen(color, cosmetic);
     setBrush(color, style);
   }
+
+  // save the state of the painter so it can be restored later
+  virtual void saveState() = 0;
+  // restore the saved state of the painter
+  virtual void restoreState() = 0;
 
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
@@ -217,6 +225,7 @@ class Descriptor
  public:
   virtual ~Descriptor() = default;
   virtual std::string getName(std::any object) const = 0;
+  virtual std::string getShortName(std::any object) const { return getName(object); }
   virtual std::string getTypeName() const = 0;
   virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
@@ -237,6 +246,7 @@ class Descriptor
     std::string toString() const { return toString(value); };
   };
   using Properties = std::vector<Property>;
+  using PropertyList = std::vector<std::pair<std::any, std::any>>;
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
@@ -303,6 +313,7 @@ class Selected
   }
 
   std::string getName() const { return descriptor_->getName(object_); }
+  std::string getShortName() const { return descriptor_->getShortName(object_); }
   std::string getTypeName() const { return descriptor_->getTypeName(object_); }
   bool getBBox(odb::Rect& bbox) const
   {
