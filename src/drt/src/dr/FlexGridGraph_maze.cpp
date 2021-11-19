@@ -33,7 +33,7 @@
 using namespace std;
 using namespace fr;
 
-int debugMazeIter = INT32_MAX;
+int debugMazeIter = std::numeric_limits<int>().max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,

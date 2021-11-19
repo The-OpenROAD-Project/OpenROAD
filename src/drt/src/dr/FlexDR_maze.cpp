@@ -44,7 +44,7 @@ using namespace fr;
 namespace gtl = boost::polygon;
 
 
-int beginDebugIter = INT32_MAX;
+int beginDebugIter = std::numeric_limits<int>().max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
 
 {
@@ -1559,7 +1559,9 @@ void FlexDRWorker::route_queue()
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
-    cout << "Starting worker " << getRouteBox() << " with " << markers_.size() << " markers\n";
+    stringstream ss;
+    ss << "Starting worker " << getRouteBox() << " with " << markers_.size() << " markers\n";
+    logger_->info(DRT, 2001, ss.str());
     for (auto& marker : markers_) {
       cout << marker << "\n";
     }
@@ -1662,7 +1664,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
       net->clear();
       if (getDRIter() >= beginDebugIter)
-        cout << "Routing net " << *net << "\n";
+        logger_->info(DRT, 2002, "Routing net " + net->getFrNet()->getName() + "\n");
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
@@ -1718,7 +1720,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           net->addRoute(std::move(tmp));
         }
         if (getDRIter() >= beginDebugIter && !getGCWorker()->getMarkers().empty()) {
-          cout << "Ending net " << net->getFrNet()->getName() << " with markers:\n";
+          logger_->info(DRT, 2003, "Ending net " + net->getFrNet()->getName() + " with markers:\n");
           for (auto& marker : getGCWorker()->getMarkers()) {
               cout << *marker << "\n";
           }
@@ -1849,10 +1851,10 @@ void FlexDRWorker::routeNet_prep(
 {
   frBox3D* tbx = nullptr;
   if (getDRIter() >= beginDebugIter)
-    cout << "Creating dest search points from pins:\n"; 
+    logger_->info(DRT, 2004, "Creating dest search points from pins:\n"); 
   for (auto& pin : net->getPins()) {
     if (getDRIter() >= beginDebugIter)
-      cout << "Pin " << pin->getName() << "\n";
+      logger_->info(DRT, 2005, "Pin " + pin->getName() + "\n");
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
       if (AUTO_TAPER_NDR_NETS
@@ -1886,8 +1888,8 @@ void FlexDRWorker::routeNet_prep(
       FlexMazeIdx mi;
       ap->getMazeIdx(mi);
       if (getDRIter() >= beginDebugIter) {
-        cout << "(" << mi.x() << " " << mi.y() << " " << mi.z() << " coords: " << 
-              ap->getPoint() << " " << ap->getBeginLayerNum() << "\n";
+        logger_->info(DRT, 2006, "(" + to_string(mi.x()) + " " + to_string(mi.y()) + " " + to_string(mi.z()) + " coords: " + 
+              to_string(ap->getPoint().x()) + " " + to_string(ap->getPoint().y()) + " " + to_string(ap->getBeginLayerNum()) + "\n");
       }
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
@@ -1960,9 +1962,9 @@ void FlexDRWorker::routeNet_setSrc(
     ap->getMazeIdx(mi);
     connComps.push_back(mi);
     if (getDRIter() >= beginDebugIter) {
-        cout << "(" << mi.x() << " " << mi.y() << " " << mi.z() << " coords: " << 
-              ap->getPoint() << " " << ap->getBeginLayerNum() << "\n";
-      }
+        logger_->info(DRT, 2000, "(" + to_string(mi.x()) + " " + to_string(mi.y()) + " " + to_string(mi.z()) + " coords: " + 
+              to_string(ap->getPoint().x()) + " " + to_string(ap->getPoint().y()) + " " + to_string(ap->getBeginLayerNum()) + "\n");
+    }
     ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
                    min(ccMazeIdx1.y(), mi.y()),
                    min(ccMazeIdx1.z(), mi.z()));
@@ -2549,7 +2551,7 @@ void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
 {
   if (path.size() <= 1)
     return;
-  for (int i = 1; i < path.size(); i++) {
+  for (unsigned long i = 1; i < path.size(); i++) {
     if (path[i].z() != path[i-1].z()) {
       frMIdx z = min (path[i].z(), path[i-1].z());
       frViaDef* viaDef = design_->getTech()->getLayer(gridGraph_.getLayerNum(z)+1)->getDefaultViaDef();

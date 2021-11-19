@@ -194,8 +194,7 @@ class frViaDef
       return layer1ShapeBox; 
     if (lNum == getLayer2Num())
       return layer2ShapeBox; 
-    std::cout << "Error: via does not have shape on layer " << std::to_string(lNum) << std::endl;
-    exit(1);
+    throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
   }
 
  protected:
