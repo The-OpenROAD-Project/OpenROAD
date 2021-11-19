@@ -52,6 +52,7 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTranslator>
+#include <deque>
 #include <iostream>
 #include <tuple>
 #include <vector>
@@ -127,6 +128,7 @@ class GuiPainter : public Painter
     pen.setWidth(width);
     painter_->setPen(pen);
   }
+
   void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
     QColor color = getOptions()->color(layer);
@@ -167,6 +169,16 @@ class GuiPainter : public Painter
     }
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
+  }
+
+  void saveState() override
+  {
+    painter_->save();
+  }
+
+  void restoreState() override
+  {
+    painter_->restore();
   }
 
   void drawGeomShape(const odb::GeomShape* shape) override
@@ -1997,7 +2009,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     drawTracks(layer, painter, bounds);
     for (auto* renderer : renderers) {
+      gui_painter.saveState();
       renderer->drawLayer(layer, gui_painter);
+      gui_painter.restoreState();
     }
   }
 
@@ -2006,7 +2020,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawRows(painter, bounds);
   for (auto* renderer : renderers) {
+    gui_painter.saveState();
     renderer->drawObjects(gui_painter);
+    gui_painter.restoreState();
   }
 
   drawCongestionMap(gui_painter, bounds);

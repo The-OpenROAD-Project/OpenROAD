@@ -163,6 +163,11 @@ class Painter
     setBrush(color, style);
   }
 
+  // save the state of the painter so it can be restored later
+  virtual void saveState() = 0;
+  // restore the saved state of the painter
+  virtual void restoreState() = 0;
+
   // Draw a geom shape as a polygon with coordinates in DBU with the current
   // pen/brush
   virtual void drawGeomShape(const odb::GeomShape* shape) = 0;

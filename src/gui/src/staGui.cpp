@@ -747,14 +747,18 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
-  for (const auto& nodes : {path_->getCaptureNodes(), path_->getPathNodes()}) {
-    drawNodesList(nodes,
-                  painter,
-                  net_descriptor,
-                  inst_descriptor,
-                  bterm_descriptor,
-                  capture_clock_color_);
-  }
+  drawNodesList(path_->getCaptureNodes(),
+                painter,
+                net_descriptor,
+                inst_descriptor,
+                bterm_descriptor,
+                capture_clock_color_);
+  drawNodesList(path_->getPathNodes(),
+                painter,
+                net_descriptor,
+                inst_descriptor,
+                bterm_descriptor,
+                clock_color_);
 
   highlightStage(painter, net_descriptor, inst_descriptor);
 }
