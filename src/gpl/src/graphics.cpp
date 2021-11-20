@@ -215,7 +215,7 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
+gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Rect& region)
 {
   selected_ = nullptr;
 
@@ -232,11 +232,12 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Point& po
     int xh = gcx + cell->dx() / 2;
     int yh = gcy + cell->dy() / 2;
 
-    if (point.x() < xl || point.y() < yl || point.x() > xh || point.y() > yh) {
+    if (region.xMax() < xl || region.yMax() < yl || region.xMin() > xh || region.yMin() > yh) {
       continue;
     }
 
     selected_ = cell;
+    gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
       return {gui::Gui::get()->makeSelected(cell->instance()->dbInst())};
@@ -253,7 +254,7 @@ void Graphics::status(const std::string& message)
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace gpl

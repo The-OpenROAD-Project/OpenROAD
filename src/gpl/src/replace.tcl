@@ -33,6 +33,7 @@
 
 sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
+  [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
@@ -40,8 +41,9 @@ sta::define_cmd_args "global_placement" {\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
     [-init_wirelength_coef init_wirelength_coef]\
-    [-min_phi_coef min_phi_conef]\
+    [-min_phi_coef min_phi_coef]\
     [-max_phi_coef max_phi_coef]\
+    [-reference_hpwl reference_hpwl]\
     [-overflow overflow]\
     [-initial_place_max_iter initial_place_max_iter]\
     [-initial_place_max_fanout initial_place_max_fanout]\
@@ -63,6 +65,7 @@ proc global_placement { args } {
     keys {-bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
+      -reference_hpwl \
       -initial_place_max_iter -initial_place_max_fanout \
       -routability_check_overflow -routability_max_density \
       -routability_max_bloat_iter -routability_max_inflation_iter \
@@ -73,6 +76,7 @@ proc global_placement { args } {
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
+      -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
       -disable_timing_driven \
@@ -161,6 +165,13 @@ proc global_placement { args } {
     sta::check_positive_float "-init_wirelength_coef" $coef
     gpl::set_init_wirelength_coef_cmd $coef
   }
+
+  if { [info exists keys(-reference_hpwl)] } {
+    set reference_hpwl $keys(-reference_hpwl)
+    sta::check_positive_float "-reference_hpwl" $reference_hpwl
+    gpl::set_reference_hpwl_cmd $reference_hpwl
+  }
+
   
   if { [info exists keys(-bin_grid_count)] } {
     set bin_grid_count  $keys(-bin_grid_count)
@@ -254,7 +265,10 @@ proc global_placement { args } {
       gpl::replace_incremental_place_cmd
     } else {
       gpl::replace_initial_place_cmd
-      gpl::replace_nesterov_place_cmd
+
+      if { ![info exists flags(-skip_nesterov_place)] } {
+        gpl::replace_nesterov_place_cmd
+      }
     }
     gpl::replace_reset_cmd
   } else {

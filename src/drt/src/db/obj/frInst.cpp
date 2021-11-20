@@ -29,47 +29,89 @@
 #include "db/obj/frInst.h"
 
 #include "frBlock.h"
-using namespace std;
 using namespace fr;
 
-void frInst::getBBox(frBox& boxIn) const
+void frInst::getBBox(Rect& boxIn) const
 {
   getRefBlock()->getBBox(boxIn);
-  frTransform xform;
+  dbTransform xform;
   getTransform(xform);
-  frPoint origin(boxIn.left(), boxIn.bottom());
-  origin.transform(frTransform(0, 0, xform.orient()));
-  xform.set(xform.xOffset() + origin.x(), xform.yOffset() + origin.y());
-  frPoint s(boxIn.right(), boxIn.top());
-  xform.updateXform(s);
-  boxIn.transform(xform);
+  Point s(boxIn.xMax(), boxIn.yMax());
+  updateXform(xform, s);
+  xform.apply(boxIn);
 }
 
-void frInst::getBoundaryBBox(frBox& boxIn) const
+void frInst::getBoundaryBBox(Rect& boxIn) const
 {
   getRefBlock()->getDieBox(boxIn);
-  frTransform xform;
+  dbTransform xform;
   getTransform(xform);
-  frPoint origin(boxIn.left(), boxIn.bottom());
-  origin.transform(frTransform(0, 0, xform.orient()));
-  xform.set(xform.xOffset() + origin.x(), xform.yOffset() + origin.y());
-  frPoint s(boxIn.right(), boxIn.top());
-  xform.updateXform(s);
-  boxIn.transform(xform);
+  Point s(boxIn.xMax(), boxIn.yMax());
+  updateXform(xform, s);
+  xform.apply(boxIn);
 }
 
-void frInst::getUpdatedXform(frTransform& in, bool noOrient) const
+void frInst::getUpdatedXform(dbTransform& in, bool noOrient) const
 {
   getTransform(in);
-  frBox mbox;
+  Rect mbox;
   getRefBlock()->getDieBox(mbox);
-  frPoint origin(mbox.left(), mbox.bottom());
-  origin.transform(frTransform(0, 0, in.orient()));
-  in.set(in.xOffset() + origin.x(), in.yOffset() + origin.y());
+  Point origin(mbox.xMin(), mbox.yMin());
+  dbTransform(in.getOrient(), Point(0, 0)).apply(origin);
+  Point offset(in.getOffset());
+  offset.x() += origin.getX();
+  offset.y() += origin.getY();
+  in.setOffset(offset);
   if (!noOrient) {
-    frPoint s(mbox.right(), mbox.top());
-    in.updateXform(s);
+    Point s(mbox.xMax(), mbox.yMax());
+    updateXform(in, s);
   } else {
-    in.set(dbOrientType(dbOrientType::R0));
+    in.setOrient(dbOrientType(dbOrientType::R0));
   }
 }
+
+// Adjust the transform so that when applied to an inst, the origin is in the
+// ll corner of the transformed inst
+void frInst::updateXform(dbTransform& xform, Point& size)
+{
+  Point p = xform.getOffset();
+  int& x = p.x();
+  int& y = p.y();
+  switch (xform.getOrient()) {
+    case dbOrientType::R90:
+      x += size.getY();
+      break;
+    case dbOrientType::R180:
+      x += size.getX();
+      y += size.getY();
+      break;
+    case dbOrientType::R270:
+      y += size.getX();
+      break;
+    case dbOrientType::MY:
+      x += size.getX();
+      break;
+    case dbOrientType::MXR90:
+      break;
+    case dbOrientType::MX:
+      y += size.getY();
+      break;
+    case dbOrientType::MYR90:
+      x += size.getY();
+      y += size.getX();
+      break;
+    // case R0: == default
+    default:
+      break;
+  }
+  xform.setOffset(p);
+}
+
+
+  frInstTerm* frInst::getInstTerm(const std::string& name) {
+      for (auto& it : instTerms_) {
+          if (it->getTerm()->getName() == name)
+              return it.get();
+      }
+      return nullptr;
+  }

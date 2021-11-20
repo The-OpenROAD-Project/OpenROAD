@@ -73,7 +73,7 @@ set drvs_ispd18 { \
     0 \
     0 \
     0 \
-    8 \
+    13 \
     0 \
     0 \
     0 \
@@ -91,8 +91,8 @@ set design_list_ispd19 " \
     ispd19_test1 \
     "
 set drvs_ispd19 { \
-    27 \
-    1 \
+    28 \
+    0 \
     0 \
     0 \
     0 \

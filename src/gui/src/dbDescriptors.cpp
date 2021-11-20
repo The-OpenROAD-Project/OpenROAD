@@ -35,7 +35,6 @@
 #include "db.h"
 #include "dbShape.h"
 
-#include "ord/OpenRoad.hh"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Liberty.hh"
@@ -44,6 +43,8 @@
 #include <QStringList>
 
 #include <iomanip>
+#include <limits>
+#include <queue>
 #include <regex>
 #include <sstream>
 
@@ -141,12 +142,20 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech, odb::dbTechLayer* 
   }
 }
 
+////////
+
+DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
+    sta_(sta)
+{
+}
+
 std::string DbInstDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbInst*>(object)->getName();
 }
 
-std::string DbInstDescriptor::getTypeName(std::any object) const
+std::string DbInstDescriptor::getTypeName() const
 {
   return "Inst";
 }
@@ -195,9 +204,16 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
                   {"X", x / dbuPerUU},
                   {"Y", y / dbuPerUU}});
   }
-  SelectionSet iterms;
+  Descriptor::PropertyList iterms;
   for (auto iterm : inst->getITerms()) {
-    iterms.insert(gui->makeSelected(iterm));
+    auto* net = iterm->getNet();
+    std::any net_value;
+    if (net == nullptr) {
+      net_value = "<none>";
+    } else {
+      net_value = gui->makeSelected(net);
+    }
+    iterms.push_back({gui->makeSelected(iterm), net_value});
   }
   props.push_back({"ITerms", iterms});
   return props;
@@ -255,7 +271,7 @@ Descriptor::Editors DbInstDescriptor::getEditors(std::any object) const
 void DbInstDescriptor::makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const
 {
   std::set<odb::dbMaster*> masters;
-  DbMasterDescriptor::getMasterEquivalent(master, masters);
+  DbMasterDescriptor::getMasterEquivalent(sta_, master, masters);
   for (auto master : masters) {
     options.push_back({master->getConstName(), master});
   }
@@ -323,14 +339,37 @@ bool DbInstDescriptor::lessThan(std::any l, std::any r) const
   return l_inst->getId() < r_inst->getId();
 }
 
+bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* inst : block->getInsts()) {
+    objects.insert(makeSelected(inst, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbMasterDescriptor::DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
+    sta_(sta)
+{
+}
 
 std::string DbMasterDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbMaster*>(object)->getName();
 }
 
-std::string DbMasterDescriptor::getTypeName(std::any object) const
+std::string DbMasterDescriptor::getTypeName() const
 {
   return "Master";
 }
@@ -377,7 +416,7 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
   props.push_back({"MTerms", mterms});
   SelectionSet equivalent;
   std::set<odb::dbMaster*> equivalent_masters;
-  getMasterEquivalent(master, equivalent_masters);
+  getMasterEquivalent(sta_, master, equivalent_masters);
   for (auto other_master : equivalent_masters) {
     if (other_master != master) {
       equivalent.insert(gui->makeSelected(other_master));
@@ -412,10 +451,11 @@ bool DbMasterDescriptor::lessThan(std::any l, std::any r) const
 }
 
 // get list of equivalent masters as EditorOptions
-void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb::dbMaster*>& masters)
+void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
+                                             odb::dbMaster* master,
+                                             std::set<odb::dbMaster*>& masters)
 {
   // mirrors method used in Resizer.cpp
-  auto sta = ord::OpenRoad::openRoad()->getSta();
   auto network = sta->getDbNetwork();
 
   sta::LibertyLibrarySeq libs;
@@ -442,21 +482,46 @@ void DbMasterDescriptor::getMasterEquivalent(odb::dbMaster* master, std::set<odb
 // get list of instances of that type
 void DbMasterDescriptor::getInstances(odb::dbMaster* master, std::set<odb::dbInst*>& insts) const
 {
-  for (auto inst : ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock()->getInsts()) {
+  for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
       insts.insert(inst);
     }
   }
 }
 
+bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  std::vector<odb::dbMaster*> masters;
+  block->getMasters(masters);
+
+  for (auto* master : masters) {
+    objects.insert(makeSelected(master, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbNetDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbNet*>(object)->getName();
 }
 
-std::string DbNetDescriptor::getTypeName(std::any object) const
+std::string DbNetDescriptor::getTypeName() const
 {
   return "Net";
 }
@@ -471,6 +536,280 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return false;
 }
 
+void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
+                                          const odb::dbObject* sink,
+                                          std::vector<GraphTarget>& sources,
+                                          std::vector<GraphTarget>& sinks) const
+{
+  // gets all the shapes that make up the iterm
+  auto get_graph_iterm_targets = [](odb::dbMTerm* mterm, const odb::dbTransform& transform, std::vector<GraphTarget>& targets) {
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        odb::Rect rect;
+        box->getBox(rect);
+        transform.apply(rect);
+        targets.push_back({rect, box->getTechLayer()});
+      }
+    }
+  };
+
+  // gets all the shapes that make up the bterm
+  auto get_graph_bterm_targets = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
+    for (auto* bpin : bterm->getBPins()) {
+      for (auto* box : bpin->getBoxes()) {
+        odb::Rect rect;
+        box->getBox(rect);
+        targets.push_back({rect, box->getTechLayer()});
+      }
+    }
+  };
+
+  // find sources and sinks on this net
+  for (auto* iterm : net->getITerms()) {
+    if (iterm == sink) {
+      odb::dbTransform transform;
+      iterm->getInst()->getTransform(transform);
+      get_graph_iterm_targets(iterm->getMTerm(), transform, sinks);
+      continue;
+    }
+
+    auto iotype = iterm->getIoType();
+    if (iotype == odb::dbIoType::OUTPUT ||
+        iotype == odb::dbIoType::INOUT) {
+      odb::dbTransform transform;
+      iterm->getInst()->getTransform(transform);
+      get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
+    }
+  }
+  for (auto* bterm : net->getBTerms()) {
+    if (bterm == sink) {
+      get_graph_bterm_targets(bterm, sinks);
+      continue;
+    }
+
+    auto iotype = bterm->getIoType();
+    if (iotype == odb::dbIoType::INPUT ||
+        iotype == odb::dbIoType::INOUT ||
+        iotype == odb::dbIoType::FEEDTHRU) {
+      get_graph_bterm_targets(bterm, sources);
+    }
+  }
+}
+
+void DbNetDescriptor::findSourcesAndSinksInGraph(odb::dbNet* net,
+                                                 const odb::dbObject* sink,
+                                                 odb::dbWireGraph* graph,
+                                                 NodeList& source_nodes,
+                                                 NodeList& sink_nodes) const
+{
+  // find sources and sinks on this net
+  std::vector<GraphTarget> sources;
+  std::vector<GraphTarget> sinks;
+  findSourcesAndSinks(net, sink, sources, sinks);
+
+  // find the nodes on the wire graph that intersect the sinks identified
+  for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
+    const auto* node = *itr;
+    int x, y;
+    node->xy(x, y);
+    const odb::Point node_pt(x, y);
+    const odb::dbTechLayer* node_layer = node->layer();
+
+    for (const auto& [source_rect, source_layer] : sources) {
+      if (source_rect.intersects(node_pt) && source_layer == node_layer) {
+        source_nodes.insert(node);
+      }
+    }
+
+    for (const auto& [sink_rect, sink_layer] : sinks) {
+      if (sink_rect.intersects(node_pt) && sink_layer == node_layer) {
+        sink_nodes.insert(node);
+      }
+    }
+  }
+}
+
+void DbNetDescriptor::drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const
+{
+  odb::dbWireGraph graph;
+  graph.decode(net->getWire());
+
+  // find the nodes on the wire graph that intersect the sinks identified
+  NodeList source_nodes;
+  NodeList sink_nodes;
+  findSourcesAndSinksInGraph(net, sink, &graph, source_nodes, sink_nodes);
+
+  if (source_nodes.empty() || sink_nodes.empty()) {
+    return;
+  }
+
+  // build connectivity map from the wire graph
+  NodeMap node_map;
+  buildNodeMap(&graph, node_map);
+
+  Painter::Color highlight_color = painter.getPenColor();
+  highlight_color.a = 255;
+
+  painter.saveState();
+  painter.setPen(highlight_color, true, 4);
+  for (const auto* source_node : source_nodes) {
+    for (const auto* sink_node : sink_nodes) {
+      // find the shortest path from source to sink
+      std::vector<odb::Point> path;
+      findPath(node_map, source_node, sink_node, path);
+
+      if (!path.empty()) {
+        odb::Point prev_pt = path[0];
+        for (const auto& pt : path) {
+          if (pt == prev_pt) {
+            continue;
+          }
+
+          painter.drawLine(prev_pt, pt);
+          prev_pt = pt;
+        }
+      } else {
+        // unable to find path so just draw a fly-wire
+        int x, y;
+        source_node->xy(x, y);
+        odb::Point source_pt(x, y);
+        sink_node->xy(x, y);
+        odb::Point sink_pt(x, y);
+        painter.drawLine(source_pt, sink_pt);
+      }
+    }
+  }
+  painter.restoreState();
+}
+
+void DbNetDescriptor::buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const
+{
+  for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
+    const auto* node = *itr;
+    NodeList connections;
+
+    int x, y;
+    node->xy(x, y);
+    const odb::Point node_pt(x, y);
+    const odb::dbTechLayer* layer = node->layer();
+
+    for (auto itr = graph->begin_edges(); itr != graph->end_edges(); itr++) {
+      const auto* edge = *itr;
+      const auto* source = edge->source();
+      const auto* target = edge->target();
+
+      if (source->layer() == layer || target->layer() == layer) {
+        int sx, sy;
+        source->xy(sx, sy);
+
+        int tx, ty;
+        target->xy(tx, ty);
+        if (sx > tx) {
+          std::swap(sx, tx);
+        }
+        if (sy > ty) {
+          std::swap(sy, ty);
+        }
+        const odb::Rect path_line(sx, sy, tx, ty);
+        if (path_line.intersects(node_pt)) {
+          connections.insert(source);
+          connections.insert(target);
+        }
+      }
+    }
+
+    node_map[node].insert(connections.begin(), connections.end());
+    for (const auto* cnode : connections) {
+      if (cnode == node) {
+        // don't insert the source node
+        continue;
+      }
+      node_map[cnode].insert(node);
+    }
+  }
+}
+
+void DbNetDescriptor::findPath(NodeMap& graph,
+                               const Node* source,
+                               const Node* sink,
+                               std::vector<odb::Point>& path) const
+{
+  // find path from source to sink using A*
+  // https://en.wikipedia.org/w/index.php?title=A*_search_algorithm&oldid=1050302256
+
+  auto distance = [](const Node* node0, const Node* node1) -> int {
+    int x0, y0;
+    node0->xy(x0, y0);
+    int x1, y1;
+    node1->xy(x1, y1);
+    return std::abs(x0 - x1) + std::abs(y0 - y1);
+  };
+
+  std::map<const Node*, const Node*> came_from;
+  std::map<const Node*, int> g_score;
+  std::map<const Node*, int> f_score;
+
+  struct DistNode {
+    const Node* node;
+    int dist;
+
+    public:
+      // used for priority queue
+      bool operator<(const DistNode& other) const { return dist > other.dist; }
+  };
+  std::priority_queue<DistNode> open_set;
+  std::set<const Node*> open_set_nodes;
+  const int source_sink_dist = distance(source, sink);
+  open_set.push({source, source_sink_dist});
+  open_set_nodes.insert(source);
+
+  for (const auto& [node, nodes] : graph) {
+    g_score[node] = std::numeric_limits<int>::max();
+    f_score[node] = std::numeric_limits<int>::max();
+  }
+  g_score[source] = 0;
+  f_score[source] = source_sink_dist;
+
+  while (!open_set.empty()) {
+    auto current = open_set.top().node;
+
+    open_set.pop();
+    open_set_nodes.erase(current);
+
+    if (current == sink) {
+      // build path
+      int x, y;
+      while (current != source) {
+        current->xy(x, y);
+        path.push_back(odb::Point(x, y));
+        current = came_from[current];
+      }
+      current->xy(x, y);
+      path.push_back(odb::Point(x, y));
+      return;
+    }
+
+    const int current_g_score = g_score[current];
+    for (const auto& neighbor : graph[current]) {
+      const int possible_g_score = current_g_score + distance(current, neighbor);
+      if (possible_g_score < g_score[neighbor]) {
+        const int new_f_score = possible_g_score + distance(neighbor, sink);
+        came_from[neighbor] = current;
+        g_score[neighbor] = possible_g_score;
+        f_score[neighbor] = new_f_score;
+
+        if (open_set_nodes.find(neighbor) == open_set_nodes.end()) {
+          open_set.push({neighbor, new_f_score});
+          open_set_nodes.insert(neighbor);
+        }
+      }
+    }
+  }
+}
+
+// additional_data is used define the related sink for this net
+// this will limit the fly-wires to just those related to that sink
+// if nullptr, all flywires will be drawn
 void DbNetDescriptor::highlight(std::any object,
                                 Painter& painter,
                                 void* additional_data) const
@@ -480,10 +819,72 @@ void DbNetDescriptor::highlight(std::any object,
     sink_object = static_cast<odb::dbObject*>(additional_data);
   auto net = std::any_cast<odb::dbNet*>(object);
 
+  auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
+  auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
+
+  const bool is_supply = net->getSigType().isSupply();
+  auto should_draw_term = [sink_object](const odb::dbObject* term) -> bool {
+    if (sink_object == nullptr) {
+      return true;
+    }
+    return sink_object == term;
+  };
+
+  auto is_source_iterm = [](odb::dbITerm* iterm) -> bool {
+    const auto iotype = iterm->getIoType();
+    return iotype == odb::dbIoType::OUTPUT ||
+           iotype == odb::dbIoType::INOUT;
+  };
+  auto is_sink_iterm = [](odb::dbITerm* iterm) -> bool {
+    const auto iotype = iterm->getIoType();
+    return iotype == odb::dbIoType::INPUT ||
+           iotype == odb::dbIoType::INOUT;
+  };
+
+  auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
+    const auto iotype = bterm->getIoType();
+    return iotype == odb::dbIoType::OUTPUT ||
+           iotype == odb::dbIoType::INOUT ||
+           iotype == odb::dbIoType::FEEDTHRU;
+  };
+  auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
+    const auto iotype = bterm->getIoType();
+    return iotype == odb::dbIoType::INPUT ||
+           iotype == odb::dbIoType::INOUT ||
+           iotype == odb::dbIoType::FEEDTHRU;
+  };
+
   // Draw regular routing
+  if (!is_supply) { // don't draw iterms on supply nets
+    // draw iterms
+    for (auto* iterm : net->getITerms()) {
+      if (is_sink_iterm(iterm)) {
+        if (should_draw_term(iterm)) {
+          iterm_descriptor->highlight(iterm, painter);
+        }
+      } else {
+        iterm_descriptor->highlight(iterm, painter);
+      }
+    }
+  }
+  // draw bterms
+  for (auto* bterm : net->getBTerms()) {
+    if (is_sink_bterm(bterm)) {
+      if (should_draw_term(bterm)) {
+        bterm_descriptor->highlight(bterm, painter);
+      }
+    } else {
+      bterm_descriptor->highlight(bterm, painter);
+    }
+  }
+
   odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
+    if (sink_object != nullptr) {
+      drawPathSegment(net, sink_object, painter);
+    }
+
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
@@ -491,60 +892,65 @@ void DbNetDescriptor::highlight(std::any object,
       shape.getBox(rect);
       painter.drawRect(rect);
     }
-  } else if (!net->getSigType().isSupply()) {
+  } else if (!is_supply) {
     std::set<odb::Point> driver_locs;
     std::set<odb::Point> sink_locs;
     for (auto inst_term : net->getITerms()) {
+      if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+
       odb::Point rect_center;
       int x, y;
       if (!inst_term->getAvgXY(&x, &y)) {
-        auto inst_term_inst = inst_term->getInst();
-        odb::dbBox* bbox = inst_term_inst->getBBox();
+        odb::dbBox* bbox = inst_term->getInst()->getBBox();
         odb::Rect rect;
         bbox->getBox(rect);
         rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
                                  (rect.yMax() + rect.yMin()) / 2.0);
-      } else
+      } else {
         rect_center = odb::Point(x, y);
-      auto iotype = inst_term->getIoType();
-      if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
-        if (sink_object != nullptr && sink_object != inst_term)
-          continue;
-        sink_locs.insert(rect_center);
       }
-      if (iotype == odb::dbIoType::INOUT || iotype == odb::dbIoType::OUTPUT)
+
+      if (is_sink_iterm(inst_term)) {
+        if (should_draw_term(inst_term)) {
+          sink_locs.insert(rect_center);
+        }
+      }
+      if (is_source_iterm(inst_term)) {
         driver_locs.insert(rect_center);
+      }
     }
     for (auto blk_term : net->getBTerms()) {
-      auto blk_term_pins = blk_term->getBPins();
-      auto iotype = blk_term->getIoType();
-      bool driver_term = iotype == odb::dbIoType::INPUT
-                         || iotype == odb::dbIoType::INOUT
-                         || iotype == odb::dbIoType::FEEDTHRU;
-      bool sink_term = iotype == odb::dbIoType::INOUT
-                       || iotype == odb::dbIoType::OUTPUT
-                       || iotype == odb::dbIoType::FEEDTHRU;
-      for (auto pin : blk_term_pins) {
+      const bool driver_term = is_source_bterm(blk_term);
+      const bool sink_term = is_sink_bterm(blk_term);
+
+      for (auto pin : blk_term->getBPins()) {
         auto pin_rect = pin->getBBox();
         odb::Point rect_center((pin_rect.xMax() + pin_rect.xMin()) / 2.0,
                                (pin_rect.yMax() + pin_rect.yMin()) / 2.0);
-        if (driver_term == true)
+        if (sink_term) {
+          if (should_draw_term(blk_term)) {
+            sink_locs.insert(rect_center);
+          }
+        }
+        if (driver_term) {
           driver_locs.insert(rect_center);
-        if (sink_term)
-          sink_locs.insert(rect_center);
+        }
       }
     }
 
-    if (driver_locs.empty() || sink_locs.empty())
-      return;
-    auto color = painter.getPenColor();
-    color.a = 255;
-    painter.setPen(color, true);
-    painter.setBrush(color);
-    for (auto& driver : driver_locs) {
-      for (auto& sink : sink_locs) {
-        painter.drawLine(driver, sink);
+    if (!driver_locs.empty() && !sink_locs.empty()) {
+      painter.saveState();
+      auto color = painter.getPenColor();
+      color.a = 255;
+      painter.setPen(color, true);
+      for (auto& driver : driver_locs) {
+        for (auto& sink : sink_locs) {
+          painter.drawLine(driver, sink);
+        }
       }
+      painter.restoreState();
     }
   }
 
@@ -567,7 +973,8 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   auto net = std::any_cast<odb::dbNet*>(object);
   Properties props({{"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
-                    {"Wire type", net->getWireType().getString()}});
+                    {"Wire type", net->getWireType().getString()},
+                    {"Special", net->isSpecial()}});
   auto gui = Gui::get();
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
@@ -594,6 +1001,22 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
   auto net = std::any_cast<odb::dbNet*>(object);
   Editors editors;
   addRenameEditor(net, editors);
+  editors.insert({"Special", makeEditor([net](std::any value) {
+    const bool new_special = std::any_cast<bool>(value);
+    if (new_special) {
+      net->setSpecial();
+    } else {
+      net->clearSpecial();
+    }
+    for (auto* iterm : net->getITerms()) {
+      if (new_special) {
+        iterm->setSpecial();
+      } else {
+        iterm->clearSpecial();
+      }
+    }
+    return true;
+  })});
   return editors;
 }
 
@@ -613,7 +1036,29 @@ bool DbNetDescriptor::lessThan(std::any l, std::any r) const
   return l_net->getId() < r_net->getId();
 }
 
+bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* net : block->getNets()) {
+    objects.insert(makeSelected(net, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbITermDescriptor::getName(std::any object) const
 {
@@ -621,7 +1066,13 @@ std::string DbITermDescriptor::getName(std::any object) const
   return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
 }
 
-std::string DbITermDescriptor::getTypeName(std::any object) const
+std::string DbITermDescriptor::getShortName(std::any object) const
+{
+  auto iterm = std::any_cast<odb::dbITerm*>(object);
+  return iterm->getMTerm()->getName();
+}
+
+std::string DbITermDescriptor::getTypeName() const
 {
   return "ITerm";
 }
@@ -641,6 +1092,11 @@ void DbITermDescriptor::highlight(std::any object,
                                   void* additional_data) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
+
+  if (!iterm->getInst()->getPlacementStatus().isPlaced()) {
+    return;
+  }
+
   odb::dbTransform inst_xfm;
   iterm->getInst()->getTransform(inst_xfm);
 
@@ -669,6 +1125,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
   return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
                      {"IO type", iterm->getIoType().getString()},
                      {"Net", net_value},
+                     {"Special", iterm->isSpecial()},
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
 
@@ -688,14 +1145,36 @@ bool DbITermDescriptor::lessThan(std::any l, std::any r) const
   return l_iterm->getId() < r_iterm->getId();
 }
 
+bool DbITermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getITerms()) {
+    objects.insert(makeSelected(term, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbBTermDescriptor::DbBTermDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbBTermDescriptor::getName(std::any object) const
 {
   return std::any_cast<odb::dbBTerm*>(object)->getName();
 }
 
-std::string DbBTermDescriptor::getTypeName(std::any object) const
+std::string DbBTermDescriptor::getTypeName() const
 {
   return "BTerm";
 }
@@ -754,14 +1233,36 @@ bool DbBTermDescriptor::lessThan(std::any l, std::any r) const
   return l_bterm->getId() < r_bterm->getId();
 }
 
+bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getBTerms()) {
+    objects.insert(makeSelected(term, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbBlockageDescriptor::DbBlockageDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbBlockageDescriptor::getName(std::any object) const
 {
   return "Blockage";
 }
 
-std::string DbBlockageDescriptor::getTypeName(std::any object) const
+std::string DbBlockageDescriptor::getTypeName() const
 {
   return "Blockage";
 }
@@ -849,7 +1350,29 @@ bool DbBlockageDescriptor::lessThan(std::any l, std::any r) const
   return l_blockage->getId() < r_blockage->getId();
 }
 
+bool DbBlockageDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* blockage : block->getBlockages()) {
+    objects.insert(makeSelected(blockage, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbObstructionDescriptor::DbObstructionDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbObstructionDescriptor::getName(std::any object) const
 {
@@ -857,7 +1380,7 @@ std::string DbObstructionDescriptor::getName(std::any object) const
   return "Obstruction: " + obs->getBBox()->getTechLayer()->getName();
 }
 
-std::string DbObstructionDescriptor::getTypeName(std::any object) const
+std::string DbObstructionDescriptor::getTypeName() const
 {
   return "Obstruction";
 }
@@ -956,7 +1479,29 @@ bool DbObstructionDescriptor::lessThan(std::any l, std::any r) const
   return l_obs->getId() < r_obs->getId();
 }
 
+bool DbObstructionDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* obs : block->getObstructions()) {
+    objects.insert(makeSelected(obs, nullptr));
+  }
+  return true;
+}
+
 //////////////////////////////////////////////////
+
+DbTechLayerDescriptor::DbTechLayerDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
 
 std::string DbTechLayerDescriptor::getName(std::any object) const
 {
@@ -964,7 +1509,7 @@ std::string DbTechLayerDescriptor::getName(std::any object) const
   return layer->getConstName();
 }
 
-std::string DbTechLayerDescriptor::getTypeName(std::any object) const
+std::string DbTechLayerDescriptor::getTypeName() const
 {
   return "Tech layer";
 }
@@ -982,7 +1527,6 @@ void DbTechLayerDescriptor::highlight(std::any object,
 
 Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) const
 {
-  auto gui = Gui::get();
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   double dbuPerUU = layer->getTech()->getDbUnitsPerMicron();
   Properties props({{"Direction", layer->getDirection().getString()},
@@ -1012,6 +1556,19 @@ bool DbTechLayerDescriptor::lessThan(std::any l, std::any r) const
   auto l_layer = std::any_cast<odb::dbTechLayer*>(l);
   auto r_layer = std::any_cast<odb::dbTechLayer*>(r);
   return l_layer->getId() < r_layer->getId();
+}
+
+bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* tech = db_->getTech();
+  if (tech == nullptr) {
+    return false;
+  }
+
+  for (auto* layer : tech->getLayers()) {
+    objects.insert(makeSelected(layer, nullptr));
+  }
+  return true;
 }
 
 }  // namespace gui

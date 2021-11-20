@@ -43,8 +43,7 @@ using utl::GUI;
 bool check_gui(const char* command)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  auto gui = gui::Gui::get();
-  if (gui == nullptr) {
+  if (!gui::Gui::enabled()) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -94,14 +93,17 @@ odb::Point make_point(double x, double y)
 %}
 
 %include "../../Exception.i"
-%include "std_string.i"
+%include <std_string.i>
+%include <std_map.i>
+namespace std {
+  %template(DisplayControlMap) map<string, bool>;
+}
 
 %inline %{
 
 bool enabled()
 {
-  auto gui = gui::Gui::get();
-  return gui != nullptr;
+  return gui::Gui::enabled();
 }
 
 void
@@ -121,7 +123,7 @@ selection_add_nets(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  gui->select("Net", name);
 }
 
 void
@@ -141,7 +143,7 @@ selection_add_insts(const char* name)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  gui->select("Inst", name);
 }
 
 void highlight_inst(const char* name, int highlight_group = 0)
@@ -269,22 +271,10 @@ void fit()
   gui->fit();
 }
 
-void save_image(const char* filename)
+void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
 {
-  if (!check_gui("save_image")) {
-    return;
-  }
   auto gui = gui::Gui::get();
-  gui->saveImage(filename);
-}
-
-void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi)
-{
-  if (!check_gui("save_image")) {
-    return;
-  }
-  auto gui = gui::Gui::get();
-  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi));
+  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), dbu_per_pixel, display_settings);
 }
 
 void clear_rulers()
@@ -337,6 +327,31 @@ void set_display_controls(const char* name, const char* display_type, bool value
   }
 }
 
+bool check_display_controls(const char* name, const char* display_type)
+{
+  if (!check_gui("check_display_controls")) {
+    return false;
+  }
+  auto gui = gui::Gui::get();
+  
+  std::string disp_type = display_type;
+  // make lower case
+  std::transform(disp_type.begin(), 
+                 disp_type.end(), 
+                 disp_type.begin(), 
+                 [](char c) { return std::tolower(c); });
+  if (disp_type == "visible") {
+    return gui->checkDisplayControlsVisible(name);
+  } else if (disp_type == "selectable") {
+    return gui->checkDisplayControlsSelectable(name);
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 9, "Unknown display control type: {}", display_type);
+  }
+  
+  return false;
+}
+
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
 {
   if (!check_gui("create_toolbar_button")) {
@@ -353,6 +368,29 @@ void remove_toolbar_button(const char* name)
   }
   auto gui = gui::Gui::get();
   gui->removeToolbarButton(name);
+}
+
+const std::string create_menu_item(const char* name, 
+                                   const char* path, 
+                                   const char* text, 
+                                   const char* script, 
+                                   const char* shortcut, 
+                                   bool echo)
+{
+  if (!check_gui("create_menu_item")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  return gui->addMenuItem(name, path, text, script, shortcut, echo);
+}
+
+void remove_menu_item(const char* name)
+{
+  if (!check_gui("remove_menu_item")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->removeMenuItem(name);
 }
 
 const std::string input_dialog(const char* title, const char* question)
@@ -398,6 +436,111 @@ void hide_widget(const char* name)
   }
   auto gui = gui::Gui::get();
   return gui->showWidget(name, false);
+}
+
+void show(const char* script = "", bool interactive = true)
+{
+  auto gui = gui::Gui::get();
+  gui->showGui(script, interactive);
+}
+
+void hide()
+{
+  if (!check_gui("hide")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->hideGui();
+}
+
+const std::string get_selection_property(const std::string& prop_name)
+{
+  if (!check_gui("get_selection_property")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  
+  const gui::Selected& selected = gui->getInspectorSelection();
+  if (!selected) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 36, "Nothing selected");
+  }
+  
+  const std::any& prop = selected.getProperty(prop_name);
+  if (!prop.has_value()) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 37, "Unknown property: {}", prop_name);
+  }
+
+  std::string prop_text = gui::Descriptor::Property::toString(prop);
+
+  if (prop_name == "BBox") {
+    // need to reformat to make it useable for TCL
+    // remove () and space
+    for (const char ch : {'(', ')', ' '}) {
+      std::size_t pos;
+      while ((pos = prop_text.find(ch)) != std::string::npos) {
+        prop_text.erase(pos, 1);
+      }
+    }
+    // replace commas with spaces
+    std::size_t pos;
+    while ((pos = prop_text.find(',')) != std::string::npos) {
+      prop_text.replace(pos, 1, " ");
+    }
+  }
+  
+  return prop_text;
+}
+
+void select_at(double x0, double y0, double x1, double y1, bool append = true)
+{
+  if (!check_gui("select_at")) {
+    return;
+  }  
+  auto gui = gui::Gui::get();
+  gui->selectAt(make_rect(x0, y0, x1, y1), append);
+}
+
+void select_at(double x, double y, bool append = true)
+{
+  select_at(x, y, x, y, append);
+}
+
+int select_next()
+{
+  if (!check_gui("select_next")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectNext();
+}
+
+int select_previous()
+{
+  if (!check_gui("select_previous")) {
+    return 0;
+  }  
+  auto gui = gui::Gui::get();
+  return gui->selectPrevious();
+}
+
+void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+{
+  if (!check_gui("select")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->select(type, name_filter, case_sensitive, highlight_group);
+}
+
+void selection_animate(int repeat = 0)
+{
+  if (!check_gui("selection_animate")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->animateSelection(repeat);
 }
 
 %} // inline

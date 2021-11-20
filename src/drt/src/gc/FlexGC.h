@@ -38,6 +38,8 @@ class drNet;
 class drPatchWire;
 class FlexDRWorker;
 class gcNet;
+class gcPin;
+
 
 class FlexGCWorker
 {
@@ -48,9 +50,10 @@ class FlexGCWorker
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
-  void setExtBox(const frBox& in);
-  void setDrcBox(const frBox& in);
+  void setExtBox(const Rect& in);
+  void setDrcBox(const Rect& in);
   bool setTargetNet(frBlockObject* in);
+  gcNet* getTargetNet();
   void resetTargetNet();
   void setTargetObj(frBlockObject* in);
   void setIgnoreDB();
@@ -59,6 +62,7 @@ class FlexGCWorker
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
   std::vector<std::unique_ptr<gcNet>>& getNets();
+  gcNet* getNet(frNet* net);
   frDesign* getDesign() const;
   const std::vector<std::unique_ptr<frMarker>>& getMarkers() const;
   const std::vector<std::unique_ptr<drPatchWire>>& getPWires() const;
@@ -70,7 +74,9 @@ class FlexGCWorker
   void initPA0(const frDesign* design);
   void initPA1();
   void updateDRNet(drNet* net);
-
+  // used in rp_prep
+  void checkMinStep(gcPin* pin);
+  void updateGCWorker();
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;

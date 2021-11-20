@@ -53,8 +53,8 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/PortDirection.hh"
 #include "sta/PathRef.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
@@ -319,14 +319,14 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
 
   if (write_arrival_requireds) {
-        for (auto& arrival : arrivals_) {
-      f << ".input_arrival " << arrival.first << " "
-        << arrival.second.first << " " << arrival.second.second << std::endl;
+    for (auto& arrival : arrivals_) {
+      f << ".input_arrival " << arrival.first << " " << arrival.second.first
+        << " " << arrival.second.second << std::endl;
     }
 
     for (auto& required : requireds_) {
-      f << ".output_required " << required.first << " "
-        << required.second.first << " " << required.second.second << std::endl;
+      f << ".output_required " << required.first << " " << required.second.first
+        << " " << required.second.second << std::endl;
     }
   }
 
@@ -473,12 +473,12 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         continue;
       }
       auto constNetName = connections[0].substr(connections[0].find("=") + 1);
-      odb::dbNet* net = block->findNet(constNetName.c_str()); 
+      odb::dbNet* net = block->findNet(constNetName.c_str());
       if (net == NULL) {
-        std::string net_name_modified = std::string("or_") + std::to_string(call_id_) + constNetName;
+        std::string net_name_modified
+            = std::string("or_") + std::to_string(call_id_) + constNetName;
         net = odb::dbNet::create(block, net_name_modified.c_str());
       }
-        
 
       // Add tie cells
       std::string constMaster
@@ -487,8 +487,8 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           = (masterName == "_const0_") ? const0_cell_port_ : const1_cell_port_;
       instIds[constMaster]
           = (instIds[constMaster]) ? instIds[constMaster] + 1 : 1;
-      std::string instName
-          = constMaster + "_" + std::to_string(call_id_) + std::to_string(instIds[constMaster]);
+      std::string instName = constMaster + "_" + std::to_string(call_id_)
+                             + std::to_string(instIds[constMaster]);
       for (auto&& lib : block->getDb()->getLibs()) {
         master = lib->findMaster(constMaster.c_str());
         if (master != NULL)
@@ -496,6 +496,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       }
 
       if (master != NULL) {
+        while (block->findInst(instName.c_str())) {
+          instIds[constMaster]++;
+          instName = constMaster + "_" + std::to_string(call_id_)
+                     + std::to_string(instIds[constMaster]);
+        }
         auto newInst = odb::dbInst::create(block, master, instName.c_str());
         odb::dbITerm::connect(newInst->findITerm(constPort.c_str()), net);
       }
@@ -513,8 +518,14 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     }
 
     instIds[masterName] = (instIds[masterName]) ? instIds[masterName] + 1 : 1;
-    std::string instName
-        = masterName + "_" + std::to_string(call_id_) + std::to_string(instIds[masterName]);
+    std::string instName = masterName + "_" + std::to_string(call_id_) + "_"
+                           + std::to_string(instIds[masterName]);
+    while (block->findInst(instName.c_str())) {
+      instIds[masterName]++;
+      instName = masterName + "_" + std::to_string(call_id_) + "_"
+                 + std::to_string(instIds[masterName]);
+    }
+
     auto newInst = odb::dbInst::create(block, master, instName.c_str());
 
     if (newInst == NULL) {
@@ -564,7 +575,8 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
       odb::dbNet* net = block->findNet(netName.c_str());
       if (net == NULL) {
-        std::string net_name_modified = std::string("or_") + std::to_string(call_id_) + netName;
+        std::string net_name_modified
+            = std::string("or_") + std::to_string(call_id_) + netName;
         net = block->findNet(net_name_modified.c_str());
         if (!net)
           net = odb::dbNet::create(block, net_name_modified.c_str());
@@ -590,8 +602,10 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
 {
   auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
-  auto req = open_sta_->vertexRequired(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-                                             sta::MinMax::max());
+  auto req = open_sta_->vertexRequired(
+      vert,
+      is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+      sta::MinMax::max());
   if (sta::delayInf(req)) {
     return 0;
   }
@@ -606,7 +620,8 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
     return 0;
 
   auto ap = pathRef.pathAnalysisPt(open_sta_);
-  auto arr = open_sta_->vertexArrival(vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), ap);
+  auto arr = open_sta_->vertexArrival(
+      vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), ap);
   if (sta::delayInf(arr)) {
     return 0;
   }
@@ -616,15 +631,15 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
 void Blif::addArrival(sta::Pin* pin, std::string netName)
 {
   if (arrivals_.find(netName) == arrivals_.end())
-    arrivals_[netName] = std::pair<float, float>(getArrivalTime(pin, true)*1e12,
-                                                getArrivalTime(pin, false)*1e12);
+    arrivals_[netName] = std::pair<float, float>(
+        getArrivalTime(pin, true) * 1e12, getArrivalTime(pin, false) * 1e12);
 }
 
 void Blif::addRequired(sta::Pin* pin, std::string netName)
 {
   if (requireds_.find(netName) == requireds_.end())
-    requireds_[netName] = std::pair<float, float>(getRequiredTime(pin, true)*1e12,
-                                                  getRequiredTime(pin, false)*1e12);
+    requireds_[netName] = std::pair<float, float>(
+        getRequiredTime(pin, true) * 1e12, getRequiredTime(pin, false) * 1e12);
 }
 
 }  // namespace rmp

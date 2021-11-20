@@ -205,6 +205,57 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbMTermShapeType, dbMTermShapeType {
+	Tcl_Obj *obj = nullptr;
+	switch ($1.getValue()) {
+		case odb::dbMTermShapeType::Value::NONE:
+			obj = Tcl_NewStringObj("NONE", -1);
+			break;
+	 	case odb::dbMTermShapeType::Value::RING:
+			obj = Tcl_NewStringObj("RING", -1);
+			break;
+	 	case odb::dbMTermShapeType::Value::FEEDTHRU:
+			obj = Tcl_NewStringObj("FEEDTHRU", -1);
+			break;
+	 	case odb::dbMTermShapeType::Value::ABUTMENT:
+			obj = Tcl_NewStringObj("ABUTMENT", -1);
+			break;
+	}
+	Tcl_SetObjResult(interp, obj);
+}
+%typemap(in) odb::dbMTermShapeType, dbMTermShapeType {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	if (strcasecmp(str, "NONE") == 0) {
+		$1 = odb::dbMTermShapeType::Value::NONE;
+	} else if (strcasecmp(str, "RING") == 0) {
+		$1 = odb::dbMTermShapeType::Value::RING;
+	} else if (strcasecmp(str, "FEEDTHRU") == 0) {
+		$1 = odb::dbMTermShapeType::Value::FEEDTHRU;
+	} else if (strcasecmp(str, "ABUTMENT") == 0) {
+		$1 = odb::dbMTermShapeType::Value::ABUTMENT;
+	}
+}
+%typemap(typecheck) odb::dbMTermShapeType, dbMTermShapeType {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "NONE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "RING") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "FEEDTHRU") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ABUTMENT") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
+
 %typemap(out) odb::dbPlacementStatus, dbPlacementStatus {
 	Tcl_Obj *obj = nullptr;
 	switch ($1.getValue()) {

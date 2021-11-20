@@ -415,6 +415,7 @@ void InitialPlace::updateCoordi() {
     int idx = inst->extId();
     if (!inst->isLocked()) {
       inst->dbSetCenterLocation( instLocVecX_(idx), instLocVecY_(idx) );
+      inst->dbSetPlaced();
     }
   }
 }

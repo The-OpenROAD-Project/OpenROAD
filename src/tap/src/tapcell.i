@@ -69,7 +69,7 @@
            int halo_y,
            const char* cnrcap_nwin_master,
            const char* cnrcap_nwout_master,
-           int add_boundary_cell,
+           bool add_boundary_cell,
            const char* tap_nwintie_master,
            const char* tap_nwin2_master,
            const char* tap_nwin3_master,

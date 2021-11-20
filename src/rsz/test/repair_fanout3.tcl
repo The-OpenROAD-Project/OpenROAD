@@ -7,5 +7,5 @@ read_def repair_fanout3.def
 
 set_max_fanout 10 [current_design]
 report_check_types -max_fanout
-repair_design -buffer_cell BUF_X1
+repair_design
 report_check_types -max_fanout

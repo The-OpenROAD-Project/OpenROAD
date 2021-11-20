@@ -226,12 +226,16 @@ void IOPlacer::initIOLists()
   }
 }
 
-bool IOPlacer::checkBlocked(Edge edge, int pos)
+bool IOPlacer::checkBlocked(Edge edge, int pos, int layer)
 {
   for (Interval blocked_interval : excluded_intervals_) {
-    if (blocked_interval.getEdge() == edge && pos >= blocked_interval.getBegin()
-        && pos <= blocked_interval.getEnd()) {
-      return true;
+    // check if the blocked interval blocks all layers (== -1) or if it blocks
+    // the layer of the position
+    if (blocked_interval.getLayer() == -1 || blocked_interval.getLayer() == layer) {
+      if (blocked_interval.getEdge() == edge && pos >= blocked_interval.getBegin()
+          && pos <= blocked_interval.getEnd()) {
+        return true;
+      }
     }
   }
 
@@ -400,7 +404,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
       curr_x = pos.getX();
       curr_y = pos.getY();
       bool blocked
-          = vertical ? checkBlocked(edge, curr_x) : checkBlocked(edge, curr_y);
+          = vertical ? checkBlocked(edge, curr_x, layer) : checkBlocked(edge, curr_y, layer);
       slots_.push_back({blocked, false, Point(curr_x, curr_y), layer, edge});
     }
     i++;
@@ -812,7 +816,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 
   if (pin.getLayer() != top_grid_.layer) {
-    int index;
+    int index = -1;
 
     int i = 0;
     for (int layer : hor_layers_) {
@@ -826,6 +830,11 @@ void IOPlacer::updatePinArea(IOPin& pin)
       if (layer == pin.getLayer())
         index = i;
       i++;
+    }
+
+    if (index == -1) {
+      logger_->error(PPL, 77, "Layer {} of Pin {} not found.",
+                    pin.getLayer(), pin.getName());
     }
 
     if (pin.getOrientation() == Orientation::north
@@ -1121,16 +1130,10 @@ void IOPlacer::run(bool random_mode)
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
-  int init_hpwl = 0;
-  int total_hpwl = 0;
-  int delta_hpwl = 0;
-
   initIOLists();
   defineSlots();
 
   initConstraints();
-
-  init_hpwl = returnIONetsHPWL(netlist_);
 
   if (random_mode) {
     logger_->info(PPL, 7, "Random pin placement.");
@@ -1166,8 +1169,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    total_hpwl += returnIONetsHPWL(netlist_io_pins_);
-    delta_hpwl = init_hpwl - total_hpwl;
+    int total_hpwl = returnIONetsHPWL(netlist_io_pins_);
     logger_->info(PPL, 12, "I/O nets HPWL: {:.2f} um.",
                   static_cast<float>(dbuToMicrons(total_hpwl)));
   }
@@ -1176,7 +1178,13 @@ void IOPlacer::run(bool random_mode)
   clear();
 }
 
-void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height)
+void IOPlacer::placePin(odb::dbBTerm* bterm,
+                        int layer,
+                        int x,
+                        int y,
+                        int width,
+                        int height,
+                        bool force_to_die_bound)
 {
   tech_ = db_->getTech();
   block_ = db_->getChip()->getBlock();
@@ -1190,6 +1198,66 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
   }
 
   odb::Point pos = odb::Point(x, y);
+
+  Rect die_boundary;
+  block_->getDieArea(die_boundary);
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
+
+  if (force_to_die_bound) {
+    movePinToTrack(pos, layer, width, height, die_boundary);
+    Edge edge;
+    odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
+    odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+    int min_spacing, init_track, num_track;
+    bool horizontal = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
+      int dist_lb = abs(pos.x() - lb.x());
+      int dist_ub = abs(pos.x() - ub.x());
+      edge = (dist_lb < dist_ub) ? Edge::left : Edge::right;
+    } else {
+      track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
+      int dist_lb = abs(pos.y() - lb.y());
+      int dist_ub = abs(pos.y() - ub.y());
+      edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
+    }
+
+    // check the whole pin shape to make sure no overlaps will happen
+    // between pins
+    bool placed_at_blocked = horizontal ?
+                             checkBlocked(edge, pos.y() - height/2, layer) ||
+                              checkBlocked(edge, pos.y() + height/2, layer) :
+                             checkBlocked(edge, pos.x() - width/2, layer) ||
+                              checkBlocked(edge, pos.x() + width/2, layer);
+    bool sum = true;
+    int offset_sum = 1;
+    int offset_sub = 1;
+    int offset = 0;
+    while (placed_at_blocked) {
+      if (sum) {
+        offset = offset_sum * min_spacing;
+        offset_sum++;
+        sum = false;
+      } else {
+        offset = -(offset_sub * min_spacing);
+        offset_sub++;
+        sum = true;
+      }
+
+      // check the whole pin shape to make sure no overlaps will happen
+      // between pins
+      placed_at_blocked = horizontal ?
+                          checkBlocked(edge, pos.y() - height/2 + offset, layer) ||
+                            checkBlocked(edge, pos.y() + height/2 + offset, layer) :
+                          checkBlocked(edge, pos.x() - width/2 + offset, layer) ||
+                            checkBlocked(edge, pos.x() + width/2 + offset, layer);
+    }
+    pos.x() += horizontal ? 0 : offset;
+    pos.y() += horizontal ? offset : 0;
+  }
+
   odb::Point ll = odb::Point(pos.x() - width/2, pos.y() - height/2);
   odb::Point ur = odb::Point(pos.x() + width/2, pos.y() + height/2);
 
@@ -1198,12 +1266,87 @@ void IOPlacer::placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width,
 
   commitIOPinToDB(io_pin);
 
+  Interval interval = getIntervalFromPin(io_pin, die_boundary);
+
+  excludeInterval(interval);
+
   logger_->info(PPL,
                 70,
                 "Pin {} placed at ({}um, {}um).",
                 bterm->getName(),
-                x/tech_->getLefUnits(),
-                y/tech_->getLefUnits());
+                pos.x()/tech_->getLefUnits(),
+                pos.y()/tech_->getLefUnits());
+}
+
+void IOPlacer::movePinToTrack(odb::Point& pos,
+                              int layer,
+                              int width,
+                              int height,
+                              const Rect& die_boundary)
+{
+  int database_unit = tech_->getLefUnits();
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
+
+  int lb_x = lb.x();
+  int lb_y = lb.y();
+  int ub_x = ub.x();
+  int ub_y = ub.y();
+
+
+  odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+  int min_spacing, init_track, num_track;
+
+  if (layer != top_grid_.layer) { // pin is placed in the die boundaries
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
+      pos.setY(round((pos.y() - init_track) / min_spacing) * min_spacing + init_track);
+      int dist_lb = abs(pos.x() - lb_x);
+      int dist_ub = abs(pos.x() - ub_x);
+      int new_x = (dist_lb < dist_ub) ? lb_x + (width / 2) : ub_x - (width / 2);
+      pos.setX(new_x);
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+      track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
+      pos.setX(round((pos.x() - init_track) / min_spacing) * min_spacing + init_track);
+      int dist_lb = abs(pos.y() - lb_y);
+      int dist_ub = abs(pos.y() - ub_y);
+      int new_y = (dist_lb < dist_ub) ? lb_y + (width / 2) : ub_y - (width / 2);
+      pos.setY(new_y);
+    }
+  }
+}
+
+Interval IOPlacer::getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary)
+{
+  Edge edge;
+  int begin, end, layer;
+  Point lb = die_boundary.ll();
+  Point ub = die_boundary.ur();
+
+  odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(io_pin.getLayer());
+  // sum the half width of the layer to avoid overlaps in adjacent tracks
+  int half_width = int(ceil(tech_layer->getWidth()));
+
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    // pin is on the left or right edge
+    int dist_lb = abs(io_pin.getPosition().x() - lb.x());
+    int dist_ub = abs(io_pin.getPosition().x() - ub.x());
+    edge = (dist_lb < dist_ub) ? Edge::left : Edge::right;
+    begin = io_pin.getLowerBound().y() - half_width;
+    end = io_pin.getUpperBound().y() + half_width;
+  } else {
+    // pin is on the top or bottom edge
+    int dist_lb = abs(io_pin.getPosition().y() - lb.y());
+    int dist_ub = abs(io_pin.getPosition().y() - ub.y());
+    edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
+    begin = io_pin.getLowerBound().x() - half_width;
+    end = io_pin.getUpperBound().x() + half_width;
+  }
+
+  layer = io_pin.getLayer();
+
+  return Interval(edge, begin, end, layer);
 }
 
 // db functions

@@ -53,8 +53,9 @@ struct _dbMTermFlags
 {
   dbIoType::Value _io_type : 4;
   dbSigType::Value _sig_type : 4;
+  dbMTermShapeType::Value _shape_type : 2;
   uint _mark : 1;
-  uint _spare_bits : 23;
+  uint _spare_bits : 21;
 };
 
 class _dbMTerm : public _dbObject
@@ -95,6 +96,7 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
 {
   _flags._io_type = dbIoType::INPUT;
   _flags._sig_type = dbSigType::SIGNAL;
+  _flags._shape_type = dbMTermShapeType::NONE;
   _flags._mark = 0;
   _flags._spare_bits = 0;
   _order_id = 0;

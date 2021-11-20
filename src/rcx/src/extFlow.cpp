@@ -635,7 +635,6 @@ uint extMain::initSearchForNets(int* X1, int* Y1, uint* pitchTable,
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
     if (layer->getRoutingLevel() == 0)
       continue;
@@ -1019,7 +1018,6 @@ uint extMain::addNetShapesOnSearch(dbNet* net, uint dir, int* bb_ll, int* bb_ur,
 
         // int xmin= r.xMin();
         uint trackNum = 0;
-        // if (net->getId()==2655) {
         if (trackNum > 0) {
           if (dy > dx) {
             trackNum = _search->addBox(r.xMin(), r.yMin() - via_ext, r.xMax(),

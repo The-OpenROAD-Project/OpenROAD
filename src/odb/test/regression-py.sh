@@ -1,7 +1,7 @@
 set -e
 
 BASE_DIR=$(dirname $0)
-export PYTHONPATH==$BASE_DIR/../../../build/src/OpenDB/src/swig/python:$PYTHONPATH
+export PYTHONPATH=$BASE_DIR/../../../build/src/OpenDB/src/swig/python:$PYTHONPATH
 APP=$BASE_DIR/../../../build/src/OpenDB/src/swig/python/opendbpy
 
 echo "Running tests .."
@@ -91,5 +91,10 @@ echo ""
 
 echo "[18] Multiple Boxes per dbBPin test"
 $APP $BASE_DIR/python/18-multiple_boxes_pin_test.py
+echo "SUCCESS!"
+echo ""
+
+echo "[19] Swig Interface test"
+$APP $BASE_DIR/python/19-swig_interface_test.py
 echo "SUCCESS!"
 echo ""

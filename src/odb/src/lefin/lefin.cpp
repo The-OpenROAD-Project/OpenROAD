@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "lefin.h"
-
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -47,6 +45,7 @@
 #include "lefLayerPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
+#include "lefin.h"
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
@@ -208,6 +207,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
 
         dw = dbdist(layer->getWidth()) >> 1;
+        designRuleWidth = -1;
         break;
       }
       case lefiGeomWidthE: {
@@ -316,10 +316,12 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         int x2 = dbdist(rect->xh);
         int y2 = dbdist(rect->yh);
 
+        dbBox* box;
         if (is_pin)
-          dbBox::create((dbMPin*) object, layer, x1, y1, x2, y2);
+          box = dbBox::create((dbMPin*) object, layer, x1, y1, x2, y2);
         else
-          dbBox::create((dbMaster*) object, layer, x1, y1, x2, y2);
+          box = dbBox::create((dbMaster*) object, layer, x1, y1, x2, y2);
+        box->setDesignRuleWidth(designRuleWidth);
         break;
       }
       case lefiGeomRectIterE: {
@@ -336,22 +338,25 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 
         for (dx = 0, x_idx = 0; x_idx < numX; ++x_idx, dx += stepX) {
           for (dy = 0, y_idx = 0; y_idx < numY; ++y_idx, dy += stepY) {
+            dbBox* box;
             if (is_pin)
-              dbBox::create(
+              box = dbBox::create(
                   (dbMPin*) object, layer, x1 + dx, y1 + dy, x2 + dx, y2 + dy);
             else
-              dbBox::create((dbMaster*) object,
+              box = dbBox::create((dbMaster*) object,
                             layer,
                             x1 + dx,
                             y1 + dy,
                             x2 + dx,
                             y2 + dy);
+            box->setDesignRuleWidth(designRuleWidth);
           }
         }
         break;
       }
       case lefiGeomPolygonE: {
-        createPolygon(object, is_pin, layer, geometry->getPolygon(i));
+        createPolygon(
+            object, is_pin, layer, geometry->getPolygon(i), designRuleWidth);
         break;
       }
       case lefiGeomPolygonIterE: {
@@ -366,8 +371,13 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 
         for (y = 0; y < pItr->yStart; y++)
           for (x = 0; x < pItr->xStart; x++)
-            createPolygon(
-                object, is_pin, layer, &p, x * pItr->xStep, y * pItr->yStep);
+            createPolygon(object,
+                          is_pin,
+                          layer,
+                          &p,
+                          designRuleWidth,
+                          x * pItr->xStep,
+                          y * pItr->yStep);
         break;
       }
       case lefiGeomViaE: {
@@ -442,6 +452,7 @@ void lefin::createPolygon(dbObject* object,
                           bool is_pin,
                           dbTechLayer* layer,
                           lefiGeomPolygon* p,
+                          int design_rule_width,
                           double offset_x,
                           double offset_y)
 {
@@ -473,12 +484,14 @@ void lefin::createPolygon(dbObject* object,
   for (itr = rects.begin(); itr != rects.end(); ++itr) {
     Rect& r = *itr;
 
+    dbBox* box;
     if (is_pin)
-      dbBox::create(
+      box = dbBox::create(
           (dbMPin*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
     else
-      dbBox::create(
+      box = dbBox::create(
           (dbMaster*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
+    box->setDesignRuleWidth(design_rule_width);
   }
 }
 
@@ -1326,9 +1339,13 @@ void lefin::pin(lefiPin* pin)
   }
 
   dbSigType sig_type;
+  dbMTermShapeType shape_type;
 
   if (pin->lefiPin::hasUse())
     sig_type = dbSigType(pin->use());
+
+  if (pin->lefiPin::hasShape())
+    shape_type = dbMTermShapeType(pin->shape());
 
   dbMTerm* term = _master->findMTerm(pin->name());
 
@@ -1345,7 +1362,7 @@ void lefin::pin(lefiPin* pin)
       return;
     }
 
-    term = dbMTerm::create(_master, pin->name(), io_type, sig_type);
+    term = dbMTerm::create(_master, pin->name(), io_type, sig_type, shape_type);
   }
 
   //
@@ -2063,7 +2080,8 @@ dbTech* lefin::createTech(const char* lef_file)
 
   if (_errors != 0) {
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(
+        utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
   }
 
   return _tech;
@@ -2099,7 +2117,8 @@ dbLib* lefin::createLib(const char* name, const char* lef_file)
   if (_errors != 0) {
     if (_lib)
       dbLib::destroy(_lib);
-    return NULL;
+    _logger->error(
+        utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
 
   return _lib;
@@ -2138,7 +2157,8 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
     if (_lib)
       dbLib::destroy(_lib);
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(
+        utl::ODB, 289, "LEF data from {} is discarded due to errors", lef_file);
   }
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();
@@ -2185,7 +2205,10 @@ dbLib* lefin::createTechAndLib(const char* lib_name,
       if (_lib)
         dbLib::destroy(_lib);
       dbTech::destroy(_tech);
-      return NULL;
+      _logger->error(utl::ODB,
+                     291,
+                     "LEF data from {} is discarded due to errors",
+                     lef_file);
     }
     _logger->info(utl::ODB, 236, "Finished LEF file:  {}", lef_file);
   }
@@ -2204,7 +2227,7 @@ dbLib* lefin::createTechAndLib(const char* lib_name,
     if (_lib)
       dbLib::destroy(_lib);
     dbTech::destroy(_tech);
-    return NULL;
+    _logger->error(utl::ODB, 290, "LEF data discarded due to errors");
   }
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();

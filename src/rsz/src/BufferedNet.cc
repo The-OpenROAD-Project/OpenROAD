@@ -36,8 +36,12 @@
 #include "rsz/BufferedNet.hh"
 
 #include <algorithm>
+// Use spdlog fmt::format until c++20 that supports std::format.
+#include <spdlog/fmt/fmt.h>
 
 #include "rsz/Resizer.hh"
+
+#include "utl/Logger.h"
 
 #include "sta/Units.hh"
 #include "sta/Liberty.hh"
@@ -47,6 +51,9 @@ namespace rsz {
 using std::min;
 
 using sta::INF;
+
+using utl::Logger;
+using utl::RSZ;
 
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
@@ -100,7 +107,7 @@ void
 BufferedNet::reportTree(int level,
                         Resizer *resizer)
 {
-  report(level, resizer);
+  resizer->logger()->report("{:{}s}{}", "", level, to_string(resizer));
   switch (type_) {
   case BufferedNetType::load:
     break;
@@ -115,9 +122,8 @@ BufferedNet::reportTree(int level,
   }
 }
 
-void
-BufferedNet::report(int level,
-                    Resizer *resizer)
+string
+BufferedNet::to_string(Resizer *resizer)
 {
   Network *sdc_network = resizer->sdcNetwork();
   Units *units = resizer->units();
@@ -128,34 +134,28 @@ BufferedNet::report(int level,
   
   switch (type_) {
   case BufferedNetType::load:
-    // %*s format indents level spaces.
-    printf("%*sload %s (%s, %s) cap %s req %s\n",
-           level, "",
-           sdc_network->pathName(load_pin_),
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
+    // {:{}s} format indents level spaces.
+    return fmt::format("load {} ({}, {}) cap {} req {}",
+                       sdc_network->pathName(load_pin_),
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
   case BufferedNetType::wire:
-    printf("%*swire (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
+    return fmt::format("wire ({}, {}) cap {} req {}",
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
   case BufferedNetType::buffer:
-    printf("%*sbuffer (%s, %s) %s cap %s req %s\n",
-           level, "",
-           x, y,
-           buffer_cell_->name(),
-           cap,
-           delayAsString(required(resizer), resizer));
-    break;
+    return fmt::format("buffer ({}, {}) {} cap {} req {}",
+                       x, y,
+                       buffer_cell_->name(),
+                       cap,
+                       delayAsString(required(resizer), resizer));
   case BufferedNetType::junction:
-    printf("%*sjunction (%s, %s) cap %s req %s\n",
-           level, "",
-           x, y, cap,
-           delayAsString(required(resizer), resizer));
-    break;
+    return fmt::format("junction ({}, {}) cap {} req {}",
+                       x, y, cap,
+                       delayAsString(required(resizer), resizer));
   }
+  // suppress gcc warning
+  return "";
 }
 
 Required

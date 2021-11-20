@@ -40,6 +40,7 @@ namespace fr {
 namespace io {
 class Parser;
 }
+
 class frLayer
 {
  public:
@@ -53,6 +54,7 @@ class frLayer
         minWidth(0),
         numMasks(1),
         defaultViaDef(nullptr),
+        hasMinStepViol(false),
         minSpc(nullptr),
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
@@ -81,7 +83,8 @@ class frLayer
         lef58CutSpacingTableDiffNetConstraint(nullptr),
         lef58SameNetInterCutSpacingTableConstraint(nullptr),
         lef58SameMetalInterCutSpacingTableConstraint(nullptr),
-        lef58DefaultInterCutSpacingTableConstraint(nullptr)
+        lef58DefaultInterCutSpacingTableConstraint(nullptr),
+        drEolCon()
   {
   }
   frLayer(frLayerNum layerNumIn, const frString& nameIn)
@@ -133,7 +136,7 @@ class frLayer
   }
   void setType(dbTechLayerType typeIn) { type = typeIn; }
   void addViaDef(frViaDef* viaDefIn) { viaDefs.insert(viaDefIn); }
-
+  void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol = in; }
   // getters
   frUInt4 getNumMasks() const { return numMasks; }
   frLayerNum getLayerNum() const { return layerNum; }
@@ -143,6 +146,8 @@ class frLayer
   frUInt4 getWidth() const { return width; }
   frUInt4 getMinWidth() const { return minWidth; }
   dbTechLayerDir getDir() const { return dir; }
+  bool isVertical() { return dir == dbTechLayerDir::VERTICAL; }
+  bool isHorizontal() { return dir == dbTechLayerDir::HORIZONTAL; }
   bool isUnidirectional() const
   {
     // We don't handle coloring so any double/triple patterned
@@ -160,6 +165,7 @@ class frLayer
     return style;
   }
   frViaDef* getDefaultViaDef() const { return defaultViaDef; }
+  bool hasVia2ViaMinStepViol() { return hasMinStepViol; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs; }
   frCollection<std::shared_ptr<frConstraint>> getConstraints() const
   {
@@ -281,21 +287,16 @@ class frLayer
   // spacing end of line
   bool hasLef58SpacingEndOfLineConstraints() const
   {
-    return (lef58SpacingEndOfLineConstraints.size()) ? true : false;
+    return !lef58SpacingEndOfLineConstraints.empty();
   }
-  frCollection<std::shared_ptr<frLef58SpacingEndOfLineConstraint>>
+  const frCollection<frLef58SpacingEndOfLineConstraint*>&
   getLef58SpacingEndOfLineConstraints() const
   {
-    frCollection<std::shared_ptr<frLef58SpacingEndOfLineConstraint>> sol;
-    std::transform(lef58SpacingEndOfLineConstraints.begin(),
-                   lef58SpacingEndOfLineConstraints.end(),
-                   std::back_inserter(sol),
-                   [](auto& kv) { return kv.lock(); });
-    return sol;
+    return lef58SpacingEndOfLineConstraints;
   }
 
   void addLef58SpacingEndOfLineConstraint(
-      const std::shared_ptr<frLef58SpacingEndOfLineConstraint>& constraintIn)
+      frLef58SpacingEndOfLineConstraint* constraintIn)
   {
     lef58SpacingEndOfLineConstraints.push_back(constraintIn);
   }
@@ -655,6 +656,15 @@ class frLayer
     return lef58DefaultInterCutSpacingTableConstraint;
   }
 
+  void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
+  {
+    drEolCon.eolWidth = width;
+    drEolCon.eolSpace = space;
+    drEolCon.eolWithin = within;
+  }
+
+  const drEolSpacingConstraint& getDrEolSpacingConstraint() const { return drEolCon; }
+
   void printAllConstraints(utl::Logger* logger);
 
  protected:
@@ -667,12 +677,13 @@ class frLayer
   frUInt4 numMasks;
   dbTechLayerDir dir;
   frViaDef* defaultViaDef;
+  bool hasMinStepViol;
   std::set<frViaDef*> viaDefs;
   std::vector<frLef58CutClass*> cutClasses;
   std::map<std::string, int> name2CutClassIdxMap;
   frCollection<std::weak_ptr<frConstraint>> constraints;
 
-  frCollection<std::weak_ptr<frLef58SpacingEndOfLineConstraint>>
+  frCollection<frLef58SpacingEndOfLineConstraint*>
       lef58SpacingEndOfLineConstraints;
 
   frConstraint* minSpc;
@@ -718,6 +729,7 @@ class frLayer
 
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
+  drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr
 

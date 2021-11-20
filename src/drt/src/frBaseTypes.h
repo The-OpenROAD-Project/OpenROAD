@@ -29,10 +29,10 @@
 #ifndef _FR_BASE_TYPES_H_
 #define _FR_BASE_TYPES_H_
 
-#include <boost/geometry/strategies/strategies.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/segment.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -42,6 +42,10 @@
 
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
+namespace odb {
+  class Rect;
+}
 
 namespace fr {
 using Logger = utl::Logger;
@@ -63,11 +67,11 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
+using odb::dbIoType;
 using odb::dbMasterType;
 using odb::dbSigType;
-using odb::dbIoType;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 enum frEndStyleEnum
 {
@@ -258,10 +262,8 @@ typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
 typedef bg::model::box<point_t> box_t;
 typedef bg::model::segment<point_t> segment_t;
 
-class frBox;
-
 template <typename T>
-using rq_box_value_t = std::pair<frBox, T>;
+using rq_box_value_t = std::pair<odb::Rect, T>;
 
 struct frDebugSettings
 {
@@ -293,6 +295,19 @@ struct frDebugSettings
   int iter;
   bool paMarkers;
   bool paCombining;
+};
+
+struct drEolSpacingConstraint
+{
+  drEolSpacingConstraint(frCoord width = 0,
+                         frCoord space = 0,
+                         frCoord within = 0)
+      : eolWidth(width), eolSpace(space), eolWithin(within)
+  {
+  }
+  frCoord eolWidth;
+  frCoord eolSpace;
+  frCoord eolWithin;
 };
 }  // namespace fr
 

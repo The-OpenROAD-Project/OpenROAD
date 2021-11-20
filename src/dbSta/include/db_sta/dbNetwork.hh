@@ -69,9 +69,9 @@ class dbNetwork : public ConcreteNetwork
 public:
   dbNetwork();
   virtual ~dbNetwork();
-  void setDb(dbDatabase *db);
+  void init(dbDatabase *db,
+            Logger *logger);
   void setBlock(dbBlock *block);
-  void setLogger(Logger *logger);
   virtual void clear();
 
   void readLefAfter(dbLib *lib);
@@ -120,6 +120,8 @@ public:
   Port *dbToSta(dbMTerm *mterm) const;
   PortDirection *dbToSta(dbSigType sig_type,
 			 dbIoType io_type) const;
+  // dbStaCbk::inDbBTermCreate
+  void makeTopPort(dbBTerm *bterm);
 
   ////////////////////////////////////////////////////////////////
   //

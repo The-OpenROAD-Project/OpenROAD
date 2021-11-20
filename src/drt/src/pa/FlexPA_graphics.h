@@ -68,6 +68,10 @@ class FlexPAGraphics : public gui::Renderer
                 const frVia* via,
                 const std::vector<std::unique_ptr<frMarker>>& markers);
 
+  void setPlanarAP(const frAccessPoint* ap,
+                   const frPathSeg* seg,
+                   const std::vector<std::unique_ptr<frMarker>>& markers);
+
   void setObjsAndMakers(const vector<pair<frConnFig*, frBlockObject*>>& objs,
                         const std::vector<std::unique_ptr<frMarker>>& markers);
 
@@ -93,8 +97,9 @@ class FlexPAGraphics : public gui::Renderer
   std::vector<frLayerNum> layer_map_;
   const frAccessPoint* pa_ap_;
   std::vector<const frVia*> pa_vias_;
+  std::vector<const frPathSeg*> pa_segs_;
   const std::vector<std::unique_ptr<frMarker>>* pa_markers_;
-  std::vector<std::pair<frBox, frLayerNum>> shapes_;
+  std::vector<std::pair<Rect, frLayerNum>> shapes_;
 };
 
 }  // namespace fr

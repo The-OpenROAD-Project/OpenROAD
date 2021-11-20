@@ -110,7 +110,7 @@ class WireSegment
 
   double getBufferLocation(unsigned idx) const
   {
-    if (idx < 0 || idx >= _bufferLocations.size()) {
+    if (idx >= _bufferLocations.size()) {
       return -1.0;
     }
     return _bufferLocations[idx];

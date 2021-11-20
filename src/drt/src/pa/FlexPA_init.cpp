@@ -103,7 +103,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
   // cout <<"  refBlock pin layer range done" <<endl;
 }
 
-bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
+bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 {
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
@@ -111,9 +111,9 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
                  + (frCoord)(tp->getTrackSpacing())
                        * ((frCoord)(tp->getNumTracks()) - 1);
   if (isVerticalTrack) {
-    return !(low > box.right() || high < box.left());
+    return !(low > box.xMax() || high < box.xMin());
   } else {
-    return !(low > box.top() || high < box.bottom());
+    return !(low > box.yMax() || high < box.yMin());
   }
 }
 
@@ -124,10 +124,6 @@ void FlexPA::initUniqueInstance_main(
         refBlock2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
-  map<frBlock*,
-      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
-      refBlockOT2Insts;  // refblock orient track-offset to instances
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
@@ -136,9 +132,9 @@ void FlexPA::initUniqueInstance_main(
       ndrInsts.push_back(inst.get());
       continue;
     }
-    frPoint origin;
+    Point origin;
     inst->getOrigin(origin);
-    frBox boundaryBBox;
+    Rect boundaryBBox;
     inst->getBoundaryBBox(boundaryBBox);
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
@@ -181,11 +177,12 @@ void FlexPA::initUniqueInstance_main(
   for (auto& [refBlock, orientMap] : refBlockOT2Insts) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
-      for (auto& [vec, inst] : offsetMap) {
-        auto uniqueInst = *(inst.begin());
+      for (auto& [vec, insts] : offsetMap) {
+        auto uniqueInst = *(insts.begin());
         uniqueInstances_.push_back(uniqueInst);
-        for (auto i : inst) {
-          inst2unique_[i] = uniqueInst;
+        for (auto i : insts) {
+            inst2unique_[i] = uniqueInst;
+            inst2Class_[i] = &insts;
         }
       }
     }
@@ -193,6 +190,7 @@ void FlexPA::initUniqueInstance_main(
   for (frInst* inst : ndrInsts) {
     uniqueInstances_.push_back(inst);
     inst2unique_[inst] = inst;
+    inst2Class_[inst] = nullptr;
   }
 
   // init unique2Idx
@@ -287,10 +285,10 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   gtl::polygon_90_set_data<frCoord> viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS1 += bboxRect;
   }
@@ -313,10 +311,10 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS2 += bboxRect;
   }

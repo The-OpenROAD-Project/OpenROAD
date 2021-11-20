@@ -51,11 +51,13 @@ class dbBlock;
 }  // namespace odb
 
 namespace sta {
+class dbNetwork;
 class Instance;
 class NetworkReader;
 class Library;
 class Port;
 class Net;
+class dbSta;
 }  // namespace sta
 
 namespace utl {
@@ -82,223 +84,233 @@ class PartOptions
  public:
   PartOptions() = default;
 
-  void setNumStarts(unsigned numStarts) { _numStarts = numStarts; }
-  unsigned getNumStarts() const { return _numStarts; }
-  void setTargetPartitions(unsigned target) { _targetPartitions = target; }
-  unsigned getTargetPartitions() const { return _targetPartitions; }
-  void setWeightedVertices(bool enable) { _weightedVertices = enable; }
-  bool getWeightedVertices() const { return _weightedVertices; }
-  void setCoarRatio(double cratio) { _coarRatio = cratio; }
-  double getCoarRatio() { return _coarRatio; }
-  void setCoarVertices(unsigned coarVertices) { _coarVertices = coarVertices; }
-  unsigned getCoarVertices() const { return _coarVertices; }
-  void setTermProp(bool enable) { _termProp = enable; }
-  bool getTermProp() const { return _termProp; }
-  void setCutHopRatio(double ratio) { _cutHopRatio = ratio; }
-  double getCutHopRatio() { return _cutHopRatio; }
-  void setArchTopology(const std::vector<int>& arch) { _archTopology = arch; }
-  const std::vector<int>& getArchTopology() const { return _archTopology; }
-  void setTool(const std::string& tool) { _tool = tool; }
-  std::string getTool() const { return _tool; }
+  void setNumStarts(unsigned numStarts) { numStarts_ = numStarts; }
+  unsigned getNumStarts() const { return numStarts_; }
+  void setTargetPartitions(unsigned target) { targetPartitions_ = target; }
+  unsigned getTargetPartitions() const { return targetPartitions_; }
+  void setWeightedVertices(bool enable) { weightedVertices_ = enable; }
+  bool getWeightedVertices() const { return weightedVertices_; }
+  void setCoarRatio(double cratio) { coarRatio_ = cratio; }
+  double getCoarRatio() { return coarRatio_; }
+  void setCoarVertices(unsigned coarVertices) { coarVertices_ = coarVertices; }
+  unsigned getCoarVertices() const { return coarVertices_; }
+  void setTermProp(bool enable) { termProp_ = enable; }
+  bool getTermProp() const { return termProp_; }
+  void setCutHopRatio(double ratio) { cutHopRatio_ = ratio; }
+  double getCutHopRatio() { return cutHopRatio_; }
+  void setArchTopology(const std::vector<int>& arch) { archTopology_ = arch; }
+  const std::vector<int>& getArchTopology() const { return archTopology_; }
+  void setTool(const std::string& tool) { tool_ = tool; }
+  std::string getTool() const { return tool_; }
   void setGraphModel(const std::string& graphModel)
   {
     if (graphModel == "clique") {
-      _graphModel = CLIQUE;
+      graphModel_ = CLIQUE;
     } else if (graphModel == "star") {
-      _graphModel = STAR;
+      graphModel_ = STAR;
     } else
-      _graphModel = HYBRID;
+      graphModel_ = HYBRID;
   }
-  GraphType getGraphModel() const { return _graphModel; }
-  void setCliqueThreshold(unsigned threshold) { _cliqueThreshold = threshold; }
-  unsigned getCliqueThreshold() const { return _cliqueThreshold; }
-  void setWeightModel(unsigned model) { _weightModel = model; }
-  unsigned getWeightModel() const { return _weightModel; }
-  void setMaxEdgeWeight(unsigned weight) { _maxEdgeWeight = weight; }
-  unsigned getMaxEdgeWeight() const { return _maxEdgeWeight; }
-  void setMaxVertexWeight(unsigned weight) { _maxVertexWeight = weight; }
-  unsigned getMaxVertexWeight() const { return _maxVertexWeight; }
+  GraphType getGraphModel() const { return graphModel_; }
+  void setCliqueThreshold(unsigned threshold) { cliqueThreshold_ = threshold; }
+  unsigned getCliqueThreshold() const { return cliqueThreshold_; }
+  void setWeightModel(unsigned model) { weightModel_ = model; }
+  unsigned getWeightModel() const { return weightModel_; }
+  void setMaxEdgeWeight(unsigned weight) { maxEdgeWeight_ = weight; }
+  unsigned getMaxEdgeWeight() const { return maxEdgeWeight_; }
+  void setMaxVertexWeight(unsigned weight) { maxVertexWeight_ = weight; }
+  unsigned getMaxVertexWeight() const { return maxVertexWeight_; }
   void setBalanceConstraint(unsigned constraint)
   {
-    _balanceConstraint = constraint;
+    balanceConstraint_ = constraint;
   }
-  unsigned getBalanceConstraint() const { return _balanceConstraint; }
-  void setRefinement(unsigned number) { _refinement = number; }
-  unsigned getRefinement() const { return _refinement; }
+  unsigned getBalanceConstraint() const { return balanceConstraint_; }
+  void setRefinement(unsigned number) { refinement_ = number; }
+  unsigned getRefinement() const { return refinement_; }
   void setRandomSeed(int seed);
   void generateSeeds(int seeds);
   int getNewSeed() { return seedGenerator_(); }
-  void setSeeds(const std::set<int>& seeds) { _seeds = seeds; }
-  const std::set<int>& getSeeds() const { return _seeds; }
-  void setExistingID(int id) { _existingId = id; }
-  int getExistingID() const { return _existingId; }
+  void setSeeds(const std::set<int>& seeds) { seeds_ = seeds; }
+  const std::set<int>& getSeeds() const { return seeds_; }
+  void setExistingID(int id) { existingId_ = id; }
+  int getExistingID() const { return existingId_; }
   void setPartitionsToTest(const std::vector<int>& partIds)
   {
-    _partitionsToTest = partIds;
+    partitionsToTest_ = partIds;
   }
   const std::vector<int>& getPartitionsToTest() const
   {
-    return _partitionsToTest;
+    return partitionsToTest_;
   }
   void setEvaluationFunction(const std::string& function)
   {
-    _evaluationFunction = function;
+    evaluationFunction_ = function;
   }
-  std::string getEvaluationFunction() const { return _evaluationFunction; }
-  void setLevel(unsigned level) { _level = level; }
-  unsigned getLevel() const { return _level; }
-  void setFinalPartitions(unsigned target) { _finalPartitions = target; }
-  unsigned getFinalPartitions() { return _finalPartitions; }
-  void setForceGraph(bool force) { _forceGraph = force; }
-  bool getForceGraph() { return _forceGraph; }
+  std::string getEvaluationFunction() const { return evaluationFunction_; }
+  void setLevel(unsigned level) { level_ = level; }
+  unsigned getLevel() const { return level_; }
+  void setFinalPartitions(unsigned target) { finalPartitions_ = target; }
+  unsigned getFinalPartitions() { return finalPartitions_; }
+  void setForceGraph(bool force) { forceGraph_ = force; }
+  bool getForceGraph() { return forceGraph_; }
   void setClusteringScheme(const std::string& scheme)
   {
-    _clusteringScheme = scheme;
+    clusteringScheme_ = scheme;
   }
-  std::string getClusteringScheme() { return _clusteringScheme; }
+  std::string getClusteringScheme() { return clusteringScheme_; }
 
  private:
-  unsigned _numStarts = 1;
-  unsigned _targetPartitions = 0;
-  bool _weightedVertices = false;
-  double _coarRatio = 0.7;
-  unsigned _coarVertices = 2500;
-  bool _termProp = false;
-  double _cutHopRatio = 1.0;
-  std::string _tool = "chaco";
-  GraphType _graphModel = HYPERGRAPH;
-  std::string _evaluationFunction = "hyperedges";
-  unsigned _cliqueThreshold = 50;
-  unsigned _weightModel = 1;
-  unsigned _maxEdgeWeight = 100;
-  unsigned _maxVertexWeight = 100;
-  unsigned _balanceConstraint = 2;
-  unsigned _refinement = 0;
-  int _level = -1;
-  int _existingId = -1;
-  unsigned _finalPartitions = 2;
-  bool _forceGraph = false;
-  std::vector<int> _archTopology;
-  std::set<int> _seeds;
-  std::vector<int> _partitionsToTest;
-  std::string _clusteringScheme = "scheme1";
+  unsigned numStarts_ = 1;
+  unsigned targetPartitions_ = 0;
+  bool weightedVertices_ = false;
+  double coarRatio_ = 0.7;
+  unsigned coarVertices_ = 2500;
+  bool termProp_ = false;
+  double cutHopRatio_ = 1.0;
+  std::string tool_ = "chaco";
+  GraphType graphModel_ = HYPERGRAPH;
+  std::string evaluationFunction_ = "hyperedges";
+  unsigned cliqueThreshold_ = 50;
+  unsigned weightModel_ = 1;
+  unsigned maxEdgeWeight_ = 100;
+  unsigned maxVertexWeight_ = 100;
+  unsigned balanceConstraint_ = 2;
+  unsigned refinement_ = 0;
+  int level_ = -1;
+  int existingId_ = -1;
+  unsigned finalPartitions_ = 2;
+  bool forceGraph_ = false;
+  std::vector<int> archTopology_;
+  std::set<int> seeds_;
+  std::vector<int> partitionsToTest_;
+  std::string clusteringScheme_ = "scheme1";
   std::mt19937 seedGenerator_ = std::mt19937();
 };
 
 class PartSolutions
 {
  public:
-  void addAssignment(std::vector<unsigned long> currentAssignment,
-                     unsigned long runtime,
-                     int seed);
+  void addAssignment(const std::vector<unsigned long>& currentAssignment,
+                     const unsigned long runtime,
+                     const int seed);
   void clearAssignments();
   const std::vector<unsigned long>& getAssignment(unsigned idx) const
   {
-    return _assignmentResults[idx];
+    return assignmentResults_[idx];
   }
-  unsigned long getRuntime(unsigned idx) const { return _runtimeResults[idx]; }
-  int getSeed(unsigned idx) const { return _seeds[idx]; }
-  void setToolName(std::string name) { _toolName = name; }
-  std::string getToolName() const { return _toolName; }
-  void setPartitionId(unsigned id) { _partitionId = id; }
-  unsigned getPartitionId() const { return _partitionId; }
-  void setClusterId(unsigned id) { _clusterId = id; }
-  unsigned getClusterId() const { return _clusterId; }
-  void setBestSolutionIdx(unsigned idx) { _bestSolutionIdx = idx; }
-  unsigned getBestSolutionIdx() const { return _bestSolutionIdx; }
-  unsigned getNumOfRuns() const { return _seeds.size(); }
-  void setBestSetSize(double result) { _bestSetSizeSD = result; }
-  double getBestSetSize() const { return _bestSetSizeSD; }
-  void setBestSetArea(double result) { _bestSetAreaSD = result; }
-  double getBestSetArea() const { return _bestSetAreaSD; }
-  void setBestNumTerminals(unsigned long result) { _bestNumTerminals = result; }
-  unsigned long getBestNumTerminals() const { return _bestNumTerminals; }
+  unsigned long getRuntime(unsigned idx) const { return runtimeResults_[idx]; }
+  int getSeed(unsigned idx) const { return seeds_[idx]; }
+  void setToolName(const std::string& name) { toolName_ = name; }
+  std::string getToolName() const { return toolName_; }
+  void setPartitionId(unsigned id) { partitionId_ = id; }
+  unsigned getPartitionId() const { return partitionId_; }
+  void setClusterId(unsigned id) { clusterId_ = id; }
+  unsigned getClusterId() const { return clusterId_; }
+  void setBestSolutionIdx(unsigned idx) { bestSolutionIdx_ = idx; }
+  unsigned getBestSolutionIdx() const { return bestSolutionIdx_; }
+  unsigned getNumOfRuns() const { return seeds_.size(); }
+  void setBestSetSize(double result) { bestSetSizeSD_ = result; }
+  double getBestSetSize() const { return bestSetSizeSD_; }
+  void setBestSetArea(double result) { bestSetAreaSD_ = result; }
+  double getBestSetArea() const { return bestSetAreaSD_; }
+  void setBestNumTerminals(unsigned long result) { bestNumTerminals_ = result; }
+  unsigned long getBestNumTerminals() const { return bestNumTerminals_; }
   void setBestNumHyperedgeCuts(unsigned long result)
   {
-    _bestNumHyperedgeCuts = result;
+    bestNumHyperedgeCuts_ = result;
   }
   unsigned long getBestNumHyperedgeCuts() const
   {
-    return _bestNumHyperedgeCuts;
+    return bestNumHyperedgeCuts_;
   }
-  void setBestRuntime(unsigned long result) { _bestRuntime = result; }
-  unsigned long getBestRuntime() const { return _bestRuntime; }
-  void setBestHopWeigth(unsigned long result) { _bestHopWeigth = result; }
-  unsigned long getBestHopWeigth() const { return _bestHopWeigth; }
+  void setBestRuntime(unsigned long result) { bestRuntime_ = result; }
+  unsigned long getBestRuntime() const { return bestRuntime_; }
+  void setBestHopWeigth(unsigned long result) { bestHopWeigth_ = result; }
+  unsigned long getBestHopWeigth() const { return bestHopWeigth_; }
 
   void resetEvaluation();
 
  private:
-  std::vector<std::vector<unsigned long>> _assignmentResults;
-  std::vector<unsigned long> _runtimeResults;
-  std::vector<int> _seeds;
-  std::string _toolName = "";
-  unsigned _partitionId = 0;
-  unsigned _clusterId = 0;
-  unsigned _bestSolutionIdx = 0;
-  unsigned _numOfRuns = 0;
-  double _bestSetSizeSD = 0;
-  double _bestSetAreaSD = 0;
-  unsigned long _bestNumTerminals = 0;
-  unsigned long _bestNumHyperedgeCuts = 0;
-  unsigned long _bestRuntime = 0;
-  unsigned long _bestHopWeigth = 0;
+  std::vector<std::vector<unsigned long>> assignmentResults_;
+  std::vector<unsigned long> runtimeResults_;
+  std::vector<int> seeds_;
+  std::string toolName_ = "";
+  unsigned partitionId_ = 0;
+  unsigned clusterId_ = 0;
+  unsigned bestSolutionIdx_ = 0;
+  unsigned numOfRuns_ = 0;
+  double bestSetSizeSD_ = 0;
+  double bestSetAreaSD_ = 0;
+  unsigned long bestNumTerminals_ = 0;
+  unsigned long bestNumHyperedgeCuts_ = 0;
+  unsigned long bestRuntime_ = 0;
+  unsigned long bestHopWeigth_ = 0;
 };
 
 class PartitionMgr
 {
  private:
   odb::dbBlock* getDbBlock() const;
-  unsigned getNumPartitioningResults() const { return _results.size(); }
-  unsigned getNumClusteringResults() const { return _clusResults.size(); }
-  PartSolutions& getPartitioningResult(unsigned id) { return _results[id]; }
-  PartSolutions& getClusteringResult(unsigned id) { return _clusResults[id]; }
+  unsigned getNumPartitioningResults() const { return results_.size(); }
+  unsigned getNumClusteringResults() const { return clusResults_.size(); }
+  const PartSolutions& getPartitioningResult(unsigned id) const
+  {
+    return results_[id];
+  }
+  const PartSolutions& getClusteringResult(unsigned id) const
+  {
+    return clusResults_[id];
+  }
 
-  PartOptions _options;
-  odb::dbDatabase* _db = nullptr;
-  ord::dbVerilogNetwork* _network = nullptr;
-  unsigned _bestId = 0;
-  Logger* _logger;
-  std::unique_ptr<Graph> _graph;
-  std::unique_ptr<Hypergraph> _hypergraph;
-  std::vector<PartSolutions> _results;
-  std::vector<PartSolutions> _clusResults;
+  PartOptions options_;
+  odb::dbDatabase* db_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
+  ord::dbVerilogNetwork* network_ = nullptr;
+  sta::dbSta* _sta = nullptr;
+  unsigned bestId_ = 0;
+  Logger* logger_;
+  std::unique_ptr<Graph> graph_;
+  std::unique_ptr<Hypergraph> hypergraph_;
+  std::vector<PartSolutions> results_;
+  std::vector<PartSolutions> clusResults_;
 
  public:
   PartitionMgr();
   ~PartitionMgr();
   void init(odb::dbDatabase* db,
+            sta::dbNetwork* db_network,
             ord::dbVerilogNetwork* network,
+            sta::dbSta* sta,
             Logger* logger);
   void runPartitioning();
   void runClustering();
   void run3PClustering();
   void evaluatePartitioning();
-  unsigned getCurrentBestId() { return _bestId; }
-  void setCurrentBestId(unsigned id) { _bestId = id; }
+  unsigned getCurrentBestId() const { return bestId_; }
+  void setCurrentBestId(unsigned id) { bestId_ = id; }
   void runChaco();
   void runGpMetis();
   void runMlPart();
   void runChacoClustering();
   void runGpMetisClustering();
   void runMlPartClustering();
-  PartOptions& getOptions() { return _options; }
-  unsigned getCurrentId() { return (_results.size() - 1); }
-  unsigned getCurrentClusId() { return (_clusResults.size() - 1); }
+  PartOptions& getOptions() { return options_; }
+  unsigned getCurrentId() const { return (results_.size() - 1); }
+  unsigned getCurrentClusId() const { return (clusResults_.size() - 1); }
   void toGraph();
   void toHypergraph();
   void hypergraph(bool buildGraph = false);
-  unsigned generatePartitionId();
-  unsigned generateClusterId();
+  unsigned generatePartitionId() const;
+  unsigned generateClusterId() const;
   void computePartitionResult(unsigned partitionId, std::string function);
   bool comparePartitionings(const PartSolutions& oldPartition,
                             const PartSolutions& newPartition,
-                            std::string function);
-  void reportPartitionResult(unsigned partitionId);
-  void writePartitioningToDb(unsigned partitionId);
+                            const std::string& function);
+  void reportPartitionResult(const unsigned partitionId);
+  void writePartitioningToDb(const unsigned partitionId);
   void dumpPartIdToFile(std::string name);
   void writeClusteringToDb(unsigned clusteringId);
-  void dumpClusIdToFile(std::string name);
+  void dumpClusIdToFile(std::string name) const;
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
   void reportGraph();
@@ -314,6 +326,9 @@ class PartitionMgr
                        unsigned int net_threshold,
                        unsigned int ignore_net_threshold,
                        unsigned int virtual_weight,
+                       unsigned int num_hops,
+                       unsigned int timing_weight,
+                       bool std_cell_timing_flag_,
                        const char* report_directory,
                        const char* file_name);
 
@@ -324,8 +339,11 @@ class PartitionMgr
       sta::Library* library,
       sta::NetworkReader* network,
       sta::Instance* parent,
-      std::set<sta::Instance*>* insts,
+      const std::set<sta::Instance*>* insts,
       std::map<sta::Net*, sta::Port*>* port_map);
+  sta::Instance* buildPartitionedTopInstance(const char* name,
+                                             sta::Library* library,
+                                             sta::NetworkReader* network);
 };
 
 }  // namespace par

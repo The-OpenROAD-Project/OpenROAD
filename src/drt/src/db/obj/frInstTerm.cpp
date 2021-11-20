@@ -37,16 +37,42 @@ frString frInstTerm::getName() const
   return getInst()->getName() + '/' + getTerm()->getName();
 }
 
-frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum) {
-    frTransform shiftXform;
-    auto inst = getInst();
-    inst->getTransform(shiftXform);
-    x = x - shiftXform.xOffset();
-    y = y - shiftXform.yOffset();
-    return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
-    
+frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
+{
+  dbTransform shiftXform;
+  auto inst = getInst();
+  inst->getTransform(shiftXform);
+  Point offset(shiftXform.getOffset());
+  x = x - offset.getX();
+  y = y - offset.getY();
+  return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
 }
 
-bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum) {
-    return getAccessPoint(x, y, lNum) != nullptr;
+bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
+{
+  return getAccessPoint(x, y, lNum) != nullptr;
+}
+
+void frInstTerm::getShapes(std::vector<frRect>& outShapes,
+                           bool updatedTransform)
+{
+  term_->getShapes(outShapes);
+  for (auto& shape : outShapes) {
+    dbTransform trans;
+    if (updatedTransform)
+      getInst()->getUpdatedXform(trans);
+    else
+      getInst()->getTransform(trans);
+    shape.move(trans);
+  }
+}
+
+Rect frInstTerm::getBBox()
+{
+  Rect bbox(term_->getBBox());
+  dbTransform trans;
+  getInst()->getTransform(trans);
+  Point offset = trans.getOffset();
+  bbox.moveDelta(offset.getX(), offset.getY());
+  return bbox;
 }

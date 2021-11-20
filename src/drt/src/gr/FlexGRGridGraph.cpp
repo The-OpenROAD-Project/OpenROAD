@@ -49,19 +49,19 @@ void FlexGRGridGraph::init()
 void FlexGRGridGraph::initCoords()
 {
   map<frLayerNum, dbTechLayerDir> zMap;
-  frPoint gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
-  frPoint gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
+  Point gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
+  Point gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
   // xCoords
   for (int xIdx = gcellIdxLL.x(); xIdx <= gcellIdxUR.x(); xIdx++) {
-    frBox gcellBox;
-    getDesign()->getTopBlock()->getGCellBox(frPoint(xIdx, 0), gcellBox);
-    xCoords_.push_back((gcellBox.left() + gcellBox.right()) / 2);
+    Rect gcellBox;
+    getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0), gcellBox);
+    xCoords_.push_back((gcellBox.xMin() + gcellBox.xMax()) / 2);
   }
   // yCoords
   for (int yIdx = gcellIdxLL.y(); yIdx <= gcellIdxUR.y(); yIdx++) {
-    frBox gcellBox;
-    getDesign()->getTopBlock()->getGCellBox(frPoint(0, yIdx), gcellBox);
-    yCoords_.push_back((gcellBox.bottom() + gcellBox.top()) / 2);
+    Rect gcellBox;
+    getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx), gcellBox);
+    yCoords_.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
   }
   // z
   if (!is2DRouting_) {
