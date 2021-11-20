@@ -750,14 +750,16 @@ void DbNetDescriptor::findPath(NodeMap& graph,
   std::map<const Node*, int> f_score;
 
   struct DistNode {
+   public:
     const Node* node;
     int dist;
 
-    public:
-      // used for priority queue
-      bool operator<(const DistNode& other) const { return dist > other.dist; }
+    bool operator() (const DistNode& lhs, const DistNode&rhs) const
+    {
+      return lhs.dist > rhs.dist;
+    }
   };
-  std::priority_queue<DistNode> open_set;
+  std::priority_queue<DistNode, std::vector<DistNode>, DistNode> open_set;
   std::set<const Node*> open_set_nodes;
   const int source_sink_dist = distance(source, sink);
   open_set.push({source, source_sink_dist});
