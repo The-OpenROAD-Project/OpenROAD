@@ -957,9 +957,10 @@ Resizer::repairNet(Net *net,
           int wire_length;
           float pin_cap, fanout;
           PinSeq load_pins;
-          repairNet(tree, drvr_pt, SteinerTree::null_pt, net, drvr_pin,
-                    max_load_slew, max_cap, max_fanout, max_length, corner, 0,
-                    wire_length, pin_cap, fanout, load_pins);
+          if (drvr_pt != SteinerTree::null_pt)
+            repairNet(tree, drvr_pt, SteinerTree::null_pt, net, drvr_pin,
+                      max_load_slew, max_cap, max_fanout, max_length, corner, 0,
+                      wire_length, pin_cap, fanout, load_pins);
           repair_count++;
 
           if (resize_drvr)
