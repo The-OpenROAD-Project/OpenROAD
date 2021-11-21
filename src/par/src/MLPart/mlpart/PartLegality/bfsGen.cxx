@@ -228,16 +228,13 @@ vector<double> SBGWeightBfs::generateSoln(Partitioning& curPart) {
         // eval
         vector<int> cuts(v_ct, 0);
         int minp = INT_MAX, maxp = -1;
-        int minval = INT_MAX, maxval = -1;
         for (int e = 0; e < e_ct; ++e) {
                 const HGFEdge& ed = hgraph.getEdgeByIdx(e);
                 for (itHGFNodeLocal it = ed.nodesBegin(); it != ed.nodesEnd(); ++it) {
                         if (ord.idx((*it)->getIndex()) < minp) {
-                                minval = (*it)->getIndex();
                                 minp = ord.idx((*it)->getIndex());
                         }
                         if (ord.idx((*it)->getIndex()) > maxp) {
-                                maxval = (*it)->getIndex();
                                 maxp = ord.idx((*it)->getIndex());
                         }
                 }

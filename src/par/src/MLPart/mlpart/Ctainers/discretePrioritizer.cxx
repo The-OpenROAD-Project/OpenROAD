@@ -59,7 +59,6 @@ DiscretePrioritizer::DiscretePrioritizer(const vector<unsigned> &priorities) : _
 void DiscretePrioritizer::populate(const vector<unsigned> &priorities) {
         abkfatal(!_populated, "can't populate DiscretePrioritizer twice");
         _populated = true;
-        typedef DiscretePriorityElement *pEltType;
         _numElts = priorities.size();
         _elements = new DiscretePriorityElement[_numElts];
         _minPriority = UINT_MAX;

@@ -123,7 +123,6 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
     std::string currentConnections = "", currentClock = "";
     std::set<std::string> currentClocks;
-    int totalOutPins = 0, totalOutConstPins = 0;
 
     auto iterms = inst->getITerms();
 

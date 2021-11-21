@@ -141,7 +141,7 @@ istream& impl_isword(istream& i, int lineNo = -1) {
 }
 
 istream& impl_needword(istream& in, const char* word, int lineNo = -1) {
-        char buffer[1024], errMess[255];  // still no way to avoid buffer overflow !
+        char buffer[1024], errMess[2048];  // still no way to avoid buffer overflow !
         in >> eatblank >> buffer;
         if (lineNo > 0) {
                 sprintf(errMess, " '%s' expected near line %d . Got %s ", word, lineNo, buffer);
@@ -154,7 +154,7 @@ istream& impl_needword(istream& in, const char* word, int lineNo = -1) {
 }
 
 istream& impl_needcaseword(istream& in, const char* word, int lineNo = -1) {
-        char buffer[1024], errMess[255];  // still no way to avoid buffer overflow !
+        char buffer[1024], errMess[2048];  // still no way to avoid buffer overflow !
         in >> eatblank;
         in >> buffer;
         if (lineNo > 0) {

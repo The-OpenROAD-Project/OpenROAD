@@ -1476,7 +1476,6 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
   while(bfs.hasNext()) {
     sta::Vertex* vertex = bfs.next();
     sta::VertexInEdgeIterator fanin_iter(vertex, graph);
-    int i = 0;
     string fanin_name = "";
     while(fanin_iter.hasNext()) {
       sta::Edge* edge = fanin_iter.next();
