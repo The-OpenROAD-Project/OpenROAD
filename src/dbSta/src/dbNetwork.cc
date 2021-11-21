@@ -368,8 +368,8 @@ DbNetTermIterator::next()
 dbNetwork::dbNetwork() :
   ConcreteNetwork(),
   db_(nullptr),
-  block_(nullptr),
   logger_(nullptr),
+  block_(nullptr),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {

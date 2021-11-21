@@ -274,8 +274,8 @@ void GreedyHEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, doubl
         // The tag MUST NOT be set to 1, or it will be removed from
         // toCluster at the end of the pass.
 
-        double maxMatchWt = 0;
-        double minMatchWt = DBL_MAX;
+        // double maxMatchWt = 0;
+        // double minMatchWt = DBL_MAX;
 
         unsigned matchId = 0;
         unsigned numMatches = 0;
@@ -307,8 +307,8 @@ void GreedyHEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, doubl
                         newCl->setTag(5);  // do not allow re-using this on the
                         // same level it was created.
                         numToCluster--;
-                        maxMatchWt = max(maxMatchWt, mRec.matchWeight);
-                        minMatchWt = min(maxMatchWt, mRec.matchWeight);
+                        // maxMatchWt = max(maxMatchWt, mRec.matchWeight);
+                        // minMatchWt = min(maxMatchWt, mRec.matchWeight);
                         numMatches++;
                 }
                 matchId++;

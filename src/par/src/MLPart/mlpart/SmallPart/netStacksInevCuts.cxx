@@ -91,13 +91,11 @@ void NetStacksInevCuts::_trivInit(const HGraphFixed &hg, const Partitioning &par
 
 void NetStacksInevCuts::_procEdge(const HGFEdge &edge, const Partitioning &part, unsigned movableIdx) {
         if (edge.getDegree() == 2) {
-                bool swapped = false;
                 unsigned nodeIdx1 = (*edge.nodesBegin())->getIndex();
                 unsigned nodeIdx2 = (*(edge.nodesBegin() + 1))->getIndex();
                 unsigned edgeWgt = 2 * unsigned(edge.getWeight() + 0.5);
                 if (_mapBack[nodeIdx2] == movableIdx) {
                         std::swap(nodeIdx1, nodeIdx2);
-                        swapped = true;
                 }
                 abkfatal(_mapBack[nodeIdx1] == movableIdx,
                          "Inconsistency between nodes, edges in"

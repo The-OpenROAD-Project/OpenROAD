@@ -460,4 +460,5 @@ void ClHG_ClusterTreeBase::spinRandomNumber(unsigned numToWaste)
 
         unsigned unused;
         for (unsigned i = 0; i < numToWaste; i++) unused = _rng;
+        (void) unused;
 }

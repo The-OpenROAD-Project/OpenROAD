@@ -52,7 +52,7 @@ class HGraphForHierarchy : public SubHGraph {
         // not contiguous.  maxEdgeId is the highest edge Id in
         // adjacentEdges
         // Mateus@180515 - Moved the implementation to .h file
-        HGraphForHierarchy(const std::vector<unsigned>& oNodes, unsigned numTerminals, const FillableHierarchy& fillH) : _madeEdge(0), SubHGraph(numTerminals, oNodes.size() - numTerminals, fillH.getEdgeWeights().size()) {
+        HGraphForHierarchy(const std::vector<unsigned>& oNodes, unsigned numTerminals, const FillableHierarchy& fillH) : SubHGraph(numTerminals, oNodes.size() - numTerminals, fillH.getEdgeWeights().size()), _madeEdge(0) {
                 //    _nodeNames = vector<string>(_nodes.size());
 
                 const std::vector<double>& edgeWeights = fillH.getEdgeWeights();

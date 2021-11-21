@@ -164,12 +164,12 @@ Resizer::Resizer() :
   db_(nullptr),
   block_(nullptr),
   core_exists_(false),
+  parasitics_src_(ParasiticsSrc::none),
   design_area_(0.0),
   max_(MinMax::max()),
   buffer_lowest_drive_(nullptr),
   buffer_med_drive_(nullptr),
   buffer_highest_drive_(nullptr),
-  parasitics_src_(ParasiticsSrc::none),
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
   tgt_slews_{0.0, 0.0},
@@ -1338,7 +1338,6 @@ Resizer::repairNet(SteinerTree *tree,
         // Setting this to max_slew is a quadratic in L
         // L^2*Rwire*Cwire + L*(Rdrvr*Cwire + Rwire*Cpin) + Rdrvr*Cpin - max_slew/k_threshold
         // Solve using quadradic eqn for L.
-        float k = 1.39;
         float a = wire_res * wire_cap;
         float b = r_drvr * wire_cap + wire_res * pin_cap;
         float c = r_drvr * pin_cap - max_load_slew / k_threshold;
@@ -3999,7 +3998,6 @@ Resizer::findFanins(PinSet *end_pins)
     ends.insert(end);
   }
 
-  Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
