@@ -255,7 +255,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
                    bus_name,
                    idx);
       portname = bus_name;
-      delete bus_name;
+      delete[] bus_name;
 
       port_buses[portname].push_back(port);
     }
