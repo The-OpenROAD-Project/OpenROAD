@@ -61,6 +61,7 @@ record_tests {
   repair_slew9
   repair_slew10
   repair_slew11
+  repair_slew12
   report_floating_nets1
   repair_tie1
   repair_tie2
