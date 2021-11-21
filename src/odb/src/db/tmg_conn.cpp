@@ -117,7 +117,6 @@ tmg_conn::tmg_conn()
   _tstackV = (tmg_rcterm**) malloc(_termNmax * sizeof(tmg_rcterm*));
   _csVV.resize(_termNmax);
   _csNV = (int*) malloc(_termNmax * sizeof(int));
-  int j;
   _shortNmax = 1024;
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
   _search = NULL;
@@ -247,7 +246,6 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
 void tmg_conn::addITerm(dbITerm* iterm)
 {
   if (_termN == _termNmax) {
-    int j, j0 = _termNmax;
     _termNmax *= 2;
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV
@@ -265,7 +263,6 @@ void tmg_conn::addITerm(dbITerm* iterm)
 void tmg_conn::addBTerm(dbBTerm* bterm)
 {
   if (_termN == _termNmax) {
-    int j, j0 = _termNmax;
     _termNmax *= 2;
     _termV = (tmg_rcterm*) realloc(_termV, _termNmax * sizeof(tmg_rcterm));
     _tstackV

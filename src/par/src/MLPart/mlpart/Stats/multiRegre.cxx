@@ -76,10 +76,9 @@ double MultipleRegression::determinant(const vector<vector<double> >& m) {
 }
 
 void MultipleRegression::calculateRegression(const vector<vector<double> >& xIn) {
-        double f1, f2, phi, sy, deter, dvest;
+        double phi, sy, deter, dvest;
         /// unsigned ids=1; double tl=0.0001;
-        unsigned istp = 1, wdta = xIn[0].size(), i, j, k, iy, ir = 2;
-        f1 = f2 = 3.29;
+        unsigned istp = 1, wdta = xIn[0].size(), i, j, k, ir = 2;
         vector<vector<double> > r(xIn.size(), vector<double>(xIn.size(), 0));
         vector<double> wsum(r.size(), 0), wmean(r.size(), 0), sigma(r.size(), 0);
         for (i = 0; i < r.size(); i++)
@@ -123,7 +122,6 @@ void MultipleRegression::calculateRegression(const vector<vector<double> >& xIn)
                 istp++;
                 if (istp > r.size()) break;
                 if (istp == r.size()) {
-                        iy = ir;
                         ir = 1;
                 }
                 k = istp - 1;

@@ -293,7 +293,9 @@ void BBPart::ReorderMovables::_reduceNbrPriors(unsigned nbrIdx, HGFNode const &m
                 HGFNode const &sisterNode = *(*iN);
                 unsigned sisterOrigIdx = sisterNode.getIndex();
                 if (sisterOrigIdx == nbrOrigIdx) continue;
+#ifdef ABKDEBUG
                 unsigned sisterIdx = _mapBack[sisterOrigIdx];
+#endif
                 if (_twoHopsComputed[sisterOrigIdx]) {
                         abkassert(sisterIdx == UINT_MAX || _isNumbered[sisterIdx], "two-hop priors computed, but not numbered???");
                         reductionCount += unsigned(min(firstEdgeWeight, double(edge.getWeight())) * bbpart_twoHopGoalWeight + 0.5);

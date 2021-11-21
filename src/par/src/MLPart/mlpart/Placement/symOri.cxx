@@ -131,7 +131,7 @@ OrientationSet::OrientationSet(const Symmetry& sym, const Orient& orient)
        and do a big switch.  Sigh.
     */
 {
-        unsigned r;
+        unsigned r = 0;
         unsigned ori = orient.getAngle() + (orient.isFaceUp() ? 1 : 0);
 
         //  cout << "sym: " << sym << " orient " << orient << endl;

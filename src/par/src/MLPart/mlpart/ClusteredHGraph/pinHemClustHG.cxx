@@ -192,7 +192,7 @@ void PinHEMClusteredHGraph::heavyEdgeMatchingLevel(double maxChildArea, double m
                                 double combArea = c0Area + adjClArea;
 
                                 if ((*cl)->getTag() == 0 && (*cl) != clPair[0] && !unionPIds.isEmpty() && (*cl)->isClusterable() && ((combArea <= maxNewArea && adjClArea <= maxChildArea) || c0Area == 0 || adjClArea == 0)) {
-                                        double newWt;
+                                        double newWt = edgeVal;
                                         double cl1Wt = max((*cl)->getArea(), _minArea / 10.0);
 
                                         switch (_params.weightOption) {

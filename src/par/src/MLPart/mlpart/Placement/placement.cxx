@@ -123,7 +123,7 @@ Placement::Placement(const Mapping& pullBackMap, const Placement& from)
 }
 
 Placement::Placement(Placement::Examples ex, unsigned size, BBox bb) {
-        unsigned i, j, nXFixed, nYFixed, nXandYFixed, num = 0;
+        unsigned i, j, nYFixed, num = 0;
 
         // setting sizes;
         switch (ex) {
@@ -133,17 +133,14 @@ Placement::Placement(Placement::Examples ex, unsigned size, BBox bb) {
                                 nYFixed = 20;
                         else
                                 nYFixed = size / 10;
-                        nXandYFixed = nXFixed = nYFixed;
                         break;
                 case _Grid1:
                         if (size == 0) size = 5;
                         nPts = size * size + 4 * size;
-                        nXandYFixed = nXFixed = nYFixed = 4 * size;
                         break;
                 case _Grid2:
                         if (size == 0) size = 5;
                         nPts = size * size;
-                        nXandYFixed = 0;
                         break;
         }
 
