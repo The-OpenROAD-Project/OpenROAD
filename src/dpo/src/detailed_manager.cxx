@@ -51,6 +51,9 @@
 #include "detailed_segment.h"
 #include "plotgnu.h"
 #include "utility.h"
+#include "utl/Logger.h"
+
+using utl::DPO;
 
 namespace dpo {
 
@@ -116,6 +119,14 @@ DetailedMgr::~DetailedMgr(void) {
   if (m_rng != 0) {
     delete m_rng;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::internalError( std::string msg )
+{
+    m_logger->error(DPO, 400, "Detailed improvement internal error: {:s}.", msg.c_str());
+    exit(-1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -351,9 +362,6 @@ void DetailedMgr::findSegments(void) {
   for (size_t reg = 1; reg < m_arch->m_regions.size(); reg++) {
     Architecture::Region* regPtr = m_arch->m_regions[reg];
 
-    // std::cout << "Finding intervals spanned by region " << regPtr->m_id << "
-    // of " << m_arch->m_regions.size() << std::endl;
-
     findRegionIntervals(regPtr->m_id, intervals);
 
     int split = 0;
@@ -470,18 +478,11 @@ void DetailedMgr::findSegments(void) {
 
             ++numSegments;
           } else {
-            std::cout << "Error." << std::endl;
-            exit(-1);
+            internalError("Unexpected problem while constructing segments");
           }
         }
       }
     }
-
-    // if( split != 0 )
-    //{
-    //    std::cout << "Region " << reg << " resulted in spliting segments; "
-    //        << "Created " << split << " new segments." << std::endl;
-    //}
   }
 
   // Make sure segment boundaries line up with sites.
@@ -510,8 +511,6 @@ void DetailedMgr::findSegments(void) {
   for (size_t i = 0; i < m_cellsInSeg.size(); i++) {
     m_cellsInSeg[i] = std::vector<Node*>();
   }
-
-  std::cout << "Created " << m_segments.size() << " segments." << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -666,19 +665,9 @@ void DetailedMgr::findClosestSpanOfSegmentsDfs(
     std::vector<std::vector<DetailedSeg*> >& candidates
 
 ) {
-  std::set<int> debug_set;
-  // debug_set.insert( 96609 );
-
   stack.push_back(segPtr);
   int segId = segPtr->m_segId;
   int rowId = segPtr->m_rowId;
-
-  if (debug_set.end() != debug_set.find(ndi->getId())) {
-    for (size_t i = 0; i <= stack.size(); i++) std::cout << " ";
-    std::cout << "seg: " << segId << " @ row: " << rowId << " L: " << xmin
-              << " R: " << xmax << " X[" << segPtr->m_xmin << ","
-              << segPtr->m_xmax << "]" << std::endl;
-  }
 
   if (rowId < top) {
     ++rowId;
@@ -687,12 +676,6 @@ void DetailedMgr::findClosestSpanOfSegmentsDfs(
       double overlap =
           std::min(xmax, segPtr->m_xmax) - std::max(xmin, segPtr->m_xmin);
 
-      if (debug_set.end() != debug_set.find(ndi->getId())) {
-        for (size_t i = 0; i <= stack.size(); i++) std::cout << " ";
-        std::cout << "up: " << segId << " @ row: " << rowId << " L: " << xmin
-                  << " R: " << xmax << " X[" << segPtr->m_xmin << ","
-                  << segPtr->m_xmax << "], overlap is " << overlap << std::endl;
-      }
       if (overlap >= 1.0e-3) {
         // Must find the reduced X-interval.
         double xl = std::max(xmin, segPtr->m_xmin);
@@ -706,8 +689,7 @@ void DetailedMgr::findClosestSpanOfSegmentsDfs(
     // segments which is potentially valid for placing the cell.
     int spanned = top - bot + 1;
     if (stack.size() != spanned) {
-      std::cout << "Error." << std::endl;
-      exit(-1);
+      internalError( "Multi-height cell spans an incorrect number of segments" );
     }
     candidates.push_back(stack);
   }
@@ -723,23 +705,8 @@ bool DetailedMgr::findClosestSpanOfSegments(
   // rows) into which the cell can be assigned.
 
   int spanned = (int)((nd->getHeight() / m_singleRowHeight) + 0.5);
-  if (spanned <= 1) {
-    // Not intended for single height cells so error out.
-    std::cout << "Error." << std::endl;
-    exit(-1);
-  }
-
-  std::set<int> debug;
-  //    debug.insert( 96609 );
-
-  if (debug.end() != debug.find(nd->getId())) {
-    std::cout << "Attempting to assign cell " << nd->getId() << " @ "
-              << "(" << nd->getX() << "," << nd->getY() << ")"
-              << " "
-              << "Spanning " << spanned << " rows"
-              << ", "
-              << "Bottom at " << nd->getY() - 0.5 * nd->getHeight()
-              << std::endl;
+  if(spanned <= 1) {
+    return false;
   }
 
   double hori;
@@ -761,11 +728,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
     // call to this routine will check both the bottom and the top rows
     // for power compatibility.
     if (!m_arch->power_compatible(nd, m_arch->m_rows[r], flip)) {
-      if (debug.end() != debug.find(nd->getId())) {
-        std::cout << " => Cell " << nd->getId() << ", "
-                  << "not compatible with row @ " << m_arch->m_rows[r]->getY()
-                  << std::endl;
-      }
       continue;
     }
 
@@ -777,27 +739,8 @@ bool DetailedMgr::findClosestSpanOfSegments(
       continue;
     }
 
-    if (debug.end() != debug.find(nd->getId())) {
-      std::cout << " => Cell " << nd->getId() << ", "
-                << "trying in rows " << b << " through " << t << ", "
-                << "Y[" << m_arch->m_rows[b]->getY() << ":"
-                << m_arch->m_rows[t]->getY() + m_arch->m_rows[t]->getH() << "]"
-                << std::endl;
-    }
-
     for (size_t sb = 0; sb < m_segsInRow[b].size(); sb++) {
       DetailedSeg* segPtr = m_segsInRow[b][sb];
-
-      if (debug.end() != debug.find(nd->getId())) {
-        std::cout << "Trying to place cell " << nd->getId() << " which spans "
-                  << spanned << " rows; "
-                  << "Location is @ (" << nd->getX() << "," << nd->getY() << ")"
-                  << ", "
-                  << "Row is " << b << ", Segment is " << sb << " of "
-                  << m_segsInRow[b].size() << ", "
-                  << "X:[" << segPtr->m_xmin << "," << segPtr->m_xmax << "]"
-                  << std::endl;
-      }
 
       candidates.clear();
       stack.clear();
@@ -805,14 +748,7 @@ bool DetailedMgr::findClosestSpanOfSegments(
       findClosestSpanOfSegmentsDfs(nd, segPtr, segPtr->m_xmin, segPtr->m_xmax,
                                    b, t, stack, candidates);
       if (candidates.size() == 0) {
-        if (debug.end() != debug.find(nd->getId())) {
-          std::cout << "No candidates." << std::endl;
-        }
         continue;
-      } else {
-        if (debug.end() != debug.find(nd->getId())) {
-          std::cout << "Candidates is " << candidates.size() << std::endl;
-        }
       }
 
       // Evaluate the candidate segments.  Determine the distance of the bottom
@@ -834,7 +770,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
         // XXX: Should region constraints be hard or soft?  If hard, there is
         // more change for failure!
         if (!regionsOkay) {
-          // std::cout << "Region is not okay." << std::endl;
           continue;
         }
 
@@ -847,12 +782,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
           int rr = segPtr->m_rowId;
           xmin = std::max(xmin, segPtr->m_xmin);
           xmax = std::min(xmax, segPtr->m_xmax);
-
-          if (debug.end() != debug.find(nd->getId())) {
-            std::cout << "Span segment " << segPtr->m_segId << ", "
-                      << "X:" << segPtr->m_xmin << "," << segPtr->m_xmax << "] "
-                      << "@ " << m_arch->m_rows[rr]->getY() << std::endl;
-          }
         }
 
         double dy = std::fabs(nd->getY() - 0.5 * nd->getHeight() - ymin);
@@ -862,13 +791,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
         double dx = std::fabs(nd->getX() - xx);
 
         double disp = dx + dy;
-
-        if (debug.end() != debug.find(nd->getId())) {
-          std::cout << "Candidate " << i << ", "
-                    << "Xmin is " << xmin << ", Xmax is " << xmax << ", "
-                    << "Ymin is " << ymin << ", DY is " << dy << ", DX is "
-                    << dx << std::endl;
-        }
 
         if (best1.size() == 0 || (dx + dy < disp1)) {
           if (1) {
@@ -882,56 +804,16 @@ bool DetailedMgr::findClosestSpanOfSegments(
             disp2 = dx + dy;
           }
         }
-
-        // std::cout << "--" << std::endl;
-        // for( size_t j = 0; j < candidates[i].size(); j++ )
-        //{
-        //    segPtr = candidates[i][j];
-        //    std::cout << "[" << segPtr->m_segId << "," << segPtr->m_rowId <<
-        //    ","
-        //        << segPtr->m_xmin << "," << segPtr->m_xmax << "]";
-        //}
-        // std::cout << "\n--" << std::endl;
       }
     }
   }
 
   segments.erase(segments.begin(), segments.end());
   if (best2.size() != 0) {
-    /*
-    std::cout << "Closest span of segments (fits):" << std::endl;
-    for( size_t j = 0; j < best2.size(); j++ )
-    {
-        DetailedSeg* segPtr = best2[j];
-        int rowId = segPtr->m_rowId;
-        int segId = segPtr->m_segId;
-        std::cout << "[" << segId << "," << rowId << "," << segPtr->m_xmin <<
-    "," << segPtr->m_xmax << "@"
-            << m_arch->m_rows[rowId]->getY() << "]";
-    }
-    std::cout << std::endl;
-    std::cout << "Displacement is " << disp2 << std::endl;
-    */
-
     segments = best2;
     return true;
   }
   if (best1.size() != 0) {
-    /*
-    std::cout << "Closest span of segments (might not fit):" << std::endl;
-    for( size_t j = 0; j < best1.size(); j++ )
-    {
-        DetailedSeg* segPtr = best1[j];
-        int rowId = segPtr->m_rowId;
-        int segId = segPtr->m_segId;
-        std::cout << "[" << segId << "," << rowId << "," << segPtr->m_xmin <<
-    "," << segPtr->m_xmax << "@"
-            << m_arch->m_rows[rowId]->getY() << "]";
-    }
-    std::cout << std::endl;
-    std::cout << "Displacement is " << disp1 << std::endl;
-    */
-
     segments = best1;
     return true;
   }
@@ -961,17 +843,12 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
     Node* nd = nodesToConsider[i];
 
     int nRowsSpanned = (int)((nd->getHeight() / m_singleRowHeight) + 0.5);
-    if (!(nRowsSpanned > 0)) {
-      std::cout << "Error." << std::endl;
-      exit(-1);
-    }
 
     if (nRowsSpanned == 1) {
       // Single height.
       DetailedSeg* segPtr = findClosestSegment(nd);
       if (segPtr == 0) {
-        cout << "Error." << endl;
-        exit(-1);
+        internalError("Unable to assign single height cell to segment" );
       }
 
       int rowId = segPtr->m_rowId;
@@ -997,14 +874,10 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
       // Multi height.
       std::vector<DetailedSeg*> segments;
       if (!findClosestSpanOfSegments(nd, segments)) {
-        std::cout << "Unable to snap multi-height cell "
-                  << m_network->m_nodeNames[nd->getId()].c_str() << "; "
-                  << "Could not find a suitable span of segments." << std::endl;
-        exit(-1);
+        internalError("Unable to assign multi-height cell to segment" );
       } else {
         if (segments.size() != nRowsSpanned) {
-          std::cout << "Error." << std::endl;
-          exit(-1);
+          internalError("Unable to assign multi-height cell to segment" );
         }
         // NB: adding a cell to a segment does _not_ change its position.
         DetailedSeg* segPtr = segments[0];
@@ -1028,18 +901,6 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
         double xx = std::max(x1, std::min(x2, nd->getX()));
         double yy = m_arch->m_rows[rowId]->getY() + 0.5 * nd->getHeight();
 
-        //                if( std::fabs( nd->getY() - yy ) > 1.0e-3 )
-        //                {
-        //                    std::cout << "Snapping multi-height cell " <<
-        //                    nd->getId() << " to seg, "
-        //                        << "change in y position" << ", "
-        //                        << "(" << nd->getX() << "," << nd->getY() <<
-        //                        ")"
-        //                        << "->"
-        //                        << "(" << xx << "," << yy << ")"
-        //                        << std::endl;
-        //                }
-
         movementX += std::fabs(nd->getX() - xx);
         movementY += std::fabs(nd->getY() - yy);
 
@@ -1048,12 +909,10 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
       }
     }
   }
-  if (nAssigned != 0) {
-    std::cout << "Assigned " << nAssigned << " cells into segments"
-              << ", "
-              << "Movement in X is " << movementX << ", "
-              << "Movement in Y is " << movementY << std::endl;
-  }
+  m_logger->info(DPO, 310,
+                 "Assigned {:d} cells into segments.  Movement in X-direction "
+                 "is {:f}, movement in Y-direction is {:f}.",
+                 nAssigned, movementX, movementY);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1123,8 +982,7 @@ void DetailedMgr::removeCellFromSegmentTest(Node* nd, int seg, double& util,
   std::vector<Node*>::iterator it =
       std::find(m_cellsInSeg[seg].begin(), m_cellsInSeg[seg].end(), nd);
   if (m_cellsInSeg[seg].end() == it) {
-    cout << "Error." << endl;
-    exit(-1);
+    internalError("Cell not found in expected segment" );
   }
   int ix = it - m_cellsInSeg[seg].begin();
   int n = m_cellsInSeg[seg].size() - 1;
@@ -1157,15 +1015,6 @@ void DetailedMgr::addCellToSegment(Node* nd, int seg) {
   // 1) adding it to the SORTED cell list for the segment;
   // 2) adding its width to the segment utilization;
   // 3) adding the required gaps between cells in the segment.
-
-  if (nd->getRegionId() != m_segments[seg]->m_regId) {
-    int spanned = (int)(nd->getHeight() / m_singleRowHeight + 0.5);
-    std::cout << "Warning: Assignment of cell " << nd->getId() << ", region "
-              << nd->getRegionId() << ", "
-              << "spanned is " << spanned << ", "
-              << "assigned to segment with region " << m_segments[seg]->m_regId
-              << std::endl;
-  }
 
   // Need to figure out where the cell goes in the sorted list...
   std::vector<Node*>::iterator it =
@@ -1351,6 +1200,7 @@ void DetailedMgr::restoreBestPositions(void) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedMgr::measureMaximumDisplacement(bool print, bool& violated) {
+  (void)print;
   violated = false;
 
   // double limit = GET_PARAM_FLOAT( PLACER_MAX_DISPLACEMENT );  // XXX: Check
@@ -1376,10 +1226,6 @@ double DetailedMgr::measureMaximumDisplacement(bool print, bool& violated) {
 
   violated = (max_disp > limit) ? true : false;
 
-  if (print) {
-    cout << "Maximum displacement: " << max_disp << ", Limit: " << limit << ", "
-         << ((max_disp > limit) ? "VIOLATION" : "PASS") << endl;
-  }
   return max_disp;
 }
 
@@ -1530,9 +1376,7 @@ void DetailedMgr::collectSingleHeightCells(void) {
 
     m_singleHeightCells.push_back(nd);
   }
-  cout << "Number of cells is " << m_network->m_nodes.size() << ", "
-       << "Number of single height cells is " << m_singleHeightCells.size()
-       << endl;
+  m_logger->info(DPO, 318, "Collected {:d} single height cells.", m_singleHeightCells.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1581,14 +1425,12 @@ void DetailedMgr::collectMultiHeightCells(void) {
     m_multiHeightCells[nRowsSpanned].push_back(nd);
     ++m_numMultiHeightCells;
   }
-  cout << "Number of cells is " << m_network->m_nodes.size() << ", "
-       << "Number of multi height cells is " << m_numMultiHeightCells << endl;
   for (size_t i = 0; i < m_multiHeightCells.size(); i++) {
     if (m_multiHeightCells[i].size() == 0) {
       continue;
     }
-    std::cout << "Number of multi height cells spanning " << i << " rows is "
-              << m_multiHeightCells[i].size() << std::endl;
+    m_logger->info(DPO, 319, "Collected {:d} multi-height cells spanning {:d} rows.", 
+        m_multiHeightCells[i].size(), i);
   }
 }
 
@@ -1654,8 +1496,8 @@ void DetailedMgr::collectFixedCells(void) {
       }
     }
   }
-  cout << "Number of cells is " << m_network->m_nodes.size() << ", "
-       << "Number of fixed cells is " << m_fixedCells.size() << endl;
+
+  m_logger->info(DPO, 320, "Collected {:d} fixed cells.", m_fixedCells.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1684,8 +1526,7 @@ void DetailedMgr::collectWideCells(void) {
       }
     }
   }
-  cout << "Number of cells is " << m_network->m_nodes.size() << ", "
-       << "Number of wide cells is " << m_wideCells.size() << endl;
+  m_logger->info(DPO, 321, "Collected {:d} wide cells.", m_wideCells.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1918,91 +1759,23 @@ void DetailedMgr::cleanup(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::setup(void) {
-  // XXX: UPDATE TO ACCOMMODATE MULTI-HEIGHT CELLS.  Likely requires using the
-  // bottom of the cell instead of the center of the cell.  Need to assign a
-  // cell to multiple segments.
-
-  // bool includeBlockages = GET_PARAM_BOOL(
-  // PLACER_MARK_M1M2_ROUTE_BLOCKAGES_AS_PLACE_BLOCKAGES );
-  bool includeBlockages = false;
-
-  // Setup.  Collect fixed and movable cells.  Create blockages and segments.
-  // Insert the movable cells into the segments.
-  collectFixedCells();
-  collectSingleHeightCells();
-  findBlockages(m_fixedCells, includeBlockages);
-  findSegments();
-  assignCellsToSegments(m_singleHeightCells);
-
-  // Look for very wide single height cells.  If any are found, fix them and
-  // redo the previous work.
-  collectWideCells();
-
-  // If no wide cells, then we are done.
-  if (m_wideCells.size() == 0) {
-    return;
-  }
-
-  // Redo blockages and segments without extra blockages and insert only wide
-  // cells.
-  findBlockages(m_fixedCells, false);  // Recompute. IGNORE blockages.
-  findSegments();                      // Recompute.
-  assignCellsToSegments(m_wideCells);  // Recompute.  ONLY wide cells.
-
-  // Some debug/warning.
-  int nFailures = 0;
-  for (int s = 0; s < m_segments.size(); s++) {
-    DetailedSeg* curr = m_segments[s];
-
-    std::vector<Node*>& nodes = m_cellsInSeg[s];
-    for (int k = 0; k < nodes.size(); k++) {
-      Node* ndi = nodes[k];
-      if (ndi->getWidth() > curr->m_xmax - curr->m_xmin) {
-        ++nFailures;
-      }
-    }
-  }
-  std::cout << "Wide cells, "
-            << "Segment issues" << ((nFailures != 0) ? " not " : " ")
-            << "resolved." << std::endl;
-
-  removeOverlapMinimumShift();
-  DetailedOrient orienter(m_arch, m_network, m_rt);
-  orienter.run(this, "orient");
-  // We SHOULD look for DRC issues for the wide cells since we are about to fix
-  // them.
-  // XXX: Since I am reorganizing code, this option is not yet available.  So,
-  // print something so I don't forget about it!
-  std::cout << "Warning: "
-            << "Fixing wide cells should include DRC correction (fixme!)."
-            << std::endl;
-
-  // Fix the wide cells.
-  for (int i = 0; i < m_wideCells.size(); i++) {
-    Node* ndi = m_wideCells[i];
-    ndi->setFixed(NodeFixed_FIXED_XY);
-  }
-
-  // Redo everything with the wide cells marked as fixed.
-  collectFixedCells();
-  collectSingleHeightCells();
-  findBlockages(m_fixedCells, includeBlockages);
-  findSegments();
-  assignCellsToSegments(m_singleHeightCells);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkOverlapInSegments(int max_err_n) {
-  // Scan each segment and check for overlap between adjacenet cells.
+  // Scan each segment and check for overlap between adjacent cells.
   // Also check for cells off the left and right edge of the segments.
+  //
+  // I use to check for other things too; e.g., segment utilization
+  // being too large with and without gaps.  I've removed that
+  // since it isn't really required.  Further, with multi-height
+  // cells, we might have forced deadspace.
+  //
+  // I do not take into account padding when I check for overlap as
+  // I consider that a different sort of issue.
 
+  (void)max_err_n;
   std::vector<Node*> temp;
   temp.reserve(m_network->m_nodes.size());
 
   int err_n = 0;
-  int err_s = 0;
   int err_g = 0;
   // The following is for some printing if we need help finding a bug.
   // I don't want to print all the potential errors since that could
@@ -2014,14 +1787,6 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
 
     double xmin = m_segments[s]->m_xmin;
     double xmax = m_segments[s]->m_xmax;
-    double width = xmax - xmin;
-
-    if (m_segments[s]->m_util >= width + 1.0e-3) {
-      ++err_s;
-    }
-    if (m_segments[s]->m_util + m_segments[s]->m_gapu >= width + 1.0e-3) {
-      ++err_g;
-    }
 
     // To be safe, gather cells in each segment and re-sort them.
     temp.erase(temp.begin(), temp.end());
@@ -2043,23 +1808,6 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
 
       if (ri >= lj + 1.0e-3) {
         err_n++;
-        if (err_n <= max_err_n) {
-          double ll = std::max(li, lj);
-          double rr = std::min(ri, rj);
-          double overlap = std::max(rr - ll, 0.0);
-
-          std::cout << "Adjacent cells overlap in segment " << s << ", "
-                    << "Cell " << ndi->getId() << " @ "
-                    << "[" << li << "," << ri << "]"
-                    << ", "
-                    << "Region is " << ndi->getRegionId() << ", "
-                    << "Cell " << ndj->getId() << " @ "
-                    << "[" << lj << "," << rj << "]"
-                    << ", "
-                    << "Region is " << ndj->getRegionId() << ", "
-                    << "Overlap is " << overlap << ", "
-                    << "Row position is " << rowY << std::endl;
-        }
       }
     }
     for (int j = 0; j < temp.size(); j++) {
@@ -2070,48 +1818,19 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
 
       if (li <= xmin - 1.0e-3 || ri >= xmax + 1.0e-3) {
         err_n++;
-
-        if (err_n <= max_err_n) {
-          std::cout << "Cell out of segment " << s << ", "
-                    << "Region is " << m_segments[s]->m_regId << ", "
-                    << "Cell " << ndi->getId() << " @ "
-                    << "[" << li << "," << ri << "]"
-                    << ", "
-                    << "Region is " << ndi->getRegionId() << ", "
-                    << "Segment @ [" << xmin << "," << xmax << "]" << std::endl;
-        }
       }
     }
   }
 
-  if (err_s == 0) {
-    std::cout << "Segment check - no segments exceeding capacity." << std::endl;
-  } else {
-    std::cout << "Segment check - found " << err_s << " overfilled segments."
-              << std::endl;
-  }
-
-  if (err_g == 0) {
-    std::cout << "Segment check - including cell spacings, no segments "
-                 "exceeding capacity."
-              << std::endl;
-  } else {
-    std::cout << "Segment check - including cell spacings, found " << err_g
-              << " overfilled segments." << std::endl;
-  }
-
-  if (err_n == 0) {
-    std::cout << "Segment check - no overlaps in segments." << std::endl;
-  } else {
-    std::cout << "Segment check - found " << err_n
-              << " overlap between adjacent cells." << std::endl;
-  }
+  m_logger->info(DPO, 311, "Found {:d} overlaps between adjacent cells.",
+                 err_n);
   return err_n;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
+  (void)max_err_n;
   // Check for spacing violations according to the spacing table.  Note
   // that there might not be a spacing table in which case we will
   // return no errors.  I should also check for padding errors although
@@ -2159,46 +1878,17 @@ int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
 
       if (!(gap >= spacing - 1.0e-3)) {
         ++err_n;
-        if (err_n <= max_err_n) {
-          std::cout << "Spacing violation"
-                    << ", "
-                    << "Cell " << ndl->getId() << " @ "
-                    << "[" << llx_l << "," << rlx_l << "]"
-                    << ", "
-                    << "Cell " << ndr->getId() << " @ "
-                    << "[" << llx_r << "," << rlx_r << "]"
-                    << ", " << std::endl;
-        }
       }
       if (!(gap >= padding - 1.0e-3)) {
         ++err_p;
-        if (err_p <= max_err_n) {
-          std::cout << "Padding violation"
-                    << ", "
-                    << "Cell " << ndl->getId() << " @ "
-                    << "[" << llx_l << "," << rlx_l << "]"
-                    << ", "
-                    << "Cell " << ndr->getId() << " @ "
-                    << "[" << llx_r << "," << rlx_r << "]"
-                    << ", " << std::endl;
-        }
       }
     }
   }
 
-  if (err_n == 0) {
-    std::cout << "Segment check - no edge spacing violations." << std::endl;
-  } else {
-    std::cout << "Segment check - found " << err_n
-              << " edge spacing violations." << std::endl;
-  }
-
-  if (err_p == 0) {
-    std::cout << "Segment check - no padding violations." << std::endl;
-  } else {
-    std::cout << "Segment check - found " << err_p << " padding violations."
-              << std::endl;
-  }
+  m_logger->info(
+      DPO, 312,
+      "Found {:d} edge spacing violations and {:d} padding violations.", err_n,
+      err_p);
 
   return err_n + err_p;
 }
@@ -2206,6 +1896,7 @@ int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkRegionAssignment(int max_err_n) {
+  (void)max_err_n;
   // Check cells are assigned (within) their proper regions.  This is sort
   // of a hack/cheat.  We assume that we have set up the segments correctly
   // and that all cells are in segments.  Multi-height cells can be in
@@ -2241,18 +1932,14 @@ int DetailedMgr::checkRegionAssignment(int max_err_n) {
     }
   }
 
-  if (err_n == 0) {
-    std::cout << "Region check - all cells within segment with proper region."
-              << std::endl;
-  } else {
-    std::cout << "Region check - found " << err_n
-              << " cells in wrong segments based on regions." << std::endl;
-  }
+  m_logger->info(DPO, 313, "Found {:d} cells in wrong regions.", err_n);
+
   return err_n;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkSiteAlignment(int max_err_n) {
+  (void)max_err_n;
   // Ensure that the left edge of each cell is aligned with a site.  We only
   // consider cells that are within segments.
   int err_n = 0;
@@ -2287,12 +1974,12 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
       ++nCellsNotInSegments;
       continue;
     } else if (m_reverseCellToSegs[nd->getId()].size() != spanned) {
-      std::cout << "Error." << std::endl;
-      exit(-1);
+      internalError( "Reverse cell map incorrectly sized." );
     }
     ++nCellsInSegments;
 
     bool okay = true;
+    (void)okay;
     if (rb < 0 || rt >= m_arch->m_rows.size()) {
       // Either off the top of the bottom of the chip, so this is not
       // exactly an alignment problem, but still a problem so count it.
@@ -2315,43 +2002,8 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
         okay = false;
       }
     }
-
-    if (!okay) {
-      if (err_n <= max_err_n) {
-        std::cout << "Site alignment problem for cell " << nd->getId() << ", "
-                  << "X:[" << xl << "," << xr << "]"
-                  << ", "
-                  << "Y:[" << yb << "," << yt << "]"
-                  << ", "
-                  << "R:[" << rb << "," << rt << "]"
-                  << ", Spanned is " << spanned << ", ";
-        std::cout << "alignments in each row:";
-        for (int r = rb; r <= rt; r++) {
-          int sid = (int)((xl - m_arch->m_rows[r]->m_subRowOrigin) /
-                          m_arch->m_rows[r]->m_siteSpacing);
-          double xt = m_arch->m_rows[r]->m_subRowOrigin +
-                      sid * m_arch->m_rows[r]->m_siteSpacing;
-          std::cout << " " << xt;
-        }
-        std::cout << std::endl;
-      }
-    }
   }
-  if (err_n == 0) {
-    std::cout << "Site check - no site alignment problems"
-              << ", "
-              << "Examined " << nCellsInSegments << " cells in segments"
-              << ", "
-              << "Skipped " << nCellsNotInSegments << " not in segments."
-              << std::endl;
-  } else {
-    std::cout << "Site check - found " << err_n << " site alignment problems"
-              << ", "
-              << "Out of " << nCellsInSegments << " cells in segments"
-              << ", "
-              << "Skipped " << nCellsNotInSegments << " not in segments."
-              << std::endl;
-  }
+  m_logger->info(DPO, 314, "Found {:d} site alignment problems.", err_n);
   return err_n;
 }
 
@@ -2397,167 +2049,8 @@ int DetailedMgr::checkRowAlignment(int max_err_n) {
       ++err_n;
     }
   }
-  if (err_n == 0) {
-    std::cout << "Row check - no row alignment problems." << std::endl;
-  } else {
-    std::cout << "Row check - found " << err_n << " row alignment problems."
-              << std::endl;
-  }
+  m_logger->info(DPO, 315, "Found {:d} row alignment problems.", err_n);
   return err_n;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-bool DetailedMgr::checkPlacement(void) {
-  // XXX: UPDATE TO ACCOMMODATE MULTI-HEIGHT CELLS.  Likely requires using the
-  // bottom of the cell instead of the center of the cell.  Need to assign a
-  // cell to multiple segments.
-
-  // Perform various placement checks to see if things are legal.
-  double singleRowHeight = getSingleRowHeight();
-
-  int numRows = m_arch->m_rows.size();
-
-  int err_1 = 0;
-  int err_1_print_limit = 5;
-  int err_2 = 0;
-  int err_2_print_limit = 5;
-  int err_3 = 0;
-  int err_3_print_limit = 5;
-  int err_4 = 0;
-  int err_4_print_limit = 5;
-  int err_5 = 0;
-  int err_5_print_limit = 5;
-  int err_6 = 0;
-  int err_6_print_limit = 5;
-
-  for (int i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
-
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
-      continue;
-    }
-
-    double xl = nd->getX() - 0.5 * nd->getWidth();
-    double xr = nd->getX() + 0.5 * nd->getWidth();
-    double yb = nd->getY() - 0.5 * nd->getHeight();
-    double yt = nd->getY() + 0.5 * nd->getHeight();
-
-    int rb = (int)((yb - m_arch->m_ymin) / singleRowHeight);
-    int rt = (int)((yt - m_arch->m_ymin) / singleRowHeight);
-    rb = std::min(numRows - 1, std::max(0, rb));
-    rt = std::min(numRows, std::max(0, rt));
-    if (rt == rb) ++rt;
-    // Cell outside the image area.
-    if ((xl > m_arch->m_xmax) || (xr < m_arch->m_xmin) ||
-        (yb > m_arch->m_ymax) || (yt < m_arch->m_ymin)) {
-      err_1++;
-
-      if (err_1 < err_1_print_limit) {
-        cout << "Error 1: Moveable node "
-             << "(" << m_network->m_nodeNames[nd->getId()].c_str()
-             << ") is outside the image. "
-             << "Node: "
-             << "[" << xl << "," << yb << "]-[" << xr << "," << yt << "] "
-             << "Image: "
-             << "[" << m_arch->m_xmin << "," << m_arch->m_ymin << "]"
-             << "-"
-             << "[" << m_arch->m_xmax << "," << m_arch->m_ymax << "] " << endl;
-      }
-    } else {
-      if ((yb < m_arch->m_ymin) || (yt > m_arch->m_ymax)) {
-        err_1++;
-        if (err_1 < err_1_print_limit) {
-          cout << "Error 1: Moveable node "
-               << "(" << m_network->m_nodeNames[nd->getId()].c_str()
-               << ") is outside the image. "
-               << "Node Y: [" << yb << "," << yt << "] "
-               << "Image Y: [" << m_arch->m_ymin << "," << m_arch->m_ymax
-               << "] " << endl;
-        }
-      }
-      for (int r = rb; r < rt; r++) {
-        double xmin = m_arch->m_rows[r]->m_subRowOrigin;
-        double xmax =
-            m_arch->m_rows[r]->m_subRowOrigin +
-            m_arch->m_rows[r]->m_numSites * m_arch->m_rows[r]->m_siteSpacing;
-        if (xl < xmin || xr > xmax) {
-          err_1++;
-          if (err_1 < err_1_print_limit) {
-            cout << "Error 1: Moveable node "
-                 << "(" << m_network->m_nodeNames[nd->getId()].c_str()
-                 << ") is outside the image. "
-                 << "Node X: [" << xl << "," << xr << "] "
-                 << "Image X: [" << xmin << "," << xmax << "] " << endl;
-          }
-        }
-      }
-    }
-  }
-
-  // Check row alignment.
-  err_2 = checkRowAlignment();
-
-  // Check site alignment.
-  err_3 = checkSiteAlignment();
-
-  // Check overlaps within segments.
-  err_4 = checkOverlapInSegments();
-
-  // Check edge spacing rules.
-  err_5 = checkEdgeSpacingInSegments();
-
-  // Check region assignment.
-  err_6 = checkRegionAssignment();
-
-  // Output.
-  if (err_1 >= err_1_print_limit) {
-    cout << "+ " << err_1 - err_1_print_limit << " other type 1 errors."
-         << endl;
-  }
-  if (err_2 >= err_2_print_limit) {
-    cout << "+ " << err_2 - err_2_print_limit << " other type 2 errors."
-         << endl;
-  }
-  if (err_3 >= err_3_print_limit) {
-    cout << "+ " << err_3 - err_3_print_limit << " other type 3 errors."
-         << endl;
-  }
-  if (err_4 >= err_4_print_limit) {
-    cout << "+ " << err_4 - err_4_print_limit << " other type 4 errors."
-         << endl;
-  }
-  if (err_5 >= err_5_print_limit) {
-    cout << "+ " << err_5 - err_5_print_limit << " other type 5 errors."
-         << endl;
-  }
-  if (err_6 >= err_6_print_limit) {
-    cout << "+ " << err_6 - err_6_print_limit << " other type 6 errors."
-         << endl;
-  }
-
-  int tot_errors = 0;
-
-  tot_errors += err_1;
-  tot_errors += err_2;
-  tot_errors += err_3;
-  tot_errors += err_4;
-  tot_errors += err_5;
-  tot_errors += err_6;
-
-  if (tot_errors != 0) {
-    cout << "Found placement check errors: " << err_1 << ", " << err_2 << ", "
-         << err_3 << ", " << err_4 << ", " << err_5 << ", " << err_6
-         << "; should look into this!" << endl;
-  } else {
-    cout << "Placement check is okay." << endl;
-  }
-
-  return (tot_errors == 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2871,11 +2364,6 @@ void DetailedMgr::removeSegmentOverlapSingle(int regId) {
     double left = segPtr->m_xmin;
     double rite = segPtr->m_xmax;
 
-    //        std::cout << "Trying to remove overlap in segment " << segId << ",
-    //        "
-    //            << "[" << left << "," << rite << "]" << ", "
-    //            << segPtr->m_util << ", " << (rite-left) << std::endl;
-
     std::vector<Node*> nodes;
     for (size_t n = 0; n < this->m_cellsInSeg[segId].size(); n++) {
       Node* ndi = this->m_cellsInSeg[segId][n];
@@ -2917,23 +2405,6 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
   // Quickly remove overlap between a range of cells in a segment.  Try to
   // satisfy gaps and try to align with sites.
 
-  //    {
-  //        double tot = 0.;
-  //        for( size_t i = 0; i < nodes_in.size(); i++ )
-  //        {
-  //            tot += nodes_in[i]->getWidth();
-  //        }
-  //        std::cout << "Span of " << nodes_in.size() << ", "
-  //            << "Total node width is " << tot << ", "
-  //            << "Space is " << xmax-xmin << ", "
-  //            << "From " << xmin << ", To " << xmax;
-  //        if( tot > xmax-xmin )
-  //        {
-  //            std::cout << "***";
-  //        }
-  //        std::cout << std::endl;
-  //    }
-
   std::vector<Node*> nodes = nodes_in;
   std::stable_sort(nodes.begin(), nodes.end(), compareNodesX());
 
@@ -2972,6 +2443,7 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
   // think this should work.
   {
     bool adjusted = false;
+    (void)adjusted;
     double tot = 0;
     for (int i = 0; i < nodes.size(); i++) {
       tot += wid[i];
@@ -2997,12 +2469,6 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
         xmax = x;
       }
       space = xmax - xmin;
-    }
-
-    if (adjusted) {
-      //            std::cout << " => Boundaries adjusted, "
-      //                << "From " << xmin << ", To " << xmax << ", Space is now
-      //                " << space << std::endl;
     }
   }
 
@@ -3243,25 +2709,6 @@ bool DetailedMgr::shift(std::vector<Node*>& cells, std::vector<double>& tarX,
     }
   }
 
-  // std::cout << boost::format( "Left %6lf, Right %6lf" ) % left % right <<
-  // std::endl; for( int i = 0; i < ncells; i++ )
-  //{
-  //    Node* ndl = (i == 0) ? 0 : cells[i-1];
-  //    Node* ndr = (i == ncells-1) ? 0 : cells[i+1];
-  //    Node* ndi = cells[i];
-  //
-  //    double width = ndi->getWidth();
-  //    if( ndl != 0 ) width += 0.5 * m_arch->getCellSpacing( ndl, ndi );
-  //    if( ndr != 0 ) width += 0.5 * m_arch->getCellSpacing( ndi, ndr );
-  //
-  //    std::cout << boost::format( "Cell %6d, width %6lf, sites %3d (%5d,%5d),
-  //    Target %lf" )
-  //        % ndi->getId() % width % swid[i] % site_l[i] % site_r[i] % tarX[i]
-  //        << std::endl;
-  //}
-  // std::cout << boost::format( "Sites %4d, [%4d,%4d]" ) % nsites % i0 % i1 <<
-  // std::endl;
-
   // Create tables.
   std::vector<std::vector<std::pair<int, int> > > prev;
   std::vector<std::vector<double> > tcost;
@@ -3366,13 +2813,6 @@ bool DetailedMgr::shift(std::vector<Node*>& cells, std::vector<double>& tarX,
 
         int ix = i0 + curr_i - 1;
         posX[curr_j - 1] = originX + ix * siteSpacing + 0.5 * ndi->getWidth();
-
-        // std::cout << boost::format( "Cell %6d assigned to site %4d/%4d, Span
-        // [%6lf,%6lf]" )
-        //    % ndi->getId() % ix % curr_i
-        //    % (originX + ix * siteSpacing) % (originX + ix * siteSpacing +
-        //    ndi->getWidth())
-        //    << std::endl;
       }
 
       curr = prev[curr_i][curr_j];
@@ -3681,9 +3121,6 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
       ndr = m_cellsInSeg[sj][++ix];
     }
 
-    // std::cout << "TryMove1: Found move: " << std::endl;
-    // printMove();
-
     return true;
   } else if (ndl != 0 && ndr != 0) {
     // Cell to both left and right of target position.
@@ -3983,14 +3420,6 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
                            double yj, int sj) {
-  // std::cout << "Trying to move a multi-height cell" << ", "
-  //    << "From (" << xi << "," << yi << ")" << ", "
-  //    << "Pos [" << ndi->getX()-0.5*ndi->getWidth() << "," <<
-  //    ndi->getX()+0.5*ndi->getWidth() << "]" << ", "
-  //    << "To (" << xj << "," << yj << ")" << ", "
-  //    << "Width is " << ndi->getWidth()
-  //    << std::endl;
-
   m_nMoved = 0;
   const int move_limit = 10;
 
@@ -4009,7 +3438,6 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   // height cells too.
   int spanned = (int)(ndi->getHeight() / singleRowHeight + 0.5);
   if (spanned <= 1 || spanned != m_reverseCellToSegs[ndi->getId()].size()) {
-    // std::cout << "Not a multi-height cell." << std::endl;
     return false;
   }
 
@@ -4028,14 +3456,9 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   // and return false as a failed attempt.
   bool flip = false;
   if (!m_arch->power_compatible(ndi, m_arch->m_rows[rb], flip)) {
-    // std::cout << "Not voltage compatible." << std::endl;
     return false;
   }
   yj = m_arch->m_rows[rb]->getY() + 0.5 * ndi->getHeight();
-
-  // std::cout << "Row span is " << rb << " -> " << rt << ", "
-  //    << m_arch->m_rows[rb]->getY() << " -> " << m_arch->m_rows[rt]->getY() +
-  //    m_arch->m_rows[rt]->getH() << std::endl;
 
   // Next find the segments based on the targeted x location.  We might be
   // outside of our region or there could be a blockage.  So, we need a flag.
@@ -4057,7 +3480,6 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   }
   // Extra check.
   if (segs.size() != spanned) {
-    // std::cout << "Could not find segments." << std::endl;
     return false;
   }
 
@@ -4117,7 +3539,6 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
     // If the left or the right cells are the same as the current cell, then
     // we aren't moving.
     if (ndi == left || ndi == rite) {
-      // std::cout << "Failed - same rows." << std::endl;
       return false;
     }
 
@@ -4135,31 +3556,9 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
     } else {
       // The cell will not fit in between the left and right cell
       // in this segment.  So, we cannot faciliate the single move.
-      // std::cout << "Failed - won't fit" << ", "
-      //    << "[" << lx << " -> " << rx << "]"
-      //    << std::endl;
       return false;
     }
   }
-
-  // std::cout << "Trying to move multi-height cell " << ndi->getId() << ", "
-  //    << "Span is " << spanned << ", ";
-  // std::cout << "Current segs/rows is";
-  // for( size_t s = 0; s < m_reverseCellToSegs[ndi->getId()].size();s ++ )
-  //{
-  //    DetailedSeg* segPtr = m_reverseCellToSegs[ndi->getId()][s];
-  //    std::cout << " " << segPtr->m_segId << "/" << segPtr->m_rowId;
-  //}
-  // std::cout << std::endl;
-  // std::cout << "Target is (" << xj << "," << yj << ")" << ", ";
-  // std::cout << "Target segs/rows is";
-  // for( size_t s = 0; s < segs.size(); s++ )
-  //{
-  //    DetailedSeg* segPtr = m_segments[segs[s]];
-  //    std::cout << " " << segPtr->m_segId << "/" << segPtr->m_rowId;
-  //}
-  // std::cout << ", Space is " << "[" << xmin << " -> " << xmax << "]" << ", "
-  //    << (xmax-xmin) << std::endl;
 
   // Here, we can fit.
   if (ndi->getWidth() <= xmax - xmin) {
@@ -4186,10 +3585,7 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
     ++m_nMoved;
 
     return true;
-  } else {
-    // std::cout << "Target is (" << xj << "," << yj << ")" << ", " << "No fit."
-    // << std::endl;
-  }
+  } 
   return false;
 }
 
@@ -4381,55 +3777,6 @@ bool DetailedMgr::trySwap1(Node* ndi, double xi, double yi, int si, double xj,
       xi = posX[0];
       xj = posX[1];
 
-      /*
-      if( prev != 0 )
-      {
-        std::cout << boost::format("P: %6d (%lf,%lf) ")
-            % prev->getId() % (prev->getX() - 0.5 * prev->getWidth()) %
-      (prev->getX() + 0.5 * prev->getWidth())
-            << std::endl;
-      }
-      std::cout << boost::format("L: %lf ") % left << std::endl;
-      std::cout << boost::format("J: %6d (%lf,%lf) ")
-          % ndj->getId() % (xi - 0.5 * ndj->getWidth()) % (xi + 0.5 *
-      ndj->getWidth())
-          << std::endl;
-      std::cout << boost::format("I: %6d (%lf,%lf) ")
-          % ndi->getId() % (xj - 0.5 * ndi->getWidth()) % (xj + 0.5 *
-      ndi->getWidth())
-          << std::endl;
-      std::cout << boost::format("R: %lf ") % right << std::endl;
-
-      if( next != 0 )
-      {
-        std::cout << boost::format("P: %6d (%lf,%lf) ")
-            % next->getId() % (next->getX() - 0.5 * next->getWidth()) %
-      (next->getX() + 0.5 * next->getWidth())
-            << std::endl;
-      }
-
-      if( xi+0.5*ndj->getWidth() > xj-0.5*ndi->getWidth() )
-      {
-          std::cout << "Caused overlap with moved cells." << std::endl;
-          exit(-1);
-      }
-      if( prev != 0 )
-      {
-          if( prev->getX() + 0.5 * prev->getWidth() > xi-0.5*ndj->getWidth() )
-          {
-              std::cout << "Caused overlap on left." << std::endl;
-              exit(-1);
-          }
-      }
-      if( next != 0 )
-      {
-          if( next->getX() - 0.5 * next->getWidth() < xj+0.5*ndi->getWidth() )
-          {
-              std::cout << "Caused overlap on right." << std::endl;
-              exit(-1);
-          }
-      }
-      */
     } else if (ix_j + 1 == ix_i) {
       // cell j is left of cell i.
       double hole = ndi->getWidth() + ndj->getWidth();
@@ -4514,14 +3861,7 @@ void DetailedMgr::acceptMove(void) {
   for (int i = 0; i < m_nMoved; i++) {
     Node* ndi = m_movedNodes[i];
 
-    // std::cout << "@" << i << ", Node is " << ndi->getId() << std::endl;
-
     int spanned = (int)((ndi->getHeight() / m_singleRowHeight) + 0.5);
-    // if( spanned != 1 )
-    //{
-    //    std::cout << "Error." << std::endl;
-    //    exit(-1);
-    //}
 
     // Remove node from current segment.
     for (size_t s = 0; s < m_curSeg[i].size(); s++) {
@@ -4642,22 +3982,9 @@ void DetailedMgr::debugSegments(void) {
     }
   }
 
-  if (err1 != 0) {
-    std::cout << "Segment debug; " << err1 << " times segment not sorted."
-              << std::endl;
-  }
-  if (err2 != 0) {
-    std::cout << "Segment debug; " << err2
-              << " times cell not found in mapped segment." << std::endl;
-  }
-  if (err3 != 0) {
-    std::cout << "Segment debug; " << err3
-              << " times cell in segment not in map." << std::endl;
-  }
-  if (err4 != 0) {
-    std::cout << "Segment debug: " << err4
-              << " times cell to segment map seems the wrong size."
-              << std::endl;
+  if(err1 != 0 || err2 != 0 || err3 != 0 || err4 != 0 )
+  {
+    m_logger->warn(DPO, 316, "Segment check: {:d} unsorted segments, {:d} cells not in mapped segment, {:d} cells not in map, {:d} incorrect cell map size.", err1, err2, err3, err4 );
   }
 }
 

@@ -48,6 +48,7 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include "utl/Logger.h"
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
 #include "detailed_orient.h"
@@ -58,6 +59,8 @@
 #include <parallel/algorithm>
 #include "omp.h"
 #endif
+
+using utl::DPO;
 
 namespace dpo {
 
@@ -79,6 +82,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch, Network* network,
       m_network(network),
       m_rt(rt),
       m_skipNetsLargerThanThis(100) {
+  m_name = "global swap";
   m_attempts = 0;
   m_moves = 0;
   m_swaps = 0;
@@ -93,6 +97,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(void)
       m_network(0),
       m_rt(0),
       m_skipNetsLargerThanThis(100) {
+  m_name = "global swap";
   m_attempts = 0;
   m_moves = 0;
   m_swaps = 0;
@@ -158,18 +163,19 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
 
-    std::cout << boost::format("Pass %3d of global swap; hpwl is %.6e\n") % p %
-                     curr_hpwl;
+    m_mgr->getLogger()->info(
+        DPO, 306, "Pass {:3d} of global swaps; hpwl is {:.6e}.", p,
+        curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
-      std::cout << "Terminating due to low improvement." << std::endl;
       break;
     }
   }
-  std::cout << boost::format(
-                   "End of passes for global swap; hpwl is %.6e, total imp is "
-                   "%.2lf%%\n") %
-                   curr_hpwl % (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  m_mgr->getLogger()->info(
+      DPO, 307,
+      "End of global swaps; objective is {:.6e}, improvement is {:.2f} percent.",
+      curr_hpwl, curr_imp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -584,9 +590,9 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedGlobalSwap::stats(void) {
-  std::cout << "Global swap generator, attempts " << m_attempts << ", "
-            << "moves " << m_moves << ", "
-            << "swaps " << m_swaps << std::endl;
+  m_mgr->getLogger()->info( DPO, 334, "Generator {:s}, "
+    "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
+    getName().c_str(), m_attempts, m_swaps, m_moves );
 }
 
 }  // namespace dpo

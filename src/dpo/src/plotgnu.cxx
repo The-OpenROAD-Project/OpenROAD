@@ -85,50 +85,6 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
   ++m_counter;
 }
 
-void PlotGnu::Draw(Network* network, Architecture* arch,
-                   std::vector<std::pair<double, double> >& otherPl,
-                   char* msg) {
-  m_network = network;
-  m_arch = arch;
-  m_rt = 0;
-  m_skipStandardCells = false;
-
-  char buf[1024];
-  if (msg == 0)
-    buf[0] = '\0';
-  else
-    sprintf(&buf[0], "%s", msg);
-
-  m_otherPl.resize(network->m_nodes.size());
-  for (size_t i = 0; i < otherPl.size(); i++) {
-    m_otherPl[i] = otherPl[i];
-  }
-  m_drawDisp = true;
-
-  if (m_drawNodes) drawNodes(buf);
-
-  m_drawDisp = false;
-  m_otherPl.clear();
-
-  ++m_counter;
-}
-
-void PlotGnu::DrawLargeCells(Network* network, Architecture* arch, char* msg) {
-  m_network = network;
-  m_arch = arch;
-  m_rt = 0;
-  m_skipStandardCells = true;
-
-  char buf[1024];
-  if (msg == 0)
-    buf[0] = '\0';
-  else
-    sprintf(&buf[0], "%s", msg);
-
-  if (m_drawNodes) drawNodes(buf);
-  ++m_counter;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // PlotGnu::drawArchitecture:
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,8 +112,6 @@ void PlotGnu::drawNodes(char* buf) {
   double siteWidth = m_arch->m_rows[0]->m_siteWidth;
   double siteSpacing = m_arch->m_rows[0]->m_siteSpacing;
 
-  std::cout << "Draw nodes, row height is " << rowHeight << ", Site width is "
-            << siteWidth << ", Site spacing is " << siteSpacing << std::endl;
 
   FILE* fpMain = 0;
   FILE* fpArch = 0;
@@ -289,12 +243,8 @@ void PlotGnu::drawNodes(char* buf) {
           m_arch->m_xmin, m_arch->m_ymin);
 
   // Draw regions with the exception of the default region.
-  std::cout << "Number of regions is " << m_arch->m_regions.size() << std::endl;
   for (size_t r = 1; r < m_arch->m_regions.size(); r++) {
-    std::cout << "Drawing rectangles for region " << r << ", ";
     Architecture::Region* regPtr = m_arch->m_regions[r];
-    std::cout << regPtr->m_rects.size() << " of them, id is " << regPtr->m_id
-              << std::endl;
     for (size_t i = 0; i < regPtr->m_rects.size(); i++) {
       Rectangle& rect = regPtr->m_rects[i];
 
@@ -519,18 +469,11 @@ void PlotGnu::drawNodes(char* buf) {
     for (unsigned i = 0; i < m_network->m_nodes.size(); i++) {
       Node* nd = &(m_network->m_nodes[i]);
 
-      // if( nd->getId() >= m_otherPl.size() )
-      //{
-      //    continue;
-      //}
       double x1 = nd->getX();
       double y1 = nd->getY();
 
       double x2 = nd->getOrigX();
       double y2 = nd->getOrigY();
-
-      // double x2 = m_otherPl[nd->getId()].first;
-      // double y2 = m_otherPl[nd->getId()].second;
 
       FILE* fpCurr = fpPeanut;
 
@@ -686,114 +629,6 @@ void PlotGnu::drawNodes(char* buf) {
   fclose(fpShreds);
   fclose(fpOutlines);
   fclose(fpPeanut);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// PlotGnu::draw_rectangles:
-////////////////////////////////////////////////////////////////////////////////
-void PlotGnu::draw_rectangles(std::vector<Rectangle>& rects, double xmin,
-                              double xmax, double ymin, double ymax,
-                              char* buf) {
-  double x, y, w, h;
-  FILE* fpMain = 0;
-  FILE* fpRect = 0;
-  char counter[128];
-  sprintf(&counter[0], "%05d", m_counter);
-
-  // Open different files to put object info into different .dat files.  This
-  // allows plotting with different colors.
-  snprintf(m_filename, BUFFER_SIZE, "rects.%05d.gp", m_counter);
-
-  std::string mainName = "rects." + std::string(buf) + ".gp";
-  if ((fpMain = fopen(mainName.c_str(), "w")) == 0) {
-    cout << "Error opening file '" << mainName << "'." << endl;
-    return;
-  }
-
-  std::string rectName = "rects." + std::string(buf) + "data.dat";
-  if ((fpRect = fopen(rectName.c_str(), "w")) == 0) {
-    cout << "Error opening file '" << rectName << "'." << endl;
-    return;
-  }
-
-  if (fpMain == 0 || fpRect == 0) {
-    cout << "Error attempting to write gnuplot files." << endl;
-    return;
-  }
-
-  // Output a surrounding box.
-  fprintf(fpRect,
-          "\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "\n",
-          xmin, ymin, xmin, ymax, xmax, ymax, xmax, ymin, xmin, ymin);
-
-  for (int i = 0; i < rects.size(); i++) {
-    Rectangle& r = rects[i];
-
-    x = 0.5 * (r.m_xmax + r.m_xmin);
-    y = 0.5 * (r.m_ymax + r.m_ymin);
-    w = (r.m_xmax - r.m_xmin);
-    h = (r.m_ymax - r.m_ymin);
-
-    fprintf(fpRect,
-            "\n"
-            "%lf %lf\n"
-            "%lf %lf\n"
-            "%lf %lf\n"
-            "%lf %lf\n"
-            "%lf %lf\n"
-            "\n",
-            x - 0.5 * w, y - 0.5 * h, x - 0.5 * w, y + 0.5 * h, x + 0.5 * w,
-            y + 0.5 * h, x + 0.5 * w, y - 0.5 * h, x - 0.5 * w, y - 0.5 * h);
-  }
-
-  // Output the top level script file...
-
-  fprintf(fpMain,
-          "# Use this file as a script for gnuplot\n"
-          //"set title \"Plot: %d, Hpwl: %.3e, #Cells: %d, #Nets: %d, %s\" font
-          //\"Times, 12\"\n"
-          "set title \"Plot: %d, %s\" font \"Times, 12\"\n"
-          "set nokey\n"
-          "set noxtics\n"
-          "set noytics\n"
-          "set nokey\n"
-          "set terminal x11\n"
-          "#Uncomment these two lines starting with \"set\"\n"
-          "#to save an EPS file for inclusion into a latex document\n"
-          "#set terminal postscript eps color solid 20\n"
-          "#set output \"%s\"\n\n",
-          m_counter,
-          // hpwl,
-          // nNodes,
-          // nEdges,
-          buf, m_filename);
-
-  // Constrain the x and y ranges.
-  fprintf(fpMain, "set xrange[%lf:%lf]\n", xmin - 1.0, xmax + 1.0);
-  fprintf(fpMain, "set yrange[%lf:%lf]\n", ymin - 1.0, ymax + 1.0);
-
-  // Setup some line types.
-  fprintf(fpMain, "set style line 1 lt 1 lw 3 lc rgb \"purple\"\n");
-  fprintf(fpMain, "set style line 2 lt 1 lw 1 lc rgb \"black\"\n");
-  fprintf(fpMain, "set style line 3 lt 1 lw 1 lc rgb \"green\"\n");
-  fprintf(fpMain, "set style line 4 lt 1 lw 1 lc rgb \"red\"\n");
-  fprintf(fpMain, "set style line 5 lt 2 lw 1 lc rgb \"orange\"\n");
-  fprintf(fpMain, "set style line 6 lt 2 lw 1 lc rgb \"blue\"\n");
-  fprintf(fpMain, "set style line 7 lt 2 lw 1 lc rgb \"brown\"\n");
-
-  // Output the plot command.
-  fprintf(fpMain, "plot [:][:] \"%s\" with lines ls 2", rectName.c_str());
-  fprintf(fpMain, "\n");
-
-  // Cleanup.
-  fclose(fpMain);
-  fclose(fpRect);
 }
 
 }  // namespace dpo

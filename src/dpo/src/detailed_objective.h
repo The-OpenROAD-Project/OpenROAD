@@ -68,7 +68,6 @@ class DetailedObjective {
                        std::vector<unsigned>& curOri, std::vector<double>& newX,
                        std::vector<double>& newY,
                        std::vector<unsigned>& newOri) {
-    std::cout << "Error." << std::endl;
     exit(-1);
     return 0.0;
   }

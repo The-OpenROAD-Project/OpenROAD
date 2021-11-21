@@ -39,15 +39,18 @@
 //////////////////////////////////////////////////////////////////////////////
 // Includes.
 //////////////////////////////////////////////////////////////////////////////
-#include "legalize_shift.h"
 #include <stdio.h>
 #include <boost/format.hpp>
 #include <deque>
 #include <iostream>
 #include <set>
 #include <vector>
+#include "utl/Logger.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "legalize_shift.h"
+
+using utl::DPO;
 
 namespace dpo {
 
@@ -69,8 +72,6 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   //
   // When the snapping and shifting occurs, there really should
   // be no displacement at all.
-
-  std::cout << "Shift legalizer." << std::endl;
 
   m_mgr = &mgr;
 
@@ -169,8 +170,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   }
   if (order.size() != cells.size()) {
     // This is a fatal error!
-    std::cout << "Error." << std::endl;
-    exit(-1);
+    m_mgr->internalError("Cells incorrectly ordered during shifting");
   }
 
   // Shift.
@@ -188,7 +188,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   }
 
   if (isDisp) {
-    std::cout << "Warning: Unexpected displacement." << std::endl;
+    m_mgr->getLogger()->warn(DPO, 200, "Unexpected displacement during legalization.");
 
     retval = false;
   }
@@ -203,7 +203,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
 
   // Good place to issue some sort of warning.
   if (err1 != 0 || err2 != 0 || err3 != 0 || err4 != 0 || err5 != 0) {
-    std::cout << "Warning: Placement checks failed." << std::endl;
+    m_mgr->getLogger()->warn(DPO, 201, "Placement check failure during legalization.");
 
     retval = false;
   }
@@ -224,12 +224,9 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
 
   std::vector<Node*>::iterator it;
 
-  // std::cout << "Total cells is " << nnodes << std::endl;
-  // std::cout << "Total segments is " << nsegs << std::endl;
 
   // We need to add dummy cells to the left and the
   // right of every segment.
-  // std::cout << "Creating left dummies." << std::endl;
   m_dummiesLeft.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
     DetailedSeg* segPtr = m_mgr->m_segments[i];
@@ -248,7 +245,6 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
     m_dummiesLeft[i] = ndi;
   }
 
-  // std::cout << "Creating right dummies." << std::endl;
   m_dummiesRight.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
     DetailedSeg* segPtr = m_mgr->m_segments[i];
@@ -268,14 +264,12 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   }
 
   // Jam all the left dummies nodes into segments.
-  // std::cout << "Inserting left dummies into segments." << std::endl;
   for (int i = 0; i < nsegs; i++) {
     m_mgr->m_cellsInSeg[i].insert(m_mgr->m_cellsInSeg[i].begin(),
                                   m_dummiesLeft[i]);
   }
 
   // Jam all the right dummies nodes into segments.
-  // std::cout << "Inserting right dummies into segments." << std::endl;
   for (int i = 0; i < nsegs; i++) {
     m_mgr->m_cellsInSeg[i].push_back(m_dummiesRight[i]);
   }
@@ -333,8 +327,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   }
 
   if (isError) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
+    m_mgr->internalError("Shifting failed during legalization");
   }
 
   return retval;

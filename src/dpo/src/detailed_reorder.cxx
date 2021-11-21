@@ -46,15 +46,17 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include "utl/Logger.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
 #include "plotgnu.h"
 #include "utility.h"
 
+using utl::DPO;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
 ////////////////////////////////////////////////////////////////////////////////
-#define DISP_TOLERANCE (0.98)
 
 namespace dpo {
 
@@ -130,19 +132,22 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
 
-    std::cout << boost::format("Pass %3d of %d-reordering; hpwl is %.6e\n") %
-                     p % m_windowSize % curr_hpwl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 304, "Pass {:3d} of reordering; objective is {:.6e}.", p,
+        curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
-      std::cout << "Terminating due to low improvement." << std::endl;
+      // std::cout << "Terminating due to low improvement." << std::endl;
       break;
     }
   }
   m_mgrPtr->resortSegments();
-  std::cout << boost::format(
-                   "End of passes for reordering; hpwl is %.6e, total imp is "
-                   "%.2lf%%\n") %
-                   curr_hpwl % (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+
+  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  m_mgrPtr->getLogger()->info(
+      DPO, 305,
+      "End of reordering; objective is {:.6e}, improvement is {:.2f} percent.",
+      curr_hpwl, curr_imp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

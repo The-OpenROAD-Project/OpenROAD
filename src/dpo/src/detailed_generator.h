@@ -54,25 +54,28 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 class DetailedGenerator {
  public:
-  DetailedGenerator(void) {}
+  DetailedGenerator(void) { m_name = "unknown generator"; }
   virtual ~DetailedGenerator(void) {}
+
+  virtual const std::string& getName(void) const { return m_name; }
 
   // Different methods for generating moves.  We _must_ overload these.  The
   // generated move should be stored in the manager.
   virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) {
-    std::cout << "Error." << std::endl;
     exit(-1);
     return false;
   };
 
   virtual void stats(void) {
-    std::cout << "Error." << std::endl;
     exit(-1);
   }
 
-  virtual void init(DetailedMgr* mgr) { std::cout << "Error." << std::endl; }
+  virtual void init(DetailedMgr* mgr) { 
+    exit(-1);
+  }
 
  protected:
+  std::string m_name;
 };
 
 }  // namespace dpo

@@ -39,6 +39,7 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include "utl/Logger.h"
 #include "plotgnu.h"
 #include "utility.h"
 
@@ -64,7 +65,7 @@
 //#include "detailed_abu.h"
 //#include "detailed_pin.h"
 
-// Algorithms.
+using utl::DPO;
 
 namespace dpo {
 
@@ -90,8 +91,6 @@ bool Detailed::improve(DetailedMgr& mgr)
   m_network = mgr.getNetwork();
   m_rt = mgr.getRoutingParams();  // Can be NULL.
 
-  std::cout << "Detailed placement script: "
-            << "'" << m_params.m_script.c_str() << "'" << std::endl;
 
   int err1, err2, err3, err4, err5;
   (void)err1;
@@ -100,6 +99,7 @@ bool Detailed::improve(DetailedMgr& mgr)
   (void)err4;
   (void)err5;
 
+  // Checks prior to detailed placement.
   err1 = mgr.checkRegionAssignment();  // If segs build right and assignment
                                        // okay, should be fine.
   err2 = mgr.checkRowAlignment();   // If segs build right and assignment okay,
@@ -107,8 +107,8 @@ bool Detailed::improve(DetailedMgr& mgr)
   err3 = mgr.checkSiteAlignment();  // Might not be okay if initial placement
                                     // not legal or code made a mistake.
   err4 =
-      mgr.checkOverlapInSegments();  // Might not be okay if initial placement
-                                     // not legal or code made a mistake.
+      mgr.checkOverlapInSegments(10);  // Might not be okay if initial placement
+                                       // not legal or code made a mistake.
   err5 = mgr.checkEdgeSpacingInSegments();  // Might not be okay.
 
   // Parse the script string and run each command.
@@ -165,58 +165,54 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   (void)err4;
   (void)err5;
 
-  std::cout << "Detailed placement command:";
-  for (size_t i = 0; i < args.size(); i++) {
-    std::cout << " " << args[i].c_str();
-  }
-  std::cout << std::endl;
-
-  std::cout << "Issues before current detailed placement command:" << std::endl;
-  err1 = m_mgr->checkRegionAssignment();  // If segs build right and assignment
-                                          // okay, should be fine.
-  err2 = m_mgr->checkRowAlignment();      // If segs build right and assignment
-                                          // okay, should be fine.
-  err3 = m_mgr->checkSiteAlignment();  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err4 =
-      m_mgr
-          ->checkOverlapInSegments();  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err5 = m_mgr->checkEdgeSpacingInSegments();  // Might not be okay.
+  // Removed some checks here.  Just check after.
 
   // The first argument is always the command.  XXX: Not implemented, but
   // include some samples...
 
+  // Print something about what command will run.
+  std::string command = "";
+  if (strcmp(args[0].c_str(), "mis") == 0) {
+    command = "independent set matching";
+  } else if (strcmp(args[0].c_str(), "gs") == 0) {
+    command = "global swaps";
+  } else if (strcmp(args[0].c_str(), "vs") == 0) {
+    command = "vertical swaps";
+  //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
+  //  command = "interleaving";
+  } else if (strcmp(args[0].c_str(), "ro") == 0) {
+    command = "reordering";
+  } else if (strcmp(args[0].c_str(), "default") == 0) {
+    command = "random improvement";
+  } else {
+    //command = "unknown command";
+    return;
+  }
+  m_mgr->getLogger()->info(DPO, 303, "Running algorithm for {:s}.", command);
+
   // Comment out some algos I haven't confirmed as working.
   if (strcmp(args[0].c_str(), "mis") == 0) {
-    std::cout << "Running independent set matching." << std::endl;
     DetailedMis mis(m_arch, m_network, m_rt);
     mis.run(m_mgr, args);
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
-    std::cout << "Running global swaps." << std::endl;
     DetailedGlobalSwap gs(m_arch, m_network, m_rt);
     gs.run(m_mgr, args);
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
-    std::cout << "Running vertical swaps." << std::endl;
     DetailedVerticalSwap vs(m_arch, m_network, m_rt);
     vs.run(m_mgr, args);
-  } else if (strcmp(args[0].c_str(), "interleave") == 0) {
-    std::cout << "Running interleaving." << std::endl;
-    DetailedInterleave interleave(m_arch, m_network, m_rt);
-    interleave.run(m_mgr, args);
+  //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
+  //  DetailedInterleave interleave(m_arch, m_network, m_rt);
+  //  interleave.run(m_mgr, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
-    std::cout << "Running reordering." << std::endl;
     DetailedReorderer ro(m_arch, m_network, m_rt);
     ro.run(m_mgr, args);
   } else if (strcmp(args[0].c_str(), "default") == 0) {
-    std::cout << "Running random improvement." << std::endl;
     DetailedRandom random(m_arch, m_network, m_rt);
     random.run(m_mgr, args);
   } else {
-    std::cout << "Unknown command." << std::endl;
+    return;
   }
 
-  std::cout << "Issues after current detailed placement command:" << std::endl;
   err1 = m_mgr->checkRegionAssignment();  // If segs build right and assignment
                                           // okay, should be fine.
   err2 = m_mgr->checkRowAlignment();      // If segs build right and assignment

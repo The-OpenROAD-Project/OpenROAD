@@ -92,7 +92,6 @@ class Graph {
         }
       }
     }
-    std::cout << "N: " << m_v << ", Colors: " << m_ncolors << std::endl;
   }
 
  public:

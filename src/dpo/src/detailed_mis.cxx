@@ -30,6 +30,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+////////////////////////////////////////////////////////////////////////////////
+// Description:
+// An implementation of maximum independent set matching to reduce either
+// wirelength of displacement.
+//
+// The idea is to color the nodes (for wirelength).  Then, one can solve
+// a matching problem to optimize for wirelength.  Nodes with the same
+// color do not share nets so they can be repositioned without worsening
+// wirelength.  Note that for displacement optimization, colors are not
+// needed.
+//
+// There are likely many improvements which can be made to this code
+// regarding the selection of nodes, etc.
+
 #include "detailed_mis.h"
 #include <lemon/cost_scaling.h>
 #include <lemon/cycle_canceling.h>
@@ -47,21 +61,9 @@
 #include "detailed_segment.h"
 #include "network.h"
 #include "router.h"
+#include "utl/Logger.h"
 
-// DEFINES ===================================================================
-#ifdef DEBUG
-#define SANITY_CHECK_NO_DUPLICATES(nodes)         \
-  do {                                            \
-    std::set<Node*> dups;                         \
-    for (unsigned i = 0; i < nodes.size(); ++i) { \
-      Node* nd = nodes[i];                        \
-      ASSERT(dups.count(nd) == 0);                \
-      dups.insert(nd);                            \
-    }                                             \
-  } while (0);
-#else
-#define SANITY_CHECK_NO_DUPLICATES(nodes)
-#endif
+using utl::DPO;
 
 namespace dpo {
 
@@ -86,76 +88,6 @@ class DetailedMis::Bucket {
   int m_travId;
 };
 
-/*
-
-// BBOX ======================================================================
-class DetailedMis::BBox
-// ***************
-// Used for tracking edge bounding boxes.
-{
-public:
-        inline bool IsValid( void )
-        // ************************
-        {
-                return _xmax >= _xmin;	// (Only need to check x, as y would be
-redundant)
-        }
-
-public:
-        double			_xmax;
-        double			_xmin;
-        double			_ymax;
-        double			_ymin;
-};
-
-
-
-
-
-
-
-// VARIOUS STRUCTURES ========================================================
-struct DetailedMis::NodeBin
-// *******************
-{
-        unsigned	_high;
-        unsigned	_low;
-};
-
-
-struct DetailedMis::SortNodesByArea
-// ***************************
-// Used to sort netlist nodes by area.
-{
-        inline bool operator() ( Node *p, Node *q ) const
-        // **********************************************
-        {
-                return p->GetArea() < q->GetArea();
-        }
-};
-
-
-struct VertexDegree
-// ****************
-{
-        unsigned	_degree;
-        unsigned	_v;
-};
-
-
-struct SortVertexDegree
-// ********************
-{
-        inline bool operator() ( const VertexDegree &p, const VertexDegree &q )
-const
-        // ********************************************************************
-        {
-                return p._degree > q._degree;
-        }
-};
-
-*/
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedMis::DetailedMis(Architecture* arch, Network* network,
@@ -169,13 +101,7 @@ DetailedMis::DetailedMis(Architecture* arch, Network* network,
       m_useSameSize(true),
       m_useSameColor(true),
       m_maxTimesUsed(3),
-      m_obj(DetailedMis::Hpwl) {
-  /*
-          _mappingNodeToLocation.resize( _params._maxNumNodes * 2 + 2 );
-          std::fill( _mappingNodeToLocation.begin(),
-     _mappingNodeToLocation.end(), (SwapLocation *) NULL );
-   */
-}
+      m_obj(DetailedMis::Hpwl) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,10 +151,11 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
 
   double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
   double last_disp, curr_disp, init_disp, tot_disp, max_disp, avg_disp;
-
-  std::cout << "Set matching objective is "
-            << ((m_obj == DetailedMis::Hpwl) ? "wire length" : "displacement")
-            << std::endl;
+  double curr_obj, curr_imp;
+  std::string obj =
+      (m_obj == DetailedMis::Hpwl) ? "wirelength" : "displacement";
+  m_mgrPtr->getLogger()->info(DPO, 300, "Set matching objective is {:s}.",
+                              obj.c_str());
 
   // If using displacement objective, then it isn't required to use colors.
   if (m_obj == DetailedMis::Disp) {
@@ -242,9 +169,10 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   curr_disp = Utility::disp_l1(m_network, tot_disp, max_disp, avg_disp);
   init_disp = curr_disp;
   for (int p = 1; p <= passes; p++) {
-    std::cout << boost::format(
-                     "Pass %3d of mis; hpwl is %.6e; disp is %.6e\n") %
-                     p % curr_hpwl % curr_disp;
+    curr_obj = (m_obj == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+
+    m_mgrPtr->getLogger()->info(
+        DPO, 301, "Pass {:3d} of matching; objective is {:.6e}.", p, curr_obj);
 
     // Run the algo here...
     place();
@@ -253,23 +181,25 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
     curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
     if (m_obj == DetailedMis::Hpwl &&
         std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
-      std::cout << "Terminating due to low improvement in hpwl." << std::endl;
       break;
     }
     last_disp = curr_disp;
     curr_disp = Utility::disp_l1(m_network, tot_disp, max_disp, avg_disp);
     if (m_obj == DetailedMis::Disp &&
         std::fabs(curr_disp - last_disp) / last_disp <= tol) {
-      std::cout << "Terminating due to low improvement in disp." << std::endl;
       break;
     }
   }
   m_mgrPtr->resortSegments();
-  std::cout << boost::format(
-                   "End of passes for mis; hpwl is %.6e, total imp is %.2lf%%; "
-                   "disp is %.6e, total imp is %.2lf%%\n") %
-                   curr_hpwl % (((init_hpwl - curr_hpwl) / init_hpwl) * 100.) %
-                   curr_disp % (((init_disp - curr_disp) / init_disp) * 100.);
+
+  double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
+  curr_imp = (m_obj == DetailedMis::Hpwl) ? hpwl_imp : disp_imp;
+  curr_obj = (m_obj == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+  m_mgrPtr->getLogger()->info(
+      DPO, 302,
+      "End of matching; objective is {:.6e}, improvement is {:.2f} percent.",
+      curr_obj, curr_imp);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -306,7 +236,9 @@ void DetailedMis::place(void) {
     }
 
     // Get other cells within the vicinity.
-    gatherNeighbours(ndi);
+    if (!gatherNeighbours(ndi)) {
+      continue;
+    }
 
     // Solve the flow.
     solveMatch();
@@ -333,15 +265,11 @@ void DetailedMis::collectMovableCells(void) {
                         m_mgrPtr->m_multiHeightCells[i].begin(),
                         m_mgrPtr->m_multiHeightCells[i].end());
   }
-  std::cout << "Number of candidate cells is " << m_candidates.size()
-            << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::colorCells(void) {
-  std::cout << "Coloring the cells (skipping edges > "
-            << m_skipEdgesLargerThanThis << ")" << std::endl;
 
   m_colors.resize(m_network->m_nodes.size());
   std::fill(m_colors.begin(), m_colors.end(), -1);
@@ -394,8 +322,7 @@ void DetailedMis::colorCells(void) {
 
     int color = gr.m_color[i];
     if (color < 0 || color >= gr.m_ncolors) {
-      std::cout << "Error." << std::endl;
-      exit(-1);
+      m_mgrPtr->internalError( "Unable to color cells during matching" );
     }
     if (m_movable[ndi->getId()]) {
       m_colors[ndi->getId()] = color;
@@ -406,18 +333,6 @@ void DetailedMis::colorCells(void) {
       ++hist[color];
     }
   }
-  std::cout << "Colors required for netlist is " << gr.m_ncolors << std::endl;
-  //    std::cout << "Histogram of colors:" << std::endl;
-  //    size_t j = 0;
-  //    for( size_t i = 0; i < hist.size(); i++ )
-  //    {
-  //        if( hist[i] > 0 )
-  //        {
-  //            ++j;
-  //            std::cout << boost::format( "Color %3d, Cells with this color is
-  //            %d\n" ) % j % hist[i];
-  //        }
-  //    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -452,8 +367,6 @@ void DetailedMis::buildGrid(void) {
   m_dimW = (int)std::ceil((xmax - xmin) / m_stepX);
   m_dimH = (int)std::ceil((ymax - ymin) / m_stepY);
 
-  //    std::cout << "Grid is " << m_dimW << "x" << m_dimH << std::endl;
-
   clearGrid();
   m_grid.resize(m_dimW);
   for (size_t i = 0; i < m_grid.size(); i++) {
@@ -475,8 +388,6 @@ void DetailedMis::buildGrid(void) {
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::populateGrid(void) {
   // Inserts movable cells into the grid.
-
-  //    std::cout << "Populating grid." << std::endl;
 
   for (size_t i = 0; i < m_grid.size(); i++) {
     for (size_t j = 0; j < m_grid[i].size(); j++) {
@@ -523,7 +434,7 @@ void DetailedMis::clearGrid(void)
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void DetailedMis::gatherNeighbours(Node* ndi) {
+bool DetailedMis::gatherNeighbours(Node* ndi) {
   double singleRowHeight = m_arch->m_rows[0]->getH();
 
   m_neighbours.clear();
@@ -535,8 +446,7 @@ void DetailedMis::gatherNeighbours(Node* ndi) {
   // current cell.
 
   if (m_cellToBinMap.end() == (it = m_cellToBinMap.find(ndi))) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
+    return false;
   }
 
   int spanned_i = (int)(ndi->getHeight() / singleRowHeight + 0.5);
@@ -586,7 +496,8 @@ void DetailedMis::gatherNeighbours(Node* ndi) {
       }
       if (compat) {
         // Must span the same number of rows and also be voltage compatible.
-        if (spanned_i != spanned_j || ndi->getBottomPower() != ndj->getBottomPower() ||
+        if (spanned_i != spanned_j ||
+            ndi->getBottomPower() != ndj->getBottomPower() ||
             ndi->getTopPower() != ndj->getTopPower()) {
           compat = false;
         }
@@ -618,6 +529,7 @@ void DetailedMis::gatherNeighbours(Node* ndi) {
     if (currPtr->m_j + 1 <= m_dimH - 1)
       Q.push_back(m_grid[currPtr->m_i][currPtr->m_j + 1]);
   }
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -710,8 +622,7 @@ void DetailedMis::solveMatch(void) {
   preflow.run();
   int maxFlow = preflow.flowValue();
   if (maxFlow != nNodes) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
+    return;
   }
   // Find mincost flow.
   lemon::CycleCanceling<lemon::ListDigraph> mincost(g);
@@ -722,20 +633,12 @@ void DetailedMis::solveMatch(void) {
   lemon::CycleCanceling<lemon::ListDigraph>::ProblemType ret = mincost.run();
 
   switch (ret) {
-    case lemon::CostScaling<lemon::ListDigraph>::INFEASIBLE:
-      // std::cout << "Min cost flow solver, result is INFEASIBLE" << std::endl;
-      exit(-1);
-      break;
     case lemon::CostScaling<lemon::ListDigraph>::OPTIMAL:
-      // std::cout << "Min cost flow solver, result is OPTIMAL   " << std::endl;
       break;
+    case lemon::CostScaling<lemon::ListDigraph>::INFEASIBLE:
     case lemon::CostScaling<lemon::ListDigraph>::UNBOUNDED:
-      // std::cout << "Min cost flow solver, result is UNBOUNDED " << std::endl;
-      exit(-1);
-      break;
     default:
-      // std::cout << "Min cost flow solver, no result" << std::endl;
-      exit(-1);
+      return;
       break;
   }
 
@@ -753,8 +656,6 @@ void DetailedMis::solveMatch(void) {
   int finalCost = 0;
   int nMoved = 0;
 
-  // m_mgrPtr->debugSegments();
-
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
     if (g.target(it) == demandNode) {
@@ -769,8 +670,7 @@ void DetailedMis::solveMatch(void) {
       std::map<lemon::ListDigraph::Arc, std::pair<int, int> >::iterator it1 =
           reverseMap.find(it);
       if (reverseMap.end() == it1) {
-        std::cout << "Error." << std::endl;
-        exit(-1);
+        m_mgrPtr->internalError( "Unable to interpret flow during matching" );
       }
 
       int i = it1->second.first;
@@ -787,26 +687,17 @@ void DetailedMis::solveMatch(void) {
 
       if (ndi != ndj) {
         ++nMoved;
-        if (spanned_i != spanned_j) {
-          std::cout << "Cells " << ndi->getId() << " and " << ndj->getId()
-                    << ", "
-                    << "don't span the same number of rows." << std::endl;
-          exit(-1);
-        }
-        if (ndi->getWidth() != ndj->getWidth() ||
+        if (spanned_i != spanned_j ||
+            ndi->getWidth() != ndj->getWidth() ||
             ndi->getHeight() != ndj->getHeight()) {
-          std::cout << "Cells " << ndi->getId() << " and " << ndj->getId()
-                    << ", "
-                    << "don't have the same dimensions." << std::endl;
-          exit(-1);
+          m_mgrPtr->internalError( "Unable to interpret flow during matching" );
         }
 
         // Remove cell "i" from its old segments.
         std::vector<DetailedSeg*>& old_segs = seg[i];
         if (spanned_i != old_segs.size()) {
           // This means an error someplace else...
-          std::cout << "Error." << std::endl;
-          exit(-1);
+          m_mgrPtr->internalError( "Unable to interpret flow during matching" );
         }
         for (size_t s = 0; s < old_segs.size(); s++) {
           DetailedSeg* segPtr = old_segs[s];
@@ -822,13 +713,7 @@ void DetailedMis::solveMatch(void) {
         std::vector<DetailedSeg*>& new_segs = seg[j];
         if (spanned_i != new_segs.size()) {
           // Not setup for non-same size stuff right now.
-          std::cout << "Cell " << ndi->getId() << ", Rows spanned is "
-                    << spanned_i << ", "
-                    << "assigned to position occupied by cell " << ndj->getId()
-                    << ", Rows spanned is " << spanned_j << ", "
-                    << "found in only " << new_segs.size() << " segments."
-                    << std::endl;
-          exit(-1);
+          m_mgrPtr->internalError( "Unable to interpret flow during matching" );
         }
         for (size_t s = 0; s < new_segs.size(); s++) {
           DetailedSeg* segPtr = new_segs[s];
@@ -846,14 +731,6 @@ void DetailedMis::solveMatch(void) {
       finalCost += icost;
     }
   }
-
-  // std::cout << "Flow-based replacement; Moved " << nMoved << " cells of " <<
-  // m_neighbours.size() << ", "
-  //    << "original hpwl is " << origCost << ", "
-  //    << "final hpwl is " << finalCost << std::endl;
-
-  // int err = m_mgrPtr->checkOverlapInSegments();
-  //(void)err;
 }
 
 //////////////////////////////////////////////////////////////////////////////////

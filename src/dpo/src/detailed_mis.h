@@ -148,7 +148,7 @@ class DetailedMis {
   void buildGrid(void);
   void clearGrid(void);
   void populateGrid(void);
-  void gatherNeighbours(Node* ndi);
+  bool gatherNeighbours(Node* ndi);
   void solveMatch(void);
   double getHpwl(Node* ndi, double xi, double yi);
   double getDisp(Node* ndi, double xi, double yi);

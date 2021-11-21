@@ -30,9 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// COMMENTS:
+///////////////////////////////////////////////////////////////////////////////
 //
-// Presently only handles random moves and swaps.
+// Description:
+// Essentially a zero temperature annealer that can use a variety of
+// move generators, different objectives and a cost function in order
+// to improve a placement.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +48,7 @@
 #include <utility>
 #include "plotgnu.h"
 #include "utility.h"
+#include "utl/Logger.h"
 // For detailed improvement.
 #include "detailed_manager.h"
 #include "detailed_orient.h"
@@ -57,15 +61,10 @@
 #include "detailed_hpwl.h"
 #include "detailed_objective.h"
 #include "detailed_vertical.h"
-//#include "detailed_drc.h"
-//#include "detailed_abu.h"
-//#include "detailed_pin.h"
-// Algorithms.
-//#include "detailed_global_vertical.h"
-//#include "detailed_reorder.h"
-//#include "detailed_lillis.h"
 
 #include "utility.h"
+
+using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
@@ -161,8 +160,6 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   // Additional generators per the command. XXX: Need to write the code for
   // these objects; just a concept now.
   if (generatorStr != "") {
-    std::cout << "Generator string: " << generatorStr.c_str() << std::endl;
-
     boost::char_separator<char> separators(" \r\t\n:");
     boost::tokenizer<boost::char_separator<char> > tokens(generatorStr,
                                                           separators);
@@ -178,19 +175,16 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
       // << std::endl; else if( gens[i] == "mis" ) std::cout << "set matching
       // generator requested." << std::endl;
       if (gens[i] == "gs") {
-        std::cout << "global swap generator requested." << std::endl;
         m_generators.push_back(new DetailedGlobalSwap());
       } else if (gens[i] == "vs") {
-        std::cout << "vertical swap generator requested." << std::endl;
         m_generators.push_back(new DetailedVerticalSwap());
       } else if (gens[i] == "rng") {
-        std::cout << "random generator requested." << std::endl;
         m_generators.push_back(new RandomGenerator());
       } else if (gens[i] == "disp") {
-        std::cout << "displacement generator requested." << std::endl;
         m_generators.push_back(new DisplacementGenerator());
-      } else
-        std::cout << "unknown generator requested." << std::endl;
+      } else {
+        ;
+      }
     }
   }
   if (m_generators.size() == 0) {
@@ -199,6 +193,10 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   }
   for (size_t i = 0; i < m_generators.size(); i++) {
     m_generators[i]->init(m_mgrPtr);
+
+    m_mgrPtr->getLogger()->info(DPO, 324,
+                                "Random improver is using {:s} generator.",
+                                m_generators[i]->getName().c_str());
   }
 
   // Objectives.
@@ -210,8 +208,6 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   // Additional objectives per the command. XXX: Need to write the code for
   // these objects; just a concept now.
   if (objectiveStr != "") {
-    std::cout << "Objective string: " << objectiveStr.c_str() << std::endl;
-
     boost::char_separator<char> separators(" \r\t\n:");
     boost::tokenizer<boost::char_separator<char> > tokens(objectiveStr,
                                                           separators);
@@ -226,23 +222,21 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
       // else if( objs[i] == "drc" )   std::cout << "drc objective requested."
       // << std::endl;
       if (objs[i] == "abu") {
-        std::cout << "abu metric objective requested." << std::endl;
         DetailedABU* objABU = new DetailedABU(m_arch, m_network, m_rt);
         objABU->init(m_mgrPtr, NULL);
         m_objectives.push_back(objABU);
       } else if (objs[i] == "disp") {
-        std::cout << "displacement objective requested." << std::endl;
         DetailedDisplacement* objDisp =
             new DetailedDisplacement(m_arch, m_network, m_rt);
         objDisp->init(m_mgrPtr, NULL);
         m_objectives.push_back(objDisp);
       } else if (objs[i] == "hpwl") {
-        std::cout << "wirelength objective requested." << std::endl;
         DetailedHPWL* objHpwl = new DetailedHPWL(m_arch, m_network, m_rt);
         objHpwl->init(m_mgrPtr, NULL);
         m_objectives.push_back(objHpwl);
-      } else
-        std::cout << "unknown objective requested." << std::endl;
+      } else {
+        ;
+      }
     }
   }
   if (m_objectives.size() == 0) {
@@ -253,22 +247,13 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   }
 
   for (size_t i = 0; i < m_objectives.size(); i++) {
-    std::cout << boost::format("Objective: id: %2d, name: %s") % i %
-                     m_objectives[i]->getName().c_str()
-              << std::endl;
+    m_mgrPtr->getLogger()->info(DPO, 325,
+                                "Random improver is using {:s} objective.",
+                                m_objectives[i]->getName().c_str());
   }
 
   // Should I just be figuring out the objectives needed from the cost string?
   if (costStr != "") {
-    // XXX: Work in progress to make things more generic...
-    std::cout << "Cost string: " << costStr << std::endl;
-
-    // costStr.erase( std::remove( costStr.begin(), costStr.end(), '(' ),
-    // costStr.end() ); costStr.erase( std::remove( costStr.begin(),
-    // costStr.end(), ')' ), costStr.end() );
-
-    std::cout << "Cost string: " << costStr << std::endl;
-
     // Replace substrings of objectives with a number.
     for (size_t i = m_objectives.size(); i > 0;) {
       --i;
@@ -277,18 +262,14 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
         if (pos == std::string::npos) {
           break;
         }
-        std::cout << "Objective '" << m_objectives[i]->getName() << "'"
-                  << ", "
-                  << "Index is " << i << ", "
-                  << "Found at " << pos << std::endl;
-
         std::string val;
         val.append(1, (char)('a' + i));
         costStr.replace(pos, m_objectives[i]->getName().length(), val);
       }
     }
 
-    std::cout << "Modified cost string: " << costStr << std::endl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 326, "Random improver cost string is {:s}.", costStr.c_str());
 
     m_expr.clear();
     for (std::string::iterator it = costStr.begin(); it != costStr.end();
@@ -316,21 +297,16 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
     }
   }
 
-  {
-    std::cout << "cost stack: " << std::endl;
-    for (size_t i = 0; i < m_expr.size(); i++) {
-      std::cout << m_expr[i].c_str() << std::endl;
-    }
-  }
-
   double curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
 
   init_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
   for (int p = 1; p <= passes; p++) {
     m_mgrPtr->resortSegments();  // Needed?
     double change = go();
-    std::cout << "Pass " << p << " of greedy improvement, Impr is "
-              << change * 100. << "%%" << std::endl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 327,
+        "Pass {:3d} of random improver; improvement in cost is {:.2f} percent.",
+        p, (change * 100));
     if (change < tol) {
       break;
     }
@@ -338,10 +314,10 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   m_mgrPtr->resortSegments();  // Needed?
 
   curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
-  std::cout
-      << boost::format(
-             "End of passes for random; hpwl is %.6e, total imp is %.2lf%%\n") %
-             curr_hpwl % (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  m_mgrPtr->getLogger()->info(
+      DPO, 328, "End of random improver; improvement is {:.6f} percent.",
+      curr_imp);
 
   // Cleanup.
   for (size_t i = 0; i < m_generators.size(); i++) {
@@ -395,9 +371,9 @@ double eval(std::vector<double>& costs, std::vector<std::string>& expr) {
     }
   }
   if (stk.size() != 1) {
-    // Error.
-    std::cout << "Error." << std::endl;
-    exit(-1);
+    // Cost function should never be negative.  If we have a problem,
+    // then return some negative value and we can catch this error.
+    return -1.0;
   }
   return stk.top();
 }
@@ -406,8 +382,8 @@ double eval(std::vector<double>& costs, std::vector<std::string>& expr) {
 //////////////////////////////////////////////////////////////////////////////////
 double DetailedRandom::go(void) {
   if (m_generators.size() == 0) {
-    std::cout << "Improver use of algorithm; requires at least one generator."
-              << std::endl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 329, "Random improver requires at least one generator.");
     return 0.0;
   }
 
@@ -441,7 +417,12 @@ double DetailedRandom::go(void) {
   }
 
   // Test.
-  std::cout << "Test evaluation: " << eval(m_currCost, m_expr) << std::endl;
+  if (eval(m_currCost, m_expr) < 0.0) {
+    m_mgrPtr->getLogger()->info(DPO, 330,
+                                "Test objective function failed, possibly due "
+                                "to a badly formed cost function.");
+    return 0.0;
+  }
 
   double currTotalCost;
   double initTotalCost;
@@ -496,16 +477,6 @@ double DetailedRandom::go(void) {
       // or just at the end...
       ;
       for (size_t i = 0; i < m_objectives.size(); i++) {
-        // if( m_objectives[i]->getName() == "abu" )
-        //{
-        //    double temp = m_objectives[i]->curr();
-        //    std::cout << boost::format( "ABU: curr %.6e, delta %.6e, next
-        //    %.6e, scratch %.6e, diff? %s" )
-        //        % m_currCost[i] % m_deltaCost[i] % m_nextCost[i]
-        //        % temp % ( (std::fabs(temp-m_nextCost[i])>1.e-3) ? "Y" : "N" )
-        //        << std::endl;
-        //}
-
         m_currCost[i] = m_nextCost[i];
       }
       currTotalCost = nextTotalCost;
@@ -516,27 +487,27 @@ double DetailedRandom::go(void) {
       }
     }
   }
-  std::cout << "Generator usage:";
   for (size_t i = 0; i < gen_count.size(); i++) {
-    std::cout << " " << gen_count[i];
+    m_mgrPtr->getLogger()->info(
+        DPO, 332,
+        "End of pass, Generator {:s} called {:d} times.",
+        m_generators[i]->getName().c_str(), gen_count[i]);
   }
-  std::cout << std::endl;
   std::cout << "Generator stats:" << std::endl;
   for (size_t i = 0; i < m_generators.size(); i++) {
     m_generators[i]->stats();
   }
 
-  std::cout << "Cost check:" << std::endl;
   for (size_t i = 0; i < m_objectives.size(); i++) {
     double scratch = m_objectives[i]->curr();
     m_nextCost[i] = scratch;  // Temporary.
     bool error = (std::fabs(scratch - m_currCost[i]) > 1.0e-3);
-    std::cout << boost::format(
-                     "Objective %2d, %10s: Init %.2lf, Curr(Scratch): %.2lf, "
-                     "Incr: %.2lf, %s") %
-                     i % m_objectives[i]->getName().c_str() % m_initCost[i] %
-                     scratch % m_currCost[i] % (error ? "MISMATCH" : "OKAY")
-              << std::endl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 333,
+        "End of pass, Objective {:s}, Initial cost {:.6e}, Scratch cost "
+        "{:.6e}, Incremental cost {:.6e}, Mismatch? {:c}",
+        m_objectives[i]->getName().c_str(), m_initCost[i], scratch,
+        m_currCost[i], ((error) ? 'Y' : 'N'));
 
     if (m_objectives[i]->getName() == "abu") {
       DetailedABU* ptr = dynamic_cast<DetailedABU*>(m_objectives[i]);
@@ -546,9 +517,7 @@ double DetailedRandom::go(void) {
     }
   }
   nextTotalCost = eval(m_nextCost, m_expr);
-  std::cout << boost::format("Total cost(Scratch): %.2lf, Incr: %.2lf") %
-                   eval(m_nextCost, m_expr) % currTotalCost
-            << std::endl;
+  m_mgrPtr->getLogger()->info( DPO, 338, "End of pass, Total cost is {:.6e}.", nextTotalCost );
 
   return ((initTotalCost - currTotalCost) / initTotalCost);
 }
@@ -569,8 +538,7 @@ void DetailedRandom::collectCandidates(void) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 RandomGenerator::RandomGenerator(void) : DetailedGenerator() {
-  std::cout << "Allocated a random move generator." << std::endl;
-
+  m_name = "displacement";
   m_attempts = 0;
   m_moves = 0;
   m_swaps = 0;
@@ -696,16 +664,15 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void RandomGenerator::stats(void) {
-  std::cout << "Random generator, attempts " << m_attempts << ", "
-            << "moves " << m_moves << ", "
-            << "swaps " << m_swaps << std::endl;
+  m_mgr->getLogger()->info( DPO, 335, "Generator {:s}, "
+    "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
+    getName().c_str(), m_attempts, m_swaps, m_moves );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DisplacementGenerator::DisplacementGenerator(void) : DetailedGenerator() {
-  std::cout << "Allocated a displacement move generator." << std::endl;
-
+  m_name = "random";
   m_attempts = 0;
   m_moves = 0;
   m_swaps = 0;
@@ -887,9 +854,9 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DisplacementGenerator::stats(void) {
-  std::cout << "Displacement generator, attempts " << m_attempts << ", "
-            << "moves " << m_moves << ", "
-            << "swaps " << m_swaps << std::endl;
+  m_mgr->getLogger()->info( DPO, 337, "Generator {:s}, "
+    "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
+    getName().c_str(), m_attempts, m_swaps, m_moves );
 }
 
 }  // namespace dpo

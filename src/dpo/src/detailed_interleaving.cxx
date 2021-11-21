@@ -30,11 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////
 // Description:
-// - Implementation of Interleave' interleaving algorithm for a single row.
+// Simple implementation of optimal single row interleaving.
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
@@ -49,9 +48,12 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include "utl/Logger.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
 #include "utility.h"
+
+using utl::DPO;
 
 namespace dpo {
 
@@ -134,19 +136,21 @@ void DetailedInterleave::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
 
-    std::cout << boost::format("Pass %3d of interleaving; hpwl is %.6e\n") %
-                     pass % curr_hpwl;
+    m_mgrPtr->getLogger()->info(
+        DPO, 322, "Pass {:3d} of interleaving; hpwl is {:.6e}.", pass,
+        curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
-      std::cout << "Terminating due to low improvement in hpwl." << std::endl;
       break;
     }
   }
   m_mgrPtr->resortSegments();
-  std::cout << boost::format(
-                   "End of passes for interleaving; hpwl is %.6e, total imp is "
-                   "%.2lf%%\n") %
-                   curr_hpwl % (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+
+  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  m_mgrPtr->getLogger()->info(
+      DPO, 323,
+      "End of interleaving; objective is {:.6e}, improvement is {:.2f} percent.",
+      curr_hpwl, curr_imp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,8 +197,6 @@ void DetailedInterleave::dp(void) {
     }
     std::sort(nodes.begin(), nodes.end(), compareNodesX());
 
-    // std::cout << "Interleaving segment " << segId << ", Cells is " <<
-    // nodes.size() << std::endl;
 
     int j = 0;
     int n = nodes.size();
@@ -208,8 +210,6 @@ void DetailedInterleave::dp(void) {
       }
       int jstop = j - 1;
 
-      // std::cout << " => Span on single height cells " << n << ", [" << jstrt
-      // << " -> " << jstop << "]" << std::endl;
 
       // Single height cells in [jstrt,jstop].
       for (int i = jstrt; i <= jstop; i += m_windowStep) {
@@ -225,8 +225,6 @@ void DetailedInterleave::dp(void) {
         }
 
         // Enough cells to interleave.
-        // std::cout << "  => Window, [" << istrt << " -> " << istop << "]" <<
-        // std::endl;
 
         Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
         rightLimit = segPtr->m_xmax;
@@ -274,8 +272,6 @@ void DetailedInterleave::dp(void) {
         }
         double nextCost = solve(&sm);
 
-        // std::cout << "Initial cost is " << initCost << ", current cost is "
-        // << nextCost << std::endl;
         if (nextCost >= initCost) {
           continue;
         }
@@ -624,8 +620,7 @@ double DetailedInterleave::solve(SmallProblem* problem) {
           --j;
           q.push_back(a[j]);
         } else {
-          std::cout << "Error." << std::endl;
-          exit(-1);
+          m_mgrPtr->internalError( "Unable to trace solution while interleaving cells" );
         }
 
         curr = curr->m_parent;
@@ -651,8 +646,6 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
     return;
   }
   if (nodes.size() > 200) {
-    std::cout << "Interleave, direct call skipped; nodes is " << nodes.size()
-              << std::endl;
     return;
   }
 
@@ -685,14 +678,6 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
     totalWidth += nd->getWidth();
     minWidth = std::min(minWidth, nd->getWidth());
   }
-
-  /*
-      std::cout << "Total space is " << totalSpace << ", "
-          << "minX: " << minX << ", "
-          << "maxX: " << maxX << ", "
-          << "cells is " << (int)nodes.size() << ", "
-          << "Total width is " << totalWidth << std::endl;
-   */
 
   scaling = 1.;
   if ((totalSpace - totalWidth < 0.0) || (totalSpace - totalWidth > minWidth)) {

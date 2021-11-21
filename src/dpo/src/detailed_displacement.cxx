@@ -131,30 +131,11 @@ double DetailedDisplacement::curr(void) {
   for (size_t i = 0; i < m_tot.size(); i++) {
     if (m_count[i] != 0) {
       disp += m_tot[i] / (double)m_count[i];
-      // std::cout << "Height " << i << ", Avg: " << m_tot[i] /
-      // (double)m_count[i] << std::endl;
     }
   }
-  // std::cout << "Sets: " << m_nSets << std::endl;
   disp /= m_singleRowHeight;
   disp /= (double)m_nSets;
-  // std::cout << "S_{am} = " << disp <<std::endl;
 
-  // for( size_t i = 0; i < m_network->m_nodes.size(); i++ )
-  //{
-  //    Node* ndi = &(m_network->m_nodes[i]);
-  //
-  //    if( ndi->getFixed() != NodeFixed_NOT_FIXED )
-  //    {
-  //        continue;
-  //    }
-  //
-  //    double dx = std::fabs( ndi->getX() - ndi->getOrigX() );
-  //    double dy = std::fabs( ndi->getY() - ndi->getOrigY() );
-  //    disp += dx + dy;
-  //}
-  // disp /= m_singleRowHeight;
-  // disp /= (double)m_network->m_nodes.size();
   return disp;
 }
 

@@ -30,6 +30,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Description:
+// Implements an objective to penalize areas of the placement which have
+// a utilization larger than a global target utilization.  
+// The idea is that it returns a value >= 0 if there are bins with high
+// utilization and can be used within a cost function in a form such as
+// hpwl * (1+penalty), where "penalty" is the returned value.  If there
+// is no bins over the target utilization, then penalty will be zero.
+//
+// Code is also included to compute the so-called "ABU" metric which is
+// a weighted metric used in a prior placement contest.  The idea here
+// is the overfilled bins are weighted such that those with higher utilization
+// are more heavily weighted.  This metric is for information purposes:
+// it is not part of the cost function, but can be called to print out the
+// ABU metric (and the resulting ABU penalty from the contest).
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,6 +64,9 @@
 #include <stack>
 #include <utility>
 #include "detailed_orient.h"
+#include "utl/Logger.h"
+
+using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
@@ -98,8 +118,6 @@ void DetailedABU::init(void) {
   // can do something even different...
 
   m_abuTargUt = m_mgrPtr->getTargetUt();  // XXX: Need to set this somehow!!!
-  std::cout << "Target Utilization for ABU metric is " << m_abuTargUt
-            << std::endl;
 
   m_abuGridUnit = BIN_DIM * m_arch->m_rows[0]->m_rowHeight;
   m_abuGridNumX = (int)ceil((m_arch->m_xmax - m_arch->m_xmin) / m_abuGridUnit);
@@ -394,19 +412,6 @@ void DetailedABU::computeBuckets(void) {
       m_utilTotals[i] += util / space;
     }
   }
-
-  // for( size_t i = 0; i < m_utilBuckets.size(); i++ )
-  //{
-  //    int n = std::max( (int)m_utilBuckets[i].size(), 1 );
-  //    double avg = m_utilTotals[i] / (double)n;
-  //    std::cout << boost::format( "[%.2lf,%.2lf]: %6d %10.4lf %10.4lf" )
-  //        % (i*denom)
-  //        % ((i+1)*denom)
-  //        % m_utilBuckets[i].size()
-  //        % m_utilTotals[i]
-  //        % avg
-  //        << std::endl;
-  //}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -454,8 +459,8 @@ double DetailedABU::calculateABU(bool print) {
   m_abuTargUt10 = 0.0;
   m_abuTargUt20 = 0.0;
 
+  // Determine free space and utilization per bin.
   std::vector<double> util_array(m_abuNumBins, 0.0);
-  /* 2. determine the free space & utilization per bin */
   for (int j = 0; j < m_abuGridNumY; j++) {
     for (int k = 0; k < m_abuGridNumX; k++) {
       unsigned binId = j * m_abuGridNumX + k;
@@ -474,7 +479,7 @@ double DetailedABU::calculateABU(bool print) {
 
   std::sort(util_array.begin(), util_array.end());
 
-  /* 3. obtain ABU numbers */
+  // Get different values.
   double abu1 = 0.0, abu2 = 0.0, abu5 = 0.0, abu10 = 0.0, abu20 = 0.0;
   int clip_index = 0.01 * m_abuNumBins;
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
@@ -507,12 +512,6 @@ double DetailedABU::calculateABU(bool print) {
   abu20 = (clip_index) ? abu20 / clip_index : util_array[m_abuNumBins - 1];
   util_array.clear();
 
-  if (print) {
-    std::cout << "  target util       : " << m_abuTargUt << std::endl;
-    std::cout << "  AVG_2,5,10,20     : " << abu2 << ", " << abu5 << ", "
-              << abu10 << ", " << abu20 << std::endl;
-  }
-
   m_abuTargUt02 = abu2;
   m_abuTargUt05 = abu5;
   m_abuTargUt10 = abu10;
@@ -534,9 +533,12 @@ double DetailedABU::calculateABU(bool print) {
                    (double)(ABU2_WGT + ABU5_WGT + ABU10_WGT + ABU20_WGT);
 
   if (print) {
-    std::cout << "  ABU_2,5,10,20     : " << abu2 << ", " << abu5 << ", "
-              << abu10 << ", " << abu20 << std::endl;
-    std::cout << "  penalty           : " << penalty << std::endl;
+    m_mgrPtr->getLogger()->info(DPO, 317,
+                                "ABU: Target {:.2f}, "
+                                "ABU_2,5,10,20: "
+                                "{:.2f}, {:.2f}, {:.2f}, {:.2f}, "
+                                "Penalty {:.2f}",
+                                m_abuTargUt, abu2, abu5, abu10, abu20, penalty);
   }
 
   return penalty;
@@ -564,35 +566,7 @@ double DetailedABU::curr() {
       fof += m_utilTotals[i] / m_utilBuckets[i].size();
     }
   }
-  // std::cout << "ABU: fof is " << fof << std::endl;
   return fof;
-
-  // The following calculation is _not_ any sort of normalized number
-  // which can be bad...
-  /*
-  double util = 0.;
-  double pen = 0.;
-  for(int j=0;j<m_abuGridNumY;j++)
-  {
-      for(int k=0;k<m_abuGridNumX;k++)
-      {
-          int binId= j*m_abuGridNumX+k;
-          if(m_abuBins[binId].area >
-  m_abuGridUnit*m_abuGridUnit*BIN_AREA_THRESHOLD)
-          {
-              double free_space = m_abuBins[binId].area-m_abuBins[binId].f_util;
-              if(free_space > FREE_SPACE_THRESHOLD*m_abuBins[binId].area)
-              {
-                  util = m_abuBins[binId].m_util / free_space;
-                  pen += (m_abuTargUt - std::max(util,
-  m_abuTargUt))/(m_abuTargUt - 1.);
-              }
-          }
-      }
-  }
-  std::cout << "ABU: curr is " << pen << std::endl;
-  return pen;
-  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -613,7 +587,6 @@ double DetailedABU::delta(int n, std::vector<Node*>& nodes,
       fofOld += m_utilTotals[i] / m_utilBuckets[i].size();
     }
   }
-  // std::cout << "ABU: fof is " << fof << std::endl;
 
   // Compute changed bins and changed occupancy.
   ++m_abuChangedBinsCounter;
@@ -636,8 +609,7 @@ double DetailedABU::delta(int n, std::vector<Node*>& nodes,
     util = m_abuBins[binId].c_util;
     if ((ix = getBucketId(binId, util)) != -1) {
       if (m_utilBuckets[ix].end() == (it = m_utilBuckets[ix].find(binId))) {
-        std::cout << "Error." << std::endl;
-        exit(-1);
+        m_mgrPtr->internalError("Unable to find bin within utilization objective");
       }
       m_utilBuckets[ix].erase(it);
       m_utilTotals[ix] -= util / space;
@@ -713,17 +685,10 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub) {
   // rather than the position stored in the node...
 
   if (nd->getType() == NodeType_TERMINAL ||
-      nd->getType() == NodeType_TERMINAL_NI) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
-  }
-  if (nd->getFixed() != NodeFixed_NOT_FIXED) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
-  }
-  if (m_network->m_shapes[nd->getId()].size() != 0) {
-    std::cout << "Error." << std::endl;
-    exit(-1);
+      nd->getType() == NodeType_TERMINAL_NI ||
+      nd->getFixed() != NodeFixed_NOT_FIXED ||
+      m_network->m_shapes[nd->getId()].size() != 0) {
+    m_mgrPtr->internalError("Problem updating bins for utilization objective");
   }
 
   int lcol = std::max(
@@ -789,8 +754,7 @@ void DetailedABU::rejectBins(void) {
     util = m_abuBins[binId].m_util;
     if ((ix = getBucketId(binId, util)) != -1) {
       if (m_utilBuckets[ix].end() == (it = m_utilBuckets[ix].find(binId))) {
-        std::cout << "Error." << std::endl;
-        exit(-1);
+        m_mgrPtr->internalError("Error rejecting bins for utilization objective");
       }
       m_utilBuckets[ix].erase(it);
       m_utilTotals[ix] -= util / space;

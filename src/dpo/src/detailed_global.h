@@ -52,7 +52,7 @@ class DetailedGlobalSwap : public DetailedGenerator {
   DetailedGlobalSwap(void);
   virtual ~DetailedGlobalSwap(void);
 
-  // Intefaces for scripting.
+  // Interfaces for scripting.
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 

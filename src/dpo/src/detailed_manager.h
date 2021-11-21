@@ -76,7 +76,6 @@ class DetailedMgr {
   virtual ~DetailedMgr(void);
 
   void cleanup(void);
-  void setup(void);
 
   Architecture* getArchitecture(void) const { return m_arch; }
   Network* getNetwork(void) const { return m_network; }
@@ -84,6 +83,8 @@ class DetailedMgr {
 
   void setLogger(utl::Logger* logger) { m_logger = logger; }
   utl::Logger* getLogger(void) const { return m_logger; }
+
+  void internalError( std::string msg );
 
   void setupObstaclesForDrc(void);
 
@@ -108,7 +109,6 @@ class DetailedMgr {
   int checkSiteAlignment(int max_err_n = 0);
   int checkRowAlignment(int max_err_n = 0);
   int checkRegionAssignment(int max_err_n = 0);
-  bool checkPlacement(void);
 
   void removeCellFromSegmentTest(Node* nd, int seg, double& util, double& gapu);
   void addCellToSegmentTest(Node* nd, int seg, double x, double& util,

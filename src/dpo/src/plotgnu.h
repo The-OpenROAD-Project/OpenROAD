@@ -67,16 +67,6 @@ class PlotGnu {
   virtual ~PlotGnu() {}
 
   void Draw(Network* network, Architecture* arch, char* msg = 0);
-  void DrawLargeCells(Network* network, Architecture* arch, char* msg = 0);
-
-  void draw_placement_density(Network* nw, Architecture* arch,
-                              RoutingParams* rt, char* buf);
-
-  void draw_rectangles(std::vector<Rectangle>& rects, double xmin, double xmax,
-                       double ymin, double ymax, char* buf);
-
-  void Draw(Network* network, Architecture* arch,
-            std::vector<std::pair<double, double> >& otherPl, char* msg = 0);
 
  protected:
   void drawArchitecture(char* buf);
