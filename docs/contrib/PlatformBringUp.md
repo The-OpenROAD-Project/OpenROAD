@@ -53,7 +53,7 @@ They include :
 
 Adding a new platform additionally requires the following: 
 
-* A validated installation of the OpenROAD flow scripts is available. See instructions [here](https://openroad.readthedocs.io/en/latest/user/GettingStarted.html#building-and-installing-the-software).:
+* A validated installation of the OpenROAD flow scripts is available. See instructions [here](./user/GettingStarted.md).:
 * A general knowledge of VLSI design and RTL to GDS flows.  \
 OpenROAD implements a fully-automated RTL-GDSII but it requires familiarity with the OpenROAD flow scripts to debug problems.
 
@@ -140,7 +140,7 @@ For Example:
     PLACE_DENSITY
 ```
 
-Alternatively, `DIE_AREA` and `CORE_AREA` can be specified instead of `CORE_UTILIZATION`, `CORE_ASPECT_RATIO`, and `CORE_MARGIN`.
+Alternatively, `DIE_AREA` and `CORE_AREA` can be specified instead of `CORE_UTILIZATION`, `CORE_ASPECT_RATIO`, and `CORE_MARGIN`. For a complete descriptor of all variables see [here](TODO).
 
 
 Following is a sample `config.mk` file for the `gcd` design:
@@ -165,7 +165,7 @@ export PLACE_DENSITY     = 0.70
 
 ## constraint.sdc
 
-The `constraint.sdc` file defines timing constraints for the design. The `create_clock` command allows you to define clocks that are either connected to nets or are virtual and can be customized. The units for `create_clock` are in nanoseconds. Here’s an example of a `constraint.sdc` file which defines a clock `clk` with a period of 8.4 nanoseconds.
+The `constraint.sdc` file defines timing constraints for the design. The `create_clock` command allows you to define clocks that are either connected to nets or are virtual and can be customized. The units for `create_clock` need to be consistent with the liberty time units. Here’s an example of a `constraint.sdc` file which defines a clock `clk` with a period of 8.4 nanoseconds (nanoseconds being consistent with the liberty time units).
 
 
 
@@ -272,7 +272,7 @@ set_routing_layers -signal $::env(MIN_ROUTING_LAYER)-$::env(MAX_ROUTING_LAYER)
 
 The first command, `set_global_routing_layer_adjustment`, adjusts the routing resources of the design. This effectively reduces the number of routing tracks that the global router assumes to exist. By setting it to the value of 0.5, this reduced the routing resources of all routing layers to 50% which can help with congestion and reduce the challenges for detail routing. The second command, `set_routing_layers`, sets the minimum and maximum routing layers for signal nets by using the `-signal` option.
 
-More customization can be done to increase the efficiency of global and detail route. Refer to the [FastRoute documentation](https://openroad.readthedocs.io/en/latest/main/src/grt/README.html)
+More customization can be done to increase the efficiency of global and detail route. Refer to the [FastRoute documentation](./main/src/grt/README.md)
 
 
 ## Metal Tracks Configuration
@@ -330,19 +330,19 @@ In the example above, the x and y pitch for `met1` would be 0.34 and the x and y
 
 ## PDN Configuration
 
-PDN is a utility that simplifies adding a power grid into the floorplan. With specifications given in the PDN configuration file, like which layer to use, stripe width and spacing, the utility can generate the metal straps used for the power grid. To create and configure a power grid, refer to [OpenROAD documentation](https://github.com/The-OpenROAD-Project/OpenROAD/blob/f864efbae4ffd4cc533f0e22c57cc7ab89618c44/src/pdn/doc/PDN.md) on pdngen.
+PDN is a utility that simplifies adding a power grid into the floorplan. With specifications given in the PDN configuration file, like which layer to use, stripe width and spacing, the utility can generate the metal straps used for the power grid. To create and configure a power grid, refer to the [PDN documentation](./main/src/pdn/doc/PDN.md).
 
 
 ## Tapcell Configuration
 
-The tapcell configuration file is used to insert tapcells and endcaps into the design. Refer to the [Tapcell][https://github.com/The-OpenROAD-Project/OpenROAD/blob/f864efbae4ffd4cc533f0e22c57cc7ab89618c44/src/tap/README.md] documentation on how to construct this file.
+The tapcell configuration file is used to insert tapcells and endcaps into the design. Refer to the [Tapcell](./main/src/tap/README.md) documentation on how to construct this file.
 
 
 
 ## setRC Configuration
 
 
-setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. Often, per-unit-length values are available in the PDK user guide. For `set_layer_rc`, Liberty units need to be used. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
+setRC allows the user to define resistances and capacitances for layers and vias using the `set_layer_rc` command. There is also a command that allows you to set the resistance and capacitance of routing wires using the `set_wire_rc`. The units `set_wire_rc` is expecting are per-unit-length values. Often, per-unit-length values are available in the PDK user guide. For `set_layer_rc`, Liberty units need to be used. Following is a generic example of a setRC configuration file which sets the resistance and capacitance of five metal layers, four vias, one signal wire, and one clock wire.
 
 
 ```

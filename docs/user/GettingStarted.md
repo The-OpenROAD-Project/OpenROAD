@@ -102,8 +102,8 @@ directory.
 
 ### Adding a New Platform
 
-Refer to the [PlatformBringUp][PlatformBringUp.md] documentation
-as an example of how to set up a new platform for OpenROAD-flow-scripts.
+Refer to the [PlatformBringUp][./contrib/PlatformBringUp.md] documentation 
+to set up a new platform for OpenROAD-flow-scripts.
 
 ## Implement the Design
 
