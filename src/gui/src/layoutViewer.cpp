@@ -410,7 +410,6 @@ LayoutViewer::LayoutViewer(
       fit_pixels_per_dbu_(1.0),
       min_depth_(0),
       max_depth_(99),
-      search_init_(false),
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
       building_ruler_(false),
@@ -427,25 +426,20 @@ LayoutViewer::LayoutViewer(
   setMouseTracking(true);
 
   addMenuAndActions();
-}
 
-LayoutViewer::~LayoutViewer()
-{
-  if (block_ != nullptr) {
-    removeOwner(); // unregister as a callback object
-  }
+  connect(&search_,
+          SIGNAL(modified()),
+          this,
+          SLOT(fullRepaint()));
+
+  connect(&search_,
+          SIGNAL(newBlock(odb::dbBlock*)),
+          this,
+          SLOT(setBlock(odb::dbBlock*)));
 }
 
 void LayoutViewer::setBlock(odb::dbBlock* block)
 {
-  if (block_ != block) {
-    if (block_ != nullptr) {
-      removeOwner();
-    }
-
-    addOwner(block);  // register as a callback object
-    fullRepaint();
-  }
   block_ = block;
 
   updateScaleAndCentering(scroller_->maximumViewportSize());
@@ -2250,11 +2244,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
 
-  if (!search_init_) {
-    search_.init(block_);
-    search_init_ = true;
-  }
-
   if (cut_maximum_size_.empty()) {
     generateCutLayerMaximumSizes();
   }
@@ -2430,17 +2419,6 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
   }
 }
 
-void LayoutViewer::updateShapes()
-{
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  fullRepaint();
-}
-
 void LayoutViewer::fit()
 {
   if (!hasDesign()) {
@@ -2517,7 +2495,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
-  setBlock(block);
+  search_.setBlock(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)
@@ -2840,93 +2818,6 @@ void LayoutViewer::generateCutLayerMaximumSizes()
       cut_maximum_size_[layer] = width;
     }
   }
-}
-
-void LayoutViewer::inDbNetDestroy(dbNet* net)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbInstDestroy(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    updateShapes();
-  }
-}
-
-void LayoutViewer::inDbInstSwapMasterAfter(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    updateShapes();
-  }
-}
-
-void LayoutViewer::inDbInstPlacementStatusBefore(
-    dbInst* inst,
-    const dbPlacementStatus& status)
-{
-  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
-    updateShapes();
-  }
-}
-
-void LayoutViewer::inDbPostMoveInst(dbInst* inst)
-{
-  if (inst->isPlaced()) {
-    updateShapes();
-  }
-}
-
-void LayoutViewer::inDbBPinDestroy(dbBPin* pin)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbFillCreate(dbFill* fill)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbWireCreate(dbWire* wire)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbWireDestroy(dbWire* wire)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbSWireCreate(dbSWire* wire)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbBlockageCreate(odb::dbBlockage* blockage)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbObstructionCreate(odb::dbObstruction* obs)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbObstructionDestroy(odb::dbObstruction* obs)
-{
-  updateShapes();
-}
-
-void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
-{
-  // This happens when initialize_floorplan is run and it make sense
-  // to fit as current zoom will be on a zero sized block.
-  setBlock(block);
 }
 
 inline int LayoutViewer::instanceSizeLimit()

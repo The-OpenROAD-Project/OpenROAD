@@ -328,7 +328,7 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
   auto* chip = db->getChip();
   if (chip != nullptr) {
-    viewer_->setBlock(chip->getBlock());
+    viewer_->designLoaded(chip->getBlock());
   }
 }
 
