@@ -1421,7 +1421,7 @@ Resizer::makeRepeater(const char *where,
   // between the driver and the loads changing the net as the repair works its
   // way from the loads to the driver.
 
-  Net *net, *in_net, *out_net;
+  Net *net = nullptr, *in_net, *out_net;
   bool have_output_port_load = false;
   for (Pin *pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
