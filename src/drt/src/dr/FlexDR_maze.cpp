@@ -1943,8 +1943,15 @@ void FlexDRWorker::routeNet_prep(
       FlexMazeIdx mi;
       ap->getMazeIdx(mi);
       if (getDRIter() >= beginDebugIter) {
-        logger_->info(DRT, 2006, "(" + to_string(mi.x()) + " " + to_string(mi.y()) + " " + to_string(mi.z()) + " coords: " + 
-              to_string(ap->getPoint().x()) + " " + to_string(ap->getPoint().y()) + " " + to_string(ap->getBeginLayerNum()) + "\n");
+        logger_->info(DRT,
+                      2006,
+                      "({} {} {} coords: {} {} {}\n",
+                      mi.x(),
+                      mi.y(),
+                      mi.z(),
+                      ap->getPoint().x(),
+                      ap->getPoint().y(),
+                      ap->getBeginLayerNum());
       }
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
@@ -2017,8 +2024,15 @@ void FlexDRWorker::routeNet_setSrc(
     ap->getMazeIdx(mi);
     connComps.push_back(mi);
     if (getDRIter() >= beginDebugIter) {
-        logger_->info(DRT, 2000, "(" + to_string(mi.x()) + " " + to_string(mi.y()) + " " + to_string(mi.z()) + " coords: " + 
-              to_string(ap->getPoint().x()) + " " + to_string(ap->getPoint().y()) + " " + to_string(ap->getBeginLayerNum()) + "\n");
+      logger_->info(DRT,
+                    2000,
+                    "({} {} {} coords: {} {} {}\n",
+                    mi.x(),
+                    mi.y(),
+                    mi.z(),
+                    ap->getPoint().x(),
+                    ap->getPoint().y(),
+                    ap->getBeginLayerNum());
     }
     ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
                    min(ccMazeIdx1.y(), mi.y()),
