@@ -1561,8 +1561,11 @@ void FlexDRWorker::route_queue()
   if (getDRIter() >= beginDebugIter) {
     logger_->info(DRT,
                   2001,
-                  "Starting worker {} with {} markers",
-                  getRouteBox(),
+                  "Starting worker ({} {}) ({} {}) with {} markers",
+                  getRouteBox().ll().x(),
+                  getRouteBox().ll().y(),
+                  getRouteBox().ur().x(),
+                  getRouteBox().ur().y(),
                   markers_.size());
     for (auto& marker : markers_) {
       cout << marker << "\n";
@@ -1727,7 +1730,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
                         "Ending net {} with markers:",
                         net->getFrNet()->getName());
           for (auto& marker : getGCWorker()->getMarkers()) {
-            logger_->info(DRT, 2004, "{}", *marker);
+            cout << *marker << "\n";
           }
         }
         didCheck = true;
