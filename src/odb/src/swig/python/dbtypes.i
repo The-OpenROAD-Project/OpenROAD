@@ -162,7 +162,6 @@
         }
 }
 %typemap(typecheck) vector< T * >, std::vector< T * >, vector< T * > &, std::vector< T * > & {
-    int       nitems;
     T         *temp;
     std::vector< T > *v;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");

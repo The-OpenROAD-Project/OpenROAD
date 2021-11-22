@@ -2319,7 +2319,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
       layer->getV54SpacingRules(rules);
       if (rules.size() > 0) {
         min_spc_valid = true;
-        int minSpc;
+        int minSpc = 0;
         for (auto rule : rules)
           minSpc = rule->getSpacing();
         if (up_via_valid)
