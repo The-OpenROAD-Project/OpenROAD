@@ -764,7 +764,6 @@ void SimulatedAnnealingCore::AlignMacro()
       if (blocks_[macro_id].GetAlignFlag() == false) {
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
-        const float ux_b = lx_b + blocks_[macro_id].GetWidth();
         const float uy_b = ly_b + blocks_[macro_id].GetHeight();
         const bool y_flag = abs(ly - ly_b) <= threshold_V ||
                             abs(uy - uy_b) <= threshold_V ||
@@ -863,7 +862,6 @@ void SimulatedAnnealingCore::AlignMacro()
         const float lx_b = blocks_[macro_id].GetX();
         const float ly_b = blocks_[macro_id].GetY();
         const float ux_b = lx_b + blocks_[macro_id].GetWidth();
-        const float uy_b = ly_b + blocks_[macro_id].GetHeight();
         const bool x_flag = abs(lx - lx_b) <= threshold_H ||
                             abs(ux - ux_b) <= threshold_H ||
                             abs(lx - ux_b) <= threshold_H ||
