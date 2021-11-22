@@ -379,6 +379,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   }
 }
 
+DisplayControls::~DisplayControls()
+{
+  custom_controls_.clear();
+}
+
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
   auto asBool
