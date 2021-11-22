@@ -1,5 +1,5 @@
 
-#include "dst/WorkerConHandler.h"
+#include "WorkerConHandler.h"
 
 #include <boost/bind.hpp>
 #include <iostream>
@@ -62,6 +62,7 @@ void WorkerConHandler::handle_read(boost::system::error_code const& err,
     logger_->info(utl::DST, 3, "worker {} is done", data);
     
     boost::asio::write(sock, boost::asio::buffer(data), error);
+    delete router;
   } else {
     logger_->warn(utl::DST, 4, "Routing conhandler failed with message: {}", err.message());
   }

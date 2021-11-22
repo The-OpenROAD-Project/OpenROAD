@@ -1,6 +1,6 @@
 
-#include "dst/BalancerConHandler.h"
-#include "dst/LoadBalancer.h"
+#include "BalancerConHandler.h"
+#include "LoadBalancer.h"
 
 #include <boost/bind.hpp>
 #include <iostream>

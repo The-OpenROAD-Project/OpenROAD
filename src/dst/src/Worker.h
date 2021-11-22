@@ -3,7 +3,6 @@
 #include <boost/asio.hpp>
 
 #include "WorkerConHandler.h"
-
 namespace odb {
 class dbDatabase;
 }

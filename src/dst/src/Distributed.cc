@@ -29,8 +29,8 @@
 #include "dst/Distributed.h"
 #include "utl/Logger.h"
 #include <boost/asio.hpp>
-#include "dst/Worker.h"
-#include "dst/LoadBalancer.h"
+#include "Worker.h"
+#include "LoadBalancer.h"
 #include "sta/StaMain.hh"
 #include <vector>
 
