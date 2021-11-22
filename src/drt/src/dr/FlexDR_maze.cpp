@@ -280,11 +280,13 @@ void FlexDRWorker::modCornerToCornerSpacing(const Rect& box,
   }
 }
 
+
 void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
                                            frMIdx z,
                                            int type,
                                            bool isBlockage,
-                                           frNonDefaultRule* ndr)
+                                           frNonDefaultRule* ndr,
+                                           bool isMacroPin)
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.minDXDY();
@@ -324,15 +326,16 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   frSquaredDistance bloatDistSquare = bloatDist;
   bloatDistSquare *= bloatDist;
 
-  FlexMazeIdx mIdx1;
-  FlexMazeIdx mIdx2;
+  FlexMazeIdx mIdx1, mPinLL;
+  FlexMazeIdx mIdx2, mPinUR;
   // assumes width always > 2
   Rect bx(box.xMin() - bloatDist - halfwidth2 + 1,
            box.yMin() - bloatDist - halfwidth2 + 1,
            box.xMax() + bloatDist + halfwidth2 - 1,
            box.yMax() + bloatDist + halfwidth2 - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
-
+  if (isMacroPin && type == 6)
+    gridGraph_.getIdxBox(mPinLL, mPinUR, box);
   Point pt, pt1, pt2, pt3, pt4;
   frSquaredDistance distSquare = 0;
   int cnt = 0;
@@ -359,6 +362,41 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             break;
           case 3:
             gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
+            break;
+          case 4: //reset fixed
+            gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
+            break;
+          case 5: //set fixed
+            gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
+            break;
+          case 6: //reset blocked
+            if (isMacroPin) {
+              if (j >= mPinLL.y() && j <= mPinUR.y()) {
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::E); 
+                if (i == 0)
+                  gridGraph_.resetBlocked(i, j, z, frDirEnum::W); 
+              }
+              if (i >= mPinLL.x() && i <= mPinUR.x()) {
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::N); 
+                if (j == 0)
+                  gridGraph_.resetBlocked(i, j, z, frDirEnum::S); 
+              }
+            } else {
+              gridGraph_.resetBlocked(i, j, z, frDirEnum::E); 
+              gridGraph_.resetBlocked(i, j, z, frDirEnum::N); 
+              if (i == 0)
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::W); 
+              if (j == 0)
+                gridGraph_.resetBlocked(i, j, z, frDirEnum::S); 
+            }
+            break;
+          case 7: //set blocked
+            gridGraph_.setBlocked(i, j, z, frDirEnum::E); 
+            gridGraph_.setBlocked(i, j, z, frDirEnum::N); 
+            if (i == 0)
+              gridGraph_.setBlocked(i, j, z, frDirEnum::W); 
+            if (j == 0)
+              gridGraph_.setBlocked(i, j, z, frDirEnum::S); 
             break;
           default:;
         }
@@ -787,6 +825,12 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
             case 3:
               gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
               break;
+            case 4:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
+              break;
+            case 5:
+              gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
+              break;
             default:;
           }
         } else {
@@ -886,6 +930,12 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
           case 3:
             gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
             break;
+          case 4:
+            gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
+            break;
+          case 5:
+            gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
+            break;
           default:;
         }
       } else if (eolType == 1) {
@@ -911,6 +961,12 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
             break;
           case 3:
             gridGraph_.addFixedShapeCostVia(i, j, z - 1);  // safe access
+            break;
+          case 4:
+            gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
+            break;
+          case 5:
+            gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
             break;
           default:;
         }
@@ -1559,9 +1615,8 @@ void FlexDRWorker::route_queue()
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
-    stringstream ss;
-    ss << "Starting worker " << getRouteBox() << " with " << markers_.size() << " markers\n";
-    logger_->info(DRT, 2001, ss.str());
+    logger_->info(DRT, 2001, "Starting worker {} with {} markers", getRouteBox(), 
+                                                                markers_.size());
     for (auto& marker : markers_) {
       cout << marker << "\n";
     }

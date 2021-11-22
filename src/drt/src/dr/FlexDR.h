@@ -641,12 +641,12 @@ class FlexDRWorker
   void subPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
   void modPathCost(drConnFig* connFig, int type, bool modEol = false, bool modCutSpc = false);
   // minSpc
-
   void modMinSpacingCostPlanar(const Rect& box,
                                frMIdx z,
                                int type,
                                bool isBlockage = false,
-                               frNonDefaultRule* ndr = nullptr);
+                               frNonDefaultRule* ndr = nullptr,
+                               bool isMacroPin = false);
   void modCornerToCornerSpacing(const Rect& box, frMIdx z, int type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
