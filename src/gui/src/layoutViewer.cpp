@@ -92,9 +92,10 @@ class GuiPainter : public Painter
  public:
   GuiPainter(QPainter* painter,
              Options* options,
+             const odb::Rect& bounds,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : Painter(options, pixels_per_dbu),
+      : Painter(options, bounds, pixels_per_dbu),
         painter_(painter),
         dbu_per_micron_(dbu_per_micron)
   {
@@ -1903,6 +1904,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter,
                          options_,
+                         bounds,
                          pixels_per_dbu_,
                          block_->getDbUnitsPerMicron());
 
@@ -2261,6 +2263,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   GuiPainter gui_painter(&painter,
                          options_,
+                         screenToDBU(draw_bounds),
                          pixels_per_dbu_,
                          block_->getDbUnitsPerMicron());
 

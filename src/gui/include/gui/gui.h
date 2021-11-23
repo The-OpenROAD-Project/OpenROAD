@@ -128,7 +128,7 @@ class Painter
   static inline const Color highlight = yellow;
   static inline const Color persistHighlight = yellow;
 
-  Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu) : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -210,9 +210,11 @@ class Painter
 
   inline double getPixelsPerDBU() { return pixels_per_dbu_; }
   inline Options* getOptions() { return options_; }
+  inline const odb::Rect& getBounds() { return bounds_; }
 
  private:
   Options* options_;
+  const odb::Rect bounds_;
   double pixels_per_dbu_;
 };
 
