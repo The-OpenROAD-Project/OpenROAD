@@ -158,8 +158,8 @@ main(int argc,
 {
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
-  setenv("LC_ALL", "C", /* override */ 1);
-  setenv("LANG", "C", /* override */ 1);
+  setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
+  setenv("LANG", "en_US.UTF-8", /* override */ 1);
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
