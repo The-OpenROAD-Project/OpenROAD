@@ -83,6 +83,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
     bloatDist
         = max(bloatDist,
               fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
 
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -716,7 +717,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
             / 2;
     r += iroute->getGuide()->getNet()->getNondefaultRule()->getSpacing(lNum / 2
                                                                        - 1);
-    box.bloat(r, box);
+                                                                       box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
   bool isCut = false;

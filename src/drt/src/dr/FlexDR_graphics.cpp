@@ -449,7 +449,6 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
-      cout << "MARKER " << box << "lNum " << layerNum << "\n";
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
@@ -727,7 +726,6 @@ void FlexDRGraphics::endNet(drNet* net)
     return;
   }
   assert(net == net_);
-
   int point_cnt = 0;
   for (auto& pts : points_by_layer_) {
     point_cnt += pts.size();
