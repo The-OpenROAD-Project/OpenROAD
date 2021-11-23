@@ -215,7 +215,6 @@ void io::Parser::patchGuides(frNet* net,
 
   if (guidePt == bestPinLocCoords)
     return;
-  // add guide in upper our lower layer
   int z = guidePt.z();
   if (guidePt.x() != bestPinLocCoords.x()
       || guidePt.y() != bestPinLocCoords.y()) {
@@ -282,6 +281,8 @@ void io::Parser::genGuides_merge(
     vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
 {
   for (auto& rect : rects) {
+    if (rect.getLayerNum() > TOP_ROUTING_LAYER)
+      logger->error(DRT, 3000, "Guide in layer {} which is above max routing layer {}", rect.getLayerNum(), TOP_ROUTING_LAYER);
     Rect box;
     rect.getBBox(box);
     Point idx;
