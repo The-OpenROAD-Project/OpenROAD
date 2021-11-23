@@ -1284,7 +1284,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
 
   if (!items.empty()) {
     // build controls
-    auto& rows = custom_controls_[renderer];
+    std::vector<ModelRow> rows;
     if (group_name.empty()) {
       for (const auto& [name, control] : items) {
         ModelRow row;
@@ -1298,12 +1298,28 @@ void DisplayControls::registerRenderer(Renderer* renderer)
         rows.push_back(row);
       }
     } else {
+      const QString parent_item_name = QString::fromStdString(group_name);
       ModelRow parent_row;
-      makeParentItem(parent_row,
-                     QString::fromStdString(group_name),
-                     model_,
-                     Qt::Checked);
-      rows.push_back(parent_row);
+      // check if parent has already been created
+      for (const auto& [renderer, controls] : custom_controls_) {
+        const QModelIndex& parent_idx = controls[0].name->index().parent();
+        if (parent_idx.isValid()) {
+          QStandardItem* check_item = model_->itemFromIndex(parent_idx);
+          if (check_item->text() == parent_item_name) {
+            parent_row.name = model_->item(parent_idx.row(), Name);
+            parent_row.swatch = model_->item(parent_idx.row(), Swatch);
+            parent_row.visible = model_->item(parent_idx.row(), Visible);
+            parent_row.selectable = model_->item(parent_idx.row(), Selectable);
+            break;
+          }
+        }
+      }
+      if (parent_row.name == nullptr) {
+        makeParentItem(parent_row,
+                       parent_item_name,
+                       model_,
+                       Qt::Checked);
+      }
       for (const auto& [name, control] : items) {
         ModelRow row;
         makeLeafItem(row,
@@ -1317,6 +1333,9 @@ void DisplayControls::registerRenderer(Renderer* renderer)
       }
       toggleParent(parent_row);
     }
+
+    auto& add_rows = custom_controls_[renderer];
+    add_rows.insert(add_rows.begin(), rows.begin(), rows.end());
   }
 
   // check if there are settings to recover
@@ -1331,15 +1350,24 @@ void DisplayControls::registerRenderer(Renderer* renderer)
 
 void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
+  saveRendererState(renderer);
+
+  if (custom_controls_.count(renderer) == 0) {
+    return;
+  }
+
   const auto& rows = custom_controls_[renderer];
 
+  const QModelIndex& parent_idx = rows[0].name->index().parent();
   for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
     // remove from Display controls
     auto index = model_->indexFromItem(itr->name);
     model_->removeRow(index.row(), index.parent());
   }
+  if (!model_->hasChildren(parent_idx)) {
+    model_->removeRow(parent_idx.row(), parent_idx.parent());
+  }
 
-  saveRendererState(renderer);
   custom_controls_.erase(renderer);
 }
 
