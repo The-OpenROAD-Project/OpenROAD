@@ -427,6 +427,23 @@ class Renderer
 
   // Used to check the value of the display control
   bool checkDisplayControl(const std::string& name);
+  // Used to set the value of the display control
+  void setDisplayControl(const std::string& name, bool value);
+
+  virtual const std::string getSettingsGroupName() { return ""; }
+  using Settings = std::map<std::string, std::variant<bool, int, double>>;
+  virtual const Settings getSettings();
+  virtual void setSettings(const Settings& settings);
+
+  template <typename T>
+  static void setSetting(const Settings& settings,
+                  const std::string& key,
+                  T& value)
+  {
+    if (settings.count(key) == 1) {
+      value = std::get<T>(settings.at(key));
+    }
+  }
 
  protected:
   // Adds a display control

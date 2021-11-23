@@ -101,6 +101,15 @@ void Renderer::addDisplayControl(const std::string& /* name */, bool /* initial_
 {
 }
 
+const Renderer::Settings Renderer::getSettings()
+{
+  return {};
+}
+
+void Renderer::setSettings(const Renderer::Settings& /* settings */)
+{
+}
+
 Selected Gui::makeSelected(std::any /* object */, void* /* additional_data */)
 {
   return Selected();

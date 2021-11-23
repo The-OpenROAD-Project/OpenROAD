@@ -329,6 +329,8 @@ class DisplayControls : public QDockWidget, public Options
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
+  void saveRendererState(Renderer* renderer);
+
   QTreeView* view_;
   DisplayControlModel* model_;
 
@@ -356,6 +358,7 @@ class DisplayControls : public QDockWidget, public Options
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;

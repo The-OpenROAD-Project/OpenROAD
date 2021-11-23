@@ -480,6 +480,29 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->endGroup();
 
   congestion_dialog_->readSettings(settings);
+  // custom renderers
+  settings->beginGroup("custom");
+  custom_controls_settings_.clear();
+  for (const auto& group : settings->childGroups()) {
+    auto& renderer_settings = custom_controls_settings_[group.toStdString()];
+
+    settings->beginGroup(group);
+    for (const auto& key_group : settings->childGroups()) {
+      settings->beginGroup(key_group);
+      const QVariant value = settings->value("data");
+      const QVariant type = settings->value("type");
+      if (type == "bool") {
+        renderer_settings[key_group.toStdString()] = value.toBool();
+      } else if (type == "int") {
+        renderer_settings[key_group.toStdString()] = value.toInt();
+      } else if (type == "double"){
+        renderer_settings[key_group.toStdString()] = value.toDouble();
+      }
+      settings->endGroup();
+    }
+    settings->endGroup();
+  }
+  settings->endGroup();
 
   settings->endGroup();
 }
@@ -548,8 +571,50 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->endGroup();
 
   congestion_dialog_->writeSettings(settings);
+  // custom renderers
+  settings->beginGroup("custom");
+  for (auto renderer : Gui::get()->renderers()) {
+    saveRendererState(renderer);
+  }
+  for (const auto& [group, renderer_settings] : custom_controls_settings_) {
+    const QString group_name = QString::fromStdString(group);
+    if (!group_name.isEmpty()) {
+      settings->beginGroup(group_name);
+      for (const auto& [name, value] : renderer_settings) {
+        const QString setting_name = QString::fromStdString(name);
+        settings->beginGroup(setting_name);
+        QVariant data;
+        QVariant type;
+        if(const auto* v = std::get_if<bool>(&value)) {
+          type = "bool";
+          data = *v;
+        } else if(const auto* v = std::get_if<int>(&value)) {
+          type = "int";
+          data = *v;
+        } else if(const auto* v = std::get_if<double>(&value)) {
+          type = "double";
+          data = *v;
+        }
+        settings->setValue("data", data);
+        settings->setValue("type", type);
+        settings->endGroup();
+      }
+      settings->endGroup();
+    }
+  }
+  settings->endGroup();
 
   settings->endGroup();
+}
+
+void DisplayControls::saveRendererState(Renderer* renderer)
+{
+  const std::string& group_name = renderer->getSettingsGroupName();
+  if (group_name.empty()) {
+    return;
+  }
+
+  custom_controls_settings_[group_name] = renderer->getSettings();
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -1244,6 +1309,15 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     }
     toggleParent(parent_row);
   }
+
+  // check if there are settings to recover
+  const std::string settings_name = renderer->getSettingsGroupName();
+  if (!settings_name.empty()) {
+    auto setting = custom_controls_settings_.find(settings_name);
+    if (setting != custom_controls_settings_.end()) {
+      renderer->setSettings(setting->second);
+    }
+  }
 }
 
 void DisplayControls::unregisterRenderer(Renderer* renderer)
@@ -1256,6 +1330,7 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
     model_->removeRow(index.row(), index.parent());
   }
 
+  saveRendererState(renderer);
   custom_controls_.erase(renderer);
 }
 

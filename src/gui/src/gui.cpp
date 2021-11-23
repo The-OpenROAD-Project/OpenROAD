@@ -511,9 +511,37 @@ bool Renderer::checkDisplayControl(const std::string& name)
   }
 }
 
+void Renderer::setDisplayControl(const std::string& name, bool value)
+{
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
+  }
+}
+
 void Renderer::addDisplayControl(const std::string& name, bool initial_state)
 {
   controls_[name] = initial_state;
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  Settings settings;
+  for (const auto& [key, init_value] : controls_) {
+    settings[key] = checkDisplayControl(key);
+  }
+  return settings;
+}
+
+void Renderer::setSettings(const Renderer::Settings& settings)
+{
+  for (auto& [key, value] : controls_) {
+    setSetting<bool>(settings, key, value);
+    setDisplayControl(key, value);
+  }
 }
 
 void Gui::load_design()
