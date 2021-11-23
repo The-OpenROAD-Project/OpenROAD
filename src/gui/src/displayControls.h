@@ -50,7 +50,6 @@
 #include <map>
 #include <vector>
 
-#include "congestionSetupDialog.h"
 #include "options.h"
 
 #include "gui/gui.h"
@@ -205,14 +204,8 @@ class DisplayControls : public QDockWidget, public Options
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   QFont pinMarkersFont() override;
-  bool showHorizontalCongestion() const override;
-  bool showVerticalCongestion() const override;
-  float getMinCongestionToShow() const override;
-  float getMaxCongestionToShow() const override;
-  QColor getCongestionColor(float congestion) const override;
 
  signals:
   // The display options have changed and clients need to update
@@ -230,8 +223,6 @@ class DisplayControls : public QDockWidget, public Options
   void itemChanged(QStandardItem* item);
   void displayItemClicked(const QModelIndex& index);
   void displayItemDblClicked(const QModelIndex& index);
-
-  void showCongestionSetup();
 
  private:
   // The columns in the tree view
@@ -352,7 +343,6 @@ class DisplayControls : public QDockWidget, public Options
   InstanceModels instances_;
   BlockageModels blockages_;
   ModelRow rows_;
-  ModelRow congestion_map_;
   ModelRow pin_markers_;
   ModelRow rulers_;
   TrackModels tracks_;

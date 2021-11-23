@@ -1579,86 +1579,6 @@ void LayoutViewer::drawRulers(Painter& painter)
   }
 }
 
-void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
-{
-  if (!options_->isCongestionVisible()) {
-    return;
-  }
-
-  if (!hasDesign()) {
-    return;
-  }
-
-  auto grid = block_->getGCellGrid();
-  if (grid == nullptr) {
-    return;
-  }
-
-  auto gcell_congestion_data = grid->getCongestionMap();
-  if (gcell_congestion_data.empty()) {
-    return;
-  }
-
-  std::vector<int> x_grid, y_grid;
-  uint x_grid_sz, y_grid_sz;
-  grid->getGridX(x_grid);
-  x_grid_sz = x_grid.size();
-  grid->getGridY(y_grid);
-  y_grid_sz = y_grid.size();
-
-  bool show_hor_congestion = options_->showHorizontalCongestion();
-  bool show_ver_congestion = options_->showVerticalCongestion();
-  auto min_congestion_to_show = options_->getMinCongestionToShow();
-  auto max_congestion_to_show = options_->getMaxCongestionToShow();
-
-  for (auto& [key, cong_data] : gcell_congestion_data) {
-    uint x_idx = key.first;
-    uint y_idx = key.second;
-
-    if (x_idx >= x_grid_sz || y_idx >= y_grid_sz) {
-      logger_->warn(utl::GUI, 4, "Skipping malformed GCell {} {} ({} {})",
-                    x_idx, y_idx, x_grid_sz, y_grid_sz);
-      continue;
-    }
-
-    auto gcell_rect = odb::Rect(
-        x_grid[x_idx], y_grid[y_idx], x_grid[x_idx + 1], y_grid[y_idx + 1]);
-
-    if (!gcell_rect.intersects(bounds))
-      continue;
-
-    auto hor_capacity = cong_data.horizontal_capacity;
-    auto hor_usage = cong_data.horizontal_usage;
-    auto ver_capacity = cong_data.vertical_capacity;
-    auto ver_usage = cong_data.vertical_usage;
-
-    //-1 indicates capacity is not well defined...
-    float hor_congestion
-        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : -1;
-    float ver_congestion
-        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : -1;
-
-    float congestion = ver_congestion;
-    if (show_hor_congestion && show_ver_congestion)
-      congestion = std::max(hor_congestion, ver_congestion);
-    else if (show_hor_congestion)
-      congestion = hor_congestion;
-    else
-      congestion = ver_congestion;
-
-    if (congestion <= 0 || congestion < min_congestion_to_show
-        || congestion > max_congestion_to_show)
-      continue;
-
-    auto gcell_color = options_->getCongestionColor(congestion);
-    Painter::Color color(
-        gcell_color.red(), gcell_color.green(), gcell_color.blue(), 100);
-    painter.setPen(color, true);
-    painter.setBrush(color);
-    painter.drawRect(gcell_rect);
-  }
-}
-
 // Draw the instances bounds
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
@@ -2020,8 +1940,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
-
-  drawCongestionMap(gui_painter, bounds);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);

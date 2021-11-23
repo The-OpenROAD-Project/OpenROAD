@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <QApplication>
 #include <QDebug>
 #include <QFontDialog>
 #include <QHeaderView>
@@ -324,7 +325,6 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
 
   // Rows
-  makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
   makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
   pin_markers_font_ = QApplication::font(); // use default font
   setNameItemDoubleClickAction(pin_markers_, [this]() {
@@ -370,16 +370,6 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
-  congestion_dialog_ = new CongestionSetupDialog(this);
-
-  connect(congestion_dialog_,
-          SIGNAL(applyCongestionRequested()),
-          this,
-          SIGNAL(changed()));
-  connect(congestion_dialog_,
-          SIGNAL(congestionSetupChanged()),
-          this,
-          SIGNAL(changed()));
 
   // register renderers
   if (gui::Gui::get() != nullptr) {
@@ -461,8 +451,6 @@ void DisplayControls::readSettings(QSettings* settings)
   // rows
   readSettingsForRow(settings, rows_);
   getColor(rows_.swatch, row_color_, "row_color");
-  // congestion map
-  readSettingsForRow(settings, congestion_map_);
   // pin markers
   readSettingsForRow(settings, pin_markers_);
   pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
@@ -489,7 +477,6 @@ void DisplayControls::readSettings(QSettings* settings)
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
 
-  congestion_dialog_->readSettings(settings);
   // custom renderers
   settings->beginGroup("custom");
   custom_controls_settings_.clear();
@@ -552,8 +539,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   // rows
   writeSettingsForRow(settings, rows_);
   settings->setValue("row_color", row_color_);
-  // congestion map
-  writeSettingsForRow(settings, congestion_map_);
   // pin markers
   writeSettingsForRow(settings, pin_markers_);
   settings->setValue("pin_markers_font", pin_markers_font_);
@@ -580,7 +565,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
 
-  congestion_dialog_->writeSettings(settings);
   // custom renderers
   settings->beginGroup("custom");
   for (auto renderer : Gui::get()->renderers()) {
@@ -1257,11 +1241,6 @@ bool DisplayControls::isScaleBarVisible() const
   return misc_.scale_bar.visible->checkState() == Qt::Checked;
 }
 
-bool DisplayControls::isCongestionVisible() const
-{
-  return congestion_map_.visible->checkState() == Qt::Checked;
-}
-
 bool DisplayControls::arePinMarkersVisible() const
 {
   return pin_markers_.visible->checkState() == Qt::Checked;
@@ -1369,38 +1348,6 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
   }
 
   custom_controls_.erase(renderer);
-}
-
-bool DisplayControls::showHorizontalCongestion() const
-{
-  return congestion_dialog_->showHorizontalCongestion()
-         || !congestion_dialog_->showVerticalCongestion();
-}
-
-bool DisplayControls::showVerticalCongestion() const
-{
-  return congestion_dialog_->showVerticalCongestion()
-         || !congestion_dialog_->showHorizontalCongestion();
-}
-
-float DisplayControls::getMinCongestionToShow() const
-{
-  return congestion_dialog_->getMinCongestionValue();
-}
-
-float DisplayControls::getMaxCongestionToShow() const
-{
-  return congestion_dialog_->getMaxCongestionValue();
-}
-
-QColor DisplayControls::getCongestionColor(float congestion) const
-{
-  return congestion_dialog_->getCongestionColorForPercentage(congestion);
-}
-
-void DisplayControls::showCongestionSetup()
-{
-  return congestion_dialog_->show();
 }
 
 void DisplayControls::techInit()

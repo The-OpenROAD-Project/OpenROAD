@@ -269,7 +269,6 @@ class LayoutViewer : public QWidget
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
-  void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds);
   void drawRulers(Painter& painter);
