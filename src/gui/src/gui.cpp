@@ -522,9 +522,14 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
   }
 }
 
-void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+void Renderer::addDisplayControl(const std::string& name,
+                                 bool initial_visible,
+                                 const DisplayControlCallback& setup)
 {
-  controls_[name] = initial_state;
+  auto& control = controls_[name];
+
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
 }
 
 const Renderer::Settings Renderer::getSettings()
@@ -538,9 +543,9 @@ const Renderer::Settings Renderer::getSettings()
 
 void Renderer::setSettings(const Renderer::Settings& settings)
 {
-  for (auto& [key, value] : controls_) {
-    setSetting<bool>(settings, key, value);
-    setDisplayControl(key, value);
+  for (auto& [key, control] : controls_) {
+    setSetting<bool>(settings, key, control.visibility);
+    setDisplayControl(key, control.visibility);
   }
 }
 

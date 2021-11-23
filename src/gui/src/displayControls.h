@@ -331,6 +331,8 @@ class DisplayControls : public QDockWidget, public Options
 
   void saveRendererState(Renderer* renderer);
 
+  void setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback);
+
   QTreeView* view_;
   DisplayControlModel* model_;
 
@@ -381,7 +383,7 @@ class DisplayControls : public QDockWidget, public Options
 
   QFont pin_markers_font_;
 
-  CongestionSetupDialog* congestion_dialog_;
+  static constexpr int callback_item_idx_ = Qt::UserRole + 1;
 };
 
 }  // namespace gui

@@ -419,7 +419,12 @@ class Renderer
 
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial setting for the control
-  using DisplayControls = std::map<std::string, bool>;
+  using DisplayControlCallback = std::function<void(void)>;
+  struct DisplayControl {
+    bool visibility;
+    DisplayControlCallback interactive_setup;
+  };
+  using DisplayControls = std::map<std::string, DisplayControl>;
   const DisplayControls& getDisplayControls()
   {
     return controls_;
@@ -447,7 +452,9 @@ class Renderer
 
  protected:
   // Adds a display control
-  void addDisplayControl(const std::string& name, bool initial_state = false);
+  void addDisplayControl(const std::string& name,
+                         bool initial_visible = false,
+                         const DisplayControlCallback& setup = DisplayControlCallback());
 
  private:
   // Holds map of display controls and callback function

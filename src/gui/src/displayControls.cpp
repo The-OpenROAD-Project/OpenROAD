@@ -47,6 +47,7 @@
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
+Q_DECLARE_METATYPE(std::function<void(void)>);
 
 namespace gui {
 
@@ -314,6 +315,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   ruler_font_ = QApplication::font(); // use default font
   ruler_color_ = Qt::cyan;
   makeParentItem(rulers_, "Rulers", model_, Qt::Checked, true, row_color_);
+  setNameItemDoubleClickAction(rulers_, [this]() {
+    ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
+  });
 
   // Rows
   row_color_ = QColor(0, 0xff, 0, 0x70);
@@ -323,6 +327,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
   makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
   pin_markers_font_ = QApplication::font(); // use default font
+  setNameItemDoubleClickAction(pin_markers_, [this]() {
+    pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
+  });
 
   // Track patterns group
   auto tracks = makeParentItem(
@@ -345,6 +352,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
+  setNameItemDoubleClickAction(misc_.instance_names, [this]() {
+    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+  });
 
   setWidget(view_);
   connect(model_,
@@ -727,17 +737,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
-    if (name_item == misc_.instance_names.name) {
-      // handle font change
-      instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
-      emit changed();
-    } else if (name_item == rulers_.name) {
-      // handle font change
-      ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
-      emit changed();
-    } else if (name_item == pin_markers_.name) {
-      // handle font change
-      pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
+    auto data = name_item->data(callback_item_idx_);
+    if (data.isValid()) {
+      auto callback = data.value<std::function<void(void)>>();
+      callback();
       emit changed();
     }
   }
@@ -1028,6 +1031,11 @@ void DisplayControls::makeLeafItem(
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
 }
 
+void DisplayControls::setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback)
+{
+  row.name->setData(QVariant::fromValue(callback), callback_item_idx_);
+}
+
 const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
 {
   QPixmap swatch(20, 20);
@@ -1274,40 +1282,41 @@ void DisplayControls::registerRenderer(Renderer* renderer)
   const std::string& group_name = renderer->getDisplayControlGroupName();
   const auto& items = renderer->getDisplayControls();
 
-  if (items.empty()) {
-    return;
-  }
-
-  // build controls
-  std::map<std::string, QStandardItem*> control_items;
-  std::vector<ModelRow>& rows = custom_controls_[renderer];
-  if (group_name.empty()) {
-    for (const auto& [name, initial_value] : items) {
-      ModelRow row;
-      makeParentItem(row,
-                     QString::fromStdString(name),
+  if (!items.empty()) {
+    // build controls
+    auto& rows = custom_controls_[renderer];
+    if (group_name.empty()) {
+      for (const auto& [name, control] : items) {
+        ModelRow row;
+        makeParentItem(row,
+                       QString::fromStdString(name),
+                       model_,
+                       control.visibility ? Qt::Checked : Qt::Unchecked);
+        if (control.interactive_setup) {
+          setNameItemDoubleClickAction(row, control.interactive_setup);
+        }
+        rows.push_back(row);
+      }
+    } else {
+      ModelRow parent_row;
+      makeParentItem(parent_row,
+                     QString::fromStdString(group_name),
                      model_,
-                     initial_value ? Qt::Checked : Qt::Unchecked);
-      rows.push_back(row);
-      control_items[name] = row.visible;
+                     Qt::Checked);
+      rows.push_back(parent_row);
+      for (const auto& [name, control] : items) {
+        ModelRow row;
+        makeLeafItem(row,
+                     QString::fromStdString(name),
+                     parent_row.name,
+                     control.visibility ? Qt::Checked : Qt::Unchecked);
+        if (control.interactive_setup) {
+          setNameItemDoubleClickAction(row, control.interactive_setup);
+        }
+        rows.push_back(row);
+      }
+      toggleParent(parent_row);
     }
-  } else {
-    ModelRow parent_row;
-    makeParentItem(parent_row,
-                   QString::fromStdString(group_name),
-                   model_,
-                   Qt::Checked);
-    rows.push_back(parent_row);
-    for (const auto& [name, initial_value] : items) {
-      ModelRow row;
-      makeLeafItem(row,
-                   QString::fromStdString(name),
-                   parent_row.name,
-                   initial_value ? Qt::Checked : Qt::Unchecked);
-      rows.push_back(row);
-      control_items[name] = row.visible;
-    }
-    toggleParent(parent_row);
   }
 
   // check if there are settings to recover
