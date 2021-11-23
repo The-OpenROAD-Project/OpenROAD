@@ -47,7 +47,6 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "odb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 
@@ -68,6 +67,7 @@ namespace gui {
 
 class LayoutScroll;
 class Ruler;
+class ScriptWidget;
 
 // This class draws the layout.  It supports:
 //   * zoom in/out with ctrl-mousewheel
@@ -77,7 +77,7 @@ class Ruler;
 //
 // This object resizes with zooming but only the visible
 // portion of this widget is ever drawn.
-class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
+class LayoutViewer : public QWidget
 {
   Q_OBJECT
 
@@ -110,14 +110,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
   LayoutViewer(Options* options,
+               ScriptWidget* output_widget,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
                QWidget* parent = nullptr);
-  ~LayoutViewer();
 
-  void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -139,25 +138,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void mousePressEvent(QMouseEvent* event) override;
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
-
-  // From dbBlockCallBackObj
-  virtual void inDbNetDestroy(odb::dbNet* net) override;
-  virtual void inDbInstDestroy(odb::dbInst* inst) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
-  virtual void inDbInstPlacementStatusBefore(
-      odb::dbInst* inst,
-      const odb::dbPlacementStatus& status) override;
-  virtual void inDbPostMoveInst(odb::dbInst* inst) override;
-  virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
-  virtual void inDbFillCreate(odb::dbFill* fill) override;
-  virtual void inDbWireCreate(odb::dbWire* wire) override;
-  virtual void inDbWireDestroy(odb::dbWire* wire) override;
-  virtual void inDbSWireCreate(odb::dbSWire* wire) override;
-  virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
-  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
-  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
-  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
-  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
 
  signals:
   // indicates the current location of the mouse
@@ -232,6 +212,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
   void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
+ private slots:
+  void setBlock(odb::dbBlock* block);
+
  private:
   struct Boxes
   {
@@ -259,17 +242,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
-  odb::dbBlock* getBlock();
   void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
-                 odb::dbBlock* block,
                  int depth);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
   void drawTracks(odb::dbTechLayer* layer,
-                  odb::dbBlock* block,
                   QPainter* painter,
                   const odb::Rect& bounds);
 
@@ -285,17 +265,15 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawObstructions(odb::dbTechLayer* layer,
                         QPainter* painter,
                         const odb::Rect& bounds);
-  void drawRows(odb::dbBlock* block,
-                QPainter* painter,
+  void drawRows(QPainter* painter,
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   void drawPinMarkers(Painter& painter,
-                      const odb::Rect& bounds,
-                      odb::dbBlock* block);
+                      const odb::Rect& bounds);
   void drawRulers(Painter& painter);
-  void drawScaleBar(QPainter* painter, odb::dbBlock* block, const QRect& rect);
+  void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
   Selected selectAtPoint(odb::Point pt_dbu);
@@ -303,7 +281,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
+  odb::Rect getBounds() const;
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+
+  bool hasDesign() const;
 
   odb::Point getVisibleCenter();
 
@@ -316,7 +297,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void generateCutLayerMaximumSizes();
 
   void addMenuAndActions();
-  void updateShapes();
 
   using Edge = std::pair<odb::Point, odb::Point>;
   struct Edges {
@@ -333,10 +313,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::Point findNextRulerPoint(const odb::Point& mouse);
 
   // build a cache of the layout to speed up future repainting
-  void updateBlockPainting(const QRect& area, odb::dbBlock* block);
+  void updateBlockPainting(const QRect& area);
 
-  odb::dbDatabase* db_;
+  void updateScaleAndCentering(const QSize& new_size);
+
+  odb::dbBlock* block_;
   Options* options_;
+  ScriptWidget* output_widget_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
@@ -351,7 +334,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   int min_depth_;
   int max_depth_;
   Search search_;
-  bool search_init_;
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   QPoint mouse_press_pos_;
@@ -382,7 +364,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   std::unique_ptr<QPixmap> block_drawing_;
 
   utl::Logger* logger_;
-  bool design_loaded_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

@@ -94,11 +94,11 @@ void DisplayColorDialog::buildUI()
   color_dialog_->setWindowFlags(Qt::Widget);
   color_dialog_->setCurrentColor(color_);
 
-  main_layout_ = new QVBoxLayout();
+  main_layout_ = new QVBoxLayout;
 
   if (show_brush_) {
-    pattern_group_box_ = new QGroupBox("Layer Pattern");
-    grid_layout_ = new QGridLayout();
+    pattern_group_box_ = new QGroupBox("Layer Pattern", this);
+    grid_layout_ = new QGridLayout;
 
     grid_layout_->setColumnStretch(2, 4);
 
@@ -106,7 +106,7 @@ void DisplayColorDialog::buildUI()
     for (auto& pattern_group : DisplayColorDialog::brush_patterns_) {
       int col_index = 0;
       for (auto pattern : pattern_group) {
-        PatternButton* pattern_button = new PatternButton(pattern);
+        PatternButton* pattern_button = new PatternButton(pattern, this);
         pattern_buttons_.push_back(pattern_button);
         if (pattern == pattern_)
           pattern_button->setChecked(true);
@@ -214,17 +214,41 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
   return QStandardItemModel::data(index, role);
 }
 
+QVariant DisplayControlModel::headerData(int section,
+                                         Qt::Orientation orientation,
+                                         int role) const
+{
+  if (orientation == Qt::Horizontal) {
+    if (role == Qt::DisplayRole) {
+      if (section == 0) {
+        return "";
+      }
+    } else if (role == Qt::DecorationRole) {
+      if (section == 1) {
+        return QIcon(":/palette.png");
+      } else if (section == 2) {
+        return QIcon(":/visible.png");
+      } else if (section == 3) {
+        return QIcon(":/select.png");
+      }
+    }
+  }
+
+  return QVariant();
+}
+
+///////////
+
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
-      view_(new QTreeView(parent)),
-      model_(new DisplayControlModel(parent)),
+      view_(new QTreeView(this)),
+      model_(new DisplayControlModel(this)),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
-  model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
@@ -336,7 +360,6 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
-  setMinimumWidth(375);
   congestion_dialog_ = new CongestionSetupDialog(this);
 
   connect(congestion_dialog_,
@@ -354,6 +377,11 @@ DisplayControls::DisplayControls(QWidget* parent)
       registerRenderer(renderer);
     }
   }
+}
+
+DisplayControls::~DisplayControls()
+{
+  custom_controls_.clear();
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)

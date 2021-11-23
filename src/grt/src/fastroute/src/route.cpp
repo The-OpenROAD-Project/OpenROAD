@@ -1258,7 +1258,6 @@ void FastRouteCore::spiralRouteAll()
   std::queue<int> edgeQueue;
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
-    treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 

@@ -33,6 +33,7 @@
 using namespace std;
 using namespace fr;
 
+int debugMazeIter = std::numeric_limits<int>().max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
@@ -147,7 +148,10 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     // add to wavefront
     wavefront_.push(nextWavefrontGrid);
   }
-
+  if (drWorker_->getDRIter() >= debugMazeIter)
+        cout << "Creating " << nextWavefrontGrid.x() << " " << nextWavefrontGrid.y() << " " << nextWavefrontGrid.z() << " coords: " << xCoords_[nextWavefrontGrid.x()] 
+                << " " << yCoords_[nextWavefrontGrid.y()] << 
+                  " cost " << nextWavefrontGrid.getCost() << " g " << nextWavefrontGrid.getPathCost() << "\n";
   return;
 }
 
@@ -399,10 +403,12 @@ frCost FlexGridGraph::getNextPathCost(
     }
 
     if (isForbiddenVia2Via) {
+      if (drWorker_->getDRIter() >= debugMazeIter)
+        cout << "isForbiddenVia2Via\n";
       if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost = INT_MAX / 2;  //+= ggMarkerCost_ * edgeLength;
+        nextPathCost += 2*ggMarkerCost_ * edgeLength;
       } else {
-        nextPathCost = INT_MAX / 2;  //+= ggDRCCost_ * edgeLength;
+        nextPathCost += 2*ggDRCCost_ * edgeLength;
       }
     }
   }
@@ -448,10 +454,12 @@ frCost FlexGridGraph::getNextPathCost(
       }
     }
     if (isForbiddenTLen) {
+      if (drWorker_->getDRIter() >= debugMazeIter)
+        cout << "isForbiddenTLen\n";
       if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost += ggDRCCost_ * edgeLength;
+        nextPathCost += 2*ggDRCCost_ * edgeLength;
       } else {
-        nextPathCost += ggMarkerCost_ * edgeLength;
+        nextPathCost += 2*ggMarkerCost_ * edgeLength;
       }
     }
   }
@@ -741,12 +749,12 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
       // if the expansion goes parallel to a die border and the wire goes out of
       // the die box, forbid expansion
       if (dir == frDirEnum::N || dir == frDirEnum::S) {
-        if (xCoords_[currGrid.x()] - halfWidth < dieBox_.left()
-            || xCoords_[currGrid.x()] + halfWidth > dieBox_.right())
+        if (xCoords_[currGrid.x()] - halfWidth < dieBox_.xMin()
+            || xCoords_[currGrid.x()] + halfWidth > dieBox_.xMax())
           return false;
       } else if (dir == frDirEnum::E || dir == frDirEnum::W) {
-        if (yCoords_[currGrid.y()] - halfWidth < dieBox_.bottom()
-            || yCoords_[currGrid.y()] + halfWidth > dieBox_.top())
+        if (yCoords_[currGrid.y()] - halfWidth < dieBox_.yMin()
+            || yCoords_[currGrid.y()] + halfWidth > dieBox_.yMax())
           return false;
       }
     }
@@ -823,6 +831,12 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
                            const Point& centerPt,
                            map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
+  if (drWorker_->getDRIter() >= debugMazeIter) {
+    cout << "INIT search: target pin " << nextPin->getName() << "\nsource points:\n";
+    for (auto& idx : connComps)
+      cout << idx.x() << " " << idx.y() << " " << idx.z() 
+          << " coords: " << xCoords_[idx.x()] << " " << yCoords_[idx.y()] << "\n";
+  }
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
@@ -883,6 +897,10 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
     if (graphics_) {
       graphics_->searchNode(this, currGrid);
     }
+    if (drWorker_->getDRIter() >= debugMazeIter)
+        cout << "Expanding " << currGrid.x() << " " << currGrid.y() << " " << currGrid.z() 
+          << " coords: " << xCoords_[currGrid.x()] << " " << yCoords_[currGrid.y()] << 
+          " cost " << currGrid.getCost() << " g " << currGrid.getPathCost() << "\n";
     if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;

@@ -683,9 +683,9 @@ double AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info,
       ratio_itr = pwl_info.ratios.begin();
       return *ratio_itr;
     } else {
-      double pwl_info_indice;
-      double pwl_info_ratio;
-      double slope_factor;
+      double pwl_info_indice = 0.0;
+      double pwl_info_ratio = 0.0;
+      double slope_factor = 1.0;
       for (indice_itr = pwl_info.indices.begin(),
           ratio_itr = pwl_info.ratios.begin();
            indice_itr != pwl_info.indices.end()

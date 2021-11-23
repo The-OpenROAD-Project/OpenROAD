@@ -56,7 +56,7 @@ void HighlightGroupDialog::setButtonBackground(QRadioButton* button,
                                                Painter::Color color)
 {
   QPalette pal = button->palette();
-  QColor button_color(color.r, color.g, color.b);
+  QColor button_color(color.r, color.g, color.b, color.a);
   pal.setColor(QPalette::Button, button_color);
   button->setAutoFillBackground(true);
   button->setPalette(pal);

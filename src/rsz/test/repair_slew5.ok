@@ -28,6 +28,7 @@ Load pins
  u5/A3 input (NAND4_X1) 1.54-1.64 (5, 2)
  u6/A4 input (NAND4_X1) 1.49-1.66 (6, 2)
  u7/A4 input (NAND4_X1) 1.49-1.66 (7, 2)
+
 max slew
 
 Pin                                    Limit    Slew   Slack

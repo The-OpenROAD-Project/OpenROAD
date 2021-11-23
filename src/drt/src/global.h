@@ -34,6 +34,7 @@
 #include <string>
 
 #include "frBaseTypes.h"
+#include "db/obj/frMarker.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -119,6 +120,7 @@ extern int CONGCOST;
 
 namespace odb {
 class Point;
+class Rect;
 }
 
 namespace fr {
@@ -156,7 +158,7 @@ std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
 std::ostream& operator<<(std::ostream& os, const odb::Point& pIn);
-std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
+std::ostream& operator<<(std::ostream& os, const odb::Rect& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frShape& fig);
 std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
@@ -165,6 +167,7 @@ std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
 std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
+std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
 #endif

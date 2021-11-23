@@ -51,31 +51,172 @@ namespace gui {
 
 using namespace odb;
 
+SelectedItemModel::SelectedItemModel(const Selected& object,
+                                     const QColor& selectable,
+                                     const QColor& editable,
+                                     QObject* parent) :
+                                         QStandardItemModel(0, 2, parent),
+                                         selectable_item_(selectable),
+                                         editable_item_(editable),
+                                         object_(object)
+{
+  setHorizontalHeaderLabels({"Name", "Value"});
+}
+
 QVariant SelectedItemModel::data(const QModelIndex& index, int role) const
 {
-  if (index.column() == 1) {
-    if (role == Qt::DisplayRole) {
-      auto selected_data = itemFromIndex(index)->data(EditorItemDelegate::selected_).value<Selected>();
-      if (selected_data) {
-        // use selected name when available
-        return QString::fromStdString(selected_data.getName());
-      }
-    } else if (role == Qt::BackgroundRole) {
-      bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
+  if (role == Qt::ForegroundRole) {
+    const bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
 
-      if (has_editor) {
-        return QBrush(editable_item_);
-      }
-    } else if (role == Qt::ForegroundRole) {
-      bool has_selected = itemFromIndex(index)->data(EditorItemDelegate::selected_).isValid();
+    if (has_selected){
+      return QBrush(selectable_item_);
+    }
+  } else {
+    if (index.column() == 1) {
+      if (role == Qt::BackgroundRole) {
+        const bool has_editor = itemFromIndex(index)->data(EditorItemDelegate::editor_).isValid();
 
-      if (has_selected){
-        return QBrush(selectable_item_);
+        if (has_editor) {
+          return QBrush(editable_item_);
+        }
       }
     }
   }
   return QStandardItemModel::data(index, role);
 }
+
+void SelectedItemModel::updateObject()
+{
+  beginResetModel();
+
+  removeRows(0, rowCount());
+
+  if (!object_) {
+    endResetModel();
+    return;
+  }
+
+  auto editors = object_.getEditors();
+
+  for (const auto& prop : object_.getProperties()) {
+    QStandardItem* name_item = nullptr;
+    QStandardItem* value_item = nullptr;
+
+    makePropertyItem(prop, name_item, value_item);
+
+    appendRow({name_item, value_item});
+
+    // make editor if found
+    auto editor_found = editors.find(prop.name);
+    if (editor_found != editors.end()) {
+      auto editor = (*editor_found).second;
+      makeItemEditor(prop.name, value_item, object_, EditorItemDelegate::getEditorType(prop.value), editor);
+    }
+  }
+
+  endResetModel();
+}
+
+void SelectedItemModel::makePropertyItem(const Descriptor::Property& property, QStandardItem*& name_item, QStandardItem*& value_item)
+{
+  const std::string& name = property.name;
+  const std::any& value = property.value;
+
+  if (name_item == nullptr) {
+    name_item = makeItem(QString::fromStdString(name));
+  }
+
+  value_item = nullptr;
+
+  // For a SelectionSet a row is created with the set items
+  // as children rows
+  if (auto sel_set = std::any_cast<Descriptor::PropertyList>(&value)) {
+    value_item = makePropertyList(name_item, sel_set->begin(), sel_set->end());
+  } else if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
+    value_item = makeList(name_item, sel_set->begin(), sel_set->end());
+  } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
+    value_item = makeList(name_item, v_list->begin(), v_list->end());
+  } else if (auto v_set = std::any_cast<std::set<std::any>>(&value)) {
+    value_item = makeList(name_item, v_set->begin(), v_set->end());
+  } else {
+    value_item = makeItem(value);
+  }
+}
+
+QStandardItem* SelectedItemModel::makeItem(const QString& name)
+{
+  auto item = new QStandardItem(name);
+  item->setEditable(false);
+  item->setSelectable(false);
+  return item;
+}
+
+QStandardItem* SelectedItemModel::makeItem(const std::any& item, bool short_name)
+{
+  if (auto selected = std::any_cast<Selected>(&item)) {
+    QStandardItem* item = nullptr;
+    if (short_name) {
+      item = makeItem(QString::fromStdString(selected->getShortName()));
+    } else {
+      item = makeItem(QString::fromStdString(selected->getName()));
+    }
+    item->setData(QVariant::fromValue(*selected), EditorItemDelegate::selected_);
+    return item;
+  } else {
+    return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
+  }
+}
+
+template<typename Iterator>
+QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+{
+  int index = 0;
+  for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
+    auto index_item = makeItem(QString::number(++index));
+    auto selected_item = makeItem(*use_itr);
+    name_item->appendRow({index_item, selected_item});
+  }
+
+  return makeItem(QString::number(index) + " items");
+}
+
+template<typename Iterator>
+QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
+{
+  for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
+    auto& [name, value] = *use_itr;
+    name_item->appendRow({makeItem(name, true), makeItem(value)});
+  }
+
+  return makeItem(QString::number(name_item->rowCount()) + " items");
+}
+
+void SelectedItemModel::makeItemEditor(const std::string& name,
+                                       QStandardItem* item,
+                                       const Selected& selected,
+                                       const EditorItemDelegate::EditType type,
+                                       const Descriptor::Editor& editor)
+{
+  item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
+  item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
+
+  Descriptor::Editor used_editor = editor;
+  if (type == EditorItemDelegate::BOOL) {
+    // for BOOL, replace options with true/false options
+    used_editor.options = {{"True", true}, {"False", false}};
+  }
+
+  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::editor_);
+  if (used_editor.options.empty()) {
+    // options are empty so use selected type
+    item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
+  } else {
+    // options are not empty so use list type
+    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), EditorItemDelegate::editor_type_);
+  }
+}
+
+/////////
 
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
                                        QObject* parent) : QItemDelegate(parent),
@@ -171,6 +312,7 @@ void EditorItemDelegate::setModelData(QWidget* editor,
       model->setData(index, QVariant::fromValue(new_selected), selected_);
     }
     edit_save = QString::fromStdString(Descriptor::Property::toString(new_property));
+    model_->selectedItemChanged(index);
   }
   model->setData(index, edit_save, Qt::EditRole);
 
@@ -180,19 +322,19 @@ void EditorItemDelegate::setModelData(QWidget* editor,
 
 EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& value)
 {
-  if (auto v = std::any_cast<const char*>(&value)) {
+  if (std::any_cast<const char*>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<const std::string>(&value)) {
+  } else if (std::any_cast<const std::string>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (auto v = std::any_cast<int>(&value)) {
+  } else if (std::any_cast<int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<unsigned int>(&value)) {
+  } else if (std::any_cast<unsigned int>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<double>(&value)) {
+  } else if (std::any_cast<double>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<float>(&value)) {
+  } else if (std::any_cast<float>(&value)) {
     return EditorItemDelegate::NUMBER;
-  } else if (auto v = std::any_cast<bool>(&value)) {
+  } else if (std::any_cast<bool>(&value)) {
     return EditorItemDelegate::BOOL;
   } else {
     return EditorItemDelegate::STRING;
@@ -201,23 +343,249 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(const std::any& v
 
 ////////
 
-Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
+ActionLayout::ActionLayout(QWidget* parent) : QLayout(parent)
+{
+}
+
+ActionLayout::~ActionLayout()
+{
+  clear();
+}
+
+void ActionLayout::clear()
+{
+  for (auto& item : actions_) {
+    removeItem(item);
+  }
+}
+
+int ActionLayout::count() const
+{
+  return actions_.size();
+}
+
+void ActionLayout::addItem(QLayoutItem* item)
+{
+  actions_.append(item);
+
+  item->widget()->setMinimumHeight(rowHeight());
+}
+
+QLayoutItem* ActionLayout::itemAt(int index) const
+{
+  return actions_.value(index);
+}
+
+QLayoutItem* ActionLayout::takeAt(int index)
+{
+  if (index >= 0 && index < actions_.size()) {
+    return actions_.takeAt(index);
+  }
+
+  return nullptr;
+}
+
+QSize ActionLayout::sizeHint() const
+{
+  return minimumSize();
+}
+
+QSize ActionLayout::minimumSize() const
+{
+  if (actions_.empty()) {
+    return QSize(0, 0);
+  }
+
+  QSize size;
+  for (const auto& item : actions_) {
+    size = size.expandedTo(item->minimumSize());
+  }
+
+  const QMargins margins = contentsMargins();
+  size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom());
+  return size;
+}
+
+int ActionLayout::rowHeight() const
+{
+  QPushButton button;
+  return button.sizeHint().height();
+}
+
+int ActionLayout::rowSpacing() const
+{
+  QPushButton button;
+  return button.style()->layoutSpacing(
+      QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Vertical);
+}
+
+int ActionLayout::buttonSpacing() const
+{
+  QPushButton button;
+  return button.style()->layoutSpacing(
+      QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Horizontal);
+}
+
+int ActionLayout::requiredRows(int width) const
+{
+  std::vector<ItemList> rows;
+  organizeItemsToRows(width, rows);
+  return rows.size();
+}
+
+int ActionLayout::itemWidth(QLayoutItem* item) const
+{
+  const QWidget* wid = item->widget();
+  return wid->sizeHint().width();
+}
+
+void ActionLayout::setGeometry(const QRect& rect)
+{
+  QLayout::setGeometry(rect);
+
+  std::vector<ItemList> rows;
+  organizeItemsToRows(rect.width(), rows);
+  if (rows.empty()) {
+    return;
+  }
+
+  int left, top, right, bottom;
+  getContentsMargins(&left, &top, &right, &bottom);
+  QRect effective_rect = rect.adjusted(left, top, -right, -bottom);
+
+  const int button_height = rowHeight();
+
+  int y = effective_rect.y();
+  for (auto row_itr = rows.begin(); row_itr != rows.end(); row_itr++) {
+    ItemList& items = *row_itr;
+
+    int x = effective_rect.x();
+    int empty_space = effective_rect.right() - (x + rowWidth(items));
+    const int size_adder = std::ceil(empty_space / static_cast<double>(items.size()));
+
+    for (auto& item : items) {
+      QSize size = item->sizeHint();
+
+      if (empty_space != 0) {
+        if (size_adder > empty_space) {
+          size.setWidth(size.width() + empty_space);
+          empty_space = 0;
+        } else {
+          size.setWidth(size.width() + size_adder);
+          empty_space -= size_adder;
+        }
+      }
+      size.setHeight(button_height);
+
+      item->setGeometry(QRect(QPoint(x, y), size));
+      x += size.width() + buttonSpacing();
+    }
+
+    y += rowHeight() + rowSpacing();
+  }
+}
+
+bool ActionLayout::hasHeightForWidth() const
+{
+  return true;
+}
+
+int ActionLayout::heightForWidth(int width) const
+{
+  const int rows = requiredRows(width);
+  int height = rows * rowHeight();
+  if (rows > 1) {
+    height += (rows - 1) * rowSpacing();
+  }
+  return height;
+}
+
+void ActionLayout::organizeItemsToRows(int width, std::vector<ItemList>& rows) const
+{
+  if (actions_.empty()) {
+    return;
+  }
+
+  int left, top, right, bottom;
+  getContentsMargins(&left, &top, &right, &bottom);
+  const int effective_width = width + left + right;
+
+  const int button_spacing = buttonSpacing();
+
+  int x = 0;
+  ItemList row;
+  for (const auto& item : actions_) {
+    const int item_width = itemWidth(item);
+
+    int next_x = x + item_width;
+    if (next_x >= effective_width) {
+      x = item_width;
+      rows.emplace_back(row.begin(), row.end());
+      row.clear();
+    } else {
+      x = next_x;
+    }
+    row.push_back(item);
+
+    x += button_spacing;
+  }
+  rows.emplace_back(row.begin(), row.end());
+
+  if (rows.size() == 1) {
+    return;
+  }
+  // make rows approximately even
+  int total_width = 0;
+  for (auto& row : rows) {
+    total_width += rowWidth(row);
+  }
+  const int target_width = total_width / static_cast<double>(rows.size());
+  for (int row = 0; row < rows.size() - 1; row++) {
+    ItemList& source = rows[row];
+    ItemList& destination = rows[row + 1];
+
+    while (rowWidth(source) > target_width && source.size() > 1) {
+      auto last_item = source.end() - 1;
+      destination.insert(destination.begin(), *last_item);
+      source.erase(last_item);
+    }
+  }
+}
+
+int ActionLayout::rowWidth(ItemList& row) const
+{
+  if (row.empty()) {
+    return 0;
+  }
+
+  const int button_spacing = buttonSpacing();
+  int width = -button_spacing;
+  for (auto& item : row) {
+    width += itemWidth(item) + buttonSpacing();
+  }
+  return width;
+}
+
+////////
+
+Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlighted, QWidget* parent)
     : QDockWidget("Inspector", parent),
-      view_(new QTreeView()),
-      model_(new SelectedItemModel(Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */)),
+      view_(new ObjectTree(this)),
+      model_(new SelectedItemModel(selection_, Qt::blue, QColor(0xc6, 0xff, 0xc4) /* pale green */, this)),
       layout_(new QVBoxLayout),
-      action_layout_(new QVBoxLayout),
+      action_layout_(new ActionLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
       selection_(Selected()),
-      button_frame_(new QFrame),
+      button_frame_(new QFrame(this)),
       button_next_(new QPushButton("Next \u2192", this)), // \u2192 = right arrow
       button_prev_(new QPushButton("\u2190 Previous", this)), // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
-      mouse_timer_(nullptr)
+      mouse_timer_(),
+      clicked_index_(),
+      highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings
-  model_->setHorizontalHeaderLabels({"Name", "Value"});
   view_->setModel(model_);
   view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
@@ -227,7 +595,8 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
 
-  QWidget* container = new QWidget;
+  QWidget* container = new QWidget(this);
+
   layout_->addWidget(view_, /* stretch */ 1);
   layout_->addLayout(action_layout_);
 
@@ -247,8 +616,13 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
 
   // connect so announcements can be made about changes
   connect(model_,
-          &SelectedItemModel::itemChanged,
+          &SelectedItemModel::selectedItemChanged,
           [this]() { emit selectedItemChanged(selection_); });
+
+  connect(model_,
+          SIGNAL(selectedItemChanged(const QModelIndex&)),
+          this,
+          SLOT(updateSelectedFields(const QModelIndex&)));
 
   connect(view_,
           SIGNAL(clicked(const QModelIndex&)),
@@ -270,6 +644,22 @@ Inspector::Inspector(const SelectionSet& selected, QWidget* parent)
           SIGNAL(entered(const QModelIndex&)),
           this,
           SLOT(focusIndex(const QModelIndex&)));
+
+  connect(view_,
+          SIGNAL(viewportEntered()),
+          this,
+          SLOT(defocus()));
+  connect(view_,
+          SIGNAL(mouseExited()),
+          this,
+          SLOT(defocus()));
+
+  mouse_timer_.setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
+  mouse_timer_.setSingleShot(true);
+  connect(&mouse_timer_,
+          SIGNAL(timeout()),
+          this,
+          SLOT(indexClicked()));
 }
 
 int Inspector::selectNext()
@@ -313,15 +703,44 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  selection_ = object;
   emit selection(object);
 
-  // disconnect announcements/signals so they will not be made for the following changes
-  // this is needed to stop SelectedItemModel::itemChanged from triggering
-  // since the change is related to adding the item and modifying the item
-  blockSignals(true);
+  reload();
 
-  model_->removeRows(0, model_->rowCount());
+  // update iterator
+  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
+  selected_itr_label_->setText(
+      QString::number(getSelectedIteratorPosition() + 1) +
+      "/" +
+      QString::number(selected_.size()));
+
+  // Auto open small lists
+  for (int row = 0; row < model_->rowCount(); row++) {
+    const QModelIndex index = model_->index(row, 0);
+    if (model_->hasChildren(index) && model_->rowCount(index) < 10) {
+      view_->expand(index);
+    }
+  }
+
+  view_->resizeColumnToContents(0);
+}
+
+void Inspector::reload()
+{
+  loadActions();
+  model_->updateObject();
+}
+
+void Inspector::highlightChanged()
+{
+  loadActions();
+}
+
+void Inspector::loadActions()
+{
   // remove action buttons and ensure delete
+  action_layout_->clear();
   while (!actions_.empty()) {
     auto it = actions_.begin();
     auto widget = it->first;
@@ -329,103 +748,74 @@ void Inspector::inspect(const Selected& object)
     delete widget; // no longer in the map so it's safe to delete
   }
 
-  selection_ = object;
-  // update iterator
-  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
-  int selected_index = std::distance(selected_.begin(), selected_itr_);
-  selected_itr_label_->setText(
-      QString::number(getSelectedIteratorPosition() + 1) +
-      "/" +
-      QString::number(selected_.size()));
-
-  if (!object) {
-    blockSignals(false);
-
+  if (!selection_) {
     return;
   }
 
-  auto editors = object.getEditors();
-
-  Descriptor::Properties all_properties = object.getProperties();
-
-  for (auto& prop : all_properties) {
-    const std::string& name = prop.name;
-    const std::any& value = prop.value;
-
-    auto name_item = makeItem(QString::fromStdString(name));
-    auto editor_found = editors.find(name);
-
-    QStandardItem* value_item = nullptr;
-
-    // For a SelectionSet a row is created with the set items
-    // as children rows
-    if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
-      value_item = makeItem(name_item, sel_set->begin(), sel_set->end());
-    } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
-      value_item = makeItem(name_item, v_list->begin(), v_list->end());
-    } else if (auto v_set = std::any_cast<std::set<std::any>>(&value)) {
-      value_item = makeItem(name_item, v_set->begin(), v_set->end());
-    } else if (auto selected = std::any_cast<Selected>(&value)) {
-      value_item = makeItem(*selected);
-    } else {
-      value_item = makeItem(QString::fromStdString(prop.toString()));
-    }
-
-    model_->appendRow({name_item, value_item});
-
-    // Auto open small lists
-    if (model_->hasChildren(name_item->index()) && name_item->rowCount() < 10) {
-      view_->expand(name_item->index());
-    }
-
-    // make editor if found
-    if (editor_found != editors.end()) {
-      auto editor = (*editor_found).second;
-      makeItemEditor(name, value_item, object, EditorItemDelegate::getEditorType(value), editor);
-    }
-  }
-
   // add action buttons
-  for (const auto [name, action] : object.getActions()) {
-    QPushButton* button = new QPushButton(name.c_str(), this);
-    connect(button, &QPushButton::released, [this, button]() {
-      handleAction(button);
-    });
-    action_layout_->addWidget(button);
-    actions_[button] = action;
+  for (const auto& action : selection_.getActions()) {
+    makeAction(action);
+  }
+  if (isHighlighted(selection_)) {
+    makeAction({"Remove from highlight", [this]() -> Selected {
+      emit removeHighlight({&selection_});
+      return selection_;
+    }});
+  } else {
+    makeAction({"Add to highlight", [this]() -> Selected {
+      emit addHighlight({selection_});
+      return selection_;
+    }});
+  }
+}
+
+void Inspector::makeAction(const Descriptor::Action& action)
+{
+  std::vector<std::pair<std::string, QString>> button_replacements{
+    {"Delete", ":/delete.png"},
+    {"Zoom to", ":/zoom_to.png"},
+    {"Remove from highlight", ":/highlight_off.png"},
+    {"Add to highlight", ":/highlight_on.png"}
+  };
+
+  const std::string& name = action.name;
+
+  QPushButton* button = nullptr;
+  for (const auto& [label, icon] : button_replacements) {
+    if (name == label) {
+      button = new QPushButton(QIcon(icon), "", this);
+      button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
+      break;
+    }
   }
 
-  blockSignals(false);
-
-  view_->resizeColumnToContents(0);
+  if (button == nullptr) {
+    button = new QPushButton(QString::fromStdString(name), this);
+  }
+  connect(button, &QPushButton::released, [this, button]() {
+    handleAction(button);
+  });
+  action_layout_->addWidget(button);
+  actions_[button] = action.callback;
 }
 
 void Inspector::clicked(const QModelIndex& index)
 {
   // QT sends both single and double clicks, so they need to be handled with a timer to
   // be able to tell the difference
-  if (mouse_timer_ == nullptr) {
-    mouse_timer_ = std::make_unique<QTimer>(this);
-    mouse_timer_->setInterval(mouse_double_click_scale_ * QApplication::doubleClickInterval());
-    mouse_timer_->setSingleShot(true);
-
-    connect(mouse_timer_.get(), &QTimer::timeout, [this, index]() { emit indexClicked(index); });
-
-    mouse_timer_->start();
+  if (!mouse_timer_.isActive()) {
+    clicked_index_ = index;
+    mouse_timer_.start();
   } else {
-    mouse_timer_->stop();
-
+    mouse_timer_.stop();
     emit indexDoubleClicked(index);
   }
-
 }
 
-void Inspector::indexClicked(const QModelIndex& index)
+void Inspector::indexClicked()
 {
-  mouse_timer_ = nullptr;
-
   // handle single click event
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = model_->itemFromIndex(clicked_index_);
   auto new_selected = item->data(EditorItemDelegate::selected_).value<Selected>();
   if (new_selected) {
     // If shift is help add to the list instead of replacing list
@@ -440,8 +830,6 @@ void Inspector::indexClicked(const QModelIndex& index)
 
 void Inspector::indexDoubleClicked(const QModelIndex& index)
 {
-  mouse_timer_ = nullptr;
-
   // handle single click event
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant item_data = item->data(EditorItemDelegate::editor_);
@@ -454,21 +842,22 @@ void Inspector::indexDoubleClicked(const QModelIndex& index)
   }
 }
 
-void Inspector::focusIndex(const QModelIndex& index)
+void Inspector::focusIndex(const QModelIndex& focus_index)
 {
-  if (index.column() == 0) {
-    return;
-  }
+  defocus();
 
-  QStandardItem* item = model_->itemFromIndex(index);
+  QStandardItem* item = model_->itemFromIndex(focus_index);
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
     // emit the selected item as something to focus on
     emit focus(item_data.value<Selected>());
-  } else {
-    emit focus(Selected());
   }
+}
+
+void Inspector::defocus()
+{
+  emit focus(Selected());
 }
 
 void Inspector::update(const Selected& object)
@@ -497,6 +886,10 @@ void Inspector::handleAction(QWidget* action)
   auto callback = actions_[action];
   auto new_selection = callback();
 
+  if (new_selection == selection_) {
+    return;
+  }
+
   int itr_index = std::distance(selected_.begin(), selected_itr_);
   // remove the current selection
   emit removeSelected(selection_);
@@ -522,62 +915,53 @@ void Inspector::handleAction(QWidget* action)
   }
 }
 
-QStandardItem* Inspector::makeItem(const QString& name)
+void Inspector::updateSelectedFields(const QModelIndex& index)
 {
-  auto item = new QStandardItem(name);
-  item->setEditable(false);
-  item->setSelectable(false);
-  return item;
-}
-
-QStandardItem* Inspector::makeItem(const std::any& item)
-{
-  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
-}
-
-QStandardItem* Inspector::makeItem(const Selected& selected)
-{
-  auto item = makeItem(QString::fromStdString(selected.getName()));
-  item->setData(QVariant::fromValue(selected), EditorItemDelegate::selected_);
-  return item;
-}
-
-template<typename Iterator>
-QStandardItem* Inspector::makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end)
-{
-  int index = 0;
-  for (Iterator use_itr = begin; use_itr != end; ++use_itr) {
-    auto index_item = makeItem(QString::number(++index));
-    auto selected_item = makeItem(*use_itr);
-    name_item->appendRow({index_item, selected_item});
+  // save expanded items
+  std::map<QString, bool> expanded;
+  for (int row = 0; row < model_->rowCount(); row++) {
+    const QModelIndex index = model_->index(row, 0);
+    const QString name = model_->itemFromIndex(index)->text();
+    expanded[name] = view_->isExpanded(index);
   }
 
-  return makeItem(QString::number(index) + " items");
+  reload();
+
+  // restore expanded items
+  for (int row = 0; row < model_->rowCount(); row++) {
+    const QModelIndex row_index = model_->index(row, 0);
+    const QString name = model_->itemFromIndex(row_index)->text();
+
+    auto itr = expanded.find(name);
+    if (itr != expanded.end()) {
+      view_->setExpanded(row_index, (*itr).second);
+    }
+  }
+
+  view_->resizeColumnToContents(0);
 }
 
-void Inspector::makeItemEditor(const std::string& name,
-                               QStandardItem* item,
-                               const Selected& selected,
-                               const EditorItemDelegate::EditType type,
-                               const Descriptor::Editor& editor)
+bool Inspector::isHighlighted(const Selected& selected)
 {
-  item->setData(QVariant::fromValue(selected), EditorItemDelegate::editor_select_);
-  item->setData(QVariant::fromValue(name), EditorItemDelegate::editor_name_);
-
-  Descriptor::Editor used_editor = editor;
-  if (type == EditorItemDelegate::BOOL) {
-    // for BOOL, replace options with true/false options
-    used_editor.options = {{"True", true}, {"False", false}};
+  for (const auto& highlight_set : highlighted_) {
+    if (highlight_set.find(selected) != highlight_set.end()) {
+      return true;
+    }
   }
 
-  item->setData(QVariant::fromValue(used_editor), EditorItemDelegate::editor_);
-  if (used_editor.options.empty()) {
-    // options are empty so use selected type
-    item->setData(QVariant::fromValue(type), EditorItemDelegate::editor_type_);
-  } else {
-    // options are not empty so use list type
-    item->setData(QVariant::fromValue(EditorItemDelegate::LIST), EditorItemDelegate::editor_type_);
-  }
+  return false;
+}
+
+////////////
+
+ObjectTree::ObjectTree(QWidget* parent) :
+    QTreeView(parent)
+{
+}
+
+void ObjectTree::leaveEvent(QEvent* event)
+{
+  emit mouseExited();
 }
 
 }  // namespace gui

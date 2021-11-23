@@ -18,6 +18,7 @@ record_tests {
   ndr_1w_3s
   ndr_2w_3s
   no_tracks
+  obs_out_of_die
   pd1
   pd2
   pd3

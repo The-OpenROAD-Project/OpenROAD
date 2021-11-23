@@ -129,10 +129,10 @@ void FlexGRCMap::init()
   for (auto& [layerIdx, dir] : zMap_) {
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
-        frBox startGCellBox;
+        Rect startGCellBox;
         design_->getTopBlock()->getGCellBox(Point(0, yIdx), startGCellBox);
-        frCoord low = startGCellBox.bottom();
-        frCoord high = startGCellBox.top();
+        frCoord low = startGCellBox.yMin();
+        frCoord high = startGCellBox.yMax();
         // non-transition via layer
         if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
           unsigned numTrack
@@ -157,10 +157,10 @@ void FlexGRCMap::init()
       }
     } else if (dir == dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
-        frBox startGCellBox;
+        Rect startGCellBox;
         design_->getTopBlock()->getGCellBox(Point(xIdx, 0), startGCellBox);
-        frCoord low = startGCellBox.left();
-        frCoord high = startGCellBox.right();
+        frCoord low = startGCellBox.xMin();
+        frCoord high = startGCellBox.xMax();
         if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
           unsigned numTrack
               = getNumTracks(design_->getTopBlock()->getTrackPatterns(layerIdx),
@@ -191,7 +191,7 @@ void FlexGRCMap::init()
 
   // update demand for fixed objects (only for pref routing direction)
   cmapLayerIdx = 0;
-  frBox currGCellBox;
+  Rect currGCellBox;
   set<frCoord> trackLocs;
   vector<rq_box_value_t<frBlockObject*>> queryResult;
   auto regionQuery = design_->getRegionQuery();
@@ -202,10 +202,10 @@ void FlexGRCMap::init()
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         trackLocs.clear();
-        frBox startGCellBox;
+        Rect startGCellBox;
         design_->getTopBlock()->getGCellBox(Point(0, yIdx), startGCellBox);
-        frCoord low = startGCellBox.bottom();
-        frCoord high = startGCellBox.top();
+        frCoord low = startGCellBox.yMin();
+        frCoord high = startGCellBox.yMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
                      true,
                      low,
@@ -229,10 +229,10 @@ void FlexGRCMap::init()
     } else if (dir == dbTechLayerDir::VERTICAL) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         trackLocs.clear();
-        frBox startGCellBox;
+        Rect startGCellBox;
         design_->getTopBlock()->getGCellBox(Point(xIdx, 0), startGCellBox);
-        frCoord low = startGCellBox.left();
-        frCoord high = startGCellBox.right();
+        frCoord low = startGCellBox.xMin();
+        frCoord high = startGCellBox.xMax();
         getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx),
                      false,
                      low,
@@ -360,11 +360,11 @@ unsigned FlexGRCMap::getNumBlkTracks(
       break;
     }
     if (isHorz) {
-      low = box.bottom() - actBloatDist;
-      high = box.top() + actBloatDist;
+      low = box.yMin() - actBloatDist;
+      high = box.yMax() + actBloatDist;
     } else {
-      low = box.left() - actBloatDist;
-      high = box.right() + actBloatDist;
+      low = box.xMin() - actBloatDist;
+      high = box.xMax() + actBloatDist;
     }
     auto iterLow = openTrackLocs.lower_bound(low);
     auto iterHigh = openTrackLocs.upper_bound(high);
@@ -377,17 +377,17 @@ unsigned FlexGRCMap::getNumBlkTracks(
 
 frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
                                   const frLayerNum lNum,
-                                  const frBox& box,
+                                  const Rect& box,
                                   bool isOBS)
 {
   auto layer = getDesign()->getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();
   // use width if minSpc does not exist
   frCoord bloatDist = width;
-  frCoord objWidth = min(box.right() - box.left(), box.top() - box.bottom());
+  frCoord objWidth = min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
   frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
-                    ? (box.right() - box.left())
-                    : (box.top() - box.bottom());
+                    ? (box.xMax() - box.xMin())
+                    : (box.yMax() - box.yMin());
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
     if (isOBS && USEMINSPACING_OBS) {
       objWidth = width;
@@ -557,7 +557,7 @@ void FlexGRCMap::printLayers()
 void FlexGRCMap::print(bool isAll)
 {
   unsigned layerIdx = 0;
-  frBox gcellBox;
+  Rect gcellBox;
   ofstream congMap;
   cout << "printing congestion map...\n";
 
@@ -591,14 +591,14 @@ void FlexGRCMap::print(bool isAll)
 
         if (isAll || (demandV > supplyV) || (demandH > supplyH)) {
           if (congMap.is_open()) {
-            congMap << "(" << gcellBox.left() << ", " << gcellBox.bottom()
-                    << ") (" << gcellBox.right() << ", " << gcellBox.top()
+            congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                    << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
                     << ")"
                     << " V: " << demandV << "/" << supplyV << " H: " << demandH
                     << "/" << supplyH << "\n";
           } else {
-            cout << "(" << gcellBox.left() << ", " << gcellBox.bottom() << ") ("
-                 << gcellBox.right() << ", " << gcellBox.top() << ")"
+            cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
+                 << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
                  << " V: " << demandV << "/" << supplyV << " H: " << demandH
                  << "/" << supplyH << "\n";
           }
@@ -614,7 +614,7 @@ void FlexGRCMap::print(bool isAll)
 
 void FlexGRCMap::print2D(bool isAll)
 {
-  frBox gcellBox;
+  Rect gcellBox;
   cout << "printing 2D congestion map...\n";
   ofstream congMap;
   if (!CMAP_FILE.empty()) {
@@ -644,13 +644,13 @@ void FlexGRCMap::print2D(bool isAll)
       design_->getTopBlock()->getGCellBox(Point(xIdx, yIdx), gcellBox);
       if (isAll || (demandV > supplyV) || (demandH > supplyH)) {
         if (congMap.is_open()) {
-          congMap << "(" << gcellBox.left() << ", " << gcellBox.bottom()
-                  << ") (" << gcellBox.right() << ", " << gcellBox.top() << ")"
+          congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                  << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
                   << " V: " << demandV << "/" << supplyV << " H: " << demandH
                   << "/" << supplyH << "\n";
         } else {
-          cout << "(" << gcellBox.left() << ", " << gcellBox.bottom() << ") ("
-               << gcellBox.right() << ", " << gcellBox.top() << ")"
+          cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
+               << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
                << " V: " << demandV << "/" << supplyV << " H: " << demandH
                << "/" << supplyH << "\n";
         }

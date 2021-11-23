@@ -35,10 +35,10 @@ See [Getting Started](GettingStarted.md) guide.
 
 ## Using the OpenROAD Flow
 
-See the [flow README](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/README.md)
-for details about the flow and how to run designs through the flow.
+See the documentation [here](GettingStarted.md) for details about the
+flow and how to run designs through the flow.
 
 ## Using the OpenROAD App
 
-See the [app README](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/README.md)
-for details about the app and the available features and commands.
+See the documentation [here](../main/README.md) for details about the app and
+the available features and commands.

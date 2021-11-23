@@ -341,7 +341,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
 {
   std::vector<std::vector<int>> gridD;
   int i, k, l, min_x, min_y, routelen, n1a, n2a, last_layer;
-  int min_result, endLayer;
+  int min_result, endLayer = 0;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -735,7 +735,6 @@ void FastRouteCore::newLayerAssignmentV4()
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
     treeedges = sttrees_[netID].edges;
-    treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       treeedge = &(treeedges[edgeID]);
@@ -871,7 +870,6 @@ void FastRouteCore::newLA()
   TreeNode* treenodes;
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
-    treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1665,7 +1663,7 @@ void FastRouteCore::freeRR(void)
 
 int FastRouteCore::edgeShift(Tree& t, int net)
 {
-  int i, j, k, l, m, deg, root, x, y, n, n1, n2, n3;
+  int i, j, k, l, m, deg, root = 0, x, y, n, n1, n2, n3;
   int maxX, minX, maxY, minY, maxX1, minX1, maxY1, minY1, maxX2, minX2, maxY2,
       minY2, bigX, smallX, bigY, smallY;
   int pairCnt;

@@ -23,7 +23,7 @@ Pin                                    Limit     Cap   Slack
 in1                                    60.65  105.52  -44.87 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 1003um.
-[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 5 buffers in 1 nets.
@@ -45,3 +45,4 @@ Driver pins
 
 Load pins
  repeater5/A input (BUF_X1) (283, 1)
+

@@ -154,7 +154,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   gcCorner* getLowCorner() const { return lowCorner_; }
   gcCorner* getHighCorner() const { return highCorner_; }
   bool isFixed() const { return fixed_; }
-  // direction always from bp to ep, not orthogonal!!
+  // direction always from bp to ep
   frDirEnum getDir() const
   {
     frDirEnum dir = frDirEnum::UNKNOWN;
@@ -178,6 +178,36 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
     }
     return dir;
   }
+  //returns the direction to the inner side of the polygon
+  frDirEnum getInnerDir() {
+    switch (getDir()) {
+      case frDirEnum::N:
+        return frDirEnum::W;
+      case frDirEnum::S:
+        return frDirEnum::E;
+      case frDirEnum::E:
+        return frDirEnum::N;
+      case frDirEnum::W:
+        return frDirEnum::S;
+      default:
+        return frDirEnum::UNKNOWN;
+    }
+  }
+  //returns the direction to the outer side of the polygon
+  frDirEnum getOuterDir() {
+    switch (getDir()) {
+      case frDirEnum::N:
+        return frDirEnum::E;
+      case frDirEnum::S:
+        return frDirEnum::W;
+      case frDirEnum::E:
+        return frDirEnum::S;
+      case frDirEnum::W:
+        return frDirEnum::N;
+      default:
+        return frDirEnum::UNKNOWN;
+    }
+  }
   // setters
   void setSegment(const gtl::segment_data<frCoord>& in)
   {
@@ -193,6 +223,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   void setNextEdge(gcSegment* in) { next_edge_ = in; }
   void setLowCorner(gcCorner* in) { lowCorner_ = in; }
   void setHighCorner(gcCorner* in) { highCorner_ = in; }
+  int isVertical() { return low().x() == high().x(); }
   void setFixed(bool in) { fixed_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return gccEdge; }
@@ -230,7 +261,9 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   void addToNet(gcNet* in) override { net_ = in; }
 
   void removeFromNet() override { net_ = nullptr; }
-
+  int length() {
+    return gtl::length(*this);
+  }
  protected:
   frLayerNum layer_;
   gcPin* pin_;
@@ -298,12 +331,12 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
     gtl::yl((*this), bp.y());
     gtl::yh((*this), ep.y());
   }
-  void setRect(const frBox& in)
+  void setRect(const Rect& in)
   {
-    gtl::xl((*this), in.left());
-    gtl::xh((*this), in.right());
-    gtl::yl((*this), in.bottom());
-    gtl::yh((*this), in.top());
+    gtl::xl((*this), in.xMin());
+    gtl::xh((*this), in.xMax());
+    gtl::yl((*this), in.yMin());
+    gtl::yh((*this), in.yMax());
   }
   void setFixed(bool in) { fixed_ = in; }
   // getters
@@ -360,10 +393,10 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 
   void setTapered(bool t) { tapered_ = t; }
 
-  bool intersects(const frBox& bx)
+  bool intersects(const Rect& bx)
   {
-    return gtl::xl(*this) <= bx.right() && gtl::xh(*this) >= bx.left()
-           && gtl::yl(*this) <= bx.top() && gtl::yh(*this) >= bx.bottom();
+    return gtl::xl(*this) <= bx.xMax() && gtl::xh(*this) >= bx.xMin()
+           && gtl::yl(*this) <= bx.yMax() && gtl::yh(*this) >= bx.yMin();
   }
 
  protected:

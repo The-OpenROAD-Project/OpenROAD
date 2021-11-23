@@ -47,35 +47,13 @@
 #include "gui/gui.h"
 
 namespace gui {
-
-class SelectedItemModel : public QStandardItemModel
-{
-  Q_OBJECT
-
-public:
-  SelectedItemModel(
-      const QColor& selectable,
-      const QColor& editable,
-      QObject* parent = nullptr)
-  : QStandardItemModel(0, 2, parent),
-    selectable_item_(selectable),
-    editable_item_(editable) {}
-
-  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-  const QColor& getSelectableColor() { return selectable_item_; }
-  const QColor& getEditableColor() { return editable_item_; }
-
-private:
-  const QColor selectable_item_;
-  const QColor editable_item_;
-};
+class SelectedItemModel;
 
 class EditorItemDelegate : public QItemDelegate
 {
   Q_OBJECT
 
-public:
+ public:
   // positions in ->data() where data is located
   static const int editor_        = Qt::UserRole;
   static const int editor_name_   = Qt::UserRole+1;
@@ -104,9 +82,102 @@ public:
 
   static EditType getEditorType(const std::any& value);
 
-private:
+ private:
   SelectedItemModel* model_;
   const QColor background_;
+};
+
+class SelectedItemModel : public QStandardItemModel
+{
+  Q_OBJECT
+
+ public:
+  SelectedItemModel(const Selected& object,
+                    const QColor& selectable,
+                    const QColor& editable,
+                    QObject* parent = nullptr);
+
+  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+  const QColor& getSelectableColor() { return selectable_item_; }
+  const QColor& getEditableColor() { return editable_item_; }
+
+ signals:
+  void selectedItemChanged(const QModelIndex& index);
+
+ public slots:
+  void updateObject();
+
+ private:
+  void makePropertyItem(const Descriptor::Property& property, QStandardItem*& name_item, QStandardItem*& value_item);
+  QStandardItem* makeItem(const QString& name);
+  QStandardItem* makeItem(const std::any& item, bool short_name = false);
+
+  template<typename Iterator>
+  QStandardItem* makeList(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
+  template<typename Iterator>
+  QStandardItem* makePropertyList(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
+
+  void makeItemEditor(const std::string& name,
+                      QStandardItem* item,
+                      const Selected& selected,
+                      const EditorItemDelegate::EditType type,
+                      const Descriptor::Editor& editor);
+
+  const QColor selectable_item_;
+  const QColor editable_item_;
+  const Selected& object_;
+};
+
+class ActionLayout : public QLayout
+{
+  // modified from: https://doc.qt.io/qt-5/qtwidgets-layouts-flowlayout-example.html
+  Q_OBJECT
+
+ public:
+  ActionLayout(QWidget* parent = nullptr);
+  ~ActionLayout();
+
+  void clear();
+
+  void addItem(QLayoutItem* item) override;
+  QSize sizeHint() const override;
+  QSize minimumSize() const override;
+  void setGeometry(const QRect& rect) override;
+  QLayoutItem* itemAt(int index) const override;
+  QLayoutItem* takeAt(int index) override;
+  int count() const override;
+
+  bool hasHeightForWidth() const override;
+  int heightForWidth(int width) const override;
+
+ private:
+  int rowHeight() const;
+  int rowSpacing() const;
+  int buttonSpacing() const;
+  int requiredRows(int width) const;
+
+  int itemWidth(QLayoutItem* item) const;
+
+  using ItemList = std::vector<QLayoutItem*>;
+  void organizeItemsToRows(int width, std::vector<ItemList>& rows) const;
+  int rowWidth(ItemList& row) const;
+
+  QList<QLayoutItem*> actions_;
+};
+
+class ObjectTree : public QTreeView
+{
+  Q_OBJECT
+
+ public:
+  ObjectTree(QWidget* parent = nullptr);
+
+ signals:
+  void mouseExited();
+
+ protected:
+  void leaveEvent(QEvent* event) override;
 };
 
 // The inspector is to allow a single object to have it properties displayed.
@@ -119,7 +190,7 @@ class Inspector : public QDockWidget
   Q_OBJECT
 
  public:
-  Inspector(const SelectionSet& selected, QWidget* parent = nullptr);
+  Inspector(const SelectionSet& selected, const HighlightSet& highlighted, QWidget* parent = nullptr);
 
   const Selected& getSelection() { return selection_; }
 
@@ -131,35 +202,38 @@ class Inspector : public QDockWidget
   void selection(const Selected& selected);
   void focus(const Selected& selected);
 
+  void addHighlight(const SelectionSet& selection);
+  void removeHighlight(const QList<const Selected*>& selected);
+
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
-
-  void indexClicked(const QModelIndex& index);
-  void indexDoubleClicked(const QModelIndex& index);
+  void highlightChanged();
 
   int selectNext();
   int selectPrevious();
 
+  void updateSelectedFields(const QModelIndex& index);
+
+  void reload();
+
+ private slots:
   void focusIndex(const QModelIndex& index);
+  void defocus();
+
+  void indexClicked();
+  void indexDoubleClicked(const QModelIndex& index);
 
  private:
   void handleAction(QWidget* action);
-  QStandardItem* makeItem(const Selected& selected);
-  QStandardItem* makeItem(const QString& name);
-  QStandardItem* makeItem(const std::any& item);
-
-  template<typename Iterator>
-  QStandardItem* makeItem(QStandardItem* name_item, const Iterator& begin, const Iterator& end);
-
-  void makeItemEditor(const std::string& name,
-                      QStandardItem* item,
-                      const Selected& selected,
-                      const EditorItemDelegate::EditType type,
-                      const Descriptor::Editor& editor);
+  void loadActions();
 
   int getSelectedIteratorPosition();
+
+  bool isHighlighted(const Selected& selected);
+
+  void makeAction(const Descriptor::Action& action);
 
   // The columns in the tree view
   enum Column
@@ -168,10 +242,10 @@ class Inspector : public QDockWidget
     Value
   };
 
-  QTreeView* view_;
+  ObjectTree* view_;
   SelectedItemModel* model_;
   QVBoxLayout* layout_;
-  QVBoxLayout* action_layout_;
+  ActionLayout* action_layout_;
   const SelectionSet& selected_;
   SelectionSet::iterator selected_itr_;
   Selected selection_;
@@ -179,7 +253,10 @@ class Inspector : public QDockWidget
   QPushButton* button_next_;
   QPushButton* button_prev_;
   QLabel* selected_itr_label_;
-  std::unique_ptr<QTimer> mouse_timer_;
+  QTimer mouse_timer_;
+  QModelIndex clicked_index_;
+
+  const HighlightSet& highlighted_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
 

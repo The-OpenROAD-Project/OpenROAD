@@ -11,9 +11,6 @@
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [INFO ODB-0134] Finished DEF file: reg3.def
 Net in1
-Driver pins
-
-Load pins
 [WARNING ODB-0173] warning: pin in1 skipped because it has no net
 No differences found.
 [INFO ODB-0127] Reading DEF file: ./results/network_edit1.def
@@ -25,7 +22,6 @@ No differences found.
 [INFO ODB-0134] Finished DEF file: ./results/network_edit1.def
 [WARNING STA-0337] port 'in1' not found.
 Net in1
-Driver pins
-
 Load pins
  r1/D input (DFF_X1) (101, 201)
+

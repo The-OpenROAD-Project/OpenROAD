@@ -9,6 +9,8 @@
     obj = Tcl_NewStringObj("DEF_5_5", -1);
   } else if ($1 == odb::defout::Version::DEF_5_6) {
     obj = Tcl_NewStringObj("DEF_5_6", -1);
+  } else if ($1 == odb::defout::Version::DEF_5_7) {
+    obj = Tcl_NewStringObj("DEF_5_7", -1);
   } else if ($1 == odb::defout::Version::DEF_5_8) {
     obj = Tcl_NewStringObj("DEF_5_8", -1);
   } else {
@@ -28,6 +30,8 @@
     $1 = odb::defout::Version::DEF_5_5;
   } else if (strcasecmp(str, "DEF_5_6") == 0 || strcasecmp(str, "5.6") == 0) {
     $1 = odb::defout::Version::DEF_5_6;
+  } else if (strcasecmp(str, "DEF_5_7") == 0 || strcasecmp(str, "5.7") == 0) {
+    $1 = odb::defout::Version::DEF_5_7;
   } else if (strcasecmp(str, "DEF_5_8") == 0 || strcasecmp(str, "5.8") == 0) {
     $1 = odb::defout::Version::DEF_5_8;
   } else {
@@ -47,6 +51,8 @@
     } else if (strcasecmp(str, "DEF_5_5") == 0 || strcasecmp(str, "5.5") == 0) {
       found = true;
     } else if (strcasecmp(str, "DEF_5_6") == 0 || strcasecmp(str, "5.6") == 0) {
+      found = true;
+    } else if (strcasecmp(str, "DEF_5_7") == 0 || strcasecmp(str, "5.7") == 0) {
       found = true;
     } else if (strcasecmp(str, "DEF_5_8") == 0 || strcasecmp(str, "5.8") == 0) {
       found = true;
