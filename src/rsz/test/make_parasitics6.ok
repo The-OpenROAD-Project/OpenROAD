@@ -23,6 +23,7 @@ Driver pins
 
 Load pins
  u2/A1 input (AND2_X1) 0.92-0.92 (100, 401)
+
 Net r1q
  Pin capacitance: 0.83-0.89
  Wire capacitance: 14.64
@@ -36,3 +37,4 @@ Driver pins
 
 Load pins
  u2/A1 input (AND2_X1) 0.83-0.89 (100, 401)
+

@@ -107,6 +107,7 @@ Driver pins
 
 Load pins
  hold1/A input (CLKBUF_X3) 1.25-1.42 (40, 41)
+
 Net out
  Pin capacitance: 0.00
  Wire capacitance: 4.99
@@ -120,3 +121,4 @@ Driver pins
 
 Load pins
  out output port (0, 0)
+
