@@ -607,6 +607,8 @@ class Gui
 
   const Selected& getInspectorSelection();
 
+  void setHeatMapSetting(const std::string& name, const std::string& option, double value);
+
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
   void addRestoreStateCommand(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }

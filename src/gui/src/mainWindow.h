@@ -42,6 +42,7 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
+#include "heatMap.h"
 #include "ruler.h"
 
 namespace odb {
@@ -96,6 +97,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   Inspector* getInspector() const { return inspector_; }
 
   const std::vector<std::string> getRestoreTclCommands();
+
+  enum HeatMap {
+  };
+  void setHeatMapSetting(const HeatMap map, const std::string& option, double value);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -221,6 +226,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+
+ private slots:
+  void setBlock(odb::dbBlock* block);
 
  private:
   void createMenus();

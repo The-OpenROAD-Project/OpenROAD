@@ -345,6 +345,19 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
+### Heat Maps
+
+To control the settings in the heat maps:
+
+```
+gui::set_heatmap name option value
+```
+
+Options description: 
+- ``name`` is the name of the heatmap. ``Power``, ``Routing`` or ``Placement``
+- ``option`` is the name of the option to modify. If option is ``rebuild`` the map will be destroyed and rebuilt.
+- ``value`` is the new value for the specified option
+
 ### GUI Controls
 
 Control the visible and selected elements in the layout:

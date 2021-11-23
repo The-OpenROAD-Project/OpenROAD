@@ -45,6 +45,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/timingWidget.cpp
     src/drcWidget.cpp
     src/ruler.cpp
+    src/heatMap.cpp
     resources/resource.qrc
   )
 

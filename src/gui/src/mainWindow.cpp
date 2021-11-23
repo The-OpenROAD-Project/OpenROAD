@@ -256,6 +256,10 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
+          this,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
           drc_viewer_,
           SLOT(setBlock(odb::dbBlock*)));
   connect(drc_viewer_,
@@ -330,6 +334,10 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   if (chip != nullptr) {
     viewer_->designLoaded(chip->getBlock());
   }
+}
+
+void MainWindow::setBlock(odb::dbBlock* block)
+{
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -1108,6 +1116,46 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   viewer_->restoreTclCommands(cmds);
 
   return cmds;
+}
+
+void MainWindow::setHeatMapSetting(const HeatMap map, const std::string& option, double value)
+{
+  HeatMapDataSource* source = nullptr;
+
+  if (source == nullptr) {
+    return;
+  }
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (settings.count(option) == 0) {
+      QStringList options;
+      options.append(QString::fromStdString(rebuild_map_option));
+      for (const auto& [key, kv] : settings) {
+        options.append(QString::fromStdString(key));
+      }
+      logger_->error(utl::GUI, 29, "{} is not a valid option. Valid options are: {}", option, options.join(", ").toStdString());
+    }
+
+    auto current_value = settings[option];
+    if (auto* v = std::get_if<bool>(&current_value)) {
+      // is bool
+      settings[option] = value == 0.0 ? false : true;
+    } else if (auto* v = std::get_if<int>(&current_value)) {
+      // is int
+      settings[option] = static_cast<int>(value);
+    } else {
+      // is double
+      settings[option] = value;
+    }
+    source->setSettings(settings);
+  }
+
+  source->getRenderer()->redraw();
 }
 
 }  // namespace gui
