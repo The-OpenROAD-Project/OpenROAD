@@ -400,14 +400,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 painter.setPen(layer, true);
             }
         }
-        // Planar doesn't distinguish E vs N so just use one
         bool planar
             = (draw_drc
-               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::UNKNOWN))
               || (draw_marker
-                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
+                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::UNKNOWN))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::E));
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::UNKNOWN));
         if (planar) {
           painter.drawRect({grid_graph_->xCoord(x) - offset,
                             grid_graph_->yCoord(y) - offset,
@@ -416,11 +415,11 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         bool via
             = (draw_drc
-               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
+               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::UNKNOWN))
               || (draw_marker
-                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
+                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::UNKNOWN))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U))
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::UNKNOWN))
               || (draw_gCostEdges
                   && grid_graph_->hasGridCostU(x, y, z))
               || (draw_blockedEdges

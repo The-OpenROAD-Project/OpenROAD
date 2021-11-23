@@ -3147,7 +3147,6 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       auto inst = instTerm->getInst();
       dbTransform xform;
       inst->getUpdatedXform(xform);
-
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
@@ -3189,23 +3188,22 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             dbMasterType masterType = inst->getRefBlock()->getMasterType();
             if (isRoutingLayer) {
-              if (masterType.isBlock()) { // temp solution for ISPD19 benchmarks
-                modCornerToCornerSpacing(box, zIdx, type);
-                if (isAddPathCost) {
-                  type =  5;
-                  modMinSpacingCostPlanar(box, zIdx, 7);
-                } else {
-                    type = 4;
-                    resetMacroPinPlanarAccess(box, zIdx);
+                if (masterType.isBlock()) { 
+                    modCornerToCornerSpacing(box, zIdx, type); // temp solution for ISPD19 benchmarks
+                    if (!isSkipVia) {
+                      modMinSpacingCostVia(box, zIdx, type, true, false);
+                      modMinSpacingCostVia(box, zIdx, type, false, false);
+                    }
+                    if (isAddPathCost) {
+                        type =  5;
+                        modMinSpacingCostPlanar(box, zIdx, 7, false, nullptr, true);
+                    } else {
+                        type = 4;
+                        modMinSpacingCostPlanar(box, zIdx, 6, false, nullptr, true);
+                    }
+                    modEolSpacingRulesCost(box, zIdx, type);
                 }
-              }
-              modMinSpacingCostPlanar(box, zIdx, type);
-
-              if (!isSkipVia) {
-                modMinSpacingCostVia(box, zIdx, type, true, false);
-                modMinSpacingCostVia(box, zIdx, type, false, false);
-              }
-              modEolSpacingRulesCost(box, zIdx, type);
+                modMinSpacingCostPlanar(box, zIdx, type, false, nullptr, masterType.isBlock());
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);

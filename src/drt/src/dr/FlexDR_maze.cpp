@@ -334,8 +334,10 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
            box.xMax() + bloatDist + halfwidth2 - 1,
            box.yMax() + bloatDist + halfwidth2 - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
-  if (isMacroPin && type == 6)
-    gridGraph_.getIdxBox(mPinLL, mPinUR, box);
+  if (isMacroPin && type == 6) {
+    Rect sBox(box.xMin() + width2/2, box.yMin() + width2/2, box.xMax() - width2/2, box.yMax() - width2/2);
+    gridGraph_.getIdxBox(mPinLL, mPinUR, sBox);
+  }
   Point pt, pt1, pt2, pt3, pt4;
   frSquaredDistance distSquare = 0;
   int cnt = 0;
@@ -364,10 +366,10 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
             break;
           case 4: //reset fixed
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
+                gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
             break;
           case 5: //set fixed
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
+                gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
             break;
           case 6: //reset blocked
             if (isMacroPin) {
