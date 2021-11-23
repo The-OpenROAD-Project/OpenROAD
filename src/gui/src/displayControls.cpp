@@ -1018,6 +1018,10 @@ void DisplayControls::makeLeafItem(
 void DisplayControls::setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback)
 {
   row.name->setData(QVariant::fromValue(callback), callback_item_idx_);
+
+  QFont current_font = row.name->data(Qt::FontRole).value<QFont>();
+  current_font.setUnderline(true);
+  row.name->setData(current_font, Qt::FontRole);
 }
 
 const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
