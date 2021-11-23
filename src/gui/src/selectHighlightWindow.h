@@ -42,6 +42,7 @@
 #include <QModelIndex>
 #include <QPoint>
 #include <QShortcut>
+#include <QSortFilterProxyModel>
 #include <QStringList>
 #include <QStyledItemDelegate>
 #include <QToolBar>
@@ -149,8 +150,7 @@ class SelectHighlightWindow : public QDockWidget
   void clearSelectedItems(const QList<const Selected*>& items);
   void clearHighlightedItems(const QList<const Selected*>& items);
   void zoomInToItems(const QList<const Selected*>& items);
-  void highlightSelectedItemsSig(const QList<const Selected*>& items,
-                                 int highlight_group);
+  void highlightSelectedItemsSig(const QList<const Selected*>& items);
 
  public slots:
   void updateSelectionModel();
@@ -168,7 +168,10 @@ class SelectHighlightWindow : public QDockWidget
  private:
   Ui::SelectHighlightWidget ui_;
   SelectionModel selection_model_;
+  QSortFilterProxyModel* sel_filter_proxy_;
+
   HighlightModel highlight_model_;
+  QSortFilterProxyModel* hlt_filter_proxy_;
 
   QMenu* select_context_menu_;
   QMenu* highlight_context_menu_;

@@ -9,3 +9,5 @@
 [INFO ODB-0134] Finished DEF file: check2.def
 [WARNING DPL-0005] Overlap check failed (1).
  _284_ overlaps _285_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033

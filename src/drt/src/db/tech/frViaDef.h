@@ -189,6 +189,13 @@ class frViaDef
   const Rect& getLayer1ShapeBox() { return layer1ShapeBox; }
   const Rect& getLayer2ShapeBox() { return layer2ShapeBox; }
   const Rect& getCutShapeBox() { return cutShapeBox; }
+  const Rect& getShapeBox(frLayerNum lNum) { 
+    if (lNum == getLayer1Num())
+      return layer1ShapeBox; 
+    if (lNum == getLayer2Num())
+      return layer2ShapeBox; 
+    throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
+  }
 
  protected:
   std::string name;

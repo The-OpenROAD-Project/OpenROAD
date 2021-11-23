@@ -1284,7 +1284,6 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                               int height,
                               const Rect& die_boundary)
 {
-  int database_unit = tech_->getLefUnits();
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
 

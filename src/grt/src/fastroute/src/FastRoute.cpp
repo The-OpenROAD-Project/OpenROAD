@@ -1348,15 +1348,15 @@ FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute,
                                      int h_tile,
                                      int x_corner,
                                      int y_corner)
-    : fastroute_(fastroute),
+    : treeStructure_(TreeStructure::steinerTreeByStt),
+      is3DVisualization_(false),
+      num_pins_(0),
+      fastroute_(fastroute),
       tech_(tech),
       w_tile_(w_tile),
       h_tile_(h_tile),
       x_corner_(x_corner),
-      y_corner_(y_corner),
-      treeStructure_(TreeStructure::steinerTreeByStt),
-      is3DVisualization_(false),
-      num_pins_(0)
+      y_corner_(y_corner)
 {
 }
 void FastRouteRenderer::setTreeStructure(TreeStructure treeStructure)

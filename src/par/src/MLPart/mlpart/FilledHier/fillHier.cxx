@@ -215,8 +215,7 @@ void FillableHierarchy::insertClusteringIntoHierarchy(const SubHGraph& subHG, co
 
         // insert the bottom level
         {
-                const HGraphFixed& bottomHG = clHG.getHGraph(0);
-                abkassert(bottomHG.getNumNodes() == subHG.getNumNodes(), "bottom HG and subHG are not the same size");
+                abkassert(clHG.getHGraph(0).getNumNodes() == subHG.getNumNodes(), "bottom HG and subHG are not the same size");
                 abkassert(origChildren.size() == subHG.getNumNodes(), "subHG not the same size as number of children");
 
                 unsigned n;

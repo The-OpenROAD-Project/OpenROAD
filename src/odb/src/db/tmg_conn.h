@@ -32,6 +32,9 @@
 
 #pragma once
 
+#include <vector>
+#include <array>
+
 #include "db.h"
 #include "dbWireCodec.h"
 #include "geom.h"
@@ -90,6 +93,7 @@ struct tmg_rc
 
 struct tmg_rcpt
 {
+  tmg_rcpt();
   int _x;  // nominal point
   int _y;
   dbTechLayer* _layer;
@@ -141,8 +145,7 @@ class tmg_conn
   tmg_conn_search* _search;
   tmg_conn_graph* _graph;
   std::vector<tmg_rc> _rcV;
-  tmg_rcpt* _ptV;
-  int _ptN;
+  std::vector<tmg_rcpt> _ptV;
   tmg_rcterm* _termV;
   tmg_rcterm** _tstackV;
   int _termN;
@@ -164,14 +167,13 @@ class tmg_conn
   int _cut_length;
   int _cut_end_extMin;
   int _need_short_wire_id;
-  tmg_connect_shape** _csVV;
-  tmg_connect_shape* _csV;
+  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
+  std::array<tmg_connect_shape, 32>* _csV;
   int* _csNV;
   int _csN;
   tmg_rcpt* _first_for_clear;
 
  private:
-  int _ptNmax;
   int _termNmax;
   int _shortNmax;
   int _last_id;
@@ -225,7 +227,7 @@ class tmg_conn
   bool checkConnected();
   void checkVisited();
   void printDisconnect();
-  void allocPt();
+  tmg_rcpt* allocPt();
   void addRc(dbShape& s, int ifr, int ito);
   void addRc(int k,
              tmg_rc_sh& s,

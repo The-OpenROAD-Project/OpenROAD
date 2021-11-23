@@ -332,6 +332,8 @@ stringToDefVersion(string version)
 {
   if (version == "5.8")
     return odb::defout::Version::DEF_5_8;
+  else if (version == "5.7")
+    return odb::defout::Version::DEF_5_7;
   else if (version == "5.6")
     return odb::defout::Version::DEF_5_6;
   else if (version == "5.5")

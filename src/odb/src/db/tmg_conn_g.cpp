@@ -441,7 +441,7 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
 {
   if (!_graph)
     _graph = new tmg_conn_graph();
-  _graph->init(_ptN, _shortN);
+  _graph->init(_ptV.size(), _shortN);
   tcg_pt* pgV = _graph->_ptV;
   tmg_rcshort* s;
   tcg_edge *e, *e2;
@@ -496,7 +496,7 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
   tcg_pt* pg;
   int* path_vis = _graph->_path_vis;
   int jstart;
-  for (int j = 0; j < _ptN; j++) {
+  for (int j = 0; j < _ptV.size(); j++) {
     pgV[j].visited = 0;
   }
 
@@ -504,7 +504,7 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
   _graph->clearVisited();
   for (int j = 0; j < npath; j++)
     path_vis[j] = 0;
-  for (jstart = 0; jstart < _ptN; jstart++) {
+  for (jstart = 0; jstart < _ptV.size(); jstart++) {
     e = _graph->getFirstEdge(jstart);
     if (!e)
       continue;
@@ -530,7 +530,7 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
   int compn = 0;
   int loopn = 0;
   _graph->clearVisited();
-  for (jstart = 0; jstart < _ptN; jstart++) {
+  for (jstart = 0; jstart < _ptV.size(); jstart++) {
     e = _graph->getFirstEdge(jstart);
     if (!e)
       continue;
@@ -604,7 +604,7 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
     int loop_removed = 0;
     done = 1;
     _graph->clearVisited();
-    for (jstart = 0; jstart < _ptN; jstart++) {
+    for (jstart = 0; jstart < _ptV.size(); jstart++) {
       e = _graph->getFirstEdge(jstart);
       if (!e)
         continue;
@@ -672,7 +672,7 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
   int compn = 0;
   int loopn = 0;
   _graph->clearVisited();
-  for (jstart = 0; jstart < _ptN; jstart++) {
+  for (jstart = 0; jstart < _ptV.size(); jstart++) {
     e = _graph->getFirstEdge(jstart);
     if (!e)
       continue;
@@ -754,7 +754,7 @@ void tmg_conn::checkVisited()
 {
   int j;
   tcg_pt* pgV = _graph->_ptV;
-  for (j = 0; j < _ptN; j++)
+  for (j = 0; j < _ptV.size(); j++)
     if (!pgV[j].visited) {
       _connected = false;
       break;
@@ -783,7 +783,7 @@ void tmg_conn::printDisconnect()
   tcg_pt* pgV = _graph->_ptV;
   tcg_edge* e;
   _graph->clearVisited();
-  for (j = 0; j < _ptN; j++) {
+  for (j = 0; j < _ptV.size(); j++) {
     e = _graph->getFirstEdge(j);
     if (!e)
       continue;
@@ -816,14 +816,14 @@ void tmg_conn::printDisconnect()
       while (tstack0 < tstackN && !pt) {
         x = tstackV[tstack0++];
         for (pt = x->_pt; pt; pt = pt->_next_for_term)
-          if (!pgV[pt - _ptV].visited)
+          if (!pgV[pt - &_ptV[0]].visited)
             break;
       }
       if (!pt)
         break;
       tstack0--;
-      e = _graph->getFirstEdge(pt - _ptV);
-      pgV[pt - _ptV].visited = 1;
+      e = _graph->getFirstEdge(pt - &_ptV[0]);
+      pgV[pt - &_ptV[0]].visited = 1;
     }
     if (nsmall == 0 || n < nsmall) {
       nsmall = n;
@@ -867,7 +867,7 @@ void tmg_conn::printDisconnect()
            _ptV[last_pt]._y,
            _ptV[last_pt]._layer->getName().c_str());
     notice(0, "nearby points\n");
-    for (j = 0; j < _ptN; j++)
+    for (j = 0; j < _ptV.size(); j++)
       if (!pgV[j].visited) {
         int dx = _ptV[j]._x - _ptV[last_pt]._x;
         int dy = _ptV[j]._y - _ptV[last_pt]._y;
@@ -901,7 +901,7 @@ void tmg_conn::adjustShapes()
 
   // find shorts that are not to the same xy
   _graph->clearVisited();
-  for (j = 0; j < _ptN; j++) {
+  for (j = 0; j < _ptV.size(); j++) {
     p = pgV + j;
     if (p->visited)
       continue;
@@ -950,7 +950,7 @@ void tmg_conn::adjustShapes()
     for (k = 0; k < pN; k++)
       for (e = pgV[pS[k]].edges; e; e = e->next)
         if (!e->s) {
-          spV[sN] = _ptV + pS[k];
+          spV[sN] = &_ptV[pS[k]];
           rV[sN] = &_rcV[e->k];
           s = &(_rcV[e->k]._shape);
           sV[sN] = s;
@@ -1059,7 +1059,7 @@ void tmg_conn::adjustShapes()
         }
       if (ok) {
 #if 1
-        adjustCommit(_ptV + pS[ii], rV, spV, sN);
+        adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
 #else
         for (k = 0; k < pN; k++)
           if (k != ii) {
@@ -1112,7 +1112,7 @@ void tmg_conn::adjustShapes()
         if (k < pN) {
           // notice(0, "trouble with collinear, net %d\n",_net->getId());
         } else {
-          adjustCommit(_ptV + pS[ii], rV, spV, sN);
+          adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
           // for self-test, it would be good to change the shapes here
           adjust_done = 1;
           continue;
@@ -1137,7 +1137,7 @@ void tmg_conn::adjustShapes()
         if (k < pN) {
           // notice(0, "trouble with collinear, net %d\n",_net->getId());
         } else {
-          adjustCommit(_ptV + pS[ii], rV, spV, sN);
+          adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
           // for self-test, it would be good to change the shapes here
           adjust_done = 1;
           continue;
@@ -1202,7 +1202,7 @@ void tmg_conn::adjustShapes()
           ok = 0;
       }
       if (ok) {
-        adjustCommit(_ptV + pS[ii], rV, spV, sN);
+        adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
         adjust_done = 1;
         continue;
       }
@@ -1304,10 +1304,10 @@ void tmg_conn::adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN)
       int dx = p->_x - spV[k]->_x;
       int dy = p->_y - spV[k]->_y;
       tmg_rcpt* p2;
-      if (_ptV + rV[k]->_ifr == spV[k])
-        p2 = _ptV + rV[k]->_ito;
+      if (&_ptV[rV[k]->_ifr] == spV[k])
+        p2 = &_ptV[rV[k]->_ito];
       else
-        p2 = _ptV + rV[k]->_ifr;
+        p2 = &_ptV[rV[k]->_ifr];
       if (dx) {
         if (p->_x < p2->_x) {
           rV[k]->_shape.setXmin(rV[k]->_shape.xMin() + dx);
@@ -1332,13 +1332,13 @@ void tmg_conn::adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN)
 int tmg_conn::getDisconnectedStart()
 {
   int j;
-  for (j = 0; j < _ptN; j++)
+  for (j = 0; j < _ptV.size(); j++)
     if (!_graph->_ptV[j].visited) {
       if (_graph->_ptV[j].edges && !_graph->_ptV[j].edges->next) {
         return j;
       }
     }
-  for (j = 0; j < _ptN; j++)
+  for (j = 0; j < _ptV.size(); j++)
     if (!_graph->_ptV[j].visited) {
       if (_graph->_ptV[j].edges) {
         return j;
@@ -1351,10 +1351,10 @@ void tmg_conn::copyWireIdToVisitedShorts(int j)
 {
   // copy _ptV[j]._dbwire_id to visited points shorted to j
   int wire_id = _ptV[j]._dbwire_id;
-  tmg_rcpt* x0 = _ptV + j;
+  tmg_rcpt* x0 = &_ptV[j];
   tmg_rcpt* x;
   for (x = x0->_sring; x != x0; x = x->_sring) {
-    if (x->_dbwire_id < 0 && _graph->_ptV[x - _ptV].visited) {
+    if (x->_dbwire_id < 0 && _graph->_ptV[x - &_ptV[0]].visited) {
       x->_dbwire_id = wire_id;
     }
   }

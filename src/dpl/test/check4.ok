@@ -12,3 +12,5 @@
 [INFO ODB-0134] Finished DEF file: check4.def
 [WARNING DPL-0006] Site aligned check failed (1).
  FILL01
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033

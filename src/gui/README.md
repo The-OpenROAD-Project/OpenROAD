@@ -27,6 +27,34 @@ To remove the button:
 gui::remove_toolbar_button name
 ```
 
+### Add items to the menubar
+
+```
+create_menu_item [-name name]
+                 [-path menu_path]
+                 -text item_text
+                 -script tcl_script
+                 [-shortcut key_shortcut] 
+                 [-echo]
+```
+
+Returns: name of the new item, either ``name`` or ``actionX``.
+
+Options description:
+- ``item_text``: The text to put on the item.
+- ``tcl_script``: The tcl script to evaluate when the button is pressed.
+- ``name``: (optional) name of the item, used when deleting the item.
+- ``menu_path``: (optional) Menu path to place the new item in (hierarchy is separated by /), defaults to "Custom Scripts", but this can also be "Tools" or "New menu/New submenu".
+- ``key_shortcut``: (optional) key shortcut to trigger this item.
+- ``echo``: (optional) indicate that the commands in the ``tcl_script`` should be echoed in the log.
+
+To remove the item: 
+
+```
+gui::remove_menu_item name
+```
+
+
 ### Save screenshot of layout
 
 This command can be both be used when the GUI is active and not active.
