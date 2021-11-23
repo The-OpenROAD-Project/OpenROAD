@@ -776,4 +776,378 @@ void HeatMapRenderer::setSettings(const Settings& settings)
   datasource_.setSettings(data_settings);
 }
 
+////////////
+
+RoutingCongestionDataSource::RoutingCongestionDataSource() :
+    HeatMapDataSource("Routing Congestion", "RoutingCongestion"),
+    show_all_(true),
+    show_hor_(false),
+    show_ver_(false)
+{
+}
+
+void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+{
+  QComboBox* congestion_ = new QComboBox(parent);
+  congestion_->addItems({"All", "Horizontal", "Vertical"});
+
+  if (show_all_) {
+    congestion_->setCurrentIndex(0);
+  } else if (show_hor_) {
+    congestion_->setCurrentIndex(1);
+  } else if (show_ver_) {
+    congestion_->setCurrentIndex(2);
+  }
+
+  layout->addRow("Congestion Layers", congestion_);
+
+  QObject::connect(congestion_,
+                   QOverload<int>::of(&QComboBox::currentIndexChanged),
+                   [this](int value) {
+                     show_all_ = value == 0;
+                     show_hor_ = value == 1;
+                     show_ver_ = value == 2;
+                     destroyMap();
+                   });
+}
+
+void RoutingCongestionDataSource::populateMap()
+{
+  if (getBlock() == nullptr) {
+    return;
+  }
+
+  auto* grid = getBlock()->getGCellGrid();
+  if (grid == nullptr) {
+    return;
+  }
+
+  auto gcell_congestion_data = grid->getCongestionMap();
+  if (gcell_congestion_data.empty()) {
+    return;
+  }
+
+  std::vector<int> x_grid, y_grid;
+  grid->getGridX(x_grid);
+  const uint x_grid_sz = x_grid.size();
+  grid->getGridY(y_grid);
+  const uint y_grid_sz = y_grid.size();
+
+  for (const auto& [key, cong_data] : gcell_congestion_data) {
+    const uint x_idx = key.first;
+    const uint y_idx = key.second;
+
+    if (x_idx + 1 >= x_grid_sz || y_idx + 1 >= y_grid_sz) {
+      continue;
+    }
+
+    const odb::Rect gcell_rect(
+        x_grid[x_idx], y_grid[y_idx], x_grid[x_idx + 1], y_grid[y_idx + 1]);
+
+    const auto hor_capacity = cong_data.horizontal_capacity;
+    const auto hor_usage = cong_data.horizontal_usage;
+    const auto ver_capacity = cong_data.vertical_capacity;
+    const auto ver_usage = cong_data.vertical_usage;
+
+    //-1 indicates capacity is not well defined...
+    const double hor_congestion
+        = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity : -1;
+    const double ver_congestion
+        = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity : -1;
+
+    double congestion = 0.0;
+    if (show_all_) {
+      congestion = std::max(hor_congestion, ver_congestion);
+    } else if (show_hor_) {
+      congestion = hor_congestion;
+    } else {
+      congestion = ver_congestion;
+    }
+
+    if (congestion < 0) {
+      continue;
+    }
+
+    addToMap(gcell_rect, 100 * congestion);
+  }
+}
+
+const Renderer::Settings RoutingCongestionDataSource::getSettings() const
+{
+  auto settings = HeatMapDataSource::getSettings();
+
+  settings["ShowAll"] = show_all_;
+  settings["ShowHor"] = show_hor_;
+  settings["ShowVer"] = show_ver_;
+
+  return settings;
+}
+
+void RoutingCongestionDataSource::setSettings(const Renderer::Settings& settings)
+{
+  HeatMapDataSource::setSettings(settings);
+
+  Renderer::setSetting<bool>(settings, "ShowAll", show_all_);
+  Renderer::setSetting<bool>(settings, "ShowHor", show_hor_);
+  Renderer::setSetting<bool>(settings, "ShowVer", show_ver_);
+}
+
+////////////
+
+PlacementCongestionDataSource::PlacementCongestionDataSource() :
+    HeatMapDataSource("Placement Congestion", "PlacementCongestion"),
+    include_taps_(true),
+    include_filler_(false),
+    include_io_(false)
+{
+}
+
+void PlacementCongestionDataSource::populateMap()
+{
+  if (getBlock() == nullptr) {
+    return;
+  }
+
+  for (auto* inst : getBlock()->getInsts()) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    if (!include_filler_ && inst->getMaster()->isFiller()) {
+      continue;
+    }
+    if (!include_taps_ && (inst->getMaster()->getType() == odb::dbMasterType::CORE_WELLTAP || inst->getMaster()->isEndCap())) {
+      continue;
+    }
+    if (!include_io_ && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
+      continue;
+    }
+    odb::Rect inst_box;
+    inst->getBBox()->getBox(inst_box);
+
+    addToMap(inst_box, 100.0);
+  }
+}
+
+void PlacementCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+{
+  QCheckBox* taps = new QCheckBox(parent);
+  taps->setCheckState(include_taps_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Include taps and endcaps", taps);
+
+  QCheckBox* filler = new QCheckBox(parent);
+  filler->setCheckState(include_filler_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Include fillers", filler);
+
+  QCheckBox* io = new QCheckBox(parent);
+  io->setCheckState(include_io_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Include IO", io);
+
+  QObject::connect(taps,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_taps_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+
+  QObject::connect(filler,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_filler_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+
+  QObject::connect(io,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_io_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+}
+
+const Renderer::Settings PlacementCongestionDataSource::getSettings() const
+{
+  auto settings = HeatMapDataSource::getSettings();
+
+  settings["Taps"] = include_taps_;
+  settings["Filler"] = include_filler_;
+  settings["IO"] = include_io_;
+
+  return settings;
+}
+
+void PlacementCongestionDataSource::setSettings(const Renderer::Settings& settings)
+{
+  HeatMapDataSource::setSettings(settings);
+
+  Renderer::setSetting<bool>(settings, "Taps", include_taps_);
+  Renderer::setSetting<bool>(settings, "Filler", include_filler_);
+  Renderer::setSetting<bool>(settings, "IO", include_io_);
+}
+
+////////////
+
+PowerDensityDataSource::PowerDensityDataSource() :
+    HeatMapDataSource("Power Density", "PowerDensity"),
+    sta_(nullptr),
+    include_internal_(true),
+    include_leakage_(true),
+    include_switching_(true),
+    min_power_(0.0),
+    max_power_(0.0)
+{
+  setLogScale(true);
+}
+
+void PowerDensityDataSource::populateMap()
+{
+  if (getBlock() == nullptr || sta_ == nullptr) {
+    return;
+  }
+
+  if (sta_->cmdNetwork() == nullptr) {
+    return;
+  }
+
+  auto corner = sta_->findCorner("default");
+  auto* network = sta_->getDbNetwork();
+
+  const bool include_all = include_internal_ && include_leakage_ && include_switching_;
+  for (auto* inst : getBlock()->getInsts()) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+
+    sta::PowerResult power;
+    sta_->power(network->dbToSta(inst), corner, power);
+
+    float pwr = 0.0;
+    if (include_all) {
+      pwr = power.total();
+    } else {
+      if (include_internal_) {
+        pwr += power.internal();
+      }
+      if (include_leakage_) {
+        pwr += power.switching();
+      }
+      if (include_switching_) {
+        pwr += power.leakage();
+      }
+    }
+
+    odb::Rect inst_box;
+    inst->getBBox()->getBox(inst_box);
+
+    addToMap(inst_box, pwr);
+  }
+}
+
+void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)
+{
+  min_power_ = std::numeric_limits<double>::max();
+  max_power_ = std::numeric_limits<double>::min();
+
+  for (const auto& [bbox, map_pt] : map) {
+    min_power_ = std::min(min_power_, map_pt->value);
+    max_power_ = std::max(max_power_, map_pt->value);
+  }
+
+  const double range = max_power_ - min_power_;
+  const double offset = min_power_;
+  for (auto& [bbox, map_pt] : map) {
+    map_pt->value = 100 * (map_pt->value - offset) / range;
+  }
+}
+
+const std::string PowerDensityDataSource::formatValue(double value) const
+{
+  double range = max_power_ - min_power_;
+  double offset = min_power_;
+  if (range == 0.0) {
+    range = 1.0; // dummy numbers until power has been populated
+  }
+
+  QString units;
+  if (max_power_ > 1 || max_power_ == 0.0) {
+    units = "W";
+  } else if (max_power_ > 1e-3) {
+    units = "mW";
+    range *= 1e3;
+    offset *= 1e3;
+  } else if (max_power_ > 1e-6) {
+    units = "\u03BCW"; // micro W
+    range *= 1e6;
+    offset *= 1e6;
+  } else if (max_power_ > 1e-9) {
+    units = "nW";
+    range *= 1e9;
+    offset *= 1e9;
+  } else {
+    units = "pW";
+    range *= 1e12;
+    offset *= 1e12;
+  }
+
+  QString text;
+  text.setNum((value / 100.0) * range + offset, 'f', 3);
+  text += units;
+  return text.toStdString();
+}
+
+void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+{
+  QCheckBox* internal = new QCheckBox(parent);
+  internal->setCheckState(include_internal_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Internal power", internal);
+
+  QCheckBox* switching = new QCheckBox(parent);
+  switching->setCheckState(include_switching_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Switching power", switching);
+
+  QCheckBox* leakage = new QCheckBox(parent);
+  leakage->setCheckState(include_leakage_ ? Qt::Checked : Qt::Unchecked);
+  layout->addRow("Leakage power", leakage);
+
+  QObject::connect(internal,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_internal_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+
+  QObject::connect(switching,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_switching_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+
+  QObject::connect(leakage,
+                   &QCheckBox::stateChanged,
+                   [this](int value) {
+                     include_leakage_ = value == Qt::Checked;
+                     destroyMap();
+                   });
+}
+
+const Renderer::Settings PowerDensityDataSource::getSettings() const
+{
+  auto settings = HeatMapDataSource::getSettings();
+
+  settings["Internal"] = include_internal_;
+  settings["Switching"] = include_switching_;
+  settings["Leakage"] = include_leakage_;
+
+  return settings;
+}
+
+void PowerDensityDataSource::setSettings(const Renderer::Settings& settings)
+{
+  HeatMapDataSource::setSettings(settings);
+
+  Renderer::setSetting<bool>(settings, "Internal", include_internal_);
+  Renderer::setSetting<bool>(settings, "Switching", include_switching_);
+  Renderer::setSetting<bool>(settings, "Leakage", include_leakage_);
+}
+
 }  // namespace gui

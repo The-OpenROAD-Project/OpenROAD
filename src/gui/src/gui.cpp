@@ -492,7 +492,10 @@ void Gui::showWidget(const std::string& name, bool show)
 
 void Gui::setHeatMapSetting(const std::string& name, const std::string& option, double value)
 {
-  std::map<std::string, MainWindow::HeatMap> maps;
+  std::map<std::string, MainWindow::HeatMap> maps{
+    {"Routing", MainWindow::HeatMap::ROUTING},
+    {"Placement", MainWindow::HeatMap::PLACEMENT},
+    {"Power", MainWindow::HeatMap::POWER}};
   MainWindow::HeatMap type;
   if (maps.count(name) != 0) {
     type = maps[name];

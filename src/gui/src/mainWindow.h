@@ -99,6 +99,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   const std::vector<std::string> getRestoreTclCommands();
 
   enum HeatMap {
+    ROUTING,
+    PLACEMENT,
+    POWER
   };
   void setHeatMapSetting(const HeatMap map, const std::string& option, double value);
 
@@ -290,6 +293,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // created menu actions
   std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
+
+  // global heat maps
+  RoutingCongestionDataSource routing_congestion_data_;
+  PlacementCongestionDataSource placement_congestion_data_;
+  PowerDensityDataSource power_density_data_;
 };
 
 }  // namespace gui

@@ -252,4 +252,74 @@ class HeatMapRenderer : public Renderer
   static constexpr char groupname_prefix_[] = "HeatMap#";
 };
 
+class RoutingCongestionDataSource : public HeatMapDataSource
+{
+ public:
+  RoutingCongestionDataSource();
+  ~RoutingCongestionDataSource() {}
+
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+
+  virtual const Renderer::Settings getSettings() const override;
+  virtual void setSettings(const Renderer::Settings& settings) override;
+
+ protected:
+  virtual void populateMap() override;
+
+ private:
+  bool show_all_;
+  bool show_hor_;
+  bool show_ver_;
+};
+
+class PlacementCongestionDataSource : public HeatMapDataSource
+{
+ public:
+  PlacementCongestionDataSource();
+  ~PlacementCongestionDataSource() {}
+
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+
+  virtual const Renderer::Settings getSettings() const override;
+  virtual void setSettings(const Renderer::Settings& settings) override;
+
+ protected:
+  virtual void populateMap() override;
+
+ private:
+  bool include_taps_;
+  bool include_filler_;
+  bool include_io_;
+};
+
+class PowerDensityDataSource : public HeatMapDataSource
+{
+ public:
+  PowerDensityDataSource();
+  ~PowerDensityDataSource() {}
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  virtual const std::string formatValue(double value) const override;
+
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+
+  virtual const Renderer::Settings getSettings() const override;
+  virtual void setSettings(const Renderer::Settings& settings) override;
+
+ protected:
+  virtual void populateMap() override;
+  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+
+ private:
+  sta::dbSta* sta_;
+
+  bool include_internal_;
+  bool include_leakage_;
+  bool include_switching_;
+
+  double min_power_;
+  double max_power_;
+};
+
 }  // namespace gui

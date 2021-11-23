@@ -338,6 +338,9 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
 void MainWindow::setBlock(odb::dbBlock* block)
 {
+  routing_congestion_data_.setBlock(block);
+  placement_congestion_data_.setBlock(block);
+  power_density_data_.setBlock(block);
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -356,6 +359,12 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  // renderers
+  power_density_data_.setSTA(sta);
+  gui->registerRenderer(routing_congestion_data_.getRenderer());
+  gui->registerRenderer(placement_congestion_data_.getRenderer());
+  gui->registerRenderer(power_density_data_.getRenderer());
 }
 
 void MainWindow::createStatusBar()
@@ -413,9 +422,8 @@ void MainWindow::createActions()
   build_ruler_->setShortcut(QString("k"));
 
   connect(congestion_setup_,
-          SIGNAL(triggered()),
-          controls_,
-          SLOT(showCongestionSetup()));
+          &QAction::triggered,
+          [this]() { routing_congestion_data_.showSetup(); });
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
@@ -1121,6 +1129,18 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
 void MainWindow::setHeatMapSetting(const HeatMap map, const std::string& option, double value)
 {
   HeatMapDataSource* source = nullptr;
+
+  switch (map) {
+  case ROUTING:
+    source = &routing_congestion_data_;
+    break;
+  case PLACEMENT:
+    source = &placement_congestion_data_;
+    break;
+  case POWER:
+    source = &power_density_data_;
+    break;
+  }
 
   if (source == nullptr) {
     return;
