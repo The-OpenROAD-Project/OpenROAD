@@ -65,6 +65,8 @@ using sta::fuzzyLess;
 using sta::fuzzyInf;
 using sta::INF;
 
+static double rebuffer_cap = 0.0;
+
 void
 Resizer::rebuffer(const Pin *drvr_pin)
 {
@@ -89,6 +91,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
     SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
                                         stt_builder_, db_network_, logger_);
     if (tree) {
+      rebuffer_cap = wireSignalCapacitance(drvr_pin, net, sta_->cmdCorner());
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
@@ -290,7 +293,7 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
     const Corner *corner = req_path.isNull()
       ? sta_->cmdCorner()
       : req_path.dcalcAnalysisPt(sta_)->corner();
-    double wire_cap = wire_length * wireSignalCapacitance(corner);
+    double wire_cap = wire_length * rebuffer_cap;
     double wire_res = wire_length * wireSignalResistance(corner);
     double wire_delay = wire_res * wire_cap;
     BufferedNet *z = makeBufferedNet(BufferedNetType::wire,
@@ -424,6 +427,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     setLocation(buffer, choice->location());
     rebufferTopDown(choice->ref(), net2, level + 1);
     parasiticsInvalid(net);
+    parasiticsInvalid(net2);
     break;
   }
   case BufferedNetType::wire:

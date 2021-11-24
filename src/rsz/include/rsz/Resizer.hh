@@ -553,6 +553,12 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
+  double wireSignalCapacitance(const Pin *drvr_pin,
+                               const Net *net,
+                               const Corner *corner);
+  float pinCap(const Pin *drvr_pin,
+               const Corner *corner);
+  double grouteLength(const Net *net);
 
   bool repairSetup(PathRef &path,
                    Slack path_slack);

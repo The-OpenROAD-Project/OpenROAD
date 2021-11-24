@@ -65,6 +65,7 @@ struct GSegment
     final_layer = l1;
   }
   bool isVia() { return (init_x == final_x && init_y == final_y); }
+  int length() { return std::abs(init_x - final_x) + std::abs(init_y - final_y); }
   bool operator==(const GSegment& segment) const
   {
     return (init_layer == segment.init_layer &&

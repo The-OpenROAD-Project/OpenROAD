@@ -80,12 +80,18 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   node_id_ = 0;
   node_map_.clear();
 
+  if (sta::stringEq(net->getConstName(),"dpath.a_lt_b$in1\\[0\\]")) {
+    logger_->setDebugLevel(GRT, "est_rc", 1);
+  }
   parasitic_
       = parasitics_->makeParasiticNetwork(sta_net_, false, analysis_point_);
   makePinRoutePts(pins);
   makeRouteParasitics(net, routes);
   makeParasiticsToGrid(pins);
   reduceParasiticNetwork();
+  if (sta::stringEq(net->getConstName(),"dpath.a_lt_b$in1\\[0\\]")) {
+    logger_->setDebugLevel(GRT, "est_rc", 0);
+  }
 }
 
 void MakeWireParasitics::makePinRoutePts(std::vector<Pin>& pins)
@@ -187,13 +193,22 @@ void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
   if (grid_node) {
     const odb::Point& pt = pin.getPosition();
     int wire_length_dbu
-        = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
+      = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
     float res, cap;
     layerRC(wire_length_dbu, layer, res, cap);
 
+    sta::Units* units = sta_->units();
+    debugPrint(logger_, GRT, "est_rc", 1,
+               "pin {} -> to grid {}u layer={} r={} c={}",
+               pin.getName(),
+               static_cast<int>(dbuToMeters(wire_length_dbu) * 1e+6),
+               layer,
+               units->resistanceUnit()->asString(res),
+               units->capacitanceUnit()->asString(cap));
+
     parasitics_->incrCap(pin_node, cap / 2.0, analysis_point_);
     parasitics_->makeResistor(
-        nullptr, pin_node, grid_node, res, analysis_point_);
+                              nullptr, pin_node, grid_node, res, analysis_point_);
     parasitics_->incrCap(grid_node, cap / 2.0, analysis_point_);
   } else {
     logger_->warn(GRT, 26, "Missing route to pin {}.", pin.getName());
