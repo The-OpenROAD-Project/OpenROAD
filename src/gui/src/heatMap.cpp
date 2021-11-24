@@ -90,8 +90,11 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   form->addRow(tr("Show legend"), show_legend_);
 
+  QString grid_suffix(" \u03BCm"); // micro meters
   grid_x_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+  grid_x_size_->setSuffix(grid_suffix);
   grid_y_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+  grid_y_size_->setSuffix(grid_suffix);
   QHBoxLayout* grid_layout = new QHBoxLayout;
   grid_layout->addWidget(new QLabel("X", this));
   grid_layout->addWidget(grid_x_size_);
