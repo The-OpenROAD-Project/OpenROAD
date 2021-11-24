@@ -101,6 +101,10 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   grid_layout->addWidget(new QLabel("Y", this));
   grid_layout->addWidget(grid_y_size_);
   form->addRow(tr("Grid"), grid_layout);
+  if (!source_.canAdjustGrid()) {
+    grid_x_size_->setEnabled(false);
+    grid_y_size_->setEnabled(false);
+  }
 
   min_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   min_range_selector_->setDecimals(3);
@@ -667,8 +671,8 @@ void HeatMapDataSource::setupMap()
     return;
   }
 
-  const int dx = grid_x_size_ * getBlock()->getDbUnitsPerMicron();
-  const int dy = grid_y_size_ * getBlock()->getDbUnitsPerMicron();
+  const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
+  const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
 
   odb::Rect bounds;
   getBlock()->getBBox()->getBox(bounds);
@@ -878,6 +882,50 @@ void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QF
                      show_ver_ = value == 2;
                      destroyMap();
                    });
+}
+
+double RoutingCongestionDataSource::getGridXSize() const
+{
+  if (getBlock() == nullptr) {
+    return default_grid_;
+  }
+
+  auto* gcellgrid = getBlock()->getGCellGrid();
+  if (gcellgrid == nullptr) {
+    return default_grid_;
+  }
+
+  std::vector<int> grid;
+  gcellgrid->getGridX(grid);
+
+  if (grid.size() < 2) {
+    return default_grid_;
+  } else {
+    const double delta = grid[1] - grid[0];
+    return delta / getBlock()->getDbUnitsPerMicron();
+  }
+}
+
+double RoutingCongestionDataSource::getGridYSize() const
+{
+  if (getBlock() == nullptr) {
+    return default_grid_;
+  }
+
+  auto* gcellgrid = getBlock()->getGCellGrid();
+  if (gcellgrid == nullptr) {
+    return default_grid_;
+  }
+
+  std::vector<int> grid;
+  gcellgrid->getGridY(grid);
+
+  if (grid.size() < 2) {
+    return default_grid_;
+  } else {
+    const double delta = grid[1] - grid[0];
+    return delta / getBlock()->getDbUnitsPerMicron();
+  }
 }
 
 void RoutingCongestionDataSource::populateMap()

@@ -132,9 +132,10 @@ class HeatMapDataSource
   int getColorAlphaMinimum() const { return 0; }
   int getColorAlphaMaximum() const { return 255; }
 
+  virtual bool canAdjustGrid() const { return true; }
   void setGridSizes(double x, double y);
-  double getGridXSize() const { return grid_x_size_; }
-  double getGridYSize() const { return grid_y_size_; }
+  virtual double getGridXSize() const { return grid_x_size_; }
+  virtual double getGridYSize() const { return grid_y_size_; }
   double getGridSizeMinimumValue() const { return 1.0; }
   double getGridSizeMaximumValue() const { return 100.0; }
 
@@ -277,6 +278,10 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
 
+  virtual bool canAdjustGrid() const override { return false; }
+  virtual double getGridXSize() const override;
+  virtual double getGridYSize() const override;
+
  protected:
   virtual void populateMap() override;
 
@@ -284,6 +289,8 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   bool show_all_;
   bool show_hor_;
   bool show_ver_;
+
+  static constexpr double default_grid_ = 10.0;
 };
 
 class PlacementCongestionDataSource : public HeatMapDataSource
