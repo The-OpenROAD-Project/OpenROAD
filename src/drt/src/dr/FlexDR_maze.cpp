@@ -959,17 +959,19 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
             gridGraph_.addRouteShapeCostVia(i, j, z - 1);  // safe access
             break;
           case 2:
+          case 4:
             gridGraph_.subFixedShapeCostVia(i, j, z - 1);  // safe access
             break;
           case 3:
+          case 5:
             gridGraph_.addFixedShapeCostVia(i, j, z - 1);  // safe access
             break;
-          case 4:
-            gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
-            break;
-          case 5:
-            gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
-            break;
+//          case 4:
+//            gridGraph_.setFixedShapeCostVia(i, j, z, 0);  // safe access
+//            break;
+//          case 5:
+//            gridGraph_.setFixedShapeCostVia(i, j, z, 1);  // safe access
+//            break;
           default:;
         }
       } else if (eolType == 2) {
@@ -2356,7 +2358,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         unique_ptr<drConnFig> tmp(std::move(currVia));
         workerRegionQuery.add(tmp.get());
         net->addRoute(std::move(tmp));
-        if (gridGraph_.hasRouteShapeCost(startX, startY, currZ, frDirEnum::U)) {
+        if (gridGraph_.hasRouteShapeCostAdj(startX, startY, currZ, frDirEnum::U)) {
           net->addMarker();
         }
       }
@@ -2485,9 +2487,9 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   bool prevHasCost = false;
   int endI = vertical ? endY : endX;
   for (int i = (vertical ? startY : startX); i < endI; i++) {
-    if ((vertical && gridGraph_.hasRouteShapeCost(startX, i, z, frDirEnum::E))
+    if ((vertical && gridGraph_.hasRouteShapeCostAdj(startX, i, z, frDirEnum::E))
         || (!vertical
-            && gridGraph_.hasRouteShapeCost(i, startY, z, frDirEnum::N))) {
+            && gridGraph_.hasRouteShapeCostAdj(i, startY, z, frDirEnum::N))) {
       if (!prevHasCost) {
         net->addMarker();
         prevHasCost = true;
@@ -3061,19 +3063,19 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     if (isPatchHorz) {
       // in gridgraph, the planar cost is checked for xIdx + 1
       for (auto xIdx = max(0, startIdx.x() - 1); xIdx < endIdx.x(); ++xIdx) {
-        if (gridGraph_.hasRouteShapeCost(
+        if (gridGraph_.hasRouteShapeCostAdj(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
                   * workerDRCCost_;
         }
-        if (gridGraph_.hasFixedShapeCost(
+        if (gridGraph_.hasFixedShapeCostAdj(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
                   * FIXEDSHAPECOST;
         }
-        if (gridGraph_.hasMarkerCost(
+        if (gridGraph_.hasMarkerCostAdj(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
@@ -3083,19 +3085,19 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     } else {
       // in gridgraph, the planar cost is checked for yIdx + 1
       for (auto yIdx = max(0, startIdx.y() - 1); yIdx < endIdx.y(); ++yIdx) {
-        if (gridGraph_.hasRouteShapeCost(
+        if (gridGraph_.hasRouteShapeCostAdj(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
                   * workerDRCCost_;
         }
-        if (gridGraph_.hasFixedShapeCost(
+        if (gridGraph_.hasFixedShapeCostAdj(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
                   * FIXEDSHAPECOST;
         }
-        if (gridGraph_.hasMarkerCost(
+        if (gridGraph_.hasMarkerCostAdj(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)

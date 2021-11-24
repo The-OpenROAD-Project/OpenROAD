@@ -3188,12 +3188,12 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             dbMasterType masterType = inst->getRefBlock()->getMasterType();
             if (isRoutingLayer) {
+                if (!isSkipVia) {
+                  modMinSpacingCostVia(box, zIdx, type, true, false);
+                  modMinSpacingCostVia(box, zIdx, type, false, false);
+                }
                 if (masterType.isBlock()) { 
                     modCornerToCornerSpacing(box, zIdx, type); // temp solution for ISPD19 benchmarks
-                    if (!isSkipVia) {
-                      modMinSpacingCostVia(box, zIdx, type, true, false);
-                      modMinSpacingCostVia(box, zIdx, type, false, false);
-                    }
                     if (isAddPathCost) {
                         type =  5;
                         modMinSpacingCostPlanar(box, zIdx, 7, false, nullptr, true);
@@ -3201,8 +3201,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                         type = 4;
                         modMinSpacingCostPlanar(box, zIdx, 6, false, nullptr, true);
                     }
-                    modEolSpacingRulesCost(box, zIdx, type);
                 }
+                modEolSpacingRulesCost(box, zIdx, type);
                 modMinSpacingCostPlanar(box, zIdx, type, false, nullptr, masterType.isBlock());
             } else {
               modCutSpacingCost(box, zIdx, type);
