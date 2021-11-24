@@ -710,9 +710,9 @@ class FlexDRWorker
       std::queue<RouteQueueEntry>& rerouteQueue);
   bool canRipup(drNet* n);
   // route
-  void addPathCost(drConnFig* connFig, bool modEol = false);
-  void subPathCost(drConnFig* connFig, bool modEol = false);
-  void modPathCost(drConnFig* connFig, int type, bool modEol = false);
+  void addPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
+  void subPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
+  void modPathCost(drConnFig* connFig, int type, bool modEol = false, bool modCutSpc = false);
   // minSpc
 
   void modMinSpacingCostPlanar(const Rect& box,
@@ -760,7 +760,9 @@ class FlexDRWorker
   void modCutSpacingCost(const Rect& box,
                          frMIdx z,
                          int type,
-                         bool isBlockage = false);
+                         bool isBlockage = false, 
+                         int avoidI = -1, 
+                         int avoidJ = -1);
   void modInterLayerCutSpacingCost(const Rect& box,
                                    frMIdx z,
                                    int type,
@@ -886,6 +888,7 @@ class FlexDRWorker
                                                 frCoord patchLength,
                                                 frCoord patchWidth);
   void routeNet_postRouteAddPathCost(drNet* net);
+  void routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path);
   void routeNet_postRouteAddPatchMetalCost(drNet* net);
 
   // end

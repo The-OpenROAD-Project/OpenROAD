@@ -43,8 +43,10 @@ using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
 
-bool debug = false;
+
+int beginDebugIter = std::numeric_limits<int>().max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
+
 {
   frCoord dx = max(max(box.xMin() - pt.x(), pt.x() - box.xMax()), 0);
   frCoord dy = max(max(box.yMin() - pt.y(), pt.y() - box.yMax()), 0);
@@ -1102,7 +1104,9 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 /*inline*/ void FlexDRWorker::modCutSpacingCost(const Rect& box,
                                                 frMIdx z,
                                                 int type,
-                                                bool isBlockage)
+                                                bool isBlockage, 
+                                                int avoidI, 
+                                                int avoidJ)
 {
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
@@ -1158,6 +1162,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+        if (i == avoidI && j == avoidJ)
+            continue;
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
@@ -1394,17 +1400,17 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   }
 }
 
-void FlexDRWorker::addPathCost(drConnFig* connFig, bool modEol)
+void FlexDRWorker::addPathCost(drConnFig* connFig, bool modEol, bool modCutSpc)
 {
-  modPathCost(connFig, 1);
+  modPathCost(connFig, 1, modEol, modCutSpc);
 }
 
-void FlexDRWorker::subPathCost(drConnFig* connFig, bool modEol)
+void FlexDRWorker::subPathCost(drConnFig* connFig, bool modEol, bool modCutSpc)
 {
-  modPathCost(connFig, 0);
+  modPathCost(connFig, 0, modEol, modCutSpc);
 }
 
-void FlexDRWorker::modPathCost(drConnFig* connFig, int type, bool modEol)
+void FlexDRWorker::modPathCost(drConnFig* connFig, int type, bool modEol, bool modCutSpc)
 {
   frNonDefaultRule* ndr = nullptr;
   if (connFig->typeId() == drcPathSeg) {
@@ -1470,7 +1476,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type, bool modEol)
       auto rect = static_cast<frRect*>(uFig.get());
       rect->getBBox(box);
       xform.apply(box);
-      modCutSpacingCost(box, bi.z(), type);
+      if (modCutSpc)
+        modCutSpacingCost(box, bi.z(), type);
       modInterLayerCutSpacingCost(box, bi.z(), type, true);
       modInterLayerCutSpacingCost(box, bi.z(), type, false);
     }
@@ -1551,8 +1558,15 @@ void FlexDRWorker::route_queue()
     gcWorker_->main();
     setMarkers(gcWorker_->getMarkers());
   }
-  if (debug) {
-    cout << "Starting with " << markers_.size() << " markers\n";
+  if (getDRIter() >= beginDebugIter) {
+    logger_->info(DRT,
+                  2001,
+                  "Starting worker ({} {}) ({} {}) with {} markers",
+                  getRouteBox().ll().x(),
+                  getRouteBox().ll().y(),
+                  getRouteBox().ur().x(),
+                  getRouteBox().ur().y(),
+                  markers_.size());
     for (auto& marker : markers_) {
       cout << marker << "\n";
     }
@@ -1654,7 +1668,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         initMazeCost_via_helper(net, false);
       }
       net->clear();
-
+      if (getDRIter() >= beginDebugIter)
+        logger_->info(DRT, 2002, "Routing net {}", net->getFrNet()->getName());
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
@@ -1709,7 +1724,15 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
-
+        if (getDRIter() >= beginDebugIter && !getGCWorker()->getMarkers().empty()) {
+          logger_->info(DRT,
+                        2003,
+                        "Ending net {} with markers:",
+                        net->getFrNet()->getName());
+          for (auto& marker : getGCWorker()->getMarkers()) {
+            cout << *marker << "\n";
+          }
+        }
         didCheck = true;
       } else {
         logger_->error(DRT, 1006, "failed to setTargetNet");
@@ -1784,7 +1807,14 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape, frLayer* layer, int modType)
   }
 }
 //mods eol cost for an eol edge
-void FlexDRWorker::modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerDirIsIncreasing, frLayer* layer, int modType) {
+void FlexDRWorker::modEolCost(frCoord low,
+                              frCoord high,
+                              frCoord line,
+                              bool isVertical,
+                              bool innerDirIsIncreasing,
+                              frLayer* layer,
+                              int modType)
+{
   Rect testBox;
   auto eol = layer->getDrEolSpacingConstraint();
   if (isVertical) {
@@ -1828,7 +1858,11 @@ void FlexDRWorker::routeNet_prep(
     list<pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
   frBox3D* tbx = nullptr;
+  if (getDRIter() >= beginDebugIter)
+    logger_->info(DRT, 2005, "Creating dest search points from pins:");
   for (auto& pin : net->getPins()) {
+    if (getDRIter() >= beginDebugIter)
+      logger_->info(DRT, 2006, "Pin {}", pin->getName());
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
       if (AUTO_TAPER_NDR_NETS
@@ -1861,6 +1895,17 @@ void FlexDRWorker::routeNet_prep(
     for (auto& ap : pin->getAccessPatterns()) {
       FlexMazeIdx mi;
       ap->getMazeIdx(mi);
+      if (getDRIter() >= beginDebugIter) {
+        logger_->info(DRT,
+                      2007,
+                      "({} {} {} coords: {} {} {}\n",
+                      mi.x(),
+                      mi.y(),
+                      mi.z(),
+                      ap->getPoint().x(),
+                      ap->getPoint().y(),
+                      ap->getBeginLayerNum());
+      }
       mazeIdx2unConnPins[mi].insert(pin.get());
       if (pin->hasFrTerm()) {
         realPinAPMazeIdx.insert(mi);
@@ -1927,11 +1972,21 @@ void FlexDRWorker::routeNet_setSrc(
   }
 
   unConnPins.erase(currPin);
-
   // first pin selection algorithm ends here
   for (auto& ap : currPin->getAccessPatterns()) {
     ap->getMazeIdx(mi);
     connComps.push_back(mi);
+    if (getDRIter() >= beginDebugIter) {
+      logger_->info(DRT,
+                    2000,
+                    "({} {} {} coords: {} {} {}\n",
+                    mi.x(),
+                    mi.y(),
+                    mi.z(),
+                    ap->getPoint().x(),
+                    ap->getPoint().y(),
+                    ap->getBeginLayerNum());
+    }
     ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
                    min(ccMazeIdx1.y(), mi.y()),
                    min(ccMazeIdx1.z(), mi.z()));
@@ -2514,6 +2569,30 @@ void FlexDRWorker::routeNet_postRouteAddPathCost(drNet* net)
   }
 }
 
+void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
+{
+  if (path.size() <= 1)
+    return;
+  for (unsigned long i = 1; i < path.size(); i++) {
+    if (path[i].z() != path[i-1].z()) {
+      frMIdx z = min (path[i].z(), path[i-1].z());
+      frViaDef* viaDef = design_->getTech()->getLayer(gridGraph_.getLayerNum(z)+1)->getDefaultViaDef();
+      dbTransform xform;
+      int x = gridGraph_.xCoord(path[i].x());
+      int y = gridGraph_.yCoord(path[i].y());
+      Point pt(x, y);
+      xform.apply(pt);
+      Rect box;
+      for (auto& uFig : viaDef->getCutFigs()) {
+        auto rect = static_cast<frRect*>(uFig.get());
+        rect->getBBox(box);
+        xform.apply(box);
+        modCutSpacingCost(box, z, 1, false, path[i].x(), path[i].y());
+      }
+    }
+  }
+}
+
 void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
                                         map<FlexMazeIdx, frCoord>& areaMap)
 {
@@ -2591,6 +2670,7 @@ bool FlexDRWorker::routeNet(drNet* net)
       routeNet_postAstarWritePath(
           net, path, realPinAPMazeIdx, mazeIdx2TaperBox, apMazeIdx);
       routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
+      routeNet_AddCutSpcCost(path);
       isFirstConn = false;
     } else {
       searchSuccess = false;

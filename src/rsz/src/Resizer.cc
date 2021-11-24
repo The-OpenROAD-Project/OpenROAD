@@ -365,23 +365,28 @@ Resizer::removeBuffer(Instance *buffer)
     removed = out_net;
   }
 
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
+  if (!sdc_->isConstrained(in_pin)
+      && !sdc_->isConstrained(out_pin)
+      && !sdc_->isConstrained(removed)
+      && !sdc_->isConstrained(buffer)) {
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteInstance(buffer);
 
-  NetPinIterator *pin_iter = db_network_->pinIterator(removed);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    Instance *pin_inst = db_network_->instance(pin);
-    if (pin_inst != buffer) {
-      Port *pin_port = db_network_->port(pin);
-      sta_->disconnectPin(pin);
-      sta_->connectPin(pin_inst, pin_port, survivor);
+    NetPinIterator *pin_iter = db_network_->pinIterator(removed);
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      Instance *pin_inst = db_network_->instance(pin);
+      if (pin_inst != buffer) {
+        Port *pin_port = db_network_->port(pin);
+        sta_->disconnectPin(pin);
+        sta_->connectPin(pin_inst, pin_port, survivor);
+      }
     }
+    delete pin_iter;
+    sta_->deleteNet(removed);
+    parasitics_invalid_.erase(removed);
   }
-  delete pin_iter;
-  sta_->deleteNet(removed);
-  parasitics_invalid_.erase(removed);
 }
 
 void
@@ -1421,7 +1426,7 @@ Resizer::makeRepeater(const char *where,
   // between the driver and the loads changing the net as the repair works its
   // way from the loads to the driver.
 
-  Net *net, *in_net, *out_net;
+  Net *net = nullptr, *in_net, *out_net;
   bool have_output_port_load = false;
   for (Pin *pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
