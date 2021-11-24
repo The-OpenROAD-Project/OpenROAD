@@ -9,10 +9,9 @@
 [INFO ODB-0131]     Created 13 components and 59 component-terminals.
 [INFO ODB-0133]     Created 16 nets and 30 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold1.def
-worst slack -0.24
-worst slack 1.35
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.024ns delay for hold repairs.
+worst slack -0.25
+worst slack 1.30
 [INFO RSZ-0046] Found 3 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 16 hold buffers.
-worst slack 0.02
-worst slack 1.23
+[INFO RSZ-0032] Inserted 18 hold buffers.
+worst slack 0.03
+worst slack 1.16

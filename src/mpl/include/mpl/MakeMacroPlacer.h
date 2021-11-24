@@ -41,13 +41,10 @@ namespace ord {
 
 class OpenRoad;
 
-mpl::MacroPlacer *
-makeMacroPlacer();
+mpl::MacroPlacer* makeMacroPlacer();
 
-void
-initMacroPlacer(OpenRoad *openroad);
+void initMacroPlacer(OpenRoad* openroad);
 
-void
-deleteMacroPlacer(mpl::MacroPlacer *macro_placer);
+void deleteMacroPlacer(mpl::MacroPlacer* macro_placer);
 
-}
+}  // namespace ord

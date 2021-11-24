@@ -62,5 +62,7 @@ target_include_directories(dst
 
 target_link_libraries(dst
   PUBLIC
-    TritonRoute
+    odb
+    utl
+    drt
 )

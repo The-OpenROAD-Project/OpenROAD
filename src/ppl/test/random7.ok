@@ -13,5 +13,5 @@ Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0041] Pin group 0: [req_msg[14] req_msg[15] req_msg[16] req_msg[17]]
-[INFO PPL-0003] Random pin placement.
+[INFO PPL-0007] Random pin placement.
 No differences found.

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include <QModelIndex>
 #include <QPoint>
 #include <QShortcut>
+#include <QSortFilterProxyModel>
 #include <QStringList>
 #include <QStyledItemDelegate>
 #include <QToolBar>
@@ -72,10 +73,7 @@ class SelectionModel : public QAbstractTableModel
 
   void populateModel();
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
  private:
-  odb::dbDatabase* db_;
   const SelectionSet& objs_;
   std::vector<const Selected*> table_data_;
 };
@@ -104,10 +102,7 @@ class HighlightModel : public QAbstractTableModel
                const QVariant& value,
                int role) override;
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
-
  private:
-  odb::dbDatabase* db_;
   const HighlightSet& objs_;
   std::vector<std::pair<int, const Selected*>> table_data_;
 };
@@ -147,21 +142,20 @@ class SelectHighlightWindow : public QDockWidget
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
 
-  void setDb(odb::dbDatabase* db);
-
  signals:
   void clearAllSelections();
   void clearAllHighlights();
 
+  void selected(const Selected& selection);
   void clearSelectedItems(const QList<const Selected*>& items);
   void clearHighlightedItems(const QList<const Selected*>& items);
   void zoomInToItems(const QList<const Selected*>& items);
-  void highlightSelectedItemsSig(const QList<const Selected*>& items,
-                                 int highlight_group);
+  void highlightSelectedItemsSig(const QList<const Selected*>& items);
 
  public slots:
   void updateSelectionModel();
   void updateHighlightModel();
+  void updateModels();
   void showSelectCustomMenu(QPoint pos);
   void showHighlightCustomMenu(QPoint pos);
 
@@ -172,9 +166,12 @@ class SelectHighlightWindow : public QDockWidget
   void zoomInHighlightedItems();
 
  private:
-  Ui::SelectHighlightWidget* ui;
+  Ui::SelectHighlightWidget ui_;
   SelectionModel selection_model_;
+  QSortFilterProxyModel* sel_filter_proxy_;
+
   HighlightModel highlight_model_;
+  QSortFilterProxyModel* hlt_filter_proxy_;
 
   QMenu* select_context_menu_;
   QMenu* highlight_context_menu_;

@@ -243,7 +243,7 @@ double extSpef::printDiff(dbNet* net, double dbCap, double refCap,
               "%10.4f VR %g  V %d  L %d  WC %d  %s corner %d %s ",
               diffCap, dbCap, comp_db, boundsPercent, refCap, comp_ref,
               boundsPercentRef, min_res, max_res, via_res, via_cnt, wlen,
-              wireCnt, ctype, ii, _ext->_tmpLenStats);
+              wireCnt, ctype, ii, _ext->_tmpLenStats.c_str());
     } else {
       const char* comp_db = comp_bounds(dbCap, min_cap, max_cap, boundsPercent);
       const char* comp_ref =
@@ -254,7 +254,7 @@ double extSpef::printDiff(dbNet* net, double dbCap, double refCap,
               "%10.4f  L %8d  WC %3d  V %3d %s corner %d %s ",
               diffCap, dbCap, comp_db, boundsPercent, refCap, comp_ref,
               boundsPercentRef, min_cap, max_cap, wlen, wireCnt, via_cnt, ctype,
-              ii, _ext->_tmpLenStats);
+              ii, _ext->_tmpLenStats.c_str());
     }
 
   } else {
@@ -1353,7 +1353,7 @@ uint extSpef::endNet(dbNet* net, uint resCnt) {
 void extSpef::setJunctionId(dbCapNode* capnode, dbRSeg* rseg) {
   if (!_stampWire || !_netSdb || !capnode->isInternal())
     return;
-  int tx, ty, cx, cy, jx, jy;
+  int cx, cy, jx, jy;
   rseg->getCoords(cx, cy);
   dbNet* cnet = capnode->getNet();
   dbNet* wnet;
@@ -1375,8 +1375,6 @@ void extSpef::setJunctionId(dbCapNode* capnode, dbRSeg* rseg) {
     dd = abs(jx - cx) + abs(jy - cy);
     if (dd < mindd) {
       mindd = dd;
-      tx = jx;
-      ty = jy;
       tjid = jid;
     }
   }
@@ -1748,7 +1746,8 @@ uint extSpef::readDNet(uint debug) {
   uint netId = 0;
   _netV1.clear();
 
-  dbNet* srcNet, *tgtNet;
+  dbNet* srcNet = nullptr;
+  dbNet* tgtNet;
   //	dbCCSeg *fseg = NULL;
 
   while (strcmp("*D_NET", _parser->get(0)) != 0) {

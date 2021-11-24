@@ -1,0 +1,13 @@
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: ./design.def
+[INFO ODB-0128] Design: counter
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 3 components and 15 component-terminals.
+[INFO ODB-0133]     Created 7 nets and 9 connections.
+[INFO ODB-0134] Finished DEF file: ./design.def
+[INFO RMP-0002] Blif writer successfully dumped file with 3 instances.
+No differences found.

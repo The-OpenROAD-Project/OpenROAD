@@ -33,14 +33,13 @@
 
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frTransform.h"
 
 namespace fr {
 class drFig : public drBlockObject
 {
  public:
   // getters
-  virtual void getBBox(frBox& box) const = 0;
+  virtual void getBBox(Rect& box) const = 0;
   // setters
   // others
  protected:

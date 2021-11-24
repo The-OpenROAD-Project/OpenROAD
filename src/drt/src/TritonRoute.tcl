@@ -40,6 +40,7 @@ sta::define_cmd_args "detailed_route" {
     [-output_drc filename]
     [-output_cmap filename]
     [-db_process_node name]
+    [-disable_via_gen]
     [-droute_end_iter iter]
     [-droute_via_in_pin_bottom_layer_num num]
     [-droute_via_in_pin_top_layer_num num]
@@ -57,8 +58,11 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
       -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -distributed}
+      -top_routing_layer -verbose -distributed} \
+    flags {-disable_via_gen}
   sta::check_argc_eq0 "detailed_route" $args
+
+  set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
 
   if { [info exists keys(-param)] } {
     if { [array size keys] > 1 } {
@@ -99,7 +103,12 @@ proc detailed_route { args } {
     }
     if { [info exists keys(-droute_end_iter)] } {
       sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-      set droute_end_iter $keys(-droute_end_iter)
+      if {$keys(-droute_end_iter) > 64} {
+        utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
+        set droute_end_iter 64
+      } else {
+        set droute_end_iter $keys(-droute_end_iter)
+      }
     } else {
       set droute_end_iter -1
     }
@@ -147,7 +156,7 @@ proc detailed_route { args } {
       set distributed ""
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
-      $output_cmap $db_process_node $droute_end_iter \
+      $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose $distributed
   }
@@ -168,12 +177,13 @@ sta::define_cmd_args "detailed_route_debug" {
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
+    [-pa_combining]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -gcell -iter -pin} \
-      flags {-dr -maze -pa -pa_markers -dump_dr}
+      flags {-dr -maze -pa -pa_markers -pa_combining -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -182,6 +192,7 @@ proc detailed_route_debug { args } {
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
+  set pa_combining [info exists flags(-pa_combining)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -200,7 +211,7 @@ proc detailed_route_debug { args } {
   if [info exists keys(-gcell)] {
     set gcell $keys(-gcell)
     if { [llength $gcell] != 2 } {
-      ord::error DRT 118 "-gcell is a list of 2 coordinates."
+      utl::error DRT 118 "-gcell is a list of 2 coordinates."
     }
     lassign $gcell gcell_x gcell_y
     sta::check_positive_integer "-gcell" $gcell_x
@@ -213,8 +224,8 @@ proc detailed_route_debug { args } {
     set iter 0
   }
 
- drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $gcell_x $gcell_y $iter $pa_markers
+  drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
+      $gcell_x $gcell_y $iter $pa_markers $pa_combining
 }
 
 proc detailed_route_run_worker { args } {

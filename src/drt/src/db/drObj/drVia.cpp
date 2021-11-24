@@ -39,4 +39,6 @@ drVia::drVia(const frVia& in)
 {
   in.getOrigin(origin_);
   setTapered(in.isTapered());
+  setBottomConnected(in.isBottomConnected());
+  setTopConnected(in.isTopConnected());
 }

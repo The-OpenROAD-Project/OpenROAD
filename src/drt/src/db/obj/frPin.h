@@ -62,7 +62,7 @@ class frPin : public frBlockObject
       }
     }
   }
-  frPin(const frPin& in, const frTransform& xform)
+  frPin(const frPin& in, const dbTransform& xform)
       : frBlockObject(), term_(in.term_)
   {
     for (auto& uPinFig : in.getFigs()) {

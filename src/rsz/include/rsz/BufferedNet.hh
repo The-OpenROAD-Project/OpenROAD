@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -38,7 +38,8 @@
 #include <array>
 
 #include "utl/Logger.h"
-#include "opendb/geom.h"
+#include "spdlog/fmt/fmt.h"
+#include "odb/geom.h"
 
 #include "sta/Transition.hh"
 #include "sta/Network.hh"
@@ -48,6 +49,7 @@
 namespace rsz {
 
 using std::array;
+using std::string;
 
 using utl::Logger;
 
@@ -92,8 +94,7 @@ public:
               BufferedNet *ref,
               BufferedNet *ref2);
   ~BufferedNet();
-  void report(int level,
-              Resizer *resizer);
+  string to_string(Resizer *resizer);
   void reportTree(Resizer *resizer);
   void reportTree(int level,
                   Resizer *resizer);

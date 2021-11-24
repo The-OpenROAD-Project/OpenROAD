@@ -6,57 +6,8 @@
 [INFO ODB-0222] Reading LEF file: dummy_pads.lef
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
-[INFO IFP-0001] Added 1886 rows of 13894 sites.
-[WARNING PAD-0011] Expected instance u_dr_dm_1_o for padcell sig0 not found
-[INFO PAD-0053] Creating pad ring net: RETN_10
-[INFO PAD-0053] Creating pad ring net: RETN_11
-[INFO PAD-0053] Creating pad ring net: RETN_12
-[INFO PAD-0053] Creating pad ring net: RETN_13
-[INFO PAD-0053] Creating pad ring net: RETN_14
-[INFO PAD-0053] Creating pad ring net: RETN_15
-[INFO PAD-0053] Creating pad ring net: RETN_16
-[INFO PAD-0053] Creating pad ring net: RETN_17
-[INFO PAD-0053] Creating pad ring net: RETN_18
-[INFO PAD-0053] Creating pad ring net: RETN_19
-[INFO PAD-0053] Creating pad ring net: RETN_20
-[INFO PAD-0053] Creating pad ring net: RETN_0
-[INFO PAD-0053] Creating pad ring net: RETN_1
-[INFO PAD-0053] Creating pad ring net: RETN_2
-[INFO PAD-0053] Creating pad ring net: RETN_3
-[INFO PAD-0053] Creating pad ring net: RETN_4
-[INFO PAD-0053] Creating pad ring net: RETN_5
-[INFO PAD-0053] Creating pad ring net: RETN_6
-[INFO PAD-0053] Creating pad ring net: RETN_7
-[INFO PAD-0053] Creating pad ring net: RETN_8
-[INFO PAD-0053] Creating pad ring net: RETN_9
-[INFO PAD-0053] Creating pad ring net: SNS_10
-[INFO PAD-0053] Creating pad ring net: SNS_11
-[INFO PAD-0053] Creating pad ring net: SNS_12
-[INFO PAD-0053] Creating pad ring net: SNS_13
-[INFO PAD-0053] Creating pad ring net: SNS_14
-[INFO PAD-0053] Creating pad ring net: SNS_15
-[INFO PAD-0053] Creating pad ring net: SNS_16
-[INFO PAD-0053] Creating pad ring net: SNS_0
-[INFO PAD-0053] Creating pad ring net: SNS_17
-[INFO PAD-0053] Creating pad ring net: SNS_1
-[INFO PAD-0053] Creating pad ring net: SNS_18
-[INFO PAD-0053] Creating pad ring net: SNS_2
-[INFO PAD-0053] Creating pad ring net: SNS_19
-[INFO PAD-0053] Creating pad ring net: SNS_20
-[INFO PAD-0053] Creating pad ring net: SNS_3
-[INFO PAD-0053] Creating pad ring net: SNS_4
-[INFO PAD-0053] Creating pad ring net: SNS_5
-[INFO PAD-0053] Creating pad ring net: SNS_6
-[INFO PAD-0053] Creating pad ring net: SNS_7
-[INFO PAD-0053] Creating pad ring net: SNS_8
-[INFO PAD-0053] Creating pad ring net: SNS_9
-[INFO PAD-0053] Creating pad ring net: DVSS_0
-[INFO PAD-0053] Creating pad ring net: DVSS_1
-[INFO PAD-0053] Creating pad ring net: DVDD_0
-[INFO PAD-0053] Creating pad ring net: DVDD_1
-[WARNING PAD-0012] Cannot find a terminal p_dr_dm_1_o for sig0 to associate with bondpad bp_u_dr_dm_1_o
-[INFO PAD-0051] Creating pad ring net: VSS
-[INFO PAD-0051] Creating pad ring net: VDD
-Differences found at line 7.
-ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 359860 358400 N DO 13894 BY 1 STEP 380 0 ;
-ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 359860 358400 FS DO 13894 BY 1 STEP 380 0 ;
+[INFO IFP-0001] Added 1885 rows of 13893 sites.
+[INFO PAD-0053] Creating padring nets: RETN_10, RETN_11, RETN_12, RETN_13, RETN_14, RETN_15, RETN_16, RETN_17, RETN_18, RETN_19, RETN_20, RETN_0, RETN_1, RETN_2, RETN_3, RETN_4, RETN_5, RETN_6, RETN_7, RETN_8, RETN_9, SNS_10, SNS_11, SNS_12, SNS_13, SNS_14, SNS_15, SNS_16, SNS_0, SNS_17, SNS_1, SNS_18, SNS_2, SNS_19, SNS_20, SNS_3, SNS_4, SNS_5, SNS_6, SNS_7, SNS_8, SNS_9, DVSS_0, DVSS_1, DVDD_0, DVDD_1.
+[INFO PAD-0051] Creating padring net: VSS.
+[INFO PAD-0051] Creating padring net: VDD.
+No differences found.

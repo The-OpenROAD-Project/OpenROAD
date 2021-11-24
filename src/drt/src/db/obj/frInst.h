@@ -82,20 +82,20 @@ class frInst : public frRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return xform_.orient(); }
-  void setOrient(const frOrient& tmpOrient) override { xform_.set(tmpOrient); }
-  void getOrigin(frPoint& tmpOrigin) const override
+  dbOrientType getOrient() const override { return xform_.getOrient(); }
+  void setOrient(const dbOrientType& tmpOrient) override { xform_.setOrient(tmpOrient); }
+  void getOrigin(Point& tmpOrigin) const override
   {
-    tmpOrigin.set(xform_.xOffset(), xform_.yOffset());
+    tmpOrigin = xform_.getOffset();
   }
-  void setOrigin(const frPoint& tmpPoint) override { xform_.set(tmpPoint); }
-  void getTransform(frTransform& xformIn) const override
+  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
+  void getTransform(dbTransform& xformIn) const override
   {
-    xformIn.set(xform_.xOffset(), xform_.yOffset(), xform_.orient());
+    xformIn = xform_;
   }
-  void setTransform(const frTransform& xformIn) override
+  void setTransform(const dbTransform& xformIn) override
   {
-    xform_.set(xformIn.xOffset(), xformIn.yOffset(), xformIn.orient());
+    xform_ = xformIn;
   }
 
   /* from frPinFig
@@ -128,20 +128,23 @@ class frInst : public frRef
    * overlaps
    */
 
-  void getBBox(frBox& boxIn) const override;
+  void getBBox(Rect& boxIn) const override;
 
-  void move(const frTransform& xform) override { ; }
-  bool overlaps(const frBox& box) const override { return false; }
+  void move(const dbTransform& xform) override { ; }
+  bool overlaps(const Rect& box) const override { return false; }
   // others
-  void getUpdatedXform(frTransform& in, bool noOrient = false) const;
-  void getBoundaryBBox(frBox& in) const;
+  void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
+  static void updateXform(dbTransform& xform, Point& size);
+  void getBoundaryBBox(Rect& in) const;
+  
+  frInstTerm* getInstTerm(const std::string& name);
 
  private:
   frString name_;
   fr::frBlock* refBlock_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
-  frTransform xform_;
+  dbTransform xform_;
   int pinAccessIdx_;
 
   template <class Archive>

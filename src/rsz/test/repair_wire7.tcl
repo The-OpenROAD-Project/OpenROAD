@@ -1,4 +1,4 @@
-# repair_design log wire from input port
+# repair_design long wire from input port
 # in1-----------u1--u2--out1
 #       1500u
 read_liberty Nangate45/Nangate45_typ.lib

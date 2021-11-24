@@ -1,6 +1,6 @@
 ############################################################################
 ##
-## Copyright (c) 2019, OpenROAD
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -39,6 +39,7 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
+utl::metric "ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "instance_count" [sta::network_instance_count]
 
@@ -73,31 +74,35 @@ pdngen -verbose $pdn_cfg
 ################################################################
 # Global placement
 
-# Used by resizer for timing driven placement.
-source $layer_rc_file
-set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
-set_dont_use $dont_use
+foreach layer_adjustment $global_routing_layer_adjustments {
+  lassign $layer_adjustment layer adjustment
+  set_global_routing_layer_adjustment $layer $adjustment
+}
+set_routing_layers -signal $global_routing_layers \
+  -clock $global_routing_clock_layers
+set_macro_extension 2
 
-# If/when this enables routing driven also the layer adjustments have to
-# move to here.
-global_placement -timing_driven -density $global_place_density \
-  -init_density_penalty $global_place_density_penalty \
+global_placement -routability_driven -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 # checkpoint
-set global_place_db [make_result_file ${design}_${platform}_global_place.db]
-write_db $global_place_db
+set global_place_def [make_result_file ${design}_${platform}_global_place.def]
+write_def $global_place_def
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
 
+source $layer_rc_file
+set_wire_rc -signal -layer $wire_rc_layer
+set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_dont_use $dont_use
+
 estimate_parasitics -placement
 
-repair_design
+repair_design -slew_margin $slew_margin -cap_margin $cap_margin
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -124,44 +129,53 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
+# place clock buffers
+detailed_placement
+
 # checkpoint
-set cts_db [make_result_file ${design}_${platform}_cts.db]
-write_db $cts_db
+set cts_def [make_result_file ${design}_${platform}_cts.def]
+write_def $cts_def
 
 ################################################################
 # Setup/hold timing repair
 
-estimate_parasitics -placement
 set_propagated_clock [all_clocks]
+
+set repair_timing_use_grt_parasitics 0
+if { $repair_timing_use_grt_parasitics } {
+  # Global route for parasitics - no guide file requied
+  global_route -congestion_iterations 100
+  estimate_parasitics -global_routing
+} else {
+  estimate_parasitics -placement
+}
+
 repair_timing
 
-# Post timing repair using placement based parasitics.
+# Post timing repair.
 report_worst_slack -min -digits 3
 report_worst_slack -max -digits 3
 report_tns -digits 3
+
+################################################################
+# Detailed Placement (final)
 
 detailed_placement
 # Capture utilization before fillers make it 100%
 utl::metric "utilization" [format %.1f [expr [rsz::utilization] * 100]]
 utl::metric "design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
-set dpl_errors [check_placement -verbose]
-utl::metric "DPL::errors" $dpl_errors
+check_placement -verbose
 
 ################################################################
 # Global routing
+
 set route_guide [make_result_file ${design}_${platform}.route_guide]
-foreach layer_adjustment $global_routing_layer_adjustments {
-  lassign $layer_adjustment layer adjustment
-  set_global_routing_layer_adjustment $layer $adjustment
-}
-set_routing_layers -signal $global_routing_layers \
-  -clock $global_routing_clock_layers
 global_route -guide_file $route_guide \
-  -overflow_iterations 100
+  -congestion_iterations 100
 
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
-set antenna_errors [check_antennas -simple_report -report_file $antenna_report]
+set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_report]
 
 utl::metric "ANT::errors" $antenna_errors
 
@@ -226,6 +240,7 @@ utl::metric "clock_skew" [sta::worst_clock_skew -setup]
 utl::metric "max_slew_violations" [sta::max_slew_violation_count]
 utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
 utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+# report clock period as a metric for updating limits
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations

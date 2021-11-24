@@ -10,13 +10,7 @@ source [file join $test_dir "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
 source [file join $test_dir "flow_metrics.tcl"]
 
-if { $argc == 0 } {
-  set tests $test_groups(flow)
-} else {
-  set tests [expand_tests $argv]
-}
-
-report_flow_metrics $tests
+report_flow_metrics_main
 
 # Local Variables:
 # mode:tcl

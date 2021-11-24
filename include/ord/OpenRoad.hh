@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -67,6 +67,10 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace rmp {
+class Restructure;
+}
+
 namespace cts {
 class TritonCTS;
 }
@@ -89,6 +93,7 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
+class MacroPlacer2;
 }
 
 namespace gpl {
@@ -127,6 +132,9 @@ class Logger;
 namespace dst {
 class Distributed;
 }
+namespace stt {
+class SteinerTreeBuilder;
+}
 
 namespace ord {
 
@@ -151,22 +159,25 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
+  rmp::Restructure *getRestructure() { return restructure_; } 
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
+  mpl::MacroPlacer2 *getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
-  grt::GlobalRouter* getFastRoute() { return fastRoute_; }
+  grt::GlobalRouter* getGlobalRouter() { return global_router_; }
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen *getPdnGen() { return pdngen_; }
   dst::Distributed *getDistributed() { return distributer_; }
+  stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -187,7 +198,9 @@ public:
 		// major.minor (avoid including defout.h)
 		string version);
   
-  void writeCdl(const char *filename, bool includeFillers);
+  void writeCdl(const char *outFilename,
+                const char *mastersFilename,
+                bool includeFillers);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
@@ -244,7 +257,9 @@ private:
   dpl::Opendp *opendp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
-  grt::GlobalRouter *fastRoute_;
+  mpl::MacroPlacer2 *macro_placer2_;
+  grt::GlobalRouter *global_router_;
+  rmp::Restructure *restructure_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;
@@ -255,6 +270,7 @@ private:
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
   dst::Distributed *distributer_;
+  stt::SteinerTreeBuilder *stt_builder_;
 
   std::set<Observer *> observers_;
 

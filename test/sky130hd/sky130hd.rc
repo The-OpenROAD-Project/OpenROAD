@@ -1,3 +1,11 @@
+# find_wire_rc -38% adjustment
+set_layer_rc -layer li1 -resistance 6.829e-02 -capacitance 1.265e-04
+set_layer_rc -layer met1 -resistance 1.207e-03 -capacitance 1.389e-04
+set_layer_rc -layer met2 -resistance 1.223e-03 -capacitance 1.388e-04
+set_layer_rc -layer met3 -resistance 1.668e-04 -capacitance 1.406e-04
+set_layer_rc -layer met4 -resistance 1.686e-04 -capacitance 1.364e-04
+set_layer_rc -layer met5 -resistance 1.865e-05 -capacitance 1.389e-04
+
 set_layer_rc -via mcon -resistance 9.249146E-3
 set_layer_rc -via via -resistance 4.5E-3
 set_layer_rc -via via2 -resistance 3.368786E-3

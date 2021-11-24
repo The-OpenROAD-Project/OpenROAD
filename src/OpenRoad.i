@@ -35,10 +35,10 @@
 
 %{
 
-#include "opendb/db.h"
-#include "opendb/lefin.h"
-#include "opendb/defin.h"
-#include "opendb/defout.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
 #include "db_sta/dbSta.hh"
@@ -118,6 +118,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+rmp::Restructure *
+getRestructure()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getRestructure();
+}
+
 cts::TritonCTS *
 getTritonCts()
 {
@@ -130,6 +137,13 @@ getMacroPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getMacroPlacer();
+}
+
+mpl::MacroPlacer2 *
+getMacroPlacer2()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getMacroPlacer2();
 }
 
 gpl::Replace*
@@ -161,10 +175,17 @@ getPDNSim()
 }
 
 grt::GlobalRouter*
-getFastRoute()
+getGlobalRouter()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getFastRoute();
+  return openroad->getGlobalRouter();
+}
+
+tap::Tapcell* 
+getTapcell()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTapcell();
 }
 
 ppl::IOPlacer*
@@ -186,6 +207,13 @@ getPdnGen()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getPdnGen();
+}
+
+stt::SteinerTreeBuilder*
+getSteinerTreeBuilder()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getSteinerTreeBuilder();
 }
 
 } // namespace ord
@@ -244,9 +272,9 @@ openroad_version()
 }
 
 const char *
-openroad_git_sha1()
+openroad_git_describe()
 {
-  return OPENROAD_GIT_SHA1;
+  return OPENROAD_GIT_DESCRIBE;
 }
 
 void
@@ -279,11 +307,12 @@ write_def_cmd(const char *filename,
 
 
 void 
-write_cdl_cmd(const char *filename,
+write_cdl_cmd(const char *outFilename,
+              const char *mastersFilename,
               bool includeFillers)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeCdl(filename, includeFillers);
+  ord->writeCdl(outFilename, mastersFilename, includeFillers);
 }
 
 void
@@ -393,7 +422,7 @@ dbu_to_microns(int dbu)
 int
 microns_to_dbu(double microns)
 {
-  return microns * getDb()->getTech()->getLefUnits();
+  return std::round(microns * getDb()->getTech()->getLefUnits());
 }
 
 // Common check for placement tools.

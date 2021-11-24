@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,19 +35,17 @@
 #include <tcl.h>
 
 #include <QDockWidget>
-#include <QLineEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QStringList>
 #include <QTextEdit>
 
+#include "tclCmdInputWidget.h"
+#include "utl/Logger.h"
+
 namespace odb {
 class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
+} // namespace odb
 
 namespace gui {
 
@@ -70,50 +68,85 @@ class ScriptWidget : public QDockWidget
 
   void setLogger(utl::Logger* logger);
 
+  void setupTcl(Tcl_Interp* interp, bool do_init_openroad);
+
+  void setFont(const QFont& font);
+
+  void bufferOutputs(bool state);
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
-  void commandExecuted();
+  void commandExecuted(int return_code);
   // tcl exit has been initiated, want the gui to handle
   // shutdown
   void tclExiting();
 
- private slots:
-  // Triggered when the user hits return in the line edit
-  void executeCommand();
+ public slots:
+ // Triggered when the user hits return in the line edit
+ void executeCommand(const QString& command, bool echo = true);
 
-  void pause();
+ // Use to execute a command silently, ie. without echo or return.
+ void executeSilentCommand(const QString& command);
+
+ private slots:
+  void outputChanged();
+
+  void pause(int timeout);
+  void unpause();
 
   void pauserClicked();
 
+  void goBackHistory();
+  void goForwardHistory();
+
+  void updatePauseTimeout();
+
+ protected:
+  // required to ensure input command space it set to correct height
+  void resizeEvent(QResizeEvent* event) override;
+
  private:
-  void keyPressEvent(QKeyEvent* e) override;
-  void setupTcl();
-  void updateOutput(int return_code, bool command_finished);
-  static int channelOutput(ClientData instanceData,
-                           const char* buf,
-                           int toWrite,
-                           int* errorCodePtr);
+  int executeTclCommand(const QString& command);
+
+  void triggerPauseCountDown(int timeout);
+
+  void addToOutput(const QString& text, const QColor& color);
+  void addCommandToOutput(const QString& cmd);
+  void addTclResultToOutput(int return_code);
+  void addReportToOutput(const QString& text);
+  void addLogToOutput(const QString& text, const QColor& color);
+
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp *interp,
                             int argc,
                             const char **argv);
 
   QTextEdit* output_;
-  QLineEdit* input_;
+  TclCmdInputWidget* input_;
   QPushButton* pauser_;
+  std::unique_ptr<QTimer> pause_timer_;
   Tcl_Interp* interp_;
-  QStringList outputBuffer_;
   QStringList history_;
+  QString history_buffer_last_;
   int historyPosition_;
   bool paused_;
   utl::Logger* logger_;
 
+  bool buffer_outputs_;
+
   // Logger sink
   template <typename Mutex>
   class GuiSink;
+  std::shared_ptr<spdlog::sinks::sink> sink_;
 
-  static Tcl_ChannelType stdout_channel_type_;
+  // maximum number of character to display in a log line
+  const int max_output_line_length_ = 1000;
+
+  const QColor cmd_msg_        = Qt::black;
+  const QColor tcl_error_msg_  = Qt::red;
+  const QColor tcl_ok_msg_     = Qt::blue;
+  const QColor buffer_msg_     = QColor(0x30, 0x30, 0x30);
 };
 
 }  // namespace gui

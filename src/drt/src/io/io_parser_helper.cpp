@@ -57,7 +57,7 @@ void io::Parser::initDefaultVias()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design->getTech()->getLayer(layerNum)->getViaDefs()) {
@@ -74,7 +74,7 @@ void io::Parser::initDefaultVias()
       if (layerNum >= BOTTOM_ROUTING_LAYER) {
         logger->error(DRT,
                       234,
-                      "{} does not have single-cut via",
+                      "{} does not have single-cut via.",
                       tech->getLayer(layerNum)->getName());
       }
     }
@@ -82,26 +82,26 @@ void io::Parser::initDefaultVias()
     if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
       auto techDefautlViaDef = tech->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
-      frBox layer1Box;
-      frBox layer2Box;
+      Rect layer1Box;
+      Rect layer2Box;
       frLayerNum layer1Num;
       frLayerNum layer2Num;
       via.getLayer1BBox(layer1Box);
       via.getLayer2BBox(layer2Box);
       layer1Num = techDefautlViaDef->getLayer1Num();
       layer2Num = techDefautlViaDef->getLayer2Num();
-      bool isLayer1Square = (layer1Box.right() - layer1Box.left())
-                            == (layer1Box.top() - layer1Box.bottom());
-      bool isLayer2Square = (layer2Box.right() - layer2Box.left())
-                            == (layer2Box.top() - layer2Box.bottom());
-      bool isLayer1EncHorz = (layer1Box.right() - layer1Box.left())
-                             > (layer1Box.top() - layer1Box.bottom());
-      bool isLayer2EncHorz = (layer2Box.right() - layer2Box.left())
-                             > (layer2Box.top() - layer2Box.bottom());
+      bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
+                            == (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
+                            == (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
+                             > (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
+                             > (layer2Box.yMax() - layer2Box.yMin());
       bool isLayer1Horz
-          = (tech->getLayer(layer1Num)->getDir() == frcHorzPrefRoutingDir);
+          = (tech->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz
-          = (tech->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir);
+          = (tech->getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL);
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
           || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
@@ -122,16 +122,16 @@ void io::Parser::initDefaultVias()
         // routing layer shape
         // rotate if needed
         if (isLayer1EncHorz != isLayer1Horz) {
-          layer1Box.set(layer1Box.bottom(),
-                        layer1Box.left(),
-                        layer1Box.top(),
-                        layer1Box.right());
+          layer1Box.init(layer1Box.yMin(),
+                         layer1Box.xMin(),
+                         layer1Box.yMax(),
+                         layer1Box.xMax());
         }
         if (isLayer2EncHorz != isLayer2Horz) {
-          layer2Box.set(layer2Box.bottom(),
-                        layer2Box.left(),
-                        layer2Box.top(),
-                        layer2Box.right());
+          layer2Box.init(layer2Box.yMin(),
+                         layer2Box.xMin(),
+                         layer2Box.yMax(),
+                         layer2Box.xMax());
         }
 
         unique_ptr<frShape> uBotFig = make_unique<frRect>();
@@ -147,7 +147,7 @@ void io::Parser::initDefaultVias()
         // cut layer shape
         unique_ptr<frShape> uCutFig = make_unique<frRect>();
         auto cutFig = static_cast<frRect*>(uCutFig.get());
-        frBox cutBox;
+        Rect cutBox;
         via.getCutBBox(cutBox);
         cutFig->setBBox(cutBox);
         cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
@@ -186,7 +186,7 @@ void io::Parser::initConstraintLayerIdx()
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger->warn(
-            DRT, 235, "Second layer {} does not exist", secondLayerName);
+            DRT, 235, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -194,7 +194,7 @@ void io::Parser::initConstraintLayerIdx()
       con->setSecondLayerNum(secondLayerNum);
       logger->info(DRT,
                    236,
-                   "Updating diff-net cut spacing rule between {} and {}",
+                   "Updating diff-net cut spacing rule between {} and {}.",
                    design->getTech()->getLayer(layerNum)->getName(),
                    design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingConstraints[secondLayerNum] = con;
@@ -211,7 +211,7 @@ void io::Parser::initConstraintLayerIdx()
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger->warn(
-            DRT, 237, "Second layer {} does not exist", secondLayerName);
+            DRT, 237, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
       auto secondLayerNum
@@ -219,7 +219,7 @@ void io::Parser::initConstraintLayerIdx()
       con->setSecondLayerNum(secondLayerNum);
       logger->info(DRT,
                    238,
-                   "Updating same-net cut spacing rule between {} and {}",
+                   "Updating same-net cut spacing rule between {} and {}.",
                    design->getTech()->getLayer(layerNum)->getName(),
                    design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingSamenetConstraints[secondLayerNum] = con;
@@ -263,7 +263,7 @@ void io::Parser::initCutLayerWidth()
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     auto layer = design->getTech()->getLayer(layerNum);
@@ -274,7 +274,7 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          logger->error(DRT, 239, "Non-rect shape in via definition");
+          logger->error(DRT, 239, "Non-rectangular shape in via definition.");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
@@ -284,21 +284,21 @@ void io::Parser::initCutLayerWidth()
             logger->warn(DRT,
                          240,
                          "CUT layer {} does not have square single-cut via, "
-                         "cut layer width may be set incorrectly",
+                         "cut layer width may be set incorrectly.",
                          layer->getName());
           }
         } else {
           logger->warn(DRT,
                        241,
                        "CUT layer {} does not have single-cut via, cut layer "
-                       "width may be set incorrectly",
+                       "width may be set incorrectly.",
                        layer->getName());
         }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER) {
           logger->error(DRT,
                         242,
-                        "CUT layer {} does not have default via",
+                        "CUT layer {} does not have default via.",
                         layer->getName());
         }
       }
@@ -308,7 +308,7 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          logger->error(DRT, 243, "Non-rect shape in via definition");
+          logger->error(DRT, 243, "Non-rectangular shape in via definition.");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         int viaWidth = cutRect->width();
@@ -316,7 +316,7 @@ void io::Parser::initCutLayerWidth()
           logger->warn(DRT,
                        244,
                        "CUT layer {} has smaller width defined in LEF compared "
-                       "to default via",
+                       "to default via.",
                        layer->getName());
         }
       }
@@ -334,9 +334,9 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
   PolygonSet viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
-    Rectangle bboxRect(bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+    Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS1 += bboxRect;
   }
   Rectangle layer1Rect;
@@ -347,16 +347,16 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                                  (yh(layer1Rect) - yl(layer1Rect)));
   isNotLowerAlign = (isLayer1Horz
                      && (tech->getLayer(viaDef->getLayer1Num())->getDir()
-                         == frcVertPrefRoutingDir))
+                         == dbTechLayerDir::VERTICAL))
                     || (!isLayer1Horz
                         && (tech->getLayer(viaDef->getLayer1Num())->getDir()
-                            == frcHorzPrefRoutingDir));
+                            == dbTechLayerDir::HORIZONTAL));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
-    Rectangle bboxRect(bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+    Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     viaLayerPS2 += bboxRect;
   }
   Rectangle layer2Rect;
@@ -367,10 +367,10 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                                  (yh(layer2Rect) - yl(layer2Rect)));
   isNotUpperAlign = (isLayer2Horz
                      && (tech->getLayer(viaDef->getLayer2Num())->getDir()
-                         == frcVertPrefRoutingDir))
+                         == dbTechLayerDir::VERTICAL))
                     || (!isLayer2Horz
                         && (tech->getLayer(viaDef->getLayer2Num())->getDir()
-                            == frcHorzPrefRoutingDir));
+                            == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
@@ -648,9 +648,8 @@ void io::Parser::postProcess()
   tech->printDefaultVias(logger);
 
   instAnalysis();
-
   // init region query
-  logger->info(DRT, 168, "Init region query ...");
+  logger->info(DRT, 168, "Init region query.");
   design->getRegionQuery()->init();
   design->getRegionQuery()->print();
   design->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
@@ -660,7 +659,7 @@ void io::Parser::postProcessGuide()
 {
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
-    logger->info(DRT, 169, "Post process guides ...");
+    logger->info(DRT, 169, "Post process guides.");
   }
   buildGCellPatterns();
 
@@ -678,11 +677,11 @@ void io::Parser::postProcessGuide()
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          logger->report("  complete {} nets", cnt);
+          logger->report("  complete {} nets.", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          logger->report("  complete {} nets", cnt);
+          logger->report("  complete {} nets.", cnt);
         }
       }
     }
@@ -697,16 +696,16 @@ void io::Parser::postProcessGuide()
     }
   }
 
-  logger->info(DRT, 178, "init guide query ...");
+  logger->info(DRT, 178, "Init guide query.");
   design->getRegionQuery()->initGuide();
   design->getRegionQuery()->printGuide();
-  logger->info(DRT, 179, "init gr pin query ...");
+  logger->info(DRT, 179, "Init gr pin query.");
   design->getRegionQuery()->initGRPin(tmpGRPins);
 
   if (OUTGUIDE_FILE == string("")) {
     if (VERBOSE > 0) {
       logger->warn(
-          DRT, 245, "No output guide specified, skipped writing guide");
+          DRT, 245, "No output guide specified, skipped writing guide.");
     }
   } else {
     // if (VERBOSE > 0) {
@@ -720,7 +719,7 @@ void io::Parser::postProcessGuide()
 void io::Parser::initRPin()
 {
   if (VERBOSE > 0) {
-    logger->info(DRT, 185, "post process initialize RPin region query ...");
+    logger->info(DRT, 185, "Post process initialize RPin region query.");
   }
   initRPin_rpin();
   initRPin_rq();
@@ -742,19 +741,20 @@ void io::Parser::initRPin_rpin()
 
         // MACRO does not go through PA
         if (prefAp == nullptr) {
-          if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK
-              || isPad(inst->getRefBlock()->getMacroClass())
-              || inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+          dbMasterType masterType = inst->getRefBlock()->getMasterType();
+          if (masterType.isBlock() || masterType.isPad()
+              || masterType == dbMasterType::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
                           ->getAccessPoints())[0]
                          .get();
-          }
+          } else
+            continue;
         }
 
         if (prefAp == nullptr) {
           logger->warn(DRT,
                        246,
-                       "{}/{} from {} has nullptr as prefAP",
+                       "{}/{} from {} has nullptr as prefAP.",
                        instTerm->getInst()->getName(),
                        trueTerm->getName(),
                        net->getName());
@@ -810,18 +810,18 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
-      frBox guideBBox;
+      Rect guideBBox;
       rect.getBBox(guideBBox);
       frCoord guideWidth
-          = (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir)
-                ? (guideBBox.top() - guideBBox.bottom())
-                : (guideBBox.right() - guideBBox.left());
-      if (tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir) {
+          = (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
+                ? (guideBBox.yMax() - guideBBox.yMin())
+                : (guideBBox.xMax() - guideBBox.xMin());
+      if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
         guideGridYMap[guideWidth]++;
-      } else if (tech->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir) {
+      } else if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL) {
         if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
           guideGridXMap[guideWidth] = 0;
         }
@@ -850,12 +850,12 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   if (tmpGCELLGRIDX != -1) {
     GCELLGRIDX = tmpGCELLGRIDX;
   } else {
-    logger->error(DRT, 170, "no GCELLGRIDX");
+    logger->error(DRT, 170, "No GCELLGRIDX.");
   }
   if (tmpGCELLGRIDY != -1) {
     GCELLGRIDY = tmpGCELLGRIDY;
   } else {
-    logger->error(DRT, 171, "no GCELLGRIDY");
+    logger->error(DRT, 171, "No GCELLGRIDY.");
   }
 }
 
@@ -869,10 +869,10 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   for (auto& [netName, rects] : tmpGuides) {
     for (auto& rect : rects) {
       // frLayerNum layerNum = rect.getLayerNum();
-      frBox guideBBox;
+      Rect guideBBox;
       rect.getBBox(guideBBox);
-      frCoord guideXOffset = guideBBox.left() % GCELLGRIDX;
-      frCoord guideYOffset = guideBBox.bottom() % GCELLGRIDY;
+      frCoord guideXOffset = guideBBox.xMin() % GCELLGRIDX;
+      frCoord guideYOffset = guideBBox.yMin() % GCELLGRIDY;
       if (guideXOffset < 0) {
         guideXOffset = GCELLGRIDX - guideXOffset;
       }
@@ -910,19 +910,19 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   if (tmpGCELLOFFSETX != -1) {
     GCELLOFFSETX = tmpGCELLOFFSETX;
   } else {
-    logger->error(DRT, 172, "no GCELLGRIDX");
+    logger->error(DRT, 172, "No GCELLGRIDX.");
   }
   if (tmpGCELLOFFSETY != -1) {
     GCELLOFFSETY = tmpGCELLOFFSETY;
   } else {
-    logger->error(DRT, 173, "no GCELLGRIDY");
+    logger->error(DRT, 173, "No GCELLGRIDY.");
   }
 }
 
 void io::Parser::buildGCellPatterns()
 {
   // horizontal = false is gcell lines along y direction (x-grid)
-  frBox dieBox;
+  Rect dieBox;
   design->getTopBlock()->getDieBox(dieBox);
 
   frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
@@ -930,35 +930,35 @@ void io::Parser::buildGCellPatterns()
 
   frGCellPattern xgp;
   xgp.setHorizontal(false);
-  // find first coord >= dieBox.left()
+  // find first coord >= dieBox.xMin()
   frCoord startCoordX
-      = dieBox.left() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
+      = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
         + GCELLOFFSETX;
-  if (startCoordX > dieBox.left()) {
+  if (startCoordX > dieBox.xMin()) {
     startCoordX -= (frCoord) GCELLGRIDX;
   }
   xgp.setStartCoord(startCoordX);
   xgp.setSpacing(GCELLGRIDX);
-  if ((dieBox.right() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
-    logger->error(DRT, 174, "gcell cnt x < 1");
+  if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+    logger->error(DRT, 174, "GCell cnt x < 1.");
   }
-  xgp.setCount((dieBox.right() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
+  xgp.setCount((dieBox.xMax() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
 
   frGCellPattern ygp;
   ygp.setHorizontal(true);
-  // find first coord >= dieBox.bottom()
+  // find first coord >= dieBox.yMin()
   frCoord startCoordY
-      = dieBox.bottom() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
+      = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
         + GCELLOFFSETY;
-  if (startCoordY > dieBox.bottom()) {
+  if (startCoordY > dieBox.yMin()) {
     startCoordY -= (frCoord) GCELLGRIDY;
   }
   ygp.setStartCoord(startCoordY);
   ygp.setSpacing(GCELLGRIDY);
-  if ((dieBox.top() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
-    logger->error(DRT, 175, "gcell cnt y < 1");
+  if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+    logger->error(DRT, 175, "GCell cnt y < 1.");
   }
-  ygp.setCount((dieBox.top() - startCoordY) / (frCoord) GCELLGRIDY);
+  ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
 
   if (VERBOSE > 0) {
     logger->info(DRT,
@@ -981,17 +981,17 @@ void io::Parser::buildGCellPatterns()
        layerNum += 2) {
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
-        frBox gcellBox;
-        design->getTopBlock()->getGCellBox(frPoint(i, j), gcellBox);
+        Rect gcellBox;
+        design->getTopBlock()->getGCellBox(Point(i, j), gcellBox);
         bool isH = (tech->getLayers().at(layerNum)->getDir()
-                    == frcHorzPrefRoutingDir);
-        frCoord gcLow = isH ? gcellBox.bottom() : gcellBox.right();
-        frCoord gcHigh = isH ? gcellBox.top() : gcellBox.left();
+                    == dbTechLayerDir::HORIZONTAL);
+        frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
+        frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
         int trackCnt = 0;
         for (auto& tp : design->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech->getLayer(layerNum)->getDir() == frcHorzPrefRoutingDir
+          if ((tech->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
                && tp->isHorizontal() == false)
-              || (tech->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir
+              || (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL
                   && tp->isHorizontal() == true)) {
             int trackNum
                 = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();
@@ -1025,12 +1025,12 @@ void io::Parser::writeGuideFile()
       outputGuide << netName << endl;
       outputGuide << "(\n";
       for (auto& guide : net->getGuides()) {
-        frPoint bp, ep;
+        Point bp, ep;
         guide->getPoints(bp, ep);
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design->getTopBlock()->getGCellIdx(bp, bpIdx);
         design->getTopBlock()->getGCellIdx(ep, epIdx);
-        frBox bbox, ebox;
+        Rect bbox, ebox;
         design->getTopBlock()->getGCellBox(bpIdx, bbox);
         design->getTopBlock()->getGCellBox(epIdx, ebox);
         frLayerNum bNum = guide->getBeginLayerNum();
@@ -1038,13 +1038,13 @@ void io::Parser::writeGuideFile()
         // append unit guide in case of stacked via
         if (bNum != eNum) {
           auto startLayerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << bbox.right() << " " << bbox.top() << " "
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << bbox.xMax() << " " << bbox.yMax() << " "
                       << startLayerName << ".5" << endl;
         } else {
           auto layerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << ebox.right() << " " << ebox.top() << " " << layerName
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << ebox.xMax() << " " << ebox.yMax() << " " << layerName
                       << endl;
         }
       }

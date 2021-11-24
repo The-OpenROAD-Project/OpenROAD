@@ -40,8 +40,8 @@
 
 namespace bgi = boost::geometry::index;
 
-// Enable frPoint & frBox to be used with boost geometry
-BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(fr::frPoint,
+// Enable Point & Rect to be used with boost geometry
+BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
                                          fr::frCoord,
                                          cs::cartesian,
                                          x,
@@ -49,12 +49,12 @@ BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(fr::frPoint,
                                          setX,
                                          setY)
 
-BOOST_GEOMETRY_REGISTER_BOX(fr::frBox, fr::frPoint, lowerLeft(), upperRight())
+BOOST_GEOMETRY_REGISTER_BOX(odb::Rect, odb::Point, ll(), ur())
 
 namespace fr {
 
-template <typename T, typename Key = frBox>
-using RTree = bgi::rtree<rq_box_value_t<T, Key>, bgi::quadratic<16>>;
+template <typename T, typename Key = Rect>
+using RTree = bgi::rtree<std::pair<Key, T>, bgi::quadratic<16>>;
 
 // I tried to get the 'experimental' boost rtree serializer code to work
 // without success.  That really is the nicer solution but such is life.
@@ -69,14 +69,14 @@ using RTree = bgi::rtree<rq_box_value_t<T, Key>, bgi::quadratic<16>>;
 template <class Archive, typename T, typename Key>
 void save(Archive& ar, const RTree<T, Key>& tree, const unsigned int version)
 {
-  std::vector<rq_box_value_t<T, Key>> objects(tree.begin(), tree.end());
+  std::vector<std::pair<Key, T>> objects(tree.begin(), tree.end());
   (ar) & objects;
 }
 
 template <class Archive, typename T, typename Key>
 void load(Archive& ar, RTree<T, Key>& tree, const unsigned int version)
 {
-  std::vector<rq_box_value_t<T, Key>> objects;
+  std::vector<std::pair<Key, T>> objects;
   (ar) & objects;
   tree = boost::move(RTree<T, Key>(objects));
 }

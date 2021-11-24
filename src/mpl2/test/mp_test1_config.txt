@@ -1,0 +1,34 @@
+min_aspect_ratio = 0.5
+dead_space = 0.10
+halo_width = 0.0
+
+num_thread = 10
+num_run = 5
+
+heat_rate = 0.1
+num_level = 3
+num_worker = 10
+
+learning_rate = 0.0
+
+alpha = 6.0
+beta = 40.0
+gamma = 100.0
+boundary_weight = 2.0
+macro_blockage_weight = 1.0
+
+shrink_factor = 0.997
+shrink_freq = 0.1
+
+
+resize_prob = 0.3
+pos_swap_prob = 0.3
+neg_swap_prob = 0.3
+double_swap_prob = 0.1
+
+init_prob = 0.95
+rej_ratio = 0.95
+k = 5000000
+c = 1000.0
+max_num_step = 500
+perturb_per_step = 60

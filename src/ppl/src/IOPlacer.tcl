@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -145,7 +145,7 @@ proc set_io_pin_constraint { args } {
     }
 
     if {[info exists keys(-direction)] && [info exists keys(-pin_names)]} {
-      utl::error PPL 16 "Both -direction and -pin_names constraints not allowed.."
+      utl::error PPL 16 "Both -direction and -pin_names constraints not allowed."
     }
 
     if [info exists keys(-direction)] {
@@ -172,7 +172,7 @@ proc set_io_pin_constraint { args } {
       set urx [ord::microns_to_dbu $urx]
       set ury [ord::microns_to_dbu $ury]
     } else {
-      utl::error PPL 59 "box at top layer must have 4 values (llx lly urx ury)."
+      utl::error PPL 59 "Box at top layer must have 4 values (llx lly urx ury)."
     }
 
     if [info exists keys(-pin_names)] {
@@ -180,7 +180,7 @@ proc set_io_pin_constraint { args } {
       ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
     }
   } else {
-    utl::warn PPL 73 "constraint with region $region has an invalid edge."
+    utl::warn PPL 73 "Constraint with region $region has an invalid edge."
   }
 }
 
@@ -188,15 +188,68 @@ proc clear_io_pin_constraints {} {
   ppl::clear_constraints
 }
 
+sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
+                                       [-ver_length v_length]
+}
+
+proc set_pin_length { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_length -ver_length}
+
+  if [info exists keys(-hor_length)] {
+    ppl::set_hor_length $keys(-hor_length)
+  }
+
+  if [info exists keys(-ver_length)] {
+    ppl::set_ver_length $keys(-ver_length)
+  }
+}
+
+sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
+                                                 [-ver_extension v_ext]
+}
+
+proc set_pin_length_extension { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_extension -ver_extension}
+
+  if [info exists keys(-hor_extension)] {
+    ppl::set_hor_length_extend $keys(-hor_extension)
+  }
+
+  if [info exists keys(-ver_extension)] {
+    ppl::set_ver_length_extend $keys(-ver_extension)
+  }
+}
+
+sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
+                                                 [-ver_multiplier v_mult]
+}
+
+proc set_pin_thick_multiplier { args } {
+  sta::parse_key_args "set_pin_length" args \
+  keys {-hor_multiplier -ver_multiplier}
+
+  if [info exists keys(-hor_multiplier)] {
+    ppl::set_hor_thick_multiplier $keys(-hor_multiplier)
+  }
+
+  if [info exists keys(-ver_multiplier)] {
+    ppl::set_ver_thick_multiplier $keys(-ver_multiplier)
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
-                                  [-pin_size pin_size]
+                                  [-pin_size pin_size]\
+                                  [-force_to_die_boundary]
 }
 
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
-  keys {-pin_name -layer -location -pin_size}
+  keys {-pin_name -layer -location -pin_size}\
+  flags {-force_to_die_boundary}
 
   if [info exists keys(-pin_name)] {
     set pin_name $keys(-pin_name)
@@ -238,20 +291,21 @@ proc place_pin { args } {
 
   set pin [ppl::parse_pin_names "place_pin" $pin_name]
   if { [llength $pin] > 1 } {
-    utl::error PPL 71 "place_pin command should receive only one pin name."
+    utl::error PPL 71 "Command place_pin should receive only one pin name."
   }
 
   set layer_idx [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer_idx $x $y $width $height
+  ppl::place_pin $pin $layer_idx $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\
-                       	          [-random]\
+                                  [-random]\
                                   [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
+                                  [-min_distance_in_tracks]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
                                  }
@@ -260,21 +314,22 @@ proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -corner_avoidance -min_distance -exclude -group_pins} \
-  flags {-random}
+  keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
+        -min_distance -exclude -group_pins} \
+  flags {-random -min_distance_in_tracks}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
-    utl::error PPL 31 "no technology found."
+    utl::error PPL 31 "No technology found."
   }
 
   set dbBlock [ord::get_db_block]
   if { $dbBlock == "NULL" } {
-    utl::error PPL 32 "no block found."
+    utl::error PPL 32 "No block found."
   }
 
   set db [ord::get_db]
-  
+
   set blockages {}
 
   foreach inst [$dbBlock getInsts] {
@@ -299,8 +354,8 @@ proc place_pins { args } {
     set hor_layers $keys(-hor_layers)
   } else {
     utl::error PPL 17 "-hor_layers is required."
-  }       
-  
+  }
+
   if [info exists keys(-ver_layers)] {
     set ver_layers $keys(-ver_layers)
   } else {
@@ -318,19 +373,25 @@ proc place_pins { args } {
   }
 
   set min_dist 2
+  set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    if {$dist_in_tracks} {
+      ppl::set_min_distance $min_dist
+    } else {
+      ppl::set_min_distance [ord::microns_to_dbu $min_dist]
+    }
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
     # setting min distance as 0u leads to the default min distance
     ppl::set_min_distance 0
   }
+  ppl::set_min_distance_in_tracks $dist_in_tracks
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
   if { $bterms_cnt == 0 } {
-    utl::error PPL 19 "Design without pins"
+    utl::error PPL 19 "Design without pins."
   }
 
 
@@ -347,10 +408,10 @@ proc place_pins { args } {
     }
 
     set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
-    
+
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
 
-    ppl::add_hor_layer $hor_layer 
+    ppl::add_hor_layer $hor_layer
   }
 
   set num_tracks_x 0
@@ -371,16 +432,16 @@ proc place_pins { args } {
 
     ppl::add_ver_layer $ver_layer
   }
-  
+
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
   if { ($bterms_cnt > $num_slots) } {
     utl::error PPL 24 "Number of pins $bterms_cnt exceeds max possible $num_slots."
   }
- 
+
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
-    
+
     foreach region $regions {
       if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
         set edge_ [ppl::parse_edge "-exclude" $edge]
@@ -402,10 +463,10 @@ proc place_pins { args } {
 
           ppl::exclude_interval $edge_ $begin $end
         } else {
-          utl::error PPL 25 "-exclude: $interval is an invalid region"
+          utl::error PPL 25 "-exclude: $interval is an invalid region."
         }
       } else {
-        utl::error PPL 26 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval."
+        utl::error PPL 26 "-exclude: invalid syntax in $region. Use (top|bottom|left|right):interval."
       }
     }
   }
@@ -420,14 +481,14 @@ proc place_pins { args } {
         if { $db_bterm != "NULL" } {
           lappend pin_list $db_bterm
         } else {
-          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
+          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx."
         }
       }
       ppl::add_pin_group $pin_list
       incr group_idx
     }
   }
-  
+
   ppl::run_io_placement [info exists flags(-random)]
 }
 
@@ -436,7 +497,7 @@ namespace eval ppl {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    utl::error PPL 27 "$cmd: $edge is an invalid edge. use top, bottom, left or right."
+    utl::error PPL 27 "$cmd: $edge is an invalid edge. Use top, bottom, left or right."
   }
   return [ppl::get_edge $edge]
 }
@@ -447,7 +508,7 @@ proc parse_direction { cmd direction } {
       [regexp -nocase -- {^INOUT$} $direction] || \
       [regexp -nocase -- {^FEEDTHRU$} $direction]} {
     set direction [string tolower $direction]
-    return [ppl::get_direction $direction]      
+    return [ppl::get_direction $direction]
   } else {
     utl::error PPL 28 "$cmd: Invalid pin direction."
   }
@@ -500,7 +561,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMax]
     } else {
-      utl::error PPL 30 "$cmd: Invalid edge"
+      utl::error PPL 30 "Invalid edge for command $cmd, should be one of top, bottom, left, right."
     }
   }
 }
@@ -515,12 +576,12 @@ proc exclude_intervals { cmd intervals } {
 
 proc parse_layer_name { layer_name } {
   if { ![ord::db_has_tech] } {
-    utl::error PPL 50 "no technology has been read."
+    utl::error PPL 50 "No technology has been read."
   }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
   if { $tech_layer == "NULL" } {
-    utl::error PPL 51 "layer $layer_name not found."
+    utl::error PPL 51 "Layer $layer_name not found."
   }
   set layer_idx [$tech_layer getRoutingLevel]
 
@@ -550,7 +611,7 @@ proc parse_pin_names {cmd names} {
   }
 
   if {[llength $pin_list] == 0} {
-    utl::error PPL 61 "Pins for $cmd command were not found"
+    utl::error PPL 61 "Pins for $cmd command were not found."
   }
 
   return $pin_list

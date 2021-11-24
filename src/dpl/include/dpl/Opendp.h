@@ -4,7 +4,7 @@
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
 // Rewrite by James Cherry, Parallax Software, Inc.
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // Copyright (c) 2018, SangGi Do and Mingyu Woo
 // All rights reserved.
 //
@@ -41,12 +41,13 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 #include <utility> // pair
 #include <tuple> // pair
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -80,6 +81,7 @@ using odb::Rect;
 
 class Pixel;
 struct Group;
+class Graphics;
 
 using Grid = Pixel *;
 using dbMasterSeq = vector<dbMaster *>;
@@ -135,6 +137,7 @@ struct Pixel
   Group *group_;
   double util;
   bool is_valid;  // false for dummy cells
+  bool is_hopeless; // too far from sites for diamond search
 };
 
 // For optimize mirroring.
@@ -177,8 +180,9 @@ public:
   void init(dbDatabase *db,
             Logger *logger);
   // legalize/report
-  // max_displacment is in rows, 0 for unconstrained
-  void detailedPlacement(int max_displacment);
+  // max_displacment is in sites. use zero for defaults.
+  void detailedPlacement(int max_displacement_x,
+                         int max_displacement_y);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
@@ -187,6 +191,10 @@ public:
   void setPadding(dbInst *inst,
                   int left,
                   int right);
+  void setDebug(bool displacement,
+                float min_displacement,
+                const dbInst* debug_instance);
+
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }
   int padGlobalRight() const { return pad_right_; }
@@ -194,7 +202,7 @@ public:
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
   // Return error count.
-  int checkPlacement(bool verbose);
+  void checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
   int64_t hpwl() const;
@@ -204,6 +212,13 @@ public:
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
+
+  const vector<Cell>& getCells() const { return cells_; }
+  Rect getCore() const { return core_; }
+  int getRowHeight() const { return row_height_; }
+  int getSiteWidth() const { return site_width_; }
+  int getRowCount() const { return row_count_; }
+  int getRowSiteCount() const { return row_site_count_; }
 
 private:
   void importDb();
@@ -238,6 +253,18 @@ private:
                         // grid indices
                         int x,
                         int y) const;
+  void diamondSearchSide(const Cell *cell,
+                         int x,
+                         int y,
+                         int x_min,
+                         int y_min,
+                         int x_max,
+                         int y_max,
+                         int x_offset,
+                         int y_offset,
+                         // Return values
+                         PixelPt &best_pt,
+                         int &best_dist) const;
   PixelPt binSearch(int x,
                     const Cell *cell,
                     int bin_x,
@@ -247,7 +274,7 @@ private:
                    int y,
                    int x_end,
                    int y_end) const;
-  bool shiftMove(Cell *cell);
+  void shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell,
                Point grid_pt);
@@ -266,6 +293,10 @@ private:
                 bool padded) const;
   Point legalGridPt(const Cell *cell,
                     bool padded) const;
+  Point nearestBlockEdge(const Cell *cell,
+                         const Point& legal_pt,
+                         const Rect& block_bbox) const;
+  void moveHopeless(int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -392,11 +423,12 @@ private:
   bool row0_top_power_is_vdd_;
   Power macro_top_power_;
   int row_height_;  // dbu
-  int site_width_;
+  int site_width_;  // dbu
   int row_count_;
   int row_site_count_;
   int have_multi_row_cells_;
-  int max_displacement_constraint_;  // rows
+  int max_displacement_x_;           // sites
+  int max_displacement_y_;           // sites
 
   // 2D pixel grid
   Grid *grid_;
@@ -413,9 +445,9 @@ private:
   int64_t displacement_sum_;
   int64_t displacement_max_;
 
+  std::unique_ptr<Graphics> graphics_;
+
   // Magic numbers
-  int diamond_search_height_;  // grid units
-  int diamond_search_width_;   // grid units
   static constexpr int bin_search_width_ = 10;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;

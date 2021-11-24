@@ -20,13 +20,13 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
    0.00    0.00 ^ clk (in)
-   0.03    0.03 ^ c2/Z (BUF_X1)
-   0.00    0.03 ^ r2/CK (DFF_X1)
-   0.11    0.14 ^ r2/Q (DFF_X1)
-   0.09    0.24 ^ u1/Z (BUF_X1)
-   0.11    0.35 ^ u2/ZN (AND2_X1)
-   0.01    0.36 ^ r3/D (DFF_X1)
-           0.36   data arrival time
+   0.02    0.02 ^ c2/Z (BUF_X1)
+   0.00    0.02 ^ r2/CK (DFF_X1)
+   0.11    0.13 ^ r2/Q (DFF_X1)
+   0.09    0.22 ^ u1/Z (BUF_X1)
+   0.11    0.33 ^ u2/ZN (AND2_X1)
+   0.01    0.34 ^ r3/D (DFF_X1)
+           0.34   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock source latency
@@ -34,12 +34,12 @@ Path Type: max
    0.04   10.04 ^ c3/Z (BUF_X1)
    0.00   10.04 ^ r3/CK (DFF_X1)
    0.00   10.04   clock reconvergence pessimism
-  -0.04   10.01   library setup time
-          10.01   data required time
+  -0.04   10.00   library setup time
+          10.00   data required time
 ---------------------------------------------------------
-          10.01   data required time
-          -0.36   data arrival time
+          10.00   data required time
+          -0.34   data arrival time
 ---------------------------------------------------------
-           9.65   slack (MET)
+           9.66   slack (MET)
 
 

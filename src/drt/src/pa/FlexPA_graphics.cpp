@@ -26,13 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "FlexPA_graphics.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "FlexPA.h"
+#include "FlexPA_graphics.h"
 
 namespace fr {
 
@@ -47,7 +46,6 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
       inst_term_(nullptr),
       top_block_(design->getTopBlock()),
       pa_ap_(nullptr),
-      pa_via_(nullptr),
       pa_markers_(nullptr)
 {
   // Build the layer map between opendb & tr
@@ -80,7 +78,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         continue;
       }
       painter.drawRect(
-          {b.first.left(), b.first.bottom(), b.first.right(), b.first.top()});
+          {b.first.xMin(), b.first.yMin(), b.first.xMax(), b.first.yMax()});
     }
   }
 
@@ -93,21 +91,31 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  if (pa_via_) {
-    auto* via_def = pa_via_->getViaDef();
-    frBox bbox;
+  for (auto via : pa_vias_) {
+    auto* via_def = via->getViaDef();
+    Rect bbox;
     bool skip = false;
     if (via_def->getLayer1Num() == layerNum) {
-      pa_via_->getLayer1BBox(bbox);
+      via->getLayer1BBox(bbox);
     } else if (via_def->getLayer2Num() == layerNum) {
-      pa_via_->getLayer2BBox(bbox);
+      via->getLayer2BBox(bbox);
     } else {
       skip = true;
     }
     if (!skip) {
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
+    }
+  }
+
+  for (auto seg : pa_segs_) {
+    if (seg->getLayerNum() == layerNum) {
+      Rect bbox;
+      seg->getBBox(bbox);
+      painter.setPen(layer, /* cosmetic */ true);
+      painter.setBrush(layer);
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
     }
   }
 
@@ -116,10 +124,10 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setBrush(gui::Painter::transparent);
     for (auto& marker : *pa_markers_) {
       if (marker->getLayerNum() == layerNum) {
-        frBox bbox;
+        Rect bbox;
         marker->getBBox(bbox);
         painter.drawRect(
-            {bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
+            {bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
       }
     }
   }
@@ -131,7 +139,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
     painter.setPen(color, /* cosmetic */ true);
 
-    frPoint pt = ap.getPoint();
+    Point pt = ap.getPoint();
     painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
     painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
   }
@@ -155,9 +163,9 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   pin_ = pin;
   inst_term_ = inst_term;
 
-  frBox box;
+  Rect box;
   inst_term->getInst()->getBBox(box);
-  gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   gui_->pause();
 }
 
@@ -208,19 +216,20 @@ void FlexPAGraphics::setViaAP(
   }
 
   pa_ap_ = ap;
-  pa_via_ = via;
+  pa_vias_ = {via};
+  pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    frBox bbox;
+    Rect bbox;
     marker->getBBox(bbox);
     logger_->info(DRT,
                   119,
-                  "marker {} at ({}, {}) ({}, {})",
+                  "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.left(),
-                  bbox.bottom(),
-                  bbox.right(),
-                  bbox.top());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();
@@ -228,54 +237,85 @@ void FlexPAGraphics::setViaAP(
 
   // These are going away once we return
   pa_ap_ = nullptr;
-  pa_via_ = nullptr;
+  pa_vias_.clear();
   pa_markers_ = nullptr;
 }
 
-void FlexPAGraphics::setMarkersAndShapes(
+void FlexPAGraphics::setPlanarAP(
+    const frAccessPoint* ap,
+    const frPathSeg* seg,
     const std::vector<std::unique_ptr<frMarker>>& markers)
 {
-  if (markers.empty())
+  if (!pin_ || !settings_->paMarkers) {
     return;
-  pa_markers_ = &markers;
-  frBox box;
-  if (inst_term_) {
-    inst_term_->getInst()->getBBox(box);
-  } else {
-    markers[0]->getBBox(box);
-  }
-  shapes_.clear();
-  for (auto& marker : markers) {
-    frBox bbox;
-    marker->getBBox(bbox);
-    logger_->info(DRT,
-                  119,
-                  "marker {} at ({}, {}) ({}, {})",
-                  marker->getConstraint()->typeId(),
-                  bbox.left(),
-                  bbox.bottom(),
-                  bbox.right(),
-                  bbox.top());
-    for (auto& a : marker->getAggressors()) {
-      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
-    }
-    for (auto& a : marker->getVictims()) {
-      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
-    }
   }
 
-  gui_->zoomTo({box.left() - 200,
-                box.bottom() - 200,
-                box.right() + 200,
-                box.top() + 200});
+  pa_ap_ = ap;
+  pa_vias_.clear();
+  pa_segs_ = {seg};
+  pa_markers_ = &markers;
+  for (auto& marker : markers) {
+    Rect bbox;
+    marker->getBBox(bbox);
+    logger_->info(DRT,
+                  292,
+                  "Marker {} at ({}, {}) ({}, {}).",
+                  marker->getConstraint()->typeId(),
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
+  }
+
   gui_->redraw();
   gui_->pause();
 
   // These are going away once we return
   pa_ap_ = nullptr;
-  pa_via_ = nullptr;
+  pa_segs_.clear();
   pa_markers_ = nullptr;
-  shapes_.clear();
+}
+
+void FlexPAGraphics::setObjsAndMakers(
+    const vector<pair<frConnFig*, frBlockObject*>>& objs,
+    const std::vector<std::unique_ptr<frMarker>>& markers)
+{
+  if (!settings_->paCombining) {
+    return;
+  }
+
+  for (auto [obj, parent] : objs) {
+    if (obj->typeId() == frcVia) {
+      auto via = static_cast<frVia*>(obj);
+      pa_vias_.push_back(via);
+    } else if (obj->typeId() == frcPathSeg) {
+      auto seg = static_cast<frPathSeg*>(obj);
+      pa_segs_.push_back(seg);
+    } else {
+      logger_->warn(DRT, 280, "Unknown type {} in setObjAP", obj->typeId());
+    }
+  }
+  pa_markers_ = &markers;
+  for (auto& marker : markers) {
+    Rect bbox;
+    marker->getBBox(bbox);
+    logger_->info(DRT,
+                  281,
+                  "Marker {} at ({}, {}) ({}, {}).",
+                  marker->getConstraint()->typeId(),
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
+  }
+
+  gui_->redraw();
+  gui_->pause();
+
+  // These are going away once we return
+  pa_markers_ = nullptr;
+  pa_vias_.clear();
+  pa_segs_.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)
@@ -286,7 +326,7 @@ void FlexPAGraphics::status(const std::string& message)
 /* static */
 bool FlexPAGraphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace fr

@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -131,18 +131,6 @@ void
 set_slots_factor(float factor)
 {
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
-}
-
-void
-set_force_spread(bool force)
-{
-  getIOPlacer()->getParameters()->setForceSpread(force);
-}
-
-void
-set_usage_factor(float usage)
-{
-  getIOPlacer()->getParameters()->setUsageFactor(usage);
 }
 
 Edge
@@ -274,6 +262,12 @@ set_min_distance(int minDist)
 }
 
 void
+set_min_distance_in_tracks(bool in_tracks)
+{
+  getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
+}
+
+void
 create_pin_shape_pattern(int layer, int x_step, int y_step,
                          int llx, int lly, int urx, int ury,
                          int width, int height, int keepout)
@@ -289,9 +283,10 @@ get_top_layer()
 
 void
 place_pin(odb::dbBTerm* bterm, int layer,
-          int x, int y, int width, int height)
+          int x, int y, int width, int height,
+          bool force_to_die_bound)
 {
-  getIOPlacer()->placePin(bterm, layer, x, y, width, height);
+  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound);
 }
 
 void

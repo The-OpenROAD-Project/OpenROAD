@@ -1,17 +1,11 @@
 # create image only with runtime dependencies
-# copies binary from a builder image
 # NOTE: don't use this file directly unless you know what you are doing,
 # instead use etc/DockerHelper.sh
 
-ARG copyImage=openroad/centos7-builder:latest
-# need to use the line below as the "COPY --from" does not accept an ARG
-FROM $copyImage AS copyfrom
-
+# https://github.com/moby/moby/issues/38379#issuecomment-448445652
 ARG fromImage=centos:centos7
+
 FROM $fromImage
 
-COPY Installer.sh /tmp/.
-RUN /tmp/Installer.sh -runtime && rm -f /tmp/Installer.sh
-
-COPY --from=copyfrom /OpenROAD/build/src/openroad /usr/bin/.
-ENTRYPOINT [ "openroad" ]
+COPY DependencyInstaller.sh /tmp/.
+RUN /tmp/DependencyInstaller.sh -runtime && rm -f /tmp/DependencyInstaller.sh

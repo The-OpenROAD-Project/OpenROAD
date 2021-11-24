@@ -7,17 +7,24 @@ This documentation is available at [https://openroad.readthedocs.io/en/latest/](
 ### Requires:
 - Python 3.x
 - Pip
-- virtualenv
+- `virtualenv`
 
-### Install pre-requisites
-```
+### Install prerequisites:
+
+``` shell
 virtualenv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Build
+### Build:
 
-```
+``` shell
 make html
+```
+
+### Check for broken links:
+
+``` shell
+make checklinks
 ```

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, OpenRoad Project UCSD
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,10 @@ void deleteTritonRoute(triton_route::TritonRoute* router)
 void initTritonRoute(OpenRoad* openroad)
 {
   openroad->getTritonRoute()->init(
-      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
+      openroad->tclInterp(),
+      openroad->getDb(),
+      openroad->getLogger(),
+      openroad->getSteinerTreeBuilder());
 }
 
 }  // namespace ord

@@ -1,0 +1,835 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+MACRO gcd
+  FOREIGN gcd 0 0 ;
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 100.13 BY 100.8 ;
+  PIN VDD
+    USE POWER ;
+    DIRECTION INOUT ;
+    PORT
+      VIA 68.07 53.115 via6_960x2800 ;
+      VIA 68.07 53.115 via5_960x2800 ;
+      VIA 68.07 53.115 via4_960x2800 ;
+      VIA 12.07 53.115 via6_960x2800 ;
+      VIA 12.07 53.115 via5_960x2800 ;
+      VIA 12.07 53.115 via4_960x2800 ;
+      VIA 68.07 13.115 via6_960x2800 ;
+      VIA 68.07 13.115 via5_960x2800 ;
+      VIA 68.07 13.115 via4_960x2800 ;
+      VIA 12.07 13.115 via6_960x2800 ;
+      VIA 12.07 13.115 via5_960x2800 ;
+      VIA 12.07 13.115 via4_960x2800 ;
+      VIA 68.07 91 via3_960x340 ;
+      VIA 68.07 91 via2_960x340 ;
+      VIA 68.07 91 via1_960x340 ;
+      VIA 12.07 91 via3_960x340 ;
+      VIA 12.07 91 via2_960x340 ;
+      VIA 12.07 91 via1_960x340 ;
+      VIA 68.07 88.2 via3_960x340 ;
+      VIA 68.07 88.2 via2_960x340 ;
+      VIA 68.07 88.2 via1_960x340 ;
+      VIA 12.07 88.2 via3_960x340 ;
+      VIA 12.07 88.2 via2_960x340 ;
+      VIA 12.07 88.2 via1_960x340 ;
+      VIA 68.07 85.4 via3_960x340 ;
+      VIA 68.07 85.4 via2_960x340 ;
+      VIA 68.07 85.4 via1_960x340 ;
+      VIA 12.07 85.4 via3_960x340 ;
+      VIA 12.07 85.4 via2_960x340 ;
+      VIA 12.07 85.4 via1_960x340 ;
+      VIA 68.07 82.6 via3_960x340 ;
+      VIA 68.07 82.6 via2_960x340 ;
+      VIA 68.07 82.6 via1_960x340 ;
+      VIA 12.07 82.6 via3_960x340 ;
+      VIA 12.07 82.6 via2_960x340 ;
+      VIA 12.07 82.6 via1_960x340 ;
+      VIA 68.07 79.8 via3_960x340 ;
+      VIA 68.07 79.8 via2_960x340 ;
+      VIA 68.07 79.8 via1_960x340 ;
+      VIA 12.07 79.8 via3_960x340 ;
+      VIA 12.07 79.8 via2_960x340 ;
+      VIA 12.07 79.8 via1_960x340 ;
+      VIA 68.07 77 via3_960x340 ;
+      VIA 68.07 77 via2_960x340 ;
+      VIA 68.07 77 via1_960x340 ;
+      VIA 12.07 77 via3_960x340 ;
+      VIA 12.07 77 via2_960x340 ;
+      VIA 12.07 77 via1_960x340 ;
+      VIA 68.07 74.2 via3_960x340 ;
+      VIA 68.07 74.2 via2_960x340 ;
+      VIA 68.07 74.2 via1_960x340 ;
+      VIA 12.07 74.2 via3_960x340 ;
+      VIA 12.07 74.2 via2_960x340 ;
+      VIA 12.07 74.2 via1_960x340 ;
+      VIA 68.07 71.4 via3_960x340 ;
+      VIA 68.07 71.4 via2_960x340 ;
+      VIA 68.07 71.4 via1_960x340 ;
+      VIA 12.07 71.4 via3_960x340 ;
+      VIA 12.07 71.4 via2_960x340 ;
+      VIA 12.07 71.4 via1_960x340 ;
+      VIA 68.07 68.6 via3_960x340 ;
+      VIA 68.07 68.6 via2_960x340 ;
+      VIA 68.07 68.6 via1_960x340 ;
+      VIA 12.07 68.6 via3_960x340 ;
+      VIA 12.07 68.6 via2_960x340 ;
+      VIA 12.07 68.6 via1_960x340 ;
+      VIA 68.07 65.8 via3_960x340 ;
+      VIA 68.07 65.8 via2_960x340 ;
+      VIA 68.07 65.8 via1_960x340 ;
+      VIA 12.07 65.8 via3_960x340 ;
+      VIA 12.07 65.8 via2_960x340 ;
+      VIA 12.07 65.8 via1_960x340 ;
+      VIA 68.07 63 via3_960x340 ;
+      VIA 68.07 63 via2_960x340 ;
+      VIA 68.07 63 via1_960x340 ;
+      VIA 12.07 63 via3_960x340 ;
+      VIA 12.07 63 via2_960x340 ;
+      VIA 12.07 63 via1_960x340 ;
+      VIA 68.07 60.2 via3_960x340 ;
+      VIA 68.07 60.2 via2_960x340 ;
+      VIA 68.07 60.2 via1_960x340 ;
+      VIA 12.07 60.2 via3_960x340 ;
+      VIA 12.07 60.2 via2_960x340 ;
+      VIA 12.07 60.2 via1_960x340 ;
+      VIA 68.07 57.4 via3_960x340 ;
+      VIA 68.07 57.4 via2_960x340 ;
+      VIA 68.07 57.4 via1_960x340 ;
+      VIA 12.07 57.4 via3_960x340 ;
+      VIA 12.07 57.4 via2_960x340 ;
+      VIA 12.07 57.4 via1_960x340 ;
+      VIA 68.07 54.6 via3_960x340 ;
+      VIA 68.07 54.6 via2_960x340 ;
+      VIA 68.07 54.6 via1_960x340 ;
+      VIA 12.07 54.6 via3_960x340 ;
+      VIA 12.07 54.6 via2_960x340 ;
+      VIA 12.07 54.6 via1_960x340 ;
+      VIA 68.07 51.8 via3_960x340 ;
+      VIA 68.07 51.8 via2_960x340 ;
+      VIA 68.07 51.8 via1_960x340 ;
+      VIA 12.07 51.8 via3_960x340 ;
+      VIA 12.07 51.8 via2_960x340 ;
+      VIA 12.07 51.8 via1_960x340 ;
+      VIA 68.07 49 via3_960x340 ;
+      VIA 68.07 49 via2_960x340 ;
+      VIA 68.07 49 via1_960x340 ;
+      VIA 12.07 49 via3_960x340 ;
+      VIA 12.07 49 via2_960x340 ;
+      VIA 12.07 49 via1_960x340 ;
+      VIA 68.07 46.2 via3_960x340 ;
+      VIA 68.07 46.2 via2_960x340 ;
+      VIA 68.07 46.2 via1_960x340 ;
+      VIA 12.07 46.2 via3_960x340 ;
+      VIA 12.07 46.2 via2_960x340 ;
+      VIA 12.07 46.2 via1_960x340 ;
+      VIA 68.07 43.4 via3_960x340 ;
+      VIA 68.07 43.4 via2_960x340 ;
+      VIA 68.07 43.4 via1_960x340 ;
+      VIA 12.07 43.4 via3_960x340 ;
+      VIA 12.07 43.4 via2_960x340 ;
+      VIA 12.07 43.4 via1_960x340 ;
+      VIA 68.07 40.6 via3_960x340 ;
+      VIA 68.07 40.6 via2_960x340 ;
+      VIA 68.07 40.6 via1_960x340 ;
+      VIA 12.07 40.6 via3_960x340 ;
+      VIA 12.07 40.6 via2_960x340 ;
+      VIA 12.07 40.6 via1_960x340 ;
+      VIA 68.07 37.8 via3_960x340 ;
+      VIA 68.07 37.8 via2_960x340 ;
+      VIA 68.07 37.8 via1_960x340 ;
+      VIA 12.07 37.8 via3_960x340 ;
+      VIA 12.07 37.8 via2_960x340 ;
+      VIA 12.07 37.8 via1_960x340 ;
+      VIA 68.07 35 via3_960x340 ;
+      VIA 68.07 35 via2_960x340 ;
+      VIA 68.07 35 via1_960x340 ;
+      VIA 12.07 35 via3_960x340 ;
+      VIA 12.07 35 via2_960x340 ;
+      VIA 12.07 35 via1_960x340 ;
+      VIA 68.07 32.2 via3_960x340 ;
+      VIA 68.07 32.2 via2_960x340 ;
+      VIA 68.07 32.2 via1_960x340 ;
+      VIA 12.07 32.2 via3_960x340 ;
+      VIA 12.07 32.2 via2_960x340 ;
+      VIA 12.07 32.2 via1_960x340 ;
+      VIA 68.07 29.4 via3_960x340 ;
+      VIA 68.07 29.4 via2_960x340 ;
+      VIA 68.07 29.4 via1_960x340 ;
+      VIA 12.07 29.4 via3_960x340 ;
+      VIA 12.07 29.4 via2_960x340 ;
+      VIA 12.07 29.4 via1_960x340 ;
+      VIA 68.07 26.6 via3_960x340 ;
+      VIA 68.07 26.6 via2_960x340 ;
+      VIA 68.07 26.6 via1_960x340 ;
+      VIA 12.07 26.6 via3_960x340 ;
+      VIA 12.07 26.6 via2_960x340 ;
+      VIA 12.07 26.6 via1_960x340 ;
+      VIA 68.07 23.8 via3_960x340 ;
+      VIA 68.07 23.8 via2_960x340 ;
+      VIA 68.07 23.8 via1_960x340 ;
+      VIA 12.07 23.8 via3_960x340 ;
+      VIA 12.07 23.8 via2_960x340 ;
+      VIA 12.07 23.8 via1_960x340 ;
+      VIA 68.07 21 via3_960x340 ;
+      VIA 68.07 21 via2_960x340 ;
+      VIA 68.07 21 via1_960x340 ;
+      VIA 12.07 21 via3_960x340 ;
+      VIA 12.07 21 via2_960x340 ;
+      VIA 12.07 21 via1_960x340 ;
+      VIA 68.07 18.2 via3_960x340 ;
+      VIA 68.07 18.2 via2_960x340 ;
+      VIA 68.07 18.2 via1_960x340 ;
+      VIA 12.07 18.2 via3_960x340 ;
+      VIA 12.07 18.2 via2_960x340 ;
+      VIA 12.07 18.2 via1_960x340 ;
+      VIA 68.07 15.4 via3_960x340 ;
+      VIA 68.07 15.4 via2_960x340 ;
+      VIA 68.07 15.4 via1_960x340 ;
+      VIA 12.07 15.4 via3_960x340 ;
+      VIA 12.07 15.4 via2_960x340 ;
+      VIA 12.07 15.4 via1_960x340 ;
+      VIA 68.07 12.6 via3_960x340 ;
+      VIA 68.07 12.6 via2_960x340 ;
+      VIA 68.07 12.6 via1_960x340 ;
+      VIA 12.07 12.6 via3_960x340 ;
+      VIA 12.07 12.6 via2_960x340 ;
+      VIA 12.07 12.6 via1_960x340 ;
+      LAYER metal7 ;
+        RECT  10.07 52.415 90.25 53.815 ;
+        RECT  10.07 12.415 90.25 13.815 ;
+      LAYER metal4 ;
+        RECT  67.83 11.115 68.31 91.085 ;
+        RECT  11.83 11.115 12.31 91.085 ;
+      LAYER metal1 ;
+        RECT  10.07 90.915 90.25 91.085 ;
+        RECT  10.07 88.115 90.25 88.285 ;
+        RECT  10.07 85.315 90.25 85.485 ;
+        RECT  10.07 82.515 90.25 82.685 ;
+        RECT  10.07 79.715 90.25 79.885 ;
+        RECT  10.07 76.915 90.25 77.085 ;
+        RECT  10.07 74.115 90.25 74.285 ;
+        RECT  10.07 71.315 90.25 71.485 ;
+        RECT  10.07 68.515 90.25 68.685 ;
+        RECT  10.07 65.715 90.25 65.885 ;
+        RECT  10.07 62.915 90.25 63.085 ;
+        RECT  10.07 60.115 90.25 60.285 ;
+        RECT  10.07 57.315 90.25 57.485 ;
+        RECT  10.07 54.515 90.25 54.685 ;
+        RECT  10.07 51.715 90.25 51.885 ;
+        RECT  10.07 48.915 90.25 49.085 ;
+        RECT  10.07 46.115 90.25 46.285 ;
+        RECT  10.07 43.315 90.25 43.485 ;
+        RECT  10.07 40.515 90.25 40.685 ;
+        RECT  10.07 37.715 90.25 37.885 ;
+        RECT  10.07 34.915 90.25 35.085 ;
+        RECT  10.07 32.115 90.25 32.285 ;
+        RECT  10.07 29.315 90.25 29.485 ;
+        RECT  10.07 26.515 90.25 26.685 ;
+        RECT  10.07 23.715 90.25 23.885 ;
+        RECT  10.07 20.915 90.25 21.085 ;
+        RECT  10.07 18.115 90.25 18.285 ;
+        RECT  10.07 15.315 90.25 15.485 ;
+        RECT  10.07 12.515 90.25 12.685 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    DIRECTION INOUT ;
+    PORT
+      VIA 40.07 73.115 via6_960x2800 ;
+      VIA 40.07 73.115 via5_960x2800 ;
+      VIA 40.07 73.115 via4_960x2800 ;
+      VIA 40.07 33.115 via6_960x2800 ;
+      VIA 40.07 33.115 via5_960x2800 ;
+      VIA 40.07 33.115 via4_960x2800 ;
+      VIA 40.07 89.6 via3_960x340 ;
+      VIA 40.07 89.6 via2_960x340 ;
+      VIA 40.07 89.6 via1_960x340 ;
+      VIA 40.07 86.8 via3_960x340 ;
+      VIA 40.07 86.8 via2_960x340 ;
+      VIA 40.07 86.8 via1_960x340 ;
+      VIA 40.07 84 via3_960x340 ;
+      VIA 40.07 84 via2_960x340 ;
+      VIA 40.07 84 via1_960x340 ;
+      VIA 40.07 81.2 via3_960x340 ;
+      VIA 40.07 81.2 via2_960x340 ;
+      VIA 40.07 81.2 via1_960x340 ;
+      VIA 40.07 78.4 via3_960x340 ;
+      VIA 40.07 78.4 via2_960x340 ;
+      VIA 40.07 78.4 via1_960x340 ;
+      VIA 40.07 75.6 via3_960x340 ;
+      VIA 40.07 75.6 via2_960x340 ;
+      VIA 40.07 75.6 via1_960x340 ;
+      VIA 40.07 72.8 via3_960x340 ;
+      VIA 40.07 72.8 via2_960x340 ;
+      VIA 40.07 72.8 via1_960x340 ;
+      VIA 40.07 70 via3_960x340 ;
+      VIA 40.07 70 via2_960x340 ;
+      VIA 40.07 70 via1_960x340 ;
+      VIA 40.07 67.2 via3_960x340 ;
+      VIA 40.07 67.2 via2_960x340 ;
+      VIA 40.07 67.2 via1_960x340 ;
+      VIA 40.07 64.4 via3_960x340 ;
+      VIA 40.07 64.4 via2_960x340 ;
+      VIA 40.07 64.4 via1_960x340 ;
+      VIA 40.07 61.6 via3_960x340 ;
+      VIA 40.07 61.6 via2_960x340 ;
+      VIA 40.07 61.6 via1_960x340 ;
+      VIA 40.07 58.8 via3_960x340 ;
+      VIA 40.07 58.8 via2_960x340 ;
+      VIA 40.07 58.8 via1_960x340 ;
+      VIA 40.07 56 via3_960x340 ;
+      VIA 40.07 56 via2_960x340 ;
+      VIA 40.07 56 via1_960x340 ;
+      VIA 40.07 53.2 via3_960x340 ;
+      VIA 40.07 53.2 via2_960x340 ;
+      VIA 40.07 53.2 via1_960x340 ;
+      VIA 40.07 50.4 via3_960x340 ;
+      VIA 40.07 50.4 via2_960x340 ;
+      VIA 40.07 50.4 via1_960x340 ;
+      VIA 40.07 47.6 via3_960x340 ;
+      VIA 40.07 47.6 via2_960x340 ;
+      VIA 40.07 47.6 via1_960x340 ;
+      VIA 40.07 44.8 via3_960x340 ;
+      VIA 40.07 44.8 via2_960x340 ;
+      VIA 40.07 44.8 via1_960x340 ;
+      VIA 40.07 42 via3_960x340 ;
+      VIA 40.07 42 via2_960x340 ;
+      VIA 40.07 42 via1_960x340 ;
+      VIA 40.07 39.2 via3_960x340 ;
+      VIA 40.07 39.2 via2_960x340 ;
+      VIA 40.07 39.2 via1_960x340 ;
+      VIA 40.07 36.4 via3_960x340 ;
+      VIA 40.07 36.4 via2_960x340 ;
+      VIA 40.07 36.4 via1_960x340 ;
+      VIA 40.07 33.6 via3_960x340 ;
+      VIA 40.07 33.6 via2_960x340 ;
+      VIA 40.07 33.6 via1_960x340 ;
+      VIA 40.07 30.8 via3_960x340 ;
+      VIA 40.07 30.8 via2_960x340 ;
+      VIA 40.07 30.8 via1_960x340 ;
+      VIA 40.07 28 via3_960x340 ;
+      VIA 40.07 28 via2_960x340 ;
+      VIA 40.07 28 via1_960x340 ;
+      VIA 40.07 25.2 via3_960x340 ;
+      VIA 40.07 25.2 via2_960x340 ;
+      VIA 40.07 25.2 via1_960x340 ;
+      VIA 40.07 22.4 via3_960x340 ;
+      VIA 40.07 22.4 via2_960x340 ;
+      VIA 40.07 22.4 via1_960x340 ;
+      VIA 40.07 19.6 via3_960x340 ;
+      VIA 40.07 19.6 via2_960x340 ;
+      VIA 40.07 19.6 via1_960x340 ;
+      VIA 40.07 16.8 via3_960x340 ;
+      VIA 40.07 16.8 via2_960x340 ;
+      VIA 40.07 16.8 via1_960x340 ;
+      VIA 40.07 14 via3_960x340 ;
+      VIA 40.07 14 via2_960x340 ;
+      VIA 40.07 14 via1_960x340 ;
+      VIA 40.07 11.2 via3_960x340 ;
+      VIA 40.07 11.2 via2_960x340 ;
+      VIA 40.07 11.2 via1_960x340 ;
+      LAYER metal7 ;
+        RECT  10.07 72.415 90.25 73.815 ;
+        RECT  10.07 32.415 90.25 33.815 ;
+      LAYER metal4 ;
+        RECT  39.83 11.115 40.31 91.085 ;
+      LAYER metal1 ;
+        RECT  10.07 89.515 90.25 89.685 ;
+        RECT  10.07 86.715 90.25 86.885 ;
+        RECT  10.07 83.915 90.25 84.085 ;
+        RECT  10.07 81.115 90.25 81.285 ;
+        RECT  10.07 78.315 90.25 78.485 ;
+        RECT  10.07 75.515 90.25 75.685 ;
+        RECT  10.07 72.715 90.25 72.885 ;
+        RECT  10.07 69.915 90.25 70.085 ;
+        RECT  10.07 67.115 90.25 67.285 ;
+        RECT  10.07 64.315 90.25 64.485 ;
+        RECT  10.07 61.515 90.25 61.685 ;
+        RECT  10.07 58.715 90.25 58.885 ;
+        RECT  10.07 55.915 90.25 56.085 ;
+        RECT  10.07 53.115 90.25 53.285 ;
+        RECT  10.07 50.315 90.25 50.485 ;
+        RECT  10.07 47.515 90.25 47.685 ;
+        RECT  10.07 44.715 90.25 44.885 ;
+        RECT  10.07 41.915 90.25 42.085 ;
+        RECT  10.07 39.115 90.25 39.285 ;
+        RECT  10.07 36.315 90.25 36.485 ;
+        RECT  10.07 33.515 90.25 33.685 ;
+        RECT  10.07 30.715 90.25 30.885 ;
+        RECT  10.07 27.915 90.25 28.085 ;
+        RECT  10.07 25.115 90.25 25.285 ;
+        RECT  10.07 22.315 90.25 22.485 ;
+        RECT  10.07 19.515 90.25 19.685 ;
+        RECT  10.07 16.715 90.25 16.885 ;
+        RECT  10.07 13.915 90.25 14.085 ;
+        RECT  10.07 11.115 90.25 11.285 ;
+    END
+  END VSS
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  22.1 0 22.17 0.07 ;
+    END
+  END clk
+  PIN req_msg[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  38.06 0 38.13 0.07 ;
+    END
+  END req_msg[0]
+  PIN req_msg[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 36.715 100.13 36.785 ;
+    END
+  END req_msg[10]
+  PIN req_msg[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  56.68 0 56.75 0.07 ;
+    END
+  END req_msg[11]
+  PIN req_msg[12]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  47.18 0 47.25 0.07 ;
+    END
+  END req_msg[12]
+  PIN req_msg[13]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 27.755 100.13 27.825 ;
+    END
+  END req_msg[13]
+  PIN req_msg[14]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  39.96 0 40.03 0.07 ;
+    END
+  END req_msg[14]
+  PIN req_msg[15]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 25.235 0.07 25.305 ;
+    END
+  END req_msg[15]
+  PIN req_msg[16]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 41.195 0.07 41.265 ;
+    END
+  END req_msg[16]
+  PIN req_msg[17]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 65.835 0.07 65.905 ;
+    END
+  END req_msg[17]
+  PIN req_msg[18]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  45.28 0 45.35 0.07 ;
+    END
+  END req_msg[18]
+  PIN req_msg[19]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  50.98 100.73 51.05 100.8 ;
+    END
+  END req_msg[19]
+  PIN req_msg[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 54.075 0.07 54.145 ;
+    END
+  END req_msg[1]
+  PIN req_msg[20]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 45.675 100.13 45.745 ;
+    END
+  END req_msg[20]
+  PIN req_msg[21]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 50.155 100.13 50.225 ;
+    END
+  END req_msg[21]
+  PIN req_msg[22]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  67.32 100.73 67.39 100.8 ;
+    END
+  END req_msg[22]
+  PIN req_msg[23]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 71.715 0.07 71.785 ;
+    END
+  END req_msg[23]
+  PIN req_msg[24]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  46.42 0 46.49 0.07 ;
+    END
+  END req_msg[24]
+  PIN req_msg[25]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 49.315 100.13 49.385 ;
+    END
+  END req_msg[25]
+  PIN req_msg[26]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 26.635 100.13 26.705 ;
+    END
+  END req_msg[26]
+  PIN req_msg[27]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  76.82 0 76.89 0.07 ;
+    END
+  END req_msg[27]
+  PIN req_msg[28]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 67.235 0.07 67.305 ;
+    END
+  END req_msg[28]
+  PIN req_msg[29]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  53.26 0 53.33 0.07 ;
+    END
+  END req_msg[29]
+  PIN req_msg[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 60.795 0.07 60.865 ;
+    END
+  END req_msg[2]
+  PIN req_msg[30]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 22.435 100.13 22.505 ;
+    END
+  END req_msg[30]
+  PIN req_msg[31]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 16.275 0.07 16.345 ;
+    END
+  END req_msg[31]
+  PIN req_msg[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  46.8 100.73 46.87 100.8 ;
+    END
+  END req_msg[3]
+  PIN req_msg[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  56.68 100.73 56.75 100.8 ;
+    END
+  END req_msg[4]
+  PIN req_msg[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 65.275 100.13 65.345 ;
+    END
+  END req_msg[5]
+  PIN req_msg[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  63.9 100.73 63.97 100.8 ;
+    END
+  END req_msg[6]
+  PIN req_msg[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 68.355 0.07 68.425 ;
+    END
+  END req_msg[7]
+  PIN req_msg[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 44.835 100.13 44.905 ;
+    END
+  END req_msg[8]
+  PIN req_msg[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 15.995 0.07 16.065 ;
+    END
+  END req_msg[9]
+  PIN req_rdy
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 37.555 0.07 37.625 ;
+    END
+  END req_rdy
+  PIN req_val
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 48.195 0.07 48.265 ;
+    END
+  END req_val
+  PIN reset
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 50.995 0.07 51.065 ;
+    END
+  END reset
+  PIN resp_msg[0]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  35.78 0 35.85 0.07 ;
+    END
+  END resp_msg[0]
+  PIN resp_msg[10]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 36.995 100.13 37.065 ;
+    END
+  END resp_msg[10]
+  PIN resp_msg[11]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  100.06 18.795 100.13 18.865 ;
+    END
+  END resp_msg[11]
+  PIN resp_msg[12]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  38.44 0 38.51 0.07 ;
+    END
+  END resp_msg[12]
+  PIN resp_msg[13]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  44.52 0 44.59 0.07 ;
+    END
+  END resp_msg[13]
+  PIN resp_msg[14]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  31.6 0 31.67 0.07 ;
+    END
+  END resp_msg[14]
+  PIN resp_msg[15]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  33.88 0 33.95 0.07 ;
+    END
+  END resp_msg[15]
+  PIN resp_msg[1]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 57.435 0.07 57.505 ;
+    END
+  END resp_msg[1]
+  PIN resp_msg[2]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  38.82 0 38.89 0.07 ;
+    END
+  END resp_msg[2]
+  PIN resp_msg[3]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  46.42 100.73 46.49 100.8 ;
+    END
+  END resp_msg[3]
+  PIN resp_msg[4]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  58.58 100.73 58.65 100.8 ;
+    END
+  END resp_msg[4]
+  PIN resp_msg[5]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  65.04 100.73 65.11 100.8 ;
+    END
+  END resp_msg[5]
+  PIN resp_msg[6]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  58.96 100.73 59.03 100.8 ;
+    END
+  END resp_msg[6]
+  PIN resp_msg[7]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 67.515 0.07 67.585 ;
+    END
+  END resp_msg[7]
+  PIN resp_msg[8]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  51.74 0 51.81 0.07 ;
+    END
+  END resp_msg[8]
+  PIN resp_msg[9]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT  52.88 0 52.95 0.07 ;
+    END
+  END resp_msg[9]
+  PIN resp_rdy
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 51.275 0.07 51.345 ;
+    END
+  END resp_rdy
+  PIN resp_val
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  0 50.715 0.07 50.785 ;
+    END
+  END resp_val
+  OBS
+    LAYER metal1 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via1 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal2 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via2 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal3 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via3 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal4 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via4 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal5 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via5 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal6 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER via6 ;
+    RECT  0 0 100.13 100.8 ;
+    LAYER metal7 ;
+    RECT  0 0 100.13 100.8 ;
+  END
+END gcd
+END LIBRARY

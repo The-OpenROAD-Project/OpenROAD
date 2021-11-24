@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, OpenROAD
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -39,7 +39,7 @@
 
 #include "utl/Logger.h"
 
-#include "opendb/dbTypes.h"
+#include "odb/dbTypes.h"
 
 namespace dpl {
 
@@ -70,6 +70,7 @@ NetBox::hpwl()
 void
 Opendp::optimizeMirroring()
 {
+  block_ = db_->getChip()->getBlock();
   NetBoxes net_boxes;
   findNetBoxes(net_boxes);
   // Sort net boxes by net hpwl.

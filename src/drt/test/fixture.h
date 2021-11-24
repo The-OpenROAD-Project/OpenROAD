@@ -29,6 +29,10 @@
 #include "frDesign.h"
 
 using namespace fr;
+
+namespace odb {
+class dbTechLayerCutSpacingTableDefRule;
+}
 // General Fixture for tests using db objects.
 class Fixture
 {
@@ -38,8 +42,8 @@ class Fixture
 
   void addLayer(frTechObject* tech,
                 const char* name,
-                frLayerTypeEnum type,
-                frPrefRoutingDirEnum dir = frcNonePrefRoutingDir);
+                dbTechLayerType type,
+                dbTechLayerDir dir = dbTechLayerDir::NONE);
 
   void setupTech(frTechObject* tech);
 
@@ -88,6 +92,16 @@ class Fixture
                                       frCoord par_within = -1,
                                       bool two_edges = false);
 
+  void makeLef58EolKeepOutConstraint(frLayerNum layer_num,
+                                     bool cornerOnly = false,
+                                     bool exceptWithin = false,
+                                     frCoord withinLow = -10,
+                                     frCoord withinHigh = 10,
+                                     frCoord forward = 200,
+                                     frCoord side = 50,
+                                     frCoord backward = 0,
+                                     frCoord width = 200);
+
   std::shared_ptr<frLef58SpacingEndOfLineConstraint>
   makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                 frCoord space = 200,
@@ -117,27 +131,35 @@ class Fixture
       bool below = false,
       bool allCuts = false);
 
+  void makeCutClass(frLayerNum layer_num,
+                    std::string name,
+                    frCoord width,
+                    frCoord height);
+
+  void makeLef58CutSpcTbl(frLayerNum layer_num,
+                          odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+
   frNet* makeNet(const char* name);
 
   frViaDef* makeViaDef(const char* name,
                        frLayerNum layer_num,
-                       const frPoint& ll,
-                       const frPoint& ur);
+                       const Point& ll,
+                       const Point& ur);
 
-  frVia* makeVia(frViaDef* via, frNet* net, const frPoint& origin);
+  frVia* makeVia(frViaDef* via, frNet* net, const Point& origin);
 
   void makePathseg(frNet* net,
                    frLayerNum layer_num,
-                   const frPoint& begin,
-                   const frPoint& end,
+                   const Point& begin,
+                   const Point& end,
                    frUInt4 width = 100,
                    frEndStyleEnum begin_style = frcTruncateEndStyle,
                    frEndStyleEnum end_style = frcTruncateEndStyle);
 
   void makePathsegExt(frNet* net,
                       frLayerNum layer_num,
-                      const frPoint& begin,
-                      const frPoint& end,
+                      const Point& begin,
+                      const Point& end,
                       frUInt4 width = 100)
   {
     makePathseg(net,
@@ -153,6 +175,13 @@ class Fixture
       frLayerNum layer_num,
       std::vector<frCoord> widthTbl,
       std::vector<std::pair<frCoord, frCoord>> valTbl);
+
+  frLef58EolExtensionConstraint* makeEolExtensionConstraint(
+      frLayerNum layer_num,
+      frCoord spacing,
+      std::vector<frCoord> eol,
+      std::vector<frCoord> ext,
+      bool parallelOnly = false);
 
   frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
       frLayerNum layer_num,

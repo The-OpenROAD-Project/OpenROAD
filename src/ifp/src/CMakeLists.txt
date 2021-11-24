@@ -54,8 +54,13 @@ target_include_directories(ifp
 
 target_link_libraries(ifp
   PRIVATE
-    opendb
+    odb
     dbSta
     OpenSTA
     utl
+)
+
+messages(
+  TARGET ifp
+  OUTPUT_DIR ..
 )

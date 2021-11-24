@@ -68,7 +68,7 @@ class frNode : public frBlockObject
   frNode(grNode& in);
   // setters
   void addToNet(frNet* in) { net = in; }
-  void setLoc(const frPoint& in) { loc = in; }
+  void setLoc(const Point& in) { loc = in; }
   void setLayerNum(frLayerNum in) { layerNum = in; }
   void setConnFig(frBlockObject* in) { connFig = in; }
   void setPin(frBlockObject* in) { pin = in; }
@@ -134,8 +134,8 @@ class frNode : public frBlockObject
   // getters
   bool hasNet() { return (net != nullptr); }
   frNet* getNet() { return net; }
-  void getLoc(frPoint& in) { in = loc; }
-  frPoint getLoc() { return loc; }
+  void getLoc(Point& in) { in = loc; }
+  Point getLoc() { return loc; }
   frLayerNum getLayerNum() { return layerNum; }
   frBlockObject* getConnFig() { return connFig; }
   frBlockObject* getPin() { return pin; }
@@ -150,7 +150,7 @@ class frNode : public frBlockObject
 
  protected:
   frNet* net;
-  frPoint loc;             // == prefAP bp if exist for pin
+  Point loc;               // == prefAP bp if exist for pin
   frLayerNum layerNum;     // == prefAP bp if exist for pin
   frBlockObject* connFig;  // wire / via / patch to parent
   frBlockObject* pin;      // term / instTerm / null if boundary pin or steiner

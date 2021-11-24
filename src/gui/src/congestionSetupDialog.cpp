@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -329,6 +329,41 @@ QColor CongestionSetupDialog::getCongestionColorForPercentage(
   congestion_color.setAlpha(alpha);
 
   return congestion_color;
+}
+
+void CongestionSetupDialog::readSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+
+  startCongestionSpinBox->setValue(settings->value("min_congestion", startCongestionSpinBox->value()).toInt());
+  endCongestionSpinBox->setValue(settings->value("max_congestion", endCongestionSpinBox->value()).toInt());
+  settings->setValue("max_congestion", endCongestionSpinBox->value());
+
+  spinBox->setValue(settings->value("num_bins", spinBox->value()).toInt());
+
+  bothCongDir->setChecked(settings->value("show_both", bothCongDir->isChecked()).toBool());
+  horCongDir->setChecked(settings->value("show_horizontal", horCongDir->isChecked()).toBool());
+  verCongDir->setChecked(settings->value("show_vertical", verCongDir->isChecked()).toBool());
+
+  settings->endGroup();
+
+  saveState();
+}
+
+void CongestionSetupDialog::writeSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+
+  settings->setValue("min_congestion", startCongestionSpinBox->value());
+  settings->setValue("max_congestion", endCongestionSpinBox->value());
+
+  settings->setValue("num_bins", spinBox->value());
+
+  settings->setValue("show_both", bothCongDir->isChecked());
+  settings->setValue("show_horizontal", horCongDir->isChecked());
+  settings->setValue("show_vertical", verCongDir->isChecked());
+
+  settings->endGroup();
 }
 
 }  // namespace gui

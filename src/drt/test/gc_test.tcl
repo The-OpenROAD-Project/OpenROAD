@@ -2,7 +2,7 @@ source "helpers.tcl"
 
 set test_dir [pwd]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
-set test_path [file join $openroad_dir "build" "src" "TritonRoute" "trTest"]
+set test_path [file join $openroad_dir "build" "src" "drt" "trTest"]
 
 set test_status [catch { exec sh -c "BASE_DIR=$test_dir $test_path" } output option]
 

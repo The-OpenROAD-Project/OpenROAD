@@ -51,8 +51,9 @@ class frTerm : public frBlockObject
         block_(nullptr),
         net_(nullptr),
         pins_(),
-        type_(frTermEnum::frcNormalTerm),
-        direction_(frTermDirectionEnum::UNKNOWN)
+        type_(dbSigType::SIGNAL),
+        direction_(dbIoType::INPUT),
+        bbox_()
   {
   }
   frTerm(const frTerm& in)
@@ -61,7 +62,8 @@ class frTerm : public frBlockObject
         block_(in.block_),
         net_(in.net_),
         type_(in.type_),
-        direction_(in.direction_)
+        direction_(in.direction_),
+        bbox_()
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -69,13 +71,14 @@ class frTerm : public frBlockObject
       addPin(std::move(tmp));
     }
   }
-  frTerm(const frTerm& in, const frTransform& xform)
+  frTerm(const frTerm& in, const dbTransform& xform)
       : frBlockObject(),
         name_(in.name_),
         block_(in.block_),
         net_(in.net_),
         type_(in.type_),
-        direction_(in.direction_)
+        direction_(in.direction_),
+        bbox_()
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -95,25 +98,72 @@ class frTerm : public frBlockObject
   void addPin(std::unique_ptr<frPin> in)
   {
     in->setTerm(this);
+    for (auto& uFig : in->getFigs()) {
+      auto pinFig = uFig.get();
+      if (pinFig->typeId() == frcRect) {
+        if (bbox_.dx() == 0 && bbox_.dy() == 0)
+          bbox_ = static_cast<frRect*>(pinFig)->getBBox();
+        else
+          bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
+      }
+    }
     pins_.push_back(std::move(in));
   }
-  void setType(frTermEnum in) { type_ = in; }
-  frTermEnum getType() const { return type_; }
-  void setDirection(frTermDirectionEnum in) { direction_ = in; }
-  frTermDirectionEnum getDirection() const { return direction_; }
+  void setType(dbSigType in) { type_ = in; }
+  dbSigType getType() const { return type_; }
+  void setDirection(dbIoType in) { direction_ = in; }
+  dbIoType getDirection() const { return direction_; }
   // others
   frBlockObjectEnum typeId() const override { return frcTerm; }
-  void setOrderId(int order_id) { order_id_ = order_id; }
-  int getOrderId() { return order_id_; }
+  void setOrderId(int order_id) { _order_id = order_id; }
+  int getOrderId() { return _order_id; }
+  frAccessPoint* getAccessPoint(frCoord x,
+                                frCoord y,
+                                frLayerNum lNum,
+                                int pinAccessIdx)
+  {
+    if (pinAccessIdx == -1) {
+      return nullptr;
+    }
+    for (auto& pin : pins_) {
+      if (!pin->hasPinAccess()) {
+        continue;
+      }
+      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+        if (x == ap->getPoint().x() && y == ap->getPoint().y()
+            && lNum == ap->getLayerNum()) {
+          return ap.get();
+        }
+      }
+    }
+    return nullptr;
+  }
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
+  {
+    return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
+  }
+  // fills outShapes with copies of the pinFigs
+  void getShapes(std::vector<frRect>& outShapes)
+  {
+    for (auto& pin : pins_) {
+      for (auto& pinShape : pin->getFigs()) {
+        if (pinShape->typeId() == frcRect) {
+          outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
+        }
+      }
+    }
+  }
+  const Rect getBBox() const { return bbox_; }
 
  private:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
   frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frPin>> pins_;  // set later
-  frTermEnum type_;
-  frTermDirectionEnum direction_;
-  int order_id_;
+  dbSigType type_;
+  dbIoType direction_;
+  int _order_id;
+  Rect bbox_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
@@ -133,7 +183,8 @@ void frTerm::serialize(Archive& ar, const unsigned int version)
   (ar) & pins_;
   (ar) & type_;
   (ar) & direction_;
-  (ar) & order_id_;
+  (ar) & _order_id;
+  (ar) & bbox_;
   if(fr::is_loading(ar) && net_) {
     net_->addTerm(this);
   }

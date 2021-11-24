@@ -1,3 +1,6 @@
+# defaults
+set slew_margin 0
+set cap_margin 0
 set power_corner "default"
 
 proc read_libraries {} {

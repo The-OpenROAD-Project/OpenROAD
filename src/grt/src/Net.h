@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 #include <vector>
 
 #include "Pin.h"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -48,19 +48,19 @@ class Net
  public:
   Net() = default;
   Net(odb::dbNet* net);
-  odb::dbNet* getDbNet() const { return _net; }
+  odb::dbNet* getDbNet() const { return net_; }
   const std::string getName() const;
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
-  std::vector<Pin>& getPins() { return _pins; }
-  int getNumPins() const { return _pins.size(); }
+  std::vector<Pin>& getPins() { return pins_; }
+  int getNumPins() const { return pins_.size(); }
   bool isLocal();
   void destroyPins();
 
  private:
-  odb::dbNet* _net;
-  std::vector<Pin> _pins;
+  odb::dbNet* net_;
+  std::vector<Pin> pins_;
 };
 
 }  // namespace grt

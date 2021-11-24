@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -37,7 +37,7 @@
 
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -69,9 +69,9 @@ class dbNetwork : public ConcreteNetwork
 public:
   dbNetwork();
   virtual ~dbNetwork();
-  void setDb(dbDatabase *db);
+  void init(dbDatabase *db,
+            Logger *logger);
   void setBlock(dbBlock *block);
-  void setLogger(Logger *logger);
   virtual void clear();
 
   void readLefAfter(dbLib *lib);
@@ -120,6 +120,8 @@ public:
   Port *dbToSta(dbMTerm *mterm) const;
   PortDirection *dbToSta(dbSigType sig_type,
 			 dbIoType io_type) const;
+  // dbStaCbk::inDbBTermCreate
+  void makeTopPort(dbBTerm *bterm);
 
   ////////////////////////////////////////////////////////////////
   //
@@ -242,6 +244,7 @@ protected:
   virtual void visitConnectedPins(const Net *net,
                                   PinVisitor &visitor,
                                   ConstNetSet &visited_nets) const;
+  bool portMsbFirst(const char *port_name);
 
   dbDatabase *db_;
   Logger *logger_;

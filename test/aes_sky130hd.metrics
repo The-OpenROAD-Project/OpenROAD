@@ -1,0 +1,16 @@
+{
+    "ord_version" : ""
+  , "instance_count" : "17210"
+  , "utilization" : "7.3"
+  , "design_area" : "219701"
+  , "ANT::errors" : "0"
+  , "DRT::drv" : "0"
+  , "worst_slack_min" : "0.10944179205988454"
+  , "worst_slack_max" : "-1.3124479652331429"
+  , "tns_max" : "-185.49559924233938"
+  , "clock_skew" : "0.6891296617294678"
+  , "max_slew_violations" : "0"
+  , "max_fanout_violations" : "0"
+  , "max_capacitance_violations" : "0"
+  , "clock_period" : "3.740000"
+}

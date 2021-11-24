@@ -81,7 +81,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
 
 void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 {
-  frBox bbox;
+  Rect bbox;
   in->getBBox(bbox);
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
@@ -119,6 +119,15 @@ int FlexGCWorker::main()
   return impl_->main();
 }
 
+void FlexGCWorker::checkMinStep(gcPin* pin)
+{
+  impl_->checkMetalShape_minStep(pin);
+}
+
+void FlexGCWorker::updateGCWorker() {
+  impl_->updateGCWorker();
+}
+
 void FlexGCWorker::end()
 {
   impl_->end();
@@ -134,14 +143,14 @@ void FlexGCWorker::initPA1()
   impl_->initPA1();
 }
 
-void FlexGCWorker::setExtBox(const frBox& in)
+void FlexGCWorker::setExtBox(const Rect& in)
 {
-  impl_->extBox_.set(in);
+  impl_->extBox_ = in;
 }
 
-void FlexGCWorker::setDrcBox(const frBox& in)
+void FlexGCWorker::setDrcBox(const Rect& in)
 {
-  impl_->drcBox_.set(in);
+  impl_->drcBox_ = in;
 }
 
 const std::vector<std::unique_ptr<frMarker>>& FlexGCWorker::getMarkers() const
@@ -164,7 +173,9 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in)
     return false;
   }
 }
-
+gcNet* FlexGCWorker::getTargetNet() {
+  return impl_->targetNet_;
+}
 void FlexGCWorker::setEnableSurgicalFix(bool in)
 {
   impl_->surgicalFixEnabled_ = in;
@@ -195,6 +206,9 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
   return impl_->getNets();
 }
 
+gcNet* FlexGCWorker::getNet(frNet* net) {
+  return impl_->getNet(net);
+}
 template <class Archive>
 void FlexGCWorker::Impl::serialize(Archive& ar, const unsigned int version)
 {

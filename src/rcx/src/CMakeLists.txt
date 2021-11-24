@@ -1,7 +1,7 @@
 ################################################################################
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2020, OpenRoad Project UCSD
+## Copyright (c) 2020, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -74,8 +74,13 @@ target_include_directories(rcx
 
 target_link_libraries(rcx
   PUBLIC
-    opendb
+    odb
     utl
   PRIVATE
     OpenSTA
+)
+
+messages(
+  TARGET rcx
+  OUTPUT_DIR ..
 )

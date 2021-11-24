@@ -14,7 +14,7 @@ function(swig_lib)
 
   # Parse args
   set(options "")
-  set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE)
+  set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER)
   set(multiValueArgs SWIG_INCLUDES SCRIPTS)
 
   cmake_parse_arguments(
@@ -102,6 +102,24 @@ function(swig_lib)
     swig_link_libraries(${ARG_NAME}
       PUBLIC
         Python3::Python
+    )
+  endif()
+  
+  if (DEFINED ARG_RUNTIME_HEADER)
+    add_custom_command(
+      OUTPUT ${ARG_RUNTIME_HEADER}
+      COMMAND ${SWIG_EXECUTABLE} -${ARG_LANGUAGE} -external-runtime ${ARG_RUNTIME_HEADER}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    add_custom_target(${ARG_NAME}_RUNTIME_HEADER
+      DEPENDS ${ARG_RUNTIME_HEADER}
+    )
+    add_dependencies(${ARG_NAME}
+      ${ARG_NAME}_RUNTIME_HEADER
+    )
+    target_include_directories(${ARG_NAME}
+      PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
     )
   endif()
 

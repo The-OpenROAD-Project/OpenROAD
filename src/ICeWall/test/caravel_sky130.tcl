@@ -35,8 +35,19 @@ source caravel_sky130/library.sky130_fd_io.tcl
 
 puts "Extracting footprint"
 
-ICeWall extract_footprint
-ICeWall write_footprint results/caravel_sky130.package.tcl
+if {[catch {ICeWall extract_footprint} msg]} {
+  puts $errorInfo
+  puts $msg
+
+  puts [dict get $::ICeWall::footprint padcell xres_0]
+  return
+}
+
+if {[catch {ICeWall write_footprint results/caravel_sky130.package.tcl} msg]} {
+  puts $errorInfo
+  puts $msg
+  exit
+}
 
 set env(FOOTPRINT_LIBRARY) caravel_sky130/library.sky130_fd_io.tcl
 diff_files results/caravel_sky130.package.tcl caravel_sky130.package.tclok
@@ -56,6 +67,8 @@ initialize_floorplan \
   -die_area  [ICeWall get_die_area] \
   -core_area [ICeWall get_core_area] \
   -site      unithd
+
+# source ../../../test/sky130hs/sky130hs.tracks
 
 if {[catch {ICeWall init_footprint caravel_sky130/chip_io.sigmap} msg]} {
   puts $errorInfo

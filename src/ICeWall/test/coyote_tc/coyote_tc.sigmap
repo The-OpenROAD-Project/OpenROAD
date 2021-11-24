@@ -1,6 +1,5 @@
 sig0   clk_i
 sig1   reset_i
-sig2   en_i
 sig3   rocc_cmd_v_o 
 sig4   rocc_cmd_data_o_0
 sig5   rocc_cmd_data_o_1
@@ -153,15 +152,6 @@ sig151 rocc_ctrl_i_interrupt_
 sig152 rocc_ctrl_o_s_ 
 sig153 rocc_ctrl_o_exception_ 
 sig154 rocc_ctrl_o_host_id_ 
-sig155 TDI 
-sig156 TDO 
-sig157 TCK 
-sig158 TRST 
-sig159 TMS
-sig160 UNASSIGNED
-sig161 UNASSIGNED
-sig162 UNASSIGNED
-sig163 UNASSIGNED
 vdd_0   VDD
 vdd_1   VDD
 vdd_2   VDD

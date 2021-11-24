@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -36,6 +36,7 @@
 #include "db_sta/dbReadVerilog.hh"
 
 #include <map>
+#include <string>
 
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
@@ -44,7 +45,7 @@
 #include "sta/VerilogReader.hh"
 
 #include "db_sta/dbNetwork.hh"
-#include "opendb/db.h"
+#include "odb/db.h"
 
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
@@ -58,6 +59,8 @@ using odb::dbBlock;
 using odb::dbTech;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModule;
+using odb::dbModInst;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbBTerm;
@@ -80,29 +83,19 @@ using sta::Cell;
 using sta::deleteVerilogReader;
 using sta::LeafInstanceIterator;
 using sta::InstanceChildIterator;
+using sta::InstancePinIterator;
 using sta::NetIterator;
 using sta::NetTermIterator;
 using sta::ConnectedPinIterator;
 using sta::NetConnectedPinIterator;
 using sta::PinPathNameLess;
 using sta::LibertyCell;
+using sta::CellPortBitIterator;
+using sta::CellPortIterator;
+using sta::Port;
 
 using utl::Logger;
 using utl::STA;
-
-// Hierarchical network for read_verilog.
-// Verilog cells and module networks are built here.
-// It is NOT part of an Sta.
-class dbVerilogNetwork : public  ConcreteNetwork
-{
-public:
-  dbVerilogNetwork();
-  virtual Cell *findAnyCell(const char *name);
-  void init(dbNetwork *db_network);
-
-private:
-  NetworkReader *db_network_;
-};
 
 dbVerilogNetwork::dbVerilogNetwork() :
   ConcreteNetwork(),
@@ -168,17 +161,20 @@ public:
   void makeDbNetlist();
 
 protected:
-  void makeDbInsts();
+  void makeDbModule(Instance* inst, dbModule* parent);
   dbIoType staToDb(PortDirection *dir);
+  void recordBusPortsOrder();
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
   dbMaster *getMaster(Cell *cell);
-
+  dbModule *makeUniqueDbModule(const char* name);
+  
   Network *network_;
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
   std::map<Cell*, dbMaster*> master_map_;
+  std::map<std::string, int> uniquify_id_; // key: module name
 };
 
 void
@@ -217,6 +213,7 @@ Verilog2db::makeBlock()
     chip = dbChip::create(db_);
   block_ = chip->getBlock();
   if (block_) {
+    // Delete existing db network objects.
     auto insts = block_->getInsts();
     for (auto iter = insts.begin(); iter != insts.end(); ) {
       iter = dbInst::destroy(iter);
@@ -224,6 +221,14 @@ Verilog2db::makeBlock()
     auto nets = block_->getNets();
     for (auto iter = nets.begin(); iter != nets.end(); ) {
       iter = dbNet::destroy(iter);
+    }
+    auto bterms = block_->getBTerms();
+    for (auto iter = bterms.begin(); iter != bterms.end(); ) {
+      iter = dbBTerm::destroy(iter);
+    }
+    auto mod_insts = block_->getTopModule()->getChildren();
+    for (auto iter = mod_insts.begin(); iter != mod_insts.end(); ) {
+      iter = dbModInst::destroy(iter);
     }
   }
   else {
@@ -238,27 +243,106 @@ Verilog2db::makeBlock()
 void
 Verilog2db::makeDbNetlist()
 {
-  makeDbInsts();
+  recordBusPortsOrder();
+  makeDbModule(network_->topInstance(), /* parent */ nullptr);
   makeDbNets(network_->topInstance());
 }
 
 void
-Verilog2db::makeDbInsts()
+Verilog2db::recordBusPortsOrder()
 {
-  LeafInstanceIterator *leaf_iter = network_->leafInstanceIterator();
-  while (leaf_iter->hasNext()) {
-    Instance *inst = leaf_iter->next();
-    const char *inst_name = network_->pathName(inst);
-    Cell *cell = network_->cell(inst);
-    dbMaster *master = getMaster(cell);
-    if (master)
-      dbInst::create(block_, master, inst_name);
-    else
-      logger_->warn(ORD, 1001, "instance {} LEF master {} not found.",
-                    inst_name,
-                    network_->name(cell));
+  // OpenDB does not have any concept of bus ports.
+  // Use a property to annotate the bus names as msb or lsb first for writing verilog.
+  Cell *top_cell = network_->cell(network_->topInstance());
+  CellPortIterator *bus_iter = network_->portIterator(top_cell);
+  while (bus_iter->hasNext()) {
+    Port *port = bus_iter->next();
+    if (network_->isBus(port)) {
+      const char *port_name = network_->name(port);
+      int from = network_->fromIndex(port);
+      int to = network_->toIndex(port);
+      string key = "bus_msb_first ";
+      key += port_name;
+      odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+    }
   }
-  delete leaf_iter;
+  delete bus_iter;
+}
+
+dbModule*
+Verilog2db::makeUniqueDbModule(const char* name)
+{
+  dbModule* module;
+  do {
+    std::string full_name(name);
+    int& id = uniquify_id_[name];
+    if (id > 0) {
+      full_name += '-' + std::to_string(id);
+    }
+    ++id;
+    module = dbModule::create(block_, full_name.c_str());
+  } while (module == nullptr);
+  return module;
+}
+
+// Recursively builds odb's dbModule/dbModInst hierarchy corresponding
+// to the sta network rooted at inst.  parent is the dbModule to build
+// the hierarchy under. If null the top module is used.
+
+void
+Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
+{
+  Cell* cell = network_->cell(inst);
+
+  dbModule* module;
+  if (parent == nullptr) {
+    module = block_->getTopModule();
+  } else {
+    module = makeUniqueDbModule(network_->name(cell));
+    dbModInst* modinst = dbModInst::create(parent, module,
+                                           network_->name(inst));
+    if (modinst == nullptr) {
+      logger_->warn(ORD,
+                     1014,
+                     "hierachical instance creation failed for {} of {}",
+                     network_->name(inst),
+                     network_->name(cell));
+      return;
+    }
+  }
+  InstanceChildIterator* child_iter = network_->childIterator(inst);
+  while (child_iter->hasNext()) {
+    Instance* child = child_iter->next();
+    if (network_->isHierarchical(child)) {
+      makeDbModule(child, module);
+    } else {
+      const char *child_name = network_->pathName(child);
+      Cell *cell = network_->cell(child);
+      dbMaster *master = getMaster(cell);
+      if (master == nullptr) {
+        logger_->warn(ORD, 1013, "instance {} LEF master {} not found.",
+                       child_name,
+                       network_->name(cell));
+        continue;
+      }
+      auto db_inst = dbInst::create(block_, master, child_name);
+      if (db_inst == nullptr) {
+        logger_->warn(ORD,
+                       1015,
+                      "leaf instance creation failed for {} of {}",
+                       network_->name(child),
+                       module->getName());
+        continue;
+      }
+      module->addInst(db_inst);
+    }
+  }
+  delete child_iter;
+
+  if (module->getChildren().reversible() && module->getChildren().orderReversed())
+    module->getChildren().reverse();
+  if (module->getInsts().reversible() && module->getInsts().orderReversed())
+    module->getInsts().reverse();
 }
 
 dbIoType
@@ -272,6 +356,8 @@ Verilog2db::staToDb(PortDirection *dir)
     return dbIoType::INOUT;
   else if (dir == PortDirection::tristate())
     return dbIoType::OUTPUT;
+  else if (dir == PortDirection::unknown())
+    return dbIoType::INPUT;
   else
     return dbIoType::INOUT;
 }
@@ -286,7 +372,7 @@ Verilog2db::makeDbNets(const Instance *inst)
     const char *net_name = network_->pathName(net);
     if (is_top || !hasTerminals(net)) {
       dbNet *db_net = dbNet::create(block_, net_name);
-      
+
       if (network_->isPower(net))
         db_net->setSigType(odb::dbSigType::POWER);
       if (network_->isGround(net))
@@ -365,7 +451,7 @@ Verilog2db::getMaster(Cell *cell)
     else {
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell)
-        logger_->warn(ORD, 1012, "Liberty cell has no LEF master.", cell_name);
+        logger_->warn(ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
       // OpenSTA read_verilog warns about missing cells.
       master_map_[cell] = nullptr;
       return nullptr;

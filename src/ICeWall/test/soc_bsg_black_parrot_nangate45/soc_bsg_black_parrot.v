@@ -1065,7 +1065,7 @@ module soc_bsg_black_parrot (
   PADCELL_SIG_H u_ddr_dqs_p_0_io (.PAD(p_ddr_dqs_p_0_io), .A(core_ddr_dqs_p_0_o), .Y(core_ddr_dqs_p_0_i), .OE(core_ddr_dqs_p_0_sel), .PU(core_ddr_dqs_p_0_sel)) ; 
   PADCELL_SIG_H u_ddr_dqs_p_3_io (.PAD(p_ddr_dqs_p_3_io), .A(core_ddr_dqs_p_3_o), .Y(core_ddr_dqs_p_3_i), .OE(core_ddr_dqs_p_3_sel), .PU(core_ddr_dqs_p_3_sel)) ; 
 
-  PADCELL_VDDIO_V u_v18_0 ();
+  // PADCELL_VDDIO_V u_v18_0 ();
   PADCELL_VDDIO_V u_v18_1 ();
   PADCELL_VDDIO_V u_v18_2 ();
   PADCELL_VDDIO_V u_v18_3 ();
@@ -1082,7 +1082,7 @@ module soc_bsg_black_parrot (
   PADCELL_VDDIO_V u_v18_22 ();
   PADCELL_VDDIO_V u_v18_23 ();
   PADCELL_VDDIO_V u_v18_24 ();
-  PADCELL_VDD_V u_vdd_0 ();
+  // PADCELL_VDD_V u_vdd_0 ();
   PADCELL_VDD_V u_vdd_1 ();
   PADCELL_VDD_V u_vdd_2 ();
   PADCELL_VDD_V u_vdd_3 ();

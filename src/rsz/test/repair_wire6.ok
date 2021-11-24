@@ -3,13 +3,13 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: repair_wire1.def
+[INFO ODB-0127] Reading DEF file: repair_wire6.def
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
-[INFO ODB-0131]     Created 3 components and 12 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 6 connections.
-[INFO ODB-0133]     Created 4 nets and 6 connections.
-[INFO ODB-0134] Finished DEF file: repair_wire1.def
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 4 connections.
+[INFO ODB-0133]     Created 3 nets and 4 connections.
+[INFO ODB-0134] Finished DEF file: repair_wire6.def
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -22,30 +22,26 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
- 105.475    0.164    0.178    0.194 ^ u2/Z (BUF_X1)
-            0.420    0.317    0.511 ^ u3/A (BUF_X1)
-   0.058    0.017    0.021    0.532 ^ u3/Z (BUF_X1)
-            0.017    0.000    0.532 ^ out1 (out)
-                              0.532   data arrival time
+  78.399    0.133    0.146    0.162 ^ u2/Z (BUF_X1)
+            0.257    0.181    0.343 ^ out1 (out)
+                              0.343   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-u2/Z manhtn 1999.8 steiner 1999.8 0.37
-u3/Z manhtn 1.1 steiner 1.1 0.00
+u2/Z manhtn 1500.3 steiner 1500.3 0.21
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 [WARNING RSZ-0065] max wire length less than 853u increases wire delays.
-[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
 Driver    length delay
 repeater1/Z manhtn 569.8 steiner 569.8 0.03
-repeater3/Z manhtn 569.3 steiner 569.3 0.03
 repeater2/Z manhtn 569.3 steiner 569.3 0.03
-u2/Z manhtn 290.4 steiner 290.4 0.01
+u2/Z manhtn 359.5 steiner 359.5 0.01
+in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -56,20 +52,17 @@ Path Type: max
                      0.000    0.000 ^ input external delay
    1.009    0.000    0.000    0.000 ^ in1 (in)
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   1.444    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
-            0.007    0.000    0.018 ^ u2/A (CLKBUF_X3)
-  18.576    0.016    0.038    0.056 ^ u2/Z (CLKBUF_X3)
-            0.019    0.010    0.066 ^ repeater3/A (BUF_X4)
-  33.153    0.015    0.032    0.098 ^ repeater3/Z (BUF_X4)
-            0.039    0.030    0.128 ^ repeater2/A (BUF_X4)
-  33.153    0.016    0.036    0.164 ^ repeater2/Z (BUF_X4)
-            0.039    0.030    0.194 ^ repeater1/A (BUF_X4)
-  30.752    0.015    0.036    0.230 ^ repeater1/Z (BUF_X4)
-            0.035    0.026    0.256 ^ u3/A (BUF_X1)
-   0.058    0.005    0.024    0.280 ^ u3/Z (BUF_X1)
-            0.005    0.000    0.280 ^ out1 (out)
-                              0.280   data arrival time
+   6.609    0.018    0.031    0.031 ^ u1/Z (BUF_X1)
+            0.018    0.000    0.031 ^ u2/A (BUF_X8)
+  22.191    0.008    0.025    0.055 ^ u2/Z (BUF_X8)
+            0.017    0.013    0.068 ^ repeater2/A (BUF_X4)
+  33.153    0.015    0.032    0.100 ^ repeater2/Z (BUF_X4)
+            0.039    0.030    0.130 ^ repeater1/A (BUF_X4)
+  29.777    0.015    0.036    0.166 ^ repeater1/Z (BUF_X4)
+            0.033    0.025    0.191 ^ out1 (out)
+                              0.191   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
+[INFO RSZ-0026] Removed 3 buffers.

@@ -50,8 +50,7 @@ FlexPA::FlexPA(frDesign* in, Logger* logger)
       macroCellPinGenApCnt_(0),
       macroCellPinValidPlanarApCnt_(0),
       macroCellPinValidViaApCnt_(0),
-      macroCellPinNoApCnt_(0),
-      maxAccessPatternSize_(0)
+      macroCellPinNoApCnt_(0)
 {
 }
 
@@ -93,7 +92,7 @@ int FlexPA::main()
 
   frTime t;
   if (VERBOSE > 0) {
-    logger_->info(DRT, 165, "start pin access");
+    logger_->info(DRT, 165, "Start pin access.");
   }
 
   init();
@@ -101,7 +100,7 @@ int FlexPA::main()
 
   int stdCellPinCnt = 0;
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE) {
+    if (inst->getRefBlock()->getMasterType() != dbMasterType::CORE) {
       continue;
     }
     for (auto& instTerm : inst->getInstTerms()) {
@@ -131,7 +130,7 @@ int FlexPA::main()
   }
 
   if (VERBOSE > 0) {
-    logger_->info(DRT, 166, "complete pin access");
+    logger_->info(DRT, 166, "Complete pin access.");
     t.print(logger_);
   }
   return 0;

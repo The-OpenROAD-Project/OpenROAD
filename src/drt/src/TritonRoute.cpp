@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "triton_route/TritonRoute.h"
+
 #include <fstream>
 #include <iostream>
 
@@ -42,8 +44,8 @@
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-#include "triton_route/TritonRoute.h"
 
 using namespace std;
 using namespace fr;
@@ -51,11 +53,11 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* TritonRoute_tcl_inits[];
+extern const char* drt_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Tritonroute_Init(Tcl_Interp* interp);
+extern int Drt_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
@@ -136,6 +138,11 @@ void TritonRoute::setDebugPaMarkers(bool on)
   debug_->paMarkers = on;
 }
 
+void TritonRoute::setDebugPaCombining(bool on)
+{
+  debug_->paCombining = on;
+}
+
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {
@@ -148,35 +155,37 @@ std::string TritonRoute::runDRWorker(const char* file_name)
 {
   // must be at this scope to persist to the end of the method
   std::unique_ptr<FlexDRGraphics> graphics;
-  if (debug_->debugDR && FlexDRGraphics::guiActive()) {
-    graphics = std::make_unique<FlexDRGraphics>(
-        debug_.get(), design_.get(), db_, logger_);
-  }
+  // if (debug_->debugDR && FlexDRGraphics::guiActive()) {
+  //   graphics = std::make_unique<FlexDRGraphics>(
+  //       debug_.get(), design_.get(), db_, logger_);
+  // }
   auto worker = FlexDRWorker::load(
       file_name, logger_, debug_.get(), db_, graphics.get());
 
   // Replace the stub tech with the reloaded one for the gui
-  std::unique_ptr<frTechObject> tech(worker->getTech());
-  if(graphics)
-    graphics->setTech(tech.get(), db_);
-  design_->setTech(std::move(tech));
+  // std::unique_ptr<frTechObject> tech(worker->getTech());
+  // if(graphics)
+  //   graphics->setTech(tech.get(), db_);
+  // design_->setTech(std::move(tech));
 
-  if (graphics) {
-    graphics->startIter(worker->getDRIter());
-  }
+  // if (graphics) {
+    // graphics->startIter(worker->getDRIter());
+  // }
   return worker->reloadedMain();
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,
                        odb::dbDatabase* db,
-                       Logger* logger)
+                       Logger* logger,
+                       stt::SteinerTreeBuilder* stt_builder)
 {
   db_ = db;
   logger_ = logger;
+  stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
-  Tritonroute_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
+  Drt_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
   FlexDRGraphics::init();
 }
 
@@ -209,8 +218,8 @@ void TritonRoute::init()
       BOTTOM_ROUTING_LAYER = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
-                    251,
-                    "bottomRoutingLayer {} not found",
+                    272,
+                    "bottomRoutingLayer {} not found.",
                     BOTTOM_ROUTING_LAYER_NAME);
     }
   }
@@ -221,8 +230,8 @@ void TritonRoute::init()
       TOP_ROUTING_LAYER = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
-                    252,
-                    "topRoutingLayer {} not found",
+                    273,
+                    "topRoutingLayer {} not found.",
                     TOP_ROUTING_LAYER_NAME);
     }
   }
@@ -251,7 +260,7 @@ void TritonRoute::prep()
 
 void TritonRoute::gr()
 {
-  FlexGR gr(getDesign(), logger_);
+  FlexGR gr(getDesign(), logger_, stt_builder_);
   gr.main(db_);
 }
 
@@ -321,18 +330,18 @@ void TritonRoute::readParams(const string& fileName)
         string value = line.substr(pos + 1);
         stringstream ss(value);
         if (field == "lef") {
-          logger_->warn(utl::DRT, 148, "deprecated lef param in params file");
+          logger_->warn(utl::DRT, 148, "Deprecated lef param in params file.");
         } else if (field == "def") {
-          logger_->warn(utl::DRT, 227, "deprecated def param in params file");
+          logger_->warn(utl::DRT, 227, "Deprecated def param in params file.");
         } else if (field == "guide") {
           GUIDE_FILE = value;
           ++readParamCnt;
         } else if (field == "outputTA") {
           logger_->warn(
-              utl::DRT, 171, "deprecated outputTA param in params file");
+              utl::DRT, 266, "Deprecated outputTA param in params file.");
         } else if (field == "output") {
           logger_->warn(
-              utl::DRT, 205, "deprecated output param in params file");
+              utl::DRT, 205, "Deprecated output param in params file.");
         } else if (field == "outputguide") {
           OUTGUIDE_FILE = value;
           ++readParamCnt;
@@ -347,9 +356,9 @@ void TritonRoute::readParams(const string& fileName)
           ++readParamCnt;
         } else if (field == "threads") {
           logger_->warn(utl::DRT,
-                        253,
-                        "deprecated threads param in params file."
-                        " Use 'set_thread_count'");
+                        274,
+                        "Deprecated threads param in params file."
+                        " Use 'set_thread_count'.");
           ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
@@ -387,7 +396,7 @@ void TritonRoute::readParams(const string& fileName)
   }
 
   if (readParamCnt < 2) {
-    logger_->error(DRT, 1, "Error reading param file: {}", fileName);
+    logger_->error(DRT, 1, "Error reading param file: {}.", fileName);
   }
 }
 
@@ -399,6 +408,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   DRC_RPT_FILE = params.outputDrcFile;
   CMAP_FILE = params.outputCmapFile;
   VERBOSE = params.verbose;
+  ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   if (params.drouteViaInPinBottomLayerNum > 0) {
     VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;

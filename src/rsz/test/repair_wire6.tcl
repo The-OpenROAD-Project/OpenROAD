@@ -3,7 +3,7 @@
 #             1500u
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def repair_wire1.def
+read_def repair_wire6.def
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
@@ -16,3 +16,6 @@ repair_design -max_wire_length 600
 
 report_long_wires 3
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
+
+# check undo
+remove_buffers

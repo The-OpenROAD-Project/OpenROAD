@@ -1,4 +1,4 @@
-sig0     dr_dm_1_o
+sig0     ddr_dm_1_o
 sig1     ddr_dqs_n_1_io
 sig2     ddr_dqs_p_1_io
 sig3     ddr_ba_2_o

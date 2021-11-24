@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,8 @@ struct Slot
 struct Section
 {
   odb::Point pos;
-  Netlist net;
+  std::vector<int> pin_indices;
+  std::vector<std::vector<int>> pin_groups;
   int cost;
   int begin_slot;
   int end_slot;

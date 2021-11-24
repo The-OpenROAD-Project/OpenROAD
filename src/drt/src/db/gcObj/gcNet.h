@@ -55,10 +55,10 @@ class gcNet : public gcBlockObject
   {
   }
   // setters
-  void addPolygon(const frBox& box, frLayerNum layerNum, bool isFixed = false)
+  void addPolygon(const Rect& box, frLayerNum layerNum, bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
-        box.left(), box.bottom(), box.right(), box.top());
+        box.xMin(), box.yMin(), box.xMax(), box.yMax());
     using namespace gtl::operators;
     if (isFixed) {
       fixedPolygons_[layerNum] += rect;
@@ -66,10 +66,10 @@ class gcNet : public gcBlockObject
       routePolygons_[layerNum] += rect;
     }
   }
-  void addRectangle(const frBox& box, frLayerNum layerNum, bool isFixed = false)
+  void addRectangle(const Rect& box, frLayerNum layerNum, bool isFixed = false)
   {
     gtl::rectangle_data<frCoord> rect(
-        box.left(), box.bottom(), box.right(), box.top());
+        box.xMin(), box.yMin(), box.xMax(), box.yMax());
     if (isFixed) {
       fixedRectangles_[layerNum].push_back(rect);
     } else {
@@ -173,20 +173,20 @@ class gcNet : public gcBlockObject
   {
     return getFrNet() && getFrNet()->getNondefaultRule();
   }
-  void addTaperedRect(const frBox& bx, int zIdx)
+  void addTaperedRect(const Rect& bx, int zIdx)
   {
     taperedRects[zIdx].push_back(bx);
   }
-  const vector<frBox>& getTaperedRects(int z) const { return taperedRects[z]; }
-  void addNonTaperedRect(const frBox& bx, int zIdx)
+  const vector<Rect>& getTaperedRects(int z) const { return taperedRects[z]; }
+  void addNonTaperedRect(const Rect& bx, int zIdx)
   {
     nonTaperedRects[zIdx].push_back(bx);
   }
-  const vector<frBox>& getNonTaperedRects(int z) const
+  const vector<Rect>& getNonTaperedRects(int z) const
   {
     return nonTaperedRects[z];
   }
-  void addSpecialSpcRect(const frBox& bx,
+  void addSpecialSpcRect(const Rect& bx,
                          frLayerNum lNum,
                          gcPin* pin,
                          gcNet* net)
@@ -227,8 +227,8 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_;
-  vector<vector<frBox>> taperedRects;     //(only routing layer)
-  vector<vector<frBox>> nonTaperedRects;  //(only routing layer)
+  vector<vector<Rect>> taperedRects;     //(only routing layer)
+  vector<vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
   vector<unique_ptr<gcRect>> specialSpacingRects;

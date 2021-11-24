@@ -34,7 +34,7 @@ using namespace fr;
 void io::Parser::instAnalysis()
 {
   if (VERBOSE > 0) {
-    logger->info(DRT, 162, "libcell analysis ...");
+    logger->info(DRT, 162, "Library cell analysis.");
   }
   trackOffsetMap.clear();
   prefTrackPatterns.clear();
@@ -42,7 +42,7 @@ void io::Parser::instAnalysis()
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
     if (design->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == frcHorzPrefRoutingDir) {
+        == dbTechLayerDir::HORIZONTAL) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -69,7 +69,7 @@ void io::Parser::instAnalysis()
             minLayerNum = min(minLayerNum, lNum);
             maxLayerNum = max(maxLayerNum, lNum);
           } else {
-            logger->warn(DRT, 248, "instAnalysis unsupported pinFig");
+            logger->warn(DRT, 248, "instAnalysis unsupported pinFig.");
           }
         }
       }
@@ -80,13 +80,13 @@ void io::Parser::instAnalysis()
   // cout <<"  refBlock pin layer range done" <<endl;
 
   if (VERBOSE > 0) {
-    logger->info(DRT, 163, "instance analysis ...");
+    logger->info(DRT, 163, "Instance analysis.");
   }
 
   vector<frCoord> offset;
   int cnt = 0;
   for (auto& inst : design->getTopBlock()->getInsts()) {
-    frPoint origin;
+    Point origin;
     inst->getOrigin(origin);
     auto orient = inst->getOrient();
     auto [minLayerNum, maxLayerNum]
@@ -118,11 +118,11 @@ void io::Parser::instAnalysis()
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          logger->report("  complete {} instances", cnt);
+          logger->report("  Complete {} instances.", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          logger->report("  complete {} instances", cnt);
+          logger->report("  Complete {} instances.", cnt);
         }
       }
     }
@@ -136,6 +136,6 @@ void io::Parser::instAnalysis()
     }
   }
   if (VERBOSE > 0) {
-    logger->info(DRT, 164, "# unique instances = {}", cnt);
+    logger->info(DRT, 164, "Number of unique instances = {}.", cnt);
   }
 }

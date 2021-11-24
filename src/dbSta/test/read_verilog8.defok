@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 2000 ;
+COMPONENTS 1 ;
+    - u1 BUF_X1 ;
+END COMPONENTS
+PINS 2 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
+    - out1 + NET out1_alias + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+NETS 2 ;
+    - in1 ( PIN in1 ) ( u1 A ) + USE SIGNAL ;
+    - out1_alias ( PIN out1 ) ( u1 Z ) + USE SIGNAL ;
+END NETS
+END DESIGN

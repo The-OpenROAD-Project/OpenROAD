@@ -43,6 +43,7 @@
 #include "fixture.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "odb/db.h"
 
 using namespace fr;
 namespace bdata = boost::unit_test::data;
@@ -50,20 +51,29 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get())
+  {
+    auto db = odb::dbDatabase::create();
+    tech = odb::dbTech::create(db);
+  }
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
                   frConstraintTypeEnum type,
-                  const frBox& expected_bbox)
+                  const Rect& expected_bbox)
   {
-    frBox bbox;
+    Rect bbox;
     marker->getBBox(bbox);
 
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());
     TEST_ENUM_EQUAL(marker->getConstraint()->typeId(), type);
-    BOOST_TEST(bbox == expected_bbox);
+
+    // TODO this expression can't be evaluated directly likely due to lack of
+    // iostream support in odb. Try removing this workaround after dbStreams are
+    // replaced with iostreams
+    bool test = (bbox == expected_bbox);
+    BOOST_TEST(test);
   }
 
   void runGC()
@@ -72,7 +82,7 @@ struct GCFixture : public Fixture
     initRegionQuery();
 
     // Run the GC engine
-    const frBox work(0, 0, 2000, 2000);
+    const Rect work(0, 0, 2000, 2000);
     worker.setExtBox(work);
     worker.setDrcBox(work);
 
@@ -82,6 +92,7 @@ struct GCFixture : public Fixture
   }
 
   FlexGCWorker worker;
+  odb::dbTech* tech;
 };
 
 BOOST_FIXTURE_TEST_SUITE(gc, GCFixture);
@@ -105,7 +116,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             frBox(500, -50, 500, 50));
+             Rect(500, -50, 500, 50));
 }
 
 /*
@@ -133,7 +144,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   makePathseg(n1, 2, {0, 0}, {600, 0});
   auto block = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
-  auto pin = makeMacroPin(block, "in", 450, 40, 550, 90, 2);
+  makeMacroPin(block, "in", 450, 40, 550, 90, 2);
   auto i1 = makeInst("i1", block, 0, 0);
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
@@ -154,7 +165,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             frBox(450, -50, 550, 40));
+             Rect(450, -50, 550, 40));
 
   // shorts of net (0,-50), (600,50)
   // with obs (450,-50), (750,200)
@@ -162,11 +173,11 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             frBox(550, -50, 600, 50));
+             Rect(550, -50, 600, 50));
   testMarker(markers[2].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             frBox(450, -50, 600, 40));
+             Rect(450, -50, 600, 40));
 }
 
 // Two touching metal shape from the same net must have sufficient
@@ -188,7 +199,7 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcNonSufficientMetalConstraint,
-             frBox(0, 0, 50, 50));
+             Rect(0, 0, 50, 50));
 }
 
 // Path seg less than min width flags a violation
@@ -208,7 +219,7 @@ BOOST_AUTO_TEST_CASE(min_width)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinWidthConstraint,
-             frBox(0, -30, 500, 30));
+             Rect(0, -30, 500, 30));
 }
 
 // Abutting Path seg less than min width don't flag a violation
@@ -244,7 +255,7 @@ BOOST_AUTO_TEST_CASE(off_grid)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcOffGridConstraint,
-             frBox(1, -49, 501, 51));
+             Rect(1, -49, 501, 51));
 }
 
 // Check violation for corner spacing
@@ -267,7 +278,7 @@ BOOST_AUTO_TEST_CASE(corner_basic)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
-             frBox(500, 50, 500, 150));
+             Rect(500, 50, 500, 150));
 }
 
 // Check no violation for corner spacing with EOL spacing
@@ -285,8 +296,6 @@ BOOST_AUTO_TEST_CASE(corner_eol_no_violation)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
-
   BOOST_TEST(worker.getMarkers().size() == 0);
 }
 
@@ -305,8 +314,6 @@ BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
-
   BOOST_TEST(worker.getMarkers().size() == 0);
 }
 
@@ -331,7 +338,7 @@ BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
-             frBox(50, 50, 200, 200));
+             Rect(50, 50, 200, 200));
 }
 
 // Check violation for parallel-run-length (PRL) spacing tables
@@ -372,7 +379,7 @@ BOOST_DATA_TEST_CASE(spacing_prl,
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTablePrlConstraint,
-               frBox(0, 50, prl, y - width / 2));
+               Rect(0, 50, prl, y - width / 2));
   }
 }
 
@@ -412,7 +419,7 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTableTwConstraint,
-               frBox(0, 100, 500, 140));
+               Rect(0, 100, 500, 140));
   }
 }
 
@@ -454,7 +461,7 @@ BOOST_AUTO_TEST_CASE(min_step58)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
-             frBox(200, 50, 300, 70));
+             Rect(200, 50, 300, 70));
 }
 
 // Check for a lef58 rect only violation.  The markers are
@@ -478,15 +485,15 @@ BOOST_AUTO_TEST_CASE(rect_only)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             frBox(150, -50, 250, 100));
+             Rect(150, -50, 250, 100));
   testMarker(markers[1].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             frBox(150, -50, 350, 50));
+             Rect(150, -50, 350, 50));
   testMarker(markers[2].get(),
              2,
              frConstraintTypeEnum::frcLef58RectOnlyConstraint,
-             frBox(50, -50, 250, 50));
+             Rect(50, -50, 250, 50));
 }
 
 // Check for a min enclosed area violation.
@@ -510,7 +517,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcMinEnclosedAreaConstraint,
-             frBox(50, 50, 150, 150));
+             Rect(50, 50, 150, 150));
 }
 
 // Check for a spacing table influence violation.
@@ -534,7 +541,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
-             frBox(100, 150, 300, 200));
+             Rect(100, 150, 300, 200));
 }
 // Check for a spacing table influence violation.
 BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
@@ -556,7 +563,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableInfluenceConstraint,
-             frBox(150, 250, 250, 450));
+             Rect(150, 250, 250, 450));
 }
 
 // Check for a spacing table twowidths violation.
@@ -579,7 +586,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcSpacingTableTwConstraint,
-             frBox(0, 100, 500, 140));
+             Rect(0, 100, 500, 140));
 }
 
 // Check for a basic end-of-line (EOL) spacing violation.
@@ -605,7 +612,164 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             frBox(450, 500, 550, 650));
+             Rect(450, 500, 550, 650));
+}
+
+// Check for a basic end-of-line (EOL) spacing violation.
+BOOST_AUTO_TEST_CASE(eol_endtoend)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  auto endToEnd
+      = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+  endToEnd->setEndToEndSpace(300);
+  con->getWithinConstraint()->setSameMask(true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {350, 50}, {1000, 50});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 0, 350, 100));
+}
+BOOST_DATA_TEST_CASE(eol_ext_basic,
+                     (bdata::make({30, 50})) ^ (bdata::make({true, false})),
+                     ext,
+                     legal)
+{
+  // Setup
+  makeEolExtensionConstraint(2, 100, {51, 101}, {20, ext}, false);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {500, 100});
+  makePathseg(n1, 2, {690, 100}, {1000, 100});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    if (markers.size() == 1)
+      testMarker(markers[0].get(),
+                 2,
+                 frConstraintTypeEnum::frcLef58EolExtensionConstraint,
+                 Rect(500, 50, 690, 150));
+  }
+}
+
+BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
+{
+  // Setup
+  makeEolExtensionConstraint(2, 100, {101}, {50}, parOnly);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {500, 100});
+  makePathseg(n1, 2, {520, 290}, {910, 290});
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (parOnly)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolExtensionConstraint,
+               Rect(500, 150, 520, 240));
+  }
+}
+// Check for eol keepout violation.
+BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (legal)
+    x_extra = 200;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {700 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               Rect(450, 500, 550, 650));
+  }
+}
+
+BOOST_AUTO_TEST_CASE(eol_keepout_except_within)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2, false, true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  makePathseg(n1, 2, {400, 700}, {700, 700});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 0);
+}
+
+// Check for eol keepout violation CORNERONLY.
+BOOST_DATA_TEST_CASE(eol_keepout_corner,
+                     (bdata::make({true, false}) * bdata::make({true, false})),
+                     concave,
+                     legal)
+{
+  // Setup
+  makeLef58EolKeepOutConstraint(2, true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {500, 0}, {500, 500});
+  frCoord x_extra = 0;
+  if (concave && !legal)
+    makePathseg(n1, 2, {360, 400}, {360, 750});
+  if (!concave && !legal)
+    x_extra = 10;
+  makePathseg(n1, 2, {400 + x_extra, 700}, {600 + x_extra, 700});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58EolKeepOutConstraint,
+               Rect(410, 500, 450, 650));
+  }
 }
 
 // Check for an end-of-line (EOL) spacing violation involving one
@@ -635,7 +799,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             frBox(450, 500, 550, 650));
+             Rect(450, 500, 550, 650));
 }
 
 // Check for an end-of-line (EOL) spacing violation involving two
@@ -668,7 +832,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
              2,
              lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
                    : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
-             frBox(450, 500, 550, 650));
+             Rect(450, 500, 550, 650));
 }
 
 BOOST_DATA_TEST_CASE(eol_min_max,
@@ -691,8 +855,8 @@ BOOST_DATA_TEST_CASE(eol_min_max,
     else if (!max && !legal)
       y += 100;      // right(600) & left(500) >= min(500) --> minMax is met
                      // --> illegal
-  } else if (legal)  // both sides need to violate minMax to have no eolSpacing
-                     // violations
+  } else if (legal)  // both sides need to violate minMax to have no
+                     // eolSpacing violations
   {
     if (max)
       y += 110;  // right(610) & left(510) > max(500)
@@ -715,7 +879,7 @@ BOOST_DATA_TEST_CASE(eol_min_max,
       testMarker(markers[0].get(),
                  2,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-                 frBox(450, y, 550, 650));
+                 Rect(450, y, 550, 650));
   }
 }
 BOOST_DATA_TEST_CASE(eol_enclose_cut,
@@ -723,15 +887,15 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
                      y,
                      legal)
 {
-  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
-  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
   makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
   frNet* n1 = makeNet("n1");
   frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
 
   makePathseg(n1, 4, {500, 0}, {500, 500});
   makePathseg(n1, 4, {0, 700}, {1000, 700});
-  auto v = makeVia(vd, n1, {400, y});
+  makeVia(vd, n1, {400, y});
   runGC();
   auto& markers = worker.getMarkers();
   if (legal)
@@ -742,7 +906,80 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
       testMarker(markers[0].get(),
                  4,
                  frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-                 frBox(450, 500, 550, 650));
+                 Rect(450, 500, 550, 650));
   }
 }
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl,
+                    (bdata::make({true, false})),
+                    viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "Vx", 100, 200);
+  auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
+  auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
+  dbRule->setDefault(100);
+  dbRule->setVertical(true);
+  std::map<std::string, uint> row_map;
+  std::map<std::string, uint> col_map;
+  std::vector<std::vector<std::pair<int, int>>> table;
+  row_map["Vx/SIDE"] = 1;
+  row_map["Vx/END"] = 0;
+  col_map["Vx/SIDE"] = 1;
+  col_map["Vx/END"] = 0;
+  if (viol) {
+    table.push_back({{300, 300}, {300, 300}});
+    table.push_back({{300, 300}, {300, 301}});
+  } else {
+    table.push_back({{301, 301}, {301, 301}});
+    table.push_back({{301, 301}, {301, 300}});
+  }
+
+  dbRule->setSpacingTable(table, row_map, col_map);
+  makeLef58CutSpcTbl(3, dbRule);
+  frNet* n1 = makeNet("n1");
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {200, 100});
+
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 400});
+
+  runGC();
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == (viol ? 1 : 0));
+}
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
+                     (bdata::make({0, 1})) ^ (bdata::make({1, 0})),
+                     x,
+                     viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "Vx", 100, 100);
+  auto layer = odb::dbTechLayer::create(tech, "v2", odb::dbTechLayerType::CUT);
+  auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
+  dbRule->setDefault(200);
+  dbRule->addExactElignedEntry("Vx", 250);
+  dbRule->setVertical(true);
+  makeLef58CutSpcTbl(3, dbRule);
+  frNet* n1 = makeNet("n1");
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {x, 300});
+
+  runGC();
+  // Test the results
+  auto& markers = worker.getMarkers();
+
+  BOOST_TEST(markers.size() == viol);
+}
+
 BOOST_AUTO_TEST_SUITE_END();

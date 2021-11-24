@@ -146,7 +146,7 @@ class grNet : public grBlockObject
   bool isModified() const { return modified; }
   int getNumOverConGCells() const { return numOverConGCells; }
   int getNumPinsIn() const { return numPinsIn; }
-  void getPinBox(frBox& in) { in.set(pinBox); }
+  void getPinBox(Rect& in) { in = pinBox; }
   bool isRipup() const { return ripup; }
   int getNumReroutes() const { return numReroutes; }
   bool isInQueue() const { return inQueue; }
@@ -222,7 +222,7 @@ class grNet : public grBlockObject
   void setNumOverConGCell(int in) { numOverConGCells = in; }
   void setNumPinsIn(int in) { numPinsIn = in; }
   void setAllowRipup(bool in) { allowRipup = in; }
-  void setPinBox(const frBox& in) { pinBox.set(in); }
+  void setPinBox(const Rect& in) { pinBox = in; }
   void setRipup(bool in) { ripup = in; }
   void addNumReroutes() { numReroutes++; }
   void resetNumReroutes() { numReroutes = 0; }
@@ -274,7 +274,7 @@ class grNet : public grBlockObject
   int numOverConGCells;
   int numPinsIn;
   bool allowRipup;
-  frBox pinBox;
+  Rect pinBox;
   bool ripup;
 
   int numReroutes;

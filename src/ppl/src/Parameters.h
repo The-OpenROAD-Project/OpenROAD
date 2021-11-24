@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -52,12 +52,6 @@ class Parameters
   void setSlotsFactor(float factor) { slots_factor_ = factor; }
   float getSlotsFactor() const { return slots_factor_; }
 
-  void setUsageFactor(float factor) { usage_factor_ = factor; }
-  float getUsageFactor() const { return usage_factor_; }
-
-  void setForceSpread(bool force_spread) { force_spread_ = force_spread; }
-  bool getForceSpread() const { return force_spread_; }
-
   void setHorizontalLengthExtend(float length)
   {
     horizontal_length_extend_ = length;
@@ -104,13 +98,14 @@ class Parameters
   void setMinDistance(int min_dist) { min_dist_ = min_dist; }
   int getMinDistance() const { return min_dist_; }
 
+  void setMinDistanceInTracks(bool in_tracks) { distance_in_tracks_ = in_tracks; }
+  bool getMinDistanceInTracks() const { return distance_in_tracks_; }
+
  private:
   bool report_hpwl_ = false;
-  bool force_spread_ = true;
   int num_slots_ = -1;
   float slots_factor_ = -1;
   float usage_ = -1;
-  float usage_factor_ = -1;
   float horizontal_thickness_multiplier_ = 1;
   float vertical_thickness_multiplier_ = 1;
   float horizontal_length_extend_ = -1;
@@ -118,8 +113,9 @@ class Parameters
   float horizontal_length_ = -1;
   float vertical_length_ = -1;
   double rand_seed_ = 42.0;
-  int corner_avoidance_;
+  int corner_avoidance_ = 0;
   int min_dist_ = 0;
+  bool distance_in_tracks_ = false;
 };
 
 }  // namespace ppl

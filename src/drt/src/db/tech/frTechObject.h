@@ -157,7 +157,7 @@ class frTechObject
           via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
     } else {
       return isIncluded(
-          (ndr ? ndr->via2ViaForbiddenLen_
+          (ndr ? ndr->via2ViaForbiddenLen
                : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
           len);
     }
@@ -170,7 +170,7 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-    return isIncluded((ndr ? ndr->viaForbiddenTurnLen_
+    return isIncluded((ndr ? ndr->viaForbiddenTurnLen
                            : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx],
                       len);
   }
@@ -242,13 +242,13 @@ class frTechObject
   // debug
   void printAllConstraints(utl::Logger* logger)
   {
-    logger->report("Reporting Layer Properties");
+    logger->report("Reporting layer properties.");
     for (auto& layer : layers) {
       auto type = layer->getType();
-      if (type == frLayerTypeEnum::CUT)
-        logger->report("Cut Layer {}", layer->getName());
-      else if (type == frLayerTypeEnum::ROUTING)
-        logger->report("Routing Layer {}", layer->getName());
+      if (type == dbTechLayerType::CUT)
+        logger->report("Cut layer {}.", layer->getName());
+      else if (type == dbTechLayerType::ROUTING)
+        logger->report("Routing layer {}.", layer->getName());
       layer->printAllConstraints(logger);
     }
   }
@@ -257,7 +257,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
-      if (layer->getType() == frLayerTypeEnum::CUT
+      if (layer->getType() == dbTechLayerType::CUT
           && layer->getLayerNum() >= 2 /*BOTTOM_ROUTING_LAYER*/) {
         logger->report("  Layer {}", layer->getName());
         logger->report("    default via: {}",
@@ -267,6 +267,18 @@ class frTechObject
   }
 
   friend class io::Parser;
+  void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
+  bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
+
+  bool isHorizontalLayer(frLayerNum l)
+  {
+    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
+  }
+
+  bool isVerticalLayer(frLayerNum l)
+  {
+    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
+  }
 
  private:
   frUInt4 dbUnit;
@@ -353,6 +365,7 @@ class frTechObject
   // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
   // for up via
   std::vector<std::vector<bool>> viaForbiddenThrough;
+  bool hasVia2viaMinStep_ = false;
 
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
@@ -403,8 +416,8 @@ class frTechObject
   {
     (ar) & dbUnit;
     (ar) & manufacturingGrid;
-    (ar) & name2layer;
     (ar) & layers;
+    (ar) & name2layer;
     (ar) & name2via;
     (ar) & vias;
     (ar) & layer2Name2CutClass;

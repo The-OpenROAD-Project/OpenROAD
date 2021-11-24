@@ -60,17 +60,17 @@ frDesign* FlexTAWorkerRegionQuery::getDesign() const
 
 void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 {
-  frBox box;
-  frPoint bp, ep;
+  Rect box;
+  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);
-    box = frBox(bp, ep);
+    box = Rect(bp, ep);
     impl_->shapes_.at(obj->getLayerNum()).insert(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     obj->getOrigin(bp);
-    box = frBox(bp, bp);
+    box = Rect(bp, bp);
     impl_->shapes_.at(obj->getViaDef()->getCutLayerNum())
         .insert(make_pair(box, obj));
   } else {
@@ -80,17 +80,17 @@ void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 
 void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
 {
-  frBox box;
-  frPoint bp, ep;
+  Rect box;
+  Point bp, ep;
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);
-    box = frBox(bp, ep);
+    box = Rect(bp, ep);
     impl_->shapes_.at(obj->getLayerNum()).remove(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     obj->getOrigin(bp);
-    box = frBox(bp, bp);
+    box = Rect(bp, bp);
     impl_->shapes_.at(obj->getViaDef()->getCutLayerNum())
         .remove(make_pair(box, obj));
   } else {
@@ -98,9 +98,10 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
   }
 }
 
-void FlexTAWorkerRegionQuery::query(const frBox& box,
-                                    const frLayerNum layerNum,
-                                    set<taPin*, frBlockObjectComp>& result) const
+void FlexTAWorkerRegionQuery::query(
+    const Rect& box,
+    const frLayerNum layerNum,
+    set<taPin*, frBlockObjectComp>& result) const
 {
   vector<rq_box_value_t<taPinFig*>> temp;
   auto& tree = impl_->shapes_.at(layerNum);
@@ -119,7 +120,7 @@ void FlexTAWorkerRegionQuery::init()
   impl_->costs_.resize(numLayers);
 }
 
-void FlexTAWorkerRegionQuery::addCost(const frBox& box,
+void FlexTAWorkerRegionQuery::addCost(const Rect& box,
                                       const frLayerNum layerNum,
                                       frBlockObject* obj,
                                       frConstraint* con)
@@ -127,7 +128,7 @@ void FlexTAWorkerRegionQuery::addCost(const frBox& box,
   impl_->costs_.at(layerNum).insert(make_pair(box, make_pair(obj, con)));
 }
 
-void FlexTAWorkerRegionQuery::removeCost(const frBox& box,
+void FlexTAWorkerRegionQuery::removeCost(const Rect& box,
                                          const frLayerNum layerNum,
                                          frBlockObject* obj,
                                          frConstraint* con)
@@ -136,7 +137,7 @@ void FlexTAWorkerRegionQuery::removeCost(const frBox& box,
 }
 
 void FlexTAWorkerRegionQuery::queryCost(
-    const frBox& box,
+    const Rect& box,
     const frLayerNum layerNum,
     vector<rq_box_value_t<pair<frBlockObject*, frConstraint*>>>& result) const
 {

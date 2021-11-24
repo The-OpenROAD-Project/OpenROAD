@@ -70,12 +70,14 @@ class fr1DLookupTbl
         interpolateTypeRow(in.interpolateTypeRow),
         interpolateTypeCol(in.interpolateTypeCol),
         extrapolateTypeRowLower(in.extrapolateTypeRowLower),
-        extrapolateTypeRowUpper(in.extrapolateTypeRowUpper)
+        extrapolateTypeRowUpper(in.extrapolateTypeRowUpper),
+        lowerBound(in.lowerBound)
   {
   }
   fr1DLookupTbl(const frString& rowNameIn,
                 const frCollection<rowClass>& rowsIn,
-                const frCollection<valClass>& valsIn)
+                const frCollection<valClass>& valsIn,
+                bool lowerBoundIn = true)
   {
     rowName = rowNameIn;
     rows = rowsIn;
@@ -84,6 +86,7 @@ class fr1DLookupTbl
     interpolateTypeCol = frInterpolateType::frcSnapDown;
     extrapolateTypeRowLower = frExtrapolateType::frcSnapUp;
     extrapolateTypeRowUpper = frExtrapolateType::frcSnapUp;
+    lowerBound = lowerBoundIn;
   }
 
   // getters
@@ -111,7 +114,7 @@ class fr1DLookupTbl
     // interpolation
     frUInt4 retIdx;
     if (rowVal >= rows.front() && rowVal <= rows.back()) {
-      if (true) {
+      if (lowerBound) {
         // if (interpolateTypeRow == frInterpolateType::frcSnapDown) {
         auto pos = lower_bound(rows.begin(), rows.end(), rowVal);
         // if (*pos != rowVal && pos != rows.begin()) {
@@ -121,6 +124,9 @@ class fr1DLookupTbl
           --pos;
         }
         retIdx = pos - rows.begin();
+      } else {
+        auto pos = upper_bound(rows.begin(), rows.end(), rowVal);
+        retIdx = std::min((frUInt4)(pos - rows.begin()), (frUInt4) rows.size());
       }
     }
     // lower extrapolation
@@ -149,6 +155,7 @@ class fr1DLookupTbl
   frInterpolateType interpolateTypeCol;
   frExtrapolateType extrapolateTypeRowLower;
   frExtrapolateType extrapolateTypeRowUpper;
+  bool lowerBound;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -160,6 +167,7 @@ class fr1DLookupTbl
     (ar) & interpolateTypeCol;
     (ar) & extrapolateTypeRowLower;
     (ar) & extrapolateTypeRowUpper;
+    (ar) & lowerBound;
   }
 
   friend class boost::serialization::access;

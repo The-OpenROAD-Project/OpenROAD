@@ -178,7 +178,6 @@ void extMeasure::segInfo(const char* msg, uint netId, int rsegId) {
 
   int x, y;
   rseg->getCoords(x, y);
-  uint w;
   debugPrint(
       logger_, RCX, "debug_net", 1,
       "Trace:C"

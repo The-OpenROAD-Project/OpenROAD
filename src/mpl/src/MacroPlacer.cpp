@@ -32,47 +32,46 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "mpl/MacroPlacer.h"
-#include "graphics.h"
 
 #include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "graphics.h"
+#include "sta/Bfs.hh"
 #include "sta/Corner.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
-#include "sta/Sta.hh"
-#include "sta/Bfs.hh"
-#include "sta/Sequential.hh"
-#include "sta/FuncExpr.hh"
 #include "sta/SearchPred.hh"
-
+#include "sta/Sequential.hh"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace mpl {
 
-using std::round;
-using std::min;
 using std::max;
+using std::min;
+using std::round;
 
 using utl::MPL;
 
-using odb::dbTech;
-using odb::dbTechLayer;
 using odb::dbBlock;
+using odb::dbBPin;
+using odb::dbBTerm;
+using odb::dbInst;
+using odb::dbITerm;
+using odb::dbPlacementStatus;
 using odb::dbRow;
 using odb::dbSet;
-using odb::dbSite;
-using odb::Rect;
-using odb::dbInst;
-using odb::dbPlacementStatus;
 using odb::dbSigType;
-using odb::dbBTerm;
-using odb::dbBPin;
-using odb::dbITerm;
+using odb::dbSite;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::Rect;
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
@@ -89,6 +88,7 @@ MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
       logger_(nullptr),
+      snap_layer_(nullptr),
       connection_driven_(false),
       lx_(0),
       ly_(0),
@@ -137,7 +137,7 @@ void MacroPlacer::setFenceRegion(double lx, double ly, double ux, double uy)
   uy_ = uy;
 }
 
-void MacroPlacer::setSnapLayer(odb::dbTechLayer *snap_layer)
+void MacroPlacer::setSnapLayer(odb::dbTechLayer* snap_layer)
 {
   snap_layer_ = snap_layer;
 }
@@ -151,20 +151,24 @@ void MacroPlacer::init()
 {
   findMacros();
 
-  // Connection driven will be disabled if some instances are missing liberty cells.
+  // Connection driven will be disabled if some instances are missing liberty
+  // cells.
   connection_driven_ = !isMissingLiberty();
 
   if (connection_driven_) {
     reportEdgePinCounts();
     findAdjacencies();
   } else {
-    logger_->warn(MPL, 2, "Some instances do not have liberty models. TritonMP will place macros without connection information.");
+    logger_->warn(MPL,
+                  2,
+                  "Some instances do not have Liberty models. TritonMP will "
+                  "place macros without connection information.");
   }
 }
 
 bool MacroPlacer::isMissingLiberty()
 {
-  sta::Network *network = sta_->network();
+  sta::Network* network = sta_->network();
   sta::LeafInstanceIterator* instIter = network->leafInstanceIterator();
   while (instIter->hasNext()) {
     sta::Instance* inst = instIter->next();
@@ -180,15 +184,13 @@ bool MacroPlacer::isMissingLiberty()
 void MacroPlacer::reportEdgePinCounts()
 {
   int counts[core_edge_count] = {0};
-  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
+  for (dbBTerm* bterm : db_->getChip()->getBlock()->getBTerms()) {
     CoreEdge edge = findNearestEdge(bterm);
     counts[coreEdgeIndex(edge)]++;
   }
   for (int i = 0; i < core_edge_count; i++) {
     CoreEdge edge = coreEdgeFromIndex(i);
-    logger_->info(MPL, 9, "{} pins {}",
-                  coreEdgeString(edge),
-                  counts[i]);
+    logger_->info(MPL, 9, "{} pins {}.", coreEdgeString(edge), counts[i]);
   }
 }
 
@@ -198,17 +200,18 @@ void MacroPlacer::placeMacrosCornerMinWL()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 67, "Initial weighted wire length {:g}.", wl);
 
   // All of this partitioning garbage is unnecessary but survives to support
   // the multiple partition algorithm.
 
   Layout layout(lx_, ly_, ux_, uy_);
-  Partition partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
+  Partition partition(
+      PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   partition.macros_ = macros_;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(partition, globalMacroPartMap);
+  makeMacroPartMap(partition, globalMacroPartMap);
 
   if (connection_driven_) {
     partition.fillNetlistTable(globalMacroPartMap);
@@ -219,13 +222,12 @@ void MacroPlacer::placeMacrosCornerMinWL()
     setDbInstLocations(partition);
 
     double curWwl = getWeightedWL();
-    logger_->info(MPL, 71, "Placed weighted wire length {:g}", curWwl);
-  }
-  else
-    logger_->warn(MPL, 72, "Partitioning failed.");
+    logger_->info(MPL, 68, "Placed weighted wire length {:g}.", curWwl);
+  } else
+    logger_->warn(MPL, 66, "Partitioning failed.");
 }
 
-void MacroPlacer::setDbInstLocations(Partition &partition)
+void MacroPlacer::setDbInstLocations(Partition& partition)
 {
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
@@ -249,7 +251,7 @@ void MacroPlacer::setDbInstLocations(Partition &partition)
     macro.ly = y;
 
     // Update db inst location.
-    dbInst *db_inst = macro.dbInstPtr;
+    dbInst* db_inst = macro.dbInstPtr;
     db_inst->setLocation(round(x * dbu), round(y * dbu));
     db_inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
     macro_idx++;
@@ -267,24 +269,25 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   init();
 
   double wl = getWeightedWL();
-  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+  logger_->info(MPL, 69, "Initial weighted wire length {:g}.", wl);
 
   Layout layout(lx_, ly_, ux_, uy_);
   bool horizontal = true;
-  Partition top_partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
+  Partition top_partition(
+      PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   top_partition.macros_ = macros_;
 
-  logger_->report("Begin One Level Partition");
+  logger_->report("Begin one level partition.");
 
   TwoPartitions oneLevelPart = getPartitions(layout, top_partition, horizontal);
 
-  logger_->report("End One Level Partition");
+  logger_->report("End one level partition.");
   TwoPartitions east_partitions, west_partitions;
 
   vector<vector<Partition>> allSets;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(top_partition, globalMacroPartMap);
+  makeMacroPartMap(top_partition, globalMacroPartMap);
 
   if (connection_driven_) {
     top_partition.fillNetlistTable(globalMacroPartMap);
@@ -297,99 +300,101 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   allSets.push_back(layoutSet);
   for (auto& partition_set : oneLevelPart) {
     if (horizontal) {
-      logger_->report("Begin Horizontal Partition");
+      logger_->report("Begin horizontal partition.");
       Layout eastInfo(layout, partition_set.first);
       Layout westInfo(layout, partition_set.second);
 
-      logger_->report("Begin East Partition");
-      TwoPartitions east_partitions = getPartitions(eastInfo, partition_set.first, !horizontal);
-      logger_->report("End East Partition");
+      logger_->report("Begin east partition.");
+      TwoPartitions east_partitions
+          = getPartitions(eastInfo, partition_set.first, !horizontal);
+      logger_->report("End east partition.");
 
-      logger_->report("Begin West Partition");
-      TwoPartitions west_partitions = getPartitions(westInfo, partition_set.second, !horizontal);
-      logger_->report("End West Partition");
+      logger_->report("Begin west partition.");
+      TwoPartitions west_partitions
+          = getPartitions(westInfo, partition_set.second, !horizontal);
+      logger_->report("End west partition.");
 
       // Zero case handling when east_partitions = 0
       if (east_partitions.empty() && !west_partitions.empty()) {
         for (size_t i = 0; i < west_partitions.size(); i++) {
-          vector<Partition> partition_set;
+          vector<Partition> partition_set2;
 
           // one set is composed of two subblocks
-          partition_set.push_back(west_partitions[i].first);
-          partition_set.push_back(west_partitions[i].second);
+          partition_set2.push_back(west_partitions[i].first);
+          partition_set2.push_back(west_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& partition_set : partition_set) {
-            updateMacroPartMap(partition_set, macroPartMap);
+          for (auto& partition : partition_set2) {
+            makeMacroPartMap(partition, macroPartMap);
           }
 
           if (connection_driven_) {
-            for (auto& partition_set : partition_set) {
-              partition_set.fillNetlistTable(macroPartMap);
+            for (auto& partition : partition_set2) {
+              partition.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(partition_set);
+          allSets.push_back(partition_set2);
         }
       }
       // Zero case handling when west_partitions = 0
       else if (!east_partitions.empty() && west_partitions.empty()) {
         for (size_t i = 0; i < east_partitions.size(); i++) {
-          vector<Partition> partition_set;
+          vector<Partition> partition_set2;
 
           // one set is composed of two subblocks
-          partition_set.push_back(east_partitions[i].first);
-          partition_set.push_back(east_partitions[i].second);
+          partition_set2.push_back(east_partitions[i].first);
+          partition_set2.push_back(east_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& partition_set : partition_set) {
-            updateMacroPartMap(partition_set, macroPartMap);
+          for (auto& partition : partition_set2) {
+            makeMacroPartMap(partition, macroPartMap);
           }
 
           if (connection_driven_) {
-            for (auto& partition_set : partition_set) {
-              partition_set.fillNetlistTable(macroPartMap);
+            for (auto& partition : partition_set2) {
+              partition.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(partition_set);
+          allSets.push_back(partition_set2);
         }
       } else {
         // for all possible partition combinations
         for (size_t i = 0; i < east_partitions.size(); i++) {
           for (size_t j = 0; j < west_partitions.size(); j++) {
-            vector<Partition> partition_set;
+            vector<Partition> partition_set2;
 
             // one set is composed of four subblocks
-            partition_set.push_back(east_partitions[i].first);
-            partition_set.push_back(east_partitions[i].second);
-            partition_set.push_back(west_partitions[j].first);
-            partition_set.push_back(west_partitions[j].second);
+            partition_set2.push_back(east_partitions[i].first);
+            partition_set2.push_back(east_partitions[i].second);
+            partition_set2.push_back(west_partitions[j].first);
+            partition_set2.push_back(west_partitions[j].second);
 
             MacroPartMap macroPartMap;
-            for (auto& partition_set : partition_set) {
-              updateMacroPartMap(partition_set, macroPartMap);
+            for (auto& partition : partition_set2) {
+              makeMacroPartMap(partition, macroPartMap);
             }
 
             if (connection_driven_) {
-              for (auto& partition_set : partition_set) {
-                partition_set.fillNetlistTable(macroPartMap);
+              for (auto& partition : partition_set2) {
+                partition.fillNetlistTable(macroPartMap);
               }
             }
-            allSets.push_back(partition_set);
+            allSets.push_back(partition_set2);
           }
         }
       }
-      logger_->report("End Horizontal Partition");
+      logger_->report("End horizontal partition.");
     } else {
       // Vertical partition support MIA
     }
   }
-  logger_->info(MPL, 70, "Using {} partition sets", allSets.size() - 1);
+  logger_->info(MPL, 70, "Using {} partition sets.", allSets.size() - 1);
 
   std::unique_ptr<Graphics> graphics;
   if (gui_debug_ && Graphics::guiActive()) {
@@ -417,11 +422,14 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       // Annealing based on ParquetFP Engine
       bool success = curPart.anneal();
       if (!success) {
-        logger_->warn(MPL, 61, "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
-                      curPart.solution_width,
-                      curPart.solution_height,
-                      curPart.width,
-                      curPart.height);
+        logger_->warn(
+            MPL,
+            61,
+            "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
+            curPart.solution_width,
+            curPart.solution_height,
+            curPart.width,
+            curPart.height);
         isFailed = true;
         break;
       }
@@ -434,7 +442,9 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     }
 
     double curWwl = getWeightedWL();
-    logger_->info(MPL, 71, "Solution {} weighted wire length {:g}",
+    logger_->info(MPL,
+                  71,
+                  "Solution {} weighted wire length {:g}.",
                   solution_count_ + 1,
                   curWwl);
     bool is_best = false;
@@ -462,14 +472,13 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   }
 
   if (found_best) {
-    logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
+    logger_->info(MPL, 73, "Best weighted wire length {:g}.", bestWwl);
     std::vector<Partition> best_set = allSets[best_setIdx];
     for (auto& best_partition : best_set) {
       updateMacroLocations(best_partition);
     }
     updateDbInstLocations();
-  }
-  else
+  } else
     logger_->warn(MPL, 72, "No partition solutions found.");
 }
 
@@ -485,8 +494,7 @@ void MacroPlacer::updateDbInstLocations()
   const int dbu = tech->getDbUnitsPerMicron();
 
   for (auto& macro : macros_) {
-    macro.dbInstPtr->setLocation(round(macro.lx * dbu),
-                                 round(macro.ly * dbu));
+    macro.dbInstPtr->setLocation(round(macro.lx * dbu), round(macro.ly * dbu));
     macro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
@@ -519,14 +527,14 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
 //
 // first: macro partition class info
 // second: macro candidates.
-void MacroPlacer::updateMacroPartMap(Partition& part,
-                                     MacroPartMap& macroPartMap)
+void MacroPlacer::makeMacroPartMap(const Partition& part,
+                                   MacroPartMap& macroPartMap) const
 {
   // This does not look like it actually does anything -cherry
   vector<int> macros = macroPartMap[part.partClass];
   // convert macro Information into macroIdx
   for (auto& macro : part.macros_) {
-    int macro_index = macro_inst_map_[macro.dbInstPtr];
+    int macro_index = macro_inst_map_.at(macro.dbInstPtr);
     macros.push_back(macro_index);
   }
   macroPartMap[part.partClass] = macros;
@@ -544,12 +552,12 @@ static bool segLxLyLess(const std::pair<int, double>& p1,
 // second : upper part
 //
 // cutLine is sweeping from lower to upper coordinates in x / y
-vector<pair<Partition, Partition>>
-MacroPlacer::getPartitions(const Layout& layout,
-                           const Partition& partition,
-                           bool horizontal)
+vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
+    const Layout& layout,
+    const Partition& partition,
+    bool horizontal)
 {
-  logger_->info(MPL, 76, "Partition {} macros", partition.macros_.size());
+  logger_->info(MPL, 76, "Partition {} macros.", partition.macros_.size());
 
   vector<pair<Partition, Partition>> partitions;
 
@@ -563,9 +571,8 @@ MacroPlacer::getPartitions(const Layout& layout,
 
   // in parent partition, traverse macros
   for (const Macro& macro : partition.macros_) {
-    segments.push_back(
-        std::make_pair(&macro - &partition.macros_[0],
-                       (horizontal) ? macro.lx : macro.ly));
+    segments.push_back(std::make_pair(&macro - &partition.macros_[0],
+                                      (horizontal) ? macro.lx : macro.ly));
 
     maxWidth = std::max(maxWidth, paddedWidth(macro));
     maxHeight = std::max(maxHeight, paddedHeight(macro));
@@ -603,7 +610,7 @@ MacroPlacer::getPartitions(const Layout& layout,
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
   }
-  logger_->info(MPL, 77, "Using {} cut lines", cutlines.size());
+  logger_->info(MPL, 77, "Using {} cut lines.", cutlines.size());
 
   // Macro checker array
   // 0 for uninitialize
@@ -615,7 +622,7 @@ MacroPlacer::getPartitions(const Layout& layout,
   for (auto& cutLine : cutlines) {
     cutRoundUp(layout, cutLine, horizontal);
 
-    logger_->info(MPL, 79, "Cut line {:.2f}", cutLine);
+    logger_->info(MPL, 79, "Cut line {:.2f}.", cutLine);
 
     // chkArr initialize
     for (size_t i = 0; i < partition.macros_.size(); i++) {
@@ -663,31 +670,31 @@ MacroPlacer::getPartitions(const Layout& layout,
     // Fill in the Partitioning information
     PartClass lClass = None, uClass = None;
     switch (partition.partClass) {
-    case PartClass::ALL:
-      lClass = (horizontal) ? W : S;
-      uClass = (horizontal) ? E : N;
-      break;
-    case PartClass::W:
-      lClass = SW;
-      uClass = NW;
-      break;
-    case PartClass::E:
-      lClass = SE;
-      uClass = NE;
-      break;
-    case PartClass::N:
-      lClass = NW;
-      uClass = NE;
-      break;
-    case PartClass::S:
-      lClass = SW;
-      uClass = SE;
-      break;
-    default:
-      logger_->error(MPL, 12, "unhandled partition class");
-      lClass = W;
-      uClass = E;
-      break;
+      case PartClass::ALL:
+        lClass = (horizontal) ? W : S;
+        uClass = (horizontal) ? E : N;
+        break;
+      case PartClass::W:
+        lClass = SW;
+        uClass = NW;
+        break;
+      case PartClass::E:
+        lClass = SE;
+        uClass = NE;
+        break;
+      case PartClass::N:
+        lClass = NW;
+        uClass = NE;
+        break;
+      case PartClass::S:
+        lClass = SW;
+        uClass = SE;
+        break;
+      default:
+        logger_->error(MPL, 12, "Unhandled partition class.");
+        lClass = W;
+        uClass = E;
+        break;
     }
 
     Partition lowerPart(
@@ -699,16 +706,16 @@ MacroPlacer::getPartitions(const Layout& layout,
         this,
         logger_);
 
-    Partition upperPart(
-        uClass,
-        (horizontal) ? cutLine : partition.lx,
-        (horizontal) ? partition.ly : cutLine,
-        (horizontal) ? partition.lx + partition.width - cutLine
-                       : partition.width,
-        (horizontal) ? partition.height
-                       : partition.ly + partition.height - cutLine,
-        this,
-        logger_);
+    Partition upperPart(uClass,
+                        (horizontal) ? cutLine : partition.lx,
+                        (horizontal) ? partition.ly : cutLine,
+                        (horizontal) ? partition.lx + partition.width - cutLine
+                                     : partition.width,
+                        (horizontal)
+                            ? partition.height
+                            : partition.ly + partition.height - cutLine,
+                        this,
+                        logger_);
 
     // Fill in child partitons' macros_
     for (const Macro& macro : partition.macros_) {
@@ -722,7 +729,7 @@ MacroPlacer::getPartitions(const Layout& layout,
                   macro));
       } else if (chkArr[i] == 3) {
         double centerPoint = (horizontal) ? macro.lx + macro.w / 2.0
-                                            : macro.ly + macro.h / 2.0;
+                                          : macro.ly + macro.h / 2.0;
 
         if (centerPoint < cutLine) {
           lowerPart.macros_.push_back(macro);
@@ -751,7 +758,7 @@ MacroPlacer::getPartitions(const Layout& layout,
 
     // impossible partitioning
     if (upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      logger_->info(MPL, 80, "Impossible partiton found.");
+      logger_->info(MPL, 80, "Impossible partition found.");
       continue;
     }
 
@@ -761,15 +768,15 @@ MacroPlacer::getPartitions(const Layout& layout,
   return partitions;
 }
 
-double MacroPlacer::paddedWidth(const Macro &macro)
+double MacroPlacer::paddedWidth(const Macro& macro)
 {
-  MacroSpacings &spacings = getSpacings(macro);
+  MacroSpacings& spacings = getSpacings(macro);
   return macro.w + spacings.getSpacingX() * 2;
 }
 
-double MacroPlacer::paddedHeight(const Macro &macro)
+double MacroPlacer::paddedHeight(const Macro& macro)
 {
-  MacroSpacings &spacings = getSpacings(macro);
+  MacroSpacings& spacings = getSpacings(macro);
   return macro.h + spacings.getSpacingY() * 2;
 }
 
@@ -781,10 +788,12 @@ void MacroPlacer::findMacros()
     if (inst->getMaster()->getType().isBlock()) {
       // for Macro cells
       dbPlacementStatus dps = inst->getPlacementStatus();
-      if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
+      if (dps == dbPlacementStatus::NONE
+          || dps == dbPlacementStatus::UNPLACED) {
         logger_->error(MPL,
                        3,
-                       "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
+                       "Macro {} is unplaced, use global_placement to get an "
+                       "initial placement before macro placement.",
                        inst->getConstName());
       }
 
@@ -805,7 +814,7 @@ void MacroPlacer::findMacros()
     logger_->error(MPL, 4, "No macros found.");
   }
 
-  logger_->info(MPL, 5, "Found {} macros", macros_.size());
+  logger_->info(MPL, 5, "Found {} macros.", macros_.size());
 }
 
 static bool isWithIn(int val, int min, int max)
@@ -822,9 +831,9 @@ void MacroPlacer::updateMacroLocations(Partition& part)
 {
   dbTech* tech = db_->getTech();
   const float pitchX = static_cast<float>(snap_layer_->getPitchX())
-    / tech->getDbUnitsPerMicron();
+                       / tech->getDbUnitsPerMicron();
   const float pitchY = static_cast<float>(snap_layer_->getPitchY())
-    / tech->getDbUnitsPerMicron();
+                       / tech->getDbUnitsPerMicron();
 
   for (auto& macro : part.macros_) {
     // snap location to routing layer grid
@@ -833,7 +842,7 @@ void MacroPlacer::updateMacroLocations(Partition& part)
     macro.lx = macroX;
     macro.ly = macroY;
     // Update Macro Location
-    int macroIdx = macro_inst_map_[macro.dbInstPtr];
+    int macroIdx = macro_inst_map_.at(macro.dbInstPtr);
     macros_[macroIdx].lx = macroX;
     macros_[macroIdx].ly = macroY;
   }
@@ -896,10 +905,13 @@ double MacroPlacer::getWeightedWL()
         edgeWeight = 1;
       }
       double wl = std::sqrt((pointX1 - pointX2) * (pointX1 - pointX2)
-                              + (pointY1 - pointY2) * (pointY1 - pointY2));
+                            + (pointY1 - pointY2) * (pointY1 - pointY2));
       double weighted_wl = edgeWeight * wl;
       if (edgeWeight > 0)
-        debugPrint(logger_, MPL, "weighted_wl", 1,
+        debugPrint(logger_,
+                   MPL,
+                   "weighted_wl",
+                   1,
                    "{} -> {} wl {:.2f} * weight {:.2f} = {:.2f}",
                    macroIndexName(i),
                    macroIndexName(j),
@@ -1000,33 +1012,31 @@ void MacroPlacer::findAdjacencies()
 
   AdjWeightMap adj_map;
   findAdjWeights(vertex_fanins, adj_map);
-  
+
   fillMacroWeights(adj_map);
 }
 
-void MacroPlacer::seedFaninBfs(sta::BfsFwdIterator &bfs,
-                               VertexFaninMap &vertex_fanins)
+void MacroPlacer::seedFaninBfs(sta::BfsFwdIterator& bfs,
+                               VertexFaninMap& vertex_fanins)
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  sta::Graph *graph = sta_->ensureGraph();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Graph* graph = sta_->ensureGraph();
   // Seed the BFS with macro output pins.
   for (Macro& macro : macros_) {
-    for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
-      sta::Pin *pin = network->dbToSta(iterm);
-      if (network->direction(pin)->isAnyOutput()
-          && !sta_->isClock(pin)) {
-        sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+    for (dbITerm* iterm : macro.dbInstPtr->getITerms()) {
+      sta::Pin* pin = network->dbToSta(iterm);
+      if (network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
+        sta::Vertex* vertex = graph->pinDrvrVertex(pin);
         vertex_fanins[vertex].insert(&macro);
         bfs.enqueueAdjacentVertices(vertex);
       }
     }
   }
   // Seed top level ports input ports.
-  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
-    sta::Pin *pin = network->dbToSta(bterm);
-    if (network->direction(pin)->isAnyInput()
-        && !sta_->isClock(pin)) {
-      sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+  for (dbBTerm* bterm : db_->getChip()->getBlock()->getBTerms()) {
+    sta::Pin* pin = network->dbToSta(bterm);
+    if (network->direction(pin)->isAnyInput() && !sta_->isClock(pin)) {
+      sta::Vertex* vertex = graph->pinDrvrVertex(pin);
       CoreEdge edge = findNearestEdge(bterm);
       vertex_fanins[vertex].insert(reinterpret_cast<Macro*>(edge));
       bfs.enqueueAdjacentVertices(vertex);
@@ -1037,22 +1047,26 @@ void MacroPlacer::seedFaninBfs(sta::BfsFwdIterator &bfs,
 // BFS search forward union-ing fanins.
 // BFS stops at register inputs because there are no timing arcs
 // from register D->Q.
-void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
-                             VertexFaninMap &vertex_fanins)
+void MacroPlacer::findFanins(sta::BfsFwdIterator& bfs,
+                             VertexFaninMap& vertex_fanins)
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  sta::Graph *graph = sta_->ensureGraph();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Graph* graph = sta_->ensureGraph();
   while (bfs.hasNext()) {
-    sta::Vertex *vertex = bfs.next();
-    MacroSet &fanins = vertex_fanins[vertex];
+    sta::Vertex* vertex = bfs.next();
+    MacroSet& fanins = vertex_fanins[vertex];
     sta::VertexInEdgeIterator fanin_iter(vertex, graph);
     while (fanin_iter.hasNext()) {
-      sta::Edge *edge = fanin_iter.next();
-      sta::Vertex *fanin = edge->from(graph);
+      sta::Edge* edge = fanin_iter.next();
+      sta::Vertex* fanin = edge->from(graph);
       // Union fanins sets of fanin vertices.
-      for (Macro *fanin : vertex_fanins[fanin]) {
+      for (Macro* fanin : vertex_fanins[fanin]) {
         fanins.insert(fanin);
-        debugPrint(logger_, MPL, "find_fanins", 1, "{} + {}",
+        debugPrint(logger_,
+                   MPL,
+                   "find_fanins",
+                   1,
+                   "{} + {}",
                    vertex->name(network),
                    faninName(fanin));
       }
@@ -1061,31 +1075,31 @@ void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
   }
 }
 
-void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                            VertexFaninMap &vertex_fanins)
+void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs,
+                                            VertexFaninMap& vertex_fanins)
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  sta::Graph *graph = sta_->ensureGraph();
-  sta::Instance *top_inst = network->topInstance();
-  sta::LeafInstanceIterator *leaf_iter = network->leafInstanceIterator(top_inst);
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Graph* graph = sta_->ensureGraph();
+  sta::Instance* top_inst = network->topInstance();
+  sta::LeafInstanceIterator* leaf_iter
+      = network->leafInstanceIterator(top_inst);
   while (leaf_iter->hasNext()) {
-    sta::Instance *inst = leaf_iter->next();
-    sta::LibertyCell *lib_cell = network->libertyCell(inst);
-    if (lib_cell->hasSequentials()
-        && !lib_cell->isMacro()) {
+    sta::Instance* inst = leaf_iter->next();
+    sta::LibertyCell* lib_cell = network->libertyCell(inst);
+    if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
       sta::LibertyCellSequentialIterator seq_iter(lib_cell);
       while (seq_iter.hasNext()) {
-        sta::Sequential *seq = seq_iter.next();
-        sta::FuncExpr *data_expr = seq->data();
+        sta::Sequential* seq = seq_iter.next();
+        sta::FuncExpr* data_expr = seq->data();
         sta::FuncExprPortIterator data_port_iter(data_expr);
         while (data_port_iter.hasNext()) {
-          sta::LibertyPort *data_port = data_port_iter.next();
-          sta::Pin *data_pin = network->findPin(inst, data_port);
-          sta::LibertyPort *out_port = seq->output();
-          sta::Pin *out_pin = findSeqOutPin(inst, out_port);
+          sta::LibertyPort* data_port = data_port_iter.next();
+          sta::Pin* data_pin = network->findPin(inst, data_port);
+          sta::LibertyPort* out_port = seq->output();
+          sta::Pin* out_pin = findSeqOutPin(inst, out_port);
           if (data_pin && out_pin) {
-            sta::Vertex *data_vertex = graph->pinLoadVertex(data_pin);
-            sta::Vertex *out_vertex = graph->pinDrvrVertex(out_pin);
+            sta::Vertex* data_vertex = graph->pinLoadVertex(data_pin);
+            sta::Vertex* out_vertex = graph->pinDrvrVertex(out_pin);
             // Copy fanins from D to Q on register.
             vertex_fanins[out_vertex] = vertex_fanins[data_vertex];
             bfs.enqueueAdjacentVertices(out_vertex);
@@ -1100,19 +1114,19 @@ void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
 // Sequential outputs are generally to internal pins that are not physically
 // part of the instance. Find the output port with a function that uses
 // the internal port.
-sta::Pin *MacroPlacer::findSeqOutPin(sta::Instance *inst,
-                                     sta::LibertyPort *out_port)
+sta::Pin* MacroPlacer::findSeqOutPin(sta::Instance* inst,
+                                     sta::LibertyPort* out_port)
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::dbNetwork* network = sta_->getDbNetwork();
   if (out_port->direction()->isInternal()) {
-    sta::InstancePinIterator *pin_iter = network->pinIterator(inst);
+    sta::InstancePinIterator* pin_iter = network->pinIterator(inst);
     while (pin_iter->hasNext()) {
-      sta::Pin *pin = pin_iter->next();
-      sta::LibertyPort *lib_port = network->libertyPort(pin);
+      sta::Pin* pin = pin_iter->next();
+      sta::LibertyPort* lib_port = network->libertyPort(pin);
       if (lib_port->direction()->isAnyOutput()) {
-        sta::FuncExpr *func = lib_port->function();
+        sta::FuncExpr* func = lib_port->function();
         if (func->hasPort(out_port)) {
-          sta::Pin *out_pin = network->findPin(inst, lib_port);
+          sta::Pin* out_pin = network->findPin(inst, lib_port);
           if (out_pin) {
             delete pin_iter;
             return out_pin;
@@ -1122,29 +1136,28 @@ sta::Pin *MacroPlacer::findSeqOutPin(sta::Instance *inst,
     }
     delete pin_iter;
     return nullptr;
-  }
-  else
+  } else
     return network->findPin(inst, out_port);
 }
 
-void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
-                                 AdjWeightMap &adj_map)
+void MacroPlacer::findAdjWeights(VertexFaninMap& vertex_fanins,
+                                 AdjWeightMap& adj_map)
 {
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  sta::Graph *graph = sta_->ensureGraph();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Graph* graph = sta_->ensureGraph();
   // Find adjacencies from macro input pin fanins.
   for (Macro& macro : macros_) {
-    for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
-      sta::Pin *pin = network->dbToSta(iterm);
+    for (dbITerm* iterm : macro.dbInstPtr->getITerms()) {
+      sta::Pin* pin = network->dbToSta(iterm);
       if (network->direction(pin)->isAnyInput()) {
-        sta::Vertex *vertex = graph->pinLoadVertex(pin);
-        MacroSet &pin_fanins = vertex_fanins[vertex];
-        for (Macro *pin_fanin : pin_fanins) {
+        sta::Vertex* vertex = graph->pinLoadVertex(pin);
+        MacroSet& pin_fanins = vertex_fanins[vertex];
+        for (Macro* pin_fanin : pin_fanins) {
           // Adjacencies are symmetric so only fill in one side.
           if (pin_fanin != &macro) {
             MacroPair from_to = (pin_fanin > &macro)
-              ? MacroPair(pin_fanin, &macro)
-              : MacroPair(&macro, pin_fanin);
+                                    ? MacroPair(pin_fanin, &macro)
+                                    : MacroPair(&macro, pin_fanin);
             adj_map[from_to]++;
           }
         }
@@ -1152,24 +1165,27 @@ void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
     }
   }
   // Find adjacencies from output pin fanins.
-  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
-    sta::Pin *pin = network->dbToSta(bterm);
-    if (network->direction(pin)->isAnyOutput()
-        && !sta_->isClock(pin)) {
-      sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+  for (dbBTerm* bterm : db_->getChip()->getBlock()->getBTerms()) {
+    sta::Pin* pin = network->dbToSta(bterm);
+    if (network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
+      sta::Vertex* vertex = graph->pinDrvrVertex(pin);
       CoreEdge edge = findNearestEdge(bterm);
-      debugPrint(logger_, MPL, "pin_edge", 1, "pin edge {} {}",
+      debugPrint(logger_,
+                 MPL,
+                 "pin_edge",
+                 1,
+                 "pin edge {} {}",
                  bterm->getConstName(),
                  coreEdgeString(edge));
       int edge_index = static_cast<int>(edge);
-      Macro *macro = reinterpret_cast<Macro*>(edge_index);
-      MacroSet &edge_fanins = vertex_fanins[vertex];
-      for (Macro *edge_fanin : edge_fanins) {
+      Macro* macro = reinterpret_cast<Macro*>(edge_index);
+      MacroSet& edge_fanins = vertex_fanins[vertex];
+      for (Macro* edge_fanin : edge_fanins) {
         if (edge_fanin != macro) {
           // Adjacencies are symmetric so only fill in one side.
           MacroPair from_to = (edge_fanin > macro)
-            ? MacroPair(edge_fanin, macro)
-            : MacroPair(macro, edge_fanin);
+                                  ? MacroPair(edge_fanin, macro)
+                                  : MacroPair(macro, edge_fanin);
           adj_map[from_to]++;
         }
       }
@@ -1178,7 +1194,7 @@ void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
 }
 
 // Fill macro_weights_ array.
-void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
+void MacroPlacer::fillMacroWeights(AdjWeightMap& adj_map)
 {
   size_t weight_size = macros_.size() + core_edge_count;
   macro_weights_.resize(weight_size);
@@ -1188,9 +1204,9 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
   }
 
   for (auto pair_weight : adj_map) {
-    const MacroPair &from_to = pair_weight.first;
-    Macro *from = from_to.first;
-    Macro *to = from_to.second;
+    const MacroPair& from_to = pair_weight.first;
+    Macro* from = from_to.first;
+    Macro* to = from_to.second;
     float weight = pair_weight.second;
     if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
       int idx1 = macroIndex(from);
@@ -1198,7 +1214,11 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
       // Note macro_weights only has entries for idx1 < idx2.
       macro_weights_[min(idx1, idx2)][max(idx1, idx2)] = weight;
       if (weight > 0)
-        debugPrint(logger_, MPL, "weights", 1, "{} -> {} {}",
+        debugPrint(logger_,
+                   MPL,
+                   "weights",
+                   1,
+                   "{} -> {} {}",
                    faninName(from),
                    faninName(to),
                    weight);
@@ -1206,7 +1226,7 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
   }
 }
 
-std::string MacroPlacer::faninName(Macro *macro)
+std::string MacroPlacer::faninName(Macro* macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
@@ -1216,7 +1236,7 @@ std::string MacroPlacer::faninName(Macro *macro)
 }
 
 // This has to be consistent with the accessors in EAST_IDX
-int MacroPlacer::macroIndex(Macro *macro)
+int MacroPlacer::macroIndex(Macro* macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
@@ -1233,12 +1253,12 @@ string MacroPlacer::macroIndexName(int index)
     return coreEdgeString(static_cast<CoreEdge>(index - macros_.size()));
 }
 
-int MacroPlacer::macroIndex(dbInst *inst)
+int MacroPlacer::macroIndex(dbInst* inst)
 {
-  return macro_inst_map_[inst];
+  return macro_inst_map_.at(inst);
 }
 
-bool MacroPlacer::macroIndexIsEdge(Macro *macro)
+bool MacroPlacer::macroIndexIsEdge(Macro* macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   return edge_index < core_edge_count;
@@ -1251,8 +1271,8 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
-    logger_->warn(MPL, 11, "pin {} is not placed. Using west.",
-               bTerm->getConstName());
+    logger_->warn(
+        MPL, 11, "Pin {} is not placed, using west.", bTerm->getConstName());
     return CoreEdge::West;
   } else {
     const double dbu = db_->getTech()->getDbUnitsPerMicron();
@@ -1302,8 +1322,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 
 ////////////////////////////////////////////////////////////////
 
-MacroSpacings &
-MacroPlacer::getSpacings(const Macro &macro)
+MacroSpacings& MacroPlacer::getSpacings(const Macro& macro)
 {
   auto itr = macro_spacings_.find(macro.dbInstPtr);
   if (itr == macro_spacings_.end())
@@ -1314,19 +1333,19 @@ MacroPlacer::getSpacings(const Macro &macro)
 
 ////////////////////////////////////////////////////////////////
 
-const char *coreEdgeString(CoreEdge edge)
+const char* coreEdgeString(CoreEdge edge)
 {
   switch (edge) {
-  case CoreEdge::West:
-    return "West";
-  case CoreEdge::East:
-    return "East";
-  case CoreEdge::North:
-    return "North";
-  case CoreEdge::South:
-    return "South";
-  default:
-    return "??";
+    case CoreEdge::West:
+      return "West";
+    case CoreEdge::East:
+      return "East";
+    case CoreEdge::North:
+      return "North";
+    case CoreEdge::South:
+      return "South";
+    default:
+      return "??";
   }
 }
 
@@ -1349,19 +1368,13 @@ Macro::Macro(double _lx,
              double _w,
              double _h,
              odb::dbInst* _dbInstPtr)
-    : lx(_lx),
-      ly(_ly),
-      w(_w),
-      h(_h),
-      dbInstPtr(_dbInstPtr)
+    : lx(_lx), ly(_ly), w(_w), h(_h), dbInstPtr(_dbInstPtr)
 {
 }
 
-Macro::Macro(double _lx,
-             double _ly,
-             const Macro &copy_from)
-  : lx(_lx),
-    ly(_ly),
+Macro::Macro(double _lx, double _ly, const Macro& copy_from)
+    : lx(_lx),
+      ly(_ly),
       w(copy_from.w),
       h(copy_from.h),
       dbInstPtr(copy_from.dbInstPtr)
@@ -1381,23 +1394,21 @@ MacroSpacings::MacroSpacings()
 MacroSpacings::MacroSpacings(double halo_x,
                              double halo_y,
                              double channel_x,
-                             double channel_y) :
-      halo_x_(halo_x),
+                             double channel_y)
+    : halo_x_(halo_x),
       halo_y_(halo_y),
       channel_x_(channel_x),
       channel_y_(channel_y)
 {
 }
 
-void MacroSpacings::setHalo(double halo_x,
-                            double halo_y)
+void MacroSpacings::setHalo(double halo_x, double halo_y)
 {
   halo_x_ = halo_x;
   halo_y_ = halo_y;
 }
 
-void MacroSpacings::setChannel(double channel_x,
-                               double channel_y)
+void MacroSpacings::setChannel(double channel_x, double channel_y)
 {
   channel_x_ = channel_x;
   channel_y_ = channel_y;

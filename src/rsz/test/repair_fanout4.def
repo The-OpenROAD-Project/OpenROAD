@@ -1,0 +1,69 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN hi_fanout ;
+
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 30000 40000 ) ;
+COMPONENTS 35 ;
+- load0 BUF_X1 + PLACED ( 0 0 ) N ;
+- load1 BUF_X1 + PLACED ( 5000 0 ) N ;
+- load2 BUF_X1 + PLACED ( 10000 0 ) N ;
+- load3 BUF_X1 + PLACED ( 15000 0 ) N ;
+- load4 BUF_X1 + PLACED ( 20000 0 ) N ;
+- load5 BUF_X1 + PLACED ( 0 5000 ) N ;
+- load6 BUF_X1 + PLACED ( 5000 5000 ) N ;
+- load7 BUF_X1 + PLACED ( 10000 5000 ) N ;
+- load8 BUF_X1 + PLACED ( 15000 5000 ) N ;
+- load9 BUF_X1 + PLACED ( 20000 5000 ) N ;
+- load10 BUF_X1 + PLACED ( 0 10000 ) N ;
+- load11 BUF_X1 + PLACED ( 5000 10000 ) N ;
+- load12 BUF_X1 + PLACED ( 10000 10000 ) N ;
+- load13 BUF_X1 + PLACED ( 15000 10000 ) N ;
+- load14 BUF_X1 + PLACED ( 20000 10000 ) N ;
+- load15 BUF_X1 + PLACED ( 0 15000 ) N ;
+- load16 BUF_X1 + PLACED ( 5000 15000 ) N ;
+- load17 BUF_X1 + PLACED ( 10000 15000 ) N ;
+- load18 BUF_X1 + PLACED ( 15000 15000 ) N ;
+- load19 BUF_X1 + PLACED ( 20000 15000 ) N ;
+- load20 BUF_X1 + PLACED ( 0 20000 ) N ;
+- load21 BUF_X1 + PLACED ( 5000 20000 ) N ;
+- load22 BUF_X1 + PLACED ( 10000 20000 ) N ;
+- load23 BUF_X1 + PLACED ( 15000 20000 ) N ;
+- load24 BUF_X1 + PLACED ( 20000 20000 ) N ;
+- load25 BUF_X1 + PLACED ( 0 25000 ) N ;
+- load26 BUF_X1 + PLACED ( 5000 25000 ) N ;
+- load27 BUF_X1 + PLACED ( 10000 25000 ) N ;
+- load28 BUF_X1 + PLACED ( 15000 25000 ) N ;
+- load29 BUF_X1 + PLACED ( 20000 25000 ) N ;
+- load30 BUF_X1 + PLACED ( 0 30000 ) N ;
+- load31 BUF_X1 + PLACED ( 5000 30000 ) N ;
+- load32 BUF_X1 + PLACED ( 10000 30000 ) N ;
+- load33 BUF_X1 + PLACED ( 15000 30000 ) N ;
+- load34 BUF_X1 + PLACED ( 20000 30000 ) N ;
+END COMPONENTS
+PINS 2 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
++ LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL
++ LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 2 ;
+- in1
+ ( load0 A )
+ ( load1 A ) ( load2 A ) ( load3 A ) ( load4 A ) ( load5 A ) ( load6 A ) ( load7 A ) ( load8 A ) ( load9 A ) ( load10 A )
+ ( load11 A ) ( load12 A ) ( load13 A ) ( load14 A ) ( load15 A ) ( load16 A ) ( load17 A ) ( load18 A ) ( load19 A ) ( load20 A )
+ ( load21 A ) ( load22 A ) ( load23 A ) ( load24 A ) ( load25 A ) ( load26 A ) ( load27 A ) ( load28 A ) ( load29 A ) ( load30 A )
+ ( load31 A ) ( load32 A ) ( load33 A ) ( load34 A ) ;
+- out1 ( PIN out1 ) ( load34 Z ) ;
+END NETS
+END DESIGN

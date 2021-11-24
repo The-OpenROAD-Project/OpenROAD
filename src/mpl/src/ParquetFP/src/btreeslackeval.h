@@ -1,5 +1,5 @@
 /**************************************************************************
-***    
+***
 *** Copyright (c) 2000-2006 Regents of the University of Michigan,
 ***               Saurabh N. Adya, Hayward Chan, Jarrod A. Roy
 ***               and Igor L. Markov
@@ -8,20 +8,20 @@
 ***  Original Affiliation:   University of Michigan, EECS Dept.
 ***                          Ann Arbor, MI 48109-2122 USA
 ***
-***  Permission is hereby granted, free of charge, to any person obtaining 
+***  Permission is hereby granted, free of charge, to any person obtaining
 ***  a copy of this software and associated documentation files (the
 ***  "Software"), to deal in the Software without restriction, including
-***  without limitation 
-***  the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-***  and/or sell copies of the Software, and to permit persons to whom the 
+***  without limitation
+***  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+***  and/or sell copies of the Software, and to permit persons to whom the
 ***  Software is furnished to do so, subject to the following conditions:
 ***
 ***  The above copyright notice and this permission notice shall be included
 ***  in all copies or substantial portions of the Software.
 ***
-*** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+*** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 *** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-*** OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+*** OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 *** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 *** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
 *** OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
@@ -29,7 +29,6 @@
 ***
 ***
 ***************************************************************************/
-
 
 #ifndef BTREESLACKEVAL_H
 #define BTREESLACKEVAL_H
@@ -41,40 +40,40 @@
 namespace parquetfp {
 
 // --------------------------------------------------------
-class BTreeSlackEval 
+class BTreeSlackEval
 {
-public:
-   inline BTreeSlackEval(const BTree& newBTree);
+ public:
+  inline BTreeSlackEval(const BTree& newBTree);
 
-   inline void evaluateSlacks(const BTree& newBTree);
-   const std::vector<float>& evaluateXSlacks(const BTree& orig_btree);
-   const std::vector<float>& evaluateYSlacks(const BTree& orig_btree);
+  inline void evaluateSlacks(const BTree& newBTree);
+  const std::vector<float>& evaluateXSlacks(const BTree& orig_btree);
+  const std::vector<float>& evaluateYSlacks(const BTree& orig_btree);
 
-   inline const std::vector<float>& xSlack() const;
-   inline const std::vector<float>& ySlack() const;
+  inline const std::vector<float>& xSlack() const;
+  inline const std::vector<float>& ySlack() const;
 
-   inline const std::vector<float>& xlocRight() const; // xloc from Right 
-   inline const std::vector<float>& ylocTop() const;   // yloc from Top
-   
-   inline const BTreeCompactor& btree() const;
-   inline const std::vector<BTree::BTreeNode>& rev_tree() const;
-   inline const std::vector<BTree::BTreeNode>& rev_orth_tree() const;
+  inline const std::vector<float>& xlocRight() const;  // xloc from Right
+  inline const std::vector<float>& ylocTop() const;    // yloc from Top
 
-   static void reverse_tree(const std::vector<BTree::BTreeNode>& tree,
-                            std::vector<BTree::BTreeNode>& rev_tree);   
+  inline const BTreeCompactor& btree() const;
+  inline const std::vector<BTree::BTreeNode>& rev_tree() const;
+  inline const std::vector<BTree::BTreeNode>& rev_orth_tree() const;
 
-private:
-   BTreeCompactor _btree;
-   std::vector<float> _xSlack;
-   std::vector<float> _ySlack;
+  static void reverse_tree(const std::vector<BTree::BTreeNode>& tree,
+                           std::vector<BTree::BTreeNode>& rev_tree);
 
-   std::vector<float> _xlocRight;
-   std::vector<float> _ylocTop;
-   
-   std::vector<BTree::BTreeNode> _rev_tree;
-   std::vector<BTree::BTreeNode> _rev_orth_tree;
+ private:
+  BTreeCompactor _btree;
+  std::vector<float> _xSlack;
+  std::vector<float> _ySlack;
 
-   BTreeSlackEval(const BTreeSlackEval&); // copy forbidden
+  std::vector<float> _xlocRight;
+  std::vector<float> _ylocTop;
+
+  std::vector<BTree::BTreeNode> _rev_tree;
+  std::vector<BTree::BTreeNode> _rev_orth_tree;
+
+  BTreeSlackEval(const BTreeSlackEval&);  // copy forbidden
 };
 // --------------------------------------------------------
 
@@ -82,41 +81,51 @@ private:
 // IMPLEMENTATIONS
 // ===============
 BTreeSlackEval::BTreeSlackEval(const BTree& newBTree)
-   : _btree(newBTree),
-     _xSlack(newBTree.NUM_BLOCKS),
-     _ySlack(newBTree.NUM_BLOCKS),
-     _xlocRight(newBTree.NUM_BLOCKS),
-     _ylocTop(newBTree.NUM_BLOCKS),
-     _rev_tree(newBTree.tree.size()),
-     _rev_orth_tree(newBTree.tree.size())
+    : _btree(newBTree),
+      _xSlack(newBTree.NUM_BLOCKS),
+      _ySlack(newBTree.NUM_BLOCKS),
+      _xlocRight(newBTree.NUM_BLOCKS),
+      _ylocTop(newBTree.NUM_BLOCKS),
+      _rev_tree(newBTree.tree.size()),
+      _rev_orth_tree(newBTree.tree.size())
 {
-   BTree::clean_tree(_rev_tree);
-   BTree::clean_tree(_rev_orth_tree);   
+  BTree::clean_tree(_rev_tree);
+  BTree::clean_tree(_rev_orth_tree);
 }
 // --------------------------------------------------------
 void BTreeSlackEval::evaluateSlacks(const BTree& newBTree)
 {
-   _btree.slimAssign(newBTree);
-   evaluateXSlacks(newBTree); // mess with "_btree" only
-   evaluateYSlacks(newBTree);
+  _btree.slimAssign(newBTree);
+  evaluateXSlacks(newBTree);  // mess with "_btree" only
+  evaluateYSlacks(newBTree);
 }
 // --------------------------------------------------------
 const std::vector<float>& BTreeSlackEval::xSlack() const
-{   return _xSlack; }
+{
+  return _xSlack;
+}
 // --------------------------------------------------------
 const std::vector<float>& BTreeSlackEval::ySlack() const
-{   return _ySlack; }
+{
+  return _ySlack;
+}
 // --------------------------------------------------------
 const BTreeCompactor& BTreeSlackEval::btree() const
-{   return _btree; }
+{
+  return _btree;
+}
 // --------------------------------------------------------
 const std::vector<BTree::BTreeNode>& BTreeSlackEval::rev_tree() const
-{   return _rev_tree; }
+{
+  return _rev_tree;
+}
 // --------------------------------------------------------
 const std::vector<BTree::BTreeNode>& BTreeSlackEval::rev_orth_tree() const
-{   return _rev_orth_tree; }
+{
+  return _rev_orth_tree;
+}
 // --------------------------------------------------------
 
-} // namespace
+}  // namespace parquetfp
 
 #endif

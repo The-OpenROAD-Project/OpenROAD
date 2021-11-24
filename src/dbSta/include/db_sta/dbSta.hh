@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -35,8 +35,8 @@
 
 #pragma once
 
-#include "opendb/db.h"
-#include "opendb/dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "sta/Sta.hh"
 #include "ord/OpenRoad.hh"
 
@@ -84,9 +84,13 @@ public:
 	    dbDatabase *db,
             gui::Gui *gui,
             Logger *logger);
+  // for makeBlockSta
+  void initVars(Tcl_Interp *tcl_interp,
+                dbDatabase *db,
+                gui::Gui *gui,
+                Logger *logger);
 
   dbDatabase *db() { return db_; }
-  virtual void makeComponents() override;
   dbNetwork *getDbNetwork() { return db_network_; }
   dbStaReport *getDbReport() { return db_report_; }
 

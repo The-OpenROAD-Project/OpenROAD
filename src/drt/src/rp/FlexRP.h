@@ -63,6 +63,10 @@ class FlexRP
 
   // functions
   void prep_viaForbiddenThrough();
+  void prep_minStepViasCheck();
+  bool hasMinStepViolation(frMinStepConstraint* minStepCons,
+                           int edge1,
+                           int edge2);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
@@ -72,6 +76,12 @@ class FlexRP
                                         frViaDef* viaDef,
                                         bool isCurrDirX);
   void prep_lineForbiddenLen();
+  void prep_eolForbiddenLen_helper(frLayer* layer,
+                                   const frCoord eolWidth,
+                                   frCoord& eolSpace,
+                                   frCoord& eolWithin);
+  void prep_eolForbiddenLen();
+  void prep_cutSpcTbl();
   void prep_lineForbiddenLen_helper(const frLayerNum& lNum,
                                     const int& tableLayerIdx,
                                     const int& tableEntryIdx,
@@ -145,10 +155,18 @@ class FlexRP
       frViaDef* viaDef2,
       bool isCurrDirX,
       std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+
+  void prep_via2viaForbiddenLen_lef58CutSpcTbl(
+      const frLayerNum& lNum,
+      frViaDef* viaDef1,
+      frViaDef* viaDef2,
+      bool isCurrDirX,
+      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+
   void prep_via2viaForbiddenLen_lef58CutSpc_helper(
-      const frBox& enclosureBox1,
-      const frBox& enclosureBox2,
-      const frBox& cutBox,
+      const Rect& enclosureBox1,
+      const Rect& enclosureBox2,
+      const Rect& cutBox,
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 };

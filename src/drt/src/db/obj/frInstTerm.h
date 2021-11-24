@@ -61,7 +61,7 @@ class frInstTerm : public frBlockObject
   frTerm* getTerm() const { return term_; }
   void addToNet(frNet* in) { net_ = in; }
   const std::vector<frAccessPoint*>& getAccessPoints() const { return ap_; }
-  frAccessPoint* getAccessPoint(int idx = 0) const { return ap_[idx]; }
+  frAccessPoint* getAccessPoint(int idx) const { return ap_[idx]; }
   frString getName() const;
   // setters
   void setAPSize(int size) { ap_.resize(size, nullptr); }
@@ -69,6 +69,10 @@ class frInstTerm : public frBlockObject
   void addAccessPoint(frAccessPoint* in) { ap_.push_back(in); }
   // others
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
+  frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
+  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
+  void getShapes(std::vector<frRect>& outShapes, bool updatedTransform = false);
+  Rect getBBox();
 
  private:
   frInst* inst_;

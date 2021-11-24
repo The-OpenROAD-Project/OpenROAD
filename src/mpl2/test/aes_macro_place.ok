@@ -1,0 +1,110 @@
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45.lef
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via4Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via5Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via6Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: ./testcases/aes_fp.def
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0252]     Updated 388 pins.
+[INFO ODB-0134] Finished DEF file: ./testcases/aes_fp.def
+Running Partition Design...
+[INFO PAR-0402] Traversed Logical Hierarchy 
+	 Number of std cell instances: 10375
+	 Total Area: 13143.024
+	 Number of Hard Macros: 0
+	 
+[INFO PAR-0403] Number of Clusters created: 36
+*** In RTLMP ***
+[INFO MPL-0009] RTL_MP  Param: min_aspect_ratio: 0.5
+[INFO MPL-0009] RTL_MP  Param: dead_space: 0.1
+[INFO MPL-0009] RTL_MP  Param: learning_rate: 0.0
+[INFO MPL-0009] RTL_MP  Param: shrink_factor: 0.997
+[INFO MPL-0009] RTL_MP  Param: shrink_freq: 0.1
+[INFO MPL-0009] RTL_MP  Param: halo_width: 2.0
+[INFO MPL-0009] RTL_MP  Param: region_file: macro_blockage.txt
+[INFO MPL-0009] RTL_MP  Param: num_thread: 10
+[INFO MPL-0009] RTL_MP  Param: num_run: 5
+[INFO MPL-0009] RTL_MP  Param: heat_rate: 0.1
+[INFO MPL-0009] RTL_MP  Param: num_level: 3
+[INFO MPL-0009] RTL_MP  Param: num_worker: 10
+[INFO MPL-0009] RTL_MP  Param: alpha: 6.0
+[INFO MPL-0009] RTL_MP  Param: beta: 40.0
+[INFO MPL-0009] RTL_MP  Param: gamma: 100.0
+[INFO MPL-0009] RTL_MP  Param: boundary_weight: 2.0
+[INFO MPL-0009] RTL_MP  Param: macro_blockage_weight: 1.0
+[INFO MPL-0009] RTL_MP  Param: resize_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: pos_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: neg_swap_prob: 0.3
+[INFO MPL-0009] RTL_MP  Param: double_swap_prob: 0.1
+[INFO MPL-0009] RTL_MP  Param: init_prob: 0.95
+[INFO MPL-0009] RTL_MP  Param: rej_ratio: 0.95
+[INFO MPL-0009] RTL_MP  Param: k: 5000000
+[INFO MPL-0009] RTL_MP  Param: c: 1000.0
+[INFO MPL-0009] RTL_MP  Param: max_num_step: 3000
+[INFO MPL-0009] RTL_MP  Param: perturb_per_step: 570
+[INFO MPL-0009] RTL_MP  Param: seed: 0
+[INFO MPL-1001] Shape_Engine Outline width:  148.01
+[INFO MPL-1002] Shape_Engine Outline height: 148.4
+[INFO MPL-1003] Shape_Engine Chip area: 21964.682
+[INFO MPL-1004] Shape_Engine Macro area:  0.0
+[INFO MPL-1005] Shape_Engine Std cell area: 13139.061
+[INFO MPL-1006] Shape_Engine Std cell util: 0.664656
+[INFO MPL-1007] Shape_Engine Cluster: top_cluster_1, area: 2393.238037, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: top_cluster_0, area: 2577.724609, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0_glue_logic, area: 1560.807495, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u3, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u2, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u1, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/u0, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: u0/r0, area: 117.660873, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us33, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us32, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us31, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us30, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us23, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us22, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us21, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us00, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us01, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us02, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us03, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us10, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us11, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us12, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us13, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-1007] Shape_Engine Cluster: us20, area: 655.939331, aspect_ratio: (0.500000,2.000000) 
+[INFO MPL-2001] Block_Placement Starts
+[INFO MPL-2002] Block_Placement  Finish Initialization
+[INFO MPL-2003] Block_Placement Init_T: 205.60281
+[INFO MPL-2004] Block_Placement level:  0   cost:  0.135831   area:   21162.470703   wirelength:  95812.523438   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2005] Block_Placement level:  1   cost:  0.135831   area:   21162.470703   wirelength:  95812.523438   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2006] Block_Placement level:  2   cost:  0.129343   area:   20008.140625   wirelength:  91328.210938   outline_penalty:  0.000000   boundary_penalty:  0.000000   macro_blockage_penalty:  0.000000
+[INFO MPL-2007] Block_Placement Floorplan width: 136.08757
+[INFO MPL-2008] Block_Placement Floorplan height: 147.02402
+[INFO MPL-2009] Block_Placement Outline width: 148.01
+[INFO MPL-2010] Block_Placement Outline height: 148.4
+[INFO MPL-3001] Pin_Aligment Starts
+*** Exit RTLMP ***
+No differences found.
+No differences found.

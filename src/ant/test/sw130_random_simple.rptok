@@ -1,4 +1,4 @@
-Warning - class CORE ANTENNACELL is not found. This msg can be ignored if not in the antenna-avoid flow
+Warning - class CORE ANTENNACELL is not found. This message can be ignored if not in the antenna-avoid flow
 
 Net - net50
   output50  (sky130_fd_sc_ms__buf_1)  A

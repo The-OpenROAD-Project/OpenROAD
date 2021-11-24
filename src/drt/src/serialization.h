@@ -63,6 +63,8 @@
 #include "db/obj/frVia.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/infra/frBox.h"
+#include "odb/geom.h"
+#include "odb/dbTypes.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -282,6 +284,162 @@ void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
   }
 }
 
+// odb classes
+template <class Archive>
+void serialize(Archive& ar,
+               odb::Rect& r,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord xlo, ylo, xhi, yhi;
+    (ar) & xlo;
+    (ar) & ylo;
+    (ar) & xhi;
+    (ar) & yhi;
+    r.reset(xlo, ylo, xhi, yhi);
+  } else {
+    fr::frCoord xlo, ylo, xhi, yhi;
+    xlo = r.xMin();
+    ylo = r.yMin();
+    xhi = r.xMax();
+    yhi = r.yMax();
+    (ar) & xlo;
+    (ar) & ylo;
+    (ar) & xhi;
+    (ar) & yhi;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::Point& p,
+               const unsigned int version)
+{
+  if (fr::is_loading(ar)) {
+    fr::frCoord x, y;
+    (ar) & x;
+    (ar) & y;
+    p.set(x, y);
+  } else {
+    fr::frCoord x, y;
+    x = p.x();
+    y = p.y();
+    (ar) & x;
+    (ar) & y;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbSigType& type,
+               const unsigned int version)
+{
+  odb::dbSigType::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbSigType(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbIoType& type,
+               const unsigned int version)
+{
+  odb::dbIoType::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbIoType(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbTechLayerType& type,
+               const unsigned int version)
+{
+  odb::dbTechLayerType::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbTechLayerType(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbMasterType& type,
+               const unsigned int version)
+{
+  odb::dbMasterType::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbMasterType(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbTechLayerDir& type,
+               const unsigned int version)
+{
+  odb::dbTechLayerDir::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbTechLayerDir(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbOrientType& type,
+               const unsigned int version)
+{
+  odb::dbOrientType::Value v;
+  if (fr::is_loading(ar)) {
+    (ar) & v;
+    type = odb::dbOrientType(v);
+  } else {
+    v = type.getValue();
+    (ar) & v;
+  }
+}
+
+template <class Archive>
+void serialize(Archive& ar,
+               odb::dbTransform& transform,
+               const unsigned int version)
+{
+  odb::dbOrientType type;
+  odb::Point offset;
+  if (fr::is_loading(ar)) {
+    (ar) & type;
+    (ar) & offset;
+    transform.setOrient(type);
+    transform.setOffset(offset);
+  } else {
+    type = transform.getOrient();
+    offset = transform.getOffset();
+    (ar) & type;
+    (ar) & offset;
+  }
+}
+
+
 }  // namespace boost::serialization
 
 namespace fr {
@@ -327,9 +485,9 @@ void register_types(Archive& ar)
   ar.template register_type<frSpacingSamenetConstraint>();
   ar.template register_type<frSpacingTableInfluenceConstraint>();
   ar.template register_type<frSpacingEndOfLineConstraint>();
-  ar.template register_type<frLef58CutSpacingTableLayerConstraint>();
-  ar.template register_type<frLef58CutSpacingTablePrlConstraint>();
-  ar.template register_type<frLef58CutSpacingTableConstraint>();
+  // ar.template register_type<frLef58CutSpacingTableLayerConstraint>();
+  // ar.template register_type<frLef58CutSpacingTablePrlConstraint>();
+  // ar.template register_type<frLef58CutSpacingTableConstraint>();
   ar.template register_type<frSpacingTablePrlConstraint>();
   ar.template register_type<frSpacingTableTwConstraint>();
   ar.template register_type<frSpacingTableConstraint>();
@@ -407,9 +565,13 @@ void serialize_globals(Archive& ar)
   (ar) & MINNUMACCESSPOINT_STDCELLPIN;
   (ar) & ACCESS_PATTERN_END_ITERATION_NUM;
   (ar) & END_ITERATION;
-  (ar) & NDR_NETS_RIPUP_THRESH;
+  (ar) & NDR_NETS_RIPUP_HARDINESS;
+  (ar) & CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+  (ar) & CLOCK_NETS_LEAF_RIPUP_HARDINESS;
   (ar) & AUTO_TAPER_NDR_NETS;
   (ar) & TAPERBOX_RADIUS;
+  (ar) & NDR_NETS_ABS_PRIORITY;
+  (ar) & CLOCK_NETS_ABS_PRIORITY;
   (ar) & TAVIACOST;
   (ar) & TAPINCOST;
   (ar) & TAALIGNCOST;

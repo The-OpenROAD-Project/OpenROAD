@@ -4,8 +4,7 @@ BUSBITCHARS "[]" ;
 DESIGN top ;
 UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( 0 0 ) ( 1000 1000 ) ;
-COMPONENTS 3 ;
-    - b1 BUF_X2 ;
+COMPONENTS 2 ;
     - b2 BUF_X4 ;
     - i1 INV_X1 ;
 END COMPONENTS
@@ -18,10 +17,9 @@ SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER ;
     - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
-NETS 4 ;
+NETS 3 ;
     - in1 ( PIN in1 ) ( i1 A ) + USE SIGNAL ;
-    - n1 ( b1 A ) ( b2 A ) + USE SIGNAL ;
-    - out1 ( PIN out1 ) ( b1 Z ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( b2 A ) + USE SIGNAL ;
     - out2 ( PIN out2 ) ( b2 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

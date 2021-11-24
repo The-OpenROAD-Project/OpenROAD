@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -85,8 +85,10 @@ using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
 using sta::dbNetwork;
+using sta::stringEq;
 
 using rsz::Resizer;
+using rsz::ParasiticsSrc;
 
 %}
 
@@ -156,6 +158,19 @@ using rsz::Resizer;
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
+}
+
+%typemap(in) ParasiticsSrc {
+  int length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  if (stringEq(arg, "placement"))
+    $1 = ParasiticsSrc::placement;
+  else if (stringEq(arg, "global_routing"))
+    $1 = ParasiticsSrc::global_routing;
+  else {
+    Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
+    return TCL_ERROR;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -255,11 +270,11 @@ wire_clk_capacitance(const Corner *corner)
 }
 
 void
-estimate_parasitics_cmd()
+estimate_parasitics_cmd(ParasiticsSrc src)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->estimateWireParasitics();
+  resizer->estimateParasitics(src);
 }
 
 // For debugging. Does not protect against annotating power/gnd.
@@ -340,7 +355,7 @@ resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(drvr_pin);
+  resizer->resizeToTargetSlew(drvr_pin, false);
 }
 
 double
@@ -386,15 +401,17 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
-repair_design_cmd(float max_length)
+repair_design_cmd(double max_length,
+                  double slew_margin,
+                  double cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length);
+  resizer->repairDesign(max_length, slew_margin, cap_margin);
 }
 
 void
-repair_clk_nets_cmd(float max_length)
+repair_clk_nets_cmd(double max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -411,11 +428,13 @@ repair_clk_inverters_cmd()
 
 void
 repair_net_cmd(Net *net,
-               float max_length)
+               double max_length,
+               double slew_margin,
+               double cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairNet(net, max_length); 
+  resizer->repairNet(net, max_length, slew_margin, cap_margin); 
 }
 
 void
@@ -456,13 +475,14 @@ repair_hold(float slack_margin,
 
 ////////////////////////////////////////////////////////////////
 
-// for testing
+// Rebuffer one net (for testing).
+// resizerPreamble() required.
 void
-rebuffer_net(Net *net)
+rebuffer_net(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->rebuffer(net);
+  resizer->rebuffer1(drvr_pin);
 }
 
 void
@@ -558,16 +578,6 @@ find_max_slew_wire_length(LibertyPort *drvr_port,
 }
 
 double
-find_slew_load_cap(LibertyPort *drvr_port,
-                   float max_slew,
-                   const Corner *corner)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->findSlewLoadCap(drvr_port, max_slew, corner);
-}
-
-double
 default_max_slew()
 {
   ensureLinked();
@@ -600,10 +610,10 @@ utilization()
 }
 
 void
-highlight_steiner_tree(const Net *net)
+highlight_steiner_tree(const Pin *drvr_pin)
 {
   Resizer *resizer = getResizer();
-  resizer->highlightSteiner(net);
+  resizer->highlightSteiner(drvr_pin);
 }
 
 PinSet

@@ -1,0 +1,43 @@
+[INFO ODB-0222] Reading LEF file: ../../../test/Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ../../../test/Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd_M7_pin/floorplan.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[INFO ODB-0134] Finished DEF file: gcd_M7_pin/floorplan.def
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: gcd_M7_pin/PDN.cfg
+[INFO PDN-0008] Design name is gcd.
+[INFO PDN-0009] Reading technology data.
+[INFO PDN-0011] ****** INFO ******
+Type: stdcell, grid
+    Stdcell Rails
+      Layer: metal1  -  width: 0.170  pitch: 2.400  offset: 0.000 
+      Layer: metal2  -  width: 0.170  pitch: 2.400  offset: 0.000 
+    Straps
+      Layer: metal4  -  width: 0.480  pitch: 56.000  offset: 2.000 
+      Layer: metal7  -  width: 1.400  pitch: 40.000  offset: 2.000 
+    Connect: 
+      {metal1 metal2 constraints {cut_pitch 0.16}} 
+      {metal2 metal4} 
+      {metal4 metal7}
+    
+Type: macro, CORE_macro_grid_1
+    Macro orientation: R0 R180 MX MY
+    Straps
+      Layer: metal5  -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6  -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
+Type: macro, CORE_macro_grid_2
+    Macro orientation: R90 R270 MXR90 MYR90
+    Straps
+      Layer: metal6  -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_hor metal6} {metal6 metal7}
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[INFO PDN-0015] Writing to database.
+No differences found.

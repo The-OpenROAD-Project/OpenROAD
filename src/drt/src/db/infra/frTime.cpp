@@ -46,7 +46,7 @@ void frTime::print(Logger* logger)
   int cmin = (t2 % 3600) / 60;
   int csec = t2 % 60;
   logger->info(DRT,
-               172,
+               267,
                "cpu time = {:02}:{:02}:{:02}, "
                "elapsed time = {:02}:{:02}:{:02}, "
                "memory = {:.2f} (MB), peak = {:.2f} (MB)",

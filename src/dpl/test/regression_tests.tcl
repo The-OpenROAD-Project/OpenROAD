@@ -1,5 +1,6 @@
 record_tests {
   cell_on_block1
+  cell_on_block2
   check1
   check2
   check3
@@ -25,6 +26,7 @@ record_tests {
   fragmented_row04
   mirror1
   mirror2
+  mirror3
   multi_height01
   multi_height02
   multi_height03
@@ -49,6 +51,7 @@ record_tests {
   simple08
   simple09
   simple10
+  max_disp1
   aes
   gcd
   ibex

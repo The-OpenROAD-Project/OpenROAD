@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -43,7 +43,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Liberty.hh"
 
-#include "opendb/db.h"
+#include "odb/db.h"
 
 namespace sta {
 
@@ -68,6 +68,7 @@ using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
 using odb::dbPlacementStatus;
+using odb::dbBoolProperty;
 
 // TODO: move to StringUtil
 char *
@@ -364,14 +365,11 @@ DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-Network *
-makedbNetwork()
-{
-  return new dbNetwork;
-}
-
 dbNetwork::dbNetwork() :
+  ConcreteNetwork(),
   db_(nullptr),
+  logger_(nullptr),
+  block_(nullptr),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
@@ -382,23 +380,18 @@ dbNetwork::~dbNetwork()
 }
 
 void
-dbNetwork::setDb(dbDatabase *db)
+dbNetwork::init(dbDatabase *db,
+                Logger *logger)
 {
   db_ = db;
+  logger_ = logger;
 }
 
 void
 dbNetwork::setBlock(dbBlock *block)
 {
-  db_ = block->getDataBase();
   block_ = block;
   readDbNetlistAfter();
-}
-
-void
-dbNetwork::setLogger(Logger *logger)
-{
-  logger_ = logger;
 }
 
 void
@@ -904,13 +897,15 @@ dbNetwork::makeCell(Library *library,
 	cport->setLibertyPort(lib_port);
 	lib_port->setExtPort(mterm);
       }
-      else if (!dir->isPowerGround())
+      else if (!dir->isPowerGround()
+               && !lib_cell->findPgPort(port_name))
 	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
     }
   }
-  groupBusPorts(cell);
+  // Assume msb first busses because LEF has no clue about busses.
+  groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
@@ -942,22 +937,48 @@ dbNetwork::readDbNetlistAfter()
 void
 dbNetwork::makeTopCell()
 {
+  if (top_cell_) {
+    // Reading DEF or linking when a network already exists; remove previous top cell.
+    Library *top_lib = library(top_cell_);
+    deleteLibrary(top_lib);
+  }
   const char *design_name = block_->getConstName();
   Library *top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
-  for (dbBTerm *bterm : block_->getBTerms()) {
-    const char *port_name = bterm->getConstName();
-    Port *port = makePort(top_cell_, port_name);
-    PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
-    setDirection(port, dir);
-    
-  }
-  groupBusPorts(top_cell_);
+  for (dbBTerm *bterm : block_->getBTerms())
+    makeTopPort(bterm);
+  groupBusPorts(top_cell_,
+                [=](const char *port_name) { return portMsbFirst(port_name); } );
 }
 
 void
+dbNetwork::makeTopPort(dbBTerm *bterm)
+{
+  const char *port_name = bterm->getConstName();
+  Port *port = makePort(top_cell_, port_name);
+  PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  setDirection(port, dir);
+}
+
+// read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
+// is msb first or lsb first.
+bool
+dbNetwork::portMsbFirst(const char *port_name)
+{
+  string key = "bus_msb_first ";
+  key += port_name;
+  dbBoolProperty *property = odb::dbBoolProperty::find(block_, key.c_str());
+  if (property)
+    return property->getValue();
+  else
+    // Default when DEF did not come from read_verilog.
+    return true;
+}
+  
+void
 dbNetwork::findConstantNets()
 {
+  clearConstantNets();
   for (dbNet *dnet : block_->getNets()) {
     if (dnet->getSigType() == dbSigType::GROUND)
       addConstantNet(dbToSta(dnet), LogicValue::zero);
@@ -990,7 +1011,8 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 		cport->setLibertyPort(lport);
 		lport->setExtPort(cport->extPort());
 	      }
-	      else if (!cport->direction()->isPowerGround())
+	      else if (!cport->direction()->isPowerGround()
+                       && !lcell->findPgPort(port_name))
 		logger_->warn(ORD, 1002,
                               "Liberty cell {} pin {} missing from LEF macro.",
 			      lcell->name(),

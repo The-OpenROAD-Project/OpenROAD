@@ -77,7 +77,7 @@ void FlexDRWorkerRegionQuery::cleanup()
 
 void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
 {
-  frBox frb;
+  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
@@ -85,15 +85,15 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
     impl_->shapes_.at(obj->getLayerNum()).insert(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
-    frTransform xform;
-    frPoint origin;
+    dbTransform xform;
+    Point origin;
     via->getOrigin(origin);
-    xform.set(origin);
+    xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .insert(make_pair(frb, via));
       } else {
@@ -104,7 +104,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .insert(make_pair(frb, via));
       } else {
@@ -115,7 +115,7 @@ void FlexDRWorkerRegionQuery::add(drConnFig* connFig)
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .insert(make_pair(frb, via));
       } else {
@@ -131,7 +131,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
     drConnFig* connFig,
     vector<vector<rq_box_value_t<drConnFig*>>>& allShapes)
 {
-  frBox frb;
+  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
@@ -139,15 +139,15 @@ void FlexDRWorkerRegionQuery::Impl::add(
     allShapes.at(obj->getLayerNum()).push_back(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
-    frTransform xform;
-    frPoint origin;
+    dbTransform xform;
+    Point origin;
     via->getOrigin(origin);
-    xform.set(origin);
+    xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer1Num())
             .push_back(make_pair(frb, via));
       } else {
@@ -158,7 +158,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer2Num())
             .push_back(make_pair(frb, via));
       } else {
@@ -169,7 +169,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         allShapes.at(via->getViaDef()->getCutLayerNum())
             .push_back(make_pair(frb, via));
       } else {
@@ -183,7 +183,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
 
 void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
 {
-  frBox frb;
+  Rect frb;
   if (connFig->typeId() == drcPathSeg || connFig->typeId() == frcRect
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
@@ -191,15 +191,15 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
     impl_->shapes_.at(obj->getLayerNum()).remove(make_pair(frb, obj));
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
-    frTransform xform;
-    frPoint origin;
+    dbTransform xform;
+    Point origin;
     via->getOrigin(origin);
-    xform.set(origin);
+    xform.setOffset(origin);
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer1Num())
             .remove(make_pair(frb, via));
       } else {
@@ -210,7 +210,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getLayer2Num())
             .remove(make_pair(frb, via));
       } else {
@@ -221,7 +221,7 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
         shape->getBBox(frb);
-        frb.transform(xform);
+        xform.apply(frb);
         impl_->shapes_.at(via->getViaDef()->getCutLayerNum())
             .remove(make_pair(frb, via));
       } else {
@@ -233,19 +233,20 @@ void FlexDRWorkerRegionQuery::remove(drConnFig* connFig)
   }
 }
 
-void FlexDRWorkerRegionQuery::query(const frBox& box,
+void FlexDRWorkerRegionQuery::query(const Rect& box,
                                     const frLayerNum layerNum,
                                     vector<drConnFig*>& result) const
 {
   vector<rq_box_value_t<drConnFig*>> temp;
   impl_->shapes_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
+  result.reserve(temp.size());
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
 }
 
 void FlexDRWorkerRegionQuery::query(
-    const frBox& box,
+    const Rect& box,
     const frLayerNum layerNum,
     vector<rq_box_value_t<drConnFig*>>& result) const
 {

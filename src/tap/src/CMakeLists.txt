@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, University of California, San Diego.
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,11 @@ target_include_directories(tap
 target_link_libraries(tap
   PRIVATE
     utl
-    opendb
+    odb
     OpenSTA
+)
+
+messages(
+  TARGET tap
+  OUTPUT_DIR ..
 )

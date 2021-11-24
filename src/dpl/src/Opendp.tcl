@@ -1,6 +1,6 @@
 #############################################################################
 ##
-## Copyright (c) 2019, OpenROAD
+## Copyright (c) 2019, The Regents of the University of California
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -32,7 +32,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement max_displacement]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
@@ -40,14 +40,32 @@ proc detailed_placement { args } {
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
-    sta::check_positive_integer "-max_displacement" $max_displacement
+    if { [llength $max_displacement] == 1 } {
+      sta::check_positive_integer "-max_displacement" $max_displacement
+      set max_displacement_x $max_displacement
+      set max_displacement_y $max_displacement
+    } elseif { [llength $max_displacement] == 2 } {
+      lassign $max_displacement max_displacement_x max_displacement_y
+      sta::check_positive_integer "-max_displacement" $max_displacement_x
+      sta::check_positive_integer "-max_displacement" $max_displacement_y
+    } else {
+      sta::error DPL 31 "-max_displacement disp|{disp_x disp_y}"
+    }
   } else {
-    set max_displacement 0
+    # use default displacement
+    set max_displacement_x 0
+    set max_displacement_y 0
   }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    dpl::detailed_placement_cmd $max_displacement
+    set site [dpl::get_row_site]
+    # Convert displacement from microns to sites.
+    set max_displacement_x [expr [ord::microns_to_dbu $max_displacement_x] \
+                              / [$site getWidth]]
+    set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
+                              / [$site getHeight]]
+    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -117,7 +135,7 @@ proc check_placement { args } {
 
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
-  return [dpl::check_placement_cmd $verbose]
+  dpl::check_placement_cmd $verbose
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
@@ -128,6 +146,35 @@ proc optimize_mirroring { args } {
 }
 
 namespace eval dpl {
+
+# min_displacement is the smallest displacement to draw
+# measured as a multiple of row_height.
+proc detailed_placement_debug { args } {
+  sta::parse_key_args "global_placement_debug" args \
+      keys {-instance -min_displacement} \
+      flags {-displacement}
+
+  set displacement [info exists flags(-displacement)]
+
+  if { [info exists keys(-min_displacement)] } {
+    set min_displacement $keys(-min_displacement)
+  } else {
+      set min_displacement 0
+  }
+
+  if { [info exists keys(-instance)] } {
+      set instance_name $keys(-instance)
+      set block [ord::get_db_block]
+      set debug_instance [$block findInst $instance_name]
+      if {$debug_instance == "NULL"} {
+          utl::error DPL 32 "Debug instance $instance_name not found."
+      }
+  } else {
+      set debug_instance "NULL"
+  }
+
+  dpl::set_debug_cmd $displacement $min_displacement $debug_instance
+}
 
 proc get_masters_arg { arg_name arg } {
   set matched 0
@@ -183,6 +230,10 @@ proc format_grid { x w } {
   } else {
     return [format "%.2f" [expr $x / double($w)]]
   }
+}
+
+proc get_row_site {} {
+  return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
 
 }

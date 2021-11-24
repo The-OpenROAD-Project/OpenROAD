@@ -12,10 +12,10 @@
 [INFO ODB-0134] Finished DEF file: aes.def
 [INFO PSM-0001] Reading voltage source file: Vsrc_aes_vss.loc.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_aes_vss.loc.
-[WARNING PSM-0030] Vsrc location at (544.000um, 12.000um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (542.700um, 33.115um).
-[WARNING PSM-0030] Vsrc location at (208.000um, 348.000um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (207.900um, 353.115um).
+[WARNING PSM-0030] VSRC location at (544.000um, 12.000um) and size 10.000um, is not located on a power stripe. Moving to closest stripe at (542.700um, 33.115um).
+[WARNING PSM-0030] VSRC location at (208.000um, 348.000um) and size 10.000um, is not located on a power stripe. Moving to closest stripe at (207.900um, 353.115um).
 [INFO PSM-0031] Number of PDN nodes on net VSS = 74090.
-[INFO PSM-0064] Number of voltage sources = 2
+[INFO PSM-0064] Number of voltage sources = 2.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
 Worstcase voltage: 4.37e-03 V

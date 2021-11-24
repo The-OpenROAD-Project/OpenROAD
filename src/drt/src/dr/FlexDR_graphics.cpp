@@ -26,13 +26,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexDR_graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
-#include "FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace fr {
@@ -51,7 +52,7 @@ class GridGraphDescriptor : public gui::Descriptor
   };
 
   std::string getName(std::any object) const override;
-  std::string getTypeName(std::any object) const override;
+  std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 
   void highlight(std::any object,
@@ -62,6 +63,8 @@ class GridGraphDescriptor : public gui::Descriptor
   gui::Selected makeSelected(std::any object,
                              void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(gui::SelectionSet& objects) const override;
 };
 
 std::string GridGraphDescriptor::getName(std::any object) const
@@ -71,7 +74,7 @@ std::string GridGraphDescriptor::getName(std::any object) const
          + std::to_string(data.z) + ">";
 }
 
-std::string GridGraphDescriptor::getTypeName(std::any object) const
+std::string GridGraphDescriptor::getTypeName() const
 {
   return "Grid Graph Node";
 }
@@ -214,18 +217,28 @@ bool GridGraphDescriptor::lessThan(std::any l, std::any r) const
          < std::tie(r_grid.x, r_grid.y, r_grid.z);
 }
 
+bool GridGraphDescriptor::getAllObjects(gui::SelectionSet& objects) const
+{
+  return false;
+}
+
 //////////////////////////////////////////////////
 
-const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
+const char* FlexDRGraphics::graph_edges_visible_ = "Graph Edges";
+const char* FlexDRGraphics::grid_cost_edges_visible_ = "Grid Cost Edges";
+const char* FlexDRGraphics::blocked_edges_visible_ = "Blocked Edges";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
 const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
+const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
-static std::string workerOrigin(FlexDRWorker* worker)
+static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
 {
-  frPoint origin = worker->getGCellBox().lowerLeft();
+  Point ll = worker->getRouteBox().ll();
+  Point origin;
+  design->getTopBlock()->getGCellIdx(ll, origin);
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -243,39 +256,41 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
       gui_(gui::Gui::get()),
       logger_(logger)
 {
-  setTech(design->getTech(), db);
-  gui_->addCustomVisibilityControl(grid_graph_visible_);
-  gui_->addCustomVisibilityControl(route_shape_cost_visible_);
-  gui_->addCustomVisibilityControl(marker_cost_visible_);
-  gui_->addCustomVisibilityControl(fixed_shape_cost_visible_);
-  gui_->addCustomVisibilityControl(route_guides_visible_, true);
-  gui_->addCustomVisibilityControl(routing_objs_visible_, true);
-
-  gui_->registerRenderer(this);
-}
-
-void FlexDRGraphics::setTech(frTechObject* tech, odb::dbDatabase* db)
-{
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
   dbu_per_uu_ = odb_tech->getDbUnitsPerMicron();
 
   layer_map_.resize(odb_tech->getLayerCount(), -1);
 
-  for (auto& tr_layer : tech->getLayers()) {
+  for (auto& tr_layer : design->getTech()->getLayers()) {
     auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
     if (odb_layer) {
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
   }
+
+  addDisplayControl(graph_edges_visible_);
+  addDisplayControl(grid_cost_edges_visible_);
+  addDisplayControl(blocked_edges_visible_);
+  addDisplayControl(route_shape_cost_visible_);
+  addDisplayControl(marker_cost_visible_);
+  addDisplayControl(fixed_shape_cost_visible_);
+  addDisplayControl(route_guides_visible_, true);
+  addDisplayControl(routing_objs_visible_, true);
+  addDisplayControl(maze_search_visible_, true);
+
+  gui_->registerRenderer(this);
+}
+
+const char* FlexDRGraphics::getDisplayControlGroupName()
+{
+  return "FlexDR";
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  if (!net_) {
-    return;
-  }
-
+  if (layer_map_.empty())
+        return;
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
@@ -285,16 +300,16 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
-    frBox box;
+  if (checkDisplayControl(routing_objs_visible_)) {
+    Rect box;
     if (drawWholeDesign_) {
       design_->getTopBlock()->getDieBox(box);
       fr::frRegionQuery::Objects<frBlockObject> figs;
-      design_->getRegionQuery()->query(box, layerNum, figs);
+      design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
       }
-    } else {
+    } else if (worker_){
       worker_->getExtBox(box);
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);
@@ -304,63 +319,86 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (gui_->checkCustomVisibilityControl(route_guides_visible_)) {
+  if (net_ && checkDisplayControl(route_guides_visible_)) {
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
       if (rect.getLayerNum() == layerNum) {
-        frBox box;
+        Rect box;
         rect.getBBox(box);
-        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       }
     }
   }
   painter.setPen(layer, /* cosmetic */ true);
-  for (frPoint& pt : points_by_layer_[layerNum]) {
-    painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
-    painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+  if (checkDisplayControl(maze_search_visible_) &&
+        !points_by_layer_.empty()) {
+    for (Point& pt : points_by_layer_[layerNum]) {
+      painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
+      painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+    }
   }
-
   // Draw graphs
   const bool draw_drc
-      = gui_->checkCustomVisibilityControl(route_shape_cost_visible_);
+      = checkDisplayControl(route_shape_cost_visible_);
   const bool draw_marker
-      = gui_->checkCustomVisibilityControl(marker_cost_visible_);
+      = checkDisplayControl(marker_cost_visible_);
   const bool draw_shape
-      = gui_->checkCustomVisibilityControl(fixed_shape_cost_visible_);
-  const bool draw_graph
-      = gui_->checkCustomVisibilityControl(grid_graph_visible_);
+      = checkDisplayControl(fixed_shape_cost_visible_);
+  const bool draw_edges
+      = checkDisplayControl(graph_edges_visible_);
+  const bool draw_gCostEdges
+      = checkDisplayControl(grid_cost_edges_visible_);
+  const bool draw_blockedEdges
+      = checkDisplayControl(blocked_edges_visible_);
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
-      && (draw_graph || draw_drc || draw_marker || draw_shape)) {
+      && (draw_edges || draw_drc || draw_marker || draw_shape ||
+          draw_gCostEdges || draw_blockedEdges)) {
     const frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    const int offset = 25;
-    const bool prefIsVert
-        = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
-
+    const int offset = design_->getTech()->getLayer(2)->getPitch() / 8;
     frMIdx x_dim, y_dim, z_dim;
     grid_graph_->getDim(x_dim, y_dim, z_dim);
 
+    auto color = painter.getPenColor();
+    auto prevColor = color;
+    color.a = 255;
     for (frMIdx x = 0; x < x_dim; ++x) {
       for (frMIdx y = 0; y < y_dim; ++y) {
-        frPoint pt;
+        Point pt;
         grid_graph_->getPoint(pt, x, y);
+        //draw edges
+        if (draw_edges || draw_gCostEdges || draw_blockedEdges) {
+            if (x != x_dim - 1) {
+                Point pt2;
+                grid_graph_->getPoint(pt2, x + 1, y);
 
-        if (draw_graph && x != x_dim - 1
-            && (!grid_graph_->hasEdge(x, y, z, frDirEnum::E)
-                || grid_graph_->isBlocked(x, y, z, frDirEnum::E)
-                || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x + 1, y);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
-        }
-
-        if (draw_graph && y != y_dim - 1
-            && (!grid_graph_->hasEdge(x, y, z, frDirEnum::N)
-                || grid_graph_->isBlocked(x, y, z, frDirEnum::N)
-                || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x, y + 1);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::E)) {
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                if ((draw_gCostEdges && grid_graph_->hasGridCostE(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::E))) {
+                    painter.setBrush(color);
+                    painter.setPen(color, true, offset/10);
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                painter.setBrush(prevColor);
+                painter.setPen(layer, true);
+            }
+            if (y != y_dim - 1) {
+                Point pt2;
+                grid_graph_->getPoint(pt2, x, y + 1);
+                if (draw_edges && grid_graph_->hasEdge(x, y, z, frDirEnum::N)) {
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                if ((draw_gCostEdges && grid_graph_->hasGridCostN(x, y, z)) ||
+                    (draw_blockedEdges && grid_graph_->isBlocked(x, y, z, frDirEnum::N))) {
+                    painter.setBrush(color);
+                    painter.setPen(color, true, offset/10);
+                    painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+                }
+                painter.setBrush(prevColor);
+                painter.setPen(layer, true);
+            }
         }
         // Planar doesn't distinguish E vs N so just use one
         bool planar
@@ -382,7 +420,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
               || (draw_marker
                   && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U));
+                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U))
+              || (draw_gCostEdges
+                  && grid_graph_->hasGridCostU(x, y, z))
+              || (draw_blockedEdges
+                  && grid_graph_->isBlocked(x, y, z, frDirEnum::U))
+              || (draw_edges
+                  && grid_graph_->hasEdge(x, y, z, frDirEnum::U));
         if (via) {
           painter.drawCircle(
               grid_graph_->xCoord(x), grid_graph_->yCoord(y), offset / 2);
@@ -390,23 +434,23 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
     }
   }
-
+  if (!worker_)
+      return;
   // Draw markers
-  frBox box;
+  Rect box;
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker : design_->getTopBlock()->getMarkers()) {
+    if (marker->getLayerNum() == layerNum) {
+      marker->getBBox(box);
+      drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
+    }
+  }
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
-      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
-    }
-  }
-  painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  if (design_->getTopBlock()) {
-    for (auto& marker : design_->getTopBlock()->getMarkers()) {
-      if (marker->getLayerNum() == layerNum) {
-        marker->getBBox(box);
-        drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
-      }
+      cout << "MARKER " << box << "lNum " << layerNum << "\n";
+      drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
 }
@@ -415,14 +459,35 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
                              gui::Painter& painter,
                              int layerNum)
 {
-  frBox box;
+  Rect box;
   switch (fig->typeId()) {
+    case frcPathSeg: {
+        auto seg = (frPathSeg*) fig;
+        if (seg->getLayerNum() == layerNum) {
+          seg->getBBox(box);
+          painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+        }
+        break;
+    }
     case drcPathSeg: {
       auto seg = (drPathSeg*) fig;
       if (seg->getLayerNum() == layerNum) {
         seg->getBBox(box);
-        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       }
+      break;
+    }
+    case frcVia: {
+      auto via = (frVia*) fig;
+      auto viadef = via->getViaDef();
+      if (viadef->getLayer1Num() == layerNum) {
+        via->getLayer1BBox(box);
+      } else if (viadef->getLayer2Num() == layerNum) {
+        via->getLayer2BBox(box);
+      } else {
+        return;
+      }
+      painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       break;
     }
     case drcVia: {
@@ -435,20 +500,29 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
       } else {
         return;
       }
-      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+      break;
+    }
+    case frcPatchWire: {
+      auto patch = (frPatchWire*) fig;
+      if (patch->getLayerNum() == layerNum) {
+        patch->getBBox(box);
+        painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+      }
       break;
     }
     case drcPatchWire: {
       auto patch = (drPatchWire*) fig;
       if (patch->getLayerNum() == layerNum) {
         patch->getBBox(box);
-        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
       }
       break;
     }
 
-    default:
-      logger_->debug(DRT, 1, "unknown fig type {} in drawLayer", fig->typeId());
+    default: {
+      logger_->debug(DRT, 1, "Unknown fig type {} in drawLayer.", fig->typeId());
+    }
   }
 }
 
@@ -463,10 +537,26 @@ void FlexDRGraphics::drawMarker(int xl,
   painter.drawLine({xl, yh}, {xh, yl});
 }
 
+void FlexDRGraphics::show(bool checkStopConditions) {
+    if (checkStopConditions) {
+        if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
+            return;
+        }
+        Rect gcellBox = worker_->getGCellBox();
+        if (settings_->gcellX >= 0
+            && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
+          return;
+        }
+    }
+    update();
+    pause(nullptr);
+}
+
 void FlexDRGraphics::update()
 {
-  if (settings_->draw)
+  if (settings_->draw) {
     gui_->redraw();
+  }
 }
 
 void FlexDRGraphics::pause(drNet* net)
@@ -484,8 +574,9 @@ void FlexDRGraphics::debugWholeDesign()
   if (!settings_->allowPause)
     return;
   drawWholeDesign_ = true;
-  gui_->pause();
   update();
+  gui_->pause();
+  drawWholeDesign_ = false;
 }
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
@@ -496,20 +587,20 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
   painter.setBrush(gui::Painter::transparent);
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
 
-  frBox box;
+  Rect box;
   worker_->getRouteBox(box);
-  painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+  painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
 
   box = worker_->getDrcBox();
-  painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+  painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
 
   worker_->getExtBox(box);
-  painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+  painter.drawRect({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
 
   if (net_) {
     for (auto& pin : net_->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
-        frPoint pt;
+        Point pt;
         ap->getPoint(pt);
         painter.drawLine({pt.x() - 100, pt.y() - 100},
                          {pt.x() + 100, pt.y() + 100});
@@ -528,25 +619,29 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
 
-  frBox gcellBox = in->getGCellBox();
+  Rect gcellBox = in->getGCellBox();
   if (settings_->gcellX >= 0
-      && !gcellBox.contains({settings_->gcellX, settings_->gcellY})) {
+      && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
     return;
   }
 
-  status("Start worker: gcell origin " + workerOrigin(in) + " "
+  Point origin;
+  design_->getTopBlock()->getGCellIdx(in->getRouteBox().ll(), origin);
+  status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
   net_ = nullptr;
-  grid_graph_ = nullptr;
+  grid_graph_ = &worker_->getGridGraph();
 
   points_by_layer_.resize(in->getTech()->getLayers().size());
 
   if (settings_->netName.empty()) {
-    frBox box;
+    Rect box;
     worker_->getExtBox(box);
-    gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+    gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+    if (settings_->draw)
+      gui_->redraw();
     if (settings_->allowPause)
       gui_->pause();
   }
@@ -562,7 +657,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   assert(grid_graph_ == nullptr || grid_graph_ == grid_graph);
   grid_graph_ = grid_graph;
 
-  frPoint in;
+  Point in;
   grid_graph->getPoint(in, grid.x(), grid.y());
   frLayerNum layer = grid_graph->getLayerNum(grid.z());
 
@@ -598,17 +693,17 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 
   status("Start net: " + net->getFrNet()->getName() + " "
-         + workerOrigin(worker_));
+         + workerOrigin(worker_, design_));
   logger_->info(
-      DRT, 249, "Net {} (id = {})", net->getFrNet()->getName(), net->getId());
+      DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
-    logger_->info(DRT, 250, "  Pin {}", pin->getName());
+    logger_->info(DRT, 250, "  Pin {}.", pin->getName());
     for (auto& ap : pin->getAccessPatterns()) {
-      frPoint pt;
+      Point pt;
       ap->getPoint(pt);
       logger_->info(DRT,
-                    251,
-                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {})",
+                    275,
+                    "    AP ({:.5f}, {:.5f}) (layer {}) (cost {}).",
                     pt.x() / (double) dbu_per_uu_,
                     pt.y() / (double) dbu_per_uu_,
                     ap->getBeginLayerNum(),
@@ -618,9 +713,9 @@ void FlexDRGraphics::startNet(drNet* net)
   net_ = net;
   last_pt_layer_ = -1;
 
-  frBox box;
+  Rect box;
   worker_->getExtBox(box);
-  gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   if (settings_->allowPause) {
     gui_->pause();
   }
@@ -678,7 +773,7 @@ void FlexDRGraphics::status(const std::string& message)
 /* static */
 bool FlexDRGraphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 /* static */

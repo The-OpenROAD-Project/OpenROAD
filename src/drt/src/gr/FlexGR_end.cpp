@@ -34,8 +34,6 @@ using namespace fr;
 
 void FlexGRWorker::end()
 {
-
-
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
   endRemoveNets(modNets);
@@ -336,9 +334,7 @@ void FlexGRWorker::endStitchBoundary()
 // grNet remembers boundary pin frNode
 void FlexGRWorker::endStitchBoundary_net(grNet* net)
 {
-
   auto fnet = net->getFrNet();
-
 
   auto& pinNodePairs = net->getPinNodePairs();
   for (auto& pinNodePair : pinNodePairs) {
@@ -385,13 +381,13 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     auto childConnFig = static_cast<grShape*>(child->getConnFig());
     getRegionQuery()->removeGRObj(childConnFig);
     auto childPathSeg = static_cast<grPathSeg*>(child->getConnFig());
-    frPoint bp, ep;
+    Point bp, ep;
     childPathSeg->getPoints(bp, ep);
     if (bp == childLoc) {
-      ep.set(parentLoc);
+      ep = parentLoc;
     } else {
       // ep == childLoc
-      bp.set(parentLoc);
+      bp = parentLoc;
     }
     childPathSeg->setPoints(bp, ep);
     getRegionQuery()->addGRObj(childConnFig);
@@ -401,17 +397,15 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
 
     // remove node from fnet
     fnet->removeNode(node);
-
   }
 }
 
 void FlexGRWorker::endWriteBackCMap()
 {
-
   auto cmap = getCMap();
 
-  frPoint gcellIdxLL = getRouteGCellIdxLL();
-  frPoint gcellIdxUR = getRouteGCellIdxUR();
+  Point gcellIdxLL = getRouteGCellIdxLL();
+  Point gcellIdxUR = getRouteGCellIdxUR();
   int idxLLX = gcellIdxLL.x();
   int idxLLY = gcellIdxLL.y();
   int idxURX = gcellIdxUR.x();
@@ -453,7 +447,6 @@ void FlexGRWorker::endWriteBackCMap()
       }
     }
   }
-
 }
 
 void FlexGRWorker::cleanup()

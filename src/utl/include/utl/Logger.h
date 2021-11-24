@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, OpenROAD
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -66,10 +66,12 @@ namespace utl {
     X(ORD) \
     X(PAR) \
     X(PDN) \
+    X(PDR) \
     X(PPL) \
     X(PSM) \
     X(PSN) \
     X(RCX) \
+    X(RMP) \
     X(RSZ) \
     X(STA) \
     X(STT) \
@@ -108,7 +110,14 @@ class Logger
                       const std::string& message,
                       const Args&... args)
     {
-      log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
+      // Message counters do NOT apply to debug messages.
+      logger_->log(spdlog::level::level_enum::debug,
+                   "[{} {}-{:04d}] " + message,
+                   level_names[spdlog::level::level_enum::debug],
+                   tool_names_[tool],
+                   level,
+                   args...);
+      logger_->flush();
     }
 
   template <typename... Args>
@@ -184,6 +193,7 @@ class Logger
   }
 
   void addSink(spdlog::sink_ptr sink);
+  void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
 
  private:

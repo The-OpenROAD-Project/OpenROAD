@@ -35,12 +35,12 @@
 
 #include <tcl.h>
 
+#include "mpl/MacroPlacer.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "mpl/MacroPlacer.h"
 
 namespace sta {
-extern const char *mpl_tcl_inits[];
+extern const char* mpl_tcl_inits[];
 }
 
 extern "C" {
@@ -59,9 +59,8 @@ void initMacroPlacer(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::mpl_tcl_inits);
-  openroad->getMacroPlacer()->init(openroad->getDb(),
-                                   openroad->getSta(),
-                                   openroad->getLogger());
+  openroad->getMacroPlacer()->init(
+      openroad->getDb(), openroad->getSta(), openroad->getLogger());
 }
 
 void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)

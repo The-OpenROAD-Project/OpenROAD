@@ -201,7 +201,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
   _spef->_independentExtCorners = _prevControl->_independentExtCorners;
   char filename[1024];
   char cName[128];
-  char seqName[64];
+  char seqName[128];
   const char* newp = "/tmp/new";
   if (_newSpefFilePrefix)
     newp = _newSpefFilePrefix;
@@ -234,7 +234,6 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
 // wis 6
 void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
                                    uint nn, bool dual_incr_spef) {
-  uint cnt;
   char fname[1200];
   if (!dual_incr_spef) {
     debugPrint(logger_, RCX, "spef_out", 1,
@@ -244,9 +243,9 @@ void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
                filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(RCX, 58, "Can't open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 483, "Can't open file \"{}\" to write spef.", filename);
     else
-      cnt = _spef->writeBlock(
+      _spef->writeBlock(
           NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/,
           "OHM" /*resUnit*/, false /*stopAfterMap*/, bnets /*tnets*/,
           false /*wClock*/, false /*wConn*/, false /*wCap*/,
@@ -262,7 +261,7 @@ void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
   if (openSpefFile(fname, 1) > 0)
     logger_->info(RCX, 59, "Can't open file \"{}\" to write spef.", fname);
   else
-    cnt = _spef->writeBlock(
+    _spef->writeBlock(
         NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/, "OHM" /*resUnit*/,
         false /*stopAfterMap*/, bnets /*tnets*/, false /*wClock*/,
         false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/, false /*wRes*/,
@@ -273,7 +272,7 @@ void extMain::writeIncrementalSpef(char* filename, std::vector<dbNet*>& bnets,
   if (openSpefFile(fname, 1) > 0)
     logger_->info(RCX, 61, "Can't open file \"{}\" to write spef.", fname);
   else
-    cnt = _spef->writeBlock(
+    _spef->writeBlock(
         NULL /*nodeCoord*/, _excludeCells, "PF" /*capUnit*/, "OHM" /*resUnit*/,
         false /*stopAfterMap*/, bnets /*tnets*/, false /*wClock*/,
         false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/, false /*wRes*/,
@@ -298,12 +297,11 @@ void extMain::writeSpef(char* filename, std::vector<dbNet*>& tnets, int corner,
     for (uint nn = 0; nn < cCnt; nn++)
       _spef->_active_corner_number[nn] = nn;
   }
-  uint cnt;
   if (openSpefFile(filename, 1) > 0) {
     logger_->info(RCX, 62, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
-    cnt = _spef->writeBlock(
+    _spef->writeBlock(
         coord /*nodeCoord*/, NULL /*excludeCell*/, "PF" /*capUnit*/,
         "OHM" /*resUnit*/, false /*stopAfterMap*/, tnets /*tnets*/,
         false /*wClock*/, false /*wConn*/, false /*wCap*/, false /*wOnlyCCcap*/,
@@ -402,6 +400,7 @@ extMain::extMain(uint menuId)
       _coordsVDD(nullptr),
       _subCktNodeFP{{nullptr, nullptr}, {nullptr, nullptr}},
       _junct2iterm(nullptr) {
+  _debug_net_id = 0;
   _previous_percent_extracted = 0;
   _power_extract_only = false;
   _skip_power_stubs = false;
@@ -566,9 +565,8 @@ uint extMain::getExtLayerCnt(dbTech* tech) {
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n++;
@@ -595,10 +593,10 @@ uint extMain::addExtModel(dbTech* tech) {
     _modelTable->add(m);
   }
 
-  int dbunit = _block->getDbUnitsPerMicron();
-  double dbFactor = 1;
-  if (dbunit > 1000)
-    dbFactor = dbunit * 0.001;
+  // int dbunit = _block->getDbUnitsPerMicron();
+  // double dbFactor = 1;
+  // if (dbunit > 1000)
+  //   dbFactor = dbunit * 0.001;
 
   dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
@@ -606,16 +604,14 @@ uint extMain::addExtModel(dbTech* tech) {
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n = layer->getRoutingLevel();
 
     uint w = layer->getWidth();  // nm
 
-    double areacap = layer->getCapacitance() / (dbFactor * dbFactor);
     double cap = layer->getCapacitance();
 
     // double cap
@@ -658,12 +654,10 @@ uint extMain::getResCapTable(bool lefRC) {
 
   uint cnt = 0;
   uint n = 0;
-  bool allRzero = true;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     n = layer->getRoutingLevel();
@@ -694,8 +688,6 @@ uint extMain::getResCapTable(bool lefRC) {
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
 
       double res = layer->getResistance();  // OHMS per square
-      if (res != 0.0)
-        allRzero = false;
       _resistanceTable[jj][n] = res;
 
       _capacitanceTable[jj][n] = 0.0;
@@ -735,12 +727,6 @@ uint extMain::getResCapTable(bool lefRC) {
     }
     cnt++;
   }
-  //	if (allRzero)
-  //	{
-  //		logger_->info(RCX, 0, "Warning: No RESISTANCE from all layers in
-  // the
-  // lef files. Can't do extraction.\n\n"); 		return 0;
-  //	}
   return cnt;
 }
 bool extMain::checkLayerResistance() {
@@ -750,9 +736,8 @@ bool extMain::checkLayerResistance() {
   uint cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
-    if (type.getValue() != dbTechLayerType::ROUTING)
+    if (layer->getRoutingLevel() == 0)
       continue;
 
     double res = layer->getResistance();  // OHMS per square
@@ -1317,18 +1302,12 @@ void extMain::measureRC(CoupleOptions& options) {
   m._ccMergedContextLength = _ccMergedContextLength;
   m._ccMergedContextArray = _ccMergedContextArray;
 
-  //	fprintf(stdout, "extCompute:: met= %d  len= %d  dist= %d  <===>
-  // modelCnt= %d  layerCnt= %d\n", 		met, len, dist,
-  // m->getModelCnt(), m->getLayerCnt());
-
-  uint debugNetId = _debug_net_id;
-
   dbRSeg* rseg1 = NULL;
   dbNet* srcNet = NULL;
   if (rsegId1 > 0) {
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
     srcNet = rseg1->getNet();
-    printNet(srcNet, debugNetId);
+    printNet(srcNet, _debug_net_id);
   }
 
   dbRSeg* rseg2 = NULL;
@@ -1336,12 +1315,11 @@ void extMain::measureRC(CoupleOptions& options) {
   if (rsegId2 > 0) {
     rseg2 = dbRSeg::getRSeg(_block, rsegId2);
     tgtNet = rseg2->getNet();
-    printNet(tgtNet, debugNetId);
+    printNet(tgtNet, _debug_net_id);
   }
   if (_lefRC)
     return;
 
-  bool watchNets = IsDebugNets(srcNet, tgtNet, debugNetId);
   m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
   m._pixelTable = _geomSeq;
 

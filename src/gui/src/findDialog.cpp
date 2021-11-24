@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,22 +47,24 @@ void FindObjectDialog::accept()
 {
   std::string pattern_to_find = findObjEdit->text().toStdString();
   bool match_case = false;
-  bool match_regex = false;
-  if (matchCaseCheckBox->isEnabled())
+  if (matchCaseCheckBox->isEnabled()) {
     match_case = matchCaseCheckBox->isChecked();
-  if (matchRegExCheckBox->isEnabled())
-    match_regex = matchRegExCheckBox->isChecked();
+  }
 
-  if (this->findObjType->currentText() == "Instance") {
-    Gui::get()->addSelectedInsts(pattern_to_find.c_str(),
-                                 match_case,
-                                 match_regex,
-                                 addToHighlightCheckBox->isChecked());
-  } else
-    Gui::get()->addSelectedNets(pattern_to_find.c_str(),
+  if (findObjType->currentText() == "Instance") {
+    Gui::get()->select("Inst", pattern_to_find.c_str(),
+                               match_case,
+                               addToHighlightCheckBox->isChecked() ? 0 : -1);
+  } else if (findObjType->currentText() == "Net") {
+    Gui::get()->select("Net", pattern_to_find.c_str(),
+                              match_case,
+                              addToHighlightCheckBox->isChecked() ? 0 : -1);
+  } else {
+    Gui::get()->select("BTerm", pattern_to_find.c_str(),
                                 match_case,
-                                match_regex,
-                                addToHighlightCheckBox->isChecked());
+                                addToHighlightCheckBox->isChecked() ? 0 : -1);
+  }
+
   QDialog::accept();
 }
 

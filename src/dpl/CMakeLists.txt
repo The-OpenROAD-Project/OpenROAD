@@ -54,6 +54,7 @@ target_sources(dpl
     src/Place.cpp
     src/FillerPlacement.cpp
     src/OptMirror.cpp
+    src/Graphics.cpp
 )
 
 target_include_directories(dpl
@@ -63,15 +64,20 @@ target_include_directories(dpl
 
 target_link_libraries(dpl
   PRIVATE
-    opendb
+    gui
+    odb
     OpenSTA
     utl
+)
+
+messages(
+  TARGET dpl
 )
 
 ################################################################
 
 add_custom_target(opendp_tags etags -o TAGS
   ${OPENDP_SRC}
-  ${OPENDB_HOME}/include/dpl/*.h
+  ${OPENDP_HOME}/include/dpl/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

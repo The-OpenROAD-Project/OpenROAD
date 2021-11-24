@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -82,11 +82,14 @@ struct Interval
   Edge edge;
   int begin;
   int end;
+  int layer;
   Interval() = default;
-  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e) {}
+  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e), layer(-1) {}
+  Interval(Edge edg, int b, int e, int l) : edge(edg), begin(b), end(e), layer(l) {}
   Edge getEdge() { return edge; }
   int getBegin() { return begin; }
   int getEnd() { return end; }
+  int getLayer() { return layer; }
 };
 
 struct Constraint
@@ -102,11 +105,13 @@ struct Constraint
       : pin_list(pins), direction(dir), interval(interv)
   {
     box = odb::Rect(-1, -1, -1, -1);
+    pins_per_slots = 0;
   }
   Constraint(PinList pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), box(b)
   {
     interval = Interval(Edge::invalid, -1, -1);
+    pins_per_slots = 0;
   }
 };
 
@@ -158,19 +163,22 @@ class IOPlacer
                              int llx, int lly, int urx, int ury,
                              int width, int height, int keepout);
   int getTopLayer() { return top_grid_.layer; }
-  void placePin(odb::dbBTerm* bterm, int layer, int x, int y, int width, int height);
+  void placePin(odb::dbBTerm* bterm,
+                int layer,
+                int x,
+                int y,
+                int width,
+                int height,
+                bool force_to_die_bound);
 
  private:
   Netlist netlist_;
   Core core_;
   std::vector<IOPin> assignment_;
-  bool report_hpwl_;
 
   int slots_per_section_;
   float slots_increase_factor_;
-  float usage_increase_factor_;
 
-  bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
@@ -226,13 +234,20 @@ class IOPlacer
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();
 
-  void updateOrientation(IOPin&);
-  void updatePinArea(IOPin&);
-  bool checkBlocked(Edge edge, int pos);
+  void updateOrientation(IOPin& pin);
+  void updatePinArea(IOPin& pin);
+  void movePinToTrack(odb::Point& pos,
+                      int layer,
+                      int width,
+                      int height,
+                      const Rect& die_boundary);
+  Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
+  bool checkBlocked(Edge edge, int pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
+  double dbuToMicrons(int64_t dbu);
 
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,

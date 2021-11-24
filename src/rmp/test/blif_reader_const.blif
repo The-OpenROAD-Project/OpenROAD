@@ -1,0 +1,11 @@
+.model tmp_circuit
+.inputs n1 n3
+.outputs n17
+
+
+.gate _const0_ z=lonet
+.gate _const1_ z=hinet
+.gate AND2_X1 A1=n1 A2=lonet ZN=t1
+.gate AND2_X1 A1=n3 A2=hinet ZN=t2
+.gate OR2_X1 A1=t1 A2=t2 ZN=n17
+.end

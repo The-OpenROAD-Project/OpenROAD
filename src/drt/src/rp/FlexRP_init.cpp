@@ -52,7 +52,7 @@ void FlexRP::init()
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
     tech_->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
@@ -62,9 +62,8 @@ void FlexRP::init()
     tech_->line2LineForbiddenLen.push_back(fourForbiddenRanges);
     tech_->viaForbiddenThrough.push_back(fourForbidden);
     for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen_.push_back(eightForbiddenRanges);
-      ndr->viaForbiddenTurnLen_.push_back(fourForbiddenRanges);
+      ndr->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
+      ndr->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
     }
   }
-
 }

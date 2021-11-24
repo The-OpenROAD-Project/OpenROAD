@@ -32,6 +32,8 @@
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/geometry/geometries/segment.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -39,7 +41,12 @@
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
+namespace odb {
+  class Rect;
+}
 
 namespace fr {
 using Logger = utl::Logger;
@@ -61,30 +68,17 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
+using odb::dbIoType;
+using odb::dbMasterType;
+using odb::dbSigType;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
-enum frOrientEnum
-{
-  frcR0 = 0,     // N
-  frcR90 = 1,    // W
-  frcR180 = 2,   // S
-  frcR270 = 3,   // E
-  frcMY = 4,     // FN
-  frcMXR90 = 5,  // FW
-  frcMX = 6,     // FS
-  frcMYR90 = 7   // FE
-};
 enum frEndStyleEnum
 {
   frcTruncateEndStyle = 0,  // ext = 0
   frcExtendEndStyle = 1,    // ext = half width
   frcVariableEndStyle = 2   // ext = variable
-};
-enum frPrefRoutingDirEnum
-{
-  frcNotApplicablePrefRoutingDir = 0,
-  frcNonePrefRoutingDir = 1,
-  frcHorzPrefRoutingDir = 2,
-  frcVertPrefRoutingDir = 3
 };
 enum frBlockObjectEnum
 {
@@ -147,28 +141,6 @@ enum class frGuideEnum
   frcGuideTrunk,
   frcGuideShortConn
 };
-enum class frTermEnum
-{
-  frcNormalTerm,
-  frcClockTerm,
-  frcPowerTerm,
-  frcGroundTerm
-};
-enum class frNetEnum
-{
-  frcNormalNet,
-  frcClockNet,
-  frcPowerNet,
-  frcGroundNet
-};
-enum class frTermDirectionEnum
-{
-  UNKNOWN,
-  INPUT,
-  OUTPUT,
-  INOUT,
-  FEEDTHRU,
-};
 enum class frNodeTypeEnum
 {
   frcSteiner,
@@ -219,7 +191,9 @@ enum class frConstraintTypeEnum
   frcLef58RightWayOnGridOnlyConstraint,
   frcLef58RectOnlyConstraint,
   frcRecheckConstraint,
-  frcSpacingTableInfluenceConstraint
+  frcSpacingTableInfluenceConstraint,
+  frcLef58EolExtensionConstraint,
+  frcLef58EolKeepOutConstraint
 };
 
 enum class frCornerTypeEnum
@@ -265,14 +239,6 @@ enum class frDirEnum
   U = 6
 };
 
-enum class frLayerTypeEnum
-{
-  CUT,
-  ROUTING,
-  IMPLANT,
-  MASTERSLICE
-};
-
 enum class AccessPointTypeEnum
 {
   Ideal,
@@ -280,53 +246,6 @@ enum class AccessPointTypeEnum
   Offgrid,
   None
 };
-
-enum class MacroClassEnum
-{
-  UNKNOWN,
-  CORE,
-  CORE_TIEHIGH,
-  CORE_TIELOW,
-  CORE_WELLTAP,
-  CORE_SPACER,
-  CORE_ANTENNACELL,
-  COVER,
-  BLOCK,
-  RING,
-  PAD,
-  PAD_INPUT,
-  PAD_OUTPUT,
-  PAD_INOUT,
-  PAD_POWER,
-  PAD_SPACER,
-  PAD_AREAIO,
-  ENDCAP,
-  ENDCAP_PRE,
-  ENDCAP_POST,
-  ENDCAP_TOPLEFT,
-  ENDCAP_TOPRIGHT,
-  ENDCAP_BOTTOMLEFT,
-  ENDCAP_BOTTOMRIGHT
-};
-
-// These will go away when we move to OpenDB's types
-inline bool isPad(MacroClassEnum e)
-{
-  return e == MacroClassEnum::PAD || e == MacroClassEnum::PAD_INPUT
-         || e == MacroClassEnum::PAD_OUTPUT || e == MacroClassEnum::PAD_INOUT
-         || e == MacroClassEnum::PAD_POWER || e == MacroClassEnum::PAD_SPACER
-         || e == MacroClassEnum::PAD_AREAIO;
-}
-
-inline bool isEndcap(MacroClassEnum e)
-{
-  return e == MacroClassEnum::ENDCAP || e == MacroClassEnum::ENDCAP_PRE
-         || e == MacroClassEnum::ENDCAP_POST
-         || e == MacroClassEnum::ENDCAP_TOPLEFT
-         || e == MacroClassEnum::ENDCAP_TOPRIGHT
-         || e == MacroClassEnum::ENDCAP_BOTTOMLEFT
-         || e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
-}
 
 // note: In ascending cost order for FlexPA
 enum class frAccessPointEnum
@@ -344,10 +263,8 @@ typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
 typedef bg::model::box<point_t> box_t;
 typedef bg::model::segment<point_t> segment_t;
 
-class frBox;
-
-template <typename T, typename Key = frBox>
-using rq_box_value_t = std::pair<Key, T>;
+template <typename T>
+using rq_box_value_t = std::pair<odb::Rect, T>;
 
 struct frDebugSettings
 {
@@ -362,7 +279,8 @@ struct frDebugSettings
         gcellY(-1),
         iter(0),
         paMarkers(false),
-        dist(false)
+        dist(false),
+        paCombining(false)
   {
   }
 
@@ -381,6 +299,28 @@ struct frDebugSettings
   int iter;
   bool paMarkers;
   bool dist;
+  bool paCombining;
+};
+
+struct drEolSpacingConstraint
+{
+  drEolSpacingConstraint(frCoord width = 0,
+                         frCoord space = 0,
+                         frCoord within = 0)
+      : eolWidth(width), eolSpace(space), eolWithin(within)
+  {
+  }
+  frCoord eolWidth;
+  frCoord eolSpace;
+  frCoord eolWithin;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & eolWidth;
+    (ar) & eolSpace;
+    (ar) & eolWithin;
+  }
+  friend class boost::serialization::access;
 };
 
 // Avoids the need to split the whole serializer like

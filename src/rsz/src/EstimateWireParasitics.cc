@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+#include "rsz/SteinerTree.hh"
 
 #include "utl/Logger.h"
 
@@ -44,7 +45,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/ArcDelayCalc.hh"
 
-#include "rsz/SteinerTree.hh"
+#include "grt/GlobalRouter.h"
 
 namespace rsz {
 
@@ -162,15 +163,85 @@ Resizer::wireClkCapacitance(const Corner *corner)
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::ensureWireParasitics()
+Resizer::ensureParasitics()
 {
-  if (have_estimated_parasitics_) {
+  estimateParasitics(global_router_->haveRoutes()
+                     ? ParasiticsSrc::global_routing
+                     : ParasiticsSrc::placement);
+}
+
+void
+Resizer::estimateParasitics(ParasiticsSrc src)
+{
+  switch (src) {
+  case ParasiticsSrc::placement:
+    estimateWireParasitics();
+    break;
+  case ParasiticsSrc::global_routing:
+    global_router_->estimateRC();
+    parasitics_src_ = ParasiticsSrc::global_routing;
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+}
+
+bool
+Resizer::haveEstimatedParasitics() const
+{
+  return parasitics_src_ != ParasiticsSrc::none;
+}
+
+void
+Resizer::incrementalParasiticsBegin()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
+    break;
+  case ParasiticsSrc::global_routing:
+    incr_groute_ = new IncrementalGRoute(global_router_, block_);
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+  parasitics_invalid_.clear();
+}
+
+void
+Resizer::incrementalParasiticsEnd()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
+    break;
+  case ParasiticsSrc::global_routing:
+    delete incr_groute_;
+    incr_groute_ = nullptr;
+    break;
+  case ParasiticsSrc::none:
+    break;
+  }
+  parasitics_invalid_.clear();
+}
+
+void
+Resizer::updateParasitics()
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
     for (const Net *net : parasitics_invalid_)
       estimateWireParasitic(net);
     parasitics_invalid_.clear();
+    break;
+  case ParasiticsSrc::global_routing: {
+    incr_groute_->updateRoutes();
+    for (const Net *net : parasitics_invalid_)
+      global_router_->estimateRC(db_network_->staToDb(net));
+    parasitics_invalid_.clear();
+    break;
   }
-  else
-    estimateWireParasitics();
+  case ParasiticsSrc::none:
+    break;
+  }
 }
 
 void
@@ -182,25 +253,6 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin)
 }
 
 void
-Resizer::ensureWireParasitic(const Net *net)
-{
-  if (have_estimated_parasitics_) {
-    PinSet *drivers = network_->drivers(net);
-    if (drivers && !drivers->empty()) {
-      PinSet::Iterator drvr_iter(drivers);
-      Pin *drvr_pin = drvr_iter.next();
-      // Sufficient to check for parasitic for one corner because
-      // they are all made at the same time.
-      const Corner *corner = sta_->corners()->findCorner(0);
-      const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
-      if (parasitics_invalid_.hasKey(net)
-          || parasitics_->findPiElmore(drvr_pin,RiseFall::rise(),parasitic_ap) == nullptr)
-        estimateWireParasitic(net);
-    }
-  }
-}
-
-void
 Resizer::ensureWireParasitic(const Pin *drvr_pin,
                              const Net *net)
 {
@@ -208,15 +260,29 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
   // they are all made at the same time.
   const Corner *corner = sta_->corners()->findCorner(0);
   const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
-  if (have_estimated_parasitics_
-      && net
-      && (parasitics_invalid_.hasKey(net)
-          || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
-                                       parasitic_ap) == nullptr)) {
-    estimateWireParasitic(net);
-    parasitics_invalid_.erase(net);
+  if (parasitics_invalid_.hasKey(net)
+      || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+                                   parasitic_ap) == nullptr) {
+    switch (parasitics_src_) {
+    case ParasiticsSrc::placement:
+      estimateWireParasitic(drvr_pin, net);
+      parasitics_invalid_.erase(net);
+      break;
+    case ParasiticsSrc::global_routing: {
+      grt::IncrementalGRoute incr_groute(global_router_, block_);
+      global_router_->addDirtyNet(db_network_->staToDb(net));
+      incr_groute.updateRoutes();
+      global_router_->estimateRC(db_network_->staToDb(net));
+      parasitics_invalid_.erase(net);
+      break;
+    }
+    case ParasiticsSrc::none:
+      break;
+    }
   }
 }
+
+////////////////////////////////////////////////////////////////
 
 void
 Resizer::estimateWireParasitics()
@@ -232,7 +298,8 @@ Resizer::estimateWireParasitics()
       estimateWireParasitic(net);
     }
     delete net_iter;
-    have_estimated_parasitics_ = true;
+
+    parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
   }
 }
@@ -240,15 +307,28 @@ Resizer::estimateWireParasitics()
 void
 Resizer::estimateWireParasitic(const Net *net)
 {
+  PinSet *drivers = network_->drivers(net);
+  if (drivers && !drivers->empty()) {
+    PinSet::Iterator drvr_iter(drivers);
+    Pin *drvr_pin = drvr_iter.next();
+    estimateWireParasitic(drvr_pin, net);
+  }
+}
+
+void
+Resizer::estimateWireParasitic(const Pin *drvr_pin,
+                               const Net *net)
+{
   if (!network_->isPower(net)
-      && !network_->isGround(net)) {
+      && !network_->isGround(net)
+      && !sta_->isIdealClock(drvr_pin)) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
       makePadParasitic(net);
     else
-      estimateWireParasiticSteiner(net);
+      estimateWireParasiticSteiner(drvr_pin, net);
   }
 }
 
@@ -282,14 +362,16 @@ Resizer::makePadParasitic(const Net *net)
     const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
     parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                           corner, max_, parasitics_ap);
-    parasitics_->deleteParasiticNetwork(net, parasitics_ap);
   }
+  parasitics_->deleteParasiticNetworks(net);
 }
 
 void
-Resizer::estimateWireParasiticSteiner(const Net *net)
+Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
+                                      const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, false, max_steiner_pin_count_,
+                                      stt_builder_, db_network_, logger_);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));
@@ -302,45 +384,61 @@ Resizer::estimateWireParasiticSteiner(const Net *net)
       int branch_count = tree->branchCount();
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
-        Pin *pin1, *pin2;
         SteinerPt steiner_pt1, steiner_pt2;
         int wire_length_dbu;
         tree->branch(i,
-                     pt1, pin1, steiner_pt1,
-                     pt2, pin2, steiner_pt2,
+                     pt1, steiner_pt1,
+                     pt2, steiner_pt2,
                      wire_length_dbu);
-        ParasiticNode *n1 = findParasiticNode(tree, parasitic, net, pin1, steiner_pt1);
-        ParasiticNode *n2 = findParasiticNode(tree, parasitic, net, pin2, steiner_pt2);
-        if (n1 != n2) {
-          if (wire_length_dbu == 0)
-            // Use a small resistor to keep the connectivity intact.
-            parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap);
-          else {
-            double length = dbuToMeters(wire_length_dbu);
-            double cap = length * wire_cap;
-            double res = length * wire_res;
-            // Make pi model for the wire.
-            debugPrint(logger_, RSZ, "resizer_parasitics", 2,
-                       " pi {} l={} c2={} rpi={} c1={} {}",
-                       parasitics_->name(n1),
-                       units_->distanceUnit()->asString(length),
-                       units_->capacitanceUnit()->asString(cap / 2.0),
-                       units_->resistanceUnit()->asString(res),
-                       units_->capacitanceUnit()->asString(cap / 2.0),
-                       parasitics_->name(n2));
-            parasitics_->incrCap(n1, cap / 2.0, parasitics_ap);
-            parasitics_->makeResistor(nullptr, n1, n2, res, parasitics_ap);
-            parasitics_->incrCap(n2, cap / 2.0, parasitics_ap);
-          }
+        ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt1);
+        ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt2);
+        if (wire_length_dbu == 0)
+          // Use a small resistor to keep the connectivity intact.
+          parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap);
+        else {
+          double length = dbuToMeters(wire_length_dbu);
+          double cap = length * wire_cap;
+          double res = length * wire_res;
+          // Make pi model for the wire.
+          debugPrint(logger_, RSZ, "resizer_parasitics", 2,
+                     " pi {} l={} c2={} rpi={} c1={} {}",
+                     parasitics_->name(n1),
+                     units_->distanceUnit()->asString(length),
+                     units_->capacitanceUnit()->asString(cap / 2.0),
+                     units_->resistanceUnit()->asString(res),
+                     units_->capacitanceUnit()->asString(cap / 2.0),
+                     parasitics_->name(n2));
+          parasitics_->incrCap(n1, cap / 2.0, parasitics_ap);
+          parasitics_->makeResistor(nullptr, n1, n2, res, parasitics_ap);
+          parasitics_->incrCap(n2, cap / 2.0, parasitics_ap);
         }
+        parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, parasitics_ap);
+        parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, parasitics_ap);
       }
       ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
       const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
       parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                             corner, max_, parasitics_ap);
-      parasitics_->deleteParasiticNetwork(net, parasitics_ap);
     }
+    parasitics_->deleteParasiticNetworks(net);
     delete tree;
+  }
+}
+
+void
+Resizer::parasiticNodeConnectPins(Parasitic *parasitic,
+                                  ParasiticNode *node,
+                                  SteinerTree *tree,
+                                  SteinerPt pt,
+                                  const ParasiticAnalysisPt *parasitics_ap)
+{
+  const PinSeq *pins = tree->pins(pt);
+  if (pins) {
+    for (Pin *pin : *pins) {
+      ParasiticNode *pin_node = parasitics_->ensureParasiticNode(parasitic, pin);
+      // Use a small resistor to keep the connectivity intact.
+      parasitics_->makeResistor(nullptr, node, pin_node, 1.0e-3, parasitics_ap);
+    }
   }
 }
 
@@ -410,26 +508,10 @@ Resizer::isPad(const Instance *inst) const
   return false;
 }
 
-ParasiticNode *
-Resizer::findParasiticNode(SteinerTree *tree,
-                           Parasitic *parasitic,
-                           const Net *net,
-                           const Pin *pin,
-                           SteinerPt steiner_pt)
-{
-  if (pin == nullptr)
-    // If the steiner pt is on top of a pin, use the pin instead.
-    pin = tree->steinerPtAlias(steiner_pt);
-  if (pin)
-    return parasitics_->ensureParasiticNode(parasitic, pin);
-  else 
-    return parasitics_->ensureParasiticNode(parasitic, net, steiner_pt);
-}
-
 void
 Resizer::parasiticsInvalid(const Net *net)
 {
-  if (have_estimated_parasitics_) {
+  if (haveEstimatedParasitics()) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 2, "parasitics invalid {}",
                network_->pathName(net));
     parasitics_invalid_.insert(net);

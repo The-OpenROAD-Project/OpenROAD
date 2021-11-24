@@ -51,6 +51,12 @@ class frDesign
         rq_(std::make_unique<frRegionQuery>(this, logger))
   {
   }
+  frDesign()
+      : topBlock_(nullptr),
+        tech_(nullptr),
+        rq_(nullptr)
+  {
+  }
   // getters
   frBlock* getTopBlock() const { return topBlock_.get(); }
   frTechObject* getTech() const { return tech_.get(); }
@@ -70,6 +76,11 @@ class frDesign
   }
   // others
   friend class io::Parser;
+  bool isHorizontalLayer(frLayerNum l)
+  {
+    return getTech()->isHorizontalLayer(l);
+  }
+  bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
 
  private:
   std::unique_ptr<frBlock> topBlock_;
@@ -77,6 +88,13 @@ class frDesign
   std::vector<std::unique_ptr<frBlock>> refBlocks_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & tech_;
+    (ar) & rq_;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -26,6 +26,8 @@ usage: $0 [CMD] [OPTIONS]
                                   'builder': os + packages to compile app +
                                              copy source code and build app
                                   'runtime': os + packages to run a compiled app
+                                  'binary': os + packages to run a compiled
+                                            app + binary set as entrypoint
   -threads                      Max number of threads to use if compiling.
                                   Default = \$(nproc)
   -sha                          Use git commit sha as the tag image. Default is
@@ -58,7 +60,7 @@ _setup() {
             _help
             ;;
     esac
-    imageName="${org}/${os}-${target}"
+    imageName="${IMAGE_NAME_OVERRIDE:-"${org}/${os}-${target}"}"
     if [[ "${useCommitSha}" == "yes" ]]; then
         imageTag="${commitSha}"
     else
@@ -66,21 +68,27 @@ _setup() {
     fi
     case "${target}" in
         "builder" )
-            fromImage="${org}/${os}-dev:${imageTag}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-"${org}/${os}-dev"}:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
-            imageName="${imageName}-${compiler}"
+            imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
         "dev" )
-            fromImage="${osBaseImage}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
             buildArgs=""
             ;;
         "runtime" )
-            fromImage="${osBaseImage}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
-            copyImage="${org}/${os}-builder-${compiler}:${imageTag}"
+            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
+            buildArgs="--build-arg copyImage=${copyImage}"
+            ;;
+        "binary" )
+            fromImage="${FROM_IMAGE_OVERRIDE:-${org}/${os}-runtime}:${imageTag}"
+            context="etc"
+            copyImage="${COPY_IMAGE_OVERRIDE:-"${org}/${os}-builder-${compiler}"}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
             ;;
         *)

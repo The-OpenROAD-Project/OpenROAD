@@ -12,7 +12,7 @@ Footprint library {
     vddio_hvc vddio_hvc_power_pad 
     vddio_lvc vddio_lvc_power_pad 
     vssio_hvc vssio_hvc_ground_pad
-    vssio_lvc vssio_hvc_ground_pad
+    vssio_lvc vssio_lvc_ground_pad
     corner sky130_fd_io__corner_bus_overlay
     fill {s8iom0s8_com_bus_slice_tied_1um}
   }

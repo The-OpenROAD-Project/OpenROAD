@@ -41,14 +41,14 @@ class frBoundary : public frFig
   // constructors
   frBoundary() : frFig() {}
   // getters
-  const std::vector<frPoint>& getPoints() const { return points_; }
+  const std::vector<Point>& getPoints() const { return points_; }
   frUInt4 getNumPoints() const { return points_.size(); }
   // setters
-  void setPoints(const std::vector<frPoint>& pIn) { points_ = pIn; }
+  void setPoints(const std::vector<Point>& pIn) { points_ = pIn; }
   // others
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     frCoord llx = 0;
     frCoord lly = 0;
@@ -66,18 +66,18 @@ class frBoundary : public frFig
       urx = (urx > point.x()) ? urx : point.x();
       ury = (ury > point.y()) ? ury : point.y();
     }
-    boxIn.set(llx, lly, urx, ury);
+    boxIn.init(llx, lly, urx, ury);
   }
-  void move(const frTransform& xform) override
+  void move(const dbTransform& xform) override
   {
     for (auto& point : points_) {
-      point.transform(xform);
+      xform.apply(point);
     }
   }
-  bool overlaps(const frBox& box) const override { return false; }
+  bool overlaps(const Rect& box) const override { return false; }
 
- private:
-  std::vector<frPoint> points_;
+ protected:
+  std::vector<Point> points_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

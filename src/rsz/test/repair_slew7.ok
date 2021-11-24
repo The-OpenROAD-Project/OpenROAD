@@ -41,8 +41,6 @@ Pin                                    Limit     Cap   Slack
 u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 1513um.
-[INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 3 instances.
 Startpoint: u1/A4 (internal pin)
 Endpoint: x5/Z (internal pin)
