@@ -214,6 +214,31 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
   return QStandardItemModel::data(index, role);
 }
 
+QVariant DisplayControlModel::headerData(int section,
+                                         Qt::Orientation orientation,
+                                         int role) const
+{
+  if (orientation == Qt::Horizontal) {
+    if (role == Qt::DisplayRole) {
+      if (section == 0) {
+        return "";
+      }
+    } else if (role == Qt::DecorationRole) {
+      if (section == 1) {
+        return QIcon(":/palette.png");
+      } else if (section == 2) {
+        return QIcon(":/visible.png");
+      } else if (section == 3) {
+        return QIcon(":/select.png");
+      }
+    }
+  }
+
+  return QVariant();
+}
+
+///////////
+
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
@@ -224,7 +249,6 @@ DisplayControls::DisplayControls(QWidget* parent)
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
-  model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
@@ -353,6 +377,11 @@ DisplayControls::DisplayControls(QWidget* parent)
       registerRenderer(renderer);
     }
   }
+}
+
+DisplayControls::~DisplayControls()
+{
+  custom_controls_.clear();
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)

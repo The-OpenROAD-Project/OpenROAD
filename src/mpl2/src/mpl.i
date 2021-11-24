@@ -51,11 +51,21 @@ namespace mpl2 {
 
 bool rtl_macro_placer_cmd(const char* config_file,
                           const char* report_directory,
+                          const float area_wt,
+                          const float wirelength_wt,
+                          const float outline_wt,
+                          const float boundary_wt,
+                          const float macro_blockage_wt,
+                          const float location_wt,
+                          const float notch_wt,
                           const char* report_file,
                           const char* macro_blockage_file,
                           const char* prefer_location_file) {
   auto macro_placer = getMacroPlacer2();
-  return macro_placer->place(config_file, report_directory, report_file, macro_blockage_file, prefer_location_file);
+  return macro_placer->place(config_file, report_directory, 
+                            area_wt, wirelength_wt, outline_wt,
+                            boundary_wt, macro_blockage_wt, location_wt, notch_wt,
+                            report_file, macro_blockage_file, prefer_location_file);
 }
 
 } // namespace

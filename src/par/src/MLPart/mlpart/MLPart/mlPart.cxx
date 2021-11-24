@@ -332,25 +332,14 @@ MLPart::MLPart(PartitioningProblem& problem, const MLPartParams& params, BBPartB
 
 		_soln2Buffers = new PartitioningDoubleBuffer(problem.getSolnBuffers());
 
-		unsigned solnBegin = _soln2Buffers->beginUsedSoln(), solnEnd = _soln2Buffers->endUsedSoln();
-
-		// these allow to find "cre`me de la cre`me" of all
-		// solutions
-		double totalCost = 0.0;
-		unsigned totalNumLegalSolns = 0;
-		double curBestCost = DBL_MAX;
-		unsigned curBestSolnNum = UINT_MAX;
+		unsigned solnEnd = _soln2Buffers->endUsedSoln();
 
 		problem.propagateTerminals();
 
 		unsigned curBegin = 0;
 		unsigned clTreeNum = 0;
-		unsigned numClTrees;
 
 		unsigned step = _params.runsPerClTree;
-		double numClTreesDbl = max(double(1), ceil((solnEnd - solnBegin) / (1.0 * step)));
-		numClTrees = static_cast<unsigned>(rint(numClTreesDbl));
-
 
 		// narrow the buffers
 		unsigned curEnd = min(curBegin + step, solnEnd);

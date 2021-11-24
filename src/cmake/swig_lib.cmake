@@ -16,7 +16,7 @@ function(swig_lib)
   set(options "")
   set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER)
   set(multiValueArgs SWIG_INCLUDES SCRIPTS)
-
+  
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
       "${options}"
@@ -64,6 +64,8 @@ function(swig_lib)
 
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
+  set_property(SOURCE ${ARG_I_FILE}
+               PROPERTY USE_SWIG_DEPENDENCIES TRUE)
 
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}

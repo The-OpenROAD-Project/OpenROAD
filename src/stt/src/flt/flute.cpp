@@ -1262,7 +1262,7 @@ Tree flutes_MD(int d, const std::vector<DTYPE>& xs, const std::vector<DTYPE>& ys
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;
-  int i, r, p, maxbp, bestbp, bp, nbp, ub, lb, n1, n2, newacc;
+  int i, r, p, maxbp, bestbp = 0, bp, nbp, ub, lb, n1, n2, newacc;
   int nn1 = 0;
   int nn2 = 0;
   std::vector<int> si, s1, s2;

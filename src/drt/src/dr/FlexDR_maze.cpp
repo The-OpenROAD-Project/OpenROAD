@@ -1617,8 +1617,14 @@ void FlexDRWorker::route_queue()
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
-    logger_->info(DRT, 2001, "Starting worker {} with {} markers", getRouteBox(), 
-                                                                markers_.size());
+    logger_->info(DRT,
+                  2001,
+                  "Starting worker ({} {}) ({} {}) with {} markers",
+                  getRouteBox().ll().x(),
+                  getRouteBox().ll().y(),
+                  getRouteBox().ur().x(),
+                  getRouteBox().ur().y(),
+                  markers_.size());
     for (auto& marker : markers_) {
       cout << marker << "\n";
     }
@@ -1721,7 +1727,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
       net->clear();
       if (getDRIter() >= beginDebugIter)
-        logger_->info(DRT, 2002, "Routing net " + net->getFrNet()->getName() + "\n");
+        logger_->info(DRT, 2002, "Routing net {}", net->getFrNet()->getName());
       // route
       mazeNetInit(net);
       bool isRouted = routeNet(net);
@@ -1777,9 +1783,12 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           net->addRoute(std::move(tmp));
         }
         if (getDRIter() >= beginDebugIter && !getGCWorker()->getMarkers().empty()) {
-          logger_->info(DRT, 2003, "Ending net " + net->getFrNet()->getName() + " with markers:\n");
+          logger_->info(DRT,
+                        2003,
+                        "Ending net {} with markers:",
+                        net->getFrNet()->getName());
           for (auto& marker : getGCWorker()->getMarkers()) {
-              cout << *marker << "\n";
+            cout << *marker << "\n";
           }
         }
         didCheck = true;
@@ -1908,10 +1917,10 @@ void FlexDRWorker::routeNet_prep(
 {
   frBox3D* tbx = nullptr;
   if (getDRIter() >= beginDebugIter)
-    logger_->info(DRT, 2004, "Creating dest search points from pins:\n"); 
+    logger_->info(DRT, 2005, "Creating dest search points from pins:");
   for (auto& pin : net->getPins()) {
     if (getDRIter() >= beginDebugIter)
-      logger_->info(DRT, 2005, "Pin " + pin->getName() + "\n");
+      logger_->info(DRT, 2006, "Pin {}", pin->getName());
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
       if (AUTO_TAPER_NDR_NETS
@@ -1946,7 +1955,7 @@ void FlexDRWorker::routeNet_prep(
       ap->getMazeIdx(mi);
       if (getDRIter() >= beginDebugIter) {
         logger_->info(DRT,
-                      2006,
+                      2007,
                       "({} {} {} coords: {} {} {}\n",
                       mi.x(),
                       mi.y(),

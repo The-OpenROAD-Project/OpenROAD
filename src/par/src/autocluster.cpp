@@ -1415,32 +1415,7 @@ void AutoClusterMgr::seedFaninBfs(sta::BfsFwdIterator& bfs)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
-
-  sta::Instance* top_inst = network->topInstance();
-  sta::LeafInstanceIterator* leaf_iter = network->leafInstanceIterator(top_inst);
-  while(leaf_iter->hasNext()) {
-    sta::Instance* inst = leaf_iter->next();
-    sta::LibertyCell* lib_cell = network->libertyCell(inst);
-    if(lib_cell->isMacro()) {
-      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while(seq_iter.hasNext()) {
-        sta::Sequential* seq = seq_iter.next();
-        sta::FuncExpr* data_expr = seq->data();
-        sta::FuncExprPortIterator data_port_iter(data_expr);
-        while (data_port_iter.hasNext()) {
-          sta::LibertyPort* data_port = data_port_iter.next();
-          sta::Pin* data_pin = network->findPin(inst, data_port);
-          sta::LibertyPort* out_port = seq->output();
-          sta::Pin* out_pin = findSeqOutPin(inst, out_port);
-          if (data_pin && out_pin) {
-            sta::Vertex* data_vertex = graph->pinLoadVertex(data_pin);
-            sta::Vertex* out_vertex = graph->pinDrvrVertex(out_pin);
-          }
-        }
-      }
-    }
-  }
-  
+ 
   // Seed the BFS with macro output pins (or boundary pins)
   for(auto inst : seeds_) {
     std::string inst_name = network_->pathName(inst);
@@ -1476,7 +1451,6 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
   while(bfs.hasNext()) {
     sta::Vertex* vertex = bfs.next();
     sta::VertexInEdgeIterator fanin_iter(vertex, graph);
-    int i = 0;
     string fanin_name = "";
     while(fanin_iter.hasNext()) {
       sta::Edge* edge = fanin_iter.next();

@@ -1399,7 +1399,7 @@ void GlobalRouter::writeGuides(const char* file_name)
     guide_file.close();
     logger_->error(GRT, 73, "Guides file could not be opened.");
   }
-  odb::dbTechLayer* ph_layer_final;
+  odb::dbTechLayer* ph_layer_final = nullptr;
 
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
@@ -2177,9 +2177,6 @@ void GlobalRouter::initGrid(int max_layer)
   odb::Rect rect;
   block_->getDieArea(rect);
 
-  int lower_leftX = rect.xMin();
-  int lower_leftY = rect.yMin();
-
   int upper_rightX = rect.xMax();
   int upper_rightY = rect.yMax();
 
@@ -2322,7 +2319,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
       layer->getV54SpacingRules(rules);
       if (rules.size() > 0) {
         min_spc_valid = true;
-        int minSpc;
+        int minSpc = 0;
         for (auto rule : rules)
           minSpc = rule->getSpacing();
         if (up_via_valid)
@@ -2578,7 +2575,6 @@ void GlobalRouter::initNetlist()
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
-  uint wire_cnt = 0, via_cnt = 0;
   if (db_net->getSigType().getValue() != odb::dbSigType::POWER
       && db_net->getSigType().getValue() != odb::dbSigType::GROUND
       && !db_net->isSpecial() && db_net->getSWires().empty()
@@ -2672,9 +2668,6 @@ void GlobalRouter::makeItermPins(Net* net,
                                  const odb::Rect& die_area)
 {
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-  int min_routing_layer = (is_clock && min_layer_for_clock_ > 0)
-                              ? min_layer_for_clock_
-                              : min_routing_layer_;
   int max_routing_layer = (is_clock && max_layer_for_clock_ > 0)
                               ? max_layer_for_clock_
                               : max_routing_layer_;
@@ -2795,9 +2788,6 @@ void GlobalRouter::makeBtermPins(Net* net,
                                  const odb::Rect& die_area)
 {
   bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-  int min_routing_layer = (is_clock && min_layer_for_clock_ > 0)
-                              ? min_layer_for_clock_
-                              : min_routing_layer_;
   int max_routing_layer = (is_clock && max_layer_for_clock_ > 0)
                               ? max_layer_for_clock_
                               : max_routing_layer_;

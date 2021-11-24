@@ -136,7 +136,6 @@ void NetStacks::_trivInit(const HGraphFixed& hg, const Partitioning& part, const
         _cuts.reserve(movables.size() + 2);
         _cuts.push_back(0);
         typedef unsigned* up;
-        typedef unsigned** upp;
         typedef edgeAndWeight* pew;
         _netData = new unsigned[hg.getNumPins() + hg.getNumEdges() + 1];
         _netStacks = new up[hg.getNumEdges() + 1];

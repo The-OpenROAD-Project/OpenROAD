@@ -90,7 +90,8 @@ void FMNetCut2WayMoveManager::reinitialize() {
         const Partitioning& curPart = *_curPart;
         _partAreas[0] = _partAreas[1] = 0;
 
-        unsigned to, from;
+        unsigned to = 0;
+        unsigned from = 0;
 
         vector<HGWeight> nodeWeights(_hgraph.getNumNodes());
 

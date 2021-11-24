@@ -88,6 +88,7 @@ Driver pins
 
 Load pins
  clkbuf_0_clk/A input (BUF_X4) 3.004-3.402 (8, 11)
+
 Net u2z
  Pin capacitance: 1.062-1.140
  Wire capacitance: 0.444
@@ -101,3 +102,4 @@ Driver pins
 
 Load pins
  r3/D input (DFF_X1) 1.062-1.140 (10, 8)
+

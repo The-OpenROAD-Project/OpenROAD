@@ -136,6 +136,7 @@ class DisplayControlModel : public QStandardItemModel
   DisplayControlModel(QWidget* parent = nullptr);
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 };
 
 // This class shows the user the set of layers & objects that
@@ -151,6 +152,7 @@ class DisplayControls : public QDockWidget, public Options
 
  public:
   DisplayControls(QWidget* parent = nullptr);
+  ~DisplayControls();
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);

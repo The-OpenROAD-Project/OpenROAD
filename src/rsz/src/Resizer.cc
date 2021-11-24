@@ -164,12 +164,12 @@ Resizer::Resizer() :
   db_(nullptr),
   block_(nullptr),
   core_exists_(false),
+  parasitics_src_(ParasiticsSrc::none),
   design_area_(0.0),
   max_(MinMax::max()),
   buffer_lowest_drive_(nullptr),
   buffer_med_drive_(nullptr),
   buffer_highest_drive_(nullptr),
-  parasitics_src_(ParasiticsSrc::none),
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
   tgt_slews_{0.0, 0.0},
@@ -365,23 +365,28 @@ Resizer::removeBuffer(Instance *buffer)
     removed = out_net;
   }
 
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
+  if (!sdc_->isConstrained(in_pin)
+      && !sdc_->isConstrained(out_pin)
+      && !sdc_->isConstrained(removed)
+      && !sdc_->isConstrained(buffer)) {
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteInstance(buffer);
 
-  NetPinIterator *pin_iter = db_network_->pinIterator(removed);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    Instance *pin_inst = db_network_->instance(pin);
-    if (pin_inst != buffer) {
-      Port *pin_port = db_network_->port(pin);
-      sta_->disconnectPin(pin);
-      sta_->connectPin(pin_inst, pin_port, survivor);
+    NetPinIterator *pin_iter = db_network_->pinIterator(removed);
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      Instance *pin_inst = db_network_->instance(pin);
+      if (pin_inst != buffer) {
+        Port *pin_port = db_network_->port(pin);
+        sta_->disconnectPin(pin);
+        sta_->connectPin(pin_inst, pin_port, survivor);
+      }
     }
+    delete pin_iter;
+    sta_->deleteNet(removed);
+    parasitics_invalid_.erase(removed);
   }
-  delete pin_iter;
-  sta_->deleteNet(removed);
-  parasitics_invalid_.erase(removed);
 }
 
 void
@@ -957,9 +962,10 @@ Resizer::repairNet(Net *net,
           int wire_length;
           float pin_cap, fanout;
           PinSeq load_pins;
-          repairNet(tree, drvr_pt, SteinerTree::null_pt, net, drvr_pin,
-                    max_load_slew, max_cap, max_fanout, max_length, corner, 0,
-                    wire_length, pin_cap, fanout, load_pins);
+          if (drvr_pt != SteinerTree::null_pt)
+            repairNet(tree, drvr_pt, SteinerTree::null_pt, net, drvr_pin,
+                      max_load_slew, max_cap, max_fanout, max_length, corner, 0,
+                      wire_length, pin_cap, fanout, load_pins);
           repair_count++;
 
           if (resize_drvr)
@@ -1338,7 +1344,6 @@ Resizer::repairNet(SteinerTree *tree,
         // Setting this to max_slew is a quadratic in L
         // L^2*Rwire*Cwire + L*(Rdrvr*Cwire + Rwire*Cpin) + Rdrvr*Cpin - max_slew/k_threshold
         // Solve using quadradic eqn for L.
-        float k = 1.39;
         float a = wire_res * wire_cap;
         float b = r_drvr * wire_cap + wire_res * pin_cap;
         float c = r_drvr * pin_cap - max_load_slew / k_threshold;
@@ -1421,7 +1426,7 @@ Resizer::makeRepeater(const char *where,
   // between the driver and the loads changing the net as the repair works its
   // way from the loads to the driver.
 
-  Net *net, *in_net, *out_net;
+  Net *net = nullptr, *in_net, *out_net;
   bool have_output_port_load = false;
   for (Pin *pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
@@ -3999,7 +4004,6 @@ Resizer::findFanins(PinSet *end_pins)
     ends.insert(end);
   }
 
-  Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
