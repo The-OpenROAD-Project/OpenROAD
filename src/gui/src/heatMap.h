@@ -79,13 +79,15 @@ class HeatMapDataSource
   using Box = bg::model::box<Point>;
   using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>, bgi::quadratic<16>>;
 
-  HeatMapDataSource(const std::string& setup_title,
+  HeatMapDataSource(const std::string& name,
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource() {}
 
   void setBlock(odb::dbBlock* block) { block_ = block; }
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
+
+  const std::string& getName() const { return name_; }
 
   // setup
   void showSetup();
@@ -158,7 +160,7 @@ class HeatMapDataSource
   }
 
  private:
-  const std::string setup_title_;
+  const std::string name_;
   const std::string settings_group_;
 
   odb::dbBlock* block_;

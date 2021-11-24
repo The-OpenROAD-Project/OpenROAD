@@ -350,9 +350,9 @@ const QColor HeatMapSetup::colorToQColor(const Painter::Color& color)
 
 ///////////
 
-HeatMapDataSource::HeatMapDataSource(const std::string& setup_title,
+HeatMapDataSource::HeatMapDataSource(const std::string& name,
                                      const std::string& settings_group) :
-    setup_title_(setup_title),
+    name_(name),
     settings_group_(settings_group),
     block_(nullptr),
     grid_x_size_(10.0),
@@ -367,7 +367,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& setup_title,
     show_legend_(false),
     map_(),
     display_bands_(),
-    renderer_(std::make_unique<HeatMapRenderer>(setup_title, *this))
+    renderer_(std::make_unique<HeatMapRenderer>(name_, *this))
 {
   setDisplayBandCount(getDisplayBandsMaximumCount());
 }
@@ -596,7 +596,7 @@ const Painter::Color HeatMapDataSource::getColor(double value) const
 void HeatMapDataSource::showSetup()
 {
   HeatMapSetup dlg(*this,
-                   QString::fromStdString(setup_title_));
+                   QString::fromStdString(name_));
 
   QObject::connect(&dlg, &HeatMapSetup::apply, [this]() { renderer_->redraw(); });
 

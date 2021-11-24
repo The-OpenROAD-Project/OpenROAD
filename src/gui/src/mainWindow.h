@@ -284,8 +284,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
 
-  QAction* congestion_setup_;
-
   QLabel* location_;
 
   // created button actions

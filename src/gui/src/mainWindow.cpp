@@ -413,17 +413,11 @@ void MainWindow::createActions()
   timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
-  congestion_setup_ = new QAction("Congestion Setup...", this);
-
   help_ = new QAction("Help", this);
   help_->setShortcut(QString("Ctrl+H"));
 
   build_ruler_ = new QAction("Ruler", this);
   build_ruler_->setShortcut(QString("k"));
-
-  connect(congestion_setup_,
-          &QAction::triggered,
-          [this]() { routing_congestion_data_.showSetup(); });
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
@@ -451,8 +445,17 @@ void MainWindow::createMenus()
   view_menu_->addAction(zoom_out_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
-  tools_menu_->addAction(congestion_setup_);
   tools_menu_->addAction(build_ruler_);
+  auto heat_maps = tools_menu_->addMenu("&Heat maps");
+  connect(heat_maps->addAction(QString::fromStdString(routing_congestion_data_.getName())),
+          &QAction::triggered,
+          [this]() { routing_congestion_data_.showSetup(); });
+  connect(heat_maps->addAction(QString::fromStdString(placement_congestion_data_.getName())),
+          &QAction::triggered,
+          [this]() { placement_congestion_data_.showSetup(); });
+  connect(heat_maps->addAction(QString::fromStdString(power_density_data_.getName())),
+          &QAction::triggered,
+          [this]() { power_density_data_.showSetup(); });
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -474,7 +477,6 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("Toolbar");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
-  view_tool_bar_->addAction(congestion_setup_);
   view_tool_bar_->addAction(inspect_);
   view_tool_bar_->addAction(timing_debug_);
 
@@ -1014,7 +1016,6 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -1029,7 +1030,6 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
