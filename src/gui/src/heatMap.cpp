@@ -75,8 +75,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     bands_selector_(new QSpinBox(this)),
     gradient_(new QLabel(this)),
     colors_list_(new QListWidget(this)),
-    rebuild_(new QPushButton("Rebuild", this)),
-    redraw_(new QPushButton("Repaint", this)),
+    rebuild_(new QPushButton("Rebuild data", this)),
     close_(new QPushButton("Close", this))
 {
   setWindowTitle(title);
@@ -130,7 +129,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(rebuild_);
-  buttons->addWidget(redraw_);
   buttons->addWidget(close_);
 
   overall_layout->addLayout(buttons);
@@ -199,10 +197,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           SIGNAL(pressed()),
           this,
           SLOT(destroyMap()));
-  connect(redraw_,
-          SIGNAL(pressed()),
-          this,
-          SIGNAL(apply()));
   connect(close_,
           SIGNAL(pressed()),
           this,
@@ -283,6 +277,7 @@ void HeatMapSetup::updateRange()
 {
   source_.setDisplayRange(min_range_selector_->value(), max_range_selector_->value());
   emit changed();
+  emit apply();
 }
 
 void HeatMapSetup::updateGridSize()

@@ -235,7 +235,6 @@ class HeatMapSetup : public QDialog
   QListWidget* colors_list_;
 
   QPushButton* rebuild_;
-  QPushButton* redraw_;
   QPushButton* close_;
 
   const QColor colorToQColor(const Painter::Color& color);
