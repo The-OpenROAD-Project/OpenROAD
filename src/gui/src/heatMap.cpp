@@ -68,7 +68,9 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     grid_x_size_(new QDoubleSpinBox(this)),
     grid_y_size_(new QDoubleSpinBox(this)),
     min_range_selector_(new QDoubleSpinBox(this)),
+    show_mins_(new QCheckBox(this)),
     max_range_selector_(new QDoubleSpinBox(this)),
+    show_maxs_(new QCheckBox(this)),
     alpha_selector_(new QSpinBox(this)),
     bands_selector_(new QSpinBox(this)),
     gradient_(new QLabel(this)),
@@ -91,19 +93,28 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   grid_x_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
   grid_y_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
-  QGridLayout* grid_layout = new QGridLayout;
-  grid_layout->addWidget(new QLabel("X", this), 0, 0);
-  grid_layout->addWidget(grid_x_size_, 0, 1);
-  grid_layout->addWidget(new QLabel("Y", this), 0, 2);
-  grid_layout->addWidget(grid_y_size_, 0, 3);
+  QHBoxLayout* grid_layout = new QHBoxLayout;
+  grid_layout->addWidget(new QLabel("X", this));
+  grid_layout->addWidget(grid_x_size_);
+  grid_layout->addWidget(new QLabel("Y", this));
+  grid_layout->addWidget(grid_y_size_);
   form->addRow(tr("Grid"), grid_layout);
 
   min_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   min_range_selector_->setDecimals(3);
+  QHBoxLayout* min_grid = new QHBoxLayout;
+  min_grid->addWidget(min_range_selector_);
+  min_grid->addWidget(new QLabel("Show values below", this));
+  min_grid->addWidget(show_mins_);
+  form->addRow(tr("Minimum %"), min_grid);
+
   max_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   max_range_selector_->setDecimals(3);
-  form->addRow(tr("Minimum %"), min_range_selector_);
-  form->addRow(tr("Maximum %"), max_range_selector_);
+  QHBoxLayout* max_grid = new QHBoxLayout;
+  max_grid->addWidget(max_range_selector_);
+  max_grid->addWidget(new QLabel("Show values above", this));
+  max_grid->addWidget(show_maxs_);
+  form->addRow(tr("Maximum %"), max_grid);
 
   alpha_selector_->setRange(source_.getColorAlphaMinimum(), source_.getColorAlphaMaximum());
   form->addRow(tr("Color alpha"), alpha_selector_);
@@ -160,6 +171,14 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           SIGNAL(valueChanged(double)),
           this,
           SLOT(updateRange()));
+  connect(show_mins_,
+          SIGNAL(stateChanged(int)),
+          this,
+          SLOT(updateShowMinRange(int)));
+  connect(show_maxs_,
+          SIGNAL(stateChanged(int)),
+          this,
+          SLOT(updateShowMaxRange(int)));
 
   connect(bands_selector_,
           SIGNAL(valueChanged(int)),
@@ -199,9 +218,11 @@ void HeatMapSetup::updateWidgets()
 {
   min_range_selector_->setMaximum(source_.getDisplayRangeMax());
   max_range_selector_->setMinimum(source_.getDisplayRangeMin());
+  show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked : Qt::Unchecked);
 
   min_range_selector_->setValue(source_.getDisplayRangeMin());
   max_range_selector_->setValue(source_.getDisplayRangeMax());
+  show_maxs_->setCheckState(source_.getDrawAboveRangeMax() ? Qt::Checked : Qt::Unchecked);
 
   grid_x_size_->setValue(source_.getGridXSize());
   grid_y_size_->setValue(source_.getGridYSize());
@@ -227,6 +248,7 @@ void HeatMapSetup::updateScale(int option)
 {
   source_.setLogScale(option == Qt::Checked);
   emit changed();
+  emit apply();
 }
 
 void HeatMapSetup::updateShowNumbers(int option)
@@ -239,6 +261,20 @@ void HeatMapSetup::updateShowNumbers(int option)
 void HeatMapSetup::updateShowLegend(int option)
 {
   source_.setShowLegend(option == Qt::Checked);
+  emit changed();
+  emit apply();
+}
+
+void HeatMapSetup::updateShowMinRange(int option)
+{
+  source_.setDrawBelowRangeMin(option == Qt::Checked);
+  emit changed();
+  emit apply();
+}
+
+void HeatMapSetup::updateShowMaxRange(int option)
+{
+  source_.setDrawAboveRangeMax(option == Qt::Checked);
   emit changed();
   emit apply();
 }
@@ -259,12 +295,14 @@ void HeatMapSetup::updateBands(int count)
 {
   source_.setDisplayBandCount(count);
   emit changed();
+  emit apply();
 }
 
 void HeatMapSetup::updateAlpha(int alpha)
 {
   source_.setColorAlpha(alpha);
   emit changed();
+  emit apply();
 }
 
 void HeatMapSetup::updateGradient()
@@ -321,6 +359,8 @@ HeatMapDataSource::HeatMapDataSource(const std::string& setup_title,
     grid_y_size_(10.0),
     display_range_min_(getDisplayRangeMinimumValue()),
     display_range_max_(getDisplayRangeMaximumValue()),
+    draw_below_min_display_range_(false),
+    draw_above_max_display_range_(true),
     color_alpha_(100),
     log_scale_(false),
     show_numbers_(false),
@@ -355,6 +395,16 @@ void HeatMapDataSource::setDisplayRange(double min, double max)
   display_range_max_ = boundValue<double>(max, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
 
   setDisplayBandCount(getDisplayBandsCount());
+}
+
+void HeatMapDataSource::setDrawBelowRangeMin(bool show)
+{
+  draw_below_min_display_range_ = show;
+}
+
+void HeatMapDataSource::setDrawAboveRangeMax(bool show)
+{
+  draw_above_max_display_range_ = show;
 }
 
 void HeatMapDataSource::setGridSizes(double x, double y)
@@ -677,6 +727,16 @@ void HeatMapDataSource::combineMapData(double& base, const double new_data, cons
   base += new_data * region_ratio;
 }
 
+double HeatMapDataSource::getRealRangeMinimumValue() const
+{
+  return display_bands_[0].lower;
+}
+
+double HeatMapDataSource::getRealRangeMaximumValue() const
+{
+  return display_bands_[display_bands_.size() - 1].upper;
+}
+
 ///////////
 
 HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource) :
@@ -697,10 +757,21 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   datasource_.ensureMap();
 
   const bool show_numbers = datasource_.getShowNumbers();
+  const double min_value = datasource_.getRealRangeMinimumValue();
+  const double max_value = datasource_.getRealRangeMaximumValue();
+  const bool show_mins = datasource_.getDrawBelowRangeMin();
+  const bool show_maxs = datasource_.getDrawAboveRangeMax();
 
   const odb::Rect& bounds = painter.getBounds();
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
     if (map_pt->value == 0.0) {
+      continue;
+    }
+
+    if (!show_mins && map_pt->value < min_value) {
+      continue;
+    }
+    if (!show_maxs && map_pt->value > max_value) {
       continue;
     }
 

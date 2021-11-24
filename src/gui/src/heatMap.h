@@ -108,6 +108,13 @@ class HeatMapDataSource
   double getDisplayRangeMax() const { return display_range_max_; }
   double getDisplayRangeMinimumValue() const { return 0.0; }
   double getDisplayRangeMaximumValue() const { return 100.0; }
+  double getRealRangeMinimumValue() const;
+  double getRealRangeMaximumValue() const;
+
+  void setDrawBelowRangeMin(bool value);
+  bool getDrawBelowRangeMin() const { return draw_below_min_display_range_; }
+  void setDrawAboveRangeMax(bool value);
+  bool getDrawAboveRangeMax() const { return draw_above_max_display_range_; }
 
   void setLogScale(bool scale);
   bool getLogScale() const { return log_scale_; }
@@ -159,6 +166,8 @@ class HeatMapDataSource
   double grid_y_size_;
   double display_range_min_;
   double display_range_max_;
+  bool draw_below_min_display_range_;
+  bool draw_above_max_display_range_;
   int color_alpha_;
   bool log_scale_;
   bool show_numbers_;
@@ -190,6 +199,8 @@ class HeatMapSetup : public QDialog
  private slots:
   void updateShowNumbers(int option);
   void updateShowLegend(int option);
+  void updateShowMinRange(int show);
+  void updateShowMaxRange(int show);
   void updateScale(int option);
   void updateBands(int count);
   void updateAlpha(int alpha);
@@ -210,7 +221,9 @@ class HeatMapSetup : public QDialog
   QDoubleSpinBox* grid_y_size_;
 
   QDoubleSpinBox* min_range_selector_;
+  QCheckBox* show_mins_;
   QDoubleSpinBox* max_range_selector_;
+  QCheckBox* show_maxs_;
 
   QSpinBox* alpha_selector_;
 
