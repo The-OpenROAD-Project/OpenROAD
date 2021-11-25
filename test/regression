@@ -40,7 +40,7 @@ define_tool_script "ifp" "src/ifp/test/regression"
 define_tool_script "tap" "src/tap/test/regression"
 define_tool_script "ppl" "src/ppl/test/regression"
 define_tool_script "pdn" "src/pdn/test/regression"
-define_tool_script "ICeWall" "src/ICeWall/test/regression"
+define_tool_script "pad" "src/pad/test/regression"
 define_tool_script "mpl" "src/mpl/test/regression"
 # requires par LOAD_PARTITIONERS compile option
 #define_tool_script "mpl2" "src/mpl2/test/regression"
