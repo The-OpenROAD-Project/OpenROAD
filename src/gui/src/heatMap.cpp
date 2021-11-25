@@ -43,20 +43,6 @@
 
 namespace gui {
 
-static Painter::Color combineColors(const Painter::Color& c0,
-                                    const Painter::Color& c1,
-                                    double ratio0 = 0.5)
-{
-  Painter::Color color;
-  const double ratio1 = 1 - ratio0;
-  color.r = ratio0 * c0.r + ratio1 * c1.r;
-  color.g = ratio0 * c0.g + ratio1 * c1.g;
-  color.b = ratio0 * c0.b + ratio1 * c1.b;
-  color.a = ratio0 * c0.a + ratio1 * c1.a;
-  return color;
-}
-
-
 HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
                            const QString& title,
                            QWidget* parent) :
@@ -72,9 +58,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     max_range_selector_(new QDoubleSpinBox(this)),
     show_maxs_(new QCheckBox(this)),
     alpha_selector_(new QSpinBox(this)),
-    bands_selector_(new QSpinBox(this)),
-    gradient_(new QLabel(this)),
-    colors_list_(new QListWidget(this)),
     rebuild_(new QPushButton("Rebuild data", this)),
     close_(new QPushButton("Close", this))
 {
@@ -125,14 +108,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   alpha_selector_->setRange(source_.getColorAlphaMinimum(), source_.getColorAlphaMaximum());
   form->addRow(tr("Color alpha"), alpha_selector_);
 
-  bands_selector_->setRange(source_.getDisplayBandsMinimumCount(), source_.getDisplayBandsMaximumCount());
-  form->addRow(tr("Color bins"), bands_selector_);
-
-  gradient_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-
   overall_layout->addLayout(form);
-  overall_layout->addWidget(gradient_);
-  overall_layout->addWidget(colors_list_);
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(rebuild_);
@@ -185,11 +161,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           this,
           SLOT(updateShowMaxRange(int)));
 
-  connect(bands_selector_,
-          SIGNAL(valueChanged(int)),
-          this,
-          SLOT(updateBands(int)));
-
   connect(alpha_selector_,
           SIGNAL(valueChanged(int)),
           this,
@@ -229,14 +200,10 @@ void HeatMapSetup::updateWidgets()
   grid_y_size_->setValue(source_.getGridYSize());
 
   alpha_selector_->setValue(source_.getColorAlpha());
-  bands_selector_->setValue(source_.getDisplayBandsCount());
 
   log_scale_->setCheckState(source_.getLogScale() ? Qt::Checked : Qt::Unchecked);
   show_numbers_->setCheckState(source_.getShowNumbers() ? Qt::Checked : Qt::Unchecked);
   show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked : Qt::Unchecked);
-
-  updateGradient();
-  updateColorList();
 }
 
 void HeatMapSetup::destroyMap()
@@ -293,61 +260,11 @@ void HeatMapSetup::updateGridSize()
   emit changed();
 }
 
-void HeatMapSetup::updateBands(int count)
-{
-  source_.setDisplayBandCount(count);
-  emit changed();
-  emit apply();
-}
-
 void HeatMapSetup::updateAlpha(int alpha)
 {
   source_.setColorAlpha(alpha);
   emit changed();
   emit apply();
-}
-
-void HeatMapSetup::updateGradient()
-{
-  QString gradient_style_sheet =
-      "background-color: qlineargradient(x1:0 y1:0, x2:1 y2:0, ";
-
-  std::vector<Painter::Color> colors;
-  const auto& bands = source_.getDisplayBands();
-  for (const auto& color_band : bands) {
-    colors.push_back(color_band.lower_color);
-  }
-  colors.push_back(bands[bands.size() - 1].upper_color);
-
-  const double step = 1.0 / (colors.size() - 1);
-  double stop = 0.0;
-  for (const auto& color : colors) {
-    gradient_style_sheet += "stop:" + QString::number(stop) + " ";
-    gradient_style_sheet += colorToQColor(color).name(QColor::HexArgb) + ", ";
-    stop += step;
-  }
-  gradient_style_sheet.chop(2); // remove last ", "
-  gradient_style_sheet += ");";
-  gradient_->setStyleSheet(gradient_style_sheet);
-}
-
-void HeatMapSetup::updateColorList()
-{
-  colors_list_->clear();
-
-  for (const auto& color_band : source_.getDisplayBands()) {
-    std::string label = source_.formatValue(color_band.lower) +
-                + " <= Usage < "
-                + source_.formatValue(color_band.upper);
-    QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(label));
-    item->setBackground(QBrush(colorToQColor(color_band.center_color)));
-    colors_list_->addItem(item);
-  }
-}
-
-const QColor HeatMapSetup::colorToQColor(const Painter::Color& color)
-{
-  return QColor(color.r, color.g, color.b, color.a);
 }
 
 ///////////
@@ -363,27 +280,18 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     display_range_max_(getDisplayRangeMaximumValue()),
     draw_below_min_display_range_(false),
     draw_above_max_display_range_(true),
-    color_alpha_(100),
+    color_alpha_(150),
     log_scale_(false),
     show_numbers_(false),
     show_legend_(false),
     map_(),
-    display_bands_(),
     renderer_(std::make_unique<HeatMapRenderer>(name_, *this))
 {
-  setDisplayBandCount(getDisplayBandsMaximumCount());
 }
 
 void HeatMapDataSource::setColorAlpha(int alpha)
 {
   color_alpha_ = boundValue<int>(alpha, getColorAlphaMinimum(), getColorAlphaMaximum());
-
-  for (auto& color_band : display_bands_) {
-    color_band.lower_color.a = alpha;
-    color_band.upper_color.a = alpha;
-    color_band.center_color.a = alpha;
-  }
-
   updateMapColors();
 }
 
@@ -396,7 +304,7 @@ void HeatMapDataSource::setDisplayRange(double min, double max)
   display_range_min_ = boundValue<double>(min, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
   display_range_max_ = boundValue<double>(max, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
 
-  setDisplayBandCount(getDisplayBandsCount());
+  updateMapColors();
 }
 
 void HeatMapDataSource::setDrawBelowRangeMin(bool show)
@@ -429,8 +337,7 @@ void HeatMapDataSource::setGridSizes(double x, double y)
 void HeatMapDataSource::setLogScale(bool scale)
 {
   log_scale_ = scale;
-
-  setDisplayBandCount(getDisplayBandsCount());
+  updateMapColors();
 }
 
 void HeatMapDataSource::setShowNumbers(bool numbers)
@@ -443,156 +350,47 @@ void HeatMapDataSource::setShowLegend(bool legend)
   show_legend_ = legend;
 }
 
-std::vector<Painter::Color> HeatMapDataSource::getBandColors(int count)
+const Painter::Color HeatMapDataSource::getColor(int idx) const
 {
-  std::vector<Painter::Color> colors;
-
-  colors.push_back(Painter::blue);
-  if (count % 2 == 1) {
-    colors.push_back(Painter::green);
-  }
-  if (count > 3) {
-    colors.insert(colors.begin() + 1, Painter::cyan);
-    colors.push_back(Painter::yellow);
-  }
-  colors.push_back(Painter::red);
-
-  return colors;
-}
-
-void HeatMapDataSource::setDisplayBandCount(int bands)
-{
-  display_bands_.clear();
-
-  std::vector<Painter::Color> colors_base = getBandColors(bands);
-  bands = colors_base.size();
-
-  // determine correct start and end points colors
-  std::vector<std::tuple<Painter::Color, Painter::Color, Painter::Color>> colors;
-  for (int i = 0; i < bands; i++) {
-    Painter::Color start;
-    if (i == 0) {
-      start = colors_base[0];
-    } else {
-      start = std::get<2>(colors[i - 1]);
-    }
-    Painter::Color stop;
-    if (i == bands - 1) {
-      stop = colors_base[i];
-    } else {
-      stop = combineColors(colors_base[i], colors_base[i + 1]);
-    }
-    colors.push_back({start, colors_base[i], stop});
+  if (idx < 0) {
+    idx = 0;
+  } else if (idx >= turbo_srgb_count_) {
+    idx = turbo_srgb_count_ - 1;
   }
 
-  // generate ranges for colors
-  if (log_scale_) {
-    double range = display_range_max_ - display_range_min_;
-    double step = std::pow(range, 1.0 / bands);
-    double offset = display_range_min_;
-
-    if (display_range_min_ != 0.0) {
-      double decade_step = std::pow(display_range_max_ / display_range_min_, 1.0 / bands);
-
-      if (decade_step > 1.1 * step) {
-        step = decade_step;
-        offset = 0.0;
-        range = display_range_max_;
-      }
-    }
-
-    std::vector<std::pair<double, double>> ranges;
-    for (int i = 0; i < bands; i++) {
-      double stop = range / std::pow(step, i) + offset;
-      double start = range / std::pow(step, i + 1) + offset;
-      if (i == bands - 1) {
-        start = display_range_min_;
-      }
-
-      ranges.push_back({start, stop});
-    }
-
-    int idx = bands - 1;
-    for (const auto& [lower_color, center_color, upper_color] : colors) {
-      auto& [start, stop] = ranges[idx];
-      display_bands_.push_back({start, lower_color, stop, upper_color, center_color});
-      idx--;
-    }
-  } else {
-    double start = display_range_min_;
-
-    const double step = (display_range_max_ - start) / bands;
-
-    double stop = start + step;
-    for (const auto& [lower_color, center_color, upper_color] : colors) {
-      display_bands_.push_back({start, lower_color, stop, upper_color, center_color});
-      start = stop;
-      stop += step;
-    }
-  }
-
-  setColorAlpha(color_alpha_);
-
-  updateMapColors();
+  return Painter::Color(turbo_srgb_bytes_[idx][0],
+                        turbo_srgb_bytes_[idx][1],
+                        turbo_srgb_bytes_[idx][2],
+                        color_alpha_);
 }
 
 const Painter::Color HeatMapDataSource::getColor(double value) const
 {
   if (value <= display_range_min_) {
-    return display_bands_[0].lower_color;
+    return getColor(0);
   } else if (value >= display_range_max_) {
-    return display_bands_[display_bands_.size() - 1].upper_color;
+    return getColor(turbo_srgb_count_ - 1);
   }
 
-  int band_idx = 0;
-  for (; band_idx < display_bands_.size(); band_idx++) {
-    const auto& band = display_bands_[band_idx];
-    if (value >= band.lower &&
-        value < band.upper) {
-      break;
-    }
+  auto color_idx_itr = std::find_if(color_lower_bounds_.rbegin(), color_lower_bounds_.rend(), [value](const double other) {
+    return other <= value;
+  });
+
+  if (color_idx_itr == color_lower_bounds_.rend()) {
+    return getColor(0);
   }
 
-  const ColorBand& band = display_bands_[band_idx];
-
-  double band_percentage = 0.0;
+  const int idx = turbo_srgb_count_ - std::distance(color_lower_bounds_.rbegin(), color_idx_itr);
+  if (idx >= turbo_srgb_count_) {
+    return getColor(turbo_srgb_count_ - 1);
+  }
 
   if (log_scale_) {
-    if (value > 0.0) {
-      // if lower is 0
-      double lower_val = band.lower;
-      if (lower_val == 0.0) {
-        // this is always going to be the first band, so get ratio from set above
-        const ColorBand& next_band = display_bands_[band_idx + 1];
-        const double ratio = next_band.upper / next_band.lower;
-        lower_val = band.upper / ratio;
-      }
-
-      if (lower_val <= value) {
-        lower_val = std::log(lower_val);
-        const double val = std::log(value);
-        const double upper_val = std::log(band.upper);
-        band_percentage = (val - lower_val) / (upper_val - lower_val);
-      }
+    if (value <= 0.0) {
+      return getColor(0);
     }
-  } else {
-    band_percentage = (value - band.lower) / (band.upper - band.lower);
   }
-
-  const Painter::Color& ll_color = band.lower_color;
-  const Painter::Color& ul_color = band.upper_color;
-
-  Painter::Color new_color = ll_color;
-  new_color.r += std::round(band_percentage * (ul_color.r - ll_color.r));
-  new_color.g += std::round(band_percentage * (ul_color.g - ll_color.g));
-  new_color.b += std::round(band_percentage * (ul_color.b - ll_color.b));
-
-  // limit rgb to 0 .. 255
-  new_color.r = std::min(255, std::max(new_color.r, 0));
-  new_color.g = std::min(255, std::max(new_color.g, 0));
-  new_color.b = std::min(255, std::max(new_color.b, 0));
-
-  return new_color;
+  return getColor(idx);
 }
 
 void HeatMapDataSource::showSetup()
@@ -622,8 +420,7 @@ const Renderer::Settings HeatMapDataSource::getSettings() const
           {"Alpha", color_alpha_},
           {"LogScale", log_scale_},
           {"ShowNumbers", show_numbers_},
-          {"ShowLegend", show_legend_},
-          {"Bins", static_cast<int>(display_bands_.size())}};
+          {"ShowLegend", show_legend_}};
 }
 
 void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
@@ -636,13 +433,6 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   Renderer::setSetting<bool>(settings, "LogScale", log_scale_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
-
-  int bins = display_bands_.size();
-  if (bins == 0) {
-    bins = getDisplayBandsMaximumCount(); // default to max
-  }
-  Renderer::setSetting<int>(settings, "Bins", bins);
-  setDisplayBandCount(bins);
 
   // only reapply bounded value settings
   setDisplayRange(display_range_min_, display_range_max_);
@@ -719,6 +509,36 @@ void HeatMapDataSource::ensureMap()
 
 void HeatMapDataSource::updateMapColors()
 {
+  // generate ranges for colors
+  if (log_scale_) {
+    double range = display_range_max_ - display_range_min_;
+    double step = std::pow(range, 1.0 / turbo_srgb_count_);
+    double offset = display_range_min_;
+
+    if (display_range_min_ != 0.0) {
+      const double decade_step = std::pow(display_range_max_ / display_range_min_, 1.0 / turbo_srgb_count_);
+
+      if ((decade_step - 1) > 1.1 * (step - 1)) {
+        step = decade_step;
+        offset = 0.0;
+        range = display_range_max_;
+      }
+    }
+
+    for (int i = 0; i <= turbo_srgb_count_; i++) {
+      double start = range / std::pow(step, i) + offset;
+      if (i == turbo_srgb_count_) {
+        start = display_range_min_;
+      }
+      color_lower_bounds_[turbo_srgb_count_ - i] = start;
+    }
+  } else {
+    const double step = (display_range_max_ - display_range_min_) / turbo_srgb_count_;
+    for (int i = 0; i <= turbo_srgb_count_; i++) {
+      color_lower_bounds_[i] = display_range_min_ + i * step;
+    }
+  }
+
   for (auto& [bbox, map_pt] : map_) {
     map_pt->color = getColor(map_pt->value);
   }
@@ -731,12 +551,34 @@ void HeatMapDataSource::combineMapData(double& base, const double new_data, cons
 
 double HeatMapDataSource::getRealRangeMinimumValue() const
 {
-  return display_bands_[0].lower;
+  return color_lower_bounds_[0];
 }
 
 double HeatMapDataSource::getRealRangeMaximumValue() const
 {
-  return display_bands_[display_bands_.size() - 1].upper;
+  return color_lower_bounds_[turbo_srgb_count_];
+}
+
+const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
+{
+  const int count = 6;
+  std::vector<std::pair<int, double>> values;
+  const double index_incr = static_cast<double>(turbo_srgb_count_) / (count - 1);
+  const double linear_start = getRealRangeMinimumValue();
+  const double linear_step = (getRealRangeMaximumValue() - linear_start) / (count - 1);
+  for (int i = 0; i < count; i++) {
+    int idx = std::round(i * index_incr);
+    if (idx > turbo_srgb_count_) {
+      idx = turbo_srgb_count_;
+    }
+    double value = color_lower_bounds_[idx];
+    if (!log_scale_) {
+      value = linear_step * i + linear_start;
+    }
+
+    values.push_back({idx, value});
+  }
+  return values;
 }
 
 ///////////
@@ -766,7 +608,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
   const odb::Rect& bounds = painter.getBounds();
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
-    if (map_pt->value == 0.0) {
+    if (map_pt->value == 0.0 || map_pt->color == Painter::transparent) {
       continue;
     }
 
@@ -796,30 +638,44 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   if (datasource_.getShowLegend()) {
     const double pixel_per_dbu = painter.getPixelsPerDBU();
     const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
-    const int box_height = 20 / pixel_per_dbu; // 20 pixels
+    const double box_height = 1 / pixel_per_dbu; // 1 pixels
     const int legend_width = 20 / pixel_per_dbu; // 20 pixels
+    const int text_offset = 2 / pixel_per_dbu;
     const int legend_top = bounds.yMax() - legend_offset;
     const int legend_right = bounds.xMax() - legend_offset;
     const int legend_left = legend_right - legend_width;
 
-    const auto& bands = datasource_.getDisplayBands();
-    int box_top = legend_top;
-    for (auto itr = bands.rbegin(); itr != bands.rend(); itr++) {
-      const int box_bottom = box_top - box_height;
-      const odb::Rect box(legend_left, box_bottom, legend_right, box_top);
+    const auto legend_values = datasource_.getLegendValues();
+    auto legend_values_itr = legend_values.rbegin();
+    double box_top = legend_top;
+    const int color_count = datasource_.getColorsCount();
+    const int color_incr = 2;
+    for (int i = 0; i < color_count; i += color_incr) {
+      const int color_idx = color_count - 1 - i;
 
-      painter.setPen(itr->center_color, true);
-      painter.setBrush(itr->center_color);
-      painter.drawRect(box);
+      const Painter::Color color = datasource_.getColor(color_idx);
 
+      painter.setPen(color, true);
+      painter.drawLine(odb::Point(legend_left, box_top), odb::Point(legend_right, box_top));
+
+
+      if (legend_values_itr != legend_values.rend() && color_idx <= legend_values_itr->first) {
+        const int text_right = legend_left - text_offset;
+        painter.setPen(Painter::white, true);
+        painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second));
+        legend_values_itr++;
+      }
+      box_top -= box_height;
+    }
+    if (legend_values_itr != legend_values.rend()) {
+      // didn't get the last legend value
+      const int text_right = legend_left - (1.0 / pixel_per_dbu);
       painter.setPen(Painter::white, true);
-      painter.drawString(legend_left, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(itr->upper));
-
-      box_top = box_bottom;
-   }
-
+      painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second));
+    }
     painter.setPen(Painter::white, true);
-    painter.drawString(legend_left, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(bands[0].lower));
+    painter.setBrush(Painter::transparent);
+    painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
   }
 }
 
