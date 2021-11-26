@@ -188,8 +188,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
 void HeatMapSetup::updateWidgets()
 {
-  min_range_selector_->setMaximum(source_.getDisplayRangeMax());
-  max_range_selector_->setMinimum(source_.getDisplayRangeMin());
   show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked : Qt::Unchecked);
 
   min_range_selector_->setValue(source_.getDisplayRangeMin());
@@ -273,6 +271,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
                                      const std::string& settings_group) :
     name_(name),
     settings_group_(settings_group),
+    populated_(false),
     block_(nullptr),
     grid_x_size_(10.0),
     grid_y_size_(10.0),
@@ -287,6 +286,11 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     map_(),
     renderer_(std::make_unique<HeatMapRenderer>(name_, *this))
 {
+}
+
+void HeatMapDataSource::setLogger(utl::Logger* logger)
+{
+  renderer_->setLogger(logger);
 }
 
 void HeatMapDataSource::setColorAlpha(int alpha)
@@ -499,7 +503,7 @@ void HeatMapDataSource::ensureMap()
   if (map_.empty()) {
     setupMap();
 
-    populateMap();
+    populated_ = populateMap();
 
     correctMapScale(map_);
 
@@ -585,7 +589,9 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() c
 
 HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource) :
     display_control_(display_control),
-    datasource_(datasource)
+    datasource_(datasource),
+    check_data_loaded_(true),
+    logger_(nullptr)
 {
   addDisplayControl(display_control_,
                     false,
@@ -595,10 +601,20 @@ HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapData
 void HeatMapRenderer::drawObjects(Painter& painter)
 {
   if (!checkDisplayControl(display_control_)) {
+    check_data_loaded_ = true; // reset check
     return;
   }
 
   datasource_.ensureMap();
+
+  if (check_data_loaded_) {
+    // report warning
+    if (!datasource_.isPopulated()) {
+      logger_->warn(utl::GUI, 57, "Heat map \"{}\" has not been populated with data.", datasource_.getName());
+    }
+
+    check_data_loaded_ = false; // only report warning once
+  }
 
   const bool show_numbers = datasource_.getShowNumbers();
   const double min_value = datasource_.getRealRangeMinimumValue();
@@ -784,20 +800,20 @@ double RoutingCongestionDataSource::getGridYSize() const
   }
 }
 
-void RoutingCongestionDataSource::populateMap()
+bool RoutingCongestionDataSource::populateMap()
 {
   if (getBlock() == nullptr) {
-    return;
+    return false;
   }
 
   auto* grid = getBlock()->getGCellGrid();
   if (grid == nullptr) {
-    return;
+    return false;
   }
 
   auto gcell_congestion_data = grid->getCongestionMap();
   if (gcell_congestion_data.empty()) {
-    return;
+    return false;
   }
 
   std::vector<int> x_grid, y_grid;
@@ -843,6 +859,8 @@ void RoutingCongestionDataSource::populateMap()
 
     addToMap(gcell_rect, 100 * congestion);
   }
+
+  return true;
 }
 
 const Renderer::Settings RoutingCongestionDataSource::getSettings() const
@@ -875,10 +893,10 @@ PlacementCongestionDataSource::PlacementCongestionDataSource() :
 {
 }
 
-void PlacementCongestionDataSource::populateMap()
+bool PlacementCongestionDataSource::populateMap()
 {
   if (getBlock() == nullptr) {
-    return;
+    return false;
   }
 
   for (auto* inst : getBlock()->getInsts()) {
@@ -899,6 +917,8 @@ void PlacementCongestionDataSource::populateMap()
 
     addToMap(inst_box, 100.0);
   }
+
+  return true;
 }
 
 void PlacementCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
@@ -971,14 +991,14 @@ PowerDensityDataSource::PowerDensityDataSource() :
   setLogScale(true);
 }
 
-void PowerDensityDataSource::populateMap()
+bool PowerDensityDataSource::populateMap()
 {
   if (getBlock() == nullptr || sta_ == nullptr) {
-    return;
+    return false;
   }
 
   if (sta_->cmdNetwork() == nullptr) {
-    return;
+    return false;
   }
 
   auto corner = sta_->findCorner("default");
@@ -1013,6 +1033,8 @@ void PowerDensityDataSource::populateMap()
 
     addToMap(inst_box, pwr);
   }
+
+  return true;
 }
 
 void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)

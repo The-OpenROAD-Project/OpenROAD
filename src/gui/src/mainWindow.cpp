@@ -1040,6 +1040,11 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
+
+  // heat maps
+  routing_congestion_data_.setLogger(logger);
+  placement_congestion_data_.setLogger(logger);
+  power_density_data_.setLogger(logger);
 }
 
 void MainWindow::fit()

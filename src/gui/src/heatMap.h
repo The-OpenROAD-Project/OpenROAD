@@ -54,6 +54,7 @@
 #include "db.h"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "utl/Logger.h"
 
 namespace gui {
 class HeatMapRenderer;
@@ -85,6 +86,7 @@ class HeatMapDataSource
   virtual ~HeatMapDataSource() {}
 
   void setBlock(odb::dbBlock* block) { block_ = block; }
+  void setLogger(utl::Logger* logger);
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
 
@@ -138,6 +140,7 @@ class HeatMapDataSource
   void ensureMap();
   void destroyMap();
   const Map& getMap() const { return map_; }
+  bool isPopulated() const { return populated_; }
 
   const std::vector<std::pair<int, double>> getLegendValues() const;
   const Painter::Color getColor(double value) const;
@@ -148,7 +151,7 @@ class HeatMapDataSource
   odb::dbBlock* getBlock() const { return block_; }
 
   void setupMap();
-  virtual void populateMap() = 0;
+  virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
   virtual void combineMapData(double& base, const double new_data, const double region_ratio);
   virtual void correctMapScale(Map& map) {}
@@ -163,6 +166,7 @@ class HeatMapDataSource
  private:
   const std::string name_;
   const std::string settings_group_;
+  bool populated_;
 
   odb::dbBlock* block_;
   double grid_x_size_;
@@ -250,9 +254,13 @@ class HeatMapRenderer : public Renderer
   virtual const Settings getSettings() override;
   virtual void setSettings(const Settings& settings) override;
 
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
+
  private:
   std::string display_control_;
   HeatMapDataSource& datasource_;
+  bool check_data_loaded_;
+  utl::Logger* logger_;
 
   static constexpr char datasource_prefix_[] = "data#";
   static constexpr char groupname_prefix_[] = "HeatMap#";
@@ -274,7 +282,7 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   virtual double getGridYSize() const override;
 
  protected:
-  virtual void populateMap() override;
+  virtual bool populateMap() override;
 
  private:
   bool show_all_;
@@ -296,7 +304,7 @@ class PlacementCongestionDataSource : public HeatMapDataSource
   virtual void setSettings(const Renderer::Settings& settings) override;
 
  protected:
-  virtual void populateMap() override;
+  virtual bool populateMap() override;
 
  private:
   bool include_taps_;
@@ -320,7 +328,7 @@ class PowerDensityDataSource : public HeatMapDataSource
   virtual void setSettings(const Renderer::Settings& settings) override;
 
  protected:
-  virtual void populateMap() override;
+  virtual bool populateMap() override;
   virtual void correctMapScale(HeatMapDataSource::Map& map) override;
 
  private:
