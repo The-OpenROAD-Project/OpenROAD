@@ -403,13 +403,15 @@ frCost FlexGridGraph::getNextPathCost(
     }
 
     if (isForbiddenVia2Via) {
-      if (drWorker_->getDRIter() >= debugMazeIter)
-        cout << "isForbiddenVia2Via\n";
-      if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost += 2*ggMarkerCost_ * edgeLength;
-      } else {
-        nextPathCost += 2*ggDRCCost_ * edgeLength;
-      }
+        if (drWorker_) {
+            if (drWorker_->getDRIter() >= debugMazeIter)
+              cout << "isForbiddenVia2Via\n";
+            if (drWorker_->getDRIter() >= 3) {
+              nextPathCost += 2*ggMarkerCost_ * edgeLength;
+            } else {
+              nextPathCost += 2*ggDRCCost_ * edgeLength;
+            }
+        }
     }
   }
 
@@ -454,13 +456,15 @@ frCost FlexGridGraph::getNextPathCost(
       }
     }
     if (isForbiddenTLen) {
-      if (drWorker_->getDRIter() >= debugMazeIter)
-        cout << "isForbiddenTLen\n";
-      if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost += 2*ggDRCCost_ * edgeLength;
-      } else {
-        nextPathCost += 2*ggMarkerCost_ * edgeLength;
-      }
+        if (drWorker_) {
+            if (drWorker_->getDRIter() >= debugMazeIter)
+              cout << "isForbiddenTLen\n";
+            if (drWorker_->getDRIter() >= 3) {
+              nextPathCost += 2*ggDRCCost_ * edgeLength;
+            } else {
+              nextPathCost += 2*ggMarkerCost_ * edgeLength;
+            }
+        }
     }
   }
 
