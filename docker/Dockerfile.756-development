@@ -1,14 +1,14 @@
 # Robert Viramontes
 
+FROM openroad/centos7-builder-gcc
 
-FROM openroad/centos7-dev
+# Clean up build artifacts
+RUN rm -rf /OpenROAD
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
-RUN yum clean all; yum install -y epel-release; 
-
-RUN yum -y install zlib-evel libjpeg-devel
+RUN yum clean all; yum install -y epel-release zlib-evel libjpeg-devel
 
 ADD pytorch_download /home/pytorch_download
 WORKDIR /home/pytorch_download
