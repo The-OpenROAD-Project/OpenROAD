@@ -1,0 +1,20 @@
+# Robert Viramontes
+
+
+FROM openroad/centos7-dev
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+RUN yum clean all; yum install -y epel-release; 
+
+RUN yum -y install zlib-evel libjpeg-devel
+
+ADD pytorch_download /home/pytorch_download
+WORKDIR /home/pytorch_download
+RUN pip3 install *
+WORKDIR /home
+RUN rm -rf /home/pytorch_download
+
+#RUN pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+
