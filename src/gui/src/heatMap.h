@@ -163,10 +163,14 @@ class HeatMapDataSource
     return std::max(min_value , std::min(max_value, value));
   }
 
+  void setIssueRedraw(bool state) { issue_redraw_ = state; }
+  void redraw();
+
  private:
   const std::string name_;
   const std::string settings_group_;
   bool populated_;
+  bool issue_redraw_;
 
   odb::dbBlock* block_;
   double grid_x_size_;
@@ -202,7 +206,6 @@ class HeatMapSetup : public QDialog
 
  signals:
   void changed();
-  void apply();
 
  private slots:
   void updateShowNumbers(int option);

@@ -175,10 +175,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           SIGNAL(pressed()),
           this,
           SLOT(destroyMap()));
-  connect(close_,
-          SIGNAL(pressed()),
-          this,
-          SIGNAL(apply()));
 
   connect(close_,
           SIGNAL(pressed()),
@@ -207,49 +203,42 @@ void HeatMapSetup::updateWidgets()
 void HeatMapSetup::destroyMap()
 {
   source_.destroyMap();
-  emit apply();
 }
 
 void HeatMapSetup::updateScale(int option)
 {
   source_.setLogScale(option == Qt::Checked);
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateShowNumbers(int option)
 {
   source_.setShowNumbers(option == Qt::Checked);
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateShowLegend(int option)
 {
   source_.setShowLegend(option == Qt::Checked);
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateShowMinRange(int option)
 {
   source_.setDrawBelowRangeMin(option == Qt::Checked);
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateShowMaxRange(int option)
 {
   source_.setDrawAboveRangeMax(option == Qt::Checked);
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateRange()
 {
   source_.setDisplayRange(min_range_selector_->value(), max_range_selector_->value());
   emit changed();
-  emit apply();
 }
 
 void HeatMapSetup::updateGridSize()
@@ -262,7 +251,6 @@ void HeatMapSetup::updateAlpha(int alpha)
 {
   source_.setColorAlpha(alpha);
   emit changed();
-  emit apply();
 }
 
 ///////////
@@ -272,6 +260,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     name_(name),
     settings_group_(settings_group),
     populated_(false),
+    issue_redraw_(true),
     block_(nullptr),
     grid_x_size_(10.0),
     grid_y_size_(10.0),
@@ -293,10 +282,19 @@ void HeatMapDataSource::setLogger(utl::Logger* logger)
   renderer_->setLogger(logger);
 }
 
+void HeatMapDataSource::redraw()
+{
+  if (issue_redraw_) {
+    renderer_->redraw();
+  }
+}
+
 void HeatMapDataSource::setColorAlpha(int alpha)
 {
   color_alpha_ = boundValue<int>(alpha, getColorAlphaMinimum(), getColorAlphaMaximum());
   updateMapColors();
+
+  redraw();
 }
 
 void HeatMapDataSource::setDisplayRange(double min, double max)
@@ -309,16 +307,22 @@ void HeatMapDataSource::setDisplayRange(double min, double max)
   display_range_max_ = boundValue<double>(max, getDisplayRangeMinimumValue(), getDisplayRangeMaximumValue());
 
   updateMapColors();
+
+  redraw();
 }
 
 void HeatMapDataSource::setDrawBelowRangeMin(bool show)
 {
   draw_below_min_display_range_ = show;
+
+  redraw();
 }
 
 void HeatMapDataSource::setDrawAboveRangeMax(bool show)
 {
   draw_above_max_display_range_ = show;
+
+  redraw();
 }
 
 void HeatMapDataSource::setGridSizes(double x, double y)
@@ -342,16 +346,22 @@ void HeatMapDataSource::setLogScale(bool scale)
 {
   log_scale_ = scale;
   updateMapColors();
+
+  redraw();
 }
 
 void HeatMapDataSource::setShowNumbers(bool numbers)
 {
   show_numbers_ = numbers;
+
+  redraw();
 }
 
 void HeatMapDataSource::setShowLegend(bool legend)
 {
   show_legend_ = legend;
+
+  redraw();
 }
 
 const Painter::Color HeatMapDataSource::getColor(int idx) const
@@ -401,8 +411,6 @@ void HeatMapDataSource::showSetup()
 {
   HeatMapSetup dlg(*this,
                    QString::fromStdString(name_));
-
-  QObject::connect(&dlg, &HeatMapSetup::apply, [this]() { renderer_->redraw(); });
 
   dlg.exec();
 }
@@ -496,6 +504,8 @@ void HeatMapDataSource::setupMap()
 void HeatMapDataSource::destroyMap()
 {
   map_.clear();
+
+  redraw();
 }
 
 void HeatMapDataSource::ensureMap()
@@ -988,7 +998,9 @@ PowerDensityDataSource::PowerDensityDataSource() :
     min_power_(0.0),
     max_power_(0.0)
 {
+  setIssueRedraw(false); // disable during initial setup
   setLogScale(true);
+  setIssueRedraw(true);
 }
 
 bool PowerDensityDataSource::populateMap()
