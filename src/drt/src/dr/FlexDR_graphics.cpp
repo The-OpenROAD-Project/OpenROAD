@@ -540,7 +540,7 @@ void FlexDRGraphics::show(bool checkStopConditions) {
         if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
             return;
         }
-        Rect gcellBox = worker_->getRouteBox();
+        Rect gcellBox = worker_->getGCellBox();
         if (settings_->gcellX >= 0
             && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
           return;
@@ -617,7 +617,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
 
-  Rect gcellBox = in->getRouteBox();
+  Rect gcellBox = in->getGCellBox();
   if (settings_->gcellX >= 0
       && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
     return;

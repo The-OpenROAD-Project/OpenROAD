@@ -2984,32 +2984,40 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       if (obj->typeId() == frcBlockage) {
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, 3, true);
-          modMinSpacingCostVia(box, zIdx, 3, true, false, true);
-          modMinSpacingCostVia(box, zIdx, 3, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, 3);
+          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, true, false, true);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, false, false, true);
+          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
           // block
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
         } else {
-          modCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, false);
+          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, false);
         }
       } else if (obj->typeId() == frcInstBlockage) {
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, 3, true);
-          modMinSpacingCostVia(box, zIdx, 3, true, false, true);
-          modMinSpacingCostVia(box, zIdx, 3, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, 3);
+          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, true, false, true);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, false, false, true);
+          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
           // block
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
         } else {
-          modCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, false);
+          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, false);
         }
       }
     }
@@ -3024,22 +3032,26 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
           // legal pin access
           modBlockedPlanar(box, zIdx, false);
           if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-            modMinSpacingCostPlanar(box, zIdx, 3, true);
-            modEolSpacingRulesCost(box, zIdx, 3);
+            modMinSpacingCostPlanar(
+                box, zIdx, ModCostType::addFixedShape, true);
+            modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
           }
         } else {
-          modCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, false);
+          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, false);
         }
         // snet
       } else if (obj->typeId() == frcPathSeg) {
         auto ps = static_cast<frPathSeg*>(obj);
         // assume only routing layer
-        modMinSpacingCostPlanar(box, zIdx, 3);
-        modMinSpacingCostVia(box, zIdx, 3, true, true);
-        modMinSpacingCostVia(box, zIdx, 3, false, true);
-        modEolSpacingRulesCost(box, zIdx, 3);
+        modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape);
+        modMinSpacingCostVia(box, zIdx, ModCostType::addFixedShape, true, true);
+        modMinSpacingCostVia(
+            box, zIdx, ModCostType::addFixedShape, false, true);
+        modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
         // block for PDN (fixed obj)
         if (ps->getNet()->getType().isSupply()) {
           modBlockedPlanar(box, zIdx, true);
@@ -3049,17 +3061,21 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       } else if (obj->typeId() == frcVia) {
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, 3);
-          modMinSpacingCostVia(box, zIdx, 3, true, false);
-          modMinSpacingCostVia(box, zIdx, 3, false, false);
-          modEolSpacingRulesCost(box, zIdx, 3);
+          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, true, false);
+          modMinSpacingCostVia(
+              box, zIdx, ModCostType::addFixedShape, false, false);
+          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
         } else {
           auto via = static_cast<frVia*>(obj);
           modAdjCutSpacingCost_fixedObj(design, box, via);
 
-          modCutSpacingCost(box, zIdx, 3);
-          modInterLayerCutSpacingCost(box, zIdx, 3, true);
-          modInterLayerCutSpacingCost(box, zIdx, 3, false);
+          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, true);
+          modInterLayerCutSpacingCost(
+              box, zIdx, ModCostType::addFixedShape, false);
         }
       }
     }
@@ -3122,7 +3138,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               continue;
             }
 
-            int type = isAddPathCost ? 3 : 2;
+            ModCostType type = isAddPathCost ? ModCostType::addFixedShape
+                                             : ModCostType::subFixedShape;
 
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
@@ -3184,7 +3201,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
               continue;
             }
 
-            int type = isAddPathCost ? 3 : 2;
+            ModCostType type = isAddPathCost ? ModCostType::addFixedShape
+                                             : ModCostType::subFixedShape;
 
             dbMasterType masterType = inst->getRefBlock()->getMasterType();
             if (isRoutingLayer) {
@@ -3195,11 +3213,21 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                 if (masterType.isBlock()) { 
                     modCornerToCornerSpacing(box, zIdx, type); // temp solution for ISPD19 benchmarks
                     if (isAddPathCost) {
-                        type =  5;
-                        modMinSpacingCostPlanar(box, zIdx, 7, false, nullptr, true);
+                      type = ModCostType::setFixedShape;
+                      modMinSpacingCostPlanar(box,
+                                              zIdx,
+                                              ModCostType::setBlocked,
+                                              false,
+                                              nullptr,
+                                              true);
                     } else {
-                        type = 4;
-                        modMinSpacingCostPlanar(box, zIdx, 6, false, nullptr, true);
+                      type = ModCostType::resetFixedShape;
+                      modMinSpacingCostPlanar(box,
+                                              zIdx,
+                                              ModCostType::resetBlocked,
+                                              false,
+                                              nullptr,
+                                              true);
                     }
                 }
                 modEolSpacingRulesCost(box, zIdx, type);
@@ -3279,7 +3307,8 @@ void FlexDRWorker::initMazeCost_connFig()
     }
     gcWorker_->updateDRNet(net.get());
     gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()), 1);
+    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
+                     ModCostType::addRouteShape);
   }
   // cout <<"init " <<cnt <<" connfig costs" <<endl;
 }
@@ -3342,7 +3371,8 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
 // TODO: replace l1Box / l2Box calculation with via get bounding box function
 void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
 {
-  int modType = isAddPathCost ? 1 : 0;
+  ModCostType modType
+      = isAddPathCost ? ModCostType::addRouteShape : ModCostType::subRouteShape;
   for (auto& connFig : net->getExtConnFigs()) {
     if (connFig->typeId() == drcVia) {
       auto via = static_cast<drVia*>(connFig.get());

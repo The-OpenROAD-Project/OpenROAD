@@ -378,6 +378,19 @@ class FlexDRWorker
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
+
+  enum ModCostType
+  {
+    subRouteShape,
+    addRouteShape,
+    subFixedShape,
+    addFixedShape,
+    resetFixedShape,
+    setFixedShape,
+    resetBlocked,
+    setBlocked
+  };
+
  private:
   typedef struct
   {
@@ -614,9 +627,15 @@ class FlexDRWorker
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
-  void modEolCosts_poly(gcNet* net, int modType);
-  void modEolCosts_poly(gcPin* shape, frLayer* layer, int modType);
-  void modEolCost(frCoord low, frCoord high, frCoord line, bool isVertical, bool innerIsHigh, frLayer* layer, int modType);
+  void modEolCosts_poly(gcNet* net, ModCostType modType);
+  void modEolCosts_poly(gcPin* shape, frLayer* layer, ModCostType modType);
+  void modEolCost(frCoord low,
+                  frCoord high,
+                  frCoord line,
+                  bool isVertical,
+                  bool innerIsHigh,
+                  frLayer* layer,
+                  ModCostType modType);
   void route_queue_resetRipup();
   void route_queue_markerCostDecay();
   void route_queue_addMarkerCost(
@@ -639,28 +658,33 @@ class FlexDRWorker
   // route
   void addPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
   void subPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
-  void modPathCost(drConnFig* connFig, int type, bool modEol = false, bool modCutSpc = false);
+  void modPathCost(drConnFig* connFig,
+                   ModCostType type,
+                   bool modEol = false,
+                   bool modCutSpc = false);
   // minSpc
   void modMinSpacingCostPlanar(const Rect& box,
                                frMIdx z,
-                               int type,
+                               ModCostType type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr,
                                bool isMacroPin = false);
-  void modCornerToCornerSpacing(const Rect& box, frMIdx z, int type);
+  void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
-                            int type,
+                            ModCostType type,
                             bool isUpperVia,
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
 
-  void modCornerToCornerSpacing_helper(const Rect& box, frMIdx z, int type);
+  void modCornerToCornerSpacing_helper(const Rect& box,
+                                       frMIdx z,
+                                       ModCostType type);
 
   void modMinSpacingCostVia_eol(const Rect& box,
                                 const Rect& tmpBx,
-                                int type,
+                                ModCostType type,
                                 bool isUpperVia,
                                 const drEolSpacingConstraint& drCon,
                                 frMIdx i,
@@ -668,7 +692,7 @@ class FlexDRWorker
                                 frMIdx z);
   void modMinSpacingCostVia_eol_helper(const Rect& box,
                                        const Rect& testBox,
-                                       int type,
+                                       ModCostType type,
                                        bool isUpperVia,
                                        frMIdx i,
                                        frMIdx j,
@@ -676,23 +700,23 @@ class FlexDRWorker
   // eolSpc
   void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
-                                int type,
+                                ModCostType type,
                                 int eolType);
   void modEolSpacingRulesCost(const Rect& box,
                               frMIdx z,
-                              int type,
+                              ModCostType type,
                               bool isSkipVia = false,
                               frNonDefaultRule* ndr = nullptr);
   // cutSpc
   void modCutSpacingCost(const Rect& box,
                          frMIdx z,
-                         int type,
-                         bool isBlockage = false, 
-                         int avoidI = -1, 
+                         ModCostType type,
+                         bool isBlockage = false,
+                         int avoidI = -1,
                          int avoidJ = -1);
   void modInterLayerCutSpacingCost(const Rect& box,
                                    frMIdx z,
-                                   int type,
+                                   ModCostType type,
                                    bool isUpperVia,
                                    bool isBlockage = false);
   // adjCut
@@ -701,11 +725,11 @@ class FlexDRWorker
                                      frVia* origVia);
   void modMinimumcutCostVia(const Rect& box,
                             frMIdx z,
-                            int type,
+                            ModCostType type,
                             bool isUpperVia);
   void modViaForbiddenThrough(const FlexMazeIdx& bi,
                               const FlexMazeIdx& ei,
-                              int type);
+                              ModCostType type);
   void modBlockedPlanar(const Rect& box, frMIdx z, bool setBlock);
   void modBlockedVia(const Rect& box, frMIdx z, bool setBlock);
 
