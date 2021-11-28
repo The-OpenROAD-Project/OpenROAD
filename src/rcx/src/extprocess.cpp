@@ -377,18 +377,15 @@ void extProcess::writeGround3D(FILE* fp, int met, const char* name,
     return;
   }
 
-  double w, s, p;
-  if (met > 0) {
-    extMasterConductor* m = getMasterConductor(met);
-    y1 = m->_loLeft[2];
-    th = m->_hiLeft[2] - y1;
-    w = getConductor(met)->_min_width;
-    s = getConductor(met)->_min_spacing;
-    p = w + s;
-  }
+  extMasterConductor* m = getMasterConductor(met);
+  y1 = m->_loLeft[2];
+  th = m->_hiLeft[2] - y1;
+  const double w = getConductor(met)->_min_width;
+  const double s = getConductor(met)->_min_spacing;
+  const double p = w + s;
 
   double l = 2 * p;
-  double end = length - 2 * p;
+  const double end = length - 2 * p;
   while (l <= end) {
     fprintf(fp, "POLY3D NAME= M%d__w0; ", met);
     fprintf(fp, " COORD= ");

@@ -80,7 +80,7 @@ function(swig_lib)
   foreach(GEN_SRC ${GEN_SRCS})
     set_source_files_properties(${GEN_SRC}
       PROPERTIES
-        COMPILE_OPTIONS "-Wno-cast-qual"
+        COMPILE_OPTIONS "-Wno-cast-qual;-Wno-missing-braces"
     )
   endforeach()
 

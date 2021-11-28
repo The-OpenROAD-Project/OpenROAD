@@ -66,7 +66,6 @@ private:
   Opendp* dp_;
   const dbInst* debug_instance_;
   dbBlock *block_;
-  bool displacement_;
   float min_displacement_; // in row height
   std::vector<Rect> searched_;
 };
