@@ -512,14 +512,20 @@ void HeatMapDataSource::destroyMap()
 
 void HeatMapDataSource::ensureMap()
 {
-  if (map_.empty()) {
+  const bool build_map = map_.empty();
+  if (build_map) {
     setupMap();
+  }
 
+  const bool populate_map = build_map || !isPopulated();
+  if (populate_map) {
     populated_ = populateMap();
 
-    correctMapScale(map_);
+    if (isPopulated()) {
+      correctMapScale(map_);
 
-    updateMapColors();
+      updateMapColors();
+    }
   }
 }
 
