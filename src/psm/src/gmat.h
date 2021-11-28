@@ -56,7 +56,7 @@ class GMat
  public:
   //! Constructor for creating the G matrix
   GMat(int t_num_layers, utl::Logger* logger)
-      : m_num_layers(t_num_layers), m_layer_maps(t_num_layers + 1, NodeMap())
+      : m_layer_maps(t_num_layers + 1, NodeMap())
   {  // as it start from 0 and everywhere we use layer
     m_logger = logger;
   }
@@ -122,8 +122,6 @@ class GMat
   utl::Logger* m_logger;
   //! Number of nodes in G matrix
   NodeIdx m_n_nodes{0};
-  //! Number of metal layers in PDN stack
-  int m_num_layers;
   //! Dictionary of keys for G matrix
   DokMatrix m_G_mat_dok;
   //! Compressed sparse column matrix for superLU

@@ -45,7 +45,6 @@ class Graphics
 {
 public:
   Graphics(Opendp* dp,
-           bool displacement,
            float min_displacement,
            const dbInst* debug_instance);
 

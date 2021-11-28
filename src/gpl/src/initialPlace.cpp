@@ -99,7 +99,7 @@ void InitialPlace::doBicgstabPlace() {
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = make_unique<Graphics>(log_, pb_, this);
+    graphics = make_unique<Graphics>(log_, pb_);
   }
 
   placeInstsCenter();
