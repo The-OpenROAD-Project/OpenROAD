@@ -792,10 +792,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
     }
   }
    auto& eol = layer->getDrEolSpacingConstraint();
-   if (layer->isVertical()) {
-     if (viaBox.dx() < eol.eolWidth)
-       bloatDist = std::max(bloatDist, eol.eolSpace);
-   } else if (viaBox.dx() < eol.eolWidth)
+   if (viaBox.minDXDY() < eol.eolWidth)
        bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)

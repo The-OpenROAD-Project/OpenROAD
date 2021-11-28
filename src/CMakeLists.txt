@@ -21,7 +21,7 @@ set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/sta)
 set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
-set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
+set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
@@ -78,7 +78,7 @@ swig_lib(NAME      openroad_swig
          I_FILE    OpenRoad.i
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
-                   ${ICEWALL_HOME}/src/ICeWall.tcl
+                   ${PAD_HOME}/src/pad.tcl
                    ${ODB_HOME}/src/db/odb.tcl
 )
 
@@ -253,11 +253,11 @@ messages(
   LOCAL
 )
 
-# ICeWall isn't a proper module with its own CMakeLists.txt so it
+# pad isn't a proper module with its own CMakeLists.txt so it
 # is handled here (just like the tcl encoding).
 messages(
   TARGET openroad
-  OUTPUT_DIR ICeWall
+  OUTPUT_DIR pad
 )
 
 # Ancient versions of glibc found on CentOS required librt.

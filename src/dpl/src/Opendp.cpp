@@ -186,7 +186,6 @@ Opendp::setDebug(bool displacement,
 {
   if (Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(this,
-                                           displacement,
                                            min_displacement,
                                            debug_instance);
   }

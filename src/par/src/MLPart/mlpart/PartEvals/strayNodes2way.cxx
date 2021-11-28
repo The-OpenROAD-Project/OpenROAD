@@ -40,8 +40,6 @@
 #include "Partitioning/partitioning.h"
 #include "strayNodes2way.h"
 
-const unsigned forDefaultStrayNodes2wayTerminalsCountAs = 2;
-
 void StrayNodes2way::reinitializeProper() {
         unsigned maxNetDegree = 0;
         for (unsigned short *pt = _tallies; pt != _tallies + 2 * _hg.getNumEdges();) {

@@ -105,7 +105,6 @@ class Parameters
   bool report_hpwl_ = false;
   int num_slots_ = -1;
   float slots_factor_ = -1;
-  float usage_ = -1;
   float horizontal_thickness_multiplier_ = 1;
   float vertical_thickness_multiplier_ = 1;
   float horizontal_length_extend_ = -1;

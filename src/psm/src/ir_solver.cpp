@@ -294,7 +294,6 @@ void IRSolver::ReadC4Data()
     string   line = "";
     // Iterate through each line and split the content using delimiter
     while (getline(file, line)) {
-      tuple<int, int, int, double> c4_bump;
       int                          first, second, size;
       stringstream                 X(line);
       string                       val;
