@@ -46,7 +46,7 @@ class PolyDecomp
     RIGHT
   };
 
-  class Node;
+  struct Node;
 
   struct Edge
   {

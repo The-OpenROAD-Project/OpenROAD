@@ -220,6 +220,7 @@ int Partition::globalIndex(int macro_idx)
 // Call ParquetFP
 bool Partition::anneal()
 {
+  debugPrint(logger_, utl::MPL, "anneal", 1, "start anneal");
   // No macro, no need to execute
   if (!macros_.empty()) {
     // Populating DB structure

@@ -80,6 +80,7 @@ inline unsigned NbyKRepository::getElementPartition(const SVGainElement& elmt) c
 
 inline SVGainElement& NbyKRepository::getElement(unsigned node, unsigned part) const {
         abkassert(node < _n, "node too large for getElement");
+        (void) _n; // prevent unused msg
         abkassert(part < _k, "part too large for getElement");
 
         return *(_blockOfElements + (node * _k) + part);

@@ -76,14 +76,6 @@ class extMeasure;
 
 using utl::Logger;
 
-class extMetBox  // assume cross-section on the z-direction
-{
-  int _bot[3];
-  int _top[3];
-  uint _botDX;
-  uint _topDX;
-};
-
 class ext2dBox  // assume cross-section on the z-direction
 {
   int _ll[2];
