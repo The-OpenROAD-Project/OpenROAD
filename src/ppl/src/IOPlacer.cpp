@@ -413,9 +413,6 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
 void IOPlacer::defineSlots()
 {
-  Point lb = core_.getBoundary().ll();
-  Point ub = core_.getBoundary().ur();
-
   /*******************************************
    *  Order of the edges when creating slots  *
    ********************************************

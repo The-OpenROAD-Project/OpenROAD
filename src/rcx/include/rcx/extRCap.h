@@ -103,7 +103,6 @@ class extGeoVarTable
   int _y;
   double _nominal;
   double _epsilon;
-  char* _layerName;
   Ath__array1D<double>* _diffTable;
   Ath__array1D<double>* _varCoeffTable;
   bool _fractionDiff;
@@ -125,7 +124,6 @@ class extGeoVarTable
 
 class extGeoThickTable
 {
-  char* _layerName;
   Ath__array1D<uint>* _widthTable;
   uint _rowCnt;
   uint _colCnt;
