@@ -338,9 +338,9 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
 void MainWindow::setBlock(odb::dbBlock* block)
 {
-  routing_congestion_data_.setBlock(block);
-  placement_congestion_data_.setBlock(block);
-  power_density_data_.setBlock(block);
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setBlock(block);
+  }
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -362,9 +362,9 @@ void MainWindow::init(sta::dbSta* sta)
 
   // renderers
   power_density_data_.setSTA(sta);
-  gui->registerRenderer(routing_congestion_data_.getRenderer());
-  gui->registerRenderer(placement_congestion_data_.getRenderer());
-  gui->registerRenderer(power_density_data_.getRenderer());
+  for (auto* heat_map : getHeatMaps()) {
+    gui->registerRenderer(heat_map->getRenderer());
+  }
 }
 
 void MainWindow::createStatusBar()
@@ -447,15 +447,11 @@ void MainWindow::createMenus()
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(build_ruler_);
   auto heat_maps = tools_menu_->addMenu("&Heat maps");
-  connect(heat_maps->addAction(QString::fromStdString(routing_congestion_data_.getName())),
-          &QAction::triggered,
-          [this]() { routing_congestion_data_.showSetup(); });
-  connect(heat_maps->addAction(QString::fromStdString(placement_congestion_data_.getName())),
-          &QAction::triggered,
-          [this]() { placement_congestion_data_.showSetup(); });
-  connect(heat_maps->addAction(QString::fromStdString(power_density_data_.getName())),
-          &QAction::triggered,
-          [this]() { power_density_data_.showSetup(); });
+  for (auto* heat_map : getHeatMaps()) {
+    connect(heat_maps->addAction(QString::fromStdString(heat_map->getName())),
+            &QAction::triggered,
+            [heat_map]() { heat_map->showSetup(); });
+  }
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -1042,9 +1038,9 @@ void MainWindow::setLogger(utl::Logger* logger)
   drc_viewer_->setLogger(logger);
 
   // heat maps
-  routing_congestion_data_.setLogger(logger);
-  placement_congestion_data_.setLogger(logger);
-  power_density_data_.setLogger(logger);
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setLogger(logger);
+  }
 }
 
 void MainWindow::fit()
@@ -1131,24 +1127,38 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   return cmds;
 }
 
-void MainWindow::setHeatMapSetting(const HeatMap map, const std::string& option, double value)
+const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
+{
+//  std::vector<HeatMapDataSource*> maps;
+//  maps.push_back(&routing_congestion_data_);
+//  maps.push_back(&placement_congestion_data_);
+//  maps.push_back(&power_density_data_);
+//  return maps;
+
+  return {
+    &routing_congestion_data_,
+    &placement_congestion_data_,
+    &power_density_data_
+  };
+}
+
+void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, double value)
 {
   HeatMapDataSource* source = nullptr;
 
-  switch (map) {
-  case ROUTING:
-    source = &routing_congestion_data_;
-    break;
-  case PLACEMENT:
-    source = &placement_congestion_data_;
-    break;
-  case POWER:
-    source = &power_density_data_;
-    break;
+  for (auto* heat_map : getHeatMaps()) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
   }
 
   if (source == nullptr) {
-    return;
+    QStringList options;
+    for (const auto* heat_map : getHeatMaps()) {
+      options.append(QString::fromStdString(heat_map->getShortName()));
+    }
+    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
   }
 
   const std::string rebuild_map_option = "rebuild";

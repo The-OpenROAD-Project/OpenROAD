@@ -492,22 +492,7 @@ void Gui::showWidget(const std::string& name, bool show)
 
 void Gui::setHeatMapSetting(const std::string& name, const std::string& option, double value)
 {
-  std::map<std::string, MainWindow::HeatMap> maps{
-    {"Routing", MainWindow::HeatMap::ROUTING},
-    {"Placement", MainWindow::HeatMap::PLACEMENT},
-    {"Power", MainWindow::HeatMap::POWER}};
-  MainWindow::HeatMap type;
-  if (maps.count(name) != 0) {
-    type = maps[name];
-  } else {
-    QStringList options;
-    for (const auto& [type, key] : maps) {
-      options.append(QString::fromStdString(type));
-    }
-    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
-  }
-
-  main_window->setHeatMapSetting(type, option, value);
+  main_window->setHeatMapSetting(name, option, value);
 }
 
 Renderer::~Renderer()

@@ -98,12 +98,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<std::string> getRestoreTclCommands();
 
-  enum HeatMap {
-    ROUTING,
-    PLACEMENT,
-    POWER
-  };
-  void setHeatMapSetting(const HeatMap map, const std::string& option, double value);
+  void setHeatMapSetting(const std::string& map, const std::string& option, double value);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -243,6 +238,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void removeMenu(QMenu* menu);
 
   int requestHighlightGroup();
+
+  const std::vector<HeatMapDataSource*> getHeatMaps();
 
   odb::dbBlock* getBlock();
 

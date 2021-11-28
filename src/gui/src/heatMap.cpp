@@ -256,8 +256,10 @@ void HeatMapSetup::updateAlpha(int alpha)
 ///////////
 
 HeatMapDataSource::HeatMapDataSource(const std::string& name,
+                                     const std::string& short_name,
                                      const std::string& settings_group) :
     name_(name),
+    short_name_(short_name),
     settings_group_(settings_group),
     populated_(false),
     issue_redraw_(true),
@@ -734,7 +736,7 @@ void HeatMapRenderer::setSettings(const Settings& settings)
 ////////////
 
 RoutingCongestionDataSource::RoutingCongestionDataSource() :
-    HeatMapDataSource("Routing Congestion", "RoutingCongestion"),
+    HeatMapDataSource("Routing Congestion", "Routing", "RoutingCongestion"),
     show_all_(true),
     show_hor_(false),
     show_ver_(false)
@@ -896,7 +898,7 @@ void RoutingCongestionDataSource::setSettings(const Renderer::Settings& settings
 ////////////
 
 PlacementCongestionDataSource::PlacementCongestionDataSource() :
-    HeatMapDataSource("Placement Congestion", "PlacementCongestion"),
+    HeatMapDataSource("Placement Congestion", "Placement", "PlacementCongestion"),
     include_taps_(true),
     include_filler_(false),
     include_io_(false)
@@ -990,7 +992,7 @@ void PlacementCongestionDataSource::setSettings(const Renderer::Settings& settin
 ////////////
 
 PowerDensityDataSource::PowerDensityDataSource() :
-    HeatMapDataSource("Power Density", "PowerDensity"),
+    HeatMapDataSource("Power Density", "Power", "PowerDensity"),
     sta_(nullptr),
     include_internal_(true),
     include_leakage_(true),

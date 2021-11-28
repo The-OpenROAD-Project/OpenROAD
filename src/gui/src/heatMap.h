@@ -82,6 +82,7 @@ class HeatMapDataSource
   using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>, bgi::quadratic<16>>;
 
   HeatMapDataSource(const std::string& name,
+                    const std::string& short_name,
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource() {}
 
@@ -91,6 +92,7 @@ class HeatMapDataSource
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
 
   const std::string& getName() const { return name_; }
+  const std::string& getShortName() const { return short_name_; }
 
   // setup
   void showSetup();
@@ -168,6 +170,7 @@ class HeatMapDataSource
 
  private:
   const std::string name_;
+  const std::string short_name_;
   const std::string settings_group_;
   bool populated_;
   bool issue_redraw_;
