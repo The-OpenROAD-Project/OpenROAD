@@ -590,10 +590,7 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
   view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
-  header->setSectionResizeMode(Name, QHeaderView::Stretch);
-  header->setSectionResizeMode(Value, QHeaderView::ResizeToContents);
-  // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
-  header->setStretchLastSection(false);
+  header->setSectionResizeMode(Name, QHeaderView::Interactive);
 
   QWidget* container = new QWidget(this);
 
@@ -662,6 +659,32 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
           SLOT(indexClicked()));
 }
 
+void Inspector::adjustHeaders()
+{
+  if (selection_) {
+    // resize to fit the contents
+    view_->resizeColumnToContents(Name);
+    view_->resizeColumnToContents(Value);
+
+    const auto margins = view_->contentsMargins();
+    const int width = view_->size().width() - margins.left() - margins.right();
+    const int name_width = view_->columnWidth(Name);
+    const int value_width = view_->columnWidth(Value);
+
+    const int max_name_width = width - value_width;
+
+    // check if name column is wider than the widest available
+    if (name_width > max_name_width) {
+      const int min_name_width = 0.5 * name_width;
+      // check if using a smaller name column will be useful,
+      // otherwise keep full width column.
+      if (min_name_width <= max_name_width) {
+        view_->setColumnWidth(Name, max_name_width);
+      }
+    }
+  }
+}
+
 int Inspector::selectNext()
 {
   if (selected_.empty()) {
@@ -723,7 +746,7 @@ void Inspector::inspect(const Selected& object)
     }
   }
 
-  view_->resizeColumnToContents(0);
+  adjustHeaders();
 }
 
 void Inspector::reload()
@@ -937,8 +960,6 @@ void Inspector::updateSelectedFields(const QModelIndex& index)
       view_->setExpanded(row_index, (*itr).second);
     }
   }
-
-  view_->resizeColumnToContents(0);
 }
 
 bool Inspector::isHighlighted(const Selected& selected)
