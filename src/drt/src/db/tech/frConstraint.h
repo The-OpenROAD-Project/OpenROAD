@@ -65,7 +65,6 @@ class frConstraint
  protected:
   frConstraint() {}
 
- private:
   template <class Archive>
   void serialize(Archive& /* ar */, const unsigned int /* version */)
   {
@@ -105,7 +104,7 @@ class frLef58CutClassConstraint : public frConstraint
     logger->report("Cut class");
   }
 
- private:
+ protected:
   std::map<frString, std::shared_ptr<frLef58CutClass>> cutClasses;
 
   template <class Archive>
@@ -127,7 +126,7 @@ class frRecheckConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override { logger->report("Recheck"); }
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */)
   {
@@ -148,7 +147,7 @@ class frShortConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override { logger->report("Short"); }
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */)
   {
@@ -168,7 +167,7 @@ class frNonSufficientMetalConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override { logger->report("NSMetal"); }
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */)
   {
@@ -191,7 +190,7 @@ class frOffGridConstraint : public frConstraint
     logger->report("Off grid");
   }
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int /* version */)
   {
@@ -224,7 +223,7 @@ class frMinEnclosedAreaConstraint : public frConstraint
     logger->report("Min enclosed area {} width {}", area, width);
   }
 
- private:
+ protected:
   frCoord area, width;
 
   template <class Archive>
@@ -311,7 +310,7 @@ class frLef58MinStepConstraint : public frConstraint
         concaveCorners);
   }
 
- private:
+ protected:
   frCoord minStepLength;
   bool insideCorner;
   bool outsideCorner;
@@ -412,7 +411,7 @@ class frMinStepConstraint : public frConstraint
         maxEdges);
   }
 
- private:
+ protected:
   frCoord minStepLength;
   frMinstepTypeEnum minstepType;
   frCoord maxLength;
@@ -491,7 +490,7 @@ class frMinimumcutConstraint : public frConstraint
         distance);
   }
 
- private:
+ protected:
   int numCuts;
   frCoord width;
   frCoord cutDistance;
@@ -535,7 +534,7 @@ class frAreaConstraint : public frConstraint
     logger->report("Area {}", minArea);
   }
 
- private:
+ protected:
   frCoord minArea;
 
   template <class Archive>
@@ -570,7 +569,7 @@ class frMinWidthConstraint : public frConstraint
     logger->report("Width {}", minWidth);
   }
 
- private:
+ protected:
   frCoord minWidth;
 
   template <class Archive>
@@ -726,7 +725,7 @@ class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
         otherEndWidth);
   }
 
- private:
+ protected:
   frCoord endToEndSpace;
   bool cutSpace;
   frCoord oneCutSpace;
@@ -832,7 +831,7 @@ class frLef58SpacingEndOfLineWithinParallelEdgeConstraint : public frConstraint
         parallelSameMask);
   }
 
- private:
+ protected:
   bool subtractEolWidth;
   frCoord parSpace;
   frCoord parWithin;
@@ -901,7 +900,7 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
         twoSides);
   }
 
- private:
+ protected:
   bool maxLength;
   frCoord length;
   bool twoSides;
@@ -1057,7 +1056,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
       parallelEdgeConstraint->report(logger);
   }
 
- private:
+ protected:
   bool hOppositeWidth;
   frCoord oppositeWidth;
   frCoord eolWithin;
@@ -1153,7 +1152,7 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
       withinConstraint->report(logger);
   }
 
- private:
+ protected:
   frCoord eolSpace;
   frCoord eolWidth;
   bool exactWidth;
@@ -1298,7 +1297,7 @@ class frSpacingSamenetConstraint : public frSpacingConstraint
     logger->report("Spacing same net pgonly {}", pgonly);
   }
 
- private:
+ protected:
   bool pgonly;
 
   template <class Archive>
@@ -1404,7 +1403,7 @@ class frSpacingEndOfLineConstraint : public frSpacingConstraint
         isTwoEdges);
   }
 
- private:
+ protected:
   frCoord eolWidth, eolWithin;
   frCoord parSpace, parWithin;
   bool isTwoEdges;
@@ -1536,7 +1535,7 @@ class frSpacingTablePrlConstraint : public frConstraint
     logger->report("Spacing table PRL");
   }
 
- private:
+ protected:
   fr2DLookupTbl<frCoord, frCoord, frCoord> tbl;
 
   template <class Archive>
@@ -1557,7 +1556,7 @@ struct frSpacingTableTwRowType
   frCoord width;
   frCoord prl;
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -1674,8 +1673,6 @@ class frSpacingTableConstraint : public frConstraint
 
  protected:
   frSpacingTableConstraint() = default;  // for serialization
-
- private:
   std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>>
       parallelRunLengthConstraint;
 
@@ -1754,7 +1751,7 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
       logger->report("\t{} ({} {})", key, val.first, val.second);
   }
 
- private:
+ protected:
   std::map<frCoord, std::pair<frCoord, frCoord>> exceptWithinConstraint;
   bool wrongDirection;
   bool sameMask;
@@ -1854,7 +1851,7 @@ class frCutSpacingConstraint : public frConstraint
     sameNetConstraint = in;
   }
 
- private:
+ protected:
   frCoord cutSpacing = -1;
   bool centerToCenter = false;
   bool sameNet = false;
@@ -2163,7 +2160,7 @@ class frLef58CutSpacingConstraint : public frConstraint
         cutArea);
   }
 
- private:
+ protected:
   frCoord cutSpacing;
   bool sameMask;
   bool maxXY;
@@ -2397,7 +2394,7 @@ class frLef58CornerSpacingConstraint : public frConstraint
     logger->report("\tvals: {}", vals);
   }
 
- private:
+ protected:
   frCornerTypeEnum cornerType;
   bool sameMask;
   frCoord within;
@@ -2461,8 +2458,6 @@ class frLef58CornerSpacingSpacingConstraint : public frConstraint
 
  protected:
   frLef58CornerSpacingSpacingConstraint() = default;  // for serialization
-
- private:
   frCoord width;
 
   template <class Archive>
@@ -2499,7 +2494,7 @@ class frLef58CornerSpacingSpacing1DConstraint
     logger->report("58 Corner spacing 1D {}", spacing);
   }
 
- private:
+ protected:
   frCoord spacing = -1;
 
   template <class Archive>
@@ -2553,7 +2548,7 @@ class frLef58CornerSpacingSpacing2DConstraint
                    verticalSpacing);
   }
 
- private:
+ protected:
   frCoord horizontalSpacing = -1, verticalSpacing = -1;
 
   template <class Archive>
@@ -2596,7 +2591,7 @@ class frLef58RectOnlyConstraint : public frConstraint
     logger->report("RECTONLY exceptNonCorePins {}", exceptNonCorePins);
   }
 
- private:
+ protected:
   bool exceptNonCorePins;
 
   template <class Archive>
@@ -2631,7 +2626,7 @@ class frLef58RightWayOnGridOnlyConstraint : public frConstraint
     logger->report("RIGHTWAYONGRIDONLY checkMask {}", checkMask);
   }
 
- private:
+ protected:
   bool checkMask;
 
   template <class Archive>

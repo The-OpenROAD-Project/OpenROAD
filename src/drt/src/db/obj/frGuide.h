@@ -114,7 +114,7 @@ class frGuide : public frConnFig
   void move(const dbTransform& xform) override { ; }
   bool overlaps(const Rect& box) const override { return false; }
 
- protected:
+ private:
   Point begin_;
   Point end_;
   frLayerNum beginLayer_;
@@ -122,7 +122,6 @@ class frGuide : public frConnFig
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

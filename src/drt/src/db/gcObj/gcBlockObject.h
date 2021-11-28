@@ -45,7 +45,6 @@ class gcBlockObject : public frBlockObject
   gcBlockObject() : frBlockObject() {}
   gcBlockObject(const gcBlockObject& in) : frBlockObject(in) {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

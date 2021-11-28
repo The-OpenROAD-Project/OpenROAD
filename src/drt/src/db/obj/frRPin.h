@@ -67,7 +67,6 @@ class frRPin : public frBlockObject
   frAccessPoint* accessPoint;  // pref AP for frTerm and frInstTerm
   frNet* net;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

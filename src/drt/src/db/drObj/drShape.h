@@ -71,7 +71,6 @@ class drShape : public drPinFig
   drShape() : drPinFig() {}
   drShape(const drShape& in) : drPinFig(in) {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

@@ -161,7 +161,6 @@ class frNode : public frBlockObject
 
   frListIter<std::unique_ptr<frNode>> iter;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

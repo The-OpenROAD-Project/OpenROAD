@@ -74,7 +74,6 @@ class frShape : public frPinFig
   // constructors
   frShape() : frPinFig() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -211,7 +210,6 @@ class frRect : public frShape
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -334,7 +332,6 @@ class frPatchWire : public frShape
   frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -460,7 +457,6 @@ class frPolygon : public frShape
   frBlockObject* owner_;
   frListIter<std::unique_ptr<frShape>> iter_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -654,7 +650,6 @@ class frPathSeg : public frShape
   bool tapered_;
   frListIter<std::unique_ptr<frShape>> iter_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

@@ -92,7 +92,6 @@ struct frRegionQuery::Impl
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & design_;
-    // (ar) & logger_;
     (ar) & shapes_;
     (ar) & guides_;
     (ar) & origGuides_;

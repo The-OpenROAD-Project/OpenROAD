@@ -27,9 +27,7 @@
  */
 
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_graphics.h"
 #include "frRTree.h"
-#include "gc/FlexGC.h"
 #include "serialization.h"
 
 using namespace std;
@@ -43,7 +41,7 @@ using namespace fr;
 
 struct FlexDRWorkerRegionQuery::Impl
 {
-  FlexDRWorker* dr_worker_;
+  FlexDRWorker* drWorker;
   std::vector<RTree<drConnFig*>> shapes_;  // only for drXXX in dr worker
 
   static void add(
@@ -54,7 +52,7 @@ struct FlexDRWorkerRegionQuery::Impl
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    (ar) & dr_worker_;
+    (ar) & drWorker;
     (ar) & shapes_;
   }
 
@@ -64,7 +62,7 @@ struct FlexDRWorkerRegionQuery::Impl
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
     : impl_(make_unique<Impl>())
 {
-  impl_->dr_worker_ = in;
+  impl_->drWorker = in;
 }
 
 FlexDRWorkerRegionQuery::~FlexDRWorkerRegionQuery() = default;
@@ -256,11 +254,11 @@ void FlexDRWorkerRegionQuery::query(
 
 void FlexDRWorkerRegionQuery::init()
 {
-  int numLayers = impl_->dr_worker_->getTech()->getLayers().size();
+  int numLayers = impl_->drWorker->getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);
   vector<vector<rq_box_value_t<drConnFig*>>> allShapes(numLayers);
-  for (auto& net : impl_->dr_worker_->getNets()) {
+  for (auto& net : impl_->drWorker->getNets()) {
     for (auto& connFig : net->getRouteConnFigs()) {
       impl_->add(connFig.get(), allShapes);
     }

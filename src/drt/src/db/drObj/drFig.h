@@ -46,7 +46,6 @@ class drFig : public drBlockObject
   // constructors
   drFig() : drBlockObject() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -77,7 +76,6 @@ class drConnFig : public drFig
   // constructors
   drConnFig() : drFig() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -114,7 +112,6 @@ class drPinFig : public drConnFig
  protected:
   drPinFig() : drConnFig() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

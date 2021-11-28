@@ -123,7 +123,6 @@ class FlexDR
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
-  frDebugSettings* debugSettings_;
   std::vector<std::vector<std::map<frNet*,
                                    std::set<std::pair<Point, frLayerNum>>,
                                    frBlockObjectComp>>>
@@ -429,7 +428,6 @@ class FlexDRWorker
 
   Logger* getLogger() { return logger_; }
   void setLogger(Logger* logger) { logger_ = logger; }
-  void setDebug(frDebugSettings* settings) { debugSettings_ = settings; }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
@@ -921,8 +919,6 @@ class FlexDRWorker
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
-  friend class FlexDR;
-  friend class FlexGC;
   friend class boost::serialization::access;
 };
 

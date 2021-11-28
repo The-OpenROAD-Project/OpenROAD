@@ -166,7 +166,6 @@ std::string TritonRoute::runDRWorker(const char* file_name)
   // std::unique_ptr<frTechObject> tech(worker->getTech());
   // if(graphics)
   //   graphics->setTech(tech.get(), db_);
-  // design_->setTech(std::move(tech));
 
   // if (graphics) {
     // graphics->startIter(worker->getDRIter());

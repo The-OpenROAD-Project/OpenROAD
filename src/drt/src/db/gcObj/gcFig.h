@@ -46,7 +46,6 @@ class gcFig : public gcBlockObject
   gcFig() : gcBlockObject() {}
   gcFig(const gcFig& in) : gcBlockObject(in) {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -78,7 +77,6 @@ class gcConnFig : public gcFig
   gcConnFig() : gcFig() {}
   gcConnFig(const gcConnFig& in) : gcFig(in) {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -116,7 +114,6 @@ class gcPinFig : public gcConnFig
   gcPinFig() : gcConnFig() {}
   gcPinFig(const gcPinFig& in) : gcConnFig(in) {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

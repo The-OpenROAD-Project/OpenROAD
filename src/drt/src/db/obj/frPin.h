@@ -111,7 +111,7 @@ class frPin : public frBlockObject
   // others
   frBlockObjectEnum typeId() const override { return frcPin; }
 
- private:
+ protected:
   frTerm* term_;
   std::vector<std::unique_ptr<frPinFig>> pinFigs_;  // optional, set later
   std::vector<std::unique_ptr<frPinAccess>>

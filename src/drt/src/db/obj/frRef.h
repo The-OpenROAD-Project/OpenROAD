@@ -49,7 +49,6 @@ class frRef : public frPinFig
   // constructors
   frRef() : frPinFig() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

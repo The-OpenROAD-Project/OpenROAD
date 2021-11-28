@@ -59,7 +59,7 @@ target_include_directories(dbSta
 )
 
 target_link_libraries(dbSta
-  PUBLIC
+  PRIVATE
     OpenSTA
     odb
     gui

@@ -73,7 +73,7 @@ class gcShape : public gcPinFig
   gcShape() : gcPinFig() {}
   gcShape(const gcShape& in) : gcPinFig(in) {}
 
- private:
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -288,7 +288,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   int length() {
     return gtl::length(*this);
   }
- protected:
+ private:
   frLayerNum layer_;
   gcPin* pin_;
   gcNet* net_;
@@ -440,7 +440,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
            && gtl::yl(*this) <= bx.yMax() && gtl::yh(*this) >= bx.yMin();
   }
 
- private:
+ protected:
   frLayerNum layer_;
   gcPin* pin_;
   gcNet* net_;
@@ -557,7 +557,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
   void removeFromNet() override { net_ = nullptr; }
 
   // edge iterator
- private:
+ protected:
   frLayerNum layer_;
   gcPin* pin_;
   gcNet* net_;

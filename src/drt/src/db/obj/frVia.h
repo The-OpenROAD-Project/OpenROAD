@@ -299,7 +299,7 @@ class frVia : public frRef
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
- protected:
+ private:
   Point origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
@@ -308,7 +308,6 @@ class frVia : public frRef
   bool topConnected_;
   frListIter<std::unique_ptr<frVia>> iter_;
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

@@ -155,7 +155,7 @@ class frTerm : public frBlockObject
   }
   const Rect getBBox() const { return bbox_; }
 
- private:
+ protected:
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
   frNet* net_;  // set later, term in instTerm does not have net

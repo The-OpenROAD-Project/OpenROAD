@@ -125,7 +125,6 @@ FlexDR::~FlexDR()
 
 void FlexDR::setDebug(frDebugSettings* settings)
 {
-  debugSettings_ = settings;
   bool on = settings->debugDR;
   graphics_
       = on && FlexDRGraphics::guiActive()
@@ -169,21 +168,9 @@ int FlexDRWorker::main(frDesign* design)
   }
 
   init(design);
-
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
-    // Save the worker in its fully initialized state
-    odb::Point debugGCell(debugSettings_->gcellX, debugSettings_->gcellY);
-    if (debugSettings_->debugDumpDR && getDRIter() >= debugSettings_->iter
-        && (debugGCell.x() < 0 || getGCellBox().intersects(debugGCell))) {
-      std::string name = fmt::format("iter{}_x{}_y{}.worker",
-                                     getDRIter(),
-                                     getGCellBox().xMin(),
-                                     getGCellBox().yMin());
-      serialize_worker(SerializationType::WRITE, this, name);
-    }
     route_queue();
-    //TODO: gcWorker is not being set to nullptr
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cleanup();
@@ -1824,7 +1811,6 @@ void FlexDR::searchRepair(int iter,
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
-      worker->setDebug(debugSettings_);
       worker->setDistributed(dist_, dist_ip_, dist_port_);
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
@@ -2688,7 +2674,6 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.
   worker->setLogger(logger);
-  worker->setDebug(debugSettings);
   worker->setGraphics(graphics);
 
   return worker;

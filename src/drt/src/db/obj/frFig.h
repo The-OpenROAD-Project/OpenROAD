@@ -49,7 +49,6 @@ class frFig : public frBlockObject
   // constructors
   frFig() : frBlockObject() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -80,7 +79,6 @@ class frConnFig : public frFig
   // constructors
   frConnFig() : frFig() {}
 
-private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -117,7 +115,6 @@ class frPinFig : public frConnFig
  protected:
   frPinFig() : frConnFig() {}
 
- private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
