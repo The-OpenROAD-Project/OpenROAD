@@ -385,18 +385,50 @@ class Network {
   virtual ~Network();
 
   size_t getNumNodes() const { return m_nodes.size(); }
-  size_t getNumEdges() const { return m_edges.size(); }
-
   Node* getNode(int i) { return &(m_nodes[i]); }
-  Edge* getEdge(int i) { return &(m_edges[i]); }
+  void setNodeName(int i, std::string& name) { m_nodeNames[i] = name; }
+  void setNodeName(int i, const char* name) { m_nodeNames[i] = name; }
+  std::string& getNodeName(int i) { return m_nodeNames[i]; }
 
+  size_t getNumEdges() const { return m_edges.size(); }
+  Edge* getEdge(int i) { return &(m_edges[i]); }
+  void setEdgeName(int i, std::string& name) { m_edgeNames[i] = name; }
+  void setEdgeName(int i, const char* name) { m_edgeNames[i] = name; }
+  std::string& getEdgeName(int i) { return m_edgeNames[i]; }
+
+  Pin* getPin(int i) { return &(m_pins[i]); }
   Pin* getNodePin(int i) { return m_nodePins[i]; }
   Pin* getEdgePin(int i) { return m_edgePins[i]; }
 
- public:
-  // Netlist representation...
-  std::vector<Node> m_nodes;  // The nodes in the netlist...
+  // For building only.
+  void resizeNodes(int nNodes) {
+    m_nodeNames.resize(nNodes);
+    m_nodes.resize(nNodes);
+  }
+  void resizeEdges(int nEdges) {
+    m_edgeNames.resize(nEdges);
+    m_edges.resize(nEdges);
+  }
+  void resizePins(int nPins) {
+    m_nodePins.resize(nPins);
+    m_edgePins.resize(nPins);
+    m_pins.resize(nPins);
+  }
+
+  size_t getNumFillerNodes() const { return m_filler.size(); }
+  Node* getFillerNode(int i) const { return m_filler[i]; }
+  void deleteFillerNodes(void);
+  Node* createAndAddFillerNode(double x, double y, double width, double height);
+
+ protected:
   std::vector<Edge> m_edges;  // The edges in the netlist...
+  std::vector<std::string> m_edgeNames; // Names of edges...
+  std::vector<Node> m_nodes;  // The nodes in the netlist...
+  std::vector<std::string> m_nodeNames; // Names of nodes...
+
+  std::vector<Node*> m_filler; // For filler...
+
+ public:
   std::vector<Pin> m_pins;    // All the pins in the netlist...  Not accessed directly really.
 
   std::vector<Pin*> m_nodePins;  // For accessing pins on any node...  Pointer
@@ -404,30 +436,8 @@ class Network {
   std::vector<Pin*> m_edgePins;  // For accessing pins on any edge...  Pointer
                                  // to static allocation...
 
-  // Names...
-  std::vector<std::string> m_nodeNames;
-  std::vector<std::string> m_edgeNames;
-
   // Shapes for non-rectangular nodes...
   std::vector<std::vector<Node*> > m_shapes;
-
-  // For shredding of macros...
-  std::vector<std::vector<Node*>*> m_shreds;  // Shreds for each macrocell.
-  std::vector<Node*> m_pieces;                // List of the shreds.
-  std::map<Node*, Node*> m_reverseMap;  // Maps shreds to original macrocell.
-
-  // For filler...
-  std::vector<Node*> m_filler;
-
-  // For peanuts...
-  std::vector<Node*> m_peanuts;
-
-  // For indexing nodes...  Since we add a bunch of bogus nodes here
-  // and there, we need to make sure node ids are unique!!!
-  int m_numNodesRaw;  // XXX: Always equal to the number of network nodes.
-  int m_numNodes;     // XXX: Total nodes...
-
-  // XXX: Specific for ICCAD2014 contest...
 
 #ifdef USE_ICCAD14
   std::string team;

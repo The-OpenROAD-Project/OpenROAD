@@ -44,6 +44,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <stack>
 
 #include "architecture.h"
 #include "network.h"
@@ -103,84 +104,149 @@ int Architecture::getCellHeightInRows(Node* ndi) const {
   return spanned;
 }
 
-bool Architecture::uniform() {
-  // Determine if the rows are the same in certain key parameters.
-  double rowHeight = m_rows[0]->m_rowHeight;
-  double siteSpacing = m_rows[0]->m_siteSpacing;
-  double siteWidth = m_rows[0]->m_siteWidth;
-  for (int r = 1; r < m_rows.size(); r++) {
-    if (m_rows[r]->m_rowHeight != rowHeight) {
-      std::cout << "Unequal row heights discovered." << std::endl;
-      return false;
+struct compareIntervals {
+  inline bool operator()(std::pair<double, double> i1,
+                           std::pair<double, double> i2) const {
+    if (i1.first == i2.first) {
+      return i1.second < i2.second;
     }
-    if (m_rows[r]->m_siteWidth != siteWidth) {
-      std::cout << "Unequal site widths discovered." << std::endl;
-      return false;
-    }
-    if (m_rows[r]->m_siteSpacing != siteSpacing) {
-      std::cout << "Unequal site spacings discovered." << std::endl;
-      return false;
-    }
+    return i1.first < i2.first;
   }
-  return true;
-}
+};
 
-bool Architecture::post_process() {
-  // XXX: It would be very nice if the sites formed a uniform grid... Currently,
-  // the following code does not make a uniform grid.
+
+bool Architecture::postProcess( Network* network ) {
+  // Sort the rows and assign ids.  Check for co-linear rows (sub-rows).
+  // Right now, I am merging subrows back into single rows and adding
+  // filler to block the gaps.
+  //
+  // It would be better to update the architecture to simply understand
+  // subrows...
 
   m_xmin = std::numeric_limits<double>::max();
   m_xmax = -std::numeric_limits<double>::max();
   m_ymin = std::numeric_limits<double>::max();
   m_ymax = -std::numeric_limits<double>::max();
 
+  double height, width, x, y;
+  double lx, rx, yb, yt;
+
   // Sort rows.
   std::stable_sort(m_rows.begin(), m_rows.end(), SortRow());
-  for (int r = 0; r < m_rows.size(); r++) {
-    m_rows[r]->m_id = r;
-  }
 
+  // Determine a box surrounding all the rows.
   for (int r = 0; r < m_rows.size(); r++) {
     Architecture::Row* row = m_rows[r];
 
-    m_xmin = std::min(m_xmin, row->m_subRowOrigin);
-    m_xmax = std::max(
-        m_xmax, row->m_subRowOrigin + row->m_numSites * row->m_siteSpacing);
-    m_ymin = std::min(m_ymin, row->m_rowLoc);
-    m_ymax = std::max(m_ymax, row->m_rowLoc + row->m_rowHeight);
+    lx = row->m_subRowOrigin;
+    rx = lx + row->m_numSites * row->m_siteSpacing;
+
+    yb = row->getY();
+    yt = yb + row->getH();
+
+    m_xmin = std::min(m_xmin, lx);
+    m_xmax = std::max(m_xmax, rx);
+    m_ymin = std::min(m_ymin, yb);
+    m_ymax = std::max(m_ymax, yt);
   }
 
-  // Check to see if any adjacent rows are co-linear.   This really implies that
-  // the rows are sub rows, and the code isn't really set up to support that...
-  // XXX: Do other parts of the code even work correctly if this is the
-  // case????????????
-  for (int r = 1; r < m_rows.size(); r++) {
-    Architecture::Row* rb = m_rows[r - 1];
-    Architecture::Row* rt = m_rows[r - 0];
-    if (std::fabs(rb->getY() - rt->getY()) <= 1.0e-3) {
-      std::cout << "Row " << r - 1 << " and row " << r
-                << " appear to have the same Y-location (subrows?)."
-                << std::endl;
+  // NEW.  Search for sub-rows.
+  std::vector<Architecture::Row*> subrows;
+  std::vector<Architecture::Row*> rows;
+  std::vector<std::pair<double,double> > intervals;
+  for (int r = 0; r < m_rows.size(); ) {
+    subrows.erase(subrows.begin(), subrows.end());
+    subrows.push_back(m_rows[r++]);
+    while (r < m_rows.size() && std::fabs(m_rows[r]->getY()-subrows[0]->getY()) < 1.0e-3) {
+      subrows.push_back(m_rows[r++]);
+    }
 
-      // Check if they overlap in the X-dir.
-      double s1 = rb->m_subRowOrigin;
-      double e1 = rb->m_subRowOrigin + rb->m_numSites * rb->m_siteSpacing;
+    // Convert subrows to intervals.
+    intervals.erase(intervals.begin(),intervals.end());
+    for (size_t i = 0; i < subrows.size(); i++) {
+      lx = subrows[i]->m_subRowOrigin;
+      rx = lx + subrows[i]->m_numSites * subrows[i]->m_siteSpacing;
+      intervals.push_back(std::make_pair(lx,rx));
+    }
+    std::sort(intervals.begin(), intervals.end(), compareIntervals());
 
-      double s2 = rt->m_subRowOrigin;
-      double e2 = rt->m_subRowOrigin + rt->m_numSites * rt->m_siteSpacing;
-
-      if ((s2 < e1 && s1 < e2)) {
-        std::cout << "Row " << r - 1 << " and row " << r
-                  << " overlap in the X-direction!" << std::endl;
+    std::stack<std::pair<double, double> > s;
+    s.push(intervals[0]);
+    for (size_t i = 1; i < intervals.size(); i++) {
+      std::pair<double, double> top = s.top();  // copy.
+      if (top.second < intervals[i].first) {
+        s.push(intervals[i]);  // new interval.
+      } else {
+        if (top.second < intervals[i].second) {
+          top.second = intervals[i].second;  // extend interval.
+        }
+        s.pop();      // remove old.
+        s.push(top);  // expanded interval.
       }
     }
+    intervals.erase(intervals.begin(), intervals.end());
+    while (!s.empty()) {
+      std::pair<double, double> temp = s.top();  // copy.
+      intervals.push_back(temp);
+      s.pop();
+    }
+    // Get intervals left to right.
+    std::sort(intervals.begin(), intervals.end(), compareIntervals());
+
+    // If more than one subrow, convert to a single row
+    // and delete the unnecessary subrows.
+    if (subrows.size() > 1) {
+      lx = intervals.front().first;
+      rx = intervals.back().second;
+      subrows[0]->m_numSites = (rx -lx) / subrows[0]->m_siteSpacing;
+      rx = lx + subrows[0]->m_numSites * subrows[0]->m_siteSpacing;
+
+      // Delete un-needed rows.
+      while (subrows.size() > 1) {
+        Architecture::Row* ptr = subrows.back();
+        subrows.pop_back();
+        delete ptr;
+      }
+    }
+    rows.push_back(subrows[0]);
+
+    // Check for the insertion of filler.  Hmm.  
+    // How do we set the id of the filler here?
+    height = subrows[0]->getH();
+    y = subrows[0]->getY() + 0.5 * subrows[0]->getH();
+    if (m_xmin < intervals.front().first) {
+      lx = m_xmin;
+      rx = intervals.front().first;
+      width = rx-lx;
+      x = 0.5*(lx + rx);
+      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+    }
+    for (size_t i = 1; i < intervals.size(); i++) {
+      if( intervals[i].first > intervals[i-1].second) {
+        lx = intervals[i-1].second;
+        rx = intervals[i].first;
+        width = rx-lx;
+        x = 0.5*(lx + rx);
+        Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+      }
+    }
+    if (m_xmax > intervals.back().second) {
+      lx = intervals.back().second;
+      rx = m_xmax;
+      width = rx-lx;
+      x = 0.5*(lx + rx);
+      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+    }
   }
-
-  std::cout << "Architecture: "
-            << "(" << m_xmin << "," << m_ymin << ")"
-            << "-"
-            << "(" << m_xmax << "," << m_ymax << ")" << std::endl;
-
+  // Replace original rows with new rows.
+  m_rows.erase( m_rows.begin(), m_rows.end() );
+  m_rows.insert( m_rows.end(), rows.begin(), rows.end() );
+  // Sort rows (to be safe).
+  std::stable_sort(m_rows.begin(), m_rows.end(), SortRow());
+  // Assign row ids.
+  for (int r = 0; r < m_rows.size(); r++) {
+    m_rows[r]->m_id = r;
+  }
   return true;
 }
 
@@ -209,30 +275,6 @@ int Architecture::find_closest_row(double y) {
   }
 
   return r;
-}
-
-void Architecture::find_overlapped_rows(double ymin, double ymax,
-                                        std::vector<Architecture::Row*>& rows) {
-  rows.erase(rows.begin(), rows.end());
-  if (ymin > this->m_ymax || ymax <= this->m_ymin) {
-    return;
-  }
-  std::vector<Architecture::Row*>::iterator row_l, row_t;
-  int b = 0;
-  if (ymin > m_rows[0]->getY()) {
-    row_l = std::lower_bound(m_rows.begin(), m_rows.end(), ymin,
-                             Architecture::Row::compare_row());
-    if (row_l == m_rows.end() || (*row_l)->getY() > ymin) {
-      --row_l;
-    }
-    b = row_l - m_rows.begin();
-  }
-  row_t = std::upper_bound(m_rows.begin(), m_rows.end(), ymax,
-                           Architecture::Row::compare_row());
-  int t = row_t - m_rows.begin() - 1;
-  for (int row_ix = b; row_ix <= t; row_ix++) {
-    rows.push_back(m_rows[row_ix]);
-  }
 }
 
 double Architecture::compute_overlap(double xmin1, double xmax1, double ymin1,
@@ -309,137 +351,6 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
     }
   }
   return false;
-}
-
-void Architecture::create_extra_nodes(Network* network, RoutingParams* rt) {
-  // This routing creates all extra nodes required by the placer.  This
-  // includes:
-  // 1. filler nodes for empty gaps in rows...
-  // 2. packing peanuts for routing...
-  // 3. shreds for macrocells...
-
-  // Filler nodes for gaps in rows...
-  for (int i = 0; i < network->m_filler.size(); i++) {
-    if (network->m_filler[i] != 0) delete network->m_filler[i];
-  }
-  network->m_filler.clear();
-
-  // Packing peanuts for routability...
-  for (int i = 0; i < network->m_peanuts.size(); i++) {
-    if (network->m_peanuts[i] != 0) delete network->m_peanuts[i];
-  }
-  network->m_peanuts.clear();
-
-  // Macrocell shreds...  Note this information is stored several ways...
-  for (int i = 0; i < network->m_pieces.size(); i++) {
-    if (network->m_pieces[i] != 0) delete network->m_pieces[i];
-  }
-  network->m_pieces.clear();
-  for (int i = 0; i < network->m_shreds.size(); i++) {
-    if (network->m_shreds[i] != 0) delete network->m_shreds[i];
-  }
-  network->m_shreds.clear();
-  network->m_reverseMap.erase(network->m_reverseMap.begin(),
-                              network->m_reverseMap.end());
-
-  // Set num nodes to ensure proper assignment of ids to nodes...
-  network->m_numNodesRaw = network->m_nodes.size();
-  network->m_numNodes = network->m_nodes.size();
-
-  create_filler_nodes(network);
-  create_peanut_nodes(network, rt);
-}
-
-void Architecture::create_filler_nodes(Network* network) {
-  // Assume a continuous placement area, but certain spans might have incomplete
-  // rows.  I noticed this one some more recent benchmarks.  Hence, we can crete
-  // dummy filler nodes which are fixed to occupy these spots.  Store them in
-  // the network which is arbitrary.
-
-  //    std::cout << "Inserting filler cells... Current node count is " <<
-  //    network->m_numNodes << std::endl;
-
-  for (int r = 0; r < m_rows.size(); r++) {
-    Architecture::Row* row = m_rows[r];
-
-    double xstrt = row->m_subRowOrigin;
-    double xstop = row->m_subRowOrigin + row->m_numSites * row->m_siteSpacing;
-    double ystrt = row->m_rowLoc;
-    double ystop = row->m_rowLoc + row->m_rowHeight;
-
-    if (xstrt > m_xmin) {
-      Node* nd = new Node();
-      nd->setFixed(NodeFixed_FIXED_XY);
-      nd->setType(NodeType_FILLER);
-      nd->setId(network->m_numNodes);
-      nd->setHeight(row->m_rowHeight);
-      nd->setWidth(xstrt - m_xmin);
-      nd->setY(row->m_rowLoc + 0.5 * row->m_rowHeight);
-      nd->setX(0.5 * (m_xmin + xstrt));
-
-      network->m_filler.push_back(nd);
-      ++network->m_numNodes;
-    }
-    if (xstop < m_xmax) {
-      Node* nd = new Node();
-      nd->setFixed(NodeFixed_FIXED_XY);
-      nd->setType(NodeType_FILLER);
-      nd->setId(network->m_numNodes);
-      nd->setHeight(row->m_rowHeight);
-      nd->setWidth(m_xmax - xstop);
-      nd->setY(row->m_rowLoc + 0.5 * row->m_rowHeight);
-      nd->setX(0.5 * (xstop + m_xmax));
-
-      network->m_filler.push_back(nd);
-      ++network->m_numNodes;
-    }
-  }
-
-  //    std::cout << "Filler cells added is " << network->m_filler.size() << ",
-  //    "
-  //         << "Current node count is " << network->m_numNodes
-  //         << std::endl;
-}
-
-void Architecture::create_peanut_nodes(Network* network, RoutingParams* rt) {
-  //    std::cout << "Inserting peanut cells... Current node count is " <<
-  //    network->m_numNodes << std::endl;
-
-  if (rt != 0) {
-    int numGridX = rt->m_grid_x;
-    int numGridY = rt->m_grid_y;
-    double tileW = rt->m_tile_size_x;
-    double tileH = rt->m_tile_size_y;
-    double originX = rt->m_origin_x;
-    double originY = rt->m_origin_y;
-
-    network->m_peanuts.resize(numGridX * numGridY);
-    int id = 0;
-    for (int i = 0; i < numGridX; i++) {
-      for (int j = 0; j < numGridY; j++) {
-        double x = originX + tileW * i + 0.5 * tileW;
-        double y = originY + tileH * j + 0.5 * tileH;
-
-        network->m_peanuts[id] = new Node();
-        network->m_peanuts[id]->setFixed(NodeFixed_FIXED_XY);
-        network->m_peanuts[id]->setType(
-            NodeType_PEANUT);  // XXX: Or should it be filler???????????
-        network->m_peanuts[id]->setId(network->m_numNodes);
-        network->m_peanuts[id]->setHeight(0.0);
-        network->m_peanuts[id]->setWidth(0.0);
-        network->m_peanuts[id]->setY(y);
-        network->m_peanuts[id]->setX(x);
-
-        ++id;
-        ++network->m_numNodes;
-      }
-    }
-  }
-
-  //    std::cout << "Peanut cells added is " << network->m_peanuts.size() << ",
-  //    "
-  //         << "Current node count is " << network->m_numNodes
-  //         << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

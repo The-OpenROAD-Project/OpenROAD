@@ -171,16 +171,16 @@ void DetailedInterleave::dp(void) {
   // Initializations.
   m_traversal = 0;
 
-  m_nodeIds.reserve(m_network->m_nodes.size());
-  m_edgeIds.reserve(m_network->m_edges.size());
+  m_nodeIds.reserve(m_network->getNumNodes());
+  m_edgeIds.reserve(m_network->getNumEdges());
 
-  m_edgeMask.resize(m_network->m_edges.size());
-  m_nodeMask.resize(m_network->m_nodes.size());
+  m_edgeMask.resize(m_network->getNumEdges());
+  m_nodeMask.resize(m_network->getNumNodes());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
   std::fill(m_nodeMask.begin(), m_nodeMask.end(), m_traversal);
 
-  m_edgeMap.resize(m_network->m_edges.size());
-  m_nodeMap.resize(m_network->m_nodes.size());
+  m_edgeMap.resize(m_network->getNumEdges());
+  m_nodeMap.resize(m_network->getNumNodes());
   std::fill(m_edgeMap.begin(), m_edgeMap.end(), -1);
   std::fill(m_nodeMap.begin(), m_nodeMap.end(), -1);
 
@@ -227,7 +227,7 @@ void DetailedInterleave::dp(void) {
         // Enough cells to interleave.
 
         Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
-        rightLimit = segPtr->m_xmax;
+        rightLimit = segPtr->getMaxX();
         if (nextPtr != 0) {
           m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
@@ -235,7 +235,7 @@ void DetailedInterleave::dp(void) {
               rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
-        leftLimit = segPtr->m_xmin;
+        leftLimit = segPtr->getMinX();
         if (prevPtr != 0) {
           m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
@@ -284,7 +284,7 @@ void DetailedInterleave::dp(void) {
         // multiples of site widths, then everything should be
         // okay and we can just update the cell position!!!
         for (size_t n = 0; n < m_nodeIds.size(); n++) {
-          Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+          Node* nd = m_network->getNode(m_nodeIds[n]);
           int nid = m_nodeMap[nd->getId()];
           nd->setX(sm.m_x[nid]);
         }
@@ -323,7 +323,7 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
     for (int pj = nd->getFirstPinIdx(); pj < nd->getLastPinIdx(); pj++) {
       Pin* pin = m_network->m_nodePins[pj];
-      Edge* ed = &(m_network->m_edges[pin->getEdgeId()]);
+      Edge* ed = m_network->getEdge(pin->getEdgeId());
       int npins = ed->getNumPins();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
@@ -362,7 +362,7 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
     double totalPadding = 0.;
     double totalWidth = 0.;
     for (size_t n = 0; n < m_nodeIds.size(); n++) {
-      Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+      Node* nd = m_network->getNode(m_nodeIds[n]);
       m_arch->getCellPadding(nd, leftPadding, rightPadding);
       totalPadding += (leftPadding + rightPadding);
       totalWidth += nd->getWidth();
@@ -392,7 +392,7 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
       totalWidth = 0.;
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
-        Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+        Node* nd = m_network->getNode(m_nodeIds[n]);
         int nid = m_nodeMap[nd->getId()];
         m_arch->getCellPadding(nd, leftPadding, rightPadding);
         sm->m_widths[nid] = nd->getWidth() + leftPadding + rightPadding;
@@ -400,7 +400,7 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
         totalWidth += sm->m_widths[nid];
       }
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
-        Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+        Node* nd = m_network->getNode(m_nodeIds[n]);
         int nid = m_nodeMap[nd->getId()];
         if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
           totalWidth -= sm->m_widths[nid];
@@ -416,14 +416,14 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
       totalWidth = 0.;
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
-        Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+        Node* nd = m_network->getNode(m_nodeIds[n]);
         int nid = m_nodeMap[nd->getId()];
         sm->m_widths[nid] = nd->getWidth();
 
         totalWidth += sm->m_widths[nid];
       }
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
-        Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+        Node* nd = m_network->getNode(m_nodeIds[n]);
         int nid = m_nodeMap[nd->getId()];
         if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
           totalWidth -= sm->m_widths[nid];
@@ -441,20 +441,20 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
   }
   // Setup initial positions.
   for (size_t n = 0; n < m_nodeIds.size(); n++) {
-    Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+    Node* nd = m_network->getNode(m_nodeIds[n]);
     int nid = m_nodeMap[nd->getId()];
     sm->m_x[nid] = nd->getX();
   }
   // Setup connectivity and net boxes.
   double cost = 0.;
   for (size_t e = 0; e < m_edgeIds.size(); e++) {
-    Edge* ed = &(m_network->m_edges[m_edgeIds[e]]);
+    Edge* ed = m_network->getEdge(m_edgeIds[e]);
     int eid = m_edgeMap[ed->getId()];
 
     EdgeInterval tmp;
     for (int pi = ed->getFirstPinIdx(); pi < ed->getLastPinIdx(); pi++) {
       Pin* pin = m_network->m_edgePins[pi];
-      Node* nd = &(m_network->m_nodes[pin->getNodeId()]);
+      Node* nd = m_network->getNode(pin->getNodeId());
       double x = nd->getX() + pin->getOffsetX();
       x = std::min(std::max(x, sm->m_xmin), sm->m_xmax);
       if (m_nodeMask[nd->getId()] == m_traversal) {
@@ -651,16 +651,16 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
 
   m_traversal = 0;
 
-  m_nodeIds.reserve(m_network->m_nodes.size());
-  m_edgeIds.reserve(m_network->m_edges.size());
+  m_nodeIds.reserve(m_network->getNumNodes());
+  m_edgeIds.reserve(m_network->getNumEdges());
 
-  m_edgeMask.resize(m_network->m_edges.size());
-  m_nodeMask.resize(m_network->m_nodes.size());
+  m_edgeMask.resize(m_network->getNumEdges());
+  m_nodeMask.resize(m_network->getNumNodes() );
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
   std::fill(m_nodeMask.begin(), m_nodeMask.end(), m_traversal);
 
-  m_edgeMap.resize(m_network->m_edges.size());
-  m_nodeMap.resize(m_network->m_nodes.size());
+  m_edgeMap.resize(m_network->getNumEdges());
+  m_nodeMap.resize(m_network->getNumNodes() );
   std::fill(m_edgeMap.begin(), m_edgeMap.end(), -1);
   std::fill(m_nodeMap.begin(), m_nodeMap.end(), -1);
 
@@ -700,7 +700,7 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
 
     for (int pj = nd->getFirstPinIdx(); pj < nd->getLastPinIdx(); pj++) {
       Pin* pin = m_network->m_nodePins[pj];
-      Edge* ed = &(m_network->m_edges[pin->getEdgeId()]);
+      Edge* ed = m_network->getEdge(pin->getEdgeId());
       int npins = ed->getNumPins();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
@@ -718,7 +718,7 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
   sm.m_xmin = minX;
   sm.m_xmax = maxX;
   for (size_t n = 0; n < m_nodeIds.size(); n++) {
-    Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+    Node* nd = m_network->getNode(m_nodeIds[n]);
     int nid = m_nodeMap[nd->getId()];
 
     sm.m_widths[nid] = nd->getWidth() * scaling;
@@ -726,13 +726,13 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
   }
   double currCost = 0.;
   for (size_t e = 0; e < m_edgeIds.size(); e++) {
-    Edge* ed = &(m_network->m_edges[m_edgeIds[e]]);
+    Edge* ed = m_network->getEdge(m_edgeIds[e]);
     int eid = m_edgeMap[ed->getId()];
 
     EdgeInterval tmp;
     for (int pi = ed->getFirstPinIdx(); pi < ed->getLastPinIdx(); pi++) {
       Pin* pin = m_network->m_edgePins[pi];
-      Node* nd = &(m_network->m_nodes[pin->getNodeId()]);
+      Node* nd = m_network->getNode(pin->getNodeId());
       double x = std::min(std::max(nd->getX() + pin->getOffsetX(), minX), maxX);
       if (m_nodeMask[nd->getId()] == m_traversal) {
         int nid = m_nodeMap[nd->getId()];
@@ -750,7 +750,7 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
   double bestCost = solve(&sm);
   if (1 || bestCost < currCost) {
     for (size_t n = 0; n < m_nodeIds.size(); n++) {
-      Node* nd = &(m_network->m_nodes[m_nodeIds[n]]);
+      Node* nd = m_network->getNode(m_nodeIds[n]);
       int nid = m_nodeMap[nd->getId()];
       nd->setX(sm.m_x[nid]);
     }

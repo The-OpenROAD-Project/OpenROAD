@@ -88,9 +88,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   mgr.findSegments();
 
   std::vector<std::pair<double, double> > origPos;
-  origPos.resize(m_network->m_nodes.size());
-  for (size_t i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* ndi = &(m_network->m_nodes[i]);
+  origPos.resize(m_network->getNumNodes() );
+  for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
+    Node* ndi = m_network->getNode(i) ;
     origPos[ndi->getId()] = std::make_pair(ndi->getX(), ndi->getY());
   }
 
@@ -132,8 +132,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   }
 
   // Topological order - required for a shift.
-  m_incoming.resize(cells.size());
-  m_outgoing.resize(cells.size());
+  size_t size = m_network->getNumNodes() ;
+  m_incoming.resize(size);
+  m_outgoing.resize(size);
   for (size_t i = 0; i < mgr.m_segments.size(); i++) {
     int segId = mgr.m_segments[i]->getSegId();
     for (size_t j = 1; j < mgr.m_cellsInSeg[segId].size(); j++) {
@@ -144,10 +145,10 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
       m_outgoing[prev->getId()].push_back(curr->getId());
     }
   }
-  std::vector<bool> visit(cells.size(), false);
-  std::vector<int> count(cells.size(), 0);
+  std::vector<bool> visit(size, false);
+  std::vector<int> count(size, 0);
   std::vector<Node*> order;
-  order.reserve(cells.size());
+  order.reserve(size);
   for (size_t i = 0; i < cells.size(); i++) {
     Node* ndi = cells[i];
     count[ndi->getId()] = m_incoming[ndi->getId()].size();
@@ -159,7 +160,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   for (size_t i = 0; i < order.size(); i++) {
     Node* ndi = order[i];
     for (size_t j = 0; j < m_outgoing[ndi->getId()].size(); j++) {
-      Node* ndj = &(m_network->m_nodes[m_outgoing[ndi->getId()][j]]);
+      Node* ndj = m_network->getNode(m_outgoing[ndi->getId()][j]);
 
       --count[ndj->getId()];
       if (count[ndj->getId()] == 0) {
@@ -219,7 +220,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   // Note: I don't even try to correct for site alignment.  I'll
   // print a warning, but will otherwise continue.
 
-  int nnodes = m_network->m_nodes.size();
+  int nnodes = m_network->getNumNodes() ;
   int nsegs = m_mgr->getNumSegments();
 
   std::vector<Node*>::iterator it;
@@ -236,7 +237,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
     Node* ndi = new Node();
 
     ndi->setId(nnodes + i);
-    ndi->setX(segPtr->m_xmin);
+    ndi->setX(segPtr->getMinX());
     ndi->setY(m_arch->getRow(rowId)->getY() +
               0.5 * m_arch->getRow(rowId)->getH());
     ndi->setWidth(0.0);
@@ -254,7 +255,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
     Node* ndi = new Node();
 
     ndi->setId(nnodes + nsegs + i);
-    ndi->setX(segPtr->m_xmax);
+    ndi->setX(segPtr->getMaxX());
     ndi->setY(m_arch->getRow(rowId)->getY() +
               0.5 * m_arch->getRow(rowId)->getH());
     ndi->setWidth(0.0);
@@ -390,8 +391,8 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     for (size_t j = 0; j < m_mgr->m_reverseCellToSegs[ndi->getId()].size();
          j++) {
       DetailedSeg* segPtr = m_mgr->m_reverseCellToSegs[ndi->getId()][j];
-      double xmin = segPtr->m_xmin;
-      double xmax = segPtr->m_xmax;
+      double xmin = segPtr->getMinX();
+      double xmax = segPtr->getMaxX();
       // Left edge always within segment.
       r->m_posn = std::min(std::max(r->m_posn, xmin), xmax - r->m_width);
     }
@@ -495,7 +496,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, double& dist) {
   // be overlap among any cell in the right clump and any cell
   // in the left clump.  Look for the worst case.
 
-  int nnodes = m_network->m_nodes.size();
+  int nnodes = m_network->getNumNodes() ;
   int nsegs = m_mgr->getNumSegments();
 
   l = nullptr;
@@ -513,7 +514,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, double& dist) {
       // might be a left or right dummy node.
       Node* ndl = 0;
       if (id < nnodes) {
-        ndl = &(m_network->m_nodes[id]);
+        ndl = m_network->getNode(id);
       } else if (id < nnodes + nsegs) {
         ndl = m_dummiesLeft[id - nnodes];
       } else {

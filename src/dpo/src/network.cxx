@@ -255,20 +255,7 @@ bool Pin::isPo(Network* network) const {
 Network::Network() {}
 
 Network::~Network() {
-  for (int i = 0; i < m_filler.size(); i++) {
-    delete m_filler[i];
-  }
-  m_filler.clear();
-  for (int i = 0; i < m_pieces.size(); i++) {
-    delete m_pieces[i];
-  }
-  m_pieces.clear();
-  for (int i = 0; i < m_shreds.size(); i++) {
-    if (m_shreds[i] != 0) {
-      delete m_shreds[i];
-    }
-  }
-  m_shreds.clear();
+  deleteFillerNodes();
 
   for (int i = 0; i < m_shapes.size(); i++) {
     for (int j = 0; j < m_shapes[i].size(); j++) {
@@ -278,16 +265,34 @@ Network::~Network() {
   }
   m_shapes.clear();
 
-  for (int i = 0; i < m_peanuts.size(); i++) {
-    delete m_peanuts[i];
-  }
-  m_peanuts.clear();
-
   m_nodeNames.clear();
   m_edgeNames.clear();
   m_nodes.clear();
   m_edges.clear();
   m_pins.clear();
+}
+
+void Network::deleteFillerNodes(void) {
+  for (int i = 0; i < m_filler.size(); i++) {
+    delete m_filler[i];
+  }
+  m_filler.clear();
+}
+
+Node* Network::createAndAddFillerNode(double x,
+    double y, double width, double height) {
+  Node* ndi = new Node();
+  ndi->setFixed(NodeFixed_FIXED_XY);
+  ndi->setType(NodeType_FILLER);
+  int id = m_nodes.size() + m_filler.size();
+  ndi->setId(id);
+  ndi->setHeight(height);
+  ndi->setWidth(width);
+  ndi->setY(y);
+  ndi->setX(x);
+
+  m_filler.push_back(ndi);
+  return ndi;
 }
 
 }  // namespace dpo

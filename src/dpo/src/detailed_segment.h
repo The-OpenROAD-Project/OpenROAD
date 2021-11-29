@@ -76,14 +76,26 @@ class DetailedSeg {
   void setRegId(int regId) { m_regId = regId; }
   int getRegId(void) const { return m_regId; }
 
+  void setMinX(double xmin) { m_xmin = xmin; }
+  double getMinX(void) const { return m_xmin; }
+
+  void setMaxX(double xmax) { m_xmax = xmax; }
+  double getMaxX(void) const { return m_xmax; }
+
+  void setUtil(double util) { m_util = util; }
+  double getUtil(void) const { return m_util; }
+
+  double getWidth(void) const { return m_xmax-m_xmin; }
+
  public:
-  int m_segId;
-  int m_rowId;
-  int m_regId;  // AAK: Added for regions.
-  double m_xmin;
-  double m_xmax;
   double m_util;
   double m_gapu;
+ protected:
+  int m_segId;
+  int m_rowId;
+  int m_regId; 
+  double m_xmin;
+  double m_xmax;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

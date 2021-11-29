@@ -493,7 +493,6 @@ double DetailedRandom::go(void) {
         "End of pass, Generator {:s} called {:d} times.",
         m_generators[i]->getName().c_str(), gen_count[i]);
   }
-  std::cout << "Generator stats:" << std::endl;
   for (size_t i = 0; i < m_generators.size(); i++) {
     m_generators[i]->stats();
   }
@@ -600,7 +599,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
     yi = ndi->getY();
 
     // Segment for the source.
-    si = segs_i[0]->m_segId;
+    si = segs_i[0]->getSegId();
 
     // Random position within a box centered about (xi,yi).
     grid_xi =
@@ -624,8 +623,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
     sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
-      if (xj >= segPtr->m_xmin && xj <= segPtr->m_xmax) {
-        sj = segPtr->m_segId;
+      if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
+        sj = segPtr->getSegId();
         break;
       }
     }
@@ -729,7 +728,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     yi = ndi->getY();
 
     // Segment for the source.
-    si = segs_i[0]->m_segId;
+    si = segs_i[0]->getSegId();
 
     // Choices: (i) random position within a box centered at the original
     // position; (ii) random position within a box between the current
@@ -796,8 +795,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
-      if (xj >= segPtr->m_xmin && xj <= segPtr->m_xmax) {
-        sj = segPtr->m_segId;
+      if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
+        sj = segPtr->getSegId();
         break;
       }
     }

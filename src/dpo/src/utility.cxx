@@ -57,8 +57,8 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
   tot = 0.;
   max = 0.;
   avg = 0.;
-  for (size_t i = 0; i < nw->m_nodes.size(); i++) {
-    Node* ndi = &(nw->m_nodes[i]);
+  for (size_t i = 0; i < nw->getNumNodes(); i++) {
+    Node* ndi = nw->getNode(i);
 
     double dx = std::fabs(ndi->getX() - ndi->getOrigX());
     double dy = std::fabs(ndi->getY() - ndi->getOrigY());
@@ -66,7 +66,7 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
     tot += dx + dx;
     max = std::max(max, dx + dy);
   }
-  avg = tot / (double)nw->m_nodes.size();
+  avg = tot / (double)nw->getNumNodes(); 
 
   return tot;
 }
@@ -75,13 +75,13 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
 ////////////////////////////////////////////////////////////////////////////////
 double Utility::hpwl(Network* nw) {
   // Compute the wire length for the given placement.
-  unsigned numEdges = nw->m_edges.size();
+  unsigned numEdges = nw->getNumEdges();
   double xmin, xmax, ymin, ymax;
   double totWL = 0.0;
   for (unsigned e = 0; e < numEdges; e++) {
-    Edge& ed = nw->m_edges[e];
+    Edge* ed = nw->getEdge(e);
 
-    int numPins = ed.getNumPins();
+    int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     }
@@ -91,12 +91,12 @@ double Utility::hpwl(Network* nw) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed.getFirstPinIdx(); p < ed.getLastPinIdx(); p++) {
+    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
       Pin* pin = nw->m_edgePins[p];
 
-      Node& node = nw->m_nodes[pin->getNodeId()];
-      double x = node.getX() + pin->getOffsetX();
-      double y = node.getY() + pin->getOffsetY();
+      Node* node = nw->getNode(pin->getNodeId());
+      double x = node->getX() + pin->getOffsetX();
+      double y = node->getY() + pin->getOffsetY();
       xmin = (x < xmin) ? x : xmin;
       xmax = (x > xmax) ? x : xmax;
       ymin = (y < ymin) ? y : ymin;
@@ -111,13 +111,13 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
   hpwlx = 0.0;
   hpwly = 0.0;
   // Compute the wire length for the given placement.
-  unsigned numEdges = nw->m_edges.size();
+  unsigned numEdges = nw->getNumEdges();
   double xmin, xmax, ymin, ymax;
   double totWL = 0.0;
   for (unsigned e = 0; e < numEdges; e++) {
-    Edge& ed = nw->m_edges[e];
+    Edge* ed = nw->getEdge(e);
 
-    int numPins = ed.getNumPins();
+    int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     }
@@ -127,12 +127,12 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed.getFirstPinIdx(); p < ed.getLastPinIdx(); p++) {
+    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
       Pin* pin = nw->m_edgePins[p];
 
-      Node& node = nw->m_nodes[pin->getNodeId()];
-      double x = node.getX() + pin->getOffsetX();
-      double y = node.getY() + pin->getOffsetY();
+      Node* node = nw->getNode(pin->getNodeId());
+      double x = node->getX() + pin->getOffsetX();
+      double y = node->getY() + pin->getOffsetY();
       xmin = (x < xmin) ? x : xmin;
       xmax = (x > xmax) ? x : xmax;
       ymin = (y < ymin) ? y : ymin;
@@ -177,9 +177,9 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
   for (int p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
     Pin* pin = nw->m_edgePins[p];
 
-    Node& node = nw->m_nodes[pin->getNodeId()];
-    double x = node.getX() + pin->getOffsetX();
-    double y = node.getY() + pin->getOffsetY();
+    Node* node = nw->getNode(pin->getNodeId());
+    double x = node->getX() + pin->getOffsetX();
+    double y = node->getY() + pin->getOffsetY();
     xmin = (x < xmin) ? x : xmin;
     xmax = (x > xmax) ? x : xmax;
     ymin = (y < ymin) ? y : ymin;
@@ -195,7 +195,7 @@ double Utility::area(Network* nw, bool print) {
   // Compute the area of the bounding boxes.  Also, compute a histogram of the
   // aspect ratios with a cut off of 0.5.
 
-  unsigned numEdges = nw->m_edges.size();
+  unsigned numEdges = nw->getNumEdges();
   double xmin, xmax, ymin, ymax;
   double totArea = 0.0;
   int nbins = 20;
@@ -203,9 +203,9 @@ double Utility::area(Network* nw, bool print) {
   histogram.resize(nbins);
   std::fill(histogram.begin(), histogram.end(), 0);
   for (unsigned e = 0; e < numEdges; e++) {
-    Edge& ed = nw->m_edges[e];
+    Edge* ed = nw->getEdge(e);
 
-    int numPins = ed.getNumPins();
+    int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     }
@@ -215,12 +215,12 @@ double Utility::area(Network* nw, bool print) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed.getFirstPinIdx(); p < ed.getLastPinIdx(); p++) {
+    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
       Pin* pin = nw->m_edgePins[p];
 
-      Node& node = nw->m_nodes[pin->getNodeId()];
-      double x = node.getX() + pin->getOffsetX();
-      double y = node.getY() + pin->getOffsetY();
+      Node* node = nw->getNode(pin->getNodeId());
+      double x = node->getX() + pin->getOffsetX();
+      double y = node->getY() + pin->getOffsetY();
 
       xmin = (x < xmin) ? x : xmin;
       xmax = (x > xmax) ? x : xmax;
@@ -253,8 +253,8 @@ void Utility::map_shredded_to_original(
     Network* original, Network* shredded, std::vector<Node*>& reverseMap,
     std::vector<std::vector<Node*> >& forwardMap) {
   // Map positions to the original network.
-  for (int k = 0; k < original->m_nodes.size(); k++) {
-    Node* nd = &(original->m_nodes[k]);
+  for (int k = 0; k < original->getNumNodes() ; k++) {
+    Node* nd = original->getNode(k);
     if (nd->getType() == NodeType_TERMINAL_NI) {
       continue;
     }
@@ -282,14 +282,14 @@ void Utility::check_connectivity(Network* nw) {
   // don't skip large nets).
   std::deque<Node*> queue;
   std::vector<int> considered;
-  considered.resize(nw->m_nodes.size());
+  considered.resize(nw->getNumNodes() );
   std::vector<int> visit;
-  visit.resize(nw->m_nodes.size());
+  visit.resize(nw->getNumNodes() );
   std::fill(visit.begin(), visit.end(), 0);
   int nComponents = 0;
   int nComponentsWithoutFixed = 0;
-  for (int i = 0; i < nw->m_nodes.size(); i++) {
-    Node* nd = &(nw->m_nodes[i]);
+  for (int i = 0; i < nw->getNumNodes() ; i++) {
+    Node* nd = nw->getNode(i);
     if (visit[nd->getId()] != 0) {
       continue;
     }
@@ -317,12 +317,12 @@ void Utility::check_connectivity(Network* nw) {
       for (int pi = curr->getFirstPinIdx(); pi < curr->getLastPinIdx(); pi++) {
         Pin* pini = nw->m_nodePins[pi];
 
-        Edge* ed = &(nw->m_edges[pini->getEdgeId()]);
+        Edge* ed = nw->getEdge(pini->getEdgeId());
 
         for (int pj = ed->getFirstPinIdx(); pj < ed->getLastPinIdx(); pj++) {
           Pin* pinj = nw->m_edgePins[pj];
 
-          Node* next = &(nw->m_nodes[pinj->getNodeId()]);
+          Node* next = nw->getNode(pinj->getNodeId());
 
           if (considered[next->getId()] == 0) {
             considered[next->getId()] = 1;

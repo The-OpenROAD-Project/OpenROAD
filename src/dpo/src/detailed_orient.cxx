@@ -72,7 +72,7 @@ DetailedOrient::DetailedOrient(Architecture* arch, Network* network,
       m_rt(rt),
       m_skipNetsLargerThanThis(100) {
   m_traversal = 0;
-  m_edgeMask.resize(m_network->m_edges.size());
+  m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
 }
 
@@ -287,9 +287,9 @@ int DetailedOrient::orientCellsForRow(void) {
   for (int s = 0; s < m_mgrPtr->m_segments.size(); s++) {
     DetailedSeg* segment = m_mgrPtr->m_segments[s];
 
-    int row = segment->m_rowId;
+    int row = segment->getRowId();
 
-    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segment->m_segId];
+    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segment->getSegId()];
     for (int i = 0; i < nodes.size(); i++) {
       bool success = orientCellForRow(nodes[i], row);
       if (!success) {
@@ -320,13 +320,13 @@ int DetailedOrient::flipCells(void) {
   for (int s = 0; s < m_mgrPtr->m_segments.size(); s++) {
     DetailedSeg* segment = m_mgrPtr->m_segments[s];
 
-    int row = segment->m_rowId;
+    int row = segment->getRowId();
 
     if ((m_arch->m_rows[row]->m_siteSymmetry & Symmetry_Y) == 0) {
       continue;
     }
 
-    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segment->m_segId];
+    std::vector<Node*>& nodes = m_mgrPtr->m_cellsInSeg[segment->getSegId()];
     for (int i = 0; i < nodes.size(); i++) {
       Node* ndi = nodes[i];
 
@@ -347,9 +347,9 @@ int DetailedOrient::flipCells(void) {
         gapr = m_arch->getCellSpacing(ndi, ndr);
       }
       spacel = (ndi->getX() - 0.5 * ndi->getWidth()) -
-               ((ndl == 0) ? segment->m_xmin
+               ((ndl == 0) ? segment->getMinX()
                            : (ndl->getX() + 0.5 * ndl->getWidth()));
-      spacer = ((ndr == 0) ? segment->m_xmax
+      spacer = ((ndr == 0) ? segment->getMaxX()
                            : (ndr->getX() - 0.5 * ndr->getWidth())) -
                (ndi->getX() + 0.5 * ndi->getWidth());
       if (gapl > spacel || gapr > spacer) {
@@ -364,7 +364,7 @@ int DetailedOrient::flipCells(void) {
       for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
         Pin* pini = m_network->m_nodePins[pi];
 
-        Edge* edi = &(m_network->m_edges[pini->getEdgeId()]);
+        Edge* edi = m_network->getEdge(pini->getEdgeId());
 
         int npins = edi->getNumPins();
         if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
@@ -384,7 +384,7 @@ int DetailedOrient::flipCells(void) {
         for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
           Pin* pinj = m_network->m_edgePins[pj];
 
-          Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+          Node* ndj = m_network->getNode(pinj->getNodeId());
 
           old_xmin = std::min(old_xmin, ndj->getX() + pinj->getOffsetX());
           old_xmax = std::max(old_xmax, ndj->getX() + pinj->getOffsetX());

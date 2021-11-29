@@ -154,7 +154,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::reorder(void) {
   m_traversal = 0;
-  m_edgeMask.resize(m_network->m_edges.size());
+  m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
 
   double rightLimit = 0.;
@@ -195,30 +195,16 @@ void DetailedReorderer::reorder(void) {
         }
 
         Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : 0;
-        rightLimit = segPtr->m_xmax;
+        rightLimit = segPtr->getMaxX();
         if (nextPtr != 0) {
-          // std::cout << "Next node is " << nextPtr->getId()
-          //    << "["
-          //    << nextPtr->getX() - 0.5 * nextPtr->getWidth() << "," <<
-          //    nextPtr->getX() + 0.5 * nextPtr->getWidth()
-          //    << "]"
-          //    << std::endl;
-
           m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
               nextPtr->getX() - 0.5 * nextPtr->getWidth() - leftPadding,
               rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
-        leftLimit = segPtr->m_xmin;
+        leftLimit = segPtr->getMinX();
         if (prevPtr != 0) {
-          // std::cout << "Prev node is " << prevPtr->getId()
-          //    << "["
-          //    << prevPtr->getX() - 0.5 * prevPtr->getWidth() << "," <<
-          //    prevPtr->getX() + 0.5 * prevPtr->getWidth()
-          //    << "]"
-          //    << std::endl;
-
           m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
               prevPtr->getX() + 0.5 * prevPtr->getWidth() + rightPadding,
@@ -503,7 +489,7 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
 
     for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
       Pin* pini = m_network->m_nodePins[pi];
-      Edge* edi = &(m_network->m_edges[pini->getEdgeId()]);
+      Edge* edi = m_network->getEdge(pini->getEdgeId());
 
       int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
@@ -518,7 +504,7 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
       double xmax = -std::numeric_limits<double>::max();
       for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
         Pin* pinj = m_network->m_edgePins[pj];
-        Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+        Node* ndj = m_network->getNode(pinj->getNodeId());
 
         double x = ndj->getX() + pinj->getOffsetX();
 

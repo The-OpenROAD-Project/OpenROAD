@@ -127,15 +127,15 @@ void PlotGnu::drawNodes(char* buf) {
 
   double xmin, xmax, ymin, ymax;
   double x, y, h, w;
-  unsigned nNodes = m_network->m_nodes.size();
-  unsigned nEdges = m_network->m_edges.size();
+  unsigned nNodes = m_network->getNumNodes();
+  unsigned nEdges = m_network->getNumEdges();
 
   double avgW = 0.;
   double avgH = 0.;
   double smallW = std::numeric_limits<double>::max();
   double smallH = std::numeric_limits<double>::max();
-  for (unsigned i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
+  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
+    Node* nd = m_network->getNode(i);;
     avgW += nd->getWidth();
     avgH += nd->getHeight();
     if (nd->getWidth() > 1.0e-3 && nd->getWidth() < smallW)
@@ -210,13 +210,13 @@ void PlotGnu::drawNodes(char* buf) {
   xmax = -std::numeric_limits<double>::max();
   ymin = std::numeric_limits<double>::max();
   ymax = -std::numeric_limits<double>::max();
-  for (unsigned i = 0; i < m_network->m_nodes.size(); i++) {
-    Node& nd = m_network->m_nodes[i];
+  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
+    Node* nd = m_network->getNode(i);
 
-    x = nd.getX();
-    y = nd.getY();
-    w = nd.getWidth();
-    h = nd.getHeight();
+    x = nd->getX();
+    y = nd->getY();
+    w = nd->getWidth();
+    h = nd->getHeight();
 
     xmin = ((x - w / 2.) < xmin) ? (x - w / 2.) : xmin;
     xmax = ((x + w / 2.) > xmax) ? (x + w / 2.) : xmax;
@@ -269,8 +269,8 @@ void PlotGnu::drawNodes(char* buf) {
   bool didPrintOutlines = false;
   bool didPrintShapes = false;
   bool didPrintPeanut = false;
-  for (unsigned i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
+  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
+    Node* nd = m_network->getNode(i);
     x = nd->getX();
     y = nd->getY();
     w = nd->getWidth();
@@ -466,8 +466,8 @@ void PlotGnu::drawNodes(char* buf) {
     // peanuts files.
 
     didPrintPeanut = true;
-    for (unsigned i = 0; i < m_network->m_nodes.size(); i++) {
-      Node* nd = &(m_network->m_nodes[i]);
+    for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
+      Node* nd = m_network->getNode(i);
 
       double x1 = nd->getX();
       double y1 = nd->getY();
@@ -507,47 +507,6 @@ void PlotGnu::drawNodes(char* buf) {
                 "%lf %lf\n"
                 "\n",
                 l, b, l, t, r, t, r, b, l, b);
-      }
-    }
-  }
-
-  if (1) {
-    for (int i = 0; i < m_network->m_peanuts.size(); i++) {
-      Node* nd = m_network->m_peanuts[i];
-      x = nd->getX();
-      y = nd->getY();
-      w = nd->getWidth();
-      h = nd->getHeight();
-      if (w * h < 1.0e-3) continue;
-      FILE* fpCurr = fpPeanut;
-      if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-        didPrintPeanut = true;
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y - 0.5 * h, x - 0.5 * w, y + 0.5 * h, x + 0.5 * w,
-                y + 0.5 * h, x + 0.5 * w, y - 0.5 * h, x - 0.5 * w,
-                y - 0.5 * h);
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y - 0.5 * h, x + 0.5 * w, y + 0.5 * h);
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y + 0.5 * h, x + 0.5 * w, y - 0.5 * h);
       }
     }
   }

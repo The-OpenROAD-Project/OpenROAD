@@ -215,7 +215,7 @@ void DetailedMis::place(void) {
   buildGrid();
   populateGrid();
 
-  m_timesUsed.resize(m_network->m_nodes.size());
+  m_timesUsed.resize(m_network->getNumNodes() );
   std::fill(m_timesUsed.begin(), m_timesUsed.end(), 0);
 
   // Select candidates and solve matching problem.  Note that we need to do
@@ -271,19 +271,19 @@ void DetailedMis::collectMovableCells(void) {
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::colorCells(void) {
 
-  m_colors.resize(m_network->m_nodes.size());
+  m_colors.resize(m_network->getNumNodes() );
   std::fill(m_colors.begin(), m_colors.end(), -1);
 
-  m_movable.resize(m_network->m_nodes.size());
+  m_movable.resize(m_network->getNumNodes() );
   std::fill(m_movable.begin(), m_movable.end(), false);
   for (size_t i = 0; i < m_candidates.size(); i++) {
     Node* ndi = m_candidates[i];
     m_movable[ndi->getId()] = true;
   }
 
-  Graph gr(m_network->m_nodes.size());
-  for (int e = 0; e < m_network->m_edges.size(); e++) {
-    Edge* edi = &(m_network->m_edges[e]);
+  Graph gr(m_network->getNumNodes() );
+  for (int e = 0; e < m_network->getNumEdges(); e++) {
+    Edge* edi = m_network->getEdge(e);
 
     int numPins = edi->getNumPins();
     if (numPins <= 1 || numPins > m_skipEdgesLargerThanThis) {
@@ -292,14 +292,14 @@ void DetailedMis::colorCells(void) {
 
     for (int pi = edi->getFirstPinIdx(); pi < edi->getLastPinIdx(); pi++) {
       Pin* pini = m_network->m_edgePins[pi];
-      Node* ndi = &(m_network->m_nodes[pini->getNodeId()]);
+      Node* ndi = m_network->getNode(pini->getNodeId());
       if (!m_movable[ndi->getId()]) {
         continue;
       }
 
       for (int pj = pi + 1; pj < edi->getLastPinIdx(); pj++) {
         Pin* pinj = m_network->m_edgePins[pj];
-        Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+        Node* ndj = m_network->getNode(pinj->getNodeId());
         if (!m_movable[ndj->getId()]) {
           continue;
         }
@@ -317,8 +317,8 @@ void DetailedMis::colorCells(void) {
   gr.greedyColoring();
 
   std::vector<int> hist;
-  for (size_t i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* ndi = &(m_network->m_nodes[i]);
+  for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
+    Node* ndi = m_network->getNode(i);
 
     int color = gr.m_color[i];
     if (color < 0 || color >= gr.m_ncolors) {
@@ -701,7 +701,7 @@ void DetailedMis::solveMatch(void) {
         }
         for (size_t s = 0; s < old_segs.size(); s++) {
           DetailedSeg* segPtr = old_segs[s];
-          int segId = segPtr->m_segId;
+          int segId = segPtr->getSegId();
           m_mgrPtr->removeCellFromSegment(ndi, segId);
         }
 
@@ -717,8 +717,8 @@ void DetailedMis::solveMatch(void) {
         }
         for (size_t s = 0; s < new_segs.size(); s++) {
           DetailedSeg* segPtr = new_segs[s];
-          int segId = segPtr->m_segId;
-          m_mgrPtr->addCellToSegment(ndi, new_segs[s]->m_segId);
+          int segId = segPtr->getSegId();
+          m_mgrPtr->addCellToSegment(ndi, segId);
         }
       }
 
@@ -753,7 +753,7 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
   for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
     Pin* pini = m_network->m_nodePins[pi];
 
-    Edge* edi = &(m_network->m_edges[pini->getEdgeId()]);
+    Edge* edi = m_network->getEdge(pini->getEdgeId());
 
     int npins = edi->getNumPins();
     if (npins <= 1 || npins > m_skipEdgesLargerThanThis) {
@@ -768,7 +768,7 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
     for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
       Pin* pinj = m_network->m_edgePins[pj];
 
-      Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+      Node* ndj = m_network->getNode(pinj->getNodeId());
 
       x = (ndj == ndi) ? (xi + pinj->getOffsetX())
                        : (ndj->getX() + pinj->getOffsetX());

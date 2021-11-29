@@ -185,7 +185,7 @@ void DetailedGlobalSwap::globalSwap() {
   // and done such that every candidate cell is considered once!!!
 
   m_traversal = 0;
-  m_edgeMask.resize(m_network->m_edges.size());
+  m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), 0);
 
   m_mgr->resortSegments();
@@ -243,7 +243,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
   for (n = nd->getFirstPinIdx(); n < nd->getLastPinIdx(); n++) {
     pin = m_network->m_nodePins[n];
 
-    ed = &(m_network->m_edges[pin->getEdgeId()]);
+    ed = m_network->getEdge(pin->getEdgeId());
 
     nodeBbox.m_xmin = std::numeric_limits<float>::max();
     nodeBbox.m_xmax = -std::numeric_limits<float>::max();
@@ -324,7 +324,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox) {
   for (int pe = ed->getFirstPinIdx(); pe < ed->getLastPinIdx(); pe++) {
     Pin* pin = m_network->m_edgePins[pe];
 
-    Node* other = &(m_network->m_nodes[pin->getNodeId()]);
+    Node* other = m_network->getNode(pin->getNodeId());
     if (other == nd) {
       continue;
     }
@@ -357,7 +357,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y) {
   for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
     Pin* pini = m_network->m_nodePins[pi];
 
-    Edge* edi = &(m_network->m_edges[pini->getEdgeId()]);
+    Edge* edi = m_network->getEdge(pini->getEdgeId());
 
     int npins = edi->getNumPins();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
@@ -381,7 +381,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y) {
     for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
       Pin* pinj = m_network->m_edgePins[pj];
 
-      Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+      Node* ndj = m_network->getNode(pinj->getNodeId());
 
       x = ndj->getX() + pinj->getOffsetX();
       y = ndj->getY() + pinj->getOffsetY();
@@ -426,7 +426,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
     for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
       Pin* pini = m_network->m_nodePins[pi];
 
-      Edge* edi = &(m_network->m_edges[pini->getEdgeId()]);
+      Edge* edi = m_network->getEdge(pini->getEdgeId());
 
       int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
@@ -450,7 +450,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
       for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
         Pin* pinj = m_network->m_edgePins[pj];
 
-        Node* ndj = &(m_network->m_nodes[pinj->getNodeId()]);
+        Node* ndj = m_network->getNode(pinj->getNodeId());
 
         x = ndj->getX() + pinj->getOffsetX();
         y = ndj->getY() + pinj->getOffsetY();
@@ -521,8 +521,8 @@ bool DetailedGlobalSwap::generate(Node* ndi) {
     int sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
-      if (xj >= segPtr->m_xmin && xj <= segPtr->m_xmax) {
-        sj = segPtr->m_segId;
+      if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
+        sj = segPtr->getSegId();
         break;
       }
     }
@@ -567,7 +567,7 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr) {
   m_rt = mgr->getRoutingParams();
 
   m_traversal = 0;
-  m_edgeMask.resize(m_network->m_edges.size());
+  m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), 0);
 }
 

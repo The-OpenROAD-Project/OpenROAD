@@ -87,16 +87,10 @@ class Architecture {
 
   int getCellHeightInRows(Node* ndi) const;
 
-  bool post_process();
+  bool postProcess( Network* network );
   double compute_overlap(double xmin1, double xmax1, double ymin1, double ymax1,
                          double xmin2, double xmax2, double ymin2,
                          double ymax2);
-  bool uniform();
-
-  void create_extra_nodes(Network* network, RoutingParams* rt);
-
-  void find_overlapped_rows(double ymin, double ymax,
-                            std::vector<Architecture::Row*>& rows);
   int find_closest_row(double y);
 
   void clear_edge_type();
@@ -139,8 +133,6 @@ class Architecture {
   double getCellSpacing(Node* leftNode, Node* rightNode);
 
  protected:
-  void create_filler_nodes(Network* network);
-  void create_peanut_nodes(Network* network, RoutingParams* rt);
 
  public:
   // Rows...

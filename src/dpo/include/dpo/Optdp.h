@@ -142,6 +142,9 @@ protected:
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;
   std::unordered_set<odb::dbTechLayer*> gndLayers_;
   std::unordered_map<odb::dbMaster*,std::pair<int,int> > masterPwrs_; // top,bot
+
+  int64_t hpwlBefore_;
+  int64_t hpwlAfter_;
 };
 
 }  // namespace

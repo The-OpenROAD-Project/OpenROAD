@@ -158,8 +158,8 @@ void DetailedABU::init(void) {
   }
 
   // Insert fixed stuff.
-  for (int i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
+  for (int i = 0; i < m_network->getNumNodes(); i++) {
+    Node* nd = m_network->getNode(i);
 
     if (nd->getType() == NodeType_TERMINAL ||
         nd->getType() == NodeType_TERMINAL_NI) {
@@ -214,8 +214,8 @@ void DetailedABU::init(void) {
   }
 
   // Insert shapes (which are also fixed).
-  for (int i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
+  for (int i = 0; i < m_network->getNumNodes() ; i++) {
+    Node* nd = m_network->getNode(i);
 
     if (m_network->m_shapes[nd->getId()].size() == 0) {
       // No shapes...
@@ -269,8 +269,8 @@ void DetailedABU::init(void) {
   }
 
   // Row blockages (filler nodes).
-  for (int i = 0; i < m_network->m_filler.size(); i++) {
-    Node* nd = m_network->m_filler[i];
+  for (int i = 0; i < m_network->getNumFillerNodes(); i++) {
+    Node* nd = m_network->getFillerNode(i);
 
     int lcol = std::max(
         (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->m_xmin) /
@@ -338,8 +338,8 @@ void DetailedABU::clearUtils(void) {
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedABU::computeUtils(void) {
   // Insert movables.
-  for (int i = 0; i < m_network->m_nodes.size(); i++) {
-    Node* nd = &(m_network->m_nodes[i]);
+  for (int i = 0; i < m_network->getNumNodes() ; i++) {
+    Node* nd = m_network->getNode(i);
 
     if (nd->getType() == NodeType_TERMINAL ||
         nd->getType() == NodeType_TERMINAL_NI) {
