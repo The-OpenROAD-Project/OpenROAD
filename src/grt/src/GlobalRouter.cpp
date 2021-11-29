@@ -3101,7 +3101,7 @@ int GlobalRouter::findInstancesObstructions(
             upper_bound = odb::Point(rect.xMax(), rect.yMax());
             pin_box = odb::Rect(lower_bound, upper_bound);
             if (!die_area.contains(pin_box)) {
-              logger_->warn(GRT,
+              logger_->error(GRT,
                             39,
                             "Found pin outside die area in instance {}.",
                             inst->getConstName());
