@@ -51,7 +51,7 @@ void WorkerConHandler::handle_read(boost::system::error_code const& err,
     stream >> data;
     if (access(data.c_str(), F_OK) == -1) {
       logger_->warn(utl::DST,
-                    10,
+                    5,
                     "Worker file {} not found from port {}",
                     data,
                     sock.remote_endpoint().port());

@@ -91,7 +91,7 @@ void Distributed::runLoadBalancer(unsigned short port)
       balancer.addWorker(worker.first, worker.second, 10);
     io_service.run();
   } catch (std::exception& e) {
-    logger_->error(utl::DST, 13, "LoadBalancer error: {}", e.what());
+    logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
   }
 }
 

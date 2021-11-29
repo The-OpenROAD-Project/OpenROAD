@@ -44,9 +44,9 @@ void BalancerConHandler::handle_read(boost::system::error_code const& err,
   if (!err) {
     boost::system::error_code error;
     if(workerAddress.is_unspecified())
-      logger_->warn(utl::DST, 9, "No workers available");
+      logger_->warn(utl::DST, 6, "No workers available");
     else {
-      logger_->info(utl::DST, 10, "Sending to {}/{}", workerAddress.to_string(), port);
+      logger_->info(utl::DST, 7, "Sending to {}/{}", workerAddress.to_string(), port);
       boost::asio::io_service io_service;
       tcp::socket socket(io_service);
       socket.connect( tcp::endpoint( workerAddress, port ));
@@ -57,7 +57,7 @@ void BalancerConHandler::handle_read(boost::system::error_code const& err,
     }
     
   } else {
-    logger_->warn(utl::DST, 11, "Balancer conhandler failed with message: {}", err.message());
+    logger_->warn(utl::DST, 8, "Balancer conhandler failed with message: {}", err.message());
   }
   owner_->updateWorker(workerAddress, port);
   sock.close();

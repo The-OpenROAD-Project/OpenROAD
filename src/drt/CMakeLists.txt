@@ -134,7 +134,7 @@ target_link_libraries(drt
     gui
     odb
     stt
-    OpenSTA
+    dbSta
     utl
     dst
     Threads::Threads
@@ -166,6 +166,7 @@ enable_testing()
 add_executable(trTest
   ${FLEXROUTE_HOME}/test/gcTest.cpp
   ${FLEXROUTE_HOME}/test/fixture.cpp
+  ${FLEXROUTE_HOME}/test/stubs.cpp
 )
 
 target_include_directories(trTest

@@ -11,12 +11,12 @@ proc detailed_route_server { args } {
   if { [info exists keys(-port)] } {
     set port $keys(-port)
   } else {
-    utl::error DST 20 "-port is required."
+    utl::error DST 10 "-port is required."
   }
   if { [info exists keys(-shared_volume)] } {
     set shared_volume $keys(-shared_volume)
   } else {
-    utl::error DST 21 "-shared_volume is required."
+    utl::error DST 11 "-shared_volume is required."
   }
   dst::run_server_cmd $port $shared_volume
 }

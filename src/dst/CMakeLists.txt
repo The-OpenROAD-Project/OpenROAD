@@ -66,3 +66,7 @@ target_link_libraries(dst
     utl
     drt
 )
+
+messages(
+  TARGET dst
+)
