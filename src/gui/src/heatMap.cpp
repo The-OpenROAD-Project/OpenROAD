@@ -417,11 +417,13 @@ void HeatMapDataSource::showSetup()
   dlg.exec();
 }
 
-const std::string HeatMapDataSource::formatValue(double value) const
+const std::string HeatMapDataSource::formatValue(double value, bool legend) const
 {
   QString text;
   text.setNum(value, 'f', 2);
-  text += "%";
+  if (legend) {
+    text += "%";
+  }
   return text.toStdString();
 }
 
@@ -656,7 +658,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
         const int x = 0.5 * (map_pt->rect.xMin() + map_pt->rect.xMax());
         const int y = 0.5 * (map_pt->rect.yMin() + map_pt->rect.yMax());
         painter.setPen(Painter::white, true);
-        painter.drawString(x, y, Painter::Anchor::CENTER, datasource_.formatValue(map_pt->value));
+        painter.drawString(x, y, Painter::Anchor::CENTER, datasource_.formatValue(map_pt->value, false));
       }
     }
   }
@@ -689,7 +691,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
       if (legend_values_itr != legend_values.rend() && color_idx <= legend_values_itr->first) {
         const int text_right = legend_left - text_offset;
         painter.setPen(Painter::white, true);
-        painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second));
+        painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second, true));
         legend_values_itr++;
       }
       box_top -= box_height;
@@ -698,7 +700,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
       // didn't get the last legend value
       const int text_right = legend_left - (1.0 / pixel_per_dbu);
       painter.setPen(Painter::white, true);
-      painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second));
+      painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second, true));
     }
     painter.setPen(Painter::white, true);
     painter.setBrush(Painter::transparent);
@@ -1067,13 +1069,15 @@ void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)
   }
 }
 
-const std::string PowerDensityDataSource::formatValue(double value) const
+const std::string PowerDensityDataSource::formatValue(double value, bool legend) const
 {
   double range = max_power_ - min_power_;
   double offset = min_power_;
   if (range == 0.0) {
     range = 1.0; // dummy numbers until power has been populated
   }
+
+  int digits = legend ? 3 : 2;
 
   QString units;
   if (max_power_ > 1 || max_power_ == 0.0) {
@@ -1097,8 +1101,10 @@ const std::string PowerDensityDataSource::formatValue(double value) const
   }
 
   QString text;
-  text.setNum((value / 100.0) * range + offset, 'f', 3);
-  text += units;
+  text.setNum((value / 100.0) * range + offset, 'f', digits);
+  if (legend) {
+    text += units;
+  }
   return text.toStdString();
 }
 

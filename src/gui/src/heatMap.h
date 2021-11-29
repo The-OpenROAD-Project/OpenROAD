@@ -97,7 +97,7 @@ class HeatMapDataSource
   // setup
   void showSetup();
   virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) {}
-  virtual const std::string formatValue(double value) const;
+  virtual const std::string formatValue(double value, bool legend) const;
 
   // settings
   const std::string& getSettingsGroupName() const { return settings_group_; }
@@ -326,7 +326,7 @@ class PowerDensityDataSource : public HeatMapDataSource
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
 
-  virtual const std::string formatValue(double value) const override;
+  virtual const std::string formatValue(double value, bool legend) const override;
 
   virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
 
