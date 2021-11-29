@@ -615,7 +615,8 @@ HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapData
 {
   addDisplayControl(display_control_,
                     false,
-                    [this]() { datasource_.showSetup(); });
+                    [this]() { datasource_.showSetup(); },
+                    {""}); // mutually exclusive to all
 }
 
 void HeatMapRenderer::drawObjects(Painter& painter)

@@ -529,12 +529,14 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
 
 void Renderer::addDisplayControl(const std::string& name,
                                  bool initial_visible,
-                                 const DisplayControlCallback& setup)
+                                 const DisplayControlCallback& setup,
+                                 const std::vector<std::string>& mutual_exclusivity)
 {
   auto& control = controls_[name];
 
   control.visibility = initial_visible;
   control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(), mutual_exclusivity.end());
 }
 
 const Renderer::Settings Renderer::getSettings()

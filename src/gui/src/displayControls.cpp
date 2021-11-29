@@ -156,8 +156,9 @@ void DisplayColorDialog::rejectDialog()
   reject();
 }
 
-DisplayControlModel::DisplayControlModel(QWidget* parent) :
-  QStandardItemModel(0, 4, parent)
+DisplayControlModel::DisplayControlModel(int user_data_item_idx, QWidget* parent) :
+  QStandardItemModel(0, 4, parent),
+  user_data_item_idx_(user_data_item_idx)
 {
 }
 
@@ -165,7 +166,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ToolTipRole) {
     QStandardItem* item = itemFromIndex(index);
-    QVariant data = item->data(Qt::UserRole);
+    QVariant data = item->data(user_data_item_idx_);
     if (data.isValid()) {
       odb::dbTechLayer* layer = data.value<odb::dbTechLayer*>();
       auto selected = Gui::get()->makeSelected(layer);
@@ -244,7 +245,7 @@ QVariant DisplayControlModel::headerData(int section,
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
-      model_(new DisplayControlModel(this)),
+      model_(new DisplayControlModel(user_data_item_idx_, this)),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
@@ -670,7 +671,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
     return;
   }
   bool checked = item->checkState() == Qt::Checked;
-  Callback callback = item->data().value<Callback>();
+  Callback callback = item->data(callback_item_idx_).value<Callback>();
   if (callback.action && !ignore_callback_) {
     callback.action(checked);
   }
@@ -696,6 +697,43 @@ void DisplayControls::itemChanged(QStandardItem* item)
       selectable->setEnabled(item->checkState() != Qt::Unchecked);
     }
   }
+
+  // check if item has exclusivity set
+  auto exclusive = item->data(exclusivity_item_idx_);
+  if (exclusive.isValid() && checked) {
+    const QModelIndex row_start_index = model_->index(item_index.row(), Name, item_index.parent());
+    QStandardItem* parent = model_->itemFromIndex(item_index.parent());
+
+    QSet<QStandardItem*> items_to_check;
+    for (const auto& exclusion : exclusive.value<QSet<QString>>()) {
+      // "" means everything is exclusive
+      bool exclude_all = exclusion == "";
+
+      for (int r = 0; r < parent->rowCount(); r++) {
+        const QModelIndex row_name = model_->index(r, Name, parent->index());
+        const QModelIndex toggle_col = model_->index(r, item_index.column(), parent->index());
+        if (exclude_all) {
+          items_to_check.insert(model_->itemFromIndex(toggle_col));
+        } else {
+          auto* name_item = model_->itemFromIndex(row_name);
+          if (name_item->text() == exclusion) {
+            items_to_check.insert(model_->itemFromIndex(toggle_col));
+          }
+        }
+      }
+    }
+
+    // toggle mutually exclusive items
+    for (auto& check_item : items_to_check) {
+      if (check_item == nullptr || check_item == item) {
+        continue;
+      }
+      if (check_item->checkState() == Qt::Checked) {
+        check_item->setCheckState(Qt::Unchecked);
+      }
+    }
+  }
+
   emit changed();
 }
 
@@ -721,7 +759,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
-    auto data = name_item->data(callback_item_idx_);
+    auto data = name_item->data(doubleclick_item_idx_);
     if (data.isValid()) {
       auto callback = data.value<std::function<void(void)>>();
       callback();
@@ -746,7 +784,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     } else if (color_item == rulers_.swatch) {
       item_color = &ruler_color_;
     } else {
-      QVariant tech_layer_data = color_item->data(Qt::UserRole);
+      QVariant tech_layer_data = color_item->data(user_data_item_idx_);
       if (!tech_layer_data.isValid()) {
         return;
       }
@@ -966,13 +1004,13 @@ QStandardItem* DisplayControls::makeParentItem(
     [this, row](bool visible) {
       toggleAllChildren(visible, row.name, Visible);
     }
-  })));
+  })), callback_item_idx_);
   if (add_selectable) {
     row.selectable->setData(QVariant::fromValue(Callback({
       [this, row](bool selectable) {
         toggleAllChildren(selectable, row.name, Selectable);
       }
-    })));
+    })), callback_item_idx_);
   }
 
   return row.name;
@@ -990,14 +1028,14 @@ void DisplayControls::makeLeafItem(
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
   if (user_data.isValid()) {
-    row.name->setData(user_data, Qt::UserRole);
+    row.name->setData(user_data, user_data_item_idx_);
   }
 
   row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);
   row.swatch->setCheckable(false);
   if (user_data.isValid()) {
-    row.swatch->setData(user_data, Qt::UserRole);
+    row.swatch->setData(user_data, user_data_item_idx_);
   }
 
   row.visible = new QStandardItem("");
@@ -1017,11 +1055,20 @@ void DisplayControls::makeLeafItem(
 
 void DisplayControls::setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback)
 {
-  row.name->setData(QVariant::fromValue(callback), callback_item_idx_);
+  row.name->setData(QVariant::fromValue(callback), doubleclick_item_idx_);
 
   QFont current_font = row.name->data(Qt::FontRole).value<QFont>();
   current_font.setUnderline(true);
   row.name->setData(current_font, Qt::FontRole);
+}
+
+void DisplayControls::setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity)
+{
+  QSet<QString> names;
+  for (const auto& name : exclusivity) {
+    names.insert(QString::fromStdString(name));
+  }
+  row.visible->setData(QVariant::fromValue(names), exclusivity_item_idx_);
 }
 
 const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
@@ -1278,6 +1325,9 @@ void DisplayControls::registerRenderer(Renderer* renderer)
         if (control.interactive_setup) {
           setNameItemDoubleClickAction(row, control.interactive_setup);
         }
+        if (!control.mutual_exclusivity.empty()) {
+          setItemExclusivity(row, control.mutual_exclusivity);
+        }
         rows.push_back(row);
       }
     } else {
@@ -1311,6 +1361,9 @@ void DisplayControls::registerRenderer(Renderer* renderer)
                      control.visibility ? Qt::Checked : Qt::Unchecked);
         if (control.interactive_setup) {
           setNameItemDoubleClickAction(row, control.interactive_setup);
+        }
+        if (!control.mutual_exclusivity.empty()) {
+          setItemExclusivity(row, control.mutual_exclusivity);
         }
         rows.push_back(row);
       }

@@ -99,7 +99,8 @@ bool Renderer::checkDisplayControl(const std::string& /* name */)
 
 void Renderer::addDisplayControl(const std::string& /* name */,
                                  bool /* initial_visible */,
-                                 const DisplayControlCallback& /* setup */)
+                                 const DisplayControlCallback& /* setup */,
+                                 const std::vector<std::string>& /* mutual_exclusivity */)
 {
 }
 

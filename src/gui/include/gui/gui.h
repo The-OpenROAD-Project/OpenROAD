@@ -424,6 +424,7 @@ class Renderer
   struct DisplayControl {
     bool visibility;
     DisplayControlCallback interactive_setup;
+    std::set<std::string> mutual_exclusivity;
   };
   using DisplayControls = std::map<std::string, DisplayControl>;
   const DisplayControls& getDisplayControls()
@@ -455,7 +456,8 @@ class Renderer
   // Adds a display control
   void addDisplayControl(const std::string& name,
                          bool initial_visible = false,
-                         const DisplayControlCallback& setup = DisplayControlCallback());
+                         const DisplayControlCallback& setup = DisplayControlCallback(),
+                         const std::vector<std::string>& mutual_exclusivity = {});
 
  private:
   // Holds map of display controls and callback function
