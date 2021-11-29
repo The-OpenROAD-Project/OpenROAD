@@ -431,8 +431,6 @@ class FlexDRWorker
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
-                                            frDebugSettings* debugSettings,
-                                            odb::dbDatabase* db,
                                             FlexDRGraphics* graphics);
 
   // distributed

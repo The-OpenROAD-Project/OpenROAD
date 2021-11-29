@@ -27,13 +27,19 @@
  */
 
 #include "dst/Distributed.h"
-#include "utl/Logger.h"
+
 #include <boost/asio.hpp>
-#include "Worker.h"
-#include "LoadBalancer.h"
-#include "sta/StaMain.hh"
+#include <boost/system/system_error.hpp>
 #include <vector>
 
+#include "LoadBalancer.h"
+#include "Worker.h"
+#include "sta/StaMain.hh"
+#include "utl/Logger.h"
+#define MAX_TRIALS 5
+
+using namespace boost::asio;
+using ip::tcp;
 using namespace dst;
 namespace odb {
 class dbDatabase;
@@ -47,8 +53,7 @@ extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);
 }
 
-Distributed::Distributed()
-    : logger_(nullptr)
+Distributed::Distributed() : logger_(nullptr)
 {
 }
 
@@ -56,8 +61,7 @@ Distributed::~Distributed()
 {
 }
 
-void Distributed::init(Tcl_Interp* tcl_interp,
-                       utl::Logger* logger)
+void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
 {
   logger_ = logger;
   // Define swig TCL commands.
@@ -65,33 +69,26 @@ void Distributed::init(Tcl_Interp* tcl_interp,
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-
 void Distributed::runDRWorker(odb::dbDatabase* db, unsigned short port)
 {
-  try
-  {
-    boost::asio::io_service io_service;  
+  try {
+    io_service io_service;
     Worker worker(io_service, db, logger_, port);
     io_service.run();
-  }
-  catch(std::exception& e)
-  {
+  } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "DRWorker server error: {}", e.what());
   }
 }
 
 void Distributed::runLoadBalancer(unsigned short port)
 {
-  try
-  {
-    boost::asio::io_service io_service;  
+  try {
+    io_service io_service;
     LoadBalancer balancer(io_service, logger_, port);
-    for(auto worker: workers_)
+    for (auto worker : workers_)
       balancer.addWorker(worker.first, worker.second, 10);
     io_service.run();
-  }
-  catch(std::exception& e)
-  {
+  } catch (std::exception& e) {
     logger_->error(utl::DST, 13, "LoadBalancer error: {}", e.what());
   }
 }
@@ -99,4 +96,68 @@ void Distributed::runLoadBalancer(unsigned short port)
 void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
   workers_.push_back({std::string(address), port});
+}
+
+bool sendMsg(tcp::socket& sock, const std::string& msg, std::string& errorMsg)
+{
+  int trials = 0;
+  while (trials < MAX_TRIALS) {
+    boost::system::error_code error;
+    write(sock, buffer(msg), error);
+    if (!error) {
+      errorMsg = "";
+      return true;
+    } else
+      errorMsg = error.message();
+  }
+  return false;
+}
+
+bool readMsg(tcp::socket& sock, std::string& dataStr)
+{
+  boost::system::error_code error;
+  streambuf receive_buffer;
+  read(sock, receive_buffer, transfer_all(), error);
+  if (error && error != error::eof) {
+    dataStr = error.message();
+    return false;
+  } else {
+    const char* data = buffer_cast<const char*>(receive_buffer.data());
+    dataStr = data;
+    if (dataStr == "")
+      return false;
+    return true;
+  }
+}
+
+bool Distributed::sendWorker(const char* msg,
+                             const char* ip,
+                             unsigned short port,
+                             std::string& result)
+{
+  result = "";
+  int trials = 0;
+  while (trials < MAX_TRIALS) {
+    trials++;
+    io_service io_service;
+    tcp::socket sock(io_service);
+    try {
+      sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
+    } catch (const boost::system::system_error& ex) {
+      result = ex.what();
+      return false;
+    }
+    bool ok = sendMsg(sock, std::string(msg) + " \n", result);
+    if (!ok)
+      continue;
+    ok = readMsg(sock, result);
+    if (!ok)
+      continue;
+    if (sock.is_open())
+      sock.close();
+    return true;
+  }
+  if (result == "")
+    result = "MAX_TRIALS reached";
+  return false;
 }

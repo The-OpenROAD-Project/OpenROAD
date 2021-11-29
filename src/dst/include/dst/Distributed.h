@@ -29,16 +29,17 @@
 #pragma once
 
 #include <tcl.h>
+
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace utl {
 class Logger;
 }
 
 namespace odb {
-  class dbDatabase;
+class dbDatabase;
 }
 
 namespace dst {
@@ -53,6 +54,11 @@ class Distributed
   void runDRWorker(odb::dbDatabase* db, unsigned short port);
   void runLoadBalancer(unsigned short port);
   void addWorkerAddress(const char* address, unsigned short port);
+  static bool sendWorker(const char* msg,
+                         const char* ip,
+                         unsigned short port,
+                         std::string& result);
+
  private:
   utl::Logger* logger_;
   std::vector<std::pair<std::string, unsigned short>> workers_;

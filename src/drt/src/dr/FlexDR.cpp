@@ -30,14 +30,13 @@
 
 #include <omp.h>
 
-#include <boost/asio.hpp>
 #include <boost/io/ios_state.hpp>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <numeric>
 #include <sstream>
-
+#include "dst/Distributed.h"
 #include "db/infra/frTime.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
@@ -46,41 +45,8 @@
 #include "serialization.h"
 #include <stdio.h>
 
-using namespace boost::asio;
-using ip::tcp;
-
 using namespace std;
 using namespace fr;
-
-#define MAX_TRIALS 5
-
-bool send(tcp::socket& socket, const std::string& msg)
-{
-  int trials = 0;
-  while (trials < MAX_TRIALS)
-  {
-    boost::system::error_code error;
-    boost::asio::write(socket, boost::asio::buffer(msg), error);
-    if (!error) {
-      return true;
-    }
-  }
-  return false;  
-}
-bool read(tcp::socket& socket, std::string& dataStr)
-{
-  boost::system::error_code error;
-  boost::asio::streambuf receive_buffer;
-  boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
-  if (error && error != boost::asio::error::eof) {
-    return false;
-  } else {
-    const char* data
-        = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-    dataStr = data;
-    return true;
-  }
-}
 
 enum class SerializationType
 {
@@ -317,38 +283,19 @@ void FlexDRWorker::distributedMain(frDesign* design)
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
   serialize_worker(SerializationType::WRITE, this, name);
-  int trials = 0;
-  while (trials < MAX_TRIALS)
+  std::string result;
+  bool ok = dst::Distributed::sendWorker(name.c_str(), dist_ip_.c_str(), dist_port_, result);
+  if(ok)
   {
-    trials++;
-    bool ok;
-    boost::asio::io_service io_service;
-    tcp::socket socket(io_service);
-    socket.connect(tcp::endpoint(boost::asio::ip::address::from_string(dist_ip_),
-                                dist_port_));
-    ok = send(socket, name + " \n");
-    if(!ok) {
-      logger_->warn(DRT, 506, "Write Error {}", name);
-      continue;
-    }
-    std::string result;
-    ok = read(socket, result);
-    if(!ok) {
-      logger_->warn(DRT, 507, "Read Error {}", name);
-      continue;
-    }
-    if(socket.is_open())
-      socket.close();
-    
     ok = serialize_worker(SerializationType::READ, this, result);
     if(!ok)
-      continue;
+      logger_->error(DRT, 511, "Deserialization failed {}", result);
     std::remove(name.c_str());
     std::remove(result.c_str());
     updateDesign(design);
-    return;
+  } else {
+    logger_->error(utl::DRT, 500, "Sending worker {} failed with message \"{}\"", name, result);  
   }
-  logger_->error(utl::DRT, 500, "Worker {} failed", name);  
 }
 
 template <class Archive>
@@ -2664,8 +2611,6 @@ int FlexDR::main()
 
 std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
                                                  utl::Logger* logger,
-                                                 frDebugSettings* debugSettings,
-                                                 odb::dbDatabase* db,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
