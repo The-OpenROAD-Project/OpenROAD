@@ -199,6 +199,7 @@ class Painter
     RIGHT_CENTER
   };
   virtual void drawString(int x, int y, Anchor anchor, const std::string& s) = 0;
+  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
 

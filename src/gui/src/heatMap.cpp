@@ -636,6 +636,39 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   const bool show_maxs = datasource_.getDrawAboveRangeMax();
 
   const odb::Rect& bounds = painter.getBounds();
+  const int color_count = datasource_.getColorsCount();
+  const int color_incr = 2;
+
+  const bool show_legend = datasource_.getShowLegend();
+  std::vector<std::pair<odb::Point, std::string>> legend_key;
+  odb::Rect legend_bounds;
+  const double pixel_per_dbu = painter.getPixelsPerDBU();
+  const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
+  const double box_height = 1 / pixel_per_dbu; // 1 pixels
+  const int legend_width = 20 / pixel_per_dbu; // 20 pixels
+  const int text_offset = 2 / pixel_per_dbu;
+  const int legend_top = bounds.yMax() - legend_offset;
+  const int legend_right = bounds.xMax() - legend_offset;
+  const int legend_left = legend_right - legend_width;
+  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+  if (show_legend) {
+    legend_bounds.set_xhi(legend_right);
+    legend_bounds.set_yhi(legend_top);
+    legend_bounds.set_xlo(legend_right);
+    legend_bounds.set_ylo(legend_top);
+
+    for (const auto& legend_value : datasource_.getLegendValues()) {
+      const int text_right = legend_left - text_offset;
+      const int box_top = legend_top - ((color_count - legend_value.first) * box_height) / color_incr;
+
+      const std::string text = datasource_.formatValue(legend_value.second, true);
+      legend_key.push_back({{text_right, box_top}, text});
+      const odb::Rect text_bounds = painter.stringBoundaries(text_right, box_top, key_anchor, text);
+
+      legend_bounds.merge(text_bounds);
+    }
+  }
+
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
     if (map_pt->value == 0.0 || map_pt->color == Painter::transparent) {
       continue;
@@ -657,53 +690,46 @@ void HeatMapRenderer::drawObjects(Painter& painter)
       if (show_numbers) {
         const int x = 0.5 * (map_pt->rect.xMin() + map_pt->rect.xMax());
         const int y = 0.5 * (map_pt->rect.yMin() + map_pt->rect.yMax());
-        painter.setPen(Painter::white, true);
-        painter.drawString(x, y, Painter::Anchor::CENTER, datasource_.formatValue(map_pt->value, false));
+        const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
+        const double text_rect_margin = 0.8;
+
+        const std::string text = datasource_.formatValue(map_pt->value, false);
+        const odb::Rect text_bound = painter.stringBoundaries(x, y, text_anchor, text);
+        bool draw = true;
+        if (show_legend && legend_bounds.intersects(text_bound)) {
+          // if text will be below legend, don't draw it
+          draw = false;
+        }
+        if (text_bound.dx() >= text_rect_margin * map_pt->rect.dx() ||
+            text_bound.dy() >= text_rect_margin * map_pt->rect.dy()) {
+          // don't draw if text will be too small
+          draw = false;
+        }
+
+        if (draw) {
+          painter.setPen(Painter::white, true);
+          painter.drawString(x, y, text_anchor, text);
+        }
       }
     }
   }
 
   // legend
-  if (datasource_.getShowLegend()) {
-    const double pixel_per_dbu = painter.getPixelsPerDBU();
-    const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
-    const double box_height = 1 / pixel_per_dbu; // 1 pixels
-    const int legend_width = 20 / pixel_per_dbu; // 20 pixels
-    const int text_offset = 2 / pixel_per_dbu;
-    const int legend_top = bounds.yMax() - legend_offset;
-    const int legend_right = bounds.xMax() - legend_offset;
-    const int legend_left = legend_right - legend_width;
-
-    const auto legend_values = datasource_.getLegendValues();
-    auto legend_values_itr = legend_values.rbegin();
+  if (show_legend) {
     double box_top = legend_top;
-    const int color_count = datasource_.getColorsCount();
-    const int color_incr = 2;
     for (int i = 0; i < color_count; i += color_incr) {
       const int color_idx = color_count - 1 - i;
 
-      const Painter::Color color = datasource_.getColor(color_idx);
-
-      painter.setPen(color, true);
+      painter.setPen(datasource_.getColor(color_idx), true);
       painter.drawLine(odb::Point(legend_left, box_top), odb::Point(legend_right, box_top));
-
-
-      if (legend_values_itr != legend_values.rend() && color_idx <= legend_values_itr->first) {
-        const int text_right = legend_left - text_offset;
-        painter.setPen(Painter::white, true);
-        painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second, true));
-        legend_values_itr++;
-      }
       box_top -= box_height;
     }
-    if (legend_values_itr != legend_values.rend()) {
-      // didn't get the last legend value
-      const int text_right = legend_left - (1.0 / pixel_per_dbu);
-      painter.setPen(Painter::white, true);
-      painter.drawString(text_right, box_top, Painter::Anchor::RIGHT_CENTER, datasource_.formatValue(legend_values_itr->second, true));
-    }
+
     painter.setPen(Painter::white, true);
     painter.setBrush(Painter::transparent);
+    for (const auto& [pt, text] : legend_key) {
+      painter.drawString(pt.x(), pt.y(), key_anchor, text);
+    }
     painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
   }
 }

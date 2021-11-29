@@ -223,17 +223,12 @@ class GuiPainter : public Painter
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
 
-  // NOTE: The constant height text s drawn with this function, hence
-  //       the trasnsformation is mapped to the base transformation and
-  //       the world co-ordinates are mapped to the window co-ordinates
-  //       before drawing.
-  void drawString(int x, int y, Anchor anchor, const std::string& s) override
+  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text)
   {
-    const QString text = QString::fromStdString(s);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const QPoint text_bbox_center = text_bbox.center();
-    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
     int sx = 0;
     int sy = 0;
     if (anchor == BOTTOM_LEFT) {
@@ -266,11 +261,40 @@ class GuiPainter : public Painter
     // add desired text location in DBU
     sx += x;
     sy += y;
+
+    return {sx, sy};
+  }
+
+  // NOTE: The constant height text s drawn with this function, hence
+  //       the transformation is mapped to the base transformation and
+  //       the world co-ordinates are mapped to the window co-ordinates
+  //       before drawing.
+  void drawString(int x, int y, Anchor anchor, const std::string& s) override
+  {
+    const QString text = QString::fromStdString(s);
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+
     const QTransform transform = painter_->transform();
-    painter_->translate(sx, sy);
+    painter_->translate(origin.x(), origin.y());
     painter_->scale(scale_adjust, -scale_adjust); // undo original scaling
     painter_->drawText(0, 0, text); // origin of painter is desired location, so paint at 0, 0
     painter_->setTransform(transform);
+  }
+
+  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) override
+  {
+    const QString text = QString::fromStdString(s);
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+
+    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
+    const int xMin = origin.x() - text_bbox.left() * scale_adjust;
+    const int yMin = origin.y() - text_bbox.bottom() * scale_adjust;
+    const int xMax = xMin + text_bbox.width() * scale_adjust;
+    const int yMax = yMin + text_bbox.height() * scale_adjust;
+    return {xMin, yMin, xMax, yMax};
   }
 
   void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
