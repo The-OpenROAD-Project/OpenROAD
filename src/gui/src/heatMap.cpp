@@ -280,7 +280,8 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     show_numbers_(false),
     show_legend_(false),
     map_(),
-    renderer_(std::make_unique<HeatMapRenderer>(name_, *this))
+    renderer_(std::make_unique<HeatMapRenderer>(name_, *this)),
+    setup_(nullptr)
 {
 }
 
@@ -416,10 +417,11 @@ const Painter::Color HeatMapDataSource::getColor(double value) const
 
 void HeatMapDataSource::showSetup()
 {
-  HeatMapSetup dlg(*this,
-                   QString::fromStdString(name_));
+  if (setup_ == nullptr) {
+    setup_ = std::make_unique<HeatMapSetup>(*this, QString::fromStdString(name_));
+  }
 
-  dlg.exec();
+  setup_->show();
 }
 
 const std::string HeatMapDataSource::formatValue(double value, bool legend) const

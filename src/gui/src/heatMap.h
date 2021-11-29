@@ -51,13 +51,14 @@
 #include <QSpinBox>
 #include <QWidget>
 
-#include "db.h"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace gui {
 class HeatMapRenderer;
+class HeatMapSetup;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -190,6 +191,7 @@ class HeatMapDataSource
   Map map_;
 
   std::unique_ptr<HeatMapRenderer> renderer_;
+  std::unique_ptr<HeatMapSetup> setup_;
 
   static const int turbo_srgb_count_;
   static const unsigned char turbo_srgb_bytes_[256][3];
