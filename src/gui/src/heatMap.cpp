@@ -628,12 +628,12 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   datasource_.ensureMap();
 
   if (check_data_loaded_) {
+    check_data_loaded_ = false; // only check warning once
+
     // report warning
     if (!datasource_.isPopulated()) {
       logger_->warn(utl::GUI, 57, "Heat map \"{}\" has not been populated with data.", datasource_.getName());
     }
-
-    check_data_loaded_ = false; // only report warning once
   }
 
   const bool show_numbers = datasource_.getShowNumbers();
