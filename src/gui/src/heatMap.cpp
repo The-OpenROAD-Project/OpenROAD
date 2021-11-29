@@ -605,6 +605,19 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() c
   return values;
 }
 
+void HeatMapDataSource::onShow()
+{
+}
+
+void HeatMapDataSource::onHide()
+{
+  if (destroyMapOnNotVisible()) {
+    setIssueRedraw(false);
+    destroyMap();
+    setIssueRedraw(true);
+  }
+}
+
 ///////////
 
 HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource) :
@@ -622,6 +635,10 @@ HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapData
 void HeatMapRenderer::drawObjects(Painter& painter)
 {
   if (!checkDisplayControl(display_control_)) {
+    if (!check_data_loaded_) {
+      // first time so check if map needs to be destroyed
+      datasource_.onHide();
+    }
     check_data_loaded_ = true; // reset check
     return;
   }
@@ -630,6 +647,7 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
   if (check_data_loaded_) {
     check_data_loaded_ = false; // only check warning once
+    datasource_.onShow();
 
     // report warning
     if (!datasource_.isPopulated()) {
@@ -1023,6 +1041,60 @@ void PlacementCongestionDataSource::setSettings(const Renderer::Settings& settin
   Renderer::setSetting<bool>(settings, "Taps", include_taps_);
   Renderer::setSetting<bool>(settings, "Filler", include_filler_);
   Renderer::setSetting<bool>(settings, "IO", include_io_);
+}
+
+void PlacementCongestionDataSource::onShow()
+{
+  HeatMapDataSource::onShow();
+
+  addOwner(getBlock());
+}
+
+void PlacementCongestionDataSource::onHide()
+{
+  HeatMapDataSource::onHide();
+
+  removeOwner();
+}
+
+void PlacementCongestionDataSource::inDbInstCreate(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbInstDestroy(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbInstSwapMasterAfter(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbPreMoveInst(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void PlacementCongestionDataSource::inDbPostMoveInst(odb::dbInst*)
+{
+  destroyMap();
 }
 
 ////////////

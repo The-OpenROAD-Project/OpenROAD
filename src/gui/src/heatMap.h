@@ -54,6 +54,7 @@
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -150,6 +151,9 @@ class HeatMapDataSource
   const Painter::Color getColor(int idx) const;
   int getColorsCount() const { return turbo_srgb_count_; }
 
+  virtual void onShow();
+  virtual void onHide();
+
  protected:
   odb::dbBlock* getBlock() const { return block_; }
 
@@ -159,6 +163,8 @@ class HeatMapDataSource
   virtual void combineMapData(double& base, const double new_data, const double region_ratio);
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
+
+  virtual bool destroyMapOnNotVisible() const { return false; }
 
   template <typename T>
   T boundValue(T value, T min_value, T max_value)
@@ -299,7 +305,7 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   static constexpr double default_grid_ = 10.0;
 };
 
-class PlacementCongestionDataSource : public HeatMapDataSource
+class PlacementCongestionDataSource : public HeatMapDataSource, public odb::dbBlockCallBackObj
 {
  public:
   PlacementCongestionDataSource();
@@ -310,8 +316,23 @@ class PlacementCongestionDataSource : public HeatMapDataSource
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
 
+  virtual void onShow() override;
+  virtual void onHide() override;
+
+  // from dbBlockCallBackObj API
+  virtual void inDbInstCreate(odb::dbInst*) override;
+  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  virtual void inDbInstDestroy(odb::dbInst*) override;
+  virtual void inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&) override;
+  virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
+  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  virtual void inDbPreMoveInst(odb::dbInst*) override;
+  virtual void inDbPostMoveInst(odb::dbInst*) override;
+
  protected:
   virtual bool populateMap() override;
+
+  virtual bool destroyMapOnNotVisible() const override { return true; }
 
  private:
   bool include_taps_;
