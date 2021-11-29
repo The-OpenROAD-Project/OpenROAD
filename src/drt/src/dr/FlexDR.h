@@ -113,12 +113,17 @@ class FlexDR
   void setDB(odb::dbDatabase* db) { db_ = db; }
   FlexDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
-  void setDistributed(bool dist, std::string ip, unsigned short port)
+  void setDistributed(bool dist,
+                      const std::string& ip,
+                      unsigned short port,
+                      const std::string& dir)
   {
     dist_ = dist;
     dist_ip_ = ip;
     dist_port_ = port;
+    dist_dir_ = dir;
   }
+
  private:
   frDesign* design_;
   Logger* logger_;
@@ -137,7 +142,8 @@ class FlexDR
   bool dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
-  
+  std::string dist_dir_;
+
   // others
   void init();
   void initFromTA();
@@ -371,7 +377,10 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in) { gcWorker_ = unique_ptr<FlexGCWorker>(in); }
+  void setGCWorker(FlexGCWorker* in)
+  {
+    gcWorker_ = unique_ptr<FlexGCWorker>(in);
+  }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -434,13 +443,19 @@ class FlexDRWorker
                                             FlexDRGraphics* graphics);
 
   // distributed
-  void setDistributed(bool dist, std::string ip, unsigned short port)
+  void setDistributed(bool dist,
+                      const std::string& ip,
+                      unsigned short port,
+                      const std::string& dir)
   {
     dist_ = dist;
     dist_ip_ = ip;
     dist_port_ = port;
+    dist_dir_ = dir;
   }
-  
+
+  void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
+
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
 
@@ -509,6 +524,7 @@ class FlexDRWorker
   bool dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
+  std::string dist_dir_;
 
   // init
   void init(const frDesign* design);
@@ -725,8 +741,12 @@ class FlexDRWorker
       std::queue<RouteQueueEntry>& rerouteQueue);
   bool canRipup(drNet* n);
   // route
-  void addPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
-  void subPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
+  void addPathCost(drConnFig* connFig,
+                   bool modEol = false,
+                   bool modCutSpc = false);
+  void subPathCost(drConnFig* connFig,
+                   bool modEol = false,
+                   bool modCutSpc = false);
   void modPathCost(drConnFig* connFig,
                    ModCostType type,
                    bool modEol = false,
@@ -919,10 +939,9 @@ class FlexDRWorker
                      std::map<frNet*,
                               std::set<std::pair<Point, frLayerNum>>,
                               frBlockObjectComp>& boundPts);
-  void endRemoveNets_pathSeg(
-      frDesign* design,
-      frPathSeg* pathSeg,
-      std::set<std::pair<Point, frLayerNum>>& boundPts);
+  void endRemoveNets_pathSeg(frDesign* design,
+                             frPathSeg* pathSeg,
+                             std::set<std::pair<Point, frLayerNum>>& boundPts);
   void endRemoveNets_via(frDesign* design, frVia* via);
   void endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire);
   void endAddNets(frDesign* design,

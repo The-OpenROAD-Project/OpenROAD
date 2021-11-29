@@ -8,7 +8,8 @@ namespace dst {
 
 void Worker::start_accept()
 {
-  WorkerConHandler::pointer connection = WorkerConHandler::create(*service, db_, logger_);
+  WorkerConHandler::pointer connection
+      = WorkerConHandler::create(*service, db_, logger_, dir_);
   acceptor_.async_accept(connection->socket(),
                          boost::bind(&Worker::handle_accept,
                                      this,
@@ -19,8 +20,12 @@ void Worker::start_accept()
 Worker::Worker(boost::asio::io_service& io_service,
                odb::dbDatabase* db,
                utl::Logger* logger,
-               unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)), db_(db), logger_(logger)
+               unsigned short port,
+               const std::string& dir)
+    : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+      db_(db),
+      logger_(logger),
+      dir_(dir)
 {
   service = &io_service;
   start_accept();

@@ -99,6 +99,7 @@ class TritonRoute
   void setDebugPaMarkers(bool on = true);
   void setDistributed(bool on = true);
   void setDistIpPort(std::string ip_port);
+  void setSharedVolume(const std::string& vol);
   void setDebugPaCombining(bool on = true);
   void reportConstraints();
 
@@ -120,6 +121,7 @@ class TritonRoute
   bool distributed_;
   std::string dist_ip_;
   unsigned short dist_port_;
+  std::string shared_volume_;
 
   void init();
   void prep();

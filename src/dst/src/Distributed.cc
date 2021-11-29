@@ -69,11 +69,13 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-void Distributed::runDRWorker(odb::dbDatabase* db, unsigned short port)
+void Distributed::runDRWorker(odb::dbDatabase* db,
+                              unsigned short port,
+                              const std::string& sharedVolume)
 {
   try {
     io_service io_service;
-    Worker worker(io_service, db, logger_, port);
+    Worker worker(io_service, db, logger_, port, sharedVolume);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "DRWorker server error: {}", e.what());

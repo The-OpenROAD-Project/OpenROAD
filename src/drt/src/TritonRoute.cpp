@@ -112,6 +112,15 @@ void TritonRoute::setDistIpPort(std::string ip_port)
   }
 }
 
+void TritonRoute::setSharedVolume(const std::string& vol)
+{
+  shared_volume_ = vol;
+  if(!shared_volume_.empty() && (char)(*--shared_volume_.end()) != '/')
+  {
+    shared_volume_ += '/';
+  }
+}
+
 void TritonRoute::setDebugNetName(const char* name)
 {
   debug_->netName = name;
@@ -155,6 +164,7 @@ std::string TritonRoute::runDRWorker(const char* file_name)
 {
   auto worker = FlexDRWorker::load(
       file_name, logger_, nullptr);
+  worker->setSharedVolume(shared_volume_);
   return worker->reloadedMain();
 }
 
@@ -259,7 +269,7 @@ void TritonRoute::dr()
   num_drvs_ = -1;
   FlexDR dr(getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
-  dr.setDistributed(distributed_, dist_ip_, dist_port_);
+  dr.setDistributed(distributed_, dist_ip_, dist_port_, shared_volume_);
   dr.main();
 }
 

@@ -51,7 +51,9 @@ class Distributed
   Distributed();
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runDRWorker(odb::dbDatabase* db, unsigned short port);
+  void runDRWorker(odb::dbDatabase* db,
+                   unsigned short port,
+                   const std::string& sharedVolume);
   void runLoadBalancer(unsigned short port);
   void addWorkerAddress(const char* address, unsigned short port);
   static bool sendWorker(const char* msg,

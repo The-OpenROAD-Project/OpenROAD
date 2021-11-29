@@ -4,7 +4,7 @@
 using namespace boost::asio;
 using ip::tcp;
 namespace utl {
-  class Logger;
+class Logger;
 }
 namespace triton_route {
 class TritonRoute;
@@ -20,16 +20,20 @@ class WorkerConHandler : public boost::enable_shared_from_this<WorkerConHandler>
   odb::dbDatabase* db_;
   streambuf in_packet_;
   utl::Logger* logger_;
+  std::string dir_;
+
  public:
   typedef boost::shared_ptr<WorkerConHandler> pointer;
   WorkerConHandler(boost::asio::io_service& io_service,
-             odb::dbDatabase* db,
-             utl::Logger* logger);
+                   odb::dbDatabase* db,
+                   utl::Logger* logger,
+                   const std::string& dir);
   static pointer create(boost::asio::io_service& io_service,
                         odb::dbDatabase* db,
-                        utl::Logger* logger)
+                        utl::Logger* logger,
+                        const std::string& dir)
   {
-    return pointer(new WorkerConHandler(io_service, db, logger));
+    return pointer(new WorkerConHandler(io_service, db, logger, dir));
   }
   tcp::socket& socket();
   void start();

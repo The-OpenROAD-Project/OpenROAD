@@ -8,7 +8,7 @@ class dbDatabase;
 }
 
 namespace utl {
-  class Logger;
+class Logger;
 }
 
 using namespace boost::asio;
@@ -21,6 +21,7 @@ class Worker
   io_service* service;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  std::string dir_;
   void start_accept();
   void handle_accept(WorkerConHandler::pointer connection,
                      const boost::system::error_code& err);
@@ -30,6 +31,7 @@ class Worker
   Worker(boost::asio::io_service& io_service,
          odb::dbDatabase* db,
          utl::Logger* logger,
-         unsigned short port = 1234);
+         unsigned short port,
+         const std::string& dir);
 };
 }  // namespace dst

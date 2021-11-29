@@ -43,11 +43,11 @@
 %inline %{
 
 void
-run_server_cmd(unsigned short port)
+run_server_cmd(unsigned short port, const char* sharedVolume)
 {
   auto* db = ord::OpenRoad::openRoad()->getDb();
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runDRWorker(db, port);
+  distributed->runDRWorker(db, port, sharedVolume);
 }
 
 void

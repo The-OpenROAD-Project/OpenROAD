@@ -66,7 +66,8 @@ void detailed_route_cmd(const char* guideFile,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
                         int verbose,
-                        const char* distributed)
+                        const char* distributed,
+                        const char* sharedVolume)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -90,6 +91,7 @@ void detailed_route_cmd(const char* guideFile,
   else {
     router->setDistributed(true);
     router->setDistIpPort(distributed);
+    router->setSharedVolume(sharedVolume);
   }
   router->main();
 }

@@ -29,6 +29,7 @@
 #include "dr/FlexDR.h"
 
 #include <omp.h>
+#include <stdio.h>
 
 #include <boost/io/ios_state.hpp>
 #include <chrono>
@@ -36,14 +37,14 @@
 #include <iomanip>
 #include <numeric>
 #include <sstream>
-#include "dst/Distributed.h"
+
 #include "db/infra/frTime.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
-#include <stdio.h>
 
 using namespace std;
 using namespace fr;
@@ -60,7 +61,7 @@ static bool serialize_worker(SerializationType type,
 {
   if (type == SerializationType::READ) {
     std::ifstream file(name);
-    if(!file.good())
+    if (!file.good())
       return false;
     InputArchive ar(file);
     register_types(ar);
@@ -69,7 +70,7 @@ static bool serialize_worker(SerializationType type,
     file.close();
   } else {
     std::ofstream file(name);
-    if(!file.good())
+    if (!file.good())
       return false;
     OutputArchive ar(file);
     register_types(ar);
@@ -107,7 +108,8 @@ std::string FlexDRWorker::reloadedMain()
   route_queue();
   setGCWorker(nullptr);
   cleanup();
-  std::string name = fmt::format("iter{}_x{}_y{}.worker.out",
+  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.out",
+                                 dist_dir_,
                                  getDRIter(),
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
@@ -278,23 +280,28 @@ void FlexDRWorker::distributedMain(frDesign* design)
   if (skipRouting_)
     return;
   // Save the worker in its fully initialized state
-  std::string name = fmt::format("iter{}_x{}_y{}.worker.in",
+  std::string name = fmt::format("{}iter{}_x{}_y{}.worker.in",
+                                 dist_dir_,
                                  getDRIter(),
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
   serialize_worker(SerializationType::WRITE, this, name);
   std::string result;
-  bool ok = dst::Distributed::sendWorker(name.c_str(), dist_ip_.c_str(), dist_port_, result);
-  if(ok)
-  {
+  bool ok = dst::Distributed::sendWorker(
+      name.c_str(), dist_ip_.c_str(), dist_port_, result);
+  if (ok) {
     ok = serialize_worker(SerializationType::READ, this, result);
-    if(!ok)
+    if (!ok)
       logger_->error(DRT, 511, "Deserialization failed {}", result);
     std::remove(name.c_str());
     std::remove(result.c_str());
     updateDesign(design);
   } else {
-    logger_->error(utl::DRT, 500, "Sending worker {} failed with message \"{}\"", name, result);  
+    logger_->error(utl::DRT,
+                   500,
+                   "Sending worker {} failed with message \"{}\"",
+                   name,
+                   result);
   }
 }
 
@@ -484,8 +491,8 @@ frCoord FlexDR::init_via2viaMinLen_minimumcut1(frLayerNum lNum,
   frCoord sol = 0;
 
   // check min len in lNum assuming pre dir routing
-  bool isH = (getTech()->getLayer(lNum)->getDir()
-              == dbTechLayerDir::HORIZONTAL);
+  bool isH
+      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
 
   bool isVia1Above = false;
   frVia via1(viaDef1);
@@ -681,8 +688,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
   frCoord sol = 0;
 
   // check min len in lNum assuming pre dir routing
-  bool isH = (getTech()->getLayer(lNum)->getDir()
-              == dbTechLayerDir::HORIZONTAL);
+  bool isH
+      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef1);
@@ -1217,8 +1224,10 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   }
   auto layer1 = getTech()->getLayer(viaDef1->getCutLayerNum());
   auto layer2 = getTech()->getLayer(viaDef2->getCutLayerNum());
-  auto cutClassIdx1 = layer1->getCutClassIdx(cutBox1.minDXDY(), cutBox1.maxDXDY());
-  auto cutClassIdx2 = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
+  auto cutClassIdx1
+      = layer1->getCutClassIdx(cutBox1.minDXDY(), cutBox1.maxDXDY());
+  auto cutClassIdx2
+      = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
   frString cutClass1, cutClass2;
   if (cutClassIdx1 != -1)
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
@@ -1227,15 +1236,15 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
-    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
-              > (cutBox1.yMax() - cutBox1.yMin());
-    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
-              > (cutBox2.yMax() - cutBox2.yMin());
+    isSide1
+        = (cutBox1.xMax() - cutBox1.xMin()) > (cutBox1.yMax() - cutBox1.yMin());
+    isSide2
+        = (cutBox2.xMax() - cutBox2.xMin()) > (cutBox2.yMax() - cutBox2.yMin());
   } else {
-    isSide1 = (cutBox1.xMax() - cutBox1.xMin())
-              < (cutBox1.yMax() - cutBox1.yMin());
-    isSide2 = (cutBox2.xMax() - cutBox2.xMin())
-              < (cutBox2.yMax() - cutBox2.yMin());
+    isSide1
+        = (cutBox1.xMax() - cutBox1.xMin()) < (cutBox1.yMax() - cutBox1.yMin());
+    isSide2
+        = (cutBox2.xMax() - cutBox2.xMin()) < (cutBox2.yMax() - cutBox2.yMin());
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
@@ -1745,9 +1754,9 @@ void FlexDR::searchRepair(int iter,
       const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
       getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
       Rect routeBox(routeBox1.xMin(),
-                     routeBox1.yMin(),
-                     routeBox2.xMax(),
-                     routeBox2.yMax());
+                    routeBox1.yMin(),
+                    routeBox2.xMax(),
+                    routeBox2.yMax());
       Rect extBox;
       Rect drcBox;
       routeBox.bloat(MTSAFEDIST, extBox);
@@ -1758,7 +1767,7 @@ void FlexDR::searchRepair(int iter,
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
-      worker->setDistributed(dist_, dist_ip_, dist_port_);
+      worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
         //   cout << "@@@ debug: " << i << " " << j << endl;
@@ -1794,7 +1803,8 @@ void FlexDR::searchRepair(int iter,
     for (auto& workersInBatch : workerBatch) {
       {
         const std::string batch_name = std::string("DR:batch<")
-          + std::to_string(workersInBatch.size()) + ">";
+                                       + std::to_string(workersInBatch.size())
+                                       + ">";
         ProfileTask profile(batch_name.c_str());
 // multi thread
 #pragma omp parallel for schedule(dynamic)
@@ -1899,7 +1909,6 @@ void FlexDR::end(bool writeMetrics)
   const ULL totWlen = std::accumulate(wlen.begin(), wlen.end(), ULL(0));
   const ULL totSCut = std::accumulate(sCut.begin(), sCut.end(), ULL(0));
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
-
 
   if (writeMetrics) {
     logger_->metric("drt::wire length::total",
@@ -2011,7 +2020,10 @@ void FlexDR::reportDRC(const string& file_name)
 
   if (file_name == string("")) {
     if (VERBOSE > 0) {
-      logger_->warn(DRT, 290, "Waring: no DRC report specified, skipped writing DRC report");
+      logger_->warn(
+          DRT,
+          290,
+          "Waring: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
@@ -2184,8 +2196,7 @@ void FlexDR::reportDRC(const string& file_name)
               break;
             case frcInstTerm: {
               frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << "iterm:"
-                     << instTerm->getInst()->getName() << "/"
+              drcRpt << "iterm:" << instTerm->getInst()->getName() << "/"
                      << instTerm->getTerm()->getName() << " ";
               break;
             }
@@ -2197,9 +2208,7 @@ void FlexDR::reportDRC(const string& file_name)
             case frcInstBlockage: {
               frInstBlockage* instBlockage
                   = (static_cast<frInstBlockage*>(src));
-              drcRpt << "inst:"
-                     << instBlockage->getInst()->getName()
-                     << " ";
+              drcRpt << "inst:" << instBlockage->getInst()->getName() << " ";
               break;
             }
             case frcBlockage: {
@@ -2207,7 +2216,10 @@ void FlexDR::reportDRC(const string& file_name)
               break;
             }
             default:
-              logger_->error(DRT, 291, "Unexpected source type in marker: {}", src->typeId());
+              logger_->error(DRT,
+                             291,
+                             "Unexpected source type in marker: {}",
+                             src->typeId());
           }
         }
       }

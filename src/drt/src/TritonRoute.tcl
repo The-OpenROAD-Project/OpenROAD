@@ -51,6 +51,7 @@ sta::define_cmd_args "detailed_route" {
     [-verbose level]
     [-param filename]
     [-distributed ip_port]
+    [-shared_volume vol]
 }
 
 proc detailed_route { args } {
@@ -58,7 +59,7 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
       -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -distributed} \
+      -top_routing_layer -verbose -distributed -shared_volume} \
     flags {-disable_via_gen}
   sta::check_argc_eq0 "detailed_route" $args
 
@@ -152,13 +153,18 @@ proc detailed_route { args } {
     }
     if { [info exists keys(-distributed)] } {
       set distributed $keys(-distributed)
+      if { [info exists keys(-shared_volume)] } {
+        set vol $keys(-shared_volume)
+      } else {
+        utl::error DRT 506 "-shared_volume is required for distributed routing."
+      }
     } else {
       set distributed ""
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
-      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose $distributed
+      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose $distributed $vol
   }
 }
 

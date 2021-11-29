@@ -1,7 +1,24 @@
 
+sta::define_cmd_args "detailed_route_server" {
+    [-port port]
+    [-shared_volume vol]
+}
 proc detailed_route_server { args } {
-  sta::check_argc_eq1 "detailed_route_server" $args
-  dst::run_server_cmd $args
+  sta::parse_key_args "detailed_route_server" args \
+    keys {-port -shared_volume} \
+    flags {}
+  sta::check_argc_eq0 "detailed_route_server" $args
+  if { [info exists keys(-port)] } {
+    set port $keys(-port)
+  } else {
+    utl::error DST 20 "-port is required."
+  }
+  if { [info exists keys(-shared_volume)] } {
+    set shared_volume $keys(-shared_volume)
+  } else {
+    utl::error DST 21 "-shared_volume is required."
+  }
+  dst::run_server_cmd $port $shared_volume
 }
 
 proc run_load_balancer { args } {
