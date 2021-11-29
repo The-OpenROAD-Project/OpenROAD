@@ -533,22 +533,15 @@ void HeatMapDataSource::updateMapColors()
 {
   // generate ranges for colors
   if (log_scale_) {
-    double range = display_range_max_ - display_range_min_;
-    double step = std::pow(range, 1.0 / turbo_srgb_count_);
-    double offset = display_range_min_;
-
+    double range = display_range_max_;
     if (display_range_min_ != 0.0) {
-      const double decade_step = std::pow(display_range_max_ / display_range_min_, 1.0 / turbo_srgb_count_);
-
-      if ((decade_step - 1) > 1.1 * (step - 1)) {
-        step = decade_step;
-        offset = 0.0;
-        range = display_range_max_;
-      }
+      range = display_range_max_ / display_range_min_;
     }
 
+    const double step = std::pow(range, 1.0 / turbo_srgb_count_);
+
     for (int i = 0; i <= turbo_srgb_count_; i++) {
-      double start = range / std::pow(step, i) + offset;
+      double start = display_range_max_ / std::pow(step, i);
       if (i == turbo_srgb_count_) {
         start = display_range_min_;
       }

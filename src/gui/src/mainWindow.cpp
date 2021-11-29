@@ -1129,12 +1129,6 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
 
 const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
 {
-//  std::vector<HeatMapDataSource*> maps;
-//  maps.push_back(&routing_congestion_data_);
-//  maps.push_back(&placement_congestion_data_);
-//  maps.push_back(&power_density_data_);
-//  return maps;
-
   return {
     &routing_congestion_data_,
     &placement_congestion_data_,
