@@ -952,12 +952,12 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
   AlignMacro();
   vector<float> x_vec;
   vector<float> y_vec;
-  for(int i = 0; i < blocks_.size(); i++) {
-    if(blocks_[i].GetNumMacro() > 0) {
-      const float lx = blocks_[i].GetX();
-      const float ly = blocks_[i].GetY();
-      const float ux = lx + blocks_[i].GetWidth();
-      const float uy = ly + blocks_[i].GetHeight();
+  for(const auto& block : blocks_) {
+    if(block.GetNumMacro() > 0) {
+      const float lx = block.GetX();
+      const float ly = block.GetY();
+      const float ux = lx + block.GetWidth();
+      const float uy = ly + block.GetHeight();
       x_vec.push_back(lx);
       x_vec.push_back(ux);
       y_vec.push_back(ly);
@@ -1010,12 +1010,12 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
     }
   }
 
-  for(int i = 0; i < blocks_.size(); i++) {
-    if(blocks_[i].GetNumMacro() > 0) {
-      const float lx = blocks_[i].GetX();
-      const float ly = blocks_[i].GetY();
-      const float ux = lx + blocks_[i].GetWidth();
-      const float uy = ly + blocks_[i].GetHeight();
+  for(const auto& block : blocks_) {
+    if(block.GetNumMacro() > 0) {
+      const float lx = block.GetX();  
+      const float ly = block.GetY();
+      const float ux = lx + block.GetWidth();
+      const float uy = ly + block.GetHeight();
 
       int x_start = 0;
       int x_end = 0;

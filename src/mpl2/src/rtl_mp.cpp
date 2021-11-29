@@ -40,7 +40,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cassert>
 
 #include "block_placement.h"
 #include "mpl2/rtl_mp.h"
@@ -203,11 +202,19 @@ bool rtl_macro_placer(const char* config_file,
   float outline_lx = 0.0;
   float outline_ly = 0.0;
 
-  assert(num_thread <= 0);
-  assert(num_run <= 0);
-  assert(num_level <= 0);
-  assert(num_worker <= 0);
-  assert(perturb_per_step <= 0);
+  if(num_thread <= 0)
+    logger->error(MPL, 10, "num_thread shoule be large than 0. (num_thread : {}).", num_thread);
+
+  if(num_run <= 0)
+    logger->error(MPL, 11, "num_run shoule be large than 0. (num_run : {}).", num_run);
+
+  if(num_level <= 0)
+    logger->error(MPL, 12, "num_level shoule be large than 0. (num_level : {}).", num_level);
+
+  if(perturb_per_step <= 0)
+    logger->error(MPL, 13, "perturb_per_step shoule be large than 0. (perturb_per_step : {}).", perturb_per_step);
+
+
 
   vector<Cluster*> clusters = shape_engine::ShapeEngine(outline_width,
                                                         outline_height,

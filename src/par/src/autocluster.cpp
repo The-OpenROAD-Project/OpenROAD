@@ -1578,9 +1578,9 @@ void AutoClusterMgr::addTimingWeight(float weight)
       }
     }
 
-    for ( auto virtual_vertex : virtual_vertex_map_) {
+    for ( const auto& virtual_vertex : virtual_vertex_map_) {
       int src_id = 0;
-      for (auto pin_fanin : virtual_vertex.second) {
+      for (const auto& pin_fanin : virtual_vertex.second) {
         std::string src_pin_name = network->pathName(pin_fanin.first);
         if (bterm_map_.find(src_pin_name) != bterm_map_.end()) 
           src_id = bundled_io_map_[bterm_map_[src_pin_name]];
@@ -1610,9 +1610,9 @@ void AutoClusterMgr::addTimingWeight(float weight)
     }
   }
 
-  for (auto virtual_vertex : virtual_vertex_map_) {
+  for (const auto& virtual_vertex : virtual_vertex_map_) {
     int src_id = 0;
-    for (auto pin_fanin : virtual_vertex.second) {
+    for (const auto& pin_fanin : virtual_vertex.second) {
       std::string src_pin_name = network->pathName(pin_fanin.first);
       if (bterm_map_.find(src_pin_name) != bterm_map_.end()) 
         src_id = bundled_io_map_[bterm_map_[src_pin_name]];
@@ -1628,7 +1628,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
   for(; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
     unordered_map<int, int> sinks = map_iter->second;
-    for (auto sink : sinks) {
+    for (const auto& sink : sinks) {
       float level_weight = weight;
       bool src_io = src_id <= bundled_io_map_.size();
       bool sink_io = sink.first <= bundled_io_map_.size();
