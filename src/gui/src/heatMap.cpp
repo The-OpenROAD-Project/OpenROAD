@@ -685,11 +685,6 @@ void HeatMapRenderer::drawObjects(Painter& painter)
     first_paint_ = false;
     // first time so announce onShow
     datasource_.onShow();
-
-    // report warning, only for the first paint event
-    if (!datasource_.isPopulated()) {
-      logger_->warn(utl::GUI, 57, "Heat map \"{}\" has not been populated with data.", datasource_.getName());
-    }
   }
 
   if (!datasource_.isPopulated()) {
