@@ -160,6 +160,7 @@ proc detailed_route { args } {
       }
     } else {
       set distributed ""
+      set vol ""
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \

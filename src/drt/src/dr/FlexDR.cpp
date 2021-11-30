@@ -305,50 +305,6 @@ void FlexDRWorker::distributedMain(frDesign* design)
   }
 }
 
-template <class Archive>
-void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
-{
-  // // We always serialize before calling main on the work unit so various
-  // // fields are empty and don't need to be serialized.  I skip these to
-  // // save having to write lots of serializers that will never be called.
-  // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
-  //     || !rq_.isEmpty() || gcWorker_) {
-  //   logger_->error(DRT, 999, "Can't serialize used worker");
-  // }
-
-  // The logger_, graphics_ and debugSettings_ are handled by the caller to
-  // use the current ones.
-  (ar) & design_;
-  (ar) & via_data_;
-  (ar) & routeBox_;
-  (ar) & extBox_;
-  (ar) & drcBox_;
-  (ar) & gcellBox_;
-  (ar) & drIter_;
-  (ar) & mazeEndIter_;
-  (ar) & followGuide_;
-  (ar) & needRecheck_;
-  (ar) & skipRouting_;
-  (ar) & ripupMode_;
-  (ar) & workerDRCCost_;
-  (ar) & workerMarkerCost_;
-  (ar) & boundaryPin_;
-  (ar) & pinCnt_;
-  (ar) & initNumMarkers_;
-  (ar) & apSVia_;
-  (ar) & fixedObjs_;
-  (ar) & planarHistoryMarkers_;
-  (ar) & viaHistoryMarkers_;
-  (ar) & historyMarkers_;
-  (ar) & nets_;
-  (ar) & owner2nets_;
-  (ar) & gridGraph_;
-  (ar) & markers_;
-  (ar) & bestMarkers_;
-  (ar) & rq_;
-  (ar) & gcWorker_;
-}
-
 void FlexDR::initFromTA()
 {
   // initialize lists
