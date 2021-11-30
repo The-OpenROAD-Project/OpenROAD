@@ -291,7 +291,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // global heat maps
   RoutingCongestionDataSource routing_congestion_data_;
-  PlacementCongestionDataSource placement_congestion_data_;
+  PlacementDensityDataSource placement_density_data_;
   PowerDensityDataSource power_density_data_;
 };
 

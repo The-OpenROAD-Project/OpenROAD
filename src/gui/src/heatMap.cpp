@@ -962,15 +962,15 @@ void RoutingCongestionDataSource::setSettings(const Renderer::Settings& settings
 
 ////////////
 
-PlacementCongestionDataSource::PlacementCongestionDataSource() :
-    HeatMapDataSource("Placement Congestion", "Placement", "PlacementCongestion"),
+PlacementDensityDataSource::PlacementDensityDataSource() :
+    HeatMapDataSource("Placement Density", "Placement", "PlacementDensity"),
     include_taps_(true),
     include_filler_(false),
     include_io_(false)
 {
 }
 
-bool PlacementCongestionDataSource::populateMap()
+bool PlacementDensityDataSource::populateMap()
 {
   if (getBlock() == nullptr) {
     return false;
@@ -998,7 +998,7 @@ bool PlacementCongestionDataSource::populateMap()
   return true;
 }
 
-void PlacementCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+void PlacementDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
 {
   QCheckBox* taps = new QCheckBox(parent);
   taps->setCheckState(include_taps_ ? Qt::Checked : Qt::Unchecked);
@@ -1034,7 +1034,7 @@ void PlacementCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, 
                    });
 }
 
-const Renderer::Settings PlacementCongestionDataSource::getSettings() const
+const Renderer::Settings PlacementDensityDataSource::getSettings() const
 {
   auto settings = HeatMapDataSource::getSettings();
 
@@ -1045,7 +1045,7 @@ const Renderer::Settings PlacementCongestionDataSource::getSettings() const
   return settings;
 }
 
-void PlacementCongestionDataSource::setSettings(const Renderer::Settings& settings)
+void PlacementDensityDataSource::setSettings(const Renderer::Settings& settings)
 {
   HeatMapDataSource::setSettings(settings);
 
@@ -1054,56 +1054,56 @@ void PlacementCongestionDataSource::setSettings(const Renderer::Settings& settin
   Renderer::setSetting<bool>(settings, "IO", include_io_);
 }
 
-void PlacementCongestionDataSource::onShow()
+void PlacementDensityDataSource::onShow()
 {
   HeatMapDataSource::onShow();
 
   addOwner(getBlock());
 }
 
-void PlacementCongestionDataSource::onHide()
+void PlacementDensityDataSource::onHide()
 {
   HeatMapDataSource::onHide();
 
   removeOwner();
 }
 
-void PlacementCongestionDataSource::inDbInstCreate(odb::dbInst*)
+void PlacementDensityDataSource::inDbInstCreate(odb::dbInst*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
+void PlacementDensityDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbInstDestroy(odb::dbInst*)
+void PlacementDensityDataSource::inDbInstDestroy(odb::dbInst*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&)
+void PlacementDensityDataSource::inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
+void PlacementDensityDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbInstSwapMasterAfter(odb::dbInst*)
+void PlacementDensityDataSource::inDbInstSwapMasterAfter(odb::dbInst*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbPreMoveInst(odb::dbInst*)
+void PlacementDensityDataSource::inDbPreMoveInst(odb::dbInst*)
 {
   destroyMap();
 }
 
-void PlacementCongestionDataSource::inDbPostMoveInst(odb::dbInst*)
+void PlacementDensityDataSource::inDbPostMoveInst(odb::dbInst*)
 {
   destroyMap();
 }
@@ -1264,7 +1264,7 @@ double PowerDensityDataSource::getDisplayRangeIncrement() const
   return getValueRange() / 100.0;
 }
 
-void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
 {
   QCheckBox* internal = new QCheckBox(parent);
   internal->setCheckState(include_internal_ ? Qt::Checked : Qt::Unchecked);

@@ -312,13 +312,13 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   static constexpr double default_grid_ = 10.0;
 };
 
-class PlacementCongestionDataSource : public HeatMapDataSource, public odb::dbBlockCallBackObj
+class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlockCallBackObj
 {
  public:
-  PlacementCongestionDataSource();
-  ~PlacementCongestionDataSource() {}
+  PlacementDensityDataSource();
+  ~PlacementDensityDataSource() {}
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;

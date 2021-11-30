@@ -1131,7 +1131,7 @@ const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
 {
   return {
     &routing_congestion_data_,
-    &placement_congestion_data_,
+    &placement_density_data_,
     &power_density_data_
   };
 }
