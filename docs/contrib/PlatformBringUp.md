@@ -485,4 +485,4 @@ run time is small and you can identify and fix errors faster.
 *   Teo Ene - Oklahoma State University
 *   Ricardo Hernandez - Oklahoma State University
 *   Ryan Ridley - Oklahoma State University
-*   Indira Iyer - TODO
+*   Indira Iyer - OpenROAD Project Consultant
