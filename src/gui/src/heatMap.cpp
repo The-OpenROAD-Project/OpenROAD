@@ -267,6 +267,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     short_name_(short_name),
     settings_group_(settings_group),
     populated_(false),
+    colors_correct_(false),
     issue_redraw_(true),
     block_(nullptr),
     grid_x_size_(10.0),
@@ -475,6 +476,8 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
     const double ratio = static_cast<double>(insersect_area) / map_pt->rect.area();
 
     combineMapData(map_pt->value, value, ratio);
+
+    markColorsInvalid();
   }
 }
 
@@ -526,15 +529,16 @@ void HeatMapDataSource::ensureMap()
     setupMap();
   }
 
-  const bool populate_map = build_map || !isPopulated();
-  if (populate_map) {
+  if (build_map || !isPopulated()) {
     populated_ = populateMap();
 
     if (isPopulated()) {
       correctMapScale(map_);
-
-      updateMapColors();
     }
+  }
+
+  if (!colors_correct_) {
+    assignMapColors();
   }
 }
 
@@ -563,9 +567,15 @@ void HeatMapDataSource::updateMapColors()
     }
   }
 
+  markColorsInvalid();
+}
+
+void HeatMapDataSource::assignMapColors()
+{
   for (auto& [bbox, map_pt] : map_) {
     map_pt->color = getColor(map_pt->value);
   }
+  colors_correct_ = true;
 }
 
 void HeatMapDataSource::combineMapData(double& base, const double new_data, const double region_ratio)

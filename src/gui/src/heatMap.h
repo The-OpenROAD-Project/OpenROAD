@@ -163,6 +163,8 @@ class HeatMapDataSource
   virtual void combineMapData(double& base, const double new_data, const double region_ratio);
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
+  void assignMapColors();
+  void markColorsInvalid() { colors_correct_ = false; }
 
   virtual bool destroyMapOnNotVisible() const { return false; }
 
@@ -180,6 +182,7 @@ class HeatMapDataSource
   const std::string short_name_;
   const std::string settings_group_;
   bool populated_;
+  bool colors_correct_;
   bool issue_redraw_;
 
   odb::dbBlock* block_;
