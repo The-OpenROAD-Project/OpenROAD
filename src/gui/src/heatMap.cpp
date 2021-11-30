@@ -673,38 +673,6 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   const bool show_maxs = datasource_.getDrawAboveRangeMax();
 
   const odb::Rect& bounds = painter.getBounds();
-  const int color_count = datasource_.getColorsCount();
-  const int color_incr = 2;
-
-  const bool show_legend = datasource_.getShowLegend();
-  std::vector<std::pair<odb::Point, std::string>> legend_key;
-  odb::Rect legend_bounds;
-  const double pixel_per_dbu = painter.getPixelsPerDBU();
-  const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
-  const double box_height = 1 / pixel_per_dbu; // 1 pixels
-  const int legend_width = 20 / pixel_per_dbu; // 20 pixels
-  const int text_offset = 2 / pixel_per_dbu;
-  const int legend_top = bounds.yMax() - legend_offset;
-  const int legend_right = bounds.xMax() - legend_offset;
-  const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
-  if (show_legend) {
-    legend_bounds.set_xhi(legend_right);
-    legend_bounds.set_yhi(legend_top);
-    legend_bounds.set_xlo(legend_right);
-    legend_bounds.set_ylo(legend_top);
-
-    for (const auto& legend_value : datasource_.getLegendValues()) {
-      const int text_right = legend_left - text_offset;
-      const int box_top = legend_top - ((color_count - legend_value.first) * box_height) / color_incr;
-
-      const std::string text = datasource_.formatValue(legend_value.second, true);
-      legend_key.push_back({{text_right, box_top}, text});
-      const odb::Rect text_bounds = painter.stringBoundaries(text_right, box_top, key_anchor, text);
-
-      legend_bounds.merge(text_bounds);
-    }
-  }
 
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
     if (!show_mins && map_pt->value < min_value) {
@@ -729,10 +697,6 @@ void HeatMapRenderer::drawObjects(Painter& painter)
         const std::string text = datasource_.formatValue(map_pt->value, false);
         const odb::Rect text_bound = painter.stringBoundaries(x, y, text_anchor, text);
         bool draw = true;
-        if (show_legend && legend_bounds.intersects(text_bound)) {
-          // if text will be below legend, don't draw it
-          draw = false;
-        }
         if (text_bound.dx() >= text_rect_margin * map_pt->rect.dx() ||
             text_bound.dy() >= text_rect_margin * map_pt->rect.dy()) {
           // don't draw if text will be too small
@@ -748,7 +712,40 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   }
 
   // legend
-  if (show_legend) {
+  if (datasource_.getShowLegend()) {
+    const double pixel_per_dbu = painter.getPixelsPerDBU();
+    const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
+    const double box_height = 1 / pixel_per_dbu; // 1 pixels
+    const int legend_width = 20 / pixel_per_dbu; // 20 pixels
+    const int text_offset = 2 / pixel_per_dbu;
+    const int legend_top = bounds.yMax() - legend_offset;
+    const int legend_right = bounds.xMax() - legend_offset;
+    const int legend_left = legend_right - legend_width;
+    const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+
+    odb::Rect legend_bounds(legend_left, legend_top, legend_right + text_offset, legend_top);
+
+    const int color_count = datasource_.getColorsCount();
+    const int color_incr = 2;
+
+    std::vector<std::pair<odb::Point, std::string>> legend_key;
+    for (const auto& legend_value : datasource_.getLegendValues()) {
+      const int text_right = legend_left - text_offset;
+      const int box_top = legend_top - ((color_count - legend_value.first) * box_height) / color_incr;
+
+      const std::string text = datasource_.formatValue(legend_value.second, true);
+      legend_key.push_back({{text_right, box_top}, text});
+      const odb::Rect text_bounds = painter.stringBoundaries(text_right, box_top, key_anchor, text);
+
+      legend_bounds.merge(text_bounds);
+    }
+
+    // draw background
+    painter.setPen(Painter::dark_gray, true);
+    painter.setBrush(Painter::dark_gray);
+    painter.drawRect(legend_bounds, 10, 10);
+
+    // draw color map
     double box_top = legend_top;
     for (int i = 0; i < color_count; i += color_incr) {
       const int color_idx = color_count - 1 - i;
@@ -758,7 +755,8 @@ void HeatMapRenderer::drawObjects(Painter& painter)
       box_top -= box_height;
     }
 
-    painter.setPen(Painter::white, true);
+    // draw key values
+    painter.setPen(Painter::black, true);
     painter.setBrush(Painter::transparent);
     for (const auto& [pt, text] : legend_key) {
       painter.drawString(pt.x(), pt.y(), key_anchor, text);
