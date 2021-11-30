@@ -157,7 +157,7 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 ### Chip level connections
 
-- [ICeWall](./src/ICeWall/README.md)
+- [ICeWall](./src/pad/README.md)
 
 ### Macro Placement
 

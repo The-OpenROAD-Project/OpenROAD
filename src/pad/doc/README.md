@@ -78,7 +78,7 @@ Details on the [TCL command interface](TCL_Interface.md)
 
 As an alternative to using TCL commands, the definition of the padring can be made using a padring strategy file, which allows for batch loading of the padcell data all at once.
 
-For an example of what a padring strategy file looks like, please refer to [../test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ICeWall/test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy) .
+For an example of what a padring strategy file looks like, please refer to [../test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pad/test/soc_bsg_black_parrot_nangate45/bsg_black_parrot.package.strategy) .
 
 ### Signal mapping
 
