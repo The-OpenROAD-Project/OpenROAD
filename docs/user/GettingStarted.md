@@ -112,9 +112,9 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 
 ## Miscellaneous
 
-### nangate45 smoke-test harness for top-level Verilog designs
+### Nangate45 smoke-test harness for top-level Verilog designs
 
-1.  Drop your Verilog files into designs/src/harness
+1.  Drop your Verilog files into `designs/src/harness`
 2.  Start the workflow:
 
 ---
