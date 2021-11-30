@@ -361,6 +361,7 @@ class LayoutViewer : public QWidget
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
+  bool repaint_requested_;
 
   utl::Logger* logger_;
 

@@ -445,6 +445,7 @@ LayoutViewer::LayoutViewer(
       inspector_focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
+      repaint_requested_(true),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
@@ -2147,16 +2148,18 @@ QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 
 void LayoutViewer::updateBlockPainting(const QRect& area)
 {
-  if (block_drawing_ != nullptr) {
+  if (block_drawing_ != nullptr && !repaint_requested_) {
     // no changes detected, so no need to update
     return;
   }
 
-  // build new drawing of layout
-  block_drawing_ = std::make_unique<QPixmap>(area.width(), area.height());
-  block_drawing_->fill(Qt::transparent);
+  repaint_requested_ = false;
 
-  QPainter block_painter(block_drawing_.get());
+  // build new drawing of layout
+  auto* block_drawing = new QPixmap(area.width(), area.height());
+  block_drawing->fill(Qt::transparent);
+
+  QPainter block_painter(block_drawing);
   block_painter.setRenderHints(QPainter::Antialiasing);
 
   // apply transforms
@@ -2169,6 +2172,9 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
 
   // paint layout
   drawBlock(&block_painter, dbu_bounds, 0);
+
+  // save the cached layout
+  block_drawing_ = std::unique_ptr<QPixmap>(block_drawing);
 }
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
@@ -2253,7 +2259,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
 void LayoutViewer::fullRepaint()
 {
-  block_drawing_ = nullptr;
+  repaint_requested_ = true;
   update();
 }
 
