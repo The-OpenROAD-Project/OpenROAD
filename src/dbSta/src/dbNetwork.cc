@@ -285,15 +285,13 @@ public:
   Pin *next();
 
 private:
-  const dbNetwork *network_;
   dbSet<dbITerm>::iterator iitr_;
   dbSet<dbITerm>::iterator iitr_end_;
   Pin *next_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
-				   const dbNetwork *network) :
-  network_(network)
+				   const dbNetwork* /* network */)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
   iitr_ = dnet->getITerms().begin();

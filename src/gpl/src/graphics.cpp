@@ -11,12 +11,10 @@
 namespace gpl {
 
 Graphics::Graphics(utl::Logger* logger,
-                   std::shared_ptr<PlacerBase> pb,
-                   InitialPlace* ip)
+                   std::shared_ptr<PlacerBase> pb)
     : pb_(pb),
       nb_(),
       np_(nullptr),
-      ip_(ip),
       selected_(nullptr),
       draw_bins_(false),
       logger_(logger)
@@ -32,7 +30,6 @@ Graphics::Graphics(utl::Logger* logger,
     : pb_(pb),
       nb_(nb),
       np_(np),
-      ip_(nullptr),
       selected_(nullptr),
       draw_bins_(draw_bins),
       logger_(logger)

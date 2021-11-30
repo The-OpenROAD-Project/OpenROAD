@@ -1297,8 +1297,7 @@ enum class TreeStructure
 class FastRouteRenderer : public gui::Renderer
 {
  public:
-  FastRouteRenderer(FastRouteCore* fastroute,
-                    odb::dbTech* tech,
+  FastRouteRenderer(odb::dbTech* tech,
                     int w_tile,
                     int h_tile,
                     int x_corner,
@@ -1337,13 +1336,11 @@ class FastRouteRenderer : public gui::Renderer
   std::vector<int> pinL_;  // array of L coordinates of pins
   int num_pins_;
 
-  FastRouteCore* fastroute_;
   odb::dbTech* tech_;
   int w_tile_, h_tile_, x_corner_, y_corner_;
 };
 
-FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute,
-                                     odb::dbTech* tech,
+FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech,
                                      int w_tile,
                                      int h_tile,
                                      int x_corner,
@@ -1351,7 +1348,6 @@ FastRouteRenderer::FastRouteRenderer(FastRouteCore* fastroute,
     : treeStructure_(TreeStructure::steinerTreeByStt),
       is3DVisualization_(false),
       num_pins_(0),
-      fastroute_(fastroute),
       tech_(tech),
       w_tile_(w_tile),
       h_tile_(h_tile),
@@ -1523,7 +1519,7 @@ void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)
   if (gui::Gui::enabled()) {
     if (fastrouteRender_ == nullptr) {
       fastrouteRender_ = new FastRouteRenderer(
-          this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
+          db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
     fastrouteRender_->highlight(net);
@@ -1544,7 +1540,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
   if (gui_) {
     if (fastrouteRender_ == nullptr) {
       fastrouteRender_ = new FastRouteRenderer(
-          this, db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
+          db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
     fastrouteRender_->highlight(net);

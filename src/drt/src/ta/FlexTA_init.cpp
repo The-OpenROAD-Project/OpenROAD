@@ -640,11 +640,12 @@ void FlexTAWorker::initFixedObjs()
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
     result.clear();
-    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::ROUTING
-        || getTech()->getLayer(layerNum)->getDir() != getDir()) {
+    frLayer* layer = getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::ROUTING
+        || layer->getDir() != getDir()) {
       continue;
     }
-    width = getTech()->getLayer(layerNum)->getWidth();
+    width = layer->getWidth();
     getRegionQuery()->query(getExtBox(), layerNum, result);
     for (auto& [bounds, obj] : result) {
       bounds.bloat(-1, box);
@@ -776,7 +777,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
   }
 
   frCoord bloatDist = 0;
-  auto con = getTech()->getLayer(lNum)->getMinSpacing();
+  auto con = layer->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       bloatDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -790,6 +791,9 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
           obsWidth, viaWidth, viaWidth /*prl*/);
     }
   }
+   auto& eol = layer->getDrEolSpacingConstraint();
+   if (viaBox.minDXDY() < eol.eolWidth)
+       bloatDist = std::max(bloatDist, eol.eolSpace);
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following

@@ -22,8 +22,7 @@ class Graphics : public gui::Renderer
  public:
   // Debug InitialPlace
   Graphics(utl::Logger* logger,
-           std::shared_ptr<PlacerBase> pb,
-           InitialPlace* ip);
+           std::shared_ptr<PlacerBase> pb);
 
   // Debug NesterovPlace
   Graphics(utl::Logger* logger,
@@ -50,7 +49,6 @@ class Graphics : public gui::Renderer
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
   NesterovPlace* np_;
-  InitialPlace* ip_;
   GCell* selected_;
   bool draw_bins_;
   utl::Logger* logger_;

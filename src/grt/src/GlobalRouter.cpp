@@ -2319,7 +2319,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
       layer->getV54SpacingRules(rules);
       if (rules.size() > 0) {
         min_spc_valid = true;
-        int minSpc;
+        int minSpc = 0;
         for (auto rule : rules)
           minSpc = rule->getSpacing();
         if (up_via_valid)
@@ -3101,7 +3101,7 @@ int GlobalRouter::findInstancesObstructions(
             upper_bound = odb::Point(rect.xMax(), rect.yMax());
             pin_box = odb::Rect(lower_bound, upper_bound);
             if (!die_area.contains(pin_box)) {
-              logger_->warn(GRT,
+              logger_->error(GRT,
                             39,
                             "Found pin outside die area in instance {}.",
                             inst->getConstName());

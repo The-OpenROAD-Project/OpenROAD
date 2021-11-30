@@ -54,27 +54,21 @@ int io::Parser::distL1(const Rect& b, const Point& p)
 {
   int x = p.getX();
   int y = p.getY();
-  int dx = (x < b.xMin()) ? b.xMin() - x :
-           (x > b.xMax()) ? x - b.xMax() :
-           0;
-  int dy = (y < b.yMin()) ? b.yMin() - y :
-           (y > b.yMax()) ? y - b.yMax() :
-           0;
+  int dx = (x < b.xMin()) ? b.xMin() - x : (x > b.xMax()) ? x - b.xMax() : 0;
+  int dy = (y < b.yMin()) ? b.yMin() - y : (y > b.yMax()) ? y - b.yMax() : 0;
   return dx + dy;
 }
 
 // Returns (by reference) the closest point inside r to Point3D p
-void io::Parser::getClosestPoint(const frRect& r, const Point3D& p, Point3D& result)
+void io::Parser::getClosestPoint(const frRect& r,
+                                 const Point3D& p,
+                                 Point3D& result)
 {
   int px = p.getX();
   int py = p.getY();
   Rect b = r.getBBox();
-  int x = (px < b.xMin()) ? b.xMin() :
-          (px > b.xMax()) ? b.xMax() :
-                            px       ;
-  int y = (py < b.yMin()) ? b.yMin() :
-          (py > b.yMax()) ? b.yMax() :
-                            py       ;
+  int x = (px < b.xMin()) ? b.xMin() : (px > b.xMax()) ? b.xMax() : px;
+  int y = (py < b.yMin()) ? b.yMin() : (py > b.yMax()) ? b.yMax() : py;
   result.set(x, y, r.getLayerNum());
 }
 
@@ -215,7 +209,6 @@ void io::Parser::patchGuides(frNet* net,
 
   if (guidePt == bestPinLocCoords)
     return;
-  // add guide in upper our lower layer
   int z = guidePt.z();
   if (guidePt.x() != bestPinLocCoords.x()
       || guidePt.y() != bestPinLocCoords.y()) {
@@ -282,6 +275,12 @@ void io::Parser::genGuides_merge(
     vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
 {
   for (auto& rect : rects) {
+    if (rect.getLayerNum() > TOP_ROUTING_LAYER)
+      logger->error(DRT,
+                    3000,
+                    "Guide in layer {} which is above max routing layer {}",
+                    rect.getLayerNum(),
+                    TOP_ROUTING_LAYER);
     Rect box;
     rect.getBBox(box);
     Point idx;
@@ -828,8 +827,7 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
                                            llBox);
         design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1),
                                            urBox);
-        Rect coverBox(
-            llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
+        Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
         frLayerNum beginLayerNum, endLayerNum;
         beginLayerNum = bNum;
         endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
@@ -981,8 +979,7 @@ void io::Parser::genGuides_final(
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ll(), lNum));
       } else if (pin2GCellMap[obj].find(make_pair(box.ur(), lNum))
                  != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(
-            make_pair(box.ur(), lNum));
+        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
         logger->warn(DRT, 220, "genGuides_final error 1.");
       }
@@ -1001,8 +998,7 @@ void io::Parser::genGuides_final(
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ll(), lNum));
       } else if (pin2GCellMap[obj].find(make_pair(box.ur(), lNum))
                  != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(
-            make_pair(box.ur(), lNum));
+        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
       } else {
         logger->warn(DRT, 221, "genGuides_final error 2.");
       }
@@ -1033,11 +1029,9 @@ void io::Parser::genGuides_final(
     auto& rect = rects[i];
     Rect box;
     rect.getBBox(box);
-    updatedNodeMap[make_pair(Point(box.xMin(), box.yMin()),
-                             rect.getLayerNum())]
+    updatedNodeMap[make_pair(Point(box.xMin(), box.yMin()), rect.getLayerNum())]
         .insert(i);
-    updatedNodeMap[make_pair(Point(box.xMax(), box.yMax()),
-                             rect.getLayerNum())]
+    updatedNodeMap[make_pair(Point(box.xMax(), box.yMax()), rect.getLayerNum())]
         .insert(i);
     // cout <<"add guide " <<i <<" to " <<Point(box.xMin(),  box.yMin()) <<"
     // " <<rect.getLayerNum() <<endl; cout <<"add guide " <<i <<" to "
@@ -1058,8 +1052,7 @@ void io::Parser::genGuides_final(
           if (box.ll() == pt) {
             rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
           } else {
-            rect.setBBox(
-                Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
+            rect.setBBox(Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
           }
         }
       } else {

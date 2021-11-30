@@ -229,6 +229,8 @@ class Inspector : public QDockWidget
   void handleAction(QWidget* action);
   void loadActions();
 
+  void adjustHeaders();
+
   int getSelectedIteratorPosition();
 
   bool isHighlighted(const Selected& selected);

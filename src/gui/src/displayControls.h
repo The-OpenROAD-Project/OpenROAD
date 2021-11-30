@@ -152,6 +152,7 @@ class DisplayControls : public QDockWidget, public Options
 
  public:
   DisplayControls(QWidget* parent = nullptr);
+  ~DisplayControls();
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
