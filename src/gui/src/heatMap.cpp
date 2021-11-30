@@ -507,7 +507,7 @@ void HeatMapDataSource::setupMap()
       auto map_pt = std::make_shared<MapColor>();
       map_pt->rect = odb::Rect(xMin, yMin, xMax, yMax);
       map_pt->value = 0.0;
-      map_pt->color = Painter::transparent;
+      map_pt->color = getColor(0);
 
       Box bbox(Point(xMin, yMin), Point(xMax, yMax));
       map_.insert(std::make_pair(bbox, map_pt));
@@ -707,10 +707,6 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   }
 
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
-    if (map_pt->value == 0.0 || map_pt->color == Painter::transparent) {
-      continue;
-    }
-
     if (!show_mins && map_pt->value < min_value) {
       continue;
     }
