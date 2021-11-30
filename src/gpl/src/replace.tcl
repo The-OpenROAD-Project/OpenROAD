@@ -137,7 +137,7 @@ proc global_placement { args } {
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
     sta::check_positive_float "-routability_max_density" $routability_max_density
-    set_routability_max_density_cmd $routability_max_density
+    gpl::set_routability_max_density_cmd $routability_max_density
   }
 
 

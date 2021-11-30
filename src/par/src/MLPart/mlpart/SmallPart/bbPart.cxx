@@ -55,9 +55,11 @@ using std::min;
 using std::max;
 using std::vector;
 
+#if 0
 const unsigned MAXNUMMOVS = 100;
 const unsigned MAXNUMNETS = 3 * MAXNUMMOVS;
 const unsigned MAXNUMPINS = 5 * MAXNUMMOVS;
+#endif
 
 class CompareByDegree {
         const HGraphFixed& _hg;

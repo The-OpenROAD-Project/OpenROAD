@@ -45,7 +45,6 @@ class Graphics
 {
 public:
   Graphics(Opendp* dp,
-           bool displacement,
            float min_displacement,
            const dbInst* debug_instance);
 
@@ -67,7 +66,6 @@ private:
   Opendp* dp_;
   const dbInst* debug_instance_;
   dbBlock *block_;
-  bool displacement_;
   float min_displacement_; // in row height
   std::vector<Rect> searched_;
 };
