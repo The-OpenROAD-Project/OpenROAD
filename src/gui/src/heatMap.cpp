@@ -70,7 +70,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   QVBoxLayout* overall_layout = new QVBoxLayout;
   QFormLayout* form = new QFormLayout;
-  source_.makeAdditionalSetupOptions(this, form);
+  source_.makeAdditionalSetupOptions(this, form, [this]() { source_.redraw(); });
 
   form->addRow(tr("Log scale"), log_scale_);
 
@@ -94,7 +94,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     grid_y_size_->setEnabled(false);
   }
 
-  min_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   min_range_selector_->setDecimals(3);
   QHBoxLayout* min_grid = new QHBoxLayout;
   min_grid->addWidget(min_range_selector_);
@@ -102,7 +101,6 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   min_grid->addWidget(show_mins_);
   form->addRow(tr("Minimum"), min_grid);
 
-  max_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   max_range_selector_->setDecimals(3);
   QHBoxLayout* max_grid = new QHBoxLayout;
   max_grid->addWidget(max_range_selector_);
@@ -191,13 +189,21 @@ void HeatMapSetup::updateWidgets()
 {
   show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked : Qt::Unchecked);
 
+  min_range_selector_->blockSignals(true);
+  min_range_selector_->setRange(source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
+                                source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
   min_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMin()));
+  min_range_selector_->blockSignals(false);
   min_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
   min_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
   show_maxs_->setCheckState(source_.getDrawAboveRangeMax() ? Qt::Checked : Qt::Unchecked);
 
+  max_range_selector_->blockSignals(true);
+  max_range_selector_->setRange(source_.convertPercentToValue(source_.getDisplayRangeMinimumValue()),
+                                source_.convertPercentToValue(source_.getDisplayRangeMaximumValue()));
   max_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMax()));
+  max_range_selector_->blockSignals(false);
   max_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
   max_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
@@ -300,6 +306,8 @@ void HeatMapDataSource::setLogger(utl::Logger* logger)
 
 void HeatMapDataSource::redraw()
 {
+  ensureMap();
+
   if (issue_redraw_) {
     renderer_->redraw();
   }
@@ -427,9 +435,13 @@ void HeatMapDataSource::showSetup()
 {
   if (setup_ == nullptr) {
     setup_ = std::make_unique<HeatMapSetup>(*this, QString::fromStdString(name_));
-  }
 
-  setup_->show();
+    QObject::connect(setup_.get(), &QDialog::finished, [this]() { setup_ = nullptr; });
+
+    setup_->show();
+  } else {
+    setup_->raise();
+  }
 }
 
 const std::string HeatMapDataSource::formatValue(double value, bool legend) const
@@ -541,6 +553,11 @@ void HeatMapDataSource::ensureMap()
 
     if (isPopulated()) {
       correctMapScale(map_);
+    }
+
+    if (setup_ != nullptr) {
+      // announce changes
+      setup_->changed();
     }
   }
 
@@ -808,7 +825,7 @@ RoutingCongestionDataSource::RoutingCongestionDataSource() :
 {
 }
 
-void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
+void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
 {
   QComboBox* congestion_ = new QComboBox(parent);
   congestion_->addItems({"All", "Horizontal", "Vertical"});
@@ -1280,23 +1297,26 @@ void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLa
 
   QObject::connect(internal,
                    &QCheckBox::stateChanged,
-                   [this](int value) {
+                   [this, changed_callback](int value) {
                      include_internal_ = value == Qt::Checked;
                      destroyMap();
+                     changed_callback();
                    });
 
   QObject::connect(switching,
                    &QCheckBox::stateChanged,
-                   [this](int value) {
+                   [this, changed_callback](int value) {
                      include_switching_ = value == Qt::Checked;
                      destroyMap();
+                     changed_callback();
                    });
 
   QObject::connect(leakage,
                    &QCheckBox::stateChanged,
-                   [this](int value) {
+                   [this, changed_callback](int value) {
                      include_leakage_ = value == Qt::Checked;
                      destroyMap();
+                     changed_callback();
                    });
 }
 

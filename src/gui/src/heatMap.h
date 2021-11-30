@@ -98,7 +98,7 @@ class HeatMapDataSource
 
   // setup
   void showSetup();
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) {}
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) {}
   virtual const std::string formatValue(double value, bool legend) const;
 
   // settings
@@ -158,6 +158,8 @@ class HeatMapDataSource
   virtual void onShow();
   virtual void onHide();
 
+  void redraw();
+
  protected:
   odb::dbBlock* getBlock() const { return block_; }
 
@@ -179,7 +181,6 @@ class HeatMapDataSource
   }
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
-  void redraw();
 
  private:
   const std::string name_;
@@ -292,7 +293,7 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   RoutingCongestionDataSource();
   ~RoutingCongestionDataSource() {}
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
@@ -361,7 +362,7 @@ class PowerDensityDataSource : public HeatMapDataSource
   virtual double convertPercentToValue(double percent) const override;
   virtual double getDisplayRangeIncrement() const override;
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
+  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
