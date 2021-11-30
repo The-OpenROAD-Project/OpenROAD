@@ -113,6 +113,10 @@ class HeatMapDataSource
   double getDisplayRangeMaximumValue() const { return 100.0; }
   double getRealRangeMinimumValue() const;
   double getRealRangeMaximumValue() const;
+  virtual double getDisplayRangeIncrement() const { return 1.0; }
+  virtual const std::string getValueUnits() const { return "%"; }
+  virtual double convertValueToPercent(double value) const { return value; }
+  virtual double convertPercentToValue(double percent) const { return percent; }
 
   void setDrawBelowRangeMin(bool value);
   bool getDrawBelowRangeMin() const { return draw_below_min_display_range_; }
@@ -352,6 +356,10 @@ class PowerDensityDataSource : public HeatMapDataSource
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
 
   virtual const std::string formatValue(double value, bool legend) const override;
+  virtual const std::string getValueUnits() const override;
+  virtual double convertValueToPercent(double value) const override;
+  virtual double convertPercentToValue(double percent) const override;
+  virtual double getDisplayRangeIncrement() const override;
 
   virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout) override;
 
@@ -371,6 +379,10 @@ class PowerDensityDataSource : public HeatMapDataSource
 
   double min_power_;
   double max_power_;
+  std::string units_;
+
+  void determineUnits(std::string& text, double& scale) const;
+  double getValueRange() const;
 };
 
 }  // namespace gui

@@ -100,7 +100,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   min_grid->addWidget(min_range_selector_);
   min_grid->addWidget(new QLabel("Show values below", this));
   min_grid->addWidget(show_mins_);
-  form->addRow(tr("Minimum %"), min_grid);
+  form->addRow(tr("Minimum"), min_grid);
 
   max_range_selector_->setRange(source_.getDisplayRangeMinimumValue(), source_.getDisplayRangeMaximumValue());
   max_range_selector_->setDecimals(3);
@@ -108,7 +108,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   max_grid->addWidget(max_range_selector_);
   max_grid->addWidget(new QLabel("Show values above", this));
   max_grid->addWidget(show_maxs_);
-  form->addRow(tr("Maximum %"), max_grid);
+  form->addRow(tr("Maximum"), max_grid);
 
   alpha_selector_->setRange(source_.getColorAlphaMinimum(), source_.getColorAlphaMaximum());
   form->addRow(tr("Color alpha"), alpha_selector_);
@@ -191,9 +191,15 @@ void HeatMapSetup::updateWidgets()
 {
   show_mins_->setCheckState(source_.getDrawBelowRangeMin() ? Qt::Checked : Qt::Unchecked);
 
-  min_range_selector_->setValue(source_.getDisplayRangeMin());
-  max_range_selector_->setValue(source_.getDisplayRangeMax());
+  min_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMin()));
+  min_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
+  min_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
+
   show_maxs_->setCheckState(source_.getDrawAboveRangeMax() ? Qt::Checked : Qt::Unchecked);
+
+  max_range_selector_->setValue(source_.convertPercentToValue(source_.getDisplayRangeMax()));
+  max_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
+  max_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
   grid_x_size_->setValue(source_.getGridXSize());
   grid_y_size_->setValue(source_.getGridYSize());
@@ -242,7 +248,8 @@ void HeatMapSetup::updateShowMaxRange(int option)
 
 void HeatMapSetup::updateRange()
 {
-  source_.setDisplayRange(min_range_selector_->value(), max_range_selector_->value());
+  source_.setDisplayRange(source_.convertValueToPercent(min_range_selector_->value()),
+                          source_.convertValueToPercent(max_range_selector_->value()));
   emit changed();
 }
 
@@ -1110,7 +1117,8 @@ PowerDensityDataSource::PowerDensityDataSource() :
     include_leakage_(true),
     include_switching_(true),
     min_power_(0.0),
-    max_power_(0.0)
+    max_power_(0.0),
+    units_("W")
 {
   setIssueRedraw(false); // disable during initial setup
   setLogScale(true);
@@ -1173,50 +1181,87 @@ void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)
     max_power_ = std::max(max_power_, map_pt->value);
   }
 
-  const double range = max_power_ - min_power_;
-  const double offset = min_power_;
+  auto round_data = [](double value, double scale) -> double {
+    const double precision = 1000.0;
+    double new_value = value * scale;
+    return std::round(new_value * precision) / precision;
+  };
+
+  double scale;
+  determineUnits(units_, scale);
+  max_power_ = round_data(max_power_, scale);
+  min_power_ = round_data(min_power_, scale);
+
   for (auto& [bbox, map_pt] : map) {
-    map_pt->value = 100 * (map_pt->value - offset) / range;
+    map_pt->value = convertValueToPercent(round_data(map_pt->value, scale));
+  }
+}
+
+void PowerDensityDataSource::determineUnits(std::string& text, double& scale) const
+{
+  if (max_power_ > 1 || max_power_ == 0.0) {
+    text = "W";
+    scale = 1.0;
+  } else if (max_power_ > 1e-3) {
+    text = "mW";
+    scale = 1e3;
+  } else if (max_power_ > 1e-6) {
+    text = "\u03BCW"; // micro W
+    scale = 1e6;
+  } else if (max_power_ > 1e-9) {
+    text = "nW";
+    scale = 1e9;
+  } else {
+    text = "pW";
+    scale = 1e12;
   }
 }
 
 const std::string PowerDensityDataSource::formatValue(double value, bool legend) const
 {
+  int digits = legend ? 3 : 2;
+
+  QString text;
+  text.setNum(convertPercentToValue(value), 'f', digits);
+  if (legend) {
+    text += QString::fromStdString(getValueUnits());
+  }
+  return text.toStdString();
+}
+
+const std::string PowerDensityDataSource::getValueUnits() const
+{
+  return units_;
+}
+
+double PowerDensityDataSource::getValueRange() const
+{
   double range = max_power_ - min_power_;
-  double offset = min_power_;
   if (range == 0.0) {
     range = 1.0; // dummy numbers until power has been populated
   }
+  return range;
+}
 
-  int digits = legend ? 3 : 2;
+double PowerDensityDataSource::convertValueToPercent(double value) const
+{
+  const double range = getValueRange();
+  const double offset = min_power_;
 
-  QString units;
-  if (max_power_ > 1 || max_power_ == 0.0) {
-    units = "W";
-  } else if (max_power_ > 1e-3) {
-    units = "mW";
-    range *= 1e3;
-    offset *= 1e3;
-  } else if (max_power_ > 1e-6) {
-    units = "\u03BCW"; // micro W
-    range *= 1e6;
-    offset *= 1e6;
-  } else if (max_power_ > 1e-9) {
-    units = "nW";
-    range *= 1e9;
-    offset *= 1e9;
-  } else {
-    units = "pW";
-    range *= 1e12;
-    offset *= 1e12;
-  }
+  return 100.0 * (value - offset) / range;
+}
 
-  QString text;
-  text.setNum((value / 100.0) * range + offset, 'f', digits);
-  if (legend) {
-    text += units;
-  }
-  return text.toStdString();
+double PowerDensityDataSource::convertPercentToValue(double percent) const
+{
+  const double range = getValueRange();
+  const double offset = min_power_;
+
+  return percent * range / 100.0 + offset;
+}
+
+double PowerDensityDataSource::getDisplayRangeIncrement() const
+{
+  return getValueRange() / 100.0;
 }
 
 void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout)
