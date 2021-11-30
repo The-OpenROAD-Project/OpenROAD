@@ -16,7 +16,7 @@ entries:
   - file: contrib/Logger
     title: Logger
   - file: contrib/PlatformBringUp
-    title: PlatformBringUp
+    title: Guide to Integrate a New Platform into the OpenROAD Flow
 
 
 - file: main/README
