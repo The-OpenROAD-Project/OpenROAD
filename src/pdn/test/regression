@@ -26,6 +26,7 @@ set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 
 source [file join $openroad_dir "test" "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
+source [file join $test_dir "regression_test.noapi.tcl"]
 
 regression_main
 
