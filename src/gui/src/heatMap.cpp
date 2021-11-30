@@ -283,6 +283,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     colors_correct_(false),
     issue_redraw_(true),
     block_(nullptr),
+    logger_(nullptr),
     grid_x_size_(10.0),
     grid_y_size_(10.0),
     display_range_min_(getDisplayRangeMinimumValue()),
@@ -301,7 +302,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
 
 void HeatMapDataSource::setLogger(utl::Logger* logger)
 {
-  renderer_->setLogger(logger);
+  logger_ = logger;
 }
 
 void HeatMapDataSource::redraw()
@@ -659,8 +660,7 @@ void HeatMapDataSource::onHide()
 HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource) :
     display_control_(display_control),
     datasource_(datasource),
-    first_paint_(true),
-    logger_(nullptr)
+    first_paint_(true)
 {
   addDisplayControl(display_control_,
                     false,

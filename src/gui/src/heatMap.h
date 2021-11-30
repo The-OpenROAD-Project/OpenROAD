@@ -191,6 +191,7 @@ class HeatMapDataSource
   bool issue_redraw_;
 
   odb::dbBlock* block_;
+  utl::Logger* logger_;
   double grid_x_size_;
   double grid_y_size_;
   double display_range_min_;
@@ -275,13 +276,10 @@ class HeatMapRenderer : public Renderer
   virtual const Settings getSettings() override;
   virtual void setSettings(const Settings& settings) override;
 
-  void setLogger(utl::Logger* logger) { logger_ = logger; }
-
  private:
   std::string display_control_;
   HeatMapDataSource& datasource_;
   bool first_paint_;
-  utl::Logger* logger_;
 
   static constexpr char datasource_prefix_[] = "data#";
   static constexpr char groupname_prefix_[] = "HeatMap#";
