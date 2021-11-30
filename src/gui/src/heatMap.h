@@ -280,7 +280,7 @@ class HeatMapRenderer : public Renderer
  private:
   std::string display_control_;
   HeatMapDataSource& datasource_;
-  bool check_data_loaded_;
+  bool first_paint_;
   utl::Logger* logger_;
 
   static constexpr char datasource_prefix_[] = "data#";

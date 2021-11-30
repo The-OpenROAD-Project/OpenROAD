@@ -557,7 +557,9 @@ void HeatMapDataSource::ensureMap()
 
     if (setup_ != nullptr) {
       // announce changes
+      setIssueRedraw(false);
       setup_->changed();
+      setIssueRedraw(true);
     }
   }
 
@@ -657,7 +659,7 @@ void HeatMapDataSource::onHide()
 HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource) :
     display_control_(display_control),
     datasource_(datasource),
-    check_data_loaded_(true),
+    first_paint_(true),
     logger_(nullptr)
 {
   addDisplayControl(display_control_,
@@ -669,21 +671,22 @@ HeatMapRenderer::HeatMapRenderer(const std::string& display_control, HeatMapData
 void HeatMapRenderer::drawObjects(Painter& painter)
 {
   if (!checkDisplayControl(display_control_)) {
-    if (!check_data_loaded_) {
-      // first time so check if map needs to be destroyed
+    if (!first_paint_) {
+      first_paint_ = true; // reset check
+      // first time so announce onHide
       datasource_.onHide();
     }
-    check_data_loaded_ = true; // reset check
     return;
   }
 
   datasource_.ensureMap();
 
-  if (check_data_loaded_) {
-    check_data_loaded_ = false; // only check warning once
+  if (first_paint_) {
+    first_paint_ = false;
+    // first time so announce onShow
     datasource_.onShow();
 
-    // report warning
+    // report warning, only for the first paint event
     if (!datasource_.isPopulated()) {
       logger_->warn(utl::GUI, 57, "Heat map \"{}\" has not been populated with data.", datasource_.getName());
       return;
