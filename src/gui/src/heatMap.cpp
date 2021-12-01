@@ -492,10 +492,11 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
     odb::Rect intersection;
     map_pt->rect.intersection(region, intersection);
 
-    const auto insersect_area = intersection.area();
-    const double ratio = static_cast<double>(insersect_area) / map_pt->rect.area();
+    const double intersect_area = intersection.area();
+    const double value_area = region.area();
+    const double region_area = map_pt->rect.area();
 
-    combineMapData(map_pt->value, value, ratio);
+    combineMapData(map_pt->value, value, value_area, intersect_area, region_area);
 
     markColorsInvalid();
   }
@@ -603,11 +604,6 @@ void HeatMapDataSource::assignMapColors()
     map_pt->color = getColor(map_pt->value);
   }
   colors_correct_ = true;
-}
-
-void HeatMapDataSource::combineMapData(double& base, const double new_data, const double region_ratio)
-{
-  base += new_data * region_ratio;
 }
 
 double HeatMapDataSource::getRealRangeMinimumValue() const
@@ -959,6 +955,11 @@ bool RoutingCongestionDataSource::populateMap()
   return true;
 }
 
+void RoutingCongestionDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+{
+  base += new_data * intersection_area / rect_area;
+}
+
 const Renderer::Settings RoutingCongestionDataSource::getSettings() const
 {
   auto settings = HeatMapDataSource::getSettings();
@@ -1015,6 +1016,11 @@ bool PlacementDensityDataSource::populateMap()
   }
 
   return true;
+}
+
+void PlacementDensityDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+{
+  base += new_data * intersection_area / rect_area;
 }
 
 void PlacementDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
@@ -1188,6 +1194,11 @@ bool PowerDensityDataSource::populateMap()
   }
 
   return true;
+}
+
+void PowerDensityDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+{
+  base += (new_data / data_area) * intersection_area;
 }
 
 void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)
