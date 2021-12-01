@@ -210,7 +210,7 @@ class HeatMapDataSource
   Map map_;
 
   std::unique_ptr<HeatMapRenderer> renderer_;
-  std::unique_ptr<HeatMapSetup> setup_;
+  HeatMapSetup* setup_;
 
   static const int turbo_srgb_count_;
   static const unsigned char turbo_srgb_bytes_[256][3];

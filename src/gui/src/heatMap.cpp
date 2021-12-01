@@ -484,9 +484,10 @@ const Painter::Color HeatMapDataSource::getColor(double value) const
 void HeatMapDataSource::showSetup()
 {
   if (setup_ == nullptr) {
-    setup_ = std::make_unique<HeatMapSetup>(*this, QString::fromStdString(name_), use_dbu_, block_->getDbUnitsPerMicron());
+    setup_ = new HeatMapSetup(*this, QString::fromStdString(name_), use_dbu_, block_->getDbUnitsPerMicron());
 
-    QObject::connect(setup_.get(), &QDialog::finished, [this]() { setup_ = nullptr; });
+    QObject::connect(setup_, &QDialog::finished, &QObject::deleteLater);
+    QObject::connect(setup_, &QObject::destroyed, [this]() { setup_ = nullptr; });
 
     setup_->show();
   } else {
