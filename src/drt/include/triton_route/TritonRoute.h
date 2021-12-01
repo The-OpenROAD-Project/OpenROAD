@@ -30,6 +30,7 @@
 #define _TRITONROUTE_H_
 
 #include <tcl.h>
+#include <string>
 
 #include <memory>
 
