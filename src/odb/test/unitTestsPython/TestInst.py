@@ -33,4 +33,3 @@ class TestInst(odbUnitTest.TestCase):
         
 if __name__=='__main__':
     odbUnitTest.main()
-    

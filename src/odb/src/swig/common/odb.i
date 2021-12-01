@@ -47,7 +47,10 @@
 #include "dbTypes.h"
 #include "geom.h"
 #include "wOrder.h"
-#include "utl/Logger.h"
+#include "ord/OpenRoad.hh"
+namespace ord {
+utl::Logger* getLogger();
+}
 
 using namespace odb;
 %}

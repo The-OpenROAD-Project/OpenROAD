@@ -33,4 +33,4 @@ class TestModule(odbUnitTest.TestCase):
         self.i1.destroy(self.i1)
         self.parent_mod.destroy(self.parent_mod)
 if __name__=='__main__':
-    odbUnitTest.main()    
+    odbUnitTest.main()
