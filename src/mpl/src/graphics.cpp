@@ -37,8 +37,8 @@
 
 namespace mpl {
 
-Graphics::Graphics(odb::dbDatabase* db, utl::Logger* logger)
-    : partition_relative_coords_(false), db_(db), logger_(logger)
+Graphics::Graphics(odb::dbDatabase* db)
+    : partition_relative_coords_(false), db_(db)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -94,7 +94,7 @@ void Graphics::status(const std::string& message)
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace mpl

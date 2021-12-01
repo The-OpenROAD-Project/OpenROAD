@@ -105,11 +105,11 @@ report_legalization_stats()
   opendp->reportLegalizationStats();
 }
 
-int
+void
 check_placement_cmd(bool verbose)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->checkPlacement(verbose);
+  opendp->checkPlacement(verbose);
 }
 
 
@@ -152,6 +152,15 @@ optimize_mirroring_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->optimizeMirroring();
+}
+
+void
+set_debug_cmd(bool displacement,
+              float min_displacement,
+              const odb::dbInst* debug_instance)
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setDebug(displacement, min_displacement, debug_instance);
 }
 
 } // namespace

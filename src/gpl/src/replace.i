@@ -117,6 +117,13 @@ set_max_phi_coef_cmd(float max_phi_coef)
 }
 
 void
+set_reference_hpwl_cmd(float reference_hpwl)
+{
+  Replace* replace = getReplace();
+  replace->setReferenceHpwl(reference_hpwl);
+}
+
+void
 set_init_density_penalty_factor_cmd(float penaltyFactor)
 {
   Replace* replace = getReplace();
@@ -131,10 +138,10 @@ set_init_wirelength_coef_cmd(float coef)
 }
 
 void
-set_incremental_place_mode_cmd()
+replace_incremental_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->setIncrementalPlaceMode(true);
+  replace->doIncrementalPlace();
 }
 
 void

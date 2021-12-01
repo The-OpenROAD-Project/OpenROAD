@@ -54,47 +54,47 @@ class frBlock : public frBlockObject
       : frBlockObject(),
         name_(name),
         dbUnit_(0) /*, manufacturingGrid_(0)*/,
-        macroClass_(MacroClassEnum::UNKNOWN){};
+        masterType_(dbMasterType::NONE){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
-  void getBBox(frBox& boxIn) const
+  void getBBox(Rect& boxIn) const
   {
     if (boundaries_.size()) {
       boundaries_.begin()->getBBox(boxIn);
     }
-    frCoord llx = boxIn.left();
-    frCoord lly = boxIn.bottom();
-    frCoord urx = boxIn.right();
-    frCoord ury = boxIn.top();
-    frBox tmpBox;
+    frCoord llx = boxIn.xMin();
+    frCoord lly = boxIn.yMin();
+    frCoord urx = boxIn.xMax();
+    frCoord ury = boxIn.yMax();
+    Rect tmpBox;
     for (auto& boundary : boundaries_) {
       boundary.getBBox(tmpBox);
-      llx = llx < tmpBox.left() ? llx : tmpBox.left();
-      lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
-      urx = urx > tmpBox.right() ? urx : tmpBox.right();
-      ury = ury > tmpBox.top() ? ury : tmpBox.top();
+      llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
+      lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
+      urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
+      ury = ury > tmpBox.yMax() ? ury : tmpBox.yMax();
     }
     for (auto& inst : getInsts()) {
       inst->getBBox(tmpBox);
-      llx = llx < tmpBox.left() ? llx : tmpBox.left();
-      lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
-      urx = urx > tmpBox.right() ? urx : tmpBox.right();
-      ury = ury > tmpBox.top() ? ury : tmpBox.top();
+      llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
+      lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
+      urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
+      ury = ury > tmpBox.yMax() ? ury : tmpBox.yMax();
     }
     for (auto& term : getTerms()) {
       for (auto& pin : term->getPins()) {
         for (auto& fig : pin->getFigs()) {
           fig->getBBox(tmpBox);
-          llx = llx < tmpBox.left() ? llx : tmpBox.left();
-          lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
-          urx = urx > tmpBox.right() ? urx : tmpBox.right();
-          ury = ury > tmpBox.top() ? ury : tmpBox.top();
+          llx = llx < tmpBox.xMin() ? llx : tmpBox.xMin();
+          lly = lly < tmpBox.yMin() ? lly : tmpBox.yMin();
+          urx = urx > tmpBox.xMax() ? urx : tmpBox.xMax();
+          ury = ury > tmpBox.yMax() ? ury : tmpBox.yMax();
         }
       }
     }
-    boxIn.set(llx, lly, urx, ury);
+    boxIn.init(llx, lly, urx, ury);
   }
-  void getDieBox(frBox& boxIn) const { boxIn.set(dieBox_); }
+  void getDieBox(Rect& boxIn) const { boxIn = dieBox_; }
   const std::vector<frBoundary>& getBoundaries() const { return boundaries_; }
   const std::vector<std::unique_ptr<frBlockage>>& getBlockages() const
   {
@@ -149,11 +149,16 @@ class frBlock : public frBlockObject
       return it->second;
     }
   }
-  // idx must be legal
-  void getGCellBox(const frPoint& idx1, frBox& box) const
+  frCoord getGCellSizeHorizontal()
   {
-    frPoint idx(idx1);
-    frBox dieBox;
+    return getGCellPatterns()[0].getSpacing();
+  }
+  frCoord getGCellSizeVertical() { return getGCellPatterns()[1].getSpacing(); }
+  // idx must be legal
+  void getGCellBox(const Point& idx1, Rect& box) const
+  {
+    Point idx(idx1);
+    Rect dieBox;
     getDieBox(dieBox);
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -177,22 +182,22 @@ class frBlock : public frBlockObject
     frCoord yh
         = (frCoord) ygp.getSpacing() * (idx.y() + 1) + ygp.getStartCoord();
     if (idx.x() <= 0) {
-      xl = dieBox.left();
+      xl = dieBox.xMin();
     }
     if (idx.y() <= 0) {
-      yl = dieBox.bottom();
+      yl = dieBox.yMin();
     }
     if (idx.x() >= (int) xgp.getCount() - 1) {
-      xh = dieBox.right();
+      xh = dieBox.xMax();
     }
     if (idx.y() >= (int) ygp.getCount() - 1) {
-      yh = dieBox.top();
+      yh = dieBox.yMax();
     }
-    box.set(xl, yl, xh, yh);
+    box.init(xl, yl, xh, yh);
   }
-  void getGCellCenter(const frPoint& idx, frPoint& pt) const
+  void getGCellCenter(const Point& idx, Point& pt) const
   {
-    frBox dieBox;
+    Rect dieBox;
     getDieBox(dieBox);
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -204,20 +209,20 @@ class frBlock : public frBlockObject
     frCoord yh
         = (frCoord) ygp.getSpacing() * (idx.y() + 1) + ygp.getStartCoord();
     if (idx.x() == 0) {
-      xl = dieBox.left();
+      xl = dieBox.xMin();
     }
     if (idx.y() == 0) {
-      yl = dieBox.bottom();
+      yl = dieBox.yMin();
     }
     if (idx.x() == (int) xgp.getCount() - 1) {
-      xh = dieBox.right();
+      xh = dieBox.xMax();
     }
     if (idx.y() == (int) ygp.getCount() - 1) {
-      yh = dieBox.top();
+      yh = dieBox.yMax();
     }
     pt.set((xl + xh) / 2, (yl + yh) / 2);
   }
-  void getGCellIdx(const frPoint& pt, frPoint& idx) const
+  void getGCellIdx(const Point& pt, Point& idx) const
   {
     auto& gp = getGCellPatterns();
     auto& xgp = gp[0];
@@ -238,7 +243,7 @@ class frBlock : public frBlockObject
     }
     idx.set(idxX, idxY);
   }
-  MacroClassEnum getMacroClass() { return macroClass_; }
+  dbMasterType getMasterType() { return masterType_; }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
     return markers_;
@@ -271,26 +276,26 @@ class frBlock : public frBlockObject
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
-  const frBox& getDieBox() const { return dieBox_; }
+  const Rect& getDieBox() const { return dieBox_; }
   void setBoundaries(const std::vector<frBoundary> in)
   {
     boundaries_ = in;
     if (boundaries_.size()) {
       boundaries_.begin()->getBBox(dieBox_);
     }
-    frCoord llx = dieBox_.left();
-    frCoord lly = dieBox_.bottom();
-    frCoord urx = dieBox_.right();
-    frCoord ury = dieBox_.top();
-    frBox tmpBox;
+    frCoord llx = dieBox_.xMin();
+    frCoord lly = dieBox_.yMin();
+    frCoord urx = dieBox_.xMax();
+    frCoord ury = dieBox_.yMax();
+    Rect tmpBox;
     for (auto& boundary : boundaries_) {
       boundary.getBBox(tmpBox);
-      llx = std::min(llx, tmpBox.left());
-      lly = std::min(lly, tmpBox.bottom());
-      urx = std::max(urx, tmpBox.right());
-      ury = std::max(ury, tmpBox.top());
+      llx = std::min(llx, tmpBox.xMin());
+      lly = std::min(lly, tmpBox.yMin());
+      urx = std::max(urx, tmpBox.xMax());
+      ury = std::max(ury, tmpBox.yMax());
     }
-    dieBox_.set(llx, lly, urx, ury);
+    dieBox_.init(llx, lly, urx, ury);
   }
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
@@ -306,7 +311,7 @@ class frBlock : public frBlockObject
   {
     gCellPatterns_ = gpIn;
   }
-  void setMacroClass(const MacroClassEnum& in) { macroClass_ = in; }
+  void setMasterType(const dbMasterType& in) { masterType_ = in; }
   void addMarker(std::unique_ptr<frMarker> in)
   {
     auto rptr = in.get();
@@ -326,7 +331,7 @@ class frBlock : public frBlockObject
   frString name_;
   frUInt4 dbUnit_;
 
-  MacroClassEnum macroClass_;
+  dbMasterType masterType_;
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;
@@ -350,7 +355,7 @@ class frBlock : public frBlockObject
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
-  frBox dieBox_;
+  Rect dieBox_;
 };
 }  // namespace fr
 

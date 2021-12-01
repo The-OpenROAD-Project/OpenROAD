@@ -30,166 +30,18 @@
 #define _FR_BOX_H_
 
 #include "db/infra/frPoint.h"
-#include "frBaseTypes.h"
+#include "odb/dbTransform.h"
+using odb::dbOrientType;
+using odb::dbTransform;
+using odb::Rect;
 
 namespace fr {
-class frBox
+class frBox3D : public Rect
 {
  public:
-  // constructor
-  frBox() : ll_(), ur_() {}
-  frBox(const frBox& tmpBox) : ll_(tmpBox.ll_), ur_(tmpBox.ur_) {}
-  frBox(const box_t& in)
-  {
-    auto minCorner = in.min_corner();
-    auto maxCorner = in.max_corner();
-    set(minCorner.x(), minCorner.y(), maxCorner.x(), maxCorner.y());
-  }
-  frBox(frCoord llx, frCoord lly, frCoord urx, frCoord ury)
-  {
-    ll_.set((llx > urx) ? urx : llx, (lly > ury) ? ury : lly);
-    ur_.set((llx > urx) ? llx : urx, (lly > ury) ? lly : ury);
-  }
-  frBox(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
-      : frBox(tmpLowerLeft.x(),
-              tmpLowerLeft.y(),
-              tmpUpperRight.x(),
-              tmpUpperRight.y())
-  {
-  }
-  // setters
-  void set(const frBox& tmpBox)
-  {
-    ll_.set(tmpBox.ll_);
-    ur_.set(tmpBox.ur_);
-  }
-  void set(frCoord llx, frCoord lly, frCoord urx, frCoord ury)
-  {
-    ll_.set((llx > urx) ? urx : llx, (lly > ury) ? ury : lly);
-    ur_.set((llx > urx) ? llx : urx, (lly > ury) ? lly : ury);
-  }
-  void set(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
-  {
-    set(tmpLowerLeft.x(),
-        tmpLowerLeft.y(),
-        tmpUpperRight.x(),
-        tmpUpperRight.y());
-  }
-  void setUnsafe(const frPoint& tmpLowerLeft, const frPoint& tmpUpperRight)
-  {
-    ll_.set(tmpLowerLeft);
-    ur_.set(tmpUpperRight);
-  }
-  // getters
-  frCoord left() const { return ll_.x(); }
-  frCoord bottom() const { return ll_.y(); }
-  frCoord right() const { return ur_.x(); }
-  frCoord top() const { return ur_.y(); }
-  frPoint& lowerLeft() { return ll_; }
-  const frPoint& lowerLeft() const { return ll_; }
-  frPoint& upperRight() { return ur_; }
-  const frPoint& upperRight() const { return ur_; }
-  frCoord width() const
-  {
-    frCoord xSpan = right() - left();
-    frCoord ySpan = top() - bottom();
-    return std::min(xSpan, ySpan);
-  }
-  frCoord length() const
-  {
-    frCoord xSpan = right() - left();
-    frCoord ySpan = top() - bottom();
-    return std::max(xSpan, ySpan);
-  }
-  frArea area() const
-  {
-    frCoord w = right() - left();
-    frCoord h = top() - bottom();
-    return w * (frArea) h;
-  }
-  bool contains(const frBox& box, bool incEdges = true) const
-  {
-    ;
-    if (incEdges) {
-      return (box.right() <= ur_.x() && box.left() >= ll_.x()
-              && box.top() <= ur_.y() && box.bottom() >= ll_.y());
-    } else {
-      return (box.right() < ur_.x() && box.left() > ll_.x()
-              && box.top() < ur_.y() && box.bottom() > ll_.y());
-    }
-  }
-  bool contains(const frPoint& in, bool incEdges = true) const
-  {
-    if (incEdges) {
-      return ll_.x() <= in.x() && in.x() <= ur_.x() && ll_.y() <= in.y()
-             && in.y() <= ur_.y();
-    } else {
-      return ll_.x() < in.x() && in.x() < ur_.x() && ll_.y() < in.y()
-             && in.y() < ur_.y();
-    }
-  }
-  bool bloatingContains(int x,
-                        int y,
-                        int bloatXL = 0,
-                        int bloatXH = 0,
-                        int bloatYL = 0,
-                        int bloatYH = 0) const
-  {
-    return left() - bloatXL <= x && right() + bloatXH >= x
-           && bottom() - bloatYL <= y && top() + bloatYH >= y;
-  }
-  void merge(const frBox& box)
-  {
-    set(std::min(left(), box.left()),
-        std::min(bottom(), box.bottom()),
-        std::max(right(), box.right()),
-        std::max(top(), box.top()));
-  }
-  void shift(int x, int y)
-  {
-    set(left() + x, bottom() + y, right() + x, top() + y);
-  }
-  frCoord distMaxXY(const frBox& bx) const
-  {
-    frCoord xd = 0, yd = 0;
-    if (left() > bx.right()) {
-      xd = left() - bx.right();
-    } else if (bx.left() > right()) {
-      xd = bx.left() - right();
-    }
-    if (bottom() > bx.top()) {
-      yd = bottom() - bx.top();
-    } else if (bx.bottom() > top()) {
-      yd = bx.bottom() - top();
-    }
-    return std::max(xd, yd);
-  }
-  void transform(const frTransform& xform);
-  bool overlaps(const frBox& boxIn, bool incEdges = true) const;
-  void bloat(const frCoord distance, frBox& boxOut) const;
-  bool operator==(const frBox& boxIn) const
-  {
-    return (ll_ == boxIn.ll_) && (ur_ == boxIn.ur_);
-  }
-  bool operator<(const frBox& boxIn) const
-  {
-    if (!(ll_ == boxIn.lowerLeft())) {
-      return (ll_ < boxIn.lowerLeft());
-    } else {
-      return (ur_ < boxIn.upperRight());
-    }
-  }
-
- protected:
-  frPoint ll_, ur_;
-};
-
-class frBox3D : public frBox
-{
- public:
-  frBox3D() : frBox(), zl_(0), zh_(0) {}
+  frBox3D() : Rect(), zl_(0), zh_(0) {}
   frBox3D(int llx, int lly, int urx, int ury, int zl, int zh)
-      : frBox(llx, lly, urx, ury), zl_(zl), zh_(zh)
+      : Rect(llx, lly, urx, ury), zl_(zl), zh_(zh)
   {
   }
   frBox3D(const frBox3D& in) = default;
@@ -200,9 +52,9 @@ class frBox3D : public frBox
                 int bloatY = 0,
                 int bloatZ = 0) const
   {
-    return zl_ - bloatZ <= z && zh_ + bloatZ >= z && left() - bloatX <= x
-           && right() + bloatX >= x && bottom() - bloatY <= y
-           && top() + bloatY >= y;
+    return zl_ - bloatZ <= z && zh_ + bloatZ >= z && xMin() - bloatX <= x
+           && xMax() + bloatX >= x && yMin() - bloatY <= y
+           && yMax() + bloatY >= y;
   }
   int zLow() const { return zl_; }
   int zHigh() const { return zh_; }

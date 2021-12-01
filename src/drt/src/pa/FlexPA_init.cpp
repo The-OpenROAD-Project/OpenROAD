@@ -43,7 +43,7 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
     if (design_->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == frcHorzPrefRoutingDir) {
+        == dbTechLayerDir::HORIZONTAL) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -65,7 +65,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
     for (auto& uTerm : refBlock->getTerms()) {
-      if (isSkipTerm(uTerm.get())) {
+      if (uTerm.get()->getType().isSupply()) {
         continue;
       }
       for (auto& uPin : uTerm->getPins()) {
@@ -103,7 +103,7 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
   // cout <<"  refBlock pin layer range done" <<endl;
 }
 
-bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
+bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 {
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
@@ -111,9 +111,9 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
                  + (frCoord)(tp->getTrackSpacing())
                        * ((frCoord)(tp->getNumTracks()) - 1);
   if (isVerticalTrack) {
-    return !(low > box.right() || high < box.left());
+    return !(low > box.xMax() || high < box.xMin());
   } else {
-    return !(low > box.top() || high < box.bottom());
+    return !(low > box.yMax() || high < box.yMin());
   }
 }
 
@@ -124,10 +124,6 @@ void FlexPA::initUniqueInstance_main(
         refBlock2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
-  map<frBlock*,
-      map<frOrient, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
-      refBlockOT2Insts;  // refblock orient track-offset to instances
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
@@ -136,9 +132,9 @@ void FlexPA::initUniqueInstance_main(
       ndrInsts.push_back(inst.get());
       continue;
     }
-    frPoint origin;
+    Point origin;
     inst->getOrigin(origin);
-    frBox boundaryBBox;
+    Rect boundaryBBox;
     inst->getBoundaryBBox(boundaryBBox);
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
@@ -181,11 +177,12 @@ void FlexPA::initUniqueInstance_main(
   for (auto& [refBlock, orientMap] : refBlockOT2Insts) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
-      for (auto& [vec, inst] : offsetMap) {
-        auto uniqueInst = *(inst.begin());
+      for (auto& [vec, insts] : offsetMap) {
+        auto uniqueInst = *(insts.begin());
         uniqueInstances_.push_back(uniqueInst);
-        for (auto i : inst) {
-          inst2unique_[i] = uniqueInst;
+        for (auto i : insts) {
+            inst2unique_[i] = uniqueInst;
+            inst2Class_[i] = &insts;
         }
       }
     }
@@ -193,6 +190,7 @@ void FlexPA::initUniqueInstance_main(
   for (frInst* inst : ndrInsts) {
     uniqueInstances_.push_back(inst);
     inst2unique_[inst] = inst;
+    inst2Class_[inst] = nullptr;
   }
 
   // init unique2Idx
@@ -267,7 +265,7 @@ void FlexPA::initViaRawPriority()
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
     if (design_->getTech()->getLayer(layerNum)->getType()
-        != frLayerTypeEnum::CUT) {
+        != dbTechLayerType::CUT) {
       continue;
     }
     for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {
@@ -287,10 +285,10 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   gtl::polygon_90_set_data<frCoord> viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS1 += bboxRect;
   }
@@ -303,20 +301,20 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotLowerAlign
       = (isLayer1Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer1Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer1Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    frBox bbox;
+    Rect bbox;
     fig->getBBox(bbox);
     gtl::rectangle_data<frCoord> bboxRect(
-        bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS2 += bboxRect;
   }
@@ -329,13 +327,13 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   isNotUpperAlign
       = (isLayer2Horz
          && (getDesign()->getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == frcVertPrefRoutingDir))
+             == dbTechLayerDir::VERTICAL))
         || (!isLayer2Horz
             && (getDesign()
                     ->getTech()
                     ->getLayer(viaDef->getLayer2Num())
                     ->getDir()
-                == frcHorzPrefRoutingDir));
+                == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = gtl::area(viaLayerPS1);
   frCoord layer2Area = gtl::area(viaLayerPS2);
@@ -360,7 +358,7 @@ void FlexPA::initTrackCoords()
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     auto layerNum = trackPattern->getLayerNum();
     auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
-                     == frcVertPrefRoutingDir);
+                     == dbTechLayerDir::VERTICAL);
     auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();

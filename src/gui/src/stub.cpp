@@ -41,9 +41,23 @@ namespace gui {
 
 Gui* Gui::singleton_ = nullptr;
 
+// Used by toString to convert dbu to microns
+int Descriptor::Property::dbu = 0;
+
+Gui::Gui() : continue_after_close_(false),
+             logger_(nullptr),
+             db_(nullptr)
+{
+}
+
 Gui* gui::Gui::get()
 {
   return singleton_;
+}
+
+bool gui::Gui::enabled()
+{
+   return false;
 }
 
 void gui::Gui::registerRenderer(gui::Renderer*)
@@ -62,25 +76,40 @@ void gui::Gui::redraw()
 {
 }
 
-void gui::Gui::pause()
+void gui::Gui::pause(int timeout)
 {
-}
-
-void gui::Gui::addCustomVisibilityControl(const std::string& name,
-                                          bool initially_visible)
-{
-}
-
-bool gui::Gui::checkCustomVisibilityControl(const std::string& name)
-{
-  return false;
 }
 
 void Gui::status(const std::string& /* message */)
 {
 }
 
+void Renderer::redraw()
+{
+}
+
 Renderer::~Renderer()
+{
+}
+
+bool Renderer::checkDisplayControl(const std::string& /* name */)
+{
+  return false;
+}
+
+void Renderer::addDisplayControl(const std::string& /* name */,
+                                 bool /* initial_visible */,
+                                 const DisplayControlCallback& /* setup */,
+                                 const std::vector<std::string>& /* mutual_exclusivity */)
+{
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  return {};
+}
+
+void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
@@ -98,8 +127,17 @@ void Gui::registerDescriptor(const std::type_info& type,
 {
 }
 
+void Gui::unregisterDescriptor(const std::type_info& type)
+{
+}
+
+std::string Descriptor::Property::toString(const std::any& /* value */)
+{
+  return "";
+}
+
 // using namespace odb;
-int startGui(int argc, char* argv[])
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

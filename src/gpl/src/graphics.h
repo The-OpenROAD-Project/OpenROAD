@@ -22,8 +22,7 @@ class Graphics : public gui::Renderer
  public:
   // Debug InitialPlace
   Graphics(utl::Logger* logger,
-           std::shared_ptr<PlacerBase> pb,
-           InitialPlace* ip);
+           std::shared_ptr<PlacerBase> pb);
 
   // Debug NesterovPlace
   Graphics(utl::Logger* logger,
@@ -40,8 +39,8 @@ class Graphics : public gui::Renderer
 
   // From Renderer API
   virtual void drawObjects(gui::Painter& painter) override;
-  virtual gui::Selected select(odb::dbTechLayer* layer,
-                               const odb::Point& point) override;
+  virtual gui::SelectionSet select(odb::dbTechLayer* layer,
+                                   const odb::Rect& region) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
@@ -50,7 +49,6 @@ class Graphics : public gui::Renderer
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
   NesterovPlace* np_;
-  InitialPlace* ip_;
   GCell* selected_;
   bool draw_bins_;
   utl::Logger* logger_;

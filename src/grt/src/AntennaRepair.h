@@ -44,7 +44,6 @@
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
 #include "sta/Liberty.hh"
@@ -70,16 +69,6 @@ typedef std::map<odb::dbNet*, std::vector<ant::VINFO>> AntennaViolations;
 
 class GlobalRouter;
 
-class AntennaCbk : public odb::dbBlockCallBackObj
-{
- public:
-  AntennaCbk(GlobalRouter* grouter);
-  virtual void inDbPostMoveInst(odb::dbInst*);
-
- private:
-  GlobalRouter* grouter_;
-};
-
 class AntennaRepair
 {
  public:
@@ -101,6 +90,7 @@ class AntennaRepair
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
+  void deleteFillerCells();
 
  private:
   typedef int coord_type;
@@ -110,7 +100,6 @@ class AntennaRepair
   typedef std::pair<box, int> value;
   typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
 
-  void deleteFillerCells();
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
                    odb::dbInst* sink_inst,

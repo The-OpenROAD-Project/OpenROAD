@@ -400,7 +400,7 @@ extMain::extMain(uint menuId)
       _coordsVDD(nullptr),
       _subCktNodeFP{{nullptr, nullptr}, {nullptr, nullptr}},
       _junct2iterm(nullptr) {
-  _debug_net_id = std::numeric_limits<uint>::max();
+  _debug_net_id = 0;
   _previous_percent_extracted = 0;
   _power_extract_only = false;
   _skip_power_stubs = false;
@@ -565,7 +565,6 @@ uint extMain::getExtLayerCnt(dbTech* tech) {
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
     if (layer->getRoutingLevel() == 0)
       continue;
@@ -605,7 +604,6 @@ uint extMain::addExtModel(dbTech* tech) {
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
     if (layer->getRoutingLevel() == 0)
       continue;
@@ -658,7 +656,6 @@ uint extMain::getResCapTable(bool lefRC) {
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
     if (layer->getRoutingLevel() == 0)
       continue;
@@ -739,7 +736,6 @@ bool extMain::checkLayerResistance() {
   uint cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
-    dbTechLayerType type = layer->getType();
 
     if (layer->getRoutingLevel() == 0)
       continue;
@@ -1306,18 +1302,12 @@ void extMain::measureRC(CoupleOptions& options) {
   m._ccMergedContextLength = _ccMergedContextLength;
   m._ccMergedContextArray = _ccMergedContextArray;
 
-  //	fprintf(stdout, "extCompute:: met= %d  len= %d  dist= %d  <===>
-  // modelCnt= %d  layerCnt= %d\n", 		met, len, dist,
-  // m->getModelCnt(), m->getLayerCnt());
-
-  uint debugNetId = _debug_net_id;
-
   dbRSeg* rseg1 = NULL;
   dbNet* srcNet = NULL;
   if (rsegId1 > 0) {
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
     srcNet = rseg1->getNet();
-    printNet(srcNet, debugNetId);
+    printNet(srcNet, _debug_net_id);
   }
 
   dbRSeg* rseg2 = NULL;
@@ -1325,7 +1315,7 @@ void extMain::measureRC(CoupleOptions& options) {
   if (rsegId2 > 0) {
     rseg2 = dbRSeg::getRSeg(_block, rsegId2);
     tgtNet = rseg2->getNet();
-    printNet(tgtNet, debugNetId);
+    printNet(tgtNet, _debug_net_id);
   }
   if (_lefRC)
     return;

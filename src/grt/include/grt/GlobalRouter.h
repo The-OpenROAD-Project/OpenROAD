@@ -42,7 +42,10 @@
 #include <vector>
 
 #include "GRoute.h"
+
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+
 #include "sta/Liberty.hh"
 
 namespace ord {
@@ -86,6 +89,7 @@ class RoutingTracks;
 class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
+class GlobalRouter;
 
 struct RegionAdjustment
 {
@@ -165,13 +169,19 @@ class GlobalRouter
                                    int max_routing_layer,
                                    NetType type);
   void estimateRC();
+  void estimateRC(odb::dbNet *db_net);
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);
+
+  // Incremental global routing functions.
+  // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
+  void removeDirtyNet(odb::dbNet* net);
+  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
 
   double dbuToMicrons(int64_t dbu);
 
@@ -187,8 +197,16 @@ class GlobalRouter
   };
   void perturbCapacities();
 
+  void initDebugFastRoute();
+  void setDebugNet(const odb::dbNet* net);
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugRectilinearSTree(bool rectilinearSTree);
+  void setDebugTree2D(bool tree2D);
+  void setDebugTree3D(bool tree3D);
+
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet* net);
+
   // Clear routes in the gui
   void clearRouteGui();
   // Report the wire length on each layer.
@@ -198,8 +216,8 @@ class GlobalRouter
  protected:
   // Net functions
   int getNetCount() const;
-  void reserveNets(size_t net_count);
   Net* addNet(odb::dbNet* db_net);
+  void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -249,7 +267,9 @@ class GlobalRouter
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  GSegment createFakePin(Pin pin, odb::Point& pin_position, odb::dbTechLayer* layer);
+  GSegment createFakePin(Pin pin,
+                         odb::Point& pin_position,
+                         odb::dbTechLayer* layer);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
@@ -266,8 +286,11 @@ class GlobalRouter
 
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
+
+  // incremental funcions
+  void updateDirtyRoutes(Capacities &capacities);
+  Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
-  Capacities saveCapacities(int previous_min_layer, int previous_max_layer);
   void restoreCapacities(Capacities capacities,
                          int previous_min_layer,
                          int previous_max_layer);
@@ -288,7 +311,6 @@ class GlobalRouter
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
   void initNetlist();
-  void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
@@ -315,8 +337,7 @@ class GlobalRouter
   GrouteRenderer* groute_renderer_;
   NetRouteMap routes_;
 
-  std::vector<Net>* nets_;
-  std::map<odb::dbNet*, Net*> db_net_map_;
+  std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks>* routing_tracks_;
@@ -357,8 +378,53 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+
+  friend class IncrementalGRoute;
+  friend class GRouteDbCbk;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::string getLayerName(int layer_idx, odb::dbDatabase* db);
+
+class GRouteDbCbk : public odb::dbBlockCallBackObj
+{
+public:
+  GRouteDbCbk(GlobalRouter* grouter);
+  virtual void inDbPostMoveInst(odb::dbInst* inst);
+  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
+
+  virtual void inDbNetDestroy(odb::dbNet* net);
+  virtual void inDbNetCreate(odb::dbNet* net);
+
+  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
+  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
+
+  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
+  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
+
+private:
+  void instItermsDirty(odb::dbInst* inst);
+
+  GlobalRouter* grouter_;
+};
+
+// Class to save global router state and monitor db updates with callbacks
+// to make incremental routing updates.
+class IncrementalGRoute
+{
+public:
+  // Saves global router state and enables db callbacks.
+  IncrementalGRoute(GlobalRouter *groute,
+                    odb::dbBlock *block);
+  // Update global routes for dirty nets.
+  void updateRoutes();
+  // Disables db callbacks.
+  ~IncrementalGRoute();
+
+private:
+  GlobalRouter *groute_;
+  Capacities capacities_;
+  GRouteDbCbk db_cbk_;
+};
 
 }  // namespace grt

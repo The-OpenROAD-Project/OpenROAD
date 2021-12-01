@@ -12,6 +12,6 @@
 worst slack -0.09
 worst slack 1.84
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 40 hold buffers.
+[INFO RSZ-0032] Inserted 41 hold buffers.
 worst slack 0.21
 worst slack 1.67

@@ -24,10 +24,26 @@ Larger designs may require better hardware.
 
 ### Building and Installing the Software
 
+**WARNING**
+
+On CentOS 7 you need to manually make sure the PATH variable includes at
+least one of the new version of GCC/Clang. To enable GCC-8 or Clang-7 you
+need to run:
+
+```shell
+# to enable gcc-8
+source /opt/rh/devtoolset-8/enable
+# or to enable clang-7
+source /opt/rh/llvm-toolset-7.0/enable
+```
+
+---
+
 There are currently two options to set up the OpenROAD Flow:
 
 - Build from sources using Docker, [instructions here](./BuildWithDocker.md).
 - Build from sources locally, [instructions here](./BuildLocally.md).
+
 
 ## Running a Design
 
@@ -86,9 +102,8 @@ directory.
 
 ### Adding a New Platform
 
-At this time, we recommend looking at the
-[Nangate45](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms/nangate45)
-as an example of how to set up a new platform for OpenROAD-flow-scripts.
+Refer to the [platform bring up](../contrib/PlatformBringUp.md) documentation
+to set up a new platform for OpenROAD-flow-scripts.
 
 ## Implement the Design
 
@@ -97,9 +112,9 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 
 ## Miscellaneous
 
-### nangate45 smoke-test harness for top-level Verilog designs
+### Nangate45 smoke-test harness for top-level Verilog designs
 
-1.  Drop your Verilog files into designs/src/harness
+1.  Drop your Verilog files into `designs/src/harness`
 2.  Start the workflow:
 
 ---

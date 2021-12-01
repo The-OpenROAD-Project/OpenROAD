@@ -7,10 +7,17 @@
 #include <unordered_map>
 #include <vector>
 
+
+
+
 #include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Bfs.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
+#include "sta/Graph.hh"
 #include "utl/Logger.h"
+#include "sta/Sta.hh"
 
 namespace par {
 
@@ -87,6 +94,8 @@ class Cluster
   void removeMacro() { macro_vec_.clear(); }
 
   float calculateArea(ord::dbVerilogNetwork* network) const;
+  void calculateNumSeq(ord::dbVerilogNetwork* network);
+  int getNumSeq() const { return num_seq_; }
 
   void addInst(sta::Instance* inst) { inst_vec_.push_back(inst); }
   void addMacro(sta::Instance* inst) { macro_vec_.push_back(inst); }
@@ -148,6 +157,7 @@ class Cluster
 
  private:
   int id_ = 0;
+  int num_seq_ = 0;
   bool type_ = true;  // false for glue logic
   sta::Instance* top_inst_ = nullptr;
   std::string name_ = "";
@@ -179,8 +189,9 @@ class AutoClusterMgr
  public:
   AutoClusterMgr(ord::dbVerilogNetwork* network,
                  odb::dbDatabase* db,
+                 sta::dbSta* sta,
                  utl::Logger* logger)
-      : network_(network), db_(db), logger_(logger)
+      : network_(network), db_(db), sta_(sta), logger_(logger)
   {
   }
 
@@ -191,6 +202,9 @@ class AutoClusterMgr
                        unsigned int net_threshold,
                        unsigned int virtual_weight,
                        unsigned int ignore_net_threshold,
+                       unsigned int num_hops,
+                       unsigned int timing_weight,
+                       bool std_cell_timing_flag,
                        const char* report_directory,
                        const char* file_name);
 
@@ -198,6 +212,7 @@ class AutoClusterMgr
   ord::dbVerilogNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_;
   unsigned int max_num_macro_ = 0;
   unsigned int min_num_macro_ = 0;
@@ -206,6 +221,7 @@ class AutoClusterMgr
   unsigned int net_threshold_ = 0;
   unsigned int virtual_weight_ = 10000;
   unsigned int num_buffer_ = 0;
+  bool std_cell_timing_flag_ = false;
   float area_buffer_ = 0;
 
   float dbu_ = 0.0;
@@ -214,6 +230,13 @@ class AutoClusterMgr
   int floorplan_ly_ = 0;
   int floorplan_ux_ = 0;
   int floorplan_uy_ = 0;
+
+  // IOs
+  std::vector<float> B_pin_;
+  std::vector<float> T_pin_;
+  std::vector<float> L_pin_;
+  std::vector<float> R_pin_;
+
 
   // Map all the BTerms to an IORegion
   std::unordered_map<std::string, IORegion> bterm_map_;
@@ -228,6 +251,29 @@ class AutoClusterMgr
   int buffer_id_ = -1;
   std::vector<std::vector<sta::Net*>> buffer_net_vec_;
   std::vector<sta::Net*> buffer_net_list_;
+
+  // timing-driven related function
+  unsigned int num_hops_ = 0;
+  unsigned int timing_weight_ = 0;
+  
+  std::vector<sta::Instance*> macros_;
+  std::vector<sta::Instance*> seeds_;
+  std::unordered_map<sta::Vertex*, std::unordered_map<sta::Pin*, int> > vertex_fanins_;
+  std::unordered_map<int, std::unordered_map<sta::Pin*, int> > virtual_vertex_map_;  
+  std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
+  std::unordered_map<sta::Pin*, sta::Instance*> pin_inst_map_;
+  void findAdjacencies();
+  
+  
+  void seedFaninBfs(sta::BfsFwdIterator& bfs);
+  void findFanins(sta::BfsFwdIterator& bfs);
+  sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
+  void copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs);
+  void addTimingWeight(float weight);
+  void addFanin(sta::Vertex*, sta::Pin*, int num_bit);
+  void addWeight(int src_id, int target_id, int weight);
+  void calculateSeed();
+
 
   std::vector<Cluster*> cluster_list_;
   std::vector<Cluster*> merge_cluster_list_;

@@ -29,10 +29,10 @@
 #ifndef _FR_BASE_TYPES_H_
 #define _FR_BASE_TYPES_H_
 
-#include <boost/geometry/strategies/strategies.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/segment.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -40,7 +40,12 @@
 #include <utility>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
+namespace odb {
+  class Rect;
+}
 
 namespace fr {
 using Logger = utl::Logger;
@@ -62,30 +67,17 @@ template <typename T>
 using frList = std::list<T>;
 template <typename T>
 using frListIter = typename std::list<T>::iterator;
+using odb::dbIoType;
+using odb::dbMasterType;
+using odb::dbSigType;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
-enum frOrientEnum
-{
-  frcR0 = 0,     // N
-  frcR90 = 1,    // W
-  frcR180 = 2,   // S
-  frcR270 = 3,   // E
-  frcMY = 4,     // FN
-  frcMXR90 = 5,  // FW
-  frcMX = 6,     // FS
-  frcMYR90 = 7   // FE
-};
 enum frEndStyleEnum
 {
   frcTruncateEndStyle = 0,  // ext = 0
   frcExtendEndStyle = 1,    // ext = half width
   frcVariableEndStyle = 2   // ext = variable
-};
-enum frPrefRoutingDirEnum
-{
-  frcNotApplicablePrefRoutingDir = 0,
-  frcNonePrefRoutingDir = 1,
-  frcHorzPrefRoutingDir = 2,
-  frcVertPrefRoutingDir = 3
 };
 enum frBlockObjectEnum
 {
@@ -147,28 +139,6 @@ enum class frGuideEnum
   frcGuideGlobal,
   frcGuideTrunk,
   frcGuideShortConn
-};
-enum class frTermEnum
-{
-  frcNormalTerm,
-  frcClockTerm,
-  frcPowerTerm,
-  frcGroundTerm
-};
-enum class frNetEnum
-{
-  frcNormalNet,
-  frcClockNet,
-  frcPowerNet,
-  frcGroundNet
-};
-enum class frTermDirectionEnum
-{
-  UNKNOWN,
-  INPUT,
-  OUTPUT,
-  INOUT,
-  FEEDTHRU,
 };
 enum class frNodeTypeEnum
 {
@@ -268,14 +238,6 @@ enum class frDirEnum
   U = 6
 };
 
-enum class frLayerTypeEnum
-{
-  CUT,
-  ROUTING,
-  IMPLANT,
-  MASTERSLICE
-};
-
 enum class AccessPointTypeEnum
 {
   Ideal,
@@ -283,38 +245,6 @@ enum class AccessPointTypeEnum
   Offgrid,
   None
 };
-
-enum class MacroClassEnum
-{
-  UNKNOWN,
-  CORE,
-  CORE_TIEHIGH,
-  CORE_TIELOW,
-  CORE_WELLTAP,
-  CORE_SPACER,
-  CORE_ANTENNACELL,
-  COVER,
-  BLOCK,
-  RING,
-  PAD,
-  PAD_INPUT,
-  PAD_OUTPUT,
-  PAD_INOUT,
-  PAD_POWER,
-  PAD_SPACER,
-  PAD_AREAIO,
-  ENDCAP,
-  ENDCAP_PRE,
-  ENDCAP_POST,
-  ENDCAP_TOPLEFT,
-  ENDCAP_TOPRIGHT,
-  ENDCAP_BOTTOMLEFT,
-  ENDCAP_BOTTOMRIGHT
-};
-
-// This will go away when we move to OpenDB's types
-bool isPad(MacroClassEnum e);
-bool isEndcap(MacroClassEnum e);
 
 // note: In ascending cost order for FlexPA
 enum class frAccessPointEnum
@@ -332,10 +262,8 @@ typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
 typedef bg::model::box<point_t> box_t;
 typedef bg::model::segment<point_t> segment_t;
 
-class frBox;
-
 template <typename T>
-using rq_box_value_t = std::pair<frBox, T>;
+using rq_box_value_t = std::pair<odb::Rect, T>;
 
 struct frDebugSettings
 {
@@ -367,6 +295,19 @@ struct frDebugSettings
   int iter;
   bool paMarkers;
   bool paCombining;
+};
+
+struct drEolSpacingConstraint
+{
+  drEolSpacingConstraint(frCoord width = 0,
+                         frCoord space = 0,
+                         frCoord within = 0)
+      : eolWidth(width), eolSpace(space), eolWithin(within)
+  {
+  }
+  frCoord eolWidth;
+  frCoord eolSpace;
+  frCoord eolWithin;
 };
 }  // namespace fr
 

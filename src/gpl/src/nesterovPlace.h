@@ -69,6 +69,9 @@ class NesterovPlaceVars {
 
   int routabilityMaxBloatIter;
   int routabilityMaxInflationIter;
+  
+  static const int maxRecursionWlCoef = 10;
+  static const int maxRecursionInitSLPCoef = 10;
 
   bool timingDrivenMode;
   bool routabilityDrivenMode;
@@ -92,7 +95,8 @@ public:
       utl::Logger* log);
   ~NesterovPlace();
 
-  void doNesterovPlace();
+  // return iteration count
+  int doNesterovPlace(int start_iter = 0);
 
   void updateGradients(
       std::vector<FloatPoint>& sumGrads,
@@ -117,6 +121,9 @@ public:
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   float getDensityPenalty() const { return densityPenalty_; }
+
+  void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
+  void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
 private:
   std::shared_ptr<PlacerBase> pb_;
@@ -174,7 +181,6 @@ private:
   float wireLengthCoefY_;
 
   // phi is described in ePlace paper.
-  float sumPhi_;
   float sumOverflow_;
 
   // half-parameter-wire-length
@@ -185,6 +191,9 @@ private:
 
   std::string divergeMsg_;
   int divergeCode_; 
+
+  int recursionCntWlCoef_;
+  int recursionCntInitSLPCoef_;
 
   void cutFillerCoordinates();
 

@@ -160,6 +160,18 @@ proc highlight_pd_net { net alpha } {
   stt::highlight_pd_tree $xs $ys $drvr_index $alpha
 }
 
+proc highlight_pdrev_net { net alpha } {
+  set pins [lassign $net net_name drvr_index]
+  set xs {}
+  set ys {}
+  foreach pin $pins {
+    lassign $pin pin_name x y
+    lappend xs $x
+    lappend ys $y
+  }
+  stt::highlight_pdrev_tree $xs $ys $drvr_index $alpha
+}
+
 proc highlight_stt_net { net alpha } {
   set pins [lassign $net net_name drvr_index]
   set xs {}

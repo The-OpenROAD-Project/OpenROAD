@@ -16,7 +16,6 @@ target_link_libraries(odbtcl
     PUBLIC
         odb
         utl
-        tcl
         cdl
         odb_swig_common
         Boost::boost

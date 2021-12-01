@@ -3,17 +3,22 @@ record_tests {
   simple01-obs
   simple01-td
   simple01-uniform
+  simple01-ref
   simple02
   simple03
   simple04
   simple05
+  simple06
+  simple07
+  simple08
+  simple09
   core01
   ar01
   ar02
   incremental01
+  incremental02
   error01
   diverge01
-  diverge02
   macro04
   density01
 }

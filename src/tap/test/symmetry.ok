@@ -11,9 +11,9 @@
 [INFO ODB-0131]     Created 344 components and 1833 component-terminals.
 [INFO ODB-0133]     Created 415 nets and 1145 connections.
 [INFO ODB-0134] Finished DEF file: symmetry.def
-[INFO TAP-0001] Macro blocks found: 0
+[INFO TAP-0001] Found 0 macro blocks.
 [INFO TAP-0002] Original rows: 57
-[INFO TAP-0003] Created rows: 0
-[INFO TAP-0004] Endcaps inserted: 56
-[INFO TAP-0005] Tapcells inserted: 0
+[INFO TAP-0003] Created 0 rows for a total of 57 rows.
+[INFO TAP-0004] Inserted 56 endcaps.
+[INFO TAP-0005] Inserted 0 tapcells.
 No differences found.

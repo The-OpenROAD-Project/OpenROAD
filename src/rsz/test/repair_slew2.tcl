@@ -1,4 +1,4 @@
-# repair_design max_slew liberty pin max_transition
+# repair_design max_slew liberty output pin max_transition
 source "helpers.tcl"
 source "hi_fanout.tcl"
 

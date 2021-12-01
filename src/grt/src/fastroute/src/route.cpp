@@ -854,9 +854,9 @@ void FastRouteCore::newrouteZAll(int threshold)
 // Ripup the original route and do Monotonic routing within bounding box
 void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 {
-  int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2, xGrid_1,
+  int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2,
       ind_i, ind_j, ind_x, k;
-  int vedge, hedge, segWidth, segHeight, curX, curY;
+  int segWidth, segHeight, curX, curY;
   std::vector<int> gridsX(x_range_ + y_range_);
   std::vector<int> gridsY(x_range_ + y_range_);
   float tmp;
@@ -908,7 +908,6 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
       cost.resize(boost::extents[segHeight + 1][segWidth + 1]);
       parent.resize(boost::extents[segHeight + 1][segWidth + 1]);
 
-      xGrid_1 = x_grid_ - 1;  // tmp variable to save runtime
       if (yl <= yr) {
         // initialize first column
         cost[0][0] = 0;
@@ -1259,7 +1258,6 @@ void FastRouteCore::spiralRouteAll()
   std::queue<int> edgeQueue;
 
   for (netID = 0; netID < num_valid_nets_; netID++) {
-    treeedges = sttrees_[netID].edges;
     treenodes = sttrees_[netID].nodes;
     deg = sttrees_[netID].deg;
 
@@ -1403,9 +1401,8 @@ void FastRouteCore::routeLVEnew(int netID,
                                 int threshold,
                                 int enlarge)
 {
-  int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, xGrid_1,
+  int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2,
       deg, yminorig, ymaxorig;
-  int vedge, hedge;
   int bestp1x = 0;
   int bestp1y = 0;
   std::vector<int> gridsX(x_range_ + y_range_);
@@ -1466,8 +1463,6 @@ void FastRouteCore::routeLVEnew(int netID,
           }
         }
       }
-
-      xGrid_1 = x_grid_ - 1;  // tmp variable to save runtime
 
       for (j = ymin; j <= ymax; j++) {
         d1[j][xmin] = 0;
@@ -1624,7 +1619,6 @@ void FastRouteCore::routeLVEnew(int netID,
             gridsX[cnt] = x2;
             gridsY[cnt] = i;
             cnt++;
-            vedge = i * x_grid_ + x2;
             v_edges_[i][x2].usage += edgeCost;
           }
         } else {

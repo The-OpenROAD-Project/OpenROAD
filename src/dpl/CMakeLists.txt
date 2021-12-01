@@ -54,6 +54,7 @@ target_sources(dpl
     src/Place.cpp
     src/FillerPlacement.cpp
     src/OptMirror.cpp
+    src/Graphics.cpp
 )
 
 target_include_directories(dpl
@@ -63,6 +64,7 @@ target_include_directories(dpl
 
 target_link_libraries(dpl
   PRIVATE
+    gui
     odb
     OpenSTA
     utl

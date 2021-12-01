@@ -87,10 +87,10 @@ class Restructure
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,
-           char* workdir_name);
+           char* workdir_name,
+           char* abc_logfile);
 
   void setMode(const char* mode_name);
-  void setLogfile(const char* file_name);
   void setTieLoPort(sta::LibertyPort* loport);
   void setTieHiPort(sta::LibertyPort* hiport);
 
@@ -106,6 +106,7 @@ class Restructure
   int countConsts(odb::dbBlock* top_block);
   void removeConstCells();
   void removeConstCell(odb::dbInst* inst);
+  bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
 
   Logger* logger_;
   std::string logfile_;
@@ -127,6 +128,7 @@ class Restructure
   std::set<odb::dbInst*> path_insts_;
 
   Mode opt_mode_;
+  bool is_area_mode_;
 };
 
 }  // namespace rmp

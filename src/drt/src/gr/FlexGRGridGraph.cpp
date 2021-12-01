@@ -48,34 +48,34 @@ void FlexGRGridGraph::init()
 
 void FlexGRGridGraph::initCoords()
 {
-  map<frLayerNum, frPrefRoutingDirEnum> zMap;
-  frPoint gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
-  frPoint gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
+  map<frLayerNum, dbTechLayerDir> zMap;
+  Point gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
+  Point gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
   // xCoords
   for (int xIdx = gcellIdxLL.x(); xIdx <= gcellIdxUR.x(); xIdx++) {
-    frBox gcellBox;
-    getDesign()->getTopBlock()->getGCellBox(frPoint(xIdx, 0), gcellBox);
-    xCoords_.push_back((gcellBox.left() + gcellBox.right()) / 2);
+    Rect gcellBox;
+    getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0), gcellBox);
+    xCoords_.push_back((gcellBox.xMin() + gcellBox.xMax()) / 2);
   }
   // yCoords
   for (int yIdx = gcellIdxLL.y(); yIdx <= gcellIdxUR.y(); yIdx++) {
-    frBox gcellBox;
-    getDesign()->getTopBlock()->getGCellBox(frPoint(0, yIdx), gcellBox);
-    yCoords_.push_back((gcellBox.bottom() + gcellBox.top()) / 2);
+    Rect gcellBox;
+    getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx), gcellBox);
+    yCoords_.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
   }
   // z
   if (!is2DRouting_) {
     for (auto& layer : getTech()->getLayers()) {
-      if (layer->getType() != frLayerTypeEnum::ROUTING) {
+      if (layer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       frLayerNum lNum = layer->getLayerNum();
-      frPrefRoutingDirEnum prefRouteDir = layer->getDir();
+      dbTechLayerDir prefRouteDir = layer->getDir();
       zMap[lNum] = prefRouteDir;
     }
   } else {
     // 2D routing only has one layer on layerNum == 2
-    zMap[2] = frcNonePrefRoutingDir;
+    zMap[2] = dbTechLayerDir::NONE;
   }
 
   frCoord zHeight = 0;
@@ -83,7 +83,7 @@ void FlexGRGridGraph::initCoords()
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
     zHeights_.push_back(zHeight);
-    zDirs_.push_back((v == frcHorzPrefRoutingDir));
+    zDirs_.push_back((v == dbTechLayerDir::HORIZONTAL));
   }
 }
 
@@ -104,18 +104,18 @@ void FlexGRGridGraph::initGrids()
 void FlexGRGridGraph::initEdges()
 {
   for (frMIdx zIdx = 0; zIdx < (int) zCoords_.size(); zIdx++) {
-    auto dir = is2DRouting_ ? frcNonePrefRoutingDir
-                            : (zDirs_[zIdx] ? frcHorzPrefRoutingDir
-                                            : frcVertPrefRoutingDir);
+    auto dir = is2DRouting_ ? dbTechLayerDir::NONE
+                            : (zDirs_[zIdx] ? dbTechLayerDir::HORIZONTAL
+                                            : dbTechLayerDir::VERTICAL);
     for (frMIdx xIdx = 0; xIdx < (int) xCoords_.size(); xIdx++) {
       for (frMIdx yIdx = 0; yIdx < (int) yCoords_.size(); yIdx++) {
         // horz
-        if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir)
+        if ((dir == dbTechLayerDir::NONE || dir == dbTechLayerDir::HORIZONTAL)
             && ((xIdx + 1) != (int) xCoords_.size())) {
           addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
         }
         // vert
-        if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir)
+        if ((dir == dbTechLayerDir::NONE || dir == dbTechLayerDir::VERTICAL)
             && ((yIdx + 1) != (int) yCoords_.size())) {
           addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
         }

@@ -6,7 +6,7 @@ and write design data.
 ``` shell
 read_lef [-tech] [-library] filename
 read_def filename
-write_def [-version 5.8|5.6|5.5|5.4|5.3] filename
+write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
 read_verilog filename
 write_verilog filename
 read_db filename

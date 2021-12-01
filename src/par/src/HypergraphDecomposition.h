@@ -35,9 +35,10 @@
 
 #pragma once
 
-#include "par/PartitionMgr.h"
-#include "Hypergraph.h"
 #include <string>
+
+#include "Hypergraph.h"
+#include "par/PartitionMgr.h"
 
 namespace odb {
 class dbDatabase;
@@ -57,38 +58,40 @@ namespace par {
 class HypergraphDecomposition
 {
  public:
-  HypergraphDecomposition() {}
-  void init(odb::dbBlock* block, Logger * logger);
-  void constructMap(Hypergraph& hypergraph, unsigned maxVertexWeight);
+  HypergraphDecomposition();
+  void init(odb::dbBlock* block, Logger* logger);
+  void constructMap(Hypergraph& hypergraph, const unsigned maxVertexWeight);
   void createHypergraph(Hypergraph& hypergraph,
-                        std::vector<unsigned long> clusters,
-                        short currentCluster);
-  void toGraph(Hypergraph& hypergraph,
+                        const std::vector<unsigned long>& clusters,
+                        const short currentCluster);
+  void toGraph(const Hypergraph& hypergraph,
                Graph& graph,
-               GraphType graphModel,
-               unsigned weightingOption,
-               unsigned maxEdgeWeight,
-               unsigned threshold);
+               const GraphType graphModel,
+               const unsigned weightingOption,
+               const unsigned maxEdgeWeight,
+               const unsigned threshold);
   void toHypergraph(Hypergraph& hypergraph, const Graph* graph);
-  void updateHypergraph(Hypergraph& hypergraph,
+  void updateHypergraph(const Hypergraph& hypergraph,
                         Hypergraph& newHypergraph,
-                        std::vector<unsigned long> clusters,
-                        short currentCluster);
+                        const std::vector<unsigned long>& clusters,
+                        const short currentCluster);
 
  private:
-  odb::dbBlock* _block;
-  Logger * _logger;
+  odb::dbBlock* block_;
+  Logger* logger_;
 
-  int _weightingOption;
-  std::vector<std::map<int, float>> adjMatrix;
+  int weightingOption_;
+  std::vector<std::map<int, float>> adjMatrix_;
   void addMapping(Hypergraph& hypergraph,
                   std::string instName,
                   const odb::Rect& rect);
-  void createCliqueGraph(Graph& graph, std::vector<int> net);
-  void createStarGraph(Graph& graph, std::vector<int> net);
-  void connectPins(int firstPin, int secondPin, float weight);
-  void connectStarPins(int firstPin, int secondPin, float weight);
-  float computeWeight(int nPins);
+  void createCliqueGraph(const std::vector<int>& net);
+  void createStarGraph(const std::vector<int>& net);
+  void connectPins(const int firstPin, const int secondPin, const float weight);
+  void connectStarPins(const int firstPin,
+                       const int secondPin,
+                       const float weight);
+  float computeWeight(const int nPins);
   void createCompressedMatrix(Graph& graph);
 };
 

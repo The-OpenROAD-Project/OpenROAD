@@ -34,12 +34,13 @@ proc define_tool_script { tool script } {
 
 # roughly flow order
 define_tool_script "OpenDB" "src/odb/test/regression"
+define_tool_script "dbSta" "src/dbSta/test/regression"
 define_tool_script "stt" "src/stt/test/regression"
 define_tool_script "ifp" "src/ifp/test/regression"
 define_tool_script "tap" "src/tap/test/regression"
 define_tool_script "ppl" "src/ppl/test/regression"
 define_tool_script "pdn" "src/pdn/test/regression"
-define_tool_script "ICeWall" "src/ICeWall/test/regression"
+define_tool_script "pad" "src/pad/test/regression"
 define_tool_script "mpl" "src/mpl/test/regression"
 # requires par LOAD_PARTITIONERS compile option
 #define_tool_script "mpl2" "src/mpl2/test/regression"

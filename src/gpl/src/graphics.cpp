@@ -11,12 +11,10 @@
 namespace gpl {
 
 Graphics::Graphics(utl::Logger* logger,
-                   std::shared_ptr<PlacerBase> pb,
-                   InitialPlace* ip)
+                   std::shared_ptr<PlacerBase> pb)
     : pb_(pb),
       nb_(),
       np_(nullptr),
-      ip_(ip),
       selected_(nullptr),
       draw_bins_(false),
       logger_(logger)
@@ -32,7 +30,6 @@ Graphics::Graphics(utl::Logger* logger,
     : pb_(pb),
       nb_(nb),
       np_(np),
-      ip_(nullptr),
       selected_(nullptr),
       draw_bins_(draw_bins),
       logger_(logger)
@@ -99,7 +96,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
     gui::Painter::Color color;
     if (gCell->isInstance()) {
-      color = gui::Painter::dark_green;
+      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+                                            : gui::Painter::dark_green;
     } else if (gCell->isFiller()) {
       color = gui::Painter::dark_magenta;
     }
@@ -214,12 +212,12 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
+gui::SelectionSet Graphics::select(odb::dbTechLayer* layer, const odb::Rect& region)
 {
   selected_ = nullptr;
 
   if (layer || !nb_) {
-    return gui::Selected();
+    return gui::SelectionSet();
   }
 
   for (GCell* cell : nb_->gCells()) {
@@ -231,17 +229,18 @@ gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
     int xh = gcx + cell->dx() / 2;
     int yh = gcy + cell->dy() / 2;
 
-    if (point.x() < xl || point.y() < yl || point.x() > xh || point.y() > yh) {
+    if (region.xMax() < xl || region.yMax() < yl || region.xMin() > xh || region.yMin() > yh) {
       continue;
     }
 
     selected_ = cell;
+    gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
-      return gui::Gui::get()->makeSelected(cell->instance()->dbInst());
+      return {gui::Gui::get()->makeSelected(cell->instance()->dbInst())};
     }
   }
-  return gui::Selected();
+  return gui::SelectionSet();
 }
 
 void Graphics::status(const std::string& message)
@@ -252,7 +251,7 @@ void Graphics::status(const std::string& message)
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::get() != nullptr;
+  return gui::Gui::enabled();
 }
 
 }  // namespace gpl

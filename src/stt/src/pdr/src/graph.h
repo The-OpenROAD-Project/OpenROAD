@@ -91,7 +91,6 @@ private:
   void print_tree();
   float calc_tree_det_cost();
   int calc_tree_pl();
-  void updateMinDist();
   bool make_unique(vector<Node>& vec);
 
   void UpdateManhDist();
@@ -99,7 +98,6 @@ private:
   int IdentLoc(int cIdx, int tIdx);
   int IsAdded(Node& cN);
   void FreeManhDist();
-  void RemoveUnneceSTNodes();
 
   // Aux functions
   void intersection(const std::vector<std::pair<double, double>> l1,
@@ -140,6 +138,7 @@ public:
 
 private:
   void buildNearestNeighbors_single_node(int idx);
+  void RemoveUnneceSTNodes();
   void refineSteiner();
   void refineSteiner2();
   bool IsOnEdge(Node& tNode, int idx);

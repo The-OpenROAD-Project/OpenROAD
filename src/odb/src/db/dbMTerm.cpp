@@ -55,6 +55,9 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
   if (_flags._sig_type != rhs._flags._sig_type)
     return false;
 
+  if (_flags._shape_type != rhs._flags._shape_type)
+    return false;
+
   if (_order_id != rhs._order_id)
     return false;
 
@@ -104,6 +107,7 @@ void _dbMTerm::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_flags._io_type);
   DIFF_FIELD(_flags._sig_type);
+  DIFF_FIELD(_flags._shape_type);
   DIFF_FIELD(_order_id);
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
@@ -124,6 +128,7 @@ void _dbMTerm::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._io_type);
   DIFF_OUT_FIELD(_flags._sig_type);
+  DIFF_OUT_FIELD(_flags._shape_type);
   DIFF_OUT_FIELD(_order_id);
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
@@ -310,6 +315,12 @@ dbIoType dbMTerm::getIoType()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
   return dbIoType(mterm->_flags._io_type);
+}
+
+dbMTermShapeType dbMTerm::getShape()
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  return dbMTermShapeType(mterm->_flags._shape_type);
 }
 
 void dbMTerm::setMark(uint v)
@@ -522,7 +533,8 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
 dbMTerm* dbMTerm::create(dbMaster* master_,
                          const char* name_,
                          dbIoType io_type_,
-                         dbSigType sig_type_)
+                         dbSigType sig_type_,
+                         dbMTermShapeType shape_type_)
 {
   _dbMaster* master = (_dbMaster*) master_;
 
@@ -534,6 +546,7 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
   ZALLOCATED(mterm->_name);
   mterm->_flags._io_type = io_type_;
   mterm->_flags._sig_type = sig_type_;
+  mterm->_flags._shape_type = shape_type_;
   if (sig_type_ == dbSigType::CLOCK)
     master_->setSequential(1);
   master->_mterm_hash.insert(mterm);

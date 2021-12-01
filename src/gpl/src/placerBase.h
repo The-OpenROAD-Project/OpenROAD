@@ -69,8 +69,9 @@ class GCell;
 class Instance {
 public:
   Instance();
-  Instance(odb::dbInst* inst, int padLeft, int padRight);
-  Instance(int lx, int ly, int ux, int uy);
+  Instance(odb::dbInst* inst, int padLeft, int padRight,
+           int site_height, utl::Logger* logger);
+  Instance(int lx, int ly, int ux, int uy); // dummy instance
   ~Instance();
 
   odb::dbInst* dbInst() const { return inst_; }
@@ -82,6 +83,15 @@ public:
   bool isInstance() const;
 
   bool isPlaceInstance() const;
+
+  bool isMacro() const;
+
+  // A placeable instance may be fixed during part of incremental placement.
+  // It remains in the set of placeable objects though so as to simplify
+  // the unlocking process.
+  bool isLocked() const;
+  void lock();
+  void unlock();
 
   // Dummy is virtual instance to fill in
   // unusable sites.  It will have inst_ as nullptr
@@ -104,7 +114,9 @@ public:
   int cy() const;
   int dx() const;
   int dy() const;
+  int64_t area() const;
 
+  
   void setExtId(int extId);
   int extId() const { return extId_; }
 
@@ -119,6 +131,8 @@ private:
   int ux_;
   int uy_;
   int extId_;
+  bool is_macro_;
+  bool is_locked_;
 };
 
 class Pin {
@@ -327,6 +341,8 @@ public:
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
+
+  void unlockAll();
 
 private:
   odb::dbDatabase* db_;

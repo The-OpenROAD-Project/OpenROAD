@@ -50,15 +50,15 @@ int FlexTAWorker::main()
     stringstream ss;
     ss << endl
        << "start TA worker (BOX) ("
-       << routeBox_.left() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.xMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ", "
-       << routeBox_.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.yMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ("
-       << routeBox_.right() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.xMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ", "
-       << routeBox_.top() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.yMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ";
-    if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (getDir() == dbTechLayerDir::HORIZONTAL) {
       ss << "H";
     } else {
       ss << "V";
@@ -68,6 +68,15 @@ int FlexTAWorker::main()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -96,15 +105,15 @@ int FlexTAWorker::main_mt()
     stringstream ss;
     ss << endl
        << "start TA worker (BOX) ("
-       << routeBox_.left() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.xMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ", "
-       << routeBox_.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.yMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ("
-       << routeBox_.right() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.xMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ", "
-       << routeBox_.top() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
+       << routeBox_.yMax() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ") ";
-    if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (getDir() == dbTechLayerDir::HORIZONTAL) {
       ss << "H";
     } else {
       ss << "V";
@@ -114,6 +123,15 @@ int FlexTAWorker::main_mt()
   }
 
   init();
+  if (isInitTA()) {
+      hardIroutesMode = true;
+      if (getTAIter() != -1)
+        sortIroutes();
+      assign();
+      hardIroutesMode = false;
+  }
+  if (getTAIter() != -1)
+        sortIroutes();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   assign();
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -148,19 +166,19 @@ int FlexTA::initTA_helper(int iter,
     if (isH) {
       for (int i = offset; i < (int) ygp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
-        frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(0, i), beginBox);
+        Rect beginBox, endBox;
+        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint((int) xgp.getCount() - 1,
+            Point((int) xgp.getCount() - 1,
                     min(i + size - 1, (int) ygp.getCount() - 1)),
             endBox);
-        frBox routeBox(
-            beginBox.left(), beginBox.bottom(), endBox.right(), endBox.top());
-        frBox extBox;
+        Rect routeBox(
+            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+        Rect extBox;
         routeBox.bloat(ygp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::HORIZONTAL);
         worker.setTAIter(iter);
         worker.main();
         sol += worker.getNumAssigned();
@@ -172,19 +190,19 @@ int FlexTA::initTA_helper(int iter,
     } else {
       for (int i = offset; i < (int) xgp.getCount(); i += size) {
         FlexTAWorker worker(getDesign());
-        frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, 0), beginBox);
+        Rect beginBox, endBox;
+        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint(min(i + size - 1, (int) xgp.getCount() - 1),
+            Point(min(i + size - 1, (int) xgp.getCount() - 1),
                     (int) ygp.getCount() - 1),
             endBox);
-        frBox routeBox(
-            beginBox.left(), beginBox.bottom(), endBox.right(), endBox.top());
-        frBox extBox;
+        Rect routeBox(
+            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+        Rect extBox;
         routeBox.bloat(xgp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcVertPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::VERTICAL);
         worker.setTAIter(iter);
         worker.main();
         sol += worker.getNumAssigned();
@@ -200,19 +218,19 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) ygp.getCount(); i += size) {
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
-        frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(0, i), beginBox);
+        Rect beginBox, endBox;
+        getDesign()->getTopBlock()->getGCellBox(Point(0, i), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint((int) xgp.getCount() - 1,
+            Point((int) xgp.getCount() - 1,
                     min(i + size - 1, (int) ygp.getCount() - 1)),
             endBox);
-        frBox routeBox(
-            beginBox.left(), beginBox.bottom(), endBox.right(), endBox.top());
-        frBox extBox;
+        Rect routeBox(
+            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+        Rect extBox;
         routeBox.bloat(ygp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::HORIZONTAL);
         worker.setTAIter(iter);
         if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
           workers.push_back(vector<unique_ptr<FlexTAWorker>>());
@@ -223,19 +241,19 @@ int FlexTA::initTA_helper(int iter,
       for (int i = offset; i < (int) xgp.getCount(); i += size) {
         auto uworker = make_unique<FlexTAWorker>(getDesign());
         auto& worker = *(uworker.get());
-        frBox beginBox, endBox;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, 0), beginBox);
+        Rect beginBox, endBox;
+        getDesign()->getTopBlock()->getGCellBox(Point(i, 0), beginBox);
         getDesign()->getTopBlock()->getGCellBox(
-            frPoint(min(i + size - 1, (int) xgp.getCount() - 1),
+            Point(min(i + size - 1, (int) xgp.getCount() - 1),
                     (int) ygp.getCount() - 1),
             endBox);
-        frBox routeBox(
-            beginBox.left(), beginBox.bottom(), endBox.right(), endBox.top());
-        frBox extBox;
+        Rect routeBox(
+            beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
+        Rect extBox;
         routeBox.bloat(xgp.getSpacing() / 2, extBox);
         worker.setRouteBox(routeBox);
         worker.setExtBox(extBox);
-        worker.setDir(frPrefRoutingDirEnum::frcVertPrefRoutingDir);
+        worker.setDir(dbTechLayerDir::VERTICAL);
         worker.setTAIter(iter);
         if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
           workers.push_back(vector<unique_ptr<FlexTAWorker>>());
@@ -278,12 +296,12 @@ void FlexTA::initTA(int size)
 
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
   bool isBottomLayerH
-      = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+      = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
 
   // H first
   if (isBottomLayerH) {
@@ -349,12 +367,12 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != frLayerTypeEnum::ROUTING) {
+  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
   bool isBottomLayerH
-      = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
+      = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
 
   // H first
   if (isBottomLayerH) {

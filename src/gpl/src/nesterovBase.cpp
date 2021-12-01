@@ -115,7 +115,7 @@ GCell::setInstance(Instance* inst) {
 
 Instance*
 GCell::instance() const {
-  return *insts_.begin();
+  return insts_.empty() ? nullptr : *insts_.begin();
 }
 
 void
@@ -132,16 +132,6 @@ GCell::setFiller() {
 void
 GCell::setClusteredInstance(const std::vector<Instance*>& insts) {
   insts_ = insts;
-}
-
-void
-GCell::setMacroInstance() {
-  isMacroInstance_ = true;
-}
-
-void
-GCell::setStdInstance() {
-  isMacroInstance_ = false; 
 }
 
 void
@@ -260,7 +250,7 @@ GCell::isMacroInstance() const {
   if( !isInstance() ) {
     return false;
   }
-  return isMacroInstance_; 
+  return instance()->isMacro();
 }
 
 bool
@@ -268,7 +258,7 @@ GCell::isStdInstance() const {
   if( !isInstance() ) {
     return false;
   }
-  return !isMacroInstance_;
+  return !instance()->isMacro();
 }
 
 ////////////////////////////////////////////////
@@ -1019,16 +1009,7 @@ NesterovBase::init() {
   // gCellStor init
   gCellStor_.reserve(pb_->placeInsts().size());
   for(auto& inst: pb_->placeInsts()) {
-    GCell myGCell(inst); 
-    // Check whether the given instance is
-    // macro or not
-    if( inst->dy() > pb_->siteSizeY() * 6 ) {
-      myGCell.setMacroInstance();
-    }
-    else {
-      myGCell.setStdInstance();
-    } 
-    gCellStor_.push_back(myGCell);
+    gCellStor_.push_back(GCell(inst));
   }
 
   // TODO: 
@@ -1184,14 +1165,12 @@ NesterovBase::initFillerGCells() {
   int64_t coreArea = pb_->die().coreArea(); 
 
   // nonPlaceInstsArea should not have density downscaling!!! 
-  whiteSpaceArea_ = coreArea - 
-    static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
   
   // targetDensity initialize
   if( nbVars_.useUniformTargetDensity ) {
     targetDensity_ = static_cast<float>(stdInstsArea_)/static_cast<float>(whiteSpaceArea_ - macroInstsArea_) + 0.01; 
-  }
-  else {
+  } else {
     targetDensity_ = nbVars_.targetDensity;
   }
 
@@ -1395,7 +1374,6 @@ NesterovBase::totalFillerArea() const {
   return totalFillerArea_;
 }
 
-
 int64_t
 NesterovBase::nesterovInstsArea() const {
   return stdInstsArea_ 
@@ -1460,7 +1438,7 @@ NesterovBase::updateAreas() {
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-  for( auto& gCell : gCells_) {
+  for( auto* gCell : gCells_) {
     if( gCell->isMacroInstance() ) {
       macroInstsArea_ 
         += static_cast<int64_t>(gCell->dx())
@@ -1623,6 +1601,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMinSumX( gPin->minExpSumX() );
         gNet->addWaXExpMinSumX( gPin->cx() 
             * gPin->minExpSumX() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MinX updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->minExpSumX() );
+        }
       }
       
       // max x
@@ -1631,6 +1614,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMaxSumX( gPin->maxExpSumX() );
         gNet->addWaXExpMaxSumX( gPin->cx() 
             * gPin->maxExpSumX() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MaxX updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->maxExpSumX() );
+        }
       }
      
       // min y 
@@ -1639,6 +1627,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMinSumY( gPin->minExpSumY() );
         gNet->addWaYExpMinSumY( gPin->cy() 
             * gPin->minExpSumY() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MinY updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->minExpSumY() );
+        }
       }
       
       // max y
@@ -1647,6 +1640,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMaxSumY( gPin->maxExpSumY() );
         gNet->addWaYExpMaxSumY( gPin->cy() 
             * gPin->maxExpSumY() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MaxY updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->maxExpSumY() );
+        }
       }
     }
     //cout << gNet->lx() << " " << gNet->ly() << " "
@@ -1661,6 +1659,9 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
 
   for(auto& gPin : gCell->gPins()) {
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+
+    debugPrint(log_, GPL, "replace", 5, "getGradientWA: wlPair: {:g} {:g}",
+      tmpPair.x, tmpPair.y);
     
     // apply timing/custom net weight
     tmpPair.x *= gPin->gNet()->totalWeight();
@@ -1668,6 +1669,11 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
     
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
+  }
+
+  if( gCell->isInstance() ) { 
+    debugPrint(log_, GPL, "replace", 5, "getGradientWA:  gradient: {:g} {:g}",
+      gradientPair.x, gradientPair.y);
   }
 
   // return sum
@@ -1734,6 +1740,9 @@ NesterovBase::getWireLengthGradientPinWA(const GPin* gPin, float wlCoeffX, float
           - wlCoeffY * gPin->maxExpSumY() * waYExpMaxSumY )
         / ( waExpMaxSumY * waExpMaxSumY );
   }
+
+  debugPrint(log_, GPL, "replace", 5, "getGradientWAPin:  gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
+      gradientMinX, gradientMaxX, gradientMinY, gradientMaxY);
 
   return FloatPoint(gradientMinX - gradientMaxX, 
       gradientMinY - gradientMaxY);
@@ -1831,8 +1840,6 @@ NesterovBase::getHpwl() {
   }
   return hpwl;
 }
-
-
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int 

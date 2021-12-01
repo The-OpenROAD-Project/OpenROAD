@@ -47,6 +47,8 @@
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
+#include "odb/db.h"
+#include "ord/OpenRoad.hh"
 
 using utl::PAR;
 
@@ -63,6 +65,8 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
+using odb::dbDatabase;
+
 
 template <class T>
 static void get_param(const unordered_map<string, string>& params,
@@ -80,91 +84,118 @@ static void get_param(const unordered_map<string, string>& params,
 
 bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
+                      dbDatabase* db,
                       const char* report_directory,
-                      const char* report_file)
+                      const float area_wt, 
+                      const float wirelength_wt, 
+                      const float outline_wt,
+                      const float boundary_wt, 
+                      const float macro_blockage_wt, 
+                      const float location_wt, 
+                      const float notch_wt,
+                      const char* report_file,
+                      const char* macro_blockage_file, 
+                      const char* prefer_location_file)
 {
   logger->report("Start RTL-MP");
 
   string block_file = string(report_directory) + '/' + report_file + ".block";
   string net_file = string(report_directory) + '/' + report_file + ".net";
 
-  // parameters defined in config_file
+  //
+  //  Default for Parameters
+  //  
   // These parameters are related to shape engine
-  float min_aspect_ratio = 0.33;
-  float dead_space = 0.1;
-  float halo_width = 2.0;
+  float min_aspect_ratio = 0.40;
+  float dead_space = 0.05;
+  float halo_width = 10.0;
 
-  string region_file = string("macro_blockage.txt");
+  string region_file = string(macro_blockage_file);
+  string location_file = string(prefer_location_file);
 
   // These parameters are related to multi-start in shape engine
-  int num_thread = 5;
-  int num_run = 5;
+  int num_thread = ord::OpenRoad::openRoad()->getThreadCount();  // set to max threads in OpenROAD
+  int num_run = 10;
 
   unsigned seed = 0;
 
   // These parameters are related to "Go with the winner"
   float heat_rate = 0.5;
-  int num_level = 5;
+  int num_level = 2;
   int num_worker = 10;
 
   // These parameters are related to cost function
-  float alpha = 0.4;                   // weight for area
-  float beta = 0.3;                    // weight for wirelength
-  float gamma = 0.3;                   // weight for outline penalty
-  float boundary_weight = 0.06;        // weight for pushing macros to boundary
-  float macro_blockage_weight = 0.08;  // weight for macro blockage
+  float alpha = area_wt;                             // weight for area
+  float beta = wirelength_wt;                        // weight for wirelength auto tuned value
+  float gamma = outline_wt;                          // weight for outline penalty - auto tuned value
+  float boundary_weight = boundary_wt;               // weight for pushing macros to boundary
+  float macro_blockage_weight = macro_blockage_wt;   // weight for macro blockage
+  float location_weight = location_wt;               // weight for preferred location
+  float notch_weight = notch_wt;                     // weight for notch
 
   float learning_rate
-      = 0.01;  // learning rate for dynamic weight in cost function
+      = 0.00;  // learning rate for dynamic weight in cost function
   float shrink_factor
-      = 0.995;  // shrink factor for soft blocks in simulated annealing
+      = 0.999;  // shrink factor for soft blocks in simulated annealing
   float shrink_freq
-      = 0.01;  // shrink frequency for soft blocks in simulated annealing
+      = 0.1;  // shrink frequency for soft blocks in simulated annealing
 
   // These parameters are related to action probabilities in each step
-  float resize_prob = 0.4;
-  float pos_swap_prob = 0.2;
-  float neg_swap_prob = 0.2;
-  float double_swap_prob = 0.2;
+  float resize_prob = 0.1;
+  float pos_swap_prob = 0.3;
+  float neg_swap_prob = 0.3;
+  float double_swap_prob = 0.3;
 
   // These parameters are related to fastSA
   float init_prob = 0.95;
   float rej_ratio = 0.95;
-  int k = 50;
-  float c = 100;
-  int max_num_step = 300;
-  int perturb_per_step = 3000;
+  int k = 5000000;
+  float c = 1000.0;
+  int max_num_step = 4000;
+  int perturb_per_step = 1000;
 
-  unordered_map<string, string> params = ParseConfigFile(config_file);
+  int snap_layer = 4;
 
-  get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
-  get_param(params, "dead_space", dead_space, logger);
-  get_param(params, "learning_rate", learning_rate, logger);
-  get_param(params, "shrink_factor", shrink_factor, logger);
-  get_param(params, "shrink_freq", shrink_freq, logger);
-  get_param(params, "halo_width", halo_width, logger);
-  get_param(params, "region_file", region_file, logger);
-  get_param(params, "num_thread", num_thread, logger);
-  get_param(params, "num_run", num_run, logger);
-  get_param(params, "heat_rate", heat_rate, logger);
-  get_param(params, "num_level", num_level, logger);
-  get_param(params, "num_worker", num_worker, logger);
-  get_param(params, "alpha", alpha, logger);
-  get_param(params, "beta", beta, logger);
-  get_param(params, "gamma", gamma, logger);
-  get_param(params, "boundary_weight", boundary_weight, logger);
-  get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
-  get_param(params, "resize_prob", resize_prob, logger);
-  get_param(params, "pos_swap_prob", pos_swap_prob, logger);
-  get_param(params, "neg_swap_prob", neg_swap_prob, logger);
-  get_param(params, "double_swap_prob", double_swap_prob, logger);
-  get_param(params, "init_prob", init_prob, logger);
-  get_param(params, "rej_ratio", rej_ratio, logger);
-  get_param(params, "k", k, logger);
-  get_param(params, "c", c, logger);
-  get_param(params, "max_num_step", max_num_step, logger);
-  get_param(params, "perturb_per_step", perturb_per_step, logger);
-  get_param(params, "seed", seed, logger);
+  //
+  // config_file is not required in the default flow. 
+  // It is still supported for developer tuning of the parameters
+  //
+  if (strcmp(config_file, "") != 0) {
+    unordered_map<string, string> params = ParseConfigFile(config_file);
+
+    get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
+    get_param(params, "dead_space", dead_space, logger);
+    get_param(params, "learning_rate", learning_rate, logger);
+    get_param(params, "shrink_factor", shrink_factor, logger);
+    get_param(params, "shrink_freq", shrink_freq, logger);
+    get_param(params, "halo_width", halo_width, logger);
+    get_param(params, "region_file", region_file, logger);
+    get_param(params, "location_file", location_file, logger);
+    get_param(params, "num_thread", num_thread, logger);
+    get_param(params, "num_run", num_run, logger);
+    get_param(params, "heat_rate", heat_rate, logger);
+    get_param(params, "num_level", num_level, logger);
+    get_param(params, "num_worker", num_worker, logger);
+    get_param(params, "alpha", alpha, logger);
+    get_param(params, "beta", beta, logger);
+    get_param(params, "gamma", gamma, logger);
+    get_param(params, "boundary_weight", boundary_weight, logger);
+    get_param(params, "macro_blockage_weight", macro_blockage_weight, logger);
+    get_param(params, "location_weight", location_weight, logger);
+    get_param(params, "notch_weight", notch_weight, logger);
+    get_param(params, "resize_prob", resize_prob, logger);
+    get_param(params, "pos_swap_prob", pos_swap_prob, logger);
+    get_param(params, "neg_swap_prob", neg_swap_prob, logger);
+    get_param(params, "double_swap_prob", double_swap_prob, logger);
+    get_param(params, "init_prob", init_prob, logger);
+    get_param(params, "rej_ratio", rej_ratio, logger);
+    get_param(params, "k", k, logger);
+    get_param(params, "c", c, logger);
+    get_param(params, "snap_layer", snap_layer, logger);
+    get_param(params, "max_num_step", max_num_step, logger);
+    get_param(params, "perturb_per_step", perturb_per_step, logger);
+    get_param(params, "seed", seed, logger);
+  }
 
   float outline_width = 0.0;
   float outline_height = 0.0;
@@ -191,6 +222,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     outline_height,
                                                     net_file,
                                                     region_file.c_str(),
+                                                    location_file.c_str(),
                                                     num_level,
                                                     num_worker,
                                                     heat_rate,
@@ -199,6 +231,8 @@ bool rtl_macro_placer(const char* config_file,
                                                     gamma,
                                                     boundary_weight,
                                                     macro_blockage_weight,
+                                                    location_weight,
+                                                    notch_weight,
                                                     resize_prob,
                                                     pos_swap_prob,
                                                     neg_swap_prob,
@@ -236,6 +270,15 @@ bool rtl_macro_placer(const char* config_file,
     return false;
   }
 
+    
+  // Get Block Placement Grid
+  // The Block Placement Grid is based on the pitch of the bottom horizontal and 
+  // vertical routing layers. The Block Placement Grid is one pitch wide and one pitch tall.
+  // TR requires the macro pins to be on grid.
+  odb::dbTech* tech = db->getTech();
+  const int dbu = tech->getDbUnitsPerMicron();
+  float pitch_x = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX()) / dbu;
+  float pitch_y = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY()) / dbu;
 
   string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
@@ -252,16 +295,22 @@ bool rtl_macro_placer(const char* config_file,
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
         string orientation = macros[j].GetOrientation();
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
 
         if (orientation == string("MX"))
           line += string("  MX  ") + to_string(lx) + string("   ")
-                  + to_string(ly + height);
+                  + to_string(uy);
         else if (orientation == string("MY"))
-          line += string("  MY  ") + to_string(lx + width) + string("   ")
+          line += string("  MY  ") + to_string(ux) + string("   ")
                   + to_string(ly);
         else if (orientation == string("R180"))
-          line += string("  R180  ") + to_string(lx + width) + string("   ")
-                  + to_string(ly + height);
+          line += string("  R180  ") + to_string(ux) + string("   ")
+                  + to_string(uy);
         else
           line += string("  R0 ") + to_string(lx) + string("   ")
                   + to_string(ly);
@@ -286,8 +335,15 @@ bool rtl_macro_placer(const char* config_file,
         float ly = outline_ly + cluster_ly + macros[j].GetY() + halo_width;
         float width = macros[j].GetWidth() - 2 * halo_width;
         float height = macros[j].GetHeight() - 2 * halo_width;
+        float ux = lx + width;
+        float uy = ly + height;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
+   
         line += to_string(lx) + string("   ") + to_string(ly) + string("  ");
-        line += to_string(lx + width) + string("  ") + to_string(ly + height);
+        line += to_string(ux) + string("  ") + to_string(uy);
         line += string("   ") + macros[j].GetOrientation();
         file << line << endl;
       }
@@ -344,16 +400,29 @@ bool rtl_macro_placer(const char* config_file,
   return true;
 }
 
-void MacroPlacer2::init(Logger* logger)
+void MacroPlacer2::init(dbDatabase* db, Logger* logger)
 {
+  db_ = db;
   logger_ = logger;
 }
 
 bool MacroPlacer2::place(const char* config_file,
                          const char* report_directory,
-                         const char* report_file)
+                         const float area_wt,
+                         const float wirelength_wt,
+                         const float outline_wt,
+                         const float boundary_wt,
+                         const float macro_blockage_wt,
+                         const float location_wt,
+                         const float notch_wt,
+                         const char* report_file,
+                         const char* macro_blockage_file,
+                         const char* prefer_location_file)
 {
-  return rtl_macro_placer(config_file, logger_, report_directory, report_file);
+  return rtl_macro_placer(config_file, logger_, db_,  report_directory, 
+                area_wt, wirelength_wt, outline_wt,
+                boundary_wt, macro_blockage_wt, location_wt, notch_wt,
+                report_file, macro_blockage_file, prefer_location_file);
 }
 
 }  // namespace mpl

@@ -162,7 +162,7 @@ void FlexGR::searchRepairMacro(int iter,
     cout << suffix << " optimization iteration for Macro..." << endl;
   }
 
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
@@ -174,12 +174,12 @@ void FlexGR::searchRepairMacro(int iter,
   vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {
-      frBox macroBBox;
+    if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
+      Rect macroBBox;
       inst->getBBox(macroBBox);
-      frPoint macroCenter((macroBBox.left() + macroBBox.right()) / 2,
-                          (macroBBox.bottom() + macroBBox.top()) / 2);
-      frPoint macroCenterIdx;
+      Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
+                          (macroBBox.yMin() + macroBBox.yMax()) / 2);
+      Point macroCenterIdx;
       getDesign()->getTopBlock()->getGCellIdx(macroCenter, macroCenterIdx);
       if (cmap2D_->hasBlock(
               macroCenterIdx.x(), macroCenterIdx.y(), 0, frDirEnum::E)
@@ -193,11 +193,11 @@ void FlexGR::searchRepairMacro(int iter,
   // create separate worker for each macro
   for (auto macro : macros) {
     auto worker = make_unique<FlexGRWorker>(this);
-    frBox macroBBox;
+    Rect macroBBox;
     macro->getBBox(macroBBox);
-    frPoint gcellIdxLL, gcellIdxUR;
-    frPoint macroLL(macroBBox.left(), macroBBox.bottom());
-    frPoint macroUR(macroBBox.right(), macroBBox.top());
+    Point gcellIdxLL, gcellIdxUR;
+    Point macroLL(macroBBox.xMin(), macroBBox.yMin());
+    Point macroUR(macroBBox.xMax(), macroBBox.yMax());
     getDesign()->getTopBlock()->getGCellIdx(macroLL, gcellIdxLL);
     getDesign()->getTopBlock()->getGCellIdx(macroUR, gcellIdxUR);
 
@@ -206,18 +206,18 @@ void FlexGR::searchRepairMacro(int iter,
     gcellIdxUR.set(min((int) gcellIdxUR.x() + size, (int) xgp.getCount()),
                    min((int) gcellIdxUR.y() + size, (int) ygp.getCount()));
 
-    frBox routeBox1;
+    Rect routeBox1;
     getDesign()->getTopBlock()->getGCellBox(gcellIdxLL, routeBox1);
-    frBox routeBox2;
+    Rect routeBox2;
     getDesign()->getTopBlock()->getGCellBox(gcellIdxUR, routeBox2);
-    frBox extBox(routeBox1.left(),
-                 routeBox1.bottom(),
-                 routeBox2.right(),
-                 routeBox2.top());
-    frBox routeBox((routeBox1.left() + routeBox1.right()) / 2,
-                   (routeBox1.bottom() + routeBox1.top()) / 2,
-                   (routeBox2.left() + routeBox2.right()) / 2,
-                   (routeBox2.bottom() + routeBox2.top()) / 2);
+    Rect extBox(routeBox1.xMin(),
+                 routeBox1.yMin(),
+                 routeBox2.xMax(),
+                 routeBox2.yMax());
+    Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                   (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                   (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                   (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
     worker->setRouteGCellIdxLL(gcellIdxLL);
     worker->setRouteGCellIdxUR(gcellIdxUR);
@@ -272,7 +272,7 @@ void FlexGR::searchRepair(int iter,
     cout << suffix << " optimization iteration ..." << endl;
   }
 
-  frBox dieBox;
+  Rect dieBox;
   getDesign()->getTopBlock()->getDieBox(dieBox);
 
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
@@ -283,10 +283,10 @@ void FlexGR::searchRepair(int iter,
     cout << "search and repair test mode" << endl << flush;
 
     FlexGRWorker worker(this);
-    frBox extBox(1847999, 440999, 1857000, 461999);
-    frBox routeBox(1849499, 442499, 1855499, 460499);
-    frPoint gcellIdxLL(616, 147);
-    frPoint gcellIdxUR(618, 153);
+    Rect extBox(1847999, 440999, 1857000, 461999);
+    Rect routeBox(1849499, 442499, 1855499, 460499);
+    Point gcellIdxLL(616, 147);
+    Point gcellIdxUR(618, 153);
 
     worker.setRouteGCellIdxLL(gcellIdxLL);
     worker.setRouteGCellIdxUR(gcellIdxUR);
@@ -319,23 +319,23 @@ void FlexGR::searchRepair(int iter,
     for (int i = 0; i < (int) xgp.getCount(); i += size) {
       for (int j = 0; j < (int) ygp.getCount(); j += size) {
         auto worker = make_unique<FlexGRWorker>(this);
-        frPoint gcellIdxLL = frPoint(i, j);
-        frPoint gcellIdxUR
-            = frPoint(min((int) xgp.getCount() - 1, i + size - 1),
+        Point gcellIdxLL = Point(i, j);
+        Point gcellIdxUR
+            = Point(min((int) xgp.getCount() - 1, i + size - 1),
                       min((int) ygp.getCount(), j + size - 1));
 
-        frBox routeBox1;
+        Rect routeBox1;
         getDesign()->getTopBlock()->getGCellBox(gcellIdxLL, routeBox1);
-        frBox routeBox2;
+        Rect routeBox2;
         getDesign()->getTopBlock()->getGCellBox(gcellIdxUR, routeBox2);
-        frBox extBox(routeBox1.left(),
-                     routeBox1.bottom(),
-                     routeBox2.right(),
-                     routeBox2.top());
-        frBox routeBox((routeBox1.left() + routeBox1.right()) / 2,
-                       (routeBox1.bottom() + routeBox1.top()) / 2,
-                       (routeBox2.left() + routeBox2.right()) / 2,
-                       (routeBox2.bottom() + routeBox2.top()) / 2);
+        Rect extBox(routeBox1.xMin(),
+                     routeBox1.yMin(),
+                     routeBox2.xMax(),
+                     routeBox2.yMax());
+        Rect routeBox((routeBox1.xMin() + routeBox1.xMax()) / 2,
+                       (routeBox1.yMin() + routeBox1.yMax()) / 2,
+                       (routeBox2.xMin() + routeBox2.xMax()) / 2,
+                       (routeBox2.yMin() + routeBox2.yMax()) / 2);
 
         // worker->setGCellIdx(gcellIdxLL, gcellIdxUR);
         worker->setRouteGCellIdxLL(gcellIdxLL);
@@ -399,10 +399,10 @@ void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
       auto ps = static_cast<grPathSeg*>(uGRShape.get());
-      frPoint bp, ep;
+      Point bp, ep;
       ps->getPoints(bp, ep);
 
-      frPoint bpIdx, epIdx;
+      Point bpIdx, epIdx;
       design_->getTopBlock()->getGCellIdx(bp, bpIdx);
       design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -601,11 +601,11 @@ void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
       auto ps = static_cast<grPathSeg*>(uGRShape.get());
-      frPoint bp, ep;
+      Point bp, ep;
       ps->getPoints(bp, ep);
       frLayerNum lNum = ps->getLayerNum();
 
-      frPoint bpIdx, epIdx;
+      Point bpIdx, epIdx;
       design_->getTopBlock()->getGCellIdx(bp, bpIdx);
       design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -653,10 +653,10 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
       xgp->getStartCoord(), xgp->getCount(), xgp->getSpacing());
   gcell->addGridPatternY(
       ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
-  frBox dieBox;
+  Rect dieBox;
   design_->getTopBlock()->getDieBox(dieBox);
-  gcell->addGridPatternX(dieBox.right(), 1, 0);
-  gcell->addGridPatternY(dieBox.top(), 1, 0);
+  gcell->addGridPatternX(dieBox.xMax(), 1, 0);
+  gcell->addGridPatternY(dieBox.yMax(), 1, 0);
   unsigned cmapLayerIdx = 0;
   for (auto& [layerNum, dir] : cmap->getZMap()) {
     string layerName(design_->getTech()->getLayer(layerNum)->getName());
@@ -711,7 +711,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -784,7 +784,7 @@ void FlexGR::reportCong3D()
     // get congestion information
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        if (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+        if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
           auto supply
               = cmap_->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           auto demand
@@ -870,7 +870,7 @@ void FlexGR::ra()
     int numBlockedTrack = 0;
     int numGCell = xgp->getCount() * ygp->getCount();
     int numBlockedGCell = 0;
-    if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
+    if (dir == dbTechLayerDir::HORIZONTAL) {
       cout << "H      ";
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
         numTrack += cmap_->getSupply(0, yIdx, cmapLayerIdx, frDirEnum::E);
@@ -888,7 +888,7 @@ void FlexGR::ra()
           }
         }
       }
-    } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
+    } else if (dir == dbTechLayerDir::VERTICAL) {
       cout << "V      ";
       for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
         numTrack += cmap_->getSupply(xIdx, 0, cmapLayerIdx, frDirEnum::N);
@@ -997,7 +997,7 @@ void FlexGR::initGR_updateCongestion_net(frNet* net)
         || node->getParent()->getType() != frNodeTypeEnum::frcSteiner) {
       continue;
     }
-    frPoint loc, parentLoc;
+    Point loc, parentLoc;
     node->getLoc(loc);
     node->getParent()->getLoc(parentLoc);
     if (loc.x() != parentLoc.x() && loc.y() != parentLoc.y()) {
@@ -1005,7 +1005,7 @@ void FlexGR::initGR_updateCongestion_net(frNet* net)
     }
 
     // generate shape and update 2D congestion map
-    frPoint bp, ep;
+    Point bp, ep;
     if (loc < parentLoc) {
       bp = loc;
       ep = parentLoc;
@@ -1014,7 +1014,7 @@ void FlexGR::initGR_updateCongestion_net(frNet* net)
       ep = loc;
     }
 
-    frPoint bpIdx, epIdx;
+    Point bpIdx, epIdx;
     design_->getTopBlock()->getGCellIdx(bp, bpIdx);
     design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1045,7 +1045,7 @@ void FlexGR::initGR_updateCongestion2D_net(frNet* net)
         || node->getParent()->getType() != frNodeTypeEnum::frcSteiner) {
       continue;
     }
-    frPoint loc, parentLoc;
+    Point loc, parentLoc;
     node->getLoc(loc);
     node->getParent()->getLoc(parentLoc);
     if (loc.x() != parentLoc.x() && loc.y() != parentLoc.y()) {
@@ -1053,7 +1053,7 @@ void FlexGR::initGR_updateCongestion2D_net(frNet* net)
     }
 
     // generate shape and update 2D congestion map
-    frPoint bp, ep;
+    Point bp, ep;
     if (loc < parentLoc) {
       bp = loc;
       ep = parentLoc;
@@ -1062,7 +1062,7 @@ void FlexGR::initGR_updateCongestion2D_net(frNet* net)
       ep = loc;
     }
 
-    frPoint bpIdx, epIdx;
+    Point bpIdx, epIdx;
     design_->getTopBlock()->getGCellIdx(bp, bpIdx);
     design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1109,7 +1109,7 @@ void FlexGR::initGR_patternRoute_init(
         continue;
       }
 
-      frPoint loc, parentLoc;
+      Point loc, parentLoc;
       node->getLoc(loc);
       parentNode->getLoc(parentLoc);
       if (loc.x() == parentLoc.x() || loc.y() == parentLoc.y()) {
@@ -1197,16 +1197,16 @@ bool FlexGR::initGR_patternRoute_route_iter(
 void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
 {
   auto net = child->getNet();
-  frPoint childLoc, parentLoc;
-  frPoint childGCellIdx, parentGCellIdx;
+  Point childLoc, parentLoc;
+  Point childGCellIdx, parentGCellIdx;
   child->getLoc(childLoc);
   parent->getLoc(parentLoc);
 
   design_->getTopBlock()->getGCellIdx(childLoc, childGCellIdx);
   design_->getTopBlock()->getGCellIdx(parentLoc, parentGCellIdx);
 
-  frPoint cornerGCellIdx1(childGCellIdx.x(), parentGCellIdx.y());
-  frPoint cornerGCellIdx2(parentGCellIdx.x(), childGCellIdx.y());
+  Point cornerGCellIdx1(childGCellIdx.x(), parentGCellIdx.y());
+  Point cornerGCellIdx2(parentGCellIdx.x(), childGCellIdx.y());
 
   // calculate corner1 cost
   double corner1Cost = 0;
@@ -1282,7 +1282,7 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     // create corner1 node
     auto uNode = make_unique<frNode>();
     uNode->setType(frNodeTypeEnum::frcSteiner);
-    frPoint cornerLoc(childLoc.x(), parentLoc.y());
+    Point cornerLoc(childLoc.x(), parentLoc.y());
     uNode->setLoc(cornerLoc);
     uNode->setLayerNum(2);
     auto cornerNode = uNode.get();
@@ -1310,7 +1310,7 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     // create corner2 route
     auto uNode = make_unique<frNode>();
     uNode->setType(frNodeTypeEnum::frcSteiner);
-    frPoint cornerLoc(parentLoc.x(), childLoc.y());
+    Point cornerLoc(parentLoc.x(), childLoc.y());
     uNode->setLoc(cornerLoc);
     uNode->setLayerNum(2);
     auto cornerNode = uNode.get();
@@ -1345,7 +1345,7 @@ double FlexGR::getCongCost(unsigned supply, unsigned demand)
 // child node and parent node must be colinear
 void FlexGR::ripupRoute(frNode* child, frNode* parent)
 {
-  frPoint childLoc, parentLoc, bp, ep;
+  Point childLoc, parentLoc, bp, ep;
   child->getLoc(childLoc);
   parent->getLoc(parentLoc);
   if (childLoc < parentLoc) {
@@ -1356,7 +1356,7 @@ void FlexGR::ripupRoute(frNode* child, frNode* parent)
     ep = childLoc;
   }
 
-  frPoint bpIdx, epIdx;
+  Point bpIdx, epIdx;
   design_->getTopBlock()->getGCellIdx(bp, bpIdx);
   design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1381,7 +1381,7 @@ void FlexGR::ripupRoute(frNode* child, frNode* parent)
 bool FlexGR::hasOverflow2D(frNode* child, frNode* parent)
 {
   bool isOverflow = false;
-  frPoint childLoc, parentLoc, bp, ep;
+  Point childLoc, parentLoc, bp, ep;
   child->getLoc(childLoc);
   parent->getLoc(parentLoc);
   if (childLoc < parentLoc) {
@@ -1392,7 +1392,7 @@ bool FlexGR::hasOverflow2D(frNode* child, frNode* parent)
     ep = childLoc;
   }
 
-  frPoint bpIdx, epIdx;
+  Point bpIdx, epIdx;
   design_->getTopBlock()->getGCellIdx(bp, bpIdx);
   design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1471,10 +1471,10 @@ void FlexGR::initGR_initObj_net(frNet* net)
 
     auto parent = node->getParent();
 
-    frPoint nodeLoc = node->getLoc();
-    frPoint parentLoc = parent->getLoc();
+    Point nodeLoc = node->getLoc();
+    Point parentLoc = parent->getLoc();
 
-    frPoint bp, ep;
+    Point bp, ep;
     if (nodeLoc < parentLoc) {
       bp = nodeLoc;
       ep = parentLoc;
@@ -1550,14 +1550,12 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   for (auto& node : netNodes) {
     if (node->getPin()) {
       if (node->getPin()->typeId() == frcInstTerm) {
-        auto term = static_cast<frInstTerm*>(node->getPin())->getTerm();
+        auto ioType = static_cast<frInstTerm*>(node->getPin())->getTerm()
+                      ->getDirection();
         // for instTerm, direction OUTPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::OUTPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::OUTPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::OUTPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }
@@ -1566,14 +1564,11 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         }
         pin2Nodes[node->getPin()].push_back(node.get());
       } else if (node->getPin()->typeId() == frcTerm) {
-        auto term = static_cast<frTerm*>(node->getPin());
+        auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
-        if (term->getDirection() == frTermDirectionEnum::INPUT
-            && nodes[0] == nullptr) {
+        if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {
           nodes[0] = node.get();
         } else {
-          if (term->getDirection() == frTermDirectionEnum::INPUT) {
-          }
           if (sinkIdx >= nodes.size()) {
             sinkIdx %= nodes.size();
           }
@@ -1608,14 +1603,14 @@ void FlexGR::initGR_genTopology_net(frNet* net)
     for (int i = 0; i < (int) nodes.size(); i++) {
       auto rpin = rpins[i];
       auto node = nodes[i];
-      frPoint pt;
+      Point pt;
       if (rpin->getFrTerm()->typeId() == frcInstTerm) {
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
-        frTransform shiftXform;
+        dbTransform shiftXform;
         inst->getTransform(shiftXform);
-        shiftXform.set(frOrient(frcR0));
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
         rpin->getAccessPoint()->getPoint(pt);
-        pt.transform(shiftXform);
+        shiftXform.apply(pt);
       } else {
         rpin->getAccessPoint()->getPoint(pt);
       }
@@ -1631,7 +1626,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
 
   // prep for 2D topology generation in case two nodes are more than one rpin in
   // same gcell topology genration works on gcell (center-to-center) level
-  frPoint apLoc, apGCellIdx;
+  Point apLoc, apGCellIdx;
   for (auto node : nodes) {
     node->getLoc(apLoc);
     design_->getTopBlock()->getGCellIdx(apLoc, apGCellIdx);
@@ -1655,13 +1650,13 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       }
     }
 
-    frBox gcellBox;
+    Rect gcellBox;
     auto gcellNode = make_unique<frNode>();
     gcellNode->setType(frNodeTypeEnum::frcSteiner);
     design_->getTopBlock()->getGCellBox(
-        frPoint(gcellIdx.first, gcellIdx.second), gcellBox);
-    frPoint loc((gcellBox.left() + gcellBox.right()) / 2,
-                (gcellBox.bottom() + gcellBox.top()) / 2);
+        Point(gcellIdx.first, gcellIdx.second), gcellBox);
+    Point loc((gcellBox.xMin() + gcellBox.xMax()) / 2,
+                (gcellBox.yMin() + gcellBox.yMax()) / 2);
     gcellNode->setLayerNum(2);
     gcellNode->setLoc(loc);
     if (!hasRoot) {
@@ -1720,8 +1715,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       // add shape from child to parent
       if (node->getParent()) {
         auto parent = node->getParent();
-        frPoint childLoc, parentLoc;
-        frPoint bp, ep;
+        Point childLoc, parentLoc;
+        Point bp, ep;
         node->getLoc(childLoc);
         parent->getLoc(parentLoc);
         if (childLoc < parentLoc) {
@@ -1741,7 +1736,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         // assuming (layerNum / - 1) == congestion map idx
         uPathSeg->setLayerNum(2);
 
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design_->getTopBlock()->getGCellIdx(bp, bpIdx);
         design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1767,8 +1762,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       // add shape from child to parent
       if (node->getParent()) {
         auto parent = node->getParent();
-        frPoint childLoc, parentLoc;
-        frPoint bp, ep;
+        Point childLoc, parentLoc;
+        Point bp, ep;
         node->getLoc(childLoc);
         parent->getLoc(parentLoc);
         if (childLoc < parentLoc) {
@@ -1788,7 +1783,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
         // assuming (layerNum / - 1) == congestion map idx
         uPathSeg->setLayerNum(2);
 
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design_->getTopBlock()->getGCellIdx(bp, bpIdx);
         design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -1853,12 +1848,12 @@ void FlexGR::layerAssign()
     frCoord urx = INT_MIN;
     frCoord ury = INT_MIN;
     for (auto& rpin : net->getRPins()) {
-      frBox bbox;
+      Rect bbox;
       rpin->getBBox(bbox);
-      llx = min(bbox.left(), llx);
-      lly = min(bbox.bottom(), lly);
-      urx = max(bbox.right(), urx);
-      ury = max(bbox.top(), ury);
+      llx = min(bbox.xMin(), llx);
+      lly = min(bbox.yMin(), lly);
+      urx = max(bbox.xMax(), urx);
+      ury = max(bbox.yMax(), ury);
     }
     int numRPins = net->getRPins().size();
     int ratio = ((urx - llx) + (ury - lly)) / (numRPins);
@@ -1981,7 +1976,7 @@ void FlexGR::layerAssign_net(frNet* net)
     auto parent = node->getParent();
     if (node->getLayerNum() == node->getParent()->getLayerNum()) {
       // pathSeg
-      frPoint currLoc, parentLoc, bp, ep;
+      Point currLoc, parentLoc, bp, ep;
       node->getLoc(currLoc);
       parent->getLoc(parentLoc);
 
@@ -2000,7 +1995,7 @@ void FlexGR::layerAssign_net(frNet* net)
       uPathSeg->setPoints(bp, ep);
       uPathSeg->setLayerNum(node->getLayerNum());
 
-      frPoint bpIdx, epIdx;
+      Point bpIdx, epIdx;
       design_->getTopBlock()->getGCellIdx(bp, bpIdx);
       design_->getTopBlock()->getGCellIdx(ep, epIdx);
 
@@ -2026,7 +2021,7 @@ void FlexGR::layerAssign_net(frNet* net)
       net->addGRShape(uShape);
     } else {
       // via
-      frPoint loc;
+      Point loc;
       frLayerNum beginLayerNum, endLayerNum;
       node->getLoc(loc);
       beginLayerNum = node->getLayerNum();
@@ -2137,8 +2132,8 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
       // bool isLayerBlocked = layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1);
       bool isLayerBlocked = false;
 
-      frPoint currLoc, parentLoc;
-      frPoint beginIdx, endIdx;
+      Point currLoc, parentLoc;
+      Point beginIdx, endIdx;
       currNode->getLoc(currLoc);
       if (currNode->getParent()) {
         auto parent = currNode->getParent();
@@ -2162,7 +2157,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
         // horz
         if (beginIdx.y() == endIdx.y()) {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcVertPrefRoutingDir) {
+              == dbTechLayerDir::VERTICAL) {
             isLayerBlocked = true;
           }
           int yIdx = beginIdx.y();
@@ -2188,7 +2183,7 @@ void FlexGR::layerAssign_node_compute(frNode* currNode,
           }
         } else {
           if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
-              == frcHorzPrefRoutingDir) {
+              == dbTechLayerDir::HORIZONTAL) {
             isLayerBlocked = true;
           }
           int xIdx = beginIdx.x();
@@ -2248,7 +2243,7 @@ void FlexGR::layerAssign_node_commit(
       cout << "Error: non-pin gcell or non-steiner child node, childNodeIdx = "
            << childNodeIdx << ", currNodeIdx = " << currNodeIdx
            << ", bestLayerCombs.size() = " << bestLayerCombs.size() << "\n";
-      frPoint loc1, loc2;
+      Point loc1, loc2;
       currNode->getLoc(loc1);
       child->getLoc(loc2);
       cout << "currNodeLoc = (" << loc1.x() / 2000.0 << ", "
@@ -2265,7 +2260,7 @@ void FlexGR::layerAssign_node_commit(
            << distance(net->getFirstNonRPinNode()->getIter(),
                        currNode->getParent()->getIter())
            << "\n";
-      frPoint loc1, loc2;
+      Point loc1, loc2;
       currNode->getLoc(loc1);
       currNode->getParent()->getLoc(loc2);
       cout << "currNodeLoc = (" << loc1.x() / 2000.0 << ", "
@@ -2275,7 +2270,7 @@ void FlexGR::layerAssign_node_commit(
       exit(1);
     }
     if (child->getType() == frNodeTypeEnum::frcPin) {
-      frPoint loc;
+      Point loc;
       child->getLoc(loc);
       cout << "Error1: currNodeIdx = " << currNodeIdx
            << ", should not commit pin node, loc(" << loc.x() / 2000.0 << ", "
@@ -2293,7 +2288,7 @@ void FlexGR::layerAssign_node_commit(
   } else {
     for (auto& child : children) {
       if (child->getType() == frNodeTypeEnum::frcPin) {
-        frPoint loc;
+        Point loc;
         child->getLoc(loc);
         cout << "Error2: should not commit pin node, loc(" << loc.x() / 2000.0
              << ", " << loc.y() / 2000.0 << ")\n";
@@ -2341,7 +2336,7 @@ void FlexGR::layerAssign_node_commit(
     }
   }
 
-  frPoint currNodeLoc;
+  Point currNodeLoc;
   currNode->getLoc(currNodeLoc);
 
   for (auto layerNum = *(nodeLayerNums.begin());
@@ -2419,7 +2414,7 @@ void FlexGR::writeToGuide()
       hasGRShape = true;
       if (uShape->typeId() == grcPathSeg) {
         auto pathSeg = static_cast<grPathSeg*>(uShape.get());
-        frPoint bp, ep;
+        Point bp, ep;
         pathSeg->getPoints(bp, ep);
         frLayerNum layerNum;
         layerNum = pathSeg->getLayerNum();
@@ -2438,7 +2433,7 @@ void FlexGR::writeToGuide()
     for (auto& uVia : net->getGRVias()) {
       hasGRShape = true;
       auto via = uVia.get();
-      frPoint loc;
+      Point loc;
       via->getOrigin(loc);
       frLayerNum beginLayerNum, endLayerNum;
       beginLayerNum = via->getViaDef()->getLayer1Num();
@@ -2466,7 +2461,7 @@ void FlexGR::writeToGuide()
       }
 
       auto gcellNode = net->getFirstNonRPinNode();
-      frPoint loc;
+      Point loc;
       gcellNode->getLoc(loc);
       frLayerNum minPinLayerNum = INT_MAX;
       frLayerNum maxPinLayerNum = INT_MIN;
@@ -2509,12 +2504,12 @@ void FlexGR::writeGuideFile()
       outputGuide << netName << endl;
       outputGuide << "(\n";
       for (auto& guide : net->getGuides()) {
-        frPoint bp, ep;
+        Point bp, ep;
         guide->getPoints(bp, ep);
-        frPoint bpIdx, epIdx;
+        Point bpIdx, epIdx;
         design_->getTopBlock()->getGCellIdx(bp, bpIdx);
         design_->getTopBlock()->getGCellIdx(ep, epIdx);
-        frBox bbox, ebox;
+        Rect bbox, ebox;
         design_->getTopBlock()->getGCellBox(bpIdx, bbox);
         design_->getTopBlock()->getGCellBox(epIdx, ebox);
         frLayerNum bNum = guide->getBeginLayerNum();
@@ -2524,14 +2519,14 @@ void FlexGR::writeGuideFile()
           for (auto lNum = min(bNum, eNum); lNum <= max(bNum, eNum);
                lNum += 2) {
             auto layerName = design_->getTech()->getLayer(lNum)->getName();
-            outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                        << bbox.right() << " " << bbox.top() << " " << layerName
+            outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                        << bbox.xMax() << " " << bbox.yMax() << " " << layerName
                         << endl;
           }
         } else {
           auto layerName = design_->getTech()->getLayer(bNum)->getName();
-          outputGuide << bbox.left() << " " << bbox.bottom() << " "
-                      << ebox.right() << " " << ebox.top() << " " << layerName
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
+                      << ebox.xMax() << " " << ebox.yMax() << " " << layerName
                       << endl;
         }
       }

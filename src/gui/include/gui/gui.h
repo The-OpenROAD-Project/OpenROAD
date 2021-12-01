@@ -39,17 +39,185 @@
 #include <functional>
 #include <initializer_list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
+#include <typeindex>
 #include <typeinfo>
 #include <variant>
+#include <unordered_map>
 
 #include "odb/db.h"
+
+namespace utl {
+class Logger;
+} // namespace utl
 
 namespace gui {
 class Painter;
 class Selected;
+class Options;
+
+// A collection of selected objects
+using SelectionSet = std::set<Selected>;
+using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
+                                                   // Color is supported for now
+
+// This is an API that the Renderer instances will use to do their
+// rendering.  This is subclassed in the gui module and hides Qt from
+// the clients.  Clients will only deal with this API and not Qt itself,
+// which contains the Qt dependencies to the gui module.
+class Painter
+{
+ public:
+  struct Color
+  {
+    constexpr Color() : r(0), g(0), b(0), a(255) {}
+    constexpr Color(int r, int g, int b, int a = 255) : r(r), g(g), b(b), a(a)
+    {
+    }
+    constexpr Color(const Color& color, int a) : r(color.r), g(color.g), b(color.b), a(a)
+    {
+    }
+
+    int r;
+    int g;
+    int b;
+    int a;
+
+    bool operator==(const Color& other) const
+    {
+      return (r == other.r) &&
+             (g == other.g) &&
+             (b == other.b) &&
+             (a == other.a);
+    }
+  };
+
+  static inline const Color black{0x00, 0x00, 0x00, 0xff};
+  static inline const Color white{0xff, 0xff, 0xff, 0xff};
+  static inline const Color dark_gray{0x80, 0x80, 0x80, 0xff};
+  static inline const Color gray{0xa0, 0xa0, 0xa4, 0xff};
+  static inline const Color light_gray{0xc0, 0xc0, 0xc0, 0xff};
+  static inline const Color red{0xff, 0x00, 0x00, 0xff};
+  static inline const Color green{0x00, 0xff, 0x00, 0xff};
+  static inline const Color blue{0x00, 0x00, 0xff, 0xff};
+  static inline const Color cyan{0x00, 0xff, 0xff, 0xff};
+  static inline const Color magenta{0xff, 0x00, 0xff, 0xff};
+  static inline const Color yellow{0xff, 0xff, 0x00, 0xff};
+  static inline const Color dark_red{0x80, 0x00, 0x00, 0xff};
+  static inline const Color dark_green{0x00, 0x80, 0x00, 0xff};
+  static inline const Color dark_blue{0x00, 0x00, 0x80, 0xff};
+  static inline const Color dark_cyan{0x00, 0x80, 0x80, 0xff};
+  static inline const Color dark_magenta{0x80, 0x00, 0x80, 0xff};
+  static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
+  static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
+
+  static inline const std::array<Painter::Color, 8> highlightColors{
+    Color(Painter::green, 100),
+    Color(Painter::yellow, 100),
+    Color(Painter::cyan, 100),
+    Color(Painter::magenta, 100),
+    Color(Painter::red, 100),
+    Color(Painter::dark_green, 100),
+    Color(Painter::dark_magenta, 100),
+    Color(Painter::blue, 100)};
+
+  // The color to highlight in
+  static inline const Color highlight = yellow;
+  static inline const Color persistHighlight = yellow;
+
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu) : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu) {}
+  virtual ~Painter() = default;
+
+  // Get the current pen color
+  virtual Color getPenColor() = 0;
+
+  // Set the pen to whatever the user has chosen for this layer
+  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
+
+  // Set the pen to an RGBA value
+  virtual void setPen(const Color& color, bool cosmetic = false, int width = 1)
+      = 0;
+
+  virtual void setPenWidth(int width) = 0;
+  // Set the brush to whatever the user has chosen for this layer
+  // The alpha value may be overridden
+  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
+
+  // Set the brush to whatever the user has chosen for this layer
+  enum Brush {
+    NONE,
+    SOLID,
+    DIAGONAL,
+    CROSS,
+    DOTS
+  };
+  virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
+
+  // Set the pen to an RGBA value and the brush
+  void setPenAndBrush(const Color& color, bool cosmetic = false, const Brush& style = SOLID)
+  {
+    setPen(color, cosmetic);
+    setBrush(color, style);
+  }
+
+  // save the state of the painter so it can be restored later
+  virtual void saveState() = 0;
+  // restore the saved state of the painter
+  virtual void restoreState() = 0;
+
+  // Draw a geom shape as a polygon with coordinates in DBU with the current
+  // pen/brush
+  virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
+
+  // Draw a rect with coordinates in DBU with the current pen/brush; draws a
+  // round rect if roundX > 0 or roundY > 0
+  virtual void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0)
+      = 0;
+
+  // Draw a line with coordinates in DBU with the current pen
+  virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
+
+  virtual void drawCircle(int x, int y, int r) = 0;
+
+  virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
+
+  enum Anchor {
+    // four corners
+    BOTTOM_LEFT,
+    BOTTOM_RIGHT,
+    TOP_LEFT,
+    TOP_RIGHT,
+
+    // centers
+    CENTER,
+    BOTTOM_CENTER,
+    TOP_CENTER,
+    LEFT_CENTER,
+    RIGHT_CENTER
+  };
+  virtual void drawString(int x, int y, Anchor anchor, const std::string& s) = 0;
+  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) = 0;
+
+  virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
+
+  // Draw a line with coordinates in DBU with the current pen
+  void drawLine(int xl, int yl, int xh, int yh)
+  {
+    drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
+  }
+
+  inline double getPixelsPerDBU() { return pixels_per_dbu_; }
+  inline Options* getOptions() { return options_; }
+  inline const odb::Rect& getBounds() { return bounds_; }
+
+ private:
+  Options* options_;
+  const odb::Rect bounds_;
+  double pixels_per_dbu_;
+};
 
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
@@ -58,19 +226,30 @@ class Selected;
 class Descriptor
 {
  public:
+  virtual ~Descriptor() = default;
   virtual std::string getName(std::any object) const = 0;
-  virtual std::string getTypeName(std::any object) const = 0;
+  virtual std::string getShortName(std::any object) const { return getName(object); }
+  virtual std::string getTypeName() const = 0;
+  virtual std::string getTypeName(std::any /* object */) const { return getTypeName(); }
   virtual bool getBBox(std::any object, odb::Rect& bbox) const = 0;
 
   virtual bool isInst(std::any /* object */) const { return false; }
   virtual bool isNet(std::any /* object */) const { return false; }
 
+  virtual bool getAllObjects(SelectionSet& /* objects */) const = 0;
+
   // A property is a name and a value.
   struct Property {
     std::string name;
     std::any value;
+
+    static int dbu;
+
+    static std::string toString(const std::any& /* value */);
+    std::string toString() const { return toString(value); };
   };
   using Properties = std::vector<Property>;
+  using PropertyList = std::vector<std::pair<std::any, std::any>>;
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
@@ -104,30 +283,17 @@ class Descriptor
 
   virtual bool lessThan(std::any l, std::any r) const = 0;
 
-  std::any getProperty(std::any object, const std::string& name) const
-  {
-    for (auto& [prop, value] : getProperties(object)) {
-      if (prop == name) {
-        return value;
-      }
-    }
-    return std::any();
-  }
-
   static const Editor makeEditor(const EditorCallback& func, const std::vector<EditorOption>& options)
   {
     return {func, options};
   }
   static const Editor makeEditor(const EditorCallback& func) { return makeEditor(func, {}); }
 
-protected:
-  // The caller (Selected) will pre-configure the Painter's pen
+  // The caller (Selected and Renderers) will pre-configure the Painter's pen
   // and brush before calling.
   virtual void highlight(std::any object,
                          Painter& painter,
                          void* additional_data = nullptr) const = 0;
-
-  friend class Selected;
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -150,6 +316,7 @@ class Selected
   }
 
   std::string getName() const { return descriptor_->getName(object_); }
+  std::string getShortName() const { return descriptor_->getShortName(object_); }
   std::string getTypeName() const { return descriptor_->getTypeName(object_); }
   bool getBBox(odb::Rect& bbox) const
   {
@@ -164,23 +331,24 @@ class Selected
   // Highlight shapes are persistent which will not get removed from
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   void highlight(Painter& painter,
-                 bool select_flag = true,
-                 int highlight_group = 0) const;
+                 const Painter::Color& pen = Painter::persistHighlight,
+                 int pen_width = 0,
+                 const Painter::Color& brush = Painter::transparent,
+                 const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
 
-  Descriptor::Properties getProperties() const
-  {
-    return descriptor_->getProperties(object_);
-  }
+  Descriptor::Properties getProperties() const;
 
   std::any getProperty(const std::string& name) const
   {
-    return descriptor_->getProperty(object_, name);
+    for (auto& [prop, value] : getProperties()) {
+      if (prop == name) {
+        return value;
+      }
+    }
+    return std::any();
   }
 
-  Descriptor::Actions getActions() const
-  {
-    return descriptor_->getActions(object_);
-  }
+  Descriptor::Actions getActions() const;
 
   Descriptor::Editors getEditors() const
   {
@@ -200,117 +368,16 @@ class Selected
     return l_type_info.before(r_type_info);
   }
 
+  friend bool operator==(const Selected& l, const Selected& r)
+  {
+    return !(l < r) && !(r < l);
+  }
+
  private:
   std::any object_;
   void* additional_data_;  // Will only be required for highlighting input nets,
                            // in which case it will store the input instTerm
   const Descriptor* descriptor_;
-};
-
-// A collection of selected objects
-using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
-                                                   // Color is supported for now
-
-// This is an API that the Renderer instances will use to do their
-// rendering.  This is subclassed in the gui module and hides Qt from
-// the clients.  Clients will only deal with this API and not Qt itself,
-// which contains the Qt dependencies to the gui module.
-class Painter
-{
- public:
-  struct Color
-  {
-    constexpr Color() : r(0), g(0), b(0), a(255) {}
-    constexpr Color(int r, int g, int b, int a = 255) : r(r), g(g), b(b), a(a)
-    {
-    }
-
-    int r;
-    int g;
-    int b;
-    int a;
-  };
-
-  static inline const Color black{0x00, 0x00, 0x00, 0xff};
-  static inline const Color white{0xff, 0xff, 0xff, 0xff};
-  static inline const Color dark_gray{0x80, 0x80, 0x80, 0xff};
-  static inline const Color gray{0xa0, 0xa0, 0xa4, 0xff};
-  static inline const Color light_gray{0xc0, 0xc0, 0xc0, 0xff};
-  static inline const Color red{0xff, 0x00, 0x00, 0xff};
-  static inline const Color green{0x00, 0xff, 0x00, 0xff};
-  static inline const Color blue{0x00, 0x00, 0xff, 0xff};
-  static inline const Color cyan{0x00, 0xff, 0xff, 0xff};
-  static inline const Color magenta{0xff, 0x00, 0xff, 0xff};
-  static inline const Color yellow{0xff, 0xff, 0x00, 0xff};
-  static inline const Color dark_red{0x80, 0x00, 0x00, 0xff};
-  static inline const Color dark_green{0x00, 0x80, 0x00, 0xff};
-  static inline const Color dark_blue{0x00, 0x00, 0x80, 0xff};
-  static inline const Color dark_cyan{0x00, 0x80, 0x80, 0xff};
-  static inline const Color dark_magenta{0x80, 0x00, 0x80, 0xff};
-  static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
-  static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
-
-  static inline const std::array<Painter::Color, 8> highlightColors{
-      Painter::green,
-      Painter::yellow,
-      Painter::cyan,
-      Painter::magenta,
-      Painter::red,
-      Painter::dark_green,
-      Painter::dark_magenta,
-      Painter::blue};
-
-  // The color to highlight in
-  static inline const Color highlight = yellow;
-  static inline const Color persistHighlight = yellow;
-  static inline const Color ruler_color = cyan;
-
-  virtual ~Painter() = default;
-
-  // Get the current pen color
-  virtual Color getPenColor() = 0;
-
-  // Set the pen to whatever the user has chosen for this layer
-  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
-
-  // Set the pen to an RGBA value
-  virtual void setPen(const Color& color, bool cosmetic = false, int width = 1)
-      = 0;
-
-  virtual void setPenWidth(int width) = 0;
-  // Set the brush to whatever the user has chosen for this layer
-  // The alpha value may be overridden
-  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
-
-  // Set the brush to whatever the user has chosen for this layer
-  virtual void setBrush(const Color& color) = 0;
-
-  // Draw a geom shape as a polygon with coordinates in DBU with the current
-  // pen/brush
-  virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
-
-  // Draw a rect with coordinates in DBU with the current pen/brush; draws a
-  // round rect if roundX > 0 or roundY > 0
-  virtual void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0)
-      = 0;
-
-  // Draw a line with coordinates in DBU with the current pen
-  virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
-
-  virtual void drawCircle(int x, int y, int r) = 0;
-
-  virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
-
-  virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;
-
-  // Draw a line with coordinates in DBU with the current pen
-  void drawLine(int xl, int yl, int xh, int yh)
-  {
-    drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
-  }
-
-  virtual void setTransparentBrush() = 0;
 };
 
 // This is an interface for classes that wish to be called to render
@@ -334,11 +401,67 @@ class Renderer
   // Handle user clicks.  Layer is a nullptr for the
   // object not associated with a layer.
   // Return true if an object was found; false otherwise.
-  virtual Selected select(odb::dbTechLayer* /* layer */,
-                          const odb::Point& /* point */)
+  virtual SelectionSet select(odb::dbTechLayer* /* layer */,
+                              const odb::Rect& /* region */)
   {
-    return Selected();
+    return SelectionSet();
   }
+
+  // Used to trigger a draw
+  void redraw();
+
+  // If group_name is empty, no display group is created and all items will be added
+  // at the top level of the display control list
+  // else, a group is created and items added under that list
+  virtual const char* getDisplayControlGroupName()
+  {
+    return "";
+  }
+
+  // Used to register display controls for this renderer.
+  // DisplayControls is a map with the name of the control and the initial setting for the control
+  using DisplayControlCallback = std::function<void(void)>;
+  struct DisplayControl {
+    bool visibility;
+    DisplayControlCallback interactive_setup;
+    std::set<std::string> mutual_exclusivity;
+  };
+  using DisplayControls = std::map<std::string, DisplayControl>;
+  const DisplayControls& getDisplayControls()
+  {
+    return controls_;
+  }
+
+  // Used to check the value of the display control
+  bool checkDisplayControl(const std::string& name);
+  // Used to set the value of the display control
+  void setDisplayControl(const std::string& name, bool value);
+
+  virtual const std::string getSettingsGroupName() { return ""; }
+  using Settings = std::map<std::string, std::variant<bool, int, double>>;
+  virtual const Settings getSettings();
+  virtual void setSettings(const Settings& settings);
+
+  template <typename T>
+  static void setSetting(const Settings& settings,
+                  const std::string& key,
+                  T& value)
+  {
+    if (settings.count(key) == 1) {
+      value = std::get<T>(settings.at(key));
+    }
+  }
+
+ protected:
+  // Adds a display control
+  void addDisplayControl(const std::string& name,
+                         bool initial_visible = false,
+                         const DisplayControlCallback& setup = DisplayControlCallback(),
+                         const std::vector<std::string>& mutual_exclusivity = {});
+
+ private:
+  // Holds map of display controls and callback function
+  DisplayControls controls_;
 };
 
 // This is the API for the rest of the program to interact with the
@@ -360,25 +483,21 @@ class Gui
   // Set the current selected object in the gui.
   void setSelected(Selected selection);
 
+  void removeSelectedByType(const std::string& type);
+
+  template <class T>
+  void removeSelected()
+  {
+    const auto* descriptor = getDescriptor<T>();
+    removeSelectedByType(descriptor->getTypeName());
+  }
+
   // Add a net to the selection set
   void addSelectedNet(const char* name);
-
-  // Add nets matching the pattern to the selection set
-  void addSelectedNets(const char* pattern,
-                       bool match_case = true,
-                       bool match_reg_ex = false,
-                       bool add_to_highlight_set = false,
-                       int highlight_group = 0);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
-  // Add instances matching the pattern to the selection set
-  void addSelectedInsts(const char* pattern,
-                        bool match_case = true,
-                        bool match_regE_ex = true,
-                        bool add_to_highlight_set = false,
-                        int highlight_group = 0);
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
@@ -391,11 +510,19 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
-  void addRuler(int x0, int y0, int x1, int y1);
+  void selectAt(const odb::Rect& area, bool append = true);
+  int selectNext();
+  int selectPrevious();
+  void animateSelection(int repeat = 0);
+
+  std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
+  void deleteRuler(const std::string& name);
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
+
+  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -407,11 +534,17 @@ class Gui
   void setResolution(double pixels_per_dbu);
 
   // Save layout to an image file
-  void saveImage(const std::string& filename, const odb::Rect& region = odb::Rect());
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region = odb::Rect(),
+                 double dbu_per_pixel = 0,
+                 const std::map<std::string, bool>& display_settings = {});
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  // Get the visibility/selectability for a control in the 'Display Control' panel.
+  bool checkDisplayControlsVisible(const std::string& name);
+  bool checkDisplayControlsSelectable(const std::string& name);
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
@@ -423,26 +556,31 @@ class Gui
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // adding custom menu items to menu bar
+  const std::string addMenuItem(const std::string& name,
+                                const std::string& path,
+                                const std::string& text,
+                                const std::string& script,
+                                const std::string& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
+
+  // open DRC
+  void loadDRC(const std::string& filename);
 
   // Force an immediate redraw.
   void redraw();
 
   // Waits for the user to click continue before returning
   // Draw events are processed while paused.
-  void pause();
+  // timeout is in milliseconds (0 is no timeout)
+  void pause(int timeout = 0);
 
   // Show a message in the status bar
   void status(const std::string& message);
-
-  // Add a custom visibilty control to the 'Display Control' panel.
-  // Useful for debug renderers to control their display.
-  void addCustomVisibilityControl(const std::string& name,
-                                  bool initially_visible = false);
-
-  // Get the visibility for a custom control in the 'Display Control' panel.
-  bool checkCustomVisibilityControl(const std::string& name);
 
   const std::set<Renderer*>& renderers() { return renderers_; }
 
@@ -453,25 +591,81 @@ class Gui
 
   void fit();
 
+  // Called to hide the gui and return to tcl command line
+  void hideGui();
+
+  // Called to show the gui and return to tcl command line
+  void showGui(const std::string& cmds = "", bool interactive = true);
+
+  // set the system logger
+  void setLogger(utl::Logger* logger);
+
+  // set openroad database
+  void setDatabase(odb::dbDatabase* db);
+
+  // check if tcl should take over after closing gui
+  bool isContinueAfterClose() { return continue_after_close_; }
+  // clear continue after close, needed to reset before GUI starts
+  void clearContinueAfterClose() { continue_after_close_ = false; }
+
+  const Selected& getInspectorSelection();
+
+  void setHeatMapSetting(const std::string& name, const std::string& option, double value);
+
+  // accessors for to add and remove commands needed to restore the state of the gui
+  const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
+  void addRestoreStateCommand(const std::string& cmd) { tcl_state_commands_.push_back(cmd); }
+  void clearRestoreStateCommands() { tcl_state_commands_.clear(); }
+
   template <class T>
   void registerDescriptor(const Descriptor* descriptor)
   {
     registerDescriptor(typeid(T), descriptor);
   }
 
-  // Will return nullptr if openroad was invoked without -gui
+  template <class T>
+  const Descriptor* getDescriptor() const
+  {
+    return getDescriptor(typeid(T));
+  }
+
+  template <class T>
+  void unregisterDescriptor()
+  {
+    unregisterDescriptor(typeid(T));
+  }
+
+  // returns the Gui singleton
   static Gui* get();
 
+  // Will return true if the GUI is active, false otherwise
+  static bool enabled();
+
  private:
-  Gui() = default;
+  Gui();
+
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
+  const Descriptor* getDescriptor(const std::type_info& type) const;
+  void unregisterDescriptor(const std::type_info& type);
+
+  // flag to indicate if tcl should take over after gui closes
+  bool continue_after_close_;
+
+  utl::Logger* logger_;
+  odb::dbDatabase* db_;
+
+  // Maps types to descriptors
+  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>> descriptors_;
+
+  // tcl commands needed to restore state
+  std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
   static Gui* singleton_;
 };
 
 // The main entry point
-int startGui(int argc, char* argv[]);
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script = "", bool interactive = true);
 
 }  // namespace gui

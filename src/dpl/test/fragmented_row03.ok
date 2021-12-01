@@ -10,18 +10,12 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO ODB-0134] Finished DEF file: fragmented_row03.def
 [WARNING DPL-0011] Could not find power special net.
-[WARNING DPL-0018] detailed placement failed on _277_.
-Placement Analysis
----------------------------------
-total displacement          0.0 u
-average displacement        0.0 u
-max displacement            0.0 u
-original HPWL              61.5 u
-legalized HPWL             61.5 u
-delta HPWL                    0 %
-
+[ERROR DPL-0018] detailed placement failed on _277_.
+DPL-0018
 [WARNING DPL-0004] Placed in rows check failed (1).
  _277_
 [WARNING DPL-0006] Site aligned check failed (1).
  _277_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033
 No differences found.

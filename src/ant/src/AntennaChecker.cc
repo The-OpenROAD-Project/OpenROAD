@@ -683,9 +683,9 @@ double AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info,
       ratio_itr = pwl_info.ratios.begin();
       return *ratio_itr;
     } else {
-      double pwl_info_indice;
-      double pwl_info_ratio;
-      double slope_factor;
+      double pwl_info_indice = 0.0;
+      double pwl_info_ratio = 0.0;
+      double slope_factor = 1.0;
       for (indice_itr = pwl_info.indices.begin(),
           ratio_itr = pwl_info.ratios.begin();
            indice_itr != pwl_info.indices.end()
@@ -911,7 +911,6 @@ void AntennaChecker::build_VIA_PAR_table(
       minus_diff_factor = am.minus_diff_factor;
       plus_diff_factor = am.plus_diff_factor;
 
-      double plus_diff_factor = 5.0;
       if (iterm_areas[1] != 0) {
         par = (diff_cut_factor * via_area) / iterm_areas[0];
         diff_par = (diff_cut_factor * via_area * diff_metal_reduce_factor
@@ -1455,7 +1454,6 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
 
         if (wireroot) {
           bool find_root = 0;
-          std::vector<std::pair<dbWireGraph::Node*, int>>::iterator root_itr;
           for (auto root_itr = wireroots_info.begin();
                root_itr != wireroots_info.end();
                ++root_itr) {
@@ -1811,7 +1809,6 @@ std::vector<dbWireGraph::Node*> AntennaChecker::get_wireroots(dbWireGraph graph)
     dbWireGraph::Node* wireroot = wireroot_info;
     if (wireroot) {
       bool find_root = 0;
-      std::vector<std::pair<dbWireGraph::Node*, int>>::iterator root_itr;
       for (auto root_itr = wireroots_info.begin();
            root_itr != wireroots_info.end();
            ++root_itr) {

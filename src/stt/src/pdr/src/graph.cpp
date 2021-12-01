@@ -33,8 +33,6 @@
 
 #include "graph.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -175,54 +173,6 @@ void Graph::addChild(Node& node, int idx)
   auto &children = node.children;
   if (std::find(children.begin(), children.end(), idx) == children.end())
     children.push_back(idx);
-}
-
-void Graph::RemoveUnneceSTNodes()
-{
-  vector<int> toBeRemoved;
-  for (int i = num_terminals; i < nodes.size(); ++i) {
-    if (nodes[i].children.size() < 2) {
-      toBeRemoved.push_back(i);
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    Node& cN = nodes[toBeRemoved[i]];
-    removeChild(nodes[cN.parent], cN.idx);
-    for (int j = 0; j < cN.children.size(); ++j) {
-      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
-      addChild(nodes[cN.parent], cN.children[j]);
-      edges_[cN.children[j]].head = cN.parent;
-    }
-  }
-  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
-    nodes.erase(nodes.begin() + toBeRemoved[i]);
-    edges_.erase(edges_.begin() + toBeRemoved[i]);
-  }
-
-  map<int, int> idxMap;
-  for (int i = 0; i < nodes.size(); ++i) {
-    debugPrint(logger_, PDR, "pdrev", 3, "idxMap {} {}", i, nodes[i].idx);
-    idxMap[nodes[i].idx] = i;
-  }
-  for (int i = 0; i < nodes.size(); ++i) {
-    Node& cN = nodes[i];
-    for (int j = 0; j < toBeRemoved.size(); ++j) {
-      removeChild(nodes[i], toBeRemoved[j]);
-    }
-
-    debugPrint(logger_, PDR, "pdrev", 3, "before cN: {}", cN);
-    sort(cN.children.begin(), cN.children.end());
-    for (int j = 0; j < cN.children.size(); ++j) {
-      if (cN.children[j] != idxMap[cN.children[j]])
-        replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
-    }
-    cN.idx = i;
-    cN.parent = idxMap[cN.parent];
-    edges_[i].tail = i;
-    edges_[i].head = idxMap[edges_[i].head];
-    edges_[i].idx = i;
-    debugPrint(logger_, PDR, "pdrev", 3, "after cN: {}", cN);
-  }
 }
 
 void Graph::replaceParent(Node& pNode, int idx, int tIdx)
@@ -555,17 +505,6 @@ void Graph::heap_decrease_key(int p, float new_key)
   }
 }
 
-void Graph::updateMinDist()
-{
-  for (int i = 0; i < num_terminals; ++i) {
-    if (i == root_idx_) {
-      nodes[i].min_dist = 0;
-    } else {
-      nodes[i].min_dist = dist(nodes[i], nodes[root_idx_]);
-    }
-  }
-}
-
 void Graph::get_children_of_node()
 {
   for (int j = 0; j < num_terminals; ++j) {
@@ -591,6 +530,26 @@ void Graph::print_tree()
                     node.y,
                     node.parent,
                     children);
+  }
+  for (auto i = 0; i < edges_.size(); i++) {
+    Edge &edge = edges_[i];
+    const char *shape = "?";
+    if (edge.best_shape == 0)
+      shape = "lower L";
+    else if (edge.best_shape == 1)
+      shape = "upper L";
+    else if (edge.best_shape == 5)
+      shape = "don't care";
+    int head = edge.head;
+    int tail = edge.tail;
+    logger_->report("Edge ({} {}) {} -> ({} {}) {} shape={}",
+                    nodes[head].x,
+                    nodes[head].y,
+                    head,
+                    nodes[tail].x,
+                    nodes[tail].y,
+                    tail,
+                    shape);
   }
 }
 
@@ -659,50 +618,44 @@ void Graph::run_PD_brute_force(float alpha)
       rpt = rpt + "Heap_elt array: ";
       for (int ar = 0; ar < heap_elt_.size(); ar++)
         rpt = rpt + std::to_string(heap_elt_[ar]) + " ";
-      rpt = rpt + "\n";
-      rpt = rpt + "Heap min_dist: ";
-      for (int ar = 0; ar < heap_elt_.size(); ar++)
-        rpt = rpt + std::to_string(nodes[heap_elt_[ar]].min_dist) + " ";
-
       debugPrint(logger_, PDR, "pdrev", 3, "{}", rpt);
     }
 
     if (i >= 0) {
       // node[i] entered the tree, update heap keys for its neighbors
       int par = nodes[i].parent;
+      int path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
       debugPrint(logger_, PDR, "pdrev", 3,
-                 "nodes[{}].path_length = nodes[{}].path_length={} + dist={} = {}",
-                 i, par, nodes[par].path_length, dist(nodes[i], nodes[par]),
-                 nodes[par].path_length + dist(nodes[i], nodes[par]));
-      nodes[i].path_length = nodes[par].path_length + dist(nodes[i], nodes[par]);
+                 "path_length[{}] = path_length[{}] + dist = {} + {} = {}",
+                 i,
+                 par,
+                 nodes[par].path_length,
+                 dist(nodes[i], nodes[par]),
+                 path_length);
+      nodes[i].path_length = path_length;
       for (int oct = 0; oct < nn_[i].size(); oct++) {
         int nn1 = nn_[i][oct];
-        debugPrint(logger_, PDR, "pdrev", 3, "NN={} i={} min_dist of node i={}",
-                   nn1,
-                   i,
-                   nodes[i].min_dist);
-        int edge_len = dist(nodes[i], nodes[nn1]);
-        float d = alpha * nodes[i].path_length;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   "intermediate d = alpha * nodes[i].path_length = "
-                   "{}*{} = {}",
-                   alpha,
-                   nodes[i].path_length,
-                   d);
-        if (nn1 != root_idx_)
-          d += edge_len;
-        debugPrint(logger_, PDR, "pdrev", 3,
-                   " d={} heap_idx[nn1]={} heap_key[nn1]={}",
-                   d,
-                   heap_idx_[nn1],
-                   heap_key_[nn1]);
-        // FIXME : Tie-break
-        if ((heap_idx_[nn1] > 0) && (d <= heap_key_[nn1])) {
-          heap_decrease_key(nn1, d);
-          nodes[nn1].parent = i;
-        } else if (heap_idx_[nn1] == 0) {
-          heap_insert(nn1, d);
-          nodes[nn1].parent = i;
+        if (heap_idx_[nn1] != -1) {
+          int edge_length = (nn1 == root_idx_) ? 0 : dist(nodes[i], nodes[nn1]);
+          float w = edge_length + path_length * alpha;
+          debugPrint(logger_, PDR, "pdrev", 3, "NN={} weight = edge_length + path_length * alpha = {} + {} * {} = {}",
+                     nn1,
+                     edge_length,
+                     path_length,
+                     alpha,
+                     w);
+          debugPrint(logger_, PDR, "pdrev", 3,
+                     " heap_idx[nn1]={} heap_key[nn1]={}",
+                     heap_idx_[nn1],
+                     heap_key_[nn1]);
+          // FIXME : Tie-break
+          if ((heap_idx_[nn1] > 0) && (w <= heap_key_[nn1])) {
+            heap_decrease_key(nn1, w);
+            nodes[nn1].parent = i;
+          } else if (heap_idx_[nn1] == 0) {
+            heap_insert(nn1, w);
+            nodes[nn1].parent = i;
+          }
         }
       }
     }
@@ -2046,6 +1999,54 @@ void Graph::swap_and_update_tree(int min_node,
     update_node_detcost_Kt(j);
   }
   get_children_of_node();
+}
+
+void Graph::RemoveUnneceSTNodes()
+{
+  vector<int> toBeRemoved;
+  for (int i = num_terminals; i < nodes.size(); ++i) {
+    if (nodes[i].children.size() < 2) {
+      toBeRemoved.push_back(i);
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    Node& cN = nodes[toBeRemoved[i]];
+    removeChild(nodes[cN.parent], cN.idx);
+    for (int j = 0; j < cN.children.size(); ++j) {
+      replaceParent(nodes[cN.children[j]], cN.idx, cN.parent);
+      addChild(nodes[cN.parent], cN.children[j]);
+      edges_[cN.children[j]].head = cN.parent;
+    }
+  }
+  for (int i = toBeRemoved.size() - 1; i >= 0; --i) {
+    nodes.erase(nodes.begin() + toBeRemoved[i]);
+    edges_.erase(edges_.begin() + toBeRemoved[i]);
+  }
+
+  map<int, int> idxMap;
+  for (int i = 0; i < nodes.size(); ++i) {
+    debugPrint(logger_, PDR, "pdrev", 3, "idxMap {} {}", i, nodes[i].idx);
+    idxMap[nodes[i].idx] = i;
+  }
+  for (int i = 0; i < nodes.size(); ++i) {
+    Node& cN = nodes[i];
+    for (int j = 0; j < toBeRemoved.size(); ++j) {
+      removeChild(nodes[i], toBeRemoved[j]);
+    }
+
+    debugPrint(logger_, PDR, "pdrev", 3, "before cN: {}", cN);
+    sort(cN.children.begin(), cN.children.end());
+    for (int j = 0; j < cN.children.size(); ++j) {
+      if (cN.children[j] != idxMap[cN.children[j]])
+        replaceChild(cN, cN.children[j], idxMap[cN.children[j]]);
+    }
+    cN.idx = i;
+    cN.parent = idxMap[cN.parent];
+    edges_[i].tail = i;
+    edges_[i].head = idxMap[edges_[i].head];
+    edges_[i].idx = i;
+    debugPrint(logger_, PDR, "pdrev", 3, "after cN: {}", cN);
+  }
 }
 
 void Graph::refineSteiner2()

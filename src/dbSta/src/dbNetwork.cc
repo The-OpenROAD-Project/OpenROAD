@@ -285,15 +285,13 @@ public:
   Pin *next();
 
 private:
-  const dbNetwork *network_;
   dbSet<dbITerm>::iterator iitr_;
   dbSet<dbITerm>::iterator iitr_end_;
   Pin *next_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
-				   const dbNetwork *network) :
-  network_(network)
+				   const dbNetwork* /* network */)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
   iitr_ = dnet->getITerms().begin();
@@ -365,14 +363,11 @@ DbNetTermIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-Network *
-makedbNetwork()
-{
-  return new dbNetwork;
-}
-
 dbNetwork::dbNetwork() :
+  ConcreteNetwork(),
   db_(nullptr),
+  logger_(nullptr),
+  block_(nullptr),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
@@ -383,23 +378,18 @@ dbNetwork::~dbNetwork()
 }
 
 void
-dbNetwork::setDb(dbDatabase *db)
+dbNetwork::init(dbDatabase *db,
+                Logger *logger)
 {
   db_ = db;
+  logger_ = logger;
 }
 
 void
 dbNetwork::setBlock(dbBlock *block)
 {
-  db_ = block->getDataBase();
   block_ = block;
   readDbNetlistAfter();
-}
-
-void
-dbNetwork::setLogger(Logger *logger)
-{
-  logger_ = logger;
 }
 
 void
@@ -905,7 +895,8 @@ dbNetwork::makeCell(Library *library,
 	cport->setLibertyPort(lib_port);
 	lib_port->setExtPort(mterm);
       }
-      else if (!dir->isPowerGround())
+      else if (!dir->isPowerGround()
+               && !lib_cell->findPgPort(port_name))
 	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
@@ -952,14 +943,19 @@ dbNetwork::makeTopCell()
   const char *design_name = block_->getConstName();
   Library *top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
-  for (dbBTerm *bterm : block_->getBTerms()) {
-    const char *port_name = bterm->getConstName();
-    Port *port = makePort(top_cell_, port_name);
-    PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
-    setDirection(port, dir);
-  }
+  for (dbBTerm *bterm : block_->getBTerms())
+    makeTopPort(bterm);
   groupBusPorts(top_cell_,
                 [=](const char *port_name) { return portMsbFirst(port_name); } );
+}
+
+void
+dbNetwork::makeTopPort(dbBTerm *bterm)
+{
+  const char *port_name = bterm->getConstName();
+  Port *port = makePort(top_cell_, port_name);
+  PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  setDirection(port, dir);
 }
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
@@ -1013,7 +1009,8 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 		cport->setLibertyPort(lport);
 		lport->setExtPort(cport->extPort());
 	      }
-	      else if (!cport->direction()->isPowerGround())
+	      else if (!cport->direction()->isPowerGround()
+                       && !lcell->findPgPort(port_name))
 		logger_->warn(ORD, 1002,
                               "Liberty cell {} pin {} missing from LEF macro.",
 			      lcell->name(),

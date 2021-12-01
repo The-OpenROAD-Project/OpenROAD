@@ -62,7 +62,6 @@ void InitialPlaceVars::reset() {
   maxSolverIter = 100;
   maxFanout = 200;
   netWeightScale = 800.0;
-  incrementalPlaceMode = false;
   debug = false;
 }
 
@@ -100,13 +99,10 @@ void InitialPlace::doBicgstabPlace() {
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = make_unique<Graphics>(log_, pb_, this);
+    graphics = make_unique<Graphics>(log_, pb_);
   }
 
-  // normally, initial place will place all cells in the centers.
-  if( !ipVars_.incrementalPlaceMode ) {
-    placeInstsCenter();
-  }
+  placeInstsCenter();
 
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
@@ -151,7 +147,9 @@ void InitialPlace::placeInstsCenter() {
   const int centerY = pb_->die().coreCy();
 
   for(auto& inst: pb_->placeInsts()) {
-    inst->setCenterLocation(centerX, centerY);
+    if (!inst->isLocked()) {
+      inst->setCenterLocation(centerX, centerY);
+    }
   }
 }
 
@@ -415,7 +413,10 @@ void InitialPlace::createSparseMatrix() {
 void InitialPlace::updateCoordi() {
   for(auto& inst : pb_->placeInsts()) {
     int idx = inst->extId();
-    inst->dbSetCenterLocation( instLocVecX_(idx), instLocVecY_(idx) );
+    if (!inst->isLocked()) {
+      inst->dbSetCenterLocation( instLocVecX_(idx), instLocVecY_(idx) );
+      inst->dbSetPlaced();
+    }
   }
 }
 

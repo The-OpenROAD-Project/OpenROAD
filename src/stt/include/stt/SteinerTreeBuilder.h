@@ -70,7 +70,7 @@ struct Tree {
   DTYPE length;    // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
-  void printTree(utl::Logger* logger);
+  void printTree(utl::Logger* logger) const;
   int branchCount() const { return deg * 2 - 2; }
 };
 
@@ -99,6 +99,7 @@ class SteinerTreeBuilder
                        const std::vector<int>& y,
                        const std::vector<int>& s,
                        int acc);
+  bool checkTree(const Tree& tree) const;
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha);
   float getAlpha(const odb::dbNet* net) const;
@@ -108,7 +109,6 @@ class SteinerTreeBuilder
 
  private:
   int computeHPWL(odb::dbNet* net);
-  bool checkTree(const Tree& tree) const;
 
   const int flute_accuracy = 3;
   float alpha_;
@@ -125,6 +125,9 @@ void
 reportSteinerTree(const Tree &tree,
                   int drvr_x,
                   int drvr_y,
+                  Logger *logger);
+void
+reportSteinerTree(const stt::Tree &tree,
                   Logger *logger);
 
 void

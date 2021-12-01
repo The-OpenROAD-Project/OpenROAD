@@ -41,18 +41,31 @@
 #include <vector>
 
 #include "utl/Logger.h"
+#include "odb/db.h"
+
 
 namespace mpl {
 
 class MacroPlacer2
 {
  public:
-  void init(utl::Logger* logger);
+  void init(odb::dbDatabase* db,
+            utl::Logger* logger);
   bool place(const char* config_file,
              const char* report_directory,
-             const char* report_file);
+             const float area_wt, 
+             const float wirelength_wt, 
+             const float outline_wt,
+             const float boundary_wt, 
+             const float macro_blockage_wt, 
+             const float location_wt, 
+             const float notch_wt,
+             const char* report_file,
+             const char* macro_blockage_file,
+             const char* prefer_location_file);
 
  private:
+  odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

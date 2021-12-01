@@ -42,8 +42,8 @@ class Fixture
 
   void addLayer(frTechObject* tech,
                 const char* name,
-                frLayerTypeEnum type,
-                frPrefRoutingDirEnum dir = frcNonePrefRoutingDir);
+                dbTechLayerType type,
+                dbTechLayerDir dir = dbTechLayerDir::NONE);
 
   void setupTech(frTechObject* tech);
 
@@ -143,23 +143,23 @@ class Fixture
 
   frViaDef* makeViaDef(const char* name,
                        frLayerNum layer_num,
-                       const frPoint& ll,
-                       const frPoint& ur);
+                       const Point& ll,
+                       const Point& ur);
 
-  frVia* makeVia(frViaDef* via, frNet* net, const frPoint& origin);
+  frVia* makeVia(frViaDef* via, frNet* net, const Point& origin);
 
   void makePathseg(frNet* net,
                    frLayerNum layer_num,
-                   const frPoint& begin,
-                   const frPoint& end,
+                   const Point& begin,
+                   const Point& end,
                    frUInt4 width = 100,
                    frEndStyleEnum begin_style = frcTruncateEndStyle,
                    frEndStyleEnum end_style = frcTruncateEndStyle);
 
   void makePathsegExt(frNet* net,
                       frLayerNum layer_num,
-                      const frPoint& begin,
-                      const frPoint& end,
+                      const Point& begin,
+                      const Point& end,
                       frUInt4 width = 100)
   {
     makePathseg(net,

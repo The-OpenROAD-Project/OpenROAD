@@ -331,6 +331,8 @@ stringToDefVersion(string version)
 {
   if (version == "5.8")
     return odb::defout::Version::DEF_5_8;
+  else if (version == "5.7")
+    return odb::defout::Version::DEF_5_7;
   else if (version == "5.6")
     return odb::defout::Version::DEF_5_6;
   else if (version == "5.5")
@@ -358,13 +360,19 @@ OpenRoad::writeDef(const char *filename, string version)
 }
 
 void
-OpenRoad::writeCdl(const char* filename, bool includeFillers)
+OpenRoad::writeCdl(const char *outFilename,
+                   const char *mastersFilename,
+                   bool includeFillers)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      odb::cdl::writeCdl(block, filename, includeFillers);
+      odb::cdl::writeCdl(getLogger(),
+                         block,
+                         outFilename,
+                         mastersFilename,
+                         includeFillers);
     }
   }
 
@@ -399,6 +407,7 @@ OpenRoad::writeDb(const char *filename)
 void
 OpenRoad::readVerilog(const char *filename)
 {
+  verilog_network_->deleteTopInstance();
   dbReadVerilog(filename, verilog_network_);
 }
 

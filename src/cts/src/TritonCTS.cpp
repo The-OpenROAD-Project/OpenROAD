@@ -459,8 +459,32 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
   Clock clockNet(net->getConstName(), driver, sdcClock, xPin, yPin);
   clockNet.setDriverPin(iterm);
 
+  // Build a set of all the clock buffers' masters
+  std::unordered_set<odb::dbMaster*> buffer_masters;
+  for (const std::string& name : _options->getBufferList()) {
+    auto master = _db->findMaster(name.c_str());
+    if (master) {
+      buffer_masters.insert(master);
+    }
+  }
+
+  // Add the root buffer
+  {
+    const std::string& name = _options->getRootBuffer();
+    auto master = _db->findMaster(name.c_str());
+    if (master) {
+      buffer_masters.insert(master);
+    }
+  }
+
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
+
+    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()) {
+      _logger->warn(CTS, 105, "Net \"{}\" already has clock buffer {}. Skipping...",
+                    clockNet.getName(), inst->getName());
+      return nullptr;
+    }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
@@ -476,11 +500,9 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
     _logger->warn(CTS, 41, "Net \"{}\" has {} sinks. Skipping...",
                   clockNet.getName(), clockNet.getNumSinks());
     return nullptr;
-  } else {
-    if (clockNet.getNumSinks() == 0) {
-      _logger->warn(CTS, 42, "Net \"{}\" has no sinks. Skipping...", clockNet.getName());
-      return nullptr;
-    }
+  } else if (clockNet.getNumSinks() == 0) {
+    _logger->warn(CTS, 42, "Net \"{}\" has no sinks. Skipping...", clockNet.getName());
+    return nullptr;
   }
 
   _logger->info(CTS, 10, " Clock net \"{}\" has {} sinks.", net->getConstName(), clockNet.getNumSinks());
@@ -579,7 +601,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     if (outputPin == nullptr) {
       outputPinFound = false;
     }
-    odb::dbITerm::connect(outputPin, clkSubNet);
+    if (outputPinFound) {
+      odb::dbITerm::connect(outputPin, clkSubNet);
+    }
 
     if (subNet.getNumSinks() == 0) {
       inputPinFound = false;
@@ -600,7 +624,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
           inputPinFound = false;
         }
       }
-      odb::dbITerm::connect(inputPin, clkSubNet);
+      if (inputPinFound) {
+        odb::dbITerm::connect(inputPin, clkSubNet);
+      }
     });
 
     if (leafLevelNet) {

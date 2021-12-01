@@ -87,7 +87,6 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 2 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -111,9 +110,10 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-[INFO GRT-0012] Antenna violations: 1
+Notice 0: Split top of 1 T shapes.
+[INFO GRT-0012] Antenna violations: 2
 [INFO GRT-0011] Deleted 5890 filler cells.
-[INFO GRT-0015] 1 diodes inserted.
+[INFO GRT-0015] 2 diodes inserted.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
@@ -132,13 +132,13 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 72
-[INFO GRT-0001] Minimum degree: 3
-[INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0017] Processing 3845 blockages on layer met1.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 4
+[INFO GRT-0017] Processing 3849 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
-[INFO GRT-0009] Nets to reroute: 1.
-[INFO GRT-0111] Final number of vias: 4
-[INFO GRT-0112] Final usage 3D: 33
+[INFO GRT-0009] Nets to reroute: 6.
+[INFO GRT-0111] Final number of vias: 21
+[INFO GRT-0112] Final usage 3D: 136
 [WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0006] Repairing antennas, iteration 2.
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
@@ -163,7 +163,7 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 2 T shapes.
+Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.

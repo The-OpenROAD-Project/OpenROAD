@@ -35,9 +35,11 @@
 #define __REPLACE_HEADER__
 
 #include <memory>
+#include <list>
 
 namespace odb {
   class dbDatabase;
+  class dbInst;
 }
 namespace sta {
   class dbSta;
@@ -81,10 +83,11 @@ class Replace
     void setGlobalRouter(grt::GlobalRouter* fr);
     void setLogger(utl::Logger* log);
 
+    void doIncrementalPlace();
     void doInitialPlace();
 
     void initNesterovPlace();
-    void doNesterovPlace();
+    int doNesterovPlace(int start_iter = 0);
 
     // Initial Place param settings
     void setInitialPlaceMaxIter(int iter);
@@ -185,7 +188,6 @@ class Replace
 
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
-    bool incrementalPlaceMode_;
     bool uniformTargetDensityMode_;
    
     // temp variable; OpenDB should have these values. 

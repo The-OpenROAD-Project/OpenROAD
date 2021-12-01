@@ -30,7 +30,10 @@
 
 #include <iostream>
 
+#include "frDesign.h"
+#include "db/obj/frBlock.h"
 #include "db/drObj/drFig.h"
+#include "db/drObj/drNet.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
 
@@ -72,8 +75,13 @@ int ACCESS_PATTERN_END_ITERATION_NUM = 10;
 
 frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
+int NDR_NETS_ABS_PRIORITY = 2;
+int CLOCK_NETS_ABS_PRIORITY = 4;
+
 int END_ITERATION = 80;
-int NDR_NETS_RIPUP_THRESH = 3;
+int NDR_NETS_RIPUP_HARDINESS = 3;
+int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
+int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
 bool AUTO_TAPER_NDR_NETS = true;
 int TAPERBOX_RADIUS = 3;
 
@@ -101,7 +109,7 @@ int HISTCOST = 32;
 
 namespace fr {
 
-ostream& operator<<(ostream& os, const frPoint& pIn)
+ostream& operator<<(ostream& os, const Point& pIn)
 {
   os << "( " << pIn.x() << " " << pIn.y() << " )";
   return os;
@@ -114,10 +122,10 @@ ostream& operator<<(ostream& os, const frRect& pinFigIn)
   //    pinFigIn.getPin()->getTerm()->getName()
   //       << " " << pinFigIn.getLayerNum() << endl;
   //  }
-  frBox tmpBox;
+  Rect tmpBox;
   pinFigIn.getBBox(tmpBox);
-  os << "  RECT " << tmpBox.left() << " " << tmpBox.bottom() << " "
-     << tmpBox.right() << " " << tmpBox.top();
+  os << "  RECT " << tmpBox.xMin() << " " << tmpBox.yMin() << " "
+     << tmpBox.xMax() << " " << tmpBox.yMax();
   return os;
 }
 
@@ -222,11 +230,11 @@ ostream& operator<<(ostream& os, const frViaDef& viaDefIn)
 
 ostream& operator<<(ostream& os, const frBlock& blockIn)
 {
-  frBox box;
+  Rect box;
   blockIn.getBBox(box);
   os << "MACRO " << blockIn.getName() << endl
-     << "  ORIGIN " << box.left() << " " << box.bottom() << endl
-     << "  SIZE " << box.right() << " " << box.top();
+     << "  ORIGIN " << box.xMin() << " " << box.yMin() << endl
+     << "  SIZE " << box.xMax() << " " << box.yMax();
   for (auto& m : blockIn.getTerms()) {
     os << endl << *m;
   }
@@ -235,7 +243,7 @@ ostream& operator<<(ostream& os, const frBlock& blockIn)
 
 ostream& operator<<(ostream& os, const frInst& instIn)
 {
-  frPoint tmpPoint;
+  Point tmpPoint;
   frString tmpString;
   frString tmpName;
   instIn.getOrigin(tmpPoint);
@@ -243,17 +251,17 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   tmpName = instIn.getName();
   tmpString = instIn.getRefBlock()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
-     << " " << tmpPoint.y() << " ) " << tmpOrient.getName() << endl;
+     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
   for (auto& m : instIn.getInstTerms()) {
     os << endl << *m;
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const frBox& box)
+ostream& operator<<(ostream& os, const Rect& box)
 {
-  os << "( " << box.left() << " " << box.bottom() << " ) ( " << box.right()
-     << " " << box.top() << " )";
+  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
+     << " " << box.yMax() << " )";
   return os;
 }
 
@@ -276,7 +284,7 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
     }
     case drcPatchWire: {
       auto p = static_cast<const drPatchWire*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "drPatchWire: " << b;
       break;
@@ -322,7 +330,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcPatchWire: {
       auto p = static_cast<const frPatchWire*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "frPatchWire: " << b;
       break;
@@ -334,7 +342,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
     }
     case frcRect: {
       auto p = static_cast<const frRect*>(&fig);
-      frBox b;
+      Rect b;
       p->getBBox(b);
       os << "frRect: " << b;
       break;
@@ -370,9 +378,126 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
       os << *static_cast<const frConnFig*>(&fig);
       break;
     }
+    case frcNet: {
+        os << *static_cast<const frNet*>(&fig);
+        break;
+    }
     default:
-      os << "UNKNOWN frShape, code " << fig.typeId();
+      os << "UNKNOWN frBlockObject, code " << fig.typeId();
   }
   return os;
 }
+
+ostream& operator<<(ostream& os, const frNet& n)
+{
+  os << "frNet " << n.getName() << (n.isClock() ? "CLOCK NET " : " ")
+     << (n.hasNDR() ? "NDR " + n.getNondefaultRule()->getName() + " " : " ")
+     << "abs priority " << n.getAbsPriorityLvl() << "\n";
+  return os;
+}
+
+ostream& operator<<(ostream& os, const drNet& n)
+{
+  os << "drNet " << *n.getFrNet() << "\nnRipupAvoids " << n.getNRipupAvoids()
+     << " maxRipupAvoids " << n.getMaxRipupAvoids() << "\n";
+  return os;
+}
+
+ostream& operator<<(ostream& os, const frMarker& m) {
+    os << "MARKER: box "<< m.getBBox() << " lNum " << m.getLayerNum() << " constraint: ";
+    switch (m.getConstraint()->typeId()) {
+        case frConstraintTypeEnum::frcAreaConstraint:
+            return os << "frcAreaConstraint";
+        case frConstraintTypeEnum::frcCutSpacingConstraint:
+            return os << "frcCutSpacingConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingConcaveCornerConstraint:
+            return os << "frcLef58CornerSpacingConcaveCornerConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
+            return os << "frcLef58CornerSpacingConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingConvexCornerConstraint:
+            return os << "frcLef58CornerSpacingConvexCornerConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
+            return os << "frcLef58CornerSpacingSpacing1DConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
+            return os << "frcLef58CornerSpacingSpacing2DConstraint";
+        case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
+            return os << "frcLef58CornerSpacingSpacingConstraint";
+        case frConstraintTypeEnum::frcLef58CutClassConstraint:
+            return os << "frcLef58CutClassConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
+            return os << "frcLef58CutSpacingAdjacentCutsConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
+            return os << "frcLef58CutSpacingConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
+            return os << "frcLef58CutSpacingLayerConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
+            return os << "frcLef58CutSpacingParallelWithinConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
+            return os << "frcLef58CutSpacingTableConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
+            return os << "frcLef58CutSpacingTableLayerConstraint";
+        case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
+            return os << "frcLef58CutSpacingTablePrlConstraint";
+        case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
+            return os << "frcLef58EolExtensionConstraint";
+        case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
+            return os << "frcLef58EolKeepOutConstraint";
+            
+        case frConstraintTypeEnum::frcLef58MinStepConstraint:
+            return os << "frcLef58MinStepConstraint";
+        case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
+            return os << "frcLef58RectOnlyConstraint";
+        case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
+            return os << "frcLef58RightWayOnGridOnlyConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
+            return os << "frcLef58SpacingEndOfLineConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
+            return os << "frcLef58SpacingEndOfLineWithinConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
+            return os << "frcLef58SpacingEndOfLineWithinEncloseCutConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinEndToEndConstraint:
+            return os << "frcLef58SpacingEndOfLineWithinEndToEndConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
+            return os << "frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
+            return os << "frcLef58SpacingEndOfLineWithinParallelEdgeConstraint";
+        case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
+            return os << "frcLef58SpacingTableConstraint";
+        case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
+            return os << "frcMinEnclosedAreaConstraint";
+        case frConstraintTypeEnum::frcMinStepConstraint:
+            return os << "frcMinStepConstraint";
+        case frConstraintTypeEnum::frcMinWidthConstraint:
+            return os << "frcMinWidthConstraint";
+        case frConstraintTypeEnum::frcMinimumcutConstraint:
+            return os << "frcMinimumcutConstraint";
+        case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
+            return os << "frcNonSufficientMetalConstraint";
+        case frConstraintTypeEnum::frcOffGridConstraint:
+            return os << "frcOffGridConstraint";
+        case frConstraintTypeEnum::frcRecheckConstraint:
+            return os << "frcRecheckConstraint";
+        case frConstraintTypeEnum::frcShortConstraint:
+            return os << "frcShortConstraint";
+        case frConstraintTypeEnum::frcSpacingConstraint:
+            return os << "frcSpacingConstraint";
+        case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
+            return os << "frcSpacingEndOfLineConstraint";
+        case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
+            return os << "frcSpacingEndOfLineParallelEdgeConstraint";
+        case frConstraintTypeEnum::frcSpacingSamenetConstraint:
+            return os << "frcSpacingSamenetConstraint";
+        case frConstraintTypeEnum::frcSpacingTableConstraint:
+            return os << "frcSpacingTableConstraint";
+        case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
+            return os << "frcSpacingTableInfluenceConstraint";
+        case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
+            return os << "frcSpacingTablePrlConstraint";
+        case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+            return os << "frcSpacingTableTwConstraint";
+        default:
+            return os << "unknown viol";
+    }
+}
+
 }  // end namespace fr

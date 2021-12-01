@@ -31,7 +31,7 @@
 
 #include <memory>
 
-#include "db/infra/frOrient.h"
+#include "odb/dbTypes.h"
 #include "db/obj/frShape.h"
 #include "db/taObj/taFig.h"
 #include "db/tech/frViaDef.h"
@@ -44,13 +44,13 @@ class taRef : public taPinFig
   // constructors
   taRef() : taPinFig() {}
   // getters
-  virtual frOrient getOrient() const = 0;
-  virtual void getOrigin(frPoint& tmpOrigin) const = 0;
-  virtual void getTransform(frTransform& xform) const = 0;
+  virtual dbOrientType getOrient() const = 0;
+  virtual void getOrigin(Point& tmpOrigin) const = 0;
+  virtual void getTransform(dbTransform& xform) const = 0;
   // setters
-  virtual void setOrient(const frOrient& tmpOrient) = 0;
-  virtual void setOrigin(const frPoint& tmpPoint) = 0;
-  virtual void setTransform(const frTransform& xform) = 0;
+  virtual void setOrient(const dbOrientType& tmpOrient) = 0;
+  virtual void setOrigin(const Point& tmpPoint) = 0;
+  virtual void setTransform(const dbTransform& xform) = 0;
 
  protected:
 };
@@ -62,11 +62,11 @@ class taVia : public taRef
   taVia(frViaDef* in) : taRef(), origin_(), viaDef_(in), owner_(nullptr) {}
   // getters
   frViaDef* getViaDef() const { return viaDef_; }
-  void getLayer1BBox(frBox& boxIn) const
+  void getLayer1BBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getLayer1Figs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -74,28 +74,28 @@ class taVia : public taRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
-    boxIn.transform(xform);
+    boxIn.init(xl, yl, xh, yh);
+    dbTransform xform;
+    xform.setOffset(origin_);
+    xform.apply(boxIn);
   }
-  void getCutBBox(frBox& boxIn) const
+  void getCutBBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getCutFigs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -103,28 +103,28 @@ class taVia : public taRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
-    boxIn.transform(xform);
+    boxIn.init(xl, yl, xh, yh);
+    dbTransform xform;
+    xform.setOffset(origin_);
+    xform.apply(boxIn);
   }
-  void getLayer2BBox(frBox& boxIn) const
+  void getLayer2BBox(Rect& boxIn) const
   {
     auto& figs = viaDef_->getLayer2Figs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -132,22 +132,22 @@ class taVia : public taRef
     for (auto& fig : figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
-    boxIn.transform(xform);
+    boxIn.init(xl, yl, xh, yh);
+    dbTransform xform;
+    xform.setOffset(origin_);
+    xform.apply(boxIn);
   }
   // setters
   void setViaDef(frViaDef* in) { viaDef_ = in; }
@@ -163,15 +163,15 @@ class taVia : public taRef
    * setTransform
    */
 
-  frOrient getOrient() const override { return frOrient(); }
-  void setOrient(const frOrient& tmpOrient) override { ; }
-  void getOrigin(frPoint& tmpOrigin) const override { tmpOrigin.set(origin_); }
-  void setOrigin(const frPoint& tmpPoint) override { origin_.set(tmpPoint); }
-  void getTransform(frTransform& xformIn) const override
+  dbOrientType getOrient() const override { return dbOrientType(); }
+  void setOrient(const dbOrientType& tmpOrient) override { ; }
+  void getOrigin(Point& tmpOrigin) const override { tmpOrigin = origin_; }
+  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
+  void getTransform(dbTransform& xformIn) const override
   {
-    xformIn.set(origin_);
+    xformIn.setOffset(origin_);
   }
-  void setTransform(const frTransform& xformIn) override {}
+  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
@@ -213,13 +213,13 @@ class taVia : public taRef
    * overlaps
    */
 
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     auto& layer1Figs = viaDef_->getLayer1Figs();
     auto& layer2Figs = viaDef_->getLayer2Figs();
     auto& cutFigs = viaDef_->getCutFigs();
     bool isFirst = true;
-    frBox box;
+    Rect box;
     frCoord xl = 0;
     frCoord yl = 0;
     frCoord xh = 0;
@@ -227,58 +227,58 @@ class taVia : public taRef
     for (auto& fig : layer1Figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
     for (auto& fig : layer2Figs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
     for (auto& fig : cutFigs) {
       fig->getBBox(box);
       if (isFirst) {
-        xl = box.left();
-        yl = box.bottom();
-        xh = box.right();
-        yh = box.top();
+        xl = box.xMin();
+        yl = box.yMin();
+        xh = box.xMax();
+        yh = box.yMax();
         isFirst = false;
       } else {
-        xl = std::min(xl, box.left());
-        yl = std::min(yl, box.bottom());
-        xh = std::max(xh, box.right());
-        yh = std::max(yh, box.top());
+        xl = std::min(xl, box.xMin());
+        yl = std::min(yl, box.yMin());
+        xh = std::max(xh, box.xMax());
+        yh = std::max(yh, box.yMax());
       }
     }
-    boxIn.set(xl, yl, xh, yh);
-    frTransform xform;
-    xform.set(origin_);
-    boxIn.transform(xform);
+    boxIn.init(xl, yl, xh, yh);
+    dbTransform xform;
+    xform.setOffset(origin_);
+    xform.apply(boxIn);
   }
-  void move(const frTransform& xform) override { ; }
-  bool overlaps(const frBox& box) const override { return false; }
+  void move(const dbTransform& xform) override { ; }
+  bool overlaps(const Rect& box) const override { return false; }
 
  protected:
-  frPoint origin_;
+  Point origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
 };

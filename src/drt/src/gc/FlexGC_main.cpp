@@ -56,28 +56,28 @@ void updateBlockageWidth(frBlockObject* owner, frCoord& width)
     }
   }
 }
-bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const frBox& box)
+bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const Rect& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
-      if (cornerX == box.right() && cornerY == box.top()) {
+      if (cornerX == box.xMax() && cornerY == box.yMax()) {
         return true;
       }
       break;
     case frCornerDirEnum::SE:
-      if (cornerX == box.right() && cornerY == box.bottom()) {
+      if (cornerX == box.xMax() && cornerY == box.yMin()) {
         return true;
       }
       break;
     case frCornerDirEnum::SW:
-      if (cornerX == box.left() && cornerY == box.bottom()) {
+      if (cornerX == box.xMin() && cornerY == box.yMin()) {
         return true;
       }
       break;
     case frCornerDirEnum::NW:
-      if (cornerX == box.left() && cornerY == box.top()) {
+      if (cornerX == box.xMin() && cornerY == box.yMax()) {
         return true;
       }
       break;
@@ -237,17 +237,15 @@ bool isPG(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcNet: {
       auto type = static_cast<frNet*>(obj)->getType();
-      return type == frNetEnum::frcPowerNet || type == frNetEnum::frcGroundNet;
+      return type.isSupply();
     }
     case frcInstTerm: {
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     case frcTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
-      return type == frTermEnum::frcPowerTerm
-             || type == frTermEnum::frcGroundTerm;
+      return type.isSupply();
     }
     default:
       return false;
@@ -546,7 +544,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     }
   }
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -556,7 +554,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -564,7 +562,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -755,7 +753,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
     return;
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -770,7 +768,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -778,7 +776,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -866,7 +864,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -886,7 +884,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1041,7 +1039,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
 
       // real violation
       auto marker = make_unique<frMarker>();
-      frBox box(gtl::xl(markerRect),
+      Rect box(gtl::xl(markerRect),
                 gtl::yl(markerRect),
                 gtl::xh(markerRect),
                 gtl::yh(markerRect));
@@ -1052,12 +1050,12 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       marker->addVictim(
           net->getOwner(),
           make_tuple(layerNum,
-                     frBox(corner->x(), corner->y(), corner->x(), corner->y()),
+                     Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                      corner->isFixed()));
       marker->addSrc(rect->getNet()->getOwner());
       marker->addAggressor(rect->getNet()->getOwner(),
                            make_tuple(rect->getLayerNum(),
-                                      frBox(gtl::xl(*rect),
+                                      Rect(gtl::xl(*rect),
                                             gtl::yl(*rect),
                                             gtl::xh(*rect),
                                             gtl::yh(*rect)),
@@ -1143,7 +1141,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
 
       // real violation
       auto marker = make_unique<frMarker>();
-      frBox box(gtl::xl(markerRect),
+      Rect box(gtl::xl(markerRect),
                 gtl::yl(markerRect),
                 gtl::xh(markerRect),
                 gtl::yh(markerRect));
@@ -1154,7 +1152,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       marker->addVictim(
           net->getOwner(),
           make_tuple(layerNum,
-                     frBox(corner->x(), corner->y(), corner->x(), corner->y()),
+                     Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                      corner->isFixed()));
       marker->addSrc(segNet->getOwner());
       frCoord llx = min(seg->getLowCorner()->x(), seg->getHighCorner()->x());
@@ -1164,7 +1162,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       marker->addAggressor(
           segNet->getOwner(),
           make_tuple(
-              seg->getLayerNum(), frBox(llx, lly, urx, ury), seg->isFixed()));
+              seg->getLayerNum(), Rect(llx, lly, urx, ury), seg->isFixed()));
       addMarker(std::move(marker));
     } else {
       // to be implemented
@@ -1202,7 +1200,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1222,7 +1220,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING
+      if (currLayer->getType() != dbTechLayerType::ROUTING
           || !currLayer->hasLef58CornerSpacingConstraint()) {
         continue;
       }
@@ -1267,7 +1265,7 @@ void FlexGCWorker::Impl::checkMetalShape_minWidth(
   }
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
+  Rect box(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(getTech()->getLayer(layerNum)->getMinWidthConstraint());
@@ -1278,7 +1276,7 @@ void FlexGCWorker::Impl::checkMetalShape_minWidth(
 }
 
 void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
-    const frBox& markerBox,
+    const Rect& markerBox,
     frLayerNum layerNum,
     gcNet* net,
     frMinStepConstraint* con,
@@ -1397,7 +1395,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   }
 
   auto marker = make_unique<frMarker>();
-  frBox markerBox(
+  Rect markerBox(
       gtl::xl(maxRect), gtl::yl(maxRect), gtl::xh(maxRect), gtl::yh(maxRect));
   marker->setBBox(markerBox);
   marker->setLayerNum(layerNum);
@@ -1422,7 +1420,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
   frCoord lly = 0;
   frCoord urx = 0;
   frCoord ury = 0;
-  frBox markerBox;
+  Rect markerBox;
   auto minStepLength = con->getMinStepLength();
   auto eolWidth = con->getEolWidth();
   for (auto& edges : pin->getPolygonEdges()) {
@@ -1478,7 +1476,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
     ury = max(ury, startEdge->getNextEdge()->getNextEdge()->high().y());
 
     auto marker = make_unique<frMarker>();
-    frBox box(llx, lly, urx, ury);
+    Rect box(llx, lly, urx, ury);
     marker->setBBox(box);
     marker->setLayerNum(layerNum);
     marker->setConstraint(con);
@@ -1525,7 +1523,7 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
   frCoord lly = 0;
   frCoord urx = 0;
   frCoord ury = 0;
-  frBox markerBox;
+  Rect markerBox;
   bool hasInsideCorner = false;
   bool hasOutsideCorner = false;
   bool hasStep = false;
@@ -1573,7 +1571,7 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
         }
         // be and ee found, check rule here
         hasRoute = hasRoute || (edge->isFixed() ? false : true);
-        markerBox.set(llx, lly, urx, ury);
+        markerBox.init(llx, lly, urx, ury);
         checkMetalShape_minStep_helper(markerBox,
                                        layerNum,
                                        net,
@@ -1661,7 +1659,7 @@ void FlexGCWorker::Impl::checkMetalShape_rectOnly(gcPin* pin)
       gtl::get_max_rectangles(maxRects, intersectionPolySet);
       for (auto& markerRect : maxRects) {
         auto marker = make_unique<frMarker>();
-        frBox box(gtl::xl(markerRect),
+        Rect box(gtl::xl(markerRect),
                   gtl::yl(markerRect),
                   gtl::xh(markerRect),
                   gtl::yh(markerRect));
@@ -1698,7 +1696,7 @@ void FlexGCWorker::Impl::checkMetalShape_offGrid(gcPin* pin)
         continue;
       }
       auto marker = make_unique<frMarker>();
-      frBox box(gtl::xl(markerRect),
+      Rect box(gtl::xl(markerRect),
                 gtl::yl(markerRect),
                 gtl::xh(markerRect),
                 gtl::yh(markerRect));
@@ -1738,7 +1736,7 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
           gtl::extents(markerRect, hole_poly);
 
           auto marker = make_unique<frMarker>();
-          frBox box(gtl::xl(markerRect),
+          Rect box(gtl::xl(markerRect),
                     gtl::yl(markerRect),
                     gtl::xh(markerRect),
                     gtl::yh(markerRect));
@@ -1807,7 +1805,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -1821,7 +1819,7 @@ void FlexGCWorker::Impl::checkMetalShape()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::ROUTING) {
+      if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1909,7 +1907,7 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
   }
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -1919,7 +1917,7 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -1927,7 +1925,7 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -1951,22 +1949,17 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   if (con->isAdjacentCuts() && con->hasExceptSamePGNet() && net1 == net2
       && net1->getOwner()) {
     auto owner = net1->getOwner();
-    if (owner->typeId() == frcNet) {
-      if (static_cast<frNet*>(owner)->getType() == frNetEnum::frcPowerNet
-          || static_cast<frNet*>(owner)->getType() == frNetEnum::frcGroundNet) {
+    auto typeId = owner->typeId();
+    if (typeId == frcNet) {
+      if (static_cast<frNet*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcTerm) {
-      if (static_cast<frTerm*>(owner)->getType() == frTermEnum::frcPowerTerm
-          || static_cast<frTerm*>(owner)->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcTerm) {
+      if (static_cast<frTerm*>(owner)->getType().isSupply()) {
         return;
       }
-    } else if (owner->typeId() == frcInstTerm) {
-      if (static_cast<frInstTerm*>(owner)->getTerm()->getType()
-              == frTermEnum::frcPowerTerm
-          || static_cast<frInstTerm*>(owner)->getTerm()->getType()
-                 == frTermEnum::frcGroundTerm) {
+    } else if (typeId == frcInstTerm) {
+      if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
         return;
       }
     }
@@ -1992,8 +1985,13 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
         workerRegionQuery.queryMaxRectangle(queryBox, secondLayerNum, result);
       }
       for (auto& [objBox, objPtr] : result) {
+        // TODO why isn't this auto-converted from Rect to box_t?
+        Rect queryRect(queryBox.min_corner().get<0>(),
+                       queryBox.min_corner().get<1>(),
+                       queryBox.max_corner().get<0>(),
+                       queryBox.max_corner().get<1>());
         if ((objPtr->getNet() == net1 || objPtr->getNet() == net2)
-            && objBox.contains(queryBox)) {
+            && objBox.contains(queryRect)) {
           return;
         }
       }
@@ -2028,7 +2026,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   }
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -2038,7 +2036,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -2046,7 +2044,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -2099,7 +2097,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   }
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -2109,7 +2107,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -2117,7 +2115,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -2413,7 +2411,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
   }
 
   auto marker = make_unique<frMarker>();
-  frBox box(gtl::xl(markerRect),
+  Rect box(gtl::xl(markerRect),
             gtl::yl(markerRect),
             gtl::xh(markerRect),
             gtl::yh(markerRect));
@@ -2423,7 +2421,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
-                               frBox(gtl::xl(*rect1),
+                               Rect(gtl::xl(*rect1),
                                      gtl::yl(*rect1),
                                      gtl::xh(*rect1),
                                      gtl::yh(*rect1)),
@@ -2431,7 +2429,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
-                                  frBox(gtl::xl(*rect2),
+                                  Rect(gtl::xl(*rect2),
                                         gtl::yl(*rect2),
                                         gtl::xh(*rect2),
                                         gtl::yh(*rect2)),
@@ -2574,7 +2572,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         }
         // this should only happen between samenet
         auto marker = make_unique<frMarker>();
-        frBox box(gtl::xl(markerRect),
+        Rect box(gtl::xl(markerRect),
                   gtl::yl(markerRect),
                   gtl::xh(markerRect),
                   gtl::yh(markerRect));
@@ -2584,7 +2582,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         marker->addSrc(net1->getOwner());
         marker->addVictim(net1->getOwner(),
                           make_tuple(layerNum,
-                                     frBox(gtl::xl(*rect1),
+                                     Rect(gtl::xl(*rect1),
                                            gtl::yl(*rect1),
                                            gtl::xh(*rect1),
                                            gtl::yh(*rect1)),
@@ -2594,7 +2592,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
             net2->getOwner(),
             make_tuple(
                 secondLayerNum,
-                frBox(corner->x(), corner->y(), corner->x(), corner->y()),
+                Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                 corner->isFixed()));
         addMarker(std::move(marker));
       }
@@ -2694,7 +2692,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
 
         // this should only happen between samenet
         auto marker = make_unique<frMarker>();
-        frBox box(gtl::xl(markerRect),
+        Rect box(gtl::xl(markerRect),
                   gtl::yl(markerRect),
                   gtl::xh(markerRect),
                   gtl::yh(markerRect));
@@ -2704,7 +2702,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         marker->addSrc(net1->getOwner());
         marker->addVictim(net1->getOwner(),
                           make_tuple(layerNum,
-                                     frBox(gtl::xl(*rect1),
+                                     Rect(gtl::xl(*rect1),
                                            gtl::yl(*rect1),
                                            gtl::xh(*rect1),
                                            gtl::yh(*rect1)),
@@ -2714,7 +2712,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
             net2->getOwner(),
             make_tuple(
                 secondLayerNum,
-                frBox(corner->x(), corner->y(), corner->x(), corner->y()),
+                Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                 corner->isFixed()));
         addMarker(std::move(marker));
       }
@@ -2967,7 +2965,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
@@ -2983,7 +2981,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
          i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
-      if (currLayer->getType() != frLayerTypeEnum::CUT) {
+      if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -3016,27 +3014,26 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
   for (auto& marker : markers_) {
     results.clear();
     if (marker->getConstraint()->typeId()
-        != frConstraintTypeEnum::frcMinStepConstraint) {
+        != frConstraintTypeEnum::frcMinStepConstraint &&
+        marker->getConstraint()->typeId()
+        != frConstraintTypeEnum::frcLef58MinStepConstraint) {
       continue;
     }
     auto lNum = marker->getLayerNum();
-    if (lNum != 10) {
+    auto layer = tech_->getLayer(lNum);
+    if (!layer->hasVia2ViaMinStepViol()) {
       continue;
     }
 
-    // bool isPatchable = false;
-    // TODO: check whether there is empty space for patching
-    // isPatchable = true;
-
-    frBox markerBBox;
-    frPoint origin;
-    frPoint patchLL, patchUR;
+    Rect markerBBox;
+    Point origin;
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     marker->getBBox(markerBBox);
-    frPoint markerCenter((markerBBox.left() + markerBBox.right()) / 2,
-                         (markerBBox.bottom() + markerBBox.top()) / 2);
+    if((int)markerBBox.maxDXDY() < (frCoord) layer->getWidth())
+      continue;
     workerRegionQuery.query(markerBBox, lNum, results);
+    std::map<Point, std::vector<drVia*>> vias;
     for (auto& connFig : results) {
       if (connFig->typeId() != drcVia) {
         continue;
@@ -3045,54 +3042,53 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      if (obj->getViaDef()->getLayer1Num() == lNum) {
-        obj->getOrigin(origin);
-        if (origin.x() != markerCenter.x() && origin.y() != markerCenter.y()) {
-          continue;
-        }
-        net = obj->getNet();
-        break;
+      Point tmpOrigin;
+      obj->getOrigin(tmpOrigin);
+      frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+      if (cutLayerNum == lNum + 1 || cutLayerNum == lNum - 1) {
+        vias[tmpOrigin].push_back(obj);
       }
     }
-
-    if (!net) {
+    for(auto& [tmpOrigin, objs] : vias)
+    {
+      bool upViaFound = false;
+      bool downViaFound = false;
+      for(auto obj : objs)
+      {
+        frLayerNum cutLayerNum = obj->getViaDef()->getCutLayerNum();
+        if(cutLayerNum == lNum + 1)
+          upViaFound = true;
+        else
+          downViaFound = true;
+        if(upViaFound && downViaFound)
+        {
+          net = obj->getNet();
+          origin = tmpOrigin;
+          break;
+        }
+      }
+    }
+    if (net == nullptr) {
       continue;
     }
-
-    // calculate patch location
-    gtl::rectangle_data<frCoord> markerRect(markerBBox.left(),
-                                            markerBBox.bottom(),
-                                            markerBBox.right(),
-                                            markerBBox.top());
-    gtl::point_data<frCoord> boostOrigin(origin.x(), origin.y());
-    gtl::encompass(markerRect, boostOrigin);
-    patchLL.set(gtl::xl(markerRect) - origin.x(),
-                gtl::yl(markerRect) - origin.y());
-    patchUR.set(gtl::xh(markerRect) - origin.x(),
-                gtl::yh(markerRect) - origin.y());
-
+    markerBBox.moveDelta(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
-    frBox box(frBox(patchLL, patchUR));
-    patch->setOffsetBox(box);
+    patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
-
-    if (!net) {
-      logger_->warn(DRT, 64, "Attempting to add patch with no drNet.");
-    }
-
     pwires_.push_back(std::move(patch));
   }
 }
 
 int FlexGCWorker::Impl::main()
 {
-  ProfileTask profile("GC:main");
+  // ProfileTask profile("GC:main");
   // printMarker = true;
   //  minStep patching for GF14
   if (surgicalFixEnabled_ && getDRWorker()
-      && DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+      && tech_->hasVia2ViaMinStep()) {  // DBPROCESSNODE ==
+                                        // "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
     patchMetalShape();
   }
   // incremental updates

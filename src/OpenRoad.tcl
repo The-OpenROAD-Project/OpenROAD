@@ -97,11 +97,12 @@ proc write_def { args } {
   if { [info exists keys(-version)] } {
     set version $keys(-version)
     if { !($version == "5.8" \
+        || $version == "5.7" \
         || $version == "5.6" \
         || $version == "5.5" \
         || $version == "5.4" \
         || $version == "5.3") } {
-      utl::error "ORD" 6 "DEF versions 5.8, 5.6, 5.5, 5.4, 5.3 supported."
+      utl::error "ORD" 6 "DEF versions 5.8, 5.7, 5.6, 5.5, 5.4, 5.3 supported."
     }
   }
 
@@ -120,15 +121,20 @@ proc write_abstract_lef { args } {
   [ord::get_db_block] saveLef $filename
 }
 
-sta::define_cmd_args "write_cdl" {[-include_fillers] filename}
+sta::define_cmd_args "write_cdl" {[-include_fillers]
+    -masters masters_filename out_filename }
 
 proc write_cdl { args } {
 
-  sta::parse_key_args "write_cdl" args keys {} flags {-include_fillers}
+  sta::parse_key_args "write_cdl" args keys {-masters} flags {-include_fillers}
   set fillers [info exists flags(-include_fillers)]
   sta::check_argc_eq1 "write_cdl" $args
-  set filename [file nativename [lindex $args 0]]
-  ord::write_cdl_cmd $filename $fillers
+  if {![info exists keys(-masters)]} {
+    utl::error ORD 1013 "-masters is required."
+  }
+  set out_filename [file nativename [lindex $args 0]]
+  set masters_filename [file nativename [lindex $args 1]]
+  ord::write_cdl_cmd $out_filename $keys(-masters) $fillers
 }
 
 

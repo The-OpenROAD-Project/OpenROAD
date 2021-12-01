@@ -33,7 +33,6 @@
 
 #include "db/gcObj/gcBlockObject.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frTransform.h"
 
 namespace fr {
 class gcFig : public gcBlockObject

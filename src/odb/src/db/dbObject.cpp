@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -87,7 +88,8 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
 
       case dbInstHdrObj:
-        // This object is not accessable from the API
+        getImpl()->getLogger()->critical(utl::ODB, 294,
+                                        "dbInstHdrObj not expected in getDbName");
         break;
 
       case dbInstObj:
@@ -186,7 +188,8 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
 
       case dbHierObj:
-        assert(0);  // hidden object....
+        getImpl()->getLogger()->critical(utl::ODB, 295,
+                                        "dbHierObj not expected in getDbName");
         break;
 
       case dbBPinObj:
@@ -337,7 +340,8 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
 
       case dbNameObj:
-        assert(0);
+        getImpl()->getLogger()->critical(utl::ODB, 296,
+                                        "dbNameObj not expected in getDbName");
         break;
     }
 

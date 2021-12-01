@@ -39,21 +39,186 @@
 
 namespace gui {
 
-// Build the rtree's for the block
-void Search::init(odb::dbBlock* block)
+Search::Search() :
+    block_(nullptr),
+    shapes_(),
+    shapes_init_(false),
+    fills_(),
+    fills_init_(false),
+    insts_(),
+    insts_init_(false),
+    blockages_(),
+    blockages_init_(false),
+    obstructions_(),
+    obstructions_init_(false)
 {
-  for (odb::dbNet* net : block->getNets()) {
+}
+
+Search::~Search()
+{
+  if (block_ != nullptr) {
+    removeOwner(); // unregister as a callback object
+  }
+}
+
+void Search::inDbNetDestroy(odb::dbNet* net)
+{
+  clearShapes();
+}
+
+void Search::inDbInstDestroy(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbInstSwapMasterAfter(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbInstPlacementStatusBefore(odb::dbInst* inst,
+                                           const odb::dbPlacementStatus& status)
+{
+  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbPostMoveInst(odb::dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+}
+
+void Search::inDbBPinDestroy(odb::dbBPin* pin)
+{
+  clearShapes();
+}
+
+void Search::inDbFillCreate(odb::dbFill* fill)
+{
+  clearFills();
+}
+
+void Search::inDbWireCreate(odb::dbWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbWireDestroy(odb::dbWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbSWireCreate(odb::dbSWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbSWireDestroy(odb::dbSWire* wire)
+{
+  clearShapes();
+}
+
+void Search::inDbBlockageCreate(odb::dbBlockage* blockage)
+{
+  clearBlockages();
+}
+
+void Search::inDbObstructionCreate(odb::dbObstruction* obs)
+{
+  clearObstructions();
+}
+
+void Search::inDbObstructionDestroy(odb::dbObstruction* obs)
+{
+  clearObstructions();
+}
+
+void Search::inDbBlockSetDieArea(odb::dbBlock* block)
+{
+  setBlock(block);
+}
+
+void Search::setBlock(odb::dbBlock* block)
+{
+  if (block_ != block) {
+    clear();
+
+    if (block_ != nullptr) {
+      removeOwner();
+    }
+
+    addOwner(block);  // register as a callback object
+  }
+
+  block_ = block;
+
+  emit newBlock(block);
+}
+
+void Search::clear()
+{
+  clearShapes();
+  clearFills();
+  clearInsts();
+  clearBlockages();
+  clearObstructions();
+}
+
+void Search::clearShapes()
+{
+  shapes_.clear();
+  shapes_init_ = false;
+
+  emit modified();
+}
+
+void Search::clearFills()
+{
+  fills_.clear();
+  fills_init_ = false;
+
+  emit modified();
+}
+
+void Search::clearInsts()
+{
+  insts_.clear();
+  insts_init_ = false;
+
+  emit modified();
+}
+
+void Search::clearBlockages()
+{
+  blockages_.clear();
+  blockages_init_ = false;
+
+  emit modified();
+}
+
+void Search::clearObstructions()
+{
+  obstructions_.clear();
+  obstructions_init_ = false;
+
+  emit modified();
+}
+
+void Search::updateShapes()
+{
+  for (odb::dbNet* net : block_->getNets()) {
     addNet(net);
     addSNet(net);
   }
 
-  for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->isPlaced()) {
-        addInst(inst);
-    }
-  }
-
-  for (odb::dbBTerm* term : block->getBTerms()) {
+  for (odb::dbBTerm* term : block_->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
       if (status == odb::dbPlacementStatus::NONE
@@ -74,7 +239,12 @@ void Search::init(odb::dbBlock* block)
     }
   }
 
-  for (odb::dbFill* fill : block->getFills()) {
+  shapes_init_ = true;
+}
+
+void Search::updateFills()
+{
+  for (odb::dbFill* fill : block_->getFills()) {
     odb::Rect rect;
     fill->getRect(rect);
     Box box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
@@ -83,13 +253,36 @@ void Search::init(odb::dbBlock* block)
     fills_[fill->getTechLayer()].insert(std::make_tuple(box, poly, fill));
   }
 
-  for (odb::dbBlockage* blockage : block->getBlockages()) {
+  fills_init_ = true;
+}
+
+void Search::updateInsts()
+{
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isPlaced()) {
+        addInst(inst);
+    }
+  }
+
+  insts_init_ = true;
+}
+
+void Search::updateBlockages()
+{
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
     addBlockage(blockage);
   }
 
-  for (odb::dbObstruction* obs : block->getObstructions()) {
+  blockages_init_ = true;
+}
+
+void Search::updateObstructions()
+{
+  for (odb::dbObstruction* obs : block_->getObstructions()) {
     addObstruction(obs);
   }
+
+  obstructions_init_ = true;
 }
 
 void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
@@ -200,14 +393,6 @@ void Search::addObstruction(odb::dbObstruction* obs)
   obstructions_[bbox->getTechLayer()].insert({box, poly, obs});
 }
 
-void Search::clear()
-{
-  insts_.clear();
-  shapes_.clear();
-  blockages_.clear();
-  obstructions_.clear();
-}
-
 template <typename T>
 class Search::MinSizePredicate
 {
@@ -252,6 +437,10 @@ Search::ShapeRange Search::searchShapes(odb::dbTechLayer* layer,
                                         int y_hi,
                                         int min_size)
 {
+  if (!shapes_init_) {
+    updateShapes();
+  }
+
   auto it = shapes_.find(layer);
   if (it == shapes_.end()) {
     return ShapeRange();
@@ -278,6 +467,10 @@ Search::FillRange Search::searchFills(odb::dbTechLayer* layer,
                                       int y_hi,
                                       int min_size)
 {
+  if (!fills_init_) {
+    updateFills();
+  }
+
   auto it = fills_.find(layer);
   if (it == fills_.end()) {
     return FillRange();
@@ -302,6 +495,10 @@ Search::InstRange Search::searchInsts(int x_lo,
                                       int y_hi,
                                       int min_height)
 {
+  if (!insts_init_) {
+    updateInsts();
+  }
+
   Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
   if (min_height > 0) {
     return InstRange(
@@ -320,6 +517,10 @@ Search::BlockageRange Search::searchBlockages(int x_lo,
                                               int y_hi,
                                               int min_height)
 {
+  if (!blockages_init_) {
+    updateBlockages();
+  }
+
   Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
   if (min_height > 0) {
     return BlockageRange(
@@ -339,6 +540,10 @@ Search::ObstructionRange Search::searchObstructions(odb::dbTechLayer* layer,
                                                     int y_hi,
                                                     int min_size)
 {
+  if (!obstructions_init_) {
+    updateObstructions();
+  }
+
   auto it = obstructions_.find(layer);
   if (it == obstructions_.end()) {
     return ObstructionRange();

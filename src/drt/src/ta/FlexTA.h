@@ -71,20 +71,20 @@ class FlexTAWorkerRegionQuery
 
   void add(taPinFig* fig);
   void remove(taPinFig* fig);
-  void query(const frBox& box,
+  void query(const Rect& box,
              const frLayerNum layerNum,
              std::set<taPin*, frBlockObjectComp>& result) const;
 
-  void addCost(const frBox& box,
+  void addCost(const Rect& box,
                const frLayerNum layerNum,
                frBlockObject* obj,
                frConstraint* con);
-  void removeCost(const frBox& box,
+  void removeCost(const Rect& box,
                   const frLayerNum layerNum,
                   frBlockObject* obj,
                   frConstraint* con);
   void queryCost(
-      const frBox& box,
+      const Rect& box,
       const frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
@@ -103,16 +103,17 @@ class FlexTAWorker
   FlexTAWorker(frDesign* designIn)
       : tech_(nullptr),
         design_(designIn),
-        dir_(frPrefRoutingDirEnum::frcNotApplicablePrefRoutingDir),
+        dir_(dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
         numAssigned_(0),
         totCost_(0),
-        maxRetry_(1){};
+        maxRetry_(1),
+        hardIroutesMode(false){};
   // setters
-  void setRouteBox(const frBox& boxIn) { routeBox_.set(boxIn); }
-  void setExtBox(const frBox& boxIn) { extBox_.set(boxIn); }
-  void setDir(frPrefRoutingDirEnum in) { dir_ = in; }
+  void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
+  void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
+  void setDir(dbTechLayerDir in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
   {
@@ -140,12 +141,13 @@ class FlexTAWorker
     }
     return sol;
   }
+
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   frDesign* getDesign() const { return design_; }
-  const frBox& getRouteBox() const { return routeBox_; }
-  const frBox& getExtBox() const { return extBox_; }
-  frPrefRoutingDirEnum getDir() const { return dir_; }
+  const Rect& getRouteBox() const { return routeBox_; }
+  const Rect& getExtBox() const { return extBox_; }
+  dbTechLayerDir getDir() const { return dir_; }
   int getTAIter() const { return taIter_; }
   bool isInitTA() const { return (taIter_ == 0); }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
@@ -177,9 +179,9 @@ class FlexTAWorker
  protected:
   frTechObject* tech_;  // not set
   frDesign* design_;
-  frBox routeBox_;
-  frBox extBox_;
-  frPrefRoutingDirEnum dir_;
+  Rect routeBox_;
+  Rect extBox_;
+  dbTechLayerDir dir_;
   int taIter_;
   FlexTAWorkerRegionQuery rq_;
 
@@ -188,22 +190,22 @@ class FlexTAWorker
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>
       reassignIroutes_;  // iroutes to be assigned in sorted order
-
   int numAssigned_;
   int totCost_;
   int maxRetry_;
+  bool hardIroutesMode;
 
   //// others
   void init();
   void initFixedObjs();
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       const frLayerNum lNum,
-                                      const frBox& box);
+                                      const Rect& box);
   frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
                                             const frLayerNum lNum,
-                                            const frBox& box,
+                                            const Rect& box,
                                             bool isOBS = true);
-  void initFixedObjs_helper(const frBox& box,
+  void initFixedObjs_helper(const Rect& box,
                             frCoord bloatDist,
                             frLayerNum lNum,
                             frNet* net);
@@ -236,8 +238,8 @@ class FlexTAWorker
   void sortIroutes();
 
   // quick drc
-  frSquaredDistance box2boxDistSquare(const frBox& box1,
-                                      const frBox& box2,
+  frSquaredDistance box2boxDistSquare(const Rect& box1,
+                                      const Rect& box2,
                                       frCoord& dx,
                                       frCoord& dy);
   void addCost(taPinFig* fig,
@@ -247,13 +249,13 @@ class FlexTAWorker
   void modCost(taPinFig* fig,
                bool isAddCost,
                std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
-  void modMinSpacingCostPlanar(const frBox& box,
+  void modMinSpacingCostPlanar(const Rect& box,
                                frLayerNum lNum,
                                taPinFig* fig,
                                bool isAddCost,
                                std::set<taPin*, frBlockObjectComp>* pinS
                                = nullptr);
-  void modMinSpacingCostVia(const frBox& box,
+  void modMinSpacingCostVia(const Rect& box,
                             frLayerNum lNum,
                             taPinFig* fig,
                             bool isAddCost,
@@ -261,7 +263,7 @@ class FlexTAWorker
                             bool isCurrPs,
                             std::set<taPin*, frBlockObjectComp>* pinS
                             = nullptr);
-  void modCutSpacingCost(const frBox& box,
+  void modCutSpacingCost(const Rect& box,
                          frLayerNum lNum,
                          taPinFig* fig,
                          bool isAddCost,
@@ -295,7 +297,7 @@ class FlexTAWorker
   frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost_helper(taPin* iroute,
-                                         frBox& box,
+                                         Rect& box,
                                          frLayerNum lNum);
   void assignIroute_updateIroute(taPin* iroute,
                                  frCoord bestTrackLoc,

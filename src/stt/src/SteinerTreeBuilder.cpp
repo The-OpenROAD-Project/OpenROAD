@@ -46,6 +46,10 @@
 
 namespace stt {
 
+static void
+reportSteinerBranches(const stt::Tree &tree,
+                      Logger *logger);
+
 SteinerTreeBuilder::SteinerTreeBuilder() :
   alpha_(0.3),
   min_fanout_alpha_({0, -1}),
@@ -99,10 +103,13 @@ Tree SteinerTreeBuilder::makeSteinerTree(std::vector<int>& x,
                                          int drvr_index,
                                          float alpha)
 {
-  if (alpha > 0.0)
-    return pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-  else
-    return flt::flute(x, y, flute_accuracy);
+  if (alpha > 0.0) {
+    Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
+    if (checkTree(tree))
+      return tree;
+    // Fall back to flute if PD fails.
+  }
+  return flt::flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -118,6 +125,25 @@ static bool rectAreaZero(const odb::Rect &rect)
   return rect.xMin() == rect.xMax() && rect.yMin() == rect.yMax();
 }
 
+static bool isCorner(const odb::Rect &rect,
+                     int x,
+                     int y)
+{
+  return (rect.xMin() == x && rect.yMin() == y)
+    || (rect.xMin() == x && rect.yMax() == y)
+    || (rect.xMax() == x && rect.yMin() == y)
+    || (rect.xMax() == x && rect.yMax() == y);
+}
+
+static bool shareCorner(const odb::Rect &rect1,
+                        const odb::Rect &rect2)
+{
+  return isCorner(rect1, rect2.xMin(), rect2.yMin())
+    || isCorner(rect1, rect2.xMin(), rect2.yMax())
+    || isCorner(rect1, rect2.xMax(), rect2.yMin())
+    || isCorner(rect1, rect2.xMax(), rect2.yMax());
+}
+
 // This checks whether the tree has the property that no two
 // non-adjacent edges have intersecting bounding boxes.  If
 // they do it is a failure as embedding those egdes may cause
@@ -131,7 +157,9 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
   }
 
   std::vector<odb::Rect> rects;
-  for (int i = 0; i < tree.branchCount(); ++i) {
+  // Ignore zero length branches by picking one end as the representative.
+  int branch_count = tree.branchCount();
+  for (int i = 0; i < branch_count; ++i) {
     const Branch& branch = tree.branch[i];
     const int x1 = branch.x;
     const int y1 = branch.y;
@@ -149,15 +177,14 @@ bool SteinerTreeBuilder::checkTree(const Tree& tree) const
       if (!rectAreaZero(r1)
           && !rectAreaZero(r2)
           && r1.intersects(r2)
-          && b1.n != j
-          && b2.n != i
-          && b1.n != b2.n) {
+          && !shareCorner(r1, r2)) {
         debugPrint(logger_, utl::STT, "check", 1,
                    "check failed ({}, {}) ({}, {}) [{}, {}] vs ({}, {}) ({}, {}) [{}, {}] degree={}",
-                      r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
-                      i, b1.n,
-                      r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax(),
-                      j, b2.n, tree.deg);
+                   r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax(),
+                   i, b1.n,
+                   r2.xMin(), r2.yMin(), r2.xMax(), r2.yMax(),
+                   j, b2.n,
+                   tree.deg);
         return false;
       }
     }
@@ -260,12 +287,27 @@ reportSteinerTree(const stt::Tree &tree,
                   int drvr_y,
                   Logger *logger)
 {
-  // flute mangles the x/y locations and pdrev moves the driver to 0
+  // flute mangles the x/y locations and pdrevII moves the driver to 0
   // so we have to find the driver location index.
   int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
   logger->report("Wire length = {} Path depth = {}",
                  tree.length,
                  findPathDepth(tree, drvr_index));
+  reportSteinerBranches(tree, logger);
+}
+
+void
+reportSteinerTree(const stt::Tree &tree,
+                  Logger *logger)
+{
+  logger->report("Wire length = {}", tree.length);
+  reportSteinerBranches(tree, logger);
+}
+
+static void
+reportSteinerBranches(const stt::Tree &tree,
+                      Logger *logger)
+{
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
@@ -358,7 +400,7 @@ void
 highlightSteinerTree(const Tree &tree,
                      gui::Gui *gui)
 {
-  if (gui) {
+  if (gui::Gui::enabled()) {
     if (LinesRenderer::lines_renderer == nullptr) {
       LinesRenderer::lines_renderer = new LinesRenderer();
       gui->registerRenderer(LinesRenderer::lines_renderer);
@@ -378,7 +420,7 @@ highlightSteinerTree(const Tree &tree,
   }
 }
 
-void Tree::printTree(utl::Logger* logger)
+void Tree::printTree(utl::Logger* logger) const
 {
   if (deg > 1) {
     for (int i = 0; i < deg; i++)
@@ -387,7 +429,6 @@ void Tree::printTree(utl::Logger* logger)
     for (int i = deg; i < 2 * deg - 2; i++)
       logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
                      i, (float)branch[i].x, (float)branch[i].y, branch[i].n);
-    logger->report("");
   }
 }
 

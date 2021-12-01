@@ -5514,6 +5514,11 @@ class dbMTerm : public dbObject
   dbIoType getIoType();
 
   ///
+  /// Get the shape of this master-terminal.
+  ///
+  dbMTermShapeType getShape();
+
+  ///
   /// Set mark of this master-terminal.
   ///
   void setMark(uint v);
@@ -5586,7 +5591,8 @@ class dbMTerm : public dbObject
   static dbMTerm* create(dbMaster* master,
                          const char* name,
                          dbIoType io_type = dbIoType(),
-                         dbSigType sig_type = dbSigType());
+                         dbSigType sig_type = dbSigType(),
+                         dbMTermShapeType shape_type = dbMTermShapeType());
 
   ///
   /// Translate a database-id back to a pointer.

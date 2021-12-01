@@ -30,52 +30,36 @@
 #define _FR_POINT_H_
 
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace fr {
-class frTransform;
+using odb::Point;
 
-class frPoint
+class Point3D : public Point
 {
  public:
-  // constructors
-  frPoint() : xCoord_(0), yCoord_(0) {}
-  frPoint(const frPoint& tmpPoint)
-      : xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_)
-  {
-  }
-  frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY){};
-  // setters
-  void set(const frPoint& tmpPoint)
-  {
-    xCoord_ = tmpPoint.xCoord_;
-    yCoord_ = tmpPoint.yCoord_;
-  }
-  void set(const frCoord tmpX, const frCoord tmpY)
-  {
-    xCoord_ = tmpX;
-    yCoord_ = tmpY;
-  }
-  void setX(const frCoord tmpX) { xCoord_ = tmpX; }
-  void setY(const frCoord tmpY) { yCoord_ = tmpY; }
-  // getters
-  frCoord x() const { return xCoord_; }
-  frCoord y() const { return yCoord_; }
-  // others
-  void transform(const frTransform& xform);
-  bool operator<(const frPoint& pIn) const
-  {
-    return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_)
-                                    : (xCoord_ < pIn.xCoord_);
-  }
-  bool operator==(const frPoint& pIn) const
-  {
-    return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-  }
-  bool operator!=(const frPoint& pIn) const { return !(*this == pIn); }
+  Point3D() : Point(0, 0), z_(0) {}
+  Point3D(int x, int y, int z) : Point(x, y), z_(z) {}
+  Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
 
- protected:
-  frCoord xCoord_, yCoord_;
+  int z() const { return getZ(); }
+  int getZ() const { return z_; }
+  void setZ(int z) { z_ = z; }
+  void set(const int x, const int y, const int z)
+  {
+    setX(x);
+    setY(y);
+    z_ = z;
+  }
+  bool operator==(const Point3D& pIn) const
+  {
+    return (x() == pIn.x()) && (y() == pIn.y()) && z_ == pIn.z_;
+  }
+
+  bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
+
+ private:
+  int z_;
 };
 }  // namespace fr
 
