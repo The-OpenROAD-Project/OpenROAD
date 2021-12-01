@@ -166,7 +166,7 @@ class HeatMapDataSource
   void setupMap();
   virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
-  virtual void combineMapData(double& base, const double new_data, const double region_ratio);
+  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
@@ -186,6 +186,7 @@ class HeatMapDataSource
   const std::string name_;
   const std::string short_name_;
   const std::string settings_group_;
+  bool destroy_map_;
   bool populated_;
   bool colors_correct_;
   bool issue_redraw_;
@@ -302,6 +303,7 @@ class RoutingCongestionDataSource : public HeatMapDataSource
 
  protected:
   virtual bool populateMap() override;
+  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
 
  private:
   bool show_all_;
@@ -337,6 +339,7 @@ class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlock
 
  protected:
   virtual bool populateMap() override;
+  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
 
   virtual bool destroyMapOnNotVisible() const override { return true; }
 
@@ -367,6 +370,8 @@ class PowerDensityDataSource : public HeatMapDataSource
 
  protected:
   virtual bool populateMap() override;
+  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
+
   virtual void correctMapScale(HeatMapDataSource::Map& map) override;
 
  private:
