@@ -41,8 +41,8 @@
 using namespace parquetfp;
 using std::vector;
 
-AnalytSolve::AnalytSolve(Command_Line* params, DB* db)
-    : _params(params), _db(db)
+AnalytSolve::AnalytSolve(DB* db)
+    : _db(db)
 {
 }
 

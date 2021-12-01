@@ -60,6 +60,8 @@ class IncidencyMatrix {
         Relation& operator()(unsigned node, unsigned edge) {
                 abkassert(node < _numNodes, "node index too big");
                 abkassert(edge < _numEdges, "edge index too big");
+                (void) _numNodes; // prevent unused msg
+                (void) _numEdges; // prevent unused msg
                 return _matrix[node * _numEdges + edge];
         }
 };

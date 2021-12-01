@@ -87,11 +87,9 @@ class PartEvalXFace {
         // these are overwhelmingly typical implementations. override if
         // necessary.
         virtual unsigned getMinCostOfOneNet() const { return 0; }
-        virtual double getMinCostOfOneNetDouble() const { return getMinCostOfOneNetDouble(); }
 
         // These highly depend on the evaluator and hypergraph
         virtual unsigned getMaxCostOfOneNet() const = 0;
-        virtual double getMaxCostOfOneNetDouble() const { return getMaxCostOfOneNetDouble(); }
 
         virtual bool isNetCut() const { return false; }
         virtual bool isNetCut2way() const { return false; }

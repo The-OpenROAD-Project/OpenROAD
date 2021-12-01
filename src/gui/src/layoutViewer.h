@@ -269,7 +269,6 @@ class LayoutViewer : public QWidget
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
-  void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds);
   void drawRulers(Painter& painter);
@@ -362,6 +361,7 @@ class LayoutViewer : public QWidget
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
+  bool repaint_requested_;
 
   utl::Logger* logger_;
 

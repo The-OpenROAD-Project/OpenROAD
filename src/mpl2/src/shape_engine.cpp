@@ -645,7 +645,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
         area = block_area;
         macro_area += block_area;
       } else {
-        area = area;
         std_cell_area += area;
       }
 

@@ -128,7 +128,7 @@ class Painter
   static inline const Color highlight = yellow;
   static inline const Color persistHighlight = yellow;
 
-  Painter(Options* options, double pixels_per_dbu) : options_(options), pixels_per_dbu_(pixels_per_dbu) {}
+  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu) : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -199,6 +199,7 @@ class Painter
     RIGHT_CENTER
   };
   virtual void drawString(int x, int y, Anchor anchor, const std::string& s) = 0;
+  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) = 0;
 
   virtual void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") = 0;
 
@@ -210,9 +211,11 @@ class Painter
 
   inline double getPixelsPerDBU() { return pixels_per_dbu_; }
   inline Options* getOptions() { return options_; }
+  inline const odb::Rect& getBounds() { return bounds_; }
 
  private:
   Options* options_;
+  const odb::Rect bounds_;
   double pixels_per_dbu_;
 };
 
@@ -417,7 +420,13 @@ class Renderer
 
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial setting for the control
-  using DisplayControls = std::map<std::string, bool>;
+  using DisplayControlCallback = std::function<void(void)>;
+  struct DisplayControl {
+    bool visibility;
+    DisplayControlCallback interactive_setup;
+    std::set<std::string> mutual_exclusivity;
+  };
+  using DisplayControls = std::map<std::string, DisplayControl>;
   const DisplayControls& getDisplayControls()
   {
     return controls_;
@@ -425,10 +434,30 @@ class Renderer
 
   // Used to check the value of the display control
   bool checkDisplayControl(const std::string& name);
+  // Used to set the value of the display control
+  void setDisplayControl(const std::string& name, bool value);
+
+  virtual const std::string getSettingsGroupName() { return ""; }
+  using Settings = std::map<std::string, std::variant<bool, int, double>>;
+  virtual const Settings getSettings();
+  virtual void setSettings(const Settings& settings);
+
+  template <typename T>
+  static void setSetting(const Settings& settings,
+                  const std::string& key,
+                  T& value)
+  {
+    if (settings.count(key) == 1) {
+      value = std::get<T>(settings.at(key));
+    }
+  }
 
  protected:
   // Adds a display control
-  void addDisplayControl(const std::string& name, bool initial_state = false);
+  void addDisplayControl(const std::string& name,
+                         bool initial_visible = false,
+                         const DisplayControlCallback& setup = DisplayControlCallback(),
+                         const std::vector<std::string>& mutual_exclusivity = {});
 
  private:
   // Holds map of display controls and callback function
@@ -580,6 +609,8 @@ class Gui
   void clearContinueAfterClose() { continue_after_close_ = false; }
 
   const Selected& getInspectorSelection();
+
+  void setHeatMapSetting(const std::string& name, const std::string& option, double value);
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }

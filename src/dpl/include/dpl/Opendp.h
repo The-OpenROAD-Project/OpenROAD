@@ -79,7 +79,7 @@ using odb::dbSite;
 using odb::Point;
 using odb::Rect;
 
-class Pixel;
+struct Pixel;
 struct Group;
 class Graphics;
 

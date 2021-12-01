@@ -256,6 +256,10 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
+          this,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
           drc_viewer_,
           SLOT(setBlock(odb::dbBlock*)));
   connect(drc_viewer_,
@@ -332,6 +336,13 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   }
 }
 
+void MainWindow::setBlock(odb::dbBlock* block)
+{
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setBlock(block);
+  }
+}
+
 void MainWindow::init(sta::dbSta* sta)
 {
   // Setup timing widget
@@ -348,6 +359,12 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  // renderers
+  power_density_data_.setSTA(sta);
+  for (auto* heat_map : getHeatMaps()) {
+    gui->registerRenderer(heat_map->getRenderer());
+  }
 }
 
 void MainWindow::createStatusBar()
@@ -396,18 +413,11 @@ void MainWindow::createActions()
   timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
-  congestion_setup_ = new QAction("Congestion Setup...", this);
-
   help_ = new QAction("Help", this);
   help_->setShortcut(QString("Ctrl+H"));
 
   build_ruler_ = new QAction("Ruler", this);
   build_ruler_->setShortcut(QString("k"));
-
-  connect(congestion_setup_,
-          SIGNAL(triggered()),
-          controls_,
-          SLOT(showCongestionSetup()));
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
@@ -435,8 +445,13 @@ void MainWindow::createMenus()
   view_menu_->addAction(zoom_out_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
-  tools_menu_->addAction(congestion_setup_);
   tools_menu_->addAction(build_ruler_);
+  auto heat_maps = tools_menu_->addMenu("&Heat maps");
+  for (auto* heat_map : getHeatMaps()) {
+    connect(heat_maps->addAction(QString::fromStdString(heat_map->getName())),
+            &QAction::triggered,
+            [heat_map]() { heat_map->showSetup(); });
+  }
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -458,7 +473,6 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("Toolbar");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
-  view_tool_bar_->addAction(congestion_setup_);
   view_tool_bar_->addAction(inspect_);
   view_tool_bar_->addAction(timing_debug_);
 
@@ -998,7 +1012,6 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -1013,7 +1026,6 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -1024,6 +1036,11 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
+
+  // heat maps
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setLogger(logger);
+  }
 }
 
 void MainWindow::fit()
@@ -1108,6 +1125,66 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   viewer_->restoreTclCommands(cmds);
 
   return cmds;
+}
+
+const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
+{
+  return {
+    &routing_congestion_data_,
+    &placement_density_data_,
+    &power_density_data_
+  };
+}
+
+void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, double value)
+{
+  HeatMapDataSource* source = nullptr;
+
+  for (auto* heat_map : getHeatMaps()) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
+  }
+
+  if (source == nullptr) {
+    QStringList options;
+    for (const auto* heat_map : getHeatMaps()) {
+      options.append(QString::fromStdString(heat_map->getShortName()));
+    }
+    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
+  }
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (settings.count(option) == 0) {
+      QStringList options;
+      options.append(QString::fromStdString(rebuild_map_option));
+      for (const auto& [key, kv] : settings) {
+        options.append(QString::fromStdString(key));
+      }
+      logger_->error(utl::GUI, 29, "{} is not a valid option. Valid options are: {}", option, options.join(", ").toStdString());
+    }
+
+    auto current_value = settings[option];
+    if (auto* v = std::get_if<bool>(&current_value)) {
+      // is bool
+      settings[option] = value == 0.0 ? false : true;
+    } else if (auto* v = std::get_if<int>(&current_value)) {
+      // is int
+      settings[option] = static_cast<int>(value);
+    } else {
+      // is double
+      settings[option] = value;
+    }
+    source->setSettings(settings);
+  }
+
+  source->getRenderer()->redraw();
 }
 
 }  // namespace gui

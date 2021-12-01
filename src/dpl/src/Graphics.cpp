@@ -40,13 +40,11 @@ namespace dpl {
 using odb::dbBox;
 
 Graphics::Graphics(Opendp *dp,
-                   bool displacement,
                    float min_displacement,
                    const dbInst* debug_instance) :
   dp_(dp),
   debug_instance_(debug_instance),
   block_(nullptr),
-  displacement_(displacement),
   min_displacement_(min_displacement)
 {
   gui::Gui::get()->registerRenderer(this);
