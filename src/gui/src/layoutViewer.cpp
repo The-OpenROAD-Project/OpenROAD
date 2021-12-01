@@ -92,9 +92,10 @@ class GuiPainter : public Painter
  public:
   GuiPainter(QPainter* painter,
              Options* options,
+             const odb::Rect& bounds,
              qreal pixels_per_dbu,
              int dbu_per_micron)
-      : Painter(options, pixels_per_dbu),
+      : Painter(options, bounds, pixels_per_dbu),
         painter_(painter),
         dbu_per_micron_(dbu_per_micron)
   {
@@ -222,17 +223,12 @@ class GuiPainter : public Painter
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
 
-  // NOTE: The constant height text s drawn with this function, hence
-  //       the trasnsformation is mapped to the base transformation and
-  //       the world co-ordinates are mapped to the window co-ordinates
-  //       before drawing.
-  void drawString(int x, int y, Anchor anchor, const std::string& s) override
+  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text)
   {
-    const QString text = QString::fromStdString(s);
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const QPoint text_bbox_center = text_bbox.center();
-    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
     int sx = 0;
     int sy = 0;
     if (anchor == BOTTOM_LEFT) {
@@ -265,11 +261,40 @@ class GuiPainter : public Painter
     // add desired text location in DBU
     sx += x;
     sy += y;
+
+    return {sx, sy};
+  }
+
+  // NOTE: The constant height text s drawn with this function, hence
+  //       the transformation is mapped to the base transformation and
+  //       the world co-ordinates are mapped to the window co-ordinates
+  //       before drawing.
+  void drawString(int x, int y, Anchor anchor, const std::string& s) override
+  {
+    const QString text = QString::fromStdString(s);
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+
     const QTransform transform = painter_->transform();
-    painter_->translate(sx, sy);
+    painter_->translate(origin.x(), origin.y());
     painter_->scale(scale_adjust, -scale_adjust); // undo original scaling
     painter_->drawText(0, 0, text); // origin of painter is desired location, so paint at 0, 0
     painter_->setTransform(transform);
+  }
+
+  virtual const odb::Rect stringBoundaries(int x, int y, Anchor anchor, const std::string& s) override
+  {
+    const QString text = QString::fromStdString(s);
+    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+    const qreal scale_adjust = 1.0 / getPixelsPerDBU();
+
+    const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
+    const int xMin = origin.x() - text_bbox.left() * scale_adjust;
+    const int yMin = origin.y() - text_bbox.bottom() * scale_adjust;
+    const int xMax = xMin + text_bbox.width() * scale_adjust;
+    const int yMax = yMin + text_bbox.height() * scale_adjust;
+    return {xMin, yMin, xMax, yMax};
   }
 
   void drawRuler(int x0, int y0, int x1, int y1, const std::string& label = "") override
@@ -420,6 +445,7 @@ LayoutViewer::LayoutViewer(
       inspector_focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
+      repaint_requested_(true),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
@@ -1578,86 +1604,6 @@ void LayoutViewer::drawRulers(Painter& painter)
   }
 }
 
-void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
-{
-  if (!options_->isCongestionVisible()) {
-    return;
-  }
-
-  if (!hasDesign()) {
-    return;
-  }
-
-  auto grid = block_->getGCellGrid();
-  if (grid == nullptr) {
-    return;
-  }
-
-  auto gcell_congestion_data = grid->getCongestionMap();
-  if (gcell_congestion_data.empty()) {
-    return;
-  }
-
-  std::vector<int> x_grid, y_grid;
-  uint x_grid_sz, y_grid_sz;
-  grid->getGridX(x_grid);
-  x_grid_sz = x_grid.size();
-  grid->getGridY(y_grid);
-  y_grid_sz = y_grid.size();
-
-  bool show_hor_congestion = options_->showHorizontalCongestion();
-  bool show_ver_congestion = options_->showVerticalCongestion();
-  auto min_congestion_to_show = options_->getMinCongestionToShow();
-  auto max_congestion_to_show = options_->getMaxCongestionToShow();
-
-  for (auto& [key, cong_data] : gcell_congestion_data) {
-    uint x_idx = key.first;
-    uint y_idx = key.second;
-
-    if (x_idx >= x_grid_sz || y_idx >= y_grid_sz) {
-      logger_->warn(utl::GUI, 4, "Skipping malformed GCell {} {} ({} {})",
-                    x_idx, y_idx, x_grid_sz, y_grid_sz);
-      continue;
-    }
-
-    auto gcell_rect = odb::Rect(
-        x_grid[x_idx], y_grid[y_idx], x_grid[x_idx + 1], y_grid[y_idx + 1]);
-
-    if (!gcell_rect.intersects(bounds))
-      continue;
-
-    auto hor_capacity = cong_data.horizontal_capacity;
-    auto hor_usage = cong_data.horizontal_usage;
-    auto ver_capacity = cong_data.vertical_capacity;
-    auto ver_usage = cong_data.vertical_usage;
-
-    //-1 indicates capacity is not well defined...
-    float hor_congestion
-        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : -1;
-    float ver_congestion
-        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : -1;
-
-    float congestion = ver_congestion;
-    if (show_hor_congestion && show_ver_congestion)
-      congestion = std::max(hor_congestion, ver_congestion);
-    else if (show_hor_congestion)
-      congestion = hor_congestion;
-    else
-      congestion = ver_congestion;
-
-    if (congestion <= 0 || congestion < min_congestion_to_show
-        || congestion > max_congestion_to_show)
-      continue;
-
-    auto gcell_color = options_->getCongestionColor(congestion);
-    Painter::Color color(
-        gcell_color.red(), gcell_color.green(), gcell_color.blue(), 100);
-    painter.setPen(color, true);
-    painter.setBrush(color);
-    painter.drawRect(gcell_rect);
-  }
-}
-
 // Draw the instances bounds
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
@@ -1903,6 +1849,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter,
                          options_,
+                         bounds,
                          pixels_per_dbu_,
                          block_->getDbUnitsPerMicron());
 
@@ -2018,8 +1965,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
-
-  drawCongestionMap(gui_painter, bounds);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -2203,16 +2148,18 @@ QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 
 void LayoutViewer::updateBlockPainting(const QRect& area)
 {
-  if (block_drawing_ != nullptr) {
+  if (block_drawing_ != nullptr && !repaint_requested_) {
     // no changes detected, so no need to update
     return;
   }
 
-  // build new drawing of layout
-  block_drawing_ = std::make_unique<QPixmap>(area.width(), area.height());
-  block_drawing_->fill(Qt::transparent);
+  repaint_requested_ = false;
 
-  QPainter block_painter(block_drawing_.get());
+  // build new drawing of layout
+  auto* block_drawing = new QPixmap(area.width(), area.height());
+  block_drawing->fill(Qt::transparent);
+
+  QPainter block_painter(block_drawing);
   block_painter.setRenderHints(QPainter::Antialiasing);
 
   // apply transforms
@@ -2225,6 +2172,9 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
 
   // paint layout
   drawBlock(&block_painter, dbu_bounds, 0);
+
+  // save the cached layout
+  block_drawing_ = std::unique_ptr<QPixmap>(block_drawing);
 }
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
@@ -2261,6 +2211,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   GuiPainter gui_painter(&painter,
                          options_,
+                         screenToDBU(draw_bounds),
                          pixels_per_dbu_,
                          block_->getDbUnitsPerMicron());
 
@@ -2308,7 +2259,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
 void LayoutViewer::fullRepaint()
 {
-  block_drawing_ = nullptr;
+  repaint_requested_ = true;
   update();
 }
 
