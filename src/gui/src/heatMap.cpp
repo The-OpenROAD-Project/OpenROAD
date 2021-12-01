@@ -279,6 +279,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     name_(name),
     short_name_(short_name),
     settings_group_(settings_group),
+    destroy_map_(true),
     populated_(false),
     colors_correct_(false),
     issue_redraw_(true),
@@ -538,13 +539,18 @@ void HeatMapDataSource::setupMap()
 
 void HeatMapDataSource::destroyMap()
 {
-  map_.clear();
+  destroy_map_ = true;
 
   redraw();
 }
 
 void HeatMapDataSource::ensureMap()
 {
+  if (destroy_map_) {
+    map_.clear();
+    destroy_map_ = false;
+  }
+
   const bool build_map = map_.empty();
   if (build_map) {
     setupMap();

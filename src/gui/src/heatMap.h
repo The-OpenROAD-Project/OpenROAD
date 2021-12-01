@@ -186,6 +186,7 @@ class HeatMapDataSource
   const std::string name_;
   const std::string short_name_;
   const std::string settings_group_;
+  bool destroy_map_;
   bool populated_;
   bool colors_correct_;
   bool issue_redraw_;
