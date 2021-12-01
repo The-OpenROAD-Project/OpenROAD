@@ -488,13 +488,15 @@ void DisplayControls::readSettings(QSettings* settings)
     for (const auto& key_group : settings->childGroups()) {
       settings->beginGroup(key_group);
       const QVariant value = settings->value("data");
-      const QVariant type = settings->value("type");
+      const QString type = settings->value("type").value<QString>();
       if (type == "bool") {
         renderer_settings[key_group.toStdString()] = value.toBool();
       } else if (type == "int") {
         renderer_settings[key_group.toStdString()] = value.toInt();
-      } else if (type == "double"){
+      } else if (type == "double") {
         renderer_settings[key_group.toStdString()] = value.toDouble();
+      } else {
+        logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
       }
       settings->endGroup();
     }
@@ -589,6 +591,8 @@ void DisplayControls::writeSettings(QSettings* settings)
         } else if(const auto* v = std::get_if<double>(&value)) {
           type = "double";
           data = *v;
+        } else {
+          logger_->warn(utl::GUI, 54, "Unknown data type for \"{}\".", name);
         }
         settings->setValue("data", data);
         settings->setValue("type", type);
