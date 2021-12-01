@@ -50,7 +50,6 @@
 #include <map>
 #include <vector>
 
-#include "congestionSetupDialog.h"
 #include "options.h"
 
 #include "gui/gui.h"
@@ -133,10 +132,13 @@ class DisplayControlModel : public QStandardItemModel
   Q_OBJECT
 
  public:
-  DisplayControlModel(QWidget* parent = nullptr);
+  DisplayControlModel(int user_data_item_idx, QWidget* parent = nullptr);
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+ private:
+  const int user_data_item_idx_;
 };
 
 // This class shows the user the set of layers & objects that
@@ -205,14 +207,8 @@ class DisplayControls : public QDockWidget, public Options
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   QFont pinMarkersFont() override;
-  bool showHorizontalCongestion() const override;
-  bool showVerticalCongestion() const override;
-  float getMinCongestionToShow() const override;
-  float getMaxCongestionToShow() const override;
-  QColor getCongestionColor(float congestion) const override;
 
  signals:
   // The display options have changed and clients need to update
@@ -230,8 +226,6 @@ class DisplayControls : public QDockWidget, public Options
   void itemChanged(QStandardItem* item);
   void displayItemClicked(const QModelIndex& index);
   void displayItemDblClicked(const QModelIndex& index);
-
-  void showCongestionSetup();
 
  private:
   // The columns in the tree view
@@ -329,6 +323,11 @@ class DisplayControls : public QDockWidget, public Options
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
+  void saveRendererState(Renderer* renderer);
+
+  void setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback);
+  void setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity);
+
   QTreeView* view_;
   DisplayControlModel* model_;
 
@@ -348,7 +347,6 @@ class DisplayControls : public QDockWidget, public Options
   InstanceModels instances_;
   BlockageModels blockages_;
   ModelRow rows_;
-  ModelRow congestion_map_;
   ModelRow pin_markers_;
   ModelRow rulers_;
   TrackModels tracks_;
@@ -356,6 +354,7 @@ class DisplayControls : public QDockWidget, public Options
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;
@@ -378,7 +377,10 @@ class DisplayControls : public QDockWidget, public Options
 
   QFont pin_markers_font_;
 
-  CongestionSetupDialog* congestion_dialog_;
+  static constexpr int user_data_item_idx_ = Qt::UserRole;
+  static constexpr int callback_item_idx_ = Qt::UserRole + 1;
+  static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
+  static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
 };
 
 }  // namespace gui

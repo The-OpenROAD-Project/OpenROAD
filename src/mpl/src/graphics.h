@@ -53,7 +53,7 @@ namespace mpl {
 class Graphics : public gui::Renderer
 {
  public:
-  Graphics(odb::dbDatabase* db, utl::Logger* logger);
+  Graphics(odb::dbDatabase* db);
 
   // Draw the partition
   void set_partitions(const std::vector<Partition>& partitions,
@@ -72,7 +72,6 @@ class Graphics : public gui::Renderer
   std::vector<Partition> partitions_;
   bool partition_relative_coords_;
   odb::dbDatabase* db_;
-  utl::Logger* logger_;
 };
 
 }  // namespace mpl

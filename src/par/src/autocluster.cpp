@@ -493,7 +493,6 @@ void AutoClusterMgr::calculateBufferNetConnection()
   for (int i = 0; i < buffer_net_vec_.size(); i++) {
     int driver_id = 0;
     vector<int> loads_id;
-    vector<int>::iterator vec_iter;
     for (int j = 0; j < buffer_net_vec_[i].size(); j++) {
       Net* net = buffer_net_vec_[i][j];
       const bool is_top = network_->instance(net) == network_->topInstance();
@@ -546,7 +545,6 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
     Net* net = net_iter->next();
     int driver_id = 0;
     vector<int> loads_id;
-    vector<int>::iterator vec_iter;
     bool buffer_flag = false;
     if (find(buffer_net_list_.begin(), buffer_net_list_.end(), net)
         != buffer_net_list_.end())

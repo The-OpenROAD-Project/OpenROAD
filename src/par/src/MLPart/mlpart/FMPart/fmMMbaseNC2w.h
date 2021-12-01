@@ -307,14 +307,10 @@ class FMMMbaseNC2w : public MoveManagerInterface {
         // these are overwhelmingly typical implementations. override if
         // necessary.
         unsigned getMinCostOfOneNet() const { return 0; }
-        double getMinCostOfOneNetDouble() const { return getMinCostOfOneNet(); }
 
         // These highly depend on the evaluator and hypergraph
         unsigned getMaxCostOfOneNet() const { return 1; }
         unsigned getMaxCostOfOneNetWW() const { return _maxEdgeWeight; }
-        double getMaxCostOfOneNetDouble() const { return getMaxCostOfOneNet(); }
-
-        double getMaxCostOfOneNetDoubleWW() const { return getMaxCostOfOneNetWW(); }
 
         bool isNetCut() const { return true; }
         bool isNetCut2way() const { return true; }
