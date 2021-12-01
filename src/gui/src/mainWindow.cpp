@@ -45,6 +45,10 @@
 #include <vector>
 #include <QDebug>
 
+#include <iomanip>
+#include <sstream>
+#include <string>
+
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "highlightGroupDialog.h"
@@ -80,6 +84,7 @@ MainWindow::MainWindow(QWidget* parent)
           highlighted_,
           rulers_,
           [](const std::any& object) { return Gui::get()->makeSelected(object); },
+          [this]() -> bool { return show_dbu_->isChecked(); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -132,9 +137,9 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(viewer_,
-          SIGNAL(location(qreal, qreal)),
+          SIGNAL(location(int, int)),
           this,
-          SLOT(setLocation(qreal, qreal)));
+          SLOT(setLocation(int, int)));
   connect(viewer_,
           SIGNAL(selected(const Selected&, bool)),
           this,
@@ -288,14 +293,6 @@ MainWindow::MainWindow(QWidget* parent)
             }
           });
 
-  connect(this,
-          &MainWindow::designLoaded,
-          [](odb::dbBlock* block) {
-            if (block != nullptr) {
-              Descriptor::Property::dbu = block->getDbUnitsPerMicron();
-            }
-          });
-
   createActions();
   createToolbars();
   createMenus();
@@ -307,6 +304,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
   hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
+  show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -316,6 +314,13 @@ MainWindow::MainWindow(QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
+
+  Descriptor::Property::convert_dbu = [this](int value, bool add_units) -> std::string {
+    return convertDBUToString(value, add_units);
+  };
+  Descriptor::Property::convert_string = [this](const std::string& value, bool* ok) -> int {
+    return convertStringToDBU(value, ok);
+  };
 }
 
 MainWindow::~MainWindow()
@@ -373,7 +378,7 @@ void MainWindow::createStatusBar()
   statusBar()->addPermanentWidget(location_);
 }
 
-odb::dbBlock* MainWindow::getBlock()
+odb::dbBlock* MainWindow::getBlock() const
 {
   if (!db_) {
     return nullptr;
@@ -419,6 +424,10 @@ void MainWindow::createActions()
   build_ruler_ = new QAction("Ruler", this);
   build_ruler_->setShortcut(QString("k"));
 
+  show_dbu_ = new QAction("Show DBU", this);
+  show_dbu_->setCheckable(true);
+  show_dbu_->setChecked(false);
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -430,6 +439,19 @@ void MainWindow::createActions()
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
 
   connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
+
+  connect(show_dbu_, SIGNAL(toggled(bool)), viewer_, SLOT(fullRepaint()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), inspector_, SLOT(reload()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
+  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
+}
+
+void MainWindow::setUseDBU(bool use_dbu)
+{
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setUseDBU(use_dbu);
+  }
 }
 
 void MainWindow::createMenus()
@@ -464,6 +486,7 @@ void MainWindow::createMenus()
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
+  option_menu->addAction(show_dbu_);
 
   menuBar()->addAction(help_);
 }
@@ -665,9 +688,18 @@ const std::string MainWindow::requestUserInput(const QString& title, const QStri
   return text.toStdString();
 }
 
-void MainWindow::setLocation(qreal x, qreal y)
+void MainWindow::setLocation(int x, int y)
 {
-  location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
+  QString location;
+  location += QString::fromStdString(convertDBUToString(x, true));
+  location += ", ";
+  location += QString::fromStdString(convertDBUToString(y, true));
+  location_->setText(location);
+}
+
+void MainWindow::setClearLocation()
+{
+  location_->setText("");
 }
 
 void MainWindow::updateSelectedStatus(const Selected& selection)
@@ -999,6 +1031,7 @@ void MainWindow::saveSettings()
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
   settings.setValue("check_exit", hide_option_->isChecked());
+  settings.setValue("use_dbu", show_dbu_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -1185,6 +1218,58 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
   }
 
   source->getRenderer()->redraw();
+}
+
+std::string MainWindow::convertDBUToString(int value, bool add_units) const
+{
+  if (show_dbu_->isChecked()) {
+    return std::to_string(value);
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return std::to_string(value);
+    } else {
+      const double dbu_per_micron = block->getDbUnitsPerMicron();
+
+      std::stringstream ss;
+      const int precision = std::ceil(std::log10(dbu_per_micron));
+      const double micron_value = value / dbu_per_micron;
+
+      ss << std::fixed << std::setprecision(precision) << micron_value;
+
+      if (add_units) {
+        ss << " \u03BCm"; // micro meter
+      }
+
+      return ss.str();
+    }
+  }
+}
+
+int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
+{
+  QString new_value = QString::fromStdString(value).simplified();
+
+  if (new_value.contains(" ")) {
+    new_value = new_value.left(new_value.indexOf(" "));
+  } else if (new_value.contains("u")) {
+    new_value = new_value.left(new_value.indexOf("u"));
+  } else if (new_value.contains("\u03BC")) {
+    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  }
+
+  if (show_dbu_->isChecked()) {
+    return new_value.toInt(ok);
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return new_value.toInt(ok);
+    } else {
+      const int dbu_per_micron = block->getDbUnitsPerMicron();
+
+      return new_value.toDouble(ok) * dbu_per_micron;
+    }
+  }
 }
 
 }  // namespace gui

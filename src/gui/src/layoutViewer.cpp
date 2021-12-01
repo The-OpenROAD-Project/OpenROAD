@@ -307,7 +307,6 @@ class GuiPainter : public Painter
     setPen(ruler_color, true);
     setBrush(ruler_color);
 
-    std::stringstream ss;
     const double x_len = x1 - x0;
     const double y_len = y1 - y0;
     const double len = std::sqrt(x_len * x_len + y_len * y_len);
@@ -343,10 +342,7 @@ class GuiPainter : public Painter
     }
     painter_->rotate(ruler_angle);
 
-    const int precision = std::ceil(std::log10(dbu_per_micron_));
     const qreal len_microns = len / (qreal) dbu_per_micron_;
-
-    ss << std::fixed << std::setprecision(precision) << len_microns;
 
     const bool flip_direction = -90 >= ruler_angle || ruler_angle > 90;
 
@@ -397,11 +393,12 @@ class GuiPainter : public Painter
       // flip text to keep it in the right position
       painter_->scale(-1, -1);
     }
+    std::string text_length = Descriptor::Property::convert_dbu(len, false);
     if (!label.empty()) {
       // label on next to length
-      drawString(0, 0, BOTTOM_CENTER, label + ": " + ss.str());
+      drawString(0, 0, BOTTOM_CENTER, label + ": " + text_length);
     } else {
-      drawString(0, 0, BOTTOM_CENTER, ss.str());
+      drawString(0, 0, BOTTOM_CENTER, text_length);
     }
     painter_->setFont(restore_font);
 
@@ -422,6 +419,7 @@ LayoutViewer::LayoutViewer(
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     std::function<Selected(const std::any&)> makeSelected,
+    std::function<bool(void)> usingDBU,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -437,6 +435,7 @@ LayoutViewer::LayoutViewer(
       max_depth_(99),
       rubber_band_showing_(false),
       makeSelected_(makeSelected),
+      usingDBU_(usingDBU),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
@@ -1091,8 +1090,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(mouse_move_pos_);
-  qreal to_dbu = block_->getDbUnitsPerMicron();
-  emit location(pt_dbu.x() / to_dbu, pt_dbu.y() / to_dbu);
+  emit location(pt_dbu.x(), pt_dbu.y());
 
   if (building_ruler_) {
     if (!(qGuiApp->keyboardModifiers() & Qt::ControlModifier)) {
@@ -2287,18 +2285,23 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
 
   double scale_unit;
   QString unit_text;
-  if (bar_size > 1000) {
-    scale_unit = 0.001;
-    unit_text = "mm";
-  } else if (bar_size > 1) {
-    scale_unit = 1;
-    unit_text = "\u03bcm"; // um
-  } else if (bar_size > 0.001) {
-    scale_unit = 1000;
-    unit_text = "nm";
+  if (usingDBU_()) {
+    scale_unit = block_->getDbUnitsPerMicron();
+    unit_text = "";
   } else {
-    scale_unit = 1e6;
-    unit_text = "pm";
+    if (bar_size > 1000) {
+      scale_unit = 0.001;
+      unit_text = "mm";
+    } else if (bar_size > 1) {
+      scale_unit = 1;
+      unit_text = "\u03bcm"; // um
+    } else if (bar_size > 0.001) {
+      scale_unit = 1000;
+      unit_text = "nm";
+    } else {
+      scale_unit = 1e6;
+      unit_text = "pm";
+    }
   }
 
   auto color = Qt::white;

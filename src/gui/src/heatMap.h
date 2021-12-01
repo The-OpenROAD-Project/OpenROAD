@@ -90,6 +90,7 @@ class HeatMapDataSource
 
   void setBlock(odb::dbBlock* block) { block_ = block; }
   void setLogger(utl::Logger* logger);
+  void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
 
@@ -187,6 +188,8 @@ class HeatMapDataSource
   const std::string short_name_;
   const std::string settings_group_;
   bool destroy_map_;
+  bool use_dbu_;
+
   bool populated_;
   bool colors_correct_;
   bool issue_redraw_;
@@ -222,6 +225,8 @@ class HeatMapSetup : public QDialog
  public:
   HeatMapSetup(HeatMapDataSource& source,
                const QString& title,
+               bool use_dbu,
+               int dbu,
                QWidget* parent = nullptr);
 
  signals:
@@ -242,6 +247,8 @@ class HeatMapSetup : public QDialog
 
  private:
   HeatMapDataSource& source_;
+  bool use_dbu_;
+  int dbu_;
 
   QCheckBox* log_scale_;
   QCheckBox* show_numbers_;
@@ -249,6 +256,8 @@ class HeatMapSetup : public QDialog
 
   QDoubleSpinBox* grid_x_size_;
   QDoubleSpinBox* grid_y_size_;
+  QSpinBox* grid_x_size_dbu_;
+  QSpinBox* grid_y_size_dbu_;
 
   QDoubleSpinBox* min_range_selector_;
   QCheckBox* show_mins_;

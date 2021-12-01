@@ -172,7 +172,6 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
       auto selected = Gui::get()->makeSelected(layer);
       if (selected) {
         auto props = selected.getProperties();
-        const QString micron = "\u03BC";
 
         // provide tooltip with layer information
         QString information;
@@ -193,14 +192,10 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
         add_prop("Direction", information);
 
         // min width
-        if (add_prop("Minimum width", information)) {
-          information += micron + "m";
-        }
+        add_prop("Minimum width", information);
 
         // min spacing
-        if (add_prop("Minimum spacing", information)) {
-          information += micron + "m";
-        }
+        add_prop("Minimum spacing", information);
 
         // resistance
         add_prop("Resistance", information);
