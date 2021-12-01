@@ -6,7 +6,8 @@
     -name name \
     -power power_net \
     -ground ground_net \
-    [-region region_name]
+    [-region region_name] \
+    [-secondary_power secondary_power_net]
 ```
 
 ## Description
@@ -28,9 +29,11 @@ The -power and -ground arguments are used to define the names of the nets to be 
 | -power | Specifies the name of the power net for this voltage domain |
 | -ground | Specifies the name of the ground net for this voltage domain |
 | -region | Specifies a region of the design occupied by this voltage domain |
+| -secondary_power | Specifies the name of the secondary power net for this voltage domain |
 
 ## Examples
 ```
 set_voltage_domain -name CORE -power VDD -ground VSS
 set_voltage_domain -name TEMP_ANALOG -region TEMP_ANALOG -power VIN -ground VSS
+set_voltage_domain -name test_domain -power VDD -ground VSS -secondary_power VREG
 ```
