@@ -67,5 +67,5 @@ target_link_libraries(lefzlib
 
 target_compile_options(lef
   PRIVATE
-    -Wno-class-memaccess
+  $<$<CXX_COMPILER_ID:GNU>:-Wno-class-memaccess>
 )
