@@ -179,13 +179,14 @@ proc define_pdn_grid {args} {
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            [-region region_name] \
                                            -power power_net_name \
+                                           [-secondary_power secondary_power_net_name] \
                                            -ground ground_net_name}
 
 proc set_voltage_domain {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground}
+    keys {-name -region -power -secondary_power -ground}
 
   if {[llength $args] > 0} {
     utl::error PDN 133 "Unexpected argument [lindex $args 0] for set_voltage_domain command."
@@ -654,6 +655,23 @@ proc check_power {power_net_name} {
   return $power_net_name
 }
 
+proc check_secondary_power {secondary_power_net_name} {
+  set block [ord::get_db_block]
+
+  foreach secondary_power $secondary_power_net_name {
+    if {[set net [$block findNet $secondary_power]] == "NULL"} {
+      set net [odb::dbNet_create $block $secondary_power]
+      $net setSpecial
+      $net setSigType "POWER"
+    } else {
+      if {[$net getSigType] != "POWER"} {
+        utl::error PDN 176 "Net $secondary_power already exists in the design, but is of signal type [$net getSigType]."
+      }
+    }
+  }
+  return $secondary_power_net_name
+}
+
 proc check_ground {ground_net_name} {
   set block [ord::get_db_block]
 
@@ -681,6 +699,7 @@ proc set_voltage_domain {args} {
     switch $arg {
       -name            {dict set voltage_domain name $value}
       -power           {dict set voltage_domain primary_power [check_power $value]}
+      -secondary_power {dict set voltage_domain secondary_power [check_secondary_power $value]}
       -ground          {dict set voltage_domain primary_ground [check_ground $value]}
       -region          {dict set voltage_domain region [check_region $value]}
       default          {utl::error PDN 130 "Unrecognized argument $arg, should be one of -name, -power, -ground -region."}
@@ -1360,10 +1379,9 @@ proc complete_macro_grid_specifications {} {
       }
       set pin_layers [lsort -unique $pin_layers]
 
-      set connect_list [dict get $grid connect]
       foreach pin_layer $pin_layers {
         set new_connections {}
-        foreach connect $connect_list {
+        foreach connect [dict get $grid connect] {
           if {[lindex $connect 0] == $pin_layer} {
             set connect [lreplace $connect 0 0 ${pin_layer}_PIN_$direction]
           }
@@ -1372,9 +1390,8 @@ proc complete_macro_grid_specifications {} {
           }
           lappend new_connections $connect
         }
-        set connect_list $new_connections
+        dict set design_data grid macro $grid_name connect $new_connections
       }
-      dict set design_data grid macro $grid_name connect $connect_list
     }
     
     if {[dict exists $grid straps]} {
@@ -2581,8 +2598,6 @@ proc via_generate_array_rule {viarule_name via_info rule_name rows columns} {
         [dict get $upper_enc xEnclosure] \
         [dict get $upper_enc yEnclosure] \
       ] \
-      lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
-      upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -3412,11 +3427,13 @@ proc generate_lower_metal_followpin_rails {} {
       set vdd_name [get_voltage_domain_power [get_voltage_domain $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]]
       set vss_box [::odb::newSetFromRect $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]
       set vss_name [get_voltage_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
+      # generate power_rails using first domain_power
+      set first_power_name [lindex $vdd_name 0]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
-      if {$vdd_name == [get_voltage_domain_power [dict get $design_data core_domain]]} {
+      if {$first_power_name == [get_voltage_domain_power [dict get $design_data core_domain]]} {
         add_stripe $lay "POWER" $vdd_box
       } else {
-        add_stripe $lay "POWER_$vdd_name" $vdd_box
+        add_stripe $lay "POWER_$first_power_name" $vdd_box
       }
       if {$vss_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
         add_stripe $lay "GROUND" $vss_box
@@ -3484,7 +3501,7 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
   }
 }
 
-proc adjust_area_for_core_rings {layer area} {
+proc adjust_area_for_core_rings {layer area number} {
   variable grid_data
 
   # When core_rings overlap with the stdcell area, we need to block out the area
@@ -3515,13 +3532,13 @@ proc adjust_area_for_core_rings {layer area} {
 
     # The area figure includes a y offset for the width of the stdcell rail - so need to subtract it here
     set rail_width [get_rails_max_width]
-
-    set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2]
-    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2]
-    set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2]
-    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2]
+    
+    # set extension area according to the number of power rings of the voltage domain, the default number is 2 
+    set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2 - ($number - 2) * ($width + $spacing)]
+    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2 - ($number - 2) * ($width + $spacing)]
+    set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2 + ($number - 2) * ($width + $spacing)]
+    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2 + ($number - 2) * ($width + $spacing)]
   }
-
   if {[get_dir $layer] == "hor"} {
     set extended_area [list $xMin [lindex $area 1] $xMax [lindex $area 3]]
   } else {
@@ -3547,11 +3564,14 @@ proc generate_stripes {tag net_name} {
     if {[dict exists $grid_data straps $lay width]} {
       set area [dict get $grid_data area]
       # debug "Area $area"
+      # Calculate the numebr of rings of core_domain
+      set ring_number 2 
       if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $lay]} {
-        set area [adjust_area_for_core_rings $lay $area]
+        set area [adjust_area_for_core_rings $lay $area $ring_number]
       }
       # debug "area=$area (spec area=[dict get $grid_data area])"
       # Create stripes for core domain's pwr/gnd nets
+      
       if {$net_name == [get_voltage_domain_power [dict get $design_data core_domain]] ||
           $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
         generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
@@ -3568,12 +3588,22 @@ proc generate_stripes {tag net_name} {
         set domain_yMin [$rect yMin]
         set domain_xMax [$rect xMax]
         set domain_yMax [$rect yMax]
+        set width [dict get $grid_data core_ring $lay width]
+        set spacing [dict get $grid_data core_ring $lay spacing]
+        set rail_width [get_rails_max_width]
         # Do not create duplicate stripes if the voltage domain has the same pwr/gnd nets as the core domain
         if {($net_name == [get_voltage_domain_power $domain_name] && $net_name != [get_voltage_domain_power [dict get $design_data core_domain]]) ||
-              ($net_name == [get_voltage_domain_ground $domain_name] && $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]])} {
-          set rail_width [get_rails_max_width]
+             ($net_name == [get_voltage_domain_ground $domain_name] && $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]])} {
           set area [list $domain_xMin [expr $domain_yMin - $rail_width / 2] $domain_xMax [expr $domain_yMax + $rail_width / 2]]
-          set area [adjust_area_for_core_rings $lay $area]
+          set area [adjust_area_for_core_rings $lay $area 2]
+          set tag "$tag\_$net_name"
+          generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
+        }
+        if {[lsearch -exact [get_voltage_domain_secondary_power $domain_name] $net_name] > -1} {
+          #Calculate the ring number of power_domain
+          set ring_number [lsearch -exact [get_voltage_domain_secondary_power $domain_name] $net_name]
+          set area [list [expr $domain_xMin + $ring_number * ($width + $spacing)] [expr $domain_yMin - $rail_width / 2] [expr $domain_xMax + $ring_number * ($width + $spacing)] [expr $domain_yMax + $rail_width / 2]]
+          set area [adjust_area_for_core_rings $lay $area [expr 3 + $ring_number]]
           set tag "$tag\_$net_name"
           generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
         }
@@ -3821,6 +3851,7 @@ proc generate_core_rings {core_ring_data} {
       set inner_ux [expr $xMax - $offset - $spacing - $width]
       set inner_uy [expr $yMax - $offset - $spacing - $width]
     } elseif {[dict exists $layer_info core_offset]} {
+
       set area [list {*}[[ord::get_db_core] ll] {*}[[ord::get_db_core] ur]]
       set offset [dict get $layer_info core_offset]
 
@@ -3851,6 +3882,7 @@ proc generate_core_rings {core_ring_data} {
           [expr $inner_ux + $width / 2] \
           [expr $inner_ly + $width / 2] \
         ]
+      
       set upper_power \
         [odb::newSetFromRect \
           [expr $inner_lx - $width / 2] \
@@ -3873,7 +3905,7 @@ proc generate_core_rings {core_ring_data} {
           [expr $outer_ux + $width / 2] \
           [expr $outer_uy + $width / 2] \
         ]
-
+ 
       add_stripe $layer "POWER" $upper_power
       add_stripe $layer "POWER" $lower_power
       add_stripe $layer "GROUND" $upper_ground
@@ -3883,6 +3915,7 @@ proc generate_core_rings {core_ring_data} {
         [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $inner_ly + $width / 2]] \
         [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $inner_uy - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
       ]]
+
       set core_ring_area [odb::bloatSet $core_rings $spacing]
       dict set grid_data core_ring_area $layer $core_ring_area
 
@@ -3921,11 +3954,12 @@ proc generate_core_rings {core_ring_data} {
       add_stripe $layer "POWER" $rhs_power
       add_stripe $layer "GROUND" $lhs_ground
       add_stripe $layer "GROUND" $rhs_ground
-
+      
       set core_rings [odb::orSets [list \
         [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $inner_lx + $width / 2] [expr $outer_uy + $width / 2]] \
         [odb::newSetFromRect [expr $inner_ux - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
       ]]
+     
       set core_ring_area [odb::bloatSet $core_rings $spacing]
       dict set grid_data core_ring_area $layer $core_ring_area
 
@@ -4209,12 +4243,14 @@ proc get_global_connect_list_default {voltage_domain is_region} {
 
   foreach net_type "primary_power primary_ground" {
     set net_name [dict get $voltage_domains $voltage_domain $net_type]
-    set net [$block findNet $net_name]
-    foreach term [get_valid_mterms $net_name] {
-      if {$is_region} {
-        pdn::add_global_connect $block $voltage_domain ".*" $term $net
-      } else {
-        pdn::add_global_connect ".*" $term $net
+    foreach sub_net $net_name {
+      set net [$block findNet $sub_net]
+      foreach term [get_valid_mterms $sub_net] {
+        if {$is_region} {
+          pdn::add_global_connect $block $voltage_domain ".*" $term $net
+        } else {
+          pdn::add_global_connect ".*" $term $net
+        }
       }
     }
   }
@@ -4243,6 +4279,7 @@ proc export_opendb_global_connection {} {
 
   ## Do global connect statements first
   get_global_connect_list_default [dict get $design_data core_domain] false
+  
   foreach net_type "power_nets ground_nets" {
     foreach net_name [dict get $design_data $net_type] {
       set net [$block findNet $net_name]
@@ -4260,7 +4297,6 @@ proc export_opendb_global_connection {} {
 
       foreach {net_type netname} [dict get $voltage_domains $voltage_domain] {
         set net [$block findNet $net_name]
-
         # loop over all patterns
         foreach pattern [get_global_connect_list $net_name] {
           pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
@@ -4581,6 +4617,7 @@ proc write_pdn_strategy {} {
   if {[dict exists $design_data grid]} {
     set_pdn_string_property_value "strategy" [dict get $design_data grid]
   }
+
 }
 
 proc init_tech {} {
@@ -4674,6 +4711,7 @@ proc init {args} {
   set stdcell_area ""
  
   set die_area [$block getDieArea]
+
   utl::info "PDN" 8 "Design name is $design_name."
   set def_output "${design_name}_pdn.def"
 
@@ -5328,7 +5366,9 @@ proc add_grid {} {
   if {[dict exists $grid_data core_ring]} {
     set area [dict get $grid_data area]
     # debug "Area $area"
+    
     generate_core_rings [dict get $grid_data core_ring]
+    
     if {[dict exists $grid_data gnd_pads]} {
       dict for {pin_name cells} [dict get $grid_data gnd_pads] {
         connect_pads_to_core_ring "GROUND" $pin_name $cells
@@ -5339,6 +5379,7 @@ proc add_grid {} {
         connect_pads_to_core_ring "POWER" $pin_name $cells
       }
     }
+    
     generate_voltage_domain_rings [dict get $grid_data core_ring]
     # merge_stripes
     # set intersections [odb::andSet $stripe_locs(G1,POWER) $stripe_locs(G2,POWER)]
@@ -5353,6 +5394,7 @@ proc add_grid {} {
   }
 
   set area [dict get $grid_data area]
+
   if {[dict exists $grid_data rails]} {
     # debug "Adding stdcell rails"
     # debug "area: [dict get $grid_data area]"
@@ -5366,11 +5408,13 @@ proc add_grid {} {
     set tag "POWER"
     generate_stripes $tag $pwr_net
   }
+
   ## Ground nets
   foreach gnd_net [dict get $design_data ground_nets] {
     set tag "GROUND"
     generate_stripes $tag $gnd_net
   }
+
   merge_stripes
 
   ## Power nets
@@ -6026,6 +6070,16 @@ proc get_voltage_domain_power {domain} {
   return [dict get $voltage_domains $domain primary_power]
 }
 
+proc get_voltage_domain_secondary_power {domain} {
+  variable voltage_domains
+  
+  if {[dict exists $voltage_domains $domain secondary_power]} {
+    return [dict get $voltage_domains $domain secondary_power]
+  } else {
+    return []
+  }
+}
+
 proc get_voltage_domain_ground {domain} {
   variable voltage_domains
 
@@ -6138,8 +6192,9 @@ proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
 
     for {set i 0} {$i < [llength $stripes($lay,$tag)]} {incr i} {
       set updated_polygonSet [lindex $stripes($lay,$tag) $i]
-      if {$snet_name == [get_voltage_domain_ground $domain_name] ||
-          $snet_name == [get_voltage_domain_power $domain_name]} {
+      # Check if core domain's power is the same as voltage domain's power 
+      if {$snet_name == [get_voltage_domain_power $domain_name] ||
+          $snet_name == [get_voltage_domain_ground $domain_name]} {
         set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box_for_crossing_core_net]
       } else {
         set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box]
@@ -6189,8 +6244,9 @@ proc generate_voltage_domain_rings {core_ring_data} {
     set domain [$block findRegion $domain_name]
     set rect [lindex [$domain getBoundaries] 0]
     set power_net [get_voltage_domain_power $domain_name]
+    set secondary_power_net [get_voltage_domain_secondary_power $domain_name]
     set ground_net [get_voltage_domain_ground $domain_name]
-
+    
     set domain_xMin [$rect xMin]
     set domain_yMin [$rect yMin]
     set domain_xMax [$rect xMax]
@@ -6242,7 +6298,7 @@ proc generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_ux + $width / 2] \
             [expr $outer_uy + $width / 2] \
           ]
-
+        
         if {$power_net == [get_voltage_domain_power [dict get $design_data core_domain]]} {
           add_stripe $layer "POWER" $lower_inner_ring
           add_stripe $layer "POWER" $upper_inner_ring
@@ -6256,6 +6312,33 @@ proc generate_voltage_domain_rings {core_ring_data} {
         } else {
           add_stripe $layer "GROUND_$ground_net" $lower_outer_ring
           add_stripe $layer "GROUND_$ground_net" $upper_outer_ring
+        }
+        
+      	set number_of_rings [llength $secondary_power_net]
+        foreach secondary_power $secondary_power_net {
+          set outer_lx [expr $outer_lx - $spacing - $width]
+          set outer_ly [expr $outer_ly - $spacing - $width]
+          set outer_ux [expr $outer_ux + $spacing + $width] 
+    	    set outer_uy [expr $outer_uy + $spacing + $width]
+
+          set upper_domain_power \
+            [odb::newSetFromRect \
+              [expr $outer_lx - $width / 2] \
+              [expr $outer_uy - $width / 2] \
+              [expr $outer_ux + $width / 2] \
+              [expr $outer_uy + $width / 2] \
+            ]
+
+          set lower_domain_power \
+            [odb::newSetFromRect \
+              [expr $outer_lx - $width / 2] \
+              [expr $outer_ly - $width / 2] \
+              [expr $outer_ux + $width / 2] \
+              [expr $outer_ly + $width / 2] \
+            ]
+
+          add_stripe $layer "POWER_$secondary_power" $upper_domain_power
+          add_stripe $layer "POWER_$secondary_power" $lower_domain_power
         }
       } else {
         set lhs_inner_ring \
@@ -6301,16 +6384,43 @@ proc generate_voltage_domain_rings {core_ring_data} {
           add_stripe $layer "GROUND_$ground_net" $lhs_outer_ring
           add_stripe $layer "GROUND_$ground_net" $rhs_outer_ring
         }
+
+        foreach secondary_power $secondary_power_net {
+          set outer_lx [expr $outer_lx - $spacing - $width]
+          set outer_ly [expr $outer_ly - $spacing - $width]
+          set outer_ux [expr $outer_ux + $spacing + $width]
+          set outer_uy [expr $outer_uy + $spacing + $width]
+  
+          set lhs_domain_power \
+            [odb::newSetFromRect \
+              [expr $outer_lx - $width / 2] \
+              [expr $outer_ly - $width / 2] \
+              [expr $outer_lx + $width / 2] \
+              [expr $outer_uy + $width / 2] \
+            ]
+
+          set rhs_domain_power \
+            [odb::newSetFromRect \
+              [expr $outer_ux - $width / 2] \
+              [expr $outer_ly - $width / 2] \
+              [expr $outer_ux + $width / 2] \
+              [expr $outer_uy + $width / 2] \
+            ]
+
+          add_stripe $layer "POWER_$secondary_power" $lhs_domain_power
+          add_stripe $layer "POWER_$secondary_power" $rhs_domain_power
+        }
       }
     }
   }
 }
 
+
 # This proc detects pins used in pdn.cfg for global connections
 proc get_valid_mterms {net_name} {
   variable global_connections
   variable default_global_connections
-  
+ 
   if {$global_connections == {}} {
     set global_connections $default_global_connections
   }
@@ -6353,7 +6463,6 @@ proc core_area_boundary {} {
 
   # Add blockages around the outside of the core area in order to trim back the templates.
   #
-  set blockages {}
   set boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly]]
   set boundary [odb::orSet $boundary [odb::newSetFromRect [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]]]
@@ -6573,11 +6682,13 @@ proc plan_grid {} {
   foreach pwr_net [dict get $design_data power_nets] {
     generate_grid_vias "POWER" $pwr_net
   }
+
   foreach gnd_net [dict get $design_data ground_nets] {
     generate_grid_vias "GROUND" $gnd_net
   }
 
   add_macro_based_grids
+ 
 }
 
 proc opendb_update_grid {} {
@@ -6620,7 +6731,8 @@ proc apply {args} {
 
   plan_grid
 
-  write_pdn_strategy 
+  write_pdn_strategy
+
   opendb_update_grid
 }
 }
