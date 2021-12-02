@@ -69,8 +69,6 @@ class PlotGnu {
   void Draw(Network* network, Architecture* arch, char* msg = 0);
 
  protected:
-  void drawArchitecture(char* buf);
-  void drawEdges(char* buf);
   void drawNodes(char* buf);
 
  protected:

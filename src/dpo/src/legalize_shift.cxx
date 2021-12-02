@@ -84,7 +84,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   mgr.collectSingleHeightCells();
   mgr.collectMultiHeightCells();
   mgr.collectWideCells();  // XXX: This requires segments!
-  mgr.findBlockages(mgr.m_fixedCells, false /* exclude blockages. */);
+  mgr.findBlockages(false); // Exclude routing blockages.
   mgr.findSegments();
 
   std::vector<std::pair<double, double> > origPos;

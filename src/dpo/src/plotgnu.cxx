@@ -50,7 +50,6 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
 ////////////////////////////////////////////////////////////////////////////////
-#define MAX_COUNT 2  // Max number of nets to print out
 
 namespace dpo {
 
@@ -61,7 +60,6 @@ PlotGnu::PlotGnu()
     : m_network(0),
       m_counter(0),
       m_drawArchitecture(false),
-      m_drawEdges(false),
       m_drawNodes(true),
       m_skipStandardCells(false),
       m_drawDisp(false) {}
@@ -86,26 +84,9 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// PlotGnu::drawArchitecture:
-////////////////////////////////////////////////////////////////////////////////
-void PlotGnu::drawArchitecture(char* buf) {
-  // XXX: Not yet implemented...
-  return;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// PlotGnu::drawEdges:
-////////////////////////////////////////////////////////////////////////////////
-void PlotGnu::drawEdges(char* buf) {
-  // XXX: Not yet implemented...
-  return;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // PlotGnu::drawNodes:
 ////////////////////////////////////////////////////////////////////////////////
 void PlotGnu::drawNodes(char* buf) {
-  // bool drawPins = true;
   bool drawPins = false;
 
   double rowHeight = m_arch->m_rows[0]->m_rowHeight;
@@ -301,8 +282,8 @@ void PlotGnu::drawNodes(char* buf) {
                 y - 0.5 * h);
 
         if (drawPins) {
-          for (int pi = nd->getFirstPinIdx(); pi < nd->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < nd->getPins().size(); pi++) {
+            Pin* pin = nd->getPins()[pi];
 
             double xp = x + pin->getOffsetX();
             double yp = y + pin->getOffsetY();
@@ -355,8 +336,8 @@ void PlotGnu::drawNodes(char* buf) {
                 y - 0.5 * h);
 
         if (drawPins) {
-          for (int pi = nd->getFirstPinIdx(); pi < nd->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < nd->getPins().size(); pi++) {
+            Pin* pin = nd->getPins()[pi];
 
             double xp = x + pin->getOffsetX();
             double yp = y + pin->getOffsetY();
@@ -409,8 +390,6 @@ void PlotGnu::drawNodes(char* buf) {
       if (m_skipStandardCells && (nd->getHeight() - 1.0e-3 < rowHeight)) {
         ;
       } else {
-        //                w *= 0.98;
-        //                h *= 0.98;
         fprintf(fpCurr,
                 "\n"
                 "%lf %lf\n"
@@ -424,8 +403,8 @@ void PlotGnu::drawNodes(char* buf) {
                 y - 0.5 * h);
 
         if (drawPins) {
-          for (int pi = nd->getFirstPinIdx(); pi < nd->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < nd->getPins().size(); pi++) {
+            Pin* pin = nd->getPins()[pi];
 
             double xp = x + pin->getOffsetX();
             double yp = y + pin->getOffsetY();
@@ -487,9 +466,10 @@ void PlotGnu::drawNodes(char* buf) {
   }
 
   if (1) {
-    for (int k = 0; k < m_network->m_shapes.size(); k++) {
-      for (int i = 0; i < m_network->m_shapes[k].size(); i++) {
-        Node* shape = m_network->m_shapes[k][i];
+    for (int k = 0; k < m_network->getNumNodes(); k++) {
+      Node* ndk = m_network->getNode(k);
+      for (int i = 0; i < m_network->getNumShapes(ndk); i++) {
+        Node* shape = m_network->getShape(ndk,i);
         double l = shape->getX() - 0.5 * shape->getWidth();
         double r = shape->getX() + 0.5 * shape->getWidth();
         double b = shape->getY() - 0.5 * shape->getHeight();

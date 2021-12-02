@@ -157,18 +157,16 @@ void DetailedABU::init(void) {
     }
   }
 
-  // Insert fixed stuff.
+  // Insert fixed stuff, but skip shapes (done later).
   for (int i = 0; i < m_network->getNumNodes(); i++) {
     Node* nd = m_network->getNode(i);
 
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
+    if (!nd->isFixed() || (m_network->getNumShapes(nd) != 0)) {
       continue;
     }
-    if (m_network->m_shapes[nd->getId()].size() != 0) {
-      continue;
-    }
-    if (nd->getFixed() == NodeFixed_NOT_FIXED) {
+    // How to handle terminals?  Some we can place on top of
+    // while others we can't...
+    if (nd->isTerminal() || nd->isTerminalNI()) {
       continue;
     }
 
@@ -217,12 +215,11 @@ void DetailedABU::init(void) {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
 
-    if (m_network->m_shapes[nd->getId()].size() == 0) {
-      // No shapes...
+    if (m_network->getNumShapes(nd) == 0) {
       continue;
     }
-    for (int m = 0; m < m_network->m_shapes[nd->getId()].size(); m++) {
-      Node* shape = m_network->m_shapes[nd->getId()][m];
+    for (int m = 0; m < m_network->getNumShapes(nd); m++) {
+      Node* shape = m_network->getShape(nd,m);
 
       int lcol =
           std::max((int)floor(((shape->getX() - 0.5 * shape->getWidth()) -
@@ -348,7 +345,7 @@ void DetailedABU::computeUtils(void) {
     if (nd->getFixed() != NodeFixed_NOT_FIXED) {
       continue;
     }
-    if (m_network->m_shapes[nd->getId()].size() != 0) {
+    if (m_network->getNumShapes(nd) != 0) {
       continue;
     }
 
@@ -684,10 +681,9 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub) {
   // contribution to the bin utilization.  Assumes the node is located at (x,y)
   // rather than the position stored in the node...
 
-  if (nd->getType() == NodeType_TERMINAL ||
-      nd->getType() == NodeType_TERMINAL_NI ||
+  if (nd->isTerminal() || nd->isTerminalNI() ||
       nd->getFixed() != NodeFixed_NOT_FIXED ||
-      m_network->m_shapes[nd->getId()].size() != 0) {
+      m_network->getNumShapes(nd) != 0) {
     m_mgrPtr->internalError("Problem updating bins for utilization objective");
   }
 

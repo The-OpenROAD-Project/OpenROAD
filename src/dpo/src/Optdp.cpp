@@ -382,11 +382,6 @@ void Optdp::createNetwork() {
   // placeable instances as well as terminals.
   nw_->resizeNodes(nNodes + nTerminals);
   nw_->resizeEdges(nEdges);
-  nw_->resizePins(nPins);
-  nw_->m_shapes.resize(nNodes + nTerminals);
-  for (size_t i = 0; i < nw_->m_shapes.size(); i++) {
-    nw_->m_shapes[i] = std::vector<Node*>();
-  }
 
   // XXX: NEED TO DO BETTER WITH ORIENTATIONS AND SYMMETRY...
 
@@ -520,23 +515,22 @@ void Optdp::createNetwork() {
     // dbSigType netType = net->getSigType();
 
     Edge* edi = nw_->getEdge(e);
+    edi->setId(e);
     netMap_[net] = edi;
 
     // Name of edge.
     nw_->setEdgeName(e, net->getName().c_str());
-
-    edi->setId(e);
 
     for (dbITerm* iTerm : net->getITerms()) {
       it_n = instMap_.find(iTerm->getInst());
       if (instMap_.end() != it_n) {
         n = it_n->second->getId();  // The node id.
 
-        Pin* ptr = &(nw_->m_pins[p]);
+        if (nw_->getNode(n)->getId() != n || nw_->getEdge(e)->getId() != e) {
+          ++errors;
+        }
 
-        ptr->setId(p);
-        ptr->setEdgeId(e);
-        ptr->setNodeId(n);
+        Pin* ptr = nw_->createAndAddPin(nw_->getNode(n),nw_->getEdge(e));
 
         // Pin offset.  Correct?
         dbMTerm* mTerm = iTerm->getMTerm();
@@ -569,11 +563,11 @@ void Optdp::createNetwork() {
       if (termMap_.end() != it_p) {
         n = it_p->second->getId();  // The node id.
 
-        Pin* ptr = &(nw_->m_pins[p]);
+        if (nw_->getNode(n)->getId() != n || nw_->getEdge(e)->getId() != e) {
+          ++errors;
+        }
 
-        ptr->setId(p);
-        ptr->setEdgeId(e);
-        ptr->setNodeId(n);
+        Pin* ptr = nw_->createAndAddPin(nw_->getNode(n),nw_->getEdge(e));
 
         // These don't need an offset.
         ptr->setOffsetX(0.0);
@@ -599,44 +593,11 @@ void Optdp::createNetwork() {
     ++errors;
   }
 
-  // Connectivity information.
-  {
-    nw_->m_nodePins.resize(nw_->m_pins.size());
-    nw_->m_edgePins.resize(nw_->m_pins.size());
-    for (size_t i = 0; i < nw_->m_pins.size(); i++) {
-      nw_->m_nodePins[i] = &(nw_->m_pins[i]);
-      nw_->m_edgePins[i] = &(nw_->m_pins[i]);
-    }
-    std::stable_sort(nw_->m_nodePins.begin(), nw_->m_nodePins.end(),
-                     Network::comparePinsByNodeId());
-    p = 0;
-    for (n = 0; n < nw_->getNumNodes(); n++) {
-      Node* nd = nw_->getNode(n);
-
-      nd->setFirstPinIdx(p);
-      while (p < nw_->m_nodePins.size() && nw_->m_nodePins[p]->getNodeId() == n)
-        ++p;
-      nd->setLastPinIdx(p);
-    }
-
-    std::stable_sort(nw_->m_edgePins.begin(), nw_->m_edgePins.end(),
-                     Network::comparePinsByEdgeId());
-    p = 0;
-    for (e = 0; e < nw_->getNumEdges(); e++) {
-      Edge* ed = nw_->getEdge(e);
-
-      ed->setFirstPinIdx(p);
-      while (p < nw_->m_edgePins.size() && nw_->m_edgePins[p]->getEdgeId() == e)
-        ++p;
-      ed->setLastPinIdx(p);
-    }
-  }
-
   if (errors != 0) {
     logger_->error(DPO, 101, "Error creating network.");
   } else {
     logger_->info(DPO, 102, "Network stats: inst {}, edges {}, pins {}",
-                  nw_->getNumNodes(), nw_->getNumEdges(), nw_->m_pins.size());
+                  nw_->getNumNodes(), nw_->getNumEdges(), nw_->getNumPins());
   }
 }
 ////////////////////////////////////////////////////////////////

@@ -41,15 +41,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <iostream>
-#include <map>
 #include <vector>
+#include <unordered_map>
 #include "architecture.h"
 #include "orientation.h"
 #include "symmetry.h"
-
-#define ERRMSG(msg)                                     \
-  fprintf(stderr, "Error: %s:%d ", __FILE__, __LINE__); \
-  fprintf(stderr, "%s\n", msg);
 
 namespace dpo {
 
@@ -69,13 +65,8 @@ const unsigned NodeType_TERMINAL_NI = 0x00000004;
 const unsigned NodeType_MACROCELL = 0x00000008;
 const unsigned NodeType_FILLER = 0x00000010;
 const unsigned NodeType_SHAPE = 0x00000020;
-const unsigned NodeType_PEANUT = 0x00000040;
-const unsigned NodeType_SPREAD = 0x00000080;
 
 const unsigned NodeAttributes_EMPTY = 0x00000000;
-const unsigned NodeAttributes_SHRED = 0x00000001;
-
-const unsigned NodeAttributes_IS_FLOP = 0x00000002;
 
 const unsigned NodeFixed_NOT_FIXED = 0x00000000;
 const unsigned NodeFixed_FIXED_X = 0x00000001;
@@ -90,8 +81,6 @@ const unsigned NodeFixed_FIXED_XY = 0x00000003;  // FIXED_X and FIXED_Y.
 class Node {
  public:
   Node();
-  Node(const Node& other);
-  Node& operator=(const Node& other);
   virtual ~Node();
 
   int getId(void) const { return m_id; }
@@ -136,7 +125,21 @@ class Node {
   void addAttribute(unsigned attribute) { m_attributes |= attribute; }
   void remAttribute(unsigned attribute) { m_attributes &= ~attribute; }
 
-  bool isFlop(void) const;
+  bool isTerminal(void) const {
+    return (m_type == NodeType_TERMINAL);
+  }
+  bool isTerminalNI(void) const {
+    return (m_type == NodeType_TERMINAL_NI);
+  }
+  bool isFiller(void) const { 
+    return (m_type == NodeType_FILLER);
+  }
+  bool isShape(void) const {
+    return (m_type == NodeType_SHAPE);
+  }
+  bool isFixed(void) const {
+    return (m_fixed != NodeFixed_NOT_FIXED);
+  }
 
   void setLeftEdgeType(int etl) { m_etl = etl; }
   int getLeftEdgeType(void) const { return m_etl; }
@@ -152,11 +155,7 @@ class Node {
   void setTopPower(int top) { m_powerTop = top; }
   int getTopPower(void) const { return m_powerTop; }
 
-  void setFirstPinIdx( unsigned idx ) { m_firstPin = idx; }
-  unsigned getFirstPinIdx(void) const { return m_firstPin; }
-
-  void setLastPinIdx( unsigned idx ) { m_lastPin = idx; }
-  unsigned getLastPinIdx(void) const { return m_lastPin; }
+  const std::vector<Pin*>& getPins(void) { return m_pins; }
 
  protected:
   // Id.
@@ -187,9 +186,10 @@ class Node {
   // Orientations.
   unsigned m_currentOrient;
   unsigned m_availOrient;
-  // For accessing pins.
-  unsigned m_firstPin;
-  unsigned m_lastPin;
+  // Pins.
+  std::vector<Pin*> m_pins;
+
+  friend class Network;
 };
 
 class Edge {
@@ -200,26 +200,20 @@ class Edge {
   int getId(void) const { return m_id; }
   void setId(int id) { m_id = id; }
 
-  void setFirstPinIdx( unsigned idx ) { m_firstPin = idx; }
-  unsigned getFirstPinIdx(void) const { return m_firstPin; }
-
-  void setLastPinIdx( unsigned idx ) { m_lastPin = idx; }
-  unsigned getLastPinIdx(void) const { return m_lastPin; }
-
-  int getNumPins(void) const { return m_lastPin-m_firstPin; }
-
   void setNdr( int ndr ) { m_ndr = ndr; }
   int getNdr( void ) const { return m_ndr; }
+
+  const std::vector<Pin*>& getPins() { return m_pins; }
 
  protected:
   // Id.
   int m_id;
-  // For accessing pins.
-  unsigned m_firstPin;
-  unsigned m_lastPin;
-  // Refers to a routing rule inside of the routing parameters
-  // class.
+  // Refer to routing rule stored elsewhere.
   int m_ndr;  
+  // Pins.
+  std::vector<Pin*> m_pins;
+
+  friend class Network;
 };
 
 class Pin {
@@ -227,22 +221,14 @@ class Pin {
   enum Direction { Dir_IN, Dir_OUT, Dir_INOUT, Dir_UNKNOWN };
 
  public:
-  Pin();
-  Pin(const Pin& other);
-  Pin& operator=(const Pin& other);
-  virtual ~Pin();
-
-  void setId(int id) { m_id = id; }
-  int getId(void) const { return m_id; }
+  Pin(void);
+  virtual ~Pin(void);
 
   void setDirection(int dir) { m_dir = dir; }
   int getDirection(void) const { return m_dir; }
 
-  void setNodeId(int id) { m_nodeId = id; }
-  int getNodeId(void) const { return m_nodeId; }
-
-  void setEdgeId(int id) { m_edgeId = id; }
-  int getEdgeId(void) const { return m_edgeId; }
+  Node* getNode(void) const { return m_node; }
+  Edge* getEdge(void) const { return m_edge; }
 
   void setOffsetX(double offsetX) { m_offsetX = offsetX; }
   double getOffsetX(void) const { return m_offsetX; }
@@ -259,22 +245,7 @@ class Pin {
   void setPinHeight(double height) { m_pinH = height; }
   double getPinHeight(void) const { return m_pinH; }
 
-#ifdef USE_ICCAD14
-  bool isSink() const { return m_dir == Pin::Dir_IN; }
-  bool isSource() const { return m_dir == Pin::Dir_OUT; }
-  bool isBiDir() const {
-    return (m_dir == Pin::Dir_IN || m_dir == Pin::Dir_OUT) ? false : true;
-  }
-  Node* getOwner(Network* network) const;
-  bool getName(Network* network, std::string& name) const;
-  bool isFlopInput(Network* network) const;
-  bool isPi(Network* nw) const;
-  bool isPo(Network* nw) const;
-#endif
-
  protected:
-  // Id.
-  int m_id;
   // Pin width and height.
   double m_pinW; 
   double m_pinH;   
@@ -282,28 +253,14 @@ class Pin {
   int m_dir;
   // Layer.
   int m_pinLayer;  
-  // Node and edge where we find this pin.
-  int m_nodeId;
-  int m_edgeId;
+  // Node and edge for pin.
+  Node* m_node;
+  Edge* m_edge;
   // Offsets from cell center.
   double m_offsetX;
   double m_offsetY;
 
-#ifdef USE_ICCAD14
-  char* m_portName;  // Name of the port.
-
-  // From .sdc file
-  double m_cap;      // Load capacitance of an output.
-  double m_delay;    // Delay at inputs/outputs wrt a specified clock.
-  double m_rTran;    // Rise transition time at input.
-  double m_fTran;    // Fall transition time at input.
-  int m_driverType;  // Library cell assumed to be driving the input.
-  // From timer
-  double m_earlySlack;  // Clearly, slack...
-  double m_lateSlack;   // Clearly, slack...
-  // Computed
-  double m_crit;  // The criticality of the pin...
-#endif
+  friend class Network;
 };
 
 class Network {
@@ -319,14 +276,7 @@ class Network {
 
   struct comparePinsByNodeId {
     bool operator()(const Pin* a, const Pin* b) {
-#ifdef USE_ICCAD14
-      // To mimic the order of pins to the evaluation script, we should also
-      // sort by pin name...
-      if (a->getNodeId() == b->getNodeId()) {
-        return (strcmp(a->m_portName, b->m_portName) < 0);
-      }
-#endif
-      return a->getNodeId() < b->getNodeId();
+      return a->getNode()->getId() < b->getNode()->getId();
     }
   };
 
@@ -335,18 +285,7 @@ class Network {
     comparePinsByEdgeId() : m_nw(0) {}
     comparePinsByEdgeId(Network* nw) : m_nw(nw) {}
     bool operator()(const Pin* a, const Pin* b) {
-      // To mimic the order of pins to the evaluation script, we should also
-      // sort by pin name.  The pin name also involves the instance name which
-      // must be obtained from the network...  :(
-      if (a->getEdgeId() == b->getEdgeId()) {
-#ifdef USE_ICCAD14
-        std::string name_a, name_b;
-        a->getName(m_nw, name_a);
-        b->getName(m_nw, name_b);
-        return (strcmp(name_a.c_str(), name_b.c_str()) < 0);
-#endif
-      }
-      return a->getEdgeId() < b->getEdgeId();
+      return a->getEdge()->getId() < b->getEdge()->getId();
     }
     Network* m_nw;
   };
@@ -396,72 +335,56 @@ class Network {
   void setEdgeName(int i, const char* name) { m_edgeNames[i] = name; }
   std::string& getEdgeName(int i) { return m_edgeNames[i]; }
 
-  Pin* getPin(int i) { return &(m_pins[i]); }
-  Pin* getNodePin(int i) { return m_nodePins[i]; }
-  Pin* getEdgePin(int i) { return m_edgePins[i]; }
-
   // For building only.
   void resizeNodes(int nNodes) {
-    m_nodeNames.resize(nNodes);
     m_nodes.resize(nNodes);
+    m_shapes.resize(nNodes);
   }
   void resizeEdges(int nEdges) {
-    m_edgeNames.resize(nEdges);
     m_edges.resize(nEdges);
   }
-  void resizePins(int nPins) {
-    m_nodePins.resize(nPins);
-    m_edgePins.resize(nPins);
-    m_pins.resize(nPins);
-  }
 
-  size_t getNumFillerNodes() const { return m_filler.size(); }
+  // For creating and adding pins.
+  Pin* createAndAddPin(Node* nd, Edge* ed);
+  int getNumPins(void) const { return m_pins.size(); }
+
+  size_t getNumFillerNodes(void) const { return m_filler.size(); }
   Node* getFillerNode(int i) const { return m_filler[i]; }
   void deleteFillerNodes(void);
   Node* createAndAddFillerNode(double x, double y, double width, double height);
 
+  bool hasShapes(Node* ndi) const {
+    if (ndi->getId() < m_shapes.size()) {
+      return (m_shapes[ndi->getId()].size() != 0);
+    }
+    return false;
+  }
+  int getNumShapes(Node* ndi) const { 
+    return (ndi->getId() < m_shapes.size())
+        ? m_shapes[ndi->getId()].size()
+        : 0;
+  }
+  Node* getShape(Node* ndi, int i) {
+    return m_shapes[ndi->getId()][i];
+  }
+  Node* createAndAddShapeNode(Node* ndi,
+    double x, double y, double width, double height);
+
+ protected:
+  // For creating and adding pins. 
+  Pin* createAndAddPin(void);
+
  protected:
   std::vector<Edge> m_edges;  // The edges in the netlist...
-  std::vector<std::string> m_edgeNames; // Names of edges...
+  std::unordered_map<int,std::string> m_edgeNames; // Names of edges...
   std::vector<Node> m_nodes;  // The nodes in the netlist...
-  std::vector<std::string> m_nodeNames; // Names of nodes...
+  std::unordered_map<int,std::string> m_nodeNames; // Names of nodes...
+  std::vector<Pin*> m_pins; // The pins in the network...
 
   std::vector<Node*> m_filler; // For filler...
 
- public:
-  std::vector<Pin> m_pins;    // All the pins in the netlist...  Not accessed directly really.
-
-  std::vector<Pin*> m_nodePins;  // For accessing pins on any node...  Pointer
-                                 // to static allocation...
-  std::vector<Pin*> m_edgePins;  // For accessing pins on any edge...  Pointer
-                                 // to static allocation...
-
   // Shapes for non-rectangular nodes...
   std::vector<std::vector<Node*> > m_shapes;
-
-#ifdef USE_ICCAD14
-  std::string team;
-  std::string directory;
-  std::string benchmark;
-  double LOCAL_WIRE_CAP_PER_MICRON,
-      LOCAL_WIRE_RES_PER_MICRON; /* Ohm & Farad per micro meter */
-  double GLOBAL_WIRE_CAP_PER_MICRON,
-      GLOBAL_WIRE_RES_PER_MICRON;    /* Ohm & Farad per micro meter */
-  double MAX_WIRE_SEGMENT_IN_MICRON; /* in micro meter  */
-  double DEF_DISTANCE_IN_MICRONS;
-
-  std::vector<Pin*> m_Pis;     // Primary input pins.
-  std::vector<Pin*> m_Pos;     // Primary output pins.
-  std::vector<Pin*> m_PisPos;  // Primary bidir pins.
-
-  // Following is sort of bad... It assumes a single clock across the entire
-  // circuit which might not be true.
-  std::string m_clockName;  // SDC identifier for the clock.
-  std::string m_clockPort;  // Port to which the clock is bound.
-  double m_clockPeriod;     // Period of the clock.
-#endif
-
- protected:
 };
 
 }  // namespace dpo

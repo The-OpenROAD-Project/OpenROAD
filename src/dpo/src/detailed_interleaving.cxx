@@ -321,10 +321,10 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
     ++nNodes;
     m_nodeIds.push_back(nd->getId());
 
-    for (int pj = nd->getFirstPinIdx(); pj < nd->getLastPinIdx(); pj++) {
-      Pin* pin = m_network->m_nodePins[pj];
-      Edge* ed = m_network->getEdge(pin->getEdgeId());
-      int npins = ed->getNumPins();
+    for (int pj = 0; pj < nd->getPins().size(); pj++) {
+      Pin* pin = nd->getPins()[pj];
+      Edge* ed = pin->getEdge();
+      int npins = ed->getPins().size();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -452,9 +452,9 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
     int eid = m_edgeMap[ed->getId()];
 
     EdgeInterval tmp;
-    for (int pi = ed->getFirstPinIdx(); pi < ed->getLastPinIdx(); pi++) {
-      Pin* pin = m_network->m_edgePins[pi];
-      Node* nd = m_network->getNode(pin->getNodeId());
+    for (int pi = 0; pi < ed->getPins().size(); pi++) {
+      Pin* pin = ed->getPins()[pi];
+      Node* nd = pin->getNode();
       double x = nd->getX() + pin->getOffsetX();
       x = std::min(std::max(x, sm->m_xmin), sm->m_xmax);
       if (m_nodeMask[nd->getId()] == m_traversal) {
@@ -698,10 +698,10 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
     ++nNodes;
     m_nodeIds.push_back(nd->getId());
 
-    for (int pj = nd->getFirstPinIdx(); pj < nd->getLastPinIdx(); pj++) {
-      Pin* pin = m_network->m_nodePins[pj];
-      Edge* ed = m_network->getEdge(pin->getEdgeId());
-      int npins = ed->getNumPins();
+    for (int pj = 0; pj < nd->getPins().size(); pj++) {
+      Pin* pin = nd->getPins()[pj];
+      Edge* ed = pin->getEdge();
+      int npins = ed->getPins().size();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -730,9 +730,9 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
     int eid = m_edgeMap[ed->getId()];
 
     EdgeInterval tmp;
-    for (int pi = ed->getFirstPinIdx(); pi < ed->getLastPinIdx(); pi++) {
-      Pin* pin = m_network->m_edgePins[pi];
-      Node* nd = m_network->getNode(pin->getNodeId());
+    for (int pi = 0; pi < ed->getPins().size(); pi++) {
+      Pin* pin = ed->getPins()[pi];
+      Node* nd = pin->getNode();
       double x = std::min(std::max(nd->getX() + pin->getOffsetX(), minX), maxX);
       if (m_nodeMask[nd->getId()] == m_traversal) {
         int nid = m_nodeMap[nd->getId()];

@@ -54,8 +54,6 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 Node::Node()
     : m_id(0),
-      m_firstPin(0),
-      m_lastPin(0),
       m_type(0),
       m_fixed(NodeFixed_NOT_FIXED),
       m_attributes(NodeAttributes_EMPTY),
@@ -71,186 +69,24 @@ Node::Node()
   m_powerTop = dpo::RowPower_UNK;
   m_powerBot = dpo::RowPower_UNK;
 }
-Node::Node(const Node& other)
-    : m_id(other.m_id),
-      m_firstPin(other.m_firstPin),
-      m_lastPin(other.m_lastPin),
-      m_type(other.m_type),
-      m_fixed(other.m_fixed),
-      m_attributes(other.m_attributes),
-      m_currentOrient(other.m_currentOrient),
-      m_availOrient(other.m_availOrient),
-      m_x(other.m_x),
-      m_y(other.m_y),
-      m_w(other.m_w),
-      m_h(other.m_h),
-      m_etl(other.m_etl),
-      m_etr(other.m_etr),
-      m_regionId(other.m_regionId) {
-  m_powerTop = dpo::RowPower_UNK;
-  m_powerBot = dpo::RowPower_UNK;
-}
-Node& Node::operator=(const Node& other) {
-  if (this != &other) {
-    m_id = other.m_id;
-    m_firstPin = other.m_firstPin;
-    m_lastPin = other.m_lastPin;
-    m_type = other.m_type;
-    m_fixed = other.m_fixed;
-    m_attributes = other.m_attributes;
-    m_currentOrient = other.m_currentOrient;
-    m_availOrient = other.m_availOrient;
-    m_x = other.m_x;
-    m_y = other.m_y;
-    m_w = other.m_w;
-    m_h = other.m_h;
-    m_etl = other.m_etl;
-    m_etr = other.m_etr;
-    m_regionId = other.m_regionId;
-  }
-  return *this;
-}
 Node::~Node() {}
 
-bool Node::isFlop() const {
-  if ((m_attributes & NodeAttributes_IS_FLOP) != 0) return true;
-  return false;
-}
-
-Edge::Edge() : m_id(0), m_firstPin(0), m_lastPin(0), m_ndr(0) {}
+Edge::Edge() : m_id(0), m_ndr(0) {}
 
 Edge::~Edge() {}
 
-Pin::Pin()
-    : m_id(-1),
-      m_dir(Pin::Dir_INOUT),
-      m_nodeId(0),
-      m_edgeId(0),
+Pin::Pin(void)
+    : m_dir(Pin::Dir_INOUT),
+      m_node(nullptr),
+      m_edge(nullptr),
       m_offsetX(0.0),
       m_offsetY(0.0),
-      m_pinLayer(
-          0),  // Assume layer 0 which is understood to correspond to metal1.
+      m_pinLayer(0),  
       m_pinW(0.0),
       m_pinH(0.0) {
-#ifdef USE_ICCAD14
-  m_portName = 0;
-  m_cap = 0.0;
-  m_delay = 0.0;
-  m_rTran = 0.0;
-  m_fTran = 0.0;
-  m_driverType = 0;
-  m_earlySlack = 0;
-  m_lateSlack = 0;
-  m_crit = 1.0;
-#endif
 }
 
-Pin::Pin(const Pin& other)
-    : m_id(other.m_id),
-      m_dir(other.m_dir),
-      m_nodeId(other.m_nodeId),
-      m_edgeId(other.m_edgeId),
-      m_offsetX(other.m_offsetX),
-      m_offsetY(other.m_offsetY),
-      m_pinLayer(other.m_pinLayer),
-      m_pinW(other.m_pinW),
-      m_pinH(other.m_pinH) {
-#ifdef USE_ICCAD14
-  if (other.m_portName == 0) {
-    m_portName = 0;
-  } else {
-    m_portName = new char[strlen(other.m_portName) + 1];
-    strcpy(&m_portName[0], &other.m_portName[0]);
-  }
-  m_cap = 0.0;
-  m_delay = 0.0;
-  m_rTran = 0.0;
-  m_fTran = 0.0;
-  m_driverType = 0;
-  m_earlySlack = 0;
-  m_lateSlack = 0;
-  m_crit = 1.0;
-#endif
-}
-
-Pin& Pin::operator=(const Pin& other) {
-  if (this != &other) {
-    m_id = other.m_id;
-    m_dir = other.m_dir;
-    m_nodeId = other.m_nodeId;
-    m_edgeId = other.m_edgeId;
-    m_offsetX = other.m_offsetX;
-    m_offsetY = other.m_offsetY;
-    m_pinLayer = other.m_pinLayer;
-    m_pinW = other.m_pinW;
-    m_pinH = other.m_pinH;
-#ifdef USE_ICCAD14
-    if (m_portName != 0) delete[] m_portName;
-    if (other.m_portName == 0) {
-      m_portName = 0;
-    } else {
-      m_portName = new char[strlen(other.m_portName) + 1];
-      strcpy(&m_portName[0], &other.m_portName[0]);
-    }
-    m_cap = 0.0;
-    m_delay = 0.0;
-    m_rTran = 0.0;
-    m_fTran = 0.0;
-    m_driverType = 0;
-    m_earlySlack = 0;
-    m_lateSlack = 0;
-    m_crit = 1.0;
-#endif
-  }
-  return *this;
-}
-
-Pin::~Pin() {
-#ifdef USE_ICCAD14
-  if (m_portName != 0) delete[] m_portName;
-#endif
-}
-
-#ifdef USE_ICCAD14
-Node* Pin::getOwner(Network* network) const {
-  return &(network->m_nodes[this->m_nodeId]);
-}
-bool Pin::getName(Network* network, std::string& name) const {
-  std::string& nodeName = network->m_nodeNames[this->m_nodeId];
-  if (strncasecmp(nodeName.c_str(), "FakeInstForExtPin",
-                  strlen("FakeInstForExtPin")) == 0) {
-    name = this->m_portName;
-  } else {
-    name = std::string(nodeName.c_str()) + "/" + std::string(this->m_portName);
-  }
-  return true;
-}
-bool Pin::isFlopInput(Network* network) const {
-  Node* owner = &(network->m_nodes[this->m_nodeId]);
-  if (owner->isFlop() && this->m_dir == Pin::Dir_IN) return true;
-  return false;
-}
-bool Pin::isPi(Network* network) const {
-  // A pin is a PI pin if it is on a fake instance and it is a source (note that
-  // a PI is a source as far as the circuit is concerned!).
-  std::string& nodeName = network->m_nodeNames[this->m_nodeId];
-  if (strncasecmp(nodeName.c_str(), "FakeInstForExtPin",
-                  strlen("FakeInstForExtPin")) == 0) {
-    return isSource();
-  }
-  return false;
-}
-bool Pin::isPo(Network* network) const {
-  // A pin is a PO pin if it is on a fake instance and it is a sink (note that a
-  // PO is a sink as far as the circuit is concerned!).
-  std::string& nodeName = network->m_nodeNames[this->m_nodeId];
-  if (strncasecmp(nodeName.c_str(), "FakeInstForExtPin",
-                  strlen("FakeInstForExtPin")) == 0) {
-    return isSink();
-  }
-  return false;
-}
-#endif
+Pin::~Pin(void) {}
 
 Network::Network() {}
 
@@ -269,6 +105,10 @@ Network::~Network() {
   m_edgeNames.clear();
   m_nodes.clear();
   m_edges.clear();
+
+  for (int i = 0; i < m_pins.size(); i++) {
+    delete m_pins[i];
+  }
   m_pins.clear();
 }
 
@@ -293,6 +133,36 @@ Node* Network::createAndAddFillerNode(double x,
 
   m_filler.push_back(ndi);
   return ndi;
+}
+
+Node* Network::createAndAddShapeNode(Node* ndi,
+    double x, double y, double width, double height) {
+  Node* shape = new Node();
+  shape->setFixed(NodeFixed_FIXED_XY);
+  shape->setType(NodeType_SHAPE);
+  shape->setId(-1);
+  shape->setHeight(height);
+  shape->setWidth(width);
+  shape->setY(y);
+  shape->setX(x);
+
+  m_shapes[ndi->getId()].push_back(shape);
+  return shape;
+}
+
+Pin* Network::createAndAddPin(void) {
+  Pin* ptr = new Pin();
+  m_pins.push_back(ptr);
+  return ptr;
+}
+
+Pin* Network::createAndAddPin(Node* nd, Edge* ed) {
+  Pin* ptr = createAndAddPin();
+  ptr->m_node = nd;
+  ptr->m_edge = ed;
+  ptr->m_node->m_pins.push_back(ptr);
+  ptr->m_edge->m_pins.push_back(ptr);
+  return ptr;
 }
 
 }  // namespace dpo

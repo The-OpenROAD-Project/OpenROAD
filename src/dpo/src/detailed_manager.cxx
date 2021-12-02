@@ -131,8 +131,7 @@ void DetailedMgr::internalError( std::string msg )
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::findBlockages(std::vector<Node*>& fixedCells,
-                                bool includeRouteBlockages) {
+void DetailedMgr::findBlockages(bool includeRouteBlockages) {
   // Blockages come from filler, from fixed nodes (possibly with shapes) and
   // from larger macros which are now considered fixed...
 
@@ -144,8 +143,8 @@ void DetailedMgr::findBlockages(std::vector<Node*>& fixedCells,
     m_blockages[i] = std::vector<std::pair<double, double> >();
   }
 
-  for (int i = 0; i < fixedCells.size(); i++) {
-    Node* nd = fixedCells[i];
+  for (int i = 0; i < m_fixedCells.size(); i++) {
+    Node* nd = m_fixedCells[i];
 
     double xmin = std::max(m_arch->m_xmin, nd->getX() - 0.5 * nd->getWidth());
     double xmax = std::min(m_arch->m_xmax, nd->getX() + 0.5 * nd->getWidth());
@@ -532,8 +531,8 @@ DetailedSeg* DetailedMgr::findClosestSegment(Node* nd) {
   double dist1 = std::numeric_limits<double>::max();
   double dist2 = std::numeric_limits<double>::max();
   DetailedSeg* best1 = 0;  // closest segment...
-  DetailedSeg* best2 =
-      0;  // closest segment which is wide enough to accomodate the cell...
+  // closest segment which is wide enough to accomodate the cell...
+  DetailedSeg* best2 = 0; 
 
   // Segments in the current row...
   for (int k = 0; k < m_segsInRow[row].size(); k++) {
@@ -926,12 +925,8 @@ void DetailedMgr::removeCellFromSegment(Node* nd, int seg) {
   std::vector<Node*>::iterator it =
       std::find(m_cellsInSeg[seg].begin(), m_cellsInSeg[seg].end(), nd);
   if (m_cellsInSeg[seg].end() == it) {
-    // This is odd.  Where does the reverse segment map say the cell should be?
-    char buf[256];
-    sprintf(&buf[0], "Unable to find cell %d in expected segment %d.",
-            nd->getId(), seg);
-    ERRMSG(buf);
-    exit(-1);
+    // Should not happen.
+    internalError("Cell not found in expected segment" );
   }
   int ix = it - m_cellsInSeg[seg].begin();
   int n = m_cellsInSeg[seg].size() - 1;
@@ -941,11 +936,8 @@ void DetailedMgr::removeCellFromSegment(Node* nd, int seg) {
       std::find(m_reverseCellToSegs[nd->getId()].begin(),
                 m_reverseCellToSegs[nd->getId()].end(), m_segments[seg]);
   if (m_reverseCellToSegs[nd->getId()].end() == its) {
-    char buf[256];
-    sprintf(&buf[0], "Unable to find segment %d in reverse map for cell %d.",
-            seg, nd->getId());
-    ERRMSG(buf);
-    exit(-1);
+    // Should not happen.
+    internalError("Cannot find segment for cell" );
   }
   m_reverseCellToSegs[nd->getId()].erase(its);
 
@@ -1062,13 +1054,11 @@ void DetailedMgr::addCellToSegment(Node* nd, int seg) {
       std::find(m_reverseCellToSegs[nd->getId()].begin(),
                 m_reverseCellToSegs[nd->getId()].end(), m_segments[seg]);
   if (m_reverseCellToSegs[nd->getId()].end() != its) {
-    ERRMSG("Found segment already present in reverse map when adding cell.");
-    exit(-1);
+    internalError("Segment already present in cell to segment map");
   }
   int spanned = (int)(nd->getHeight() / m_singleRowHeight + 0.5);
   if (m_reverseCellToSegs[nd->getId()].size() >= spanned) {
-    ERRMSG("Reverse cell to segment map in not properly sized.");
-    exit(-1);
+    internalError("Cell to segment map incorrectly sized");
   }
   m_reverseCellToSegs[nd->getId()].push_back(m_segments[seg]);
 }
@@ -1210,11 +1200,7 @@ double DetailedMgr::measureMaximumDisplacement(bool print, bool& violated) {
   double max_disp = 0.;
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
 
@@ -1360,17 +1346,11 @@ void DetailedMgr::collectSingleHeightCells(void) {
 
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
-
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
+  
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
-      continue;
-    }
-
-    int nRowsSpanned = (int)((nd->getHeight() / m_singleRowHeight) + 0.5);
-    if (nRowsSpanned != 1) {
+    if (m_arch->isMultiHeightCell(nd)) {
       continue;
     }
 
@@ -1406,18 +1386,11 @@ void DetailedMgr::collectMultiHeightCells(void) {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
 
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed() || m_arch->isSingleHeightCell(nd)) {
       continue;
     }
 
-    int nRowsSpanned = (int)((nd->getHeight() / m_singleRowHeight) + 0.5);
-    if (nRowsSpanned == 1) {
-      continue;
-    }
+    int nRowsSpanned = m_arch->getCellHeightInRows(nd);
 
     if (nRowsSpanned >= m_multiHeightCells.size()) {
       m_multiHeightCells.resize(nRowsSpanned + 1, std::vector<Node*>());
@@ -1457,6 +1430,11 @@ void DetailedMgr::collectFixedCells(void) {
   // Fixed cells are used only to create blockages which, in turn, are used to
   // create obstacles.  Obstacles are then used to create the segments into
   // which cells can be placed.
+  //
+  // AAK: 01-dec-2021.  I noticed an error with respect to bookshelf format
+  // and the handling of TERMINAL_NI cells.  One can place movable cells on
+  // top of these sorts of terminals.  Therefore, they should NOT be considered
+  // as fixed, at least with respect to creating blockages.
 
   m_fixedMacros.erase(m_fixedMacros.begin(), m_fixedMacros.end());
   m_fixedCells.erase(m_fixedCells.begin(), m_fixedCells.end());
@@ -1472,32 +1450,25 @@ void DetailedMgr::collectFixedCells(void) {
   for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
 
-    if (nd->getFixed() == NodeFixed_NOT_FIXED) {
+    if (!nd->isFixed() || nd->isTerminalNI()) {
       continue;
     }
 
-    // Terminals can have area too!
-    // if( nd->getType() == NodeType_TERMINAL || nd->getType() ==
-    // NodeType_TERMINAL_NI )
-    //{
-    //    continue;
-    //}
-
     // Fixed or macrocell (with or without shapes).
-    if (m_network->m_shapes[nd->getId()].size() == 0) {
+    if (m_network->getNumShapes(nd) == 0) {
       m_fixedMacros.push_back(nd);
       m_fixedCells.push_back(nd);
     } else {
       // Shape.
-      for (int j = 0; j < m_network->m_shapes[nd->getId()].size(); j++) {
-        Node* shape = m_network->m_shapes[nd->getId()][j];
+      for (int j = 0; j < m_network->getNumShapes(nd); j++) {
+        Node* shape = m_network->getShape(nd,j);
         m_fixedMacros.push_back(shape);
         m_fixedCells.push_back(shape);
       }
     }
   }
 
-  m_logger->info(DPO, 320, "Collected {:d} fixed cells.", m_fixedCells.size());
+  m_logger->info(DPO, 320, "Collected {:d} fixed cells (excluded terminal_NI).", m_fixedCells.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1950,11 +1921,7 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i); 
 
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
 
@@ -2017,11 +1984,7 @@ int DetailedMgr::checkRowAlignment(int max_err_n) {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
 
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
     double xl = nd->getX() - 0.5 * nd->getWidth();
@@ -2074,16 +2037,16 @@ double DetailedMgr::getCellSpacing(Node* ndl, Node* ndr,
     Pin* pinr = 0;
 
     // Right-most pin on the left cell.
-    for (int i = ndl->getFirstPinIdx(); i < ndl->getLastPinIdx(); i++) {
-      Pin* pin = m_network->m_nodePins[i];
+    for (int i = 0; i < ndl->getPins().size(); i++) {
+      Pin* pin = ndl->getPins()[i];
       if (pinl == 0 || pin->getOffsetX() > pinl->getOffsetX()) {
         pinl = pin;
       }
     }
 
     // Left-most pin on the right cell.
-    for (int i = ndr->getFirstPinIdx(); i < ndr->getLastPinIdx(); i++) {
-      Pin* pin = m_network->m_nodePins[i];
+    for (int i = 0; i < ndr->getPins().size(); i++) {
+      Pin* pin = ndr->getPins()[i];
       if (pinr == 0 || pin->getOffsetX() < pinr->getOffsetX()) {
         pinr = pin;
       }

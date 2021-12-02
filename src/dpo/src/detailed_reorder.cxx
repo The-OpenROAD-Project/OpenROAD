@@ -487,11 +487,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
   for (int i = istrt; i <= istop; i++) {
     Node* ndi = nodes[i];
 
-    for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_nodePins[pi];
-      Edge* edi = m_network->getEdge(pini->getEdgeId());
+    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+      Pin* pini = ndi->getPins()[pi];
 
-      int npins = edi->getNumPins();
+      Edge* edi = pini->getEdge();
+
+      int npins = edi->getPins().size();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -502,9 +503,10 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
 
       double xmin = std::numeric_limits<double>::max();
       double xmax = -std::numeric_limits<double>::max();
-      for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
-        Node* ndj = m_network->getNode(pinj->getNodeId());
+      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
+
+        Node* ndj = pinj->getNode();
 
         double x = ndj->getX() + pinj->getOffsetX();
 

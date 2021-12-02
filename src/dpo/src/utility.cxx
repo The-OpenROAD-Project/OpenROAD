@@ -81,7 +81,8 @@ double Utility::hpwl(Network* nw) {
   for (unsigned e = 0; e < numEdges; e++) {
     Edge* ed = nw->getEdge(e);
 
-    int numPins = ed->getNumPins();
+    //int numPins = ed->getNumPins();
+    int numPins = ed->getPins().size();
     if (numPins <= 1) {
       continue;
     }
@@ -91,10 +92,10 @@ double Utility::hpwl(Network* nw) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
-      Pin* pin = nw->m_edgePins[p];
+    for (unsigned p = 0; p < ed->getPins().size(); p++) {
+      Pin* pin = ed->getPins()[p];
 
-      Node* node = nw->getNode(pin->getNodeId());
+      Node* node = pin->getNode();
       double x = node->getX() + pin->getOffsetX();
       double y = node->getY() + pin->getOffsetY();
       xmin = (x < xmin) ? x : xmin;
@@ -117,7 +118,7 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
   for (unsigned e = 0; e < numEdges; e++) {
     Edge* ed = nw->getEdge(e);
 
-    int numPins = ed->getNumPins();
+    int numPins = ed->getPins().size();
     if (numPins <= 1) {
       continue;
     }
@@ -127,10 +128,10 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
-      Pin* pin = nw->m_edgePins[p];
+    for (unsigned p = 0; p < ed->getPins().size(); p++) {
+      Pin* pin = ed->getPins()[p];
 
-      Node* node = nw->getNode(pin->getNodeId());
+      Node* node = pin->getNode();
       double x = node->getX() + pin->getOffsetX();
       double y = node->getY() + pin->getOffsetY();
       xmin = (x < xmin) ? x : xmin;
@@ -164,7 +165,7 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
   hpwlx = 0.0;
   hpwly = 0.0;
 
-  int numPins = ed->getNumPins();
+  int numPins = ed->getPins().size();
   if (numPins <= 1) {
     return 0.0;
   }
@@ -174,10 +175,10 @@ double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
   ymin = std::numeric_limits<double>::max();
   ymax = -std::numeric_limits<double>::max();
 
-  for (int p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
-    Pin* pin = nw->m_edgePins[p];
+  for (int p = 0; p < ed->getPins().size(); p++) {
+    Pin* pin = ed->getPins()[p];
 
-    Node* node = nw->getNode(pin->getNodeId());
+    Node* node = pin->getNode();
     double x = node->getX() + pin->getOffsetX();
     double y = node->getY() + pin->getOffsetY();
     xmin = (x < xmin) ? x : xmin;
@@ -205,7 +206,8 @@ double Utility::area(Network* nw, bool print) {
   for (unsigned e = 0; e < numEdges; e++) {
     Edge* ed = nw->getEdge(e);
 
-    int numPins = ed->getNumPins();
+    //int numPins = ed->getNumPins();
+    int numPins = ed->getPins().size();
     if (numPins <= 1) {
       continue;
     }
@@ -215,10 +217,10 @@ double Utility::area(Network* nw, bool print) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (unsigned p = ed->getFirstPinIdx(); p < ed->getLastPinIdx(); p++) {
-      Pin* pin = nw->m_edgePins[p];
+    for (unsigned p = 0; p < ed->getPins().size(); p++) {
+      Pin* pin = ed->getPins()[p];
 
-      Node* node = nw->getNode(pin->getNodeId());
+      Node* node = pin->getNode();
       double x = node->getX() + pin->getOffsetX();
       double y = node->getY() + pin->getOffsetY();
 
@@ -275,67 +277,6 @@ void Utility::map_shredded_to_original(
     nd->setX(x);
     nd->setY(y);
   }
-}
-
-void Utility::check_connectivity(Network* nw) {
-  // Determine if the network is connected or not.  Consider all nets (i.e.,
-  // don't skip large nets).
-  std::deque<Node*> queue;
-  std::vector<int> considered;
-  considered.resize(nw->getNumNodes() );
-  std::vector<int> visit;
-  visit.resize(nw->getNumNodes() );
-  std::fill(visit.begin(), visit.end(), 0);
-  int nComponents = 0;
-  int nComponentsWithoutFixed = 0;
-  for (int i = 0; i < nw->getNumNodes() ; i++) {
-    Node* nd = nw->getNode(i);
-    if (visit[nd->getId()] != 0) {
-      continue;
-    }
-
-    // Use current node as a seed.
-    ++nComponents;
-
-    bool has_fixed = false;
-    queue.clear();
-    std::fill(considered.begin(), considered.end(), 0);
-    considered[nd->getId()] = 1;
-    queue.push_back(nd);
-    int count = 0;
-    while (queue.size() != 0) {
-      Node* curr = queue.front();
-      queue.pop_front();
-
-      if (curr->getFixed() != NodeFixed_NOT_FIXED) {
-        has_fixed = true;
-      }
-
-      visit[curr->getId()] = 1;
-      ++count;
-
-      for (int pi = curr->getFirstPinIdx(); pi < curr->getLastPinIdx(); pi++) {
-        Pin* pini = nw->m_nodePins[pi];
-
-        Edge* ed = nw->getEdge(pini->getEdgeId());
-
-        for (int pj = ed->getFirstPinIdx(); pj < ed->getLastPinIdx(); pj++) {
-          Pin* pinj = nw->m_edgePins[pj];
-
-          Node* next = nw->getNode(pinj->getNodeId());
-
-          if (considered[next->getId()] == 0) {
-            considered[next->getId()] = 1;
-            queue.push_back(next);
-          }
-        }
-      }
-    }
-
-    if (!has_fixed) ++nComponentsWithoutFixed;
-  }
-  std::cout << "Connected components: " << nComponents
-            << ", Without fixed: " << nComponentsWithoutFixed << std::endl;
 }
 
 void Utility::get_row_blockages(
@@ -485,8 +426,8 @@ bool Utility::setOrientation(Network* network, Node* ndi, unsigned newOri) {
       break;
   }
 
-  for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-    Pin* pin = network->m_nodePins[pi];
+  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    Pin* pin = ndi->getPins()[pi];
 
     if (mX == -1) {
      pin->setOffsetX( pin->getOffsetX() * (double)mX );

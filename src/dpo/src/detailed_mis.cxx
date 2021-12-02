@@ -285,21 +285,21 @@ void DetailedMis::colorCells(void) {
   for (int e = 0; e < m_network->getNumEdges(); e++) {
     Edge* edi = m_network->getEdge(e);
 
-    int numPins = edi->getNumPins();
+    int numPins = edi->getPins().size();
     if (numPins <= 1 || numPins > m_skipEdgesLargerThanThis) {
       continue;
     }
 
-    for (int pi = edi->getFirstPinIdx(); pi < edi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_edgePins[pi];
-      Node* ndi = m_network->getNode(pini->getNodeId());
+    for (int pi = 0; pi < edi->getPins().size(); pi++) {
+      Pin* pini = edi->getPins()[pi];
+      Node* ndi = pini->getNode();
       if (!m_movable[ndi->getId()]) {
         continue;
       }
 
-      for (int pj = pi + 1; pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
-        Node* ndj = m_network->getNode(pinj->getNodeId());
+      for (int pj = pi + 1; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
+        Node* ndj = pinj->getNode();
         if (!m_movable[ndj->getId()]) {
           continue;
         }
@@ -750,12 +750,12 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
 
   double hpwl = 0.;
   double x, y, l, r, b, t;
-  for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-    Pin* pini = m_network->m_nodePins[pi];
+  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    Pin* pini = ndi->getPins()[pi];
 
-    Edge* edi = m_network->getEdge(pini->getEdgeId());
+    Edge* edi = pini->getEdge();
 
-    int npins = edi->getNumPins();
+    int npins = edi->getPins().size();
     if (npins <= 1 || npins > m_skipEdgesLargerThanThis) {
       continue;
     }
@@ -765,10 +765,10 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
     b = std::numeric_limits<double>::max();
     t = -std::numeric_limits<double>::max();
 
-    for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-      Pin* pinj = m_network->m_edgePins[pj];
+    for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      Pin* pinj = edi->getPins()[pj];
 
-      Node* ndj = m_network->getNode(pinj->getNodeId());
+      Node* ndj = pinj->getNode();
 
       x = (ndj == ndi) ? (xi + pinj->getOffsetX())
                        : (ndj->getX() + pinj->getOffsetX());

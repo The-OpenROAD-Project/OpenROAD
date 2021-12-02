@@ -42,13 +42,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-// Needed for getrusage
-#include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <boost/random/mersenne_twister.hpp>
 
-#define USE_GETTIMEOFDAY
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
@@ -75,47 +72,6 @@ class Architecture;
 ////////////////////////////////////////////////////////////////////////////////
 class Utility {
  public:
-  // Timer that uses getrusage to record time.
-  class Timer {
-   public:
-    Timer() : m_tm1(0.0), m_tm2(0.0) { ; }
-
-    inline double usertime(void) const { return (m_tm2 - m_tm1); }
-
-    inline void start() {
-#ifdef USE_GETTIMEOFDAY
-      m_tm1 = (gettimeofday(&m_tv, NULL) == 0)
-                  ? m_tv.tv_sec + 1.0e-6 * m_tv.tv_usec
-                  : 0.0;
-#else
-      m_tm1 = (getrusage(RUSAGE_SELF, &m_ru) == 0)
-                  ? m_ru.ru_utime.tv_sec + 1.0e-6 * m_ru.ru_utime.tv_usec
-                  : 0.0;
-#endif
-    }
-
-    inline void stop() {
-#ifdef USE_GETTIMEOFDAY
-      m_tm2 = (gettimeofday(&m_tv, NULL) == 0)
-                  ? m_tv.tv_sec + 1.0e-6 * m_tv.tv_usec
-                  : 0.0;
-#else
-      m_tm2 = (getrusage(RUSAGE_SELF, &m_ru) == 0)
-                  ? m_ru.ru_utime.tv_sec + 1.0e-6 * m_ru.ru_utime.tv_usec
-                  : 0.0;
-#endif
-    }
-
-   public:
-#ifdef USE_GETTIMEOFDAY
-    struct timeval m_tv;
-#else
-    struct rusage m_ru;
-#endif
-    double m_tm1;
-    double m_tm2;
-  };
-
   template <class RandomAccessIter>
   inline static void random_shuffle(RandomAccessIter first,
                                     RandomAccessIter last, Placer_RNG* rng) {
@@ -151,11 +107,6 @@ class Utility {
   static double hpwl(Network* nw, double& hpwlx, double& hpwly);
   static double hpwl(Network* nw, Edge* ed);
   static double hpwl(Network* nw, Edge*, double& hpwlx, double& hpwly);
-
-  static double rsmt(Network* nw);
-  static double rsmt(Network* nw, Edge* ed);
-
-  static void check_connectivity(Network*);
 
   static double area(Network* nw, bool print = true);
 

@@ -88,8 +88,7 @@ class DetailedMgr {
 
   void setupObstaclesForDrc(void);
 
-  void findBlockages(std::vector<Node*>& fixedCells,
-                     bool includeRouteBlockages = true);
+  void findBlockages(bool includeRouteBlockages = true);
   void findRegionIntervals(
       int regId,
       std::vector<std::vector<std::pair<double, double> > >& intervals);
@@ -237,6 +236,8 @@ class DetailedMgr {
   double m_targetUt;
   double m_targetMaxMovement;
 
+  std::vector<Node*> m_fixedCells;   // Fixed; filler, macros, temporary, etc.
+
  public:
   // Blockages and segments.
   std::vector<std::vector<std::pair<double, double> > > m_blockages;
@@ -255,7 +256,6 @@ class DetailedMgr {
   std::vector<Node*> m_singleHeightCells;  // Single height cells.
   std::vector<std::vector<Node*> >
       m_multiHeightCells;            // Multi height cells by height.
-  std::vector<Node*> m_fixedCells;   // Fixed; filler, macros, temporary, etc.
   std::vector<Node*> m_fixedMacros;  // Fixed; only macros.
   std::vector<Node*>
       m_wideCells;  // Wide movable cells.  Can be single of multi.

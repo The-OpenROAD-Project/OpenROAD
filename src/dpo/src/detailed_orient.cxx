@@ -137,15 +137,15 @@ bool DetailedOrient::orientCellForRow(Node* ndi, int row) {
     }
 
     if (cellOri == Orientation_FS) {
-      for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-        Pin* pin = m_network->m_nodePins[pi];
+      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+        Pin* pin = ndi->getPins()[pi];
         pin->setOffsetY(pin->getOffsetY()*(-1));
       }
       ndi->setCurrOrient(Orientation_N );
       return true;
     } else if (cellOri == Orientation_S) {
-      for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-        Pin* pin = m_network->m_nodePins[pi];
+      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+        Pin* pin = ndi->getPins()[pi];;
         pin->setOffsetY(pin->getOffsetY()*(-1));
       }
       ndi->setCurrOrient( Orientation_FN );
@@ -158,14 +158,14 @@ bool DetailedOrient::orientCellForRow(Node* ndi, int row) {
     }
 
     if (cellOri == Orientation_N) {
-      for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-        Pin* pin = m_network->m_nodePins[pi];
+      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+        Pin* pin = ndi->getPins()[pi];
         pin->setOffsetY(pin->getOffsetY()*(-1));
       }
       ndi->setCurrOrient(Orientation_FS );
     } else if (cellOri == Orientation_FN) {
-      for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-        Pin* pin = m_network->m_nodePins[pi];
+      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+        Pin* pin = ndi->getPins()[pi];
         pin->setOffsetY(pin->getOffsetY()*(-1));
       }
       ndi->setCurrOrient( Orientation_S );
@@ -224,8 +224,8 @@ bool DetailedOrient::orientAdjust(Node* ndi, unsigned newOri) {
       break;
   }
 
-  for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-    Pin* pin = m_network->m_nodePins[pi];
+  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    Pin* pin = ndi->getPins()[pi];
 
     if (mX == -1) {
       pin->setOffsetX( pin->getOffsetX() * (double)mX );
@@ -361,12 +361,12 @@ int DetailedOrient::flipCells(void) {
       old_wl = new_wl = 0.;
 
       ++m_traversal;
-      for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-        Pin* pini = m_network->m_nodePins[pi];
+      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+        Pin* pini = ndi->getPins()[pi];
 
-        Edge* edi = m_network->getEdge(pini->getEdgeId());
+        Edge* edi = pini->getEdge();
 
-        int npins = edi->getNumPins();
+        int npins = edi->getPins().size();
         if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
           continue;
         }
@@ -381,10 +381,10 @@ int DetailedOrient::flipCells(void) {
         new_xmin = std::numeric_limits<double>::max();
         new_xmax = -std::numeric_limits<double>::max();
 
-        for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-          Pin* pinj = m_network->m_edgePins[pj];
+        for (int pj = 0; pj < edi->getPins().size(); pj++) {
+          Pin* pinj = edi->getPins()[pj];
 
-          Node* ndj = m_network->getNode(pinj->getNodeId());
+          Node* ndj = pinj->getNode();
 
           old_xmin = std::min(old_xmin, ndj->getX() + pinj->getOffsetX());
           old_xmax = std::max(old_xmax, ndj->getX() + pinj->getOffsetX());
@@ -404,8 +404,8 @@ int DetailedOrient::flipCells(void) {
         // Perform the flipping, assuming we  have orientations that we can
         // understand.
         if (ndi->getCurrOrient() == Orientation_N) {
-          for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+            Pin* pin = ndi->getPins()[pi];
             pin->setOffsetX(pin->getOffsetX() * (-1));
           }
           ndi->swapEdgeTypes();
@@ -414,8 +414,8 @@ int DetailedOrient::flipCells(void) {
 
           ++nflips;
         } else if (ndi->getCurrOrient() == Orientation_S) {
-          for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+            Pin* pin = ndi->getPins()[pi];
             pin->setOffsetX(pin->getOffsetX() * (-1));
           }
           ndi->swapEdgeTypes();
@@ -424,8 +424,8 @@ int DetailedOrient::flipCells(void) {
 
           ++nflips;
         } else if (ndi->getCurrOrient() == Orientation_FN) {
-          for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+            Pin* pin = ndi->getPins()[pi];
             pin->setOffsetX(pin->getOffsetX() * (-1));
           }
           ndi->swapEdgeTypes();
@@ -434,8 +434,8 @@ int DetailedOrient::flipCells(void) {
 
           ++nflips;
         } else if (ndi->getCurrOrient() == Orientation_FS) {
-          for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-            Pin* pin = m_network->m_nodePins[pi];
+          for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+            Pin* pin = ndi->getPins()[pi];
             pin->setOffsetX(pin->getOffsetX() * (-1));
           }
           ndi->swapEdgeTypes();

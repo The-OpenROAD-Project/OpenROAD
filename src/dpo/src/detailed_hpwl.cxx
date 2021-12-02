@@ -104,7 +104,7 @@ double DetailedHPWL::curr(void) {
   for (int i = 0; i < m_network->getNumEdges(); i++) {
     Edge* edi = m_network->getEdge(i);
 
-    int npins = edi->getNumPins();
+    int npins = edi->getPins().size();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
       continue;
     }
@@ -114,10 +114,10 @@ double DetailedHPWL::curr(void) {
     ymin = std::numeric_limits<double>::max();
     ymax = -std::numeric_limits<double>::max();
 
-    for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-      Pin* pinj = m_network->m_edgePins[pj];
+    for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      Pin* pinj = edi->getPins()[pj];
 
-      Node* ndj = m_network->getNode(pinj->getNodeId());
+      Node* ndj = pinj->getNode();
 
       x = ndj->getX() + pinj->getOffsetX();
       y = ndj->getY() + pinj->getOffsetY();
@@ -162,12 +162,12 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
   ++m_traversal;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
-    for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_nodePins[pi];
+    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+      Pin* pini = ndi->getPins()[pi];
 
-      Edge* edi = m_network->getEdge(pini->getEdgeId());
+      Edge* edi = pini->getEdge();
 
-      int npins = edi->getNumPins();
+      int npins = edi->getPins().size();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -180,10 +180,10 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
       old_xmax = -std::numeric_limits<double>::max();
       old_ymin = std::numeric_limits<double>::max();
       old_ymax = -std::numeric_limits<double>::max();
-      for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
+      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
 
-        Node* curr = m_network->getNode(pinj->getNodeId());
+        Node* curr = pinj->getNode();
 
         x = curr->getX() + pinj->getOffsetX();
         y = curr->getY() + pinj->getOffsetY();
@@ -210,12 +210,12 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
   ++m_traversal;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
-    for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_nodePins[pi];
+    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+      Pin* pini = ndi->getPins()[pi];
 
-      Edge* edi = m_network->getEdge(pini->getEdgeId());
+      Edge* edi = pini->getEdge();
 
-      int npins = edi->getNumPins();
+      int npins = edi->getPins().size();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -229,10 +229,10 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
       new_ymin = std::numeric_limits<double>::max();
       new_ymax = -std::numeric_limits<double>::max();
 
-      for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
+      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
 
-        Node* curr = m_network->getNode(pinj->getNodeId());
+        Node* curr = pinj->getNode();
 
         x = curr->getX() + pinj->getOffsetX();
         y = curr->getY() + pinj->getOffsetY();
@@ -273,12 +273,12 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
   double new_xmin, new_xmax, new_ymin, new_ymax;
 
   ++m_traversal;
-  for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-    Pin* pini = m_network->m_nodePins[pi];
+  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    Pin* pini = ndi->getPins()[pi];
 
-    Edge* edi = m_network->getEdge(pini->getEdgeId());
+    Edge* edi = pini->getEdge();
 
-    int npins = edi->getNumPins();
+    int npins = edi->getPins().size();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
       continue;
     }
@@ -297,10 +297,10 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
     new_ymin = std::numeric_limits<double>::max();
     new_ymax = -std::numeric_limits<double>::max();
 
-    for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-      Pin* pinj = m_network->m_edgePins[pj];
+    for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      Pin* pinj = edi->getPins()[pj];
 
-      Node* ndj = m_network->getNode(pinj->getNodeId());
+      Node* ndj = pinj->getNode();
 
       x = ndj->getX() + pinj->getOffsetX();
       y = ndj->getY() + pinj->getOffsetY();
@@ -349,12 +349,13 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
   ++m_traversal;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
-    for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_nodePins[pi];
+    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+      Pin* pini = ndi->getPins()[pi];
 
-      Edge* edi = m_network->getEdge(pini->getEdgeId());
+      Edge* edi = pini->getEdge();
 
-      int npins = edi->getNumPins();
+      //int npins = edi->getNumPins();
+      int npins = edi->getPins().size();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -373,10 +374,10 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
       new_ymin = std::numeric_limits<double>::max();
       new_ymax = -std::numeric_limits<double>::max();
 
-      for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
+      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
 
-        Node* ndj = m_network->getNode(pinj->getNodeId());
+        Node* ndj = pinj->getNode();
 
         x = ndj->getX() + pinj->getOffsetX();
         y = ndj->getY() + pinj->getOffsetY();
@@ -426,12 +427,12 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
   ++m_traversal;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
-    for (int pi = ndi->getFirstPinIdx(); pi < ndi->getLastPinIdx(); pi++) {
-      Pin* pini = m_network->m_nodePins[pi];
+    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+      Pin* pini = ndi->getPins()[pi];
 
-      Edge* edi = m_network->getEdge(pini->getEdgeId());
+      Edge* edi = pini->getEdge();
 
-      int npins = edi->getNumPins();
+      int npins = edi->getPins().size();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -450,10 +451,10 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
       new_ymin = std::numeric_limits<double>::max();
       new_ymax = -std::numeric_limits<double>::max();
 
-      for (int pj = edi->getFirstPinIdx(); pj < edi->getLastPinIdx(); pj++) {
-        Pin* pinj = m_network->m_edgePins[pj];
+      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+        Pin* pinj = edi->getPins()[pj];
 
-        Node* curr = m_network->getNode(pinj->getNodeId());
+        Node* curr = pinj->getNode();
 
         x = curr->getX() + pinj->getOffsetX();
         y = curr->getY() + pinj->getOffsetY();
