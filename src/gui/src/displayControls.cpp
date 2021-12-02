@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <QApplication>
 #include <QDebug>
 #include <QFontDialog>
 #include <QHeaderView>
@@ -47,6 +48,7 @@
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
+Q_DECLARE_METATYPE(std::function<void(void)>);
 
 namespace gui {
 
@@ -154,8 +156,9 @@ void DisplayColorDialog::rejectDialog()
   reject();
 }
 
-DisplayControlModel::DisplayControlModel(QWidget* parent) :
-  QStandardItemModel(0, 4, parent)
+DisplayControlModel::DisplayControlModel(int user_data_item_idx, QWidget* parent) :
+  QStandardItemModel(0, 4, parent),
+  user_data_item_idx_(user_data_item_idx)
 {
 }
 
@@ -163,7 +166,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
 {
   if (role == Qt::ToolTipRole) {
     QStandardItem* item = itemFromIndex(index);
-    QVariant data = item->data(Qt::UserRole);
+    QVariant data = item->data(user_data_item_idx_);
     if (data.isValid()) {
       odb::dbTechLayer* layer = data.value<odb::dbTechLayer*>();
       auto selected = Gui::get()->makeSelected(layer);
@@ -214,17 +217,41 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
   return QStandardItemModel::data(index, role);
 }
 
+QVariant DisplayControlModel::headerData(int section,
+                                         Qt::Orientation orientation,
+                                         int role) const
+{
+  if (orientation == Qt::Horizontal) {
+    if (role == Qt::DisplayRole) {
+      if (section == 0) {
+        return "";
+      }
+    } else if (role == Qt::DecorationRole) {
+      if (section == 1) {
+        return QIcon(":/palette.png");
+      } else if (section == 2) {
+        return QIcon(":/visible.png");
+      } else if (section == 3) {
+        return QIcon(":/select.png");
+      }
+    }
+  }
+
+  return QVariant();
+}
+
+///////////
+
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
-      model_(new DisplayControlModel(this)),
+      model_(new DisplayControlModel(user_data_item_idx_, this)),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
-  model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
@@ -290,15 +317,20 @@ DisplayControls::DisplayControls(QWidget* parent)
   ruler_font_ = QApplication::font(); // use default font
   ruler_color_ = Qt::cyan;
   makeParentItem(rulers_, "Rulers", model_, Qt::Checked, true, row_color_);
+  setNameItemDoubleClickAction(rulers_, [this]() {
+    ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
+  });
 
   // Rows
   row_color_ = QColor(0, 0xff, 0, 0x70);
   makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
 
   // Rows
-  makeParentItem(congestion_map_, "Congestion Map", model_, Qt::Unchecked);
   makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
   pin_markers_font_ = QApplication::font(); // use default font
+  setNameItemDoubleClickAction(pin_markers_, [this]() {
+    pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
+  });
 
   // Track patterns group
   auto tracks = makeParentItem(
@@ -321,6 +353,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
+  setNameItemDoubleClickAction(misc_.instance_names, [this]() {
+    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+  });
 
   setWidget(view_);
   connect(model_,
@@ -336,17 +371,6 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
-  setMinimumWidth(375);
-  congestion_dialog_ = new CongestionSetupDialog(this);
-
-  connect(congestion_dialog_,
-          SIGNAL(applyCongestionRequested()),
-          this,
-          SIGNAL(changed()));
-  connect(congestion_dialog_,
-          SIGNAL(congestionSetupChanged()),
-          this,
-          SIGNAL(changed()));
 
   // register renderers
   if (gui::Gui::get() != nullptr) {
@@ -354,6 +378,11 @@ DisplayControls::DisplayControls(QWidget* parent)
       registerRenderer(renderer);
     }
   }
+}
+
+DisplayControls::~DisplayControls()
+{
+  custom_controls_.clear();
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
@@ -423,8 +452,6 @@ void DisplayControls::readSettings(QSettings* settings)
   // rows
   readSettingsForRow(settings, rows_);
   getColor(rows_.swatch, row_color_, "row_color");
-  // congestion map
-  readSettingsForRow(settings, congestion_map_);
   // pin markers
   readSettingsForRow(settings, pin_markers_);
   pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
@@ -451,7 +478,31 @@ void DisplayControls::readSettings(QSettings* settings)
   instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
   settings->endGroup();
 
-  congestion_dialog_->readSettings(settings);
+  // custom renderers
+  settings->beginGroup("custom");
+  custom_controls_settings_.clear();
+  for (const auto& group : settings->childGroups()) {
+    auto& renderer_settings = custom_controls_settings_[group.toStdString()];
+
+    settings->beginGroup(group);
+    for (const auto& key_group : settings->childGroups()) {
+      settings->beginGroup(key_group);
+      const QVariant value = settings->value("data");
+      const QString type = settings->value("type").value<QString>();
+      if (type == "bool") {
+        renderer_settings[key_group.toStdString()] = value.toBool();
+      } else if (type == "int") {
+        renderer_settings[key_group.toStdString()] = value.toInt();
+      } else if (type == "double") {
+        renderer_settings[key_group.toStdString()] = value.toDouble();
+      } else {
+        logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+      }
+      settings->endGroup();
+    }
+    settings->endGroup();
+  }
+  settings->endGroup();
 
   settings->endGroup();
 }
@@ -491,8 +542,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   // rows
   writeSettingsForRow(settings, rows_);
   settings->setValue("row_color", row_color_);
-  // congestion map
-  writeSettingsForRow(settings, congestion_map_);
   // pin markers
   writeSettingsForRow(settings, pin_markers_);
   settings->setValue("pin_markers_font", pin_markers_font_);
@@ -519,9 +568,52 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("instance_name_font", instance_name_font_);
   settings->endGroup();
 
-  congestion_dialog_->writeSettings(settings);
+  // custom renderers
+  settings->beginGroup("custom");
+  for (auto renderer : Gui::get()->renderers()) {
+    saveRendererState(renderer);
+  }
+  for (const auto& [group, renderer_settings] : custom_controls_settings_) {
+    const QString group_name = QString::fromStdString(group);
+    if (!group_name.isEmpty()) {
+      settings->beginGroup(group_name);
+      for (const auto& [name, value] : renderer_settings) {
+        const QString setting_name = QString::fromStdString(name);
+        settings->beginGroup(setting_name);
+        QVariant data;
+        QVariant type;
+        if(const auto* v = std::get_if<bool>(&value)) {
+          type = "bool";
+          data = *v;
+        } else if(const auto* v = std::get_if<int>(&value)) {
+          type = "int";
+          data = *v;
+        } else if(const auto* v = std::get_if<double>(&value)) {
+          type = "double";
+          data = *v;
+        } else {
+          logger_->warn(utl::GUI, 54, "Unknown data type for \"{}\".", name);
+        }
+        settings->setValue("data", data);
+        settings->setValue("type", type);
+        settings->endGroup();
+      }
+      settings->endGroup();
+    }
+  }
+  settings->endGroup();
 
   settings->endGroup();
+}
+
+void DisplayControls::saveRendererState(Renderer* renderer)
+{
+  const std::string& group_name = renderer->getSettingsGroupName();
+  if (group_name.empty()) {
+    return;
+  }
+
+  custom_controls_settings_[group_name] = renderer->getSettings();
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -583,7 +675,7 @@ void DisplayControls::itemChanged(QStandardItem* item)
     return;
   }
   bool checked = item->checkState() == Qt::Checked;
-  Callback callback = item->data().value<Callback>();
+  Callback callback = item->data(callback_item_idx_).value<Callback>();
   if (callback.action && !ignore_callback_) {
     callback.action(checked);
   }
@@ -609,6 +701,43 @@ void DisplayControls::itemChanged(QStandardItem* item)
       selectable->setEnabled(item->checkState() != Qt::Unchecked);
     }
   }
+
+  // check if item has exclusivity set
+  auto exclusive = item->data(exclusivity_item_idx_);
+  if (exclusive.isValid() && checked) {
+    const QModelIndex row_start_index = model_->index(item_index.row(), Name, item_index.parent());
+    QStandardItem* parent = model_->itemFromIndex(item_index.parent());
+
+    QSet<QStandardItem*> items_to_check;
+    for (const auto& exclusion : exclusive.value<QSet<QString>>()) {
+      // "" means everything is exclusive
+      bool exclude_all = exclusion == "";
+
+      for (int r = 0; r < parent->rowCount(); r++) {
+        const QModelIndex row_name = model_->index(r, Name, parent->index());
+        const QModelIndex toggle_col = model_->index(r, item_index.column(), parent->index());
+        if (exclude_all) {
+          items_to_check.insert(model_->itemFromIndex(toggle_col));
+        } else {
+          auto* name_item = model_->itemFromIndex(row_name);
+          if (name_item->text() == exclusion) {
+            items_to_check.insert(model_->itemFromIndex(toggle_col));
+          }
+        }
+      }
+    }
+
+    // toggle mutually exclusive items
+    for (auto& check_item : items_to_check) {
+      if (check_item == nullptr || check_item == item) {
+        continue;
+      }
+      if (check_item->checkState() == Qt::Checked) {
+        check_item->setCheckState(Qt::Unchecked);
+      }
+    }
+  }
+
   emit changed();
 }
 
@@ -634,17 +763,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
   if (index.column() == 0) {
     auto name_item = model_->itemFromIndex(index);
 
-    if (name_item == misc_.instance_names.name) {
-      // handle font change
-      instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
-      emit changed();
-    } else if (name_item == rulers_.name) {
-      // handle font change
-      ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
-      emit changed();
-    } else if (name_item == pin_markers_.name) {
-      // handle font change
-      pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
+    auto data = name_item->data(doubleclick_item_idx_);
+    if (data.isValid()) {
+      auto callback = data.value<std::function<void(void)>>();
+      callback();
       emit changed();
     }
   }
@@ -666,7 +788,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     } else if (color_item == rulers_.swatch) {
       item_color = &ruler_color_;
     } else {
-      QVariant tech_layer_data = color_item->data(Qt::UserRole);
+      QVariant tech_layer_data = color_item->data(user_data_item_idx_);
       if (!tech_layer_data.isValid()) {
         return;
       }
@@ -886,13 +1008,13 @@ QStandardItem* DisplayControls::makeParentItem(
     [this, row](bool visible) {
       toggleAllChildren(visible, row.name, Visible);
     }
-  })));
+  })), callback_item_idx_);
   if (add_selectable) {
     row.selectable->setData(QVariant::fromValue(Callback({
       [this, row](bool selectable) {
         toggleAllChildren(selectable, row.name, Selectable);
       }
-    })));
+    })), callback_item_idx_);
   }
 
   return row.name;
@@ -910,14 +1032,14 @@ void DisplayControls::makeLeafItem(
   row.name = new QStandardItem(text);
   row.name->setEditable(false);
   if (user_data.isValid()) {
-    row.name->setData(user_data, Qt::UserRole);
+    row.name->setData(user_data, user_data_item_idx_);
   }
 
   row.swatch = new QStandardItem(makeSwatchIcon(color), "");
   row.swatch->setEditable(false);
   row.swatch->setCheckable(false);
   if (user_data.isValid()) {
-    row.swatch->setData(user_data, Qt::UserRole);
+    row.swatch->setData(user_data, user_data_item_idx_);
   }
 
   row.visible = new QStandardItem("");
@@ -933,6 +1055,24 @@ void DisplayControls::makeLeafItem(
   }
 
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
+}
+
+void DisplayControls::setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback)
+{
+  row.name->setData(QVariant::fromValue(callback), doubleclick_item_idx_);
+
+  QFont current_font = row.name->data(Qt::FontRole).value<QFont>();
+  current_font.setUnderline(true);
+  row.name->setData(current_font, Qt::FontRole);
+}
+
+void DisplayControls::setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity)
+{
+  QSet<QString> names;
+  for (const auto& name : exclusivity) {
+    names.insert(QString::fromStdString(name));
+  }
+  row.visible->setData(QVariant::fromValue(names), exclusivity_item_idx_);
 }
 
 const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
@@ -1156,11 +1296,6 @@ bool DisplayControls::isScaleBarVisible() const
   return misc_.scale_bar.visible->checkState() == Qt::Checked;
 }
 
-bool DisplayControls::isCongestionVisible() const
-{
-  return congestion_map_.visible->checkState() == Qt::Checked;
-}
-
 bool DisplayControls::arePinMarkersVisible() const
 {
   return pin_markers_.visible->checkState() == Qt::Checked;
@@ -1181,86 +1316,99 @@ void DisplayControls::registerRenderer(Renderer* renderer)
   const std::string& group_name = renderer->getDisplayControlGroupName();
   const auto& items = renderer->getDisplayControls();
 
-  if (items.empty()) {
-    return;
+  if (!items.empty()) {
+    // build controls
+    std::vector<ModelRow> rows;
+    if (group_name.empty()) {
+      for (const auto& [name, control] : items) {
+        ModelRow row;
+        makeParentItem(row,
+                       QString::fromStdString(name),
+                       model_,
+                       control.visibility ? Qt::Checked : Qt::Unchecked);
+        if (control.interactive_setup) {
+          setNameItemDoubleClickAction(row, control.interactive_setup);
+        }
+        if (!control.mutual_exclusivity.empty()) {
+          setItemExclusivity(row, control.mutual_exclusivity);
+        }
+        rows.push_back(row);
+      }
+    } else {
+      const QString parent_item_name = QString::fromStdString(group_name);
+      ModelRow parent_row;
+      // check if parent has already been created
+      for (const auto& [renderer, controls] : custom_controls_) {
+        const QModelIndex& parent_idx = controls[0].name->index().parent();
+        if (parent_idx.isValid()) {
+          QStandardItem* check_item = model_->itemFromIndex(parent_idx);
+          if (check_item->text() == parent_item_name) {
+            parent_row.name = model_->item(parent_idx.row(), Name);
+            parent_row.swatch = model_->item(parent_idx.row(), Swatch);
+            parent_row.visible = model_->item(parent_idx.row(), Visible);
+            parent_row.selectable = model_->item(parent_idx.row(), Selectable);
+            break;
+          }
+        }
+      }
+      if (parent_row.name == nullptr) {
+        makeParentItem(parent_row,
+                       parent_item_name,
+                       model_,
+                       Qt::Checked);
+      }
+      for (const auto& [name, control] : items) {
+        ModelRow row;
+        makeLeafItem(row,
+                     QString::fromStdString(name),
+                     parent_row.name,
+                     control.visibility ? Qt::Checked : Qt::Unchecked);
+        if (control.interactive_setup) {
+          setNameItemDoubleClickAction(row, control.interactive_setup);
+        }
+        if (!control.mutual_exclusivity.empty()) {
+          setItemExclusivity(row, control.mutual_exclusivity);
+        }
+        rows.push_back(row);
+      }
+      toggleParent(parent_row);
+    }
+
+    auto& add_rows = custom_controls_[renderer];
+    add_rows.insert(add_rows.begin(), rows.begin(), rows.end());
   }
 
-  // build controls
-  std::map<std::string, QStandardItem*> control_items;
-  std::vector<ModelRow>& rows = custom_controls_[renderer];
-  if (group_name.empty()) {
-    for (const auto& [name, initial_value] : items) {
-      ModelRow row;
-      makeParentItem(row,
-                     QString::fromStdString(name),
-                     model_,
-                     initial_value ? Qt::Checked : Qt::Unchecked);
-      rows.push_back(row);
-      control_items[name] = row.visible;
+  // check if there are settings to recover
+  const std::string settings_name = renderer->getSettingsGroupName();
+  if (!settings_name.empty()) {
+    auto setting = custom_controls_settings_.find(settings_name);
+    if (setting != custom_controls_settings_.end()) {
+      renderer->setSettings(setting->second);
     }
-  } else {
-    ModelRow parent_row;
-    makeParentItem(parent_row,
-                   QString::fromStdString(group_name),
-                   model_,
-                   Qt::Checked);
-    rows.push_back(parent_row);
-    for (const auto& [name, initial_value] : items) {
-      ModelRow row;
-      makeLeafItem(row,
-                   QString::fromStdString(name),
-                   parent_row.name,
-                   initial_value ? Qt::Checked : Qt::Unchecked);
-      rows.push_back(row);
-      control_items[name] = row.visible;
-    }
-    toggleParent(parent_row);
   }
 }
 
 void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
+  saveRendererState(renderer);
+
+  if (custom_controls_.count(renderer) == 0) {
+    return;
+  }
+
   const auto& rows = custom_controls_[renderer];
 
+  const QModelIndex& parent_idx = rows[0].name->index().parent();
   for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
     // remove from Display controls
     auto index = model_->indexFromItem(itr->name);
     model_->removeRow(index.row(), index.parent());
   }
+  if (!model_->hasChildren(parent_idx)) {
+    model_->removeRow(parent_idx.row(), parent_idx.parent());
+  }
 
   custom_controls_.erase(renderer);
-}
-
-bool DisplayControls::showHorizontalCongestion() const
-{
-  return congestion_dialog_->showHorizontalCongestion()
-         || !congestion_dialog_->showVerticalCongestion();
-}
-
-bool DisplayControls::showVerticalCongestion() const
-{
-  return congestion_dialog_->showVerticalCongestion()
-         || !congestion_dialog_->showHorizontalCongestion();
-}
-
-float DisplayControls::getMinCongestionToShow() const
-{
-  return congestion_dialog_->getMinCongestionValue();
-}
-
-float DisplayControls::getMaxCongestionToShow() const
-{
-  return congestion_dialog_->getMaxCongestionValue();
-}
-
-QColor DisplayControls::getCongestionColor(float congestion) const
-{
-  return congestion_dialog_->getCongestionColorForPercentage(congestion);
-}
-
-void DisplayControls::showCongestionSetup()
-{
-  return congestion_dialog_->show();
 }
 
 void DisplayControls::techInit()

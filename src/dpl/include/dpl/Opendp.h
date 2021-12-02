@@ -79,7 +79,7 @@ using odb::dbSite;
 using odb::Point;
 using odb::Rect;
 
-class Pixel;
+struct Pixel;
 struct Group;
 class Graphics;
 
@@ -137,6 +137,7 @@ struct Pixel
   Group *group_;
   double util;
   bool is_valid;  // false for dummy cells
+  bool is_hopeless; // too far from sites for diamond search
 };
 
 // For optimize mirroring.
@@ -201,7 +202,7 @@ public:
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
   // Return error count.
-  int checkPlacement(bool verbose);
+  void checkPlacement(bool verbose);
   void fillerPlacement(dbMasterSeq *filler_masters,
                        const char* prefix);
   int64_t hpwl() const;
@@ -273,7 +274,7 @@ private:
                    int y,
                    int x_end,
                    int y_end) const;
-  bool shiftMove(Cell *cell);
+  void shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell,
                Point grid_pt);
@@ -292,6 +293,10 @@ private:
                 bool padded) const;
   Point legalGridPt(const Cell *cell,
                     bool padded) const;
+  Point nearestBlockEdge(const Cell *cell,
+                         const Point& legal_pt,
+                         const Rect& block_bbox) const;
+  void moveHopeless(int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();

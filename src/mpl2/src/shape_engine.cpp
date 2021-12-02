@@ -427,7 +427,6 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   if (macros.size() == 1) {
     const float width = macros[0].GetWidth();
     const float height = macros[0].GetHeight();
-    const float ar = height / width;
     final_area = height * width;
     aspect_ratio.push_back(pair<float, float>(width, height));
     return aspect_ratio;
@@ -646,7 +645,6 @@ void ParseBlockFile(vector<Cluster*>& clusters,
         area = block_area;
         macro_area += block_area;
       } else {
-        area = area;
         std_cell_area += area;
       }
 

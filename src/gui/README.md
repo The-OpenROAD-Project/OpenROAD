@@ -27,6 +27,34 @@ To remove the button:
 gui::remove_toolbar_button name
 ```
 
+### Add items to the menubar
+
+```
+create_menu_item [-name name]
+                 [-path menu_path]
+                 -text item_text
+                 -script tcl_script
+                 [-shortcut key_shortcut] 
+                 [-echo]
+```
+
+Returns: name of the new item, either ``name`` or ``actionX``.
+
+Options description:
+- ``item_text``: The text to put on the item.
+- ``tcl_script``: The tcl script to evaluate when the button is pressed.
+- ``name``: (optional) name of the item, used when deleting the item.
+- ``menu_path``: (optional) Menu path to place the new item in (hierarchy is separated by /), defaults to "Custom Scripts", but this can also be "Tools" or "New menu/New submenu".
+- ``key_shortcut``: (optional) key shortcut to trigger this item.
+- ``echo``: (optional) indicate that the commands in the ``tcl_script`` should be echoed in the log.
+
+To remove the item: 
+
+```
+gui::remove_menu_item name
+```
+
+
 ### Save screenshot of layout
 
 This command can be both be used when the GUI is active and not active.
@@ -316,6 +344,22 @@ To remove all the rulers:
 ```
 gui::clear_rulers
 ```
+
+### Heat Maps
+
+To control the settings in the heat maps:
+
+```
+gui::set_heatmap name option
+gui::set_heatmap name option value
+```
+
+Options description: 
+- ``name`` is the name of the heatmap. ``Power``, ``Routing`` or ``Placement``
+- ``option`` is the name of the option to modify. If option is ``rebuild`` the map will be destroyed and rebuilt.
+- ``value`` is the new value for the specified option. This is not used when rebuilding map.
+
+These options can also be modified in the GUI by double-clicking the underlined display control for the heat map.
 
 ### GUI Controls
 

@@ -69,6 +69,9 @@ class NesterovPlaceVars {
 
   int routabilityMaxBloatIter;
   int routabilityMaxInflationIter;
+  
+  static const int maxRecursionWlCoef = 10;
+  static const int maxRecursionInitSLPCoef = 10;
 
   bool timingDrivenMode;
   bool routabilityDrivenMode;
@@ -178,7 +181,6 @@ private:
   float wireLengthCoefY_;
 
   // phi is described in ePlace paper.
-  float sumPhi_;
   float sumOverflow_;
 
   // half-parameter-wire-length
@@ -189,6 +191,9 @@ private:
 
   std::string divergeMsg_;
   int divergeCode_; 
+
+  int recursionCntWlCoef_;
+  int recursionCntInitSLPCoef_;
 
   void cutFillerCoordinates();
 

@@ -39,7 +39,7 @@ class drFig : public drBlockObject
 {
  public:
   // getters
-  virtual void getBBox(frBox& box) const = 0;
+  virtual void getBBox(Rect& box) const = 0;
   // setters
   // others
  protected:

@@ -15,3 +15,5 @@
 [INFO ODB-0134] Finished DEF file: check6.def
 [WARNING DPL-0005] Overlap check failed (1).
  block1 overlaps _277_
+[ERROR DPL-0033] detailed placement checks failed.
+DPL-0033

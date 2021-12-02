@@ -33,6 +33,11 @@
 #pragma once
 
 #include "gui/gui.h"
+#include "odb/dbWireGraph.h"
+
+#include <map>
+#include <set>
+#include <vector>
 
 namespace odb {
 class dbMaster;
@@ -133,6 +138,28 @@ class DbNetDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
 
+  using Node = odb::dbWireGraph::Node;
+  using NodeList = std::set<const Node*>;
+  using NodeMap = std::map<const Node*, NodeList>;
+  using GraphTarget = std::pair<const odb::Rect, const odb::dbTechLayer*>;
+
+  void drawPathSegment(odb::dbNet* net, const odb::dbObject* sink, Painter& painter) const;
+  void findSourcesAndSinksInGraph(odb::dbNet* net,
+                                  const odb::dbObject* sink,
+                                  odb::dbWireGraph* graph,
+                                  NodeList& source_nodes,
+                                  NodeList& sink_nodes) const;
+  void findSourcesAndSinks(odb::dbNet* net,
+                           const odb::dbObject* sink,
+                           std::vector<GraphTarget>& sources,
+                           std::vector<GraphTarget>& sinks) const;
+  void findPath(NodeMap& graph,
+                const Node* source,
+                const Node* sink,
+                std::vector<odb::Point>& path) const;
+
+  void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
+
   static const int max_iterms_ = 10000;
 };
 
@@ -142,6 +169,7 @@ class DbITermDescriptor : public Descriptor
   DbITermDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
+  std::string getShortName(std::any object) const override;
   std::string getTypeName() const override;
   bool getBBox(std::any object, odb::Rect& bbox) const override;
 

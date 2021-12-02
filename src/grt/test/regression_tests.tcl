@@ -12,12 +12,14 @@ record_tests {
   est_rc2
   gcd
   gcd_flute
+  inst_pin_out_of_die
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
   ndr_1w_3s
   ndr_2w_3s
   no_tracks
+  obs_out_of_die
   pd1
   pd2
   pd3

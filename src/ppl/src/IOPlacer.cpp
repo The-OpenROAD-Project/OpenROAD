@@ -413,9 +413,6 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
 void IOPlacer::defineSlots()
 {
-  Point lb = core_.getBoundary().ll();
-  Point ub = core_.getBoundary().ur();
-
   /*******************************************
    *  Order of the edges when creating slots  *
    ********************************************
@@ -1284,7 +1281,6 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
                               int height,
                               const Rect& die_boundary)
 {
-  int database_unit = tech_->getLefUnits();
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
 

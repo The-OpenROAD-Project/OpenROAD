@@ -53,15 +53,15 @@ void FlexGRGridGraph::initCoords()
   Point gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
   // xCoords
   for (int xIdx = gcellIdxLL.x(); xIdx <= gcellIdxUR.x(); xIdx++) {
-    frBox gcellBox;
+    Rect gcellBox;
     getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0), gcellBox);
-    xCoords_.push_back((gcellBox.left() + gcellBox.right()) / 2);
+    xCoords_.push_back((gcellBox.xMin() + gcellBox.xMax()) / 2);
   }
   // yCoords
   for (int yIdx = gcellIdxLL.y(); yIdx <= gcellIdxUR.y(); yIdx++) {
-    frBox gcellBox;
+    Rect gcellBox;
     getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx), gcellBox);
-    yCoords_.push_back((gcellBox.bottom() + gcellBox.top()) / 2);
+    yCoords_.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
   }
   // z
   if (!is2DRouting_) {

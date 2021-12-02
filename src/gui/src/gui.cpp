@@ -57,6 +57,9 @@
 #include "drcWidget.h"
 #include "ruler.h"
 
+extern int cmd_argc;
+extern char **cmd_argv;
+
 namespace gui {
 
 static odb::dbBlock* getBlock(odb::dbDatabase* db)
@@ -339,6 +342,26 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
+const std::string Gui::addMenuItem(const std::string& name,
+                                   const std::string& path,
+                                   const std::string& text,
+                                   const std::string& script,
+                                   const std::string& shortcut,
+                                   bool echo)
+{
+  return main_window->addMenuItem(name,
+                                  QString::fromStdString(path),
+                                  QString::fromStdString(text),
+                                  QString::fromStdString(script),
+                                  QString::fromStdString(shortcut),
+                                  echo);
+}
+
+void Gui::removeMenuItem(const std::string& name)
+{
+  main_window->removeMenuItem(name);
+}
+
 const std::string Gui::requestUserInput(const std::string& title, const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title), QString::fromStdString(question));
@@ -467,6 +490,11 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, double value)
+{
+  main_window->setHeatMapSetting(name, option, value);
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
@@ -488,9 +516,44 @@ bool Renderer::checkDisplayControl(const std::string& name)
   }
 }
 
-void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  controls_[name] = initial_state;
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
+  }
+}
+
+void Renderer::addDisplayControl(const std::string& name,
+                                 bool initial_visible,
+                                 const DisplayControlCallback& setup,
+                                 const std::vector<std::string>& mutual_exclusivity)
+{
+  auto& control = controls_[name];
+
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(), mutual_exclusivity.end());
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  Settings settings;
+  for (const auto& [key, init_value] : controls_) {
+    settings[key] = checkDisplayControl(key);
+  }
+  return settings;
+}
+
+void Renderer::setSettings(const Renderer::Settings& settings)
+{
+  for (auto& [key, control] : controls_) {
+    setSetting<bool>(settings, key, control.visibility);
+    setDisplayControl(key, control.visibility);
+  }
 }
 
 void Gui::load_design()
@@ -563,16 +626,17 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   }
 
   // OR already running, so GUI should not set anything up
-  // passing in 0, nullptr, nullptr to indicate such
-  // pass cmds and interactive along
-  startGui(0, nullptr, nullptr, cmds, interactive);
+  // passing in cmd_argc and cmd_argv to meet Qt application requirement for arguments
+  // nullptr for tcl interp to indicate nothing to setup
+  // and commands and interactive setting
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
 }
 
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false

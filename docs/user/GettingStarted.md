@@ -102,9 +102,8 @@ directory.
 
 ### Adding a New Platform
 
-At this time, we recommend looking at the
-[Nangate45](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/tree/master/flow/platforms/nangate45)
-as an example of how to set up a new platform for OpenROAD-flow-scripts.
+Refer to the [platform bring up](../contrib/PlatformBringUp.md) documentation
+to set up a new platform for OpenROAD-flow-scripts.
 
 ## Implement the Design
 
@@ -113,9 +112,9 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 
 ## Miscellaneous
 
-### nangate45 smoke-test harness for top-level Verilog designs
+### Nangate45 smoke-test harness for top-level Verilog designs
 
-1.  Drop your Verilog files into designs/src/harness
+1.  Drop your Verilog files into `designs/src/harness`
 2.  Start the workflow:
 
 ---

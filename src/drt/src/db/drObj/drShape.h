@@ -200,7 +200,7 @@ class drPathSeg : public drShape
    * overlaps, in .cpp
    */
   // needs to be updated
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     bool isHorizontal = true;
     if (begin_.x() == end_.x()) {
@@ -210,15 +210,15 @@ class drPathSeg : public drShape
     auto beginExt = style_.getBeginExt();
     auto endExt = style_.getEndExt();
     if (isHorizontal) {
-      boxIn.set(begin_.x() - beginExt,
-                begin_.y() - width / 2,
-                end_.x() + endExt,
-                end_.y() + width / 2);
+      boxIn.init(begin_.x() - beginExt,
+                 begin_.y() - width / 2,
+                 end_.x() + endExt,
+                 end_.y() + width / 2);
     } else {
-      boxIn.set(begin_.x() - width / 2,
-                begin_.y() - beginExt,
-                end_.x() + width / 2,
-                end_.y() + endExt);
+      boxIn.init(begin_.x() - width / 2,
+                 begin_.y() - beginExt,
+                 end_.x() + width / 2,
+                 end_.y() + endExt);
     }
   }
 
@@ -317,21 +317,21 @@ class drPatchWire : public drShape
    * getBBox
    * setBBox
    */
-  void getBBox(frBox& boxIn) const override
+  void getBBox(Rect& boxIn) const override
   {
     dbTransform xform(origin_);
-    boxIn.set(offsetBox_);
-    boxIn.transform(xform);
+    boxIn = offsetBox_;
+    xform.apply(boxIn);
   }
 
-  void getOffsetBox(frBox& boxIn) const { boxIn = offsetBox_; }
-  void setOffsetBox(const frBox& boxIn) { offsetBox_.set(boxIn); }
+  void getOffsetBox(Rect& boxIn) const { boxIn = offsetBox_; }
+  void setOffsetBox(const Rect& boxIn) { offsetBox_ = boxIn; }
 
   void getOrigin(Point& in) const { in = origin_; }
   void setOrigin(const Point& in) { origin_ = in; }
 
  protected:
-  frBox offsetBox_;
+  Rect offsetBox_;
   Point origin_;
   frLayerNum layer_;
   drBlockObject* owner_;

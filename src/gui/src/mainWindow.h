@@ -42,6 +42,7 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
+#include "heatMap.h"
 #include "ruler.h"
 
 namespace odb {
@@ -97,6 +98,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<std::string> getRestoreTclCommands();
 
+  void setHeatMapSetting(const std::string& map, const std::string& option, double value);
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -150,7 +153,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
+  void addHighlighted(const SelectionSet& selection, int highlight_group = -1);
 
   // Add Ruler to Layout View
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
@@ -160,7 +163,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Add the selections(List) to highlight set
   void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
-                            int highlight_group = 0);
+                            int highlight_group = -1);
 
   // Higlight set will be cleared with this explicit call
   void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
@@ -198,6 +201,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                      bool echo);
   void removeToolbarButton(const std::string& name);
 
+  // add/remove menu actions
+  const std::string addMenuItem(const std::string& name,
+                                const QString& path,
+                                const QString& text,
+                                const QString& script,
+                                const QString& shortcut,
+                                bool echo);
+  void removeMenuItem(const std::string& name);
+
   // request for user input
   const std::string requestUserInput(const QString& title, const QString& question);
 
@@ -213,11 +225,21 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
 
+ private slots:
+  void setBlock(odb::dbBlock* block);
+
  private:
   void createMenus();
   void createActions();
   void createToolbars();
   void createStatusBar();
+
+  QMenu* findMenu(QStringList& path, QMenu* parent = nullptr);
+  void removeMenu(QMenu* menu);
+
+  int requestHighlightGroup();
+
+  const std::vector<HeatMapDataSource*> getHeatMaps();
 
   odb::dbBlock* getBlock();
 
@@ -259,12 +281,18 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
 
-  QAction* congestion_setup_;
-
   QLabel* location_;
 
   // created button actions
   std::map<const std::string, std::unique_ptr<QAction>> buttons_;
+
+  // created menu actions
+  std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
+
+  // global heat maps
+  RoutingCongestionDataSource routing_congestion_data_;
+  PlacementDensityDataSource placement_density_data_;
+  PowerDensityDataSource power_density_data_;
 };
 
 }  // namespace gui

@@ -3,7 +3,6 @@
   , "instance_count" : "45634"
   , "utilization" : "7.1"
   , "design_area" : "628888"
-  , "DPL::errors" : "0"
   , "ANT::errors" : "0"
   , "DRT::drv" : "0"
   , "worst_slack_min" : "-0.12849455196893064"

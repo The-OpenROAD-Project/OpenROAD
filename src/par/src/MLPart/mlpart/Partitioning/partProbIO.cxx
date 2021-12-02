@@ -463,7 +463,7 @@ bool PartitioningProblem::save(const char* blkFileName, const char* fixFileName,
 
         unsigned numPart = (*_capacities).size();
 
-        char buf[20], buf1[20];
+        char buf[20], buf1[32];
 
         for (k = 0; k != numPart; k++) {
                 for (j = 0; j != numWeights; j++) sumCapacities[j] += (*_capacities)[k][j];
@@ -757,7 +757,7 @@ bool PartitioningProblem::readBLK(istream& blkFile) {
                         abkfatal2(padBlockNum >= 0 && padBlockNum < numPadBlocks, " Bad pad block Id (too big a number) in line ", lineNo);
                         (*_padBlocks)[padBlockNum] = box;
                 } else {
-                        char buf[255];
+                        char buf[512];
                         sprintf(buf, "\n Got '%s' ", partId);
                         abkfatal3(0,
                                   "Partition Id starting with b or pb expected "
@@ -852,7 +852,7 @@ bool PartitioningProblem::readFIX(istream& fixFile) {
                                         unsigned blockNum = atoi(partId + 2);
                                         abkfatal2(blockNum >= 0 && blockNum < numPadBlocks, "Block Id out of range in line ", lineNo);
                                         if ((*_terminalToBlock)[node.getIndex()] != UINT_MAX) {
-                                                char errMess[256];
+                                                char errMess[512];
                                                 sprintf(errMess,
                                                         " Pad %s is "
                                                         "constrained to >1 pad "
@@ -863,7 +863,7 @@ bool PartitioningProblem::readFIX(istream& fixFile) {
                                         (*_terminalToBlock)[node.getIndex()] = blockNum;
                                         for (unsigned kw = 0; kw != numWeights; kw++) _hgraph->setWeight(node.getIndex(), 0.0, kw);
                                 } else {
-                                        char buf[255];
+                                        char buf[512];
                                         sprintf(buf, ".\n Got %s ", partId);
                                         abkfatal3(0,
                                                   " Block or partition Id "
@@ -959,7 +959,7 @@ bool PartitioningProblem::readSOL(istream& solFile) {
                                 } else if (partId[0] == 'p' && partId[1] == 'b') {
                                         // ignore
                                 } else {
-                                        char buf[255];
+                                        char buf[512];
                                         sprintf(buf, ".\n Got %s ", partId);
                                         abkfatal3(0,
                                                   " Block or partition Id "

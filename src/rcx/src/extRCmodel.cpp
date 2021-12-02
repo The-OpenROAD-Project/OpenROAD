@@ -1872,7 +1872,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger) {
   _metLevel = 0;
 }
 extRCModel::extRCModel(const char* name, Logger* logger) {
-  logger = logger;
+  logger_ = logger;
   _layerCnt = 0;
   strcpy(_name, name);
   _resOver = NULL;

@@ -134,10 +134,10 @@ class FlexGridGraph
     return nodes_[getIdx(x, y, z)].hasGridCostUp;
   }
 
-  void getBBox(frBox& in) const
+  void getBBox(Rect& in) const
   {
     if (xCoords_.size() && yCoords_.size()) {
-      in.set(
+      in.init(
           xCoords_.front(), yCoords_.front(), xCoords_.back(), yCoords_.back());
     }
   }
@@ -209,35 +209,35 @@ class FlexGridGraph
 
   void getIdxBox(FlexMazeIdx& mIdx1,
                  FlexMazeIdx& mIdx2,
-                 const frBox& box,
+                 const Rect& box,
                  getIdxBox_EnclosureType enclosureOption = uncertain) const
   {
-    mIdx1.set(std::lower_bound(xCoords_.begin(), xCoords_.end(), box.left())
+    mIdx1.set(std::lower_bound(xCoords_.begin(), xCoords_.end(), box.xMin())
                   - xCoords_.begin(),
-              std::lower_bound(yCoords_.begin(), yCoords_.end(), box.bottom())
+              std::lower_bound(yCoords_.begin(), yCoords_.end(), box.yMin())
                   - yCoords_.begin(),
               mIdx1.z());
     if (enclosureOption == 1) {
-      if (xCoords_[mIdx1.x()] > box.left()) {
+      if (xCoords_[mIdx1.x()] > box.xMin()) {
         mIdx1.setX(max(0, mIdx1.x() - 1));
       }
-      if (yCoords_[mIdx1.y()] > box.bottom()) {
+      if (yCoords_[mIdx1.y()] > box.yMin()) {
         mIdx1.setY(max(0, mIdx1.y() - 1));
       }
     }
     mIdx2.set(
-        frMIdx(std::upper_bound(xCoords_.begin(), xCoords_.end(), box.right())
+        frMIdx(std::upper_bound(xCoords_.begin(), xCoords_.end(), box.xMax())
                - xCoords_.begin())
             - 1,
-        frMIdx(std::upper_bound(yCoords_.begin(), yCoords_.end(), box.top())
+        frMIdx(std::upper_bound(yCoords_.begin(), yCoords_.end(), box.yMax())
                - yCoords_.begin())
             - 1,
         mIdx2.z());
     if (enclosureOption == 2) {
-      if (xCoords_[mIdx2.x()] > box.right()) {
+      if (xCoords_[mIdx2.x()] > box.xMax()) {
         mIdx2.setX(max(0, mIdx2.x() - 1));
       }
-      if (yCoords_[mIdx2.y()] > box.top()) {
+      if (yCoords_[mIdx2.y()] > box.yMax()) {
         mIdx2.setY(max(0, mIdx2.y() - 1));
       }
     }
@@ -282,7 +282,8 @@ class FlexGridGraph
     }
     return sol;
   }
-  frUInt4 getFixedShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  //gets fixed shape cost in the adjacent node following dir
+  frUInt4 getFixedShapeCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
@@ -295,9 +296,9 @@ class FlexGridGraph
     }
     return (sol);
   }
-  bool hasFixedShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasFixedShapeCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
-    return getFixedShapeCost(x, y, z, dir);
+    return getFixedShapeCostAdj(x, y, z, dir);
   }
   bool isOverrideShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -309,7 +310,8 @@ class FlexGridGraph
       return nodes_[idx].overrideShapeCostVia;
     }
   }
-  frUInt4 getRouteShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  //gets route shape cost in the adjacent node following dir
+  frUInt4 getRouteShapeCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
@@ -323,11 +325,12 @@ class FlexGridGraph
     }
     return (sol);
   }
-  bool hasRouteShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasRouteShapeCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
-    return getRouteShapeCost(x, y, z, dir);
+    return getRouteShapeCostAdj(x, y, z, dir);
   }
-  frUInt4 getMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  //gets marker cost in the adjacent node following dir
+  frUInt4 getMarkerCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     // old
@@ -342,9 +345,9 @@ class FlexGridGraph
     }
     return (sol);
   }
-  bool hasMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasMarkerCostAdj(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
-    return getMarkerCost(x, y, z, dir);
+    return getMarkerCostAdj(x, y, z, dir);
   }
   frCoord xCoord(frMIdx x) const { return xCoords_[x]; }
   frCoord yCoord(frMIdx y) const { return yCoords_[y]; }
@@ -373,7 +376,7 @@ class FlexGridGraph
                    frMIdx y,
                    frMIdx z,
                    frDirEnum dir,
-                   const frBox& box,
+                   const Rect& box,
                    bool initDR) const
   {
     bool sol = false;
@@ -386,7 +389,7 @@ class FlexGridGraph
       Point pt, pt1;
       getPoint(pt, x, y);
       getPoint(pt1, x1, y1);
-      sol = box.contains(pt) && box.contains(pt1);
+      sol = box.intersects(pt) && box.intersects(pt1);
     } else {
       sol = false;
     }
@@ -397,7 +400,7 @@ class FlexGridGraph
                frMIdx y,
                frMIdx z,
                frDirEnum dir,
-               const frBox& box,
+               const Rect& box,
                bool initDR)
   {
     bool sol = false;
@@ -621,11 +624,25 @@ class FlexGridGraph
       node.fixedShapeCostPlanar = addToByte(node.fixedShapeCostPlanar, 1);
     }
   }
+  void setFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  {
+    if (isValid(x, y, z)) {
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.fixedShapeCostPlanar = c;
+    }
+  }
   void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
       node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
+    }
+  }
+  void setFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  {
+    if (isValid(x, y, z)) {
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.fixedShapeCostVia = c;
     }
   }
   void subFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z)
@@ -829,8 +846,8 @@ class FlexGridGraph
   const frBox3D* getDstTaperBox() const { return dstTaperBox; }
   // functions
   void init(const frDesign* design,
-            const frBox& routeBBox,
-            const frBox& extBBox,
+            const Rect& routeBBox,
+            const Rect& extBBox,
             std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
             std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
             bool initDR,
@@ -980,7 +997,7 @@ class FlexGridGraph
   frVector<frLayerNum> zCoords_;
   frVector<frCoord> zHeights_;  // accumulated Z diff
   std::vector<dbTechLayerDir> layerRouteDirections_;
-  frBox dieBox_;
+  Rect dieBox_;
   frUInt4 ggDRCCost_;
   frUInt4 ggMarkerCost_;
   // temporary variables
@@ -1121,7 +1138,7 @@ class FlexGridGraph
       std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
           vertLoc2TrackPatterns,
       std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
-      const frBox& bbox);
+      const Rect& bbox);
   void initGrids(
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
       const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
@@ -1131,7 +1148,7 @@ class FlexGridGraph
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
                  const std::map<frLayerNum, dbTechLayerDir>& zMap,
-                 const frBox& bbox,
+                 const Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
                     const FlexMazeIdx& dstMazeIdx1,
@@ -1162,7 +1179,7 @@ class FlexGridGraph
                         const map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
-  bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
+  bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);
   bool isWorkerBorder(frMIdx v, bool isVert);
 };
 }  // namespace fr

@@ -255,7 +255,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
                    bus_name,
                    idx);
       portname = bus_name;
-      delete bus_name;
+      delete[] bus_name;
 
       port_buses[portname].push_back(port);
     }
@@ -362,7 +362,6 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
 
-    Net* net = db_network_->net(db_network_->term(pin));
     const char* portname = db_network_->name(pin);
     Port* port = network->makePort(cell, portname);
     network->setDirection(port, db_network_->direction(pin));

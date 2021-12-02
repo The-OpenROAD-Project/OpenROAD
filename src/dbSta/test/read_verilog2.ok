@@ -27,7 +27,6 @@ Driver pins
 Load pins
  b2/u1/A input (snl_bufx1) 0.00
 
-Hierarchical pins
 Net b1/u1out
  Pin capacitance: 0.00
  Wire capacitance: 0.00
@@ -42,7 +41,6 @@ Driver pins
 Load pins
  b1/r1/D input (snl_ffqx1) 0.00
 
-Hierarchical pins
 Net b1/r1q
  Pin capacitance: 0.00
  Wire capacitance: 0.00
@@ -57,7 +55,6 @@ Driver pins
 Load pins
  b1/u2/A input (snl_bufx1) 0.00
 
-Hierarchical pins
 Net b2/r1q
  Pin capacitance: 0.00
  Wire capacitance: 0.00
@@ -72,5 +69,4 @@ Driver pins
 Load pins
  b2/u2/A input (snl_bufx1) 0.00
 
-Hierarchical pins
 No differences found.

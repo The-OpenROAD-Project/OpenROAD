@@ -6,6 +6,8 @@ record_tests {
   test_gcd_M7_pin.api
   fail_quick
   tempSensor.api
+  ldo.api
+  multiple_ring.api
   tinyRocket.api
   soc_bsg_black_parrot_nangate45.api
   soc_bsg_black_parrot_nangate45.pad_offset.api

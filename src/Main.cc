@@ -83,8 +83,8 @@ extern "C"
 }
 #endif
 
-static int cmd_argc;
-static char **cmd_argv;
+int cmd_argc;
+char **cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 
@@ -156,6 +156,11 @@ int
 main(int argc,
      char *argv[])
 {
+  // This avoids problems with locale setting dependent
+  // C functions like strtod (e.g. 0.5 vs 0,5).
+  setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
+  setenv("LANG", "en_US.UTF-8", /* override */ 1);
+
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
     return 0;
@@ -243,7 +248,7 @@ tclReadlineInit(Tcl_Interp *interp)
 
 // Tcl init executed inside Tcl_Main.
 static int
-tclAppInit(int argc,
+tclAppInit(int& argc,
            char *argv[],
            const char *init_filename,
            Tcl_Interp *interp)
@@ -251,8 +256,8 @@ tclAppInit(int argc,
   // first check if gui was requested and launch.
   // gui will call this function again as part of setup
   // ensuring the else {} will be utilized to initialize tcl and OR.
-  if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
-    gui::startGui(cmd_argc, cmd_argv, interp);
+  if (findCmdLineFlag(argc, argv, "-gui")) {
+    gui::startGui(argc, argv, interp);
   } else {
     // init tcl
     if (Tcl_Init(interp) == TCL_ERROR) {

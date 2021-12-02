@@ -331,12 +331,12 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
     gtl::yl((*this), bp.y());
     gtl::yh((*this), ep.y());
   }
-  void setRect(const frBox& in)
+  void setRect(const Rect& in)
   {
-    gtl::xl((*this), in.left());
-    gtl::xh((*this), in.right());
-    gtl::yl((*this), in.bottom());
-    gtl::yh((*this), in.top());
+    gtl::xl((*this), in.xMin());
+    gtl::xh((*this), in.xMax());
+    gtl::yl((*this), in.yMin());
+    gtl::yh((*this), in.yMax());
   }
   void setFixed(bool in) { fixed_ = in; }
   // getters
@@ -393,10 +393,10 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 
   void setTapered(bool t) { tapered_ = t; }
 
-  bool intersects(const frBox& bx)
+  bool intersects(const Rect& bx)
   {
-    return gtl::xl(*this) <= bx.right() && gtl::xh(*this) >= bx.left()
-           && gtl::yl(*this) <= bx.top() && gtl::yh(*this) >= bx.bottom();
+    return gtl::xl(*this) <= bx.xMax() && gtl::xh(*this) >= bx.xMin()
+           && gtl::yl(*this) <= bx.yMax() && gtl::yh(*this) >= bx.yMin();
   }
 
  protected:

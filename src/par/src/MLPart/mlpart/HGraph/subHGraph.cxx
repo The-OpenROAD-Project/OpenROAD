@@ -106,8 +106,6 @@ void SubHGraph::printNodeMap() const {
         cout << endl << "*****************" << endl << "Node's HASH_MAP" << endl;
 
         OrigToNewMap::const_iterator m;
-        unsigned* toprint;
-        toprint = reinterpret_cast<unsigned*>(&m);
         unsigned i = 0;
 
         for (m = origNodeToNew.begin(); m != origNodeToNew.end(); m++) {

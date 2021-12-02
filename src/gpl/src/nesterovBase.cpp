@@ -115,7 +115,7 @@ GCell::setInstance(Instance* inst) {
 
 Instance*
 GCell::instance() const {
-  return *insts_.begin();
+  return insts_.empty() ? nullptr : *insts_.begin();
 }
 
 void
@@ -1601,6 +1601,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMinSumX( gPin->minExpSumX() );
         gNet->addWaXExpMinSumX( gPin->cx() 
             * gPin->minExpSumX() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MinX updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->minExpSumX() );
+        }
       }
       
       // max x
@@ -1609,6 +1614,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMaxSumX( gPin->maxExpSumX() );
         gNet->addWaXExpMaxSumX( gPin->cx() 
             * gPin->maxExpSumX() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MaxX updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->maxExpSumX() );
+        }
       }
      
       // min y 
@@ -1617,6 +1627,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMinSumY( gPin->minExpSumY() );
         gNet->addWaYExpMinSumY( gPin->cy() 
             * gPin->minExpSumY() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MinY updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->minExpSumY() );
+        }
       }
       
       // max y
@@ -1625,6 +1640,11 @@ NesterovBase::updateWireLengthForceWA(
         gNet->addWaExpMaxSumY( gPin->maxExpSumY() );
         gNet->addWaYExpMaxSumY( gPin->cy() 
             * gPin->maxExpSumY() );
+        if( gPin->gCell() && gPin->gCell()->isInstance() ) { 
+          debugPrint(log_, GPL, "replace", 5, "wlUpdateWA:  MaxY updated: {} {:g}",
+            gPin->gCell()->instance()->dbInst()->getConstName(),
+            gPin->maxExpSumY() );
+        }
       }
     }
     //cout << gNet->lx() << " " << gNet->ly() << " "
@@ -1639,6 +1659,9 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
 
   for(auto& gPin : gCell->gPins()) {
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+
+    debugPrint(log_, GPL, "replace", 5, "getGradientWA: wlPair: {:g} {:g}",
+      tmpPair.x, tmpPair.y);
     
     // apply timing/custom net weight
     tmpPair.x *= gPin->gNet()->totalWeight();
@@ -1646,6 +1669,11 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
     
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
+  }
+
+  if( gCell->isInstance() ) { 
+    debugPrint(log_, GPL, "replace", 5, "getGradientWA:  gradient: {:g} {:g}",
+      gradientPair.x, gradientPair.y);
   }
 
   // return sum
@@ -1712,6 +1740,9 @@ NesterovBase::getWireLengthGradientPinWA(const GPin* gPin, float wlCoeffX, float
           - wlCoeffY * gPin->maxExpSumY() * waYExpMaxSumY )
         / ( waExpMaxSumY * waExpMaxSumY );
   }
+
+  debugPrint(log_, GPL, "replace", 5, "getGradientWAPin:  gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
+      gradientMinX, gradientMaxX, gradientMinY, gradientMaxY);
 
   return FloatPoint(gradientMinX - gradientMaxX, 
       gradientMinY - gradientMaxY);

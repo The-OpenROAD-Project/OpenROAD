@@ -163,21 +163,21 @@ class frViaDef
   // setters
   void addLayer1Fig(std::unique_ptr<frShape> figIn)
   {
-    frBox box;
+    Rect box;
     figIn->getBBox(box);
     layer1ShapeBox.merge(box);
     layer1Figs.push_back(std::move(figIn));
   }
   void addLayer2Fig(std::unique_ptr<frShape> figIn)
   {
-    frBox box;
+    Rect box;
     figIn->getBBox(box);
     layer2ShapeBox.merge(box);
     layer2Figs.push_back(std::move(figIn));
   }
   void addCutFig(std::unique_ptr<frShape> figIn)
   {
-    frBox box;
+    Rect box;
     figIn->getBBox(box);
     cutShapeBox.merge(box);
     cutFigs.push_back(std::move(figIn));
@@ -186,9 +186,16 @@ class frViaDef
   void setCutClass(frLef58CutClass* in) { cutClass = in; }
   void setCutClassIdx(int in) { cutClassIdx = in; }
   void setAddedByRouter(bool in) { addedByRouter = in; }
-  const frBox& getLayer1ShapeBox() { return layer1ShapeBox; }
-  const frBox& getLayer2ShapeBox() { return layer2ShapeBox; }
-  const frBox& getCutShapeBox() { return cutShapeBox; }
+  const Rect& getLayer1ShapeBox() { return layer1ShapeBox; }
+  const Rect& getLayer2ShapeBox() { return layer2ShapeBox; }
+  const Rect& getCutShapeBox() { return cutShapeBox; }
+  const Rect& getShapeBox(frLayerNum lNum) { 
+    if (lNum == getLayer1Num())
+      return layer1ShapeBox; 
+    if (lNum == getLayer2Num())
+      return layer2ShapeBox; 
+    throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
+  }
 
  protected:
   std::string name;
@@ -200,9 +207,9 @@ class frViaDef
   int cutClassIdx;
   bool addedByRouter;
 
-  frBox layer1ShapeBox;
-  frBox layer2ShapeBox;
-  frBox cutShapeBox;
+  Rect layer1ShapeBox;
+  Rect layer2ShapeBox;
+  Rect cutShapeBox;
 };
 }  // namespace fr
 #endif

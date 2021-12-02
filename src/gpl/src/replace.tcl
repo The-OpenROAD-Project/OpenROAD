@@ -33,6 +33,7 @@
 
 sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
+  [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
     [-incremental]\
@@ -75,6 +76,7 @@ proc global_placement { args } {
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
+      -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
       -disable_timing_driven \
@@ -135,7 +137,7 @@ proc global_placement { args } {
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
     sta::check_positive_float "-routability_max_density" $routability_max_density
-    set_routability_max_density_cmd $routability_max_density
+    gpl::set_routability_max_density_cmd $routability_max_density
   }
 
 
@@ -263,7 +265,10 @@ proc global_placement { args } {
       gpl::replace_incremental_place_cmd
     } else {
       gpl::replace_initial_place_cmd
-      gpl::replace_nesterov_place_cmd
+
+      if { ![info exists flags(-skip_nesterov_place)] } {
+        gpl::replace_nesterov_place_cmd
+      }
     }
     gpl::replace_reset_cmd
   } else {

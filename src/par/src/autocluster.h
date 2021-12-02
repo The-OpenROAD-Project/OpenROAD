@@ -253,8 +253,8 @@ class AutoClusterMgr
   std::vector<sta::Net*> buffer_net_list_;
 
   // timing-driven related function
-  unsigned int num_hops_;
-  unsigned int timing_weight_;
+  unsigned int num_hops_ = 0;
+  unsigned int timing_weight_ = 0;
   
   std::vector<sta::Instance*> macros_;
   std::vector<sta::Instance*> seeds_;

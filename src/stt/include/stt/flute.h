@@ -55,7 +55,7 @@ using stt::Tree;
 #define FLUTE_D 9                   // LUT is used for d <= FLUTE_D, FLUTE_D <= 9
 
 // User-Callable Functions
-void readLUT();
+// Delete LUT tables for exit so they are not leaked.
 void deleteLUT();
 DTYPE flute_wl(int d, const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc);
 Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc);

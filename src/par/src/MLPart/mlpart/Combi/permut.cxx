@@ -77,8 +77,7 @@ Permutation& Permutation::getInverse(Permutation& result) const {
         unsigned i;
         for (i = 0; i != _meat.size(); i++) result._meat[i] = (unsigned)-1;
         for (i = 0; i < getSize(); i++) {
-                unsigned tmp = result[_meat[i]];
-                abkassert(tmp == (unsigned)-1, "Can\'t invert permutation: not injective");
+                abkassert(result[_meat[i]] == (unsigned)-1, "Can\'t invert permutation: not injective");
                 result[_meat[i]] = i;
         };
         return result;

@@ -27,6 +27,7 @@ Driver pins
 
 Load pins
  pad1/PAD bidirect (PAD) 2.20 (420, 1000)
+
 Net out1
  Pin capacitance: 2.20
  Wire capacitance: 0.00
@@ -41,6 +42,7 @@ Driver pins
 Load pins
  out1 output port (0, 0)
  pad2/PAD bidirect (PAD) 2.20 (15, 1000)
+
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)

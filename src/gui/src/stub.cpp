@@ -97,7 +97,19 @@ bool Renderer::checkDisplayControl(const std::string& /* name */)
   return false;
 }
 
-void Renderer::addDisplayControl(const std::string& /* name */, bool /* initial_state */)
+void Renderer::addDisplayControl(const std::string& /* name */,
+                                 bool /* initial_visible */,
+                                 const DisplayControlCallback& /* setup */,
+                                 const std::vector<std::string>& /* mutual_exclusivity */)
+{
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  return {};
+}
+
+void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
@@ -125,7 +137,7 @@ std::string Descriptor::Property::toString(const std::any& /* value */)
 }
 
 // using namespace odb;
-int startGui(int argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
+int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& script, bool interactive)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
