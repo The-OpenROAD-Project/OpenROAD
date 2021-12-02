@@ -3590,11 +3590,16 @@ proc generate_stripes {tag net_name} {
         set domain_yMax [$rect yMax]
         set width [dict get $grid_data core_ring $lay width]
         set spacing [dict get $grid_data core_ring $lay spacing]
+        set rail_width [get_rails_max_width]
         # Do not create duplicate stripes if the voltage domain has the same pwr/gnd nets as the core domain
         if {($net_name == [get_voltage_domain_power $domain_name] && $net_name != [get_voltage_domain_power [dict get $design_data core_domain]]) ||
-             ($net_name == [get_voltage_domain_ground $domain_name] && $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]]) || 
-             ([lsearch -exact [get_voltage_domain_secondary_power $domain_name] $net_name] > -1) } {
-          set rail_width [get_rails_max_width]
+             ($net_name == [get_voltage_domain_ground $domain_name] && $net_name != [get_voltage_domain_ground [dict get $design_data core_domain]])} {
+          set area [list $domain_xMin [expr $domain_yMin - $rail_width / 2] $domain_xMax [expr $domain_yMax + $rail_width / 2]]
+          set area [adjust_area_for_core_rings $lay $area 2]
+          set tag "$tag\_$net_name"
+          generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
+        }
+        if {[lsearch -exact [get_voltage_domain_secondary_power $domain_name] $net_name] > -1} {
           #Calculate the ring number of power_domain
           set ring_number [lsearch -exact [get_voltage_domain_secondary_power $domain_name] $net_name]
           set area [list [expr $domain_xMin + $ring_number * ($width + $spacing)] [expr $domain_yMin - $rail_width / 2] [expr $domain_xMax + $ring_number * ($width + $spacing)] [expr $domain_yMax + $rail_width / 2]]
