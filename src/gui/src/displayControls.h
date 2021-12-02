@@ -224,7 +224,7 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
-  void displayItemClicked(const QModelIndex& index);
+  void displayItemSelected(const QItemSelection& selected);
   void displayItemDblClicked(const QModelIndex& index);
 
  private:
