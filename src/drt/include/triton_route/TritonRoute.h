@@ -91,7 +91,7 @@ class TritonRoute
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
-  void setDebugGCell(int x, int y);
+  void setDebugWorker(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
   void setDebugPaCombining(bool on = true);

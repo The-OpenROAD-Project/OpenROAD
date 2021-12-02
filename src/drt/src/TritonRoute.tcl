@@ -167,7 +167,7 @@ sta::define_cmd_args "detailed_route_debug" {
     [-maze]
     [-net name]
     [-pin name]
-    [-gcell x y]
+    [-worker x y]
     [-iter iter]
     [-pa_markers]
     [-pa_combining]
@@ -175,7 +175,7 @@ sta::define_cmd_args "detailed_route_debug" {
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net -gcell -iter -pin} \
+      keys {-net -worker -iter -pin} \
       flags {-dr -maze -pa -pa_markers -pa_combining}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
@@ -198,16 +198,16 @@ proc detailed_route_debug { args } {
     set pin_name ""
   }
 
-  set gcell_x -1
-  set gcell_y -1
-  if [info exists keys(-gcell)] {
-    set gcell $keys(-gcell)
-    if { [llength $gcell] != 2 } {
-      utl::error DRT 118 "-gcell is a list of 2 coordinates."
+  set worker_x -1
+  set worker_y -1
+  if [info exists keys(-worker)] {
+    set worker $keys(-worker)
+    if { [llength $worker] != 2 } {
+      utl::error DRT 118 "-worker is a list of 2 coordinates."
     }
-    lassign $gcell gcell_x gcell_y
-    sta::check_positive_integer "-gcell" $gcell_x
-    sta::check_positive_integer "-gcell" $gcell_y
+    lassign $worker worker_x worker_y
+    sta::check_positive_integer "-worker" $worker_x
+    sta::check_positive_integer "-worker" $worker_y
   }
 
   if { [info exists keys(-iter)] } {
@@ -217,5 +217,5 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
-      $gcell_x $gcell_y $iter $pa_markers $pa_combining
+      $worker_x $worker_y $iter $pa_markers $pa_combining
 }

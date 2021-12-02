@@ -96,10 +96,10 @@ void TritonRoute::setDebugPinName(const char* name)
   debug_->pinName = name;
 }
 
-void TritonRoute::setDebugGCell(int x, int y)
+void TritonRoute::setDebugWorker(int x, int y)
 {
-  debug_->gcellX = x;
-  debug_->gcellY = y;
+  debug_->x = x;
+  debug_->y = y;
 }
 
 void TritonRoute::setDebugIter(int iter)
