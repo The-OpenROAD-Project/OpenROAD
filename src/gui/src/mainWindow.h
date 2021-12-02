@@ -132,7 +132,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void saveSettings();
 
   // Set the location to display in the status bar
-  void setLocation(qreal x, qreal y);
+  void setLocation(int x, int y);
 
   // Update selected name in status bar
   void updateSelectedStatus(const Selected& selection);
@@ -220,6 +220,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
+ private slots:
+  void setUseDBU(bool use_dbu);
+  void setClearLocation();
+
+
  protected:
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
@@ -241,7 +246,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<HeatMapDataSource*> getHeatMaps();
 
-  odb::dbBlock* getBlock();
+  odb::dbBlock* getBlock() const;
+
+  std::string convertDBUToString(int value, bool add_units) const;
+  int convertStringToDBU(const std::string& value, bool* ok) const;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
@@ -280,6 +288,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* zoom_out_;
   QAction* help_;
   QAction* build_ruler_;
+  QAction* show_dbu_;
 
   QLabel* location_;
 

@@ -115,6 +115,7 @@ class LayoutViewer : public QWidget
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
+               std::function<bool(void)> usingDBU,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -141,7 +142,7 @@ class LayoutViewer : public QWidget
 
  signals:
   // indicates the current location of the mouse
-  void location(qreal x, qreal y);
+  void location(int x, int y);
 
   // indicates a new object has been selected
   void selected(const Selected& selected, bool showConnectivity = false);
@@ -339,6 +340,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
+  std::function<bool(void)> usingDBU_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;

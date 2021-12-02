@@ -50,14 +50,20 @@ const unsigned char HeatMapDataSource::turbo_srgb_bytes_[256][3] = {{48,18,59},{
 
 HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
                            const QString& title,
+                           bool use_dbu,
+                           int dbu,
                            QWidget* parent) :
     QDialog(parent),
     source_(source),
+    use_dbu_(use_dbu),
+    dbu_(dbu),
     log_scale_(new QCheckBox(this)),
     show_numbers_(new QCheckBox(this)),
     show_legend_(new QCheckBox(this)),
-    grid_x_size_(new QDoubleSpinBox(this)),
-    grid_y_size_(new QDoubleSpinBox(this)),
+    grid_x_size_(nullptr),
+    grid_y_size_(nullptr),
+    grid_x_size_dbu_(nullptr),
+    grid_y_size_dbu_(nullptr),
     min_range_selector_(new QDoubleSpinBox(this)),
     show_mins_(new QCheckBox(this)),
     max_range_selector_(new QDoubleSpinBox(this)),
@@ -70,6 +76,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   QVBoxLayout* overall_layout = new QVBoxLayout;
   QFormLayout* form = new QFormLayout;
+
   source_.makeAdditionalSetupOptions(this, form, [this]() { source_.redraw(); });
 
   form->addRow(tr("Log scale"), log_scale_);
@@ -78,21 +85,40 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   form->addRow(tr("Show legend"), show_legend_);
 
-  QString grid_suffix(" \u03BCm"); // micro meters
-  grid_x_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
-  grid_x_size_->setSuffix(grid_suffix);
-  grid_y_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
-  grid_y_size_->setSuffix(grid_suffix);
   QHBoxLayout* grid_layout = new QHBoxLayout;
-  grid_layout->addWidget(new QLabel("X", this));
-  grid_layout->addWidget(grid_x_size_);
-  grid_layout->addWidget(new QLabel("Y", this));
-  grid_layout->addWidget(grid_y_size_);
-  form->addRow(tr("Grid"), grid_layout);
-  if (!source_.canAdjustGrid()) {
-    grid_x_size_->setEnabled(false);
-    grid_y_size_->setEnabled(false);
+  if (!use_dbu_) {
+    grid_x_size_ = new QDoubleSpinBox(this);
+    grid_y_size_ = new QDoubleSpinBox(this);
+
+    const QString grid_suffix(" \u03BCm"); // micro meters
+    grid_x_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+    grid_x_size_->setSuffix(grid_suffix);
+    grid_y_size_->setRange(source_.getGridSizeMinimumValue(), source_.getGridSizeMaximumValue());
+    grid_y_size_->setSuffix(grid_suffix);
+    grid_layout->addWidget(new QLabel("X", this));
+    grid_layout->addWidget(grid_x_size_);
+    grid_layout->addWidget(new QLabel("Y", this));
+    grid_layout->addWidget(grid_y_size_);
+    if (!source_.canAdjustGrid()) {
+      grid_x_size_->setEnabled(false);
+      grid_y_size_->setEnabled(false);
+    }
+  } else {
+    grid_x_size_dbu_ = new QSpinBox(this);
+    grid_y_size_dbu_ = new QSpinBox(this);
+
+    grid_x_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_, source_.getGridSizeMaximumValue() * dbu_);
+    grid_y_size_dbu_->setRange(source_.getGridSizeMinimumValue() * dbu_, source_.getGridSizeMaximumValue() * dbu_);
+    grid_layout->addWidget(new QLabel("X", this));
+    grid_layout->addWidget(grid_x_size_dbu_);
+    grid_layout->addWidget(new QLabel("Y", this));
+    grid_layout->addWidget(grid_y_size_dbu_);
+    if (!source_.canAdjustGrid()) {
+      grid_x_size_dbu_->setEnabled(false);
+      grid_y_size_dbu_->setEnabled(false);
+    }
   }
+  form->addRow(tr("Grid"), grid_layout);
 
   min_range_selector_->setDecimals(3);
   QHBoxLayout* min_grid = new QHBoxLayout;
@@ -128,14 +154,25 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           this,
           SLOT(updateScale(int)));
 
-  connect(grid_x_size_,
-          SIGNAL(valueChanged(double)),
-          this,
-          SLOT(updateGridSize()));
-  connect(grid_y_size_,
-          SIGNAL(valueChanged(double)),
-          this,
-          SLOT(updateGridSize()));
+  if (!use_dbu_) {
+    connect(grid_x_size_,
+            SIGNAL(valueChanged(double)),
+            this,
+            SLOT(updateGridSize()));
+    connect(grid_y_size_,
+            SIGNAL(valueChanged(double)),
+            this,
+            SLOT(updateGridSize()));
+  } else {
+    connect(grid_x_size_dbu_,
+            SIGNAL(valueChanged(int)),
+            this,
+            SLOT(updateGridSize()));
+    connect(grid_y_size_dbu_,
+            SIGNAL(valueChanged(int)),
+            this,
+            SLOT(updateGridSize()));
+  }
 
   connect(show_numbers_,
           SIGNAL(stateChanged(int)),
@@ -207,8 +244,13 @@ void HeatMapSetup::updateWidgets()
   max_range_selector_->setSuffix(" " + QString::fromStdString(source_.getValueUnits()));
   max_range_selector_->setSingleStep(source_.getDisplayRangeIncrement());
 
-  grid_x_size_->setValue(source_.getGridXSize());
-  grid_y_size_->setValue(source_.getGridYSize());
+  if (!use_dbu_) {
+    grid_x_size_->setValue(source_.getGridXSize());
+    grid_y_size_->setValue(source_.getGridYSize());
+  } else {
+    grid_x_size_dbu_->setValue(source_.getGridXSize() * dbu_);
+    grid_y_size_dbu_->setValue(source_.getGridYSize() * dbu_);
+  }
 
   alpha_selector_->setValue(source_.getColorAlpha());
 
@@ -261,7 +303,12 @@ void HeatMapSetup::updateRange()
 
 void HeatMapSetup::updateGridSize()
 {
-  source_.setGridSizes(grid_x_size_->value(), grid_y_size_->value());
+  if (!use_dbu_) {
+    source_.setGridSizes(grid_x_size_->value(), grid_y_size_->value());
+  } else {
+    const double dbu = dbu_;
+    source_.setGridSizes(grid_x_size_dbu_->value() / dbu, grid_x_size_dbu_->value() / dbu);
+  }
   emit changed();
 }
 
@@ -280,6 +327,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     short_name_(short_name),
     settings_group_(settings_group),
     destroy_map_(true),
+    use_dbu_(false),
     populated_(false),
     colors_correct_(false),
     issue_redraw_(true),
@@ -436,9 +484,10 @@ const Painter::Color HeatMapDataSource::getColor(double value) const
 void HeatMapDataSource::showSetup()
 {
   if (setup_ == nullptr) {
-    setup_ = std::make_unique<HeatMapSetup>(*this, QString::fromStdString(name_));
+    setup_ = new HeatMapSetup(*this, QString::fromStdString(name_), use_dbu_, block_->getDbUnitsPerMicron());
 
-    QObject::connect(setup_.get(), &QDialog::finished, [this]() { setup_ = nullptr; });
+    QObject::connect(setup_, &QDialog::finished, &QObject::deleteLater);
+    QObject::connect(setup_, &QObject::destroyed, [this]() { setup_ = nullptr; });
 
     setup_->show();
   } else {

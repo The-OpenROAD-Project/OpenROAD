@@ -64,6 +64,9 @@ using SelectionSet = std::set<Selected>;
 using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
                                                    // Color is supported for now
 
+using DBUToString = std::function<std::string(int, bool)>;
+using StringToDBU = std::function<int(const std::string&, bool*)>;
+
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
 // the clients.  Clients will only deal with this API and not Qt itself,
@@ -128,7 +131,12 @@ class Painter
   static inline const Color highlight = yellow;
   static inline const Color persistHighlight = yellow;
 
-  Painter(Options* options, const odb::Rect& bounds, double pixels_per_dbu) : options_(options), bounds_(bounds), pixels_per_dbu_(pixels_per_dbu) {}
+  Painter(Options* options,
+          const odb::Rect& bounds,
+          double pixels_per_dbu) :
+            options_(options),
+            bounds_(bounds),
+            pixels_per_dbu_(pixels_per_dbu) {}
   virtual ~Painter() = default;
 
   // Get the current pen color
@@ -243,7 +251,8 @@ class Descriptor
     std::string name;
     std::any value;
 
-    static int dbu;
+    static DBUToString convert_dbu;
+    static StringToDBU convert_string;
 
     static std::string toString(const std::any& /* value */);
     std::string toString() const { return toString(value); };
