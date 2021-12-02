@@ -10,7 +10,7 @@
       [-pad_pin_pattern pad_pin_pattern] \
       [-pin_layer pin_layer_name] \
       [-connect_by_abutment signal_list] \
-      [-allow_filler_overlap|-reject_filler_overlap]
+      [-allow_filler_overlap]
 ```
 ## Description
 
@@ -43,7 +43,6 @@ The -allow_filler_overlap option allows the smallest filler cell to be inserted 
 | -pin_layer | Specify the layer which is to be used to create a top level pin over the pin of the padcell. The creation of a physical pin at this location identifies pin locations for LVS (layout-versus-schematic) verification. |
 | -connect_by_abutment | Specify the list of signals that connect by abutment in the padring. The placement of breaker cells in the padring will split these signals into separate nets as required. |
 | -allow_filler_overlap | Allow the insertion of the smallest IO filler cell to overlap with padcells. Only use when this is supported by the IO library you are using. |
-| -reject_filler_overlap | Disallow the insertion of IO filler cells into gaps which are not wide enough to accomodate them. This is the default. |
 
 ## Examples
 ```

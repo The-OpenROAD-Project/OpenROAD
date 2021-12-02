@@ -75,7 +75,7 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-pad_pin_pattern pad_pin_pattern] \
                                             [-pin_layer pin_layer_name] \
                                             [-connect_by_abutment signal_list] \
-                                            [-allow_filler_overlap|-reject_filler_overlap]}
+                                            [-allow_filler_overlap]}
 
 proc set_padring_options {args} {
   if {[ord::get_db_block] == "NULL"} {
@@ -84,14 +84,10 @@ proc set_padring_options {args} {
 
   sta::parse_key_args "set_padring_options" args \
     keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pin_layer -connect_by_abutment} \
-    flags {-allow_filler_overlap -reject_filler_overlap}
+    flags {-allow_filler_overlap}
 
   if {[llength $args] > 0} {
     utl::error PAD 219 "Unrecognized arguments ([lindex $args 0]) specified for set_padring_options."
-  }
-
-  if {[info exists flags(-allow_filler_overlap)] && [info exists flags(-reject_filler_overlap)]} {
-    utl::error PAD 258 "Options -allow_filler_overlap and -reject_filler_overlap are mutually exclusive"
   }
 
   if {[info exists keys(-type)]} {
@@ -134,11 +130,9 @@ proc set_padring_options {args} {
     ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
   }
 
+  ICeWall::set_filler_overlap_allowed 0
   if {[info exists flags(-allow_filler_overlap)]} {
     ICeWall::set_filler_overlap_allowed 1
-  }
-  if {[info exists flags(-reject_filler_overlap)]} {
-    ICeWall::set_filler_overlap_allowed 0
   }
 }
 
