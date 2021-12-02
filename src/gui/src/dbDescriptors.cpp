@@ -843,13 +843,13 @@ void DbNetDescriptor::highlight(std::any object,
 
   auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT ||
+    return iotype == odb::dbIoType::INPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
   auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::INPUT ||
+    return iotype == odb::dbIoType::OUTPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
