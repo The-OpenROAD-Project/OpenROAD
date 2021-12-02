@@ -36,7 +36,6 @@
 using namespace std;
 using namespace fr;
 
-string netToDebug = "";
 // copied from FlexDRWorker::initNets_searchRepair_pin2epMap_helper
 void FlexDRConnectivityChecker::pin2epMap_helper(
     const frNet* net,
@@ -85,9 +84,6 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
         pin2epMap)
 {
-  bool enableOutput = net->getName() == netToDebug;
-  if (enableOutput)
-    cout << "pin2epMap\n\n";
   // to avoid delooping fake planar ep in pin
   set<pair<Point, frLayerNum>> extEndPoints;
   for (auto& connFig : netRouteObjs) {
@@ -99,14 +95,9 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     frSegStyle style;
     obj->getStyle(style);
     auto lNum = obj->getLayerNum();
-    if (enableOutput)
-      cout << *obj << " layer " << getTech()->getLayer(lNum)->getName()
-           << "\nquery bp\n";
     if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, bp, lNum, pin2epMap, true);
     }
-    if (enableOutput)
-      cout << "query ep\n";
     if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, ep, lNum, pin2epMap, true);
     }
@@ -120,12 +111,8 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     const Point origin = obj->getOrigin();
     auto l1Num = obj->getViaDef()->getLayer1Num();
     auto l2Num = obj->getViaDef()->getLayer2Num();
-    if (enableOutput)
-      cout << *obj << "  query pt l1\n";
     if (obj->isBottomConnected())
       pin2epMap_helper(net, origin, l1Num, pin2epMap, false);
-    if (enableOutput)
-      cout << "  query pt l2\n";
     if (obj->isTopConnected())
       pin2epMap_helper(net, origin, l2Num, pin2epMap, false);
   }
@@ -157,9 +144,6 @@ void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
     const vector<frConnFig*>& netRouteObjs,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
-  bool enableOutput = net->getName() == netToDebug;
-  if (enableOutput)
-    cout << "nodeMap_routeObjEnd\n";
   for (int i = 0; i < (int) netRouteObjs.size(); i++) {
     const auto connFig = netRouteObjs[i];
     if (connFig->typeId() == frcPathSeg) {
@@ -168,9 +152,6 @@ void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
       const auto lNum = obj->getLayerNum();
       nodeMap[{bp, lNum}].insert(i);
       nodeMap[{ep, lNum}].insert(i);
-      if (enableOutput)
-        cout << "pathSeg node idx = " << i << "bp " << bp << " ep " << ep
-             << " lNum " << lNum << "\n";
     } else if (connFig->typeId() == frcVia) {
       auto obj = static_cast<const frVia*>(connFig);
       const Point origin = obj->getOrigin();
@@ -178,9 +159,6 @@ void FlexDRConnectivityChecker::nodeMap_routeObjEnd(
       const auto l2Num = obj->getViaDef()->getLayer2Num();
       nodeMap[{origin, l1Num}].insert(i);
       nodeMap[{origin, l2Num}].insert(i);
-      if (enableOutput)
-        cout << "via node idx = " << i << "bp " << origin << " bottom lNum "
-             << l1Num << "\n";
     }
   }
 }
@@ -321,10 +299,7 @@ bool FlexDRConnectivityChecker::astar(
     const int nNetRouteObjs,
     const int nNetObjs)
 {
-  bool enableOutput = net->getName() == netToDebug;
   // a star search
-  if (enableOutput)
-    cout << "ASTAR\n";
   // node index, node visited
   vector<vector<int>> adjVec(nNetObjs, vector<int>());
   vector<char> onPathIdx(nNetObjs, false);
@@ -342,8 +317,6 @@ bool FlexDRConnectivityChecker::astar(
         const auto idx2 = *it2;
         adjVec[idx1].push_back(idx2);
         adjVec[idx2].push_back(idx1);
-        if (enableOutput)
-          cout << "add edge #" << idx1 << " -- #" << idx2 << endl;
       }
     }
   }
@@ -430,8 +403,6 @@ void FlexDRConnectivityChecker::finish(
     const int nCnt,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
-  bool enableOutput = net->getName() == netToDebug;
-
   auto regionQuery = getRegionQuery();
 
   // from obj to pt
@@ -458,10 +429,6 @@ void FlexDRConnectivityChecker::finish(
         victimPathSeg->getBBox(bbox);
         addMarker(net, victimPathSeg->getLayerNum(), bbox);
 
-        if (enableOutput) {
-          cout << "net " << net->getName() << " deleting pathseg "
-               << *static_cast<frPathSeg*>(netRouteObjs[i]) << endl;
-        }
         regionQuery->removeDRObj(static_cast<frShape*>(netRouteObjs[i]));
         net->removeShape(static_cast<frShape*>(netRouteObjs[i]));
       } else if (netRouteObjs[i]->typeId() == frcVia) {
@@ -472,9 +439,6 @@ void FlexDRConnectivityChecker::finish(
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
-        if (enableOutput)
-          cout << "net " << net->getName() << " deleting via " << *via << endl;
-
         regionQuery->removeDRObj(via);
         net->removeVia(via);
       } else {
@@ -634,8 +598,6 @@ void FlexDRConnectivityChecker::finish(
       regionQuery->removeDRObj(ps);
       ps->setPoints(minPt, maxPt);
       regionQuery->addDRObj(ps);
-      if (enableOutput)
-        cout << "net " << net->getName() << " shrinking pathseg" << endl;
     }
   }
 
@@ -681,8 +643,6 @@ void FlexDRConnectivityChecker::finish(
 
       regionQuery->removeDRObj(obj);
       net->removePatchWire(obj);
-      if (enableOutput)
-        cout << "net " << net->getName() << " deleting pwire" << endl;
     }
   }
 }
@@ -1065,9 +1025,7 @@ void FlexDRConnectivityChecker::check(int iter)
       const int nCnt = (int) netRouteObjs.size() + (int) netPins.size();
 
       if (!status[i]) {
-        cout << "=============================\nError: checkConnectivity "
-                "break, net "
-             << net->getName() << endl
+        cout << "Error: checkConnectivity break, net " << net->getName() << endl
              << "Objs not visited:\n";
         for (int idx = 0; idx < (int) adjVisited.size(); idx++) {
           if (!adjVisited[idx]) {
@@ -1077,16 +1035,6 @@ void FlexDRConnectivityChecker::check(int iter)
               cout << *(netPins[idx - netRouteObjs.size()]) << "\n";
           }
         }
-        cout << "Objs visited:\n";
-        for (int idx = 0; idx < (int) adjVisited.size(); idx++) {
-          if (adjVisited[idx]) {
-            if (idx < (int) netRouteObjs.size())
-              cout << *(netRouteObjs[idx]) << "\n";
-            else
-              cout << *(netPins[idx - netRouteObjs.size()]) << "\n";
-          }
-        }
-        cout << "=============================\n";
         isWrong = true;
       } else {
         // get lock
