@@ -691,9 +691,9 @@ const std::string MainWindow::requestUserInput(const QString& title, const QStri
 void MainWindow::setLocation(int x, int y)
 {
   QString location;
-  location += QString::fromStdString(convertDBUToString(x, true));
+  location += QString::fromStdString(convertDBUToString(x, false));
   location += ", ";
-  location += QString::fromStdString(convertDBUToString(y, true));
+  location += QString::fromStdString(convertDBUToString(y, false));
   location_->setText(location);
 }
 
