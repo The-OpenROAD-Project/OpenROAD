@@ -814,8 +814,17 @@ class FlexDRWorker
                       int i,
                       vector<FlexMazeIdx>& points,
                       const set<FlexMazeIdx>& apMazeIdx);
-  void checkPathSegStyle(drPathSeg* ps, bool isBegin, frSegStyle& style);
-  void checkViaConnectivityToAP(drVia* ps, bool isBottom, frNet* net);
+  bool isInWorkerBorder(frCoord x, frCoord y) const;
+  void checkPathSegStyle(drPathSeg* ps,
+                         bool isBegin,
+                         frSegStyle& style,
+                         const set<FlexMazeIdx>& apMazeIdx,
+                         const FlexMazeIdx& idx);
+  void checkViaConnectivityToAP(drVia* ps,
+                                bool isBottom,
+                                frNet* net,
+                                const set<FlexMazeIdx>& apMazeIdx,
+                                const FlexMazeIdx& idx);
   bool hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
