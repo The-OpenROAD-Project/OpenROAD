@@ -530,10 +530,32 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   auto wire = net->getWire();
-  if (wire && wire->getBBox(bbox)) {
-    return true;
+  bool has_box = false;
+  bbox.mergeInit();
+  if (wire) {
+    odb::Rect wire_box;
+    if (wire->getBBox(wire_box)) {
+      bbox.merge(wire_box);
+      has_box = true;
+    }
   }
-  return false;
+
+  for (auto inst_term : net->getITerms()) {
+    if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    bbox.merge(inst_term->getBBox());
+    has_box = true;
+  }
+
+  for (auto blk_term : net->getBTerms()) {
+    for (auto pin : blk_term->getBPins()) {
+      bbox.merge(pin->getBBox());
+      has_box = true;
+    }
+  }
+
+  return has_box;
 }
 
 void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
@@ -843,13 +865,13 @@ void DbNetDescriptor::highlight(std::any object,
 
   auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT ||
+    return iotype == odb::dbIoType::INPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
   auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::INPUT ||
+    return iotype == odb::dbIoType::OUTPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
