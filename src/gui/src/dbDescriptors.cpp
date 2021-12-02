@@ -544,11 +544,7 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
     if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {
       continue;
     }
-
-    odb::dbBox* term_bbox = inst_term->getInst()->getBBox();
-    odb::Rect rect;
-    term_bbox->getBox(rect);
-    bbox.merge(rect);
+    bbox.merge(inst_term->getBBox());
     has_box = true;
   }
 
