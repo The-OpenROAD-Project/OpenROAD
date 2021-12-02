@@ -363,10 +363,10 @@ DisplayControls::DisplayControls(QWidget* parent)
           this,
           SLOT(itemChanged(QStandardItem*)));
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
+  connect(view_->selectionModel(),
+          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
           this,
-          SLOT(displayItemClicked(const QModelIndex&)));
+          SLOT(displayItemSelected(const QItemSelection&)));
   connect(view_,
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
@@ -741,20 +741,21 @@ void DisplayControls::itemChanged(QStandardItem* item)
   emit changed();
 }
 
-void DisplayControls::displayItemClicked(const QModelIndex& index)
+void DisplayControls::displayItemSelected(const QItemSelection& selection)
 {
-  if (index.column() == 0 && index.parent().isValid()) {
-    auto parent_item = model_->itemFromIndex(index.parent());
-    if (parent_item == layers_group_.name) {
-      auto item = model_->itemFromIndex(index);
-      auto layer_find = std::find_if(layer_controls_.begin(), layer_controls_.end(), [item](const auto& o) {
-        return o.second.name == item;
-      });
-      if (layer_find != layer_controls_.end()) {
-        // need non-const object
-        emit selected(Gui::get()->makeSelected(const_cast<odb::dbTechLayer*>(layer_find->first)));
-      }
+  for (const auto& index : selection.indexes()) {
+    const QModelIndex name_index = model_->index(index.row(), Name, index.parent());
+    auto* name_item = model_->itemFromIndex(name_index);
+    QVariant tech_layer_data = name_item->data(user_data_item_idx_);
+    if (!tech_layer_data.isValid()) {
+      continue;
     }
+    auto* tech_layer = tech_layer_data.value<odb::dbTechLayer*>();
+    if (tech_layer == nullptr) {
+      continue;
+    }
+    emit selected(Gui::get()->makeSelected(tech_layer));
+    return;
   }
 }
 
@@ -798,13 +799,19 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       }
       item_color = &layer_color_[tech_layer];
       item_pattern = &layer_pattern_[tech_layer];
-      has_sibling = true;
+      if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+        if (index.row() != 0) {
+          // ensure if a via is the first layer, it can still be modified
+          return;
+        }
+      } else {
+        has_sibling = true;
+      }
     }
 
     if (item_color == nullptr) {
       return;
     }
-
 
     std::unique_ptr<DisplayColorDialog> display_dialog;
     if (item_pattern != nullptr) {
@@ -978,7 +985,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           true,
           color(layer),
-          type == dbTechLayerType::CUT ? QVariant() : QVariant::fromValue(layer));
+          QVariant::fromValue(layer));
     }
   }
 
