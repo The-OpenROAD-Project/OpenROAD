@@ -81,6 +81,16 @@ static gui::MainWindow* main_window = nullptr;
 DBUToString Descriptor::Property::convert_dbu;
 StringToDBU Descriptor::Property::convert_string;
 
+static void resetConversions()
+{
+  Descriptor::Property::convert_dbu = [](int value, bool) {
+    return std::to_string(value);
+  };
+  Descriptor::Property::convert_string = [](const std::string& value, bool*) {
+    return 0;
+  };
+}
+
 Gui* Gui::singleton_ = nullptr;
 
 Gui* Gui::get()
@@ -96,6 +106,7 @@ Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
              db_(nullptr)
 {
+  resetConversions();
 }
 
 bool Gui::enabled()
@@ -745,6 +756,8 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
     // if exiting, go ahead and exit with gui return code.
     exit(ret);
   }
+
+  resetConversions();
 
   return ret;
 }
