@@ -255,7 +255,7 @@ void addNonTaperedPatches(gcNet* gNet,
       pwire->getBBox(box);
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {
-        if (nt.overlaps(box)) {
+        if (nt.intersects(box)) {
           gNet->addNonTaperedRect(box, z);
           break;
         }

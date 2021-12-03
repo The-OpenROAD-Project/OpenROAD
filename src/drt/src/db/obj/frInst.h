@@ -124,13 +124,13 @@ class frInst : public frRef
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   void getBBox(Rect& boxIn) const override;
 
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
   // others
   void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);

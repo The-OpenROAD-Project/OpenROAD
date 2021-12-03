@@ -328,9 +328,6 @@ void FlexDRWorker::initNetObjs(
         if (nets.find(net) == nets.end()) {
           continue;
         }
-        // if (getExtBox().overlaps(box, false)) {
-        //   continue;
-        // }
         rect.setBBox(box);
         rect.setLayerNum(lNum);
         netOrigGuides[net].push_back(rect);
@@ -2731,17 +2728,17 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& routes)
 {
   //if shapes dont overlap routeBox, ignore violation
-  if (!getRouteBox().overlaps(marker->getBBox())) {
+  if (!getRouteBox().intersects(marker->getBBox())) {
         bool overlaps = false;
         for (auto& s : marker->getAggressors()) {
-            if (std::get<1>(s.second).overlaps(getRouteBox())) {
+            if (std::get<1>(s.second).intersects(getRouteBox())) {
                 overlaps = true;
                 break;
             }
         }
         if (!overlaps) {
             for (auto& s : marker->getVictims()) {
-                if (std::get<1>(s.second).overlaps(getRouteBox())) {
+                if (std::get<1>(s.second).intersects(getRouteBox())) {
                     overlaps = true;
                     break;
                 }
