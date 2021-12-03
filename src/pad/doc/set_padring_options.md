@@ -26,7 +26,7 @@ The -pad_pin_pattern option is used to define a pattern that is to be used to de
 
 The -connect_by_abutment option is used to define the list of signals that are connected by abutment through the padring. The placement of breaker cells within the padring can result in these signals being split into a number of different nets.
 
-The -allow_filler_overlap option allows the smallest filler cell to be inserted into a space which is smaller than its width, resulting in overlaping with padcells. Use this option if you library cells are designed such that the smallest filler cell will not cause DRC violation when overlapping the edge of the pad cells. The -reject_filler_overlap prevents the insert of filler cells if this would cause any overlaps. By default overlapping filler cells is not allowed. These two options are mutually exclusive.
+The -allow_filler_overlap option allows the smallest filler cell to be inserted into a space which is smaller than its width, resulting in overlaping with padcells. Use this option if you library cells are designed such that the smallest filler cell will not cause DRC violation when overlapping the edge of the pad cells. By default overlapping filler cells is not allowed. 
 
 ## Options
 
