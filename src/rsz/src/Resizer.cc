@@ -3712,7 +3712,7 @@ Resizer::designAreaIncr(float delta)
 void
 Resizer::ensureDesignArea()
 {
-  if (core_exists_) {
+  if (block_) {
     design_area_ = 0.0;
     for (dbInst *inst : block_->getInsts()) {
       dbMaster *master = inst->getMaster();
