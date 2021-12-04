@@ -32,6 +32,7 @@
 
 #include "frDesign.h"
 #include "db/obj/frBlock.h"
+#include "db/obj/frMaster.h"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
 #include "db/drObj/drShape.h"

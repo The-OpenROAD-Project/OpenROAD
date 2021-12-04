@@ -29,6 +29,7 @@
 #include "db/obj/frInst.h"
 
 #include "frBlock.h"
+#include "frMaster.h"
 using namespace fr;
 
 void frInst::getBBox(Rect& boxIn) const

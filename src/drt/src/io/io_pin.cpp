@@ -54,7 +54,7 @@ void io::Parser::instAnalysis()
   }
 
   int numLayers = design->getTech()->getLayers().size();
-  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
       refBlockPinLayerRange;
   for (auto& uRefBlock : design->getRefBlocks()) {
     auto refBlock = uRefBlock.get();

@@ -49,13 +49,13 @@ class Fixture
 
   void makeDesign();
 
-  frBlock* makeMacro(const char* name,
+  frMaster* makeMacro(const char* name,
                      frCoord originX = 0,
                      frCoord originY = 0,
                      frCoord sizeX = 0,
                      frCoord sizeY = 0);
 
-  frBlockage* makeMacroObs(frBlock* refBlock,
+  frBlockage* makeMacroObs(frMaster* refBlock,
                            frCoord xl,
                            frCoord yl,
                            frCoord xh,
@@ -63,7 +63,7 @@ class Fixture
                            frLayerNum lNum = 2,
                            frCoord designRuleWidth = -1);
 
-  frTerm* makeMacroPin(frBlock* refBlock,
+  frTerm* makeMacroPin(frMaster* refBlock,
                        std::string name,
                        frCoord xl,
                        frCoord yl,
@@ -71,7 +71,7 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
+  frInst* makeInst(const char* name, frMaster* refBlock, frCoord x, frCoord y);
 
   void makeCornerConstraint(frLayerNum layer_num,
                             frCoord eolWidth = -1,

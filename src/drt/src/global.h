@@ -131,6 +131,7 @@ frCoord getGCELLOFFSETY();
 
 class frViaDef;
 class frBlock;
+class frMaster;
 class frInst;
 class frInstTerm;
 class frTerm;

@@ -94,13 +94,13 @@ void Fixture::setupTech(frTechObject* tech)
   addLayer(tech, "m1", dbTechLayerType::ROUTING);
 }
 
-frBlock* Fixture::makeMacro(const char* name,
+frMaster* Fixture::makeMacro(const char* name,
                             frCoord originX,
                             frCoord originY,
                             frCoord sizeX,
                             frCoord sizeY)
 {
-  auto block = make_unique<frBlock>(name);
+  auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<Point> points;
@@ -118,7 +118,7 @@ frBlock* Fixture::makeMacro(const char* name,
   return blkPtr;
 }
 
-frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
+frBlockage* Fixture::makeMacroObs(frMaster* refBlock,
                                   frCoord xl,
                                   frCoord yl,
                                   frCoord xh,
@@ -145,7 +145,7 @@ frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
   return blk;
 }
 
-frTerm* Fixture::makeMacroPin(frBlock* refBlock,
+frTerm* Fixture::makeMacroPin(frMaster* refBlock,
                               std::string name,
                               frCoord xl,
                               frCoord yl,
@@ -175,7 +175,7 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
 }
 
 frInst* Fixture::makeInst(const char* name,
-                          frBlock* refBlock,
+                          frMaster* refBlock,
                           frCoord x,
                           frCoord y)
 {

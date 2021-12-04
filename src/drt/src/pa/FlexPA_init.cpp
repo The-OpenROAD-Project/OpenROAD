@@ -56,7 +56,7 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
 }
 
 void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
-    map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+    map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         refBlock2PinLayerRange)
 {
   int numLayers = design_->getTech()->getLayers().size();
@@ -120,7 +120,7 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 // must init all unique, including filler, macro, etc. to ensure frInst
 // pinAccessIdx is active
 void FlexPA::initUniqueInstance_main(
-    const map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+    const map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         refBlock2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
@@ -220,7 +220,7 @@ void FlexPA::initUniqueInstance()
   vector<frTrackPattern*> prefTrackPatterns;
   getPrefTrackPatterns(prefTrackPatterns);
 
-  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
       refBlock2PinLayerRange;
   initUniqueInstance_refBlock2PinLayerRange(refBlock2PinLayerRange);
 

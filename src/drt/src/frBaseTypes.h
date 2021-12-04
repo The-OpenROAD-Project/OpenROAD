@@ -96,6 +96,7 @@ enum frBlockObjectEnum
   frcBlockage,
   frcLayerBlockage,
   frcBlock,
+  frcMaster,
   frcBoundary,
   frcInstBlockage,
   frcAccessPattern,

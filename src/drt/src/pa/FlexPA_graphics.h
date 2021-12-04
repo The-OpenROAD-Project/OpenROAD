@@ -44,6 +44,7 @@ class frDesign;
 class frPin;
 class frInstTerm;
 class frBlock;
+class frMaster;
 class frAccessPoint;
 class frVia;
 class frMarker;

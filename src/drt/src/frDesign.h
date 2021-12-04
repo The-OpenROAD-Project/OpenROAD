@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "db/obj/frBlock.h"
+#include "db/obj/frMaster.h"
 #include "db/tech/frTechObject.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
@@ -55,14 +56,14 @@ class frDesign
   frBlock* getTopBlock() const { return topBlock_.get(); }
   frTechObject* getTech() const { return tech_.get(); }
   frRegionQuery* getRegionQuery() const { return rq_.get(); }
-  std::vector<std::unique_ptr<frBlock>>& getRefBlocks() { return refBlocks_; }
-  const std::vector<std::unique_ptr<frBlock>>& getRefBlocks() const
+  std::vector<std::unique_ptr<frMaster>>& getRefBlocks() { return refBlocks_; }
+  const std::vector<std::unique_ptr<frMaster>>& getRefBlocks() const
   {
     return refBlocks_;
   }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
-  void addRefBlock(std::unique_ptr<frBlock> in)
+  void addRefBlock(std::unique_ptr<frMaster> in)
   {
     name2refBlock_[in->getName()] = in.get();
     refBlocks_.push_back(std::move(in));
@@ -77,8 +78,8 @@ class frDesign
 
  protected:
   std::unique_ptr<frBlock> topBlock_;
-  std::map<frString, frBlock*> name2refBlock_;
-  std::vector<std::unique_ptr<frBlock>> refBlocks_;
+  std::map<frString, frMaster*> name2refBlock_;
+  std::vector<std::unique_ptr<frMaster>> refBlocks_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
 };

@@ -39,6 +39,7 @@ namespace fr {
 class frNet;
 class frInstTerm;
 class frBlock;
+class frMaster;
 
 class frTerm : public frBlockObject
 {
@@ -86,13 +87,13 @@ class frTerm : public frBlockObject
     }
   }
   // getters
-  frBlock* getBlock() const { return block_; }
+  frMaster* getBlock() const { return block_; }
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
   const frString& getName() const { return name_; }
   const std::vector<std::unique_ptr<frPin>>& getPins() const { return pins_; }
   // setters
-  void setBlock(frBlock* in) { block_ = in; }
+  void setBlock(frMaster* in) { block_ = in; }
   void addToNet(frNet* in) { net_ = in; }
   void addPin(std::unique_ptr<frPin> in)
   {
@@ -156,7 +157,7 @@ class frTerm : public frBlockObject
 
  protected:
   frString name_;  // A, B, Z, VSS, VDD
-  frBlock* block_;
+  frMaster* block_;
   frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frPin>> pins_;  // set later
   dbSigType type_;

@@ -82,7 +82,7 @@ class Parser
   void postProcessGuide();
   void initDefaultVias();
   void initRPin();
-  std::map<frBlock*,
+  std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
@@ -137,7 +137,7 @@ class Parser
   std::string masterSliceLayerName;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
   std::vector<std::pair<frBlockObject*, Point>> tmpGRPins;
-  std::map<frBlock*,
+  std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,

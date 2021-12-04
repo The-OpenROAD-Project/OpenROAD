@@ -53,8 +53,7 @@ class frBlock : public frBlockObject
   frBlock(const frString& name)
       : frBlockObject(),
         name_(name),
-        dbUnit_(0) /*, manufacturingGrid_(0)*/,
-        masterType_(dbMasterType::NONE){};
+        dbUnit_(0){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   void getBBox(Rect& boxIn) const
@@ -243,7 +242,6 @@ class frBlock : public frBlockObject
     }
     idx.set(idxX, idxY);
   }
-  dbMasterType getMasterType() { return masterType_; }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
     return markers_;
@@ -256,10 +254,11 @@ class frBlock : public frBlockObject
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frTerm> in)
   {
-    in->setOrderId(terms_.size());
-    in->setBlock(this);
-    name2term_[in->getName()] = in.get();
-    terms_.push_back(std::move(in));
+    exit(1);
+    //in->setOrderId(terms_.size());
+    //in->setBlock(this);
+    //name2term_[in->getName()] = in.get();
+    //terms_.push_back(std::move(in));
   }
   void addInst(std::unique_ptr<frInst> in)
   {
@@ -311,7 +310,6 @@ class frBlock : public frBlockObject
   {
     gCellPatterns_ = gpIn;
   }
-  void setMasterType(const dbMasterType& in) { masterType_ = in; }
   void addMarker(std::unique_ptr<frMarker> in)
   {
     auto rptr = in.get();
@@ -330,8 +328,6 @@ class frBlock : public frBlockObject
  protected:
   frString name_;
   frUInt4 dbUnit_;
-
-  dbMasterType masterType_;
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;

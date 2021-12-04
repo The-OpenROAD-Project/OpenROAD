@@ -121,7 +121,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
-    frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
+    frMaster* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), refBlock);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts);
@@ -1728,7 +1728,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 {
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
-      tmpBlock = make_unique<frBlock>(master->getName());
+      auto tmpMaster = make_unique<frMaster>(master->getName());
       frCoord originX;
       frCoord originY;
       master->getOrigin(originX, originY);
@@ -1743,15 +1743,15 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       points.push_back(Point(originX, sizeY));
       bound.setPoints(points);
       bounds.push_back(bound);
-      tmpBlock->setBoundaries(bounds);
-      tmpBlock->setMasterType(master->getType());
+      tmpMaster->setBoundaries(bounds);
+      tmpMaster->setMasterType(master->getType());
 
       for (auto _term : master->getMTerms()) {
         unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
         auto term = uTerm.get();
         term->setId(numTerms);
         numTerms++;
-        tmpBlock->addTerm(std::move(uTerm));
+        tmpMaster->addTerm(std::move(uTerm));
 
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
@@ -1771,7 +1771,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
                              122,
                              "Layer {} is skipped for {}/{}.",
                              layer,
-                             tmpBlock->getName(),
+                             tmpMaster->getName(),
                              _term->getName());
               continue;
             } else
@@ -1803,7 +1803,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
                          123,
                          "Layer {} is skipped for {}/OBS.",
                          layer,
-                         tmpBlock->getName());
+                         tmpMaster->getName());
           continue;
         } else
           layerNum = tech->name2layer.at(layer)->getLayerNum();
@@ -1825,10 +1825,10 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
         blkIn->setPin(std::move(pinIn));
-        tmpBlock->addBlockage(std::move(blkIn));
+        tmpMaster->addBlockage(std::move(blkIn));
       }
-      tmpBlock->setId(numRefBlocks + 1);
-      design->addRefBlock(std::move(tmpBlock));
+      tmpMaster->setId(numRefBlocks + 1);
+      design->addRefBlock(std::move(tmpMaster));
       numRefBlocks++;
       numTerms = 0;
       numBlockages = 0;
