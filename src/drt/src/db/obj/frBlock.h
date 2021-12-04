@@ -254,11 +254,10 @@ class frBlock : public frBlockObject
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frBTerm> in)
   {
-    exit(1);
-    //in->setOrderId(terms_.size());
-    //in->setBlock(this);
-    //name2term_[in->getName()] = in.get();
-    //terms_.push_back(std::move(in));
+    in->setOrderId(terms_.size());
+    in->setBlock(this);
+    name2term_[in->getName()] = in.get();
+    terms_.push_back(std::move(in));
   }
   void addInst(std::unique_ptr<frInst> in)
   {
