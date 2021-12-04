@@ -33,6 +33,7 @@
 
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 #include "frBaseTypes.h"
 #include "frInst.h"
 

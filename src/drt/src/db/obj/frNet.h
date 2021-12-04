@@ -115,6 +115,7 @@ class frNet : public frBlockObject
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void addTerm(frTerm* in) { terms_.push_back(in); }
+  void addBTerm(frBTerm* in) { bterms_.push_back(in); }
   void setName(const frString& stringIn) { name_ = stringIn; }
   void addShape(std::unique_ptr<frShape> in)
   {
@@ -222,6 +223,7 @@ class frNet : public frBlockObject
   frString name_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frTerm*> terms_;  // terms is IO
+  std::vector<frBTerm*> bterms_;  // terms is IO
   // dr
   std::list<std::unique_ptr<frShape>> shapes_;
   std::list<std::unique_ptr<frVia>> vias_;

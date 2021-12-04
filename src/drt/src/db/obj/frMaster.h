@@ -34,6 +34,7 @@
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 #include "frBaseTypes.h"
 
 namespace fr {

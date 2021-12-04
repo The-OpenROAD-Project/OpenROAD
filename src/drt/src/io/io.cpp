@@ -503,13 +503,13 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
         logger->error(DRT, 104, "Terminal {} not found.", term->getName());
-      auto frterm = tmpBlock->name2term_[term->getName()];  // frTerm*
-      frterm->addToNet(netIn);
-      netIn->addTerm(frterm);
+      auto frbterm = tmpBlock->name2term_[term->getName()];  // frBTerm*
+      frbterm->addToNet(netIn);
+      netIn->addBTerm(frbterm);
       if (!is_special) {
         // graph enablement
         auto termNode = make_unique<frNode>();
-        termNode->setPin(frterm);
+        termNode->setPin(frbterm);
         termNode->setType(frNodeTypeEnum::frcPin);
         netIn->addNode(termNode);
       }
@@ -793,7 +793,7 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    auto uTermIn = make_unique<frTerm>(term->getName());
+    auto uTermIn = make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
     numTerms++;

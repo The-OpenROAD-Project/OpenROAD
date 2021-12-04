@@ -37,7 +37,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
 
@@ -135,11 +135,11 @@ class frBlock : public frBlockObject
   {
     return trackPatterns_.at(lNum);
   }
-  const std::vector<std::unique_ptr<frTerm>>& getTerms() const
+  const std::vector<std::unique_ptr<frBTerm>>& getTerms() const
   {
     return terms_;
   }
-  frTerm* getTerm(const std::string& in) const
+  frBTerm* getTerm(const std::string& in) const
   {
     auto it = name2term_.find(in);
     if (it == name2term_.end()) {
@@ -252,7 +252,7 @@ class frBlock : public frBlockObject
 
   // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
-  void addTerm(std::unique_ptr<frTerm> in)
+  void addTerm(std::unique_ptr<frBTerm> in)
   {
     exit(1);
     //in->setOrderId(terms_.size());
@@ -332,8 +332,8 @@ class frBlock : public frBlockObject
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;
 
-  std::map<std::string, frTerm*> name2term_;
-  std::vector<std::unique_ptr<frTerm>> terms_;
+  std::map<std::string, frBTerm*> name2term_;
+  std::vector<std::unique_ptr<frBTerm>> terms_;
 
   std::map<std::string, frNet*> name2net_;
   std::vector<std::unique_ptr<frNet>> nets_;
