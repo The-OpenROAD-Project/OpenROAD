@@ -114,15 +114,15 @@ void io::Parser::setTracks(odb::dbBlock* block)
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
-    if (design->name2refBlock_.find(inst->getMaster()->getName())
-        == design->name2refBlock_.end())
+    if (design->name2master_.find(inst->getMaster()->getName())
+        == design->name2master_.end())
       logger->error(
           DRT, 95, "Library cell {} not found.", inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
-    frMaster* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
-    auto uInst = make_unique<frInst>(inst->getName(), refBlock);
+    frMaster* master = design->name2master_.at(inst->getMaster()->getName());
+    auto uInst = make_unique<frInst>(inst->getName(), master);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts);
     numInsts++;
@@ -133,7 +133,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     y = defdist(block, y);
     tmpInst->setOrigin(Point(x, y));
     tmpInst->setOrient(inst->getOrient());
-    for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
+    for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms);
@@ -142,7 +142,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
       instTerm->setAPSize(pinCnt);
       tmpInst->addInstTerm(std::move(instTerm));
     }
-    for (auto& uBlk : tmpInst->getRefBlock()->getBlockages()) {
+    for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
       auto blk = uBlk.get();
       unique_ptr<frInstBlockage> instBlk
           = make_unique<frInstBlockage>(tmpInst, blk);
@@ -521,7 +521,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             DRT, 105, "Component {} not found.", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
-      auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
+      auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
       if (frterm == nullptr)
         logger->error(DRT,
                       106,
@@ -1827,9 +1827,9 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         blkIn->setPin(std::move(pinIn));
         tmpMaster->addBlockage(std::move(blkIn));
       }
-      tmpMaster->setId(numRefBlocks + 1);
-      design->addRefBlock(std::move(tmpMaster));
-      numRefBlocks++;
+      tmpMaster->setId(numMasters + 1);
+      design->addMaster(std::move(tmpMaster));
+      numMasters++;
       numTerms = 0;
       numBlockages = 0;
     }
@@ -2058,7 +2058,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->report("");
     logger->report("Units:                {}", tech->getDBUPerUU());
     logger->report("Number of layers:     {}", tech->layers.size());
-    logger->report("Number of macros:     {}", design->refBlocks_.size());
+    logger->report("Number of macros:     {}", design->masters_.size());
     logger->report("Number of vias:       {}", tech->vias.size());
     logger->report("Number of viarulegen: {}", tech->viaRuleGenerates.size());
     logger->report("");

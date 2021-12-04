@@ -630,7 +630,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
   bool isMacroCellPin = false;
   if (instTerm) {
     dbMasterType masterType
-        = instTerm->getInst()->getRefBlock()->getMasterType();
+        = instTerm->getInst()->getMaster()->getMasterType();
     if (masterType == dbMasterType::CORE
         || masterType == dbMasterType::CORE_TIEHIGH
         || masterType == dbMasterType::CORE_TIELOW
@@ -776,7 +776,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
     dbMasterType masterType
-        = instTerm->getInst()->getRefBlock()->getMasterType();
+        = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1057,7 +1057,7 @@ void FlexPA::prepPoint_pin_updateStat(
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
     dbMasterType masterType
-        = instTerm->getInst()->getRefBlock()->getMasterType();
+        = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1106,7 +1106,7 @@ bool FlexPA::prepPoint_pin_helper(
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
     dbMasterType masterType
-        = instTerm->getInst()->getRefBlock()->getMasterType();
+        = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1207,7 +1207,7 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
     dbMasterType masterType
-        = instTerm->getInst()->getRefBlock()->getMasterType();
+        = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1268,7 +1268,7 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       logger_->error(DRT, 75, "prepPoint_pin unique2paidx not found.");
     } else {
       for (auto& ap : aps) {
-        // if (instTerm->getInst()->getRefBlock()->getName() ==
+        // if (instTerm->getInst()->getMaster()->getName() ==
         // string("INVP_X1F_A9PP84TR_C14") && instTerm->getTerm()->getName() ==
         // string("Y")) {
         //  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
@@ -1298,7 +1298,7 @@ void FlexPA::prepPoint()
   for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
     auto& inst = uniqueInstances_[i];
     // only do for core and block cells
-    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    dbMasterType masterType = inst->getMaster()->getMasterType();
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
@@ -1387,7 +1387,7 @@ void FlexPA::prepPattern()
     // only do for core and block cells
     // TODO the above comment says "block cells" but that's not what the code
     // does?
-    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    dbMasterType masterType = inst->getMaster()->getMasterType();
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
@@ -1821,7 +1821,7 @@ void FlexPA::addAccessPatternObj(
 void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    dbMasterType masterType = inst->getRefBlock()->getMasterType();
+    dbMasterType masterType = inst->getMaster()->getMasterType();
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
@@ -2018,9 +2018,9 @@ void FlexPA::genPatterns(
     auto inst = pins[0].second->getInst();
     logger_->warn(DRT,
                   87,
-                  "No valid pattern for unique instance {}, refBlock is {}.",
+                  "No valid pattern for unique instance {}, master is {}.",
                   inst->getName(),
-                  inst->getRefBlock()->getName());
+                  inst->getMaster()->getName());
     // int paIdx = unique2paidx[pins[0].second->getInst()];
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     dbTransform shiftXform;
@@ -2547,7 +2547,7 @@ void FlexPA::genPatterns_print(
       unique_ptr<frVia> via
           = make_unique<frVia>(pa->getAccessPoint(currIdx2)->getViaDef());
       Point pt(pa->getAccessPoint(currIdx2)->getPoint());
-      cout << " gccleanvia " << inst->getRefBlock()->getName() << " "
+      cout << " gccleanvia " << inst->getMaster()->getName() << " "
            << instTerm->getTerm()->getName() << " "
            << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()
            << " " << inst->getOrient().getString() << "\n";

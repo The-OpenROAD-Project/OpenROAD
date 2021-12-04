@@ -2025,7 +2025,7 @@ void FlexDRWorker::initTrackCoords_pin(
       // {
       //   if (pin->getFrTerm() && pin->getFrTerm()->typeId() == frcInstTerm) {
       //     frInstTerm* instTerm = (frInstTerm*)pin->getFrTerm();
-      //     // if (instTerm->getInst()->getRefBlock()->getName() ==
+      //     // if (instTerm->getInst()->getMaster()->getName() ==
       //     "DFFSQ_X1N_A10P5PP84TR_C14_mod" && instTerm->getTerm()->getName()
       //     == "Q") {
       //     //   cout << "  initTrackCoords ap (" << pt.x() / 2000.0 << ", " <<
@@ -2255,7 +2255,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
       // macro cell or stdcell
       if (term->typeId() == frcInstTerm) {
         dbMasterType masterType =
-          static_cast<frInstTerm*>(term)->getInst()->getRefBlock()
+          static_cast<frInstTerm*>(term)->getInst()->getMaster()
             ->getMasterType();
         if (masterType.isBlock() || masterType.isPad()
             || masterType == dbMasterType::RING) {
@@ -3204,7 +3204,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             ModCostType type = isAddPathCost ? ModCostType::addFixedShape
                                              : ModCostType::subFixedShape;
 
-            dbMasterType masterType = inst->getRefBlock()->getMasterType();
+            dbMasterType masterType = inst->getMaster()->getMasterType();
             if (isRoutingLayer) {
                 if (!isSkipVia) {
                   modMinSpacingCostVia(box, zIdx, type, true, false);
@@ -3326,7 +3326,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     auto dPinTerm = pin->getFrTerm();
     if (dPinTerm->typeId() == frcInstTerm) {
       frInstTerm* instTerm = static_cast<frInstTerm*>(dPinTerm);
-      dbMasterType masterType = instTerm->getInst()->getRefBlock()->getMasterType();
+      dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
       if (masterType.isBlock() || masterType.isPad()
           || masterType == dbMasterType::RING) {
         continue;

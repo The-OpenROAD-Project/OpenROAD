@@ -717,7 +717,7 @@ void FlexTAWorker::initFixedObjs()
             isMacro = true;
           } else {
             auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-            dbMasterType masterType = inst->getRefBlock()->getMasterType();
+            dbMasterType masterType = inst->getMaster()->getMasterType();
             if (masterType.isBlock() || masterType.isPad()
                 || masterType == dbMasterType::RING) {
               isMacro = true;

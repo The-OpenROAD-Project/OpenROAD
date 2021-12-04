@@ -68,7 +68,7 @@ class Parser
         tmpGRPins(),
         trackOffsetMap(),
         prefTrackPatterns(),
-        numRefBlocks(0),
+        numMasters(0),
         numInsts(0),
         numTerms(0),
         numNets(0),
@@ -144,7 +144,7 @@ class Parser
            frBlockObjectComp>
       trackOffsetMap;
   std::vector<frTrackPattern*> prefTrackPatterns;
-  int numRefBlocks;
+  int numMasters;
   int numInsts;
   int numTerms;      // including instterm and term
   int numNets;       // including snet and net

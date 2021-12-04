@@ -180,7 +180,7 @@ ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
   frString termName;
   frString netName;
   name = instTermIn.getInst()->getName();
-  cellName = instTermIn.getInst()->getRefBlock()->getName();
+  cellName = instTermIn.getInst()->getMaster()->getName();
   termName = instTermIn.getTerm()->getName();
   if (instTermIn.getNet()) {
     netName = instTermIn.getNet()->getName();
@@ -250,7 +250,7 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   instIn.getOrigin(tmpPoint);
   auto tmpOrient = instIn.getOrient();
   tmpName = instIn.getName();
-  tmpString = instIn.getRefBlock()->getName();
+  tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
      << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
   for (auto& m : instIn.getInstTerms()) {

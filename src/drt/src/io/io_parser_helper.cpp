@@ -741,7 +741,7 @@ void io::Parser::initRPin_rpin()
 
         // MACRO does not go through PA
         if (prefAp == nullptr) {
-          dbMasterType masterType = inst->getRefBlock()->getMasterType();
+          dbMasterType masterType = inst->getMaster()->getMasterType();
           if (masterType.isBlock() || masterType.isPad()
               || masterType == dbMasterType::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())

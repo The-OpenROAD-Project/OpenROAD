@@ -56,17 +56,17 @@ class frDesign
   frBlock* getTopBlock() const { return topBlock_.get(); }
   frTechObject* getTech() const { return tech_.get(); }
   frRegionQuery* getRegionQuery() const { return rq_.get(); }
-  std::vector<std::unique_ptr<frMaster>>& getRefBlocks() { return refBlocks_; }
-  const std::vector<std::unique_ptr<frMaster>>& getRefBlocks() const
+  std::vector<std::unique_ptr<frMaster>>& getMasters() { return masters_; }
+  const std::vector<std::unique_ptr<frMaster>>& getMasters() const
   {
-    return refBlocks_;
+    return masters_;
   }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
-  void addRefBlock(std::unique_ptr<frMaster> in)
+  void addMaster(std::unique_ptr<frMaster> in)
   {
-    name2refBlock_[in->getName()] = in.get();
-    refBlocks_.push_back(std::move(in));
+    name2master_[in->getName()] = in.get();
+    masters_.push_back(std::move(in));
   }
   // others
   friend class io::Parser;
@@ -78,8 +78,8 @@ class frDesign
 
  protected:
   std::unique_ptr<frBlock> topBlock_;
-  std::map<frString, frMaster*> name2refBlock_;
-  std::vector<std::unique_ptr<frMaster>> refBlocks_;
+  std::map<frString, frMaster*> name2master_;
+  std::vector<std::unique_ptr<frMaster>> masters_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
 };

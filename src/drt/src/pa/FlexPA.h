@@ -92,7 +92,7 @@ class FlexPA
   map<frMaster*,
       map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
-      refBlockOT2Insts;  // refblock orient track-offset to instances
+      masterOT2Insts;  // master orient track-offset to instances
 
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
@@ -103,13 +103,13 @@ class FlexPA
   // init
   void init();
   void initUniqueInstance();
-  void initUniqueInstance_refBlock2PinLayerRange(
+  void initUniqueInstance_master2PinLayerRange(
       std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-          refBlock2PinLayerRange);
+          master2PinLayerRange);
   void initUniqueInstance_main(
       const std::map<frMaster*,
                      std::tuple<frLayerNum, frLayerNum>,
-                     frBlockObjectComp>& refBlock2PinLayerRange,
+                     frBlockObjectComp>& master2PinLayerRange,
       const std::vector<frTrackPattern*>& prefTrackPatterns);
   bool isNDRInst(frInst& inst);
   void initPinAccess();
