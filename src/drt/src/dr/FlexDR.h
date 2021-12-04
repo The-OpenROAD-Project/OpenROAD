@@ -291,7 +291,7 @@ class FlexDRWorker
     Rect box;
     for (auto& marker : in) {
       marker.getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(marker);
       }
     }
@@ -303,7 +303,7 @@ class FlexDRWorker
     for (auto& uMarker : in) {
       auto& marker = *uMarker;
       marker.getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(marker);
       }
     }
@@ -314,7 +314,7 @@ class FlexDRWorker
     Rect box;
     for (auto& marker : in) {
       marker->getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(*marker);
       }
     }
