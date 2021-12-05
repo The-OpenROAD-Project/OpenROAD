@@ -508,9 +508,10 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
     }
 
     int gaps_above_below = 0;
-    if (rows_with_macros.begin()->first == row_idx) {
+    if (!rows_with_macros.empty()
+        && rows_with_macros[0] == row_idx) {
       gaps_above_below = 1;
-      rows_with_macros.erase(rows_with_macros.begin()->first);
+      rows_with_macros.erase(rows_with_macros[0]);
     }
 
     for (odb::dbRow* row : subrows) {
@@ -536,15 +537,14 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
         pitch = dist2;
       }
 
-      int x;
       odb::Rect row_bb;
       row->getBBox(row_bb);
       const int llx = row_bb.xMin();
       const int urx = row_bb.xMax();
 
-      for (x = llx + offset; x < urx; x += pitch) {
-        const int site_x = row->getSite()->getWidth();
-        x = makeSiteLoc(x, site_x, 1, llx);
+      const int site_width = row->getSite()->getWidth();
+      for (int x = llx + offset; x < urx; x += pitch) {
+        x = makeSiteLoc(x, site_width, 1, llx);
         // Check if site is filled
         const int tap_width = tapcell_master->getWidth();
         odb::dbOrientType ori = row->getOrient();
@@ -561,7 +561,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
   return tapcell_count;
 }
 
-int Tapcell::checkIfFilled(int x,
+bool Tapcell::checkIfFilled(int x,
                             int width,
                             odb::dbOrientType& orient,
                             const vector<vector<int>>& row_insts)
@@ -580,11 +580,10 @@ int Tapcell::checkIfFilled(int x,
     if (x_end > placement[0] && x_start < placement[1]) {
       int left_x = placement[0] - width;
       int right_x = placement[1];
-      vector<std::pair<int, int>> value;
-      return left_x + right_x;
+      return left_x + right_x > 0;
     }
   }
-  return 0;
+  return false;
 }
 
 int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
@@ -1118,24 +1117,19 @@ vector<odb::dbBox*> Tapcell::findBlockages()
 
 }
 
-int Tapcell::makeSiteLoc(int x, double site_x, bool at_left_from_macro, int offset)
+int Tapcell::makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
 {
-  auto site_int = double(x - offset) / site_x;
-  if (!at_left_from_macro) {
-    site_int = ceil(site_int);
-  } else {
-    site_int = floor(site_int);
-  }
-  site_int = int(site_int * site_x + offset);
-  return site_int;
+  double site_x = (x - offset) / site_width;
+  int site_x1 = at_left_from_macro ? floor(site_x) : ceil(site_x);
+  return site_x1 * site_width + offset;
 }
 
 void Tapcell::makeInstance(odb::dbBlock* block,
-                        odb::dbMaster* master,
-                        odb::dbOrientType orientation,
-                        int x,
-                        int y,
-                        const string& prefix)
+                           odb::dbMaster* master,
+                           odb::dbOrientType orientation,
+                           int x,
+                           int y,
+                           const string& prefix)
 {
   if (x < 0 || y < 0) {
     return;
