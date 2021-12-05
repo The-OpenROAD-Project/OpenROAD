@@ -36,7 +36,7 @@ include("openroad")
 project(dst
   LANGUAGES CXX
 )
-find_package(Boost 1.68.0 REQUIRED COMPONENTS system thread)
+find_package(Boost 1.68.0 REQUIRED COMPONENTS serialization system thread)
 swig_lib(NAME      dst
          NAMESPACE dst
          I_FILE    src/Distributed.i
@@ -55,16 +55,13 @@ target_sources(dst
 target_include_directories(dst
   PUBLIC
     include
-
-  PRIVATE
-    src
 )
 
 target_link_libraries(dst
   PUBLIC
-    odb
     utl
-    drt
+    sta_swig
+    ${Boost_LIBRARIES}
 )
 
 messages(

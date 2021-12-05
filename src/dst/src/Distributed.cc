@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 
 #include "LoadBalancer.h"
 #include "Worker.h"
+#include "dst/JobCallBack.h"
+#include "dst/JobMessage.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 #define MAX_TRIALS 5
@@ -41,9 +43,7 @@
 using namespace boost::asio;
 using ip::tcp;
 using namespace dst;
-namespace odb {
-class dbDatabase;
-}
+
 namespace sta {
 // Tcl files encoded into strings.
 extern const char* dst_tcl_inits[];
@@ -69,16 +69,14 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-void Distributed::runDRWorker(odb::dbDatabase* db,
-                              unsigned short port,
-                              const std::string& sharedVolume)
+void Distributed::runWorker(unsigned short port)
 {
   try {
     io_service io_service;
-    Worker worker(io_service, db, logger_, port, sharedVolume);
+    Worker worker(io_service, this, logger_, port);
     io_service.run();
   } catch (std::exception& e) {
-    logger_->error(utl::DST, 1, "DRWorker server error: {}", e.what());
+    logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
 }
 
@@ -132,13 +130,18 @@ bool readMsg(tcp::socket& sock, std::string& dataStr)
   }
 }
 
-bool Distributed::sendWorker(const char* msg,
-                             const char* ip,
-                             unsigned short port,
-                             std::string& result)
+bool Distributed::sendJob(JobMessage& msg,
+                          const char* ip,
+                          unsigned short port,
+                          JobMessage& result)
 {
-  result = "";
   int trials = 0;
+  std::string msgStr;
+  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+    logger_->warn(utl::DST, 12, "Serializing JobMessage failed");
+    return false;
+  }
+  std::string resultStr = "";
   while (trials < MAX_TRIALS) {
     trials++;
     io_service io_service;
@@ -146,20 +149,50 @@ bool Distributed::sendWorker(const char* msg,
     try {
       sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
     } catch (const boost::system::system_error& ex) {
-      result = ex.what();
+      logger_->warn(utl::DST,
+                    13,
+                    "Socket connection failed with message \"{}\"",
+                    ex.what());
       return false;
     }
-    bool ok = sendMsg(sock, std::string(msg) + " \n", result);
+    bool ok = sendMsg(sock, msgStr, resultStr);
     if (!ok)
       continue;
-    ok = readMsg(sock, result);
+    ok = readMsg(sock, resultStr);
     if (!ok)
+      continue;
+    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr))
       continue;
     if (sock.is_open())
       sock.close();
     return true;
   }
-  if (result == "")
-    result = "MAX_TRIALS reached";
+  if (resultStr == "")
+    resultStr = "MAX_TRIALS reached";
+  logger_->warn(
+      utl::DST, 14, "Sending job failed with message \"{}\"", resultStr);
   return false;
+}
+
+bool Distributed::sendResult(JobMessage& msg, tcp::socket& sock)
+{
+  std::string msgStr;
+  if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
+    logger_->warn(utl::DST, 20, "Serializing result JobMessage failed");
+    return false;
+  }
+  int trials = 0;
+  std::string error;
+  while (trials < MAX_TRIALS) {
+    if (sendMsg(sock, msgStr, error))
+      return true;
+  }
+  logger_->warn(
+      utl::DST, 22, "Sending result failed with message \"{}\"", error);
+  return false;
+}
+
+void Distributed::addCallBack(JobCallBack* cb)
+{
+  callbacks_.push_back(cb);
 }

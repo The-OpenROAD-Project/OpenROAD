@@ -54,6 +54,7 @@ void initTritonRoute(OpenRoad* openroad)
       openroad->tclInterp(),
       openroad->getDb(),
       openroad->getLogger(),
+      openroad->getDistributed(),
       openroad->getSteinerTreeBuilder());
 }
 

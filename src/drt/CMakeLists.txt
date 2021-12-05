@@ -44,7 +44,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 
-find_package(Boost 1.68.0 REQUIRED COMPONENTS serialization system thread)
+find_package(Boost 1.68.0 REQUIRED COMPONENTS serialization)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
 
@@ -134,7 +134,7 @@ target_link_libraries(drt
     gui
     odb
     stt
-    dbSta
+    OpenSTA
     utl
     dst
     Threads::Threads
@@ -166,7 +166,6 @@ enable_testing()
 add_executable(trTest
   ${FLEXROUTE_HOME}/test/gcTest.cpp
   ${FLEXROUTE_HOME}/test/fixture.cpp
-  ${FLEXROUTE_HOME}/test/stubs.cpp
 )
 
 target_include_directories(trTest

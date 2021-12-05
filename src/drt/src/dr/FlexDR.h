@@ -30,6 +30,7 @@
 #define _FR_FLEXDR_H_
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/export.hpp>
 #include <deque>
 #include <memory>
 
@@ -38,11 +39,14 @@
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
+#include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
-
+namespace dst {
+class Distributed;
+}
 namespace odb {
 class dbDatabase;
 }
@@ -113,7 +117,7 @@ class FlexDR
   void setDB(odb::dbDatabase* db) { db_ = db; }
   FlexDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
-  void setDistributed(bool dist,
+  void setDistributed(dst::Distributed* dist,
                       const std::string& ip,
                       unsigned short port,
                       const std::string& dir)
@@ -139,10 +143,11 @@ class FlexDR
   std::string debugNetName_;
 
   // distributed
-  bool dist_;
+  dst::Distributed* dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
+  std::string globals_path_;
 
   // others
   void init();
@@ -430,7 +435,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
-  void distributedMain(frDesign* design);
+  void distributedMain(frDesign* design, const char* globals_path);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   void end(frDesign* design);
@@ -443,7 +448,7 @@ class FlexDRWorker
                                             FlexDRGraphics* graphics);
 
   // distributed
-  void setDistributed(bool dist,
+  void setDistributed(dst::Distributed* dist,
                       const std::string& ip,
                       unsigned short port,
                       const std::string& dir)
@@ -521,7 +526,7 @@ class FlexDRWorker
   vector<Point3D> specialAccessAPs;
 
   // distributed
-  bool dist_;
+  dst::Distributed* dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
@@ -1004,6 +1009,31 @@ class FlexDRWorker
   friend class boost::serialization::access;
 };
 
+struct RoutingJobDescription : dst::JobDescription
+{
+ public:
+  RoutingJobDescription(std::string pathIn,
+                        std::string globals = "",
+                        std::string dirIn = "")
+      : path(pathIn), globals_path(globals), shared_dir(dirIn)
+  {
+  }
+  std::string path;
+  std::string globals_path;
+  std::string shared_dir;
+
+ private:
+  RoutingJobDescription() {}
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & path;
+    (ar) & globals_path;
+    (ar) & shared_dir;
+  }
+  friend class boost::serialization::access;
+};
 }  // namespace fr
 
 #endif

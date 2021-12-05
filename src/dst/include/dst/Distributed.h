@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 
 #include <tcl.h>
 
+#include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,12 +39,10 @@ namespace utl {
 class Logger;
 }
 
-namespace odb {
-class dbDatabase;
-}
-
 namespace dst {
 class LoadBalancer;
+class JobMessage;
+class JobCallBack;
 
 class Distributed
 {
@@ -51,18 +50,20 @@ class Distributed
   Distributed();
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runDRWorker(odb::dbDatabase* db,
-                   unsigned short port,
-                   const std::string& sharedVolume);
+  void runWorker(unsigned short port);
   void runLoadBalancer(unsigned short port);
   void addWorkerAddress(const char* address, unsigned short port);
-  static bool sendWorker(const char* msg,
-                         const char* ip,
-                         unsigned short port,
-                         std::string& result);
+  bool sendJob(JobMessage& msg,
+               const char* ip,
+               unsigned short port,
+               JobMessage& result);
+  bool sendResult(JobMessage& result, boost::asio::ip::tcp::socket& sock);
+  void addCallBack(JobCallBack* cb);
+  const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
 
  private:
   utl::Logger* logger_;
   std::vector<std::pair<std::string, unsigned short>> workers_;
+  std::vector<JobCallBack*> callbacks_;
 };
 }  // namespace dst

@@ -136,11 +136,4 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaCombining(pa_combining);
 }
 
-void
-run_worker_cmd(const char* file_name)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->runDRWorker(file_name);
-}
-
 %} // inline

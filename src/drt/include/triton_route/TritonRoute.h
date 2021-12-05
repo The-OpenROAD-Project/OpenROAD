@@ -30,9 +30,9 @@
 #define _TRITONROUTE_H_
 
 #include <tcl.h>
-#include <string>
 
 #include <memory>
+#include <string>
 
 namespace fr {
 class frDesign;
@@ -51,9 +51,12 @@ class Gui;
 namespace stt {
 class SteinerTreeBuilder;
 }
+namespace dst {
+class Distributed;
+}
 namespace triton_route {
 
-typedef struct
+struct ParamStruct
 {
   const std::string& guideFile;
   const std::string& outputGuideFile;
@@ -70,7 +73,7 @@ typedef struct
   const std::string& bottomRoutingLayer;
   const std::string& topRoutingLayer;
   int verbose;
-} ParamStruct;
+};
 
 class TritonRoute
 {
@@ -80,8 +83,8 @@ class TritonRoute
   void init(Tcl_Interp* tcl_interp,
             odb::dbDatabase* db,
             utl::Logger* logger,
+            dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder);
-  void init(odb::dbDatabase* db, utl::Logger* logger);
 
   fr::frDesign* getDesign() const { return design_.get(); }
 
@@ -110,6 +113,7 @@ class TritonRoute
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const char* file_name);
+  void updateGlobals(const char* file_name);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;
@@ -119,6 +123,7 @@ class TritonRoute
   stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;
+  dst::Distributed* dist_;
   bool distributed_;
   std::string dist_ip_;
   unsigned short dist_port_;

@@ -1,24 +1,18 @@
 
-sta::define_cmd_args "detailed_route_server" {
+sta::define_cmd_args "run_worker" {
     [-port port]
-    [-shared_volume vol]
 }
-proc detailed_route_server { args } {
-  sta::parse_key_args "detailed_route_server" args \
-    keys {-port -shared_volume} \
+proc run_worker { args } {
+  sta::parse_key_args "run_worker" args \
+    keys {-port} \
     flags {}
-  sta::check_argc_eq0 "detailed_route_server" $args
+  sta::check_argc_eq0 "run_worker" $args
   if { [info exists keys(-port)] } {
     set port $keys(-port)
   } else {
     utl::error DST 10 "-port is required."
   }
-  if { [info exists keys(-shared_volume)] } {
-    set shared_volume $keys(-shared_volume)
-  } else {
-    utl::error DST 11 "-shared_volume is required."
-  }
-  dst::run_server_cmd $port $shared_volume
+  dst::run_server_cmd $port
 }
 
 proc run_load_balancer { args } {

@@ -28,9 +28,12 @@
 
 #include "dr/FlexDR.h"
 
+#include <dst/JobMessage.h>
 #include <omp.h>
 #include <stdio.h>
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
 #include <chrono>
 #include <fstream>
@@ -49,6 +52,8 @@
 using namespace std;
 using namespace fr;
 
+BOOST_CLASS_EXPORT(RoutingJobDescription)
+
 enum class SerializationType
 {
   READ,
@@ -65,7 +70,6 @@ static bool serialize_worker(SerializationType type,
       return false;
     InputArchive ar(file);
     register_types(ar);
-    serialize_globals(ar);
     ar >> *worker;
     file.close();
   } else {
@@ -74,10 +78,21 @@ static bool serialize_worker(SerializationType type,
       return false;
     OutputArchive ar(file);
     register_types(ar);
-    serialize_globals(ar);
     ar << *worker;
     file.close();
   }
+  return true;
+}
+
+static bool writeGlobals(const std::string& name)
+{
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  OutputArchive ar(file);
+  register_types(ar);
+  serialize_globals(ar);
+  file.close();
   return true;
 }
 
@@ -262,7 +277,7 @@ void FlexDRWorker::updateDesign(frDesign* design)
   }
 }
 
-void FlexDRWorker::distributedMain(frDesign* design)
+void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -286,22 +301,20 @@ void FlexDRWorker::distributedMain(frDesign* design)
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
   serialize_worker(SerializationType::WRITE, this, name);
-  std::string result;
-  bool ok = dst::Distributed::sendWorker(
-      name.c_str(), dist_ip_.c_str(), dist_port_, result);
+  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
+  msg.desc
+      = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
+  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (ok) {
-    ok = serialize_worker(SerializationType::READ, this, result);
+    auto desc = static_cast<RoutingJobDescription*>(result.desc.get());
+    ok = serialize_worker(SerializationType::READ, this, desc->path);
     if (!ok)
-      logger_->error(DRT, 511, "Deserialization failed {}", result);
+      logger_->error(DRT, 511, "Deserialization failed");
     std::remove(name.c_str());
-    std::remove(result.c_str());
+    std::remove(desc->path.c_str());
     updateDesign(design);
   } else {
-    logger_->error(utl::DRT,
-                   500,
-                   "Sending worker {} failed with message \"{}\"",
-                   name,
-                   result);
+    logger_->error(utl::DRT, 500, "Sending worker {} failed", name);
   }
 }
 
@@ -1662,6 +1675,14 @@ void FlexDR::searchRepair(int iter,
     MARKERDECAY = 0.99;
   if (iter == 50)
     MARKERDECAY = 0.999;
+  if (dist_) {
+    if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
+      if (iter != 0)
+        std::remove(globals_path_.c_str());
+      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
+      writeGlobals(globals_path_);
+    }
+  }
   frTime t;
   if (VERBOSE > 0) {
     string suffix;
@@ -1766,7 +1787,8 @@ void FlexDR::searchRepair(int iter,
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           if (dist_)
-            workersInBatch[i]->distributedMain(getDesign());
+            workersInBatch[i]->distributedMain(getDesign(),
+                                               globals_path_.c_str());
           else
             workersInBatch[i]->main(getDesign());
 #pragma omp critical

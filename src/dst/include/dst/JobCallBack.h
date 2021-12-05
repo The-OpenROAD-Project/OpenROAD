@@ -1,4 +1,4 @@
-/* Author: Matt Liberty */
+/* Authors: Osama */
 /*
  * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
@@ -25,69 +25,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
+#include <boost/asio/ip/tcp.hpp>
 
-#include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
-
-// Stubs out functions from OpenRoad that aren't needed by trTest but
-// are referenced from TritonRoute.a or its dependencies.
-char **cmd_argv;
-int cmd_argc;
-namespace ord {
-
-OpenRoad::OpenRoad()
+namespace dst {
+class JobMessage;
+class JobCallBack
 {
-}
-
-OpenRoad* OpenRoad::openRoad()
-{
-  return nullptr;
-}
-
-void OpenRoad::addObserver(Observer* observer)
-{
-}
-
-void OpenRoad::removeObserver(Observer* observer)
-{
-}
-
-int OpenRoad::getThreadCount()
-{
-  return 0;
-}
-
-OpenRoad::Observer::~Observer()
-{
-}
-
-}  // namespace ord
-
-namespace sta {
-
-Pin* dbNetwork::dbToSta(odb::dbBTerm*) const
-{
-  return nullptr;
-}
-
-Cell* dbNetwork::dbToSta(odb::dbMaster*) const
-{
-  return nullptr;
-}
-
-odb::dbMaster* dbNetwork::staToDb(const LibertyCell*) const
-{
-  return nullptr;
-}
-
-void dbNetwork::staToDb(const Pin* pin, dbITerm*& iterm, dbBTerm*& bterm) const
-{
-}
-
-}  // namespace sta
-
-int
-ord::tclAppInit(Tcl_Interp *interp)
-{
-  return -1;
-}
+ public:
+  virtual void onRoutingJobReceived(JobMessage& msg,
+                                    boost::asio::ip::tcp::socket& sock){};
+  JobCallBack() {}
+  virtual ~JobCallBack() {}
+};
+}  // namespace dst
