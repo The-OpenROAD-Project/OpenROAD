@@ -35,8 +35,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
-#include <iomanip>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -79,8 +77,19 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
-// Used by toString to convert dbu to microns
-int Descriptor::Property::dbu = 0;
+// Used by toString to convert dbu to microns (and back), will be set in main_window
+DBUToString Descriptor::Property::convert_dbu;
+StringToDBU Descriptor::Property::convert_string;
+
+static void resetConversions()
+{
+  Descriptor::Property::convert_dbu = [](int value, bool) {
+    return std::to_string(value);
+  };
+  Descriptor::Property::convert_string = [](const std::string& value, bool*) {
+    return 0;
+  };
+}
 
 Gui* Gui::singleton_ = nullptr;
 
@@ -97,6 +106,7 @@ Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
              db_(nullptr)
 {
+  resetConversions();
 }
 
 bool Gui::enabled()
@@ -490,6 +500,11 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, double value)
+{
+  main_window->setHeatMapSetting(name, option, value);
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
@@ -511,9 +526,44 @@ bool Renderer::checkDisplayControl(const std::string& name)
   }
 }
 
-void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  controls_[name] = initial_state;
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
+  }
+}
+
+void Renderer::addDisplayControl(const std::string& name,
+                                 bool initial_visible,
+                                 const DisplayControlCallback& setup,
+                                 const std::vector<std::string>& mutual_exclusivity)
+{
+  auto& control = controls_[name];
+
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(), mutual_exclusivity.end());
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  Settings settings;
+  for (const auto& [key, init_value] : controls_) {
+    settings[key] = checkDisplayControl(key);
+  }
+  return settings;
+}
+
+void Renderer::setSettings(const Renderer::Settings& settings)
+{
+  for (auto& [key, control] : controls_) {
+    setSetting<bool>(settings, key, control.visibility);
+    setDisplayControl(key, control.visibility);
+  }
 }
 
 void Gui::load_design()
@@ -707,6 +757,8 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
     exit(ret);
   }
 
+  resetConversions();
+
   return ret;
 }
 
@@ -774,21 +826,12 @@ std::string Descriptor::Property::toString(const std::any& value)
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
-    double lef_units = dbu;
-    if (dbu == 0) {
-      lef_units = 1;
-    }
-    const int precision = std::ceil(std::log10(lef_units));
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(precision) << "(";
-    ss << v->xMin() / lef_units << ",";
-    ss << v->yMin() / lef_units << "), (";
-    ss << v->xMax() / lef_units << ",";
-    ss << v->yMax() / lef_units << ")";
-    if (dbu == 0) {
-      ss << " DBU";
-    }
-    return ss.str();
+    std::string text = "(";
+    text += convert_dbu(v->xMin(), false) + ",";
+    text += convert_dbu(v->yMin(), false) + "), (";
+    text += convert_dbu(v->xMax(), false) + ",";
+    text += convert_dbu(v->yMax(), false) + ")";
+    return text;
   }
 
   return "<unknown>";

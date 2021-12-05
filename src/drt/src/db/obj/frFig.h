@@ -43,7 +43,7 @@ class frFig : public frBlockObject
   // setters
   // others
   virtual void move(const dbTransform& xform) = 0;
-  virtual bool overlaps(const Rect& box) const = 0;
+  virtual bool intersects(const Rect& box) const = 0;
 
  protected:
   // constructors

@@ -74,7 +74,7 @@ class frBoundary : public frFig
       xform.apply(point);
     }
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
  protected:
   std::vector<Point> points_;

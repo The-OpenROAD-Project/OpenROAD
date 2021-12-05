@@ -44,7 +44,6 @@ class Point;
 class AnalytSolve
 {
  private:
-  Command_Line* _params;
   DB* _db;
 
   std::vector<float> _xloc;
@@ -52,7 +51,7 @@ class AnalytSolve
 
  public:
   AnalytSolve() {}
-  AnalytSolve(Command_Line* params, DB* db);
+  AnalytSolve(DB* db);
   ~AnalytSolve() {}
 
   Point getOptLoc(int index,

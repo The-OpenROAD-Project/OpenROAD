@@ -65,7 +65,6 @@ class clustering
   std::vector<flop> flops;
   std::vector<std::vector<flop*>> clusters;
 
-  int verbose = 1;
   int TEST_LAYOUT = 1;
   int TEST_ITER = 1;
   std::string plotFile;
