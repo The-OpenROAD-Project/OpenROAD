@@ -477,7 +477,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
     row_fills.insert({y, merged_placements});
   }
 
-  std::map<int, int> rows_with_macros;
+  std::set<int> rows_with_macros;
   std::map<std::pair<int, int>, vector<int>> macro_outlines
       = getMacroOutlines(rows);
   for(auto&[ignored,bot_top_row]:macro_outlines) {
@@ -487,10 +487,10 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
       bot_top_row[i + 1]++;
 
       if (bot_top_row[i] >= 0) {
-        rows_with_macros.insert({bot_top_row[i], 0});
+        rows_with_macros.insert(bot_top_row[i]);
       }
       if (bot_top_row[i + 1] <= rows.size()) {
-        rows_with_macros.insert({bot_top_row[i + 1], 0});
+        rows_with_macros.insert(bot_top_row[i + 1]);
       }
     }
   }
@@ -508,10 +508,9 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
     }
 
     int gaps_above_below = 0;
-    if (!rows_with_macros.empty()
-        && rows_with_macros[0] == row_idx) {
+    if (rows_with_macros.find(row_idx) != rows_with_macros.end()) {
       gaps_above_below = 1;
-      rows_with_macros.erase(rows_with_macros[0]);
+      rows_with_macros.erase(row_idx);
     }
 
     for (odb::dbRow* row : subrows) {
@@ -548,8 +547,8 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
         // Check if site is filled
         const int tap_width = tapcell_master->getWidth();
         odb::dbOrientType ori = row->getOrient();
-        int overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
-        if (overlap == 0) {
+        bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
+        if (!overlap) {
           const int lly = row_bb.yMin();
           makeInstance(block, tapcell_master, ori, x, lly, tap_prefix_);
         }

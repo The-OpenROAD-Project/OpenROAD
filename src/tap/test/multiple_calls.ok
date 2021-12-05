@@ -15,12 +15,12 @@
 [INFO TAP-0002] Original rows: 30
 [INFO TAP-0003] Created 0 rows for a total of 30 rows.
 [INFO TAP-0004] Inserted 60 endcaps.
-[INFO TAP-0005] Inserted 18 tapcells.
+[INFO TAP-0005] Inserted 19 tapcells.
 [INFO TAP-0001] Found 1 macro blocks.
 [INFO TAP-0002] Original rows: 30
 [INFO TAP-0003] Created 0 rows for a total of 30 rows.
 [INFO TAP-0004] Inserted 60 endcaps.
-[INFO TAP-0005] Inserted 36 tapcells.
+[INFO TAP-0005] Inserted 38 tapcells.
 Differences found at line 44.
-COMPONENTS 79 ;
-COMPONENTS 97 ;
+COMPONENTS 80 ;
+COMPONENTS 99 ;
