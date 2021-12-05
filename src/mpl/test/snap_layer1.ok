@@ -37,7 +37,7 @@
 [InitialPlace]  Iter: 3 CG Error: 0.00000000 HPWL: 4612190
 [InitialPlace]  Iter: 4 CG Error: 0.00000000 HPWL: 3981997
 [InitialPlace]  Iter: 5 CG Error: 0.00000000 HPWL: 3907795
-[INFO GPL-0031] FillerInit: NumGCells: 4
+[INFO GPL-0031] FillerInit: NumGCells: 2
 [INFO GPL-0032] FillerInit: NumGNets: 15
 [INFO GPL-0033] FillerInit: NumGPins: 31
 [INFO GPL-0023] TargetDensity: 0.70
@@ -48,7 +48,7 @@
 [INFO GPL-0028] BinCnt: 2 2
 [INFO GPL-0029] BinSize: 189810 88200
 [INFO GPL-0030] NumBins: 4
-[NesterovSolve] Iter: 1 overflow: 0 HPWL: 2892419
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 2892421
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO MPL-0005] Found 2 macros.
 [INFO MPL-0009] West pins 7.

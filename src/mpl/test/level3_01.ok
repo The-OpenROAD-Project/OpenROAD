@@ -113,7 +113,7 @@ Begin west partition.
 End west partition.
 End horizontal partition.
 [INFO MPL-0070] Using 3 partition sets.
-[INFO MPL-0071] Solution 1 weighted wire length 2701.67.
+[INFO MPL-0071] Solution 1 weighted wire length 2645.83.
 [INFO MPL-0071] Solution 2 weighted wire length 3704.35.
 [WARNING MPL-0061] Parquet area 54.77 x 114 exceeds the partition area 62.51 x 102.2.
 [INFO MPL-0073] Best weighted wire length 3704.35.
