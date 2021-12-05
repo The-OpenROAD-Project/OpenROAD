@@ -5,7 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fakeram45_64x7.lef
 
 # place_pins result is not stable across ports. sigh.
-if {1} {
+if {0} {
   read_verilog east_west1.v
   link_design mem2
   source Nangate45/Nangate45.vars
