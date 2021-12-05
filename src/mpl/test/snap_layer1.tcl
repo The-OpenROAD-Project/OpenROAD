@@ -1,14 +1,7 @@
 # -snap_layer 3
 source helpers.tcl
-
-read_liberty Nangate45/Nangate45_typ.lib
-read_liberty Nangate45/fakeram45_64x7.lib
-
-read_lef Nangate45/Nangate45.lef
-read_lef Nangate45/fakeram45_64x7.lef
-
-read_def east_west1.def
-read_sdc gcd.sdc
+set mem0_pins_west 1
+source east_west.tcl
 
 global_placement -skip_initial_place
 macro_placement -halo {1.0 1.0} -snap_layer 3

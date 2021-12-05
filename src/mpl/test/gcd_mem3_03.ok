@@ -6,18 +6,80 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: gcd_mem3.def
-[INFO ODB-0128] Design: gcd_mem3
-[INFO ODB-0130]     Created 75 pins.
-[INFO ODB-0131]     Created 309 components and 1802 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 0 connections.
-[INFO ODB-0133]     Created 398 nets and 1184 connections.
-[INFO ODB-0134] Finished DEF file: gcd_mem3.def
+[INFO IFP-0001] Added 49 rows of 1262 sites.
+[WARNING PPL-0015] Macro mem0 is not placed.
+[WARNING PPL-0015] Macro mem1 is not placed.
+[WARNING PPL-0015] Macro mem2 is not placed.
+Found 0 macro blocks.
+Using 1u default distance from corners.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0007] Random pin placement.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 10260 11200
+[INFO GPL-0005] CoreAreaUxUy: 489820 148400
+[INFO GPL-0006] NumInstances: 309
+[INFO GPL-0007] NumPlaceInstances: 309
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 398
+[INFO GPL-0011] NumPins: 1259
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 500000 160000
+[INFO GPL-0014] CoreAreaLxLy: 10260 11200
+[INFO GPL-0015] CoreAreaUxUy: 489820 148400
+[INFO GPL-0016] CoreArea: 65795632000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 38367840000
+[INFO GPL-0019] Util(%): 58.31
+[INFO GPL-0020] StdInstsArea: 2234400000
+[INFO GPL-0021] MacroInstsArea: 36133440000
+[InitialPlace]  Iter: 1 CG Error: 0.00000010 HPWL: 39059900
+[InitialPlace]  Iter: 2 CG Error: 0.00000011 HPWL: 32832900
+[InitialPlace]  Iter: 3 CG Error: 0.00000009 HPWL: 32980880
+[InitialPlace]  Iter: 4 CG Error: 0.00000011 HPWL: 33040518
+[InitialPlace]  Iter: 5 CG Error: 0.00000009 HPWL: 33053884
+[INFO GPL-0031] FillerInit: NumGCells: 2927
+[INFO GPL-0032] FillerInit: NumGNets: 398
+[INFO GPL-0033] FillerInit: NumGPins: 1259
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 124167766
+[INFO GPL-0025] IdealBinArea: 177382528
+[INFO GPL-0026] IdealBinCnt: 370
+[INFO GPL-0027] TotalBinArea: 65795632000
+[INFO GPL-0028] BinCnt: 16 16
+[INFO GPL-0029] BinSize: 29973 8575
+[INFO GPL-0030] NumBins: 256
+[NesterovSolve] Iter: 1 overflow: 0.597888 HPWL: 22789781
+[NesterovSolve] Iter: 10 overflow: 0.573396 HPWL: 25240665
+[NesterovSolve] Iter: 20 overflow: 0.576882 HPWL: 25240208
+[NesterovSolve] Iter: 30 overflow: 0.577225 HPWL: 25216372
+[NesterovSolve] Iter: 40 overflow: 0.577009 HPWL: 25222309
+[NesterovSolve] Iter: 50 overflow: 0.576491 HPWL: 25218649
+[NesterovSolve] Iter: 60 overflow: 0.576099 HPWL: 25211621
+[NesterovSolve] Iter: 70 overflow: 0.575121 HPWL: 25205904
+[NesterovSolve] Iter: 80 overflow: 0.57381 HPWL: 25193317
+[NesterovSolve] Iter: 90 overflow: 0.57192 HPWL: 25178822
+[NesterovSolve] Iter: 100 overflow: 0.5692 HPWL: 25160338
+[NesterovSolve] Iter: 110 overflow: 0.566288 HPWL: 25147563
+[NesterovSolve] Iter: 120 overflow: 0.562444 HPWL: 25151908
+[NesterovSolve] Iter: 130 overflow: 0.553827 HPWL: 25121517
+[NesterovSolve] Iter: 140 overflow: 0.543226 HPWL: 25087294
+[NesterovSolve] Iter: 150 overflow: 0.52724 HPWL: 24986974
+[NesterovSolve] Iter: 160 overflow: 0.511066 HPWL: 25004834
+[NesterovSolve] Iter: 170 overflow: 0.477436 HPWL: 25083193
+[NesterovSolve] Iter: 180 overflow: 0.443251 HPWL: 25160575
+[NesterovSolve] Iter: 190 overflow: 0.412403 HPWL: 24686672
+[NesterovSolve] Iter: 200 overflow: 0.386795 HPWL: 24837603
+[NesterovSolve] Iter: 210 overflow: 0.336258 HPWL: 25883994
+[NesterovSolve] Iter: 220 overflow: 0.307832 HPWL: 25300127
+[NesterovSolve] Iter: 230 overflow: 0.143222 HPWL: 25581906
+[NesterovSolve] Finished with Overflow: 0.084292
 [INFO MPL-0005] Found 3 macros.
-[INFO MPL-0009] West pins 18.
-[INFO MPL-0009] East pins 13.
-[INFO MPL-0009] North pins 12.
-[INFO MPL-0009] South pins 32.
-[INFO MPL-0067] Initial weighted wire length 5248.89.
-[INFO MPL-0068] Placed weighted wire length 5278.78.
+[INFO MPL-0009] West pins 11.
+[INFO MPL-0009] East pins 11.
+[INFO MPL-0009] North pins 27.
+[INFO MPL-0009] South pins 26.
+[INFO MPL-0067] Initial weighted wire length 15009.7.
+[INFO MPL-0068] Placed weighted wire length 15372.4.
 No differences found.
