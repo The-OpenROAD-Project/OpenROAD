@@ -88,7 +88,7 @@ class frMarker : public frFig
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps in .cpp
+   * intersects in .cpp
    */
 
   void getBBox(Rect& bboxIn) const override { bboxIn = bbox_; }
@@ -121,7 +121,7 @@ class frMarker : public frFig
 
   void move(const dbTransform& xform) override {}
 
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   // others
   frBlockObjectEnum typeId() const override { return frcMarker; }

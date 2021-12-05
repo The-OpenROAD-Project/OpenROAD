@@ -275,8 +275,8 @@ struct frDebugSettings
         debugPA(false),
         draw(true),
         allowPause(true),
-        gcellX(-1),
-        gcellY(-1),
+        x(-1),
+        y(-1),
         iter(0),
         paMarkers(false),
         dist(false),
@@ -294,8 +294,8 @@ struct frDebugSettings
   bool allowPause;
   std::string netName;
   std::string pinName;
-  int gcellX;
-  int gcellY;
+  int x;
+  int y;
   int iter;
   bool paMarkers;
   bool dist;

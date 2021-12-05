@@ -222,7 +222,7 @@ class frVia : public frRef
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   void getBBox(Rect& boxIn) const override
@@ -287,7 +287,7 @@ class frVia : public frRef
     xform.apply(boxIn);
   }
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frVia>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<frVia>> getIter() const { return iter_; }

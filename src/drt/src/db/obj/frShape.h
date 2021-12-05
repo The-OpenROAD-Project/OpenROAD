@@ -64,7 +64,7 @@ class frShape : public frPinFig
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   virtual void setIter(frListIter<std::unique_ptr<frShape>>& in) = 0;
@@ -171,16 +171,16 @@ class frRect : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps in .cpp
+   * intersects in .cpp
    */
   void getBBox(Rect& boxIn) const override { boxIn = box_; }
   const Rect& getBBox() const { return box_; }
   void move(const dbTransform& xform) override { xform.apply(box_); }
-  bool overlaps(const Rect& box) const override
+  bool intersects(const Rect& box) const override
   {
     Rect rectBox;
     getBBox(rectBox);
-    return rectBox.overlaps(box);
+    return rectBox.intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -296,7 +296,7 @@ class frPatchWire : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps in .cpp
+   * intersects in .cpp
    */
   void getBBox(Rect& boxIn) const override
   {
@@ -308,11 +308,11 @@ class frPatchWire : public frShape
   void getOrigin(Point& in) const { in = origin_; }
   Point getOrigin() const { return origin_; }
   void move(const dbTransform& xform) override {}
-  bool overlaps(const Rect& box) const override
+  bool intersects(const Rect& box) const override
   {
     Rect rectBox;
     getBBox(rectBox);
-    return rectBox.overlaps(box);
+    return rectBox.intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -412,7 +412,7 @@ class frPolygon : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, in .cpp
+   * intersects, in .cpp
    */
   void getBBox(Rect& boxIn) const override
   {
@@ -440,7 +440,7 @@ class frPolygon : public frShape
       xform.apply(point);
     }
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -593,7 +593,7 @@ class frPathSeg : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, in .cpp
+   * intersects, in .cpp
    */
   // needs to be updated
   void getBBox(Rect& boxIn) const override
@@ -622,7 +622,7 @@ class frPathSeg : public frShape
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {

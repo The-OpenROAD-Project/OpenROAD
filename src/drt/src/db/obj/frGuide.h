@@ -107,12 +107,12 @@ class frGuide : public frConnFig
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, incomplete
+   * intersects, incomplete
    */
   // needs to be updated
   void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
  private:
   Point begin_;

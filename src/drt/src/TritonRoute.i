@@ -116,7 +116,7 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool dump_dr,
                              bool pa,
                              bool maze,
-                             int gcell_x, int gcell_y,
+                             int x, int y,
                              int iter,
                              bool pa_markers,
                              bool pa_combining)
@@ -128,8 +128,8 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugDumpDR(dump_dr);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
-  if (gcell_x >= 0) {
-    router->setDebugGCell(gcell_x, gcell_y);
+  if (x >= 0) {
+    router->setDebugWorker(x, y);
   }
   router->setDebugIter(iter);
   router->setDebugPaMarkers(pa_markers);

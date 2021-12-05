@@ -234,11 +234,9 @@ const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
-static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
+static std::string workerOrigin(FlexDRWorker* worker)
 {
-  Point ll = worker->getRouteBox().ll();
-  Point origin;
-  design->getTopBlock()->getGCellIdx(ll, origin);
+  Point origin = worker->getRouteBox().ll();
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -540,9 +538,9 @@ void FlexDRGraphics::show(bool checkStopConditions) {
         if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
             return;
         }
-        Rect gcellBox = worker_->getGCellBox();
-        if (settings_->gcellX >= 0
-            && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
+        const Rect& rBox = worker_->getRouteBox();
+        if (settings_->x >= 0
+            && !rBox.intersects(Point(settings_->x, settings_->y))) {
           return;
         }
     }
@@ -616,16 +614,12 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   if (current_iter_ < settings_->iter) {
     return;
   }
-
-  Rect gcellBox = in->getGCellBox();
-  if (settings_->gcellX >= 0
-      && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
+  const Rect& rBox = in->getRouteBox();
+  if (settings_->x >= 0
+      && !rBox.intersects(Point(settings_->x, settings_->y))) {
     return;
   }
-
-  Point origin;
-  design_->getTopBlock()->getGCellIdx(in->getRouteBox().ll(), origin);
-  status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
+  status("Start worker: origin " + workerOrigin(in) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -691,7 +685,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 
   status("Start net: " + net->getFrNet()->getName() + " "
-         + workerOrigin(worker_, design_));
+         + workerOrigin(worker_));
   logger_->info(
       DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {
