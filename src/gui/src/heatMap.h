@@ -55,6 +55,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -394,8 +395,13 @@ class PowerDensityDataSource : public HeatMapDataSource
   double max_power_;
   std::string units_;
 
+  sta::Corner* corner_;
+
   void determineUnits(std::string& text, double& scale) const;
   double getValueRange() const;
+
+  void ensureCorner();
+  void setCorner(const std::string& name);
 };
 
 }  // namespace gui
