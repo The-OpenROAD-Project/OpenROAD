@@ -79,9 +79,14 @@ void Grid::clear()
 
 void Grid::addObstruction(int layer, const odb::Rect& obstruction)
 {
-  odb::Rect obs_inside_die = die_area_.intersect(obstruction);
-  if (!obs_inside_die.isInverted()) {
-    obstructions_[layer].push_back(obs_inside_die);
+  // compute the intersection between obstruction and the die area
+  // only when they are overlapping to avoid assert error during
+  // intersect() function
+  if (die_area_.overlaps(obstruction)) {
+    odb::Rect obs_inside_die = die_area_.intersect(obstruction);
+    if (!obs_inside_die.isInverted()) {
+      obstructions_[layer].push_back(obs_inside_die);
+    }
   }
 }
 
