@@ -2593,7 +2593,8 @@ namespace eval ICeWall {
               if {$mterm == "NULL"} {
                 utl::error "PAD" 252 "Bondpad cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
               }
-              set pin [odb::dbITerm_connect $inst $net $mterm]
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
             }
           }
           if {[llength $pin_shape] != 4} {
@@ -3376,7 +3377,8 @@ namespace eval ICeWall {
               if {$mterm == "NULL"} {
                 utl::error "PAD" 253 "Bump cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
               }
-              set pin [odb::dbITerm_connect $inst $net $mterm]
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
             }
           }
           if {[llength $pin_shape] != 4} {
@@ -4218,8 +4220,8 @@ namespace eval ICeWall {
             # debug "inst_name: $inst_name, pin_name: $pin_name"
             set mterm [[$inst getMaster] findMTerm $pin_name]
             if {$mterm != "NULL"} {
-              set iterm [odb::dbITerm_connect $inst $net $mterm]
-              # debug "connect"
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
               $iterm setSpecial
             } else {
               utl::warn "PAD" 18 "No terminal $signal found on $inst_name."

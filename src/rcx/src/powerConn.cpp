@@ -908,7 +908,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst, odb::dbNet* net,
     if (mterm->getSigType() != net->getSigType())
       continue;
 
-    iterm = odb::dbITerm::connect(inst, targetNet, mterm);
+    inst->getITerm(mterm)->connect(targetNet);
     break;
   }
   if (iterm == NULL) {

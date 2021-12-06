@@ -573,7 +573,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
   std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
   odb::dbInst* topClockInst = _block->findInst(topClockInstName.c_str());
   odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst);
-  odb::dbITerm::connect(topClockInstInputPin, topClockNet);
+  topClockInstInputPin->connect(topClockNet);
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
   std::map<int, uint> fanoutcount;
@@ -602,7 +602,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
       outputPinFound = false;
     }
     if (outputPinFound) {
-      odb::dbITerm::connect(outputPin, clkSubNet);
+      outputPin->connect(clkSubNet);
     }
 
     if (subNet.getNumSinks() == 0) {
@@ -625,7 +625,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
         }
       }
       if (inputPinFound) {
-        odb::dbITerm::connect(inputPin, clkSubNet);
+        inputPin->connect(clkSubNet);
       }
     });
 
@@ -731,7 +731,7 @@ void TritonCTS::disconnectAllSinksFromNet(odb::dbNet* net)
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      odb::dbITerm::disconnect(iterm);
+      iterm->disconnect();
     }
   }
 }
@@ -740,7 +740,7 @@ void TritonCTS::disconnectAllPinsFromNet(odb::dbNet* net)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   for (odb::dbITerm* iterm : iterms) {
-    odb::dbITerm::disconnect(iterm);
+    iterm->disconnect();
   }
 }
 

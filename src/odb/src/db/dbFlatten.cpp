@@ -347,7 +347,7 @@ bool dbFlatten::copyInst(dbBlock* parent, dbInst* child, dbInst* grandchild)
         continue;  // error
 
       dbITerm* parent_iterm = inst->getITerm(child_iterm->getMTerm());
-      dbITerm::connect(parent_iterm, parent_net);
+      parent_iterm->connect(parent_net);
     }
   }
 

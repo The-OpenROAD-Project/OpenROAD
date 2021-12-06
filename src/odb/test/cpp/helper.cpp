@@ -67,15 +67,15 @@ dbDatabase* create2LevetDbNoBTerms()
   dbNet*      n5    = dbNet::create(block, "n5");
   dbNet*      n6    = dbNet::create(block, "n6");
   dbNet*      n7    = dbNet::create(block, "n7");
-  dbITerm::connect(i1->findITerm("a"), n1);
-  dbITerm::connect(i1->findITerm("b"), n2);
-  dbITerm::connect(i2->findITerm("a"), n3);
-  dbITerm::connect(i2->findITerm("b"), n4);
-  dbITerm::connect(i3->findITerm("a"), n5);
-  dbITerm::connect(i3->findITerm("b"), n6);
-  dbITerm::connect(i1->findITerm("o"), n5);
-  dbITerm::connect(i2->findITerm("o"), n6);
-  dbITerm::connect(i3->findITerm("o"), n7);
+  i1->findITerm("a")->connect(n1);
+  i1->findITerm("b")->connect(n2);
+  i2->findITerm("a")->connect(n3);
+  i2->findITerm("b")->connect(n4);
+  i3->findITerm("a")->connect(n5);
+  i3->findITerm("b")->connect(n6);
+  i1->findITerm("o")->connect(n5);
+  i2->findITerm("o")->connect(n6);
+  i3->findITerm("o")->connect(n7);
   return db;
 }
 dbDatabase* create2LevetDbWithBTerms()
