@@ -20,6 +20,7 @@ if {0} {
     -core_area $core_area
   source $tracks_file
   place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
+  global_placement
   
   write_def level3.def
 } else {
