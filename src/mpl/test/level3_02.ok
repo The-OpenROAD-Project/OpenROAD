@@ -32,7 +32,7 @@
 [INFO GPL-0019] Util(%): 20.09
 [INFO GPL-0020] StdInstsArea: 379848000
 [INFO GPL-0021] MacroInstsArea: 36133440000
-[InitialPlace]  Iter: 1 CG Error: 0.00000009 HPWL: 23371610
+[InitialPlace]  Iter: 1 CG Error: 0.00000009 HPWL: 21592182
 [InitialPlace]  Iter: 2 CG Error: 0.00000004 HPWL: 20919637
 [InitialPlace]  Iter: 3 CG Error: 0.00000007 HPWL: 20817286
 [InitialPlace]  Iter: 4 CG Error: 0.00000008 HPWL: 20768809
