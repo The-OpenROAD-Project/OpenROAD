@@ -298,7 +298,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     antenna_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
-  odb::dbITerm::connect(antenna_iterm, net);
+  antenna_iterm->connect(net);
   diode_insts_.push_back(antenna_inst);
 
   // Add diode to the R-tree of fixed instances

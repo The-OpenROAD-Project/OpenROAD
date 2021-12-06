@@ -3348,27 +3348,14 @@ class dbITerm : public dbObject
   dbBTerm* getBTerm();
 
   ///
-  /// Create a connection between a instance and a net using a specific
-  /// master-terminal. The dbITerm representing the connection is returned.
-  /// Returns NULL if that specific master-terminal of that instance is
-  /// already connected to a net.
-  ///
-  static dbITerm* connect(dbInst* inst, dbNet* net, dbMTerm* terminal);
-
-  ///
   /// Connect this iterm to this net.
   ///
-  static void connect(dbITerm* iterm, dbNet* net);
+  void connect(dbNet* net);
 
   ///
   /// Disconnect this iterm from the net it is connected to.
   ///
-  static void disconnect(dbITerm* iterm);
-
-  ///
-  /// Disconnect this iterm from the net it is connected to.
-  ///
-  static dbSet<dbITerm>::iterator disconnect(dbSet<dbITerm>::iterator& itr);
+  void disconnect();
 
   ///
   /// Get the average of the centers for the iterm shapes

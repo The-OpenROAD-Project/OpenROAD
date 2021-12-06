@@ -216,7 +216,7 @@ void definNet::connection(const char* iname, const char* tname)
     return;
   }
 
-  dbITerm::connect(inst, _cur_net, mterm);
+  inst->getITerm(mterm)->connect(_cur_net);
   _net_iterm_cnt++;
 }
 
