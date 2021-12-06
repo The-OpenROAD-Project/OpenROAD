@@ -493,7 +493,10 @@ void DisplayControls::readSettings(QSettings* settings)
       } else if (type == "string") {
         renderer_settings[key_group.toStdString()] = value.toString().toStdString();
       } else {
-        logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        // this can get called before logger has been created
+        if (logger_ != nullptr) {
+          logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        }
       }
       settings->endGroup();
     }
