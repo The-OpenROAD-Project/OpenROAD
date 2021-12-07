@@ -65,6 +65,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       targetObj_(nullptr),
       ignoreDB_(false),
       ignoreMinArea_(false),
+      ignoreLongSideEOL_(false),
       surgicalFixEnabled_(false)
 {
 }
@@ -189,6 +190,11 @@ void FlexGCWorker::setIgnoreDB()
 void FlexGCWorker::setIgnoreMinArea()
 {
   impl_->ignoreMinArea_ = true;
+}
+
+void FlexGCWorker::setIgnoreLongSideEOL()
+{
+  impl_->ignoreLongSideEOL_ = true;
 }
 
 std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()

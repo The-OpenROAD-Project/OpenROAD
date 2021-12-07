@@ -985,8 +985,7 @@ class frLef58EolKeepOutConstraint : public frConstraint
   {
     logger->report(
         "EOLKEEPOUT backwardExt {} sideExt {} forwardExt {} eolWidth {} "
-        "cornerOnly {}",
-        "exceptWithin {} withinLow {} withinHigh {}",
+        "cornerOnly {} exceptWithin {} withinLow {} withinHigh {}",
         backwardExt,
         sideExt,
         forwardExt,

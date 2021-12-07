@@ -168,6 +168,7 @@ class FlexGCWorker::Impl
   frBlockObject* targetObj_;
   bool ignoreDB_;
   bool ignoreMinArea_;
+  bool ignoreLongSideEOL_;
   bool surgicalFixEnabled_;
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
