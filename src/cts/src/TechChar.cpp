@@ -280,71 +280,61 @@ void TechChar::reportSegments(uint8_t length,
       });
 }
 
-void TechChar::write(const std::string& filename) const
+void TechChar::printChar() const
 {
-  std::ofstream file(filename.c_str());
+  debugPrint(_logger, CTS, "characterization", 3,
+             "{} {} {} {} {} {} {}",
+             _minSegmentLength, _maxSegmentLength,
+             _minCapacitance, _maxCapacitance, _minSlew,
+             _maxSlew, _options->getWireSegmentUnit());
 
-  if (!file.is_open()) {
-    _logger->error(CTS, 59, "Could not open characterization file {}.", filename.c_str());
-  }
-
-  file << _minSegmentLength << " " << _maxSegmentLength << " "
-       << _minCapacitance << " " << _maxCapacitance << " " << _minSlew << " "
-       << _maxSlew << " " << _options->getWireSegmentUnit() << "\n";
-
-  file.precision(15);
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
-    file << idx << " " << (unsigned) segment.getLength() << " "
-         << (unsigned) segment.getLoad() << " "
-         << (unsigned) segment.getOutputSlew() << " " << segment.getPower()
-         << " " << segment.getDelay() << " " << (unsigned) segment.getInputCap()
-         << " " << (unsigned) segment.getInputSlew() << " ";
-
-    file << !segment.isBuffered() << " ";
-
+    std::string buffer_locations;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      file << segment.getBufferLocation(idx) << " ";
+      buffer_locations += std::to_string(segment.getBufferLocation(idx));
     }
 
-    file << "\n";
+    debugPrint(_logger, CTS, "characterization", 3,
+               "{} {} {} {} {} {} {} {} {} {}",
+               idx,
+               (unsigned) segment.getLength(),
+               (unsigned) segment.getLoad(),
+               (unsigned) segment.getOutputSlew(),
+               segment.getPower(),
+               segment.getDelay(),
+               (unsigned) segment.getInputCap(),
+               (unsigned) segment.getInputSlew(),
+               !segment.isBuffered(),
+               buffer_locations);
   });
-
-  file.close();
 }
 
-void TechChar::writeSol(const std::string& filename) const
+void TechChar::printSol() const
 {
-  std::ofstream file(filename.c_str());
-
-  if (!file.is_open()) {
-    _logger->error(CTS, 60, " Could not open characterization file {}.", filename.c_str());
-  }
-
-  file.precision(15);
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
-    file << idx << " ";
+    std::string report;
+    report += std::to_string(idx) + " ";
 
     if (segment.isBuffered()) {
       for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
         float wirelengthValue = segment.getBufferLocation(idx)
                                 * ((float) (segment.getLength())
                                    * (float) (_options->getWireSegmentUnit()));
-        file << (unsigned long) (wirelengthValue);
-        file << "," << segment.getBufferMaster(idx);
+
+        report += std::to_string((unsigned long) (wirelengthValue));
+        report += "," + segment.getBufferMaster(idx);
         if (!(idx + 1 >= segment.getNumBuffers())) {
-          file << ",";
+          report += ",";
         }
       }
     } else {
       float wirelengthValue = (float) (segment.getLength())
                               * (float) (_options->getWireSegmentUnit());
-      file << (unsigned long) (wirelengthValue);
+      report += std::to_string((unsigned long) (wirelengthValue));
     }
 
-    file << "\n";
+    debugPrint(_logger, CTS, "characterization", 3, "{}", report);
   });
-
-  file.close();
 }
 
 void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
@@ -1182,10 +1172,8 @@ void TechChar::create()
   compileLut(convertedSolutions);
   // Saves the characterization file if needed.
   if (_options->getOutputPath().length() > 0) {
-    std::string lutFile = _options->getOutputPath() + "lut.txt";
-    std::string solFile = _options->getOutputPath() + "sol_list.txt";
-    write(lutFile);
-    writeSol(solFile);
+    printChar();
+    printSol();
   }
   // super confused -cherry
   if (_openStaChar != nullptr) {

@@ -190,8 +190,8 @@ class TechChar
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
-  void write(const std::string& file) const;
-  void writeSol(const std::string& file) const;
+  void printChar() const;
+  void printSol() const;
 
   void report() const;
   void reportSegment(unsigned key) const;
