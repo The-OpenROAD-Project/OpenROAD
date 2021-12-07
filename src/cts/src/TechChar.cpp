@@ -280,7 +280,7 @@ void TechChar::reportSegments(uint8_t length,
       });
 }
 
-void TechChar::printChar() const
+void TechChar::printCharacterization() const
 {
   debugPrint(_logger, CTS, "characterization", 3,
              "{} {} {} {} {} {} {}",
@@ -291,7 +291,7 @@ void TechChar::printChar() const
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffer_locations;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      buffer_locations += std::to_string(segment.getBufferLocation(idx));
+      buffer_locations += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
     debugPrint(_logger, CTS, "characterization", 3,
@@ -309,7 +309,7 @@ void TechChar::printChar() const
   });
 }
 
-void TechChar::printSol() const
+void TechChar::printSolution() const
 {
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string report;
@@ -1172,8 +1172,8 @@ void TechChar::create()
   compileLut(convertedSolutions);
   // Saves the characterization file if needed.
   if (_options->getOutputPath().length() > 0) {
-    printChar();
-    printSol();
+    printCharacterization();
+    printSolution();
   }
   // super confused -cherry
   if (_openStaChar != nullptr) {
