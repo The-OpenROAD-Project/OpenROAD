@@ -500,7 +500,7 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
-void Gui::setHeatMapSetting(const std::string& name, const std::string& option, double value)
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
 {
   main_window->setHeatMapSetting(name, option, value);
 }
