@@ -205,12 +205,6 @@ report_wire_segments(unsigned length, unsigned load, unsigned outputSlew)
   getTritonCts()->getCharacterization()->reportSegments(length, load, outputSlew);
 }
 
-void
-export_characterization(const char* file)
-{
-  getTritonCts()->getCharacterization()->write(file);
-}
-
 int
 set_clock_nets(const char* names)
 {

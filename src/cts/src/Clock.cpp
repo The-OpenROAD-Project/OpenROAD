@@ -91,7 +91,7 @@ Box<double> Clock::computeSinkRegionClustered(
 {
   std::vector<double> allPositionsX;
   std::vector<double> allPositionsY;
-  for (std::pair<float, float> sinkLocation : sinks) {
+  for (const std::pair<float, float>& sinkLocation : sinks) {
     allPositionsX.push_back(sinkLocation.first);
     allPositionsY.push_back(sinkLocation.second);
   }

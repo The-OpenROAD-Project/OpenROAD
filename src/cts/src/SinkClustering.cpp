@@ -430,7 +430,7 @@ void SinkClustering::writePlotFile(unsigned groupSize)
 
   unsigned clusterCounter = 0;
   double totalWL = 0;
-  for (std::vector<unsigned> clusters : _bestSolution) {
+  for (const std::vector<unsigned>& clusters : _bestSolution) {
     unsigned color = clusterCounter % colors.size();
     std::vector<Point<double>> clusterNodes;
     for (unsigned idx : clusters) {
@@ -454,7 +454,7 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
   std::vector<int> vecY;
   double driverX = 0;
   double driverY = 0;
-  for (auto point: points) {
+  for (const auto& point : points) {
     driverX += point.getX();
     driverY += point.getY();
   }
@@ -463,7 +463,7 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
   vecX.emplace_back(driverX * _options->getDbUnits());
   vecY.emplace_back(driverY * _options->getDbUnits());
 
-  for (auto point: points) {
+  for (const auto& point: points) {
     vecX.emplace_back(point.getX() * _options->getDbUnits());
     vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
