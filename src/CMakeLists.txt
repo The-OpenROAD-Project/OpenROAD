@@ -113,6 +113,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 ################################################################
 
 # Build flow tools
+add_subdirectory(abc)
 add_subdirectory(ifp)
 add_subdirectory(odb)
 add_subdirectory(sta)
