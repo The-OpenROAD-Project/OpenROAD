@@ -188,6 +188,7 @@ target_link_libraries(openroad
   par
   utl
   pdn
+  libabc #libabc is the library target defined by abc
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
