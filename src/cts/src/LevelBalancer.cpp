@@ -58,7 +58,7 @@ void LevelBalancer::run()
 unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 {
   unsigned maxDepth = 0;
-  for (auto child : parent->getChildren()) {
+  for (const auto& child : parent->getChildren()) {
     unsigned depth = computeMaxTreeDepth(child) + 1; //also count itself - non sink inst
     odb::dbObject* driverPin = child->getClock().getDriverPin();
     if (driverPin && driverPin->getObjectType() == odb::dbITermObj) {
@@ -149,7 +149,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, un
     subNet.removeSinks(instsToRemove);
     subNet.setLeafLevel(false);
     unsigned subClusterCnt = 0;
-    for (auto cluster : subClusters) {
+    for (const auto& cluster : subClusters) {
       unsigned clusterLevel = cluster.first;
       unsigned bufLevels = maxTreeDepth - clusterLevel;
       subClusterCnt++;

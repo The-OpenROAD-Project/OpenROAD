@@ -504,7 +504,7 @@ void TechChar::initCharacterization()
     _logger->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
   odb::dbMaster* testBuf = nullptr;
-  for (std::string masterString : masterVector) {
+  for (const std::string& masterString : masterVector) {
     testBuf = _db->findMaster(masterString.c_str());
     if (testBuf == nullptr) {
       _logger->error(CTS, 74, "Buffer {} not found. Check your -buf_list input.", masterString);
@@ -768,7 +768,7 @@ void TechChar::setParasitics(
     unsigned setupWirelength)
 {
   // For each topology...
-  for (SolutionData solution : topologiesVector) {
+  for (const SolutionData& solution : topologiesVector) {
     // For each net in the topolgy -> set the parasitics.
     for (unsigned netIndex = 0; netIndex < solution.netVector.size();
          ++netIndex) {

@@ -85,7 +85,7 @@ void HTreeBuilder::preSinkClustering(
   unsigned clusterCount = 0;
 
   std::vector<std::pair<float, float>> newSinkLocations;
-  for (std::vector<unsigned> cluster : matching.sinkClusteringSolution()) {
+  for (const std::vector<unsigned>& cluster : matching.sinkClusteringSolution()) {
     if (cluster.size() == 1) {
       const std::pair<float, float>& point = points[cluster[0]];
       newSinkLocations.emplace_back(point);
@@ -663,7 +663,7 @@ void HTreeBuilder::initSecondLevelSinks(
     std::vector<const ClockInst*> &sinkInsts)
 {
   sinkLocations.clear();
-  for (auto buf : _topLevelSinksClustered) {
+  for (const auto& buf : _topLevelSinksClustered) {
     sinkLocations.emplace_back(buf.first, buf.second);
     Point<double> bufPos(buf.first, buf.second);
     sinkInsts.emplace_back(_mapLocationToSink[bufPos]);

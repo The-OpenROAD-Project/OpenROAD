@@ -338,7 +338,7 @@ int TritonCTS::setClockNets(const char* names)
 
   std::vector<odb::dbNet*> netObjects;
 
-  for (std::string name : nets) {
+  for (const std::string& name : nets) {
     odb::dbNet* net = block->findNet(name.c_str());
     bool netFound = false;
     if (net != nullptr) {
@@ -409,7 +409,7 @@ void TritonCTS::populateTritonCTS()
   }
 
   // Iterate over all the nets found by the user-input and dbSta
-  for (auto clockInfo : clockNetsInfo) {
+  for (const auto& clockInfo : clockNetsInfo) {
      std::set<odb::dbNet *> clockNets = clockInfo.first;
      std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
