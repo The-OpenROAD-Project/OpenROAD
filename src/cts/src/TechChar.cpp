@@ -700,7 +700,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
             = bufInstance->findITerm(_charBufIn.c_str());
         odb::dbITerm* bufInstanceOutPin
             = bufInstance->findITerm(_charBufOut.c_str());
-        odb::dbITerm::connect(bufInstanceInPin, net);
+        bufInstanceInPin->connect(net);
         // Updates the topology with the old net and number of nodes that didn't
         // have buffers until now.
         topology.netVector.push_back(net);
@@ -712,7 +712,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                               + std::to_string(wireCounter);
         net = odb::dbNet::create(_charBlock, netName.c_str());
         odb::dbWire::create(net);
-        odb::dbITerm::connect(bufInstanceOutPin, net);
+        bufInstanceOutPin->connect(net);
         net->setSigType(odb::dbSigType::SIGNAL);
         // Updates the topology wih the new instance and the current topology
         // (as a vector of strings).

@@ -253,7 +253,7 @@ void TritonRoute::init()
   pa.setDebug(debug_.get(), db_);
   pa.main();
   if (GUIDE_FILE != string("")) {
-    parser.postProcessGuide();
+    parser.postProcessGuide(db_);
   }
   // GR-related
   parser.initRPin();
@@ -309,7 +309,7 @@ int TritonRoute::main()
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.postProcessGuide();
+    parser.postProcessGuide(db_);
   }
   prep();
   ta();

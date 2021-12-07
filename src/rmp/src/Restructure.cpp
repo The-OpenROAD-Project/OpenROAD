@@ -482,8 +482,8 @@ void Restructure::removeConstCells()
           auto new_inst
               = odb::dbInst::create(block_, const_master, inst_name.c_str());
           if (new_inst) {
-            odb::dbITerm::disconnect(iterm);
-            odb::dbITerm::connect(new_inst->getITerm(const_port), net);
+            iterm->disconnect();
+            new_inst->getITerm(const_port)->connect(net);
           } else
             logger_->warn(RMP, 35, "Could not create instance {}.", inst_name);
         }
@@ -508,7 +508,7 @@ void Restructure::removeConstCells()
 void Restructure::removeConstCell(odb::dbInst* inst)
 {
   for (auto iterm : inst->getITerms())
-    odb::dbITerm::disconnect(iterm);
+    iterm->disconnect();
   odb::dbInst::destroy(inst);
 }
 

@@ -9,7 +9,8 @@
       [-pad_inst_pattern pad_inst_pattern] \
       [-pad_pin_pattern pad_pin_pattern] \
       [-pin_layer pin_layer_name] \
-      [-connect_by_abutment signal_list]
+      [-connect_by_abutment signal_list] \
+      [-allow_filler_overlap]
 ```
 ## Description
 
@@ -25,6 +26,7 @@ The -pad_pin_pattern option is used to define a pattern that is to be used to de
 
 The -connect_by_abutment option is used to define the list of signals that are connected by abutment through the padring. The placement of breaker cells within the padring can result in these signals being split into a number of different nets.
 
+The -allow_filler_overlap option allows the smallest filler cell to be inserted into a space which is smaller than its width, resulting in overlaping with padcells. Use this option if you library cells are designed such that the smallest filler cell will not cause DRC violation when overlapping the edge of the pad cells. By default overlapping filler cells is not allowed. 
 
 ## Options
 
@@ -40,6 +42,7 @@ The -connect_by_abutment option is used to define the list of signals that are c
 | -pad_pin_pattern | Specify the name of the signal to connect to the padcell based upon the given format string. The format string is expected to include %s somewhere within the string, which will be replaced by the signal name associated with the pad instance. |
 | -pin_layer | Specify the layer which is to be used to create a top level pin over the pin of the padcell. The creation of a physical pin at this location identifies pin locations for LVS (layout-versus-schematic) verification. |
 | -connect_by_abutment | Specify the list of signals that connect by abutment in the padring. The placement of breaker cells in the padring will split these signals into separate nets as required. |
+| -allow_filler_overlap | Allow the insertion of the smallest IO filler cell to overlap with padcells. Only use when this is supported by the IO library you are using. |
 
 ## Examples
 ```
@@ -51,7 +54,8 @@ set_padring_options \
   -pad_inst_pattern "u_%s" \
   -pad_pin_pattern "p_%s" \
   -pin_layer metal10 \
-  -connect_by_abutment {SNS RETN DVDD DVSS}
+  -connect_by_abutment {SNS RETN DVDD DVSS} \
+  -allow_filler_overlap
 
 ```
 
