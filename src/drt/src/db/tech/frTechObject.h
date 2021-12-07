@@ -433,6 +433,7 @@ class frTechObject
     (ar) & viaForbiddenPlanarLen;
     (ar) & line2LineForbiddenLen;
     (ar) & viaForbiddenThrough;
+    (ar) & hasVia2viaMinStep_;
   }
 
   friend class boost::serialization::access;

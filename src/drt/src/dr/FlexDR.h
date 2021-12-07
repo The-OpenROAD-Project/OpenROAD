@@ -122,6 +122,7 @@ class FlexDR
                       unsigned short port,
                       const std::string& dir)
   {
+    dist_on_ = true;
     dist_ = dist;
     dist_ip_ = ip;
     dist_port_ = port;
@@ -144,6 +145,7 @@ class FlexDR
 
   // distributed
   dst::Distributed* dist_;
+  bool dist_on_;
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
@@ -210,7 +212,7 @@ class FlexDRWorker;
 class FlexDRWorkerRegionQuery
 {
  public:
-  FlexDRWorkerRegionQuery(FlexDRWorker* in = 0);  // =0 just for serialization
+  FlexDRWorkerRegionQuery(FlexDRWorker* in);
   ~FlexDRWorkerRegionQuery();
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
@@ -227,7 +229,7 @@ class FlexDRWorkerRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
-
+  FlexDRWorkerRegionQuery() : FlexDRWorkerRegionQuery(nullptr) {}
   // We will have to use explicit instantiation because the impl is private
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
@@ -276,15 +278,6 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker()
-      :  // for serialization
-        logger_(nullptr),
-        graphics_(nullptr),
-        debugSettings_(nullptr),
-        via_data_(nullptr),
-        gcWorker_(nullptr)
-  {
-  }
   FlexDRWorker(const FlexDRViaData* via_data, frDesign* design, Logger* logger)
       : design_(design),
         logger_(logger),
@@ -314,6 +307,16 @@ class FlexDRWorker
         gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
+        gcWorker_(nullptr)
+  {
+  }
+  FlexDRWorker()
+      :  // for serialization
+        logger_(nullptr),
+        graphics_(nullptr),
+        debugSettings_(nullptr),
+        via_data_(nullptr),
+        rq_(nullptr),
         gcWorker_(nullptr)
   {
   }

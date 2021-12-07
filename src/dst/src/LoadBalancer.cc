@@ -30,8 +30,9 @@
 
 #include <boost/bind.hpp>
 
-using namespace boost::asio;
-using ip::tcp;
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 namespace dst {
 
 void LoadBalancer::start_accept()
@@ -42,10 +43,10 @@ void LoadBalancer::start_accept()
                          boost::bind(&LoadBalancer::handle_accept,
                                      this,
                                      connection,
-                                     boost::asio::placeholders::error));
+                                     asio::placeholders::error));
 }
 
-LoadBalancer::LoadBalancer(boost::asio::io_service& io_service,
+LoadBalancer::LoadBalancer(asio::io_service& io_service,
                            utl::Logger* logger,
                            unsigned short port)
     : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)), logger_(logger)
@@ -58,9 +59,9 @@ void LoadBalancer::addWorker(std::string ip,
                              unsigned short port,
                              unsigned short avail)
 {
-  workers_.push(worker(address::from_string(ip), port, avail));
+  workers_.push(worker(ip::address::from_string(ip), port, avail));
 }
-void LoadBalancer::updateWorker(address ip, unsigned short port)
+void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
 {
   // std::unique_lock lock(workers_mutex_);
   workers_mutex_.lock();
@@ -81,7 +82,7 @@ void LoadBalancer::handle_accept(BalancerConHandler::pointer connection,
   if (!err) {
     // std::unique_lock lock(workers_mutex_);
     workers_mutex_.lock();
-    address workerAddress;
+    ip::address workerAddress;
     unsigned short port;
     if (!workers_.empty()) {
       worker w = workers_.top();

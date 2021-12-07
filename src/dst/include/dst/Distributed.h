@@ -39,8 +39,10 @@ namespace utl {
 class Logger;
 }
 
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 namespace dst {
-class LoadBalancer;
 class JobMessage;
 class JobCallBack;
 
@@ -57,7 +59,7 @@ class Distributed
                const char* ip,
                unsigned short port,
                JobMessage& result);
-  bool sendResult(JobMessage& result, boost::asio::ip::tcp::socket& sock);
+  bool sendResult(JobMessage& result, tcp::socket& sock);
   void addCallBack(JobCallBack* cb);
   const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
 

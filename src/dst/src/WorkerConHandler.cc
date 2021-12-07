@@ -40,13 +40,12 @@
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "utl/Logger.h"
-using namespace boost::asio;
-using ip::tcp;
-using std::cout;
-using std::endl;
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 namespace dst {
 
-WorkerConHandler::WorkerConHandler(boost::asio::io_service& io_service,
+WorkerConHandler::WorkerConHandler(asio::io_service& io_service,
                                    Distributed* dist,
                                    utl::Logger* logger)
     : sock(io_service), dist_(dist), logger_(logger)
@@ -68,7 +67,6 @@ void WorkerConHandler::start()
                                 std::size_t bytes_xfer) {
         std::thread t1(&WorkerConHandler::handle_read, me, ec, bytes_xfer);
         t1.detach();
-        // me->handle_read(ec, bytes_xfer);
       });
 }
 
@@ -86,7 +84,7 @@ void WorkerConHandler::handle_read(boost::system::error_code const& err,
                     "Received malformed msg {} from port {}",
                     data,
                     sock.remote_endpoint().port());
-      boost::asio::write(sock, boost::asio::buffer("0"), error);
+      asio::write(sock, asio::buffer("0"), error);
       sock.close();
       return;
     }
@@ -103,7 +101,7 @@ void WorkerConHandler::handle_read(boost::system::error_code const& err,
                       "Unsupported job type {} from port {}",
                       msg.type,
                       sock.remote_endpoint().port());
-        boost::asio::write(sock, boost::asio::buffer("0"), error);
+        asio::write(sock, asio::buffer("0"), error);
         sock.close();
         break;
     }

@@ -120,17 +120,19 @@ class frBlock : public frBlockObject
   {
     return insts_;
   }
-  frInst* findInst(std::string name) const {
-    if(name2inst_.find(name) != name2inst_.end())
+  frInst* findInst(std::string name) const
+  {
+    if (name2inst_.find(name) != name2inst_.end())
       return name2inst_.at(name);
     else
       return nullptr;
   }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
-  frNet* findNet(std::string name) const {
-    if(name2net_.find(name) != name2net_.end())
+  frNet* findNet(std::string name) const
+  {
+    if (name2net_.find(name) != name2net_.end())
       return name2net_.at(name);
-    else if(name2snet_.find(name) != name2snet_.end())
+    else if (name2snet_.find(name) != name2snet_.end())
       return name2snet_.at(name);
     else
       return nullptr;

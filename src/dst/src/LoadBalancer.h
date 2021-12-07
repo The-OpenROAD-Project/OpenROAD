@@ -37,18 +37,19 @@ namespace utl {
 class Logger;
 }
 
-using namespace boost::asio;
-using namespace ip;
+namespace asio = boost::asio;
+namespace ip = asio::ip;
+using asio::ip::tcp;
 namespace dst {
 class LoadBalancer
 {
  private:
   struct worker
   {
-    address ip_;
+    ip::address ip_;
     unsigned short port_;
     unsigned short priority_;
-    worker(address ip, unsigned short port, unsigned short priority)
+    worker(ip::address ip, unsigned short port, unsigned short priority)
         : ip_(ip), port_(port), priority_(priority)
     {
     }
@@ -62,10 +63,10 @@ class LoadBalancer
   };
 
   tcp::acceptor acceptor_;
-  io_service* service;
+  asio::io_service* service;
   utl::Logger* logger_;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
-  boost::asio::detail::mutex workers_mutex_;
+  asio::detail::mutex workers_mutex_;
 
   void start_accept();
   void handle_accept(BalancerConHandler::pointer connection,
@@ -73,10 +74,10 @@ class LoadBalancer
 
  public:
   // constructor for accepting connection from client
-  LoadBalancer(boost::asio::io_service& io_service,
+  LoadBalancer(asio::io_service& io_service,
                utl::Logger* logger,
                unsigned short port = 1234);
   void addWorker(std::string ip, unsigned short port, unsigned short avail);
-  void updateWorker(address ip, unsigned short port);
+  void updateWorker(ip::address ip, unsigned short port);
 };
 }  // namespace dst

@@ -743,6 +743,7 @@ class frLayer
     (ar) & numMasks;
     (ar) & dir;
     (ar) & defaultViaDef;
+    (ar) & hasMinStepViol;
     (ar) & viaDefs;
     (ar) & cutClasses;
     (ar) & name2CutClassIdxMap;

@@ -30,8 +30,9 @@
 
 #include <boost/bind.hpp>
 
-using namespace boost::asio;
-using ip::tcp;
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 namespace dst {
 
 void Worker::start_accept()
@@ -42,10 +43,10 @@ void Worker::start_accept()
                          boost::bind(&Worker::handle_accept,
                                      this,
                                      connection,
-                                     boost::asio::placeholders::error));
+                                     asio::placeholders::error));
 }
 
-Worker::Worker(boost::asio::io_service& io_service,
+Worker::Worker(asio::io_service& io_service,
                Distributed* dist,
                utl::Logger* logger,
                unsigned short port)

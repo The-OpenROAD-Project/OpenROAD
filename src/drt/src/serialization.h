@@ -485,9 +485,6 @@ void register_types(Archive& ar)
   ar.template register_type<frSpacingSamenetConstraint>();
   ar.template register_type<frSpacingTableInfluenceConstraint>();
   ar.template register_type<frSpacingEndOfLineConstraint>();
-  // ar.template register_type<frLef58CutSpacingTableLayerConstraint>();
-  // ar.template register_type<frLef58CutSpacingTablePrlConstraint>();
-  // ar.template register_type<frLef58CutSpacingTableConstraint>();
   ar.template register_type<frSpacingTablePrlConstraint>();
   ar.template register_type<frSpacingTableTwConstraint>();
   ar.template register_type<frSpacingTableConstraint>();
@@ -529,7 +526,6 @@ void register_types(Archive& ar)
   ar.template register_type<frVia>();
   ar.template register_type<frTrackPattern>();
   ar.template register_type<frBox3D>();
-  // ar.template register_type<frBlock>();
 }
 
 template <class Archive>

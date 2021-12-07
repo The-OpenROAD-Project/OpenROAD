@@ -35,15 +35,16 @@ namespace utl {
 class Logger;
 }
 
-using namespace boost::asio;
-using namespace ip;
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 namespace dst {
 class Distributed;
 class Worker
 {
  private:
   tcp::acceptor acceptor_;
-  io_service* service;
+  asio::io_service* service;
   Distributed* dist_;
   utl::Logger* logger_;
   void start_accept();
@@ -52,7 +53,7 @@ class Worker
 
  public:
   // constructor for accepting connection from client
-  Worker(boost::asio::io_service& io_service,
+  Worker(asio::io_service& io_service,
          Distributed* dist,
          utl::Logger* logger,
          unsigned short port);

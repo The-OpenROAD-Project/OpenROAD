@@ -102,7 +102,7 @@ class TritonRoute
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
   void setDistributed(bool on = true);
-  void setDistIpPort(std::string ip_port);
+  void setWorkerIpPort(const char* ip_port);
   void setSharedVolume(const std::string& vol);
   void setDebugPaCombining(bool on = true);
   void reportConstraints();

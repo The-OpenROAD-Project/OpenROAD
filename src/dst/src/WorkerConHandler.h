@@ -29,8 +29,8 @@
 #pragma once
 #include <boost/asio.hpp>
 #include <boost/enable_shared_from_this.hpp>
-using namespace boost::asio;
-using ip::tcp;
+namespace asio = boost::asio;
+using asio::ip::tcp;
 namespace utl {
 class Logger;
 }
@@ -41,15 +41,15 @@ class WorkerConHandler : public boost::enable_shared_from_this<WorkerConHandler>
  private:
   tcp::socket sock;
   Distributed* dist_;
-  streambuf in_packet_;
+  asio::streambuf in_packet_;
   utl::Logger* logger_;
 
  public:
   typedef boost::shared_ptr<WorkerConHandler> pointer;
-  WorkerConHandler(boost::asio::io_service& io_service,
+  WorkerConHandler(asio::io_service& io_service,
                    Distributed* dist,
                    utl::Logger* logger);
-  static pointer create(boost::asio::io_service& io_service,
+  static pointer create(asio::io_service& io_service,
                         Distributed* dist,
                         utl::Logger* logger)
   {

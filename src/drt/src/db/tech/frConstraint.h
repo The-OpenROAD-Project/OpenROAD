@@ -54,6 +54,27 @@ enum class frLef58CornerSpacingExceptionEnum
   EXCEPTSAMEMETAL
 };
 
+struct drEolSpacingConstraint
+{
+  drEolSpacingConstraint(frCoord width = 0,
+                         frCoord space = 0,
+                         frCoord within = 0)
+      : eolWidth(width), eolSpace(space), eolWithin(within)
+  {
+  }
+  frCoord eolWidth;
+  frCoord eolSpace;
+  frCoord eolWithin;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & eolWidth;
+    (ar) & eolSpace;
+    (ar) & eolWithin;
+  }
+  friend class boost::serialization::access;
+};
+
 // base type for design rule
 class frConstraint
 {
@@ -935,7 +956,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   // getters
   bool hasOppositeWidth() const { return hOppositeWidth; }
   frCoord getOppositeWidth() const { return oppositeWidth; }
-  frCoord getEolWithin() const { return sameMask ? 0 :eolWithin; }
+  frCoord getEolWithin() const { return sameMask ? 0 : eolWithin; }
   frCoord getWrongDirWithin() const { return wrongDirWithin; }
   bool hasSameMask() const { return sameMask; }
   bool hasExceptExactWidth() const
@@ -1469,11 +1490,17 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   // constructor
   frLef58CutSpacingTableConstraint(
       odb::dbTechLayerCutSpacingTableDefRule* dbRule)
-      : db_rule_(dbRule), default_spacing_({0, 0}), default_center2center_(false), default_centerAndEdge_(false)
+      : db_rule_(dbRule),
+        default_spacing_({0, 0}),
+        default_center2center_(false),
+        default_centerAndEdge_(false)
   {
   }
   // setter
-  void setDefaultSpacing(const std::pair<frCoord, frCoord>& value) { default_spacing_ = value; }
+  void setDefaultSpacing(const std::pair<frCoord, frCoord>& value)
+  {
+    default_spacing_ = value;
+  }
   void setDefaultCenterToCenter(bool value) { default_center2center_ = value; }
   void setDefaultCenterAndEdge(bool value) { default_centerAndEdge_ = value; }
   // getter
@@ -1485,7 +1512,10 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   {
     logger->report("CUTSPACINGTABLE");
   }
-  std::pair<frCoord, frCoord> getDefaultSpacing() const { return default_spacing_; }
+  std::pair<frCoord, frCoord> getDefaultSpacing() const
+  {
+    return default_spacing_;
+  }
   bool getDefaultCenterToCenter() const { return default_center2center_; }
   bool getDefaultCenterAndEdge() const { return default_centerAndEdge_; }
   // others
@@ -2672,6 +2702,7 @@ class frNonDefaultRule
     (ar) & widths_;
     (ar) & spacings_;
     (ar) & wireExtensions_;
+    (ar) & drEolCons_;
     (ar) & minCuts_;
     (ar) & vias_;
     (ar) & viasRules_;
@@ -2681,6 +2712,7 @@ class frNonDefaultRule
   }
 
   friend class boost::serialization::access;
+
  public:
   frViaDef* getPrefVia(int z)
   {

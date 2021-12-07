@@ -316,6 +316,8 @@ class frVia : public frRef
     (ar) & viaDef_;
     (ar) & owner_;
     (ar) & tapered_;
+    (ar) & bottomConnected_;
+    (ar) & topConnected_;
     // iter is handled by the owner
   }
 

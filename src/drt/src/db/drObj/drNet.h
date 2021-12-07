@@ -66,16 +66,13 @@ class drNet : public drBlockObject
         routed_(false),
         origGuides_()
   {
-    if(fNet_ != nullptr){
-      if (hasNDR())
-        maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
-      if (isClockNetTrunk())
-        maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
-      else if (isClockNetLeaf())
-        maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_LEAF_RIPUP_HARDINESS);
-    }
+    if (hasNDR())
+      maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
+    if (isClockNetTrunk())
+      maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
+    else if (isClockNetLeaf())
+      maxRipupAvoids_ = std::max((int)maxRipupAvoids_, CLOCK_NETS_LEAF_RIPUP_HARDINESS);
   }
-  drNet() : drNet(nullptr) {} // for serialization
   // getters
   const std::vector<std::unique_ptr<drPin>>& getPins() const { return pins_; }
   const std::vector<std::unique_ptr<drConnFig>>& getExtConnFigs() const
@@ -233,6 +230,7 @@ class drNet : public drBlockObject
 
   std::vector<frRect> origGuides_;
 
+  drNet() {} // for serialization
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

@@ -35,7 +35,7 @@
 
 %{
 
-#include <string>
+#include <string.h>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  
@@ -85,12 +85,11 @@ void detailed_route_cmd(const char* guideFile,
                     bottomRoutingLayer,
                     topRoutingLayer,
                     verbose});
-  std::string ip_port = distributed;
-  if(ip_port == "")
+  if(strlen(distributed) == 0)
     router->setDistributed(false);
   else {
     router->setDistributed(true);
-    router->setDistIpPort(distributed);
+    router->setWorkerIpPort(distributed);
     router->setSharedVolume(sharedVolume);
   }
   router->main();

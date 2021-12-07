@@ -38,10 +38,10 @@
 #include "dst/JobMessage.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#define MAX_TRIALS 5
+namespace dst {
+  const int MAX_TRIALS = 5;
+}
 
-using namespace boost::asio;
-using ip::tcp;
 using namespace dst;
 
 namespace sta {
@@ -72,7 +72,7 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
 void Distributed::runWorker(unsigned short port)
 {
   try {
-    io_service io_service;
+    asio::io_service io_service;
     Worker worker(io_service, this, logger_, port);
     io_service.run();
   } catch (std::exception& e) {
@@ -83,7 +83,7 @@ void Distributed::runWorker(unsigned short port)
 void Distributed::runLoadBalancer(unsigned short port)
 {
   try {
-    io_service io_service;
+    asio::io_service io_service;
     LoadBalancer balancer(io_service, logger_, port);
     for (auto worker : workers_)
       balancer.addWorker(worker.first, worker.second, 10);
@@ -103,7 +103,7 @@ bool sendMsg(tcp::socket& sock, const std::string& msg, std::string& errorMsg)
   int trials = 0;
   while (trials < MAX_TRIALS) {
     boost::system::error_code error;
-    write(sock, buffer(msg), error);
+    write(sock, asio::buffer(msg), error);
     if (!error) {
       errorMsg = "";
       return true;
@@ -116,13 +116,13 @@ bool sendMsg(tcp::socket& sock, const std::string& msg, std::string& errorMsg)
 bool readMsg(tcp::socket& sock, std::string& dataStr)
 {
   boost::system::error_code error;
-  streambuf receive_buffer;
-  read(sock, receive_buffer, transfer_all(), error);
-  if (error && error != error::eof) {
+  asio::streambuf receive_buffer;
+  asio::read(sock, receive_buffer, asio::transfer_all(), error);
+  if (error && error != asio::error::eof) {
     dataStr = error.message();
     return false;
   } else {
-    const char* data = buffer_cast<const char*>(receive_buffer.data());
+    const char* data = asio::buffer_cast<const char*>(receive_buffer.data());
     dataStr = data;
     if (dataStr == "")
       return false;
@@ -144,7 +144,7 @@ bool Distributed::sendJob(JobMessage& msg,
   std::string resultStr = "";
   while (trials < MAX_TRIALS) {
     trials++;
-    io_service io_service;
+    asio::io_service io_service;
     tcp::socket sock(io_service);
     try {
       sock.connect(tcp::endpoint(ip::address::from_string(ip), port));

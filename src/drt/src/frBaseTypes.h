@@ -47,6 +47,9 @@
 namespace odb {
   class Rect;
 }
+namespace boost::serialization{
+  class access;
+}
 
 namespace fr {
 using Logger = utl::Logger;
@@ -279,7 +282,6 @@ struct frDebugSettings
         y(-1),
         iter(0),
         paMarkers(false),
-        dist(false),
         paCombining(false)
   {
   }
@@ -298,29 +300,7 @@ struct frDebugSettings
   int y;
   int iter;
   bool paMarkers;
-  bool dist;
   bool paCombining;
-};
-
-struct drEolSpacingConstraint
-{
-  drEolSpacingConstraint(frCoord width = 0,
-                         frCoord space = 0,
-                         frCoord within = 0)
-      : eolWidth(width), eolSpace(space), eolWithin(within)
-  {
-  }
-  frCoord eolWidth;
-  frCoord eolSpace;
-  frCoord eolWithin;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & eolWidth;
-    (ar) & eolSpace;
-    (ar) & eolWithin;
-  }
-  friend class boost::serialization::access;
 };
 
 // Avoids the need to split the whole serializer like

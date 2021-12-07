@@ -97,7 +97,7 @@ static bool writeGlobals(const std::string& name)
 }
 
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn), logger_(loggerIn), db_(dbIn)
+    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
 {
 }
 
@@ -1675,7 +1675,7 @@ void FlexDR::searchRepair(int iter,
     MARKERDECAY = 0.99;
   if (iter == 50)
     MARKERDECAY = 0.999;
-  if (dist_) {
+  if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
       if (iter != 0)
         std::remove(globals_path_.c_str());
@@ -1744,7 +1744,8 @@ void FlexDR::searchRepair(int iter,
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
-      worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
+      if (dist_on_)
+        worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
         //   cout << "@@@ debug: " << i << " " << j << endl;
@@ -1786,7 +1787,7 @@ void FlexDR::searchRepair(int iter,
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if (dist_)
+          if (dist_on_)
             workersInBatch[i]->distributedMain(getDesign(),
                                                globals_path_.c_str());
           else

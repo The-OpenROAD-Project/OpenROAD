@@ -37,12 +37,12 @@
 #include "LoadBalancer.h"
 #include "utl/Logger.h"
 
-using namespace boost::asio;
-using ip::tcp;
-using std::cout;
-using std::endl;
+namespace asio = boost::asio;
+namespace ip = asio::ip;
+using asio::ip::tcp;
+
 namespace dst {
-BalancerConHandler::BalancerConHandler(boost::asio::io_service& io_service,
+BalancerConHandler::BalancerConHandler(asio::io_service& io_service,
                                        LoadBalancer* owner,
                                        utl::Logger* logger)
     : sock(io_service), owner_(owner), logger_(logger)
@@ -78,14 +78,14 @@ void BalancerConHandler::handle_read(boost::system::error_code const& err,
     else {
       logger_->info(
           utl::DST, 7, "Sending to {}/{}", workerAddress.to_string(), port);
-      boost::asio::io_service io_service;
+      asio::io_service io_service;
       tcp::socket socket(io_service);
       socket.connect(tcp::endpoint(workerAddress, port));
-      boost::asio::write(socket, in_packet_, error);
-      boost::asio::streambuf receive_buffer;
-      boost::asio::read(
-          socket, receive_buffer, boost::asio::transfer_all(), error);
-      boost::asio::write(sock, receive_buffer, error);
+      asio::write(socket, in_packet_, error);
+      asio::streambuf receive_buffer;
+      asio::read(
+          socket, receive_buffer, asio::transfer_all(), error);
+      asio::write(sock, receive_buffer, error);
     }
 
   } else {

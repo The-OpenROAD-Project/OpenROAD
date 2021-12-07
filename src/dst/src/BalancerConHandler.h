@@ -30,8 +30,10 @@
 #include <boost/asio.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-using namespace boost::asio;
-using ip::tcp;
+namespace asio = boost::asio;
+namespace ip = asio::ip;
+using asio::ip::tcp;
+
 namespace utl {
 class Logger;
 }
@@ -43,16 +45,16 @@ class BalancerConHandler
 {
  private:
   tcp::socket sock;
-  streambuf in_packet_;
+  asio::streambuf in_packet_;
   utl::Logger* logger_;
   LoadBalancer* owner_;
 
  public:
   typedef boost::shared_ptr<BalancerConHandler> pointer;
-  BalancerConHandler(boost::asio::io_service& io_service,
+  BalancerConHandler(asio::io_service& io_service,
                      LoadBalancer* owner,
                      utl::Logger* logger);
-  static pointer create(boost::asio::io_service& io_service,
+  static pointer create(asio::io_service& io_service,
                         LoadBalancer* owner,
                         utl::Logger* logger)
   {
