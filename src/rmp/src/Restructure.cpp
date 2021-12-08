@@ -219,10 +219,10 @@ void Restructure::runABC()
                  "Writing ABC script file {}.",
                  abc_script_file);
       if (writeAbcScript(abc_script_file)) {
-        std::string abc_command = std::string("yosys-abc -F ") + abc_script_file;
+        std::string abc_command = std::string("abc -F ") + abc_script_file;
         if (logfile_ != "")
           abc_command
-              = abc_command + " >& " + logfile_ + std::to_string(temp_mode_idx);
+              = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
 
         pid_t child_pid = fork();
         if (child_pid == 0) {  // Begin child
