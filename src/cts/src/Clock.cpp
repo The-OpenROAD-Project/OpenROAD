@@ -35,14 +35,14 @@
 
 #include "Clock.h"
 
-#include "utl/Logger.h"
-
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
+
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -58,7 +58,8 @@ void Clock::report(utl::Logger* _logger) const
 
   _logger->report("\tPin name \tPos");
   forEachSink([&](const ClockInst& sink) {
-    _logger->report("\t {} \t ({}, {})", sink.getName(), sink.getX(), sink.getY());
+    _logger->report(
+        "\t {} \t ({}, {})", sink.getName(), sink.getX(), sink.getY());
   });
 }
 
