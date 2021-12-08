@@ -34,14 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Clustering.h"
+
+#include <float.h>
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include <lemon/network_simplex.h>
-#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/timeb.h>
 #include <time.h>
+
 #include <algorithm>
 #include <array>
 #include <fstream>
@@ -140,8 +142,8 @@ void clustering::fixSegmentLengths(std::vector<std::pair<float, float>>& _means)
     float minY = std::min(_means[midIdx].second, _means[midIdx + 1].second);
     float maxX = std::max(_means[midIdx].first, _means[midIdx + 1].first);
     float maxY = std::max(_means[midIdx].second, _means[midIdx + 1].second);
-    branchingPoint
-        = std::make_pair(minX + (maxX - minX) / 2.0, minY + (maxY - minY) / 2.0);
+    branchingPoint = std::make_pair(minX + (maxX - minX) / 2.0,
+                                    minY + (maxY - minY) / 2.0);
   }
 
   fixSegment(branchingPoint, _means[midIdx], segmentLength / 2.0);
@@ -184,8 +186,8 @@ float clustering::Kmeans(unsigned N,
   for (long int i = 0; i < flops.size(); ++i) {
     flops[i].dists[IDX] = 0;
     for (long int j = 0; j < N; ++j) {
-      flops[i].dists[IDX]
-          += calcDist(std::make_pair(means[j].first, means[j].second), &flops[i]);
+      flops[i].dists[IDX] += calcDist(
+          std::make_pair(means[j].first, means[j].second), &flops[i]);
     }
   }
 
@@ -217,18 +219,18 @@ float clustering::Kmeans(unsigned N,
       int position = 0;
       if (f->match_idx[IDX].first >= 0 && f->match_idx[IDX].first < N) {
         position = f->match_idx[IDX].first;
-      }
-      else{
-
+      } else {
         // Added to check wrong assignment
 
         float minimumDist;
         int minimumDistClusterIndex = -1;
 
-        // Initialize minimumDist and minimumDistClusterIndex with a cluster with size < CAP
+        // Initialize minimumDist and minimumDistClusterIndex with a cluster
+        // with size < CAP
         for (long int j = 0; j < means.size(); ++j) {
-          if(clusters[j].size() < CAP){
-            minimumDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+          if (clusters[j].size() < CAP) {
+            minimumDist
+                = calcDist(std::make_pair(means[j].first, means[j].second), f);
             minimumDistClusterIndex = j;
             break;
           }
@@ -237,13 +239,13 @@ float clustering::Kmeans(unsigned N,
         if (minimumDistClusterIndex == -1) {
           // No cluster with size < CAP
           minimumDistClusterIndex = 0;
-        }
-        else {
+        } else {
           // Nearest Cluster with size < CAP
           for (long int j = 0; j < means.size(); ++j) {
-            if(clusters[j].size() < CAP) {
-              float currentDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
-              if(currentDist < minimumDist){
+            if (clusters[j].size() < CAP) {
+              float currentDist = calcDist(
+                  std::make_pair(means[j].first, means[j].second), f);
+              if (currentDist < minimumDist) {
                 minimumDist = currentDist;
                 minimumDistClusterIndex = j;
               }
@@ -252,7 +254,6 @@ float clustering::Kmeans(unsigned N,
         }
 
         position = minimumDistClusterIndex;
-      
       }
       clusters[position].push_back(f);
     }
@@ -270,8 +271,8 @@ float clustering::Kmeans(unsigned N,
       float pre_y = means[i].second;
 
       if (clusters[i].size() > 0) {
-        means[i]
-            = std::make_pair(sum_x / clusters[i].size(), sum_y / clusters[i].size());
+        means[i] = std::make_pair(sum_x / clusters[i].size(),
+                                  sum_y / clusters[i].size());
         delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
       }
     }
@@ -386,8 +387,13 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     o_edges.push_back(e);
   }
 
-  debugPrint(_logger, CTS, "tritoncts", 1, 
-          "Graph has {} nodes and {} edges", countNodes(g), countArcs(g)); 
+  debugPrint(_logger,
+             CTS,
+             "tritoncts",
+             1,
+             "Graph has {} nodes and {} edges",
+             countNodes(g),
+             countArcs(g));
 
   // formulate min-cost flow
   NetworkSimplex<ListDigraph, int, int> flow(g);
@@ -419,12 +425,15 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   node_map[t] = std::make_pair(-2, std::make_pair(-2, -2));
 
   for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
-    debugPrint(_logger, CTS, "tritoncts", 2, 
-        "{}-{}", g.id(g.source(it)), g.id(g.target(it))); 
-    debugPrint(_logger, CTS, "tritoncts", 2, 
-        " cost = ", f_cost[it]); 
-    debugPrint(_logger, CTS, "tritoncts", 2, 
-        " cap = ", f_cap[it]); 
+    debugPrint(_logger,
+               CTS,
+               "tritoncts",
+               2,
+               "{}-{}",
+               g.id(g.source(it)),
+               g.id(g.target(it)));
+    debugPrint(_logger, CTS, "tritoncts", 2, " cost = ", f_cost[it]);
+    debugPrint(_logger, CTS, "tritoncts", 2, " cap = ", f_cap[it]);
   }
 
   flow.costMap(f_cost);
@@ -437,15 +446,26 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     if (f_sol[it] != 0) {
       if (node_map[g.source(it)].second.first == -1
           && node_map[g.target(it)].first == -1) {
-        debugPrint(_logger, CTS, "tritoncts", 3,"Flow from: flop_",
+        debugPrint(_logger,
+                   CTS,
+                   "tritoncts",
+                   3,
+                   "Flow from: flop_",
                    node_map[g.source(it)].first);
-        debugPrint(_logger, CTS, "tritoncts", 3," to cluster_",
+        debugPrint(_logger,
+                   CTS,
+                   "tritoncts",
+                   3,
+                   " to cluster_",
                    node_map[g.target(it)].second.first);
-        debugPrint(_logger, CTS, "tritoncts", 3," slot_",
+        debugPrint(_logger,
+                   CTS,
+                   "tritoncts",
+                   3,
+                   " slot_",
                    node_map[g.target(it)].second.second);
-        debugPrint(_logger, CTS, "tritoncts", 3," flow = ",
-                   f_sol[it]);
-        
+        debugPrint(_logger, CTS, "tritoncts", 3, " flow = ", f_sol[it]);
+
         flops[node_map[g.source(it)].first].match_idx[IDX]
             = node_map[g.target(it)].second;
       }
