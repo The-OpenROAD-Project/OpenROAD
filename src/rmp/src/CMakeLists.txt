@@ -61,7 +61,6 @@ target_include_directories(rmp
     ../include
   PRIVATE
     .
-    ../../
  )
 
 target_link_libraries(rmp 
@@ -71,4 +70,5 @@ target_link_libraries(rmp
     OpenSTA
     rsz
     utl
+    libabc
  )
