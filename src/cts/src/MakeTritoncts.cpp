@@ -34,11 +34,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "cts/MakeTritoncts.h"
+
+#include "CtsOptions.h"
 #include "cts/TritonCTS.h"
 #include "db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "CtsOptions.h"
 
 namespace sta {
 // Tcl files encoded into strings.
