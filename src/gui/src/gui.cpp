@@ -451,10 +451,31 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename, const odb::Rect& region, double dbu_per_pixel, const std::map<std::string, bool>& display_settings)
 {
-  if (!enabled()) {
-    if (db_ == nullptr) {
-      logger_->error(utl::GUI, 15, "No design loaded.");
+  if (db_ == nullptr) {
+    logger_->error(utl::GUI, 15, "No design loaded.");
+  }
+  odb::Rect save_region = region;
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const bool is_offscreen = main_window->testAttribute(Qt::WA_DontShowOnScreen) /* if not interactive this will be set */ || !enabled();
+  if (is_offscreen && use_die_area) { // if gui is active and interactive the visible are of the layout viewer will be used.
+    auto* chip = db_->getChip();
+    if (chip == nullptr) {
+      logger_->error(utl::GUI, 64, "No design loaded.");
     }
+
+    auto* block = chip->getBlock();
+    if (block == nullptr) {
+      logger_->error(utl::GUI, 65, "No design loaded.");
+    }
+
+    block->getBBox()->getBox(save_region); // get die area since screen area is not reliable
+    const double bloat_by = 0.05; // 5%
+    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
+
+    save_region.bloat(bloat, save_region);
+  }
+
+  if (!enabled()) {
     auto* tech = db_->getTech();
     if (tech == nullptr) {
       logger_->error(utl::GUI, 16, "No design loaded.");
@@ -471,10 +492,10 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     // save command
     save_cmds += "gui::save_image ";
     save_cmds += "\"" + filename + "\" ";
-    save_cmds += std::to_string(region.xMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.yMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.xMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -489,7 +510,8 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     for (const auto& [control, value] : display_settings) {
       setDisplayControlsVisible(control, value);
     }
-    main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
+
+    main_window->getLayoutViewer()->saveImage(filename.c_str(), save_region, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
