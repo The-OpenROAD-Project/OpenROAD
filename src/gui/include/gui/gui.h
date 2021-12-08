@@ -556,6 +556,10 @@ class Gui
   bool checkDisplayControlsVisible(const std::string& name);
   bool checkDisplayControlsSelectable(const std::string& name);
 
+  // Used to save and restore the display controls, useful for batch operations
+  void saveDisplayControls();
+  void restoreDisplayControls();
+
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 

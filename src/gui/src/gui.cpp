@@ -404,6 +404,16 @@ bool Gui::checkDisplayControlsSelectable(const std::string& name)
   return main_window->getControls()->checkControlByPath(name, false);
 }
 
+void Gui::saveDisplayControls()
+{
+  main_window->getControls()->save();
+}
+
+void Gui::restoreDisplayControls()
+{
+  main_window->getControls()->restore();
+}
+
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
   main_window->zoomTo(rect_dbu);
