@@ -445,8 +445,9 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     logger_->error(utl::GUI, 15, "No design loaded.");
   }
   odb::Rect save_region = region;
-  if (main_window->testAttribute(Qt::WA_DontShowOnScreen) || // if not interactive this will be set
-      !enabled()) {
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const bool is_offscreen = main_window->testAttribute(Qt::WA_DontShowOnScreen) /* if not interactive this will be set */ || !enabled();
+  if (is_offscreen && use_die_area) { // if gui is active and interactive the visible are of the layout viewer will be used.
     auto* chip = db_->getChip();
     if (chip == nullptr) {
       logger_->error(utl::GUI, 64, "No design loaded.");
