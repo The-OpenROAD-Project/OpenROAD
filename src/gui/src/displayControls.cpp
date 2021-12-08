@@ -40,6 +40,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <random>
 #include <vector>
 
 #include "db.h"
@@ -1452,6 +1453,9 @@ void DisplayControls::techInit()
   int metal = 0;
   int via = 0;
 
+  // ensure if random colors are used they are consistent
+  std::mt19937 gen_color(1);
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
@@ -1461,14 +1465,19 @@ void DisplayControls::techInit()
         color = colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else if (type == dbTechLayerType::CUT) {
       if (via < num_colors) {
-        color = colors[via++];
+        if (metal != 0) {
+          color = colors[via++];
+        } else {
+          // via came first, so pick random color
+          color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+        }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else {
       continue;
