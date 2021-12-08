@@ -855,7 +855,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
   genGuides_pinEnclosure(net, rects);
 
   vector<map<frCoord, boost::icl::interval_set<frCoord>>> intvs(
-      tech->getLayers().size());
+      min((int)tech->getLayers().size(), TOP_ROUTING_LAYER+1));
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
