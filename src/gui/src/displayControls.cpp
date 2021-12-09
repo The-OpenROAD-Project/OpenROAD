@@ -393,28 +393,31 @@ DisplayControls::~DisplayControls()
 
 void DisplayControls::createLayerMenu()
 {
-  connect(layers_menu_->addAction("Only show selected"),
+  connect(layers_menu_->addAction("Show only selected"),
           &QAction::triggered,
           [this]() {
             layerShowOnlySelectedNeighbors(0, 0);
           });
-  auto* neighbors = layers_menu_->addMenu("Show with neighboring layers");
-  connect(neighbors->addAction("1 above / 1 below"),
+
+  const QString show_range = "Show layer range ";
+  const QString down_arrow = "\u2193";
+  const QString up_arrow = "\u2191";
+  connect(layers_menu_->addAction(show_range + up_arrow + down_arrow),
           &QAction::triggered,
           [this]() {
             layerShowOnlySelectedNeighbors(1, 1);
           });
-  connect(neighbors->addAction("2 above / 2 below"),
+  connect(layers_menu_->addAction(show_range + up_arrow + up_arrow + down_arrow + down_arrow),
           &QAction::triggered,
           [this]() {
             layerShowOnlySelectedNeighbors(2, 2);
           });
-  connect(neighbors->addAction("1 above"),
+  connect(layers_menu_->addAction(show_range + down_arrow),
           &QAction::triggered,
           [this]() {
             layerShowOnlySelectedNeighbors(0, 1);
           });
-  connect(neighbors->addAction("1 below"),
+  connect(layers_menu_->addAction(show_range + up_arrow),
           &QAction::triggered,
           [this]() {
             layerShowOnlySelectedNeighbors(1, 0);
