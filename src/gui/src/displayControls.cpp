@@ -399,29 +399,38 @@ void DisplayControls::createLayerMenu()
             layerShowOnlySelectedNeighbors(0, 0);
           });
 
+
   const QString show_range = "Show layer range ";
+  const QString updown_arrow = "\u2195";
   const QString down_arrow = "\u2193";
   const QString up_arrow = "\u2191";
-  connect(layers_menu_->addAction(show_range + up_arrow + down_arrow),
-          &QAction::triggered,
-          [this]() {
-            layerShowOnlySelectedNeighbors(1, 1);
-          });
-  connect(layers_menu_->addAction(show_range + up_arrow + up_arrow + down_arrow + down_arrow),
-          &QAction::triggered,
-          [this]() {
-            layerShowOnlySelectedNeighbors(2, 2);
-          });
-  connect(layers_menu_->addAction(show_range + down_arrow),
-          &QAction::triggered,
-          [this]() {
-            layerShowOnlySelectedNeighbors(0, 1);
-          });
-  connect(layers_menu_->addAction(show_range + up_arrow),
-          &QAction::triggered,
-          [this]() {
-            layerShowOnlySelectedNeighbors(1, 0);
-          });
+  auto add_range_action = [&](int up, int down) {
+    QString arrows;
+    for (int n = 1; n < down; n++) {
+      arrows += up_arrow;
+    }
+    if (up > 0 && down > 0) {
+      arrows += updown_arrow;
+    } else if (down > 0) {
+      arrows += up_arrow;
+    } else if (up > 0) {
+      arrows += down_arrow;
+    }
+    for (int n = 1; n < up; n++) {
+      arrows += down_arrow;
+    }
+
+    connect(layers_menu_->addAction(show_range + arrows),
+            &QAction::triggered,
+            [this, up, down]() {
+              layerShowOnlySelectedNeighbors(down, up);
+            });
+  };
+
+  add_range_action(1, 1); // 1 layer above / below
+  add_range_action(2, 2); // 2 layers above / below
+  add_range_action(0, 1); // 1 layer below
+  add_range_action(1, 0); // 1 layer above
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
