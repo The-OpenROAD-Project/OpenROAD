@@ -47,6 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
+
 #include "odb/db.h"
 #include "get_voltage.h"
 #include "ir_solver.h"
@@ -133,7 +134,6 @@ void IRSolver::SolveIR()
                               col_ptr,  // read-write
                               row_idx,
                               values);
-
   vector<double>                 J = GetJ();
   Map<VectorXd>                  b(J.data(), J.size());
   VectorXd                       x;
@@ -142,6 +142,7 @@ void IRSolver::SolveIR()
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
+    //std::cout<< solver.lastErrorMessage() << std::endl;
     m_logger->error(utl::PSM, 10, "LU factorization of the G Matrix failed.");
   }
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J");
@@ -271,12 +272,17 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
-  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", m_C4Bumps.size());
-  for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
-    NodeIdx node_loc      = m_C4Nodes[it].first;
-    double  voltage_value = m_C4Nodes[it].second;
-    m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
-    m_J.push_back(voltage_value);     // push back first vdd
+  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", 
+                 m_C4Bumps.size(),m_C4Nodes.size());
+  std::map<NodeIdx, double>::iterator c4_node_it;
+  size_t it = 0;
+  for (c4_node_it = m_C4Nodes.begin(); c4_node_it != m_C4Nodes.end();
+       c4_node_it++) {
+  //for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
+    NodeIdx node_loc      = c4_node_it->first;
+    double  voltage_value = c4_node_it->second;
+    m_Gmat->AddC4Bump(node_loc, it++);  // add the  bump
+    m_J.push_back(voltage_value);     // push back  vdd
   }
   return true;
 }
@@ -705,8 +711,25 @@ bool IRSolver::CreateGmat(bool connection_only)
     vector<Node*>::iterator node_it;
     for (node_it = RDL_nodes.begin(); node_it != RDL_nodes.end(); ++node_it) {
       Node* node = *node_it;
-      m_C4Nodes.push_back(make_pair(node->GetGLoc(), v));
-      num_C4++;
+      NodeIdx k = node->GetGLoc();
+      std::map<NodeIdx, double>::iterator lb = m_C4Nodes.lower_bound(k);
+      
+      if(lb != m_C4Nodes.end() && !(m_C4Nodes.key_comp()(k, lb->first))) {
+        // key already exists and voltage value is different 
+        if (lb->second != v) {
+          NodeLoc node_loc = node->GetLoc();
+          double  new_loc1 = ((double) node_loc.first) / ((double) unit_micron);
+          double  new_loc2 = ((double) node_loc.second) / ((double) unit_micron);
+          m_logger->warn(utl::PSM, 67, "Multiple voltage supply values mapped"
+                     " at the same node ({:4.3f}um, {:4.3f}um)",
+                   new_loc1,
+                   new_loc2);
+        }
+      } else {
+        // the key does not exist in the map, add it to the map
+        m_C4Nodes.insert(lb, std::map<NodeIdx, double>::value_type(k, v));
+        num_C4++;
+      }
     }
   }
   // All new nodes must be inserted by this point
@@ -936,7 +959,7 @@ bool IRSolver::CheckValidR(double R) {
 
 bool IRSolver::CheckConnectivity()
 {
-  vector<pair<NodeIdx, double>>::iterator c4_node_it;
+  std::map<NodeIdx, double>::iterator c4_node_it;
   CscMatrix*                              Amat      = m_Gmat->GetAMat();
   int                                     num_nodes = m_Gmat->GetNumNodes();
 
