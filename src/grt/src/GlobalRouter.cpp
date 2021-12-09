@@ -2595,6 +2595,7 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   delete net;
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
+  routes_.erase(db_net);
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)

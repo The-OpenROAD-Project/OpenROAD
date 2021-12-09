@@ -352,6 +352,24 @@ bool check_display_controls(const char* name, const char* display_type)
   return false;
 }
 
+void save_display_controls()
+{
+  if (!check_gui("set_display_controls")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveDisplayControls();
+}
+
+void restore_display_controls()
+{
+  if (!check_gui("restore_display_controls")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->restoreDisplayControls();
+}
+
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
 {
   if (!check_gui("create_toolbar_button")) {
@@ -544,6 +562,15 @@ void selection_animate(int repeat = 0)
 }
 
 void set_heatmap(const std::string& name, const std::string& option, double value = 0.0)
+{
+  if (!check_gui("set_heatmap")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->setHeatMapSetting(name, option, value);
+}
+
+void set_heatmap(const std::string& name, const std::string& option, const std::string& value)
 {
   if (!check_gui("set_heatmap")) {
     return;

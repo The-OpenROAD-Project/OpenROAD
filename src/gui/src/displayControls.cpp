@@ -40,6 +40,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <random>
 #include <vector>
 
 #include "db.h"
@@ -490,8 +491,13 @@ void DisplayControls::readSettings(QSettings* settings)
         renderer_settings[key_group.toStdString()] = value.toInt();
       } else if (type == "double") {
         renderer_settings[key_group.toStdString()] = value.toDouble();
+      } else if (type == "string") {
+        renderer_settings[key_group.toStdString()] = value.toString().toStdString();
       } else {
-        logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        // this can get called before logger has been created
+        if (logger_ != nullptr) {
+          logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        }
       }
       settings->endGroup();
     }
@@ -586,6 +592,9 @@ void DisplayControls::writeSettings(QSettings* settings)
         } else if(const auto* v = std::get_if<double>(&value)) {
           type = "double";
           data = *v;
+        } else if(const auto* v = std::get_if<std::string>(&value)) {
+          type = "string";
+          data = QString::fromStdString(*v);
         } else {
           logger_->warn(utl::GUI, 54, "Unknown data type for \"{}\".", name);
         }
@@ -1444,6 +1453,9 @@ void DisplayControls::techInit()
   int metal = 0;
   int via = 0;
 
+  // ensure if random colors are used they are consistent
+  std::mt19937 gen_color(1);
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
@@ -1453,14 +1465,19 @@ void DisplayControls::techInit()
         color = colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else if (type == dbTechLayerType::CUT) {
       if (via < num_colors) {
-        color = colors[via++];
+        if (metal != 0) {
+          color = colors[via++];
+        } else {
+          // via came first, so pick random color
+          color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+        }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else {
       continue;
