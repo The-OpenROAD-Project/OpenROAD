@@ -142,8 +142,8 @@ void IRSolver::SolveIR()
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
-    //std::cout<< solver.lastErrorMessage() << std::endl;
-    m_logger->error(utl::PSM, 10, "LU factorization of the G Matrix failed.");
+    m_logger->error(utl::PSM, 10, "LU factorization of the G Matrix failed. SparseLU solver message: {}.",
+                    solver.lastErrorMessage());
   }
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J");
   x = solver.solve(b);
@@ -272,17 +272,12 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
-  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", 
-                 m_C4Bumps.size(),m_C4Nodes.size());
+  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", m_C4Bumps.size());
   std::map<NodeIdx, double>::iterator c4_node_it;
   size_t it = 0;
-  for (c4_node_it = m_C4Nodes.begin(); c4_node_it != m_C4Nodes.end();
-       c4_node_it++) {
-  //for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
-    NodeIdx node_loc      = c4_node_it->first;
-    double  voltage_value = c4_node_it->second;
-    m_Gmat->AddC4Bump(node_loc, it++);  // add the  bump
-    m_J.push_back(voltage_value);     // push back  vdd
+  for (auto [node_loc, voltage_value] : m_C4Nodes) {
+    m_Gmat->AddC4Bump(node_loc, it++); // add the  bump
+    m_J.push_back(voltage_value); // push back  vdd
   }
   return true;
 }
@@ -439,7 +434,6 @@ bool IRSolver::CreateJ()
     }
     int x, y;
     inst->getLocation(x, y);
-    // cout << "Got location" <<endl;
     int     l      = m_bottom_layer;  // atach to the bottom most routing layer
     Node*   node_J = m_Gmat->GetNode(x, y, l, true);
     NodeLoc node_loc = node_J->GetLoc();
@@ -469,7 +463,6 @@ bool IRSolver::CreateJ()
     }
   }
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Created J vector");
-  //m_logger->info(utl::PSM, 25, "Created J vector.");
   return true;
 }
 
@@ -712,22 +705,23 @@ bool IRSolver::CreateGmat(bool connection_only)
     for (node_it = RDL_nodes.begin(); node_it != RDL_nodes.end(); ++node_it) {
       Node* node = *node_it;
       NodeIdx k = node->GetGLoc();
-      std::map<NodeIdx, double>::iterator lb = m_C4Nodes.lower_bound(k);
-      
-      if(lb != m_C4Nodes.end() && !(m_C4Nodes.key_comp()(k, lb->first))) {
-        // key already exists and voltage value is different 
-        if (lb->second != v) {
-          NodeLoc node_loc = node->GetLoc();
-          double  new_loc1 = ((double) node_loc.first) / ((double) unit_micron);
-          double  new_loc2 = ((double) node_loc.second) / ((double) unit_micron);
-          m_logger->warn(utl::PSM, 67, "Multiple voltage supply values mapped"
-                     " at the same node ({:4.3f}um, {:4.3f}um)",
-                   new_loc1,
-                   new_loc2);
-        }
+      std::pair<std::map<NodeIdx, double>::iterator,bool> ret;
+      ret  = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
+      if (ret.second==false) {
+        // key already exists and voltage value is different occurs when a user
+        // specifies two different voltage supply values by mistatke in two
+        // nearby nodes
+        NodeLoc node_loc = node->GetLoc();
+        double  new_loc1 = ((double) node_loc.first) / ((double) unit_micron);
+        double  new_loc2 = ((double) node_loc.second) / ((double) unit_micron);
+        m_logger->warn(utl::PSM, 67, "Multiple voltage supply values mapped"
+                       "at the same node ({:4.3f}um, {:4.3f}um)."
+                       "If you provided a vsrc file. Check for duplicate entries." 
+                       "Choosing voltage value {:4.3f}.",
+                       new_loc1,
+                       new_loc2,
+                       ret.first->second);
       } else {
-        // the key does not exist in the map, add it to the map
-        m_C4Nodes.insert(lb, std::map<NodeIdx, double>::value_type(k, v));
         num_C4++;
       }
     }
