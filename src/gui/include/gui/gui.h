@@ -447,7 +447,8 @@ class Renderer
   void setDisplayControl(const std::string& name, bool value);
 
   virtual const std::string getSettingsGroupName() { return ""; }
-  using Settings = std::map<std::string, std::variant<bool, int, double>>;
+  using Setting = std::variant<bool, int, double, std::string>;
+  using Settings = std::map<std::string, Setting>;
   virtual const Settings getSettings();
   virtual void setSettings(const Settings& settings);
 
@@ -555,6 +556,10 @@ class Gui
   bool checkDisplayControlsVisible(const std::string& name);
   bool checkDisplayControlsSelectable(const std::string& name);
 
+  // Used to save and restore the display controls, useful for batch operations
+  void saveDisplayControls();
+  void restoreDisplayControls();
+
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 
@@ -619,7 +624,7 @@ class Gui
 
   const Selected& getInspectorSelection();
 
-  void setHeatMapSetting(const std::string& name, const std::string& option, double value);
+  void setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value);
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
