@@ -30,7 +30,6 @@
 
 #include <tcl.h>
 
-#include <boost/asio/ip/tcp.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,10 +38,20 @@ namespace utl {
 class Logger;
 }
 
+namespace boost::asio {
+class executor;
+template <typename Protocol, typename Executor>
+class basic_stream_socket;
+namespace ip {
+class tcp;
+}
+}  // namespace boost::asio
+
 namespace asio = boost::asio;
 using asio::ip::tcp;
 
 namespace dst {
+typedef asio::basic_stream_socket<tcp, asio::executor> socket;
 class JobMessage;
 class JobCallBack;
 
@@ -59,13 +68,22 @@ class Distributed
                const char* ip,
                unsigned short port,
                JobMessage& result);
-  bool sendResult(JobMessage& result, tcp::socket& sock);
+  bool sendResult(JobMessage& result, socket& sock);
   void addCallBack(JobCallBack* cb);
   const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
 
  private:
+  struct EndPoint
+  {
+    std::string ip;
+    unsigned short port;
+    EndPoint(std::string ip_in, unsigned short port_in)
+        : ip(ip_in), port(port_in)
+    {
+    }
+  };
   utl::Logger* logger_;
-  std::vector<std::pair<std::string, unsigned short>> workers_;
+  std::vector<EndPoint> workers_;
   std::vector<JobCallBack*> callbacks_;
 };
 }  // namespace dst

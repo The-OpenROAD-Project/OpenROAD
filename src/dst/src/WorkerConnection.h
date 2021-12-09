@@ -27,69 +27,38 @@
  */
 
 #pragma once
-#include <memory>
-#include <string>
-namespace boost::serialization {
-class access;
+#include <boost/asio.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
+namespace asio = boost::asio;
+using asio::ip::tcp;
+namespace utl {
+class Logger;
 }
 namespace dst {
 class Distributed;
-class WorkerConnection;
-class BalancerConnection;
-
-class JobDescription
+class WorkerConnection : public boost::enable_shared_from_this<WorkerConnection>
 {
  public:
-  JobDescription() {}
-  virtual ~JobDescription() {}
+  typedef boost::shared_ptr<WorkerConnection> pointer;
+  WorkerConnection(asio::io_service& io_service,
+                   Distributed* dist,
+                   utl::Logger* logger);
+  static pointer create(asio::io_service& io_service,
+                        Distributed* dist,
+                        utl::Logger* logger)
+  {
+    return boost::make_shared<WorkerConnection>(io_service, dist, logger);
+  }
+  tcp::socket& socket();
+  void start();
+  void handle_read(boost::system::error_code const& err,
+                   size_t bytes_transferred);
 
  private:
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-  }
-  friend class boost::serialization::access;
+  tcp::socket sock;
+  Distributed* dist_;
+  asio::streambuf in_packet_;
+  utl::Logger* logger_;
 };
-
-class JobMessage
-{
- public:
-  enum JobType
-  {
-    ROUTING,
-    NONE
-  };
-  JobMessage(JobType in) : type_(in) {}
-  void setJobDescription(std::unique_ptr<JobDescription> in)
-  {
-    desc_ = std::move(in);
-  }
-  JobDescription* getJobDescription() { return desc_.get(); }
-  JobType getType() const { return type_; }
-
- private:
-  JobType type_;
-  std::unique_ptr<JobDescription> desc_;
-  JobMessage() : JobMessage(NONE) {}
-
-  static constexpr const char* EOP = "\r\n\r\n";  // ENDOFPACKET SEQUENCE
-
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
-
-  friend class boost::serialization::access;
-
-  enum SerializeType
-  {
-    READ,
-    WRITE
-  };
-  static bool serializeMsg(SerializeType type,
-                           JobMessage& msg,
-                           std::string& str);
-  friend class dst::Distributed;
-  friend class dst::WorkerConnection;
-  friend class dst::BalancerConnection;
-};
-
 }  // namespace dst

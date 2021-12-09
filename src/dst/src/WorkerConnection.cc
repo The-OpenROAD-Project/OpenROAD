@@ -26,75 +26,89 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "BalancerConHandler.h"
+#include "WorkerConnection.h"
 
-#include <dst/JobMessage.h>
+#include <unistd.h>
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 #include <thread>
 
-#include "LoadBalancer.h"
+#include "dst/Distributed.h"
+#include "dst/JobCallBack.h"
+#include "dst/JobMessage.h"
 #include "utl/Logger.h"
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
-using asio::ip::tcp;
-
 namespace dst {
-BalancerConHandler::BalancerConHandler(asio::io_service& io_service,
-                                       LoadBalancer* owner,
-                                       utl::Logger* logger)
-    : sock(io_service), owner_(owner), logger_(logger)
+
+WorkerConnection::WorkerConnection(asio::io_service& io_service,
+                                   Distributed* dist,
+                                   utl::Logger* logger)
+    : sock(io_service), dist_(dist), logger_(logger)
 {
 }
 // socket creation
-tcp::socket& BalancerConHandler::socket()
+tcp::socket& WorkerConnection::socket()
 {
   return sock;
 }
 
-void BalancerConHandler::start(ip::address workerAddress, unsigned short port)
+void WorkerConnection::start()
 {
   async_read_until(
       sock,
       in_packet_,
       JobMessage::EOP,
-      [me = shared_from_this(), workerAddress, port](
-          boost::system::error_code const& ec, std::size_t bytes_xfer) {
-        me->handle_read(ec, bytes_xfer, workerAddress, port);
+      [me = shared_from_this()](boost::system::error_code const& ec,
+                                std::size_t bytes_xfer) {
+        std::thread t1(&WorkerConnection::handle_read, me, ec, bytes_xfer);
+        t1.detach();
       });
 }
 
-void BalancerConHandler::handle_read(boost::system::error_code const& err,
-                                     size_t bytes_transferred,
-                                     ip::address workerAddress,
-                                     unsigned short port)
+void WorkerConnection::handle_read(boost::system::error_code const& err,
+                                   size_t bytes_transferred)
 {
   if (!err) {
+    std::string data{buffers_begin(in_packet_.data()),
+                     buffers_begin(in_packet_.data()) + bytes_transferred};
     boost::system::error_code error;
-    if (workerAddress.is_unspecified())
-      logger_->warn(utl::DST, 6, "No workers available");
-    else {
-      logger_->info(
-          utl::DST, 7, "Sending to {}/{}", workerAddress.to_string(), port);
-      asio::io_service io_service;
-      tcp::socket socket(io_service);
-      socket.connect(tcp::endpoint(workerAddress, port));
-      asio::write(socket, in_packet_, error);
-      asio::streambuf receive_buffer;
-      asio::read(
-          socket, receive_buffer, asio::transfer_all(), error);
-      asio::write(sock, receive_buffer, error);
+    JobMessage msg(JobMessage::NONE);
+    if (!JobMessage::serializeMsg(JobMessage::READ, msg, data)) {
+      logger_->warn(utl::DST,
+                    41,
+                    "Received malformed msg {} from port {}",
+                    data,
+                    sock.remote_endpoint().port());
+      asio::write(sock, asio::buffer("0"), error);
+      sock.close();
+      return;
     }
-
+    switch (msg.getType()) {
+      case JobMessage::ROUTING:
+        /* code */
+        for (auto& cb : dist_->getCallBacks()) {
+          cb->onRoutingJobReceived(msg, sock);
+        }
+        break;
+      default:
+        logger_->warn(utl::DST,
+                      5,
+                      "Unsupported job type {} from port {}",
+                      msg.getType(),
+                      sock.remote_endpoint().port());
+        asio::write(sock, asio::buffer("0"), error);
+        sock.close();
+        break;
+    }
   } else {
     logger_->warn(utl::DST,
-                  8,
-                  "Balancer conhandler failed with message: {}",
+                  4,
+                  "Worker conhandler failed with message: \"{}\"",
                   err.message());
   }
-  owner_->updateWorker(workerAddress, port);
   sock.close();
 }
 }  // namespace dst

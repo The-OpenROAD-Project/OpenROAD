@@ -29,33 +29,30 @@
 #pragma once
 #include <boost/asio.hpp>
 
-#include "WorkerConHandler.h"
+#include "WorkerConnection.h"
 
 namespace utl {
 class Logger;
 }
 
-namespace asio = boost::asio;
-using asio::ip::tcp;
-
 namespace dst {
 class Distributed;
 class Worker
 {
- private:
-  tcp::acceptor acceptor_;
-  asio::io_service* service;
-  Distributed* dist_;
-  utl::Logger* logger_;
-  void start_accept();
-  void handle_accept(WorkerConHandler::pointer connection,
-                     const boost::system::error_code& err);
-
  public:
   // constructor for accepting connection from client
   Worker(asio::io_service& io_service,
          Distributed* dist,
          utl::Logger* logger,
          unsigned short port);
+
+ private:
+  tcp::acceptor acceptor_;
+  asio::io_service* service;
+  Distributed* dist_;
+  utl::Logger* logger_;
+  void start_accept();
+  void handle_accept(WorkerConnection::pointer connection,
+                     const boost::system::error_code& err);
 };
 }  // namespace dst

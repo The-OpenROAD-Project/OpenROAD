@@ -29,6 +29,7 @@
 #include "dst/Distributed.h"
 
 #include <boost/asio.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
 #include <vector>
 
@@ -39,7 +40,7 @@
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 namespace dst {
-  const int MAX_TRIALS = 5;
+const int MAX_TRIES = 5;
 }
 
 using namespace dst;
@@ -59,6 +60,9 @@ Distributed::Distributed() : logger_(nullptr)
 
 Distributed::~Distributed()
 {
+  for (auto cb : callbacks_)
+    delete cb;
+  callbacks_.clear();
 }
 
 void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
@@ -86,7 +90,7 @@ void Distributed::runLoadBalancer(unsigned short port)
     asio::io_service io_service;
     LoadBalancer balancer(io_service, logger_, port);
     for (auto worker : workers_)
-      balancer.addWorker(worker.first, worker.second, 10);
+      balancer.addWorker(worker.ip, worker.port, 10);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
@@ -95,17 +99,17 @@ void Distributed::runLoadBalancer(unsigned short port)
 
 void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
-  workers_.push_back({std::string(address), port});
+  workers_.push_back(EndPoint(address, port));
 }
 
-bool sendMsg(tcp::socket& sock, const std::string& msg, std::string& errorMsg)
+bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
 {
-  int trials = 0;
-  while (trials < MAX_TRIALS) {
+  int tries = 0;
+  while (tries++ < MAX_TRIES) {
     boost::system::error_code error;
     write(sock, asio::buffer(msg), error);
     if (!error) {
-      errorMsg = "";
+      errorMsg.clear();
       return true;
     } else
       errorMsg = error.message();
@@ -113,7 +117,7 @@ bool sendMsg(tcp::socket& sock, const std::string& msg, std::string& errorMsg)
   return false;
 }
 
-bool readMsg(tcp::socket& sock, std::string& dataStr)
+bool readMsg(dst::socket& sock, std::string& dataStr)
 {
   boost::system::error_code error;
   asio::streambuf receive_buffer;
@@ -135,17 +139,16 @@ bool Distributed::sendJob(JobMessage& msg,
                           unsigned short port,
                           JobMessage& result)
 {
-  int trials = 0;
+  int tries = 0;
   std::string msgStr;
   if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
     logger_->warn(utl::DST, 12, "Serializing JobMessage failed");
     return false;
   }
-  std::string resultStr = "";
-  while (trials < MAX_TRIALS) {
-    trials++;
+  std::string resultStr;
+  while (tries++ < MAX_TRIES) {
     asio::io_service io_service;
-    tcp::socket sock(io_service);
+    dst::socket sock(io_service);
     try {
       sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
     } catch (const boost::system::system_error& ex) {
@@ -168,22 +171,22 @@ bool Distributed::sendJob(JobMessage& msg,
     return true;
   }
   if (resultStr == "")
-    resultStr = "MAX_TRIALS reached";
+    resultStr = "MAX_TRIES reached";
   logger_->warn(
       utl::DST, 14, "Sending job failed with message \"{}\"", resultStr);
   return false;
 }
 
-bool Distributed::sendResult(JobMessage& msg, tcp::socket& sock)
+bool Distributed::sendResult(JobMessage& msg, dst::socket& sock)
 {
   std::string msgStr;
   if (!JobMessage::serializeMsg(JobMessage::WRITE, msg, msgStr)) {
     logger_->warn(utl::DST, 20, "Serializing result JobMessage failed");
     return false;
   }
-  int trials = 0;
+  int tries = 0;
   std::string error;
-  while (trials < MAX_TRIALS) {
+  while (tries++ < MAX_TRIES) {
     if (sendMsg(sock, msgStr, error))
       return true;
   }

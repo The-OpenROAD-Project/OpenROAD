@@ -26,16 +26,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
-#include <boost/asio/ip/tcp.hpp>
+#include <dst/Distributed.h>
 
 namespace dst {
 class JobMessage;
 class JobCallBack
 {
  public:
-  virtual void onRoutingJobReceived(JobMessage& msg,
-                                    boost::asio::ip::tcp::socket& sock){};
-  JobCallBack() {}
+  virtual void onRoutingJobReceived(JobMessage& msg, socket& sock) = 0;
   virtual ~JobCallBack() {}
 };
 }  // namespace dst

@@ -302,16 +302,17 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
                                  getGCellBox().yMin());
   serialize_worker(SerializationType::WRITE, this, name);
   dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
-  msg.desc
+  std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
+  msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (ok) {
-    auto desc = static_cast<RoutingJobDescription*>(result.desc.get());
-    ok = serialize_worker(SerializationType::READ, this, desc->path);
+    auto desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
+    ok = serialize_worker(SerializationType::READ, this, desc->getWorkerPath());
     if (!ok)
       logger_->error(DRT, 511, "Deserialization failed");
     std::remove(name.c_str());
-    std::remove(desc->path.c_str());
+    std::remove(desc->getWorkerPath().c_str());
     updateDesign(design);
   } else {
     logger_->error(utl::DRT, 500, "Sending worker {} failed", name);

@@ -30,15 +30,12 @@
 
 #include <boost/bind.hpp>
 
-namespace asio = boost::asio;
-using asio::ip::tcp;
-
 namespace dst {
 
 void LoadBalancer::start_accept()
 {
-  BalancerConHandler::pointer connection
-      = BalancerConHandler::create(*service, this, logger_);
+  BalancerConnection::pointer connection
+      = BalancerConnection::create(*service, this, logger_);
   acceptor_.async_accept(connection->socket(),
                          boost::bind(&LoadBalancer::handle_accept,
                                      this,
@@ -69,14 +66,14 @@ void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
-    if (worker.ip_ == ip && worker.port_ == port)
-      worker.priority_++;
+    if (worker.ip == ip && worker.port == port)
+      worker.priority++;
     newQueue.push(worker);
   }
   workers_.swap(newQueue);
   workers_mutex_.unlock();
 }
-void LoadBalancer::handle_accept(BalancerConHandler::pointer connection,
+void LoadBalancer::handle_accept(BalancerConnection::pointer connection,
                                  const boost::system::error_code& err)
 {
   if (!err) {
@@ -87,9 +84,9 @@ void LoadBalancer::handle_accept(BalancerConHandler::pointer connection,
     if (!workers_.empty()) {
       worker w = workers_.top();
       workers_.pop();
-      workerAddress = w.ip_;
-      port = w.port_;
-      w.priority_--;
+      workerAddress = w.ip;
+      port = w.port;
+      w.priority--;
       workers_.push(w);
     }
     workers_mutex_.unlock();

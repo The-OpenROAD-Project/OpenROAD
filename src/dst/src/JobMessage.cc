@@ -26,38 +26,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-#include <boost/asio.hpp>
-#include <boost/enable_shared_from_this.hpp>
-namespace asio = boost::asio;
-using asio::ip::tcp;
-namespace utl {
-class Logger;
-}
-namespace dst {
-class Distributed;
-class WorkerConHandler : public boost::enable_shared_from_this<WorkerConHandler>
-{
- private:
-  tcp::socket sock;
-  Distributed* dist_;
-  asio::streambuf in_packet_;
-  utl::Logger* logger_;
+#include "dst/JobMessage.h"
 
- public:
-  typedef boost::shared_ptr<WorkerConHandler> pointer;
-  WorkerConHandler(asio::io_service& io_service,
-                   Distributed* dist,
-                   utl::Logger* logger);
-  static pointer create(asio::io_service& io_service,
-                        Distributed* dist,
-                        utl::Logger* logger)
-  {
-    return pointer(new WorkerConHandler(io_service, dist, logger));
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/unique_ptr.hpp>
+
+using namespace dst;
+
+template <class Archive>
+inline bool is_loading(const Archive& ar)
+{
+  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+}
+
+template <class Archive>
+void JobMessage::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & type_;
+  (ar) & desc_;
+  if (!is_loading(ar)) {
+    std::string eop = EOP;
+    (ar) & eop;
   }
-  tcp::socket& socket();
-  void start();
-  void handle_read(boost::system::error_code const& err,
-                   size_t bytes_transferred);
-};
-}  // namespace dst
+}
+
+bool JobMessage::serializeMsg(SerializeType type,
+                              JobMessage& msg,
+                              std::string& str)
+{
+  if (type == WRITE) {
+    try {
+      std::ostringstream oarchive_stream;
+      boost::archive::text_oarchive archive(oarchive_stream);
+      archive << msg;
+      str = oarchive_stream.str();
+    } catch (const boost::archive::archive_exception& e) {
+      return false;
+    }
+  } else {
+    try {
+      std::istringstream iarchive_stream(str);
+      boost::archive::text_iarchive archive(iarchive_stream);
+      archive >> msg;
+    } catch (const boost::archive::archive_exception& e) {
+      return false;
+    }
+  }
+  return true;
+}

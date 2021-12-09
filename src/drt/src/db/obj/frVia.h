@@ -299,13 +299,14 @@ class frVia : public frRef
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
+
  private:
   Point origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
-  bool tapered_;
-  bool bottomConnected_;
-  bool topConnected_;
+  bool tapered_ : 1;
+  bool bottomConnected_ : 1;
+  bool topConnected_ : 1;
   frListIter<std::unique_ptr<frVia>> iter_;
 
   template <class Archive>
@@ -315,9 +316,22 @@ class frVia : public frRef
     (ar) & origin_;
     (ar) & viaDef_;
     (ar) & owner_;
-    (ar) & tapered_;
-    (ar) & bottomConnected_;
-    (ar) & topConnected_;
+    bool tmp;
+    if (is_loading(ar)) {
+      (ar) & tmp;
+      tapered_ = tmp;
+      (ar) & tmp;
+      bottomConnected_ = tmp;
+      (ar) & tmp;
+      topConnected_ = tmp;
+    } else {
+      tmp = tapered_;
+      (ar) & tmp;
+      tmp = bottomConnected_;
+      (ar) & tmp;
+      tmp = topConnected_;
+      (ar) & tmp;
+    }
     // iter is handled by the owner
   }
 

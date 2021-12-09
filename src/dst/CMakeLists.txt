@@ -44,10 +44,11 @@ swig_lib(NAME      dst
 )
 target_sources(dst
   PRIVATE
+  src/JobMessage.cc
   src/Worker.cc
   src/LoadBalancer.cc
-  src/WorkerConHandler.cc
-  src/BalancerConHandler.cc
+  src/WorkerConnection.cc
+  src/BalancerConnection.cc
   src/MakeDistributed.cc
   src/Distributed.cc
 )

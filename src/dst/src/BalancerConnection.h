@@ -29,6 +29,7 @@
 #pragma once
 #include <boost/asio.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
 
 namespace asio = boost::asio;
 namespace ip = asio::ip;
@@ -40,25 +41,19 @@ class Logger;
 namespace dst {
 class LoadBalancer;
 
-class BalancerConHandler
-    : public boost::enable_shared_from_this<BalancerConHandler>
+class BalancerConnection
+    : public boost::enable_shared_from_this<BalancerConnection>
 {
- private:
-  tcp::socket sock;
-  asio::streambuf in_packet_;
-  utl::Logger* logger_;
-  LoadBalancer* owner_;
-
  public:
-  typedef boost::shared_ptr<BalancerConHandler> pointer;
-  BalancerConHandler(asio::io_service& io_service,
+  typedef boost::shared_ptr<BalancerConnection> pointer;
+  BalancerConnection(asio::io_service& io_service,
                      LoadBalancer* owner,
                      utl::Logger* logger);
   static pointer create(asio::io_service& io_service,
                         LoadBalancer* owner,
                         utl::Logger* logger)
   {
-    return pointer(new BalancerConHandler(io_service, owner, logger));
+    return boost::make_shared<BalancerConnection>(io_service, owner, logger);
   }
   tcp::socket& socket();
   void start(ip::address workerAddress, unsigned short port);
@@ -66,5 +61,11 @@ class BalancerConHandler
                    size_t bytes_transferred,
                    ip::address workerAddress,
                    unsigned short port);
+
+ private:
+  tcp::socket sock;
+  asio::streambuf in_packet_;
+  utl::Logger* logger_;
+  LoadBalancer* owner_;
 };
 }  // namespace dst

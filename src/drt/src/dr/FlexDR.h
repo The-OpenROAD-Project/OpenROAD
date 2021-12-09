@@ -1021,28 +1021,34 @@ class FlexDRWorker
   friend class boost::serialization::access;
 };
 
-struct RoutingJobDescription : dst::JobDescription
+class RoutingJobDescription : public dst::JobDescription
 {
  public:
   RoutingJobDescription(std::string pathIn,
                         std::string globals = "",
                         std::string dirIn = "")
-      : path(pathIn), globals_path(globals), shared_dir(dirIn)
+      : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
   {
   }
-  std::string path;
-  std::string globals_path;
-  std::string shared_dir;
+  void setWorkerPath(const std::string& path) { path_ = path; }
+  void setGlobalsPath(const std::string& path) { globals_path_ = path; }
+  void setSharedDir(const std::string& path) { shared_dir_ = path; }
+  const std::string& getWorkerPath() const { return path_; }
+  const std::string& getGlobalsPath() const { return globals_path_; }
+  const std::string& getSharedDir() const { return shared_dir_; }
 
  private:
+  std::string path_;
+  std::string globals_path_;
+  std::string shared_dir_;
   RoutingJobDescription() {}
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & path;
-    (ar) & globals_path;
-    (ar) & shared_dir;
+    (ar) & path_;
+    (ar) & globals_path_;
+    (ar) & shared_dir_;
   }
   friend class boost::serialization::access;
 };

@@ -31,26 +31,31 @@
 #include <queue>
 #include <vector>
 
-#include "BalancerConHandler.h"
+#include "BalancerConnection.h"
 
 namespace utl {
 class Logger;
 }
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
-using asio::ip::tcp;
 namespace dst {
 class LoadBalancer
 {
+ public:
+  // constructor for accepting connection from client
+  LoadBalancer(asio::io_service& io_service,
+               utl::Logger* logger,
+               unsigned short port = 1234);
+  void addWorker(std::string ip, unsigned short port, unsigned short avail);
+  void updateWorker(ip::address ip, unsigned short port);
+
  private:
   struct worker
   {
-    ip::address ip_;
-    unsigned short port_;
-    unsigned short priority_;
-    worker(ip::address ip, unsigned short port, unsigned short priority)
-        : ip_(ip), port_(port), priority_(priority)
+    ip::address ip;
+    unsigned short port;
+    unsigned short priority;
+    worker(ip::address ipIn, unsigned short portIn, unsigned short priorityIn)
+        : ip(ipIn), port(portIn), priority(priorityIn)
     {
     }
   };
@@ -58,7 +63,7 @@ class LoadBalancer
   {
     bool operator()(worker const& w1, worker const& w2)
     {
-      return w1.priority_ < w2.priority_;
+      return w1.priority < w2.priority;
     }
   };
 
@@ -69,15 +74,7 @@ class LoadBalancer
   asio::detail::mutex workers_mutex_;
 
   void start_accept();
-  void handle_accept(BalancerConHandler::pointer connection,
+  void handle_accept(BalancerConnection::pointer connection,
                      const boost::system::error_code& err);
-
- public:
-  // constructor for accepting connection from client
-  LoadBalancer(asio::io_service& io_service,
-               utl::Logger* logger,
-               unsigned short port = 1234);
-  void addWorker(std::string ip, unsigned short port, unsigned short avail);
-  void updateWorker(ip::address ip, unsigned short port);
 };
 }  // namespace dst

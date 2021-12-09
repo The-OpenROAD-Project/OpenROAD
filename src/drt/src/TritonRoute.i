@@ -35,7 +35,7 @@
 
 %{
 
-#include <string.h>
+#include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  

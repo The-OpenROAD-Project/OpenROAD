@@ -30,20 +30,16 @@
 
 #include <boost/bind.hpp>
 
-namespace asio = boost::asio;
-using asio::ip::tcp;
-
 namespace dst {
 
 void Worker::start_accept()
 {
-  WorkerConHandler::pointer connection
-      = WorkerConHandler::create(*service, dist_, logger_);
-  acceptor_.async_accept(connection->socket(),
-                         boost::bind(&Worker::handle_accept,
-                                     this,
-                                     connection,
-                                     asio::placeholders::error));
+  WorkerConnection::pointer connection
+      = WorkerConnection::create(*service, dist_, logger_);
+  acceptor_.async_accept(
+      connection->socket(),
+      boost::bind(
+          &Worker::handle_accept, this, connection, asio::placeholders::error));
 }
 
 Worker::Worker(asio::io_service& io_service,
@@ -58,7 +54,7 @@ Worker::Worker(asio::io_service& io_service,
   start_accept();
 }
 
-void Worker::handle_accept(WorkerConHandler::pointer connection,
+void Worker::handle_accept(WorkerConnection::pointer connection,
                            const boost::system::error_code& err)
 {
   if (!err) {
