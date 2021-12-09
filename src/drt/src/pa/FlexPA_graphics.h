@@ -60,6 +60,7 @@ class FlexPAGraphics : public gui::Renderer
                  Logger* logger);
 
   void startPin(frPin* pin, frInstTerm* inst_term);
+  void startPin(frBPin* pin, frInstTerm* inst_term);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,

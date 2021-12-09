@@ -799,7 +799,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     numTerms++;
     termIn->setType(term->getSigType());
     termIn->setDirection(term->getIoType());
-    auto pinIn = make_unique<frPin>();
+    auto pinIn = make_unique<frBPin>();
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
       for (auto box : pin->getBoxes()) {

@@ -32,7 +32,7 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
-#include "db/obj/frPin.h"
+#include "db/obj/frBPin.h"
 #include "frBaseTypes.h"
 
 namespace fr {
@@ -66,7 +66,7 @@ class frBTerm : public frBlockObject
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
-      auto tmp = std::make_unique<frPin>(*pin);
+      auto tmp = std::make_unique<frBPin>(*pin);
       addPin(std::move(tmp));
     }
   }
@@ -81,7 +81,7 @@ class frBTerm : public frBlockObject
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
-      auto tmp = std::make_unique<frPin>(*pin, xform);
+      auto tmp = std::make_unique<frBPin>(*pin, xform);
       addPin(std::move(tmp));
     }
   }
@@ -90,14 +90,13 @@ class frBTerm : public frBlockObject
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
   const frString& getName() const { return name_; }
-  const std::vector<std::unique_ptr<frPin>>& getPins() const { return pins_; }
+  const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   // setters
   void setBlock(frBlock* in) { block_ = in; }
   void addToNet(frNet* in) { net_ = in; }
-  void addPin(std::unique_ptr<frPin> in)
+  void addPin(std::unique_ptr<frBPin> in)
   {
-    // TODO
-    //in->setTerm(this);
+    in->setTerm(this);
     for (auto& uFig : in->getFigs()) {
       auto pinFig = uFig.get();
       if (pinFig->typeId() == frcRect) {
@@ -159,7 +158,7 @@ class frBTerm : public frBlockObject
   frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
   frNet* net_;  // set later, term in instTerm does not have net
-  std::vector<std::unique_ptr<frPin>> pins_;  // set later
+  std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   dbSigType type_;
   dbIoType direction_;
   int _order_id;

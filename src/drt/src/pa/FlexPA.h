@@ -118,17 +118,20 @@ class FlexPA
   // prep
   void prep();
   void prepPoint();
-  int prepPoint_pin(frPin* pin, frInstTerm* instTerm = nullptr);
+  template <typename T>
+  int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
+  template <typename T>
   void prepPoint_pin_mergePinShapes(
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       bool isShrink = false);
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
+  template <typename T>
   void prepPoint_pin_genPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       frAccessPointEnum lowerType,
@@ -136,7 +139,6 @@ class FlexPA
   void prepPoint_pin_genPoints_layerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      frPin* pin,
       frInstTerm* instTerm,
       const gtl::polygon_90_set_data<frCoord>& layerShapes,
       frLayerNum layerNum,
@@ -194,22 +196,25 @@ class FlexPA
       bool allowVia,
       frAccessPointEnum lowCost,
       frAccessPointEnum highCost);
+  template <typename T>
   void prepPoint_pin_checkPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_checkPoint(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_checkPoint_planar(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       frDirEnum dir,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
   bool prepPoint_pin_checkPoint_planar_ep(
       Point& ep,
@@ -218,25 +223,29 @@ class FlexPA
       frLayerNum layerNum,
       frDirEnum dir,
       int stepSizeMultiplier = 2);
+  template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       frDirEnum dir,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   bool prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
                                            frVia* via,
-                                           frPin* pin,
+                                           T* pin,
                                            frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_updateStat(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   bool prepPoint_pin_helper(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       frAccessPointEnum lowerType,
       frAccessPointEnum upperType);

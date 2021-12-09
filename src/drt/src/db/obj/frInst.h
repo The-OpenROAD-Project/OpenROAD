@@ -108,6 +108,7 @@ class frInst : public frRef
   bool hasPin() const override { return false; }
   frPin* getPin() const override { return nullptr; }
   void addToPin(frPin* in) override { ; }
+  void addToPin(frBPin* in) override { ; }
   void removeFromPin() override { ; }
 
   /* from frConnFig

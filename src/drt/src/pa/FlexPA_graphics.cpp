@@ -169,6 +169,11 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   gui_->pause();
 }
 
+void FlexPAGraphics::startPin(frBPin* pin, frInstTerm* inst_term)
+{
+  // TODO
+}
+
 static const char* to_string(frAccessPointEnum e)
 {
   switch (e) {

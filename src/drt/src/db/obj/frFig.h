@@ -73,6 +73,7 @@ class frConnFig : public frFig
 };
 
 class frPin;
+class frBPin;
 class frPinFig : public frConnFig
 {
  public:
@@ -81,6 +82,7 @@ class frPinFig : public frConnFig
   virtual frPin* getPin() const = 0;
   // setters
   virtual void addToPin(frPin* in) = 0;
+  virtual void addToPin(frBPin* in) = 0;
   virtual void removeFromPin() = 0;
   // others
 

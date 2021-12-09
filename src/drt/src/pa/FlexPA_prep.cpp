@@ -43,9 +43,10 @@ using namespace fr;
 
 int gcCallCnt = 0;
 
+template <typename T>
 void FlexPA::prepPoint_pin_mergePinShapes(
     vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm,
     bool isShrink)
 {
@@ -614,7 +615,6 @@ void FlexPA::prepPoint_pin_genPoints_rect(
 void FlexPA::prepPoint_pin_genPoints_layerShapes(
     vector<unique_ptr<frAccessPoint>>& aps,
     set<pair<Point, frLayerNum>>& apset,
-    frPin* pin,
     frInstTerm* instTerm,
     const gtl::polygon_90_set_data<frCoord>& layerShapes,
     frLayerNum layerNum,
@@ -680,10 +680,11 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
 // lower 1/2     1, upper on-grid 0 = 1
 // lower center  2, upper on-grid 0 = 2
 // lower center  2, upper center  2 = 4
+template <typename T>
 void FlexPA::prepPoint_pin_genPoints(
     vector<unique_ptr<frAccessPoint>>& aps,
     set<pair<Point, frLayerNum>>& apset,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm,
     const vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
     frAccessPointEnum lowerType,
@@ -705,7 +706,6 @@ void FlexPA::prepPoint_pin_genPoints(
       // cout <<"via layernum = " <<layerNum <<endl;
       prepPoint_pin_genPoints_layerShapes(aps,
                                           apset,
-                                          pin,
                                           instTerm,
                                           *it,
                                           layerNum,
@@ -758,11 +758,12 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
   return outside;
 }
 
+template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_planar(
     frAccessPoint* ap,
     const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     frDirEnum dir,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm)
 {
   Point bp, ep;
@@ -850,11 +851,12 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   }
 }
 
+template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_via(
     frAccessPoint* ap,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     frDirEnum dir,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm)
 {
   Point bp;
@@ -957,9 +959,10 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   }
 }
 
+template <typename T>
 bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
                                                  frVia* via,
-                                                 frPin* pin,
+                                                 T* pin,
                                                  frInstTerm* instTerm)
 {
   Point bp, ep;
@@ -1012,11 +1015,12 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   return sol;
 }
 
+template <typename T>
 void FlexPA::prepPoint_pin_checkPoint(
     frAccessPoint* ap,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const vector<gtl::polygon_90_data<frCoord>>& polys,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm)
 {
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
@@ -1026,10 +1030,11 @@ void FlexPA::prepPoint_pin_checkPoint(
   prepPoint_pin_checkPoint_via(ap, polyset, frDirEnum::U, pin, instTerm);
 }
 
+template <typename T>
 void FlexPA::prepPoint_pin_checkPoints(
     vector<unique_ptr<frAccessPoint>>& aps,
     const vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm)
 {
   vector<vector<gtl::polygon_90_data<frCoord>>> layerPolys(
@@ -1046,9 +1051,10 @@ void FlexPA::prepPoint_pin_checkPoints(
   }
 }
 
+template <typename T>
 void FlexPA::prepPoint_pin_updateStat(
     const vector<unique_ptr<frAccessPoint>>& tmpAps,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm)
 {
   bool isStdCellPin = false;
@@ -1091,11 +1097,12 @@ void FlexPA::prepPoint_pin_updateStat(
   }
 }
 
+template <typename T>
 bool FlexPA::prepPoint_pin_helper(
     vector<unique_ptr<frAccessPoint>>& aps,
     set<pair<Point, frLayerNum>>& apset,
     vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-    frPin* pin,
+    T* pin,
     frInstTerm* instTerm,
     frAccessPointEnum lowerType,
     frAccessPointEnum upperType)
@@ -1194,8 +1201,11 @@ bool FlexPA::prepPoint_pin_helper(
   return false;
 }
 
+//template FlexPAGraphics::startPin<frPin>(frPin* pin, frInstTerm* inst_term);
+
 // first create all access points with costs
-int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
+template <typename T>
+int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
 {
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
@@ -1222,11 +1232,7 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   }
 
   vector<gtl::polygon_90_set_data<frCoord>> pinShapes;
-  if (isMacroCellPin) {
-    prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
-  } else {
-    prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
-  }
+  prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
 
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
@@ -1268,19 +1274,6 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
       logger_->error(DRT, 75, "prepPoint_pin unique2paidx not found.");
     } else {
       for (auto& ap : aps) {
-        // if (instTerm->getInst()->getMaster()->getName() ==
-        // string("INVP_X1F_A9PP84TR_C14") && instTerm->getTerm()->getName() ==
-        // string("Y")) {
-        //  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-        //  Point pt;
-        //  for (auto &ap: aps) {
-        //    ap->getPoint(pt);
-        //    cout <<"checked ap@(" <<pt.x() / dbu <<", " <<pt.y() / dbu <<") "
-        //         <<getDesign()->getTech()->getLayer(ap->getLayerNum())->getName()
-        //         <<" , cost="
-        //         <<ap->getCost() <<endl;
-        //  }
-        // }
         pin->getPinAccess(it->second)->addAccessPoint(std::move(ap));
       }
     }
@@ -1351,8 +1344,7 @@ void FlexPA::prepPoint()
     if (term.get()->getType().isSupply()) {
       continue;
     }
-    auto net = term->getNet();
-    if (net == nullptr) {
+    if (term->getNet() == nullptr) {
       continue;
     }
     int nAps = 0;

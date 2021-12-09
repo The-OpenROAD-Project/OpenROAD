@@ -137,6 +137,7 @@ class frInstTerm;
 class frTerm;
 class frBTerm;
 class frPin;
+class frBPin;
 class frRect;
 class frPolygon;
 class frNet;

@@ -138,6 +138,11 @@ class frRect : public frShape
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
 
+  void addToPin(frBPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
   void removeFromPin() override { owner_ = nullptr; }
 
   /* from frConnFig
@@ -251,6 +256,11 @@ class frPatchWire : public frShape
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
 
+  void addToPin(frBPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
   void removeFromPin() override { owner_ = nullptr; }
 
   /* from frConnFig
@@ -350,6 +360,11 @@ class frPolygon : public frShape
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
@@ -519,6 +534,11 @@ class frPathSeg : public frShape
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }

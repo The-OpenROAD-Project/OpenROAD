@@ -200,6 +200,10 @@ class frVia : public frRef
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
+  void addToPin(frBPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
   void removeFromPin() override { owner_ = nullptr; }
 
   /* from frConnFig
