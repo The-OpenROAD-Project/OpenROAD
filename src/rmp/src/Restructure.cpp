@@ -259,7 +259,7 @@ void Restructure::runABC()
 	Abc_Start();
 	pAbc = Abc_FrameGetGlobalFrame();
 
-	sprintf( Command, "read %s", abc_script_file.c_str() );
+	sprintf( Command, "source %s", abc_script_file.c_str() );
 	if ( Cmd_CommandExecute( pAbc, Command ) )
 	  {
 	    fprintf( stdout, "Cannot execute command \"%s\".\n", Command );
