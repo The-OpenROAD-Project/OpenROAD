@@ -260,7 +260,8 @@ void Restructure::runABC()
 	pAbc = Abc_FrameGetGlobalFrame();
 
 	sprintf( Command, "source %s", abc_script_file.c_str() );
-	if ( Cmd_CommandExecute( pAbc, Command ) )
+	child_proc[temp_mode_idx] = Cmd_CommandExecute( pAbc, Command );
+	if ( child_proc[temp_mode_idx] )
 	  {
 	    fprintf( stdout, "Cannot execute command \"%s\".\n", Command );
 	    return;
@@ -269,6 +270,7 @@ void Restructure::runABC()
 	Abc_Stop();
 	// Exit linked abc
 
+	/*
         std::string abc_command = std::string("abc -F ") + abc_script_file;
         if (logfile_ != "")
           abc_command
@@ -297,11 +299,11 @@ void Restructure::runABC()
               "Failed to create new ABC process, could not fork parent "
               "process. Please check OS messages for details.");
         }
-
+	*/
         files_to_remove.emplace_back(abc_script_file);
       }
     }  // end spawn
-
+    /*
     // Wait for ABC process(es)
     for (int curr_thread = 0; curr_thread < max_parallel_runs; ++curr_thread) {
       int child_idx = curr_mode_idx + curr_thread;
@@ -324,14 +326,14 @@ void Restructure::runABC()
             logfile_ + std::to_string(child_idx));
       }
     }  // end wait
-
+    */
     curr_mode_idx += max_parallel_runs;
   }  // end modes
 
   // Inspect ABC results to choose blif with least instance count
   for (int curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
     // Skip failed ABC runs
-    if (child_proc[curr_mode_idx] == 0) {
+    if (child_proc[curr_mode_idx] != 0) {
       continue;
     }
 
