@@ -273,7 +273,6 @@ bool IRSolver::AddC4Bump()
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   m_logger->info(utl::PSM, 64, "Number of voltage sources = {}.", m_C4Bumps.size());
-  std::map<NodeIdx, double>::iterator c4_node_it;
   size_t it = 0;
   for (auto [node_loc, voltage_value] : m_C4Nodes) {
     m_Gmat->AddC4Bump(node_loc, it++); // add the  bump
