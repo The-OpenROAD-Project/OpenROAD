@@ -523,7 +523,8 @@ bool Restructure::writeAbcScript(std::string file_name)
   }
 
   for (auto lib_name : lib_file_names_) {
-    std::string read_lib_str = "read_lib " + lib_name + "\n";
+    // abc read_liv prints verbose by default, -v toggles to off to avoid read time being printed
+    std::string read_lib_str = "read_lib -v " + lib_name + "\n";
     script << read_lib_str;
   }
 
@@ -613,9 +614,6 @@ void Restructure::writeOptCommands(std::ofstream& script)
       break;
     }
   }
-  script << "stime -p -c" << std::endl << "print_stats -m" << std::endl;
-  script << "upsize {D} -c" << std::endl << "dnsize {D} -c" << std::endl;
-  script << "stime -p -c" << std::endl << "print_stats -m" << std::endl;
 }
 
 void Restructure::setMode(const char* mode_name)
