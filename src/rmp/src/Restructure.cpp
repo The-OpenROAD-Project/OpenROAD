@@ -269,64 +269,9 @@ void Restructure::runABC()
       
 	Abc_Stop();
 	// Exit linked abc
-
-	/*
-        std::string abc_command = std::string("abc -F ") + abc_script_file;
-        if (logfile_ != "")
-          abc_command
-              = abc_command + " > " + logfile_ + std::to_string(temp_mode_idx);
-
-        pid_t child_pid = fork();
-        if (child_pid == 0) {  // Begin child
-          // Run in child process
-          int ret = execlp("sh", "sh", "-c", abc_command.c_str(), 0);
-          // Execution of command failed
-          logger_->error(
-              RMP,
-              31,
-              "Failed to run ABC with exit code {}. Please check the "
-              "messages for details.",
-              ret);
-          exit(ret);
-        }  // End child
-
-        if (child_pid > 0) {
-          child_proc[temp_mode_idx] = child_pid;
-        } else if (child_pid < 0) {
-          logger_->warn(
-              RMP,
-              29,
-              "Failed to create new ABC process, could not fork parent "
-              "process. Please check OS messages for details.");
-        }
-	*/
         files_to_remove.emplace_back(abc_script_file);
       }
     }  // end spawn
-    /*
-    // Wait for ABC process(es)
-    for (int curr_thread = 0; curr_thread < max_parallel_runs; ++curr_thread) {
-      int child_idx = curr_mode_idx + curr_thread;
-      pid_t child = child_proc[child_idx];
-
-      if (child == 0) {
-        continue;
-      }
-
-      int return_status;
-      waitpid(child, &return_status, 0);
-
-      if (return_status) {
-        child_proc[child_idx] = 0;
-        logger_->warn(
-            RMP,
-            15,
-            "ABC failed with code {}. Please check {} log file for details.",
-            return_status,
-            logfile_ + std::to_string(child_idx));
-      }
-    }  // end wait
-    */
     curr_mode_idx += max_parallel_runs;
   }  // end modes
 
