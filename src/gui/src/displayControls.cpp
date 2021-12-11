@@ -761,7 +761,6 @@ void DisplayControls::itemChanged(QStandardItem* item)
   // check if item has exclusivity set
   auto exclusive = item->data(exclusivity_item_idx_);
   if (exclusive.isValid() && checked) {
-    const QModelIndex row_start_index = model_->index(item_index.row(), Name, item_index.parent());
     QStandardItem* parent = model_->itemFromIndex(item_index.parent());
 
     QSet<QStandardItem*> items_to_check;
