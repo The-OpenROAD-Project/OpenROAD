@@ -1204,14 +1204,14 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
     }
 
     auto current_value = settings[option];
-    if (auto* v = std::get_if<bool>(&current_value)) {
+    if (std::holds_alternative<bool>(current_value)) {
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
         settings[option] = *s;
       } else {
         logger_->error(utl::GUI, 60, "{} must be a boolean", option);
       }
-    } else if (auto* v = std::get_if<int>(&current_value)) {
+    } else if (std::holds_alternative<int>(current_value)) {
       // is int
       if (auto* s = std::get_if<int>(&value)) {
         settings[option] = *s;
@@ -1220,7 +1220,7 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
       } else {
         logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
       }
-    } else if (auto* v = std::get_if<double>(&current_value)) {
+    } else if (std::holds_alternative<double>(current_value)) {
       // is double
       if (auto* s = std::get_if<int>(&value)) {
         settings[option] = static_cast<double>(*s);
