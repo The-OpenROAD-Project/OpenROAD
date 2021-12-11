@@ -242,6 +242,8 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
       model_(new DisplayControlModel(user_data_item_idx_, this)),
+      layers_menu_(new QMenu(this)),
+      layers_menu_layer_(nullptr),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
@@ -249,6 +251,7 @@ DisplayControls::DisplayControls(QWidget* parent)
 {
   setObjectName("layers");  // for settings
   view_->setModel(model_);
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -257,6 +260,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
+
+  createLayerMenu();
 
   auto layers = makeParentItem(
       layers_group_,
@@ -368,6 +373,11 @@ DisplayControls::DisplayControls(QWidget* parent)
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
 
+  connect(view_,
+          SIGNAL(customContextMenuRequested(const QPoint &)),
+          this,
+          SLOT(itemContextMenu(const QPoint &)));
+
   // register renderers
   if (gui::Gui::get() != nullptr) {
     for (auto renderer : gui::Gui::get()->renderers()) {
@@ -379,6 +389,48 @@ DisplayControls::DisplayControls(QWidget* parent)
 DisplayControls::~DisplayControls()
 {
   custom_controls_.clear();
+}
+
+void DisplayControls::createLayerMenu()
+{
+  connect(layers_menu_->addAction("Show only selected"),
+          &QAction::triggered,
+          [this]() {
+            layerShowOnlySelectedNeighbors(0, 0);
+          });
+
+
+  const QString show_range = "Show layer range ";
+  const QString updown_arrow = "\u2195";
+  const QString down_arrow = "\u2193";
+  const QString up_arrow = "\u2191";
+  auto add_range_action = [&](int up, int down) {
+    QString arrows;
+    for (int n = 1; n < down; n++) {
+      arrows += up_arrow;
+    }
+    if (up > 0 && down > 0) {
+      arrows += updown_arrow;
+    } else if (down > 0) {
+      arrows += up_arrow;
+    } else if (up > 0) {
+      arrows += down_arrow;
+    }
+    for (int n = 1; n < up; n++) {
+      arrows += down_arrow;
+    }
+
+    connect(layers_menu_->addAction(show_range + arrows),
+            &QAction::triggered,
+            [this, up, down]() {
+              layerShowOnlySelectedNeighbors(down, up);
+            });
+  };
+
+  add_range_action(1, 1); // 1 layer above / below
+  add_range_action(2, 2); // 2 layers above / below
+  add_range_action(0, 1); // 1 layer below
+  add_range_action(1, 0); // 1 layer above
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
@@ -1520,6 +1572,78 @@ void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds, co
         bool select = selectable->checkState() == Qt::Checked;
         cmds.push_back(fmt::format(selectable_restore, name, select));
       }
+    }
+  }
+}
+
+void DisplayControls::itemContextMenu(const QPoint &point)
+{
+  const QModelIndex index = view_->indexAt(point);
+
+  if (!index.isValid()) {
+    return;
+  }
+
+  // check if index is a layer
+  const QModelIndex parent = index.parent();
+  if (!parent.isValid()) {
+    return;
+  }
+
+  auto* parent_item = model_->itemFromIndex(parent);
+  if (parent_item != layers_group_.name) {
+    // not a member of the layers
+    return;
+  }
+
+  const QModelIndex name_index = model_->index(index.row(), Name, parent);
+  auto* name_item = model_->itemFromIndex(name_index);
+  layers_menu_layer_ = name_item->data(user_data_item_idx_).value<odb::dbTechLayer*>();
+
+  layers_menu_->popup(view_->viewport()->mapToGlobal(point));
+}
+
+void DisplayControls::layerShowOnlySelectedNeighbors(int lower, int upper)
+{
+  if (layers_menu_layer_ == nullptr) {
+    return;
+  }
+
+  std::set<const odb::dbTechLayer*> layers;
+  collectNeighboringLayers(layers_menu_layer_, lower, upper, layers);
+  setOnlyVisibleLayers(layers);
+
+  layers_menu_layer_ = nullptr;
+}
+
+void DisplayControls::collectNeighboringLayers(odb::dbTechLayer* layer,
+                                               int lower,
+                                               int upper,
+                                               std::set<const odb::dbTechLayer*>& layers)
+{
+  if (layer == nullptr) {
+    return;
+  }
+
+  layers.insert(layer);
+  if (lower > 0) {
+    collectNeighboringLayers(layer->getLowerLayer(), lower - 1, 0, layers);
+  }
+
+  if (upper > 0) {
+    collectNeighboringLayers(layer->getUpperLayer(), 0, upper - 1, layers);
+  }
+}
+
+void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers)
+{
+  for (auto& [layer, row] : layer_controls_) {
+    row.visible->setCheckState(Qt::Unchecked);
+  }
+
+  for (auto* layer : layers) {
+    if (layer_controls_.count(layer) != 0) {
+      layer_controls_[layer].visible->setCheckState(Qt::Checked);
     }
   }
 }

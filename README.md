@@ -35,14 +35,14 @@ The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
 
-| Argument             | Value                     |
-|----------------------|---------------------------|
-| CMAKE_BUILD_TYPE     | DEBUG, RELEASE            |
-| CMAKE_CXX_FLAGS      | Additional compiler flags |
-| TCL_LIB              | Path to tcl library       |
-| TCL_HEADER           | Path to tcl.h             |
-| ZLIB_ROOT            | Path to zlib              |
-| CMAKE_INSTALL_PREFIX | Path to install binary    |
+| Argument               | Value                     |
+|------------------------|---------------------------|
+| `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
+| `CMAKE_CXX_FLAGS`      | Additional compiler flags |
+| `TCL_LIB`              | Path to Tcl library       |
+| `TCL_HEADER`           | Path to `tcl.h`           |
+| `ZLIB_ROOT`            | Path to `zlib`            |
+| `CMAKE_INSTALL_PREFIX` | Path to install binary    |
 
 ### Build by hand
 
@@ -109,7 +109,8 @@ gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004 
 ## Run
 
 ``` text
-openroad [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file
+openroad [-help] [-version] [-no_init] [-exit] [-gui]
+         [-threads count|max] [-log file_name] cmd_file
   -help              show help and exit
   -version           show version and exit
   -no_init           do not read .openroad init file

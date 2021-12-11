@@ -1958,14 +1958,15 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawInstanceNames(painter, insts);
 
   drawRows(painter, bounds);
+
+  if (options_->arePinMarkersVisible()) {
+    drawPinMarkers(gui_painter, bounds);
+  }
+
   for (auto* renderer : renderers) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
-  }
-
-  if (options_->arePinMarkersVisible()) {
-    drawPinMarkers(gui_painter, bounds);
   }
 }
 

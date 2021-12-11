@@ -42,7 +42,7 @@ uint ttttGetDgOverlap;
 //#define TEST_GetDgOverlap
 
 namespace rcx {
-CoupleOptions coupleOptionsNull{0};
+CoupleOptions coupleOptionsNull{};
 };
 
 uint Ath__track::trackContextOn(int orig, int end, int base, int width,
@@ -112,7 +112,7 @@ uint Ath__track::findOverlap(
     Ath__array1D<Ath__wire*>* nwTable, Ath__grid* ccGrid,
     Ath__array1D<Ath__wire*>* ccTable, ZInterface* context, uint met,
     rcx::CoupleAndCompute coupleAndCompute, void* compPtr) {
-  rcx::CoupleOptions coupleOptions;
+  rcx::CoupleOptions coupleOptions{};
 
   AthPool<Ath__wire>* wirePool = _grid->getWirePoolPtr();
 
@@ -339,7 +339,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid, uint srcTrack, uint trackDist,
   // 	return 0;
 
   uint dir = _grid->getDir();
-  rcx::CoupleOptions coupleOptions;
+  rcx::CoupleOptions coupleOptions{};
 
   Ath__array1D<Ath__wire*> w1Table;
   Ath__array1D<Ath__wire*> w2Table;
