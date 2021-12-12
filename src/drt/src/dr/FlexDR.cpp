@@ -139,15 +139,11 @@ int FlexDRWorker::main(frDesign* design)
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
-    Rect scaledBox;
-    stringstream ss;
-    ss << endl
-       << "start DR worker (BOX) "
-       << "( " << routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
+    logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
+                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
 
   init(design);
@@ -172,17 +168,27 @@ int FlexDRWorker::main(frDesign* design)
 
   return 0;
 }
-
-inline frBlockObject* getEqObject(frBlockObject* srObj, frDesign* design)
+/**
+ * Finds an equivalent object from the current design to obj. This is
+ * because obj is a copy of the actual object that resides in design and
+ * it is assumed that it has a different memory allocation.
+ *
+ * @param[in] obj pointer to the serialized object. Should be a copy of an
+ * object in design.
+ * @param[in] design pointer to frDesign.
+ * @returns pointer to the equivalent frBlockObject in design. Returns nullptr
+ * if no equivalent object was found or if the object is of an unexpected type.
+ */
+inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
 {
-  switch (srObj->typeId()) {
+  switch (obj->typeId()) {
     case frcNet: {
-      frNet* srNet = (static_cast<frNet*>(srObj));
+      frNet* srNet = (static_cast<frNet*>(obj));
       auto net = design->getTopBlock()->findNet(srNet->getName());
       return net;
     }
     case frcInstTerm: {
-      frInstTerm* srTerm = (static_cast<frInstTerm*>(srObj));
+      frInstTerm* srTerm = (static_cast<frInstTerm*>(obj));
       auto srInst = srTerm->getInst();
       auto inst = design->getTopBlock()->findInst(srInst->getName());
       if (inst == nullptr)
@@ -193,11 +199,11 @@ inline frBlockObject* getEqObject(frBlockObject* srObj, frDesign* design)
       return nullptr;
     }
     case frcTerm: {
-      frTerm* srTerm = (static_cast<frTerm*>(srObj));
+      frTerm* srTerm = (static_cast<frTerm*>(obj));
       return design->getTopBlock()->getTerm(srTerm->getName());
     }
     case frcInstBlockage: {
-      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(srObj));
+      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
       auto srInst = srBlkg->getInst();
       auto inst = design->getTopBlock()->findInst(srInst->getName());
       if (inst == nullptr)
@@ -208,7 +214,7 @@ inline frBlockObject* getEqObject(frBlockObject* srObj, frDesign* design)
       return nullptr;
     }
     case frcBlockage: {
-      frBlockage* srBlkg = (static_cast<frBlockage*>(srObj));
+      frBlockage* srBlkg = (static_cast<frBlockage*>(obj));
       for (auto& blkg : design->getTopBlock()->getBlockages())
         if (blkg->getId() == srBlkg->getId())
           return blkg.get();
@@ -249,7 +255,7 @@ void FlexDRWorker::updateDesign(frDesign* design)
     std::set<frBlockObject*> newSrcs;
     for (auto src : marker.getSrcs()) {
       if (src != nullptr) {
-        auto newSrc = getEqObject(src, design);
+        auto newSrc = getEquivalentObject(src, design);
         if (newSrc == nullptr)
           logger_->error(DRT, 503, "Fail in mapping serialized marker src");
         newSrcs.insert(newSrc);
@@ -259,7 +265,7 @@ void FlexDRWorker::updateDesign(frDesign* design)
     marker.setSrcs(newSrcs);
     for (auto& [obj, value] : marker.getVictims()) {
       if (obj != nullptr) {
-        auto newObj = getEqObject(obj, design);
+        auto newObj = getEquivalentObject(obj, design);
         if (newObj == nullptr)
           logger_->error(DRT, 504, "Fail in mapping serialized marker victim");
         obj = newObj;
@@ -267,7 +273,7 @@ void FlexDRWorker::updateDesign(frDesign* design)
     }
     for (auto& [obj, value] : marker.getAggressors()) {
       if (obj != nullptr) {
-        auto newObj = getEqObject(obj, design);
+        auto newObj = getEquivalentObject(obj, design);
         if (newObj == nullptr)
           logger_->error(
               DRT, 505, "Fail in mapping serialized marker aggressor");
@@ -281,14 +287,11 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
-    stringstream ss;
-    ss << endl
-       << "start DR worker (BOX) "
-       << "( " << routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU() << " "
-       << routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
+    logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
+                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
+                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
 
   init(design);

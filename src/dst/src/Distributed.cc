@@ -31,7 +31,6 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
-#include <vector>
 
 #include "LoadBalancer.h"
 #include "Worker.h"
@@ -73,22 +72,22 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-void Distributed::runWorker(unsigned short port)
+void Distributed::runWorker(const char* ip, unsigned short port)
 {
   try {
     asio::io_service io_service;
-    Worker worker(io_service, this, logger_, port);
+    Worker worker(io_service, this, logger_, ip, port);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
 }
 
-void Distributed::runLoadBalancer(unsigned short port)
+void Distributed::runLoadBalancer(const char* ip, unsigned short port)
 {
   try {
     asio::io_service io_service;
-    LoadBalancer balancer(io_service, logger_, port);
+    LoadBalancer balancer(io_service, logger_, ip, port);
     for (auto worker : workers_)
       balancer.addWorker(worker.ip, worker.port, 10);
     io_service.run();
@@ -101,7 +100,7 @@ void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
   workers_.push_back(EndPoint(address, port));
 }
-
+//TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
 {
   int tries = 0;

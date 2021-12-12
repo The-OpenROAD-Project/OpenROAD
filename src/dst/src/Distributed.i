@@ -30,7 +30,6 @@
 
 #include "ord/OpenRoad.hh"
 #include "dst/Distributed.h"
-#include <thread>
 %}
 
 %include "../../Exception.i"
@@ -38,17 +37,17 @@
 %inline %{
 
 void
-run_server_cmd(unsigned short port)
+run_worker_cmd(const char* host, unsigned short port)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runWorker(port);
+  distributed->runWorker(host, port);
 }
 
 void
-run_load_balancer(unsigned short port)
+run_load_balancer(const char* host, unsigned short port)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runLoadBalancer(port);
+  distributed->runLoadBalancer(host, port);
 }
 
 void

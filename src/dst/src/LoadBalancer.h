@@ -30,6 +30,7 @@
 #include <boost/asio.hpp>
 #include <queue>
 #include <vector>
+#include <mutex>
 
 #include "BalancerConnection.h"
 
@@ -44,6 +45,7 @@ class LoadBalancer
   // constructor for accepting connection from client
   LoadBalancer(asio::io_service& io_service,
                utl::Logger* logger,
+               const char* ip,
                unsigned short port = 1234);
   void addWorker(std::string ip, unsigned short port, unsigned short avail);
   void updateWorker(ip::address ip, unsigned short port);
@@ -71,7 +73,7 @@ class LoadBalancer
   asio::io_service* service;
   utl::Logger* logger_;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
-  asio::detail::mutex workers_mutex_;
+  std::mutex workers_mutex_;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,

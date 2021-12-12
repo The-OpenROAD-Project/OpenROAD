@@ -51,6 +51,15 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
+void detailed_route_distributed(const char* ip,
+                                unsigned short port,
+                                const char* sharedVolume)
+{
+  router->setDistributed(true);
+  router->setWorkerIpPort(ip, port);
+  router->setSharedVolume(sharedVolume);
+}
+
 void detailed_route_cmd(const char* guideFile,
                         const char* outputGuideFile,
                         const char* outputMazeFile,
@@ -65,9 +74,7 @@ void detailed_route_cmd(const char* guideFile,
                         double orK,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
-                        int verbose,
-                        const char* distributed,
-                        const char* sharedVolume)
+                        int verbose)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -85,13 +92,6 @@ void detailed_route_cmd(const char* guideFile,
                     bottomRoutingLayer,
                     topRoutingLayer,
                     verbose});
-  if(strlen(distributed) == 0)
-    router->setDistributed(false);
-  else {
-    router->setDistributed(true);
-    router->setWorkerIpPort(distributed);
-    router->setSharedVolume(sharedVolume);
-  }
   router->main();
 }
 

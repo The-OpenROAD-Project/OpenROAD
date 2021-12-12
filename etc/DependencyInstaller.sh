@@ -8,7 +8,7 @@ _installCommonDev() {
     cmakeVersionBig=3.14
     cmakeVersionSmall=${cmakeVersionBig}.0
     swigVersion=4.0.1
-    boostVersionBig=1.72
+    boostVersionBig=1.74
     boostVersionSmall=${boostVersionBig}.0
     eigenVersion=3.3
     lemonVersion=1.3.1
@@ -53,7 +53,7 @@ _installCommonDev() {
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh
-        ./b2 install --with-iostreams --with-test --with-serialization -j $(nproc)
+        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
     else
         echo "Boost already installed."
     fi

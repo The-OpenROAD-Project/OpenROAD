@@ -63,11 +63,10 @@ class RoutingCallBack : public dst::JobCallBack
       return;
     }
     if (globals_path_ != desc->getGlobalsPath()) {
-      mx_.lock();
+      std::lock_guard<std::mutex> lock(mx_);
       globals_path_ = desc->getGlobalsPath();
       router_->setSharedVolume(desc->getSharedDir());
       router_->updateGlobals(desc->getGlobalsPath().c_str());
-      mx_.unlock();
     }
     logger_->info(utl::DRT, 600, "running worker {}", desc->getWorkerPath());
     std::string resultPath

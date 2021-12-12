@@ -99,22 +99,10 @@ void TritonRoute::setDistributed(bool on)
   distributed_ = on;
 }
 
-void TritonRoute::setWorkerIpPort(const char* in)
+void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
-  std::string ip_port = in;
-  size_t pos = ip_port.find("/");
-  if (pos == std::string::npos) {
-    logger_->error(DRT,
-                   512,
-                   "Malformed worker ip/port entered. It should be in the form "
-                   "xx.xx.xx.xx/xx");
-  }
-  dist_ip_ = ip_port.substr(0, pos);
-  try {
-    dist_port_ = stoi(ip_port.substr(pos + 1, ip_port.length() - pos));
-  } catch (std::exception& e) {
-    logger_->error(DRT, 513, "Parsing port throws exception \"{}\"", e.what());
-  }
+  dist_ip_ = ip;
+  dist_port_ = port;
 }
 
 void TritonRoute::setSharedVolume(const std::string& vol)

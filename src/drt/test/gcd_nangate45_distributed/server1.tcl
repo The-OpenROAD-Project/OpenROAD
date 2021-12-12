@@ -1,1 +1,1 @@
-run_worker -port 1111
+run_worker -host 127.0.0.1 -port 1111

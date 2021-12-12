@@ -39,7 +39,7 @@ class Logger;
 }
 
 namespace boost::asio {
-class executor;
+class any_io_executor;
 template <typename Protocol, typename Executor>
 class basic_stream_socket;
 namespace ip {
@@ -51,7 +51,7 @@ namespace asio = boost::asio;
 using asio::ip::tcp;
 
 namespace dst {
-typedef asio::basic_stream_socket<tcp, asio::executor> socket;
+typedef asio::basic_stream_socket<tcp, asio::any_io_executor> socket;
 class JobMessage;
 class JobCallBack;
 
@@ -61,8 +61,8 @@ class Distributed
   Distributed();
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runWorker(unsigned short port);
-  void runLoadBalancer(unsigned short port);
+  void runWorker(const char* ip, unsigned short port);
+  void runLoadBalancer(const char* ip, unsigned short port);
   void addWorkerAddress(const char* address, unsigned short port);
   bool sendJob(JobMessage& msg,
                const char* ip,

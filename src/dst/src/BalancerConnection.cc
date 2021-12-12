@@ -30,8 +30,6 @@
 
 #include <dst/JobMessage.h>
 
-#include <boost/bind.hpp>
-#include <iostream>
 #include <thread>
 
 #include "LoadBalancer.h"

@@ -32,6 +32,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/unique_ptr.hpp>
+#include <sstream>
 
 using namespace dst;
 

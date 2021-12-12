@@ -28,7 +28,9 @@
 
 #include "Worker.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+
+namespace ip = asio::ip;
 
 namespace dst {
 
@@ -45,8 +47,9 @@ void Worker::start_accept()
 Worker::Worker(asio::io_service& io_service,
                Distributed* dist,
                utl::Logger* logger,
+               const char* ip,
                unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
       dist_(dist),
       logger_(logger)
 {

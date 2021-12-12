@@ -28,7 +28,7 @@
 
 #include "LoadBalancer.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 namespace dst {
 
@@ -45,8 +45,10 @@ void LoadBalancer::start_accept()
 
 LoadBalancer::LoadBalancer(asio::io_service& io_service,
                            utl::Logger* logger,
+                           const char* ip,
                            unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(tcp::v4(), port)), logger_(logger)
+    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+      logger_(logger)
 {
   service = &io_service;
   start_accept();
@@ -60,8 +62,7 @@ void LoadBalancer::addWorker(std::string ip,
 }
 void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
 {
-  // std::unique_lock lock(workers_mutex_);
-  workers_mutex_.lock();
+  std::lock_guard<std::mutex> lock(workers_mutex_);
   std::priority_queue<worker, std::vector<worker>, CompareWorker> newQueue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
@@ -71,25 +72,24 @@ void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
     newQueue.push(worker);
   }
   workers_.swap(newQueue);
-  workers_mutex_.unlock();
 }
 void LoadBalancer::handle_accept(BalancerConnection::pointer connection,
                                  const boost::system::error_code& err)
 {
   if (!err) {
-    // std::unique_lock lock(workers_mutex_);
-    workers_mutex_.lock();
     ip::address workerAddress;
     unsigned short port;
-    if (!workers_.empty()) {
-      worker w = workers_.top();
-      workers_.pop();
-      workerAddress = w.ip;
-      port = w.port;
-      w.priority--;
-      workers_.push(w);
+    {
+      std::lock_guard<std::mutex> lock(workers_mutex_);
+      if (!workers_.empty()) {
+        worker w = workers_.top();
+        workers_.pop();
+        workerAddress = w.ip;
+        port = w.port;
+        w.priority--;
+        workers_.push(w);
+      }
     }
-    workers_mutex_.unlock();
     connection->start(workerAddress, port);
   }
   start_accept();

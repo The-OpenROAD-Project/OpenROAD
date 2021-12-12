@@ -44,6 +44,7 @@ class Worker
   Worker(asio::io_service& io_service,
          Distributed* dist,
          utl::Logger* logger,
+         const char* ip,
          unsigned short port);
 
  private:

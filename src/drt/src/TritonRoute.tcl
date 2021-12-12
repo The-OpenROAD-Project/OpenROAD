@@ -50,7 +50,9 @@ sta::define_cmd_args "detailed_route" {
     [-top_routing_layer layer]
     [-verbose level]
     [-param filename]
-    [-distributed ip_port]
+    [-distributed]
+    [-remote_host host]
+    [-remote_port port]
     [-shared_volume vol]
 }
 
@@ -59,8 +61,8 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
       -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -distributed -shared_volume} \
-    flags {-disable_via_gen}
+      -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
+    flags {-disable_via_gen -distributed}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -151,21 +153,28 @@ proc detailed_route { args } {
     } else {
       set verbose 1
     }
-    if { [info exists keys(-distributed)] } {
-      set distributed $keys(-distributed)
+    if { [info exists flags(-distributed)] } {
+      if { [info exists keys(-remote_host)] } {
+        set host $keys(-remote_host)
+      } else {
+        utl::error DRT 506 "-remote_host is required for distributed routing."
+      }
+      if { [info exists keys(-remote_port)] } {
+        set port $keys(-remote_port)
+      } else {
+        utl::error DRT 507 "-remote_port is required for distributed routing."
+      }
       if { [info exists keys(-shared_volume)] } {
         set vol $keys(-shared_volume)
       } else {
-        utl::error DRT 506 "-shared_volume is required for distributed routing."
+        utl::error DRT 508 "-shared_volume is required for distributed routing."
       }
-    } else {
-      set distributed ""
-      set vol ""
+      drt::detailed_route_distributed $host $port $vol
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
-      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose $distributed $vol
+      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
   }
 }
 

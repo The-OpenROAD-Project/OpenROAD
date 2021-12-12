@@ -14,7 +14,9 @@ detailed_route -guide gcd_nangate45_distributed/gcd_nangate45.route_guide \
                -output_drc results/gcd_nangate45.output.drc.rpt \
                -output_maze results/gcd_nangate45.output.maze.log \
                -verbose 1 \
-	             -distributed 127.0.0.1/1234 \
+	             -distributed \
+	             -remote_host 127.0.0.1 \
+	             -remote_port 1234 \
                -shared_volume results
 exec kill $server1
 exec kill $server2

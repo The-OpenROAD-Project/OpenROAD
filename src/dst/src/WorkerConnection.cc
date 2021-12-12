@@ -28,12 +28,6 @@
 
 #include "WorkerConnection.h"
 
-#include <unistd.h>
-
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/bind.hpp>
-#include <iostream>
 #include <thread>
 
 #include "dst/Distributed.h"
