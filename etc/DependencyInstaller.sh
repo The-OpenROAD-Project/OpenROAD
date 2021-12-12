@@ -49,7 +49,7 @@ _installCommonDev() {
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
-        md5sum -c <(echo "e2b0b1eac302880461bcbef097171758  boost_${boostVersionUnderscore}.tar.gz") || exit 1
+        md5sum -c <(echo "e425bf1f1d8c36a3cd464884e74f007a  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh
