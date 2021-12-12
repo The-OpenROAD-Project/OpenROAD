@@ -22,7 +22,7 @@ _installCommonDev() {
     if [[ -z $(cmake --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-Linux-x86_64.sh
-        md5sum -c <(echo "e425bf1f1d8c36a3cd464884e74f007a  cmake-${cmakeVersionSmall}-Linux-x86_64.sh") || exit 1
+        md5sum -c <(echo "73041a43d27a30cdcbfdfdb61310d081  cmake-${cmakeVersionSmall}-Linux-x86_64.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-Linux-x86_64.sh
         ./cmake-${cmakeVersionSmall}-Linux-x86_64.sh --skip-license --prefix=/usr/local
     else
