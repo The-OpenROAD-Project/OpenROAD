@@ -8,7 +8,7 @@ _installCommonDev() {
     cmakeVersionBig=3.14
     cmakeVersionSmall=${cmakeVersionBig}.0
     swigVersion=4.0.1
-    boostVersionBig=1.74
+    boostVersionBig=1.76
     boostVersionSmall=${boostVersionBig}.0
     eigenVersion=3.3
     lemonVersion=1.3.1
