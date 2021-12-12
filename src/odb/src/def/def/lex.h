@@ -33,10 +33,6 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-extern void lex_init();
-extern void lex_un_init();
-extern int defyyparse(defrData *data);
-
 void AddStringDefine(char *token, char *string);
 void AddBooleanDefine(char *token, int val);
 void AddNumDefine(char *token, double val);

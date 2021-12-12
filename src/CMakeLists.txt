@@ -71,6 +71,15 @@ find_package(Boost REQUIRED)
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
+add_compile_options(
+  -Wall
+  -Wredundant-decls
+  -Wformat-security
+  -Wno-sign-compare
+  $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
+)
+
 ################################################################
 
 swig_lib(NAME      openroad_swig
@@ -147,9 +156,7 @@ add_executable(openroad
 
 target_compile_options(openroad
   PRIVATE
-    -Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security
-    $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
-    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
+    -Wextra -pedantic -Wcast-qual
 )
 
 # Disable compiler specific extensions like gnu++11.
