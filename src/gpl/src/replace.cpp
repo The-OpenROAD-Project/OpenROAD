@@ -129,20 +129,20 @@ void Replace::reset() {
   minPhiCoef_ = 0.95;
   maxPhiCoef_ = 1.05;
   referenceHpwl_= 446000000;
+
   routabilityCheckOverflow_ = 0.20;
   routabilityMaxDensity_ = 0.99;
-  routabilityMaxBloatIter_ = 1;
-  routabilityMaxInflationIter_ = 4;
-  routabilityTargetRcMetric_ = 1.03;
+  routabilityTargetRcMetric_ = 1.25;
   routabilityInflationRatioCoef_ = 2.5;
   routabilityMaxInflationRatio_ = 2.5;
+  routabilityRcK1_ = routabilityRcK2_ = 1.0;
+  routabilityRcK3_ = routabilityRcK4_ = 0.0;
+  routabilityMaxBloatIter_ = 1;
+  routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true; 
   uniformTargetDensityMode_ = false;
-  
-  routabilityRcK1_ = routabilityRcK2_ = 1.0;
-  routabilityRcK3_ = routabilityRcK4_ = 0.0;
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
