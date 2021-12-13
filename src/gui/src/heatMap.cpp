@@ -695,6 +695,9 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() c
 
 void HeatMapDataSource::onShow()
 {
+  if (!isPopulated()) {
+    logger_->warn(utl::GUI, 66, "Heat map \"{}\" has not been populated with data.", getName());
+  }
 }
 
 void HeatMapDataSource::onHide()
