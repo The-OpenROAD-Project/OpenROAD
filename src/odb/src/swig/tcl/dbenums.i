@@ -617,6 +617,7 @@
 }
 %typemap(in) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
 	char *str = Tcl_GetStringFromObj($input, 0);
+        $1 = odb::dbTechLayer::LEF58_TYPE::NONE;
 	if (strcasecmp(str, "NWELL") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::NWELL;
 	} else if (strcasecmp(str, "PWELL") == 0) {
@@ -631,8 +632,6 @@
 		$1 = odb::dbTechLayer::LEF58_TYPE::TRIMPOLY;
 	} else if (strcasecmp(str, "MIMCAP") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::MIMCAP;
-	} else if (strcasecmp(str, "NONE") == 0) {
-		$1 = odb::dbTechLayer::LEF58_TYPE::NONE;
 	}
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
@@ -648,6 +647,34 @@
 		} 	else if (strcasecmp(str, "OVERLAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "IMPLANT") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "NONE") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
+%typemap(typecheck) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "NWELL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PWELL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ABOVEDIEEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "BELOWDIEEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "DIFFUSION") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "TRIMPOLY") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "MIMCAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "NONE") == 0) {
 			found = true;

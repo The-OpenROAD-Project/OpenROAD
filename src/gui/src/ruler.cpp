@@ -118,7 +118,6 @@ void RulerDescriptor::highlight(std::any object,
 Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const double dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {{"Label", ruler->getLabel()},
           {"Point 0 - x", Property::convert_dbu(ruler->getPt0().x(), true)},
           {"Point 0 - y", Property::convert_dbu(ruler->getPt0().y(), true)},
