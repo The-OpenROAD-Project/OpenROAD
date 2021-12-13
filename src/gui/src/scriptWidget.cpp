@@ -32,6 +32,7 @@
 
 #include "scriptWidget.h"
 
+#include <mutex>
 #include <errno.h>
 #include <unistd.h>
 
@@ -88,6 +89,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
   connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
   connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
+
+  connect(this,
+          SIGNAL(addToOutput(const QString&, const QColor&)),
+          this,
+          SLOT(addTextToOutput(const QString&, const QColor&)),
+          Qt::QueuedConnection);
 
   setWidget(container);
 }
@@ -221,7 +228,7 @@ void ScriptWidget::addReportToOutput(const QString& text)
   addToOutput(text, buffer_msg_);
 }
 
-void ScriptWidget::addToOutput(const QString& text, const QColor& color)
+void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
 {
   // make sure cursor is at the end of the document
   output_->moveCursor(QTextCursor::End);
@@ -401,30 +408,39 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
   {
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
+
+    mutex_.lock(); // formatter checks and caches some information
     this->formatter_->format(msg, formatted);
-    std::string formatted_msg = std::string(formatted.data(), formatted.size());
+    mutex_.unlock();
+    const QString formatted_msg = QString::fromStdString(std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
       // this comes from a ->report
-      widget_->addReportToOutput(formatted_msg.c_str());
+      widget_->addReportToOutput(formatted_msg);
     }
     else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err ? widget_->tcl_error_msg_ : widget_->buffer_msg_;
 
-      widget_->addLogToOutput(formatted_msg.c_str(), msg_color);
+      widget_->addLogToOutput(formatted_msg, msg_color);
     }
+
+    // process queue, if main thread will process new text, otherwise there is nothing to process from this thread.
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   }
 
   void flush_() override {}
 
  private:
   ScriptWidget* widget_;
+  std::mutex mutex_;
 };
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
-  sink_ = std::make_shared<GuiSink<std::mutex>>(this);
+  // use spdlog::details::null_mutex instead of std::mutex, Qt will handle the thread transfers to the output viewer
+  // null_mutex prevents deadlock (by not locking) when the logging causes a redraw, which then causes another logging event.
+  sink_ = std::make_shared<GuiSink<spdlog::details::null_mutex>>(this);
   logger_ = logger;
   logger->addSink(sink_);
 }

@@ -82,6 +82,8 @@ class ScriptWidget : public QDockWidget
   // shutdown
   void tclExiting();
 
+  void addToOutput(const QString& text, const QColor& color);
+
  public slots:
  // Triggered when the user hits return in the line edit
  void executeCommand(const QString& command, bool echo = true);
@@ -102,6 +104,8 @@ class ScriptWidget : public QDockWidget
 
   void updatePauseTimeout();
 
+  void addTextToOutput(const QString& text, const QColor& color);
+
  protected:
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
@@ -111,7 +115,6 @@ class ScriptWidget : public QDockWidget
 
   void triggerPauseCountDown(int timeout);
 
-  void addToOutput(const QString& text, const QColor& color);
   void addCommandToOutput(const QString& cmd);
   void addTclResultToOutput(int return_code);
   void addReportToOutput(const QString& text);
