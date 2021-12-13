@@ -245,8 +245,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
-  int left_pad = opendp_->padGlobalLeft();
-  int right_pad = opendp_->padGlobalRight();
   std::vector<value> overlap_insts;
   int legalize_itr = 0;
   while (!legally_placed && legalize_itr < max_legalize_itr) {
@@ -260,6 +258,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
       place_at_left = true;
     }
 
+    const int left_pad = opendp_->padLeft(antenna_inst);
+    const int right_pad = opendp_->padRight(antenna_inst);
     antenna_inst->setOrient(inst_orient);
     antenna_inst->setLocation(inst_loc_x + offset, inst_loc_y);
 
