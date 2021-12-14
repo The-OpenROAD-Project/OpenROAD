@@ -584,6 +584,11 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   gtl::polygon_90_set_data<frCoord> tmpPoly;
   for (auto& [boostSeg, ptr] : results) {
+    if (ptr->getPin() == edge->getPin())
+      continue;
+    if (edge->isFixed() && ptr->isFixed())
+      continue;
+
     // skip if non oppo-dir edge
     if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
       continue;
