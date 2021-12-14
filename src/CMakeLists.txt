@@ -28,6 +28,8 @@ set(OPENROAD_SOURCE
   Main.cc
   )
 
+set(Boost_USE_STATIC_LIBS ON)
+
 ################################################################
 
 # OSX tcl is deprecated and prints a warning, so look for a user installed
