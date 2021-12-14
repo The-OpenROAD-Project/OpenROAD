@@ -1,6 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +30,24 @@
 
 #include <memory>
 
-#include "db/obj/frBlockObject.h"
 #include "db/obj/frBPin.h"
+#include "db/obj/frTerm.h"
 #include "frBaseTypes.h"
 
 namespace fr {
 class frNet;
-class frInstTerm;
 class frBlock;
 
-class frBTerm : public frBlockObject
+class frBTerm : public frTerm
 {
  public:
   // constructors
   frBTerm(const frString& name)
-      : frBlockObject(),
-        name_(name),
-        block_(nullptr),
-        net_(nullptr),
-        pins_(),
-        type_(dbSigType::SIGNAL),
-        direction_(dbIoType::INPUT),
-        bbox_()
+      : frTerm(name), block_(nullptr)
   {
   }
   frBTerm(const frBTerm& in)
-      : frBlockObject(),
-        name_(in.name_),
-        block_(in.block_),
-        net_(in.net_),
-        type_(in.type_),
-        direction_(in.direction_),
-        bbox_()
+      : frTerm(in), block_(in.block_)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -71,13 +56,7 @@ class frBTerm : public frBlockObject
     }
   }
   frBTerm(const frBTerm& in, const dbTransform& xform)
-      : frBlockObject(),
-        name_(in.name_),
-        block_(in.block_),
-        net_(in.net_),
-        type_(in.type_),
-        direction_(in.direction_),
-        bbox_()
+      : frTerm(in), block_(in.block_)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -87,13 +66,9 @@ class frBTerm : public frBlockObject
   }
   // getters
   frBlock* getBlock() const { return block_; }
-  bool hasNet() const { return (net_); }
-  frNet* getNet() const { return net_; }
-  const frString& getName() const { return name_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   // setters
   void setBlock(frBlock* in) { block_ = in; }
-  void addToNet(frNet* in) { net_ = in; }
   void addPin(std::unique_ptr<frBPin> in)
   {
     in->setTerm(this);
@@ -108,14 +83,8 @@ class frBTerm : public frBlockObject
     }
     pins_.push_back(std::move(in));
   }
-  void setType(dbSigType in) { type_ = in; }
-  dbSigType getType() const { return type_; }
-  void setDirection(dbIoType in) { direction_ = in; }
-  dbIoType getDirection() const { return direction_; }
   // others
   frBlockObjectEnum typeId() const override { return frcTerm; }
-  void setOrderId(int order_id) { _order_id = order_id; }
-  int getOrderId() { return _order_id; }
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,
                                 frLayerNum lNum,
@@ -137,10 +106,6 @@ class frBTerm : public frBlockObject
     }
     return nullptr;
   }
-  bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
-  {
-    return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;
-  }
   // fills outShapes with copies of the pinFigs
   void getShapes(std::vector<frRect>& outShapes)
   {
@@ -152,17 +117,10 @@ class frBTerm : public frBlockObject
       }
     }
   }
-  const Rect getBBox() const { return bbox_; }
 
  protected:
-  frString name_;  // A, B, Z, VSS, VDD
   frBlock* block_;
-  frNet* net_;  // set later, term in instTerm does not have net
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
-  dbSigType type_;
-  dbIoType direction_;
-  int _order_id;
-  Rect bbox_;
 };
 }  // namespace fr
 

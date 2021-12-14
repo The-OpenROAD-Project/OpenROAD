@@ -1201,8 +1201,6 @@ bool FlexPA::prepPoint_pin_helper(
   return false;
 }
 
-//template FlexPAGraphics::startPin<frPin>(frPin* pin, frInstTerm* inst_term);
-
 // first create all access points with costs
 template <typename T>
 int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
@@ -1861,7 +1859,7 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
 // the input inst must be unique instance
 void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
 {
-  std::vector<std::pair<frCoord, std::pair<frPin*, frInstTerm*>>> pins;
+  std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
   int paIdx = unique2paidx_[inst];
   for (auto& instTerm : inst->getInstTerms()) {
@@ -1893,12 +1891,12 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
   }
   std::sort(pins.begin(),
             pins.end(),
-            [](const std::pair<frCoord, std::pair<frPin*, frInstTerm*>>& lhs,
-               const std::pair<frCoord, std::pair<frPin*, frInstTerm*>>& rhs) {
+            [](const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& lhs,
+               const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& rhs) {
               return lhs.first < rhs.first;
             });
 
-  std::vector<std::pair<frPin*, frInstTerm*>> pinInstTermPairs;
+  std::vector<std::pair<frMPin*, frInstTerm*>> pinInstTermPairs;
   for (auto& [x, m] : pins) {
     pinInstTermPairs.push_back(m);
   }
@@ -1907,7 +1905,7 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
 }
 
 void FlexPA::genPatterns(
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int currUniqueInstIdx)
 {
   if (pins.empty()) {
@@ -2037,7 +2035,7 @@ void FlexPA::genPatterns(
 // init dp node array for valid access points
 void FlexPA::genPatterns_init(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::set<std::vector<int>>& instAccessPatterns,
     std::set<std::pair<int, int>>& usedAccessPoints,
     std::set<std::pair<int, int>>& violAccessPoints,
@@ -2072,7 +2070,7 @@ void FlexPA::genPatterns_init(
 
 void FlexPA::genPatterns_reset(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int maxAccessPointSize)
 {
   for (int i = 0; i < (int) nodes.size(); i++) {
@@ -2151,7 +2149,7 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
 
 void FlexPA::genPatterns_perform(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::vector<int>& vioEdges,
     const std::set<std::pair<int, int>>& usedAccessPoints,
     const std::set<std::pair<int, int>>& violAccessPoints,
@@ -2195,7 +2193,7 @@ void FlexPA::genPatterns_perform(
 int FlexPA::getEdgeCost(int prevNodeIdx,
                         int currNodeIdx,
                         const std::vector<FlexDPNode>& nodes,
-                        const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                         std::vector<int>& vioEdges,
                         const std::set<std::pair<int, int>>& usedAccessPoints,
                         const std::set<std::pair<int, int>>& violAccessPoints,
@@ -2315,7 +2313,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
 
 bool FlexPA::genPatterns_commit(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     bool& isValid,
     std::set<std::vector<int>>& instAccessPatterns,
     std::set<std::pair<int, int>>& usedAccessPoints,
@@ -2351,7 +2349,7 @@ bool FlexPA::genPatterns_commit(
     instAccessPatterns.insert(accessPattern);
     // create new access pattern and push to uniqueInstances
     auto pinAccessPattern = std::make_unique<FlexPinAccessPattern>();
-    std::map<frPin*, frAccessPoint*> pin2AP;
+    std::map<frMPin*, frAccessPoint*> pin2AP;
     // check DRC for the whole pattern
     vector<pair<frConnFig*, frBlockObject*>> objs;
     vector<unique_ptr<frVia>> tempVias;
@@ -2473,7 +2471,7 @@ bool FlexPA::genPatterns_commit(
 
 void FlexPA::genPatterns_print_debug(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int maxAccessPointSize)
 {
   int currNodeIdx = getFlatIdx(pins.size(), 0, maxAccessPointSize);
@@ -2518,7 +2516,7 @@ void FlexPA::genPatterns_print_debug(
 
 void FlexPA::genPatterns_print(
     std::vector<FlexDPNode>& nodes,
-    const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int maxAccessPointSize)
 {
   int currNodeIdx = getFlatIdx(pins.size(), 0, maxAccessPointSize);

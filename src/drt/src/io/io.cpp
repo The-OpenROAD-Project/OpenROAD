@@ -167,7 +167,7 @@ void io::Parser::setObstructions(odb::dbBlock* block)
     auto blkIn = make_unique<frBlockage>();
     blkIn->setId(numBlockages);
     numBlockages++;
-    auto pinIn = make_unique<frPin>();
+    auto pinIn = make_unique<frBPin>();
     pinIn->setId(0);
     frCoord xl = blockage->getBBox()->xMin();
     frCoord yl = blockage->getBBox()->yMin();
@@ -1747,7 +1747,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       tmpMaster->setMasterType(master->getType());
 
       for (auto _term : master->getMTerms()) {
-        unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
+        unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(_term->getName());
         auto term = uTerm.get();
         term->setId(numTerms);
         numTerms++;
@@ -1758,7 +1758,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {
-          auto pinIn = make_unique<frPin>();
+          auto pinIn = make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
@@ -1811,7 +1811,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         blkIn->setId(numBlockages);
         blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
-        auto pinIn = make_unique<frPin>();
+        auto pinIn = make_unique<frBPin>();
         pinIn->setId(0);
         frCoord xl = obs->xMin();
         frCoord yl = obs->yMin();

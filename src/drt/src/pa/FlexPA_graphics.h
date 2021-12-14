@@ -59,7 +59,7 @@ class FlexPAGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startPin(frPin* pin, frInstTerm* inst_term);
+  void startPin(frMPin* pin, frInstTerm* inst_term);
   void startPin(frBPin* pin, frInstTerm* inst_term);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,

@@ -768,7 +768,7 @@ void io::Parser::initRPin_rpin()
       }
     }
     // term
-    for (auto& term : net->getTerms()) {
+    for (auto& term : net->getBTerms()) {
       int pinIdx = 0;
       auto trueTerm = term;
       for (auto& pin : trueTerm->getPins()) {

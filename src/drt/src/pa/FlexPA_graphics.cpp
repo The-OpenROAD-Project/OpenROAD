@@ -145,7 +145,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 }
 
-void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
+void FlexPAGraphics::startPin(frMPin* pin, frInstTerm* inst_term)
 {
   pin_ = nullptr;
   aps_.clear();

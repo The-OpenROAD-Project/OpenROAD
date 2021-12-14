@@ -132,7 +132,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   rq->queryGRPin(box, result);
   dbTransform instXform;  // (0,0), R0
   dbTransform shiftXform;
-  frTerm* trueTerm = nullptr;
+  frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
     if (term->typeId() == frcInstTerm) {
@@ -148,7 +148,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
       if (static_cast<frTerm*>(term)->getNet() != net) {
         continue;
       }
-      trueTerm = static_cast<frTerm*>(term);
+      trueTerm = static_cast<frMTerm*>(term);
     }
     if (trueTerm) {
       int pinIdx = 0;
@@ -232,7 +232,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   }
   dbTransform instXform;  // (0,0), R0
   dbTransform shiftXform;
-  frTerm* trueTerm = nullptr;
+  frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
     if (term->typeId() == frcInstTerm) {
@@ -248,7 +248,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
       if (static_cast<frTerm*>(term)->getNet() != net) {
         continue;
       }
-      trueTerm = static_cast<frTerm*>(term);
+      trueTerm = static_cast<frMTerm*>(term);
     }
     if (trueTerm) {
       int pinIdx = 0;

@@ -252,21 +252,21 @@ class FlexPA
 
   void prepPattern();
   void prepPattern_inst(frInst* inst, int currUniqueInstIdx);
-  void genPatterns(const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+  void genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                    int currUniqueInstIdx);
   void genPatterns_init(std::vector<FlexDPNode>& nodes,
-                        const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                         std::set<std::vector<int>>& instAccessPatterns,
                         std::set<std::pair<int, int>>& usedAccessPoints,
                         std::set<std::pair<int, int>>& violAccessPoints,
                         int maxAccessPointSize);
   void genPatterns_reset(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   void genPatterns_perform(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vioEdges,
       const std::set<std::pair<int, int>>& usedAccessPoints,
       const std::set<std::pair<int, int>>& violAccessPoints,
@@ -275,7 +275,7 @@ class FlexPA
   int getEdgeCost(int prevNodeIdx,
                   int currNodeIdx,
                   const std::vector<FlexDPNode>& nodes,
-                  const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+                  const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vioEdges,
                   const std::set<std::pair<int, int>>& usedAccessPoints,
                   const std::set<std::pair<int, int>>& violAccessPoints,
@@ -283,7 +283,7 @@ class FlexPA
                   int maxAccessPointSize);
   bool genPatterns_commit(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& isValid,
       std::set<std::vector<int>>& instAccessPatterns,
       std::set<std::pair<int, int>>& usedAccessPoints,
@@ -292,11 +292,11 @@ class FlexPA
       int maxAccessPointSize);
   void genPatterns_print_debug(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   void genPatterns_print(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   int getFlatIdx(int idx1, int idx2, int idx2Dim);
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);

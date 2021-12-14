@@ -121,8 +121,9 @@ void FlexGCWorker::Impl::initObj(const Rect& box,
 
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 {
-  if (targetObj_) {
-    if (targetObj_->typeId() == frcInst) {
+  if (targetObj_ == nullptr) { return false; }
+  switch(targetObj_->typeId()) {
+    case frcInst:
       if (obj->typeId() == frcInstTerm
           && static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
@@ -133,19 +134,16 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
       } else {
         return true;
       }
-    } else if (targetObj_->typeId() == frcTerm) {
-      if (obj->typeId() == frcTerm
-          && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_)) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
+      break;
+    case frcMTerm:
+    case frcBTerm:
+    case frcTerm:
+      return !(obj->typeId() == frcTerm
+        && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
+      break;
+    default:
       logger_->error(
           DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
-    }
-  } else {
-    return false;
   }
   return false;
 }

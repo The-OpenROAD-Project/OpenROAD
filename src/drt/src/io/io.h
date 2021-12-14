@@ -173,6 +173,10 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
+  template <typename T>
+  void genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm, frInst* inst,
+                                      dbTransform& shiftXform,
+                                      vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r, const Point3D& p, Point3D& result);
@@ -196,10 +200,11 @@ class Parser
       frNet* net,
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
+  template <typename T>
   void genGuides_gCell2TermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frTerm* term,
+      T* term,
       frBlockObject* origTerm);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
@@ -208,7 +213,7 @@ class Parser
   bool genGuides_gCell2APTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frTerm* instTerm);
+      frBTerm* term);
   void genGuides_initPin2GCellMap(
       frNet* net,
       std::map<frBlockObject*,

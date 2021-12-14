@@ -243,7 +243,7 @@ void io::Parser::genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides)
 {
   for (auto pin : net->getInstTerms())
     checkPinForGuideEnclosure(pin, net, guides);
-  for (auto pin : net->getTerms())
+  for (auto pin : net->getBTerms())
     checkPinForGuideEnclosure(pin, net, guides);
 }
 
@@ -518,10 +518,11 @@ void io::Parser::genGuides_split(
   rects.shrink_to_fit();
 }
 
+template <typename T>
 void io::Parser::genGuides_gCell2TermMap(
     map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
         gCell2PinMap,
-    frTerm* term,
+    T* term,
     frBlockObject* origTerm)
 {
   for (auto& uPin : term->getPins()) {
@@ -615,7 +616,7 @@ void io::Parser::genGuides_gCell2PinMap(
     dbTransform xform;
     instTerm->getInst()->getUpdatedXform(xform);
     auto origTerm = instTerm->getTerm();
-    auto uTerm = make_unique<frTerm>(*origTerm, xform);
+    auto uTerm = make_unique<frMTerm>(*origTerm, xform);
     auto term = uTerm.get();
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
@@ -625,7 +626,7 @@ void io::Parser::genGuides_gCell2PinMap(
       genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
     }
   }
-  for (auto& term : net->getTerms()) {
+  for (auto& term : net->getBTerms()) {
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APTermMap(gCell2PinMap, term)) {
         genGuides_gCell2TermMap(gCell2PinMap, term, term);
@@ -651,7 +652,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   dbTransform shiftXform;
   dbTransform xform;
   instTerm->getInst()->getUpdatedXform(xform);
-  frTerm* trueTerm = instTerm->getTerm();
+  frMTerm* trueTerm = instTerm->getTerm();
   string name;
   frInst* inst = instTerm->getInst();
   inst->getTransform(shiftXform);
@@ -702,7 +703,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
 bool io::Parser::genGuides_gCell2APTermMap(
     map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
         gCell2PinMap,
-    frTerm* term)
+    frBTerm* term)
 {
   bool isSuccess = false;
 
@@ -711,7 +712,7 @@ bool io::Parser::genGuides_gCell2APTermMap(
   }
 
   // ap
-  frTerm* trueTerm = term;
+  frBTerm* trueTerm = term;
 
   int pinIdx = 0;
   int pinAccessIdx = 0;
@@ -760,7 +761,7 @@ void io::Parser::genGuides_initPin2GCellMap(
   for (auto& instTerm : net->getInstTerms()) {
     pin2GCellMap[instTerm];
   }
-  for (auto& term : net->getTerms()) {
+  for (auto& term : net->getBTerms()) {
     pin2GCellMap[term];
   }
 }
@@ -771,7 +772,7 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
   for (auto& instTerm : net->getInstTerms()) {
     terms.push_back(instTerm);
   }
-  for (auto& term : net->getTerms()) {
+  for (auto& term : net->getBTerms()) {
     terms.push_back(term);
   }
 
@@ -779,72 +780,77 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
     // ap
     dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
-    frTerm* trueTerm = nullptr;
-    string name;
     frInst* inst = nullptr;
+      logger->warn(DRT, 9214, "got here.");
     if (term->typeId() == frcInstTerm) {
       inst = static_cast<frInstTerm*>(term)->getInst();
       inst->getTransform(shiftXform);
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       inst->getUpdatedXform(instXform);
-      trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-      name = inst->getName() + string("/") + trueTerm->getName();
+      auto trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+
+      genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
     } else if (term->typeId() == frcTerm) {
-      trueTerm = static_cast<frTerm*>(term);
-      name = string("PIN/") + trueTerm->getName();
+      auto trueTerm = static_cast<frBTerm*>(term);
+      genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
     }
-    int pinIdx = 0;
-    int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-    for (auto& pin : trueTerm->getPins()) {
-      frAccessPoint* prefAp = nullptr;
-      if (inst) {
-        prefAp = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-      }
-      if (!pin->hasPinAccess()) {
-        continue;
-      }
-      if (pinAccessIdx == -1) {
-        continue;
-      }
+  }
+}
 
-      if (!prefAp) {
-        for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-          prefAp = ap.get();
-          break;
-        }
+template <typename T>
+void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm, frInst* inst, dbTransform& shiftXform, vector<frRect>& rects)
+{
+  int pinIdx = 0;
+  int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
+  for (auto& pin : trueTerm->getPins()) {
+    frAccessPoint* prefAp = nullptr;
+    if (inst) {
+      prefAp = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+    }
+    if (!pin->hasPinAccess()) {
+      continue;
+    }
+    if (pinAccessIdx == -1) {
+      continue;
+    }
+
+    if (!prefAp) {
+      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+        prefAp = ap.get();
+        break;
       }
+    }
 
-      if (prefAp) {
-        Point bp;
-        prefAp->getPoint(bp);
-        auto bNum = prefAp->getLayerNum();
-        shiftXform.apply(bp);
+    if (prefAp) {
+      Point bp;
+      prefAp->getPoint(bp);
+      auto bNum = prefAp->getLayerNum();
+      shiftXform.apply(bp);
 
-        Point idx;
-        Rect llBox, urBox;
-        design->getTopBlock()->getGCellIdx(bp, idx);
-        design->getTopBlock()->getGCellBox(Point(idx.x() - 1, idx.y() - 1),
-                                           llBox);
-        design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1),
-                                           urBox);
-        Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
-        frLayerNum beginLayerNum, endLayerNum;
-        beginLayerNum = bNum;
-        endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
+      Point idx;
+      Rect llBox, urBox;
+      design->getTopBlock()->getGCellIdx(bp, idx);
+      design->getTopBlock()->getGCellBox(Point(idx.x() - 1, idx.y() - 1),
+                                         llBox);
+      design->getTopBlock()->getGCellBox(Point(idx.x() + 1, idx.y() + 1),
+                                         urBox);
+      Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
+      frLayerNum beginLayerNum, endLayerNum;
+      beginLayerNum = bNum;
+      endLayerNum = min(bNum + 4, design->getTech()->getTopLayerNum());
 
-        for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
-          for (int xIdx = -1; xIdx <= 1; xIdx++) {
-            for (int yIdx = -1; yIdx <= 1; yIdx++) {
-              frRect coverGuideRect;
-              coverGuideRect.setBBox(coverBox);
-              coverGuideRect.setLayerNum(lNum);
-              rects.push_back(coverGuideRect);
-            }
+      for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
+        for (int xIdx = -1; xIdx <= 1; xIdx++) {
+          for (int yIdx = -1; yIdx <= 1; yIdx++) {
+            frRect coverGuideRect;
+            coverGuideRect.setBBox(coverBox);
+            coverGuideRect.setLayerNum(lNum);
+            rects.push_back(coverGuideRect);
           }
         }
       }
-      pinIdx++;
     }
+    pinIdx++;
   }
 }
 

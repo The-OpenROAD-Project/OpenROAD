@@ -33,8 +33,7 @@
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
-#include "db/obj/frTerm.h"
-#include "db/obj/frBTerm.h"
+#include "db/obj/frMTerm.h"
 #include "frBaseTypes.h"
 
 namespace fr {
@@ -88,11 +87,11 @@ class frMaster : public frBlockObject
     return blockages_;
   }
   const frString& getName() const { return name_; }
-  const std::vector<std::unique_ptr<frTerm>>& getTerms() const
+  const std::vector<std::unique_ptr<frMTerm>>& getTerms() const
   {
     return terms_;
   }
-  frTerm* getTerm(const std::string& in) const
+  frMTerm* getTerm(const std::string& in) const
   {
     auto it = name2term_.find(in);
     if (it == name2term_.end()) {
@@ -104,10 +103,10 @@ class frMaster : public frBlockObject
   dbMasterType getMasterType() { return masterType_; }
 
   // setters
-  void addTerm(std::unique_ptr<frTerm> in)
+  void addTerm(std::unique_ptr<frMTerm> in)
   {
     in->setOrderId(terms_.size());
-    in->setBlock(this);
+    in->setMaster(this);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
   }
@@ -152,8 +151,8 @@ class frMaster : public frBlockObject
 
   dbMasterType masterType_;
 
-  std::map<std::string, frTerm*> name2term_;
-  std::vector<std::unique_ptr<frTerm>> terms_;
+  std::map<std::string, frMTerm*> name2term_;
+  std::vector<std::unique_ptr<frMTerm>> terms_;
 
   std::vector<std::unique_ptr<frBlockage>> blockages_;
 

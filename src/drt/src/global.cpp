@@ -143,7 +143,7 @@ ostream& operator<<(ostream& os, const frPolygon& pinFigIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frPin& pinIn)
+ostream& operator<<(ostream& os, const frMPin& pinIn)
 {
   os << "PIN (NAME) " << pinIn.getTerm()->getName();
   for (auto& m : pinIn.getFigs()) {
@@ -158,7 +158,7 @@ ostream& operator<<(ostream& os, const frPin& pinIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frTerm& termIn)
+ostream& operator<<(ostream& os, const frMTerm& termIn)
 {
   frString name;
   frString netName;

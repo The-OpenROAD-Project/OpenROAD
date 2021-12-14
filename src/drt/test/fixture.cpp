@@ -130,7 +130,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
   auto blkIn = make_unique<frBlockage>();
   blkIn->setId(id);
   blkIn->setDesignRuleWidth(designRuleWidth);
-  auto pinIn = make_unique<frPin>();
+  auto pinIn = make_unique<frBPin>();
   pinIn->setId(0);
   // pinFig
   unique_ptr<frRect> pinFig = make_unique<frRect>();
@@ -154,7 +154,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
                               frLayerNum lNum)
 {
   int id = master->getTerms().size();
-  unique_ptr<frTerm> uTerm = make_unique<frTerm>(name);
+  unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(name);
   auto term = uTerm.get();
   term->setId(id);
   master->addTerm(std::move(uTerm));
@@ -162,7 +162,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   term->setType(termType);
   dbIoType termDirection = dbIoType::INPUT;
   term->setDirection(termDirection);
-  auto pinIn = make_unique<frPin>();
+  auto pinIn = make_unique<frMPin>();
   pinIn->setId(0);
   unique_ptr<frRect> pinFig = make_unique<frRect>();
   pinFig->setBBox(Rect(xl, yl, xh, yh));

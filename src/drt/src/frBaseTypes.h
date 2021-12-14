@@ -83,6 +83,8 @@ enum frBlockObjectEnum
 {
   frcNet,
   frcTerm,
+  frcBTerm,
+  frcMTerm,
   frcInst,
   frcVia,
   frcPin,

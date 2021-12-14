@@ -1114,7 +1114,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
       }
     }
   } else if (dPinTerm->typeId() == frcTerm) {
-    auto term = static_cast<frTerm*>(dPinTerm);
+    auto term = static_cast<frMTerm*>(dPinTerm);
     for (auto& uPin : term->getPins()) {
       auto pin = uPin.get();
       bool hasTempAp = false;
@@ -1509,7 +1509,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     // ap
     dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
-    frTerm* trueTerm = nullptr;
+    frMTerm* trueTerm = nullptr;
     string name;
     frInst* inst = nullptr;
     if (term->typeId() == frcInstTerm) {
@@ -1520,7 +1520,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
       trueTerm = static_cast<frInstTerm*>(term)->getTerm();
       name = inst->getName() + string("/") + trueTerm->getName();
     } else if (term->typeId() == frcTerm) {
-      trueTerm = static_cast<frTerm*>(term);
+      trueTerm = static_cast<frMTerm*>(term);
       name = string("PIN/") + trueTerm->getName();
     }
     int pinIdx = 0;
@@ -3102,7 +3102,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 {
   for (auto& obj : objs) {
     if (obj->typeId() == frcTerm) {
-      auto term = static_cast<frTerm*>(obj);
+      auto term = static_cast<frMTerm*>(obj);
       for (auto& uPin : term->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
