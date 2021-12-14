@@ -190,14 +190,12 @@ class frAccessPoint : public frBlockObject
 class frPinAccess : public frBlockObject
 {
  public:
-  frPinAccess() : frBlockObject(), aps_(), pin_(nullptr), bpin_(nullptr) {}
+  frPinAccess() : frBlockObject(), aps_() {}
   // getters
   const std::vector<std::unique_ptr<frAccessPoint>>& getAccessPoints() const
   {
     return aps_;
   }
-  frPin* getPin() const { return pin_; }
-  frBPin* getBPin() const { return bpin_; }
   frAccessPoint* getAccessPoint(int idx) const { return aps_[idx].get(); }
   int getNumAccessPoints() const { return aps_.size(); }
   // setters
@@ -205,15 +203,11 @@ class frPinAccess : public frBlockObject
   {
     aps_.push_back(std::move(in));
   }
-  void addToPin(frPin* in) { pin_ = in; }
-  void addToPin(frBPin* in) { bpin_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcPinAccess; }
 
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
-  frPin* pin_;
-  frBPin* bpin_;
 };
 }  // namespace fr
 
