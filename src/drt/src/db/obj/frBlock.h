@@ -149,6 +149,15 @@ class frBlock : public frBlockObject
       return it->second;
     }
   }
+  frInst* getInst(const std::string& in) const
+  {
+    auto it = name2inst_.find(in);
+    if (it == name2inst_.end()) {
+      return nullptr;
+    } else {
+      return it->second;
+    }
+  }
   frCoord getGCellSizeHorizontal()
   {
     return getGCellPatterns()[0].getSpacing();
