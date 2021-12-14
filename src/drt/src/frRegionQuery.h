@@ -136,6 +136,13 @@ class frRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+
+  frRegionQuery();
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+  
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

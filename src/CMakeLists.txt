@@ -28,6 +28,8 @@ set(OPENROAD_SOURCE
   Main.cc
   )
 
+set(Boost_USE_STATIC_LIBS ON)
+
 ################################################################
 
 # OSX tcl is deprecated and prints a warning, so look for a user installed
@@ -146,6 +148,7 @@ add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
 add_subdirectory(utl)
+add_subdirectory(dst)
 add_subdirectory(pdn)
 
 ################################################################
@@ -188,6 +191,7 @@ target_link_libraries(openroad
   tap
   gui
   drt
+  dst
   mpl
   mpl2
   psm

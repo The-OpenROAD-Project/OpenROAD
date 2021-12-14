@@ -1717,8 +1717,7 @@ void FlexDRWorker::initNets_numPinsIn()
       }
     }
   }
-  bgi::rtree<rq_box_value_t<drPin*>, bgi::quadratic<16>> pinRegionQuery(
-      allPins);
+  RTree<drPin*> pinRegionQuery(allPins);
   for (auto& net : nets_) {
     frCoord x1 = getExtBox().xMax();
     frCoord x2 = getExtBox().xMin();
