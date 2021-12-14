@@ -34,10 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rmp/Restructure.h"
-
-// includ stdio.h for MAC
-#include <stdio.h>
-
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
