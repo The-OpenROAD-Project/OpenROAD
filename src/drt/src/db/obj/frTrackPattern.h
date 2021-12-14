@@ -76,12 +76,25 @@ class frTrackPattern : public frBlockObject
   void setLayerNum(frLayerNum tmpLayerNum) { layerNum_ = tmpLayerNum; }
   frBlockObjectEnum typeId() const override { return frcTrackPattern; }
 
- protected:
+ private:
   bool horizontal_;
   frCoord startCoord_;
   frUInt4 numTracks_;
   frUInt4 trackSpacing_;
   frLayerNum layerNum_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & horizontal_;
+    (ar) & startCoord_;
+    (ar) & numTracks_;
+    (ar) & trackSpacing_;
+    (ar) & layerNum_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

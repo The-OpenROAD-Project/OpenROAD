@@ -37,12 +37,13 @@ using namespace fr;
 typedef bg::model::polygon<point_t> polygon_t;
 typedef bg::model::multi_polygon<polygon_t> mpolygon_t;
 
-inline bool isBlockage(frBlockObject* owner)
+static bool isBlockage(frBlockObject* owner)
 {
   return owner
          && (owner->typeId() == frcInstBlockage
              || owner->typeId() == frcBlockage);
 }
+
 void updateBlockageWidth(frBlockObject* owner, frCoord& width)
 {
   if (isBlockage(owner)) {

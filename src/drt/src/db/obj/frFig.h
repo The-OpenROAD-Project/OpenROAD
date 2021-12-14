@@ -48,6 +48,14 @@ class frFig : public frBlockObject
  protected:
   // constructors
   frFig() : frBlockObject() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frNet;
@@ -70,6 +78,14 @@ class frConnFig : public frFig
  protected:
   // constructors
   frConnFig() : frFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPin;
@@ -98,6 +114,14 @@ class frPinFig : public frConnFig
    */
  protected:
   frPinFig() : frConnFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConnFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

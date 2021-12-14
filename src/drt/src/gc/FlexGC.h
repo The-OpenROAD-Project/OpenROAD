@@ -58,6 +58,7 @@ class FlexGCWorker
   void setTargetObj(frBlockObject* in);
   void setIgnoreDB();
   void setIgnoreMinArea();
+  void setIgnoreLongSideEOL();
   void setEnableSurgicalFix(bool in);
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
@@ -80,6 +81,13 @@ class FlexGCWorker
  private:
   class Impl;
   std::unique_ptr<Impl> impl_;
+
+  FlexGCWorker(); // for serialization
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

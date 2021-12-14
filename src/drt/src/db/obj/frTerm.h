@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frPin.h"
 #include "frBaseTypes.h"
 
@@ -163,7 +164,31 @@ class frTerm : public frBlockObject
   dbIoType direction_;
   int _order_id;
   Rect bbox_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frTerm() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
+
+template <class Archive>
+void frTerm::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & block_;
+  (ar) & net_;
+  (ar) & pins_;
+  (ar) & type_;
+  (ar) & direction_;
+  (ar) & _order_id;
+  (ar) & bbox_;
+  if(fr::is_loading(ar) && net_) {
+    net_->addTerm(this);
+  }
+}
 }  // namespace fr
 
 #endif
