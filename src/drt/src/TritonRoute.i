@@ -35,6 +35,7 @@
 
 %{
 
+#include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  
@@ -48,6 +49,16 @@ int detailed_route_num_drvs()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   return router->getNumDRVs();
+}
+
+void detailed_route_distributed(const char* ip,
+                                unsigned short port,
+                                const char* sharedVolume)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setDistributed(true);
+  router->setWorkerIpPort(ip, port);
+  router->setSharedVolume(sharedVolume);
 }
 
 void detailed_route_cmd(const char* guideFile,
@@ -102,6 +113,7 @@ void
 set_detailed_route_debug_cmd(const char* net_name,
                              const char* pin_name,
                              bool dr,
+                             bool dump_dr,
                              bool pa,
                              bool maze,
                              int x, int y,
@@ -113,6 +125,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
+  router->setDebugDumpDR(dump_dr);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (x >= 0) {

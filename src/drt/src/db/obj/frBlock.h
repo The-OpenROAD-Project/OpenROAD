@@ -30,11 +30,12 @@
 #define _FR_BLOCK_H_
 
 #include <algorithm>
+#include <type_traits>
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
-#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
 #include "db/obj/frTerm.h"
@@ -119,7 +120,23 @@ class frBlock : public frBlockObject
   {
     return insts_;
   }
+  frInst* findInst(std::string name) const
+  {
+    if (name2inst_.find(name) != name2inst_.end())
+      return name2inst_.at(name);
+    else
+      return nullptr;
+  }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
+  frNet* findNet(std::string name) const
+  {
+    if (name2net_.find(name) != name2net_.end())
+      return name2net_.at(name);
+    else if (name2snet_.find(name) != name2snet_.end())
+      return name2snet_.at(name);
+    else
+      return nullptr;
+  }
   const std::vector<std::unique_ptr<frNet>>& getSNets() const { return snets_; }
   std::vector<frTrackPattern*> getTrackPatterns() const
   {
@@ -334,9 +351,8 @@ class frBlock : public frBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return frcBlock; }
-  friend class io::Parser;
 
- protected:
+ private:
   frString name_;
   frUInt4 dbUnit_;
 
@@ -365,7 +381,48 @@ class frBlock : public frBlockObject
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
   Rect dieBox_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frBlock() = default;  // for serialization
+
+  friend class boost::serialization::access;
+  friend class io::Parser;
 };
+
+template <class Archive>
+void frBlock::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & dbUnit_;
+  (ar) & masterType_;
+  (ar) & name2inst_;
+  (ar) & insts_;
+  (ar) & name2term_;
+  (ar) & terms_;
+  (ar) & name2net_;
+  (ar) & nets_;
+  (ar) & name2snet_;
+  (ar) & snets_;
+  (ar) & blockages_;
+  (ar) & boundaries_;
+  (ar) & trackPatterns_;
+  (ar) & gCellPatterns_;
+  (ar) & markers_;
+  (ar) & fakeSNets_;
+  (ar) & dieBox_;
+
+  // The list members can container an iterator representing their position
+  // in the list for fast removal.  It is tricky to serialize the iterator
+  // so just reset them from the list after loading.
+  if (is_loading(ar)) {
+    for (auto it = markers_.begin(); it != markers_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+  }
+}
 }  // namespace fr
 
 #endif

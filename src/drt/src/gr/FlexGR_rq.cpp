@@ -232,9 +232,7 @@ void FlexGRWorkerRegionQuery::init(bool includeExt)
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    shapes_.at(i) = boost::move(
-        bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16>>(
-            allShapes.at(i)));
+    shapes_.at(i) = boost::move(RTree<grConnFig*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }

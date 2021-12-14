@@ -48,6 +48,14 @@ class frRef : public frPinFig
  protected:
   // constructors
   frRef() : frPinFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frPinFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

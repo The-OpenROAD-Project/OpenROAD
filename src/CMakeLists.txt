@@ -145,6 +145,7 @@ add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
 add_subdirectory(utl)
+add_subdirectory(dst)
 add_subdirectory(pdn)
 
 ################################################################
@@ -187,6 +188,7 @@ target_link_libraries(openroad
   tap
   gui
   drt
+  dst
   mpl
   mpl2
   psm

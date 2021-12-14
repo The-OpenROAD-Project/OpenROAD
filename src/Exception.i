@@ -22,7 +22,7 @@
     fprintf(stderr, "Error: out of memory.");
     exit(0);
   }
-  // This catches std::runtime_eror (utl::error) and sta::Exception.
+  // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, excp.what(), nullptr);

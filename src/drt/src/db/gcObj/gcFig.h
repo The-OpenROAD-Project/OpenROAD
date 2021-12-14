@@ -45,6 +45,14 @@ class gcFig : public gcBlockObject
   // constructors
   gcFig() : gcBlockObject() {}
   gcFig(const gcFig& in) : gcBlockObject(in) {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<gcBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class gcNet;
@@ -68,6 +76,14 @@ class gcConnFig : public gcFig
   // constructors
   gcConnFig() : gcFig() {}
   gcConnFig(const gcConnFig& in) : gcFig(in) {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<gcFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class gcPin;
@@ -97,6 +113,14 @@ class gcPinFig : public gcConnFig
  protected:
   gcPinFig() : gcConnFig() {}
   gcPinFig(const gcPinFig& in) : gcConnFig(in) {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<gcConnFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

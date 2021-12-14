@@ -60,6 +60,14 @@ class Point3D : public Point
 
  private:
   int z_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<Point>(*this);
+    (ar) & z_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 
