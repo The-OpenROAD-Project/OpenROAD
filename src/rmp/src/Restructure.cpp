@@ -35,7 +35,9 @@
 
 #include "rmp/Restructure.h"
 
+// includ stdio.h for MAC
 #include <stdio.h>
+
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -46,6 +48,7 @@
 #include <sstream>
 
 // From abc which sets its include path to abc/src
+#include <stdio.h>
 #include "misc/util/abc_global.h"
 #include "generic.h"
 #include "base/main/abcapis.h"
