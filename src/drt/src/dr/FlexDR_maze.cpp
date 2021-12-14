@@ -1787,12 +1787,12 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape,
         low = min(edge->low().y(), edge->high().y());
         high = max(edge->low().y(), edge->high().y());
         line = edge->low().x();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
       } else {
         low = min(edge->low().x(), edge->high().x());
         high = max(edge->low().x(), edge->high().x());
         line = edge->low().y();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
       }
       modEolCost(low,
                  high,
