@@ -222,16 +222,16 @@ void Restructure::runABC()
       if (writeAbcScript(abc_script_file)) {
 	// Call linked abc
 	Abc_Frame_t * pAbc;
-	char Command[1000];
+	std::string Command = "";
 
 	Abc_Start();
 	pAbc = Abc_FrameGetGlobalFrame();
 
-	sprintf( Command, "source %s", abc_script_file.c_str() );
-	child_proc[temp_mode_idx] = Cmd_CommandExecute( pAbc, Command );
+	Command = "source " + abc_script_file;
+	child_proc[temp_mode_idx] = Cmd_CommandExecute( pAbc, Command.c_str() );
 	if ( child_proc[temp_mode_idx] )
 	  {
-	    fprintf( stdout, "Cannot execute command \"%s\".\n", Command );
+	    fprintf( stdout, "Cannot execute command \"%s\".\n", Command.c_str() );
 	    return;
 	  }
       
