@@ -32,6 +32,7 @@
 #include <tcl.h>
 
 #include <memory>
+#include <string>
 
 namespace fr {
 class frDesign;
@@ -50,9 +51,13 @@ class Gui;
 namespace stt {
 class SteinerTreeBuilder;
 }
+namespace dst {
+class Distributed;
+}
 namespace triton_route {
 
-typedef struct {
+struct ParamStruct
+{
   const std::string& guideFile;
   const std::string& outputGuideFile;
   const std::string& outputMazeFile;
@@ -68,7 +73,7 @@ typedef struct {
   const std::string& bottomRoutingLayer;
   const std::string& topRoutingLayer;
   int verbose;
-} ParamStruct;
+};
 
 class TritonRoute
 {
@@ -78,6 +83,7 @@ class TritonRoute
   void init(Tcl_Interp* tcl_interp,
             odb::dbDatabase* db,
             utl::Logger* logger,
+            dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder);
 
   fr::frDesign* getDesign() const { return design_.get(); }
@@ -87,18 +93,27 @@ class TritonRoute
   int getNumDRVs() const;
 
   void setDebugDR(bool on = true);
+  void setDebugDumpDR(bool on = true);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
-  void setDebugGCell(int x, int y);
+  void setDebugWorker(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDistributed(bool on = true);
+  void setWorkerIpPort(const char* ip, unsigned short port);
+  void setSharedVolume(const std::string& vol);
   void setDebugPaCombining(bool on = true);
   void reportConstraints();
 
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
+
+  // This runs a serialized worker from file_name.  It is intended
+  // for debugging and not general usage.
+  std::string runDRWorker(const char* file_name);
+  void updateGlobals(const char* file_name);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;
@@ -108,6 +123,11 @@ class TritonRoute
   stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;
+  dst::Distributed* dist_;
+  bool distributed_;
+  std::string dist_ip_;
+  unsigned short dist_port_;
+  std::string shared_volume_;
 
   void init();
   void prep();

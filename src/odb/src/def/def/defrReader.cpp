@@ -50,6 +50,8 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
+#include "def_parser.hpp"
+
 extern defrContext defContext;
 
 void

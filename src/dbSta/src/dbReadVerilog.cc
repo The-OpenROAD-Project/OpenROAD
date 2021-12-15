@@ -406,7 +406,7 @@ Verilog2db::makeDbNets(const Instance *inst)
 	    dbMaster *master = db_inst->getMaster();
 	    dbMTerm *mterm = master->findMTerm(block_, port_name);
 	    if (mterm)
-	      dbITerm::connect(db_inst, db_net, mterm);
+              db_inst->getITerm(mterm)->connect(db_net);
 	  }
 	}
       }

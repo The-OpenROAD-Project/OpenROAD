@@ -45,6 +45,10 @@
 #include <vector>
 #include <QDebug>
 
+#include <iomanip>
+#include <sstream>
+#include <string>
+
 #include "dbDescriptors.h"
 #include "displayControls.h"
 #include "highlightGroupDialog.h"
@@ -80,6 +84,7 @@ MainWindow::MainWindow(QWidget* parent)
           highlighted_,
           rulers_,
           [](const std::any& object) { return Gui::get()->makeSelected(object); },
+          [this]() -> bool { return show_dbu_->isChecked(); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -132,9 +137,9 @@ MainWindow::MainWindow(QWidget* parent)
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(viewer_,
-          SIGNAL(location(qreal, qreal)),
+          SIGNAL(location(int, int)),
           this,
-          SLOT(setLocation(qreal, qreal)));
+          SLOT(setLocation(int, int)));
   connect(viewer_,
           SIGNAL(selected(const Selected&, bool)),
           this,
@@ -256,6 +261,10 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
+          this,
+          SLOT(setBlock(odb::dbBlock*)));
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
           drc_viewer_,
           SLOT(setBlock(odb::dbBlock*)));
   connect(drc_viewer_,
@@ -284,14 +293,6 @@ MainWindow::MainWindow(QWidget* parent)
             }
           });
 
-  connect(this,
-          &MainWindow::designLoaded,
-          [](odb::dbBlock* block) {
-            if (block != nullptr) {
-              Descriptor::Property::dbu = block->getDbUnitsPerMicron();
-            }
-          });
-
   createActions();
   createToolbars();
   createMenus();
@@ -303,6 +304,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
   hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
+  show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -312,6 +314,13 @@ MainWindow::MainWindow(QWidget* parent)
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
   setWindowTitle("OpenROAD");
+
+  Descriptor::Property::convert_dbu = [this](int value, bool add_units) -> std::string {
+    return convertDBUToString(value, add_units);
+  };
+  Descriptor::Property::convert_string = [this](const std::string& value, bool* ok) -> int {
+    return convertStringToDBU(value, ok);
+  };
 }
 
 MainWindow::~MainWindow()
@@ -332,6 +341,13 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   }
 }
 
+void MainWindow::setBlock(odb::dbBlock* block)
+{
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setBlock(block);
+  }
+}
+
 void MainWindow::init(sta::dbSta* sta)
 {
   // Setup timing widget
@@ -348,6 +364,12 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  // renderers
+  power_density_data_.setSTA(sta);
+  for (auto* heat_map : getHeatMaps()) {
+    gui->registerRenderer(heat_map->getRenderer());
+  }
 }
 
 void MainWindow::createStatusBar()
@@ -356,7 +378,7 @@ void MainWindow::createStatusBar()
   statusBar()->addPermanentWidget(location_);
 }
 
-odb::dbBlock* MainWindow::getBlock()
+odb::dbBlock* MainWindow::getBlock() const
 {
   if (!db_) {
     return nullptr;
@@ -396,18 +418,15 @@ void MainWindow::createActions()
   timing_debug_ = new QAction("Timing...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
-  congestion_setup_ = new QAction("Congestion Setup...", this);
-
   help_ = new QAction("Help", this);
   help_->setShortcut(QString("Ctrl+H"));
 
   build_ruler_ = new QAction("Ruler", this);
   build_ruler_->setShortcut(QString("k"));
 
-  connect(congestion_setup_,
-          SIGNAL(triggered()),
-          controls_,
-          SLOT(showCongestionSetup()));
+  show_dbu_ = new QAction("Show DBU", this);
+  show_dbu_->setCheckable(true);
+  show_dbu_->setChecked(false);
 
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
@@ -420,6 +439,19 @@ void MainWindow::createActions()
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
 
   connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
+
+  connect(show_dbu_, SIGNAL(toggled(bool)), viewer_, SLOT(fullRepaint()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), inspector_, SLOT(reload()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
+  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
+  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
+}
+
+void MainWindow::setUseDBU(bool use_dbu)
+{
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setUseDBU(use_dbu);
+  }
 }
 
 void MainWindow::createMenus()
@@ -435,8 +467,13 @@ void MainWindow::createMenus()
   view_menu_->addAction(zoom_out_);
 
   tools_menu_ = menuBar()->addMenu("&Tools");
-  tools_menu_->addAction(congestion_setup_);
   tools_menu_->addAction(build_ruler_);
+  auto heat_maps = tools_menu_->addMenu("&Heat maps");
+  for (auto* heat_map : getHeatMaps()) {
+    connect(heat_maps->addAction(QString::fromStdString(heat_map->getName())),
+            &QAction::triggered,
+            [heat_map]() { heat_map->showSetup(); });
+  }
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -449,6 +486,7 @@ void MainWindow::createMenus()
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
+  option_menu->addAction(show_dbu_);
 
   menuBar()->addAction(help_);
 }
@@ -458,7 +496,6 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("Toolbar");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
-  view_tool_bar_->addAction(congestion_setup_);
   view_tool_bar_->addAction(inspect_);
   view_tool_bar_->addAction(timing_debug_);
 
@@ -651,9 +688,18 @@ const std::string MainWindow::requestUserInput(const QString& title, const QStri
   return text.toStdString();
 }
 
-void MainWindow::setLocation(qreal x, qreal y)
+void MainWindow::setLocation(int x, int y)
 {
-  location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
+  QString location;
+  location += QString::fromStdString(convertDBUToString(x, false));
+  location += ", ";
+  location += QString::fromStdString(convertDBUToString(y, false));
+  location_->setText(location);
+}
+
+void MainWindow::setClearLocation()
+{
+  location_->setText("");
 }
 
 void MainWindow::updateSelectedStatus(const Selected& selection)
@@ -985,6 +1031,7 @@ void MainWindow::saveSettings()
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
   settings.setValue("check_exit", hide_option_->isChecked());
+  settings.setValue("use_dbu", show_dbu_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -998,7 +1045,6 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -1013,7 +1059,6 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -1024,6 +1069,11 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
+
+  // heat maps
+  for (auto* heat_map : getHeatMaps()) {
+    heat_map->setLogger(logger);
+  }
 }
 
 void MainWindow::fit()
@@ -1108,6 +1158,141 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   viewer_->restoreTclCommands(cmds);
 
   return cmds;
+}
+
+const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
+{
+  return {
+    &routing_congestion_data_,
+    &placement_density_data_,
+    &power_density_data_
+  };
+}
+
+void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+{
+  HeatMapDataSource* source = nullptr;
+
+  for (auto* heat_map : getHeatMaps()) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
+  }
+
+  if (source == nullptr) {
+    QStringList options;
+    for (const auto* heat_map : getHeatMaps()) {
+      options.append(QString::fromStdString(heat_map->getShortName()));
+    }
+    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
+  }
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (settings.count(option) == 0) {
+      QStringList options;
+      options.append(QString::fromStdString(rebuild_map_option));
+      for (const auto& [key, kv] : settings) {
+        options.append(QString::fromStdString(key));
+      }
+      logger_->error(utl::GUI, 29, "{} is not a valid option. Valid options are: {}", option, options.join(", ").toStdString());
+    }
+
+    auto current_value = settings[option];
+    if (std::holds_alternative<bool>(current_value)) {
+      // is bool
+      if (auto* s = std::get_if<bool>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+      }
+    } else if (std::holds_alternative<int>(current_value)) {
+      // is int
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = static_cast<int>(*s);
+      } else {
+        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+      }
+    } else if (std::holds_alternative<double>(current_value)) {
+      // is double
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = static_cast<double>(*s);
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+      }
+    } else {
+      // is string
+      if (auto* s = std::get_if<std::string>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 63, "{} must be a string", option);
+      }
+    }
+    source->setSettings(settings);
+  }
+
+  source->getRenderer()->redraw();
+}
+
+std::string MainWindow::convertDBUToString(int value, bool add_units) const
+{
+  if (show_dbu_->isChecked()) {
+    return std::to_string(value);
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return std::to_string(value);
+    } else {
+      const double dbu_per_micron = block->getDbUnitsPerMicron();
+
+      std::stringstream ss;
+      const int precision = std::ceil(std::log10(dbu_per_micron));
+      const double micron_value = value / dbu_per_micron;
+
+      ss << std::fixed << std::setprecision(precision) << micron_value;
+
+      if (add_units) {
+        ss << " \u03BCm"; // micro meter
+      }
+
+      return ss.str();
+    }
+  }
+}
+
+int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
+{
+  QString new_value = QString::fromStdString(value).simplified();
+
+  if (new_value.contains(" ")) {
+    new_value = new_value.left(new_value.indexOf(" "));
+  } else if (new_value.contains("u")) {
+    new_value = new_value.left(new_value.indexOf("u"));
+  } else if (new_value.contains("\u03BC")) {
+    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  }
+
+  if (show_dbu_->isChecked()) {
+    return new_value.toInt(ok);
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return new_value.toInt(ok);
+    } else {
+      const int dbu_per_micron = block->getDbUnitsPerMicron();
+
+      return new_value.toDouble(ok) * dbu_per_micron;
+    }
+  }
 }
 
 }  // namespace gui

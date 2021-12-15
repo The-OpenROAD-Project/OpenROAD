@@ -308,11 +308,12 @@ class drVia : public drRef
   bool isTapered() const { return tapered_; }
 
   const Point& getOrigin() const { return origin_; }
-  
+
   bool isBottomConnected() const { return bottomConnected_; }
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
+
  protected:
   Point origin_;
   frViaDef* viaDef_;
@@ -322,6 +323,35 @@ class drVia : public drRef
   bool tapered_ : 1;
   bool bottomConnected_ : 1;
   bool topConnected_ : 1;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drRef>(*this);
+    (ar) & origin_;
+    (ar) & viaDef_;
+    (ar) & owner_;
+    (ar) & beginMazeIdx_;
+    (ar) & endMazeIdx_;
+    bool tmp;
+    if (is_loading(ar)) {
+      (ar) & tmp;
+      tapered_ = tmp;
+      (ar) & tmp;
+      bottomConnected_ = tmp;
+      (ar) & tmp;
+      topConnected_ = tmp;
+    } else {
+      tmp = tapered_;
+      (ar) & tmp;
+      tmp = bottomConnected_;
+      (ar) & tmp;
+      tmp = topConnected_;
+      (ar) & tmp;
+    }
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

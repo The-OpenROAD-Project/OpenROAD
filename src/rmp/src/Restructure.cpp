@@ -346,52 +346,24 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
                                unsigned max_depth)
 {
-  open_sta_->ensureGraph();
-  open_sta_->searchPreamble();
   auto sta_state = open_sta_->search();
-  int path_count = 100000;
-  float min_slack = area_mode ? -sta::INF : -sta::INF;
-  float max_slack = area_mode ? sta::INF : 0;
-
-  sta::PathEndSeq* path_ends
-      = sta_state->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr,
-          nullptr,
-          nullptr,
-          false,
-          // corner, min_max,
-          open_sta_->findCorner("default"),
-          sta::MinMaxAll::max(),
-          // group_count, endpoint_count, unique_pins
-          path_count,
-          1,
-          true,
-          min_slack,
-          max_slack,  // slack_min, slack_max,
-          true,       // sort_by_slack
-          nullptr,    // group_names
-          // setup, hold, recovery, removal,
-          true,
-          true,
-          false,
-          false,
-          // clk_gating_setup, clk_gating_hold
-          false,
-          false);
-
-  std::size_t path_found = path_ends->size();
+  sta::VertexSet*  end_points  = sta_state->endpoints();
+  std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  for (auto& path_end : *path_ends) {
+  for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
-      sta::PathExpanded expanded(path_end->path(), open_sta_);
+      sta::PathRef path_ref = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
+      sta::Path* path = path_ref.path();
+      sta::PathExpanded expanded(path, open_sta_);
+      // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
-        ends.insert(path_end->vertex(sta_state)->pin());
+        ends.insert(end_point->pin());
         // Use only one end point to limit blob size for timing
         break;
       }
     } else {
-      ends.insert(path_end->vertex(sta_state)->pin());
+      ends.insert(end_point->pin());
     }
   }
 
@@ -405,7 +377,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                         false /*loops*/,
                                         false /*generated_clks*/);
     debugPrint(logger_, RMP, "remap", 1, "Size of errors = {}", errors.size());
-    if (errors.size() && errors[0]->size() > 1) {
+    if (!errors.empty() && errors[0]->size() > 1) {
       sta::CheckError* error = errors[0];
       bool first = true;
       for (auto pinName : *error) {
@@ -510,8 +482,8 @@ void Restructure::removeConstCells()
           auto new_inst
               = odb::dbInst::create(block_, const_master, inst_name.c_str());
           if (new_inst) {
-            odb::dbITerm::disconnect(iterm);
-            odb::dbITerm::connect(new_inst->getITerm(const_port), net);
+            iterm->disconnect();
+            new_inst->getITerm(const_port)->connect(net);
           } else
             logger_->warn(RMP, 35, "Could not create instance {}.", inst_name);
         }
@@ -536,7 +508,7 @@ void Restructure::removeConstCells()
 void Restructure::removeConstCell(odb::dbInst* inst)
 {
   for (auto iterm : inst->getITerms())
-    odb::dbITerm::disconnect(iterm);
+    iterm->disconnect();
   odb::dbInst::destroy(inst);
 }
 

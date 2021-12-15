@@ -35,7 +35,7 @@ BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
   odb::dbBTerm::create(n1, "b1");
   auto b2 = odb::dbBTerm::create(n1, "b2");
   auto b3 = odb::dbBTerm::create(n1, "b3");
-  odb::dbITerm::connect(i1->findITerm("a"), n1);
+  i1->findITerm("a")->connect(n1);
   b2->disconnect();
   i1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   i1->swapMaster(lib->findMaster("or2"));

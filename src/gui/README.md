@@ -345,7 +345,23 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
-### GUI Controls
+### Heat Maps
+
+To control the settings in the heat maps:
+
+```
+gui::set_heatmap name option
+gui::set_heatmap name option value
+```
+
+Options description: 
+- ``name`` is the name of the heatmap. ``Power``, ``Routing`` or ``Placement``
+- ``option`` is the name of the option to modify. If option is ``rebuild`` the map will be destroyed and rebuilt.
+- ``value`` is the new value for the specified option. This is not used when rebuilding map.
+
+These options can also be modified in the GUI by double-clicking the underlined display control for the heat map.
+
+### GUI Display Controls
 
 Control the visible and selected elements in the layout:
 
@@ -357,6 +373,26 @@ Options description:
 - ``name`` is the name of the control. For example, for the power nets option this would be ``Signals/Power`` or could be ``Layers/*`` to set the option for all the layers.
 - ``display_type`` is either ``visible`` or ``selectable``
 - ``value`` is either ``true`` or ``false``
+
+To check the visibility or selectability of elements in the layout:
+
+```
+gui::check_display_controls name display_type 
+```
+
+Options description: 
+- ``name`` is the name of the control. For example, for the power nets option this would be ``Signals/Power`` or could be ``Layers/*`` to set the option for all the layers.
+- ``display_type`` is either ``visible`` or ``selectable``
+
+
+When performing a batch operation changing the display controls settings, the following commands can be used to save the current state of the display controls and restore them at the end.
+
+```
+gui::save_display_controls
+gui::restroe_display_controls
+```
+
+### GUI Controls
 
 To request user input via the GUI:
 

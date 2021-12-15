@@ -825,30 +825,28 @@ PlacerBase::init() {
     dbSigType netType = net->getSigType();
 
     // escape nets with VDD/VSS/reset nets
-    if( netType == dbSigType::GROUND ||
-        netType == dbSigType::POWER ||
-        netType == dbSigType::RESET ) {
-      continue;
-    }
+    if( netType == dbSigType::SIGNAL ||
+        netType == dbSigType::CLOCK ) {
 
-    Net myNet(net);
-    netStor_.push_back( myNet );
-    
-    // this is safe because of "reserve"
-    Net* myNetPtr = &netStor_[netStor_.size()-1];
-    netMap_[net] = myNetPtr;
+      Net myNet(net);
+      netStor_.push_back( myNet );
+      
+      // this is safe because of "reserve"
+      Net* myNetPtr = &netStor_[netStor_.size()-1];
+      netMap_[net] = myNetPtr;
 
-    for(dbITerm* iTerm : net->getITerms()) {
-      Pin myPin(iTerm);
-      myPin.setNet(myNetPtr); 
-      myPin.setInstance( dbToPb(iTerm->getInst()) );
-      pinStor_.push_back( myPin );
-    }
+      for(dbITerm* iTerm : net->getITerms()) {
+        Pin myPin(iTerm);
+        myPin.setNet(myNetPtr); 
+        myPin.setInstance( dbToPb(iTerm->getInst()) );
+        pinStor_.push_back( myPin );
+      }
 
-    for(dbBTerm* bTerm : net->getBTerms()) {
-      Pin myPin(bTerm);
-      myPin.setNet(myNetPtr);
-      pinStor_.push_back( myPin );
+      for(dbBTerm* bTerm : net->getBTerms()) {
+        Pin myPin(bTerm);
+        myPin.setNet(myNetPtr);
+        pinStor_.push_back( myPin );
+      }
     }
   }
 

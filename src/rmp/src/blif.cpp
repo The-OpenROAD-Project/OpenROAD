@@ -437,7 +437,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();
-      odb::dbITerm::disconnect(iterm);
+      iterm->disconnect();
       if (net && net->getITerms().size() == 0 && net->getBTerms().size() == 0) {
         odb::dbNet::destroy(net);
       }
@@ -501,7 +501,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                      + std::to_string(instIds[constMaster]);
         }
         auto newInst = odb::dbInst::create(block, master, instName.c_str());
-        odb::dbITerm::connect(newInst->findITerm(constPort.c_str()), net);
+        newInst->findITerm(constPort.c_str())->connect(net);
       }
 
       continue;
@@ -591,7 +591,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         continue;
       }
 
-      odb::dbITerm::connect(newInst->findITerm(mtermName.c_str()), net);
+      newInst->findITerm(mtermName.c_str())->connect(net);
     }
   }
 

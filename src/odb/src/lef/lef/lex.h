@@ -58,9 +58,6 @@ void lefSetNonDefault(const char *name);
 void lefUnsetNonDefault();
 
 extern int yylex();
-extern void lex_init();
-extern int lefyyparse();
-extern void lex_un_init();
 
 int fake_ftell();
 

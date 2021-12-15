@@ -39,8 +39,8 @@ find_package(LEMON REQUIRED)
 
 swig_lib(NAME      cts
          NAMESPACE cts
-         I_FILE    tritoncts.i
-         SCRIPTS   tritoncts.tcl
+         I_FILE    TritonCTS.i
+         SCRIPTS   TritonCTS.tcl
 )
 
 target_sources(cts
@@ -52,7 +52,7 @@ target_sources(cts
     SinkClustering.cpp
     TechChar.cpp
     TritonCTS.cpp
-    clustering.cpp
+    Clustering.cpp
     LevelBalancer.cpp
 )
 

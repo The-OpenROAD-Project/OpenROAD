@@ -97,7 +97,6 @@ NesterovPlace::NesterovPlace()
   baseWireLengthCoef_(0), 
   wireLengthCoefX_(0), 
   wireLengthCoefY_(0),
-  sumPhi_(0),
   sumOverflow_(0),
   prevHpwl_(0),
   isDiverged_(false),
@@ -551,6 +550,9 @@ NesterovPlace::doNesterovPlace(int start_iter) {
 
       if( newStepLength > stepLength_ * 0.95) {
         stepLength_ = newStepLength;
+        break;
+      } else if (newStepLength < 0.01) {
+        stepLength_ = 0.01;
         break;
       }
       else {

@@ -398,7 +398,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
 
   std::unique_ptr<Graphics> graphics;
   if (gui_debug_ && Graphics::guiActive()) {
-    graphics = std::make_unique<Graphics>(db_, logger_);
+    graphics = std::make_unique<Graphics>(db_);
   }
 
   solution_count_ = 0;

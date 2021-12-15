@@ -79,7 +79,7 @@ class Parser
   void readDb(odb::dbDatabase* db);
   void readGuide();
   void postProcess();
-  void postProcessGuide();
+  void postProcessGuide(odb::dbDatabase* db);
   void initDefaultVias();
   void initRPin();
   std::map<frBlock*,
@@ -131,7 +131,6 @@ class Parser
   frTechObject* tech;
   Logger* logger;
   std::unique_ptr<frBlock> tmpBlock;
-  odb::dbDatabase* db;
   // temporary variables
   int readLayerCnt;
   std::string masterSliceLayerName;
@@ -151,7 +150,7 @@ class Parser
   int numBlockages;  // including instBlockage and blockage
 
   // postProcess functions
-  void buildGCellPatterns();
+  void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
                                  frCoord& GCELLGRIDY,
                                  frCoord& GCELLOFFSETX,

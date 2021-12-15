@@ -181,7 +181,6 @@ private:
   float wireLengthCoefY_;
 
   // phi is described in ePlace paper.
-  float sumPhi_;
   float sumOverflow_;
 
   // half-parameter-wire-length

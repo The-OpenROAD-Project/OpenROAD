@@ -42,6 +42,7 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
+#include "heatMap.h"
 #include "ruler.h"
 
 namespace odb {
@@ -97,6 +98,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<std::string> getRestoreTclCommands();
 
+  void setHeatMapSetting(const std::string& map, const std::string& option, const Renderer::Setting& value);
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -129,7 +132,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void saveSettings();
 
   // Set the location to display in the status bar
-  void setLocation(qreal x, qreal y);
+  void setLocation(int x, int y);
 
   // Update selected name in status bar
   void updateSelectedStatus(const Selected& selection);
@@ -217,10 +220,18 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
+ private slots:
+  void setUseDBU(bool use_dbu);
+  void setClearLocation();
+
+
  protected:
   // used to check if user intends to close Openroad or just the GUI.
   void closeEvent(QCloseEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+
+ private slots:
+  void setBlock(odb::dbBlock* block);
 
  private:
   void createMenus();
@@ -233,7 +244,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   int requestHighlightGroup();
 
-  odb::dbBlock* getBlock();
+  const std::vector<HeatMapDataSource*> getHeatMaps();
+
+  odb::dbBlock* getBlock() const;
+
+  std::string convertDBUToString(int value, bool add_units) const;
+  int convertStringToDBU(const std::string& value, bool* ok) const;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
@@ -272,8 +288,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* zoom_out_;
   QAction* help_;
   QAction* build_ruler_;
-
-  QAction* congestion_setup_;
+  QAction* show_dbu_;
 
   QLabel* location_;
 
@@ -282,6 +297,11 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // created menu actions
   std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
+
+  // global heat maps
+  RoutingCongestionDataSource routing_congestion_data_;
+  PlacementDensityDataSource placement_density_data_;
+  PowerDensityDataSource power_density_data_;
 };
 
 }  // namespace gui

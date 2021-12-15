@@ -35,16 +35,16 @@
 
 #pragma once
 
+#include <cmath>
+#include <limits>
+
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 #include "Util.h"
 
-#include <cmath>
-#include <limits>
-
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -107,7 +107,7 @@ class HTreeBuilder : public TreeBuilder
     static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
     LevelTopology(double length)
-        : _length(length), _outputSlew(0), _outputCap(0), _remainingLength(0) {};
+        : _length(length), _outputSlew(0), _outputCap(0), _remainingLength(0){};
 
     void addWireSegment(unsigned idx) { _wireSegments.push_back(idx); }
 
@@ -186,8 +186,11 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net, TreeBuilder* parent, Logger* logger) :
-                        TreeBuilder(options, net, parent), _logger(logger){};
+  HTreeBuilder(CtsOptions* options,
+               Clock& net,
+               TreeBuilder* parent,
+               Logger* logger)
+      : TreeBuilder(options, net, parent), _logger(logger){};
 
   void run();
 
@@ -221,9 +224,9 @@ class HTreeBuilder : public TreeBuilder
   void createClockSubNets();
   void createSingleBufferClockNet();
   void initTopLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
-                         std::vector<const ClockInst*> &sinkInsts);
+                         std::vector<const ClockInst*>& sinkInsts);
   void initSecondLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
-                         std::vector<const ClockInst*> &sinkInsts);
+                            std::vector<const ClockInst*>& sinkInsts);
   void computeBranchSinks(
       LevelTopology& topology,
       unsigned branchIdx,
@@ -256,9 +259,10 @@ class HTreeBuilder : public TreeBuilder
                         std::vector<std::pair<float, float>>& points,
                         std::vector<unsigned>& mapSinkToPoint);
   void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
-                         std::vector<const ClockInst*> &sinkInsts,
+                         std::vector<const ClockInst*>& sinkInsts,
                          float maxDiameter,
-                         unsigned clusterSize, bool secondLevel=false);
+                         unsigned clusterSize,
+                         bool secondLevel = false);
   void assignSinksToBranches(
       LevelTopology& topology,
       unsigned branchPtIdx1,

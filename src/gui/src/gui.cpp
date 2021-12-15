@@ -35,8 +35,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
-#include <iomanip>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -79,8 +77,19 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
-// Used by toString to convert dbu to microns
-int Descriptor::Property::dbu = 0;
+// Used by toString to convert dbu to microns (and back), will be set in main_window
+DBUToString Descriptor::Property::convert_dbu;
+StringToDBU Descriptor::Property::convert_string;
+
+static void resetConversions()
+{
+  Descriptor::Property::convert_dbu = [](int value, bool) {
+    return std::to_string(value);
+  };
+  Descriptor::Property::convert_string = [](const std::string& value, bool*) {
+    return 0;
+  };
+}
 
 Gui* Gui::singleton_ = nullptr;
 
@@ -97,6 +106,7 @@ Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
              db_(nullptr)
 {
+  resetConversions();
 }
 
 bool Gui::enabled()
@@ -394,6 +404,16 @@ bool Gui::checkDisplayControlsSelectable(const std::string& name)
   return main_window->getControls()->checkControlByPath(name, false);
 }
 
+void Gui::saveDisplayControls()
+{
+  main_window->getControls()->save();
+}
+
+void Gui::restoreDisplayControls()
+{
+  main_window->getControls()->restore();
+}
+
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
   main_window->zoomTo(rect_dbu);
@@ -431,10 +451,31 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename, const odb::Rect& region, double dbu_per_pixel, const std::map<std::string, bool>& display_settings)
 {
-  if (!enabled()) {
-    if (db_ == nullptr) {
-      logger_->error(utl::GUI, 15, "No design loaded.");
+  if (db_ == nullptr) {
+    logger_->error(utl::GUI, 15, "No design loaded.");
+  }
+  odb::Rect save_region = region;
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const bool is_offscreen = main_window->testAttribute(Qt::WA_DontShowOnScreen) /* if not interactive this will be set */ || !enabled();
+  if (is_offscreen && use_die_area) { // if gui is active and interactive the visible are of the layout viewer will be used.
+    auto* chip = db_->getChip();
+    if (chip == nullptr) {
+      logger_->error(utl::GUI, 64, "No design loaded.");
     }
+
+    auto* block = chip->getBlock();
+    if (block == nullptr) {
+      logger_->error(utl::GUI, 65, "No design loaded.");
+    }
+
+    block->getBBox()->getBox(save_region); // get die area since screen area is not reliable
+    const double bloat_by = 0.05; // 5%
+    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
+
+    save_region.bloat(bloat, save_region);
+  }
+
+  if (!enabled()) {
     auto* tech = db_->getTech();
     if (tech == nullptr) {
       logger_->error(utl::GUI, 16, "No design loaded.");
@@ -451,10 +492,10 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     // save command
     save_cmds += "gui::save_image ";
     save_cmds += "\"" + filename + "\" ";
-    save_cmds += std::to_string(region.xMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.yMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.xMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -469,7 +510,8 @@ void Gui::saveImage(const std::string& filename, const odb::Rect& region, double
     for (const auto& [control, value] : display_settings) {
       setDisplayControlsVisible(control, value);
     }
-    main_window->getLayoutViewer()->saveImage(filename.c_str(), region, dbu_per_pixel);
+
+    main_window->getLayoutViewer()->saveImage(filename.c_str(), save_region, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
@@ -488,6 +530,11 @@ void Gui::showWidget(const std::string& name, bool show)
       }
     }
   }
+}
+
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+{
+  main_window->setHeatMapSetting(name, option, value);
 }
 
 Renderer::~Renderer()
@@ -511,9 +558,44 @@ bool Renderer::checkDisplayControl(const std::string& name)
   }
 }
 
-void Renderer::addDisplayControl(const std::string& name, bool initial_state)
+void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  controls_[name] = initial_state;
+  const std::string& group_name = getDisplayControlGroupName();
+
+  if (group_name.empty()) {
+    return Gui::get()->setDisplayControlsVisible(name, value);
+  } else {
+    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
+  }
+}
+
+void Renderer::addDisplayControl(const std::string& name,
+                                 bool initial_visible,
+                                 const DisplayControlCallback& setup,
+                                 const std::vector<std::string>& mutual_exclusivity)
+{
+  auto& control = controls_[name];
+
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(), mutual_exclusivity.end());
+}
+
+const Renderer::Settings Renderer::getSettings()
+{
+  Settings settings;
+  for (const auto& [key, init_value] : controls_) {
+    settings[key] = checkDisplayControl(key);
+  }
+  return settings;
+}
+
+void Renderer::setSettings(const Renderer::Settings& settings)
+{
+  for (auto& [key, control] : controls_) {
+    setSetting<bool>(settings, key, control.visibility);
+    setDisplayControl(key, control.visibility);
+  }
 }
 
 void Gui::load_design()
@@ -707,6 +789,8 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
     exit(ret);
   }
 
+  resetConversions();
+
   return ret;
 }
 
@@ -774,21 +858,12 @@ std::string Descriptor::Property::toString(const std::any& value)
   } else if (auto v = std::any_cast<bool>(&value)) {
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
-    double lef_units = dbu;
-    if (dbu == 0) {
-      lef_units = 1;
-    }
-    const int precision = std::ceil(std::log10(lef_units));
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(precision) << "(";
-    ss << v->xMin() / lef_units << ",";
-    ss << v->yMin() / lef_units << "), (";
-    ss << v->xMax() / lef_units << ",";
-    ss << v->yMax() / lef_units << ")";
-    if (dbu == 0) {
-      ss << " DBU";
-    }
-    return ss.str();
+    std::string text = "(";
+    text += convert_dbu(v->xMin(), false) + ",";
+    text += convert_dbu(v->yMin(), false) + "), (";
+    text += convert_dbu(v->xMax(), false) + ",";
+    text += convert_dbu(v->yMax(), false) + ")";
+    return text;
   }
 
   return "<unknown>";

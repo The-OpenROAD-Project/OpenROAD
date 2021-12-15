@@ -159,7 +159,7 @@ class IRSolver
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> m_layer_res;
   //! Locations of the C4 bumps in the G matrix
-  std::vector<std::pair<NodeIdx, double>> m_C4Nodes;
+  std::map<NodeIdx, double> m_C4Nodes;
   //! Function to add C4 bumps to the G matrix
   bool AddC4Bump();
   //! Function that parses the Vsrc file

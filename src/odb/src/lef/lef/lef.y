@@ -63,9 +63,7 @@
 #include "lefrCallBacks.hpp"
 #include "lefrSettings.hpp"
 
-#if defined(__clang__)
-#pragma(clang, ignored -Wdeprecated-register)
-#endif
+#include "lef_parser.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 

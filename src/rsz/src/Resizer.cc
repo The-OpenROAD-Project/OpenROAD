@@ -3133,7 +3133,7 @@ Resizer::findLongWires(VertexSeq &drvrs)
         drvr_dists.push_back(DrvrDist(vertex, maxLoadManhattenDistance(vertex)));
     }
   }
-  sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
+  sort(drvr_dists, [](const DrvrDist &drvr_dist1,
                           const DrvrDist &drvr_dist2) {
                     return drvr_dist1.second > drvr_dist2.second;
                   });
@@ -3157,7 +3157,7 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
         drvr_dists.push_back(DrvrDist(vertex, findMaxSteinerDist(vertex)));
     }
   }
-  sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
+  sort(drvr_dists, [](const DrvrDist &drvr_dist1,
                           const DrvrDist &drvr_dist2) {
                      return drvr_dist1.second > drvr_dist2.second;
                    });
@@ -3712,7 +3712,7 @@ Resizer::designAreaIncr(float delta)
 void
 Resizer::ensureDesignArea()
 {
-  if (core_exists_) {
+  if (block_) {
     design_area_ = 0.0;
     for (dbInst *inst : block_->getInsts()) {
       dbMaster *master = inst->getMaster();
@@ -3905,12 +3905,11 @@ Resizer::journalRestore()
 class SteinerRenderer : public gui::Renderer
 {
 public:
-  SteinerRenderer(Resizer *resizer);
+  SteinerRenderer();
   void highlight(SteinerTree *tree);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
 private:
-  Resizer *resizer_;
   SteinerTree *tree_;
 };
 
@@ -3919,7 +3918,7 @@ Resizer::highlightSteiner(const Pin *drvr)
 {
   if (gui::Gui::enabled()) {
     if (steiner_renderer_ == nullptr) {
-      steiner_renderer_ = new SteinerRenderer(this);
+      steiner_renderer_ = new SteinerRenderer();
       gui_->registerRenderer(steiner_renderer_);
     }
     SteinerTree *tree = nullptr;
@@ -3930,8 +3929,7 @@ Resizer::highlightSteiner(const Pin *drvr)
   }
 }
 
-SteinerRenderer::SteinerRenderer(Resizer *resizer) :
-  resizer_(resizer),
+SteinerRenderer::SteinerRenderer() :
   tree_(nullptr)
 {
 }

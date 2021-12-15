@@ -93,13 +93,26 @@ class gcPin : public gcBlockObject
   // others
   frBlockObjectEnum typeId() const override { return gccPin; }
 
- protected:
+ private:
   std::unique_ptr<gcPolygon> polygon_;
   gcNet* net_;
   // assisting structures
   std::vector<std::vector<std::unique_ptr<gcSegment>>> polygon_edges_;
   std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;
   std::vector<std::unique_ptr<gcRect>> max_rectangles_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<gcBlockObject>(*this);
+    (ar) & polygon_;
+    (ar) & net_;
+    (ar) & polygon_edges_;
+    (ar) & polygon_corners_;
+    (ar) & max_rectangles_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

@@ -33,14 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "cts/TritonCTS.h"
+#include "LevelBalancer.h"
+
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
-#include "LevelBalancer.h"
-
+#include "cts/TritonCTS.h"
 #include "odb/db.h"
-
 
 namespace cts {
 
@@ -58,13 +57,20 @@ void LevelBalancer::run()
 unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 {
   unsigned maxDepth = 0;
-  for (auto child : parent->getChildren()) {
-    unsigned depth = computeMaxTreeDepth(child) + 1; //also count itself - non sink inst
+  for (const auto& child : parent->getChildren()) {
+    unsigned depth
+        = computeMaxTreeDepth(child) + 1;  // also count itself - non sink inst
     odb::dbObject* driverPin = child->getClock().getDriverPin();
     if (driverPin && driverPin->getObjectType() == odb::dbITermObj) {
-      odb::dbInst* drivingInst = (static_cast<odb::dbITerm*> (driverPin))->getInst();
-      debugPrint(_logger, CTS, "levelizer", 1,
-          "Downstream depth is {} from driver {}", depth, child->getClock().getName());
+      odb::dbInst* drivingInst
+          = (static_cast<odb::dbITerm*>(driverPin))->getInst();
+      debugPrint(_logger,
+                 CTS,
+                 "levelizer",
+                 1,
+                 "Downstream depth is {} from driver {}",
+                 depth,
+                 child->getClock().getName());
       cgcLevelMap_[drivingInst] = std::make_pair(depth, child);
     }
     if (depth > maxDepth)
@@ -73,8 +79,11 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
   return parent->getTreeBufLevels() + maxDepth;
 }
 
-void LevelBalancer::addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*> cluster,
-          Clock::SubNet* driverNet, unsigned bufLevels, const std::string nameSuffix)
+void LevelBalancer::addBufferLevels(TreeBuilder* builder,
+                                    std::vector<ClockInst*> cluster,
+                                    Clock::SubNet* driverNet,
+                                    unsigned bufLevels,
+                                    const std::string nameSuffix)
 {
   Clock::SubNet* prevLevelSubNet = driverNet;
 
@@ -84,25 +93,25 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*
     totalX += clockInstObj->getX();
     totalY += clockInstObj->getY();
   }
-  double centroidX = totalX/cluster.size();
-  double centroidY = totalY/cluster.size();
+  double centroidX = totalX / cluster.size();
+  double centroidY = totalY / cluster.size();
   int driverX = prevLevelSubNet->getDriver()->getX();
   int driverY = prevLevelSubNet->getDriver()->getY();
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
-    ClockInst& levelBuffer
-      = builder->getClock().addClockBuffer("clkbuf_level_" + std::to_string(level) + "_"
-                                          + nameSuffix + std::to_string(levelBufCount_),
-                                          _options->getSinkBuffer(),
-          driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
-          driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
+    ClockInst& levelBuffer = builder->getClock().addClockBuffer(
+        "clkbuf_level_" + std::to_string(level) + "_" + nameSuffix
+            + std::to_string(levelBufCount_),
+        _options->getSinkBuffer(),
+        driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
+        driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
     builder->addTreeLevelBuffer(&levelBuffer);
 
     // Add Net
-    Clock::SubNet* levelSubNet
-      = &(builder->getClock().addSubNet("clknet_level_" + std::to_string(level) + "_" + nameSuffix
-                                          + std::to_string(levelBufCount_)));
+    Clock::SubNet* levelSubNet = &(builder->getClock().addSubNet(
+        "clknet_level_" + std::to_string(level) + "_" + nameSuffix
+        + std::to_string(levelBufCount_)));
     levelBufCount_++;
     // Connect to driving and driven nets
     prevLevelSubNet->addInst(levelBuffer);
@@ -117,15 +126,21 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*
   prevLevelSubNet->setLeafLevel(true);
 }
 
-void LevelBalancer::fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, unsigned maxTreeDepth)
+void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
+                                  unsigned parentDepth,
+                                  unsigned maxTreeDepth)
 {
   unsigned currLevel = builder->getTreeBufLevels() + parentDepth;
   if (currLevel >= maxTreeDepth)
     return;
 
-  _logger->report("Fixing from level {} (parent={} + current={}) to max {} for driver {}",
-                    parentDepth + builder->getTreeBufLevels(), parentDepth, builder->getTreeBufLevels(),
-                                        maxTreeDepth, builder->getClock().getName());
+  _logger->report(
+      "Fixing from level {} (parent={} + current={}) to max {} for driver {}",
+      parentDepth + builder->getTreeBufLevels(),
+      parentDepth,
+      builder->getTreeBufLevels(),
+      maxTreeDepth,
+      builder->getClock().getName());
   unsigned clusterCnt = 0;
   builder->getClock().forEachSubNet([&](Clock::SubNet& subNet) {
     std::map<unsigned, std::vector<ClockInst*>> subClusters;
@@ -149,22 +164,31 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, un
     subNet.removeSinks(instsToRemove);
     subNet.setLeafLevel(false);
     unsigned subClusterCnt = 0;
-    for (auto cluster : subClusters) {
+    for (const auto& cluster : subClusters) {
       unsigned clusterLevel = cluster.first;
       unsigned bufLevels = maxTreeDepth - clusterLevel;
       subClusterCnt++;
-      const std::string suffix = std::to_string(subClusterCnt) + "_" + std::to_string(clusterCnt);
-      debugPrint(_logger, CTS, "levelizer", 1, "Adding buffer levels: {} to net {} with {} subClusters",
-                          bufLevels, subNet.getName(), subClusterCnt);
+      const std::string suffix
+          = std::to_string(subClusterCnt) + "_" + std::to_string(clusterCnt);
+      debugPrint(_logger,
+                 CTS,
+                 "levelizer",
+                 1,
+                 "Adding buffer levels: {} to net {} with {} subClusters",
+                 bufLevels,
+                 subNet.getName(),
+                 subClusterCnt);
       addBufferLevels(builder, cluster.second, &subNet, bufLevels, suffix);
 
       if (currLevel != clusterLevel) {
         for (ClockInst* clockInstObj : cluster.second) {
-          fixTreeLevels(cgcLevelMap_[clockInstObj->getDbInputPin()->getInst()].second,
-                        currLevel+bufLevels+1, maxTreeDepth);
+          fixTreeLevels(
+              cgcLevelMap_[clockInstObj->getDbInputPin()->getInst()].second,
+              currLevel + bufLevels + 1,
+              maxTreeDepth);
         }
       }
     }
   });
 }
-}
+}  // namespace cts
