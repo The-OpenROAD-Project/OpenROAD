@@ -392,7 +392,6 @@ void frBlock::serialize(Archive& ar, const unsigned int version)
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
   (ar) & dbUnit_;
-  (ar) & masterType_;
   (ar) & name2inst_;
   (ar) & insts_;
   (ar) & name2term_;

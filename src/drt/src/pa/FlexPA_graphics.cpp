@@ -183,7 +183,9 @@ void FlexPAGraphics::startPin(frMPin* pin,
   gui_->pause();
 }
 
-void FlexPAGraphics::startPin(frBPin* pin, frInstTerm* inst_term)
+void FlexPAGraphics::startPin(frBPin* pin,
+                              frInstTerm* inst_term,
+                              set<frInst*, frBlockObjectComp>* instClass)
 {
   // TODO
 }

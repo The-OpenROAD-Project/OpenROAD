@@ -103,16 +103,11 @@ void frTerm::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
-  (ar) & block_;
   (ar) & net_;
-  (ar) & pins_;
   (ar) & type_;
   (ar) & direction_;
   (ar) & _order_id;
   (ar) & bbox_;
-  if(fr::is_loading(ar) && net_) {
-    net_->addTerm(this);
-  }
 }
 }  // namespace fr
 

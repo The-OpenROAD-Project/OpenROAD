@@ -31,7 +31,7 @@
 
 #include <memory>
 
-#include "db/obj/frPin.h"
+#include "db/obj/frBPin.h"
 #include "frBaseTypes.h"
 
 namespace fr {

@@ -69,6 +69,16 @@ class frMPin : public frPin
   frMTerm* term_;
   std::vector<std::unique_ptr<frPinAccess>>
       aps_;  // not copied in copy constructor
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frPin>(*this);
+    (ar) & term_;
+    (ar) & aps_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

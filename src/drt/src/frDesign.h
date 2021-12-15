@@ -69,8 +69,8 @@ class frDesign
   }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
-  void addMaster(std::unique_ptr<frMaster> in)
   void setTech(std::unique_ptr<frTechObject> in) { tech_ = std::move(in); }
+  void addMaster(std::unique_ptr<frMaster> in)
   {
     name2master_[in->getName()] = in.get();
     masters_.push_back(std::move(in));

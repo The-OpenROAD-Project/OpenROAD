@@ -457,7 +457,9 @@ void register_types(Archive& ar)
   ar.template register_type<frPatchWire>();
   ar.template register_type<frPolygon>();
   ar.template register_type<frInstTerm>();
-  ar.template register_type<frTerm>();
+  ar.template register_type<frBTerm>();
+  ar.template register_type<frMTerm>();
+  ar.template register_type<frMaster>();
   ar.template register_type<frNet>();
 
   ar.template register_type<frLef58CutClassConstraint>();
@@ -521,7 +523,8 @@ void register_types(Archive& ar)
   ar.template register_type<frInstBlockage>();
   ar.template register_type<frMarker>();
   ar.template register_type<frNode>();
-  ar.template register_type<frPin>();
+  ar.template register_type<frBPin>();
+  ar.template register_type<frMPin>();
   ar.template register_type<frRPin>();
   ar.template register_type<frVia>();
   ar.template register_type<frTrackPattern>();

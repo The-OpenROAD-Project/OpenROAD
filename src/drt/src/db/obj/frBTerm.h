@@ -121,7 +121,26 @@ class frBTerm : public frTerm
  protected:
   frBlock* block_;
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frBTerm() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
+
+template <class Archive>
+void frBTerm::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frTerm>(*this);
+  (ar) & block_;
+  (ar) & pins_;
+  if(fr::is_loading(ar) && net_) {
+    net_->addBTerm(this);
+  }
+}
+
 }  // namespace fr
 
 #endif

@@ -144,7 +144,6 @@ class frMaster : public frBlockObject
   void setMasterType(const dbMasterType& in) { masterType_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcMaster; }
-  friend class io::Parser;
 
  protected:
   frString name_;
@@ -159,7 +158,26 @@ class frMaster : public frBlockObject
   std::vector<frBoundary> boundaries_;
 
   Rect dieBox_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frMaster() = default;  // for serialization
+
+  friend class boost::serialization::access;
+  friend class io::Parser;
 };
+
+template <class Archive>
+void frMaster::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & name2term_;
+  (ar) & terms_;
+  (ar) & blockages_;
+  (ar) & boundaries_;
+}
 }  // namespace fr
 
 #endif
