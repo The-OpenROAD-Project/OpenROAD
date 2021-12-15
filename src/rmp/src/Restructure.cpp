@@ -43,10 +43,7 @@
 #include <fstream>
 #include <sstream>
 
-// From abc which sets its include path to abc/src
-#include <stdio.h>
-#include "misc/util/abc_global.h"
-#include "generic.h"
+#include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 
 #include "db_sta/dbNetwork.hh"
