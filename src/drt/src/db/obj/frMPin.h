@@ -42,40 +42,28 @@ class frMPin : public frPin
 {
  public:
   // constructors
-  frMPin() : frPin(), term_(nullptr), aps_() {}
-  frMPin(const frMPin& in) : frPin(in), term_(in.term_), aps_() {}
+  frMPin() : frPin(), term_(nullptr) {}
+  frMPin(const frMPin& in) : frPin(in), term_(in.term_) {}
   frMPin(const frMPin& in, const dbTransform& xform)
-      : frPin(in, xform), term_(in.term_), aps_() {}
+      : frPin(in, xform), term_(in.term_) {}
 
   // getters
   frMTerm* getTerm() const { return term_; }
 
-  int getNumPinAccess() const override { return aps_.size(); }
-  bool hasPinAccess() const override { return !aps_.empty(); }
-  frPinAccess* getPinAccess(int idx) const { return aps_[idx].get(); }
-
   // setters
   // cannot have setterm, must be available when creating
   void setTerm(frMTerm* in) { term_ = in; }
-  void addPinAccess(std::unique_ptr<frPinAccess> in)
-  {
-    in->setId(aps_.size());
-    aps_.push_back(std::move(in));
-  }
   // others
   frBlockObjectEnum typeId() const override { return frcPin; }
 
  protected:
   frMTerm* term_;
-  std::vector<std::unique_ptr<frPinAccess>>
-      aps_;  // not copied in copy constructor
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<frPin>(*this);
     (ar) & term_;
-    (ar) & aps_;
   }
 
   friend class boost::serialization::access;

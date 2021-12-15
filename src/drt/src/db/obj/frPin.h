@@ -49,8 +49,9 @@ class frPin : public frBlockObject
     return pinFigs_;
   }
 
-  virtual int getNumPinAccess() const = 0;
-  virtual bool hasPinAccess() const = 0;
+  int getNumPinAccess() const { return aps_.size(); }
+  bool hasPinAccess() const { return !aps_.empty(); }
+  frPinAccess* getPinAccess(int idx) const { return aps_[idx].get(); }
 
   // setters
   // cannot have setterm, must be available when creating
@@ -58,6 +59,11 @@ class frPin : public frBlockObject
   {
     in->addToPin(this);
     pinFigs_.push_back(std::move(in));
+  }
+  void addPinAccess(std::unique_ptr<frPinAccess> in)
+  {
+    in->setId(aps_.size());
+    aps_.push_back(std::move(in));
   }
   // others
   frBlockObjectEnum typeId() const override { return frcPin; }
