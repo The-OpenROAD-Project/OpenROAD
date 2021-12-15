@@ -15,6 +15,9 @@ if (Qt5_FOUND AND BUILD_GUI)
   set(CMAKE_AUTOUIC ON)
   set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
 
+  # LTO interfers with Qt signals/slots
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
   swig_lib(NAME      gui
