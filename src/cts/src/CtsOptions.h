@@ -35,15 +35,15 @@
 
 #pragma once
 
-#include "Util.h"
-#include "db.h"
-#include "utl/Logger.h"
-#include "stt/SteinerTreeBuilder.h"
-
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "Util.h"
+#include "db.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -51,7 +51,9 @@ class CtsOptions
 {
  public:
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
-      : _logger(logger), _sttBuilder(sttBuildder) {}
+      : _logger(logger), _sttBuilder(sttBuildder)
+  {
+  }
 
   void setBlockName(const std::string& blockName) { _blockName = blockName; }
   std::string getBlockName() const { return _blockName; }
@@ -78,7 +80,10 @@ class CtsOptions
   bool getSimpleCts() const { return _simpleCts; }
   void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
   bool getSinkClustering() const { return _sinkClusteringEnable; }
-  void setSinkClusteringUseMaxCap(bool useMaxCap) { _sinkClusteringUseMaxCap = useMaxCap; }
+  void setSinkClusteringUseMaxCap(bool useMaxCap)
+  {
+    _sinkClusteringUseMaxCap = useMaxCap;
+  }
   bool getSinkClusteringUseMaxCap() const { return _sinkClusteringUseMaxCap; }
   void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
   unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }
@@ -169,11 +174,22 @@ class CtsOptions
   bool isSimpleSegmentEnabled() const { return _simpleSegmentsEnable; }
   void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
   double getMaxDiameter() const { return _maxDiameter; }
-  void setMaxDiameter(double distance) { _maxDiameter = distance; _sinkClusteringUseMaxCap = false; }
+  void setMaxDiameter(double distance)
+  {
+    _maxDiameter = distance;
+    _sinkClusteringUseMaxCap = false;
+  }
   unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
-  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
+  void setSizeSinkClustering(unsigned size)
+  {
+    _sinkClustersSize = size;
+    _sinkClusteringUseMaxCap = false;
+  }
   unsigned getSinkClusteringLevels() const { return _sinkClusteringLevels; }
-  void setSinkClusteringLevels(unsigned levels) { _sinkClusteringLevels = levels; }
+  void setSinkClusteringLevels(unsigned levels)
+  {
+    _sinkClusteringLevels = levels;
+  }
   unsigned getNumStaticLayers() const { return _numStaticLayers; }
   void setBalanceLevels(bool balance) { _balanceLevels = balance; }
   bool getBalanceLevels() const { return _balanceLevels; }
@@ -184,8 +200,8 @@ class CtsOptions
   void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
   double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
-  utl::Logger *getLogger() { return _logger;}
-  stt::SteinerTreeBuilder *getSttBuilder() { return _sttBuilder;}
+  utl::Logger* getLogger() { return _logger; }
+  stt::SteinerTreeBuilder* getSttBuilder() { return _sttBuilder; }
 
  private:
   std::string _blockName = "";

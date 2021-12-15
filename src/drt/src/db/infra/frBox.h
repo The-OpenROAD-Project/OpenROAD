@@ -62,6 +62,15 @@ class frBox3D : public Rect
  private:
   int zl_;
   int zh_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<Rect>(*this);
+    (ar) & zl_;
+    (ar) & zh_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

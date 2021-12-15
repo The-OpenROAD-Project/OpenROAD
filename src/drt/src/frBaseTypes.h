@@ -31,6 +31,7 @@
 
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/serialization/base_object.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
 #include <cstdint>
@@ -45,6 +46,9 @@
 
 namespace odb {
   class Rect;
+}
+namespace boost::serialization{
+  class access;
 }
 
 namespace fr {
@@ -272,6 +276,7 @@ struct frDebugSettings
 {
   frDebugSettings()
       : debugDR(false),
+        debugDumpDR(false),
         debugMaze(false),
         debugPA(false),
         draw(true),
@@ -287,6 +292,7 @@ struct frDebugSettings
   bool is_on() const { return debugDR || debugPA; }
 
   bool debugDR;
+  bool debugDumpDR;
   bool debugMaze;
   bool debugPA;
   bool draw;
@@ -300,18 +306,15 @@ struct frDebugSettings
   bool paCombining;
 };
 
-struct drEolSpacingConstraint
+// Avoids the need to split the whole serializer like
+// BOOST_SERIALIZATION_SPLIT_MEMBER while still allowing for read/write
+// specific code.
+template <class Archive>
+inline bool is_loading(const Archive& ar)
 {
-  drEolSpacingConstraint(frCoord width = 0,
-                         frCoord space = 0,
-                         frCoord within = 0)
-      : eolWidth(width), eolSpace(space), eolWithin(within)
-  {
-  }
-  frCoord eolWidth;
-  frCoord eolSpace;
-  frCoord eolWithin;
-};
+  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+}
+
 }  // namespace fr
 
 #endif

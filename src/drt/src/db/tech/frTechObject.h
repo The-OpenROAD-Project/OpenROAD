@@ -73,7 +73,7 @@ class frTechObject
   frLayerNum getBottomLayerNum() const { return 0; }
   frLayerNum getTopLayerNum() const
   {
-    return (frLayerNum)((int) layers.size() - 1);
+    return (frLayerNum) ((int) layers.size() - 1);
   }
   const std::vector<std::unique_ptr<frLayer>>& getLayers() const
   {
@@ -280,7 +280,7 @@ class frTechObject
     return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
   }
 
- protected:
+ private:
   frUInt4 dbUnit;
   frUInt4 manufacturingGrid;
 
@@ -411,6 +411,32 @@ class frTechObject
     return included;
   }
 
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & dbUnit;
+    (ar) & manufacturingGrid;
+    (ar) & layers;
+    (ar) & name2layer;
+    (ar) & name2via;
+    (ar) & vias;
+    (ar) & layer2Name2CutClass;
+    (ar) & layerCutClass;
+    (ar) & name2viaRuleGenerate;
+    (ar) & viaRuleGenerates;
+    (ar) & constraints;
+    (ar) & uConstraints;
+    (ar) & nonDefaultRules;
+    (ar) & via2ViaForbiddenLen;
+    (ar) & via2ViaForbiddenOverlapLen;
+    (ar) & viaForbiddenTurnLen;
+    (ar) & viaForbiddenPlanarLen;
+    (ar) & line2LineForbiddenLen;
+    (ar) & viaForbiddenThrough;
+    (ar) & hasVia2viaMinStep_;
+  }
+
+  friend class boost::serialization::access;
   friend class FlexRP;
 };
 }  // namespace fr

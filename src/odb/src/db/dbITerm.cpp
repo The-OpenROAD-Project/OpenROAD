@@ -448,31 +448,21 @@ void dbITerm::clearConnected()
 #endif
 }
 
-dbITerm* dbITerm::connect(dbInst* inst_, dbNet* net_, dbMTerm* mterm_)
+void dbITerm::connect(dbNet* net_)
 {
-  _dbInst* inst = (_dbInst*) inst_;
-  //_dbNet * net = (_dbNet *) net_;
-  _dbMTerm* mterm = (_dbMTerm*) mterm_;
-  _dbBlock* block = (_dbBlock*) inst->getOwner();
-  _dbITerm* iterm = block->_iterm_tbl->getPtr(inst->_iterms[mterm->_order_id]);
-  connect((dbITerm*) iterm, net_);
-  return (dbITerm*) iterm;
-}
-
-void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
-{
-  _dbITerm* iterm = (_dbITerm*) iterm_;
+  _dbITerm* iterm = (_dbITerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
   // Do Nothing if already connected
   if (iterm->_net == net->getOID())
     return;
-  for (auto callback : block->_callbacks)
-    callback->inDbITermPreConnect(iterm_, net_);
 
   if (iterm->_net != 0)
-    disconnect(iterm_);
+    disconnect();
+
+  for (auto callback : block->_callbacks)
+    callback->inDbITermPreConnect(this, net_);
 
   if (block->_journal) {
     debugPrint(iterm->getImpl()->getLogger(),
@@ -480,11 +470,11 @@ void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
                "DB_ECO",
                1,
                "ECO: connect Iterm {} to net {}",
-               iterm_->getId(),
+               getId(),
                net_->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(iterm_->getId());
+    block->_journal->pushParam(getId());
     block->_journal->pushParam(net_->getId());
     block->_journal->endAction();
   }
@@ -504,12 +494,12 @@ void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
   net->_iterms = iterm->getOID();
 
   for (auto callback : block->_callbacks)
-    callback->inDbITermPostConnect(iterm_);
+    callback->inDbITermPostConnect(this);
 }
 
-void dbITerm::disconnect(dbITerm* iterm_)
+void dbITerm::disconnect()
 {
-  _dbITerm* iterm = (_dbITerm*) iterm_;
+  _dbITerm* iterm = (_dbITerm*) this;
 
   if (iterm->_net == 0)
     return;
@@ -517,17 +507,17 @@ void dbITerm::disconnect(dbITerm* iterm_)
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
   for (auto callback : block->_callbacks)
-    callback->inDbITermPreDisconnect(iterm_);
+    callback->inDbITermPreDisconnect(this);
   if (block->_journal) {
     debugPrint(iterm->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
                1,
                "ECO: disconnect Iterm {}",
-               iterm_->getId());
+               getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
-    block->_journal->pushParam(iterm_->getId());
+    block->_journal->pushParam(getId());
     block->_journal->endAction();
   }
 
@@ -554,15 +544,7 @@ void dbITerm::disconnect(dbITerm* iterm_)
 
   iterm->_net = 0;
   for (auto callback : block->_callbacks)
-    callback->inDbITermPostDisconnect(iterm_, (dbNet*) net);
-}
-
-dbSet<dbITerm>::iterator dbITerm::disconnect(dbSet<dbITerm>::iterator& itr)
-{
-  dbITerm* it = *itr;
-  dbSet<dbITerm>::iterator next = ++itr;
-  disconnect(it);
-  return next;
+    callback->inDbITermPostDisconnect(this, (dbNet*) net);
 }
 
 dbSigType dbITerm::getSigType()

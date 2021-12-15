@@ -655,13 +655,13 @@ void io::Parser::postProcess()
   design->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
-void io::Parser::postProcessGuide()
+void io::Parser::postProcessGuide(odb::dbDatabase* db)
 {
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
     logger->info(DRT, 169, "Post process guides.");
   }
-  buildGCellPatterns();
+  buildGCellPatterns(db);
 
   design->getRegionQuery()->initOrigGuide(tmpGuides);
   int cnt = 0;
@@ -821,7 +821,8 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
           guideGridYMap[guideWidth] = 0;
         }
         guideGridYMap[guideWidth]++;
-      } else if (tech->getLayer(layerNum)->getDir() == dbTechLayerDir::VERTICAL) {
+      } else if (tech->getLayer(layerNum)->getDir()
+                 == dbTechLayerDir::VERTICAL) {
         if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
           guideGridXMap[guideWidth] = 0;
         }
@@ -919,46 +920,63 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   }
 }
 
-void io::Parser::buildGCellPatterns()
+void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
 {
   // horizontal = false is gcell lines along y direction (x-grid)
-  Rect dieBox;
-  design->getTopBlock()->getDieBox(dieBox);
-
+  frGCellPattern xgp, ygp;
   frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
-  buildGCellPatterns_helper(GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
+  auto gcellGrid = db->getChip()->getBlock()->getGCellGrid();
+  if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
+      && gcellGrid->getNumGridPatternsY() == 1) {
+    frCoord COUNTX, COUNTY;
+    gcellGrid->getGridPatternX(0, GCELLOFFSETX, COUNTX, GCELLGRIDX);
+    gcellGrid->getGridPatternY(0, GCELLOFFSETY, COUNTY, GCELLGRIDY);
+    xgp.setStartCoord(GCELLOFFSETX);
+    xgp.setSpacing(GCELLGRIDX);
+    xgp.setCount(COUNTX);
+    xgp.setHorizontal(false);
 
-  frGCellPattern xgp;
-  xgp.setHorizontal(false);
-  // find first coord >= dieBox.xMin()
-  frCoord startCoordX
-      = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
-        + GCELLOFFSETX;
-  if (startCoordX > dieBox.xMin()) {
-    startCoordX -= (frCoord) GCELLGRIDX;
-  }
-  xgp.setStartCoord(startCoordX);
-  xgp.setSpacing(GCELLGRIDX);
-  if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
-    logger->error(DRT, 174, "GCell cnt x < 1.");
-  }
-  xgp.setCount((dieBox.xMax() - (frCoord) startCoordX) / (frCoord) GCELLGRIDX);
+    ygp.setStartCoord(GCELLOFFSETY);
+    ygp.setSpacing(GCELLGRIDY);
+    ygp.setCount(COUNTY);
+    ygp.setHorizontal(true);
 
-  frGCellPattern ygp;
-  ygp.setHorizontal(true);
-  // find first coord >= dieBox.yMin()
-  frCoord startCoordY
-      = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
-        + GCELLOFFSETY;
-  if (startCoordY > dieBox.yMin()) {
-    startCoordY -= (frCoord) GCELLGRIDY;
+  } else {
+    Rect dieBox;
+    design->getTopBlock()->getDieBox(dieBox);
+    buildGCellPatterns_helper(
+        GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
+    xgp.setHorizontal(false);
+    // find first coord >= dieBox.xMin()
+    frCoord startCoordX
+        = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
+          + GCELLOFFSETX;
+    if (startCoordX > dieBox.xMin()) {
+      startCoordX -= (frCoord) GCELLGRIDX;
+    }
+    xgp.setStartCoord(startCoordX);
+    xgp.setSpacing(GCELLGRIDX);
+    if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+      logger->error(DRT, 174, "GCell cnt x < 1.");
+    }
+    xgp.setCount((dieBox.xMax() - (frCoord) startCoordX)
+                 / (frCoord) GCELLGRIDX);
+
+    ygp.setHorizontal(true);
+    // find first coord >= dieBox.yMin()
+    frCoord startCoordY
+        = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
+          + GCELLOFFSETY;
+    if (startCoordY > dieBox.yMin()) {
+      startCoordY -= (frCoord) GCELLGRIDY;
+    }
+    ygp.setStartCoord(startCoordY);
+    ygp.setSpacing(GCELLGRIDY);
+    if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+      logger->error(DRT, 175, "GCell cnt y < 1.");
+    }
+    ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
   }
-  ygp.setStartCoord(startCoordY);
-  ygp.setSpacing(GCELLGRIDY);
-  if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
-    logger->error(DRT, 175, "GCell cnt y < 1.");
-  }
-  ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
 
   if (VERBOSE > 0) {
     logger->info(DRT,
@@ -1038,14 +1056,13 @@ void io::Parser::writeGuideFile()
         // append unit guide in case of stacked via
         if (bNum != eNum) {
           auto startLayerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
-                      << bbox.xMax() << " " << bbox.yMax() << " "
-                      << startLayerName << ".5" << endl;
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " " << bbox.xMax()
+                      << " " << bbox.yMax() << " " << startLayerName << ".5"
+                      << endl;
         } else {
           auto layerName = tech->getLayer(bNum)->getName();
-          outputGuide << bbox.xMin() << " " << bbox.yMin() << " "
-                      << ebox.xMax() << " " << ebox.yMax() << " " << layerName
-                      << endl;
+          outputGuide << bbox.xMin() << " " << bbox.yMin() << " " << ebox.xMax()
+                      << " " << ebox.yMax() << " " << layerName << endl;
         }
       }
       outputGuide << ")\n";

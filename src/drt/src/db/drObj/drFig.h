@@ -45,6 +45,14 @@ class drFig : public drBlockObject
  protected:
   // constructors
   drFig() : drBlockObject() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class drNet;
@@ -67,6 +75,14 @@ class drConnFig : public drFig
  protected:
   // constructors
   drConnFig() : drFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class drPin;
@@ -95,6 +111,14 @@ class drPinFig : public drConnFig
    */
  protected:
   drPinFig() : drConnFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drConnFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

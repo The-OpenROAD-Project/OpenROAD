@@ -143,7 +143,6 @@ class frRect;
 class frPolygon;
 class frNet;
 class drNet;
-class frBox;
 class drConnFig;
 class frShape;
 class frConnFig;

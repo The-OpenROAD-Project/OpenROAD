@@ -2598,11 +2598,9 @@ void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
     if (path[i].z() != path[i-1].z()) {
       frMIdx z = min (path[i].z(), path[i-1].z());
       frViaDef* viaDef = design_->getTech()->getLayer(gridGraph_.getLayerNum(z)+1)->getDefaultViaDef();
-      dbTransform xform;
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
-      Point pt(x, y);
-      xform.apply(pt);
+      dbTransform xform(Point(x, y));
       Rect box;
       for (auto& uFig : viaDef->getCutFigs()) {
         auto rect = static_cast<frRect*>(uFig.get());

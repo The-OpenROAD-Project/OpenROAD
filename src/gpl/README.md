@@ -50,22 +50,15 @@ global_placement
     [-verbose_level level]
 ```
 
--   `-timing_driven`: Enable timing-driven mode
-    -   `-skip_initial_place` : Skip the initial placement (BiCGSTAB
-        solving) before Nesterov placement. IP improves HPWL by ~5% on large
-        designs. Equal to '-initial_place_max_iter 0'
-    -   `-incremental` : Enable the incremental global placement. Users
-        would need to tune other parameters (e.g., init_density_penalty) with
-        pre-placed solutions.
--   `-grid_count`: `[64,128,256,512,..., int]`. Default: Defined by internal
-    heuristic.
-
 ### Tuning Parameters
 
+- `-timing_driven`: Enable timing-driven mode
+- `-skip_initial_place` : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
+- `-incremental` : Enable the incremental global placement. Users would need to tune other parameters (e.g., init_density_penalty) with pre-placed solutions.
 - `-bin_grid_count`: set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`.
 - `-density`: set target density. Default value is 0.70. Allowed values are `[0-1, float]`.
 - `-init_density_penalty`: set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`.
-- `-init_wire_length_coef`: set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`.
+- `-init_wirelength_coef`: set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`.
 - `-min_phi_coef`: set `pcof_min(µ_k Lower Bound)`. Default value is 0.95. Allowed values are `[0.95-1.05, float]`.
 - `-max_phi_coef`: set `pcof_max(µ_k Upper Bound)`. Default value is 1.05. Allowed values are `[1.00-1.20, float]`.
 - `-overflow`: set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`.

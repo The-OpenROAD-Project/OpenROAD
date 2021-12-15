@@ -40,6 +40,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <random>
 #include <vector>
 
 #include "db.h"
@@ -241,6 +242,8 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
       model_(new DisplayControlModel(user_data_item_idx_, this)),
+      layers_menu_(new QMenu(this)),
+      layers_menu_layer_(nullptr),
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
@@ -248,6 +251,7 @@ DisplayControls::DisplayControls(QWidget* parent)
 {
   setObjectName("layers");  // for settings
   view_->setModel(model_);
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
   QHeaderView* header = view_->header();
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
@@ -256,6 +260,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   header->setSectionResizeMode(Selectable, QHeaderView::ResizeToContents);
   // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
   header->setStretchLastSection(false);
+
+  createLayerMenu();
 
   auto layers = makeParentItem(
       layers_group_,
@@ -367,6 +373,11 @@ DisplayControls::DisplayControls(QWidget* parent)
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
 
+  connect(view_,
+          SIGNAL(customContextMenuRequested(const QPoint &)),
+          this,
+          SLOT(itemContextMenu(const QPoint &)));
+
   // register renderers
   if (gui::Gui::get() != nullptr) {
     for (auto renderer : gui::Gui::get()->renderers()) {
@@ -378,6 +389,48 @@ DisplayControls::DisplayControls(QWidget* parent)
 DisplayControls::~DisplayControls()
 {
   custom_controls_.clear();
+}
+
+void DisplayControls::createLayerMenu()
+{
+  connect(layers_menu_->addAction("Show only selected"),
+          &QAction::triggered,
+          [this]() {
+            layerShowOnlySelectedNeighbors(0, 0);
+          });
+
+
+  const QString show_range = "Show layer range ";
+  const QString updown_arrow = "\u2195";
+  const QString down_arrow = "\u2193";
+  const QString up_arrow = "\u2191";
+  auto add_range_action = [&](int up, int down) {
+    QString arrows;
+    for (int n = 1; n < down; n++) {
+      arrows += up_arrow;
+    }
+    if (up > 0 && down > 0) {
+      arrows += updown_arrow;
+    } else if (down > 0) {
+      arrows += up_arrow;
+    } else if (up > 0) {
+      arrows += down_arrow;
+    }
+    for (int n = 1; n < up; n++) {
+      arrows += down_arrow;
+    }
+
+    connect(layers_menu_->addAction(show_range + arrows),
+            &QAction::triggered,
+            [this, up, down]() {
+              layerShowOnlySelectedNeighbors(down, up);
+            });
+  };
+
+  add_range_action(1, 1); // 1 layer above / below
+  add_range_action(2, 2); // 2 layers above / below
+  add_range_action(0, 1); // 1 layer below
+  add_range_action(1, 0); // 1 layer above
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
@@ -490,8 +543,13 @@ void DisplayControls::readSettings(QSettings* settings)
         renderer_settings[key_group.toStdString()] = value.toInt();
       } else if (type == "double") {
         renderer_settings[key_group.toStdString()] = value.toDouble();
+      } else if (type == "string") {
+        renderer_settings[key_group.toStdString()] = value.toString().toStdString();
       } else {
-        logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        // this can get called before logger has been created
+        if (logger_ != nullptr) {
+          logger_->warn(utl::GUI, 57, "Unknown data type \"{}\" for \"{}\".", type.toStdString(), key_group.toStdString());
+        }
       }
       settings->endGroup();
     }
@@ -586,6 +644,9 @@ void DisplayControls::writeSettings(QSettings* settings)
         } else if(const auto* v = std::get_if<double>(&value)) {
           type = "double";
           data = *v;
+        } else if(const auto* v = std::get_if<std::string>(&value)) {
+          type = "string";
+          data = QString::fromStdString(*v);
         } else {
           logger_->warn(utl::GUI, 54, "Unknown data type for \"{}\".", name);
         }
@@ -700,7 +761,6 @@ void DisplayControls::itemChanged(QStandardItem* item)
   // check if item has exclusivity set
   auto exclusive = item->data(exclusivity_item_idx_);
   if (exclusive.isValid() && checked) {
-    const QModelIndex row_start_index = model_->index(item_index.row(), Name, item_index.parent());
     QStandardItem* parent = model_->itemFromIndex(item_index.parent());
 
     QSet<QStandardItem*> items_to_check;
@@ -1444,6 +1504,9 @@ void DisplayControls::techInit()
   int metal = 0;
   int via = 0;
 
+  // ensure if random colors are used they are consistent
+  std::mt19937 gen_color(1);
+
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
@@ -1453,14 +1516,19 @@ void DisplayControls::techInit()
         color = colors[metal++];
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else if (type == dbTechLayerType::CUT) {
       if (via < num_colors) {
-        color = colors[via++];
+        if (metal != 0) {
+          color = colors[via++];
+        } else {
+          // via came first, so pick random color
+          color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+        }
       } else {
         // pick a random color as we exceeded the built-in palette size
-        color = QColor(50 + rand() % 200, 50 + rand() % 200, 50 + rand() % 200);
+        color = QColor(50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
       }
     } else {
       continue;
@@ -1503,6 +1571,78 @@ void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds, co
         bool select = selectable->checkState() == Qt::Checked;
         cmds.push_back(fmt::format(selectable_restore, name, select));
       }
+    }
+  }
+}
+
+void DisplayControls::itemContextMenu(const QPoint &point)
+{
+  const QModelIndex index = view_->indexAt(point);
+
+  if (!index.isValid()) {
+    return;
+  }
+
+  // check if index is a layer
+  const QModelIndex parent = index.parent();
+  if (!parent.isValid()) {
+    return;
+  }
+
+  auto* parent_item = model_->itemFromIndex(parent);
+  if (parent_item != layers_group_.name) {
+    // not a member of the layers
+    return;
+  }
+
+  const QModelIndex name_index = model_->index(index.row(), Name, parent);
+  auto* name_item = model_->itemFromIndex(name_index);
+  layers_menu_layer_ = name_item->data(user_data_item_idx_).value<odb::dbTechLayer*>();
+
+  layers_menu_->popup(view_->viewport()->mapToGlobal(point));
+}
+
+void DisplayControls::layerShowOnlySelectedNeighbors(int lower, int upper)
+{
+  if (layers_menu_layer_ == nullptr) {
+    return;
+  }
+
+  std::set<const odb::dbTechLayer*> layers;
+  collectNeighboringLayers(layers_menu_layer_, lower, upper, layers);
+  setOnlyVisibleLayers(layers);
+
+  layers_menu_layer_ = nullptr;
+}
+
+void DisplayControls::collectNeighboringLayers(odb::dbTechLayer* layer,
+                                               int lower,
+                                               int upper,
+                                               std::set<const odb::dbTechLayer*>& layers)
+{
+  if (layer == nullptr) {
+    return;
+  }
+
+  layers.insert(layer);
+  if (lower > 0) {
+    collectNeighboringLayers(layer->getLowerLayer(), lower - 1, 0, layers);
+  }
+
+  if (upper > 0) {
+    collectNeighboringLayers(layer->getUpperLayer(), 0, upper - 1, layers);
+  }
+}
+
+void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers)
+{
+  for (auto& [layer, row] : layer_controls_) {
+    row.visible->setCheckState(Qt::Unchecked);
+  }
+
+  for (auto* layer : layers) {
+    if (layer_controls_.count(layer) != 0) {
+      layer_controls_[layer].visible->setCheckState(Qt::Checked);
     }
   }
 }

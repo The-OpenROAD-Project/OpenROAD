@@ -38,6 +38,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QMenu>
 #include <QModelIndex>
 #include <QRadioButton>
 #include <QSettings>
@@ -48,6 +49,7 @@
 #include <QVBoxLayout>
 #include <functional>
 #include <map>
+#include <set>
 #include <vector>
 
 #include "options.h"
@@ -227,6 +229,9 @@ class DisplayControls : public QDockWidget, public Options
   void displayItemSelected(const QItemSelection& selected);
   void displayItemDblClicked(const QModelIndex& index);
 
+ private slots:
+  void itemContextMenu(const QPoint &point);
+
  private:
   // The columns in the tree view
   enum Column
@@ -328,8 +333,15 @@ class DisplayControls : public QDockWidget, public Options
   void setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback);
   void setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity);
 
+  void createLayerMenu();
+  void layerShowOnlySelectedNeighbors(int lower, int upper);
+  void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
+  void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
+
   QTreeView* view_;
   DisplayControlModel* model_;
+  QMenu* layers_menu_;
+  odb::dbTechLayer* layers_menu_layer_;
 
   bool ignore_callback_;
 

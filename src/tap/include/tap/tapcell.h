@@ -147,7 +147,7 @@ class Tapcell
                  int y,
                  const std::string& prefix);
   bool isXInRow(const int x, const std::vector<odb::dbRow*>& subrow);
-  int checkIfFilled(int x,
+  bool checkIfFilled(int x,
                      int width,
                      odb::dbOrientType& orient,
                      const std::vector<std::vector<int>>& row_insts);

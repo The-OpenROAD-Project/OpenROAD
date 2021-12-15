@@ -555,7 +555,7 @@ void dbJournal::redo_connectObject()
                  "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
                  iterm_id,
                  net_id);
-      dbITerm::connect(iterm, net);
+      iterm->connect(net);
       break;
     }
 
@@ -597,7 +597,7 @@ void dbJournal::redo_disconnectObject()
                  2,
                  "REDO ECO: disconnect dbITermObj, iterm_id {}",
                  iterm_id);
-      dbITerm::disconnect(iterm);
+      iterm->disconnect();
       break;
     }
 

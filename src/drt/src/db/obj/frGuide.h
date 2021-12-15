@@ -107,20 +107,34 @@ class frGuide : public frConnFig
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, incomplete
+   * intersects, incomplete
    */
   // needs to be updated
   void getBBox(Rect& boxIn) const override { boxIn = Rect(begin_, end_); }
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
- protected:
+ private:
   Point begin_;
   Point end_;
   frLayerNum beginLayer_;
   frLayerNum endLayer_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConnFig>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & beginLayer_;
+    (ar) & endLayer_;
+    (ar) & routeObj_;
+    (ar) & net_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

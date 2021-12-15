@@ -226,7 +226,7 @@ class frVia : public frRef
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   void getBBox(Rect& boxIn) const override
@@ -291,7 +291,7 @@ class frVia : public frRef
     xform.apply(boxIn);
   }
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frVia>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<frVia>> getIter() const { return iter_; }
@@ -303,7 +303,8 @@ class frVia : public frRef
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
- protected:
+
+ private:
   Point origin_;
   frViaDef* viaDef_;
   frBlockObject* owner_;
@@ -311,6 +312,34 @@ class frVia : public frRef
   bool bottomConnected_ : 1;
   bool topConnected_ : 1;
   frListIter<std::unique_ptr<frVia>> iter_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frRef>(*this);
+    (ar) & origin_;
+    (ar) & viaDef_;
+    (ar) & owner_;
+    bool tmp;
+    if (is_loading(ar)) {
+      (ar) & tmp;
+      tapered_ = tmp;
+      (ar) & tmp;
+      bottomConnected_ = tmp;
+      (ar) & tmp;
+      topConnected_ = tmp;
+    } else {
+      tmp = tapered_;
+      (ar) & tmp;
+      tmp = bottomConnected_;
+      (ar) & tmp;
+      tmp = topConnected_;
+      (ar) & tmp;
+    }
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

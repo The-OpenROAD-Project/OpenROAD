@@ -80,6 +80,11 @@ class FlexGCWorkerRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 
 class FlexGCWorker::Impl
@@ -88,6 +93,7 @@ class FlexGCWorker::Impl
 
  public:
   // constructors
+  Impl(); // for serialization
   Impl(frTechObject* techIn,
        Logger* logger,
        FlexDRWorker* drWorkerIn,
@@ -168,6 +174,7 @@ class FlexGCWorker::Impl
   frBlockObject* targetObj_;
   bool ignoreDB_;
   bool ignoreMinArea_;
+  bool ignoreLongSideEOL_;
   bool surgicalFixEnabled_;
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
@@ -488,6 +495,11 @@ class FlexGCWorker::Impl
   bool isCornerOverlap(gcCorner* corner,
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

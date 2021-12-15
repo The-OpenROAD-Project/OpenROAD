@@ -129,6 +129,9 @@ namespace utl {
 class Logger;
 }
 
+namespace dst {
+class Distributed;
+}
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -173,6 +176,7 @@ public:
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen *getPdnGen() { return pdngen_; }
+  dst::Distributed *getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
 
   // Return the bounding box of the db rows.
@@ -265,6 +269,7 @@ private:
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
+  dst::Distributed *distributer_;
   stt::SteinerTreeBuilder *stt_builder_;
 
   std::set<Observer *> observers_;
