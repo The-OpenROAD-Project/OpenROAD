@@ -36,8 +36,6 @@
 
 namespace fr {
 class frViaDef;
-class frPin;
-class frBPin;
 class frPinAccess;
 class frAccessPoint : public frBlockObject
 {

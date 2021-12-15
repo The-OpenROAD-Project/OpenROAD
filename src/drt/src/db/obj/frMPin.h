@@ -31,9 +31,6 @@
 #include <iostream>
 
 #include "db/obj/frPin.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
 
 namespace fr {
 class frMTerm;

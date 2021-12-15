@@ -32,10 +32,8 @@
 
 #include "db/obj/frBPin.h"
 #include "db/obj/frTerm.h"
-#include "frBaseTypes.h"
 
 namespace fr {
-class frNet;
 class frBlock;
 
 class frBTerm : public frTerm

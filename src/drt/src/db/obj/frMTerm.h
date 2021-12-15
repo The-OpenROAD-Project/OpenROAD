@@ -32,8 +32,6 @@
 
 #include "db/obj/frTerm.h"
 #include "db/obj/frMPin.h"
-#include "db/obj/frMTerm.h"
-#include "frBaseTypes.h"
 
 namespace fr {
 class frMaster;

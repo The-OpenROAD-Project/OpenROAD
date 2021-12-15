@@ -33,15 +33,9 @@
 
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frPin.h"
 #include "frBaseTypes.h"
 
 namespace fr {
-class frNet;
-class frInstTerm;
-class frBlock;
-class frMaster;
-
 class frTerm : public frBlockObject
 {
  public:

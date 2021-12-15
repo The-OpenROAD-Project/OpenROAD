@@ -40,7 +40,6 @@ namespace fr {
 namespace io {
 class Parser;
 }
-class frGuide;
 class frMaster : public frBlockObject
 {
  public:
