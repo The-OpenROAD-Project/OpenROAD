@@ -192,7 +192,6 @@ class DetailedMgr {
 
   void acceptMove(void);
   void rejectMove(void);
-  void printMove(void);
 
  public:
   struct compareBlockages {

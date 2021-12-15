@@ -85,6 +85,12 @@ class DetailedRandom {
  protected:
   double go(void);
 
+  double eval(std::vector<double>& costs, std::vector<std::string>& expr);
+  double doOperation(double a, double b, char op);
+  bool isOperator(char ch);
+  bool isObjective(char ch);
+  bool isNumber(char ch);
+
   void collectCandidates(void);
 
  protected:

@@ -119,9 +119,9 @@ void DetailedABU::init(void) {
 
   m_abuTargUt = m_mgrPtr->getTargetUt();  // XXX: Need to set this somehow!!!
 
-  m_abuGridUnit = BIN_DIM * m_arch->m_rows[0]->m_rowHeight;
-  m_abuGridNumX = (int)ceil((m_arch->m_xmax - m_arch->m_xmin) / m_abuGridUnit);
-  m_abuGridNumY = (int)ceil((m_arch->m_ymax - m_arch->m_ymin) / m_abuGridUnit);
+  m_abuGridUnit = BIN_DIM * m_arch->getRow(0)->m_rowHeight;
+  m_abuGridNumX = (int)ceil((m_arch->getMaxX() - m_arch->getMinX()) / m_abuGridUnit);
+  m_abuGridNumY = (int)ceil((m_arch->getMaxY() - m_arch->getMinY()) / m_abuGridUnit);
   m_abuNumBins = m_abuGridNumX * m_abuGridNumY;
   m_abuBins.resize(m_abuNumBins);
 
@@ -138,13 +138,13 @@ void DetailedABU::init(void) {
 
       m_abuBins[binId].id = binId;
 
-      m_abuBins[binId].lx = m_arch->m_xmin + k * m_abuGridUnit;
-      m_abuBins[binId].ly = m_arch->m_ymin + j * m_abuGridUnit;
+      m_abuBins[binId].lx = m_arch->getMinX() + k * m_abuGridUnit;
+      m_abuBins[binId].ly = m_arch->getMinY() + j * m_abuGridUnit;
       m_abuBins[binId].hx = m_abuBins[binId].lx + m_abuGridUnit;
       m_abuBins[binId].hy = m_abuBins[binId].ly + m_abuGridUnit;
 
-      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, m_arch->m_xmax);
-      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, m_arch->m_ymax);
+      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, m_arch->getMaxX());
+      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, m_arch->getMaxY());
 
       double w = m_abuBins[binId].hx - m_abuBins[binId].lx;
       double h = m_abuBins[binId].hy - m_abuBins[binId].ly;
@@ -171,19 +171,19 @@ void DetailedABU::init(void) {
     }
 
     int lcol = std::max(
-        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->m_xmin) /
+        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->getMinX()) /
                    m_abuGridUnit),
         0);
     int rcol = std::min(
-        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->m_xmin) /
+        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->getMinX()) /
                    m_abuGridUnit),
         m_abuGridNumX - 1);
     int brow = std::max(
-        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                    m_abuGridUnit),
         0);
     int trow = std::min(
-        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                    m_abuGridUnit),
         m_abuGridNumY - 1);
 
@@ -223,22 +223,22 @@ void DetailedABU::init(void) {
 
       int lcol =
           std::max((int)floor(((shape->getX() - 0.5 * shape->getWidth()) -
-                               m_arch->m_xmin) /
+                               m_arch->getMinX()) /
                               m_abuGridUnit),
                    0);
       int rcol =
           std::min((int)floor(((shape->getX() + 0.5 * shape->getWidth()) -
-                               m_arch->m_xmin) /
+                               m_arch->getMinX()) /
                               m_abuGridUnit),
                    m_abuGridNumX - 1);
       int brow =
           std::max((int)floor(((shape->getY() - 0.5 * shape->getHeight()) -
-                               m_arch->m_ymin) /
+                               m_arch->getMinY()) /
                               m_abuGridUnit),
                    0);
       int trow =
           std::min((int)floor(((shape->getY() + 0.5 * shape->getHeight()) -
-                               m_arch->m_ymin) /
+                               m_arch->getMinY()) /
                               m_abuGridUnit),
                    m_abuGridNumY - 1);
 
@@ -270,19 +270,19 @@ void DetailedABU::init(void) {
     Node* nd = m_network->getFillerNode(i);
 
     int lcol = std::max(
-        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->m_xmin) /
+        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->getMinX()) /
                    m_abuGridUnit),
         0);
     int rcol = std::min(
-        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->m_xmin) /
+        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->getMinX()) /
                    m_abuGridUnit),
         m_abuGridNumX - 1);
     int brow = std::max(
-        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                    m_abuGridUnit),
         0);
     int trow = std::min(
-        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                    m_abuGridUnit),
         m_abuGridNumY - 1);
 
@@ -354,11 +354,11 @@ void DetailedABU::computeUtils(void) {
     double nly = nd->getY() - 0.5 * nd->getHeight();
     double nhy = nd->getY() + 0.5 * nd->getHeight();
 
-    int lcol = std::max((int)floor((nlx - m_arch->m_xmin) / m_abuGridUnit), 0);
-    int rcol = std::min((int)floor((nrx - m_arch->m_xmin) / m_abuGridUnit),
+    int lcol = std::max((int)floor((nlx - m_arch->getMinX()) / m_abuGridUnit), 0);
+    int rcol = std::min((int)floor((nrx - m_arch->getMinX()) / m_abuGridUnit),
                         m_abuGridNumX - 1);
-    int brow = std::max((int)floor((nly - m_arch->m_ymin) / m_abuGridUnit), 0);
-    int trow = std::min((int)floor((nhy - m_arch->m_ymin) / m_abuGridUnit),
+    int brow = std::max((int)floor((nly - m_arch->getMinY()) / m_abuGridUnit), 0);
+    int trow = std::min((int)floor((nhy - m_arch->getMinY()) / m_abuGridUnit),
                         m_abuGridNumY - 1);
 
     // Cell area...
@@ -688,17 +688,17 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub) {
   }
 
   int lcol = std::max(
-      (int)floor(((x - 0.5 * nd->getWidth()) - m_arch->m_xmin) / m_abuGridUnit),
+      (int)floor(((x - 0.5 * nd->getWidth()) - m_arch->getMinX()) / m_abuGridUnit),
       0);
   int rcol = std::min(
-      (int)floor(((x + 0.5 * nd->getWidth()) - m_arch->m_xmin) / m_abuGridUnit),
+      (int)floor(((x + 0.5 * nd->getWidth()) - m_arch->getMinX()) / m_abuGridUnit),
       m_abuGridNumX - 1);
   int brow =
-      std::max((int)floor(((y - 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+      std::max((int)floor(((y - 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                           m_abuGridUnit),
                0);
   int trow =
-      std::min((int)floor(((y + 0.5 * nd->getHeight()) - m_arch->m_ymin) /
+      std::min((int)floor(((y + 0.5 * nd->getHeight()) - m_arch->getMinY()) /
                           m_abuGridUnit),
                m_abuGridNumY - 1);
 

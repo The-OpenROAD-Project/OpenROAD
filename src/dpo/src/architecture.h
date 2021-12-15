@@ -30,14 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-// File: architecture.h
-////////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
-// Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <iostream>
@@ -51,7 +46,6 @@
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 class RoutingParams;
 class Architecture;
@@ -59,16 +53,9 @@ class Network;
 class Node;
 
 ////////////////////////////////////////////////////////////////////////////////
-// Classes.
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture {
-  // This class represents information about the layout area.  It's not as
-  // advanced as the one used in the legalizer, but it's sufficient for now (we
-  // can change it later as required)...  Right now, we only keep track of row
-  // information and not explicit site information...
-  //
-  // XXX: What about sub-rows being introduced????
-  // XXX: Should routing information be stored here????
+  // This class represents information about the layout area. 
 
  public:
   class Row;
@@ -79,8 +66,15 @@ class Architecture {
   Architecture();
   virtual ~Architecture();
 
+  std::vector<Architecture::Row*>& getRows(void) { return m_rows; }
   int getNumRows(void) const { return m_rows.size(); }
   Architecture::Row* getRow(int r) const { return m_rows[r]; }
+  Architecture::Row* createAndAddRow(void);
+
+  std::vector<Architecture::Region*>& getRegions(void) { return m_regions; }
+  int getNumRegions(void) const { return m_regions.size(); }
+  Architecture::Region* getRegion(int r) const { return m_regions[r]; }
+  Architecture::Region* createAndAddRegion(void);
 
   bool isSingleHeightCell(Node* ndi) const;
   bool isMultiHeightCell(Node* ndi) const;
@@ -133,20 +127,19 @@ class Architecture {
   double getCellSpacing(Node* leftNode, Node* rightNode);
 
  protected:
-
- public:
-  // Rows...
-  std::vector<Row*> m_rows;
-
-  // Die...
+  // Boundary around rows.
   double m_xmin;
   double m_xmax;
   double m_ymin;
   double m_ymax;
 
+  // Rows...
+  std::vector<Row*> m_rows;
+
   // Regions...
   std::vector<Region*> m_regions;
-  std::vector<int> m_numNodesInRegion;
+
+ public:
 
   bool m_useSpacingTable;
   bool m_usePadding;

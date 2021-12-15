@@ -72,7 +72,10 @@ initOptdp(OpenRoad *openroad)
   Dpo_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpo_tcl_inits);
-  openroad->getOptdp()->init(openroad);
+  //openroad->getOptdp()->init(openroad);
+  openroad->getOptdp()->init(openroad->getDb(),
+                             openroad->getLogger(),
+                             openroad->getOpendp());
 }
 
 }  // namespace ord

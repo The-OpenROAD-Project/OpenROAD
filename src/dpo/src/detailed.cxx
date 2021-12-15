@@ -54,7 +54,6 @@
 #include "detailed_random.h"
 #include "detailed_reorder.h"
 #include "detailed_vertical.h"
-// Other.
 #include "detailed_orient.h"
 
 // Other things not ready.
@@ -92,24 +91,6 @@ bool Detailed::improve(DetailedMgr& mgr)
   m_rt = mgr.getRoutingParams();  // Can be NULL.
 
 
-  int err1, err2, err3, err4, err5;
-  (void)err1;
-  (void)err2;
-  (void)err3;
-  (void)err4;
-  (void)err5;
-
-  // Checks prior to detailed placement.
-  err1 = mgr.checkRegionAssignment();  // If segs build right and assignment
-                                       // okay, should be fine.
-  err2 = mgr.checkRowAlignment();   // If segs build right and assignment okay,
-                                    // should be fine.
-  err3 = mgr.checkSiteAlignment();  // Might not be okay if initial placement
-                                    // not legal or code made a mistake.
-  err4 =
-      mgr.checkOverlapInSegments(10);  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err5 = mgr.checkEdgeSpacingInSegments();  // Might not be okay.
 
   // Parse the script string and run each command.
   boost::char_separator<char> separators(" \r\t\n", ";");
@@ -137,16 +118,22 @@ bool Detailed::improve(DetailedMgr& mgr)
   // Last command; possible if no ending semi-colon.
   doDetailedCommand(args);
 
-  err1 = mgr.checkRegionAssignment();  // If segs build right and assignment
-                                       // okay, should be fine.
-  err2 = mgr.checkRowAlignment();   // If segs build right and assignment okay,
-                                    // should be fine.
-  err3 = mgr.checkSiteAlignment();  // Might not be okay if initial placement
-                                    // not legal or code made a mistake.
-  err4 =
-      mgr.checkOverlapInSegments(10);  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err5 = mgr.checkEdgeSpacingInSegments();  // Might not be okay.
+  // Note: If cell orientation was not the last script
+  // command run, then we should/need to perform
+  // orientation to ensure the cells are properly
+  // oriented for their respective row assignments.
+  // We do not need to do flipping though.
+  {
+    DetailedOrient orienter(m_arch, m_network, m_rt);
+    orienter.run(m_mgr, "orient -f");
+  }
+
+  // Different checks which are useful for debugging.
+  //mgr.checkRegionAssignment();  
+  //mgr.checkRowAlignment();   
+  //mgr.checkSiteAlignment();  
+  //mgr.checkOverlapInSegments(); 
+  //mgr.checkEdgeSpacingInSegments(); 
 
   return true;
 }
@@ -157,13 +144,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   if (args.size() == 0) {
     return;
   }
-
-  int err1, err2, err3, err4, err5;
-  (void)err1;
-  (void)err2;
-  (void)err3;
-  (void)err4;
-  (void)err5;
 
   // Removed some checks here.  Just check after.
 
@@ -206,6 +186,9 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     DetailedReorderer ro(m_arch, m_network, m_rt);
     ro.run(m_mgr, args);
+  } else if (strcmp(args[0].c_str(), "orient") == 0) {
+    DetailedOrient orienter(m_arch, m_network, m_rt);
+    orienter.run(m_mgr, args);
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     DetailedRandom random(m_arch, m_network, m_rt);
     random.run(m_mgr, args);
@@ -213,17 +196,12 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
     return;
   }
 
-  err1 = m_mgr->checkRegionAssignment();  // If segs build right and assignment
-                                          // okay, should be fine.
-  err2 = m_mgr->checkRowAlignment();      // If segs build right and assignment
-                                          // okay, should be fine.
-  err3 = m_mgr->checkSiteAlignment();  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err4 =
-      m_mgr
-          ->checkOverlapInSegments();  // Might not be okay if initial placement
-                                       // not legal or code made a mistake.
-  err5 = m_mgr->checkEdgeSpacingInSegments();  // Might not be okay.
+  // Different checks which are useful for debugging.
+  //m_mgr->checkRegionAssignment();  
+  //m_mgr->checkRowAlignment();   
+  //m_mgr->checkSiteAlignment();  
+  //m_mgr->checkOverlapInSegments(); 
+  //m_mgr->checkEdgeSpacingInSegments(); 
 }
 
 }  // namespace dpo

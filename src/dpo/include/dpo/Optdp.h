@@ -37,7 +37,6 @@
 #include <set>
 #include <vector>
 #include <utility> // pair
-#include <tuple> // pair
 #include <unordered_map>
 #include <unordered_set>
 
@@ -48,28 +47,25 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
-class OpenRoad;
+namespace dpl {
+class Opendp;
 }
 
 namespace dpo {
 
+class RoutingParams;
+class Architecture;
+class Network;
 class Node;
 class Edge;
 class Pin;
 
-
-using std::map;
-using std::set;
-using std::string;
-using std::vector;
-using std::pair;
-using std::tuple;
-
-using utl::Logger;
-
-using odb::dbBlock;
 using odb::dbDatabase;
+using utl::Logger;
+using dpl::Opendp;
+
+/*
+using odb::dbBlock;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbLib;
@@ -83,13 +79,8 @@ using odb::dbRow;
 using odb::dbSite;
 using odb::Point;
 using odb::Rect;
+*/
 
-using ord::OpenRoad;
-
-
-class RoutingParams;
-class Architecture;
-class Network;
 
 class Optdp
 {
@@ -103,7 +94,7 @@ public:
   Optdp &operator=(const Optdp &&) = delete;
 
   void clear();
-  void init(ord::OpenRoad* openroad);
+  void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
 
   void improvePlacement();
 
@@ -111,27 +102,25 @@ protected:
   void import();
   void updateDbInstLocations();
 
-  void initEdgeTypes();
-  void initCellSpacingTable();
   void initPadding();
   void createLayerMap();
   void createNdrMap();
   void setupMasterPowers();
   void createNetwork();
   void createArchitecture();
-  void createRouteGrid();
+  void createRouteInformation();
   void setUpNdrRules();
   void setUpPlacementRegions();
 
 protected:
-  ord::OpenRoad *openroad_;
   utl::Logger *logger_;
   odb::dbDatabase *db_;
+  dpl::Opendp* opendp_;
 
   // My stuff.
-  Architecture *arch_;
-  Network *nw_;
-  RoutingParams *rt_;
+  Architecture *arch_; // Information about rows, etc.
+  Network *network_; // The netlist, cells, etc.
+  RoutingParams *routeinfo_; // Route info we might consider (future).
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;

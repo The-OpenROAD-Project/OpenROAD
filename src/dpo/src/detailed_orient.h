@@ -72,15 +72,17 @@ class DetailedOrient {
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
+  // Useful to have some of these routines accessible/public.
+  int orientCells(int& changed);
+  bool orientSingleHeightCellForRow(Node* ndi, int row);
+  bool orientMultiHeightCellForRow(Node* ndi, int row);
   int flipCells(void);
-  int orientCellsForRow(void);
 
-  bool orientCellForRow(Node* ndi, int row);
+  // Other.
   bool orientAdjust(Node* ndi, unsigned newOri);
   unsigned orientFind(Node* ndi, int row);
   bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
 
-  // XXX: Couple more routines that _should_ go here.
  protected:
   Architecture* m_arch;
   Network* m_network;

@@ -74,18 +74,18 @@ const int MAX_MOVE_ATTEMPTS = 5;
 
 namespace dpo {
 
-bool isOperator(char ch) {
+bool DetailedRandom::isOperator(char ch) {
   if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^')
     return true;
   return false;
 }
 
-bool isObjective(char ch) {
+bool DetailedRandom::isObjective(char ch) {
   if (ch >= 'a' && ch <= 'z') return true;
   return false;
 }
 
-bool isNumber(char ch) {
+bool DetailedRandom::isNumber(char ch) {
   if (ch >= '0' && ch <= '9') return true;
   return false;
 }
@@ -297,9 +297,14 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
     }
   }
 
-  double curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
 
-  init_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
+  m_currCost.resize(m_objectives.size());
+  for (size_t i = 0; i < m_objectives.size(); i++) {
+    m_currCost[i] = m_objectives[i]->curr();
+  }
+  double iCost = eval(m_currCost, m_expr);
+
+
   for (int p = 1; p <= passes; p++) {
     m_mgrPtr->resortSegments();  // Needed?
     double change = go();
@@ -313,11 +318,16 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   }
   m_mgrPtr->resortSegments();  // Needed?
 
-  curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
-  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  m_currCost.resize(m_objectives.size());
+  for (size_t i = 0; i < m_objectives.size(); i++) {
+    m_currCost[i] = m_objectives[i]->curr();
+  }
+  double fCost = eval(m_currCost, m_expr);
+
+  double imp = (((iCost - fCost) / iCost) * 100.);
   m_mgrPtr->getLogger()->info(
       DPO, 328, "End of random improver; improvement is {:.6f} percent.",
-      curr_imp);
+      imp);
 
   // Cleanup.
   for (size_t i = 0; i < m_generators.size(); i++) {
@@ -330,7 +340,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
   m_objectives.clear();
 }
 
-double doOperation(double a, double b, char op) {
+double DetailedRandom::doOperation(double a, double b, char op) {
   switch (op) {
     case '+':
       return b + a;
@@ -353,7 +363,7 @@ double doOperation(double a, double b, char op) {
   return 0.0;
 }
 
-double eval(std::vector<double>& costs, std::vector<std::string>& expr) {
+double DetailedRandom::eval(std::vector<double>& costs, std::vector<std::string>& expr) {
   std::stack<double> stk;
   for (size_t i = 0; i < expr.size(); i++) {
     std::string& val = expr[i];
@@ -560,7 +570,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->m_rows[0]->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->m_siteSpacing;
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;
@@ -694,7 +704,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->m_rows[0]->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->m_siteSpacing;
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;

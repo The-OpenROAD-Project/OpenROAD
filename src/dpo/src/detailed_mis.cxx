@@ -49,6 +49,7 @@
 #include <lemon/cycle_canceling.h>
 #include <lemon/list_graph.h>
 #include <lemon/preflow.h>
+#include <lemon/network_simplex.h>
 #include <lemon/smart_graph.h>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -97,10 +98,10 @@ DetailedMis::DetailedMis(Architecture* arch, Network* network,
       m_network(network),
       m_rt(rt),
       m_skipEdgesLargerThanThis(100),
-      m_maxProblemSize(50),
+      m_maxProblemSize(25),
       m_useSameSize(true),
       m_useSameColor(true),
-      m_maxTimesUsed(3),
+      m_maxTimesUsed(2),
       m_obj(DetailedMis::Hpwl) {}
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,6 +169,13 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
 
   curr_disp = Utility::disp_l1(m_network, tot_disp, max_disp, avg_disp);
   init_disp = curr_disp;
+
+  // Do some things that only need to be done once regardless
+  // of the number of passes.
+  collectMovableCells(); // Movable cells.
+  colorCells(); // Color the cells.
+  buildGrid(); // Grid for searching for neigbours.
+
   for (int p = 1; p <= passes; p++) {
     curr_obj = (m_obj == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
 
@@ -205,14 +213,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args) {
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::place(void) {
-  // Collect cells we will consider moving.
-  collectMovableCells();
-
-  // Need to color the cells.
-  colorCells();
-
-  // Build a grid for locating close cells.
-  buildGrid();
+  // Populate the grid.  Used for searching.
   populateGrid();
 
   m_timesUsed.resize(m_network->getNumNodes() );
@@ -361,8 +362,8 @@ void DetailedMis::buildGrid(void) {
   avgW /= (double)m_candidates.size();
   avgA /= (double)m_candidates.size();
 
-  m_stepX = avgW * std::sqrt(200);
-  m_stepY = avgH * std::sqrt(200);
+  m_stepX = avgW * std::sqrt(m_maxProblemSize);
+  m_stepY = avgH * std::sqrt(m_maxProblemSize);
 
   m_dimW = (int)std::ceil((xmax - xmin) / m_stepX);
   m_dimH = (int)std::ceil((ymax - ymin) / m_stepY);
@@ -435,7 +436,7 @@ void DetailedMis::clearGrid(void)
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 bool DetailedMis::gatherNeighbours(Node* ndi) {
-  double singleRowHeight = m_arch->m_rows[0]->getH();
+  double singleRowHeight = m_arch->getRow(0)->getH();
 
   m_neighbours.clear();
   m_neighbours.push_back(ndi);
@@ -540,7 +541,7 @@ void DetailedMis::solveMatch(void) {
   }
   std::vector<Node*>& nodes = m_neighbours;
   double hpwl_x, hpwl_y, hpwl;
-  double singleRowHeight = m_arch->m_rows[0]->getH();
+  double singleRowHeight = m_arch->getRow(0)->getH();
 
   int nNodes = (int)nodes.size();
   int nSpots = (int)nodes.size();
@@ -625,21 +626,16 @@ void DetailedMis::solveMatch(void) {
     return;
   }
   // Find mincost flow.
-  lemon::CycleCanceling<lemon::ListDigraph> mincost(g);
+  //lemon::CycleCanceling<lemon::ListDigraph> mincost(g);
+  lemon::NetworkSimplex<lemon::ListDigraph> mincost(g);
   mincost.lowerMap(l_i);
   mincost.upperMap(u_i);
   mincost.costMap(c_i);
   mincost.stSupply(supplyNode, demandNode, maxFlow);
-  lemon::CycleCanceling<lemon::ListDigraph>::ProblemType ret = mincost.run();
-
-  switch (ret) {
-    case lemon::CostScaling<lemon::ListDigraph>::OPTIMAL:
-      break;
-    case lemon::CostScaling<lemon::ListDigraph>::INFEASIBLE:
-    case lemon::CostScaling<lemon::ListDigraph>::UNBOUNDED:
-    default:
-      return;
-      break;
+  //lemon::CycleCanceling<lemon::ListDigraph>::ProblemType ret = mincost.run();
+  lemon::NetworkSimplex<lemon::ListDigraph>::ProblemType ret = mincost.run();
+  if (ret != lemon::NetworkSimplex<lemon::ListDigraph>::OPTIMAL) {
+    return;
   }
 
   // Get the solution and assign nodes to new spots.  We also need to update the
@@ -761,9 +757,9 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
     }
 
     l = std::numeric_limits<double>::max();
-    r = -std::numeric_limits<double>::max();
+    r = std::numeric_limits<double>::lowest();
     b = std::numeric_limits<double>::max();
-    t = -std::numeric_limits<double>::max();
+    t = std::numeric_limits<double>::lowest();
 
     for (int pj = 0; pj < edi->getPins().size(); pj++) {
       Pin* pinj = edi->getPins()[pj];

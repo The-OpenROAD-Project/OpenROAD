@@ -291,7 +291,7 @@ void Utility::get_row_blockages(
 
   blockages.erase(blockages.begin(), blockages.end());
 
-  int numRows = arch->m_rows.size();
+  int numRows = arch->getRows().size();
 
   // Allocate proper space for the blockages.
   blockages.resize(numRows);
@@ -304,14 +304,14 @@ void Utility::get_row_blockages(
   for (int i = 0; i < fixed.size(); i++) {
     Node* nd = fixed[i];
 
-    double xmin = std::max(arch->m_xmin, nd->getX() - 0.5 * nd->getWidth());
-    double xmax = std::min(arch->m_xmax, nd->getX() + 0.5 * nd->getWidth());
-    double ymin = std::max(arch->m_ymin, nd->getY() - 0.5 * nd->getHeight());
-    double ymax = std::min(arch->m_ymax, nd->getY() + 0.5 * nd->getHeight());
+    double xmin = std::max(arch->getMinX(), nd->getX() - 0.5 * nd->getWidth());
+    double xmax = std::min(arch->getMaxX(), nd->getX() + 0.5 * nd->getWidth());
+    double ymin = std::max(arch->getMinY(), nd->getY() - 0.5 * nd->getHeight());
+    double ymax = std::min(arch->getMaxY(), nd->getY() + 0.5 * nd->getHeight());
 
     for (int r = 0; r < numRows; r++) {
-      double lb = arch->m_ymin + r * arch->m_rows[r]->m_rowHeight;
-      double ub = lb + arch->m_rows[r]->m_rowHeight;
+      double lb = arch->getMinY() + r * arch->getRow(r)->m_rowHeight;
+      double ub = lb + arch->getRow(r)->m_rowHeight;
 
       // Note that a blockage only needs to overlap with a bit of the row before
       // it is considered a blockage!

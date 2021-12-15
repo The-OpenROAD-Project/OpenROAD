@@ -431,6 +431,7 @@ target_link_libraries(<library_target>
 | ioPlacer         | ppl               |
 | OpenDB           | odb               |
 | opendp           | dpl               |
+| detailedPlacer   | dpo               |
 | OpenRCX          | rcx               |
 | *OpenROAD*       | ord               |
 | OpenSTA          | sta               |

@@ -30,12 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-// File: plotgnu.cxx
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "plotgnu.h"
 #include <stdio.h>
@@ -45,7 +41,6 @@
 #include <map>
 #include <vector>
 #include "utility.h"
-using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
@@ -89,9 +84,9 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
 void PlotGnu::drawNodes(char* buf) {
   bool drawPins = false;
 
-  double rowHeight = m_arch->m_rows[0]->m_rowHeight;
-  double siteWidth = m_arch->m_rows[0]->m_siteWidth;
-  double siteSpacing = m_arch->m_rows[0]->m_siteSpacing;
+  double rowHeight = m_arch->getRow(0)->m_rowHeight;
+  double siteWidth = m_arch->getRow(0)->m_siteWidth;
+  double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
 
 
   FILE* fpMain = 0;
@@ -205,10 +200,10 @@ void PlotGnu::drawNodes(char* buf) {
     ymax = ((y + h / 2.) > ymax) ? (y + h / 2.) : ymax;
   }
 
-  double xmin_range = std::min(m_arch->m_xmin, xmin);
-  double xmax_range = std::max(m_arch->m_xmax, xmax);
-  double ymin_range = std::min(m_arch->m_ymin, ymin);
-  double ymax_range = std::max(m_arch->m_ymax, ymax);
+  double xmin_range = std::min(m_arch->getMinX(), xmin);
+  double xmax_range = std::max(m_arch->getMaxX(), xmax);
+  double ymin_range = std::min(m_arch->getMinY(), ymin);
+  double ymax_range = std::max(m_arch->getMaxY(), ymax);
 
   // Output the architecture, which, at the moment is simply a box...
   fprintf(fpArch,
@@ -219,13 +214,13 @@ void PlotGnu::drawNodes(char* buf) {
           "%lf %lf\n"
           "%lf %lf\n"
           "\n",
-          m_arch->m_xmin, m_arch->m_ymin, m_arch->m_xmin, m_arch->m_ymax,
-          m_arch->m_xmax, m_arch->m_ymax, m_arch->m_xmax, m_arch->m_ymin,
-          m_arch->m_xmin, m_arch->m_ymin);
+          m_arch->getMinX(), m_arch->getMinY(), m_arch->getMinX(), m_arch->getMaxY(),
+          m_arch->getMaxX(), m_arch->getMaxY(), m_arch->getMaxX(), m_arch->getMinY(),
+          m_arch->getMinX(), m_arch->getMinY());
 
   // Draw regions with the exception of the default region.
-  for (size_t r = 1; r < m_arch->m_regions.size(); r++) {
-    Architecture::Region* regPtr = m_arch->m_regions[r];
+  for (size_t r = 1; r < m_arch->getRegions().size(); r++) {
+    Architecture::Region* regPtr = m_arch->getRegion(r);
     for (size_t i = 0; i < regPtr->m_rects.size(); i++) {
       Rectangle& rect = regPtr->m_rects[i];
 
@@ -386,7 +381,7 @@ void PlotGnu::drawNodes(char* buf) {
     w = nd->getWidth() - 0.040 * siteWidth;
     h = nd->getHeight() - 0.040 * rowHeight;
     if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-      double rowHeight = m_arch->m_rows[0]->m_rowHeight;
+      double rowHeight = m_arch->getRow(0)->m_rowHeight;
       if (m_skipStandardCells && (nd->getHeight() - 1.0e-3 < rowHeight)) {
         ;
       } else {

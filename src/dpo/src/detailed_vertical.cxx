@@ -265,17 +265,17 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
     nodeBbox.m_xmin =
-        std::min(std::max(m_arch->m_xmin, nodeBbox.m_xmin - pin->getOffsetX()),
-                 m_arch->m_xmax);
+        std::min(std::max(m_arch->getMinX(), nodeBbox.m_xmin - pin->getOffsetX()),
+                 m_arch->getMaxX());
     nodeBbox.m_xmax =
-        std::max(std::min(m_arch->m_xmax, nodeBbox.m_xmax - pin->getOffsetX()),
-                 m_arch->m_xmin);
+        std::max(std::min(m_arch->getMaxX(), nodeBbox.m_xmax - pin->getOffsetX()),
+                 m_arch->getMinX());
     nodeBbox.m_ymin =
-        std::min(std::max(m_arch->m_ymin, nodeBbox.m_ymin - pin->getOffsetY()),
-                 m_arch->m_ymax);
+        std::min(std::max(m_arch->getMinY(), nodeBbox.m_ymin - pin->getOffsetY()),
+                 m_arch->getMaxY());
     nodeBbox.m_ymax =
-        std::max(std::min(m_arch->m_ymax, nodeBbox.m_ymax - pin->getOffsetY()),
-                 m_arch->m_ymin);
+        std::max(std::min(m_arch->getMaxY(), nodeBbox.m_ymax - pin->getOffsetY()),
+                 m_arch->getMinY());
 
     // Record the location and pin offset used to generate this point.
 
