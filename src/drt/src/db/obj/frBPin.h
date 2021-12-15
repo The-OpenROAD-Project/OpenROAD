@@ -1,4 +1,3 @@
-/* Authors: Lutong Wang and Bangqi Xu */
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
