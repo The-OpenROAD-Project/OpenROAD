@@ -320,7 +320,7 @@ void TritonCTS::writeDataToDb()
     _logger->info(CTS, 99, " Sinks {}", sinkCount);
     _logger->info(CTS, 100, " Leaf buffers {}", leafSinks);
     double avgWL = allSinkDistance / sinkCount;
-    _logger->info(CTS, 101, " Average sink wire length {:.3} um", avgWL);
+    _logger->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
     _logger->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
   }
 }
