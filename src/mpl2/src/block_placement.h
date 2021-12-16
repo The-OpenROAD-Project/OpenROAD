@@ -56,8 +56,8 @@ class Block
   bool is_soft_ = true;
   int num_macro_ = 0;
 
-  // This flag is used multiple times by the SimulatedAnnealingCore::AlignMacro method
-  // It means alignment with boundaried or macros
+  // This flag is used multiple times by the SimulatedAnnealingCore::AlignMacro
+  // method It means alignment with boundaried or macros
   bool align_flag_ = false;
 
   std::vector<std::pair<float, float>> aspect_ratio_;
@@ -140,7 +140,6 @@ struct Region
   }
 };
 
-
 struct Location
 {
   float lx_ = 0.0;
@@ -149,7 +148,8 @@ struct Location
   float uy_ = 0.0;
   std::string name_;
 
-  Location(std::string name, float lx, float ly, float ux, float uy) {
+  Location(std::string name, float lx, float ly, float ux, float uy)
+  {
     name_ = name;
     lx_ = lx;
     ly_ = ly;
@@ -157,9 +157,6 @@ struct Location
     uy_ = uy;
   }
 };
-
-
-
 
 class SimulatedAnnealingCore
 {
@@ -185,35 +182,33 @@ class SimulatedAnnealingCore
   float shrink_factor_ = 0.995;
   float shrink_freq_ = 0.01;
 
-  float height_;
-  float width_;
-  float area_;
-  float wirelength_;
-  float outline_penalty_;
-  float boundary_penalty_;
-  float macro_blockage_penalty_;
-  float location_penalty_;
-  float notch_penalty_;
+  float height_ = 0.0;
+  float width_ = 0.0;
+  float area_ = 0.0;
+  float wirelength_ = 0.0;
+  float outline_penalty_ = 0.0;
+  float boundary_penalty_ = 0.0;
+  float macro_blockage_penalty_ = 0.0;
+  float location_penalty_ = 0.0;
+  float notch_penalty_ = 0.0;
 
+  float pre_height_ = 0.0;
+  float pre_width_ = 0.0;
+  float pre_area_ = 0.0;
+  float pre_wirelength_ = 0.0;
+  float pre_outline_penalty_ = 0.0;
+  float pre_boundary_penalty_ = 0.0;
+  float pre_macro_blockage_penalty_ = 0.0;
+  float pre_location_penalty_ = 0.0;
+  float pre_notch_penalty_ = 0.0;
 
-  float pre_height_;
-  float pre_width_;
-  float pre_area_;
-  float pre_wirelength_;
-  float pre_outline_penalty_;
-  float pre_boundary_penalty_;
-  float pre_macro_blockage_penalty_;
-  float pre_location_penalty_;
-  float pre_notch_penalty_;
-
-
-  float norm_area_;
-  float norm_wirelength_;
-  float norm_outline_penalty_;
-  float norm_boundary_penalty_;
-  float norm_macro_blockage_penalty_;
-  float norm_location_penalty_;
-  float norm_notch_penalty_;
+  float norm_area_ = 0.0;
+  float norm_wirelength_ = 0.0;
+  float norm_outline_penalty_ = 0.0;
+  float norm_boundary_penalty_ = 0.0;
+  float norm_macro_blockage_penalty_ = 0.0;
+  float norm_location_penalty_ = 0.0;
+  float norm_notch_penalty_ = 0.0;
 
   // These parameters are related to cost function
   float alpha_;                  // weight for area
@@ -231,13 +226,13 @@ class SimulatedAnnealingCore
   float macro_blockage_weight_base_;
   float location_weight_base_;
   float notch_weight_base_;
- 
+
   // These parameters are related to action probabilities
   float resize_prob_ = 0.4;
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
-  
+
   std::unordered_map<std::string, int> block_map_;
   std::unordered_map<int, int> location_map_;
   std::unordered_map<std::string, std::pair<float, float>> terminal_position_;
@@ -258,8 +253,7 @@ class SimulatedAnnealingCore
 
   std::mt19937 generator_;
   std::uniform_real_distribution<float> distribution_;
-  
-  
+
   void ShrinkBlocks();
   void PackFloorplan();
   void Resize();
@@ -343,7 +337,6 @@ class SimulatedAnnealingCore
   float GetNormLocationPenalty() const { return norm_location_penalty_; }
   float GetNormNotchPenalty() const { return norm_notch_penalty_; }
 
-
   float GetCost() const
   {
     return NormCost(area_,
@@ -378,8 +371,10 @@ void ParseNetFile(
     std::unordered_map<std::string, std::pair<float, float>>& terminal_position,
     const std::string& net_file);
 
-void ParseRegionFile(std::vector<Region*>& regions, const std::string& region_file);
-void ParseLocationFile(std::vector<Location*>& locations, const std::string& location_file);
+void ParseRegionFile(std::vector<Region*>& regions,
+                     const std::string& region_file);
+void ParseLocationFile(std::vector<Location*>& locations,
+                       const std::string& location_file);
 
 std::vector<Block> Floorplan(
     const std::vector<shape_engine::Cluster*>& clusters,
