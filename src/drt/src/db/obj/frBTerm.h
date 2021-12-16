@@ -82,7 +82,7 @@ class frBTerm : public frTerm
     pins_.push_back(std::move(in));
   }
   // others
-  frBlockObjectEnum typeId() const override { return frcTerm; }
+  frBlockObjectEnum typeId() const override { return frcBTerm; }
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,
                                 frLayerNum lNum,

@@ -92,6 +92,8 @@ enum frBlockObjectEnum
   frcInst,
   frcVia,
   frcPin,
+  frcBPin,
+  frcMPin,
   frcInstTerm,
   frcRect,
   frcPolygon,

@@ -82,16 +82,23 @@ void io::Parser::patchGuides(frNet* net,
   Rect pinBBox;
   vector<frRect> pinShapes;
   string name = "";
-  if (pin->typeId() == frcTerm) {
-    frTerm* term = static_cast<frTerm*>(pin);
-    term->getShapes(pinShapes);
-    pinBBox = term->getBBox();
-    name = term->getName();
-  } else {
-    frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
-    iTerm->getShapes(pinShapes, true);
-    pinBBox = iTerm->getBBox();
-    name = iTerm->getName();
+  switch (pin->typeId()) {
+    case frcBTerm:
+    case frcTerm: {
+      frTerm* term = static_cast<frTerm*>(pin);
+      term->getShapes(pinShapes);
+      pinBBox = term->getBBox();
+      name = term->getName();
+      break;
+    }
+    case frcInstTerm: {
+      frInstTerm* iTerm = static_cast<frInstTerm*>(pin);
+      iTerm->getShapes(pinShapes, true);
+      pinBBox = iTerm->getBBox();
+      name = iTerm->getName();
+    }
+    default:
+      logger->error(DRT, 1007, "PatchGuides invoked with non-term object.");
   }
   logger->info(DRT,
                1000,
@@ -252,10 +259,19 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
                                            std::vector<frRect>& guides)
 {
   vector<frRect> pinShapes;
-  if (pin->typeId() == frcTerm) {
-    static_cast<frTerm*>(pin)->getShapes(pinShapes);
-  } else {
-    static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+  switch (pin->typeId()) {
+    case frcBTerm:
+    case frcMTerm:
+    case frcTerm: {
+      static_cast<frTerm*>(pin)->getShapes(pinShapes);
+      break;
+    }
+    case frcInstTerm: {
+      static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+      break;
+    }
+    default:
+      logger->error(DRT, 1008, "PatchGuides invoked with non-term object.");
   }
   for (auto& pinRect : pinShapes) {
     int i = 0;
@@ -781,18 +797,24 @@ void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
     dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
     frInst* inst = nullptr;
-      logger->warn(DRT, 9214, "got here.");
-    if (term->typeId() == frcInstTerm) {
-      inst = static_cast<frInstTerm*>(term)->getInst();
-      inst->getTransform(shiftXform);
-      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-      inst->getUpdatedXform(instXform);
-      auto trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+    switch (term->typeId()) {
+      case frcInstTerm: {
+        inst = static_cast<frInstTerm*>(term)->getInst();
+        inst->getTransform(shiftXform);
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        inst->getUpdatedXform(instXform);
+        auto trueTerm = static_cast<frInstTerm*>(term)->getTerm();
 
-      genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
-    } else if (term->typeId() == frcTerm) {
-      auto trueTerm = static_cast<frBTerm*>(term);
-      genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
+        genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
+        break;
+      }
+      case frcBTerm: {
+        auto trueTerm = static_cast<frBTerm*>(term);
+        genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
+        break;
+      }
+      default:
+        break;
     }
   }
 }
@@ -893,19 +915,27 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
     }
     for (auto& [obj, locS] : pin2GCellMap) {
       if (locS.empty()) {
-        if (obj->typeId() == frcInstTerm) {
-          auto ptr = static_cast<frInstTerm*>(obj);
-          logger->warn(DRT,
-                       215,
-                       "Pin {}/{} not covered by guide.",
-                       ptr->getInst()->getName(),
-                       ptr->getTerm()->getName());
-        } else if (obj->typeId() == frcTerm) {
-          auto ptr = static_cast<frTerm*>(obj);
-          logger->warn(
-              DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
-        } else {
-          logger->warn(DRT, 217, "genGuides unknown type.");
+        switch(obj->typeId()) {
+          case frcInstTerm: {
+            auto ptr = static_cast<frInstTerm*>(obj);
+            logger->warn(DRT,
+                         215,
+                         "Pin {}/{} not covered by guide.",
+                         ptr->getInst()->getName(),
+                         ptr->getTerm()->getName());
+            break;
+          }
+          case frcBTerm:
+          case frcTerm: {
+            auto ptr = static_cast<frTerm*>(obj);
+            logger->warn(
+                DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
+            break;
+          }
+          default: {
+            logger->warn(DRT, 217, "genGuides unknown type.");
+            break;
+          }
         }
       }
     }

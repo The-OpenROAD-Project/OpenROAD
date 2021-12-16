@@ -135,20 +135,31 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
-    if (term->typeId() == frcInstTerm) {
-      if (static_cast<frInstTerm*>(term)->getNet() != net) {
-        continue;
+    switch (term->typeId()) {
+      case frcInstTerm: {
+        auto iterm = static_cast<frInstTerm*>(term);
+        if (iterm->getNet() != net) {
+          continue;
+        }
+        inst = iterm->getInst();
+        inst->getTransform(shiftXform);
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        inst->getUpdatedXform(instXform);
+        trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+        break;
       }
-      inst = static_cast<frInstTerm*>(term)->getInst();
-      inst->getTransform(shiftXform);
-      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-      inst->getUpdatedXform(instXform);
-      trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-    } else if (term->typeId() == frcTerm) {
-      if (static_cast<frTerm*>(term)->getNet() != net) {
-        continue;
+      case frcMTerm: {
+        auto mterm = static_cast<frMTerm*>(term);
+        if (mterm->getNet() != net) {
+          continue;
+        }
+        trueTerm = mterm;
+        break;
       }
-      trueTerm = static_cast<frMTerm*>(term);
+      default: {
+        cout << "ERROR: Invalid Term type returned from queryGRPin." << endl;
+        exit(1);
+      }
     }
     if (trueTerm) {
       int pinIdx = 0;
@@ -235,21 +246,33 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
     frInst* inst = nullptr;
-    if (term->typeId() == frcInstTerm) {
-      if (static_cast<frInstTerm*>(term)->getNet() != net) {
-        continue;
+    switch (term->typeId()) {
+      case frcInstTerm: {
+        auto iterm = static_cast<frInstTerm*>(term);
+        if (iterm->getNet() != net) {
+          continue;
+        }
+        inst = iterm->getInst();
+        inst->getTransform(shiftXform);
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        inst->getUpdatedXform(instXform);
+        trueTerm = iterm->getTerm();
+        break;
       }
-      inst = static_cast<frInstTerm*>(term)->getInst();
-      inst->getTransform(shiftXform);
-      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-      inst->getUpdatedXform(instXform);
-      trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-    } else if (term->typeId() == frcTerm) {
-      if (static_cast<frTerm*>(term)->getNet() != net) {
-        continue;
+      case frcMTerm: {
+        auto mterm = static_cast<frMTerm*>(term);
+        if (mterm->getNet() != net) {
+          continue;
+        }
+        trueTerm = mterm;
+        break;
       }
-      trueTerm = static_cast<frMTerm*>(term);
+      default: {
+        cout << "ERROR: Invalid Term type returned from queryGRPin." << endl;
+        exit(1);
+      }
     }
+
     if (trueTerm) {
       int pinIdx = 0;
       int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
@@ -649,21 +672,24 @@ void FlexTAWorker::initFixedObjs()
     getRegionQuery()->query(getExtBox(), layerNum, result);
     for (auto& [bounds, obj] : result) {
       bounds.bloat(-1, box);
+      auto type = obj->typeId();
       // instterm term
-      if (obj->typeId() == frcTerm || obj->typeId() == frcInstTerm) {
+      if (type == frcTerm || type == frcInstTerm ||
+          type == frcBTerm || type == frcMTerm) {
         bloatDist = TASHAPEBLOATWIDTH * width;
         frNet* netPtr = nullptr;
-        if (obj->typeId() == frcTerm) {
+        if (type == frcTerm || type == frcBTerm ||
+            type == frcMTerm) {
           netPtr = static_cast<frTerm*>(obj)->getNet();
         } else {
           netPtr = static_cast<frInstTerm*>(obj)->getNet();
         }
         initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
         // snet
-      } else if (obj->typeId() == frcPathSeg || obj->typeId() == frcVia) {
+      } else if (type == frcPathSeg || type == frcVia) {
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         frNet* netPtr = nullptr;
-        if (obj->typeId() == frcPathSeg) {
+        if (type == frcPathSeg) {
           netPtr = static_cast<frPathSeg*>(obj)->getNet();
         } else {
           netPtr = static_cast<frVia*>(obj)->getNet();
@@ -705,15 +731,14 @@ void FlexTAWorker::initFixedObjs()
             }
           }
         }
-      } else if (obj->typeId() == frcBlockage
-                 || obj->typeId() == frcInstBlockage) {
+      } else if (type == frcBlockage || type == frcInstBlockage) {
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
 
         if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
           // block track for up-via and down-via for fat MACRO OBS
           bool isMacro = false;
-          if (obj->typeId() == frcBlockage) {
+          if (type == frcBlockage) {
             isMacro = true;
           } else {
             auto inst = (static_cast<frInstBlockage*>(obj))->getInst();

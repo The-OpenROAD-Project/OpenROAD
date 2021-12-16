@@ -350,12 +350,19 @@ void FlexDRWorker::initNets_initDR(
   design->getRegionQuery()->queryGRPin(getRouteBox(), result);
   for (auto obj : result) {
     frNet* net;
-    if (obj->typeId() == frcInstTerm) {
-      net = static_cast<frInstTerm*>(obj)->getNet();
-    } else if (obj->typeId() == frcTerm) {
-      net = static_cast<frTerm*>(obj)->getNet();
-    } else {
-      logger_->error(utl::DRT, 0, "initNetTerms unsupported obj.");
+    switch (obj->typeId()) {
+      case frcInstTerm: {
+        net = static_cast<frInstTerm*>(obj)->getNet();
+        break;
+      }
+      case frcBTerm:
+      case frcMTerm:
+      case frcTerm: {
+        net = static_cast<frTerm*>(obj)->getNet();
+        break;
+      }
+      default:
+        logger_->error(utl::DRT, 0, "initNetTerms unsupported obj.");
     }
     nets.insert(net);
     netTerms[net].insert(obj);
@@ -419,25 +426,34 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
       continue;
     if (enableOutput)
       cout << "got " << rqObj << "\n";
-    if (rqObj->typeId() == frcInstTerm) {
-      auto instTerm = static_cast<frInstTerm*>(rqObj);
-      if (instTerm->getNet() == net) {
-        if (!isPathSeg && !bx.intersects(bp)
-            && !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
+    switch (rqObj->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj);
+        if (instTerm->getNet() == net) {
+          if (!isPathSeg && !bx.intersects(bp)
+              && !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
+            continue;
+          if (enableOutput)
+            cout << "inserting " << instTerm << "\n";
+          pin2epMap[rqObj].insert(make_pair(bp, lNum));
+        }
+        break;
+      }
+      case frcBTerm:
+      case frcMTerm:
+      case frcTerm: {
+        if (!isPathSeg && !bx.intersects(bp))  // terms have aps created on the fly
           continue;
-        if (enableOutput)
-          cout << "inserting " << instTerm << "\n";
-        pin2epMap[rqObj].insert(make_pair(bp, lNum));
+        auto term = static_cast<frTerm*>(rqObj);
+        if (term->getNet() == net) {
+          if (enableOutput)
+            cout << "inserting " << term << "\n";
+          pin2epMap[rqObj].insert(make_pair(bp, lNum));
+        }
+        break;
       }
-    } else if (rqObj->typeId() == frcTerm) {
-      if (!isPathSeg && !bx.intersects(bp))  // terms have aps created on the fly
-        continue;
-      auto term = static_cast<frTerm*>(rqObj);
-      if (term->getNet() == net) {
-        if (enableOutput)
-          cout << "inserting " << term << "\n";
-        pin2epMap[rqObj].insert(make_pair(bp, lNum));
-      }
+      default:
+        break;
     }
   }
 }
@@ -1110,7 +1126,9 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
         }
       }
     }
-  } else if (dPinTerm->typeId() == frcTerm) {
+  } else if (dPinTerm->typeId() == frcTerm ||
+             dPinTerm->typeId() == frcBTerm ||
+             dPinTerm->typeId() == frcMTerm) {
     auto term = static_cast<frMTerm*>(dPinTerm);
     for (auto& uPin : term->getPins()) {
       auto pin = uPin.get();
@@ -1509,16 +1527,23 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
     frMTerm* trueTerm = nullptr;
     string name;
     frInst* inst = nullptr;
-    if (term->typeId() == frcInstTerm) {
-      inst = static_cast<frInstTerm*>(term)->getInst();
-      inst->getTransform(shiftXform);
-      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-      inst->getUpdatedXform(instXform);
-      trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-      name = inst->getName() + string("/") + trueTerm->getName();
-    } else if (term->typeId() == frcTerm) {
-      trueTerm = static_cast<frMTerm*>(term);
-      name = string("PIN/") + trueTerm->getName();
+    switch (term->typeId()) {
+      case frcInstTerm: {
+        inst = static_cast<frInstTerm*>(term)->getInst();
+        inst->getTransform(shiftXform);
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        inst->getUpdatedXform(instXform);
+        trueTerm = static_cast<frInstTerm*>(term)->getTerm();
+        name = inst->getName() + string("/") + trueTerm->getName();
+        break;
+      }
+      case frcMTerm: {
+        trueTerm = static_cast<frMTerm*>(term);
+        name = string("PIN/") + trueTerm->getName();
+        break;
+      }
+      default:
+        break;
     }
     int pinIdx = 0;
     int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : 0;
@@ -2248,18 +2273,24 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
     bool isStdCellPin = true;
     auto term = pin->getFrTerm();
     if (term) {
-      // macro cell or stdcell
-      if (term->typeId() == frcInstTerm) {
-        dbMasterType masterType =
-          static_cast<frInstTerm*>(term)->getInst()->getMaster()
-            ->getMasterType();
-        if (masterType.isBlock() || masterType.isPad()
-            || masterType == dbMasterType::RING) {
-          isStdCellPin = false;
+      switch (term->typeId()) {
+        case frcInstTerm: { // macro cell or stdcell
+          dbMasterType masterType =
+            static_cast<frInstTerm*>(term)->getInst()->getMaster()
+              ->getMasterType();
+          if (masterType.isBlock() || masterType.isPad()
+              || masterType == dbMasterType::RING) {
+            isStdCellPin = false;
+          }
+          break;
         }
-        // IO
-      } else if (term->typeId() == frcTerm) {
-        isStdCellPin = false;
+        case frcBTerm: // IO
+        case frcTerm: {
+          isStdCellPin = false;
+          break;
+        }
+        default:
+          break;
       }
     } else {
       continue;
@@ -2490,6 +2521,8 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                        << instTerm->getTerm()->getName() << " ";
                   break;
                 }
+                case frcBTerm:
+                case frcMTerm:
                 case frcTerm: {
                   frTerm* term = (static_cast<frTerm*>(src));
                   cout << "PIN/" << term->getName() << " ";
@@ -3028,61 +3061,71 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       }
     }
     for (auto& [box, obj] : result) {
-      // term no bloat
-      if (obj->typeId() == frcTerm) {
-        frNet2Terms[static_cast<frTerm*>(obj)->getNet()].insert(obj);
-      } else if (obj->typeId() == frcInstTerm) {
-        frNet2Terms[static_cast<frInstTerm*>(obj)->getNet()].insert(obj);
-        if (isRoutingLayer) {
-          // unblock planar edge for obs over pin, ap will unblock via edge for
-          // legal pin access
-          modBlockedPlanar(box, zIdx, false);
-          if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-            modMinSpacingCostPlanar(
+      switch (obj->typeId()) {
+        case frcBTerm:
+        case frcMTerm:
+        case frcTerm: { // term no bloat
+          frNet2Terms[static_cast<frTerm*>(obj)->getNet()].insert(obj);
+          break;
+        }
+        case frcInstTerm: {
+          frNet2Terms[static_cast<frInstTerm*>(obj)->getNet()].insert(obj);
+          if (isRoutingLayer) {
+            // unblock planar edge for obs over pin, ap will unblock via edge for
+            // legal pin access
+            modBlockedPlanar(box, zIdx, false);
+            if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+              modMinSpacingCostPlanar(
+                  box, zIdx, ModCostType::addFixedShape, true);
+              modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
+            }
+          } else {
+            modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
+            modInterLayerCutSpacingCost(
                 box, zIdx, ModCostType::addFixedShape, true);
-            modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
+            modInterLayerCutSpacingCost(
+                box, zIdx, ModCostType::addFixedShape, false);
           }
-        } else {
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
+          break;
         }
-        // snet
-      } else if (obj->typeId() == frcPathSeg) {
-        auto ps = static_cast<frPathSeg*>(obj);
-        // assume only routing layer
-        modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape);
-        modMinSpacingCostVia(box, zIdx, ModCostType::addFixedShape, true, true);
-        modMinSpacingCostVia(
-            box, zIdx, ModCostType::addFixedShape, false, true);
-        modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-        // block for PDN (fixed obj)
-        if (ps->getNet()->getType().isSupply()) {
-          modBlockedPlanar(box, zIdx, true);
-          modBlockedVia(box, zIdx, true);
-        }
-        // snet
-      } else if (obj->typeId() == frcVia) {
-        if (isRoutingLayer) {
+        case frcPathSeg: { // snet
+          auto ps = static_cast<frPathSeg*>(obj);
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape);
+          modMinSpacingCostVia(box, zIdx, ModCostType::addFixedShape, true, true);
           modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, true, false);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, false, false);
+              box, zIdx, ModCostType::addFixedShape, false, true);
           modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-        } else {
-          auto via = static_cast<frVia*>(obj);
-          modAdjCutSpacingCost_fixedObj(design, box, via);
-
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
+          // block for PDN (fixed obj)
+          if (ps->getNet()->getType().isSupply()) {
+            modBlockedPlanar(box, zIdx, true);
+            modBlockedVia(box, zIdx, true);
+          }
+          break;
         }
+        case frcVia: { // snet
+          if (isRoutingLayer) {
+            // assume only routing layer
+            modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape);
+            modMinSpacingCostVia(
+                box, zIdx, ModCostType::addFixedShape, true, false);
+            modMinSpacingCostVia(
+                box, zIdx, ModCostType::addFixedShape, false, false);
+            modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
+          } else {
+            auto via = static_cast<frVia*>(obj);
+            modAdjCutSpacingCost_fixedObj(design, box, via);
+
+            modCutSpacingCost(box, zIdx, ModCostType::addFixedShape);
+            modInterLayerCutSpacingCost(
+                box, zIdx, ModCostType::addFixedShape, true);
+            modInterLayerCutSpacingCost(
+                box, zIdx, ModCostType::addFixedShape, false);
+          }
+          break;
+        }
+        default:
+          break;
       }
     }
   }
@@ -3107,7 +3150,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                                       bool isSkipVia)
 {
   for (auto& obj : objs) {
-    if (obj->typeId() == frcTerm) {
+    if (obj->typeId() == frcTerm ||
+        obj->typeId() == frcMTerm) {
       auto term = static_cast<frMTerm*>(obj);
       for (auto& uPin : term->getPins()) {
         auto pin = uPin.get();
@@ -3275,25 +3319,32 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
     design->getRegionQuery()->query(getExtBox(), layerNum, result);
     for (auto& [box, obj] : result) {
       // term no bloat
-      if (obj->typeId() == frcTerm) {
-        FlexMazeIdx mIdx1, mIdx2;
-        gridGraph_.getIdxBox(mIdx1, mIdx2, box);
-        bool isPinRectHorz
-            = (box.xMax() - box.xMin()) > (box.yMax() - box.yMin());
-        for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
-          for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-            FlexMazeIdx mIdx(i, j, zIdx);
-            gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
-            gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
-            if (isPinRectHorz) {
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::N);
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::S);
-            } else {
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::W);
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::E);
+      switch (obj->typeId()) {
+        case frcBTerm:
+        case frcMTerm:
+        case frcTerm: {
+          FlexMazeIdx mIdx1, mIdx2;
+          gridGraph_.getIdxBox(mIdx1, mIdx2, box);
+          bool isPinRectHorz
+              = (box.xMax() - box.xMin()) > (box.yMax() - box.yMin());
+          for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
+            for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
+              FlexMazeIdx mIdx(i, j, zIdx);
+              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
+              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
+              if (isPinRectHorz) {
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::N);
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::S);
+              } else {
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::W);
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::E);
+              }
             }
           }
+          break;
         }
+        default:
+          break;
       }
     }
   }

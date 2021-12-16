@@ -84,7 +84,7 @@ class frMTerm : public frTerm
   void setType(dbSigType in) { type_ = in; }
   dbSigType getType() const { return type_; }
   // others
-  frBlockObjectEnum typeId() const override { return frcTerm; }
+  frBlockObjectEnum typeId() const override { return frcMTerm; }
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,
                                 frLayerNum lNum,

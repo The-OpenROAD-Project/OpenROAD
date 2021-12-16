@@ -41,46 +41,62 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
   bool isFloatingVDD = false;
   bool isFloatingVSS = false;
   frBlockObject* owner = nullptr;
-  if (obj->typeId() == frcTerm) {
-    auto term = static_cast<frTerm*>(obj);
-    if (term->hasNet()) {
-      owner = term->getNet();
-    } else {
-      dbSigType sigType = term->getType();
-      isFloatingVDD = (sigType == dbSigType::POWER);
-      isFloatingVSS = (sigType == dbSigType::GROUND);
+  switch (obj->typeId()) {
+    case frcBTerm:
+    case frcMTerm:
+    case frcTerm: {
+      auto term = static_cast<frTerm*>(obj);
+      if (term->hasNet()) {
+        owner = term->getNet();
+      } else {
+        dbSigType sigType = term->getType();
+        isFloatingVDD = (sigType == dbSigType::POWER);
+        isFloatingVSS = (sigType == dbSigType::GROUND);
+        owner = obj;
+      }
+      break;
+    }
+    case frcInstTerm: {
+      auto instTerm = static_cast<frInstTerm*>(obj);
+      if (instTerm->hasNet()) {
+        owner = instTerm->getNet();
+      } else {
+        dbSigType sigType = instTerm->getTerm()->getType();
+        isFloatingVDD = (sigType == dbSigType::POWER);
+        isFloatingVSS = (sigType == dbSigType::GROUND);
+        owner = obj;
+      }
+      break;
+    }
+    case frcInstBlockage:
+    case frcBlockage: {
       owner = obj;
+      break;
     }
-  } else if (obj->typeId() == frcInstTerm) {
-    auto instTerm = static_cast<frInstTerm*>(obj);
-    if (instTerm->hasNet()) {
-      owner = instTerm->getNet();
-    } else {
-      dbSigType sigType = instTerm->getTerm()->getType();
-      isFloatingVDD = (sigType == dbSigType::POWER);
-      isFloatingVSS = (sigType == dbSigType::GROUND);
-      owner = obj;
+    case frcPathSeg:
+    case frcVia:
+    case frcPatchWire: {
+      auto shape = static_cast<frShape*>(obj);
+      if (shape->hasNet()) {
+        owner = shape->getNet();
+      } else {
+        logger_->error(DRT, 37, "init_design_helper shape does not have net.");
+      }
+      break;
     }
-  } else if (obj->typeId() == frcInstBlockage || obj->typeId() == frcBlockage) {
-    owner = obj;
-  } else if (obj->typeId() == frcPathSeg || obj->typeId() == frcVia
-             || obj->typeId() == frcPatchWire) {
-    auto shape = static_cast<frShape*>(obj);
-    if (shape->hasNet()) {
-      owner = shape->getNet();
-    } else {
-      logger_->error(DRT, 37, "init_design_helper shape does not have net.");
+    case drcPathSeg:
+    case drcVia:
+    case drcPatchWire: {
+      auto shape = static_cast<drShape*>(obj);
+      if (shape->hasNet()) {
+        owner = shape->getNet()->getFrNet();
+      } else {
+        logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
+      }
+      break;
     }
-  } else if (obj->typeId() == drcPathSeg || obj->typeId() == drcVia
-             || obj->typeId() == drcPatchWire) {
-    auto shape = static_cast<drShape*>(obj);
-    if (shape->hasNet()) {
-      owner = shape->getNet()->getFrNet();
-    } else {
-      logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
-    }
-  } else {
-    logger_->error(DRT, 39, "init_design_helper unsupported type.");
+    default:
+      logger_->error(DRT, 39, "init_design_helper unsupported type.");
   }
 
   if (isFloatingVSS) {
@@ -122,12 +138,13 @@ void FlexGCWorker::Impl::initObj(const Rect& box,
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 {
   if (targetObj_ == nullptr) { return false; }
+  auto type = obj->typeId();
   switch(targetObj_->typeId()) {
     case frcInst:
-      if (obj->typeId() == frcInstTerm
+      if (type == frcInstTerm
           && static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
-      } else if (obj->typeId() == frcInstBlockage
+      } else if (type == frcInstBlockage
                  && static_cast<frInstBlockage*>(obj)->getInst()
                         == targetObj_) {
         return false;
@@ -137,10 +154,11 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
       break;
     case frcMTerm:
     case frcBTerm:
-    case frcTerm:
-      return !(obj->typeId() == frcTerm
+    case frcTerm: {
+      return !((type == frcTerm || type == frcBTerm || type == frcMTerm)
         && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
       break;
+    }
     default:
       logger_->error(
           DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");

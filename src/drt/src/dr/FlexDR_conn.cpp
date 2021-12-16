@@ -59,21 +59,30 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
   for (auto& [bx, rqObj] : result) {
     if (isPathSeg && !bx.intersects(pt))
       continue;
-    if (rqObj->typeId() == frcInstTerm) {
-      auto instTerm = static_cast<frInstTerm*>(rqObj);
-      if (instTerm->getNet() == net) {
-        if (!isPathSeg && !bx.intersects(pt)
-            && !instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+    switch (rqObj->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj);
+        if (instTerm->getNet() == net) {
+          if (!isPathSeg && !bx.intersects(pt)
+              && !instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+            continue;
+          pin2epMap[instTerm].insert(make_pair(pt, lNum));
+        }
+        break;
+      }
+      case frcBTerm:
+      case frcMTerm:
+      case frcTerm: {
+        if (!isPathSeg && !bx.intersects(pt))
           continue;
-        pin2epMap[instTerm].insert(make_pair(pt, lNum));
+        auto term = static_cast<frTerm*>(rqObj);
+        if (term->getNet() == net) {
+          pin2epMap[term].insert(make_pair(pt, lNum));
+        }
+        break;
       }
-    } else if (rqObj->typeId() == frcTerm) {
-      if (!isPathSeg && !bx.intersects(pt))
-        continue;
-      auto term = static_cast<frTerm*>(rqObj);
-      if (term->getNet() == net) {
-        pin2epMap[term].insert(make_pair(pt, lNum));
-      }
+      default:
+        break;
     }
   }
 }

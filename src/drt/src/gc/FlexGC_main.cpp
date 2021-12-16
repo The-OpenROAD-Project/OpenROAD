@@ -244,6 +244,8 @@ bool isPG(frBlockObject* obj)
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
       return type.isSupply();
     }
+    case frcBTerm:
+    case frcMTerm:
     case frcTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
       return type.isSupply();
@@ -1950,19 +1952,27 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   if (con->isAdjacentCuts() && con->hasExceptSamePGNet() && net1 == net2
       && net1->getOwner()) {
     auto owner = net1->getOwner();
-    auto typeId = owner->typeId();
-    if (typeId == frcNet) {
-      if (static_cast<frNet*>(owner)->getType().isSupply()) {
-        return;
+    switch (owner->typeId()) {
+      case frcNet: {
+        if (static_cast<frNet*>(owner)->getType().isSupply()) {
+          return;
+        }
+        break;
       }
-    } else if (typeId == frcTerm) {
-      if (static_cast<frTerm*>(owner)->getType().isSupply()) {
-        return;
+      case frcTerm: {
+        if (static_cast<frTerm*>(owner)->getType().isSupply()) {
+          return;
+        }
+        break;
       }
-    } else if (typeId == frcInstTerm) {
-      if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
-        return;
+      case frcInstTerm: {
+        if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
+          return;
+        }
+        break;
       }
+      default:
+        break;
     }
   }
   if (con->isParallelOverlap()) {
