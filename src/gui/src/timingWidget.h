@@ -57,6 +57,7 @@ class TimingWidget : public QDockWidget
   void init(sta::dbSta* sta);
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_.get(); }
+  TimingConeRenderer* getConeRenderer() { return cone_renderer_.get(); }
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -112,6 +113,7 @@ class TimingWidget : public QDockWidget
   TimingPathDetailModel* path_details_model_;
   TimingPathDetailModel* capture_details_model_;
   std::unique_ptr<TimingPathRenderer> path_renderer_;
+  std::unique_ptr<TimingConeRenderer> cone_renderer_;
   GuiDBChangeListener* dbchange_listener_;
   QTabWidget* delay_widget_;
   QTabWidget* detail_widget_;

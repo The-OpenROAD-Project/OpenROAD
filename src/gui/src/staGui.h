@@ -35,8 +35,11 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <vector>
 #include <QAbstractTableModel>
+#include <QColor>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -62,6 +65,7 @@ class dbRow;
 class dbSWire;
 }  // namespace odb
 namespace sta {
+class BfsIterator;
 class dbSta;
 class DcalcAnalysisPt;
 class Instance;
@@ -157,6 +161,7 @@ class TimingPathNode
   odb::dbObject* getPin() const { return pin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
+  const odb::Rect getPinBBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }
@@ -366,6 +371,39 @@ class TimingPathRenderer : public gui::Renderer
   static const gui::Painter::Color signal_color_;
   static const gui::Painter::Color clock_color_;
   static const gui::Painter::Color capture_clock_color_;
+};
+
+class TimingConeRenderer : public gui::Renderer
+{
+ public:
+  TimingConeRenderer();
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  void setITerm(odb::dbITerm* term, bool fanin, bool fanout);
+  void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
+  void setPin(sta::Pin* pin, bool fanin, bool fanout);
+
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+ private:
+  using PinList = std::vector<std::unique_ptr<TimingPathNode>>;
+  using DepthMap = std::map<int, PinList>;
+
+  sta::dbSta* sta_;
+  DepthMap map_;
+  int min_map_index_;
+  int max_map_index_;
+  float min_timing_;
+  float max_timing_;
+  SpectrumGenerator color_generator_;
+
+  using DepthMapSet = std::map<int, std::set<odb::dbObject*>>;
+  void getFaninCone(sta::Pin* pin, DepthMapSet& depth_map);
+  void getFanoutCone(sta::Pin* pin, DepthMapSet& depth_map);
+  void getCone(sta::Pin* pin, sta::PinSet* pin_set, sta::BfsIterator& bfs, DepthMapSet& depth_map);
+  void buildConnectivity();
+  void annotateTiming(sta::Pin* pin);
+
+  static const gui::Painter::Color inst_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj

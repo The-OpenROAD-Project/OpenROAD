@@ -660,6 +660,11 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
+void Gui::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+{
+  main_window->timingCone(term, fanin, fanout);
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {

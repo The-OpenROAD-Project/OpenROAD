@@ -220,6 +220,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
+  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
+
  private slots:
   void setUseDBU(bool use_dbu);
   void setClearLocation();
