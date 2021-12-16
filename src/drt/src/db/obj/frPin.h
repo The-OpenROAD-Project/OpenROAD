@@ -42,6 +42,7 @@ class frTerm;
 class frPin : public frBlockObject
 {
  public:
+  virtual ~frPin() {}
 
   // getters
   const std::vector<std::unique_ptr<frPinFig>>& getFigs() const

@@ -39,6 +39,8 @@ namespace fr {
 class frTerm : public frBlockObject
 {
  public:
+  virtual ~frTerm() {}
+
   // getters
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
