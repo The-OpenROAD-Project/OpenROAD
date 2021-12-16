@@ -873,8 +873,11 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
-    // emit the selected item as something to focus on
-    emit focus(item_data.value<Selected>());
+    Selected sel = item_data.value<Selected>();
+    if (!sel.isLargeHighlight()) {
+      // emit the selected item as something to focus on
+      emit focus(sel);
+    }
   }
 }
 

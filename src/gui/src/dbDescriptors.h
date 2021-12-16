@@ -125,6 +125,7 @@ class DbNetDescriptor : public Descriptor
   void highlight(std::any object,
                  Painter& painter,
                  void* additional_data) const override;
+  bool isLargeHighlight(std::any object) const override;
 
   bool isNet(std::any object) const override;
 
