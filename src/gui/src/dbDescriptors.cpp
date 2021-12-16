@@ -1154,6 +1154,17 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
 
+Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
+{
+  auto gui = Gui::get();
+  auto iterm = std::any_cast<odb::dbITerm*>(object);
+
+  return {{"Fanin/out Cone", [this, iterm, gui]() {
+    gui->timingCone(iterm, true, true);
+    return makeSelected(iterm, nullptr);
+  }}};
+}
+
 Selected DbITermDescriptor::makeSelected(std::any object,
                                          void* additional_data) const
 {
@@ -1240,6 +1251,17 @@ Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
   Editors editors;
   addRenameEditor(bterm, editors);
   return editors;
+}
+
+Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
+{
+  auto gui = Gui::get();
+  auto bterm = std::any_cast<odb::dbBTerm*>(object);
+
+  return {{"Fanin/out Cone", [this, bterm, gui]() {
+    gui->timingCone(bterm, true, true);
+    return makeSelected(bterm, nullptr);
+  }}};
 }
 
 Selected DbBTermDescriptor::makeSelected(std::any object,
