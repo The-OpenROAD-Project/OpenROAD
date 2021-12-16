@@ -2493,6 +2493,8 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
           return true;
         break;
       }
+      default:
+        break;
     }
   }
   return false;
