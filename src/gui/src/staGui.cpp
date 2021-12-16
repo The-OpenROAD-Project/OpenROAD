@@ -213,24 +213,80 @@ void TimingPathsModel::populateModel(bool setup_hold, int path_count)
 }
 
 bool TimingPathsModel::populatePaths(bool get_max,
-                                     int path_count,
-                                     bool clockExpanded)
+                                     int path_count)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  sta_->ensureGraph();
-  sta_->searchPreamble();
 
-  auto sta_state = sta_->search();
+  TimingPath::buildPaths(sta_,
+                         get_max,
+                         false, // unconstrained
+                         path_count,
+                         {}, // to
+                         {}, // through
+                         {}, // from
+                         true,
+                         timing_paths_);
+
+  QApplication::restoreOverrideCursor();
+  return true;
+}
+
+/////////
+
+void TimingPath::buildPaths(sta::dbSta* sta,
+                            bool get_max,
+                            bool include_unconstrained,
+                            int path_count,
+                            const std::set<sta::Pin*>& from,
+                            const std::set<sta::Pin*>& thrus,
+                            const std::set<sta::Pin*>& to,
+                            bool include_capture,
+                            std::vector<std::unique_ptr<TimingPath>>& paths)
+{
+  sta->ensureGraph();
+  sta->searchPreamble();
+
+  sta::ExceptionFrom* e_from = nullptr;
+  if (!from.empty()) {
+    sta::PinSet* pins = new sta::PinSet;
+    pins->insert(from.begin(), from.end());
+    e_from = sta->makeExceptionFrom(pins,
+                                    nullptr,
+                                    nullptr,
+                                    sta::RiseFallBoth::riseFall());
+  }
+  sta::ExceptionThruSeq* e_thrus = nullptr;
+  if (!thrus.empty()) {
+    e_thrus = new sta::ExceptionThruSeq;
+    for (sta::Pin* thru : thrus) {
+      sta::PinSet* pins = new sta::PinSet;
+      pins->insert(thru);
+      e_thrus->push_back(sta->makeExceptionThru(pins,
+                                                nullptr,
+                                                nullptr,
+                                                sta::RiseFallBoth::riseFall()));
+    }
+  }
+  sta::ExceptionTo* e_to = nullptr;
+  if (!to.empty()) {
+    sta::PinSet* pins = new sta::PinSet;
+    pins->insert(to.begin(), to.end());
+    e_to = sta->makeExceptionTo(pins,
+                                nullptr,
+                                nullptr,
+                                sta::RiseFallBoth::riseFall(),
+                                sta::RiseFallBoth::riseFall());
+  }
 
   sta::PathEndSeq* path_ends
-      = sta_state->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr,
-          nullptr,
-          nullptr,
-          false,
+      = sta->search()->findPathEnds(  // from, thrus, to, unconstrained
+          e_from,
+          e_thrus,
+          e_to,
+          include_unconstrained,
           // corner, min_max,
-          sta_->findCorner("default"),
+          sta->cmdCorner(),
           get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
           // group_count, endpoint_count, unique_pins
           path_count,
@@ -249,127 +305,117 @@ bool TimingPathsModel::populatePaths(bool get_max,
           false,
           false);
 
-  bool first_path = true;
   for (auto& path_end : *path_ends) {
-    TimingPath* path = new TimingPath();
+    TimingPath* timing_path = new TimingPath();
+    auto* path = path_end->path();
+
     sta::DcalcAnalysisPt* dcalc_ap
-        = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
+        = path->pathAnalysisPt(sta)->dcalcAnalysisPt();
 
-    auto* start_clock_edge = path_end->sourceClkEdge(sta_);
+    auto* start_clock_edge = path_end->sourceClkEdge(sta);
     if (start_clock_edge != nullptr) {
-      path->setStartClock(start_clock_edge->clock()->name());
+      timing_path->setStartClock(start_clock_edge->clock()->name());
     } else {
-      path->setStartClock("<No clock>");
+      timing_path->setStartClock("<No clock>");
     }
-    auto* end_clock = path_end->targetClk(sta_);
+    auto* end_clock = path_end->targetClk(sta);
     if (end_clock != nullptr) {
-      path->setEndClock(end_clock->name());
+      timing_path->setEndClock(end_clock->name());
     } else {
-      path->setEndClock("<No clock>");
+      timing_path->setEndClock("<No clock>");
     }
-    path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay()
-                                             : 0);
-    path->setSlack(path_end->slack(sta_));
-    path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
-    path->setPathRequiredTime(path_end->requiredTime(sta_));
-    bool clockPropagated = false;
+
+    auto* path_delay = path_end->pathDelay();
+    if (path_delay != nullptr) {
+      timing_path->setPathDelay(path_delay->delay());
+    } else {
+      timing_path->setPathDelay(0.0);
+    }
+    timing_path->setSlack(path_end->slack(sta));
+    timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta));
+    timing_path->setPathRequiredTime(path_end->requiredTime(sta));
+
+    bool clock_propagated = false;
     if (start_clock_edge != nullptr) {
-      clockPropagated = start_clock_edge->clock()->isPropagated();
+      clock_propagated = start_clock_edge->clock()->isPropagated();
     }
-    if (!clockPropagated)
-      clockExpanded = false;
-    else
-      clockExpanded = true;
 
-    path->populatePath(path_end->path(), sta_, dcalc_ap, clockExpanded, first_path);
-    path->populateCapturePath(path_end->targetClkPath(), sta_, dcalc_ap, path_end->targetClkOffset(sta_), clockExpanded, first_path);
+    const bool clock_expaneded = clock_propagated;
 
-    first_path = false;
+    timing_path->populatePath(path,
+                              sta,
+                              dcalc_ap,
+                              clock_expaneded);
+    if (include_capture) {
+      timing_path->populateCapturePath(path_end->targetClkPath(),
+                                       sta,
+                                       dcalc_ap,
+                                       path_end->targetClkOffset(sta),
+                                       clock_expaneded);
+    }
 
-    path->computeClkEndIndex();
+    timing_path->computeClkEndIndex();
+    timing_path->setSlackOnPathNodes();
 
-    timing_paths_.push_back(std::unique_ptr<TimingPath>(path));
+    paths.push_back(std::unique_ptr<TimingPath>(timing_path));
   }
-  QApplication::restoreOverrideCursor();
+
   delete path_ends;
-  return true;
 }
 
-/////////
-
-void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list)
+void TimingPath::populateNodeList(sta::Path* path,
+                                  sta::dbSta* sta,
+                                  sta::DcalcAnalysisPt* dcalc_ap,
+                                  float offset,
+                                  bool clock_expanded,
+                                  TimingNodeList& list)
 {
   float arrival_prev_stage = 0;
   float arrival_cur_stage = 0;
 
   sta::PathExpanded expand(path, sta);
   for (size_t i = 0; i < expand.size(); i++) {
-    auto ref = expand.path(i);
-    auto pin = ref->vertex(sta)->pin();
-    auto slew = ref->slew(sta);
-    float cap = 0.0;
+    const auto* ref = expand.path(i);
+    const auto pin = ref->vertex(sta)->pin();
+    const bool pin_is_clock = sta->isClock(pin);
+    const auto slew = ref->slew(sta);
     const bool is_driver = sta->network()->isDriver(pin);
+    const auto is_rising = ref->transition(sta) == sta::RiseFall::rise();
+    const auto arrival = ref->arrival(sta);
+
+    float cap = 0.0;
     if (is_driver
         && !(!clock_expanded && (sta->network()->isCheckClk(pin) || !i))) {
       sta::Parasitic* parasitic = nullptr;
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      if (arc_delay_calc)
+      if (arc_delay_calc) {
         parasitic = arc_delay_calc->findParasitic(
             pin, ref->transition(sta), dcalc_ap);
+      }
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
       cap = graph_delay_calc->loadCap(
           pin, parasitic, ref->transition(sta), dcalc_ap);
     }
 
-    auto is_rising = ref->transition(sta) == sta::RiseFall::rise();
-    auto arrival = ref->arrival(sta);
-    auto path_ap = ref->pathAnalysisPt(sta);
-    auto path_required = !first_path ? 0 : ref->required(sta);
-    if (!path_required || sta::delayInf(path_required)) {
-      auto* vert = sta->getDbNetwork()->graph()->pinLoadVertex(pin);
-      auto req = sta->vertexRequired(
-          vert, is_rising ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
-      if (sta::delayInf(req)) {
-        path_required = 0;
-      }
-      path_required = req;
-    }
-    auto slack = !first_path ? path_required - arrival : ref->slack(sta);
     odb::dbITerm* term;
     odb::dbBTerm* port;
     sta->getDbNetwork()->staToDb(pin, term, port);
     odb::dbObject* pin_object = term;
-    if (term == nullptr)
+    if (term == nullptr) {
       pin_object = port;
+    }
     arrival_cur_stage = arrival;
 
-    bool pin_is_clock = sta->isClock(pin);
-
-    if (i == 0) {
-      list.push_back(std::make_unique<TimingPathNode>(pin_object,
-          pin_is_clock,
-          is_rising,
-          !is_driver,
-          arrival + offset,
-          path_required + offset,
-          0,
-          slack,
-          slew,
-          cap));
-    } else {
-      list.push_back(std::make_unique<TimingPathNode>(pin_object,
-          pin_is_clock,
-          is_rising,
-          !is_driver,
-          arrival + offset,
-          path_required + offset,
-          arrival_cur_stage - arrival_prev_stage,
-          slack,
-          slew,
-          cap));
+    list.push_back(std::make_unique<TimingPathNode>(pin_object,
+        pin_is_clock,
+        is_rising,
+        !is_driver,
+        true,
+        arrival + offset,
+        arrival_cur_stage - arrival_prev_stage,
+        slew,
+        cap));
       arrival_prev_stage = arrival_cur_stage;
-    }
-    first_path = false;
   }
 
   // populate list with source/sink nodes
@@ -378,11 +424,11 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
     if (node->isSource()) {
       if (i < (list.size() - 1)) {
         // get the next node
-        node->setSinkNode(list[i + 1].get());
+        node->setPairedNode(list[i + 1].get());
       }
     } else {
       // node is sink
-      node->setSinkNode(node);
+      node->setPairedNode(node);
     }
   }
 
@@ -403,14 +449,21 @@ void TimingPath::populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAn
   }
 }
 
-void TimingPath::populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path)
+void TimingPath::populatePath(sta::Path* path,
+                              sta::dbSta* sta,
+                              sta::DcalcAnalysisPt* dcalc_ap,
+                              bool clock_expanded)
 {
-  populateNodeList(path, sta, dcalc_ap, 0, clock_expanded, first_path, path_nodes_);
+  populateNodeList(path, sta, dcalc_ap, 0, clock_expanded, path_nodes_);
 }
 
-void TimingPath::populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path)
+void TimingPath::populateCapturePath(sta::Path* path,
+                                     sta::dbSta* sta,
+                                     sta::DcalcAnalysisPt* dcalc_ap,
+                                     float offset,
+                                     bool clock_expanded)
 {
-  populateNodeList(path, sta, dcalc_ap, offset, clock_expanded, first_path, capture_nodes_);
+  populateNodeList(path, sta, dcalc_ap, offset, clock_expanded, capture_nodes_);
 }
 
 std::string TimingPath::getStartStageName() const
@@ -443,6 +496,13 @@ void TimingPath::computeClkEndIndex()
 {
   computeClkEndIndex(path_nodes_, clk_path_end_index_);
   computeClkEndIndex(capture_nodes_, clk_capture_end_index_);
+}
+
+void TimingPath::setSlackOnPathNodes()
+{
+  for (const auto& node : path_nodes_) {
+    node->setPathSlack(slack_);
+  }
 }
 
 /////////////
@@ -498,6 +558,20 @@ odb::dbBTerm* TimingPathNode::getPinAsBTerm() const
   }
 
   return nullptr;
+}
+
+void TimingPathNode::copyData(TimingPathNode* other) const
+{
+  other->pin_ = pin_;
+  other->is_clock_ = is_clock_;
+  other->is_rising_ = is_rising_;
+  other->is_sink_ = is_sink_;
+  other->has_values_ = has_values_;
+  other->arrival_ = arrival_;
+  other->delay_ = delay_;
+  other->slew_ = slew_;
+  other->load_ = load_;
+  other->path_slack_ = path_slack_;
 }
 
 /////////
@@ -692,7 +766,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
       inst = instance_node->getInstance();
     }
 
-    auto* sink_node = node->getSinkNode();
+    auto* sink_node = node->getPairedNode();
     if (sink_node != nullptr) {
       sink = sink_node->getPin();
     }
@@ -727,7 +801,7 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
     }
 
     if (node->isSource()) {
-      auto* sink_node = node->getSinkNode();
+      auto* sink_node = node->getPairedNode();
       if (sink_node != nullptr) {
         gui::Painter::Color wire_color = node->isClock() ? clock_color : TimingPathRenderer::signal_color_;
         painter.setPenAndBrush(wire_color, true);

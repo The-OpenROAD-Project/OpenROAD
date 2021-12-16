@@ -102,7 +102,7 @@ class TimingPathsModel : public QAbstractTableModel
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max, int path_count, bool clockExpanded = false);
+  bool populatePaths(bool get_max, int path_count);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
@@ -121,26 +121,25 @@ class TimingPathNode
 {
  public:
   TimingPathNode(odb::dbObject* pin,
-                 bool is_clock,
-                 bool is_rising,
-                 bool is_sink,
-                 float arrival,
-                 float required,
-                 float delay,
-                 float slack,
-                 float slew,
-                 float load)
+                 bool is_clock = false,
+                 bool is_rising = false,
+                 bool is_sink = false,
+                 bool has_values = false,
+                 float arrival = 0.0,
+                 float delay = 0.0,
+                 float slew = 0.0,
+                 float load = 0.0)
       : pin_(pin),
         is_clock_(is_clock),
         is_rising_(is_rising),
         is_sink_(is_sink),
+        has_values_(has_values),
         arrival_(arrival),
-        required_(required),
         delay_(delay),
-        slack_(slack),
         slew_(slew),
         load_(load),
-        sink_node_(nullptr),
+        path_slack_(0.0),
+        paired_node_(nullptr),
         instance_node_(nullptr)
   {
   }
@@ -165,30 +164,35 @@ class TimingPathNode
   bool isSource() const { return !is_sink_; }
 
   float getArrival() const { return arrival_; }
-  float getRequired() const { return required_; }
   float getDelay() const { return delay_; }
-  float getSlack() const { return slack_; }
   float getSlew() const { return slew_; }
   float getLoad() const { return load_; }
 
-  void setSinkNode(const TimingPathNode* node) { sink_node_ = node; }
-  const TimingPathNode* getSinkNode() const { return sink_node_; }
+  void setPathSlack(float value) { path_slack_ = value; }
+  float getPathSlack() const { return path_slack_; }
+
+  bool hasValues() const { return has_values_; }
+
+  void setPairedNode(const TimingPathNode* node) { paired_node_ = node; }
+  const TimingPathNode* getPairedNode() const { return paired_node_; }
   void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
   const TimingPathNode* getInstanceNode() const { return instance_node_; }
+
+  void copyData(TimingPathNode* other) const;
 
  private:
   odb::dbObject* pin_;
   bool is_clock_;
   bool is_rising_;
   bool is_sink_;
+  bool has_values_;
   float arrival_;
-  float required_;
   float delay_;
-  float slack_;
   float slew_;
   float load_;
+  float path_slack_;
 
-  const TimingPathNode* sink_node_;
+  const TimingPathNode* paired_node_;
   const TimingPathNode* instance_node_;
 };
 
@@ -209,6 +213,16 @@ class TimingPath
   {
   }
 
+  static void buildPaths(sta::dbSta* sta,
+                         bool get_max,
+                         bool include_unconstrained,
+                         int path_count,
+                         const std::set<sta::Pin*>& from,
+                         const std::set<sta::Pin*>& thrus,
+                         const std::set<sta::Pin*>& to,
+                         bool include_capture,
+                         std::vector<std::unique_ptr<TimingPath>>& paths);
+
   using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 
   void appendNode(TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node)); }
@@ -228,6 +242,7 @@ class TimingPath
   void setPathDelay(float del) { path_delay_ = del; }
 
   void computeClkEndIndex();
+  void setSlackOnPathNodes();
 
   int getClkPathEndIndex() const { return clk_path_end_index_; }
   int getClkCaptureEndIndex() const { return clk_capture_end_index_; }
@@ -238,8 +253,8 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
-  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
-  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path);
+  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded);
+  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded);
 
  private:
   TimingNodeList path_nodes_;
@@ -253,7 +268,7 @@ class TimingPath
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
-  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
+  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, TimingNodeList& list);
 
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
