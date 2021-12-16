@@ -123,6 +123,11 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 ################################################################
 
+# abc does not have "platform" support for macos so force it to use stdint.h
+if (CMAKE_OSX_SYSROOT)
+   set(ABC_USE_STDINT_H 1)
+endif()
+
 # Build flow tools
 add_subdirectory(abc)
 add_subdirectory(ifp)
