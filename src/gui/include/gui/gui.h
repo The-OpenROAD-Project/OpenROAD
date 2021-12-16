@@ -474,6 +474,18 @@ class Renderer
   DisplayControls controls_;
 };
 
+class SpectrumGenerator
+{
+ public:
+  SpectrumGenerator() {};
+
+  int getColorCount() const;
+  Painter::Color getColor(double value, int alpha = 150) const;
+
+ private:
+  static const unsigned char spectrum_[256][3];
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
