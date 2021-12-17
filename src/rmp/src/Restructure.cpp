@@ -151,7 +151,7 @@ void Restructure::getBlob(unsigned max_depth)
 void Restructure::runABC()
 {
   input_blif_file_name_ = work_dir_name_ + std::string(block_->getConstName())
-                          + "_crit_path.blif";
+    + "_crit_path.blif";
   std::vector<std::string> files_to_remove;
 
   debugPrint(logger_,
@@ -165,7 +165,7 @@ void Restructure::runABC()
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str(), !is_area_mode_);
   debugPrint(
-      logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
+	     logger_, RMP, "remap", 1, "Writing blif file {}", input_blif_file_name_);
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
@@ -235,8 +235,8 @@ void Restructure::runABC()
     }
 
     output_blif_file_name_
-        = work_dir_name_ + std::string(block_->getConstName())
-          + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
+      = work_dir_name_ + std::string(block_->getConstName())
+      + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
     std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
 
     int level_gain = 0;
@@ -245,7 +245,7 @@ void Restructure::runABC()
     bool success = readAbcLog(abc_log_name, level_gain, delay);
     if (success) {
       success
-          = blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
+	= blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
       logger_->report("Optimized to {} instances in iteration {} with max path depth decrease of {}, delay of {}.",
                       num_instances,
                       curr_mode_idx, level_gain, delay);
@@ -270,7 +270,7 @@ void Restructure::runABC()
   }
 
   if (best_inst_count < std::numeric_limits<int>::max()
-     || best_delay_gain < std::numeric_limits<float>::max()) {
+      || best_delay_gain < std::numeric_limits<float>::max()) {
     // read back netlist
     debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
     blif_.readBlif(best_blif.c_str(), block_);
