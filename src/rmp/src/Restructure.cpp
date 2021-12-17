@@ -221,20 +221,16 @@ void Restructure::runABC()
 
       if (writeAbcScript(abc_script_file)) {
 	// Call linked abc
-	Abc_Frame_t * pAbc;
-	std::string Command = "";
-
+	Abc_Frame_t * abc_frame;
 	Abc_Start();
-	pAbc = Abc_FrameGetGlobalFrame();
-
-	Command = "source " + abc_script_file;
-	child_proc[temp_mode_idx] = Cmd_CommandExecute( pAbc, Command.c_str() );
+	abc_frame = Abc_FrameGetGlobalFrame();
+	std::string command = "source " + abc_script_file;
+	child_proc[temp_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
 	if ( child_proc[temp_mode_idx] )
 	  {
-	    fprintf( stdout, "Cannot execute command \"%s\".\n", Command.c_str() );
+	    logger_->error(RMP, 26, "Error executing ABC command {}.", command);
 	    return;
 	  }
-      
 	Abc_Stop();
 	// Exit linked abc
         files_to_remove.emplace_back(abc_script_file);
