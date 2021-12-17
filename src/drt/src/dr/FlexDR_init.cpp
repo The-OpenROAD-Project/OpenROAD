@@ -3367,9 +3367,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     FlexMazeIdx bi, ei;
     via->getMazeIdx(bi, ei);
     if (isAddPathCost) {
-      addPathCost(via.get());
+      addPathCost(via.get(), true);
     } else {
-      subPathCost(via.get());
+      subPathCost(via.get(), true);
     }
   }
 }
