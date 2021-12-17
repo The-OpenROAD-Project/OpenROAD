@@ -178,7 +178,7 @@ proc select { args } {
     set case_sense 0
   }
   
-  gui::select $type $name $case_sense $highlight
+  return [gui::select $type $name $case_sense $highlight]
 }
 
 namespace eval gui {
