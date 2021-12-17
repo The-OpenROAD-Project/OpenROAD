@@ -339,9 +339,8 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
           skip = true;
           break;
         }
-      } else if (type == frcTerm || type == frcBTerm ||
-                 type == frcMTerm) {
-        auto term = static_cast<frTerm*>(obj);
+      } else if (type == frcBTerm) {
+        auto term = static_cast<frBTerm*>(obj);
         if (term->getNet() == net) {
           skip = true;
           break;

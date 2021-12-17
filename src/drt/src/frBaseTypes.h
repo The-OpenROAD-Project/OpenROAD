@@ -86,7 +86,6 @@ enum frEndStyleEnum
 enum frBlockObjectEnum
 {
   frcNet,
-  frcTerm,
   frcBTerm,
   frcMTerm,
   frcInst,

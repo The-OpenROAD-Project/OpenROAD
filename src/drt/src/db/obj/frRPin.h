@@ -63,8 +63,8 @@ class frRPin : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcRPin; }
 
  protected:
-  frBlockObject* term;         // either frTerm or frInstTerm
-  frAccessPoint* accessPoint;  // pref AP for frTerm and frInstTerm
+  frBlockObject* term;         // either frBTerm or frInstTerm
+  frAccessPoint* accessPoint;  // pref AP for frBTerm and frInstTerm
   frNet* net;
 
   template <class Archive>

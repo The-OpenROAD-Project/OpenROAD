@@ -50,8 +50,6 @@ void frRPin::getBBox(Rect& in)
         break;
       }
     case frcBTerm:
-    case frcMTerm:
-    case frcTerm:
       accessPoint->getPoint(pt);
       break;
     default:

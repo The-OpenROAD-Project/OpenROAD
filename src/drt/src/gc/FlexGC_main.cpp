@@ -244,9 +244,7 @@ bool isPG(frBlockObject* obj)
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
       return type.isSupply();
     }
-    case frcBTerm:
-    case frcMTerm:
-    case frcTerm: {
+    case frcBTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
       return type.isSupply();
     }
@@ -1959,8 +1957,8 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
         }
         break;
       }
-      case frcTerm: {
-        if (static_cast<frTerm*>(owner)->getType().isSupply()) {
+      case frcBTerm: {
+        if (static_cast<frBTerm*>(owner)->getType().isSupply()) {
           return;
         }
         break;

@@ -52,7 +52,7 @@ class frTerm : public frBlockObject
   void setDirection(dbIoType in) { direction_ = in; }
   dbIoType getDirection() const { return direction_; }
   // others
-  frBlockObjectEnum typeId() const override { return frcTerm; }
+  virtual frBlockObjectEnum typeId() const = 0;
   void setOrderId(int order_id) { _order_id = order_id; }
   int getOrderId() { return _order_id; }
   virtual frAccessPoint* getAccessPoint(frCoord x,

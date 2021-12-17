@@ -70,14 +70,12 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
         }
         break;
       }
-      case frcBTerm:
-      case frcMTerm:
-      case frcTerm: {
+      case frcBTerm: {
         if (!isPathSeg && !bx.intersects(pt))
           continue;
-        auto term = static_cast<frTerm*>(rqObj);
-        if (term->getNet() == net) {
-          pin2epMap[term].insert(make_pair(pt, lNum));
+        auto bterm = static_cast<frBTerm*>(rqObj);
+        if (bterm->getNet() == net) {
+          pin2epMap[bterm].insert(make_pair(pt, lNum));
         }
         break;
       }

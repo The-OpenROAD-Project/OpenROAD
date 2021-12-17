@@ -42,14 +42,12 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
   bool isFloatingVSS = false;
   frBlockObject* owner = nullptr;
   switch (obj->typeId()) {
-    case frcBTerm:
-    case frcMTerm:
-    case frcTerm: {
-      auto term = static_cast<frTerm*>(obj);
-      if (term->hasNet()) {
-        owner = term->getNet();
+    case frcBTerm: {
+      auto bterm = static_cast<frBTerm*>(obj);
+      if (bterm->hasNet()) {
+        owner = bterm->getNet();
       } else {
-        dbSigType sigType = term->getType();
+        dbSigType sigType = bterm->getType();
         isFloatingVDD = (sigType == dbSigType::POWER);
         isFloatingVSS = (sigType == dbSigType::GROUND);
         owner = obj;
@@ -152,10 +150,8 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
         return true;
       }
       break;
-    case frcMTerm:
-    case frcBTerm:
-    case frcTerm: {
-      return !((type == frcTerm || type == frcBTerm || type == frcMTerm)
+    case frcBTerm: {
+      return !(type == frcBTerm
         && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
       break;
     }
@@ -296,33 +292,6 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
     pathSeg->getBBox(box);
-    // debug
-    // if (pathSeg->getLayerNum() == 4 && box.xMin() < 470300 && box.xMax() >
-    // 470300 && box.yMin() < 100800 && box.yMax() > 100800) {
-    //   cout << "  @@@ debug: initDRObj catches wire on M2 (";
-    //   auto owner = currNet->getOwner();
-    //   if (owner == nullptr) {
-    //     cout <<" FLOATING";
-    //   } else {
-    //     if (owner->typeId() == frcNet) {
-    //       cout <<static_cast<frNet*>(owner)->getName();
-    //     } else if (owner->typeId() == frcInstTerm) {
-    //       cout <<static_cast<frInstTerm*>(owner)->getInst()->getName() <<"/"
-    //            <<static_cast<frInstTerm*>(owner)->getTerm()->getName();
-    //     } else if (owner->typeId() == frcTerm) {
-    //       cout <<"PIN/" <<static_cast<frTerm*>(owner)->getName();
-    //     } else if (owner->typeId() == frcInstBlockage) {
-    //       cout <<static_cast<frInstBlockage*>(owner)->getInst()->getName()
-    //       <<"/OBS";
-    //     } else if (owner->typeId() == frcBlockage) {
-    //       cout <<"PIN/OBS";
-    //     } else {
-    //       cout <<"UNKNOWN";
-    //     }
-    //   }
-    //   cout <<  ") (" << box.xMin() << ", " << box.yMin() << ") - (" <<
-    //   box.xMax() << ", " << box.yMax() << ")\n";
-    // }
     currNet->addPolygon(box, pathSeg->getLayerNum());
     if (pathSeg->isTapered())
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);

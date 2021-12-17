@@ -148,13 +148,16 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         trueTerm = static_cast<frInstTerm*>(term)->getTerm();
         break;
       }
+      // TODO this can't be right, it should be a bterm
+      // TODO actually as written, frTerms don't even do anything in this loop
+      case frcBTerm:
       case frcMTerm: {
-        auto mterm = static_cast<frMTerm*>(term);
+        /*auto bterm = static_cast<frBTerm*>(term);
         if (mterm->getNet() != net) {
           continue;
         }
         trueTerm = mterm;
-        break;
+        break;*/
       }
       default:
        break;
@@ -257,13 +260,14 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         trueTerm = iterm->getTerm();
         break;
       }
+      case frcBTerm:
       case frcMTerm: {
-        auto mterm = static_cast<frMTerm*>(term);
+        /*auto mterm = static_cast<frMTerm*>(term);
         if (mterm->getNet() != net) {
           continue;
         }
         trueTerm = mterm;
-        break;
+        break;*/
       }
       default:
         break;
@@ -670,13 +674,11 @@ void FlexTAWorker::initFixedObjs()
       bounds.bloat(-1, box);
       auto type = obj->typeId();
       // instterm term
-      if (type == frcTerm || type == frcInstTerm ||
-          type == frcBTerm || type == frcMTerm) {
+      if (type == frcInstTerm || type == frcBTerm || type == frcMTerm) {
         bloatDist = TASHAPEBLOATWIDTH * width;
         frNet* netPtr = nullptr;
-        if (type == frcTerm || type == frcBTerm ||
-            type == frcMTerm) {
-          netPtr = static_cast<frTerm*>(obj)->getNet();
+        if (type == frcBTerm || type == frcMTerm) {
+          netPtr = static_cast<frBTerm*>(obj)->getNet();
         } else {
           netPtr = static_cast<frInstTerm*>(obj)->getNet();
         }

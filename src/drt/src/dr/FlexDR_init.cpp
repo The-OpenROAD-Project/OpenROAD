@@ -355,10 +355,8 @@ void FlexDRWorker::initNets_initDR(
         net = static_cast<frInstTerm*>(obj)->getNet();
         break;
       }
-      case frcBTerm:
-      case frcMTerm:
-      case frcTerm: {
-        net = static_cast<frTerm*>(obj)->getNet();
+      case frcBTerm: {
+        net = static_cast<frBTerm*>(obj)->getNet();
         break;
       }
       default:
@@ -439,12 +437,10 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
         }
         break;
       }
-      case frcBTerm:
-      case frcMTerm:
-      case frcTerm: {
+      case frcBTerm: {
         if (!isPathSeg && !bx.intersects(bp))  // terms have aps created on the fly
           continue;
-        auto term = static_cast<frTerm*>(rqObj);
+        auto term = static_cast<frBTerm*>(rqObj);
         if (term->getNet() == net) {
           if (enableOutput)
             cout << "inserting " << term << "\n";
@@ -1126,10 +1122,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
         }
       }
     }
-  } else if (dPinTerm->typeId() == frcTerm ||
-             dPinTerm->typeId() == frcBTerm ||
-             dPinTerm->typeId() == frcMTerm) {
-    auto term = static_cast<frMTerm*>(dPinTerm);
+  } else if (dPinTerm->typeId() == frcBTerm) {
+    auto term = static_cast<frBTerm*>(dPinTerm);
     for (auto& uPin : term->getPins()) {
       auto pin = uPin.get();
       bool hasTempAp = false;
@@ -1544,7 +1538,9 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
         break;
       }
       default:
-        break;
+        logger_->error(utl::DRT,
+                       1009,
+                       "initNet_term_new invoked with non-term object.");
     }
     int pinIdx = 0;
     int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : 0;
@@ -2285,8 +2281,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
           }
           break;
         }
-        case frcBTerm: // IO
-        case frcTerm: {
+        case frcBTerm: { // IO
           isStdCellPin = false;
           break;
         }
@@ -2522,11 +2517,9 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                        << instTerm->getTerm()->getName() << " ";
                   break;
                 }
-                case frcBTerm:
-                case frcMTerm:
-                case frcTerm: {
-                  frTerm* term = (static_cast<frTerm*>(src));
-                  cout << "PIN/" << term->getName() << " ";
+                case frcBTerm: {
+                  frBTerm* bterm = (static_cast<frBTerm*>(src));
+                  cout << "PIN/" << bterm->getName() << " ";
                   break;
                 }
                 case frcInstBlockage: {
@@ -3063,10 +3056,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     }
     for (auto& [box, obj] : result) {
       switch (obj->typeId()) {
-        case frcBTerm:
-        case frcMTerm:
-        case frcTerm: { // term no bloat
-          frNet2Terms[static_cast<frTerm*>(obj)->getNet()].insert(obj);
+        case frcBTerm: { // term no bloat
+          frNet2Terms[static_cast<frBTerm*>(obj)->getNet()].insert(obj);
           break;
         }
         case frcInstTerm: {
@@ -3320,9 +3311,7 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
     for (auto& [box, obj] : result) {
       // term no bloat
       switch (obj->typeId()) {
-        case frcBTerm:
-        case frcMTerm:
-        case frcTerm: {
+        case frcBTerm: {
           FlexMazeIdx mIdx1, mIdx2;
           gridGraph_.getIdxBox(mIdx1, mIdx2, box);
           bool isPinRectHorz

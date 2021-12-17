@@ -83,9 +83,8 @@ void io::Parser::patchGuides(frNet* net,
   vector<frRect> pinShapes;
   string name = "";
   switch (pin->typeId()) {
-    case frcBTerm:
-    case frcTerm: {
-      frTerm* term = static_cast<frTerm*>(pin);
+    case frcBTerm: {
+      frBTerm* term = static_cast<frBTerm*>(pin);
       term->getShapes(pinShapes);
       pinBBox = term->getBBox();
       name = term->getName();
@@ -96,6 +95,7 @@ void io::Parser::patchGuides(frNet* net,
       iTerm->getShapes(pinShapes, true);
       pinBBox = iTerm->getBBox();
       name = iTerm->getName();
+      break;
     }
     default:
       logger->error(DRT, 1007, "PatchGuides invoked with non-term object.");
@@ -260,9 +260,7 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
 {
   vector<frRect> pinShapes;
   switch (pin->typeId()) {
-    case frcBTerm:
-    case frcMTerm:
-    case frcTerm: {
+    case frcBTerm: {
       static_cast<frTerm*>(pin)->getShapes(pinShapes);
       break;
     }
@@ -271,7 +269,9 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
       break;
     }
     default:
-      logger->error(DRT, 1008, "PatchGuides invoked with non-term object.");
+      logger->error(DRT,
+                    1008,
+                    "checkPinForGuideEnclosure invoked with non-term object.");
   }
   for (auto& pinRect : pinShapes) {
     int i = 0;
@@ -925,9 +925,8 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
                          ptr->getTerm()->getName());
             break;
           }
-          case frcBTerm:
-          case frcTerm: {
-            auto ptr = static_cast<frTerm*>(obj);
+          case frcBTerm: {
+            auto ptr = static_cast<frBTerm*>(obj);
             logger->warn(
                 DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
             break;

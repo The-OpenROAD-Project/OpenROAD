@@ -158,7 +158,7 @@ ostream& operator<<(ostream& os, const frMPin& pinIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frMTerm& termIn)
+ostream& operator<<(ostream& os, const frBTerm& termIn)
 {
   frString name;
   frString netName;
@@ -365,8 +365,8 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
       os << *static_cast<const frInstTerm*>(&fig);
       break;
     }
-    case frcTerm: {
-      os << *static_cast<const frTerm*>(&fig);
+    case frcBTerm: {
+      os << *static_cast<const frBTerm*>(&fig);
       break;
     }
     // case fig is a frConnFig

@@ -2484,10 +2484,8 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
           return true;
         break;
       }
-      case frcBTerm:
-      case frcMTerm:
-      case frcTerm: {
-        auto term = static_cast<frTerm*>(rqObj.second);
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj.second);
         if (term->getNet() == net
             && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
           return true;
