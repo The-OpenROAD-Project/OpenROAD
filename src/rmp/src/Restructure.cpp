@@ -189,7 +189,7 @@ void Restructure::runABC()
   debugPrint(
 	     logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
 
-  for (int curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
+  for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
     output_blif_file_name_
       = work_dir_name_ + std::string(block_->getConstName())
       + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
@@ -475,7 +475,7 @@ bool Restructure::writeAbcScript(std::string file_name)
   }
 
   for (auto lib_name : lib_file_names_) {
-    // abc read_liv prints verbose by default, -v toggles to off to avoid read time being printed
+    // abc read_lib prints verbose by default, -v toggles to off to avoid read time being printed
     std::string read_lib_str = "read_lib -v " + lib_name + "\n";
     script << read_lib_str;
   }
