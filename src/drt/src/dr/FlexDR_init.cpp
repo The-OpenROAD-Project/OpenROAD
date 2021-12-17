@@ -1537,6 +1537,7 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
         name = inst->getName() + string("/") + trueTerm->getName();
         break;
       }
+      case frcBTerm:
       case frcMTerm: {
         trueTerm = static_cast<frMTerm*>(term);
         name = string("PIN/") + trueTerm->getName();
@@ -3150,7 +3151,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                                       bool isSkipVia)
 {
   for (auto& obj : objs) {
-    if (obj->typeId() == frcTerm ||
+    if (obj->typeId() == frcBTerm ||
         obj->typeId() == frcMTerm) {
       auto term = static_cast<frMTerm*>(obj);
       for (auto& uPin : term->getPins()) {

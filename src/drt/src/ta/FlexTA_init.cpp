@@ -156,10 +156,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         trueTerm = mterm;
         break;
       }
-      default: {
-        cout << "ERROR: Invalid Term type returned from queryGRPin." << endl;
-        exit(1);
-      }
+      default:
+       break;
     }
     if (trueTerm) {
       int pinIdx = 0;
@@ -267,10 +265,8 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         trueTerm = mterm;
         break;
       }
-      default: {
-        cout << "ERROR: Invalid Term type returned from queryGRPin." << endl;
-        exit(1);
-      }
+      default:
+        break;
     }
 
     if (trueTerm) {
