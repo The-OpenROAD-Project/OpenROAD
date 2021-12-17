@@ -255,9 +255,9 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
-void Gui::selectAt(const odb::Rect& area, bool append)
+int Gui::selectAt(const odb::Rect& area, bool append)
 {
-  main_window->getLayoutViewer()->selectArea(area, append);
+  return main_window->getLayoutViewer()->selectArea(area, append);
 }
 
 int Gui::selectNext()
@@ -285,7 +285,7 @@ void Gui::deleteRuler(const std::string& name)
   main_window->deleteRuler(name);
 }
 
-void Gui::select(const std::string& type, const std::string& name_filter, bool filter_case_sensitive, int highlight_group)
+int Gui::select(const std::string& type, const std::string& name_filter, bool filter_case_sensitive, int highlight_group)
 {
   for (auto& [object_type, descriptor] : descriptors_) {
     if (descriptor->getTypeName() == type) {
@@ -314,7 +314,7 @@ void Gui::select(const std::string& type, const std::string& name_filter, bool f
       }
 
       // already found the descriptor, so return to exit loop
-      return;
+      return selected.size();
     }
   }
 

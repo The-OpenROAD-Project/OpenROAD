@@ -82,6 +82,8 @@ select -type object_type
        [-highlight group]
 ```
 
+Returns: number of objects selected.
+
 Options description:
 - ``object_type``: name of the object typ. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
 - ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.

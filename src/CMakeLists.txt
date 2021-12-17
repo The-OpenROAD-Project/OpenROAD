@@ -28,6 +28,8 @@ set(OPENROAD_SOURCE
   Main.cc
   )
 
+set(Boost_USE_STATIC_LIBS ON)
+
 ################################################################
 
 # OSX tcl is deprecated and prints a warning, so look for a user installed
@@ -121,7 +123,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 ################################################################
 
+# abc does not have "platform" support for macos so force it to use stdint.h
+if (CMAKE_OSX_SYSROOT)
+   set(ABC_USE_STDINT_H 1)
+endif()
+
 # Build flow tools
+add_subdirectory(abc)
 add_subdirectory(ifp)
 add_subdirectory(odb)
 add_subdirectory(sta)
@@ -196,6 +204,7 @@ target_link_libraries(openroad
   par
   utl
   pdn
+  libabc #libabc is the library target defined by abc
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

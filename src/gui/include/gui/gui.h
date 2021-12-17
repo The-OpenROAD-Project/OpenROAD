@@ -520,7 +520,7 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
-  void selectAt(const odb::Rect& area, bool append = true);
+  int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
   int selectPrevious();
   void animateSelection(int repeat = 0);
@@ -532,7 +532,7 @@ class Gui
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
 
-  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
+  int select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);

@@ -81,6 +81,12 @@ To install in a different directory use:
 ./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
+### LTO Options
+By default, OpenROAD is built with link time optimizations enabled. This adds 
+about 1 minute to compile times and improves the runtime by about 11%. If
+you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
+generating a build.
+
 ## Regression Tests
 
 There are a set of regression tests in `test/`.

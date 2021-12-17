@@ -8,7 +8,7 @@ be defined over the stdcell area, and over areas occupied by macros.
 
 ## Installation and Setup
 
-This package runs as a utility within the `openraod` application.
+This package runs as a utility within the `openroad` application.
 
 ## Usage
 
