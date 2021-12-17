@@ -169,9 +169,6 @@ void Restructure::runABC()
   files_to_remove.emplace_back(input_blif_file_name_);
 
   // abc optimization
-
-  int max_threads = ord::OpenRoad::openRoad()->getThreadCount();
-
   std::vector<Mode> modes;
   std::vector<pid_t> child_proc;
 
@@ -190,53 +187,44 @@ void Restructure::runABC()
   float best_delay_gain = std::numeric_limits<float>::max();
 
   debugPrint(
-      logger_, RMP, "remap", 1, "Running ABC with {} threads.", max_threads);
+	     logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
 
-  for (int curr_mode_idx = 0; curr_mode_idx < modes.size();) {
-    int max_parallel_runs = (max_threads < modes.size() - curr_mode_idx)
-                                ? max_threads
-                                : modes.size() - curr_mode_idx;
+  for (int curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
+    output_blif_file_name_
+      = work_dir_name_ + std::string(block_->getConstName())
+      + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
 
-    // Spawn ABC process(es)
-    for (int curr_thread = 0; curr_thread < max_parallel_runs; ++curr_thread) {
-      int temp_mode_idx = curr_mode_idx + curr_thread;
-      output_blif_file_name_
-          = work_dir_name_ + std::string(block_->getConstName())
-            + std::to_string(temp_mode_idx) + "_crit_path_out.blif";
+    opt_mode_ = modes[curr_mode_idx];
 
-      opt_mode_ = modes[temp_mode_idx];
+    std::string abc_script_file = work_dir_name_
+      + std::to_string(curr_mode_idx)
+      + "ord_abc_script.tcl";
+    if (logfile_ == "")
+      logfile_ = work_dir_name_ + "abc.log";
 
-      std::string abc_script_file = work_dir_name_
-                                    + std::to_string(temp_mode_idx)
-                                    + "ord_abc_script.tcl";
-      if (logfile_ == "")
-        logfile_ = work_dir_name_ + "abc.log";
+    debugPrint(logger_,
+	       RMP,
+	       "remap",
+	       1,
+	       "Writing ABC script file {}.",
+	       abc_script_file);
 
-      debugPrint(logger_,
-                 RMP,
-                 "remap",
-                 1,
-                 "Writing ABC script file {}.",
-                 abc_script_file);
-
-      if (writeAbcScript(abc_script_file)) {
-	// Call linked abc
-	Abc_Frame_t * abc_frame;
-	Abc_Start();
-	abc_frame = Abc_FrameGetGlobalFrame();
-	std::string command = "source " + abc_script_file;
-	child_proc[temp_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
-	if ( child_proc[temp_mode_idx] )
-	  {
-	    logger_->error(RMP, 26, "Error executing ABC command {}.", command);
-	    return;
-	  }
-	Abc_Stop();
-	// Exit linked abc
-        files_to_remove.emplace_back(abc_script_file);
-      }
-    }  // end spawn
-    curr_mode_idx += max_parallel_runs;
+    if (writeAbcScript(abc_script_file)) {
+      // call linked abc
+      Abc_Frame_t * abc_frame;
+      Abc_Start();
+      abc_frame = Abc_FrameGetGlobalFrame();
+      std::string command = "source " + abc_script_file;
+      child_proc[curr_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
+      if ( child_proc[curr_mode_idx] )
+	{
+	  logger_->error(RMP, 26, "Error executing ABC command {}.", command);
+	  return;
+	}
+      Abc_Stop();
+      // exit linked abc
+      files_to_remove.emplace_back(abc_script_file);
+    }
   }  // end modes
 
   // Inspect ABC results to choose blif with least instance count
