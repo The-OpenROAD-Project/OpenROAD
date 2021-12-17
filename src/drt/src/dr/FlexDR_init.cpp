@@ -3151,9 +3151,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                                       bool isSkipVia)
 {
   for (auto& obj : objs) {
-    if (obj->typeId() == frcBTerm ||
-        obj->typeId() == frcMTerm) {
-      auto term = static_cast<frMTerm*>(obj);
+    if (obj->typeId() == frcBTerm) {
+      auto term = static_cast<frBTerm*>(obj);
       for (auto& uPin : term->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
