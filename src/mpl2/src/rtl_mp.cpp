@@ -93,6 +93,7 @@ bool rtl_macro_placer(const char* config_file,
                       const float macro_blockage_wt,
                       const float location_wt,
                       const float notch_wt,
+                      const float macro_halo,
                       const char* report_file,
                       const char* macro_blockage_file,
                       const char* prefer_location_file)
@@ -108,7 +109,6 @@ bool rtl_macro_placer(const char* config_file,
   // These parameters are related to shape engine
   float min_aspect_ratio = 0.40;
   float dead_space = 0.05;
-  float halo_width = 10.0;
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
@@ -133,6 +133,7 @@ bool rtl_macro_placer(const char* config_file,
   float macro_blockage_weight = macro_blockage_wt;  // weight for macro blockage
   float location_weight = location_wt;  // weight for preferred location
   float notch_weight = notch_wt;        // weight for notch
+  float halo_width = macro_halo;  // halo width around macros
 
   float learning_rate
       = 0.00;  // learning rate for dynamic weight in cost function
@@ -450,6 +451,7 @@ bool MacroPlacer2::place(const char* config_file,
                          const float macro_blockage_wt,
                          const float location_wt,
                          const float notch_wt,
+                         const float macro_halo,
                          const char* report_file,
                          const char* macro_blockage_file,
                          const char* prefer_location_file)
@@ -465,6 +467,7 @@ bool MacroPlacer2::place(const char* config_file,
                           macro_blockage_wt,
                           location_wt,
                           notch_wt,
+                          macro_halo,
                           report_file,
                           macro_blockage_file,
                           prefer_location_file);
