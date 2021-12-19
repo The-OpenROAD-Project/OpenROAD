@@ -68,7 +68,9 @@ class PDNSim
   void set_bump_pitch_y(float bump_pitch);
   void set_pdnsim_net_voltage(std::string net, float voltage);
   int  analyze_power_grid();
+  //void  getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop);
   void write_pg_spice();
+  void getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop);
 
   int check_connectivity();
 
@@ -85,6 +87,8 @@ class PDNSim
   std::string                  _spice_out_file;
   std::string                  _power_net;
   std::map<std::string, float> _net_voltage_map;
+  std::map<int, std::map<std::pair<int,int>,double>> _ir_drop;
+  
 };
 }  // namespace psm
 

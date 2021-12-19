@@ -186,14 +186,6 @@ int PDNSim::analyze_power_grid()
   }
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
-  std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
-  int                vsize;
-  vsize = nodes.size();
-  for (int n = 0; n < vsize; n++) {
-    Node* node = nodes[n];
-    if (node->GetLayerNum() != 1)
-      continue;
-  }
   _logger->report("########## IR report #################");
   _logger->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);
   _logger->report("Average IR drop  : {:3.2e} V",
@@ -209,6 +201,32 @@ int PDNSim::analyze_power_grid()
     _logger->report("######################################");
   }
 
+  std::map<int, std::map<std::pair<int,int>,double>> ir_drop;
+  //std::map<odb::dbTechLayer*, std::map<std::pair<int,int>,double> ir_drop;
+  std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
+  int                vsize;
+  vsize = nodes.size();
+  odb::dbTech* tech        = _db->getTech();
+  for (int n = 0; n < vsize; n++) {
+    Node* node = nodes[n];
+    int node_layer_num = node->GetLayerNum();
+    NodeLoc node_loc = node->GetLoc();
+    double voltage = node->GetVoltage();
+    //odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
+    //ir_drop[node_layer][node_loc] = voltage;
+    ir_drop[node_layer_num][node_loc] = voltage;
+  }
+  
+  _ir_drop = ir_drop;
+  std::map<int, std::map<std::pair<int,int>,double>> ir_drop2;
+  //PDNSim::getIRDropMap(ir_drop2);
+  //for(auto const& lyr : ir_drop2) {
+  //  std::cout << lyr.first << ": \n";
+  //  for(auto const& nd : lyr.second) {
+  //      std::cout <<"("<< nd.first.first<<", "<<nd.first.second << "): "<< nd.second<<"\n ";
+  //  }
+  //  std::cout << "\n";
+  //}
   delete irsolve_h;
   return 1;
 }
@@ -234,6 +252,12 @@ int PDNSim::check_connectivity()
   int val = irsolve_h->GetConnectionTest();
   delete irsolve_h;
   return val;
+}
+
+void PDNSim::getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop) {
+  // TODO can be enhanced to check if it exists 
+  // and if it does not run analyze IR 
+  ir_drop = _ir_drop;
 }
 
 }  // namespace psm
