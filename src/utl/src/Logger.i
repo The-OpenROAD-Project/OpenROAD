@@ -120,6 +120,22 @@ metric(const char *metric,
   logger->metric(metric, value);
 }
 
+void
+metric_integer(const char *metric,
+       const int *value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
+void
+metric_float(const char *metric,
+       const float *value)
+{
+  Logger *logger = getLogger();
+  logger->metric(metric, value);
+}
+
 } // namespace
 
 %} // inline
