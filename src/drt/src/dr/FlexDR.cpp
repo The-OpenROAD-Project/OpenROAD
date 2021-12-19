@@ -1912,6 +1912,8 @@ void FlexDR::end(bool writeMetrics)
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric("detailedroute__route__wirelength", totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
@@ -1922,6 +1924,7 @@ void FlexDR::end(bool writeMetrics)
       }
     }
     logger_->report("Total number of vias = {}.", totSCut + totMCut);
+    logger_->metric("detailedroute__route__wirelength", totSCut + totMCut);
     if (totMCut > 0) {
       logger_->report("Total number of multi-cut vias = {} ({:5.1f}%).",
                       totMCut,
