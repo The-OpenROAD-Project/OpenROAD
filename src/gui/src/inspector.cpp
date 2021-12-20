@@ -726,6 +726,10 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  if (deselect_action_) {
+    deselect_action_();
+  }
+
   selection_ = object;
   emit selection(object);
 
@@ -771,13 +775,19 @@ void Inspector::loadActions()
     delete widget; // no longer in the map so it's safe to delete
   }
 
+  deselect_action_ = Descriptor::ActionCallback();
+
   if (!selection_) {
     return;
   }
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    makeAction(action);
+    if (action.name == Descriptor::deselect_action_) {
+      deselect_action_ = action.callback;
+    } else {
+      makeAction(action);
+    }
   }
   if (isHighlighted(selection_)) {
     makeAction({"Remove from highlight", [this]() -> Selected {

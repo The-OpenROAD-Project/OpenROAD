@@ -1162,6 +1162,9 @@ Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
   return {{"Fanin/out Cone", [this, iterm, gui]() {
     gui->timingCone(iterm, true, true);
     return makeSelected(iterm, nullptr);
+  }}, {std::string(deselect_action_), [this, iterm, gui]() {
+    gui->timingCone(static_cast<odb::dbITerm*>(nullptr), true, true);
+    return makeSelected(iterm, nullptr);
   }}};
 }
 
@@ -1260,6 +1263,9 @@ Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
 
   return {{"Fanin/out Cone", [this, bterm, gui]() {
     gui->timingCone(bterm, true, true);
+    return makeSelected(bterm, nullptr);
+  }}, {std::string(deselect_action_), [this, bterm, gui]() {
+    gui->timingCone(static_cast<odb::dbBTerm*>(nullptr), true, true);
     return makeSelected(bterm, nullptr);
   }}};
 }

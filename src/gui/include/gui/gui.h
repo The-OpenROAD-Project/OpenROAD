@@ -268,6 +268,7 @@ class Descriptor
     ActionCallback callback;
   };
   using Actions = std::vector<Action>;
+  static constexpr std::string_view deselect_action_ = "deselect";
 
   // An editor is a callback function and a list of possible values (this can be empty),
   // the name of the editor should match the property it modifies
