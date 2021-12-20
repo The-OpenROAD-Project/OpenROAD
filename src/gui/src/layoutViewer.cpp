@@ -941,12 +941,15 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 }
 
-void LayoutViewer::selectArea(const odb::Rect& area, bool append)
+int LayoutViewer::selectArea(const odb::Rect& area, bool append)
 {
   if (!append) {
     emit selected(Selected()); // remove previous selections
   }
-  emit addSelected(selectAt(area));
+
+  auto selection_set = selectAt(area);
+  emit addSelected(selection_set);
+  return selection_set.size();
 }
 
 SelectionSet LayoutViewer::selectAt(odb::Rect region)
@@ -1958,14 +1961,15 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawInstanceNames(painter, insts);
 
   drawRows(painter, bounds);
+
+  if (options_->arePinMarkersVisible()) {
+    drawPinMarkers(gui_painter, bounds);
+  }
+
   for (auto* renderer : renderers) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
-  }
-
-  if (options_->arePinMarkersVisible()) {
-    drawPinMarkers(gui_painter, bounds);
   }
 }
 

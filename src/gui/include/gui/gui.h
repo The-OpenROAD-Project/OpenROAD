@@ -303,6 +303,7 @@ class Descriptor
   virtual void highlight(std::any object,
                          Painter& painter,
                          void* additional_data = nullptr) const = 0;
+  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -344,6 +345,7 @@ class Selected
                  int pen_width = 0,
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
+  bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
 
@@ -447,7 +449,8 @@ class Renderer
   void setDisplayControl(const std::string& name, bool value);
 
   virtual const std::string getSettingsGroupName() { return ""; }
-  using Settings = std::map<std::string, std::variant<bool, int, double>>;
+  using Setting = std::variant<bool, int, double, std::string>;
+  using Settings = std::map<std::string, Setting>;
   virtual const Settings getSettings();
   virtual void setSettings(const Settings& settings);
 
@@ -519,7 +522,7 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
-  void selectAt(const odb::Rect& area, bool append = true);
+  int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
   int selectPrevious();
   void animateSelection(int repeat = 0);
@@ -531,7 +534,7 @@ class Gui
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
 
-  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
+  int select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -554,6 +557,10 @@ class Gui
   // Get the visibility/selectability for a control in the 'Display Control' panel.
   bool checkDisplayControlsVisible(const std::string& name);
   bool checkDisplayControlsSelectable(const std::string& name);
+
+  // Used to save and restore the display controls, useful for batch operations
+  void saveDisplayControls();
+  void restoreDisplayControls();
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
@@ -619,7 +626,7 @@ class Gui
 
   const Selected& getInspectorSelection();
 
-  void setHeatMapSetting(const std::string& name, const std::string& option, double value);
+  void setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value);
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }

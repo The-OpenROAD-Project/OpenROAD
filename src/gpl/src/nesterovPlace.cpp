@@ -551,6 +551,9 @@ NesterovPlace::doNesterovPlace(int start_iter) {
       if( newStepLength > stepLength_ * 0.95) {
         stepLength_ = newStepLength;
         break;
+      } else if (newStepLength < 0.01) {
+        stepLength_ = 0.01;
+        break;
       }
       else {
         stepLength_ = newStepLength;

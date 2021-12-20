@@ -35,19 +35,18 @@
 
 #pragma once
 
-#include "Util.h"
-
-#include "db.h"
-
 #include <cassert>
 #include <deque>
 #include <functional>
 #include <unordered_map>
 #include <vector>
 
+#include "Util.h"
+#include "db.h"
+
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -87,7 +86,7 @@ class ClockInst
   void setInputPinObj(odb::dbITerm* pin) { _inputPinObj = pin; }
   odb::dbITerm* getDbInputPin() const { return _inputPinObj; }
   void setInputCap(float cap) { _inputCap = cap; }
-  float getInputCap() const { return _inputCap;}
+  float getInputCap() const { return _inputCap; }
 
   bool isClockBuffer() const { return _type == CLOCK_BUFFER; }
 
@@ -140,7 +139,7 @@ class Clock
     {
       ClockInst* driver = getDriver();
       std::vector<ClockInst*> instsToPreserve;
-      forEachSink([&](ClockInst* inst){
+      forEachSink([&](ClockInst* inst) {
         if (sinksToRemove.find(inst) == sinksToRemove.end()) {
           instsToPreserve.emplace_back(inst);
         }
@@ -215,7 +214,11 @@ class Clock
     _sinks.emplace_back(name, "", CLOCK_SINK, x, y);
   }
 
-  void addSink(const std::string& name, int x, int y, odb::dbITerm* pinObj, float inputCap)
+  void addSink(const std::string& name,
+               int x,
+               int y,
+               odb::dbITerm* pinObj,
+               float inputCap)
   {
     _sinks.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
   }

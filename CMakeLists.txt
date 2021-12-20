@@ -45,6 +45,13 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
 cmake_policy(SET CMP0071 NEW)
 endif()
 
+# Interfers with Qt so off by default.
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
+
+if (LINK_TIME_OPTIMIZATION)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )

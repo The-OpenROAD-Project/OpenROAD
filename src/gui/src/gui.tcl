@@ -131,16 +131,6 @@ proc save_image { args } {
     if {[llength $area] != 4} {
       utl::error GUI 18 "Area must contain 4 elements."
     }
-  } elseif {![gui::enabled]} {
-    # gui is not enabled, so default to whole block + 5%
-    set die_area [ord::get_die_area]
-    set die_width_margin [expr 0.05 * ([lindex $die_area 2] - [lindex $die_area 0])]
-    set die_height_margin [expr 0.05 * ([lindex $die_area 3] - [lindex $die_area 1])]
-    set area [list \
-               [expr [lindex $die_area 0] - $die_width_margin] \
-               [expr [lindex $die_area 1] - $die_height_margin] \
-               [expr [lindex $die_area 2] + $die_width_margin] \
-               [expr [lindex $die_area 3] + $die_height_margin]]
   }
 
   sta::check_argc_eq1 "save_image" $args
@@ -188,7 +178,7 @@ proc select { args } {
     set case_sense 0
   }
   
-  gui::select $type $name $case_sense $highlight
+  return [gui::select $type $name $case_sense $highlight]
 }
 
 namespace eval gui {

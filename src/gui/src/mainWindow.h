@@ -98,7 +98,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   const std::vector<std::string> getRestoreTclCommands();
 
-  void setHeatMapSetting(const std::string& map, const std::string& option, double value);
+  void setHeatMapSetting(const std::string& map, const std::string& option, const Renderer::Setting& value);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets

@@ -81,6 +81,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
+#include "dst/MakeDistributed.h"
 #include "stt/MakeSteinerTreeBuilder.h"
 
 namespace sta {
@@ -139,6 +140,7 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr),
     partitionMgr_(nullptr),
     pdngen_(nullptr),
+    distributer_(nullptr),
     stt_builder_(nullptr),
     threads_(1)
 {
@@ -166,6 +168,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
+  deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   delete logger_;
 }
@@ -227,6 +230,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
 
   // Init components.
@@ -257,6 +261,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
+  initDistributed(this);
   initSteinerTreeBuilder(this);
 
   // Import exported commands to global namespace.

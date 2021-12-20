@@ -30,6 +30,7 @@
 
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -48,13 +49,17 @@ struct FlexGCWorkerRegionQuery::Impl
   void init(int numLayers);
 
   FlexGCWorker* gcWorker_;
-  std::vector<bgi::rtree<std::pair<segment_t, gcSegment*>, bgi::quadratic<16>>>
-      polygon_edges_;  // merged
-  std::vector<bgi::rtree<rq_box_value_t<gcRect*>, bgi::quadratic<16>>>
-      max_rectangles_;  // merged
-  std::vector<bgi::rtree<rq_box_value_t<gcRect>, bgi::quadratic<16>>>
+  std::vector<RTree<gcSegment*, segment_t>> polygon_edges_;  // merged
+  std::vector<RTree<gcRect*>> max_rectangles_;  // merged
+  std::vector<RTree<gcRect>>
       spc_rectangles_;  // rects that require nondefault spacing that intersects
                         // tapered max rects
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 
 FlexGCWorkerRegionQuery::FlexGCWorkerRegionQuery(FlexGCWorker* in)
@@ -229,16 +234,10 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
 
   int cntRTPolygonEdge = 0;
   int cntRTMaxRectangle = 0;
-  for (int i = 0; i < numLayers; i++) {
-    polygon_edges_[i] = boost::move(
-        bgi::rtree<pair<segment_t, gcSegment*>, bgi::quadratic<16>>(
-            allPolygonEdges[i]));
-    max_rectangles_[i]
-        = boost::move(bgi::rtree<rq_box_value_t<gcRect*>, bgi::quadratic<16>>(
-            allMaxRectangles[i]));
-    spc_rectangles_[i]
-        = boost::move(bgi::rtree<rq_box_value_t<gcRect>, bgi::quadratic<16>>(
-            allSpcRectangles[i]));
+   for (int i = 0; i < numLayers; i++) {
+    polygon_edges_[i] = boost::move(RTree<gcSegment*, segment_t>(allPolygonEdges[i]));
+    max_rectangles_[i] = boost::move(RTree<gcRect*>(allMaxRectangles[i]));
+    spc_rectangles_[i] = boost::move(RTree<gcRect>(allSpcRectangles[i]));
     cntRTPolygonEdge += polygon_edges_[i].size();
     cntRTMaxRectangle += max_rectangles_[i].size();
   }
@@ -281,3 +280,28 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
       removeSpcRectangle(spcR.get());
   }
 }
+
+template <class Archive>
+void FlexGCWorkerRegionQuery::Impl::serialize(Archive& ar,
+                                              const unsigned int version)
+{
+  (ar) & gcWorker_;
+  (ar) & polygon_edges_;
+  (ar) & max_rectangles_;
+  (ar) & spc_rectangles_;
+}
+
+template <class Archive>
+void FlexGCWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void FlexGCWorkerRegionQuery::serialize<InputArchive>(
+    InputArchive& ar,
+    const unsigned int file_version);
+
+template void FlexGCWorkerRegionQuery::serialize<OutputArchive>(
+    OutputArchive& ar,
+    const unsigned int file_version);

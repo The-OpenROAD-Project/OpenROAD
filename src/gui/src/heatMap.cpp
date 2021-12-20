@@ -695,6 +695,9 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() c
 
 void HeatMapDataSource::onShow()
 {
+  if (!isPopulated()) {
+    logger_->warn(utl::GUI, 66, "Heat map \"{}\" has not been populated with data.", getName());
+  }
 }
 
 void HeatMapDataSource::onHide()
@@ -1198,7 +1201,8 @@ PowerDensityDataSource::PowerDensityDataSource() :
     include_switching_(true),
     min_power_(0.0),
     max_power_(0.0),
-    units_("W")
+    units_("W"),
+    corner_(nullptr)
 {
   setIssueRedraw(false); // disable during initial setup
   setLogScale(true);
@@ -1215,7 +1219,8 @@ bool PowerDensityDataSource::populateMap()
     return false;
   }
 
-  auto corner = sta_->findCorner("default");
+  ensureCorner();
+
   auto* network = sta_->getDbNetwork();
 
   const bool include_all = include_internal_ && include_leakage_ && include_switching_;
@@ -1225,7 +1230,7 @@ bool PowerDensityDataSource::populateMap()
     }
 
     sta::PowerResult power;
-    sta_->power(network->dbToSta(inst), corner, power);
+    sta_->power(network->dbToSta(inst), corner_, power);
 
     float pwr = 0.0;
     if (include_all) {
@@ -1351,6 +1356,22 @@ double PowerDensityDataSource::getDisplayRangeIncrement() const
 
 void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
 {
+  ensureCorner();
+
+  QComboBox* corners = nullptr;
+  if (sta_->multiCorner()) {
+    corners = new QComboBox(parent);
+    int selection = 0;
+    for (auto* corner : *sta_->corners()) {
+      corners->addItem(corner->name());
+      if (corner_ == corner) {
+        selection = corners->count() - 1;
+      }
+    }
+    corners->setCurrentIndex(selection);
+    layout->addRow("Corner", corners);
+  }
+
   QCheckBox* internal = new QCheckBox(parent);
   internal->setCheckState(include_internal_ ? Qt::Checked : Qt::Unchecked);
   layout->addRow("Internal power", internal);
@@ -1386,6 +1407,16 @@ void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLa
                      destroyMap();
                      changed_callback();
                    });
+
+  if (corners != nullptr) {
+    QObject::connect(corners,
+                     &QComboBox::currentTextChanged,
+                     [this, changed_callback](const QString& corner) {
+                       setCorner(corner.toStdString());
+                       destroyMap();
+                       changed_callback();
+                     });
+  }
 }
 
 const Renderer::Settings PowerDensityDataSource::getSettings() const
@@ -1395,17 +1426,41 @@ const Renderer::Settings PowerDensityDataSource::getSettings() const
   settings["Internal"] = include_internal_;
   settings["Switching"] = include_switching_;
   settings["Leakage"] = include_leakage_;
+  if (corner_ != nullptr) {
+    settings["corner"] = std::string(corner_->name());
+  }
 
   return settings;
 }
 
 void PowerDensityDataSource::setSettings(const Renderer::Settings& settings)
 {
+  ensureCorner();
+
   HeatMapDataSource::setSettings(settings);
 
   Renderer::setSetting<bool>(settings, "Internal", include_internal_);
   Renderer::setSetting<bool>(settings, "Switching", include_switching_);
   Renderer::setSetting<bool>(settings, "Leakage", include_leakage_);
+
+  std::string corner = corner_->name();
+  Renderer::setSetting<std::string>(settings, "corner", corner);
+  setCorner(corner);
+}
+
+void PowerDensityDataSource::ensureCorner()
+{
+  if (corner_ != nullptr) {
+    return;
+  }
+
+  auto corners = sta_->corners()->corners();
+  corner_ = corners[0];
+}
+
+void PowerDensityDataSource::setCorner(const std::string& name)
+{
+  corner_ = sta_->findCorner(name.c_str());
 }
 
 }  // namespace gui

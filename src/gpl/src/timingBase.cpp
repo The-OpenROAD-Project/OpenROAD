@@ -51,7 +51,7 @@ TimingBase::TimingBase()
   : rs_(nullptr),
     log_(nullptr),
     nb_(nullptr),
-    net_weight_max_(4.0)
+    net_weight_max_(1.9)
 {
 }
 
@@ -180,6 +180,9 @@ TimingBase::updateGNetWeights(float overflow) {
         gNet->setTimingWeight(weight);
         weighted_net_count++;
       }
+      debugPrint(log_, GPL, "replace", 3, "timingUpdate: net:{} slack:{} weight:{}", 
+          gNet->net()->dbNet()->getConstName(), 
+          net_slack, gNet->totalWeight());
     }
   }
 

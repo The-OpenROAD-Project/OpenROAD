@@ -35,18 +35,18 @@
 
 #pragma once
 
-#include "Util.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-
 #include <limits>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "CtsOptions.h"
+#include "TechChar.h"
+#include "Util.h"
+
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -71,8 +71,7 @@ class SinkClustering
   SinkClustering(CtsOptions* options, TechChar* techChar);
 
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
-  void addCap(float cap) { _pointsCap.emplace_back(cap);}
-  void run();
+  void addCap(float cap) { _pointsCap.emplace_back(cap); }
   void run(unsigned groupSize, float maxDiameter, int scaleFactor);
   unsigned getNumPoints() const { return _points.size(); }
 
@@ -89,7 +88,6 @@ class SinkClustering
   void normalizePoints(float maxDiameter = 10);
   void computeAllThetas();
   void sortPoints();
-  void findBestMatching();
   void writePlotFile();
   void findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
@@ -97,7 +95,10 @@ class SinkClustering
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
 
-  bool isLimitExceeded(unsigned size, double cost, double capCost, unsigned sizeLimit);
+  bool isLimitExceeded(unsigned size,
+                       double cost,
+                       double capCost,
+                       unsigned sizeLimit);
   bool isOne(double pos) const
   {
     return (1 - pos) < std::numeric_limits<double>::epsilon();
@@ -107,8 +108,8 @@ class SinkClustering
     return pos < std::numeric_limits<double>::epsilon();
   }
 
-  CtsOptions *_options;
-  Logger *_logger;
+  CtsOptions* _options;
+  Logger* _logger;
   TechChar* _techChar;
   std::vector<Point<double>> _points;
   std::vector<float> _pointsCap;

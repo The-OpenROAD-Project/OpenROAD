@@ -65,6 +65,18 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     MAX_THREADS = 1;
   }
 
+  if (!settings_->pinName.empty()) {
+    // Break pinName into inst_name_ and term_name_ at ':'
+    size_t pos = settings_->pinName.rfind(':');
+    if (pos == std::string::npos) {
+      logger_->error(
+          DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+    }
+    term_name_ = settings_->pinName.substr(pos + 1);
+    auto inst_name = settings_->pinName.substr(0, pos);
+    inst_ = design->getTopBlock()->getInst(inst_name);
+  }
+
   gui_->registerRenderer(this);
 }
 
@@ -126,8 +138,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (marker->getLayerNum() == layerNum) {
         Rect bbox;
         marker->getBBox(bbox);
-        painter.drawRect(
-            {bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
+        painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
       }
     }
   }
@@ -145,18 +156,23 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 }
 
-void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
+void FlexPAGraphics::startPin(frPin* pin,
+                              frInstTerm* inst_term,
+                              set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
   aps_.clear();
 
   frTerm* term = pin->getTerm();
-  //  frBlock* block = term->getBlock();
-  //  std::string name = block->getName() + ':' + term->getName()
   std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
                      + term->getName();
-  if (!settings_->pinName.empty() && name != settings_->pinName) {
-    return;
+  if (!settings_->pinName.empty()) {
+    if (term->getName() != term_name_) {
+      return;
+    }
+    if (inst_term && instClass->find(inst_) == instClass->end()) {
+      return;
+    }
   }
 
   status("Start pin: " + name);
@@ -224,12 +240,13 @@ void FlexPAGraphics::setViaAP(
     marker->getBBox(bbox);
     logger_->info(DRT,
                   119,
-                  "Marker {} at ({}, {}) ({}, {}).",
-                  marker->getConstraint()->typeId(),
+                  "Marker ({}, {}) ({}, {}) on {}:",
                   bbox.xMin(),
                   bbox.yMin(),
                   bbox.xMax(),
-                  bbox.yMax());
+                  bbox.yMax(),
+                  marker->getLayerNum());
+    marker->getConstraint()->report(logger_);
   }
 
   gui_->redraw();

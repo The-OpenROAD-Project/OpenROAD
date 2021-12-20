@@ -78,6 +78,15 @@ class frBoundary : public frFig
 
  protected:
   std::vector<Point> points_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frFig>(*this);
+    (ar) & points_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

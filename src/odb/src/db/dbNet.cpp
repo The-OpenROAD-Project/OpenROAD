@@ -2895,10 +2895,13 @@ void dbNet::destroy(dbNet* net_)
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   dbSet<dbITerm> iterms = net_->getITerms();
-  dbSet<dbITerm>::iterator iitr;
+  dbSet<dbITerm>::iterator iitr = iterms.begin();
 
-  for (iitr = iterms.begin(); iitr != iterms.end();)
-    iitr = dbITerm::disconnect(iitr);
+  while (iitr != iterms.end()) {
+    dbITerm* iterm = *iitr;
+    ++iitr;
+    iterm->disconnect();
+  }
 
   dbSet<dbBTerm> bterms = net_->getBTerms();
 

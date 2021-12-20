@@ -1717,8 +1717,7 @@ void FlexDRWorker::initNets_numPinsIn()
       }
     }
   }
-  bgi::rtree<rq_box_value_t<drPin*>, bgi::quadratic<16>> pinRegionQuery(
-      allPins);
+  RTree<drPin*> pinRegionQuery(allPins);
   for (auto& net : nets_) {
     frCoord x1 = getExtBox().xMax();
     frCoord x2 = getExtBox().xMin();
@@ -2864,6 +2863,8 @@ void FlexDRWorker::route_queue_update_from_marker(
       }
     }
   }
+  vector<drNet*> avoidRipupCandidates;
+  bool allowAvoidRipup = false;;
   // add to victims and aggressors as appropriate
   for (auto& aggressorOwner : uniqueAggressorOwners) {
     if (aggressorOwner && aggressorOwner->typeId() == frcNet) {
@@ -2876,10 +2877,10 @@ void FlexDRWorker::route_queue_update_from_marker(
             }
             if (uniqueAggressorOwners.size() + uniqueVictimOwners.size() > 1) {
                 if (dNet->canAvoidRipup()) {
-                  dNet->incNRipupAvoids();
-                  checks.push_back({dNet, -1, false});
+                  avoidRipupCandidates.push_back(dNet);
                   continue;
-                }
+                } else 
+                    allowAvoidRipup = true;
                 dNet->setNRipupAvoids(0);
             }
             routes.push_back({dNet, dNet->getNumReroutes(), true});
@@ -2888,7 +2889,15 @@ void FlexDRWorker::route_queue_update_from_marker(
       }
     }
   }
-
+  for (drNet* dNet : avoidRipupCandidates) {
+    if (allowAvoidRipup) {
+        dNet->incNRipupAvoids();
+        checks.push_back({dNet, -1, false});
+    } else {
+        dNet->setNRipupAvoids(0);
+        routes.push_back({dNet, dNet->getNumReroutes(), true});
+    }
+  }
   for (auto& victimOwner : uniqueVictimOwners) {
     checks.push_back({victimOwner, -1, false});
   }
@@ -3401,9 +3410,9 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
     if (isAddPathCost) {
-      addPathCost(connFig.get(), true);
+      addPathCost(connFig.get());
     } else {
-      subPathCost(connFig.get(), true);
+      subPathCost(connFig.get());
     }
   }
 }
