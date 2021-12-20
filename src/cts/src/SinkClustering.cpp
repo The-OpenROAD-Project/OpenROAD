@@ -139,57 +139,6 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
   return 4;
 }
 
-void SinkClustering::findBestMatching()
-{
-  std::vector<Matching> matching0;
-  std::vector<Matching> matching1;
-  double matchingCost0 = 0.0;
-  double matchingCost1 = 0.0;
-
-  for (unsigned i = 0; i < _thetaIndexVector.size() - 1; ++i) {
-    unsigned idx0 = _thetaIndexVector[i].second;
-    unsigned idx1 = _thetaIndexVector[i + 1].second;
-    Point<double>& p0 = _points[idx0];
-    Point<double>& p1 = _points[idx1];
-
-    double cost = p0.computeDist(p1);
-    if (i % 2 == 0) {
-      matching0.emplace_back(idx0, idx1);
-      matchingCost0 += cost;
-    } else {
-      matching1.emplace_back(idx0, idx1);
-      matchingCost1 += cost;
-    }
-  }
-
-  // Cost 1 needs to sum the distance from first to last
-  // element
-  unsigned idx0 = _thetaIndexVector.front().second;
-  unsigned idx1 = _thetaIndexVector.back().second;
-  matching1.emplace_back(idx0, idx1);
-  Point<double>& p0 = _points[idx0];
-  Point<double>& p1 = _points[idx1];
-  matchingCost1 += p0.computeDist(p1);
-
-  _logger->info(CTS, 88, "Matching0 size: {}.", matching0.size());
-  _logger->info(CTS, 89, "Matching1 size: {}.", matching1.size());
-  if (matchingCost0 < matchingCost1) {
-    _matchings = matching0;
-  } else {
-    _matchings = matching1;
-  }
-}
-
-void SinkClustering::run()
-{
-  normalizePoints();
-  computeAllThetas();
-  sortPoints();
-  findBestMatching();
-  if (_logger->debugCheck(CTS, "Stree", 1))
-    writePlotFile();
-}
-
 void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
 {
   _scaleFactor = scaleFactor;
