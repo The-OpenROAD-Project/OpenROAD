@@ -15,9 +15,9 @@
 [INFO ODB-0134] Finished DEF file: boundary_macros.def
 [INFO TAP-0001] Found 5 macro blocks.
 [INFO TAP-0002] Original rows: 57
-[INFO TAP-0003] Created 29 rows for a total of 86 rows.
-[INFO TAP-0004] Inserted 172 endcaps.
-[INFO TAP-0006] Inserted 531 top/bottom cells.
-[INFO TAP-0007] Inserted 481 cells near blockages.
-[INFO TAP-0005] Inserted 41 tapcells.
+[INFO TAP-0003] Created -44 rows for a total of 13 rows.
+[INFO TAP-0004] Inserted 26 endcaps.
+[INFO TAP-0006] Inserted 89 top/bottom cells.
+[INFO TAP-0007] Inserted 11 cells near blockages.
+[INFO TAP-0005] Inserted 0 tapcells.
 No differences found.
