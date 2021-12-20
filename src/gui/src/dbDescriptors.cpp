@@ -102,6 +102,35 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
   })});
 }
 
+// timing cone actions
+template<typename T>
+static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
+{
+  auto* gui = Gui::get();
+
+  actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
+    gui->timingCone(static_cast<T>(nullptr), false, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanin/out Cone", [obj, desc, gui]() {
+    bool okay;
+    QString selection = QInputDialog::getItem(
+          nullptr,
+          "Fanin/out Cone",
+          "Cone",
+          {"Fanin", "Fanout", "Both"},
+          2, // Both
+          false,
+          &okay);
+    if (okay) {
+      const bool fanin = selection == "Fanin" || selection == "Both";
+      const bool fanout = selection == "Fanout" || selection == "Both";
+      gui->timingCone(obj, fanin, fanout);
+    }
+    return desc->makeSelected(obj, nullptr);
+  }});
+}
+
 // get list of tech layers as EditorOption list
 static void addLayersToOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
 {
@@ -1156,16 +1185,12 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
 
 Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
 {
-  auto gui = Gui::get();
   auto iterm = std::any_cast<odb::dbITerm*>(object);
 
-  return {{"Fanin/out Cone", [this, iterm, gui]() {
-    gui->timingCone(iterm, true, true);
-    return makeSelected(iterm, nullptr);
-  }}, {std::string(deselect_action_), [this, iterm, gui]() {
-    gui->timingCone(static_cast<odb::dbITerm*>(nullptr), true, true);
-    return makeSelected(iterm, nullptr);
-  }}};
+  Descriptor::Actions actions;
+  addTimingConeActions<odb::dbITerm*>(iterm, this, actions);
+
+  return actions;
 }
 
 Selected DbITermDescriptor::makeSelected(std::any object,
@@ -1258,16 +1283,12 @@ Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
 
 Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
 {
-  auto gui = Gui::get();
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
 
-  return {{"Fanin/out Cone", [this, bterm, gui]() {
-    gui->timingCone(bterm, true, true);
-    return makeSelected(bterm, nullptr);
-  }}, {std::string(deselect_action_), [this, bterm, gui]() {
-    gui->timingCone(static_cast<odb::dbBTerm*>(nullptr), true, true);
-    return makeSelected(bterm, nullptr);
-  }}};
+  Descriptor::Actions actions;
+  addTimingConeActions<odb::dbBTerm*>(bterm, this, actions);
+
+  return actions;
 }
 
 Selected DbBTermDescriptor::makeSelected(std::any object,
