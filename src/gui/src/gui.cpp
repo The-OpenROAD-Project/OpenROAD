@@ -128,7 +128,9 @@ void Gui::unregisterRenderer(Renderer* renderer)
     return;
   }
 
-  main_window->getControls()->unregisterRenderer(renderer);
+  if (Gui::enabled()) {
+    main_window->getControls()->unregisterRenderer(renderer);
+  }
 
   renderers_.erase(renderer);
   redraw();
@@ -136,6 +138,9 @@ void Gui::unregisterRenderer(Renderer* renderer)
 
 void Gui::redraw()
 {
+  if (!Gui::enabled()) {
+    return;
+  }
   main_window->redraw();
 }
 
