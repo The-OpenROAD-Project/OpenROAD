@@ -988,7 +988,7 @@ void DbNetDescriptor::highlight(std::any object,
   }
 }
 
-bool DbNetDescriptor::isLargeHighlight(std::any object) const
+bool DbNetDescriptor::isSlowHighlight(std::any object) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   return net->getSigType().isSupply();

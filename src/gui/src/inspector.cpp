@@ -874,7 +874,7 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
 
   if (item_data.isValid()) {
     Selected sel = item_data.value<Selected>();
-    if (!sel.isLargeHighlight()) {
+    if (!sel.isSlowHighlight()) {
       // emit the selected item as something to focus on
       emit focus(sel);
     }

@@ -303,7 +303,7 @@ class Descriptor
   virtual void highlight(std::any object,
                          Painter& painter,
                          void* additional_data = nullptr) const = 0;
-  virtual bool isLargeHighlight(std::any /* object */) const { return false; }
+  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -345,7 +345,7 @@ class Selected
                  int pen_width = 0,
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
-  bool isLargeHighlight() const { return descriptor_->isLargeHighlight(object_); }
+  bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
 
