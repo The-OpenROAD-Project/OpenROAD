@@ -3410,9 +3410,9 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
     if (isAddPathCost) {
-      addPathCost(connFig.get(), true);
+      addPathCost(connFig.get());
     } else {
-      subPathCost(connFig.get(), true);
+      subPathCost(connFig.get());
     }
   }
 }
