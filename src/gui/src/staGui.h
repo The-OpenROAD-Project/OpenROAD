@@ -162,6 +162,7 @@ class TimingPathNode
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
   const odb::Rect getPinBBox() const;
+  const odb::Rect getPinLargestBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }
@@ -382,7 +383,7 @@ class TimingConeRenderer : public gui::Renderer
   void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
   void setPin(sta::Pin* pin, bool fanin, bool fanout);
 
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+  virtual void drawObjects(gui::Painter& painter) override;
 
  private:
   using PinList = std::vector<std::unique_ptr<TimingPathNode>>;

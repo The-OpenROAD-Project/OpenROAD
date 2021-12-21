@@ -588,6 +588,44 @@ const odb::Rect TimingPathNode::getPinBBox() const
   }
 }
 
+const odb::Rect TimingPathNode::getPinLargestBox() const
+{
+  if (isPinITerm()) {
+    auto* iterm = getPinAsITerm();
+    odb::dbTransform transform;
+    iterm->getInst()->getTransform(transform);
+
+    odb::Rect pin_rect;
+    auto* mterm = iterm->getMTerm();
+    for (auto* pin : mterm->getMPins()) {
+      for (auto* box : pin->getGeometry()) {
+        odb::Rect box_rect;
+        box->getBox(box_rect);
+        if (pin_rect.area() < box_rect.area()) {
+          transform.apply(box_rect);
+          pin_rect = box_rect;
+        }
+      }
+    }
+
+    return pin_rect;
+  } else {
+    auto* bterm = getPinAsBTerm();
+
+    odb::Rect pin_rect;
+    for (auto* pin : bterm->getBPins()) {
+      for (auto* box : pin->getBoxes()) {
+        odb::Rect box_rect;
+        box->getBox(box_rect);
+        if (pin_rect.area() < box_rect.area()) {
+          pin_rect = box_rect;
+        }
+      }
+    }
+    return pin_rect;
+  }
+}
+
 /////////
 
 TimingPathDetailModel::TimingPathDetailModel(bool is_capture, sta::dbSta* sta, QObject* parent)
@@ -1011,8 +1049,8 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         continue;
       }
 
-      const odb::Rect source_rect = source_node->getPinBBox();
-      const odb::Rect sink_rect = pin->getPinBBox();
+      const odb::Rect source_rect = source_node->getPinLargestBox();
+      const odb::Rect sink_rect = pin->getPinLargestBox();
 
       const odb::Point source_pt(0.5 * (source_rect.xMin() + source_rect.xMax()),
                                  0.5 * (source_rect.yMin() + source_rect.yMax()));
@@ -1026,11 +1064,11 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
 
   // annotate with depth
   const auto text_anchor = gui::Painter::Anchor::CENTER;
-  const double text_margin = 0.8;
+  const double text_margin = 2.0;
   painter.setPen(gui::Painter::white, true);
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
-      const odb::Rect pin_rect = pin->getPinBBox();
+      const odb::Rect pin_rect = pin->getPinLargestBox();
       const odb::Point pin_pt(0.5 * (pin_rect.xMin() + pin_rect.xMax()),
                               0.5 * (pin_rect.yMin() + pin_rect.yMax()));
 
@@ -1186,8 +1224,6 @@ void TimingConeRenderer::buildConnectivity()
 
 void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
 {
-  auto* network = sta_->getDbNetwork();
-
   // annotate critical path and work forwards/backwards until all pins have timing
   std::vector<TimingPathNode*> pin_order;
   for (int i = 0; i <= std::max(-min_map_index_, max_map_index_); i++) {

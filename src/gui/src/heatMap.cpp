@@ -591,8 +591,9 @@ void HeatMapDataSource::ensureMap()
 
 void HeatMapDataSource::updateMapColors()
 {
+  const int color_count = color_generator_.getColorCount();
   color_lower_bounds_.clear();
-  color_lower_bounds_.resize(color_generator_.getColorCount() + 1);
+  color_lower_bounds_.resize(color_count + 1);
   // generate ranges for colors
   if (log_scale_) {
     double range = display_range_max_;
@@ -600,18 +601,18 @@ void HeatMapDataSource::updateMapColors()
       range = display_range_max_ / display_range_min_;
     }
 
-    const double step = std::pow(range, 1.0 / color_generator_.getColorCount());
+    const double step = std::pow(range, 1.0 / color_count);
 
-    for (int i = 0; i <= color_generator_.getColorCount(); i++) {
+    for (int i = 0; i <= color_count; i++) {
       double start = display_range_max_ / std::pow(step, i);
       if (i == color_generator_.getColorCount()) {
         start = display_range_min_;
       }
-      color_lower_bounds_[color_generator_.getColorCount() - i] = start;
+      color_lower_bounds_[color_count - i] = start;
     }
   } else {
-    const double step = (display_range_max_ - display_range_min_) / color_generator_.getColorCount();
-    for (int i = 0; i <= color_generator_.getColorCount(); i++) {
+    const double step = (display_range_max_ - display_range_min_) / color_count;
+    for (int i = 0; i <= color_count; i++) {
       color_lower_bounds_[i] = display_range_min_ + i * step;
     }
   }
