@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,58 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
+#include "dbVector.h"
 #include "odb.h"
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
-class _dbMTerm;
-class _dbBox;
-class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
-template <class T>
-class dbTable;
-class _dbAccessPoint;
+class _dbDatabase;
+class _dbTechLayer;
+// User Code Begin Classes
+// User Code End Classes
 
-class _dbMPin : public _dbObject
+// User Code Begin Structs
+// User Code End Structs
+
+class _dbAccessPoint : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  dbId<_dbMTerm> _mterm;
-  dbId<_dbBox> _geoms;
-  dbId<_dbMPin> _next_mpin;
-  dbTable<_dbAccessPoint>* ap_tbl_;
+  // User Code Begin Enums
+  // User Code End Enums
 
-  _dbMPin(_dbDatabase*, const _dbMPin& p);
-  _dbMPin(_dbDatabase*);
-  ~_dbMPin();
+  Point point_;
+  dbId<_dbTechLayer> layer_;
+  dbVector<bool> accesses_;
+  uint type_low_;
+  uint type_high_;
 
-  bool operator==(const _dbMPin& rhs) const;
-  bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbMPin& rhs) const;
+  // User Code Begin Fields
+  // User Code End Fields
+  _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
+  _dbAccessPoint(_dbDatabase*);
+  ~_dbAccessPoint();
+  bool operator==(const _dbAccessPoint& rhs) const;
+  bool operator!=(const _dbAccessPoint& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbAccessPoint& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbAccessPoint& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
+  // User Code End Methods
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin);
-dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin);
-
+dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj);
+// User Code Begin General
+// User Code End General
 }  // namespace odb
+   // Generator Code End Header

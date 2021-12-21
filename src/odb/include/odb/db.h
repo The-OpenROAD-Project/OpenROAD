@@ -141,6 +141,7 @@ class dbModule;
 class dbModInst;
 class dbGroup;
 class dbGCellGrid;
+class dbAccessPoint;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -3198,7 +3199,7 @@ class dbITerm : public dbObject
   ///
   /// Get the instance of this instance-terminal.
   ///
-  dbInst* getInst();
+  dbInst* getInst() const;
 
   ///
   /// Get the net of this instance-terminal.
@@ -3363,6 +3364,9 @@ class dbITerm : public dbObject
   ///
   bool getAvgXY(int* x, int* y);
 
+  void addAccessPoint(dbAccessPoint* ap);
+
+  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Translate a database-id back to a pointer.
   ///
@@ -8858,6 +8862,54 @@ class dbGCellGrid : public dbObject
   std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
                                                               = nullptr);
   // User Code End dbGCellGrid
+};
+
+class dbAccessPoint : public dbObject
+{
+ public:
+  enum AccessType
+  {
+    OnGrid,
+    HalfGrid,
+    Center,
+    EncOpt,
+    NearbyGrid
+  };
+  // User Code Begin dbAccessPointEnums
+  // User Code End dbAccessPointEnums
+  void setPoint(Point point);
+
+  Point getPoint() const;
+
+  void setLayer(dbTechLayer* layer);
+
+  void setAccesses(std::vector<bool> accesses);
+
+  void getAccesses(std::vector<bool>& tbl) const;
+
+  // User Code Begin dbAccessPoint
+  void setTypeLow(AccessType type_low);
+
+  AccessType getTypeLow() const;
+
+  void setTypeHigh(AccessType type_high);
+
+  AccessType getTypeHigh() const;
+
+  void setAccess(bool access, dbDirection dir);
+
+  bool hasAccess(dbDirection dir = dbDirection::NONE) const;
+
+  dbTechLayer* getLayer() const;
+
+  dbMPin* getMPin() const;
+
+  static dbAccessPoint* create(dbMPin* pin);
+
+  static dbAccessPoint* getAccessPoint(dbMPin* pin, uint dbid);
+
+  static void destroy(dbAccessPoint* ap);
+  // User Code End dbAccessPoint
 };
 
 // Generator Code End ClassDefinition

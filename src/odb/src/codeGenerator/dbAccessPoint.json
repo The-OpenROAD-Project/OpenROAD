@@ -1,0 +1,47 @@
+{
+    "name": "dbAccessPoint",
+    "parent": "dbObject",
+    "fields": [
+      {
+        "name": "point_",
+        "type": "Point"
+      },
+      {
+        "type": "dbId<_dbTechLayer>",
+        "name": "layer_",
+        "flags":["no-get"],
+        "parent": "dbTechLayer"
+      },
+      {
+        "name": "accesses_",
+        "type": "dbVector<bool>"
+      },
+      {
+        "name": "type_low_",
+        "type": "uint",
+        "flags" : ["private"]
+      },
+      {
+        "name": "type_high_",
+        "type": "uint",
+        "flags" : ["private"]
+      }
+    ],
+    "enums": [
+        {
+          "name": "AccessType",
+          "values": [
+            "OnGrid",
+            "HalfGrid",
+            "Center",
+            "EncOpt",
+            "NearbyGrid"
+          ],
+          "public": true
+        }
+      ],
+      "h_includes": [
+        "dbVector.h"
+      ],
+      "cpp_includes": ["dbTypes.h"]
+  }

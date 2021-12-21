@@ -39,22 +39,29 @@
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbAccessPoint.h"
 
 namespace odb {
 
 template class dbTable<_dbMTerm>;
 
-_dbMPin::_dbMPin(_dbDatabase*)
+_dbMPin::_dbMPin(_dbDatabase* db)
 {
+  ap_tbl_ = new dbTable<_dbAccessPoint>(
+      db, this, (GetObjTbl_t) &_dbMPin::getObjectTable, dbAccessPointObj);
+  ZALLOCATED(ap_tbl_);
 }
 
-_dbMPin::_dbMPin(_dbDatabase*, const _dbMPin& p)
+_dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
     : _mterm(p._mterm), _geoms(p._geoms), _next_mpin(p._next_mpin)
 {
+  ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *p.ap_tbl_);
+  ZALLOCATED(ap_tbl_);
 }
 
 _dbMPin::~_dbMPin()
 {
+  delete ap_tbl_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
@@ -62,6 +69,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
   stream << mpin._mterm;
   stream << mpin._geoms;
   stream << mpin._next_mpin;
+  stream << *mpin.ap_tbl_;
   return stream;
 }
 
@@ -70,6 +78,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin._mterm;
   stream >> mpin._geoms;
   stream >> mpin._next_mpin;
+  stream >> *mpin.ap_tbl_;
   return stream;
 }
 
@@ -84,6 +93,9 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   if (_next_mpin != rhs._next_mpin)
     return false;
 
+  if (*ap_tbl_ != *rhs.ap_tbl_)
+    return false;
+
   return true;
 }
 
@@ -95,6 +107,7 @@ void _dbMPin::differences(dbDiff& diff,
   DIFF_FIELD(_mterm);
   DIFF_FIELD(_geoms);
   DIFF_FIELD(_next_mpin);
+  DIFF_TABLE_NO_DEEP(ap_tbl_);
   DIFF_END
 }
 
@@ -104,7 +117,19 @@ void _dbMPin::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_mterm);
   DIFF_OUT_FIELD(_geoms);
   DIFF_OUT_FIELD(_next_mpin);
+  DIFF_OUT_TABLE_NO_DEEP(ap_tbl_);
   DIFF_END
+}
+
+dbObjectTable* _dbMPin::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbAccessPointObj:
+      return ap_tbl_;
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
 }
 
 ////////////////////////////////////////////////////////////////////
