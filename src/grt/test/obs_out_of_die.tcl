@@ -10,7 +10,7 @@ set guide_file [make_result_file obs_out_of_die.guide]
 
 set_routing_layers -signal met1-met5
 
-global_route
+global_route -verbose
 
 write_guides $guide_file
 

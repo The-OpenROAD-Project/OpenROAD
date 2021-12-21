@@ -6,7 +6,7 @@ read_lef "sky130hs/sky130hs_std_cell.lef"
 
 read_def "gcd_sky130.def"
 
-global_route
+global_route -verbose
 
 catch {repair_antennas sky130_fd_sc_hs__diode_2/DIOD} error
 puts $error

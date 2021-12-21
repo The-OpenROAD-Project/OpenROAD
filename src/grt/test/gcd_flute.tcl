@@ -6,7 +6,7 @@ read_def "gcd.def"
 set guide_file [make_result_file gcd_flute.guide]
 
 set_routing_alpha 0.0
-global_route
+global_route -verbose
 
 write_guides $guide_file
 
