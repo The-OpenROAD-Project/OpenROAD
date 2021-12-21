@@ -47,22 +47,6 @@ namespace grt {
 
 class Grid
 {
- private:
-  odb::Rect die_area_;
-  int tile_width_;
-  int tile_height_;
-  int x_grids_;
-  int y_grids_;
-  bool perfect_regular_x_;
-  bool perfect_regular_y_;
-  int num_layers_;
-  int pitches_in_tile_ = 15;
-  std::vector<int> spacings_;
-  std::vector<int> min_widths_;
-  std::vector<int> horizontal_edges_capacities_;
-  std::vector<int> vertical_edges_capacities_;
-  std::map<int, std::vector<odb::Rect>> obstructions_;
-
  public:
   Grid() = default;
   ~Grid() = default;
@@ -81,11 +65,11 @@ class Grid
             const std::vector<int>& verticalCapacities,
             const std::map<int, std::vector<odb::Rect>>& obstructions);
 
-  typedef struct
+  struct Tile
   {
-    int _x;
-    int _y;
-  } TILE;
+    int x;
+    int y;
+  };
 
   void clear();
 
@@ -157,7 +141,7 @@ class Grid
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstruction,
+  std::pair<Tile, Tile> getBlockedTiles(const odb::Rect& obstruction,
                                         odb::Rect& first_tile_bds,
                                         odb::Rect& last_tile_bds);
 
@@ -169,6 +153,22 @@ class Grid
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
+
+ private:
+  odb::Rect die_area_;
+  int tile_width_;
+  int tile_height_;
+  int x_grids_;
+  int y_grids_;
+  bool perfect_regular_x_;
+  bool perfect_regular_y_;
+  int num_layers_;
+  int pitches_in_tile_ = 15;
+  std::vector<int> spacings_;
+  std::vector<int> min_widths_;
+  std::vector<int> horizontal_edges_capacities_;
+  std::vector<int> vertical_edges_capacities_;
+  std::map<int, std::vector<odb::Rect>> obstructions_;
 };
 
 }  // namespace grt

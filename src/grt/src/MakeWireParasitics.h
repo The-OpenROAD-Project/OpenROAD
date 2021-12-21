@@ -74,7 +74,7 @@ class MakeWireParasitics
                          std::vector<Pin>& pins,
                          std::vector<GSegment>& routes);
 
- protected:
+ private:
   void makePinRoutePts(std::vector<Pin>& pins);
   RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);

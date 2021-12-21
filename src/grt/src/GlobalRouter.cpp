@@ -1065,7 +1065,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 {
   odb::Rect first_tile_box;
   odb::Rect last_tile_box;
-  std::pair<Grid::TILE, Grid::TILE> tiles_to_adjust;
+  std::pair<Grid::Tile, Grid::Tile> tiles_to_adjust;
 
   odb::Rect die_box = grid_->getGridArea();
 
@@ -1081,8 +1081,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 
   tiles_to_adjust
       = grid_->getBlockedTiles(region, first_tile_box, last_tile_box);
-  Grid::TILE& first_tile = tiles_to_adjust.first;
-  Grid::TILE& last_tile = tiles_to_adjust.second;
+  Grid::Tile& first_tile = tiles_to_adjust.first;
+  Grid::Tile& last_tile = tiles_to_adjust.second;
 
   RoutingTracks routing_tracks = getRoutingTracksByIndex(layer);
   int track_space = routing_tracks.getUsePitch();
@@ -1098,18 +1098,18 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   if (!vertical) {
     // Setting capacities of edges completely contains the adjust region
     // according the percentage of reduction
-    for (int x = first_tile._x; x < last_tile._x; x++) {
-      for (int y = first_tile._y; y <= last_tile._y; y++) {
+    for (int x = first_tile.x; x < last_tile.x; x++) {
+      for (int y = first_tile.y; y <= last_tile.y; y++) {
         int edge_cap
             = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
 
-        if (y == first_tile._y) {
+        if (y == first_tile.y) {
           edge_cap -= first_tile_reduce;
           if (edge_cap < 0)
             edge_cap = 0;
           fastroute_->addAdjustment(
               x, y, layer, x + 1, y, layer, edge_cap, true);
-        } else if (y == last_tile._y) {
+        } else if (y == last_tile.y) {
           edge_cap -= last_tile_reduce;
           if (edge_cap < 0)
             edge_cap = 0;
@@ -1124,20 +1124,20 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   } else {
     // If preferred direction is vertical, only first and last columns will have
     // specific adjustments
-    for (int x = first_tile._x; x <= last_tile._x; x++) {
+    for (int x = first_tile.x; x <= last_tile.x; x++) {
       // Setting capacities of edges completely contains the adjust region
       // according the percentage of reduction
-      for (int y = first_tile._y; y < last_tile._y; y++) {
+      for (int y = first_tile.y; y < last_tile.y; y++) {
         int edge_cap
             = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
 
-        if (x == first_tile._x) {
+        if (x == first_tile.x) {
           edge_cap -= first_tile_reduce;
           if (edge_cap < 0)
             edge_cap = 0;
           fastroute_->addAdjustment(
               x, y, layer, x, y + 1, layer, edge_cap, true);
-        } else if (x == last_tile._x) {
+        } else if (x == last_tile.x) {
           edge_cap -= last_tile_reduce;
           if (edge_cap < 0)
             edge_cap = 0;
@@ -1160,7 +1160,7 @@ void GlobalRouter::computeObstructionsAdjustments()
   for (auto const& [level, tech_layer] : routing_layers_) {
     std::vector<odb::Rect> layer_obstructions = obstructions[level];
     if (!layer_obstructions.empty()) {
-      std::pair<Grid::TILE, Grid::TILE> blocked_tiles;
+      std::pair<Grid::Tile, Grid::Tile> blocked_tiles;
 
       bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
@@ -1192,8 +1192,8 @@ void GlobalRouter::computeObstructionsAdjustments()
         blocked_tiles
             = grid_->getBlockedTiles(obs, first_tile_box, last_tile_box);
 
-        Grid::TILE& first_tile = blocked_tiles.first;
-        Grid::TILE& last_tile = blocked_tiles.second;
+        Grid::Tile& first_tile = blocked_tiles.first;
+        Grid::Tile& last_tile = blocked_tiles.second;
 
         int first_tile_reduce = grid_->computeTileReduce(
             obs, first_tile_box, track_space, true, tech_layer->getDirection());
@@ -1202,9 +1202,9 @@ void GlobalRouter::computeObstructionsAdjustments()
             obs, last_tile_box, track_space, false, tech_layer->getDirection());
 
         if (!vertical) {
-          for (int x = first_tile._x; x < last_tile._x; x++) {
-            for (int y = first_tile._y; y <= last_tile._y; y++) {
-              if (y == first_tile._y) {
+          for (int x = first_tile.x; x < last_tile.x; x++) {
+            for (int y = first_tile.y; y <= last_tile.y; y++) {
+              if (y == first_tile.y) {
                 int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
                 edge_cap -= first_tile_reduce;
@@ -1212,7 +1212,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                   edge_cap = 0;
                 fastroute_->addAdjustment(
                     x, y, level, x + 1, y, level, edge_cap, true);
-              } else if (y == last_tile._y) {
+              } else if (y == last_tile.y) {
                 int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
                 edge_cap -= last_tile_reduce;
@@ -1227,9 +1227,9 @@ void GlobalRouter::computeObstructionsAdjustments()
             }
           }
         } else {
-          for (int x = first_tile._x; x <= last_tile._x; x++) {
-            for (int y = first_tile._y; y < last_tile._y; y++) {
-              if (x == first_tile._x) {
+          for (int x = first_tile.x; x <= last_tile.x; x++) {
+            for (int y = first_tile.y; y < last_tile.y; y++) {
+              if (x == first_tile.x) {
                 int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
                 edge_cap -= first_tile_reduce;
@@ -1237,7 +1237,7 @@ void GlobalRouter::computeObstructionsAdjustments()
                   edge_cap = 0;
                 fastroute_->addAdjustment(
                     x, y, level, x, y + 1, level, edge_cap, true);
-              } else if (x == last_tile._x) {
+              } else if (x == last_tile.x) {
                 int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
                 edge_cap -= last_tile_reduce;
