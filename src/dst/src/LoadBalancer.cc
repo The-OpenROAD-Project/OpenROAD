@@ -78,7 +78,7 @@ void LoadBalancer::handle_accept(BalancerConnection::pointer connection,
 {
   if (!err) {
     ip::address workerAddress;
-    unsigned short port;
+    unsigned short port = 0;
     {
       std::lock_guard<std::mutex> lock(workers_mutex_);
       if (!workers_.empty()) {
