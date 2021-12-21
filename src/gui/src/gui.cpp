@@ -666,7 +666,7 @@ void SpectrumGenerator::drawLegend(Painter& painter, const std::vector<std::pair
   // draw color map
   double box_top = legend_top;
   for (int i = 0; i < color_count; i += color_incr) {
-    const double color_idx = 100.0 * (color_count - 1 - i);
+    const double color_idx = scale_ * (color_count - 1 - i);
 
     painter.setPen(getColor(color_idx / color_count), true);
     painter.drawLine(odb::Point(legend_left, box_top), odb::Point(legend_right, box_top));

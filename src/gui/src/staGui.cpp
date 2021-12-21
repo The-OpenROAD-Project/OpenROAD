@@ -1097,6 +1097,22 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  // draw legend
+  const int legend_keys = 5;
+  const int color_count = color_generator_.getColorCount();
+  auto* units = sta_->units()->timeUnit();
+  const std::string text_units = std::string(units->scaleAbreviation()) + units->suffix();
+  std::vector<std::pair<int, std::string>> legend;
+  for (int i = 0; i < legend_keys; i++) {
+    const double scale = static_cast<double>(i) / (legend_keys - 1);
+    const int color_index = color_count * scale;
+    const double slack = max_timing_ - timing_range * scale;
+    const std::string text = units->asString(slack) + text_units;
+    legend.push_back({color_index, text});
+  }
+  std::reverse(legend.begin(), legend.end());
+  color_generator_.drawLegend(painter, legend);
 }
 
 void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_map)
