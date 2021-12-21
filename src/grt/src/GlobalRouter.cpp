@@ -3268,7 +3268,7 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
                      via->getName());
           default_vias[i] = via;
           logger_->info(
-              GRT, 224, "Chose via {} as default.", via->getConstName());
+              GRT, 224, "Using via {} as default.", via->getConstName());
           break;
         }
       }
