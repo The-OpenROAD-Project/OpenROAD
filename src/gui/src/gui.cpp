@@ -629,6 +629,59 @@ Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
                         alpha);
 }
 
+void SpectrumGenerator::drawLegend(Painter& painter, const std::vector<std::pair<int, std::string>>& legend_key) const
+{
+  const odb::Rect& bounds = painter.getBounds();
+  const double pixel_per_dbu = painter.getPixelsPerDBU();
+  const int legend_offset = 20 / pixel_per_dbu; // 20 pixels
+  const double box_height = 1 / pixel_per_dbu; // 1 pixels
+  const int legend_width = 20 / pixel_per_dbu; // 20 pixels
+  const int text_offset = 2 / pixel_per_dbu;
+  const int legend_top = bounds.yMax() - legend_offset;
+  const int legend_right = bounds.xMax() - legend_offset;
+  const int legend_left = legend_right - legend_width;
+  const Painter::Anchor key_anchor = Painter::Anchor::RIGHT_CENTER;
+
+  odb::Rect legend_bounds(legend_left, legend_top, legend_right + text_offset, legend_top);
+
+  const int color_count = getColorCount();
+  const int color_incr = 2;
+
+  std::vector<std::pair<odb::Point, std::string>> legend_key_points;
+  for (const auto& [legend_value, legend_text] : legend_key) {
+    const int text_right = legend_left - text_offset;
+    const int box_top = legend_top - ((color_count - legend_value) * box_height) / color_incr;
+
+    legend_key_points.push_back({{text_right, box_top}, legend_text});
+    const odb::Rect text_bounds = painter.stringBoundaries(text_right, box_top, key_anchor, legend_text);
+
+    legend_bounds.merge(text_bounds);
+  }
+
+  // draw background
+  painter.setPen(Painter::dark_gray, true);
+  painter.setBrush(Painter::dark_gray);
+  painter.drawRect(legend_bounds, 10, 10);
+
+  // draw color map
+  double box_top = legend_top;
+  for (int i = 0; i < color_count; i += color_incr) {
+    const double color_idx = 100.0 * (color_count - 1 - i);
+
+    painter.setPen(getColor(color_idx / color_count), true);
+    painter.drawLine(odb::Point(legend_left, box_top), odb::Point(legend_right, box_top));
+    box_top -= box_height;
+  }
+
+  // draw key values
+  painter.setPen(Painter::black, true);
+  painter.setBrush(Painter::transparent);
+  for (const auto& [pt, text] : legend_key_points) {
+    painter.drawString(pt.x(), pt.y(), key_anchor, text);
+  }
+  painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
+}
+
 void Gui::load_design()
 {
   main_window->postReadDb(main_window->getDb());

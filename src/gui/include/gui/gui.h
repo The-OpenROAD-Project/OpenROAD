@@ -483,6 +483,8 @@ class SpectrumGenerator
   int getColorCount() const;
   Painter::Color getColor(double value, int alpha = 150) const;
 
+  void drawLegend(Painter& painter, const std::vector<std::pair<int, std::string>>& legend_key) const;
+
  private:
   static const unsigned char spectrum_[256][3];
   double scale_;
