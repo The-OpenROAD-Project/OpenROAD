@@ -89,6 +89,7 @@ GlobalRouter::GlobalRouter()
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(0),
+      silence_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
       seed_(0),
@@ -207,11 +208,13 @@ void GlobalRouter::globalRoute()
                       : max_routing_layer_;
 
   std::vector<Net*> nets = startFastRoute(min_layer, max_layer, NetType::All);
-  reportResources();
+  if (!silence_)
+    reportResources();
 
   routes_ = findRouting(nets, min_layer, max_layer);
 
-  reportCongestion();
+  if (!silence_)
+    reportCongestion();
   computeWirelength();
 }
 
@@ -228,7 +231,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
   int violations_cnt = -1;
   int itr = 0;
   while (violations_cnt != 0 && itr < iterations) {
-    logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
+    if (!silence_)
+      logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
     // Antenna checker requires local connections so copy the routes
     // so the originals are not side-effected.
@@ -243,8 +247,9 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
       IncrementalGRoute incr_groute(this, block_);
       clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
-      logger_->info(
-          GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
+      if (!silence_)
+        logger_->info(
+            GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
 
       antenna_repair.legalizePlacedCells();
       incr_groute.updateRoutes();
@@ -735,8 +740,10 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
-  logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
-  logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
+  if (!silence_) {
+    logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
+    logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
+  }
 
   fastroute_->initEdges();
 }
@@ -1165,11 +1172,13 @@ void GlobalRouter::computeObstructionsAdjustments()
       bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-      logger_->info(GRT,
-                    17,
-                    "Processing {} blockages on layer {}.",
-                    layer_obstructions.size(),
-                    tech_layer->getName());
+      if (!silence_) {
+        logger_->info(GRT,
+                      17,
+                      "Processing {} blockages on layer {}.",
+                      layer_obstructions.size(),
+                      tech_layer->getName());
+      }
 
       int track_space = grid_->getMinWidths()[level - 1];
 
@@ -1178,7 +1187,7 @@ void GlobalRouter::computeObstructionsAdjustments()
             || obs.xMin() >= grid_->getXMax()
             || obs.yMax() <= grid_->getYMin()
             || obs.yMin() >= grid_->getYMax()) {
-          logger_->info(
+          logger_->warn(
               GRT,
               209,
               "Ignoring an obstruction on layer {} outside the die area.",
@@ -1404,7 +1413,8 @@ void GlobalRouter::writeGuides(const char* file_name)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+  if (!silence_)
+    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   int final_layer;
 
   // Sort nets so guide file net order is consistent.
@@ -1776,10 +1786,11 @@ void GlobalRouter::computeWirelength()
       }
     }
   }
-  logger_->info(GRT,
-                18,
-                "Total wirelength: {} um",
-                total_wirelength / block_->getDefUnits());
+  if (!silence_)
+    logger_->info(GRT,
+                  18,
+                  "Total wirelength: {} um",
+                  total_wirelength / block_->getDefUnits());
 }
 
 // This needs to be rewritten to shift down undeleted elements instead
@@ -2448,13 +2459,14 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
                                                num_tracks,
                                                orientation);
     routing_tracks.push_back(layer_tracks);
-    logger_->info(
-        GRT,
-        88,
-        "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
-        tech_layer->getName(),
-        static_cast<float>(dbuToMicrons(layer_tracks.getTrackPitch())),
-        static_cast<float>(dbuToMicrons(layer_tracks.getLineToViaPitch())));
+    if (!silence_)
+      logger_->info(
+          GRT,
+          88,
+          "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
+          tech_layer->getName(),
+          static_cast<float>(dbuToMicrons(layer_tracks.getTrackPitch())),
+          static_cast<float>(dbuToMicrons(layer_tracks.getLineToViaPitch())));
   }
 }
 
@@ -2633,7 +2645,8 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> clock_nets = sta_->findClkNets();
 
-  logger_->info(GRT, 19, "Found {} clock nets.", clock_nets.size());
+  if (!silence_)
+    logger_->info(GRT, 19, "Found {} clock nets.", clock_nets.size());
 
   for (odb::dbNet* net : clock_nets) {
     net->setSigType(odb::dbSigType::CLOCK);
@@ -2947,7 +2960,8 @@ void GlobalRouter::initObstructions()
   obstructions_cnt += findInstancesObstructions(die_area, layer_extensions);
   findNetsObstructions(die_area);
 
-  logger_->info(GRT, 4, "Blockages: {}", obstructions_cnt);
+  if (!silence_)
+    logger_->info(GRT, 4, "Blockages: {}", obstructions_cnt);
 }
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
@@ -3120,7 +3134,8 @@ int GlobalRouter::findInstancesObstructions(
         GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
-  logger_->info(GRT, 3, "Macros: {}", macros_cnt);
+  if (!silence_)
+    logger_->info(GRT, 3, "Macros: {}", macros_cnt);
   return obstructions_cnt;
 }
 
@@ -3248,7 +3263,12 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
     if (prop == nullptr) {
       continue;
     } else {
-      logger_->info(GRT, 8, "Default via: {}.", via->getConstName());
+      debugPrint(logger_,
+                 utl::GRT,
+                 "l2v_pitch",
+                 1,
+                 "Default via: {}.",
+                 via->getConstName());
       default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
     }
   }
@@ -3267,8 +3287,12 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
                      via->getTopLayer()->getName(),
                      via->getName());
           default_vias[i] = via;
-          logger_->info(
-              GRT, 224, "Using via {} as default.", via->getConstName());
+          debugPrint(logger_,
+                   utl::GRT,
+                   "l2v_pitch",
+                   1,
+                   "Using via {} as default.",
+                   via->getConstName());
           break;
         }
       }
@@ -3316,11 +3340,13 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 {
   odb::dbTechLayer* min_layer = routing_layers_[min_routing_layer];
   odb::dbTechLayer* max_layer = routing_layers_[max_routing_layer];
-  logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
-  logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
-  logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
-  logger_->info(
-      GRT, 23, "Grid origin: ({}, {})", grid_origin_.x(), grid_origin_.y());
+  if (!silence_) {
+    logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
+    logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
+    logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
+    logger_->info(
+        GRT, 23, "Grid origin: ({}, {})", grid_origin_.x(), grid_origin_.y());
+  }
 }
 
 void GlobalRouter::reportResources()
@@ -3609,7 +3635,8 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
     std::vector<Net*> dirty_nets = startFastRoute(
         min_routing_layer_, max_routing_layer_, NetType::Antenna);
     fastroute_->setVerbose(0);
-    logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
+    if (!silence_)
+      logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
         debugPrint(
