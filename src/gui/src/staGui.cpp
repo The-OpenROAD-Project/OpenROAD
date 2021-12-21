@@ -77,8 +77,6 @@ const Painter::Color TimingPathRenderer::signal_color_ = Painter::Color(gui::Pai
 const Painter::Color TimingPathRenderer::clock_color_ = Painter::Color(gui::Painter::cyan, 100);
 const Painter::Color TimingPathRenderer::capture_clock_color_ = Painter::Color(gui::Painter::green, 100);
 
-const Painter::Color TimingConeRenderer::inst_color_ = Painter::Color(gui::Painter::highlight, 100);
-
 /////////
 
 TimingPathsModel::TimingPathsModel(sta::dbSta* sta, QObject* parent)
@@ -1012,26 +1010,6 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     return;
   }
 
-  // draw instances
-  std::set<odb::dbInst*> instances;
-  for (const auto& [level, pins] : map_) {
-    for (const auto& pin : pins) {
-      if (pin->isPinITerm()) {
-        odb::dbInst* inst = pin->getPinAsITerm()->getInst();
-
-        if (inst != nullptr) {
-          instances.insert(inst);
-        }
-      }
-    }
-  }
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  painter.setPen(inst_color_, true);
-  painter.setBrush(inst_color_);
-  for (auto* inst : instances) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
   // draw timing connections
   const double timing_range = max_timing_ - min_timing_;
 
@@ -1046,14 +1024,44 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     return value;
   };
 
+  // draw instances
+  std::map<odb::dbInst*, TimingPathNode*> instances;
+  for (const auto& [level, pins] : map_) {
+    for (const auto& pin : pins) {
+      if (pin->isPinITerm()) {
+        odb::dbInst* inst = pin->getPinAsITerm()->getInst();
+
+        if (inst != nullptr) {
+          if (instances.count(inst) == 0) {
+            instances[inst] = pin.get();
+          } else {
+            auto& worst_pin = instances[inst];
+            if (!worst_pin->hasValues()) {
+              worst_pin = pin.get();
+            } else if (pin->hasValues()) {
+              if (worst_pin->getPathSlack() > pin->getPathSlack()) {
+                worst_pin = pin.get();
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (const auto& [inst, slack_pin] : instances) {
+    const auto color = color_generator_.getColor(timingToRatio(slack_pin), 150);
+    painter.setPenAndBrush(color, true);
+    inst_descriptor->highlight(inst, painter);
+  }
+
   const int line_width = 2; // 2 pixels
   auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       const auto color = color_generator_.getColor(timingToRatio(pin.get()), 255);
-      painter.setPen(color, true);
-      painter.setBrush(color);
+      painter.setPenAndBrush(color, true);
 
       if (pin->isPinITerm()) {
         iterm_descriptor->highlight(pin->getPinAsITerm(), painter);

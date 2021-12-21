@@ -406,8 +406,6 @@ class TimingConeRenderer : public gui::Renderer
   void getCone(sta::Pin* pin, sta::PinSet* pin_set, sta::BfsIterator& bfs, DepthMapSet& depth_map);
   void buildConnectivity();
   void annotateTiming(sta::Pin* pin);
-
-  static const gui::Painter::Color inst_color_;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
