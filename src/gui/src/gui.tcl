@@ -181,6 +181,47 @@ proc select { args } {
   return [gui::select $type $name $case_sense $highlight]
 }
 
+sta::define_cmd_args "timing_cone" {iterm_or_bterm \
+                                    [-fanin] \
+                                    [-fanout] \
+                                    [-off]
+}
+
+proc timing_cone { args } {
+  sta::parse_key_args "timing_cone" args \
+    keys {} flags {-fanin -fanout -off}
+  if { [info exists flags(-off)] } {
+    sta::check_argc_eq0 "timing_cone" $args
+
+    gui::timing_cone NULL 0 0
+    return
+  }
+
+  sta::check_argc_eq1 "select" $args
+
+  set fanin [info exists flags(-fanin)]
+  set fanout [info exists flags(-fanout)]
+  
+  # clear old one
+  gui::timing_cone NULL 0 0
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GUI 67 "Design not loaded."
+  }
+
+  set term [$block findITerm $args]
+  if { $term == "NULL" } {
+    set term [$block findBTerm $args]
+  }
+  if { $term == "NULL" } {
+    utl::error GUI 68 "Unable to find iterm or bterm: $args."
+  }
+
+  # select new one
+  gui::timing_cone $term $fanin $fanout
+}
+
 namespace eval gui {
   proc parse_options { args_var } {
     set options [gui::DisplayControlMap]
