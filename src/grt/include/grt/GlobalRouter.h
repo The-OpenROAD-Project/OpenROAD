@@ -213,15 +213,13 @@ class GlobalRouter
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
 
- protected:
+ private:
   // Net functions
   int getNetCount() const;
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
-  friend class AntennaRepair;
 
- private:
   void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
@@ -381,6 +379,7 @@ class GlobalRouter
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
+  friend class AntennaRepair;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
