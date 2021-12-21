@@ -51,7 +51,7 @@ class frBPin : public frPin
   // cannot have setterm, must be available when creating
   void setTerm(frBTerm* in) { term_ = in; }
   // others
-  frBlockObjectEnum typeId() const override { return frcPin; }
+  frBlockObjectEnum typeId() const override { return frcBPin; }
 
  protected:
   frBTerm* term_;

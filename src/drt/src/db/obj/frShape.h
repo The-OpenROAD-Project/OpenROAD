@@ -136,7 +136,8 @@ class frRect : public frShape
    */
   bool hasPin() const override
   {
-    return (owner_) && (owner_->typeId() == frcPin);
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
   }
 
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
@@ -266,7 +267,8 @@ class frPatchWire : public frShape
    */
   bool hasPin() const override
   {
-    return (owner_) && (owner_->typeId() == frcPin);
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
   }
 
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
@@ -387,7 +389,8 @@ class frPolygon : public frShape
    */
   bool hasPin() const override
   {
-    return (owner_) && (owner_->typeId() == frcPin);
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
   }
 
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
@@ -573,7 +576,8 @@ class frPathSeg : public frShape
    */
   bool hasPin() const override
   {
-    return (owner_) && (owner_->typeId() == frcPin);
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
   }
 
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }

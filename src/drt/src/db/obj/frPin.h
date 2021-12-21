@@ -67,7 +67,7 @@ class frPin : public frBlockObject
     aps_.push_back(std::move(in));
   }
   // others
-  frBlockObjectEnum typeId() const override { return frcPin; }
+  virtual frBlockObjectEnum typeId() const = 0;
 
  protected:
   // constructors
