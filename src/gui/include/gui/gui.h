@@ -478,13 +478,14 @@ class Renderer
 class SpectrumGenerator
 {
  public:
-  SpectrumGenerator() {};
+  SpectrumGenerator(double max_value);
 
   int getColorCount() const;
   Painter::Color getColor(double value, int alpha = 150) const;
 
  private:
   static const unsigned char spectrum_[256][3];
+  double scale_;
 };
 
 // This is the API for the rest of the program to interact with the

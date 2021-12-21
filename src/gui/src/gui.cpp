@@ -603,6 +603,11 @@ void Renderer::setSettings(const Renderer::Settings& settings)
   }
 }
 
+SpectrumGenerator::SpectrumGenerator(double max_value) :
+    scale_(1.0 / max_value)
+{
+}
+
 int SpectrumGenerator::getColorCount() const
 {
   return 256;
@@ -611,7 +616,7 @@ int SpectrumGenerator::getColorCount() const
 Painter::Color SpectrumGenerator::getColor(double value, int alpha) const
 {
   const int max_index = getColorCount() - 1;
-  int index = std::round(value * max_index);
+  int index = std::round(scale_ * value * max_index);
   if (index < 0) {
     index = 0;
   } else if (index > max_index) {

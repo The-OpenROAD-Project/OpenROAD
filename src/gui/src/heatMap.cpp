@@ -340,7 +340,8 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     show_legend_(false),
     map_(),
     renderer_(std::make_unique<HeatMapRenderer>(name_, *this)),
-    setup_(nullptr)
+    setup_(nullptr),
+    color_generator_(SpectrumGenerator(100.0))
 {
 }
 
@@ -441,7 +442,7 @@ const Painter::Color HeatMapDataSource::getColor(double value) const
     }
   }
 
-  return color_generator_.getColor(value / 100.0, color_alpha_);
+  return color_generator_.getColor(value, color_alpha_);
 }
 
 void HeatMapDataSource::showSetup()

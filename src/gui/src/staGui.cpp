@@ -881,7 +881,8 @@ TimingConeRenderer::TimingConeRenderer() :
     min_map_index_(0),
     max_map_index_(0),
     min_timing_(0.0),
-    max_timing_(0.0)
+    max_timing_(0.0),
+    color_generator_(SpectrumGenerator(1.0))
 {
 }
 
