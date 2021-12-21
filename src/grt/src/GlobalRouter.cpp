@@ -88,8 +88,7 @@ GlobalRouter::GlobalRouter()
       overflow_iterations_(50),
       allow_congestion_(false),
       macro_extension_(0),
-      verbose_(0),
-      silence_(false),
+      verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
       seed_(0),
@@ -208,12 +207,12 @@ void GlobalRouter::globalRoute()
                       : max_routing_layer_;
 
   std::vector<Net*> nets = startFastRoute(min_layer, max_layer, NetType::All);
-  if (!silence_)
+  if (verbose_)
     reportResources();
 
   routes_ = findRouting(nets, min_layer, max_layer);
 
-  if (!silence_)
+  if (verbose_)
     reportCongestion();
   computeWirelength();
 }
@@ -231,7 +230,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
   int violations_cnt = -1;
   int itr = 0;
   while (violations_cnt != 0 && itr < iterations) {
-    if (!silence_)
+    if (verbose_)
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
 
     // Antenna checker requires local connections so copy the routes
@@ -247,7 +246,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
       IncrementalGRoute incr_groute(this, block_);
       clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
-      if (!silence_)
+      if (verbose_)
         logger_->info(
             GRT, 15, "{} diodes inserted.", antenna_repair.getDiodesCount());
 
@@ -740,7 +739,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
-  if (!silence_) {
+  if (verbose_) {
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
@@ -1172,7 +1171,7 @@ void GlobalRouter::computeObstructionsAdjustments()
       bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-      if (!silence_) {
+      if (verbose_) {
         logger_->info(GRT,
                       17,
                       "Processing {} blockages on layer {}.",
@@ -1321,13 +1320,9 @@ void GlobalRouter::addRegionAdjustment(int min_x,
       min_x, min_y, max_x, max_y, layer, reduction_percentage));
 }
 
-void GlobalRouter::setVerbose(const int v)
+void GlobalRouter::setVerbose(const bool v)
 {
   verbose_ = v;
-}
-
-void GlobalRouter::setSilence(const bool s) {
-  silence_ = s;
 }
 
 void GlobalRouter::setOverflowIterations(int iterations)
@@ -1417,7 +1412,7 @@ void GlobalRouter::writeGuides(const char* file_name)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  if (!silence_)
+  if (verbose_)
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   int final_layer;
 
@@ -1790,7 +1785,7 @@ void GlobalRouter::computeWirelength()
       }
     }
   }
-  if (!silence_)
+  if (verbose_)
     logger_->info(GRT,
                   18,
                   "Total wirelength: {} um",
@@ -2463,7 +2458,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
                                                num_tracks,
                                                orientation);
     routing_tracks.push_back(layer_tracks);
-    if (!silence_)
+    if (verbose_)
       logger_->info(
           GRT,
           88,
@@ -2649,7 +2644,7 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> clock_nets = sta_->findClkNets();
 
-  if (!silence_)
+  if (verbose_)
     logger_->info(GRT, 19, "Found {} clock nets.", clock_nets.size());
 
   for (odb::dbNet* net : clock_nets) {
@@ -2964,7 +2959,7 @@ void GlobalRouter::initObstructions()
   obstructions_cnt += findInstancesObstructions(die_area, layer_extensions);
   findNetsObstructions(die_area);
 
-  if (!silence_)
+  if (verbose_)
     logger_->info(GRT, 4, "Blockages: {}", obstructions_cnt);
 }
 
@@ -3138,7 +3133,7 @@ int GlobalRouter::findInstancesObstructions(
         GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
-  if (!silence_)
+  if (verbose_)
     logger_->info(GRT, 3, "Macros: {}", macros_cnt);
   return obstructions_cnt;
 }
@@ -3278,7 +3273,7 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
   }
 
   if (default_vias.empty()) {
-    if (!silence_)
+    if (verbose_)
       logger_->warn(GRT, 43, "No OR_DEFAULT vias defined.");
     for (int i = 1; i <= max_routing_layer; i++) {
       for (odb::dbTechVia* via : vias) {
@@ -3345,7 +3340,7 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 {
   odb::dbTechLayer* min_layer = routing_layers_[min_routing_layer];
   odb::dbTechLayer* max_layer = routing_layers_[max_routing_layer];
-  if (!silence_) {
+  if (verbose_) {
     logger_->info(GRT, 20, "Min routing layer: {}", min_layer->getName());
     logger_->info(GRT, 21, "Max routing layer: {}", max_layer->getName());
     logger_->info(GRT, 22, "Global adjustment: {}%", int(adjustment_ * 100));
@@ -3640,7 +3635,7 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
     std::vector<Net*> dirty_nets = startFastRoute(
         min_routing_layer_, max_routing_layer_, NetType::Antenna);
     fastroute_->setVerbose(0);
-    if (!silence_)
+    if (verbose_)
       logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)

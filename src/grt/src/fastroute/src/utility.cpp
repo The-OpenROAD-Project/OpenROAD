@@ -274,7 +274,7 @@ void FastRouteCore::fillVIA()
     }
   }
 
-  if (verbose_ > 1) {
+  if (verbose_) {
     logger_->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
     logger_->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
     logger_->info(GRT, 199, "Via filling finished.");
@@ -1275,9 +1275,6 @@ void FastRouteCore::checkUsage()
         }
       }
     }
-  }
-  if (verbose_ > 1) {
-    logger_->report("Usage checked");
   }
 }
 

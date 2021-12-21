@@ -178,7 +178,6 @@ Resizer::estimateParasitics(ParasiticsSrc src)
     estimateWireParasitics();
     break;
   case ParasiticsSrc::global_routing:
-    global_router_->setSilence(true);
     global_router_->estimateRC();
     parasitics_src_ = ParasiticsSrc::global_routing;
     break;

@@ -783,27 +783,25 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     }
   }  // loop i
 
-  if (verbose_ > 1) {
-    debugPrint(logger_,
-               GRT,
-               "rsmt",
-               1,
-               "Wirelength: {}, Wirelength1: {}",
-               wl,
-               wl1);
-    debugPrint(logger_,
-               GRT,
-               "rsmt",
-               1,
-               "Number of segments: {}",
-               totalNumSeg);
-    debugPrint(logger_,
-               GRT,
-               "rsmt",
-               1,
-               "Number of shifts: {}",
-               numShift);
-  }
+  debugPrint(logger_,
+             GRT,
+             "rsmt",
+             1,
+             "Wirelength: {}, Wirelength1: {}",
+             wl,
+             wl1);
+  debugPrint(logger_,
+             GRT,
+             "rsmt",
+             1,
+             "Number of segments: {}",
+             totalNumSeg);
+  debugPrint(logger_,
+             GRT,
+             "rsmt",
+             1,
+             "Number of shifts: {}",
+             numShift);
 }
 
 }  // namespace grt

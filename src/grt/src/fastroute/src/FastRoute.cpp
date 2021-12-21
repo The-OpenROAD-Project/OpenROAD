@@ -89,7 +89,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       num_layers_(0),
       total_overflow_(0),
       grid_hv_(0),
-      verbose_(0),
+      verbose_(false),
       via_cost_(0),
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
@@ -687,7 +687,7 @@ void FastRouteCore::updateDbCongestion()
   auto db_gcell = odb::dbGCellGrid::create(block);
   if (db_gcell == nullptr) {
     db_gcell = block->getGCellGrid();
-    if (verbose_ > 1)
+    if (verbose_)
       logger_->warn(
           utl::GRT,
           211,
@@ -777,20 +777,14 @@ NetRouteMap FastRouteCore::run()
 
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
-  if (verbose_ > 1)
-    logger_->info(GRT, 97, "First L Route.");
   routeLAll(true);
   gen_brk_RSMT(true, true, true, false, noADJ);
 
   getOverflow2D(&maxOverflow);
-  if (verbose_ > 1)
-    logger_->info(GRT, 98, "Second L Route.");
   newrouteLAll(false, true);
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   newrouteZAll(10);
-  if (verbose_ > 1)
-    logger_->info(GRT, 99, "First Z Route.");
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
@@ -851,7 +845,7 @@ NetRouteMap FastRouteCore::run()
   int cost_type = 1;
 
   InitLastUsage(upType);
-  if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_ > 1) {
+  if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_) {
     logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
@@ -872,7 +866,7 @@ NetRouteMap FastRouteCore::run()
   float overflow_reduction_percent = -1;
   while (total_overflow_ > 0 && i <= overflow_iterations_
          && overflow_increases <= max_overflow_increases) {
-    if (verbose_ > 1) {
+    if (verbose_) {
       logger_->info(GRT, 102, "Iteration {}", i);
     }
     if (THRESH_M > 15) {
@@ -993,7 +987,7 @@ NetRouteMap FastRouteCore::run()
                         "of reduction between iterations.");
           break;
         }
-        if (verbose_ > 1) {
+        if (verbose_) {
           logger_->info(GRT, 103, "Extra Run for hard benchmark.");
         }
         L = 0;
@@ -1142,20 +1136,10 @@ NetRouteMap FastRouteCore::run()
 
   checkUsage();
 
-  if (verbose_ > 1)
-    logger_->info(GRT, 105, "Maze routing finished.");
-
-  if (verbose_ > 1) {
-    logger_->report("Final 2D results:");
-  }
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
-  if (verbose_ > 1)
-    logger_->info(GRT, 106, "Layer assignment begins.");
   newLA();
-  if (verbose_ > 1)
-    logger_->info(GRT, 107, "Layer assignment finished.");
-
+  
   const clock_t t2 = clock();
   const float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
 
@@ -1180,16 +1164,11 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (goingLV && past_cong == 0) {
-    if (verbose_ > 1)
-      logger_->info(GRT, 108, "Post-processing begins.");
     mazeRouteMSMDOrder3D(enlarge_, 0, ripupTH3D, layer_orientation_);
 
     if (gen_brk_Time > 120) {
       mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
     }
-    if (verbose_ > 1)
-      logger_->info(
-          GRT, 109, "Post-processing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1197,7 +1176,7 @@ NetRouteMap FastRouteCore::run()
   const int numVia = threeDVIA();
   checkRoute3D();
 
-  if (verbose_ > 1) {
+  if (verbose_) {
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
