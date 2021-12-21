@@ -812,8 +812,13 @@ NetRouteMap FastRouteCore::run()
   for (int i = 0; i < LVIter; i++) {
     LOGIS_COF = std::max<float>(2.0 / (1 + log(maxOverflow)), LOGIS_COF);
     LOGIS_COF = 2.0 / (1 + log(maxOverflow));
-    if (verbose_ > 1)
-      logger_->info(GRT, 100, "LV routing round {}, enlarge {}.", i, enlarge_);
+    debugPrint(logger_,
+               GRT,
+               "patternRouting",
+               1,
+               "LV routing round {}, enlarge {}.",
+               i,
+               enlarge_);
     routeLVAll(newTH, enlarge_, LOGIS_COF);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -845,7 +850,7 @@ NetRouteMap FastRouteCore::run()
   int cost_type = 1;
 
   InitLastUsage(upType);
-  if (total_overflow_ > 0 && overflow_iterations_ > 0) {
+  if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_ > 1) {
     logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
@@ -987,7 +992,9 @@ NetRouteMap FastRouteCore::run()
                         "of reduction between iterations.");
           break;
         }
-        logger_->info(GRT, 103, "Extra Run for hard benchmark.");
+        if (verbose_ > 1) {
+          logger_->info(GRT, 103, "Extra Run for hard benchmark.");
+        }
         L = 0;
         upType = 3;
         stopDEC = true;
@@ -1112,11 +1119,13 @@ NetRouteMap FastRouteCore::run()
   bool has_2D_overflow = total_overflow_ > 0;
 
   if (minofl > 0) {
-    logger_->info(GRT,
-                  104,
-                  "Minimal overflow {} occurring at round {}.",
-                  minofl,
-                  minoflrnd);
+    debugPrint(logger_,
+               GRT,
+               "congestionIterations",
+               1,
+               "Minimal overflow {} occurring at round {}.",
+               minofl,
+               minoflrnd);
     copyBR();
   }
 
@@ -1187,8 +1196,10 @@ NetRouteMap FastRouteCore::run()
   const int numVia = threeDVIA();
   checkRoute3D();
 
-  logger_->info(GRT, 111, "Final number of vias: {}", numVia);
-  logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
+  if (verbose_ > 1) {
+    logger_->info(GRT, 111, "Final number of vias: {}", numVia);
+    logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
+  }
 
   NetRouteMap routes = getRoutes();
 

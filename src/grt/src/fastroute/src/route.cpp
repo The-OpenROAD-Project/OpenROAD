@@ -1685,9 +1685,13 @@ void FastRouteCore::routeLVEnew(int netID,
 void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 {
   int netID, edgeID, numEdges, i, forange;
-
-  if (verbose_ > 1)
-    logger_->info(GRT, 182, "{} threshold, {} expand.", threshold, expand);
+  debugPrint(logger_,
+             GRT,
+             "patternRouting",
+             1,
+             "{} threshold, {} expand.",
+             threshold,
+             expand);
 
   h_cost_table_.resize(10 * h_capacity_);
 
