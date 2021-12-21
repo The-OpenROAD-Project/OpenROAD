@@ -16,11 +16,6 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -46,9 +41,6 @@ met4       Vertical        31104         30956          0.48%
 met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 54
-[INFO GRT-0112] Final usage 3D: 1139
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -70,11 +62,6 @@ worst slack -1.95
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -87,19 +74,11 @@ worst slack -1.95
 [INFO GRT-0002] Maximum degree: 2
 [INFO GRT-0017] Processing 94 blockages on layer met1.
 [INFO GRT-0009] Nets to reroute: 5.
-[INFO GRT-0111] Final number of vias: 4
-[INFO GRT-0112] Final usage 3D: 13
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -112,19 +91,11 @@ worst slack -1.95
 [INFO GRT-0002] Maximum degree: -2147483648
 [INFO GRT-0017] Processing 94 blockages on layer met1.
 [INFO GRT-0009] Nets to reroute: 2.
-[INFO GRT-0111] Final number of vias: 0
-[INFO GRT-0112] Final usage 3D: 0
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -137,19 +108,11 @@ worst slack -1.95
 [INFO GRT-0002] Maximum degree: 2
 [INFO GRT-0017] Processing 96 blockages on layer met1.
 [INFO GRT-0009] Nets to reroute: 2.
-[INFO GRT-0111] Final number of vias: 4
-[INFO GRT-0112] Final usage 3D: 15
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -162,9 +125,6 @@ worst slack -1.95
 [INFO GRT-0002] Maximum degree: 2
 [INFO GRT-0017] Processing 96 blockages on layer met1.
 [INFO GRT-0009] Nets to reroute: 2.
-[INFO GRT-0111] Final number of vias: 4
-[INFO GRT-0112] Final usage 3D: 15
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO RSZ-0032] Inserted 5 hold buffers.
 worst slack 0.16
 [WARNING DPL-0011] Could not find power special net.
@@ -182,11 +142,6 @@ delta HPWL                    0 %
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4600  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3400  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4600  line-2-Via Pitch: 0.3500
@@ -212,9 +167,6 @@ met4       Vertical        31104         30956          0.48%
 met5       Horizontal      10368         10153          2.07%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 60
-[INFO GRT-0112] Final usage 3D: 1161
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

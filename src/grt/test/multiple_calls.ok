@@ -104,7 +104,6 @@ metal9     Horizontal       2256             0          100.00%
 metal10    Vertical         2256            47          97.92%
 ---------------------------------------------------------------
 
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

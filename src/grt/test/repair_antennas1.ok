@@ -100,7 +100,6 @@ Notice 0: Split top of 1 T shapes.
 [INFO GRT-0017] Processing 3930 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 [INFO GRT-0009] Nets to reroute: 6.
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 [INFO GRT-0014] Routed nets: 411
 No differences found.
 No differences found.

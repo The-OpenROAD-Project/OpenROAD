@@ -44,7 +44,6 @@ met4       Vertical         8664          4625          46.62%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

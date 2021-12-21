@@ -687,10 +687,11 @@ void FastRouteCore::updateDbCongestion()
   auto db_gcell = odb::dbGCellGrid::create(block);
   if (db_gcell == nullptr) {
     db_gcell = block->getGCellGrid();
-    logger_->warn(
-        utl::GRT,
-        211,
-        "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
+    if (verbose_ > 1)
+      logger_->warn(
+          utl::GRT,
+          211,
+          "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
