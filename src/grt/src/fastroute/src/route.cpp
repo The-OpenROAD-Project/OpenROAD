@@ -319,7 +319,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
           } else if (treenodes[n1].status == 1) {
             costL1 = 0;
             costL2 = via_cost_;
-          } else {
+          } else if (verbose_) {
             logger_->warn(
                 GRT, 179, "Wrong node status {}.", treenodes[n1].status);
           }
@@ -1158,7 +1158,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
       } else if (treenodes[n1].status == 1) {
         costL1 = 0;
         costL2 = via_cost_;
-      } else {
+      } else if (verbose_) {
         logger_->warn(GRT, 181, "Wrong node status {}.", treenodes[n1].status);
       }
       if (treenodes[n2].status == 2) {

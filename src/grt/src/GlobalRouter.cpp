@@ -1186,11 +1186,12 @@ void GlobalRouter::computeObstructionsAdjustments()
             || obs.xMin() >= grid_->getXMax()
             || obs.yMax() <= grid_->getYMin()
             || obs.yMin() >= grid_->getYMax()) {
-          logger_->warn(
-              GRT,
-              209,
-              "Ignoring an obstruction on layer {} outside the die area.",
-              tech_layer->getName());
+          if (verbose_)
+            logger_->warn(
+                GRT,
+                209,
+                "Ignoring an obstruction on layer {} outside the die area.",
+                tech_layer->getName());
           continue;
         }
 
@@ -1298,12 +1299,13 @@ void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
   odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
   odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_routing_layer_);
   if (layer > max_routing_layer_ && max_routing_layer_ > 0) {
-    logger_->warn(GRT,
-                  30,
-                  "Specified layer {} for adjustment is greater than max "
-                  "routing layer {} and will be ignored.",
-                  tech_layer->getName(),
-                  max_tech_layer->getName());
+    if (verbose_)
+      logger_->warn(GRT,
+                    30,
+                    "Specified layer {} for adjustment is greater than max "
+                    "routing layer {} and will be ignored.",
+                    tech_layer->getName(),
+                    max_tech_layer->getName());
   } else {
     adjustments_[layer] = reduction_percentage;
   }
@@ -1751,12 +1753,13 @@ void GlobalRouter::checkPinPlacement()
     } else {
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == port->getPosition()) {
-          logger_->warn(GRT,
-                        31,
-                        "At least 2 pins in position ({}, {}), layer {}.",
-                        pos.x(),
-                        pos.y(),
-                        tech_layer->getName());
+          if (verbose_)
+            logger_->warn(GRT,
+                          31,
+                          "At least 2 pins in position ({}, {}), layer {}.",
+                          pos.x(),
+                          pos.y(),
+                          tech_layer->getName());
           invalid = true;
         }
       }
@@ -2048,7 +2051,8 @@ GSegment GlobalRouter::createFakePin(Pin pin,
         pin_position.setX(new_x_position);
       }
     } else {
-      logger_->warn(GRT, 32, "Pin {} has invalid orientation.", pin.getName());
+      if (verbose_)
+        logger_->warn(GRT, 32, "Pin {} has invalid orientation.", pin.getName());
     }
   } else {
     int new_y_position;
@@ -2067,7 +2071,8 @@ GSegment GlobalRouter::createFakePin(Pin pin,
         pin_position.setY(new_y_position);
       }
     } else {
-      logger_->warn(GRT, 33, "Pin {} has invalid orientation.", pin.getName());
+      if (verbose_)
+        logger_->warn(GRT, 33, "Pin {} has invalid orientation.", pin.getName());
     }
   }
 
@@ -2694,10 +2699,11 @@ void GlobalRouter::makeItermPins(Net* net,
 
     if (master->getType() == odb::dbMasterType::COVER
         || master->getType() == odb::dbMasterType::COVER_BUMP) {
-      logger_->warn(
-          GRT,
-          34,
-          "Net connected to instance of class COVER added for routing.");
+      if (verbose_)
+        logger_->warn(
+            GRT,
+            34,
+            "Net connected to instance of class COVER added for routing.");
     }
 
     bool connected_to_pad = master->getType().isPad();
@@ -2737,8 +2743,9 @@ void GlobalRouter::makeItermPins(Net* net,
         upper_bound = odb::Point(rect.xMax(), rect.yMax());
         pin_box = odb::Rect(lower_bound, upper_bound);
         if (!die_area.contains(pin_box)) {
-          logger_->warn(
-              GRT, 35, "Pin {} is outside die area.", getITermName(iterm));
+          if (verbose_)
+            logger_->warn(
+                GRT, 35, "Pin {} is outside die area.", getITermName(iterm));
         }
         pin_boxes[pin_layer].push_back(pin_box);
         if (pin_layer > last_layer) {
@@ -2851,7 +2858,8 @@ void GlobalRouter::makeBtermPins(Net* net,
         upper_bound = odb::Point(bpin_box->xMax(), bpin_box->yMax());
         pin_box = odb::Rect(lower_bound, upper_bound);
         if (!die_area.contains(pin_box)) {
-          logger_->warn(GRT, 36, "Pin {} is outside die area.", pin_name);
+          if (verbose_)
+            logger_->warn(GRT, 36, "Pin {} is outside die area.", pin_name);
         }
         pin_boxes[pin_layer].push_back(pin_box);
 
@@ -3025,7 +3033,8 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
           = odb::Point(obstruction_box->xMax(), obstruction_box->yMax());
       odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
       if (!die_area.contains(obstruction_rect)) {
-        logger_->warn(GRT, 37, "Found blockage outside die area.");
+        if (verbose_)
+          logger_->warn(GRT, 37, "Found blockage outside die area.");
       }
       grid_->addObstruction(layer, obstruction_rect);
       obstructions_cnt++;
@@ -3080,10 +3089,11 @@ int GlobalRouter::findInstancesObstructions(
                                             rect.yMax() + layer_extension);
         odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
         if (!die_area.contains(obstruction_rect)) {
-          logger_->warn(GRT,
-                        38,
-                        "Found blockage outside die area in instance {}.",
-                        inst->getConstName());
+          if (verbose_)
+            logger_->warn(GRT,
+                          38,
+                          "Found blockage outside die area in instance {}.",
+                          inst->getConstName());
         }
         grid_->addObstruction(layer, obstruction_rect);
         obstructions_cnt++;
@@ -3129,8 +3139,9 @@ int GlobalRouter::findInstancesObstructions(
   }
 
   if (pin_out_of_die_count > 0) {
-    logger_->warn(
-        GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
+    if (verbose_)
+      logger_->warn(
+          GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
   if (verbose_)
@@ -3170,10 +3181,11 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                   = odb::Point(wire_rect.xMax(), wire_rect.yMax());
               odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
               if (!die_area.contains(obstruction_rect)) {
-                logger_->warn(GRT,
-                              40,
-                              "Net {} has wires outside die area.",
-                              db_net->getConstName());
+                if (verbose_)
+                  logger_->warn(GRT,
+                                40,
+                                "Net {} has wires outside die area.",
+                                db_net->getConstName());
               }
               grid_->addObstruction(l, obstruction_rect);
             }
@@ -3202,10 +3214,11 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                   = odb::Point(wire_rect.xMax(), wire_rect.yMax());
               odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
               if (!die_area.contains(obstruction_rect)) {
-                logger_->warn(GRT,
-                              41,
-                              "Net {} has wires outside die area.",
-                              db_net->getConstName());
+                if (verbose_)
+                  logger_->warn(GRT,
+                                41,
+                                "Net {} has wires outside die area.",
+                                db_net->getConstName());
               }
               grid_->addObstruction(l, obstruction_rect);
             }
@@ -3274,7 +3287,8 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
   if (default_vias.empty()) {
     if (verbose_)
-      logger_->warn(GRT, 43, "No OR_DEFAULT vias defined.");
+      if (verbose_)
+        logger_->warn(GRT, 43, "No OR_DEFAULT vias defined.");
     for (int i = 1; i <= max_routing_layer; i++) {
       for (odb::dbTechVia* via : vias) {
         if (via->getBottomLayer()->getRoutingLevel() == i) {

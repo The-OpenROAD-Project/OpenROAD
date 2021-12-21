@@ -1006,14 +1006,15 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   if (E1_pos == -1) {
     int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
     int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->warn(
-        GRT,
-        169,
-        "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-        netName(nets_[net_id]),
-        x_pos,
-        y_pos,
-        nets_[net_id]->numPins);
+    if (verbose_)
+      logger_->warn(
+          GRT,
+          169,
+          "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+          netName(nets_[net_id]),
+          x_pos,
+          y_pos,
+          nets_[net_id]->numPins);
     return false;
   }
 
@@ -1183,14 +1184,15 @@ bool FastRouteCore::updateRouteType2(const int net_id,
   if (E1_pos == -1) {
     int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
     int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->warn(
-        GRT,
-        170,
-        "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-        netName(nets_[net_id]),
-        x_pos,
-        y_pos,
-        nets_[net_id]->numPins);
+    if (verbose_)
+      logger_->warn(
+          GRT,
+          170,
+          "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+          netName(nets_[net_id]),
+          x_pos,
+          y_pos,
+          nets_[net_id]->numPins);
     return false;
   }
 
@@ -1766,10 +1768,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A1,
                                            edge_n1A2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          150,
-                          "Net {} has errors during updateRouteType1.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            150,
+                            "Net {} has errors during updateRouteType1.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1799,10 +1802,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A2,
                                            edge_C1C2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          151,
-                          "Net {} has errors during updateRouteType2.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            151,
+                            "Net {} has errors during updateRouteType2.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1915,10 +1919,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B1,
                                            edge_n2B2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          152,
-                          "Net {} has errors during updateRouteType1.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            152,
+                            "Net {} has errors during updateRouteType1.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1949,10 +1954,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B2,
                                            edge_D1D2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          153,
-                          "Net {} has errors during updateRouteType2.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            153,
+                            "Net {} has errors during updateRouteType2.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;

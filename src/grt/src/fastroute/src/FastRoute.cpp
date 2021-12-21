@@ -482,11 +482,12 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger_->warn(GRT,
-                      113,
-                      "Underflow in reduce: cap, reducedCap: {}, {}",
-                      cap,
-                      reducedCap);
+        if (verbose_)
+          logger_->warn(GRT,
+                        113,
+                        "Underflow in reduce: cap, reducedCap: {}, {}",
+                        cap,
+                        reducedCap);
       }
       reduce = 0;
     } else {
@@ -510,11 +511,12 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger_->warn(GRT,
-                      114,
-                      "Underflow in reduce: cap, reducedCap: {}, {}",
-                      cap,
-                      reducedCap);
+        if (verbose_)
+          logger_->warn(GRT,
+                        114,
+                        "Underflow in reduce: cap, reducedCap: {}, {}",
+                        cap,
+                        reducedCap);
       }
       reduce = 0;
     } else {
@@ -699,7 +701,8 @@ void FastRouteCore::updateDbCongestion()
   for (int k = 0; k < num_layers_; k++) {
     auto layer = db_->getTech()->findRoutingLayer(k + 1);
     if (layer == nullptr) {
-      logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k + 1);
+      if (verbose_)
+        logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k + 1);
       continue;
     }
 
@@ -978,10 +981,11 @@ NetRouteMap FastRouteCore::run()
           // if after 20 iterations the largest reduction percentage
           // is smaller than 15%, stop congestion iterations and
           // consider the design unroutable
-          logger_->warn(GRT,
-                        227,
-                        "Reached 20 congestion iterations with less than 15% "
-                        "of reduction between iterations.");
+          if (verbose_)
+            logger_->warn(GRT,
+                          227,
+                          "Reached 20 congestion iterations with less than 15% "
+                          "of reduction between iterations.");
           break;
         }
         if (verbose_) {
@@ -1122,11 +1126,12 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (overflow_increases > max_overflow_increases) {
-    logger_->warn(
-        GRT,
-        230,
-        "Congestion iterations cannot increase overflow, reached the "
-        "maximum number of times the total overflow can bee increased.");
+    if (verbose_)
+      logger_->warn(
+          GRT,
+          230,
+          "Congestion iterations cannot increase overflow, reached the "
+          "maximum number of times the total overflow can bee increased.");
   }
 
   freeRR();
@@ -1189,7 +1194,8 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (total_overflow_ > 0) {
-    logger_->warn(GRT, 115, "Global routing finished with overflow.");
+    if (verbose_)
+      logger_->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
   return routes;
