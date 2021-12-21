@@ -1513,28 +1513,26 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
                                     vector<frBlockObject*>& terms)
 {
   for (auto term : terms) {
-    auto dPin = make_unique<drPin>();
-    dPin->setFrTerm(term);
     // ap
+    // TODO is instXform used properly here?
     dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
-    frMTerm* trueTerm = nullptr;
-    string name;
-    frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
-        inst = static_cast<frInstTerm*>(term)->getInst();
+        auto instTerm = static_cast<frInstTerm*>(term);
+        frInst* inst = instTerm->getInst();
         inst->getTransform(shiftXform);
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
         inst->getUpdatedXform(instXform);
-        trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-        name = inst->getName() + string("/") + trueTerm->getName();
+        auto trueTerm = instTerm->getTerm();
+        string name = inst->getName() + string("/") + trueTerm->getName();
+        initNet_term_new_helper(design, trueTerm, term, inst, dNet, name, shiftXform);
         break;
       }
-      case frcBTerm:
-      case frcMTerm: {
-        trueTerm = static_cast<frMTerm*>(term);
-        name = string("PIN/") + trueTerm->getName();
+      case frcBTerm: {
+        auto trueTerm = static_cast<frBTerm*>(term);
+        string name = string("PIN/") + trueTerm->getName();
+        initNet_term_new_helper(design, trueTerm, term, nullptr, dNet, name, shiftXform);
         break;
       }
       default:
@@ -1542,65 +1540,79 @@ void FlexDRWorker::initNet_term_new(const frDesign* design,
                        1009,
                        "initNet_term_new invoked with non-term object.");
     }
-    int pinIdx = 0;
-    int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : 0;
-    for (auto& pin : trueTerm->getPins()) {
-      frAccessPoint* prefAp = nullptr;
-      if (inst) {
-        prefAp = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-      }
-      if (!pin->hasPinAccess()) {
-        continue;
-      }
-      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-        Point bp;
-        ap->getPoint(bp);
-        auto bNum = ap->getLayerNum();
-        shiftXform.apply(bp);
-
-        auto dAp = make_unique<drAccessPattern>();
-        dAp->setPoint(bp);
-        dAp->setBeginLayerNum(bNum);
-        if (ap.get() == prefAp) {
-          dAp->setPinCost(0);
-        } else {
-          dAp->setPinCost(1);
-        }
-        // set min area
-        if (ENABLE_BOUNDARY_MAR_FIX) {
-          auto minAreaConstraint
-              = getTech()->getLayer(bNum)->getAreaConstraint();
-          if (minAreaConstraint) {
-            auto reqArea = minAreaConstraint->getMinArea();
-            dAp->setBeginArea(reqArea);
-          }
-        }
-        dAp->setValidAccess(ap->getAccess());
-        if (ap->hasAccess(frDirEnum::U)) {
-          if (!(ap->getViaDefs().empty())) {
-            dAp->setAccessViaDef(frDirEnum::U, &(ap->getViaDefs()));
-          }
-        }
-        if (getRouteBox().intersects(bp))
-          dPin->addAccessPattern(std::move(dAp));
-      }
-      pinIdx++;
-    }
-
-    if (dPin->getAccessPatterns().empty()) {
-      initNet_termGenAp_new(design, dPin.get());
-      if (dPin->getAccessPatterns().empty()) {
-        cout << "\nError: pin " << name << " still does not have temp ap"
-             << endl;
-        if (graphics_)
-          graphics_->debugWholeDesign();
-        exit(1);
-      }
-    }
-    dPin->setId(pinCnt_);
-    pinCnt_++;
-    dNet->addPin(std::move(dPin));
   }
+}
+
+template <typename T>
+void FlexDRWorker::initNet_term_new_helper(const frDesign* design,
+                                           T* trueTerm,
+                                           frBlockObject* term,
+                                           frInst* inst,
+                                           drNet* dNet,
+                                           const string& name,
+                                           const dbTransform& shiftXform)
+{
+  auto dPin = make_unique<drPin>();
+  dPin->setFrTerm(term);
+
+  int pinIdx = 0;
+  int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : 0;
+  for (auto& pin : trueTerm->getPins()) {
+    frAccessPoint* prefAp = nullptr;
+    if (inst) {
+      prefAp = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+    }
+    if (!pin->hasPinAccess()) {
+      continue;
+    }
+    for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+      Point bp;
+      ap->getPoint(bp);
+      auto bNum = ap->getLayerNum();
+      shiftXform.apply(bp);
+
+      auto dAp = make_unique<drAccessPattern>();
+      dAp->setPoint(bp);
+      dAp->setBeginLayerNum(bNum);
+      if (ap.get() == prefAp) {
+        dAp->setPinCost(0);
+      } else {
+        dAp->setPinCost(1);
+      }
+      // set min area
+      if (ENABLE_BOUNDARY_MAR_FIX) {
+        auto minAreaConstraint
+            = getTech()->getLayer(bNum)->getAreaConstraint();
+        if (minAreaConstraint) {
+          auto reqArea = minAreaConstraint->getMinArea();
+          dAp->setBeginArea(reqArea);
+        }
+      }
+      dAp->setValidAccess(ap->getAccess());
+      if (ap->hasAccess(frDirEnum::U)) {
+        if (!(ap->getViaDefs().empty())) {
+          dAp->setAccessViaDef(frDirEnum::U, &(ap->getViaDefs()));
+        }
+      }
+      if (getRouteBox().intersects(bp))
+        dPin->addAccessPattern(std::move(dAp));
+    }
+    pinIdx++;
+  }
+
+  if (dPin->getAccessPatterns().empty()) {
+    initNet_termGenAp_new(design, dPin.get());
+    if (dPin->getAccessPatterns().empty()) {
+      cout << "\nError: pin " << name << " still does not have temp ap"
+           << endl;
+      if (graphics_)
+        graphics_->debugWholeDesign();
+      exit(1);
+    }
+  }
+  dPin->setId(pinCnt_);
+  pinCnt_++;
+  dNet->addPin(std::move(dPin));
 }
 
 void FlexDRWorker::initNet_boundary(drNet* dNet,

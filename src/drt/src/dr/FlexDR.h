@@ -656,6 +656,14 @@ class FlexDRWorker
   void initNet_term_new(const frDesign* design,
                         drNet* dNet,
                         std::vector<frBlockObject*>& terms);
+  template <typename T>
+  void initNet_term_new_helper(const frDesign* design,
+                               T* trueTerm,
+                               frBlockObject* term,
+                               frInst* inst,
+                               drNet* dNet,
+                               const string& name,
+                               const dbTransform& shiftXform);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
