@@ -47,6 +47,11 @@ metal9     Horizontal       2256          2162          4.17%
 metal10    Vertical         2256          2209          2.08%
 ---------------------------------------------------------------
 
+[INFO GRT-0197] Via related to pin nodes: 749
+[INFO GRT-0198] Via related Steiner nodes: 116
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 1228
+[INFO GRT-0112] Final usage 3D: 7016
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
