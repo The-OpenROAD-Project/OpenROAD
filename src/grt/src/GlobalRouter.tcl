@@ -176,7 +176,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
-                                  [-allow_overflow]
+                                  [-allow_overflow] \
+                                  [-silence]
 }
 
 proc global_route { args } {
@@ -185,7 +186,7 @@ proc global_route { args } {
           -congestion_iterations \
           -overflow_iterations -grid_origin
          } \
-    flags {-allow_congestion -allow_overflow}
+    flags {-allow_congestion -allow_overflow -silence}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "Missing dbTech."
@@ -201,6 +202,8 @@ proc global_route { args } {
   } else {
     grt::set_verbose 0
   }
+
+  grt::set_silence [info exists flags(-silence)]
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)

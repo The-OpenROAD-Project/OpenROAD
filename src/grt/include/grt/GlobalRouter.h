@@ -157,6 +157,7 @@ class GlobalRouter
                            int layer,
                            float reduction_percentage);
   void setVerbose(const int v);
+  void setSilence(const bool s);
   void setOverflowIterations(int iterations);
   void setGridOrigin(long x, long y);
   void setAllowCongestion(bool allow_congestion);
@@ -361,6 +362,7 @@ class GlobalRouter
   std::vector<RegionAdjustment> region_adjustments_;
 
   int verbose_;
+  bool silence_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
 

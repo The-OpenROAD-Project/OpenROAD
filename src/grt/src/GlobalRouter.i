@@ -103,6 +103,12 @@ set_verbose(int v)
 }
 
 void
+set_silence(int v)
+{
+  getGlobalRouter()->setSilence(v);
+}
+
+void
 set_overflow_iterations(int iterations)
 {
   getGlobalRouter()->setOverflowIterations(iterations);
