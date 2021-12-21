@@ -39,7 +39,7 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 |------------------------|---------------------------|
 | `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
 | `CMAKE_CXX_FLAGS`      | Additional compiler flags |
-| `TCL_LIB`              | Path to Tcl library       |
+| `TCL_LIBRARY`          | Path to Tcl library       |
 | `TCL_HEADER`           | Path to `tcl.h`           |
 | `ZLIB_ROOT`            | Path to `zlib`            |
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |

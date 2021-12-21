@@ -404,7 +404,7 @@ proc place_pins { args } {
 
     set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
     if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
-      utl::warn PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
+      utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
     }
 
     set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
@@ -423,7 +423,7 @@ proc place_pins { args } {
 
     set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
     if { [$v_tech_layer getDirection] != "VERTICAL" } {
-      utl::warn PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
+      utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
     }
 
     set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]

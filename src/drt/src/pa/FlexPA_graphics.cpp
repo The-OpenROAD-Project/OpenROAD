@@ -65,15 +65,17 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     MAX_THREADS = 1;
   }
 
-  // Break pinName into inst_name_ and term_name_ at ':'
-  size_t pos = settings_->pinName.rfind(':');
-  if (pos == std::string::npos) {
-    logger_->error(
-        DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+  if (!settings_->pinName.empty()) {
+    // Break pinName into inst_name_ and term_name_ at ':'
+    size_t pos = settings_->pinName.rfind(':');
+    if (pos == std::string::npos) {
+      logger_->error(
+          DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+    }
+    term_name_ = settings_->pinName.substr(pos + 1);
+    auto inst_name = settings_->pinName.substr(0, pos);
+    inst_ = design->getTopBlock()->getInst(inst_name);
   }
-  term_name_ = settings_->pinName.substr(pos + 1);
-  auto inst_name = settings_->pinName.substr(0, pos);
-  inst_ = design->getTopBlock()->getInst(inst_name);
 
   gui_->registerRenderer(this);
 }
