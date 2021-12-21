@@ -915,6 +915,9 @@ void TimingPathRenderer::highlightStage(gui::Painter& painter,
 
 TimingConeRenderer::TimingConeRenderer() :
     sta_(nullptr),
+    term_(nullptr),
+    fanin_(false),
+    fanout_(false),
     map_(),
     min_map_index_(0),
     max_map_index_(0),
@@ -950,6 +953,20 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
     return;
   }
 
+  if (pin != term_) {
+    term_ = pin;
+    fanin_ = fanin;
+    fanout_ = fanout;
+  } else {
+    // toggle options
+    if (fanin) {
+      fanin_ = !fanin_;
+    }
+    if (fanout) {
+      fanout_ = !fanout_;
+    }
+  }
+
   if (pin == nullptr) {
     Gui::get()->unregisterRenderer(this);
     return;
@@ -962,10 +979,10 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   map_.clear();
 
   DepthMapSet depth_map;
-  if (fanin) {
+  if (fanin_) {
     getFaninCone(pin, depth_map);
   }
-  if (fanout) {
+  if (fanout_) {
     getFanoutCone(pin, depth_map);
   }
 

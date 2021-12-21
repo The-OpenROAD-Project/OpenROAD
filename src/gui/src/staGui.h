@@ -390,6 +390,9 @@ class TimingConeRenderer : public gui::Renderer
   using DepthMap = std::map<int, PinList>;
 
   sta::dbSta* sta_;
+  sta::Pin* term_;
+  bool fanin_;
+  bool fanout_;
   DepthMap map_;
   int min_map_index_;
   int max_map_index_;

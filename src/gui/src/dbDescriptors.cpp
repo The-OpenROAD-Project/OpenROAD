@@ -112,21 +112,12 @@ static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Acti
     gui->timingCone(static_cast<T>(nullptr), false, false);
     return desc->makeSelected(obj, nullptr);
   }});
-  actions.push_back({"Fanin/out Cone", [obj, desc, gui]() {
-    bool okay;
-    QString selection = QInputDialog::getItem(
-          nullptr,
-          "Fanin/out Cone",
-          "Cone",
-          {"Fanin", "Fanout", "Both"},
-          2, // Both
-          false,
-          &okay);
-    if (okay) {
-      const bool fanin = selection == "Fanin" || selection == "Both";
-      const bool fanout = selection == "Fanout" || selection == "Both";
-      gui->timingCone(obj, fanin, fanout);
-    }
+  actions.push_back({"Fanin Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, true, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanout Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, false, true);
     return desc->makeSelected(obj, nullptr);
   }});
 }

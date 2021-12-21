@@ -810,6 +810,10 @@ void Inspector::makeAction(const Descriptor::Action& action)
     {"Remove from highlight", ":/highlight_off.png"},
     {"Add to highlight", ":/highlight_on.png"}
   };
+  std::vector<std::pair<std::string, QString>> symbol_replacements{
+    {"Fanin Cone", "\u25B7"},
+    {"Fanout Cone", "\u25C1"}
+  };
 
   const std::string& name = action.name;
 
@@ -819,6 +823,15 @@ void Inspector::makeAction(const Descriptor::Action& action)
       button = new QPushButton(QIcon(icon), "", this);
       button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
       break;
+    }
+  }
+  if (button == nullptr) {
+    for (const auto& [label, new_text] : symbol_replacements) {
+      if (name == label) {
+        button = new QPushButton(new_text, this);
+        button->setToolTip(QString::fromStdString(name)); // set tool since this is a symbol
+        break;
+      }
     }
   }
 
