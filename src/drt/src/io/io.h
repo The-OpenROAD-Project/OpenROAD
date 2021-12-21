@@ -174,7 +174,9 @@ class Parser
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
   static int distL1(const Rect& b, const Point& p);
-  static void getClosestPoint(const frRect& r, const Point3D& p, Point3D& result);
+  static void getClosestPoint(const frRect& r,
+                              const Point3D& p,
+                              Point3D& result);
   void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
   void checkPinForGuideEnclosure(frBlockObject* pin,
                                  frNet* net,
@@ -287,6 +289,7 @@ class Writer
           mergedPathSegs);
   void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
   void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
+  void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech);
 };
 }  // namespace io
 }  // namespace fr

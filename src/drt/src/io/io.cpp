@@ -313,9 +313,9 @@ void io::Parser::setVias(odb::dbBlock* block)
         for (auto box : boxes) {
           unique_ptr<frRect> pinFig = make_unique<frRect>();
           pinFig->setBBox(Rect(defdist(block, box->xMin()),
-                                defdist(block, box->yMin()),
-                                defdist(block, box->xMax()),
-                                defdist(block, box->yMax())));
+                               defdist(block, box->yMin()),
+                               defdist(block, box->xMax()),
+                               defdist(block, box->yMax())));
           pinFig->setLayerNum(layerNum);
           switch (cnt) {
             case 0:
@@ -496,7 +496,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     if (net->getSigType() == dbSigType::CLOCK)
       uNetIn->updateIsClock(true);
     if (is_special)
-        uNetIn->setIsSpecial(true);
+      uNetIn->setIsSpecial(true);
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
@@ -1262,8 +1262,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       cutClass2 = cutClass2.substr(0, cutClass2.find("/"));
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
-    con->setDefaultCenterToCenter(
-        rule->isCenterToCenter(cutClass1, cutClass2));
+    con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
     con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
@@ -2166,7 +2165,8 @@ void io::Parser::readGuide()
                         tech->getLayer(TOP_ROUTING_LAYER)->getName(),
                         TOP_ROUTING_LAYER);
 
-        box.init(stoi(vLine[0]), stoi(vLine[1]), stoi(vLine[2]), stoi(vLine[3]));
+        box.init(
+            stoi(vLine[0]), stoi(vLine[1]), stoi(vLine[2]), stoi(vLine[3]));
         frRect rect;
         rect.setBBox(box);
         rect.setLayerNum(layerNum);
@@ -2572,12 +2572,8 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     }
     for (auto& fig : via->getCutFigs()) {
       fig->getBBox(box);
-      odb::dbBox::create(_db_via,
-                         _cut_layer,
-                         box.xMin(),
-                         box.yMin(),
-                         box.xMax(),
-                         box.yMax());
+      odb::dbBox::create(
+          _db_via, _cut_layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
     }
 
     for (auto& fig : via->getLayer1Figs()) {
@@ -2692,6 +2688,42 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
     }
   }
 }
+void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
+{
+  for (auto& inst : design->getTopBlock()->getInsts()) {
+    auto db_inst = block->findInst(inst->getName().c_str());
+    if (db_inst == nullptr)
+      logger->error(DRT, 294, "inst {} not found in db", inst->getName());
+    for (auto& term : inst->getInstTerms()) {
+      auto aps = term->getAccessPoints();
+      auto db_iterm = db_inst->findITerm(term->getTerm()->getName().c_str());
+      if (db_iterm == nullptr)
+        logger->error(DRT, 295, "iterm {} not found in db", term->getName());
+      auto db_pins = db_iterm->getMTerm()->getMPins();
+      if (aps.size() != db_pins.size())
+        logger->error(DRT,
+                      296,
+                      "Mismatch in access points size {} and term pins size {}",
+                      aps.size(),
+                      db_pins.size());
+      frUInt4 i = 0;
+      for (auto db_pin : db_pins) {
+        if (aps[i] != nullptr) {
+          auto db_ap = odb::dbAccessPoint::create(db_pin);
+          db_ap->setPoint(aps[i]->getPoint());
+          db_ap->setAccesses(aps[i]->getAccess());
+          auto layer = tech->findLayer(aps[i]->getLayerNum());
+          db_ap->setLayer(layer);
+          db_iterm->setAccessPoint(db_pin, db_ap);
+        } else {
+          db_iterm->setAccessPoint(db_pin, nullptr);
+        }
+
+        i++;
+      }
+    }
+  }
+}
 
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
@@ -2707,4 +2739,5 @@ void io::Writer::updateDb(odb::dbDatabase* db)
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);
+  updateDbAccessPoints(block, tech);
 }

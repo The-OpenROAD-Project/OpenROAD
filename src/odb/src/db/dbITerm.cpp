@@ -47,6 +47,7 @@
 #include "dbInstHdr.h"
 #include "dbJournal.h"
 #include "dbLib.h"
+#include "dbMPin.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbNet.h"
@@ -54,7 +55,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "utl/Logger.h"
-#include "dbMPin.h"
 
 namespace odb {
 
@@ -677,15 +677,26 @@ void dbITerm::addAccessPoint(dbAccessPoint* ap)
   iterm->aps_[ap->getMPin()->getImpl()->getOID()] = ap->getImpl()->getOID();
 }
 
+void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+  if (ap != nullptr)
+    iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
+  else
+    iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
+}
+
 std::vector<dbAccessPoint*> dbITerm::getAccessPoints() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   std::vector<dbAccessPoint*> aps;
   auto master = (_dbMaster*) getInst()->getMaster();
-  for(auto& [pin_id, ap_id] : iterm->aps_)
-  {
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
     auto mpin = master->_mpin_tbl->getPtr(pin_id);
-    aps.push_back((dbAccessPoint*) mpin->ap_tbl_->getPtr(ap_id));
+    if (ap_id.isValid())
+      aps.push_back((dbAccessPoint*) mpin->ap_tbl_->getPtr(ap_id));
+    else
+      aps.push_back(nullptr);
   }
   return aps;
 }

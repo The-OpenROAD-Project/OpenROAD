@@ -3364,6 +3364,8 @@ class dbITerm : public dbObject
   ///
   bool getAvgXY(int* x, int* y);
 
+  void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
+
   void addAccessPoint(dbAccessPoint* ap);
 
   std::vector<dbAccessPoint*> getAccessPoints() const;
