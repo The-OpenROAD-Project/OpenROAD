@@ -78,6 +78,7 @@ add_compile_options(
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
+  $<$<CXX_COMPILER_ID:GNU>:-Werror>
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
 )
