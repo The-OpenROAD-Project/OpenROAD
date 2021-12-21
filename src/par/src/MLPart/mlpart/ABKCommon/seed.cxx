@@ -303,7 +303,7 @@ void SeedHandler::_chooseInitNondetSeed() {
                 unsigned rndbuf;
                 FILE *rnd = fopen("/dev/urandom", "r");
                 if (rnd) {
-                        fread(&rndbuf, sizeof(rndbuf), 1, rnd);
+                  (void) fread(&rndbuf, sizeof(rndbuf), 1, rnd);
                         fclose(rnd);
                         sprintf(buf, "%g %d %d", tm, procID, rndbuf);
                 } else
