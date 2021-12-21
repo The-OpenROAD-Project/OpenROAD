@@ -41,6 +41,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                Logger* logger)
     : logger_(logger),
       settings_(settings),
+      inst_(nullptr),
       gui_(gui::Gui::get()),
       pin_(nullptr),
       inst_term_(nullptr),
