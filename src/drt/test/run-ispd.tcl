@@ -42,11 +42,11 @@ proc genFiles { run_dir ispd_year design drv } {
     set    runFile [open "$run_dir/$design/run.sh" w]
     puts  $runFile "set -e"
     puts  $runFile "cd $run_dir/$design"
-    puts  $runFile "$program -exit run.tcl > $run_dir/$design/run.log"
+    puts  $runFile "$program -exit run.tcl > $run_dir/$design/run_${design}.log"
     puts  $runFile "echo"
     puts  $runFile "echo"
     puts  $runFile "echo Report for $design"
-    puts  $runFile "tail $run_dir/$design/run.log"
+    puts  $runFile "tail $run_dir/$design/run_${design}.log"
     puts  $runFile "cd '$bench_dir/ispd${ispd_year}eval'"
     puts  $runFile "./ispd${ispd_year}eval -lef $bench_dir/$design/$design.input.lef -def $run_dir/$design/$design.output.def -guide $bench_dir/$design/$design.input.guide | grep -v WARNING | grep -v ERROR"
     puts  $runFile "echo"
@@ -115,7 +115,7 @@ cd $run_dir
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
 set status [catch { eval exec -ignorestderr parallel -j $parallel_jobs --halt never --joblog $run_dir/log ./{}/run.sh ::: $design_list >@stdout } ]
 foreach design $design_list {
-    set fileName "$run_dir/$design/run.log"
+    set fileName "$run_dir/$design/run_${design}.log"
     set f [open $fileName]
     fcopy $f stdout
     close $f
