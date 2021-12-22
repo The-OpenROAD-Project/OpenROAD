@@ -34,24 +34,21 @@
 #include <string>
 #include <vector>
 
+#include <boost/asio.hpp>
+
 namespace utl {
 class Logger;
 }
-
-namespace boost::asio {
-class any_io_executor;
-template <typename Protocol, typename Executor>
-class basic_stream_socket;
-namespace ip {
-class tcp;
-}
-}  // namespace boost::asio
 
 namespace asio = boost::asio;
 using asio::ip::tcp;
 
 namespace dst {
+#if BOOST_VERSION >= 107000
 typedef asio::basic_stream_socket<tcp, asio::any_io_executor> socket;
+#else
+typedef asio::basic_stream_socket<tcp> socket;
+#endif
 class JobMessage;
 class JobCallBack;
 
