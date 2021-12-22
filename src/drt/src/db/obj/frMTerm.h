@@ -81,8 +81,6 @@ class frMTerm : public frTerm
     }
     pins_.push_back(std::move(in));
   }
-  void setType(dbSigType in) { type_ = in; }
-  dbSigType getType() const { return type_; }
   // others
   frBlockObjectEnum typeId() const override { return frcMTerm; }
   frAccessPoint* getAccessPoint(frCoord x,
