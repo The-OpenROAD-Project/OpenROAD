@@ -484,7 +484,7 @@ class FastRouteCore
   int num_layers_;
   int total_overflow_;  // total # overflow
   int grid_hv_;
-  int verbose_;
+  bool verbose_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

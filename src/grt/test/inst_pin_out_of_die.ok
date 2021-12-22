@@ -14,11 +14,6 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500

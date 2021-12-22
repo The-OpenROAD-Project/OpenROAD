@@ -97,7 +97,7 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_verbose(int v)
+set_verbose(bool v)
 {
   getGlobalRouter()->setVerbose(v);
 }

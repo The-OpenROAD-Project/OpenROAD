@@ -13,7 +13,7 @@ set def_file [make_result_file repair_antennas3.def]
 
 set_routing_layers -signal met1-met5
 
-global_route
+global_route -verbose
 
 repair_antennas sky130_fd_sc_hs__diode_2/DIODE -iterations 3
 
