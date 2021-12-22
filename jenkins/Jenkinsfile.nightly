@@ -33,7 +33,7 @@ pipeline {
           post {
             always {
               sh "mv /home/jenkins/ispd/runs/*.tar.gz .";
-              sh "mv /home/jenkins/ispd/runs/*log .";
+              sh "mv /home/jenkins/ispd/runs/*/*log .";
               archiveArtifacts "*.tar.gz, *log";
             }
           }
