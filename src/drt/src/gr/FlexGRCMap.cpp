@@ -424,7 +424,7 @@ unsigned FlexGRCMap::getNumPins(
         pins.insert(obj);
       }
     } else if (obj->typeId() == frcBTerm) {
-      auto term = static_cast<frTerm*>(obj);
+      auto term = static_cast<frBTerm*>(obj);
       if (term->hasNet()) {
         pins.insert(obj);
       }

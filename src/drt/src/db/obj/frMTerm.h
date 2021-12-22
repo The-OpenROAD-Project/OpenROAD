@@ -63,6 +63,8 @@ class frMTerm : public frTerm
     }
   }
   // getters
+  bool hasNet() const { return false; }
+  frNet* getNet() const { return nullptr; }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frMPin>>& getPins() const { return pins_; }
   // setters
@@ -132,11 +134,6 @@ template <class Archive>
 void frMTerm::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
-  (ar) & name_;
-  (ar) & type_;
-  (ar) & direction_;
-  (ar) & _order_id;
-  (ar) & bbox_;
   (ar) & master_;
   (ar) & pins_;
 }

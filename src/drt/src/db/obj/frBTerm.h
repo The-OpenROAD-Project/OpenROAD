@@ -63,9 +63,12 @@ class frBTerm : public frTerm
     }
   }
   // getters
+  bool hasNet() const { return (net_); }
+  frNet* getNet() const { return net_; }
   frBlock* getBlock() const { return block_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   // setters
+  void addToNet(frNet* in) { net_ = in; }
   void setBlock(frBlock* in) { block_ = in; }
   void addPin(std::unique_ptr<frBPin> in)
   {
@@ -119,6 +122,7 @@ class frBTerm : public frTerm
  protected:
   frBlock* block_;
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
+  frNet* net_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
@@ -134,6 +138,7 @@ void frBTerm::serialize(Archive& ar, const unsigned int version)
   (ar) & boost::serialization::base_object<frTerm>(*this);
   (ar) & block_;
   (ar) & pins_;
+  (ar) & net_;
   if(fr::is_loading(ar) && net_) {
     net_->addBTerm(this);
   }

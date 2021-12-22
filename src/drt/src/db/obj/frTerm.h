@@ -42,11 +42,10 @@ class frTerm : public frBlockObject
   virtual ~frTerm() {}
 
   // getters
-  bool hasNet() const { return (net_); }
-  frNet* getNet() const { return net_; }
+  virtual bool hasNet() const = 0;
+  virtual frNet* getNet() const = 0;
   const frString& getName() const { return name_; }
   // setters
-  void addToNet(frNet* in) { net_ = in; }
   void setType(dbSigType in) { type_ = in; }
   dbSigType getType() const { return type_; }
   void setDirection(dbIoType in) { direction_ = in; }
@@ -99,7 +98,6 @@ void frTerm::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
-  (ar) & net_;
   (ar) & type_;
   (ar) & direction_;
   (ar) & _order_id;
