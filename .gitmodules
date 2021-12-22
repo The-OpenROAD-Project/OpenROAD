@@ -2,5 +2,5 @@
 	path = src/sta
 	url = https://github.com/The-OpenROAD-Project/OpenSTA.git
 [submodule "src/abc"]
-	path = src/abc
+	path = third-party/abc
 	url = https://github.com/The-OpenROAD-Project/abc.git
