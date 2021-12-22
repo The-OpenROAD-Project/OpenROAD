@@ -56,11 +56,6 @@ getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 static float
 getSecondNorm(const vector<FloatPoint>& a);
 
-#ifdef ENABLE_CIMG_LIB
-static std::string
-getZeroFillStr(int iterNum);
-#endif
-
 NesterovPlaceVars::NesterovPlaceVars()
 {
   reset();
