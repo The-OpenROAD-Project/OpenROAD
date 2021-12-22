@@ -90,7 +90,6 @@ enum frBlockObjectEnum
   frcMTerm,
   frcInst,
   frcVia,
-  frcPin,
   frcBPin,
   frcMPin,
   frcInstTerm,
