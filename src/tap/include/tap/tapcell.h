@@ -131,6 +131,7 @@ class Tapcell
               int halo_x,
               int halo_y);
   const std::pair<int, int> getMinMaxX(const std::vector<std::vector<odb::dbRow*>>& rows);
+  std::map<int, std::vector<std::vector<int>>> findRowFills();
   odb::dbMaster* pickCornerMaster(LocationType top_bottom,
                                   odb::dbOrientType ori,
                                   odb::dbMaster* cnrcap_nwin_master,
@@ -168,6 +169,7 @@ class Tapcell
                                odb::dbMaster* tap_nwouttie_master,
                                odb::dbMaster* tap_nwout2_master,
                                odb::dbMaster* tap_nwout3_master,
+                               const std::vector<std::vector<int>>& row_fill_check,
                                const std::string& prefix);
   int insertAroundMacros(const std::vector<std::vector<odb::dbRow*>>& rows,
                          const std::vector<std::string>& masters,
