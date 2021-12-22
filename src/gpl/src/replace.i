@@ -246,6 +246,13 @@ get_global_placement_uniform_density_cmd()
   return replace->getUniformTargetDensity();
 }
 
+void 
+add_timing_net_reweight_iter_cmd(int overflow)
+{
+  Replace* replace = getReplace();
+  return replace->addTimingNetWeightIter(overflow);
+}
+
 void
 set_debug_cmd(int pause_iterations,
               int update_iterations,

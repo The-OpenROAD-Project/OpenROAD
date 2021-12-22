@@ -620,7 +620,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // timing driven feature
     // do reweight on timing-critical nets. 
     if( npVars_.timingDrivenMode 
-        && tb_->isTimingUpdateIter(sumOverflow_) ){
+        && tb_->isTimingNetWeightIter(sumOverflow_) ){
       // update db's instance location from current density coordinates
       updateDb();
 

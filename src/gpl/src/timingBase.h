@@ -57,11 +57,12 @@ class TimingBase {
         utl::Logger* log);
 
     // check whether overflow reached the timingIter
-    bool isTimingUpdateIter(float overflow);
-    void addTimingUpdateIter(int overflow);
-    void deleteTimingUpdateIter(int overflow);
-    void clearTimingUpdateIter();
-    size_t getTimingUpdateIterSize() const;
+    bool isTimingNetWeightIter(float overflow);
+    void addTimingNetWeightIter(int overflow);
+    void setTimingNetWeightIters(std::vector<int>& overflows);
+    void deleteTimingNetWeightIter(int overflow);
+    void clearTimingNetWeightIter();
+    size_t getTimingNetWeightIterSize() const;
 
     // updateNetWeight.
     // True: successfully reweighted gnets
@@ -73,7 +74,7 @@ class TimingBase {
     utl::Logger* log_;
     std::shared_ptr<NesterovBase> nb_;
 
-    std::vector<int> timingUpdateIter_;
+    std::vector<int> timingNetWeightIter_;
     std::vector<int> timingIterChk_;
     float net_weight_max_;
     void initTimingIterChk();

@@ -63,75 +63,26 @@ TimingBase::TimingBase(
     rs_ = rs;
     nb_ = nb;
     log_ = log;
-
-    addTimingUpdateIter(79);
-    addTimingUpdateIter(64);
-    addTimingUpdateIter(49);
-    addTimingUpdateIter(29);
-    addTimingUpdateIter(21);
-    addTimingUpdateIter(15);
-
-    initTimingIterChk();
   }
 
 void
 TimingBase::initTimingIterChk() {
   timingIterChk_.clear();
-  timingIterChk_.resize(timingUpdateIter_.size(), false);
-}
-
-void
-TimingBase::addTimingUpdateIter(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingUpdateIter_.begin(), 
-        timingUpdateIter_.end(), 
-        overflow);
-
-  // only push overflow when the overflow is not in vector.
-  if( it == timingUpdateIter_.end() ) {
-    timingUpdateIter_.push_back(overflow);
-  }
-
-  // do sort in reverse order
-  std::sort(timingUpdateIter_.begin(), 
-      timingUpdateIter_.end(),
-      std::greater <int> ());
-}
-
-void
-TimingBase::deleteTimingUpdateIter(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingUpdateIter_.begin(), 
-        timingUpdateIter_.end(), 
-        overflow);
-  // only erase overflow when the overflow is in vector.
-  if( it != timingUpdateIter_.end() ) {
-    timingUpdateIter_.erase(it);
-  }
-}
-
-void
-TimingBase::clearTimingUpdateIter() {
-  timingUpdateIter_.clear();
-}
-
-size_t
-TimingBase::getTimingUpdateIterSize() const {
-  return timingUpdateIter_.size();
+  timingIterChk_.resize(timingNetWeightIter_.size(), false);
 }
 
 bool
-TimingBase::isTimingUpdateIter(float overflow) {
+TimingBase::isTimingNetWeightIter(float overflow) {
   int intOverflow = std::round(overflow * 100);
   // exception case handling
-  if ( timingUpdateIter_.empty()
-       || intOverflow > timingUpdateIter_[0] ) { 
+  if ( timingNetWeightIter_.empty()
+       || intOverflow > timingNetWeightIter_[0] ) { 
     return false;
   } 
 
   bool needTdRun = false;
-  for(int i=0; i<timingUpdateIter_.size(); i++) {
-    if( timingUpdateIter_[i] > intOverflow ) {
+  for(int i=0; i<timingNetWeightIter_.size(); i++) {
+    if( timingNetWeightIter_[i] > intOverflow ) {
       if( !timingIterChk_[i] ) {
         timingIterChk_[i] = true;
         needTdRun = true; 
@@ -142,6 +93,55 @@ TimingBase::isTimingUpdateIter(float overflow) {
   }
   return needTdRun;
 }
+
+void
+TimingBase::addTimingNetWeightIter(int overflow) {
+  std::vector<int>::iterator it 
+    = std::find(timingNetWeightIter_.begin(), 
+        timingNetWeightIter_.end(), 
+        overflow);
+
+  // only push overflow when the overflow is not in vector.
+  if( it == timingNetWeightIter_.end() ) {
+    timingNetWeightIter_.push_back(overflow);
+  }
+
+  // do sort in reverse order
+  std::sort(timingNetWeightIter_.begin(), 
+      timingNetWeightIter_.end(),
+      std::greater <int> ());
+}
+
+void
+TimingBase::setTimingNetWeightIters(std::vector<int>& overflows) {
+  for(auto& overflow : overflows) {
+    addTimingNetWeightIter(overflow);
+  }
+  initTimingIterChk();
+}
+
+void
+TimingBase::deleteTimingNetWeightIter(int overflow) {
+  std::vector<int>::iterator it 
+    = std::find(timingNetWeightIter_.begin(), 
+        timingNetWeightIter_.end(), 
+        overflow);
+  // only erase overflow when the overflow is in vector.
+  if( it != timingNetWeightIter_.end() ) {
+    timingNetWeightIter_.erase(it);
+  }
+}
+
+void
+TimingBase::clearTimingNetWeightIter() {
+  timingNetWeightIter_.clear();
+}
+
+size_t
+TimingBase::getTimingNetWeightIterSize() const {
+  return timingNetWeightIter_.size();
+}
+
 
 bool
 TimingBase::updateGNetWeights(float overflow) {
@@ -180,7 +180,7 @@ TimingBase::updateGNetWeights(float overflow) {
         gNet->setTimingWeight(weight);
         weighted_net_count++;
       }
-      debugPrint(log_, GPL, "replace", 3, "timingUpdate: net:{} slack:{} weight:{}", 
+      debugPrint(log_, GPL, "replace", 3, "timing: net:{} slack:{} weight:{}", 
           gNet->net()->dbNet()->getConstName(), 
           net_slack, gNet->totalWeight());
     }
@@ -189,5 +189,6 @@ TimingBase::updateGNetWeights(float overflow) {
   log_->info(GPL, 103, "Weighted {} nets.", weighted_net_count);
   return true;
 }
+
 
 }
