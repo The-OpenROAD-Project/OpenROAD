@@ -713,9 +713,8 @@ void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block,
   // Insert tb tie
   int x = x_start;
   for (int n = 0; n < tbtiecount; n++) {
-    int tap_width = master->getWidth();
-    bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
-    if (checkSymmetry(master, ori) && !overlap) {
+    if (checkSymmetry(master, ori) &&
+        !checkIfFilled(x, master->getWidth(), ori, row_fill_check)) {
       makeInstance(block, master, ori, x, lly, prefix);
     }
     x += tbtiewidth;
@@ -733,9 +732,8 @@ void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block,
 
   // Fill with 3s
   for (int n = 0; n < tb3tiecount; n++) {
-    int tap_width = tb3_master->getWidth();
-    bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
-    if (checkSymmetry(tb3_master, ori) && !overlap) {
+    if (checkSymmetry(tb3_master, ori) &&
+        !checkIfFilled(x, tb3_master->getWidth(), ori, row_fill_check)) {
       makeInstance(block, tb3_master, ori, x, lly, prefix);
     }
     x += tap3_master_width;
@@ -743,9 +741,8 @@ void Tapcell::insertAtTopBottomHelper(odb::dbBlock* block,
 
   // Fill with 2s
   for (; x < x_end; x += tap2_master_width) {
-    int tap_width = tb2_master->getWidth();
-    bool overlap = checkIfFilled(x, tap_width, ori, row_fill_check);
-    if (checkSymmetry(tb2_master, ori) && !overlap) {
+    if (checkSymmetry(tb2_master, ori) &&
+        !checkIfFilled(x, tb2_master->getWidth(), ori, row_fill_check)) {
       makeInstance(block, tb2_master, ori, x, lly, prefix);
     }
   }
@@ -896,14 +893,13 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
         }
 
         // NE corner
-        int tap_width = incnr_master->getWidth();
-        bool overlap = checkIfFilled(x_end, tap_width, top_row_ori, row_fill_check);
-        if (checkSymmetry(incnr_master, top_row_ori) && !overlap) {
+        if (checkSymmetry(incnr_master, top_row_ori) &&
+          !checkIfFilled(x_end, incnr_master->getWidth(), top_row_ori, row_fill_check)) {
           makeInstance(block, incnr_master, top_row_ori, x_end, top_row_y, prefix);
         }
         // NW corner
-        overlap = checkIfFilled((x_start - incnr_master->getWidth()), tap_width, west_ori, row_fill_check);
-        if (checkSymmetry(incnr_master, west_ori) && !overlap) {
+        if (checkSymmetry(incnr_master, west_ori) &&
+            !checkIfFilled((x_start - incnr_master->getWidth()), incnr_master->getWidth(), west_ori, row_fill_check)) {
           makeInstance(block,
                     incnr_master,
                     west_ori,
@@ -967,15 +963,13 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
         }
 
         // SE corner
-        int tap_width = incnr_master->getWidth();
-        bool overlap = checkIfFilled(x_end, tap_width, bot_row_ori, row_fill_check);
-        if (checkSymmetry(incnr_master, bot_row_ori) && !overlap) {
+        if (checkSymmetry(incnr_master, bot_row_ori) &&
+            !checkIfFilled(x_end, incnr_master->getWidth(), bot_row_ori, row_fill_check)) {
           makeInstance(block, incnr_master, bot_row_ori, x_end, bot_row_y, prefix);
         }
         // SW corner
-        tap_width = incnr_master->getWidth();
-        overlap = checkIfFilled((x_start - incnr_master->getWidth()), tap_width, west_ori, row_fill_check);
-        if (checkSymmetry(incnr_master, west_ori) && !overlap) {
+        if (checkSymmetry(incnr_master, west_ori) &&
+            !checkIfFilled((x_start - incnr_master->getWidth()), incnr_master->getWidth(), west_ori, row_fill_check)) {
           makeInstance(block,
                     incnr_master,
                     west_ori,
