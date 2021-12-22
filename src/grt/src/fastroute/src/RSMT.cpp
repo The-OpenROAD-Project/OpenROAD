@@ -787,20 +787,11 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
              GRT,
              "rsmt",
              1,
-             "Wirelength: {}, Wirelength1: {}",
+             "Wirelength: {}, Wirelength1: {}\nNumber of segments: {}\nNumber "
+             "of shifts: {}",
              wl,
-             wl1);
-  debugPrint(logger_,
-             GRT,
-             "rsmt",
-             1,
-             "Number of segments: {}",
-             totalNumSeg);
-  debugPrint(logger_,
-             GRT,
-             "rsmt",
-             1,
-             "Number of shifts: {}",
+             wl1,
+             totalNumSeg,
              numShift);
 }
 
