@@ -2690,50 +2690,83 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 }
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
 {
+  auto db = block->getDb();
+  std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
+  for (auto& refBlk : design->getRefBlocks()) {
+    auto db_master = db->findMaster(refBlk->getName().c_str());
+    if (db_master == nullptr)
+      logger->error(DRT, 294, "master {} not found in db", refBlk->getName());
+    for (auto& term : refBlk->getTerms()) {
+      auto db_mterm = db_master->findMTerm(term->getName().c_str());
+      if (db_mterm == nullptr)
+        logger->error(DRT, 295, "mterm {} not found in db", term->getName());
+      auto db_pins = db_mterm->getMPins();
+      if (db_pins.size() != term->getPins().size())
+        logger->error(DRT,
+                      296,
+                      "Mismatch in number of pins for term {}/{}",
+                      refBlk->getName(),
+                      term->getName());
+      frUInt4 i = 0;
+      auto& pins = term->getPins();
+      for (auto db_pin : db_pins) {
+        auto& pin = pins[i++];
+        int sz = pin->getNumPinAccess();
+        while (sz--) {
+          auto pa = pin->getPinAccess(sz);
+          for (auto& ap : pa->getAccessPoints()) {
+            auto db_ap = odb::dbAccessPoint::create(db_pin);
+            db_ap->setPoint(ap->getPoint());
+            if (ap->hasAccess(frDirEnum::N))
+              db_ap->setAccess(true, odb::dbDirection::NORTH);
+            if (ap->hasAccess(frDirEnum::S))
+              db_ap->setAccess(true, odb::dbDirection::SOUTH);
+            if (ap->hasAccess(frDirEnum::E))
+              db_ap->setAccess(true, odb::dbDirection::EAST);
+            if (ap->hasAccess(frDirEnum::W))
+              db_ap->setAccess(true, odb::dbDirection::WEST);
+            if (ap->hasAccess(frDirEnum::U))
+              db_ap->setAccess(true, odb::dbDirection::UP);
+            if (ap->hasAccess(frDirEnum::D))
+              db_ap->setAccess(true, odb::dbDirection::DOWN);
+            auto layer = tech->findLayer(ap->getLayerNum());
+            db_ap->setLayer(layer);
+            db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
+                true));  // this works because both enums have the same order
+            db_ap->setHighType(
+                (odb::dbAccessPoint::AccessType) ap->getType(false));
+            aps_map[ap.get()] = db_ap;
+          }
+        }
+      }
+    }
+  }
   for (auto& inst : design->getTopBlock()->getInsts()) {
     auto db_inst = block->findInst(inst->getName().c_str());
     if (db_inst == nullptr)
-      logger->error(DRT, 294, "inst {} not found in db", inst->getName());
+      logger->error(DRT, 297, "inst {} not found in db", inst->getName());
     for (auto& term : inst->getInstTerms()) {
       auto aps = term->getAccessPoints();
       auto db_iterm = db_inst->findITerm(term->getTerm()->getName().c_str());
       if (db_iterm == nullptr)
-        logger->error(DRT, 295, "iterm {} not found in db", term->getName());
+        logger->error(DRT, 298, "iterm {} not found in db", term->getName());
       auto db_pins = db_iterm->getMTerm()->getMPins();
       if (aps.size() != db_pins.size())
         logger->error(DRT,
-                      296,
+                      299,
                       "Mismatch in access points size {} and term pins size {}",
                       aps.size(),
                       db_pins.size());
       frUInt4 i = 0;
       for (auto db_pin : db_pins) {
         if (aps[i] != nullptr) {
-          auto db_ap = odb::dbAccessPoint::create(db_pin);
-          db_ap->setPoint(aps[i]->getPoint());
-          if (aps[i]->hasAccess(frDirEnum::N))
-            db_ap->setAccess(true, odb::dbDirection::NORTH);
-          if (aps[i]->hasAccess(frDirEnum::S))
-            db_ap->setAccess(true, odb::dbDirection::SOUTH);
-          if (aps[i]->hasAccess(frDirEnum::E))
-            db_ap->setAccess(true, odb::dbDirection::EAST);
-          if (aps[i]->hasAccess(frDirEnum::W))
-            db_ap->setAccess(true, odb::dbDirection::WEST);
-          if (aps[i]->hasAccess(frDirEnum::U))
-            db_ap->setAccess(true, odb::dbDirection::UP);
-          if (aps[i]->hasAccess(frDirEnum::D))
-            db_ap->setAccess(true, odb::dbDirection::DOWN);
-          auto layer = tech->findLayer(aps[i]->getLayerNum());
-          db_ap->setLayer(layer);
-          db_ap->setLowType((odb::dbAccessPoint::AccessType) aps[i]->getType(
-              true));  // this works because both enums half the same order
-          db_ap->setHighType(
-              (odb::dbAccessPoint::AccessType) aps[i]->getType(false));
-          db_iterm->setAccessPoint(db_pin, db_ap);
+          if (aps_map.find(aps[i]) != aps_map.end())
+            db_iterm->setAccessPoint(db_pin, aps_map[aps[i]]);
+          else
+            logger->error(DRT, 300, "Preferred access point is not found");
         } else {
           db_iterm->setAccessPoint(db_pin, nullptr);
         }
-
         i++;
       }
     }
