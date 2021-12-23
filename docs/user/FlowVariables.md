@@ -34,7 +34,7 @@ public platforms supported by the OpenROAD flow.
 
 Note:
 -   = indicates default definition assigned by the tool
--   ?= indicates that the variable value may be reassigned
+-   ?= indicates that the variable value may be reassigned with design `config.mk`
 -   N/A indicates that the variable/files is not supported currently.
 
 
@@ -55,16 +55,17 @@ Note:
 | `TIEHI_CELL_AND_PORT`                | =            | =            | =             | =         |
 | `TIELO_CELL_AND_PORT`                | =            | =            | =             | =         |
 | `MIN_BUF_CELL_AND_PORTS`             | =            | =            | =             | =         |
-| `ABC_CLOCK_PERIOD_IN_PS`             | N/A          | =            | ?=            | ?=        |
+| `ABC_CLOCK_PERIOD_IN_PS`             | ?=           | ?=           | ?=            | ?=        |
 | `ABC_DRIVER_CELL`                    | =            | =            | =             | =         |
 | `ABC_LOAD_IN_FF`                     | =            | =            | =             | =         |
 | Floorplan                            |              |              |               |           |
 | `PLACE_SITE`                         | =            | =            | =             | =         |
+| `MAKE_TRACKS`                        | =            | =            | =             | =         |
 | `TAPCELL_TCL`                        | =            | =            | =             | =         |
 | `MACRO_PLACE_HALO`                   | ?=           | ?=           | ?=            | ?=        |
 | `MACRO_PLACE_CHANNEL`                | ?=           | ?=           | ?=            | ?=        |
 | `PDN_CFG`                            | ?=           | ?=           | ?=            | ?=        |
-| `IO_PIN_MARGIN`                      | =            | =            | =             | =         |
+| `IO_PIN_MARGIN`                      | ?=           | ?=           | ?=            | ?=        |
 | `IO_PLACER_H`                        | =            | =            | =             | =         |
 | `IO_PLACER_V`                        | =            | =            | =             | =         |
 | Placement                            |              |              |               |           |
@@ -72,7 +73,6 @@ Note:
 | `CELL_PAD_IN_SITES_DETAIL_PLACEMENT` | ?=           | ?=           | ?=            | ?=        |
 | `PLACE_DENSITY`                      | ?=           | ?=           | ?=            | ?=        |
 | `WIRE_RC_LAYER`                      | =            | =            | =             | =         |
-| `MAX_WIRE_LENGTH`                    | =            | =            | =             | =         |
 | Clock Tree Synthesis                 |              |              |               |           |
 | `CTS_BUF_CELL`                       | =            | =            | =             | =         |
 | `FILL_CELLS`                         | =            | =            | =             | =         |
@@ -80,7 +80,7 @@ Note:
 | Routing                              |              |              |               |           |
 | `MIN_ROUTING_LAYER`                  | =            | =            | =             | =         |
 | `MAX_ROUTING_LAYER`                  | =            | =            | =             | =         |
-| `FASTROUTE_TCL`                      | ?=           | ?=           | =             | N/A       |
+| `FASTROUTE_TCL`                      | ?=           | ?=           | ?=            | N/A       |
 | `RCX_RULES`                          | =            | =            | =             | =         |
 | `KLAYOUT_TECH_FILE`                  | =            | =            | =             | =         |
 | `FILL_CONFIG`                        | =            | =            | N/A           | N/A       |
@@ -96,7 +96,7 @@ Note:
 | `SC_LEF`         | Path to technology standard cell LEF file.                                                                                                           |
 | `GDS_FILES`      | Path to platform GDS files.                                                                                                                          |
 | `LIB_FILES`      | A Liberty file of the standard cell library with PVT characterization, input and output characteristics, timing and power definitions for each cell. |
-| `DONT_USE_CELLS` | Don't use cells to ease congestion issues.                                                                                                           |
+| `DONT_USE_CELLS` | Dont use cells eases pin access in detailed routing.                                                                                                 |
 
 
 ### Synthesis
@@ -107,8 +107,8 @@ Note:
 | `LATCH_MAP_FILE`         | List of latches treated as a black box by Yosys.                                           |
 | `CLKGATE_MAP_FILE`       | List of cells for gating clock treated as a black box by Yosys.                            |
 | `ADDER_MAP_FILE`         | List of adders treated as a black box by Yosys.                                            |
-| `TIEHI_CELL_AND_PORT`    | Tie high cells used in Yosys synthesis to avoid a logical 1 in the Netlist.                |
-| `TIELO_CELL_AND_PORT`    | Tie low cells used in Yosys synthesis to avoid a logical 0 in the Netlist.                 |
+| `TIEHI_CELL_AND_PORT`    | Tie high cells used in Yosys synthesis to replace a logical 1 in the Netlist.              |
+| `TIELO_CELL_AND_PORT`    | Tie low cells used in Yosys synthesis to replace a logical 0 in the Netlist.               |
 | `MIN_BUF_CELL_AND_PORTS` | Used to insert a buffer cell to pass through wires. Used in synthesis.                     |
 | `ABC_CLOCK_PERIOD_IN_PS` | Clock period to be used by STA during synthesis. Default value read from `constraint.sdc`. |
 | `ABC_DRIVER_CELL`        | Default driver cell used during ABC synthesis.                                             |
@@ -136,11 +136,8 @@ Note:
 
 | Variable                             | Description                                                                                                                                   |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `CELL_PAD_IN_SITES_GLOBAL_PLACEMENT` | Cell padding on both sides in site widths to ease routability during global placement. Default 2 sites.                                       |
-| `CELL_PAD_IN_SITES_DETAIL_PLACEMENT` | Cell padding on both sides in site widths to ease routability in detail placement. Default 1 sites.                                           |
-| `MAX_WIRE_LENGTH`                    | Specifies the maximum wire length used by the resizer to reduce RC delay by inserting buffers. Integer value.                                 |
-| `WIRE_RC_LAYER`                      | Metal Layer to use for parasitics estimations.                                                                                                |
-| `CELL_PAD_IN_SITES`                  | Cell padding in SITE widths to ease rout-ability. Integer value.                                                                              |
+| `CELL_PAD_IN_SITES_GLOBAL_PLACEMENT` | Cell padding on both sides in site widths to ease routability during global placement.                 		                       |
+| `CELL_PAD_IN_SITES_DETAIL_PLACEMENT` | Cell padding on both sides in site widths to ease routability in detail placement.			                                       |
 | `PLACE_DENSITY`                      | The desired placement density of cells. It reflects how spread the cells would be on the core area. 1.0 = closely dense. 0.0 = widely spread. |
 
 
@@ -150,7 +147,7 @@ Note:
 | Variable       | Description                                                                                                   |
 |----------------|---------------------------------------------------------------------------------------------------------------|
 | `CTS_BUF_CELL` | The buffer cell used in the clock tree.                                                                       |
-| `FILL_CELLS`   | Filler cells list used to fill any spaces between regular library cells to avoid planarity problems post-CTS. |
+| `FILL_CELLS`   | Fill cells are used to fill empty sites.									 |
 
 
 ### Routing
@@ -158,8 +155,8 @@ Note:
 
 | Variable            | Description                                         |
 |---------------------|-----------------------------------------------------|
-| `MIN_ROUTING_LAYER` | The number of lowest layers to be used in routing.  |
-| `MAX_ROUTING_LAYER` | The number of highest layers to be used in routing. |
+| `MIN_ROUTING_LAYER` | The lowest metal layer name to be used in routing.  |
+| `MAX_ROUTING_LAYER` | The highest metal layer name to be used in routing. |
 
 
 ### Extraction
@@ -190,7 +187,7 @@ file for each design located in the OpenROAD-flow-scripts directory of
 | `DESIGN_NAME`   | The name of the top-level module of the design.                                                                                                                      |
 | `VERILOG_FILES` | The path to the design Verilog files.                                                                                                                                |
 | `SDC_FILE`      | The path to design constraint (SDC) file.                                                                                                                            |
-| `CLOCK_PORT`    | The name of the design's clock port used in Static Timing Analysis. If your design does not have a clock port defined as an empty variable `export CLOCK_PORT= " "`. |
+| `CLOCK_PORT`    | The name of the designs clock port used in Static Timing Analysis. If your design does not have a clock port defined as an empty variable `export CLOCK_PORT= ""`. |
 | `CLOCK_PERIOD`  | The clock period for the design to meet its goal.                                                                                                                    |
 
 
@@ -215,54 +212,19 @@ configuration file.
 | `CORNER`                 | PVT corner library selection fast/typical/worst.                                                   |
 | `DFF_LIB_FILE`           | Define this variable if the design has asynchronous clocks.                                        |
 | `DESIGN_NICKNAME`        | If the design has a hierarchy, to select a specific module as top design this variable is defined. |
-| `ABC_CLOCK_PERIOD_IN_PS` | Clock period to be used by STA during synthesis. Default value read from SDC.                      |
 | `ABC_AREA`               | Strategies for Yosys ABC synthesis: Area/Speed. Default ABC_SPEED.                                 |
 | `PWR_NETS_VOLTAGES`      | Used for IR Drop calculation.                                                                      |
 | `GND_NETS_VOLTAGES`      | Used for IR Drop calculation.                                                                      |
 
 
-#### Floorplanning
+#### Floorplan
 
 
 | Variable              | Description                                                                                                                                                                                                                                |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `CORE_UTILIZATION`    | The core utilization percentage (0-100).                                                                                                                                                                                                   |
-| `CORE_ASPECT_RATIO`   | The core's aspect ratio (height / width). Default 1.0.                                                                                                                                                                                     |
-| `CORE_MARGIN`         | The core margin, in multiples of site heights, from the bottom boundary. Default 4.                                                                                                                                                        |
-| `MACRO_PLACE_HALO`    | horizontal/vertical halo around macros (microns).                                                                                                                                                                                          |
-| `MACRO_PLACE_CHANNEL` | horizontal/vertical channel width between macros (microns).                                                                                                                                                                                |
-| `PDN_CFG`             | File path which has a set of power grid policies to be applied to the design, such as layers to use, stripe width and spacing, then have the utility generate the actual metal straps.                                                     |
-| `DIE_AREA`            | Specify die area to be used in floorplanning. Specified as a 4-corner rectangle. Unit microns.                                                                                                                                             |
+| `CORE_UTILIZATION`    | The core utilization percentage (0-100). Overrides DIE_AREA & CORE_AREA                                                                                                                                                                    |
+| `CORE_ASPECT_RATIO`   | The core aspect ratio (height / width). If CORE_UTILIZATION defined, it can be defined else ignore it.                                                                                                                                     |
+| `CORE_MARGIN`         | The core margin, in multiples of site heights, from the bottom boundary. If CORE_UTILIZATION defined, it can be defined else ignore it.                                                                                                    |
+| `DIE_AREA`            | Specify die area to be used in floorplanning. Specified as a 4-corner rectangle.Ignored if CORE_UTILIZATION is set. Unit microns.                                                                                                          |
 | `CORE_AREA`           | Specify core area to be used in floorplanning. Specified as a 4-corner rectangle. The core area can be specified in absolute terms and is mutually exclusive from `CORE_UTILIZATION` and `CORE_ASPECT_RATIO` specifications. Unit microns. |
-| `IO_PIN_MARGIN`       | Maximum number of I/O pins placed outside floorplan boundary. Integer value.                                                                                                                                                               |
-| `IO_PLACER_H`         | The metal layer on which to place the I/O pins horizontally (top and bottom of the die).                                                                                                                                                   |
-| `IO_PLACER_V`         | The metal layer on which to place the I/O pins vertically (sides of the die).                                                                                                                                                              |
 
-
-#### Placement
-
-
-| Variable                             | Description                                                                                                                                   |
-|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `CELL_PAD_IN_SITES_GLOBAL_PLACEMENT` | Cell padding on both sides in site widths to ease routability during global placement. Default 2 sites.                                       |
-| `CELL_PAD_IN_SITES_DETAIL_PLACEMENT` | Cell padding on both sides in site widths to ease routability in detail placement. Default 1 sites.                                           |
-| `PLACE_DENSITY`                      | The desired placement density of cells. It reflects how spread the cells would be on the core area. 1.0 = closely dense. 0.0 = widely spread. |
-| `MAX_WIRE_LENGTH`                    | Specifies the maximum wire length used by the resizer to reduce RC delay by inserting buffers. Integer value.                                 |
-
-
-#### Clock Tree Synthesis(CTS)
-
-
-| Variable           | Description                              |
-|--------------------|------------------------------------------|
-| `CTS_BUF_CELL`     | The buffer cell used in the clock tree.  |
-| `CTS_BUF_DISTANCE` | Minimum buffer distance used during CTS. |
-
-
-#### Routing
-
-
-| Variable            | Description                                            |
-|---------------------|--------------------------------------------------------|
-| `MIN_ROUTING_LAYER` | The number of the lowest layer to be used in routing.  |
-| `MAX_ROUTING_LAYER` | The number of the highest layer to be used in routing. |
