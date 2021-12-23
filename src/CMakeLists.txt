@@ -178,6 +178,7 @@ target_include_directories(openroad
 )
 
 target_link_libraries(openroad
+  libabc #libabc must be in the link order before OpenSTA due to a conflicting zlib
   ifp
   openroad_swig
   gpl
