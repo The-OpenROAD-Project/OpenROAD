@@ -2709,8 +2709,13 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
       frUInt4 i = 0;
       for (auto db_pin : db_pins) {
         if (aps[i] != nullptr) {
+          dbTransform xform;
+          inst->getTransform(xform);
+          xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+          auto pt = aps[i]->getPoint();
+          xform.apply(pt);
           auto db_ap = odb::dbAccessPoint::create(db_pin);
-          db_ap->setPoint(aps[i]->getPoint());
+          db_ap->setPoint(pt);
           if (aps[i]->hasAccess(frDirEnum::N))
             db_ap->setAccess(true, odb::dbDirection::NORTH);
           if (aps[i]->hasAccess(frDirEnum::S))
