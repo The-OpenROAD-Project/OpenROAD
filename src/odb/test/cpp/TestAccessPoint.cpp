@@ -24,15 +24,14 @@ BOOST_AUTO_TEST_CASE( test_default )
     ap->setHighType(dbAccessPoint::HalfGrid);
     ap->setAccess(true, dbDirection::DOWN);
     iterm->addAccessPoint(ap);
-
-    utl::Logger* logger = new utl::Logger();
-    dbDatabase* db2 = dbDatabase::create();
-    db2->setLogger(logger);
     FILE *write, *read;
     std::string path = std::string(std::getenv("BASE_DIR"))
             + "/results/TestAccessPointDbRW";
     write = fopen(path.c_str(), "w");
     db->write(write);
+    dbDatabase::destroy(db);
+
+    dbDatabase* db2 = dbDatabase::create();
     read = fopen(path.c_str(), "r");
     db2->read(read);
     auto aps = db2->getChip()->getBlock()->findInst("i1")->findITerm("a")->getAccessPoints();
@@ -45,7 +44,11 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(ap->hasAccess());
     BOOST_TEST(ap->getHighType() == dbAccessPoint::HalfGrid);
     BOOST_TEST(ap->hasAccess(dbDirection::DOWN));
-    BOOST_TEST(!ap->hasAccess(dbDirection::UP));    
+    std::vector<dbDirection> dirs;
+    ap->getAccesses(dirs);
+    BOOST_TEST(dirs.size() == 1);    
+    BOOST_TEST(dirs[0] == dbDirection::DOWN);
+    dbDatabase::destroy(db2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

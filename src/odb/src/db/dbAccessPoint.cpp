@@ -169,19 +169,22 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
   obj->layer_ = layer->getImpl()->getOID();
 }
 
-void dbAccessPoint::getAccesses(std::vector<bool>& tbl) const
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  tbl = obj->accesses_;
-}
-
 // User Code Begin dbAccessPointPublicMethods
 
-void dbAccessPoint::setAccesses(const std::vector<bool>& accesses)
+void dbAccessPoint::setAccesses(const std::vector<dbDirection>& accesses)
+{
+  for (auto dir : accesses) {
+    setAccess(true, dir);
+  }
+}
+
+void dbAccessPoint::getAccesses(std::vector<dbDirection>& tbl) const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-
-  obj->accesses_ = accesses;
+  for (int dir = 0; dir < 6; dir++) {
+    if (obj->accesses_[dir])
+      tbl.push_back(dbDirection::Value(dir + 1));
+  }
 }
 
 void dbAccessPoint::setLowType(AccessType low_type_)
@@ -212,26 +215,15 @@ dbAccessPoint::AccessType dbAccessPoint::getHighType() const
 
 void dbAccessPoint::setAccess(bool access, dbDirection dir)
 {
-  // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   switch (dir) {
     case dbDirection::EAST:
-      obj->accesses_[0] = access;
-      return;
     case dbDirection::SOUTH:
-      obj->accesses_[1] = access;
-      return;
     case dbDirection::WEST:
-      obj->accesses_[2] = access;
-      return;
     case dbDirection::NORTH:
-      obj->accesses_[3] = access;
-      return;
     case dbDirection::UP:
-      obj->accesses_[4] = access;
-      return;
     case dbDirection::DOWN:
-      obj->accesses_[5] = access;
+      obj->accesses_[dir - 1] = access;
       return;
     case dbDirection::NONE:
       break;
@@ -242,25 +234,15 @@ void dbAccessPoint::setAccess(bool access, dbDirection dir)
 
 bool dbAccessPoint::hasAccess(dbDirection dir) const
 {
-  // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   switch (dir) {
     case dbDirection::EAST:
-      return obj->accesses_[0];
     case dbDirection::SOUTH:
-      return obj->accesses_[1];
-      break;
     case dbDirection::WEST:
-      return obj->accesses_[2];
-      break;
     case dbDirection::NORTH:
-      return obj->accesses_[3];
-      break;
     case dbDirection::UP:
-      return obj->accesses_[4];
-      break;
     case dbDirection::DOWN:
-      return obj->accesses_[5];
+      return obj->accesses_[dir - 1];
       break;
     case dbDirection::NONE:
       return (std::count(obj->accesses_.begin(), obj->accesses_.end(), true)

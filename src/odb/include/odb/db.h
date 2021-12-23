@@ -8885,10 +8885,10 @@ class dbAccessPoint : public dbObject
 
   void setLayer(dbTechLayer* layer);
 
-  void getAccesses(std::vector<bool>& tbl) const;
-
   // User Code Begin dbAccessPoint
-  void setAccesses(const std::vector<bool>& accesses);
+  void setAccesses(const std::vector<dbDirection>& accesses);
+
+  void getAccesses(std::vector<dbDirection>& tbl) const;
 
   void setLowType(AccessType type_low);
 

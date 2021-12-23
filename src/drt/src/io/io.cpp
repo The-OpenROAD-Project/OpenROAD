@@ -2711,7 +2711,18 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
         if (aps[i] != nullptr) {
           auto db_ap = odb::dbAccessPoint::create(db_pin);
           db_ap->setPoint(aps[i]->getPoint());
-          db_ap->setAccesses(aps[i]->getAccess());
+          if (aps[i]->hasAccess(frDirEnum::N))
+            db_ap->setAccess(true, odb::dbDirection::NORTH);
+          if (aps[i]->hasAccess(frDirEnum::S))
+            db_ap->setAccess(true, odb::dbDirection::SOUTH);
+          if (aps[i]->hasAccess(frDirEnum::E))
+            db_ap->setAccess(true, odb::dbDirection::EAST);
+          if (aps[i]->hasAccess(frDirEnum::W))
+            db_ap->setAccess(true, odb::dbDirection::WEST);
+          if (aps[i]->hasAccess(frDirEnum::U))
+            db_ap->setAccess(true, odb::dbDirection::UP);
+          if (aps[i]->hasAccess(frDirEnum::D))
+            db_ap->setAccess(true, odb::dbDirection::DOWN);
           auto layer = tech->findLayer(aps[i]->getLayerNum());
           db_ap->setLayer(layer);
           db_ap->setLowType((odb::dbAccessPoint::AccessType) aps[i]->getType(
@@ -2739,8 +2750,7 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access)
   if (block == nullptr || tech == nullptr)
     logger->error(DRT, 4, "Load design first.");
 
-  if(pin_access)
-  {
+  if (pin_access) {
     updateDbAccessPoints(block, tech);
   } else {
     fillConnFigs(false);

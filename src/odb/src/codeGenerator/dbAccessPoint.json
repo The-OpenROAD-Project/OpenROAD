@@ -15,7 +15,7 @@
       {
         "name": "accesses_",
         "type": "dbVector<bool>",
-        "flags":["no-set"]
+        "flags":["private"]
       },
       {
         "name": "low_type_",
