@@ -136,7 +136,7 @@ class Replace
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
-    void addTimingNetWeightIter(int overflow);
+    void addTimingNetWeightOverflow(int overflow);
 
     void setPlottingPath(const char* path);
 
@@ -192,7 +192,7 @@ class Replace
     bool routabilityDrivenMode_;
     bool uniformTargetDensityMode_;
 
-    std::vector<int> timingNetWeightIters_;
+    std::vector<int> timingNetWeightOverflows_;
    
     // temp variable; OpenDB should have these values. 
     int padLeft_;

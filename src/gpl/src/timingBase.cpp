@@ -66,25 +66,25 @@ TimingBase::TimingBase(
   }
 
 void
-TimingBase::initTimingIterChk() {
-  timingIterChk_.clear();
-  timingIterChk_.resize(timingNetWeightIter_.size(), false);
+TimingBase::initTimingOverflowChk() {
+  timingOverflowChk_.clear();
+  timingOverflowChk_.resize(timingNetWeightOverflow_.size(), false);
 }
 
 bool
-TimingBase::isTimingNetWeightIter(float overflow) {
+TimingBase::isTimingNetWeightOverflow(float overflow) {
   int intOverflow = std::round(overflow * 100);
   // exception case handling
-  if ( timingNetWeightIter_.empty()
-       || intOverflow > timingNetWeightIter_[0] ) { 
+  if ( timingNetWeightOverflow_.empty()
+       || intOverflow > timingNetWeightOverflow_[0] ) { 
     return false;
   } 
 
   bool needTdRun = false;
-  for(int i=0; i<timingNetWeightIter_.size(); i++) {
-    if( timingNetWeightIter_[i] > intOverflow ) {
-      if( !timingIterChk_[i] ) {
-        timingIterChk_[i] = true;
+  for(int i=0; i<timingNetWeightOverflow_.size(); i++) {
+    if( timingNetWeightOverflow_[i] > intOverflow ) {
+      if( !timingOverflowChk_[i] ) {
+        timingOverflowChk_[i] = true;
         needTdRun = true; 
       }
       continue;
@@ -95,51 +95,53 @@ TimingBase::isTimingNetWeightIter(float overflow) {
 }
 
 void
-TimingBase::addTimingNetWeightIter(int overflow) {
+TimingBase::addTimingNetWeightOverflow(int overflow) {
   std::vector<int>::iterator it 
-    = std::find(timingNetWeightIter_.begin(), 
-        timingNetWeightIter_.end(), 
+    = std::find(timingNetWeightOverflow_.begin(), 
+        timingNetWeightOverflow_.end(), 
         overflow);
 
   // only push overflow when the overflow is not in vector.
-  if( it == timingNetWeightIter_.end() ) {
-    timingNetWeightIter_.push_back(overflow);
+  if( it == timingNetWeightOverflow_.end() ) {
+    timingNetWeightOverflow_.push_back(overflow);
   }
 
   // do sort in reverse order
-  std::sort(timingNetWeightIter_.begin(), 
-      timingNetWeightIter_.end(),
+  std::sort(timingNetWeightOverflow_.begin(), 
+      timingNetWeightOverflow_.end(),
       std::greater <int> ());
 }
 
 void
-TimingBase::setTimingNetWeightIters(std::vector<int>& overflows) {
+TimingBase::setTimingNetWeightOverflows(std::vector<int>& overflows) {
+  // sort by decreasing order
+  std::sort(overflows.begin(), overflows.end(), std::greater<int>());
   for(auto& overflow : overflows) {
-    addTimingNetWeightIter(overflow);
+    addTimingNetWeightOverflow(overflow);
   }
-  initTimingIterChk();
+  initTimingOverflowChk();
 }
 
 void
-TimingBase::deleteTimingNetWeightIter(int overflow) {
+TimingBase::deleteTimingNetWeightOverflow(int overflow) {
   std::vector<int>::iterator it 
-    = std::find(timingNetWeightIter_.begin(), 
-        timingNetWeightIter_.end(), 
+    = std::find(timingNetWeightOverflow_.begin(), 
+        timingNetWeightOverflow_.end(), 
         overflow);
   // only erase overflow when the overflow is in vector.
-  if( it != timingNetWeightIter_.end() ) {
-    timingNetWeightIter_.erase(it);
+  if( it != timingNetWeightOverflow_.end() ) {
+    timingNetWeightOverflow_.erase(it);
   }
 }
 
 void
-TimingBase::clearTimingNetWeightIter() {
-  timingNetWeightIter_.clear();
+TimingBase::clearTimingNetWeightOverflow() {
+  timingNetWeightOverflow_.clear();
 }
 
 size_t
-TimingBase::getTimingNetWeightIterSize() const {
-  return timingNetWeightIter_.size();
+TimingBase::getTimingNetWeightOverflowSize() const {
+  return timingNetWeightOverflow_.size();
 }
 
 

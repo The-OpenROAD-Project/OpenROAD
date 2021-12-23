@@ -73,7 +73,7 @@ proc global_placement { args } {
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
       -routability_rc_coefficients \
-      -timing_driven_net_reweight_iter \
+      -timing_driven_net_reweight_overflow \
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
@@ -100,14 +100,14 @@ proc global_placement { args } {
       utl::error GPL 121 "No liberty libraries found."
     }
 
-    if { [info exists keys(-timing_driven_net_reweight_iter)] } {
-      set overflow_list $keys(-timing_driven_net_reweight_iter)
+    if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
+      set overflow_list $keys(-timing_driven_net_reweight_overflow)
     } else {
       set overflow_list [list 79 64 49 29 21 15]
     }
 
     foreach overflow $overflow_list {
-      gpl::add_timing_net_reweight_iter_cmd $overflow
+      gpl::add_timing_net_reweight_overflow_cmd $overflow
     }
   }
 
