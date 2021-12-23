@@ -89,6 +89,7 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
+  void pinAccess();
 
   int getNumDRVs() const;
 
@@ -129,7 +130,7 @@ class TritonRoute
   unsigned short dist_port_;
   std::string shared_volume_;
 
-  void init();
+  void init(bool pin_access = false);
   void prep();
   void gr();
   void ta();

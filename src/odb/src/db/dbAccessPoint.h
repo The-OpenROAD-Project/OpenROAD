@@ -61,8 +61,8 @@ class _dbAccessPoint : public _dbObject
   Point point_;
   dbId<_dbTechLayer> layer_;
   dbVector<bool> accesses_;
-  uint type_low_;
-  uint type_high_;
+  uint low_type_;
+  uint high_type_;
 
   // User Code Begin Fields
   // User Code End Fields

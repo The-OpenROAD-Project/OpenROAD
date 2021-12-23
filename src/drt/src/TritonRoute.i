@@ -96,6 +96,30 @@ void detailed_route_cmd(const char* guideFile,
   router->main();
 }
 
+void pin_access_cmd(const char* dbProcessNode,
+                    const char* bottomRoutingLayer,
+                    const char* topRoutingLayer,
+                    int verbose)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setParams({"",
+                    "",
+                    "",
+                    "",
+                    "",
+                    dbProcessNode,
+                    false,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    bottomRoutingLayer,
+                    topRoutingLayer,
+                    verbose});
+  router->pinAccess();
+}
+
 void detailed_route_cmd(const char* param_file)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

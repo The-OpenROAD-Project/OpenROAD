@@ -264,7 +264,7 @@ class Writer
   frTechObject* getTech() const { return tech; }
   frDesign* getDesign() const { return design; }
   // others
-  void updateDb(odb::dbDatabase* db);
+  void updateDb(odb::dbDatabase* db, bool pin_access = false);
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs;  // all connFigs ready to def
   std::vector<frViaDef*> viaDefs;

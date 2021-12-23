@@ -194,7 +194,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   FlexDRGraphics::init();
 }
 
-void TritonRoute::init()
+void TritonRoute::init(bool pin_access)
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     VIAINPIN_BOTTOMLAYERNUM = 2;
@@ -246,7 +246,8 @@ void TritonRoute::init()
     parser.postProcessGuide(db_);
   }
   // GR-related
-  parser.initRPin();
+  if(!pin_access)
+    parser.initRPin();
 }
 
 void TritonRoute::prep()
@@ -309,6 +310,14 @@ int TritonRoute::main()
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
   return 0;
+}
+
+void TritonRoute::pinAccess()
+{
+  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  init(true);
+  io::Writer writer(getDesign(), logger_);
+  writer.updateDb(db_, true);
 }
 
 void TritonRoute::readParams(const string& fileName)

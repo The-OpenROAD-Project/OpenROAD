@@ -14,15 +14,16 @@
       },
       {
         "name": "accesses_",
-        "type": "dbVector<bool>"
+        "type": "dbVector<bool>",
+        "flags":["no-set"]
       },
       {
-        "name": "type_low_",
+        "name": "low_type_",
         "type": "uint",
         "flags" : ["private"]
       },
       {
-        "name": "type_high_",
+        "name": "high_type_",
         "type": "uint",
         "flags" : ["private"]
       }

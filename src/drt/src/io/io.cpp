@@ -2714,6 +2714,10 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
           db_ap->setAccesses(aps[i]->getAccess());
           auto layer = tech->findLayer(aps[i]->getLayerNum());
           db_ap->setLayer(layer);
+          db_ap->setLowType((odb::dbAccessPoint::AccessType) aps[i]->getType(
+              true));  // this works because both enums half the same order
+          db_ap->setHighType(
+              (odb::dbAccessPoint::AccessType) aps[i]->getType(false));
           db_iterm->setAccessPoint(db_pin, db_ap);
         } else {
           db_iterm->setAccessPoint(db_pin, nullptr);
@@ -2725,10 +2729,8 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
   }
 }
 
-void io::Writer::updateDb(odb::dbDatabase* db)
+void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access)
 {
-  fillConnFigs(false);
-  fillViaDefs();
   if (db->getChip() == nullptr)
     logger->error(DRT, 3, "Load design first.");
 
@@ -2737,7 +2739,14 @@ void io::Writer::updateDb(odb::dbDatabase* db)
   if (block == nullptr || tech == nullptr)
     logger->error(DRT, 4, "Load design first.");
 
-  updateDbVias(block, tech);
-  updateDbConn(block, tech);
-  updateDbAccessPoints(block, tech);
+  if(pin_access)
+  {
+    updateDbAccessPoints(block, tech);
+  } else {
+    fillConnFigs(false);
+    fillViaDefs();
+    updateDbVias(block, tech);
+    updateDbConn(block, tech);
+    updateDbAccessPoints(block, tech);
+  }
 }

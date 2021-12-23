@@ -56,10 +56,10 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (layer_ != rhs.layer_)
     return false;
 
-  if (type_low_ != rhs.type_low_)
+  if (low_type_ != rhs.low_type_)
     return false;
 
-  if (type_high_ != rhs.type_high_)
+  if (high_type_ != rhs.high_type_)
     return false;
 
   // User Code Begin ==
@@ -79,8 +79,8 @@ void _dbAccessPoint::differences(dbDiff& diff,
   DIFF_BEGIN
 
   DIFF_FIELD(layer_);
-  DIFF_FIELD(type_low_);
-  DIFF_FIELD(type_high_);
+  DIFF_FIELD(low_type_);
+  DIFF_FIELD(high_type_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -89,8 +89,8 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(type_low_);
-  DIFF_OUT_FIELD(type_high_);
+  DIFF_OUT_FIELD(low_type_);
+  DIFF_OUT_FIELD(high_type_);
 
   // User Code Begin Out
   // User Code End Out
@@ -105,8 +105,8 @@ _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
 {
   layer_ = r.layer_;
-  type_low_ = r.type_low_;
-  type_high_ = r.type_high_;
+  low_type_ = r.low_type_;
+  high_type_ = r.high_type_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -116,8 +116,8 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.point_;
   stream >> obj.layer_;
   stream >> obj.accesses_;
-  stream >> obj.type_low_;
-  stream >> obj.type_high_;
+  stream >> obj.low_type_;
+  stream >> obj.high_type_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -127,8 +127,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.point_;
   stream << obj.layer_;
   stream << obj.accesses_;
-  stream << obj.type_low_;
-  stream << obj.type_high_;
+  stream << obj.low_type_;
+  stream << obj.high_type_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -169,13 +169,6 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
   obj->layer_ = layer->getImpl()->getOID();
 }
 
-void dbAccessPoint::setAccesses(std::vector<bool> accesses)
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-
-  obj->accesses_ = accesses;
-}
-
 void dbAccessPoint::getAccesses(std::vector<bool>& tbl) const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
@@ -184,30 +177,37 @@ void dbAccessPoint::getAccesses(std::vector<bool>& tbl) const
 
 // User Code Begin dbAccessPointPublicMethods
 
-void dbAccessPoint::setTypeLow(AccessType type_low)
+void dbAccessPoint::setAccesses(const std::vector<bool>& accesses)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
-  obj->type_low_ = type_low;
+  obj->accesses_ = accesses;
 }
 
-dbAccessPoint::AccessType dbAccessPoint::getTypeLow() const
+void dbAccessPoint::setLowType(AccessType low_type_)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  return dbAccessPoint::AccessType(obj->type_low_);
+
+  obj->low_type_ = low_type_;
 }
 
-void dbAccessPoint::setTypeHigh(AccessType type_high)
+dbAccessPoint::AccessType dbAccessPoint::getLowType() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-
-  obj->type_high_ = type_high;
+  return dbAccessPoint::AccessType(obj->low_type_);
 }
 
-dbAccessPoint::AccessType dbAccessPoint::getTypeHigh() const
+void dbAccessPoint::setHighType(AccessType high_type_)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  return dbAccessPoint::AccessType(obj->type_high_);
+
+  obj->high_type_ = high_type_;
+}
+
+dbAccessPoint::AccessType dbAccessPoint::getHighType() const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  return dbAccessPoint::AccessType(obj->high_type_);
 }
 
 void dbAccessPoint::setAccess(bool access, dbDirection dir)
@@ -233,10 +233,9 @@ void dbAccessPoint::setAccess(bool access, dbDirection dir)
     case dbDirection::DOWN:
       obj->accesses_[5] = access;
       break;
-    default:
-      getImpl()->getLogger()->error(
-          utl::ODB, 1100, "Access direction is of unknown type");
   }
+  getImpl()->getLogger()->error(
+      utl::ODB, 1100, "Access direction is of unknown type");
 }
 
 bool dbAccessPoint::hasAccess(dbDirection dir) const
@@ -264,10 +263,9 @@ bool dbAccessPoint::hasAccess(dbDirection dir) const
     case dbDirection::NONE:
       return (std::count(obj->accesses_.begin(), obj->accesses_.end(), true)
               > 0);
-    default:
-      getImpl()->getLogger()->error(
-          utl::ODB, 1101, "Access direction is of unknown type");
   }
+  getImpl()->getLogger()->error(
+      utl::ODB, 1101, "Access direction is of unknown type");
 }
 
 dbTechLayer* dbAccessPoint::getLayer() const
