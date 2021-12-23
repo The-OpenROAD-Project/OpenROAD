@@ -217,21 +217,23 @@ void dbAccessPoint::setAccess(bool access, dbDirection dir)
   switch (dir) {
     case dbDirection::EAST:
       obj->accesses_[0] = access;
-      break;
+      return;
     case dbDirection::SOUTH:
       obj->accesses_[1] = access;
-      break;
+      return;
     case dbDirection::WEST:
       obj->accesses_[2] = access;
-      break;
+      return;
     case dbDirection::NORTH:
       obj->accesses_[3] = access;
-      break;
+      return;
     case dbDirection::UP:
       obj->accesses_[4] = access;
-      break;
+      return;
     case dbDirection::DOWN:
       obj->accesses_[5] = access;
+      return;
+    case dbDirection::NONE:
       break;
   }
   getImpl()->getLogger()->error(
