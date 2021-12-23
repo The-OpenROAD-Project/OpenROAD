@@ -438,7 +438,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
   int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
 
-  std::map<int, vector<vector<int>>> row_fills = findRowFills();
+  RowFills row_fills = findRowFills();
 
   std::set<int> rows_with_macros;
   std::map<std::pair<int, int>, vector<int>> macro_outlines
@@ -612,7 +612,7 @@ int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
   // Grab top
   new_rows.push_back(rows.back());
 
-  std::map<int, vector<vector<int>>> row_fills = findRowFills();
+  RowFills row_fills = findRowFills();
 
   for (int cur_row = 0; cur_row < new_rows.size(); cur_row++) {
     for (odb::dbRow* subrow : new_rows[cur_row]) {
@@ -827,7 +827,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
 
   for(auto&[x_start_end, outline]:macro_outlines) {
     for (int i = 0; i < outline.size(); i += 2) {
-      std::map<int, vector<vector<int>>> row_fills = findRowFills();
+      RowFills row_fills = findRowFills();
       const int x_start = x_start_end.first;
       const int x_end = x_start_end.second;
       int bot_row = outline[i];
@@ -1013,7 +1013,7 @@ const std::pair<int, int> Tapcell::getMinMaxX(const vector<vector<odb::dbRow*>>&
   return {min_x, max_x};
 }
 
-std::map<int, std::vector<std::vector<int>>> Tapcell::findRowFills()
+Tapcell::RowFills Tapcell::findRowFills()
 {
   int y;
   std::map<int, vector<vector<int>>> row_fills;

@@ -118,6 +118,7 @@ class Tapcell
     std::string nwin_master;
     std::string nwout_master;
   };
+  typedef std::map<int, std::vector<std::vector<int>>> RowFills;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   int phy_idx_;
@@ -131,7 +132,7 @@ class Tapcell
               int halo_x,
               int halo_y);
   const std::pair<int, int> getMinMaxX(const std::vector<std::vector<odb::dbRow*>>& rows);
-  std::map<int, std::vector<std::vector<int>>> findRowFills();
+  RowFills findRowFills();
   odb::dbMaster* pickCornerMaster(LocationType top_bottom,
                                   odb::dbOrientType ori,
                                   odb::dbMaster* cnrcap_nwin_master,
