@@ -196,7 +196,7 @@ void Restructure::runABC()
 
     opt_mode_ = modes[curr_mode_idx];
 
-    std::string abc_script_file = work_dir_name_
+    const std::string abc_script_file = work_dir_name_
       + std::to_string(curr_mode_idx)
       + "ord_abc_script.tcl";
     if (logfile_ == "")
@@ -211,10 +211,9 @@ void Restructure::runABC()
 
     if (writeAbcScript(abc_script_file)) {
       // call linked abc
-      Abc_Frame_t * abc_frame;
       Abc_Start();
-      abc_frame = Abc_FrameGetGlobalFrame();
-      std::string command = "source " + abc_script_file;
+      Abc_Frame_t * abc_frame = Abc_FrameGetGlobalFrame();
+      const std::string command = "source " + abc_script_file;
       child_proc[curr_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
       if ( child_proc[curr_mode_idx] )
 	{
@@ -237,7 +236,7 @@ void Restructure::runABC()
     output_blif_file_name_
       = work_dir_name_ + std::string(block_->getConstName())
       + std::to_string(curr_mode_idx) + "_crit_path_out.blif";
-    std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
+    const std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
 
     int level_gain = 0;
     float delay = std::numeric_limits<float>::max();
