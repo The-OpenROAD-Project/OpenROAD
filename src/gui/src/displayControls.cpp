@@ -333,8 +333,6 @@ DisplayControls::DisplayControls(QWidget* parent)
     pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
   });
 
-  // Access Points
-  makeParentItem(access_points_, "Access Points", model_, Qt::Checked);
 
   // Track patterns group
   auto tracks = makeParentItem(
@@ -354,6 +352,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Checked);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
@@ -523,6 +522,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, misc_.instance_names);
   readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
+  readSettingsForRow(settings, misc_.access_points);
   readSettingsForRow(settings, misc_.detailed);
   readSettingsForRow(settings, misc_.selected);
   getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
@@ -618,6 +618,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, misc_.instance_names);
   writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
+  writeSettingsForRow(settings, misc_.access_points);
   writeSettingsForRow(settings, misc_.detailed);
   writeSettingsForRow(settings, misc_.selected);
   settings->setValue("instance_name_color", instance_name_color_);
@@ -1368,7 +1369,7 @@ bool DisplayControls::arePinMarkersVisible() const
 
 bool DisplayControls::areAccessPointsVisible() const
 {
-  return access_points_.visible->checkState() == Qt::Checked;
+  return misc_.access_points.visible->checkState() == Qt::Checked;
 }
 
 QFont DisplayControls::pinMarkersFont()

@@ -289,6 +289,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow instance_names;
     ModelRow scale_bar;
     ModelRow fills;
+    ModelRow access_points;
     ModelRow detailed;
     ModelRow selected;
   };
@@ -361,7 +362,6 @@ class DisplayControls : public QDockWidget, public Options
   BlockageModels blockages_;
   ModelRow rows_;
   ModelRow pin_markers_;
-  ModelRow access_points_;
   ModelRow rulers_;
   TrackModels tracks_;
   MiscModels misc_;
