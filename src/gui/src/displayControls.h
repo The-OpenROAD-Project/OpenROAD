@@ -210,6 +210,7 @@ class DisplayControls : public QDockWidget, public Options
 
   bool isScaleBarVisible() const override;
   bool arePinMarkersVisible() const override;
+  bool areAccessPointsVisible() const override;
   QFont pinMarkersFont() override;
 
  signals:
@@ -360,6 +361,7 @@ class DisplayControls : public QDockWidget, public Options
   BlockageModels blockages_;
   ModelRow rows_;
   ModelRow pin_markers_;
+  ModelRow access_points_;
   ModelRow rulers_;
   TrackModels tracks_;
   MiscModels misc_;

@@ -1961,6 +1961,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawInstanceNames(painter, insts);
 
   drawRows(painter, bounds);
+  if (options_->areAccessPointsVisible()) {
+    drawAccessPoints(gui_painter);
+  }
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -1970,6 +1973,29 @@ void LayoutViewer::drawBlock(QPainter* painter,
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawAccessPoints(Painter& painter)
+{
+  for (auto term : block_->getITerms()) {
+    for (auto ap : term->getAccessPoints()) {
+      if (ap != nullptr && options_->isVisible(ap->getLayer())) {
+        auto color = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
+        painter.setPen(color, /* cosmetic */ true);
+        Point pt = ap->getPoint();
+        odb::dbTransform xform;
+        int x, y;
+        term->getInst()->getLocation(x, y);
+        xform.setOffset({x, y});
+        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+        xform.apply(pt);
+        painter.drawLine({pt.x() - 50, pt.y() - 50},
+                         {pt.x() + 50, pt.y() + 50});
+        painter.drawLine({pt.x() - 50, pt.y() + 50},
+                         {pt.x() + 50, pt.y() - 50});
+      }
+    }
   }
 }
 

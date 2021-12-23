@@ -333,6 +333,9 @@ DisplayControls::DisplayControls(QWidget* parent)
     pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
   });
 
+  // Access Points
+  makeParentItem(access_points_, "Access Points", model_, Qt::Checked);
+
   // Track patterns group
   auto tracks = makeParentItem(
       tracks_group_, "Tracks", model_, Qt::Unchecked);
@@ -1361,6 +1364,11 @@ bool DisplayControls::isScaleBarVisible() const
 bool DisplayControls::arePinMarkersVisible() const
 {
   return pin_markers_.visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::areAccessPointsVisible() const
+{
+  return access_points_.visible->checkState() == Qt::Checked;
 }
 
 QFont DisplayControls::pinMarkersFont()
