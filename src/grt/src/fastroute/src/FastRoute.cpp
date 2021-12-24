@@ -1187,8 +1187,6 @@ NetRouteMap FastRouteCore::run()
 
   net_eo_.clear();
 
-  updateDbCongestion();
-
   if (has_2D_overflow && !allow_overflow_) {
     logger_->error(GRT, 118, "Routing congestion too high.");
   }

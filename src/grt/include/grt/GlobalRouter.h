@@ -300,6 +300,7 @@ class GlobalRouter
                       odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
+  void updateDbCongestion();
 
   // db functions
   void initGrid(int max_layer);

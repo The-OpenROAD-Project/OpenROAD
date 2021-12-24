@@ -212,9 +212,15 @@ void GlobalRouter::globalRoute()
 
   routes_ = findRouting(nets, min_layer, max_layer);
 
+  updateDbCongestion();
   if (verbose_)
     reportCongestion();
   computeWirelength();
+}
+
+void GlobalRouter::updateDbCongestion()
+{
+  fastroute_->updateDbCongestion();
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
@@ -3633,6 +3639,9 @@ void IncrementalGRoute::updateRoutes()
 
 IncrementalGRoute::~IncrementalGRoute()
 {
+  // Updating DB congestion is slow so only do it on "exit" from
+  // incremental routing.
+  groute_->updateDbCongestion();
   db_cbk_.removeOwner();
 }
 
