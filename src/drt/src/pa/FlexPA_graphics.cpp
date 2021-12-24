@@ -162,16 +162,16 @@ void FlexPAGraphics::startPin(frPin* pin,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
-  aps_.clear();
 
   frTerm* term = pin->getTerm();
   std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
                      + term->getName();
   if (!settings_->pinName.empty()) {
-    if (term->getName() != term_name_) {
+    if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_term && instClass->find(inst_) == instClass->end()) {
+    if (inst_term == nullptr
+        || (inst_term && instClass->find(inst_) == instClass->end())) {
       return;
     }
   }
@@ -180,10 +180,12 @@ void FlexPAGraphics::startPin(frPin* pin,
   pin_ = pin;
   inst_term_ = inst_term;
 
-  Rect box;
-  inst_term->getInst()->getBBox(box);
-  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
-  gui_->pause();
+  if (inst_term) {
+    Rect box;
+    inst_term->getInst()->getBBox(box);
+    gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+    gui_->pause();
+  }
 }
 
 static const char* to_string(frAccessPointEnum e)
@@ -221,6 +223,7 @@ void FlexPAGraphics::setAPs(
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
+  aps_.clear();
 }
 
 void FlexPAGraphics::setViaAP(
