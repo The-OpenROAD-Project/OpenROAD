@@ -131,7 +131,8 @@ make DESIGN_NAME=TopLevelName DESIGN_CONFIG=$(pwd)/designs/harness.mk
 ### AutoTuner: Automatic parameter tuning framework
 Automatic parameter tuning framework for commercial and academic RTL-to-GDS flows.
 AutoTuner provides two main functionalities as follows.
-* Automatic hyperparameter tuning framework for OpenROAD-flow-script (ORFS)
-* Parametric sweeping experiments for ORFS
+
+- Automatic hyperparameter tuning framework for OpenROAD-flow-scripts 
+- Parametric sweeping experiments for OpenROAD-flow-scripts 
 
 Refer to the detailed [instructions here](./InstructionsForAutoTuner.md) for AutoTuner.
