@@ -1810,7 +1810,10 @@ void FlexDR::searchRepair(int iter,
                   logger_->report("    Completing {}% with {} violations.",
                                   prev_perc,
                                   getDesign()->getTopBlock()->getNumMarkers());
+                  logger_->metric("detailedroute__route__drc_errors", getDesign()->getTopBlock()->getNumMarkers());
                   logger_->report("    {}.", t);
+                } else {
+                  logger_->metric("detailedroute__route__drc_errors", 0);
                 }
               }
             }
