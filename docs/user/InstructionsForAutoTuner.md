@@ -1,6 +1,6 @@
 # Instructions for AutoTuner with Ray
 
-_AutoTuner_ is a “no-human-in-loop” parameter tuning framework for commercial and academic RTL-to-GDS flows. 
+_AutoTuner_ is a "no-human-in-loop" parameter tuning framework for commercial and academic RTL-to-GDS flows. 
 AutoTuner provides a generic interface where users can define parameter configuration as JSON objects. 
 This enables AutoTuner to easily support various tools and flows. AutoTuner also utilizes [METRICS2.1](https://github.com/ieee-ceda-datc/datc-rdf-Metrics4ML) to capture PPA 
 of individual search trials. With the abundant features of METRICS2.1, users can explore various reward functions that steer the flow autotuning to different PPA goals. 
@@ -25,28 +25,33 @@ User-settable coefficient values (`coeff_perform`, `coeff_power`, `coeff_area`) 
 
 Sample JSON file for sky130hd aes design: [[link]](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/designs/sky130hd/aes/autotuner.json)
 
-Simple Example with comments:
+Simple Example:
 ```json
 {
-    "_SDC_FILE_PATH": "constraint.sdc",     // pointer of the base SDC file for modification
-    "_SDC_CLK_PERIOD": {                    // parameter name (clock period) for sweeping/tuning. 
-        "type": "float",                    // parameter type for sweeping/tuning
-        "minmax": [                         // min-to-max range for sweeping/tuning. 
-            1.0,                            // The unit follows the default value of each technology std cell library.
+    "_SDC_FILE_PATH": "constraint.sdc",     
+    "_SDC_CLK_PERIOD": {                    
+        "type": "float",                    
+        "minmax": [                         
+            1.0,                            
             3.7439
         ],
-        "step": 0                           // step ‘0’ for type ‘float’ means continuous step for sweeping/tuning
+        "step": 0                           
     },
-    "CORE_MARGIN": {                        // parameter name (die-to-core margin) for sweeping/tuning
+    "CORE_MARGIN": {                        
         "type": "int",
         "minmax": [
             2,
             2
         ],
-        "step": 0                           // step ‘0’ for type ‘int’ means the constant parameter.
+        "step": 0                           
     },
 }
 ```
+
+* `"_SDC_FILE_PATH"`, `"_SDC_CLK_PERIOD"`, `"CORE_MARGIN"`: Parameter names for sweeping/tuning. 
+* `"type"`: Parameter type ("float" or "int") for sweeping/tuning
+* `"minmax"`: Min-to-max range for sweeping/tuning. The unit follows the default value of each technology std cell library.
+* `"step"`: Parameter step within the minmax range. Step 0 for type "float" means continuous step for sweeping/tuning. Step 0 for type "int" means the constant parameter.
 
 ## Tunable / sweepable parameters
 
@@ -58,24 +63,24 @@ For SDC you can use:
 * `_SDC_FILE_PATH`
   - Path relative to the current JSON file to the SDC file.
 * `_SDC_CLK_PERIOD`
-  - Design clock period. This will create a copy of _SDC_FILE_PATH and modify the clock period.
+  - Design clock period. This will create a copy of `_SDC_FILE_PATH` and modify the clock period.
 * `_SDC_UNCERTAINTY`
-  - Clock uncertainty. This will create a copy of _SDC_FILE_PATH and modify the clock uncertainty.
+  - Clock uncertainty. This will create a copy of `_SDC_FILE_PATH` and modify the clock uncertainty.
 * `_SDC_IO_DELAY`
-  - I/O delay. This will create a copy of _SDC_FILE_PATH and modify the I/O delay.
+  - I/O delay. This will create a copy of `_SDC_FILE_PATH` and modify the I/O delay.
 
 
 
 For FastRoute you can use:
 
 * `_FR_FILE_PATH`
-  - Path relative to the current JSON file to the fastroute.tcl file.
+  - Path relative to the current JSON file to the `fastroute.tcl` file.
 * `_FR_LAYER_ADJUST`
-  - Layer adjustment. This will create a copy of _FR_FILE_PATH and modify the layer adjustment for all routable layers, i.e., from $MIN_ROUTING_LAYER to $MAX_ROUTING_LAYER.
+  - Layer adjustment. This will create a copy of `_FR_FILE_PATH` and modify the layer adjustment for all routable layers, i.e., from `$MIN_ROUTING_LAYER` to `$MAX_ROUTING_LAYER`.
 * `_FR_LAYER_ADJUST_NAME`
-  - Layer adjustment for layer NAME. This will create a copy of _FR_FILE_PATH and modify the layer adjustment only for the layer NAME.
+  - Layer adjustment for layer NAME. This will create a copy of `_FR_FILE_PATH` and modify the layer adjustment only for the layer NAME.
 * `_FR_GR_SEED`
-  - Global route random seed. This will create a copy of _FR_FILE_PATH and modify the global route random seed.
+  - Global route random seed. This will create a copy of `_FR_FILE_PATH` and modify the global route random seed.
 
 
 
@@ -132,7 +137,7 @@ GCP Setup Tutorial coming soon.
     - --config
         - Configuration file that sets which knobs to use for autotuning
     - --experiment
-        - Experiment name. This parameter is used to prefix the FLOW_VARIANT and to set the Ray log destination
+        - Experiment name. This parameter is used to prefix the `FLOW_VARIANT` and to set the Ray log destination
     - --resume
         - Resume previous run
 * Git setup
@@ -151,7 +156,7 @@ GCP Setup Tutorial coming soon.
     - --git-url
         - ORFS repo URL to use
     - --build-args
-        - Additional arguments given to ./build_openroad.sh
+        - Additional arguments given to `./build_openroad.sh`
 * For AutoTuner
     - --algorithm
         - Search algorithm to use for autotuning
@@ -162,7 +167,7 @@ GCP Setup Tutorial coming soon.
     - --iterations
         - Number of iterations for autotuning
     - --reference
-        - Reference file for use with ‘PPAImprov’ evaluation function
+        - Reference file for use with "PPAImprov" evaluation function
     - --perturbation
         - Perturbation interval for PopulationBasedTraining
     - --seed
