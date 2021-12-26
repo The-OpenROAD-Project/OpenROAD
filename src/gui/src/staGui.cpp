@@ -1133,8 +1133,8 @@ void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_m
                                    false, // startpoints_only
                                    0,
                                    0,
-                                   false, // thru_disabled
-                                   false); // thru_constants
+                                   true, // thru_disabled
+                                   true); // thru_constants
 
   sta::SearchPred2 srch_pred(sta_);
   sta::BfsBkwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
@@ -1148,16 +1148,16 @@ void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_m
 
 void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin, DepthMapSet& depth_map)
 {
-  sta::PinSeq pins_to;
-  pins_to.push_back(source_pin);
+  sta::PinSeq pins_from;
+  pins_from.push_back(source_pin);
 
-  auto* pins = sta_->findFanoutPins(&pins_to,
-                                   true, // flat
-                                   false, // startpoints_only
-                                   0,
-                                   0,
-                                   false, // thru_disabled
-                                   false); // thru_constants
+  auto* pins = sta_->findFanoutPins(&pins_from,
+                                    true, // flat
+                                    false, // startpoints_only
+                                    0,
+                                    0,
+                                    true, // thru_disabled
+                                    true); // thru_constants
   sta::SearchPred2 srch_pred(sta_);
 
   sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
@@ -1169,7 +1169,14 @@ void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, sta::B
   auto* network = sta_->getDbNetwork();
   auto* graph = sta_->graph();
 
+  auto filter_pins = [network](sta::Pin* pin) {
+    return network->isRegClkPin(pin);
+  };
+
   for (auto* pin : *pins) {
+    if (filter_pins(pin)) {
+      continue;
+    }
     sta::Vertex* vertex = graph->pinDrvrVertex(pin);
     bfs.enqueueAdjacentVertices(vertex);
   }
@@ -1195,7 +1202,12 @@ void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, sta::B
     odb::dbITerm* iterm = nullptr;
     odb::dbBTerm* bterm = nullptr;
 
-    network->staToDb(vertex->pin(), iterm, bterm);
+    auto* sta_pin = vertex->pin();
+    if (filter_pins(sta_pin)) {
+      continue;
+    }
+
+    network->staToDb(sta_pin, iterm, bterm);
     odb::dbObject* pin_term = nullptr;
     if (iterm != nullptr) {
       pin_term = iterm;
