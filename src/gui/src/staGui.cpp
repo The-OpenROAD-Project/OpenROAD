@@ -965,7 +965,7 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
     }
   }
 
-  if (pin == nullptr) {
+  if (pin == nullptr || (!fanin_ && !fanout_)) {
     Gui::get()->unregisterRenderer(this);
     return;
   } else {
