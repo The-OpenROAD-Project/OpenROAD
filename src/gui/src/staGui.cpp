@@ -1322,6 +1322,12 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
       max_timing_ = std::max(max_timing_, pin->getPathSlack());
     }
   }
+
+  for (auto& [level, pin_list] : map_) {
+    std::sort(pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
+      return l->getPathSlack() > r->getPathSlack();
+    });
+  }
 }
 
 }  // namespace gui
