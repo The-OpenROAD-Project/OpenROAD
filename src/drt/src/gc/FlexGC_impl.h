@@ -138,7 +138,7 @@ class FlexGCWorker::Impl
   // update
   void updateGCWorker();
 
- protected:
+ private:
   frTechObject* tech_;
   Logger* logger_;
   FlexDRWorker* drWorker_;

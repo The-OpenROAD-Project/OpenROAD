@@ -96,7 +96,7 @@ class Parser
     return prefTrackPatterns;
   }
 
- protected:
+ private:
   void readDesign(odb::dbDatabase*);
   void readTechAndLibs(odb::dbDatabase*);
   void setMacros(odb::dbDatabase*);
@@ -267,7 +267,7 @@ class Writer
       connFigs;  // all connFigs ready to def
   std::vector<frViaDef*> viaDefs;
 
- protected:
+ private:
   frTechObject* tech;
   frDesign* design;
   Logger* logger;
