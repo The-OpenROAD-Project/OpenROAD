@@ -622,7 +622,7 @@ class FlexGRGridGraph
     zDirs_.shrink_to_fit();
   }
 
- protected:
+ private:
   frDesign* design_;
   FlexGRWorker* grWorker_;
   frGCellPattern* xgp_;
