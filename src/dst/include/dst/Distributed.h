@@ -44,11 +44,7 @@ namespace asio = boost::asio;
 using asio::ip::tcp;
 
 namespace dst {
-#if BOOST_VERSION >= 107000
-typedef asio::basic_stream_socket<tcp, asio::any_io_executor> socket;
-#else
-typedef asio::basic_stream_socket<tcp> socket;
-#endif
+using socket = asio::basic_stream_socket<tcp>;
 class JobMessage;
 class JobCallBack;
 
