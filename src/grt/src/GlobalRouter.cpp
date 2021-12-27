@@ -119,14 +119,14 @@ void GlobalRouter::clear()
     delete net_itr.second;
   db_net_map_.clear();
   clearObjects();
+  routing_tracks_->clear();
+  routing_layers_.clear();
 }
 
 void GlobalRouter::clearObjects()
 {
   grid_->clear();
   fastroute_->clear();
-  routing_tracks_->clear();
-  routing_layers_.clear();
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
 }
@@ -140,9 +140,9 @@ GlobalRouter::~GlobalRouter()
     delete net_itr.second;
 }
 
-std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
-                                               int max_routing_layer,
-                                               NetType type)
+
+std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
+                                              int max_routing_layer)
 {
   initAdjustments();
 
@@ -154,21 +154,17 @@ std::vector<Net*> GlobalRouter::startFastRoute(int min_routing_layer,
   fastroute_->setOverflowIterations(overflow_iterations_);
   fastroute_->setAllowOverflow(allow_congestion_);
 
-  block_ = db_->getChip()->getBlock();
-
   initRoutingLayers();
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
-  initNetlist();
 
-  std::vector<Net*> nets;
-  getNetsByType(type, nets);
-  initializeNets(nets);
+  std::vector<Net*> nets = initNetlist();
+  initNets(nets);
+
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
-
   return nets;
 }
 
@@ -195,6 +191,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 void GlobalRouter::globalRoute()
 {
   clear();
+  block_ = db_->getChip()->getBlock();
+
   if (max_routing_layer_ == -1) {
     max_routing_layer_ = computeMaxRoutingLayer();
   }
@@ -206,7 +204,8 @@ void GlobalRouter::globalRoute()
                       ? std::max(max_routing_layer_, max_layer_for_clock_)
                       : max_routing_layer_;
 
-  std::vector<Net*> nets = startFastRoute(min_layer, max_layer, NetType::All);
+  std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+
   if (verbose_)
     reportResources();
 
@@ -655,7 +654,7 @@ void GlobalRouter::findPins(Net* net,
   }
 }
 
-void GlobalRouter::initializeNets(std::vector<Net*>& nets)
+void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   fastroute_->resetNewNetID();
   checkPinPlacement();
@@ -2585,14 +2584,29 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
   }
 }
 
-void GlobalRouter::initNetlist()
+std::vector<Net*> GlobalRouter::initNetlist()
 {
-  if (db_net_map_.empty()) {
-    initClockNets();
-    for (odb::dbNet* net : block_->getNets()) {
-      addNet(net);
+  initClockNets();
+
+  std::vector<Net*> nets;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    Net *net = addNet(db_net);
+    // add clock nets not connected to a leaf first
+    if (net) {
+      bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+      if (is_non_leaf_clock)
+        nets.push_back(net);
     }
   }
+
+  for (auto net_itr : db_net_map_) {
+    Net* net = net_itr.second;
+    bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+    if (!is_non_leaf_clock) {
+      nets.push_back(net);
+    }
+  }
+  return nets;
 }
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
@@ -2623,32 +2637,6 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
 {
   return db_net_map_[db_net];
-}
-
-void GlobalRouter::getNetsByType(NetType type, std::vector<Net*>& nets)
-{
-  if (type == NetType::Antenna) {
-    for (odb::dbNet* db_net : dirty_nets_) {
-      nets.push_back(db_net_map_[db_net]);
-    }
-  } else {
-    // add clock nets not connected to a leaf first
-    for (auto net_itr : db_net_map_) {
-      Net* net = net_itr.second;
-      bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-      if (is_non_leaf_clock) {
-        nets.push_back(net);
-      }
-    }
-
-    for (auto net_itr : db_net_map_) {
-      Net* net = net_itr.second;
-      bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-      if (!is_non_leaf_clock) {
-        nets.push_back(net);
-      }
-    }
-  }
 }
 
 void GlobalRouter::initClockNets()
@@ -3237,8 +3225,6 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
 
 int GlobalRouter::computeMaxRoutingLayer()
 {
-  block_ = db_->getChip()->getBlock();
-
   int max_routing_layer = -1;
 
   odb::dbTech* tech = db_->getTech();
@@ -3654,16 +3640,21 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
 {
   // Fastroute barfs if there are no nets. It shouldn't. -cherry
   if (!dirty_nets_.empty()) {
+    fastroute_->setVerbose(false);
+
     updateDirtyNets();
-    std::vector<Net*> dirty_nets = startFastRoute(
-        min_routing_layer_, max_routing_layer_, NetType::Antenna);
-    fastroute_->setVerbose(0);
+    std::vector<Net*> dirty_nets;
+    for (odb::dbNet* db_net : dirty_nets_) {
+      dirty_nets.push_back(db_net_map_[db_net]);
+    }
+    initFastRouteIncr(dirty_nets);
+
     if (verbose_)
-      logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
+      logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
-        debugPrint(
-            logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+        debugPrint(logger_, GRT, "incr", 2, "dirty net {}",
+                   net->getConstName());
     }
     restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
     removeDirtyNetsRouting();
@@ -3673,6 +3664,17 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
     mergeResults(new_route);
     dirty_nets_.clear();
   }
+}
+
+void GlobalRouter::initFastRouteIncr(std::vector<Net*> &nets)
+{
+  initCoreGrid(max_routing_layer_);
+  setCapacities(min_routing_layer_, max_routing_layer_);
+
+  initNets(nets);
+
+  applyAdjustments(min_routing_layer_, max_routing_layer_);
+  perturbCapacities();
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)

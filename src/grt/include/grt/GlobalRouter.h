@@ -165,9 +165,9 @@ class GlobalRouter
 
   // flow functions
   void writeGuides(const char* file_name);
-  std::vector<Net*> startFastRoute(int min_routing_layer,
-                                   int max_routing_layer,
-                                   NetType type);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer);
+  void initFastRouteIncr(std::vector<Net*> &nets);
   void estimateRC();
   void estimateRC(odb::dbNet *db_net);
   void globalRoute();
@@ -228,7 +228,7 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
-  void initializeNets(std::vector<Net*>& nets);
+  void initNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -309,9 +309,8 @@ class GlobalRouter
                          int max_layer);
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
-  void initNetlist();
+  std::vector<Net*> initNetlist();
   Net* getNet(odb::dbNet* db_net);
-  void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
