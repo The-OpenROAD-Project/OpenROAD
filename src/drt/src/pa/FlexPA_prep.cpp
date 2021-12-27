@@ -1652,7 +1652,12 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
   }
 
   if (instCnt != -1) {
-    logger_->error(DRT, 85, "Valid access pattern combination not found.");
+    std::string inst_names;
+    for (frInst* inst : insts) {
+      inst_names += '\n' + inst->getName();
+    }
+    logger_->error(DRT, 85, "Valid access pattern combination not found for {}",
+                   inst_names);
   }
 
   // for (int i = 0; i < (int)instAccessPatternIdx.size(); i++) {

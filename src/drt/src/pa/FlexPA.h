@@ -60,7 +60,7 @@ class FlexPA
   int main();
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
 
- protected:
+ private:
   frDesign* design_;
   Logger* logger_;
   std::unique_ptr<FlexPAGraphics> graphics_;

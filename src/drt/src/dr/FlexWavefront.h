@@ -177,7 +177,7 @@ class FlexWavefrontGrid
   void setSrcTaperBox(const frBox3D* b) { srcTaperBox = b; }
   const frBox3D* getSrcTaperBox() const { return srcTaperBox; }
 
- protected:
+ private:
   frMIdx xIdx_, yIdx_, zIdx_;
   frCost pathCost_;  // path cost
   frCost cost_;      // path + est cost
@@ -214,7 +214,7 @@ class FlexWavefront
   void cleanup() { wavefrontPQ_.cleanup(); }
   void fit() { wavefrontPQ_.fit(); }
 
- protected:
+ private:
   myPriorityQueue wavefrontPQ_;
 };
 }  // namespace fr

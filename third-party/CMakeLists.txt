@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, The Regents of the University of California
+## Copyright (c) 2021, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -33,42 +33,9 @@
 ##
 ###############################################################################
 
-include("openroad")
+# abc does not have "platform" support for macos so force it to use stdint.h
+if (CMAKE_OSX_SYSROOT)
+   set(ABC_USE_STDINT_H 1)
+endif()
 
-project(rmp)
-
-swig_lib(NAME      rmp
-         NAMESPACE rmp
-         I_FILE    rmp.i
-         SCRIPTS   rmp.tcl
-)
-
-target_sources(rmp
-  PRIVATE
-    blifParser.cpp
-    blif.cpp
-    Restructure.cpp
-    MakeRestructure.cpp
-)
-
-messages(
-TARGET rmp
-OUTPUT_DIR ..
-)
-
-target_include_directories(rmp
-  PUBLIC
-    ../include
-  PRIVATE
-    .
- )
-
-target_link_libraries(rmp 
-  PRIVATE
-    odb
-    dbSta
-    OpenSTA
-    rsz
-    utl
-    libabc
- )
+add_subdirectory(abc)
