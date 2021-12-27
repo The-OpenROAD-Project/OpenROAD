@@ -47,7 +47,6 @@ met5       Horizontal       2888          2812          2.63%
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 15
 [INFO GRT-0112] Final usage 3D: 64
-[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

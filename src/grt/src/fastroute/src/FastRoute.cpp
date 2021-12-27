@@ -686,16 +686,12 @@ NetRouteMap FastRouteCore::getRoutes()
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
-  auto db_gcell = odb::dbGCellGrid::create(block);
-  if (db_gcell == nullptr) {
-    db_gcell = block->getGCellGrid();
-    if (verbose_)
-      logger_->warn(
-          utl::GRT,
-          211,
-          "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
+  auto db_gcell = block->getGCellGrid();
+  if (db_gcell)
     db_gcell->resetGrid();
-  }
+  else
+    db_gcell = odb::dbGCellGrid::create(block);
+
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, h_tile_);
   for (int k = 0; k < num_layers_; k++) {
