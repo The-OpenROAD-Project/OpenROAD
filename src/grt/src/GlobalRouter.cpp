@@ -1522,7 +1522,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
 {
   std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
   int last_layer = -1;
-  for (uint p = 0; p < pins.size(); p++) {
+  for (int p = 0; p < pins.size(); p++) {
     if (p > 0) {
       odb::Point pin_pos0 = findFakePinPosition(pins[p - 1], db_net);
       odb::Point pin_pos1 = findFakePinPosition(pins[p], db_net);
@@ -1561,7 +1561,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       odb::Point pin_pos = findFakePinPosition(pin, db_net);
 
       int wire_via_layer = std::numeric_limits<int>::max();
-      for (uint i = 0; i < route.size(); i++) {
+      for (int i = 0; i < route.size(); i++) {
         if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
              || (pin_pos.x() == route[i].final_x
                  && pin_pos.y() == route[i].final_y))
@@ -1584,7 +1584,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
 
       if (!bottom_layer_pin) {
-        for (uint i = 0; i < route.size(); i++) {
+        for (int i = 0; i < route.size(); i++) {
           if (((pin_pos.x() == route[i].init_x
                 && pin_pos.y() == route[i].init_y)
                || (pin_pos.x() == route[i].final_x
@@ -1673,7 +1673,7 @@ void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box)
     logger_->error(GRT, 78, "Guides vector is empty.");
   }
   final_box.push_back(guide_box[0]);
-  for (uint i = 1; i < guide_box.size(); i++) {
+  for (int i = 1; i < guide_box.size(); i++) {
     odb::Rect box = guide_box[i];
     odb::Rect& lastBox = final_box.back();
     if (lastBox.overlaps(box)) {
@@ -1815,7 +1815,7 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
       segs_at_point[pinPt] += 1;
     }
 
-    uint i = 0;
+    int i = 0;
     while (i < segments.size() - 1) {
       GSegment& segment0 = segments[i];
       GSegment& segment1 = segments[i + 1];
@@ -3123,13 +3123,13 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   odb::dbSet<odb::dbNet> nets = block_->getNets();
 
   if (nets.empty()) {
-    logger_->error(GRT, 94, "Design without nets.");
+    logger_->error(GRT, 94, "Design with no nets.");
   }
 
   for (odb::dbNet* db_net : nets) {
     uint wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
-    if (wire_cnt < 1)
+    if (wire_cnt == 0)
       continue;
 
     if (db_net->getSigType().isSupply()) {
