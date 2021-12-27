@@ -694,37 +694,24 @@ void FastRouteCore::updateDbCongestion()
 
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, h_tile_);
+  auto db_tech = db_->getTech();
   for (int k = 0; k < num_layers_; k++) {
-    auto layer = db_->getTech()->findRoutingLayer(k + 1);
+    auto layer = db_tech->findRoutingLayer(k + 1);
     if (layer == nullptr) {
-      if (verbose_)
-        logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k + 1);
       continue;
     }
 
+    const unsigned short capH = h_capacity_3D_[k];
+    const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_ - 1; x++) {
-        const unsigned short capH = h_capacity_3D_[k];
-        const unsigned short blockageH
-            = (h_capacity_3D_[k] - h_edges_3D_[k][y][x].cap);
+        const unsigned short blockageH = capH - h_edges_3D_[k][y][x].cap;
+        const unsigned short blockageV = capV - v_edges_3D_[k][y][x].cap;
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
-
-        db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
-        db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
-        db_gcell->setHorizontalBlockage(layer, x, y, (uint) blockageH);
-      }
-    }
-
-    for (int y = 0; y < y_grid_ - 1; y++) {
-      for (int x = 0; x < x_grid_; x++) {
-        const unsigned short capV = v_capacity_3D_[k];
-        const unsigned short blockageV
-            = (v_capacity_3D_[k] - v_edges_3D_[k][y][x].cap);
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
-
-        db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
-        db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
-        db_gcell->setVerticalBlockage(layer, x, y, (uint) blockageV);
+        db_gcell->setCapacity(layer, x, y, capH, capV, 0);
+        db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
+        db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
       }
     }
   }
