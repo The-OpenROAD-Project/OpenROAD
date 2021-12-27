@@ -1332,7 +1332,7 @@ void GlobalRouter::setOverflowIterations(int iterations)
   overflow_iterations_ = iterations;
 }
 
-void GlobalRouter::setGridOrigin(long x, long y)
+void GlobalRouter::setGridOrigin(int x, int y)
 {
   grid_origin_ = odb::Point(x, y);
 }
@@ -1693,8 +1693,8 @@ void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box)
 odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
   odb::Rect die_bounds = grid_->getGridArea();
-  long init_x, init_y;
-  long final_x, final_y;
+  int init_x, init_y;
+  int final_x, final_y;
 
   if (route.init_x < route.final_x) {
     init_x = route.init_x;
@@ -1849,15 +1849,15 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
                                    GSegment& new_seg,
                                    const std::map<RoutePt, int>& segs_at_point)
 {
-  long init_x0 = std::min(seg0.init_x, seg0.final_x);
-  long init_y0 = std::min(seg0.init_y, seg0.final_y);
-  long final_x0 = std::max(seg0.final_x, seg0.init_x);
-  long final_y0 = std::max(seg0.final_y, seg0.init_y);
+  int init_x0 = std::min(seg0.init_x, seg0.final_x);
+  int init_y0 = std::min(seg0.init_y, seg0.final_y);
+  int final_x0 = std::max(seg0.final_x, seg0.init_x);
+  int final_y0 = std::max(seg0.final_y, seg0.init_y);
 
-  long init_x1 = std::min(seg1.init_x, seg1.final_x);
-  long init_y1 = std::min(seg1.init_y, seg1.final_y);
-  long final_x1 = std::max(seg1.final_x, seg1.init_x);
-  long final_y1 = std::max(seg1.final_y, seg1.init_y);
+  int init_x1 = std::min(seg1.init_x, seg1.final_x);
+  int init_y1 = std::min(seg1.init_y, seg1.final_y);
+  int final_x1 = std::max(seg1.final_x, seg1.init_x);
+  int final_y1 = std::max(seg1.final_y, seg1.init_y);
 
   // vertical segments aligned
   if (init_x0 == final_x0 && init_x1 == final_x1 && init_x0 == init_x1) {

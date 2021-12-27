@@ -413,11 +413,11 @@ void FastRouteCore::setNumAdjustments(int nAdjustments)
   num_adjust_ = nAdjustments;
 }
 
-int FastRouteCore::getEdgeCurrentResource(long x1,
-                                          long y1,
+int FastRouteCore::getEdgeCurrentResource(int x1,
+                                          int y1,
                                           int l1,
-                                          long x2,
-                                          long y2,
+                                          int x2,
+                                          int y2,
                                           int l2)
 {
   int resource = 0;
@@ -437,11 +437,11 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
   return resource;
 }
 
-int FastRouteCore::getEdgeCurrentUsage(long x1,
-                                       long y1,
+int FastRouteCore::getEdgeCurrentUsage(int x1,
+                                       int y1,
                                        int l1,
-                                       long x2,
-                                       long y2,
+                                       int x2,
+                                       int y2,
                                        int l2)
 {
   int usage = 0;
@@ -464,11 +464,11 @@ void FastRouteCore::setMaxNetDegree(int deg)
   max_degree_ = deg;
 }
 
-void FastRouteCore::addAdjustment(long x1,
-                                  long y1,
+void FastRouteCore::addAdjustment(int x1,
+                                  int y1,
                                   int l1,
-                                  long x2,
-                                  long y2,
+                                  int x2,
+                                  int y2,
                                   int l2,
                                   int reducedCap,
                                   bool isReduce)
@@ -536,11 +536,11 @@ void FastRouteCore::addAdjustment(long x1,
   }
 }
 
-int FastRouteCore::getEdgeCapacity(long x1,
-                                   long y1,
+int FastRouteCore::getEdgeCapacity(int x1,
+                                   int y1,
                                    int l1,
-                                   long x2,
-                                   long y2,
+                                   int x2,
+                                   int y2,
                                    int l2)
 {
   int cap = 0;
@@ -580,11 +580,11 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
   return cap;
 }
 
-void FastRouteCore::setEdgeCapacity(long x1,
-                                    long y1,
+void FastRouteCore::setEdgeCapacity(int x1,
+                                    int y1,
                                     int l1,
-                                    long x2,
-                                    long y2,
+                                    int x2,
+                                    int y2,
                                     int l2,
                                     int newCap)
 {
@@ -605,11 +605,11 @@ void FastRouteCore::setEdgeCapacity(long x1,
   }
 }
 
-void FastRouteCore::setEdgeUsage(long x1,
-                                 long y1,
+void FastRouteCore::setEdgeUsage(int x1,
+                                 int y1,
                                  int l1,
-                                 long x2,
-                                 long y2,
+                                 int x2,
+                                 int y2,
                                  int l2,
                                  int newUsage)
 {

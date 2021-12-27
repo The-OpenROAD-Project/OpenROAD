@@ -124,11 +124,11 @@ class FastRouteCore
   void resetNewNetID();
   void initEdges();
   void setNumAdjustments(int nAdjustements);
-  void addAdjustment(long x1,
-                     long y1,
+  void addAdjustment(int x1,
+                     int y1,
                      int l1,
-                     long x2,
-                     long y2,
+                     int x2,
+                     int y2,
                      int l2,
                      int reducedCap,
                      bool isReduce);
@@ -136,27 +136,27 @@ class FastRouteCore
   NetRouteMap run();
   void updateDbCongestion();
 
-  int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
+  int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(long x1,
-                             long y1,
+  int getEdgeCurrentResource(int x1,
+                             int y1,
                              int l1,
-                             long x2,
-                             long y2,
+                             int x2,
+                             int y2,
                              int l2);
-  int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  void setEdgeUsage(long x1,
-                    long y1,
+  int getEdgeCurrentUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  void setEdgeUsage(int x1,
+                    int y1,
                     int l1,
-                    long x2,
-                    long y2,
+                    int x2,
+                    int y2,
                     int l2,
                     int newUsage);
-  void setEdgeCapacity(long x1,
-                       long y1,
+  void setEdgeCapacity(int x1,
+                       int y1,
                        int l1,
-                       long x2,
-                       long y2,
+                       int x2,
+                       int y2,
                        int l2,
                        int newCap);
   void setMaxNetDegree(int);
