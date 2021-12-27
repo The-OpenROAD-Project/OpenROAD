@@ -249,7 +249,6 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
       antenna_repair.deleteFillerCells();
 
       IncrementalGRoute incr_groute(this, block_);
-      clearObjects();
       antenna_repair.repairAntennas(diode_mterm);
       if (verbose_)
         logger_->info(
