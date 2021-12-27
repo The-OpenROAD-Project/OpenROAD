@@ -129,6 +129,7 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
+  bool pin_access_valid_;
 
   void init(bool pin_access = false);
   void prep();

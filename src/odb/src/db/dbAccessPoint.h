@@ -46,6 +46,11 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbTechLayer;
+class _dbLib;
+class _dbMaster;
+class _dbMPin;
+class _dbBPin;
+class _dbITerm;
 // User Code Begin Classes
 // User Code End Classes
 
@@ -60,9 +65,15 @@ class _dbAccessPoint : public _dbObject
 
   Point point_;
   dbId<_dbTechLayer> layer_;
+  dbId<_dbLib> lib_;
+  dbId<_dbMaster> master_;
+  dbId<_dbMPin> mpin_;
+  dbId<_dbBPin> bpin_;
   dbVector<bool> accesses_;
   uint low_type_;
   uint high_type_;
+  dbVector<dbId<_dbITerm>>
+      iterms_;  // list of iterms that prefer this access point
 
   // User Code Begin Fields
   // User Code End Fields
@@ -77,6 +88,7 @@ class _dbAccessPoint : public _dbObject
                    const _dbAccessPoint& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
+  void setMPin(_dbMPin* mpin);
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj);

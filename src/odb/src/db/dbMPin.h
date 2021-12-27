@@ -35,6 +35,7 @@
 #include "dbCore.h"
 #include "dbId.h"
 #include "odb.h"
+#include "dbVector.h"
 
 namespace odb {
 
@@ -44,8 +45,6 @@ class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
-template <class T>
-class dbTable;
 class _dbAccessPoint;
 
 class _dbMPin : public _dbObject
@@ -55,7 +54,7 @@ class _dbMPin : public _dbObject
   dbId<_dbMTerm> _mterm;
   dbId<_dbBox> _geoms;
   dbId<_dbMPin> _next_mpin;
-  dbTable<_dbAccessPoint>* ap_tbl_;
+  dbVector<dbVector<dbId<_dbAccessPoint>>> aps_;
 
   _dbMPin(_dbDatabase*, const _dbMPin& p);
   _dbMPin(_dbDatabase*);
@@ -65,7 +64,7 @@ class _dbMPin : public _dbObject
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbMPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
+  void addAccessPoint(uint idx, _dbAccessPoint* ap);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin);

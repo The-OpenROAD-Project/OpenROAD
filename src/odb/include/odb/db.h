@@ -887,6 +887,11 @@ class dbBlock : public dbObject
   dbSet<dbGroup> getGroups();
 
   ///
+  /// Get the access points of this block.
+  ///
+  dbSet<dbAccessPoint> getAccessPoints();
+
+  ///
   /// Find a specific instance of this block.
   /// Returns NULL if the object was not found.
   ///
@@ -1796,7 +1801,7 @@ class dbBPin : public dbObject
   ///
   /// Get bterm of this pin.
   ///
-  dbBTerm* getBTerm();
+  dbBTerm* getBTerm() const;
 
   ///
   /// Get boxes of this pin
@@ -1838,6 +1843,7 @@ class dbBPin : public dbObject
   ///
   int getMinSpacing();
 
+  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Create a new block-terminal-pin
   ///
@@ -3149,6 +3155,10 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  void setPinAccessIdx(uint idx);
+
+  uint getPinAccessIdx() const;
+
   ///
   /// Create a new instance.
   /// Returns NULL if an instance with this name already exists.
@@ -3211,7 +3221,7 @@ class dbITerm : public dbObject
   ///
   /// Get the master-terminal that this instance-terminal is representing.
   ///
-  dbMTerm* getMTerm();
+  dbMTerm* getMTerm() const;
 
   ///
   /// Get bbox of this iterm (ie the transfromed bbox of the mterm)
@@ -3221,7 +3231,7 @@ class dbITerm : public dbObject
   ///
   /// Get the block this instance-terminal belongs too.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the signal type of this instance-terminal.
@@ -3366,9 +3376,18 @@ class dbITerm : public dbObject
 
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
-  void addAccessPoint(dbAccessPoint* ap);
-
-  std::vector<dbAccessPoint*> getAccessPoints() const;
+  ///
+  /// Returns preferred access points per each pin.
+  /// The size of the vector is the number of pins.
+  /// One preffered access point, if available, for each pin.
+  ///
+  std::vector<dbAccessPoint*> getPrefAccessPoints() const;
+  ///
+  /// Returns all access points for each pin.
+  /// The size of the vector is the number of pins.
+  /// The inner vector is the access points for the i_th pin.
+  ///
+  std::vector<std::vector<dbAccessPoint*>> getAccessPoints() const;
   ///
   /// Translate a database-id back to a pointer.
   ///
@@ -8907,9 +8926,15 @@ class dbAccessPoint : public dbObject
 
   dbMPin* getMPin() const;
 
-  static dbAccessPoint* create(dbMPin* pin);
+  dbBPin* getBPin() const;
 
-  static dbAccessPoint* getAccessPoint(dbMPin* pin, uint dbid);
+  static dbAccessPoint* create(dbBlock* block,
+                               dbMPin* pin,
+                               uint pin_access_idx);
+
+  static dbAccessPoint* create(dbBPin* pin);
+
+  static dbAccessPoint* getAccessPoint(dbBlock* block, uint dbid);
 
   static void destroy(dbAccessPoint* ap);
   // User Code End dbAccessPoint

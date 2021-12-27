@@ -66,7 +66,8 @@ TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       num_drvs_(-1),
       gui_(gui::Gui::get()),
-      distributed_(false)
+      distributed_(false),
+      pin_access_valid_(false)
 {
 }
 
@@ -235,19 +236,25 @@ void TritonRoute::init(bool pin_access)
 
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
+  } else if (pin_access) {
+    ENABLE_VIA_GEN = true;
   } else {
     ENABLE_VIA_GEN = false;
   }
-  parser.postProcess();
-  FlexPA pa(getDesign(), logger_);
-  pa.setDebug(debug_.get(), db_);
-  pa.main();
+  if (!pin_access_valid_) {
+    parser.postProcess();
+    FlexPA pa(getDesign(), logger_);
+    pa.setDebug(debug_.get(), db_);
+    pa.main();
+  }
   if (GUIDE_FILE != string("")) {
     parser.postProcessGuide(db_);
   }
   // GR-related
-  if(!pin_access)
+  if (!pin_access_valid_) {
     parser.initRPin();
+  }
+  pin_access_valid_ = true;
 }
 
 void TritonRoute::prep()

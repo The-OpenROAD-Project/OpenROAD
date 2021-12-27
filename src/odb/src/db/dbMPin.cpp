@@ -47,21 +47,15 @@ template class dbTable<_dbMTerm>;
 
 _dbMPin::_dbMPin(_dbDatabase* db)
 {
-  ap_tbl_ = new dbTable<_dbAccessPoint>(
-      db, this, (GetObjTbl_t) &_dbMPin::getObjectTable, dbAccessPointObj);
-  ZALLOCATED(ap_tbl_);
 }
 
 _dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
     : _mterm(p._mterm), _geoms(p._geoms), _next_mpin(p._next_mpin)
 {
-  ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *p.ap_tbl_);
-  ZALLOCATED(ap_tbl_);
 }
 
 _dbMPin::~_dbMPin()
 {
-  delete ap_tbl_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
@@ -69,7 +63,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
   stream << mpin._mterm;
   stream << mpin._geoms;
   stream << mpin._next_mpin;
-  stream << *mpin.ap_tbl_;
+  stream << mpin.aps_;
   return stream;
 }
 
@@ -78,7 +72,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin._mterm;
   stream >> mpin._geoms;
   stream >> mpin._next_mpin;
-  stream >> *mpin.ap_tbl_;
+  stream >> mpin.aps_;
   return stream;
 }
 
@@ -93,7 +87,7 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   if (_next_mpin != rhs._next_mpin)
     return false;
 
-  if (*ap_tbl_ != *rhs.ap_tbl_)
+  if (aps_ != rhs.aps_)
     return false;
 
   return true;
@@ -107,7 +101,7 @@ void _dbMPin::differences(dbDiff& diff,
   DIFF_FIELD(_mterm);
   DIFF_FIELD(_geoms);
   DIFF_FIELD(_next_mpin);
-  DIFF_TABLE_NO_DEEP(ap_tbl_);
+  // DIFF_VECTOR(aps_);
   DIFF_END
 }
 
@@ -117,21 +111,18 @@ void _dbMPin::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_mterm);
   DIFF_OUT_FIELD(_geoms);
   DIFF_OUT_FIELD(_next_mpin);
-  DIFF_OUT_TABLE_NO_DEEP(ap_tbl_);
+  // DIFF_OUT_VECTOR(aps_);
   DIFF_END
 }
 
-dbObjectTable* _dbMPin::getObjectTable(dbObjectType type)
+void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
 {
-  switch (type) {
-    case dbAccessPointObj:
-      return ap_tbl_;
-    default:
-      break;
-  }
-  return getTable()->getObjectTable(type);
+   if(aps_.size() <= idx)
+   {
+     aps_.resize(idx+1);
+   }
+   aps_[idx].push_back(ap->getOID());
 }
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbMPin - Methods
@@ -185,5 +176,6 @@ dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->_mpin_tbl->getPtr(dbid_);
 }
+
 
 }  // namespace odb

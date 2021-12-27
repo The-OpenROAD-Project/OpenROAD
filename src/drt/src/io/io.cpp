@@ -2049,6 +2049,8 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
 void io::Parser::readDb(odb::dbDatabase* db)
 {
+  if(design->getTopBlock() != nullptr)
+    return;
   if (VERBOSE > 0) {
     logger->info(DRT, 149, "Reading tech and libs.");
   }
@@ -2688,8 +2690,35 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
     }
   }
 }
+
+inline void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
+                                frAccessPoint* ap,
+                                odb::dbTech* tech)
+{
+  db_ap->setPoint(ap->getPoint());
+  if (ap->hasAccess(frDirEnum::N))
+    db_ap->setAccess(true, odb::dbDirection::NORTH);
+  if (ap->hasAccess(frDirEnum::S))
+    db_ap->setAccess(true, odb::dbDirection::SOUTH);
+  if (ap->hasAccess(frDirEnum::E))
+    db_ap->setAccess(true, odb::dbDirection::EAST);
+  if (ap->hasAccess(frDirEnum::W))
+    db_ap->setAccess(true, odb::dbDirection::WEST);
+  if (ap->hasAccess(frDirEnum::U))
+    db_ap->setAccess(true, odb::dbDirection::UP);
+  if (ap->hasAccess(frDirEnum::D))
+    db_ap->setAccess(true, odb::dbDirection::DOWN);
+  auto layer = tech->findLayer(ap->getLayerNum());
+  db_ap->setLayer(layer);
+  db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
+      true));  // this works because both enums have the same order
+  db_ap->setHighType((odb::dbAccessPoint::AccessType) ap->getType(false));
+}
+
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
 {
+  for(auto ap : block->getAccessPoints())
+    odb::dbAccessPoint::destroy(ap);
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
   for (auto& refBlk : design->getRefBlocks()) {
@@ -2711,32 +2740,16 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
       auto& pins = term->getPins();
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
+        int j = 0;
         int sz = pin->getNumPinAccess();
-        while (sz--) {
-          auto pa = pin->getPinAccess(sz);
+        while (j < sz) {
+          auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
-            auto db_ap = odb::dbAccessPoint::create(db_pin);
-            db_ap->setPoint(ap->getPoint());
-            if (ap->hasAccess(frDirEnum::N))
-              db_ap->setAccess(true, odb::dbDirection::NORTH);
-            if (ap->hasAccess(frDirEnum::S))
-              db_ap->setAccess(true, odb::dbDirection::SOUTH);
-            if (ap->hasAccess(frDirEnum::E))
-              db_ap->setAccess(true, odb::dbDirection::EAST);
-            if (ap->hasAccess(frDirEnum::W))
-              db_ap->setAccess(true, odb::dbDirection::WEST);
-            if (ap->hasAccess(frDirEnum::U))
-              db_ap->setAccess(true, odb::dbDirection::UP);
-            if (ap->hasAccess(frDirEnum::D))
-              db_ap->setAccess(true, odb::dbDirection::DOWN);
-            auto layer = tech->findLayer(ap->getLayerNum());
-            db_ap->setLayer(layer);
-            db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
-                true));  // this works because both enums have the same order
-            db_ap->setHighType(
-                (odb::dbAccessPoint::AccessType) ap->getType(false));
+            auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
+            updateDbAccessPoint(db_ap, ap.get(), tech);
             aps_map[ap.get()] = db_ap;
           }
+          j++;
         }
       }
     }
@@ -2745,6 +2758,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     auto db_inst = block->findInst(inst->getName().c_str());
     if (db_inst == nullptr)
       logger->error(DRT, 297, "inst {} not found in db", inst->getName());
+    db_inst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& term : inst->getInstTerms()) {
       auto aps = term->getAccessPoints();
       auto db_iterm = db_inst->findITerm(term->getTerm()->getName().c_str());
@@ -2768,6 +2782,30 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
           db_iterm->setAccessPoint(db_pin, nullptr);
         }
         i++;
+      }
+    }
+  }
+  for (auto& term : design->getTopBlock()->getTerms()) {
+    auto db_term = block->findBTerm(term->getName().c_str());
+    if (db_term == nullptr)
+      logger->error(DRT, 301, "bterm {} not found in db", term->getName());
+    auto db_pins = db_term->getBPins();
+    frUInt4 i = 0;
+    auto& pins = term->getPins();
+    if (db_pins.size() != pins.size())
+      logger->error(
+          DRT, 302, "Mismatch in number of pins for bterm {}", term->getName());
+    for (auto db_pin : db_pins) {
+      auto& pin = pins[i++];
+      int j = 0;
+      int sz = pin->getNumPinAccess();
+      while (j < sz) {
+        auto pa = pin->getPinAccess(j);
+        for (auto& ap : pa->getAccessPoints()) {
+          auto db_ap = odb::dbAccessPoint::create(db_pin);
+          updateDbAccessPoint(db_ap, ap.get(), tech);
+        }
+        j++;
       }
     }
   }

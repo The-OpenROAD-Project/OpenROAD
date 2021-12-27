@@ -352,7 +352,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
-  makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Checked);
+  makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);

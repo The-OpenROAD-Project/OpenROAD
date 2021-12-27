@@ -14,7 +14,8 @@ _comparable = [
     'char *',
     'char*',
     'char',
-    'Rect'
+    'Rect',
+    'Point'
 ]
 std = [
     'int',

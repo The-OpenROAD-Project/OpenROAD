@@ -240,7 +240,7 @@ dbNet* dbITerm::getNet()
   return (dbNet*) net;
 }
 
-dbMTerm* dbITerm::getMTerm()
+dbMTerm* dbITerm::getMTerm() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -270,7 +270,7 @@ dbBTerm* dbITerm::getBTerm()
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
-dbBlock* dbITerm::getBlock()
+dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
@@ -671,30 +671,47 @@ void dbITerm::staSetVertexId(uint32_t id)
   iterm->_sta_vertex_id = id;
 }
 
-void dbITerm::addAccessPoint(dbAccessPoint* ap)
-{
-  _dbITerm* iterm = (_dbITerm*) this;
-  iterm->aps_[ap->getMPin()->getImpl()->getOID()] = ap->getImpl()->getOID();
-}
-
 void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  if (ap != nullptr)
+  if (ap != nullptr) {
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
+    _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
+    _ap->iterms_.push_back(iterm->getOID());
+  }
   else
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
 }
 
-std::vector<dbAccessPoint*> dbITerm::getAccessPoints() const
+std::vector<std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
 {
+  _dbBlock* block = (_dbBlock*) getBlock();
+  auto mterm = getMTerm();
+  uint pin_access_idx = getInst()->getPinAccessIdx();
+  auto mpins = mterm->getMPins();
+  std::vector<std::vector<dbAccessPoint*>> aps(mpins.size());
+  uint i = 0;
+  for(auto mpin : mpins)
+  {
+    _dbMPin* pin = (_dbMPin*) mpin;
+    if(pin->aps_.size() > pin_access_idx)
+      for(auto id : pin->aps_[pin_access_idx])
+      {
+        aps[i].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
+      }
+    i++;
+  }
+  return aps;
+}
+
+std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
+{
+  _dbBlock* block = (_dbBlock*) getBlock();
   _dbITerm* iterm = (_dbITerm*) this;
   std::vector<dbAccessPoint*> aps;
-  auto master = (_dbMaster*) getInst()->getMaster();
   for (auto& [pin_id, ap_id] : iterm->aps_) {
-    auto mpin = master->_mpin_tbl->getPtr(pin_id);
     if (ap_id.isValid())
-      aps.push_back((dbAccessPoint*) mpin->ap_tbl_->getPtr(ap_id));
+      aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
     else
       aps.push_back(nullptr);
   }
