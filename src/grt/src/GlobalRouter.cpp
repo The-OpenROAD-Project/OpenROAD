@@ -783,16 +783,15 @@ int GlobalRouter::computeTrackConsumption(
 void GlobalRouter::computeGridAdjustments(int min_routing_layer,
                                           int max_routing_layer)
 {
-  odb::Point upper_die_bounds
-      = odb::Point(grid_->getXMax(), grid_->getYMax());
+  odb::Point upper_die_bounds(grid_->getXMax(), grid_->getYMax());
   int h_space;
   int v_space;
 
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  odb::Point upper_grid_bounds = odb::Point(x_grids * grid_->getTileWidth(),
-                                            y_grids * grid_->getTileHeight());
+  odb::Point upper_grid_bounds(x_grids * grid_->getTileWidth(),
+                               y_grids * grid_->getTileHeight());
   int x_extra = upper_die_bounds.x() - upper_grid_bounds.x();
   int y_extra = upper_die_bounds.y() - upper_grid_bounds.y();
 
