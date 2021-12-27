@@ -2358,27 +2358,27 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
                  1,
                  "routing level {} : layer_width = {:.4f}",
                  layer->getName(),
-                 static_cast<float>(dbuToMicrons(layer_width)));
+                 dbuToMicrons(layer_width));
       debugPrint(logger_,
                  utl::GRT,
                  "l2v_pitch",
                  1,
                  "L2V_up : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} "
                  ", L2V = {:.4f} ",
-                 static_cast<float>(dbuToMicrons(width_up)),
-                 static_cast<float>(dbuToMicrons(prl_up)),
-                 static_cast<float>(dbuToMicrons(min_spc_up)),
-                 static_cast<float>(dbuToMicrons(L2V_up)));
+                 dbuToMicrons(width_up),
+                 dbuToMicrons(prl_up),
+                 dbuToMicrons(min_spc_up),
+                 dbuToMicrons(L2V_up));
       debugPrint(logger_,
                  utl::GRT,
                  "l2v_pitch",
                  1,
                  "L2V_down : viaWidth = {:.4f} , prl = {:.4f} , minSpc = "
                  "{:.4f} , L2V = {:.4f} ",
-                 static_cast<float>(dbuToMicrons(width_down)),
-                 static_cast<float>(dbuToMicrons(prl_down)),
-                 static_cast<float>(dbuToMicrons(min_spc_down)),
-                 static_cast<float>(dbuToMicrons(L2V_down)));
+                 dbuToMicrons(width_down),
+                 dbuToMicrons(prl_down),
+                 dbuToMicrons(min_spc_down),
+                 dbuToMicrons(L2V_down));
     }
     pitches[level] = {L2V_up, L2V_down};
   }
@@ -2468,8 +2468,8 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
           88,
           "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
           tech_layer->getName(),
-          static_cast<float>(dbuToMicrons(layer_tracks.getTrackPitch())),
-          static_cast<float>(dbuToMicrons(layer_tracks.getLineToViaPitch())));
+          dbuToMicrons(layer_tracks.getTrackPitch()),
+          dbuToMicrons(layer_tracks.getLineToViaPitch()));
   }
 }
 
