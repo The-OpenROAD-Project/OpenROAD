@@ -118,13 +118,8 @@ void GlobalRouter::clear()
   for (auto net_itr : db_net_map_)
     delete net_itr.second;
   db_net_map_.clear();
-  clearObjects();
   routing_tracks_->clear();
   routing_layers_.clear();
-}
-
-void GlobalRouter::clearObjects()
-{
   grid_->clear();
   fastroute_->clear();
   vertical_capacities_.clear();
@@ -650,7 +645,6 @@ void GlobalRouter::findPins(Net* net,
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
-  fastroute_->resetNewNetID();
   checkPinPlacement();
   pad_pins_connections_.clear();
 
@@ -1158,103 +1152,103 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 
 void GlobalRouter::computeObstructionsAdjustments()
 {
-  std::map<int, std::vector<odb::Rect>> obstructions
-      = grid_->getAllObstructions();
-
+  const std::map<int, std::vector<odb::Rect>> &obstructions
+      = grid_->getObstructions();
   for (auto const& [level, tech_layer] : routing_layers_) {
-    std::vector<odb::Rect> layer_obstructions = obstructions[level];
-    if (!layer_obstructions.empty()) {
-      std::pair<Grid::Tile, Grid::Tile> blocked_tiles;
-
-      bool vertical
+    auto obs_itr = obstructions.find(level);
+    if (obs_itr != obstructions.end()) {
+      const std::vector<odb::Rect> &layer_obstructions = obs_itr->second;
+      if (!layer_obstructions.empty()) {
+        bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-      if (verbose_) {
-        logger_->info(GRT,
-                      17,
-                      "Processing {} blockages on layer {}.",
-                      layer_obstructions.size(),
-                      tech_layer->getName());
-      }
-
-      int track_space = grid_->getMinWidths()[level - 1];
-
-      for (odb::Rect& obs : layer_obstructions) {
-        if (obs.xMax() <= grid_->getXMin()
-            || obs.xMin() >= grid_->getXMax()
-            || obs.yMax() <= grid_->getYMin()
-            || obs.yMin() >= grid_->getYMax()) {
-          if (verbose_)
-            logger_->warn(
-                GRT,
-                209,
-                "Ignoring an obstruction on layer {} outside the die area.",
-                tech_layer->getName());
-          continue;
+        if (verbose_) {
+          logger_->info(GRT,
+                        17,
+                        "Processing {} blockages on layer {}.",
+                        layer_obstructions.size(),
+                        tech_layer->getName());
         }
 
-        odb::Rect first_tile_box;
-        odb::Rect last_tile_box;
+        int track_space = grid_->getMinWidths()[level - 1];
 
-        blocked_tiles
-            = grid_->getBlockedTiles(obs, first_tile_box, last_tile_box);
+        for (const odb::Rect& obs : layer_obstructions) {
+          if (obs.xMax() <= grid_->getXMin()
+              || obs.xMin() >= grid_->getXMax()
+              || obs.yMax() <= grid_->getYMin()
+              || obs.yMin() >= grid_->getYMax()) {
+            if (verbose_)
+              logger_->warn(
+                            GRT,
+                            209,
+                            "Ignoring an obstruction on layer {} outside the die area.",
+                            tech_layer->getName());
+            continue;
+          }
 
-        Grid::Tile& first_tile = blocked_tiles.first;
-        Grid::Tile& last_tile = blocked_tiles.second;
+          odb::Rect first_tile_box;
+          odb::Rect last_tile_box;
 
-        int first_tile_reduce = grid_->computeTileReduce(
-            obs, first_tile_box, track_space, true, tech_layer->getDirection());
+          std::pair<Grid::Tile, Grid::Tile> blocked_tiles =
+            grid_->getBlockedTiles(obs, first_tile_box, last_tile_box);
 
-        int last_tile_reduce = grid_->computeTileReduce(
-            obs, last_tile_box, track_space, false, tech_layer->getDirection());
+          Grid::Tile& first_tile = blocked_tiles.first;
+          Grid::Tile& last_tile = blocked_tiles.second;
 
-        if (!vertical) {
-          for (int x = first_tile.x; x < last_tile.x; x++) {
-            for (int y = first_tile.y; y <= last_tile.y; y++) {
-              if (y == first_tile.y) {
-                int edge_cap
+          int first_tile_reduce = grid_->computeTileReduce(
+                                                           obs, first_tile_box, track_space, true, tech_layer->getDirection());
+
+          int last_tile_reduce = grid_->computeTileReduce(
+                                                          obs, last_tile_box, track_space, false, tech_layer->getDirection());
+
+          if (!vertical) {
+            for (int x = first_tile.x; x < last_tile.x; x++) {
+              for (int y = first_tile.y; y <= last_tile.y; y++) {
+                if (y == first_tile.y) {
+                  int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
-                edge_cap -= first_tile_reduce;
-                if (edge_cap < 0)
-                  edge_cap = 0;
-                fastroute_->addAdjustment(
-                    x, y, level, x + 1, y, level, edge_cap, true);
-              } else if (y == last_tile.y) {
-                int edge_cap
+                  edge_cap -= first_tile_reduce;
+                  if (edge_cap < 0)
+                    edge_cap = 0;
+                  fastroute_->addAdjustment(
+                                            x, y, level, x + 1, y, level, edge_cap, true);
+                } else if (y == last_tile.y) {
+                  int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
-                edge_cap -= last_tile_reduce;
-                if (edge_cap < 0)
-                  edge_cap = 0;
-                fastroute_->addAdjustment(
-                    x, y, level, x + 1, y, level, edge_cap, true);
-              } else {
-                fastroute_->addAdjustment(
-                    x, y, level, x + 1, y, level, 0, true);
+                  edge_cap -= last_tile_reduce;
+                  if (edge_cap < 0)
+                    edge_cap = 0;
+                  fastroute_->addAdjustment(
+                                            x, y, level, x + 1, y, level, edge_cap, true);
+                } else {
+                  fastroute_->addAdjustment(
+                                            x, y, level, x + 1, y, level, 0, true);
+                }
               }
             }
-          }
-        } else {
-          for (int x = first_tile.x; x <= last_tile.x; x++) {
-            for (int y = first_tile.y; y < last_tile.y; y++) {
-              if (x == first_tile.x) {
-                int edge_cap
+          } else {
+            for (int x = first_tile.x; x <= last_tile.x; x++) {
+              for (int y = first_tile.y; y < last_tile.y; y++) {
+                if (x == first_tile.x) {
+                  int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
-                edge_cap -= first_tile_reduce;
-                if (edge_cap < 0)
-                  edge_cap = 0;
-                fastroute_->addAdjustment(
-                    x, y, level, x, y + 1, level, edge_cap, true);
-              } else if (x == last_tile.x) {
-                int edge_cap
+                  edge_cap -= first_tile_reduce;
+                  if (edge_cap < 0)
+                    edge_cap = 0;
+                  fastroute_->addAdjustment(
+                                            x, y, level, x, y + 1, level, edge_cap, true);
+                } else if (x == last_tile.x) {
+                  int edge_cap
                     = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
-                edge_cap -= last_tile_reduce;
-                if (edge_cap < 0)
-                  edge_cap = 0;
-                fastroute_->addAdjustment(
-                    x, y, level, x, y + 1, level, edge_cap, true);
-              } else {
-                fastroute_->addAdjustment(
-                    x, y, level, x, y + 1, level, 0, true);
+                  edge_cap -= last_tile_reduce;
+                  if (edge_cap < 0)
+                    edge_cap = 0;
+                  fastroute_->addAdjustment(
+                                            x, y, level, x, y + 1, level, edge_cap, true);
+                } else {
+                  fastroute_->addAdjustment(
+                                            x, y, level, x, y + 1, level, 0, true);
+                }
               }
             }
           }
@@ -3598,9 +3592,9 @@ void IncrementalGRoute::updateRoutes()
 
 IncrementalGRoute::~IncrementalGRoute()
 {
-  // Updating DB congestion is slow so only do it on "exit" from
-  // incremental routing.
-  groute_->updateDbCongestion();
+  // Updating DB congestion is slow and only used for gui so 
+  // don't bother updating it.
+  //groute_->updateDbCongestion();
   db_cbk_.removeOwner();
 }
 
@@ -3641,11 +3635,8 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*> &nets)
 {
-  initCoreGrid(max_routing_layer_);
-  setCapacities(min_routing_layer_, max_routing_layer_);
-
+  fastroute_->clearNets();
   initNets(nets);
-
   applyAdjustments(min_routing_layer_, max_routing_layer_);
   perturbCapacities();
 }

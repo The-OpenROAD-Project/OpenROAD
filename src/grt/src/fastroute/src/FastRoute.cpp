@@ -113,15 +113,7 @@ void FastRouteCore::clear()
 
 void FastRouteCore::deleteComponents()
 {
-  if (!nets_.empty()) {
-    for (FrNet* net : nets_) {
-      if (net != nullptr)
-        delete net;
-      net = nullptr;
-    }
-
-    nets_.clear();
-  }
+  clearNets();
 
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
@@ -138,30 +130,6 @@ void FastRouteCore::deleteComponents()
 
   h_edges_3D_.resize(boost::extents[0][0][0]);
   v_edges_3D_.resize(boost::extents[0][0][0]);
-
-  if (!sttrees_.empty()) {
-    for (int i = 0; i < num_valid_nets_; i++) {
-      int deg = sttrees_[i].deg;
-      int numEdges = 2 * deg - 3;
-      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
-        if (treeedge->len > 0) {
-          treeedge->route.gridsX.clear();
-          treeedge->route.gridsY.clear();
-          treeedge->route.gridsL.clear();
-        }
-      }
-
-      if (sttrees_[i].nodes != nullptr)
-        delete[] sttrees_[i].nodes;
-      sttrees_[i].nodes = nullptr;
-
-      if (sttrees_[i].edges != nullptr)
-        delete[] sttrees_[i].edges;
-      sttrees_[i].edges = nullptr;
-    }
-    sttrees_.clear();
-  }
 
   parent_x1_.resize(boost::extents[0][0]);
   parent_y1_.resize(boost::extents[0][0]);
@@ -197,13 +165,45 @@ void FastRouteCore::deleteComponents()
   cost_v_test_.clear();
   cost_tb_test_.clear();
 
-  new_net_id_ = 0;
-  seg_count_ = 0;
-  pin_ind_ = 0;
   num_adjust_ = 0;
   v_capacity_ = 0;
   h_capacity_ = 0;
+}
+
+void FastRouteCore::clearNets()
+{
+  for (FrNet* net : nets_) {
+    delete net;
+  }
+  nets_.clear();
+  new_net_id_ = 0;
   num_nets_ = 0;
+  pin_ind_ = 0;
+  seg_count_ = 0;
+
+  if (!sttrees_.empty()) {
+    for (int i = 0; i < num_valid_nets_; i++) {
+      int deg = sttrees_[i].deg;
+      int numEdges = 2 * deg - 3;
+      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
+        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
+        if (treeedge->len > 0) {
+          treeedge->route.gridsX.clear();
+          treeedge->route.gridsY.clear();
+          treeedge->route.gridsL.clear();
+        }
+      }
+
+      if (sttrees_[i].nodes != nullptr)
+        delete[] sttrees_[i].nodes;
+      sttrees_[i].nodes = nullptr;
+
+      if (sttrees_[i].edges != nullptr)
+        delete[] sttrees_[i].edges;
+      sttrees_[i].edges = nullptr;
+    }
+    sttrees_.clear();
+  }
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -293,11 +293,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
   net->pinX.push_back(x);
   net->pinY.push_back(y);
   net->pinL.push_back(layer);
-}
-
-void FastRouteCore::resetNewNetID()
-{
-  new_net_id_ = 0;
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,

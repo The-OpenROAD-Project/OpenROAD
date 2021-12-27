@@ -220,7 +220,6 @@ class GlobalRouter
   void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
 
-  void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);

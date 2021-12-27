@@ -87,11 +87,9 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] Antenna violations: 1
 [INFO GRT-0015] 1 diodes inserted.
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 35
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 17
-[INFO GRT-0017] Processing 3930 blockages on layer met1.
+[INFO GRT-0017] Processing 3926 blockages on layer met1.
 [INFO GRT-0017] Processing 10 blockages on layer met4.
 [INFO GRT-0009] rerouting 6 nets.
 [INFO GRT-0014] Routed nets: 411

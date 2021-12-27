@@ -132,7 +132,7 @@ class Grid
     vertical_edges_capacities_[layer] = reduction;
   };
 
-  const std::map<int, std::vector<odb::Rect>>& getAllObstructions() const
+  const std::map<int, std::vector<odb::Rect>>& getObstructions() const
   {
     return obstructions_;
   }
