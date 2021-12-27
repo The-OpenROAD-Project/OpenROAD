@@ -1515,7 +1515,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
 {
   std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
   int last_layer = -1;
-  for (int p = 0; p < pins.size(); p++) {
+  for (size_t p = 0; p < pins.size(); p++) {
     if (p > 0) {
       odb::Point pin_pos0 = findFakePinPosition(pins[p - 1], db_net);
       odb::Point pin_pos1 = findFakePinPosition(pins[p], db_net);
@@ -1554,7 +1554,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       odb::Point pin_pos = findFakePinPosition(pin, db_net);
 
       int wire_via_layer = std::numeric_limits<int>::max();
-      for (int i = 0; i < route.size(); i++) {
+      for (size_t i = 0; i < route.size(); i++) {
         if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
              || (pin_pos.x() == route[i].final_x
                  && pin_pos.y() == route[i].final_y))
@@ -1577,7 +1577,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
       }
 
       if (!bottom_layer_pin) {
-        for (int i = 0; i < route.size(); i++) {
+        for (size_t i = 0; i < route.size(); i++) {
           if (((pin_pos.x() == route[i].init_x
                 && pin_pos.y() == route[i].init_y)
                || (pin_pos.x() == route[i].final_x
@@ -1662,11 +1662,11 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
 void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box)
 {
   std::vector<odb::Rect> final_box;
-  if (guide_box.size() < 1) {
+  if (guide_box.empty()) {
     logger_->error(GRT, 78, "Guides vector is empty.");
   }
   final_box.push_back(guide_box[0]);
-  for (int i = 1; i < guide_box.size(); i++) {
+  for (size_t i = 1; i < guide_box.size(); i++) {
     odb::Rect box = guide_box[i];
     odb::Rect& lastBox = final_box.back();
     if (lastBox.overlaps(box)) {
@@ -1808,7 +1808,7 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
       segs_at_point[pinPt] += 1;
     }
 
-    int i = 0;
+    size_t i = 0;
     while (i < segments.size() - 1) {
       GSegment& segment0 = segments[i];
       GSegment& segment1 = segments[i + 1];
@@ -3336,7 +3336,7 @@ void GlobalRouter::reportResources()
   logger_->report(
       "---------------------------------------------------------------");
 
-  for (int l = 0; l < original_resources.size(); l++) {
+  for (size_t l = 0; l < original_resources.size(); l++) {
     odb::dbTechLayer* layer = routing_layers_[l + 1];
     std::string routing_direction
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
@@ -3389,7 +3389,7 @@ void GlobalRouter::reportCongestion()
       "------------------------------------------------------------------------"
       "---------------");
 
-  for (int l = 0; l < resources.size(); l++) {
+  for (size_t l = 0; l < resources.size(); l++) {
     float usage_percentage;
     if (resources[l] == 0) {
       usage_percentage = 0.0;
@@ -3453,7 +3453,7 @@ void GlobalRouter::reportLayerWireLengths()
     }
   }
   if (total_length > 0) {
-    for (int i = 0; i < lengths.size(); i++) {
+    for (size_t i = 0; i < lengths.size(); i++) {
       int64_t length = lengths[i];
       if (length > 0) {
         odb::dbTechLayer* layer = routing_layers_[i];
