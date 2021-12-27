@@ -333,11 +333,6 @@ void GlobalRouter::initRoutingLayers()
   fastroute_->setLayerOrientation(vertical);
 }
 
-void GlobalRouter::initRoutingTracks(int max_routing_layer)
-{
-  initRoutingTracks(*routing_tracks_, max_routing_layer);
-}
-
 void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
 {
   for (int l = 1; l <= grid_->getNumLayers(); l++) {
@@ -2390,12 +2385,11 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   return pitches;
 }
 
-void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
-                                     int max_layer)
+void GlobalRouter::initRoutingTracks(int max_routing_layer)
 {
-  auto l2vPitches = calcLayerPitches(max_layer);
+  auto l2vPitches = calcLayerPitches(max_routing_layer);
   for (auto const& [level, tech_layer] : routing_layers_) {
-    if (level > max_layer && max_layer > -1) {
+    if (level > max_routing_layer && max_routing_layer > -1) {
       break;
     }
 
@@ -2467,7 +2461,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
                                                location,
                                                num_tracks,
                                                orientation);
-    routing_tracks.push_back(layer_tracks);
+    routing_tracks_->push_back(layer_tracks);
     if (verbose_)
       logger_->info(
           GRT,

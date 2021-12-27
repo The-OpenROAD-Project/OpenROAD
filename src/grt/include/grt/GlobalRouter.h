@@ -305,8 +305,6 @@ class GlobalRouter
   // db functions
   void initGrid(int max_layer);
   void initRoutingLayers(std::map<int, odb::dbTechLayer*>& routing_layers);
-  void initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
-                         int max_layer);
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
   std::vector<Net*> initNetlist();
