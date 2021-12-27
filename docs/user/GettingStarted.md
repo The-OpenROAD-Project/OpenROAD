@@ -97,8 +97,10 @@ platforms, you can create the necessary platform-specific files
 yourself.
 
 Once the platform is set up, you can create a new design configuration with
-information about the design. See sample configurations in the `design`
-directory.
+information about the design. 
+Refer to the document [Flow variables] (./FlowVariables.md) for details on how to use 
+environment variables in OpenROAD-flow-scripts to configure platform and design specific parameters. 
+See sample configurations in the `design` directory.
 
 ### Adding a New Platform
 

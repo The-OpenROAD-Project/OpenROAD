@@ -148,3 +148,6 @@ entries:
 
 - file: user/FAQS
   title: FAQs
+
+- file: user/FlowVariables.md
+  title: Flow Variables
