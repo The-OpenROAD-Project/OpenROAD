@@ -121,6 +121,8 @@ proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
     keys {-signal -clock}
 
+  sta::check_argc_eq0 "set_routing_layers" $args
+
   if { [info exists keys(-signal)] } {
     grt::define_layer_range $keys(-signal)
   }
@@ -150,6 +152,8 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
   keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+
+  sta::check_argc_eq0 "set_global_routing_random" $args
 
   if { [info exists keys(-seed)] } {
     set seed $keys(-seed)
@@ -185,6 +189,8 @@ proc global_route { args } {
           -overflow_iterations -grid_origin
          } \
     flags {-allow_congestion -allow_overflow -verbose}
+
+  sta::check_argc_eq0 "global_route" $args
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "Missing dbTech."
