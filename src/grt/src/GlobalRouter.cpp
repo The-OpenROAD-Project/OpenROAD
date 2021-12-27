@@ -2164,8 +2164,7 @@ void GlobalRouter::initGrid(int max_layer)
   if (track_grid->getNumGridPatternsY() > 0)
     track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
 
-  if (tech_layer->getDirection().getValue()
-      == odb::dbTechLayerDir::HORIZONTAL) {
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     if (track_step_y == -1) {
       logger_->error(GRT,
                      124,
@@ -2173,8 +2172,7 @@ void GlobalRouter::initGrid(int max_layer)
                      tech_layer->getName());
     }
     track_spacing = track_step_y;
-  } else if (tech_layer->getDirection().getValue()
-             == odb::dbTechLayerDir::VERTICAL) {
+  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
     if (track_step_x == -1) {
       logger_->error(GRT,
                      147,
@@ -2242,10 +2240,8 @@ void GlobalRouter::initRoutingLayers(
   for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
     if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
-      if (tech_layer->getDirection().getValue()
-              != odb::dbTechLayerDir::HORIZONTAL
-          && tech_layer->getDirection().getValue()
-                 != odb::dbTechLayerDir::VERTICAL) {
+      if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+          && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
         logger_->error(GRT,
                        84,
                        "Layer {} does not have valid direction.",
@@ -2419,8 +2415,7 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     if (track_grid->getNumGridPatternsY() > 0)
       track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
 
-    if (tech_layer->getDirection().getValue()
-        == odb::dbTechLayerDir::HORIZONTAL) {
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       if (track_step_y == -1) {
         logger_->error(GRT,
                        148,
@@ -2433,8 +2428,7 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
       location = init_track_y;
       num_tracks = num_tracks_y;
       orientation = horizontal;
-    } else if (tech_layer->getDirection().getValue()
-               == odb::dbTechLayerDir::VERTICAL) {
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       if (track_step_x == -1) {
         logger_->error(GRT,
                        149,
@@ -2485,8 +2479,7 @@ void GlobalRouter::computeCapacities(int max_layer)
     RoutingTracks routing_tracks = getRoutingTracksByIndex(level);
     int track_spacing = routing_tracks.getUsePitch();
 
-    if (tech_layer->getDirection().getValue()
-        == odb::dbTechLayerDir::HORIZONTAL) {
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       h_capacity = std::floor((float) grid_->getTileWidth() / track_spacing);
 
       grid_->addHorizontalCapacity(h_capacity, level - 1);
@@ -2498,8 +2491,7 @@ void GlobalRouter::computeCapacities(int max_layer)
                  "Layer {} has {} h-capacity",
                  tech_layer->getConstName(),
                  h_capacity);
-    } else if (tech_layer->getDirection().getValue()
-               == odb::dbTechLayerDir::VERTICAL) {
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       v_capacity = std::floor((float) grid_->getTileWidth() / track_spacing);
 
       grid_->addHorizontalCapacity(0, level - 1);
@@ -2548,8 +2540,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
       track->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
     }
 
-    if (tech_layer->getDirection().getValue()
-        == odb::dbTechLayerDir::HORIZONTAL) {
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       if (track_step_y == -1) {
         logger_->error(GRT,
                        116,
@@ -2557,8 +2548,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
                        tech_layer->getName());
       }
       min_width = track_step_y;
-    } else if (tech_layer->getDirection().getValue()
-               == odb::dbTechLayerDir::VERTICAL) {
+    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       if (track_step_x == -1) {
         logger_->error(GRT,
                        117,
@@ -2605,8 +2595,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
 
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
-  if (db_net->getSigType().getValue() != odb::dbSigType::POWER
-      && db_net->getSigType().getValue() != odb::dbSigType::GROUND
+  if (!db_net->getSigType().isSupply()
       && !db_net->isSpecial() && db_net->getSWires().empty()
       && db_net->getWire() == nullptr) {
     Net* net = new Net(db_net);
@@ -2722,7 +2711,7 @@ void GlobalRouter::makeItermPins(Net* net,
         transform.apply(rect);
 
         odb::dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
+        if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }
 
@@ -2768,16 +2757,14 @@ void GlobalRouter::makeItermPins(Net* net,
       odb::Point pin_position = pin.getPosition();
       odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
-      if (tech_layer->getDirection().getValue()
-          == odb::dbTechLayerDir::HORIZONTAL) {
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
         int inst_to_pin = pin_position.x() - inst_middle.x();
         if (inst_to_pin < 0) {
           pin.setOrientation(PinOrientation::east);
         } else {
           pin.setOrientation(PinOrientation::west);
         }
-      } else if (tech_layer->getDirection().getValue()
-                 == odb::dbTechLayerDir::VERTICAL) {
+      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
         int inst_to_pin = pin_position.y() - inst_middle.y();
         if (inst_to_pin < 0) {
           pin.setOrientation(PinOrientation::north);
@@ -2837,7 +2824,7 @@ void GlobalRouter::makeBtermPins(Net* net,
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
         odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-        if (tech_layer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
+        if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;
         }
 
@@ -2883,16 +2870,14 @@ void GlobalRouter::makeBtermPins(Net* net,
       odb::Point pin_position = pin.getPosition();
       odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
-      if (tech_layer->getDirection().getValue()
-          == odb::dbTechLayerDir::HORIZONTAL) {
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
         int inst_to_pin = pin_position.x() - inst_middle.x();
         if (inst_to_pin < 0) {
           pin.setOrientation(PinOrientation::east);
         } else {
           pin.setOrientation(PinOrientation::west);
         }
-      } else if (tech_layer->getDirection().getValue()
-                 == odb::dbTechLayerDir::VERTICAL) {
+      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
         int inst_to_pin = pin_position.y() - inst_middle.y();
         if (inst_to_pin < 0) {
           pin.setOrientation(PinOrientation::north);
@@ -2904,16 +2889,14 @@ void GlobalRouter::makeBtermPins(Net* net,
       odb::Point pin_position = pin.getPosition();
       odb::dbTechLayer* tech_layer = routing_layers_[pin.getTopLayer()];
 
-      if (tech_layer->getDirection().getValue()
-          == odb::dbTechLayerDir::HORIZONTAL) {
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
         int inst_to_die = pin_position.x() - getRectMiddle(die_area).x();
         if (inst_to_die < 0) {
           pin.setOrientation(PinOrientation::west);
         } else {
           pin.setOrientation(PinOrientation::east);
         }
-      } else if (tech_layer->getDirection().getValue()
-                 == odb::dbTechLayerDir::VERTICAL) {
+      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
         int inst_to_die = pin_position.y() - getRectMiddle(die_area).y();
         if (inst_to_die < 0) {
           pin.setOrientation(PinOrientation::south);
@@ -3101,8 +3084,7 @@ int GlobalRouter::findInstancesObstructions(
           transform.apply(rect);
 
           odb::dbTechLayer* tech_layer = box->getTechLayer();
-          if (tech_layer->getType().getValue()
-              != odb::dbTechLayerType::ROUTING) {
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
             continue;
           }
 
@@ -3151,8 +3133,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
     if (wire_cnt < 1)
       continue;
 
-    if (db_net->getSigType() == odb::dbSigType::POWER
-        || db_net->getSigType() == odb::dbSigType::GROUND) {
+    if (db_net->getSigType().isSupply()) {
       for (odb::dbSWire* swire : db_net->getSWires()) {
         for (odb::dbSBox* s : swire->getWires()) {
           if (s->isVia()) {
