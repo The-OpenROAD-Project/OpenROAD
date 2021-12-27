@@ -160,7 +160,7 @@ class FastRouteCore
                        int l2,
                        int newCap);
   void setMaxNetDegree(int);
-  void setVerbose(int v);
+  void setVerbose(bool v);
   void setOverflowIterations(int iterations);
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();

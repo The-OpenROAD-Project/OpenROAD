@@ -1201,7 +1201,7 @@ NetRouteMap FastRouteCore::run()
   return routes;
 }
 
-void FastRouteCore::setVerbose(int v)
+void FastRouteCore::setVerbose(bool v)
 {
   verbose_ = v;
 }

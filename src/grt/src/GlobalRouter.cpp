@@ -3648,7 +3648,7 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
     updateDirtyNets();
     std::vector<Net*> dirty_nets = startFastRoute(
         min_routing_layer_, max_routing_layer_, NetType::Antenna);
-    fastroute_->setVerbose(0);
+    fastroute_->setVerbose(false);
     if (verbose_)
       logger_->info(GRT, 9, "Nets to reroute: {}.", dirty_nets_.size());
     if (logger_->debugCheck(GRT, "incr", 2)) {
