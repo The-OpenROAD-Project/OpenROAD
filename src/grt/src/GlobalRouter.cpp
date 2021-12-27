@@ -3580,14 +3580,14 @@ void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 ////////////////////////////////////////////////////////////////
 
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
-    : groute_(groute), capacities_(groute_->getCapacities()), db_cbk_(groute)
+    : groute_(groute), db_cbk_(groute)
 {
   db_cbk_.addOwner(block);
 }
 
 void IncrementalGRoute::updateRoutes()
 {
-  groute_->updateDirtyRoutes(capacities_);
+  groute_->updateDirtyRoutes();
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -3603,7 +3603,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
+void GlobalRouter::updateDirtyRoutes()
 {
   // Fastroute barfs if there are no nets. It shouldn't. -cherry
   if (!dirty_nets_.empty()) {
@@ -3623,7 +3623,6 @@ void GlobalRouter::updateDirtyRoutes(Capacities& capacities)
         debugPrint(logger_, GRT, "incr", 2, "dirty net {}",
                    net->getConstName());
     }
-    restoreCapacities(capacities, min_routing_layer_, max_routing_layer_);
     removeDirtyNetsRouting();
 
     NetRouteMap new_route

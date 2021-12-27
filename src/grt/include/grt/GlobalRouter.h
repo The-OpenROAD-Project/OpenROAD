@@ -285,7 +285,7 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
 
   // incremental funcions
-  void updateDirtyRoutes(Capacities &capacities);
+  void updateDirtyRoutes();
   Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
   void restoreCapacities(Capacities capacities,
@@ -419,7 +419,6 @@ public:
 
 private:
   GlobalRouter *groute_;
-  Capacities capacities_;
   GRouteDbCbk db_cbk_;
 };
 
