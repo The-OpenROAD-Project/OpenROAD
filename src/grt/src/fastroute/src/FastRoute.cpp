@@ -113,15 +113,7 @@ void FastRouteCore::clear()
 
 void FastRouteCore::deleteComponents()
 {
-  if (!nets_.empty()) {
-    for (FrNet* net : nets_) {
-      if (net != nullptr)
-        delete net;
-      net = nullptr;
-    }
-
-    nets_.clear();
-  }
+  clearNets();
 
   h_edges_.resize(boost::extents[0][0]);
   v_edges_.resize(boost::extents[0][0]);
@@ -138,30 +130,6 @@ void FastRouteCore::deleteComponents()
 
   h_edges_3D_.resize(boost::extents[0][0][0]);
   v_edges_3D_.resize(boost::extents[0][0][0]);
-
-  if (!sttrees_.empty()) {
-    for (int i = 0; i < num_valid_nets_; i++) {
-      int deg = sttrees_[i].deg;
-      int numEdges = 2 * deg - 3;
-      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
-        if (treeedge->len > 0) {
-          treeedge->route.gridsX.clear();
-          treeedge->route.gridsY.clear();
-          treeedge->route.gridsL.clear();
-        }
-      }
-
-      if (sttrees_[i].nodes != nullptr)
-        delete[] sttrees_[i].nodes;
-      sttrees_[i].nodes = nullptr;
-
-      if (sttrees_[i].edges != nullptr)
-        delete[] sttrees_[i].edges;
-      sttrees_[i].edges = nullptr;
-    }
-    sttrees_.clear();
-  }
 
   parent_x1_.resize(boost::extents[0][0]);
   parent_y1_.resize(boost::extents[0][0]);
@@ -197,13 +165,45 @@ void FastRouteCore::deleteComponents()
   cost_v_test_.clear();
   cost_tb_test_.clear();
 
-  new_net_id_ = 0;
-  seg_count_ = 0;
-  pin_ind_ = 0;
   num_adjust_ = 0;
   v_capacity_ = 0;
   h_capacity_ = 0;
+}
+
+void FastRouteCore::clearNets()
+{
+  for (FrNet* net : nets_) {
+    delete net;
+  }
+  nets_.clear();
+  new_net_id_ = 0;
   num_nets_ = 0;
+  pin_ind_ = 0;
+  seg_count_ = 0;
+
+  if (!sttrees_.empty()) {
+    for (int i = 0; i < num_valid_nets_; i++) {
+      int deg = sttrees_[i].deg;
+      int numEdges = 2 * deg - 3;
+      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
+        TreeEdge* treeedge = &(sttrees_[i].edges[edgeID]);
+        if (treeedge->len > 0) {
+          treeedge->route.gridsX.clear();
+          treeedge->route.gridsY.clear();
+          treeedge->route.gridsL.clear();
+        }
+      }
+
+      if (sttrees_[i].nodes != nullptr)
+        delete[] sttrees_[i].nodes;
+      sttrees_[i].nodes = nullptr;
+
+      if (sttrees_[i].edges != nullptr)
+        delete[] sttrees_[i].edges;
+      sttrees_[i].edges = nullptr;
+    }
+    sttrees_.clear();
+  }
 }
 
 void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
@@ -293,11 +293,6 @@ void FastRouteCore::addPin(int netID, int x, int y, int layer)
   net->pinX.push_back(x);
   net->pinY.push_back(y);
   net->pinL.push_back(layer);
-}
-
-void FastRouteCore::resetNewNetID()
-{
-  new_net_id_ = 0;
 }
 
 int FastRouteCore::addNet(odb::dbNet* db_net,
@@ -686,49 +681,32 @@ NetRouteMap FastRouteCore::getRoutes()
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
-  auto db_gcell = odb::dbGCellGrid::create(block);
-  if (db_gcell == nullptr) {
-    db_gcell = block->getGCellGrid();
-    if (verbose_)
-      logger_->warn(
-          utl::GRT,
-          211,
-          "dbGcellGrid already exists in db. Clearing existing dbGCellGrid.");
+  auto db_gcell = block->getGCellGrid();
+  if (db_gcell)
     db_gcell->resetGrid();
-  }
+  else
+    db_gcell = odb::dbGCellGrid::create(block);
+
   db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, h_tile_);
+  auto db_tech = db_->getTech();
   for (int k = 0; k < num_layers_; k++) {
-    auto layer = db_->getTech()->findRoutingLayer(k + 1);
+    auto layer = db_tech->findRoutingLayer(k + 1);
     if (layer == nullptr) {
-      if (verbose_)
-        logger_->warn(utl::GRT, 215, "Skipping layer {} not found in db.", k + 1);
       continue;
     }
 
+    const unsigned short capH = h_capacity_3D_[k];
+    const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_ - 1; x++) {
-        const unsigned short capH = h_capacity_3D_[k];
-        const unsigned short blockageH
-            = (h_capacity_3D_[k] - h_edges_3D_[k][y][x].cap);
+        const unsigned short blockageH = capH - h_edges_3D_[k][y][x].cap;
+        const unsigned short blockageV = capV - v_edges_3D_[k][y][x].cap;
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
-
-        db_gcell->setHorizontalCapacity(layer, x, y, (uint) capH);
-        db_gcell->setHorizontalUsage(layer, x, y, (uint) usageH);
-        db_gcell->setHorizontalBlockage(layer, x, y, (uint) blockageH);
-      }
-    }
-
-    for (int y = 0; y < y_grid_ - 1; y++) {
-      for (int x = 0; x < x_grid_; x++) {
-        const unsigned short capV = v_capacity_3D_[k];
-        const unsigned short blockageV
-            = (v_capacity_3D_[k] - v_edges_3D_[k][y][x].cap);
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
-
-        db_gcell->setVerticalCapacity(layer, x, y, (uint) capV);
-        db_gcell->setVerticalUsage(layer, x, y, (uint) usageV);
-        db_gcell->setVerticalBlockage(layer, x, y, (uint) blockageV);
+        db_gcell->setCapacity(layer, x, y, capH, capV, 0);
+        db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
+        db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
       }
     }
   }
@@ -1186,8 +1164,6 @@ NetRouteMap FastRouteCore::run()
   NetRouteMap routes = getRoutes();
 
   net_eo_.clear();
-
-  updateDbCongestion();
 
   if (has_2D_overflow && !allow_overflow_) {
     logger_->error(GRT, 118, "Routing congestion too high.");

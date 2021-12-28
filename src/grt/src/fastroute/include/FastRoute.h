@@ -102,6 +102,7 @@ class FastRouteCore
 
   void deleteComponents();
   void clear();
+  void clearNets();
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
@@ -121,7 +122,6 @@ class FastRouteCore
              int min_layer,
              int max_layer,
              std::vector<int> edge_cost_per_layer);
-  void resetNewNetID();
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,

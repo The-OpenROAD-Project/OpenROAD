@@ -165,9 +165,9 @@ class GlobalRouter
 
   // flow functions
   void writeGuides(const char* file_name);
-  std::vector<Net*> startFastRoute(int min_routing_layer,
-                                   int max_routing_layer,
-                                   NetType type);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer);
+  void initFastRouteIncr(std::vector<Net*> &nets);
   void estimateRC();
   void estimateRC(odb::dbNet *db_net);
   void globalRoute();
@@ -220,7 +220,6 @@ class GlobalRouter
   void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
 
-  void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -228,7 +227,7 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
-  void initializeNets(std::vector<Net*>& nets);
+  void initNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -286,7 +285,7 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
 
   // incremental funcions
-  void updateDirtyRoutes(Capacities &capacities);
+  void updateDirtyRoutes();
   Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
   void restoreCapacities(Capacities capacities,
@@ -300,17 +299,15 @@ class GlobalRouter
                       odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
+  void updateDbCongestion();
 
   // db functions
   void initGrid(int max_layer);
   void initRoutingLayers(std::map<int, odb::dbTechLayer*>& routing_layers);
-  void initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
-                         int max_layer);
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
-  void initNetlist();
+  std::vector<Net*> initNetlist();
   Net* getNet(odb::dbNet* db_net);
-  void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -422,7 +419,6 @@ public:
 
 private:
   GlobalRouter *groute_;
-  Capacities capacities_;
   GRouteDbCbk db_cbk_;
 };
 
