@@ -7,7 +7,7 @@ set guide_file [make_result_file pd3.guide]
 
 set_routing_alpha 0.9 -min_fanout 9
 
-global_route
+global_route -verbose
 
 write_guides $guide_file
 

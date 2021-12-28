@@ -35,7 +35,7 @@
 #define __REPLACE_HEADER__
 
 #include <memory>
-#include <list>
+#include <vector>
 
 namespace odb {
   class dbDatabase;
@@ -136,6 +136,8 @@ class Replace
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
+    void addTimingNetWeightOverflow(int overflow);
+
     void setPlottingPath(const char* path);
 
     void setDebug(int pause_iterations,
@@ -189,6 +191,8 @@ class Replace
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
     bool uniformTargetDensityMode_;
+
+    std::vector<int> timingNetWeightOverflows_;
    
     // temp variable; OpenDB should have these values. 
     int padLeft_;

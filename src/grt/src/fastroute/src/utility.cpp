@@ -274,7 +274,7 @@ void FastRouteCore::fillVIA()
     }
   }
 
-  if (verbose_ > 1) {
+  if (verbose_) {
     logger_->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
     logger_->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
     logger_->info(GRT, 199, "Via filling finished.");
@@ -476,7 +476,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         gridD[l][0] = 0;
       }
     } else {
-      logger_->warn(GRT, 200, "Start point not assigned.");
+      if (verbose_)
+        logger_->warn(GRT, 200, "Start point not assigned.");
       fflush(stdout);
     }
 
@@ -1276,9 +1277,6 @@ void FastRouteCore::checkUsage()
       }
     }
   }
-  if (verbose_ > 1) {
-    logger_->report("Usage checked");
-  }
 }
 
 void FastRouteCore::check2DEdgesUsage()
@@ -1400,65 +1398,71 @@ bool FastRouteCore::checkRoute2DTree(int netID)
     const std::vector<short>& gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
-      logger_->warn(
-          GRT, 207, "Ripped up edge without edge length reassignment.");
+      if (verbose_)
+        logger_->warn(
+            GRT, 207, "Ripped up edge without edge length reassignment.");
       STHwrong = true;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger_->warn(GRT,
-                      208,
-                      "Route length {}, tree length {}.",
-                      treeedge->route.routelen,
-                      treeedge->len);
+        if (verbose_)
+          logger_->warn(GRT,
+                        208,
+                        "Route length {}, tree length {}.",
+                        treeedge->route.routelen,
+                        treeedge->len);
         STHwrong = true;
         return true;
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger_->warn(
-            GRT,
-            164,
-            "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
-            "{}.",
-            y1,
-            x1,
-            gridsY[0],
-            gridsX[0],
-            treeedge->route.routelen);
+        if (verbose_)
+          logger_->warn(
+              GRT,
+              164,
+              "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
+              "{}.",
+              y1,
+              x1,
+              gridsY[0],
+              gridsX[0],
+              treeedge->route.routelen);
         STHwrong = true;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger_->warn(
-            GRT,
-            165,
-            "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
-            y1,
-            x1,
-            gridsY[edgelength],
-            gridsX[edgelength],
-            treeedge->route.routelen);
+        if (verbose_)
+          logger_->warn(
+              GRT,
+              165,
+              "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
+              y1,
+              x1,
+              gridsY[edgelength],
+              gridsX[edgelength],
+              treeedge->route.routelen);
         STHwrong = true;
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
         distance
             = abs(gridsX[i + 1] - gridsX[i]) + abs(gridsY[i + 1] - gridsY[i]);
         if (distance != 1) {
-          logger_->warn(GRT,
-                        166,
-                        "Net {} edge[{}] maze route wrong, distance {}, i {}.",
-                        netName(nets_[netID]),
-                        edgeID,
-                        distance,
-                        i);
+          if (verbose_)
+            logger_->warn(GRT,
+                          166,
+                          "Net {} edge[{}] maze route wrong, distance {}, i {}.",
+                          netName(nets_[netID]),
+                          edgeID,
+                          distance,
+                          i);
           STHwrong = true;
         }
       }
 
       if (STHwrong) {
-        logger_->warn(
-            GRT, 167, "Invalid 2D tree for net {}.", netName(nets_[netID]));
+        if (verbose_)
+          logger_->warn(
+              GRT, 167, "Invalid 2D tree for net {}.", netName(nets_[netID]));
         return true;
       }
     }

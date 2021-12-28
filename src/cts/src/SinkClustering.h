@@ -72,7 +72,6 @@ class SinkClustering
 
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
   void addCap(float cap) { _pointsCap.emplace_back(cap); }
-  void run();
   void run(unsigned groupSize, float maxDiameter, int scaleFactor);
   unsigned getNumPoints() const { return _points.size(); }
 
@@ -89,7 +88,6 @@ class SinkClustering
   void normalizePoints(float maxDiameter = 10);
   void computeAllThetas();
   void sortPoints();
-  void findBestMatching();
   void writePlotFile();
   void findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);

@@ -145,6 +145,8 @@ entries:
     title: User Guide
   - file: contrib/Metrics
     title: Metrics
+  - file: user/InstructionsForAutoTuner
+    title: AutoTuner
 
 - file: user/FAQS
   title: FAQs

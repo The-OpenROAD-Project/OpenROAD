@@ -1815,7 +1815,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined) {
   if (name != NULL)
     t->_name = strdup(name);
   else {
-    char buff[16];
+    char buff[32];
     sprintf(buff, "MinMax%d", model);
     t->_name = strdup(buff);
   }
