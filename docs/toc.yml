@@ -145,9 +145,8 @@ entries:
     title: User Guide
   - file: contrib/Metrics
     title: Metrics
+  - file: user/FlowVariables
+    title: Flow Variables
 
 - file: user/FAQS
   title: FAQs
-
-- file: user/FlowVariables.md
-  title: Flow Variables
