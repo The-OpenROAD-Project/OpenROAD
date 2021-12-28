@@ -436,7 +436,7 @@ void DetailedMis::clearGrid(void)
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 bool DetailedMis::gatherNeighbours(Node* ndi) {
-  double singleRowHeight = m_arch->getRow(0)->getH();
+  double singleRowHeight = m_arch->getRow(0)->getHeight();
 
   m_neighbours.clear();
   m_neighbours.push_back(ndi);
@@ -541,7 +541,7 @@ void DetailedMis::solveMatch(void) {
   }
   std::vector<Node*>& nodes = m_neighbours;
   double hpwl_x, hpwl_y, hpwl;
-  double singleRowHeight = m_arch->getRow(0)->getH();
+  double singleRowHeight = m_arch->getRow(0)->getHeight();
 
   int nNodes = (int)nodes.size();
   int nSpots = (int)nodes.size();

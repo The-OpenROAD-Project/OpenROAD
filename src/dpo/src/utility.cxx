@@ -310,8 +310,8 @@ void Utility::get_row_blockages(
     double ymax = std::min(arch->getMaxY(), nd->getY() + 0.5 * nd->getHeight());
 
     for (int r = 0; r < numRows; r++) {
-      double lb = arch->getMinY() + r * arch->getRow(r)->m_rowHeight;
-      double ub = lb + arch->getRow(r)->m_rowHeight;
+      double lb = arch->getMinY() + r * arch->getRow(r)->getHeight();
+      double ub = lb + arch->getRow(r)->getHeight();
 
       // Note that a blockage only needs to overlap with a bit of the row before
       // it is considered a blockage!

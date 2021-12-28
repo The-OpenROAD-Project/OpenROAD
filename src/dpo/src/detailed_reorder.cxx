@@ -224,9 +224,9 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
                                 int rowId) {
   int size = jstop - jstrt + 1;
 
-  double siteWidth = m_arch->getRow(0)->m_siteWidth;
-  double originX = m_arch->getRow(0)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
+  double siteWidth = m_arch->getRow(0)->getSiteWidth();
+  double originX = m_arch->getRow(0)->getLeft();
+  double siteSpacing = m_arch->getRow(0)->getSiteSpacing();
 
   std::vector<double> widths;
   widths.resize(size);

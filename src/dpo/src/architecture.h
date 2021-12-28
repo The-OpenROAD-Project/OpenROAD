@@ -117,6 +117,12 @@ class Architecture {
   void clearSpacingTable(void);
   double getCellSpacingUsingTable(int firstEdge, int secondEdge);
   void addCellSpacingUsingTable(int firstEdge, int secondEdge, double sep);
+  std::vector<Architecture::Spacing*>& getCellSpacings(void) { 
+    return m_cellSpacings;
+  }
+  std::vector<std::pair<char*,int> >& getEdgeTypes(void) { 
+    return m_edgeTypes;
+  }
 
   // Using padding...
   void setUsePadding(bool val = true) { m_usePadding = val; }
@@ -139,12 +145,13 @@ class Architecture {
   // Regions...
   std::vector<Region*> m_regions;
 
- public:
-
+  // Spacing tables...
   bool m_useSpacingTable;
-  bool m_usePadding;
   std::vector<std::pair<char*, int> > m_edgeTypes;
   std::vector<Spacing*> m_cellSpacings;
+
+  // Padding...
+  bool m_usePadding;
   std::map<int, std::pair<double, double> >
       m_cellPaddings;  // Padding to left,right.
 };
@@ -158,7 +165,7 @@ class Architecture::Spacing {
   int getSecondEdge(void) const { return m_i2; }
   double getSeparation(void) const { return m_sep; }
 
- public:
+ protected:
   int m_i1;
   int m_i2;
   double m_sep;
@@ -173,22 +180,39 @@ class Architecture::Row {
   Row();
   virtual ~Row();
 
-  inline double getY() { return m_rowLoc; }
-  inline double getH() { return m_rowHeight; }
+  void setBottom(double bottom) { m_rowLoc = bottom; }
+  void setHeight(double height) { m_rowHeight = height; }
+  void setSiteSpacing(double spacing) { m_siteSpacing = spacing; }
+  void setSiteWidth(double width) { m_siteWidth = width; }
+  void setNumSites(int nsites) { m_numSites = nsites; }
+
+  inline double getBottom(void) const { return m_rowLoc; }
+  inline double getTop(void) const { return m_rowLoc+m_rowHeight; }
+  inline double getCenterY(void) const { return m_rowLoc+0.5*m_rowHeight; }
+  inline double getLeft(void) const { return m_subRowOrigin; }
+  inline double getRight(void) const { 
+    return m_subRowOrigin+m_numSites*m_siteSpacing; // ? add m_siteWidth
+  }
+  inline double getHeight(void) const { return m_rowHeight; }
+  inline double getSiteWidth(void) const { return m_siteWidth; }
+  inline double getSiteSpacing(void) const { return m_siteSpacing; }
+  inline int getNumSites(void) const { return m_numSites; }
+
+ protected:
+  double m_rowLoc;          // Y-location of the row.
+  double m_rowHeight;       // Height of the row.
+  int m_numSites;           // Number of sites...  Ending X location (xmax) is =
+                            // m_subRowOrigin + m_numSites * m_siteSpacing;
+  double m_siteWidth;       // Width of sites in the row.
 
  public:
   // XXX: Ignores site orientation and symmetry right now...
-  double m_rowLoc;          // Y-location of the row.
-  double m_rowHeight;       // Height of the row.
-  double m_siteWidth;       // Width of sites in the row.
-  double m_siteSpacing;     // Spacing between sites in the row. XXX: Likely
-                            // assumed to be the same as the width...
   double m_subRowOrigin;    // Starting X location (xmin) of the row.
   unsigned m_siteOrient;    // Orientation of sites in the row.
   unsigned m_siteSymmetry;  // Symmetry of sites in the row.  Symmetry allows
                             // for certain orientations...
-  int m_numSites;           // Number of sites...  Ending X location (xmax) is =
-                            // m_subRowOrigin + m_numSites * m_siteSpacing;
+  double m_siteSpacing;     // Spacing between sites in the row. XXX: Likely
+                            // assumed to be the same as the width...
   int m_id;  // Every row  needs an id...  Filled in after sorting.
 
   // The following is to try and monitor voltages at the top and bottom of the
@@ -199,17 +223,17 @@ class Architecture::Row {
 
   struct compare_row {
     inline bool operator()(Architecture::Row*& s, double i) const {
-      return s->getY() < i;
+      return s->getBottom() < i;
     }
     inline bool operator()(double i, Architecture::Row*& s) const {
-      return i < s->getY();
+      return i < s->getBottom();
     }
   };
 };
 
 struct SortRow {
   inline bool operator()(Architecture::Row* p, Architecture::Row* q) const {
-    return p->getY() < q->getY();
+    return p->getBottom() < q->getBottom();
   }
 };
 

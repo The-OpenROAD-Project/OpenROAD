@@ -519,7 +519,7 @@ bool DetailedGlobalSwap::generate(Node* ndi) {
 
     // Row and segment for the destination.
     int rj = m_arch->find_closest_row(yj - 0.5 * ndi->getHeight());
-    yj = m_arch->getRow(rj)->getY() + 0.5 * ndi->getHeight();
+    yj = m_arch->getRow(rj)->getBottom() + 0.5 * ndi->getHeight();
     int sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
@@ -536,7 +536,6 @@ bool DetailedGlobalSwap::generate(Node* ndi) {
     }
 
     bool isMoveOkay = false;
-    /*
     if (!isMoveOkay) {
       if (si != sj) {
         isMoveOkay |= m_mgr->tryMove1(ndi, xi, yi, si, xj, yj, sj);
@@ -544,7 +543,6 @@ bool DetailedGlobalSwap::generate(Node* ndi) {
         isMoveOkay |= m_mgr->tryMove2(ndi, xi, yi, si, xj, yj, sj);
       }
     }
-    */
     if (isMoveOkay) {
       ++m_moves;
       return true;

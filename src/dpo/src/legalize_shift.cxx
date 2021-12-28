@@ -238,8 +238,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
 
     ndi->setId(nnodes + i);
     ndi->setX(segPtr->getMinX());
-    ndi->setY(m_arch->getRow(rowId)->getY() +
-              0.5 * m_arch->getRow(rowId)->getH());
+    ndi->setY(m_arch->getRow(rowId)->getCenterY());
     ndi->setWidth(0.0);
     ndi->setHeight(0.0);
 
@@ -256,8 +255,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
 
     ndi->setId(nnodes + nsegs + i);
     ndi->setX(segPtr->getMaxX());
-    ndi->setY(m_arch->getRow(rowId)->getY() +
-              0.5 * m_arch->getRow(rowId)->getH());
+    ndi->setY(m_arch->getRow(rowId)->getCenterY());
     ndi->setWidth(0.0);
     ndi->setHeight(0.0);
 
@@ -447,7 +445,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     ndi->setX(newX);
 
     double oldY = ndi->getY();
-    double newY = m_arch->getRow(rowId)->getY() + 0.5 * ndi->getHeight();
+    double newY = m_arch->getRow(rowId)->getBottom() + 0.5 * ndi->getHeight();
 
     ndi->setY(newY);
 

@@ -84,9 +84,9 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
 void PlotGnu::drawNodes(char* buf) {
   bool drawPins = false;
 
-  double rowHeight = m_arch->getRow(0)->m_rowHeight;
-  double siteWidth = m_arch->getRow(0)->m_siteWidth;
-  double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
+  double rowHeight = m_arch->getRow(0)->getHeight();
+  double siteWidth = m_arch->getRow(0)->getSiteWidth();
+  double siteSpacing = m_arch->getRow(0)->getSiteSpacing();
 
 
   FILE* fpMain = 0;
@@ -381,7 +381,7 @@ void PlotGnu::drawNodes(char* buf) {
     w = nd->getWidth() - 0.040 * siteWidth;
     h = nd->getHeight() - 0.040 * rowHeight;
     if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-      double rowHeight = m_arch->getRow(0)->m_rowHeight;
+      double rowHeight = m_arch->getRow(0)->getHeight();
       if (m_skipStandardCells && (nd->getHeight() - 1.0e-3 < rowHeight)) {
         ;
       } else {

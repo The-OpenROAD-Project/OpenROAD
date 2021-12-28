@@ -68,7 +68,7 @@ DetailedDisplacement::DetailedDisplacement(Architecture* arch, Network* network,
       m_rt(rt),
       m_orientPtr(0) {
   m_name = "disp";
-  m_singleRowHeight = m_arch->getRow(0)->getH();
+  m_singleRowHeight = m_arch->getRow(0)->getHeight();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

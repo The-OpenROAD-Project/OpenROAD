@@ -119,7 +119,7 @@ void DetailedABU::init(void) {
 
   m_abuTargUt = m_mgrPtr->getTargetUt();  // XXX: Need to set this somehow!!!
 
-  m_abuGridUnit = BIN_DIM * m_arch->getRow(0)->m_rowHeight;
+  m_abuGridUnit = BIN_DIM * m_arch->getRow(0)->getHeight();
   m_abuGridNumX = (int)ceil((m_arch->getMaxX() - m_arch->getMinX()) / m_abuGridUnit);
   m_abuGridNumY = (int)ceil((m_arch->getMaxY() - m_arch->getMinY()) / m_abuGridUnit);
   m_abuNumBins = m_abuGridNumX * m_abuGridNumY;

@@ -303,7 +303,7 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
                                int jstrt, int jstop) {
   // Create a small problem for the cells indexed from [istrt,istop].
 
-  double siteWidth = m_arch->getRow(0)->m_siteWidth;
+  double siteWidth = m_arch->getRow(0)->getSiteWidth();
 
   // Figure out node mappings and the problem size.
   ++m_traversal;

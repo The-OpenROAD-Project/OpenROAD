@@ -538,7 +538,7 @@ bool DetailedVerticalSwap::generate(Node* ndi) {
     }
 
     int rj = rmin + ((*(m_mgr->m_rng))() % (rmax - rmin + 1));
-    yj = m_arch->getRow(rj)->getY() + 0.5 * ndi->getHeight();
+    yj = m_arch->getRow(rj)->getBottom() + 0.5 * ndi->getHeight();
     int sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];

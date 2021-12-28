@@ -66,7 +66,7 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch, Network* network,
                          RoutingParams* rt)
     : m_arch(arch), m_network(network), m_rt(rt), m_logger(0), m_rng(0) {
-  m_singleRowHeight = m_arch->getRow(0)->m_rowHeight;
+  m_singleRowHeight = m_arch->getRow(0)->getHeight();
   m_numSingleHeightRows = m_arch->getRows().size();
 
   m_rng = new Placer_RNG;
@@ -268,10 +268,8 @@ void DetailedMgr::findSegments(void) {
   double x1, x2;
   m_segsInRow.resize(m_numSingleHeightRows);
   for (int r = 0; r < m_numSingleHeightRows; r++) {
-    double lx = m_arch->getRow(r)->m_subRowOrigin;
-    double rx =
-        m_arch->getRow(r)->m_subRowOrigin +
-        m_arch->getRow(r)->m_numSites * m_arch->getRow(r)->m_siteSpacing;
+    double lx = m_arch->getRow(r)->getLeft();
+    double rx = m_arch->getRow(r)->getRight();
 
     m_segsInRow[r] = std::vector<DetailedSeg*>();
 
@@ -773,7 +771,7 @@ bool DetailedMgr::findClosestSpanOfSegments(
         }
 
         DetailedSeg* segPtr = candidates[i][0];
-        double ymin = m_arch->getRow(segPtr->getRowId())->getY();
+        double ymin = m_arch->getRow(segPtr->getRowId())->getBottom();
         double xmin = segPtr->getMinX();
         double xmax = segPtr->getMaxX();
         for (size_t j = 0; j < candidates[i].size(); j++) {
@@ -862,7 +860,7 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
       double x1 = segPtr->getMinX() + 0.5 * nd->getWidth();
       double x2 = segPtr->getMaxX() - 0.5 * nd->getWidth();
       double xx = std::max(x1, std::min(x2, nd->getX()));
-      double yy = m_arch->getRow(rowId)->getY() + 0.5 * nd->getHeight();
+      double yy = m_arch->getRow(rowId)->getBottom() + 0.5 * nd->getHeight();
 
       movementX += std::fabs(nd->getX() - xx);
       movementY += std::fabs(nd->getY() - yy);
@@ -898,7 +896,7 @@ void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider) {
         double x1 = xmin + 0.5 * nd->getWidth();
         double x2 = xmax - 0.5 * nd->getWidth();
         double xx = std::max(x1, std::min(x2, nd->getX()));
-        double yy = m_arch->getRow(rowId)->getY() + 0.5 * nd->getHeight();
+        double yy = m_arch->getRow(rowId)->getBottom() + 0.5 * nd->getHeight();
 
         movementX += std::fabs(nd->getX() - xx);
         movementY += std::fabs(nd->getY() - yy);
@@ -1259,9 +1257,9 @@ void DetailedMgr::setupObstaclesForDrc(void) {
   for (int row_id = 0; row_id < m_arch->getRows().size(); row_id++) {
     m_obstacles[row_id].resize(m_rt->m_num_layers);
 
-    double originX = m_arch->getRow(row_id)->m_subRowOrigin;
-    double siteSpacing = m_arch->getRow(row_id)->m_siteSpacing;
-    int numSites = m_arch->getRow(row_id)->m_numSites;
+    double originX = m_arch->getRow(row_id)->getLeft();
+    double siteSpacing = m_arch->getRow(row_id)->getSiteSpacing();
+    int numSites = m_arch->getRow(row_id)->getNumSites();
 
     // Blockages relevant to this row...
     int count = 0;
@@ -1273,8 +1271,8 @@ void DetailedMgr::setupObstaclesForDrc(void) {
         // Extract obstacles which interfere with this row only.
         xmin = originX;
         xmax = originX + numSites * siteSpacing;
-        ymin = m_arch->getRow(row_id)->getY();
-        ymax = m_arch->getRow(row_id)->getY() + m_arch->getRow(row_id)->getH();
+        ymin = m_arch->getRow(row_id)->getBottom();
+        ymax = m_arch->getRow(row_id)->getTop();
 
         if (rects[b].m_xmax <= xmin) continue;
         if (rects[b].m_xmin >= xmax) continue;
@@ -1341,7 +1339,7 @@ void DetailedMgr::collectSingleHeightCells(void) {
 
   m_singleHeightCells.erase(m_singleHeightCells.begin(),
                             m_singleHeightCells.end());
-  m_singleRowHeight = m_arch->getRow(0)->m_rowHeight;
+  m_singleRowHeight = m_arch->getRow(0)->getHeight();
   m_numSingleHeightRows = m_arch->getRows().size();
 
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
@@ -1379,7 +1377,7 @@ void DetailedMgr::collectMultiHeightCells(void) {
   for (size_t i = 0; i < m_multiHeightCells.size(); i++) {
     m_multiHeightCells[i] = std::vector<Node*>();
   }
-  m_singleRowHeight = m_arch->getRow(0)->m_rowHeight;
+  m_singleRowHeight = m_arch->getRow(0)->getHeight();
   m_numSingleHeightRows = m_arch->getRows().size();
 
   int m_numMultiHeightCells = 0;
@@ -1438,7 +1436,7 @@ void DetailedMgr::collectFixedCells(void) {
 
   m_fixedMacros.erase(m_fixedMacros.begin(), m_fixedMacros.end());
   m_fixedCells.erase(m_fixedCells.begin(), m_fixedCells.end());
-  double rowHeight = m_arch->getRow(0)->m_rowHeight;
+  double rowHeight = m_arch->getRow(0)->getHeight();
 
   // Insert filler.
   for (size_t i = 0; i < m_network->getNumFillerNodes(); i++) {
@@ -1753,8 +1751,7 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
   // be too overwhelming.
   for (int s = 0; s < m_segments.size(); s++) {
     int rowId = m_segments[s]->getRowId();
-    double rowY =
-        m_arch->getRow(rowId)->getY() + 0.5 * m_arch->getRow(rowId)->getH();
+    double rowY = m_arch->getRow(rowId)->getCenterY();
 
     double xmin = m_segments[s]->getMinX();
     double xmax = m_segments[s]->getMaxX();
@@ -2322,8 +2319,7 @@ void DetailedMgr::removeSegmentOverlapSingle(int regId) {
     int segId = segPtr->getSegId();
     int rowId = segPtr->getRowId();
 
-    double rowy =
-        m_arch->getRow(rowId)->getY() + 0.5 * m_arch->getRow(rowId)->getH();
+    double rowy = m_arch->getRow(rowId)->getCenterY();
     double left = segPtr->getMinX();
     double rite = segPtr->getMaxX();
 
@@ -2604,10 +2600,10 @@ bool DetailedMgr::shift(std::vector<Node*>& cells, std::vector<double>& tarX,
   // XXX: Need to pre-allocate a maximum size for the problem to
   // avoid constant reallocation.
 
-  double originX = m_arch->getRow(rowId)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(rowId)->m_siteSpacing;
-  double siteWidth = m_arch->getRow(rowId)->m_siteWidth;
-  int numSites = m_arch->getRow(rowId)->m_numSites;
+  double originX = m_arch->getRow(rowId)->getLeft();
+  double siteSpacing = m_arch->getRow(rowId)->getSiteSpacing();
+  double siteWidth = m_arch->getRow(rowId)->getSiteWidth();
+  int numSites = m_arch->getRow(rowId)->getNumSites();
   (void)numSites;
 
   // Number of cells.
@@ -2787,7 +2783,7 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
   int ri = m_segments[si]->getRowId();
   int rj = m_segments[sj]->getRowId();
 
-  double row_y = m_arch->getRow(rj)->getY() + 0.5 * m_arch->getRow(rj)->getH();
+  double row_y = m_arch->getRow(rj)->getCenterY();
   if (std::fabs(yj - row_y) >= 1.0e-3) {
     yj = row_y;
   }
@@ -3267,7 +3263,7 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
 
   int nn = m_cellsInSeg[si].size() - 1;
 
-  double row_y = m_arch->getRow(rj)->getY() + 0.5 * m_arch->getRow(rj)->getH();
+  double row_y = m_arch->getRow(rj)->getCenterY();
   if (std::fabs(yj - row_y) >= 1.0e-3) {
     yj = row_y;
   }
@@ -3383,7 +3379,7 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   // Code to try and move a multi-height cell to another location.  Simple
   // in that it only looks for gaps.
 
-  double singleRowHeight = m_arch->getRow(0)->getH();
+  double singleRowHeight = m_arch->getRow(0)->getHeight();
   double originX = m_arch->getRow(0)->m_subRowOrigin;
   double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
 
@@ -3401,7 +3397,7 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   // Need to turn the target location into a span of rows.  I'm assuming
   // rows are layered on after the other...
 
-  int rb = (((yj - 0.5 * ndi->getHeight()) - m_arch->getRow(0)->getY()) /
+  int rb = (((yj - 0.5 * ndi->getHeight()) - m_arch->getRow(0)->getBottom()) /
             singleRowHeight);
   while (rb + spanned >= m_arch->getRows().size()) {
     --rb;
@@ -3415,7 +3411,7 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   if (!m_arch->power_compatible(ndi, m_arch->getRow(rb), flip)) {
     return false;
   }
-  yj = m_arch->getRow(rb)->getY() + 0.5 * ndi->getHeight();
+  yj = m_arch->getRow(rb)->getBottom() + 0.5 * ndi->getHeight();
 
   // Next find the segments based on the targeted x location.  We might be
   // outside of our region or there could be a blockage.  So, we need a flag.

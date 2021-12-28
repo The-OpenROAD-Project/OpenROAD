@@ -197,11 +197,11 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   }
 
   // Different checks which are useful for debugging.
-  //m_mgr->checkRegionAssignment();  
-  //m_mgr->checkRowAlignment();   
-  //m_mgr->checkSiteAlignment();  
-  //m_mgr->checkOverlapInSegments(); 
-  //m_mgr->checkEdgeSpacingInSegments(); 
+  //mgr.checkRegionAssignment();  
+  //mgr.checkRowAlignment();   
+  //mgr.checkSiteAlignment();  
+  //mgr.checkOverlapInSegments(); 
+  //mgr.checkEdgeSpacingInSegments(); 
 }
 
 }  // namespace dpo

@@ -85,21 +85,21 @@ void Architecture::clearSpacingTable(void) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isSingleHeightCell(Node* ndi) const {
-  int spanned = (int)(ndi->getHeight() / m_rows[0]->getH() + 0.5);
+  int spanned = (int)(ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
   return spanned == 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isMultiHeightCell(Node* ndi) const {
-  int spanned = (int)(ndi->getHeight() / m_rows[0]->getH() + 0.5);
+  int spanned = (int)(ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
   return spanned != 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellHeightInRows(Node* ndi) const {
-  int spanned = (int)(ndi->getHeight() / m_rows[0]->getH() + 0.5);
+  int spanned = (int)(ndi->getHeight() / m_rows[0]->getHeight() + 0.5);
   return spanned;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,10 +153,10 @@ bool Architecture::postProcess( Network* network ) {
     Architecture::Row* row = m_rows[r];
 
     lx = row->m_subRowOrigin;
-    rx = lx + row->m_numSites * row->m_siteSpacing;
+    rx = lx + row->getNumSites() * row->m_siteSpacing;
 
-    yb = row->getY();
-    yt = yb + row->getH();
+    yb = row->getBottom();
+    yt = yb + row->getHeight();
 
     m_xmin = std::min(m_xmin, lx);
     m_xmax = std::max(m_xmax, rx);
@@ -171,7 +171,7 @@ bool Architecture::postProcess( Network* network ) {
   for (int r = 0; r < m_rows.size(); ) {
     subrows.erase(subrows.begin(), subrows.end());
     subrows.push_back(m_rows[r++]);
-    while (r < m_rows.size() && std::fabs(m_rows[r]->getY()-subrows[0]->getY()) < 1.0e-3) {
+    while (r < m_rows.size() && std::fabs(m_rows[r]->getBottom()-subrows[0]->getBottom()) < 1.0e-3) {
       subrows.push_back(m_rows[r++]);
     }
 
@@ -179,7 +179,7 @@ bool Architecture::postProcess( Network* network ) {
     intervals.erase(intervals.begin(),intervals.end());
     for (size_t i = 0; i < subrows.size(); i++) {
       lx = subrows[i]->m_subRowOrigin;
-      rx = lx + subrows[i]->m_numSites * subrows[i]->m_siteSpacing;
+      rx = lx + subrows[i]->getNumSites() * subrows[i]->m_siteSpacing;
       intervals.push_back(std::make_pair(lx,rx));
     }
     std::sort(intervals.begin(), intervals.end(), compareIntervals());
@@ -212,8 +212,8 @@ bool Architecture::postProcess( Network* network ) {
     if (subrows.size() > 1) {
       lx = intervals.front().first;
       rx = intervals.back().second;
-      subrows[0]->m_numSites = (rx -lx) / subrows[0]->m_siteSpacing;
-      rx = lx + subrows[0]->m_numSites * subrows[0]->m_siteSpacing;
+      subrows[0]->setNumSites((rx -lx) / subrows[0]->m_siteSpacing);
+      rx = lx + subrows[0]->getNumSites() * subrows[0]->m_siteSpacing;
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {
@@ -226,8 +226,8 @@ bool Architecture::postProcess( Network* network ) {
 
     // Check for the insertion of filler.  Hmm.  
     // How do we set the id of the filler here?
-    height = subrows[0]->getH();
-    y = subrows[0]->getY() + 0.5 * subrows[0]->getH();
+    height = subrows[0]->getHeight();
+    y = subrows[0]->getCenterY();
     if (m_xmin < intervals.front().first) {
       lx = m_xmin;
       rx = intervals.front().first;
@@ -269,11 +269,11 @@ bool Architecture::postProcess( Network* network ) {
 int Architecture::find_closest_row(double y) {
   // Given a "y" (intended to be the bottom of a cell), find the closest row.
   int r = 0;
-  if (y > m_rows[0]->getY()) {
+  if (y > m_rows[0]->getBottom()) {
     std::vector<Architecture::Row*>::iterator row_l;
     row_l = std::lower_bound(m_rows.begin(), m_rows.end(), y,
                              Architecture::Row::compare_row());
-    if (row_l == m_rows.end() || (*row_l)->getY() > y) {
+    if (row_l == m_rows.end() || (*row_l)->getBottom() > y) {
       --row_l;
     }
     r = row_l - m_rows.begin();
@@ -282,8 +282,8 @@ int Architecture::find_closest_row(double y) {
     // bottom of the cell (specified in "y") overlaps with.  But, it could be
     // true that the bottom of the cell is actually closer to the row above...
     if (r < m_rows.size() - 1) {
-      if (std::fabs(m_rows[r + 1]->getY() - y) <
-          std::fabs(m_rows[r]->getY() - y)) {
+      if (std::fabs(m_rows[r + 1]->getBottom() - y) <
+          std::fabs(m_rows[r]->getBottom() - y)) {
         // Actually, the cell is closer to the row above the one found...
         ++r;
       }
@@ -320,7 +320,7 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
   bool okayTop = false;
 
   int spanned =
-      (int)((ndi->getHeight() / row->getH()) + 0.5);  // Number of spanned rows.
+      (int)((ndi->getHeight() / row->getHeight()) + 0.5);  // Number of spanned rows.
   int lo = row->m_id;
   int hi = lo + spanned - 1;
   if (hi >= m_rows.size()) return false;  // off the top of the chip.
