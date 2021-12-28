@@ -309,7 +309,6 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
 
   computeCapacities(max_routing_layer);
   computeSpacingsAndMinWidth(max_routing_layer);
-  initObstructions();
 
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileWidth(), grid_->getTileHeight());
@@ -1150,108 +1149,88 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
-void GlobalRouter::computeObstructionsAdjustments()
+void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction, odb::dbTechLayer* tech_layer)
 {
-  const std::map<int, std::vector<odb::Rect>> &obstructions
-      = grid_->getObstructions();
-  for (auto const& [level, tech_layer] : routing_layers_) {
-    auto obs_itr = obstructions.find(level);
-    if (obs_itr != obstructions.end()) {
-      const std::vector<odb::Rect> &layer_obstructions = obs_itr->second;
-      if (!layer_obstructions.empty()) {
-        bool vertical
+  // compute the intersection between obstruction and the die area
+  // only when they are overlapping to avoid assert error during
+  // intersect() function
+  const odb::Rect& die_area = grid_->getGridArea();
+  odb::Rect obstruction_rect;
+  if (die_area.overlaps(obstruction)) {
+    obstruction_rect = die_area.intersect(obstruction);
+    // ignores obstructions completely outside the die area
+    if (obstruction_rect.isInverted()) {
+      return;
+    }
+  }
+  odb::Rect first_tile_box;
+  odb::Rect last_tile_box;
+
+  std::pair<Grid::Tile, Grid::Tile> blocked_tiles =
+    grid_->getBlockedTiles(obstruction_rect, first_tile_box, last_tile_box);
+
+  Grid::Tile& first_tile = blocked_tiles.first;
+  Grid::Tile& last_tile = blocked_tiles.second;
+
+  bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-        if (verbose_) {
-          logger_->info(GRT,
-                        17,
-                        "Processing {} blockages on layer {}.",
-                        layer_obstructions.size(),
-                        tech_layer->getName());
+  int layer = tech_layer->getRoutingLevel();
+
+  int track_space = grid_->getMinWidths()[layer - 1];
+  int first_tile_reduce = grid_->computeTileReduce(
+                                                   obstruction_rect, first_tile_box, track_space, true, tech_layer->getDirection());
+
+  int last_tile_reduce = grid_->computeTileReduce(
+                                                  obstruction_rect, last_tile_box, track_space, false, tech_layer->getDirection());
+
+  if (!vertical) {
+    for (int x = first_tile.x; x < last_tile.x; x++) {
+      for (int y = first_tile.y; y <= last_tile.y; y++) {
+        if (y == first_tile.y) {
+          int edge_cap
+            = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
+          edge_cap -= first_tile_reduce;
+          if (edge_cap < 0)
+            edge_cap = 0;
+          fastroute_->addAdjustment(
+                                    x, y, layer, x + 1, y, layer, edge_cap, true);
+        } else if (y == last_tile.y) {
+          int edge_cap
+            = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
+          edge_cap -= last_tile_reduce;
+          if (edge_cap < 0)
+            edge_cap = 0;
+          fastroute_->addAdjustment(
+                                    x, y, layer, x + 1, y, layer, edge_cap, true);
+        } else {
+          fastroute_->addAdjustment(
+                                    x, y, layer, x + 1, y, layer, 0, true);
         }
-
-        int track_space = grid_->getMinWidths()[level - 1];
-
-        for (const odb::Rect& obs : layer_obstructions) {
-          if (obs.xMax() <= grid_->getXMin()
-              || obs.xMin() >= grid_->getXMax()
-              || obs.yMax() <= grid_->getYMin()
-              || obs.yMin() >= grid_->getYMax()) {
-            if (verbose_)
-              logger_->warn(
-                            GRT,
-                            209,
-                            "Ignoring an obstruction on layer {} outside the die area.",
-                            tech_layer->getName());
-            continue;
-          }
-
-          odb::Rect first_tile_box;
-          odb::Rect last_tile_box;
-
-          std::pair<Grid::Tile, Grid::Tile> blocked_tiles =
-            grid_->getBlockedTiles(obs, first_tile_box, last_tile_box);
-
-          Grid::Tile& first_tile = blocked_tiles.first;
-          Grid::Tile& last_tile = blocked_tiles.second;
-
-          int first_tile_reduce = grid_->computeTileReduce(
-                                                           obs, first_tile_box, track_space, true, tech_layer->getDirection());
-
-          int last_tile_reduce = grid_->computeTileReduce(
-                                                          obs, last_tile_box, track_space, false, tech_layer->getDirection());
-
-          if (!vertical) {
-            for (int x = first_tile.x; x < last_tile.x; x++) {
-              for (int y = first_tile.y; y <= last_tile.y; y++) {
-                if (y == first_tile.y) {
-                  int edge_cap
-                    = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
-                  edge_cap -= first_tile_reduce;
-                  if (edge_cap < 0)
-                    edge_cap = 0;
-                  fastroute_->addAdjustment(
-                                            x, y, level, x + 1, y, level, edge_cap, true);
-                } else if (y == last_tile.y) {
-                  int edge_cap
-                    = fastroute_->getEdgeCapacity(x, y, level, x + 1, y, level);
-                  edge_cap -= last_tile_reduce;
-                  if (edge_cap < 0)
-                    edge_cap = 0;
-                  fastroute_->addAdjustment(
-                                            x, y, level, x + 1, y, level, edge_cap, true);
-                } else {
-                  fastroute_->addAdjustment(
-                                            x, y, level, x + 1, y, level, 0, true);
-                }
-              }
-            }
-          } else {
-            for (int x = first_tile.x; x <= last_tile.x; x++) {
-              for (int y = first_tile.y; y < last_tile.y; y++) {
-                if (x == first_tile.x) {
-                  int edge_cap
-                    = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
-                  edge_cap -= first_tile_reduce;
-                  if (edge_cap < 0)
-                    edge_cap = 0;
-                  fastroute_->addAdjustment(
-                                            x, y, level, x, y + 1, level, edge_cap, true);
-                } else if (x == last_tile.x) {
-                  int edge_cap
-                    = fastroute_->getEdgeCapacity(x, y, level, x, y + 1, level);
-                  edge_cap -= last_tile_reduce;
-                  if (edge_cap < 0)
-                    edge_cap = 0;
-                  fastroute_->addAdjustment(
-                                            x, y, level, x, y + 1, level, edge_cap, true);
-                } else {
-                  fastroute_->addAdjustment(
-                                            x, y, level, x, y + 1, level, 0, true);
-                }
-              }
-            }
-          }
+      }
+    }
+  } else {
+    for (int x = first_tile.x; x <= last_tile.x; x++) {
+      for (int y = first_tile.y; y < last_tile.y; y++) {
+        if (x == first_tile.x) {
+          int edge_cap
+            = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
+          edge_cap -= first_tile_reduce;
+          if (edge_cap < 0)
+            edge_cap = 0;
+          fastroute_->addAdjustment(
+                                    x, y, layer, x, y + 1, layer, edge_cap, true);
+        } else if (x == last_tile.x) {
+          int edge_cap
+            = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
+          edge_cap -= last_tile_reduce;
+          if (edge_cap < 0)
+            edge_cap = 0;
+          fastroute_->addAdjustment(
+                                    x, y, layer, x, y + 1, layer, edge_cap, true);
+        } else {
+          fastroute_->addAdjustment(
+                                    x, y, layer, x, y + 1, layer, 0, true);
         }
       }
     }
@@ -2916,7 +2895,7 @@ std::string getLayerName(int layer_idx, odb::dbDatabase* db)
   return tech_layer->getName();
 }
 
-void GlobalRouter::initObstructions()
+void GlobalRouter::computeObstructionsAdjustments()
 {
   odb::Rect die_area(grid_->getXMin(),
                      grid_->getYMin(),
@@ -2998,7 +2977,7 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
         if (verbose_)
           logger_->warn(GRT, 37, "Found blockage outside die area.");
       }
-      grid_->addObstruction(layer, obstruction_rect);
+      applyObstructionAdjustment(obstruction_rect, obstruction_box->getTechLayer());
       obstructions_cnt++;
     }
   }
@@ -3057,7 +3036,7 @@ int GlobalRouter::findInstancesObstructions(
                           "Found blockage outside die area in instance {}.",
                           inst->getConstName());
         }
-        grid_->addObstruction(layer, obstruction_rect);
+        applyObstructionAdjustment(obstruction_rect, box->getTechLayer());
         obstructions_cnt++;
       }
     }
@@ -3092,7 +3071,7 @@ int GlobalRouter::findInstancesObstructions(
                             inst->getConstName());
               pin_out_of_die_count++;
             }
-            grid_->addObstruction(pin_layer, pin_box);
+            applyObstructionAdjustment(pin_box, box->getTechLayer());
           }
         }
       }
@@ -3147,7 +3126,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                                 "Net {} has wires outside die area.",
                                 db_net->getConstName());
               }
-              grid_->addObstruction(l, obstruction_rect);
+              applyObstructionAdjustment(obstruction_rect, s->getTechLayer());
             }
           }
         }
@@ -3180,7 +3159,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                                 "Net {} has wires outside die area.",
                                 db_net->getConstName());
               }
-              grid_->addObstruction(l, obstruction_rect);
+              applyObstructionAdjustment(obstruction_rect, pshape.shape.getTechLayer());
             }
           }
         }
