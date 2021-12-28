@@ -89,21 +89,22 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
   if (gcell_id_y >= y_grids_)
     gcell_id_y--;
 
-  int center_x = (gcell_id_x * tile_width_) + (tile_width_ / 2) + die_area_.xMin();
+  int center_x
+      = (gcell_id_x * tile_width_) + (tile_width_ / 2) + die_area_.xMin();
   int center_y
       = (gcell_id_y * tile_height_) + (tile_height_ / 2) + die_area_.yMin();
 
   return odb::Point(center_x, center_y);
 }
 
-std::pair<Grid::Tile, Grid::Tile> Grid::getBlockedTiles(
+std::pair<odb::Point, odb::Point> Grid::getBlockedTiles(
     const odb::Rect& obstruction,
     odb::Rect& first_tile_bds,
     odb::Rect& last_tile_bds)
 {
-  std::pair<Tile, Tile> tiles;
-  Tile first_tile;
-  Tile last_tile;
+  std::pair<odb::Point, odb::Point> tiles;
+  odb::Point first_tile;
+  odb::Point last_tile;
 
   odb::Point lower = obstruction.ll();  // lower bound of obstruction
   odb::Point upper = obstruction.ur();  // upper bound of obstruction
@@ -116,12 +117,12 @@ std::pair<Grid::Tile, Grid::Tile> Grid::getBlockedTiles(
                                    // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  first_tile.x = (lower.x() - (getTileWidth() / 2)) / getTileWidth();
-  first_tile.y = (lower.y() - (getTileHeight() / 2)) / getTileHeight();
+  first_tile.setX((lower.x() - (getTileWidth() / 2)) / getTileWidth());
+  first_tile.setY((lower.y() - (getTileHeight() / 2)) / getTileHeight());
 
   // Get x and y indices of last blocked tile
-  last_tile.x = (upper.x() - (getTileWidth() / 2)) / getTileWidth();
-  last_tile.y = (upper.y() - (getTileHeight() / 2)) / getTileHeight();
+  last_tile.setX((upper.x() - (getTileWidth() / 2)) / getTileWidth());
+  last_tile.setY((upper.y() - (getTileHeight() / 2)) / getTileHeight());
 
   tiles = std::make_pair(first_tile, last_tile);
 

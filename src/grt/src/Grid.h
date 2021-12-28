@@ -64,12 +64,6 @@ class Grid
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities);
 
-  struct Tile
-  {
-    int x;
-    int y;
-  };
-
   void clear();
 
   int getXMin() const { return die_area_.xMin(); }
@@ -133,9 +127,10 @@ class Grid
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<Tile, Tile> getBlockedTiles(const odb::Rect& obstruction,
-                                        odb::Rect& first_tile_bds,
-                                        odb::Rect& last_tile_bds);
+  std::pair<odb::Point, odb::Point> getBlockedTiles(
+      const odb::Rect& obstruction,
+      odb::Rect& first_tile_bds,
+      odb::Rect& last_tile_bds);
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
