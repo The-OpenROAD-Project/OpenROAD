@@ -1060,10 +1060,6 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
                                             int layer,
                                             float reduction_percentage)
 {
-  odb::Rect first_tile_box;
-  odb::Rect last_tile_box;
-  std::pair<odb::Point, odb::Point> tiles_to_adjust;
-
   odb::Rect die_box = grid_->getGridArea();
 
   if ((die_box.xMin() > region.ll().x() && die_box.yMin() > region.ll().y())
@@ -1076,10 +1072,11 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   bool vertical
       = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-  tiles_to_adjust
-      = grid_->getBlockedTiles(region, first_tile_box, last_tile_box);
-  odb::Point& first_tile = tiles_to_adjust.first;
-  odb::Point& last_tile = tiles_to_adjust.second;
+  odb::Rect first_tile_box;
+  odb::Rect last_tile_box;
+  odb::Point first_tile;
+  odb::Point last_tile;
+  grid_->getBlockedTiles(region, first_tile_box, last_tile_box, first_tile, last_tile);
 
   RoutingTracks routing_tracks = getRoutingTracksByIndex(layer);
   int track_space = routing_tracks.getUsePitch();
@@ -1165,12 +1162,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction, odb:
   }
   odb::Rect first_tile_box;
   odb::Rect last_tile_box;
-
-  std::pair<odb::Point, odb::Point> blocked_tiles =
-    grid_->getBlockedTiles(obstruction_rect, first_tile_box, last_tile_box);
-
-  odb::Point& first_tile = blocked_tiles.first;
-  odb::Point& last_tile = blocked_tiles.second;
+  odb::Point first_tile;
+  odb::Point last_tile;
+  grid_->getBlockedTiles(obstruction_rect, first_tile_box, last_tile_box, first_tile, last_tile);
 
   bool vertical
           = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;

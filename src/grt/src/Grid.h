@@ -127,10 +127,12 @@ class Grid
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<odb::Point, odb::Point> getBlockedTiles(
+  void getBlockedTiles(
       const odb::Rect& obstruction,
       odb::Rect& first_tile_bds,
-      odb::Rect& last_tile_bds);
+      odb::Rect& last_tile_bds,
+      odb::Point& first_tile,
+      odb::Point& last_tile);
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
