@@ -143,7 +143,7 @@ for the OpenROAD flow. Specifically the `config.mk` file in the platform
 directory has all of the configuration variables that the flow uses. Refer
 to the OpenROAD-flow-scripts documentation for a full list of configuration
 variables that can be set.
-Refer to the document [Flow variables] (../user/FlowVariables.md) for details on how to use 
+Refer to the document [Flow variables](../user/FlowVariables.md) for details on how to use 
 environment variables in OpenROAD-flow-scripts to configure platform and design specific parameters. 
 
 For an example of a platform `config.mk` file, refer to
