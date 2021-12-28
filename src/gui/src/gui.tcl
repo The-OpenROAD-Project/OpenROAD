@@ -181,14 +181,14 @@ proc select { args } {
   return [gui::select $type $name $case_sense $highlight]
 }
 
-sta::define_cmd_args "timing_cone" {iterm_or_bterm \
-                                    [-fanin] \
-                                    [-fanout] \
-                                    [-off]
+sta::define_cmd_args "display_timing_cone" {pin \
+                                            [-fanin] \
+                                            [-fanout] \
+                                            [-off]
 }
 
-proc timing_cone { args } {
-  sta::parse_key_args "timing_cone" args \
+proc display_timing_cone { args } {
+  sta::parse_key_args "display_timing_cone" args \
     keys {} flags {-fanin -fanout -off}
   if { [info exists flags(-off)] } {
     sta::check_argc_eq0 "timing_cone" $args
@@ -201,7 +201,7 @@ proc timing_cone { args } {
 
   set fanin [info exists flags(-fanin)]
   set fanout [info exists flags(-fanout)]
-  
+
   # clear old one
   gui::timing_cone NULL 0 0
 
@@ -210,12 +210,18 @@ proc timing_cone { args } {
     utl::error GUI 67 "Design not loaded."
   }
 
-  set term [$block findITerm $args]
-  if { $term == "NULL" } {
-    set term [$block findBTerm $args]
+  sta::parse_port_pin_net_arg $args pins nets
+
+  foreach net $nets {
+    lappend pins [sta::net_load_pins $net]
   }
+  if {[llength $pins] != 1} {
+    utl::error GUI 68 "Multiple pin timing cones are not supported."
+  }
+
+  set term [sta::sta_to_db_pin $pins]
   if { $term == "NULL" } {
-    utl::error GUI 68 "Unable to find iterm or bterm: $args."
+    set term [sta::sta_to_db_port $pins]
   }
 
   # select new one

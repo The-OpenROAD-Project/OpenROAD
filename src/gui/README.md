@@ -92,14 +92,14 @@ Options description:
 ### Displaying timing cones
 
 ```
-timing_cone" terminal_name
-             [-fanin]
-             [-fanout]
-             [-off]
+display_timing_cone" pin
+                     [-fanin]
+                     [-fanout]
+                     [-off]
 ```
 
 Options description:
-- ``terminal_name``: name of the instance or block terminal.
+- ``pin``: name of the instance or block pin.
 - ``fanin``: (optional) display the fanin timing cone.
 - ``fanout``: (optional) display the fanout timing cone.
 - ``off``: (optional) remove the timing cone.
