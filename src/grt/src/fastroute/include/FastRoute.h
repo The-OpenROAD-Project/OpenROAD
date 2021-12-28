@@ -132,6 +132,16 @@ class FastRouteCore
                      int l2,
                      int reducedCap,
                      bool isReduce);
+  void applyVerticalAdjustments(const odb::Point& first_tile,
+                                const odb::Point& last_tile,
+                                int layer,
+                                int first_tile_reduce,
+                                int last_tile_reduce);
+  void applyHorizontalAdjustments(const odb::Point& first_tile,
+                                  const odb::Point& last_tile,
+                                  int layer,
+                                  int first_tile_reduce,
+                                  int last_tile_reduce);
   void initAuxVar();
   NetRouteMap run();
   void updateDbCongestion();

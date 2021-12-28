@@ -1179,55 +1179,17 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction, odb:
                                                   obstruction_rect, last_tile_box, track_space, false, tech_layer->getDirection());
 
   if (!vertical) {
-    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-        if (y == first_tile.getY()) {
-          int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
-          edge_cap -= first_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-                                    x, y, layer, x + 1, y, layer, edge_cap, true);
-        } else if (y == last_tile.getY()) {
-          int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
-          edge_cap -= last_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-                                    x, y, layer, x + 1, y, layer, edge_cap, true);
-        } else {
-          fastroute_->addAdjustment(
-                                    x, y, layer, x + 1, y, layer, 0, true);
-        }
-      }
-    }
+    fastroute_->applyHorizontalAdjustments(first_tile,
+                                           last_tile,
+                                           layer,
+                                           first_tile_reduce,
+                                           last_tile_reduce);
   } else {
-    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-        if (x == first_tile.getX()) {
-          int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
-          edge_cap -= first_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-                                    x, y, layer, x, y + 1, layer, edge_cap, true);
-        } else if (x == last_tile.getX()) {
-          int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
-          edge_cap -= last_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-                                    x, y, layer, x, y + 1, layer, edge_cap, true);
-        } else {
-          fastroute_->addAdjustment(
-                                    x, y, layer, x, y + 1, layer, 0, true);
-        }
-      }
-    }
+    fastroute_->applyVerticalAdjustments(first_tile,
+                                         last_tile,
+                                         layer,
+                                         first_tile_reduce,
+                                         last_tile_reduce);
   }
 }
 
