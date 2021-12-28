@@ -225,8 +225,6 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
   int size = jstop - jstrt + 1;
 
   double siteWidth = m_arch->getRow(0)->getSiteWidth();
-  double originX = m_arch->getRow(0)->getLeft();
-  double siteSpacing = m_arch->getRow(0)->getSiteSpacing();
 
   std::vector<double> widths;
   widths.resize(size);
@@ -296,7 +294,6 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
         totalWidth += widths[i];
       }
       for (size_t i = 0; i < size; i++) {
-        Node* ndi = nodes[jstrt + i];
         if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
           totalWidth -= widths[i];
           widths[i] += sitesPerCell * siteWidth;
@@ -316,7 +313,6 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
         totalWidth += widths[i];
       }
       for (size_t i = 0; i < size; i++) {
-        Node* ndi = nodes[jstrt + i];
         if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
           totalWidth -= widths[i];
           widths[i] += sitesPerCell * siteWidth;
@@ -483,7 +479,6 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
   ++m_traversal;
 
   double cost = 0.;
-  int size = istop - istrt + 1;
   for (int i = istrt; i <= istop; i++) {
     Node* ndi = nodes[i];
 

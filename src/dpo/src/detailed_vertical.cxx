@@ -231,7 +231,6 @@ void DetailedVerticalSwap::verticalSwap() {
 bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
   // Determines the median location for a node.
 
-  double curX, curY;
   Edge* ed;
   unsigned mid;
   unsigned n;
@@ -247,9 +246,9 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
     ed = pin->getEdge();
 
     nodeBbox.m_xmin = std::numeric_limits<float>::max();
-    nodeBbox.m_xmax = -std::numeric_limits<float>::max();
+    nodeBbox.m_xmax = std::numeric_limits<float>::lowest();
     nodeBbox.m_ymin = std::numeric_limits<float>::max();
-    nodeBbox.m_ymax = -std::numeric_limits<float>::max();
+    nodeBbox.m_ymax = std::numeric_limits<float>::lowest();
 
     int numPins = ed->getPins().size();
     if (numPins <= 1) {

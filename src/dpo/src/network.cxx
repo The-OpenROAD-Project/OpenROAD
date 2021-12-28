@@ -54,18 +54,18 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 Node::Node()
     : m_id(0),
-      m_type(0),
-      m_fixed(NodeFixed_NOT_FIXED),
-      m_attributes(NodeAttributes_EMPTY),
-      m_currentOrient(Orientation_N),
-      m_availOrient(Orientation_N),
       m_x(0.0),
       m_y(0.0),
       m_w(0.0),
       m_h(0.0),
+      m_type(0),
+      m_fixed(NodeFixed_NOT_FIXED),
+      m_attributes(NodeAttributes_EMPTY),
       m_etl(EDGETYPE_DEFAULT),
       m_etr(EDGETYPE_DEFAULT),
-      m_regionId(0) {
+      m_regionId(0),
+      m_currentOrient(Orientation_N),
+      m_availOrient(Orientation_N) {
   m_powerTop = dpo::RowPower_UNK;
   m_powerBot = dpo::RowPower_UNK;
 }
@@ -76,14 +76,14 @@ Edge::Edge() : m_id(0), m_ndr(0) {}
 Edge::~Edge() {}
 
 Pin::Pin(void)
-    : m_dir(Pin::Dir_INOUT),
+    : m_pinW(0.0),
+      m_pinH(0.0),
+      m_dir(Pin::Dir_INOUT),
+      m_pinLayer(0),  
       m_node(nullptr),
       m_edge(nullptr),
       m_offsetX(0.0),
-      m_offsetY(0.0),
-      m_pinLayer(0),  
-      m_pinW(0.0),
-      m_pinH(0.0) {
+      m_offsetY(0.0) {
 }
 
 Pin::~Pin(void) {}

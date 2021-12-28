@@ -247,8 +247,8 @@ class Architecture::Region {
 
   // Box around all sub-rectangles.
   double m_xmin;
-  double m_xmax;
   double m_ymin;
+  double m_xmax;
   double m_ymax;
 
   // Rectangles forming the rectilinear region.

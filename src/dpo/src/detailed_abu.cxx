@@ -388,7 +388,6 @@ void DetailedABU::computeBuckets(void) {
   for (size_t i = 0; i < m_utilBuckets.size(); i++) {
     m_utilBuckets[i].erase(m_utilBuckets[i].begin(), m_utilBuckets[i].end());
   }
-  double denom = 1. / (double)m_utilBuckets.size();
   for (int j = 0; j < m_abuGridNumY; j++) {
     for (int k = 0; k < m_abuGridNumX; k++) {
       unsigned binId = j * m_abuGridNumX + k;

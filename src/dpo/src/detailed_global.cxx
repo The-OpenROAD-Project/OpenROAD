@@ -230,7 +230,6 @@ void DetailedGlobalSwap::globalSwap() {
 bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
   // Determines the median location for a node.
 
-  double curX, curY;
   Edge* ed;
   unsigned mid;
   unsigned n;

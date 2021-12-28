@@ -397,9 +397,7 @@ void DetailedMis::populateGrid(void) {
   }
 
   double xmin = m_arch->getMinX();
-  double xmax = m_arch->getMaxX();
   double ymin = m_arch->getMinY();
-  double ymax = m_arch->getMaxY();
 
   // Insert cells into the constructed grid.
   m_cellToBinMap.clear();
@@ -422,8 +420,6 @@ void DetailedMis::clearGrid(void)
 // Clear out any old grid.  The dimensions of the grid are also stored in the
 // class...
 {
-  unsigned i, j;
-
   for (size_t i = 0; i < m_grid.size(); i++) {
     for (size_t j = 0; j < m_grid[i].size(); j++) {
       delete m_grid[i][j];
@@ -540,7 +536,6 @@ void DetailedMis::solveMatch(void) {
     return;
   }
   std::vector<Node*>& nodes = m_neighbours;
-  double hpwl_x, hpwl_y, hpwl;
   double singleRowHeight = m_arch->getRow(0)->getHeight();
 
   int nNodes = (int)nodes.size();

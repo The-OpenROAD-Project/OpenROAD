@@ -598,7 +598,6 @@ double DetailedInterleave::solve(SmallProblem* problem) {
       }
     }
 
-    double currCost = matrix[nb][na]->m_cost;
     if (matrix[nb][na]->m_cost >= bestCost) {
       break;
     } else {

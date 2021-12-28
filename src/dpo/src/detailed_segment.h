@@ -62,7 +62,7 @@ class DetailedSeg {
         m_rowId(-1),
         m_regId(0),
         m_xmin(std::numeric_limits<double>::max()),
-        m_xmax(std::numeric_limits<double>::min()),
+        m_xmax(std::numeric_limits<double>::lowest()),
         m_util(0.0),
         m_gapu(0.0) {}
   virtual ~DetailedSeg() {}
@@ -87,15 +87,15 @@ class DetailedSeg {
 
   double getWidth(void) const { return m_xmax-m_xmin; }
 
- public:
-  double m_util;
-  double m_gapu;
  protected:
   int m_segId;
   int m_rowId;
   int m_regId; 
   double m_xmin;
   double m_xmax;
+ public:
+  double m_util;
+  double m_gapu;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

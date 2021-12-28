@@ -663,7 +663,6 @@ void DetailedMgr::findClosestSpanOfSegmentsDfs(
 
 ) {
   stack.push_back(segPtr);
-  int segId = segPtr->getSegId();
   int rowId = segPtr->getRowId();
 
   if (rowId < top) {
@@ -706,8 +705,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
     return false;
   }
 
-  double hori;
-  double vert;
   double disp1 = std::numeric_limits<double>::max();
   double disp2 = std::numeric_limits<double>::max();
 
@@ -776,7 +773,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
         double xmax = segPtr->getMaxX();
         for (size_t j = 0; j < candidates[i].size(); j++) {
           segPtr = candidates[i][j];
-          int rr = segPtr->getRowId();
           xmin = std::max(xmin, segPtr->getMinX());
           xmax = std::min(xmax, segPtr->getMaxX());
         }
@@ -786,8 +782,6 @@ bool DetailedMgr::findClosestSpanOfSegments(
         double xx =
             std::max(xmin + 0.5 * ww, std::min(xmax - 0.5 * ww, nd->getX()));
         double dx = std::fabs(nd->getX() - xx);
-
-        double disp = dx + dy;
 
         if (best1.size() == 0 || (dx + dy < disp1)) {
           if (1) {
@@ -1224,8 +1218,6 @@ bool DetailedMgr::isNodeAlignedToRow(Node* nd) {
 
   int numRows = m_arch->getRows().size();
 
-  double xl = nd->getX() - 0.5 * nd->getWidth();
-  double xr = nd->getX() + 0.5 * nd->getWidth();
   double yb = nd->getY() - 0.5 * nd->getHeight();
   double yt = nd->getY() + 0.5 * nd->getHeight();
 
@@ -1262,7 +1254,6 @@ void DetailedMgr::setupObstaclesForDrc(void) {
     int numSites = m_arch->getRow(row_id)->getNumSites();
 
     // Blockages relevant to this row...
-    int count = 0;
     for (int layer_id = 0; layer_id < m_rt->m_num_layers; layer_id++) {
       m_obstacles[row_id][layer_id].clear();
 
@@ -1436,7 +1427,6 @@ void DetailedMgr::collectFixedCells(void) {
 
   m_fixedMacros.erase(m_fixedMacros.begin(), m_fixedMacros.end());
   m_fixedCells.erase(m_fixedCells.begin(), m_fixedCells.end());
-  double rowHeight = m_arch->getRow(0)->getHeight();
 
   // Insert filler.
   for (size_t i = 0; i < m_network->getNumFillerNodes(); i++) {
@@ -1527,8 +1517,6 @@ void DetailedMgr::removeOverlapMinimumShift(void) {
   double x;
   for (int s = 0; s < m_segments.size(); s++) {
     DetailedSeg* segment = m_segments[s];
-
-    int r = segment->getRowId();
 
     std::vector<Node*>& nodes = m_cellsInSeg[segment->getSegId()];
     if (nodes.size() == 0) {
@@ -1662,8 +1650,6 @@ void DetailedMgr::removeOverlapMinimumShift(void) {
     // movement.
     bool okay_disp = true;
     for (int i = 0; i < nodes.size(); i++) {
-      Node* ndi = nodes[i];
-
       if (treq[i] - tarr[i] < wid[i]) {
         okay_disp = false;
       }
@@ -1673,7 +1659,6 @@ void DetailedMgr::removeOverlapMinimumShift(void) {
       // Do the shifting while observing the limits...
       x = segment->getMaxX();
       for (int i = nodes.size() - 1; i >= 0; i--) {
-        Node* ndi = nodes[i];
         // Node cannot go beyond (x-wid[i]), prefers to be at llx[i], but cannot
         // be below tarr[i].
         x = std::min(x, treq[i]);
@@ -1745,14 +1730,10 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
   temp.reserve(m_network->getNumNodes() );
 
   int err_n = 0;
-  int err_g = 0;
   // The following is for some printing if we need help finding a bug.
   // I don't want to print all the potential errors since that could
   // be too overwhelming.
   for (int s = 0; s < m_segments.size(); s++) {
-    int rowId = m_segments[s]->getRowId();
-    double rowY = m_arch->getRow(rowId)->getCenterY();
-
     double xmin = m_segments[s]->getMinX();
     double xmax = m_segments[s]->getMaxX();
 
@@ -1768,11 +1749,8 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
       Node* ndi = temp[j - 1];
       Node* ndj = temp[j];
 
-      double li = ndi->getX() - 0.5 * ndi->getWidth();
       double ri = ndi->getX() + 0.5 * ndi->getWidth();
-
       double lj = ndj->getX() - 0.5 * ndj->getWidth();
-      double rj = ndj->getX() + 0.5 * ndj->getWidth();
 
       if (ri >= lj + 1.0e-3) {
         err_n++;
@@ -1814,8 +1792,6 @@ int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
   int err_n = 0;
   int err_p = 0;
   for (int s = 0; s < m_segments.size(); s++) {
-    double xmin = m_segments[s]->getMinX();
-    double xmax = m_segments[s]->getMaxX();
 
     // To be safe, gather cells in each segment and re-sort them.
     temp.erase(temp.begin(), temp.end());
@@ -1833,7 +1809,7 @@ int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
       double rlx_l = llx_l + ndl->getWidth();
 
       double llx_r = ndr->getX() - 0.5 * ndr->getWidth();
-      double rlx_r = llx_r + ndr->getWidth();
+      //double rlx_r = llx_r + ndr->getWidth();
 
       double gap = llx_r - rlx_l;
 
@@ -1881,8 +1857,6 @@ int DetailedMgr::checkRegionAssignment(int max_err_n) {
 
   int err_n = 0;
   for (int s = 0; s < m_segments.size(); s++) {
-    double xmin = m_segments[s]->getMinX();
-    double xmax = m_segments[s]->getMaxX();
 
     // To be safe, gather cells in each segment and re-sort them.
     temp.erase(temp.begin(), temp.end());
@@ -1923,9 +1897,7 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
     }
 
     double xl = nd->getX() - 0.5 * nd->getWidth();
-    double xr = nd->getX() + 0.5 * nd->getWidth();
     double yb = nd->getY() - 0.5 * nd->getHeight();
-    double yt = nd->getY() + 0.5 * nd->getHeight();
 
     // Determine the spanned rows. XXX: Is this strictly correct?  It
     // assumes rows are continuous and that the bottom row lines up
@@ -1984,8 +1956,6 @@ int DetailedMgr::checkRowAlignment(int max_err_n) {
     if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
-    double xl = nd->getX() - 0.5 * nd->getWidth();
-    double xr = nd->getX() + 0.5 * nd->getWidth();
     double yb = nd->getY() - 0.5 * nd->getHeight();
     double yt = nd->getY() + 0.5 * nd->getHeight();
 
@@ -2780,7 +2750,6 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
   // Try to move a single height cell from its current position in a new
   // segment.
 
-  int ri = m_segments[si]->getRowId();
   int rj = m_segments[sj]->getRowId();
 
   double row_y = m_arch->getRow(rj)->getCenterY();
@@ -3258,7 +3227,6 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
     return false;
   }
 
-  int ri = m_segments[si]->getRowId();
   int rj = m_segments[sj]->getRowId();
 
   int nn = m_cellsInSeg[si].size() - 1;
@@ -3275,10 +3243,7 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
   (void)ix_i;
   (void)ix_j;
 
-  double originX = m_arch->getRow(rj)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(rj)->m_siteSpacing;
-  int site_id;
-  double x1, x2, xl, xr;
+  double x1, x2;
   double space_left_j, space_right_j, large_left_j, large_right_j;
 
   // Find closest cell to the right of the target location.
@@ -3380,12 +3345,9 @@ bool DetailedMgr::tryMove3(Node* ndi, double xi, double yi, int si, double xj,
   // in that it only looks for gaps.
 
   double singleRowHeight = m_arch->getRow(0)->getHeight();
-  double originX = m_arch->getRow(0)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
 
   std::vector<Node*>::iterator it_j;
   double xmin, xmax;
-  int site_id;
 
   // Ensure multi-height, although I think this code should work for single
   // height cells too.
@@ -3599,9 +3561,6 @@ bool DetailedMgr::trySwap1(Node* ndi, double xi, double yi, int si, double xj,
   getSpaceAroundCell(si, ix_i, space_left_i, space_right_i, large_left_i,
                      large_right_i);
 
-  double originX;
-  double siteSpacing;
-  int site_id;
   double x1, x2, x3, x4;
 
   int ni = m_cellsInSeg[si].size() - 1;
@@ -3813,8 +3772,6 @@ void DetailedMgr::acceptMove(void) {
 
   for (int i = 0; i < m_nMoved; i++) {
     Node* ndi = m_movedNodes[i];
-
-    int spanned = (int)((ndi->getHeight() / m_singleRowHeight) + 0.5);
 
     // Remove node from current segment.
     for (size_t s = 0; s < m_curSeg[i].size(); s++) {

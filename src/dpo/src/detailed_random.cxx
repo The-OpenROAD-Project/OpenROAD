@@ -403,8 +403,6 @@ double DetailedRandom::go(void) {
   // Try to improve.
   int maxAttempts =
       (int)std::ceil(m_movesPerCandidate * (double)m_candidates.size());
-  Node* ndi = 0;
-  Node* ndj = 0;
   Utility::random_shuffle(m_candidates.begin(), m_candidates.end(),
                           m_mgrPtr->m_rng);
 
@@ -712,7 +710,6 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
   Node* ndi = candidates[(*(m_mgr->m_rng))() % (candidates.size())];
   int spanned_i = (int)(ndi->getHeight() / m_mgr->getSingleRowHeight() + 0.5);
-  int spanned_j = -1;
 
   // Segments for the source.
   std::vector<DetailedSeg*>& segs_i = m_mgr->m_reverseCellToSegs[ndi->getId()];

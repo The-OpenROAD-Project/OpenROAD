@@ -86,7 +86,6 @@ void PlotGnu::drawNodes(char* buf) {
 
   double rowHeight = m_arch->getRow(0)->getHeight();
   double siteWidth = m_arch->getRow(0)->getSiteWidth();
-  double siteSpacing = m_arch->getRow(0)->getSiteSpacing();
 
 
   FILE* fpMain = 0;
@@ -103,8 +102,6 @@ void PlotGnu::drawNodes(char* buf) {
 
   double xmin, xmax, ymin, ymax;
   double x, y, h, w;
-  unsigned nNodes = m_network->getNumNodes();
-  unsigned nEdges = m_network->getNumEdges();
 
   double avgW = 0.;
   double avgH = 0.;
@@ -504,8 +501,6 @@ void PlotGnu::drawNodes(char* buf) {
           "#set terminal postscript eps color solid 20\n"
           "#set output \"%s\"\n\n",
           m_counter, hpwl,
-          // nNodes,
-          // nEdges,
           buf, m_filename);
 
   // Constrain the x and y ranges.

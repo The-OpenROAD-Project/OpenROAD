@@ -54,8 +54,8 @@ class Rectangle {
   Rectangle() {
     m_xmin = std::numeric_limits<double>::max();
     m_ymin = std::numeric_limits<double>::max();
-    m_xmax = -std::numeric_limits<double>::max();
-    m_ymax = -std::numeric_limits<double>::max();
+    m_xmax = std::numeric_limits<double>::lowest();
+    m_ymax = std::numeric_limits<double>::lowest();
   }
   Rectangle(double xmin, double ymin, double xmax, double ymax)
       : m_xmin(xmin), m_ymin(ymin), m_xmax(xmax), m_ymax(ymax) {}
@@ -78,8 +78,8 @@ class Rectangle {
   void reset(void) {
     m_xmin = std::numeric_limits<double>::max();
     m_ymin = std::numeric_limits<double>::max();
-    m_xmax = -std::numeric_limits<double>::max();
-    m_ymax = -std::numeric_limits<double>::max();
+    m_xmax = std::numeric_limits<double>::lowest();
+    m_ymax = std::numeric_limits<double>::lowest();
   }
 
   void enlarge(const Rectangle& r) {
@@ -134,8 +134,8 @@ class Rectangle {
 
  public:
   double m_xmin;
-  double m_xmax;
   double m_ymin;
+  double m_xmax;
   double m_ymax;
 };
 

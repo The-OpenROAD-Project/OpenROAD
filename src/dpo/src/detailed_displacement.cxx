@@ -151,8 +151,6 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
 
-  double old_disp = 0.;
-  double new_disp = 0.;
   double dx, dy;
 
   std::fill(m_del.begin(), m_del.end(), 0.0);

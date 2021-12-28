@@ -265,7 +265,6 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row) {
   }
 
   unsigned rowOri = m_arch->getRow(row)->m_siteOrient;
-  unsigned siteSym = m_arch->getRow(row)->m_siteSymmetry;
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {
@@ -556,7 +555,6 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row) {
   // around the Y-axis previously to improve WL...
 
   unsigned rowOri = m_arch->getRow(row)->m_siteOrient;
-  unsigned siteSym = m_arch->getRow(row)->m_siteSymmetry;
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {

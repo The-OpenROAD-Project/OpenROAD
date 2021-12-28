@@ -64,23 +64,6 @@ using odb::dbDatabase;
 using utl::Logger;
 using dpl::Opendp;
 
-/*
-using odb::dbBlock;
-using odb::dbInst;
-using odb::dbNet;
-using odb::dbLib;
-using odb::dbMaster;
-using odb::dbMasterType;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbBTerm;
-using odb::dbOrientType;
-using odb::dbRow;
-using odb::dbSite;
-using odb::Point;
-using odb::Rect;
-*/
-
 
 class Optdp
 {
@@ -113,8 +96,8 @@ protected:
   void setUpPlacementRegions();
 
 protected:
-  utl::Logger *logger_;
   odb::dbDatabase *db_;
+  utl::Logger *logger_;
   dpl::Opendp* opendp_;
 
   // My stuff.

@@ -79,7 +79,8 @@ using odb::dbSite;
 using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
-Optdp::Optdp() : network_(nullptr), arch_(nullptr), routeinfo_(nullptr) {}
+Optdp::Optdp() : db_(nullptr), logger_(nullptr), opendp_(nullptr),
+    arch_(nullptr), network_(nullptr), routeinfo_(nullptr) {}
 
 ////////////////////////////////////////////////////////////////
 Optdp::~Optdp() {}
@@ -381,7 +382,7 @@ void Optdp::createNetwork() {
   }
 
   for (dbNet* net : nets) {
-    dbSigType netType = net->getSigType();
+    //dbSigType netType = net->getSigType();
     // Should probably skip global nets.
     ++nEdges;
 
@@ -788,14 +789,12 @@ void Optdp::createArchitecture() {
 ////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementRegions() {
   double xmin, xmax, ymin, ymax;
-  int r = 0;
   xmin = arch_->getMinX();
   xmax = arch_->getMaxX();
   ymin = arch_->getMinY();
   ymax = arch_->getMaxY();
 
   dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbRegion> regions = block->getRegions();
 
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;

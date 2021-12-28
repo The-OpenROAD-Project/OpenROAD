@@ -233,7 +233,7 @@ bool Architecture::postProcess( Network* network ) {
       rx = intervals.front().first;
       width = rx-lx;
       x = 0.5*(lx + rx);
-      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+      network->createAndAddFillerNode(x, y, width, height);
     }
     for (size_t i = 1; i < intervals.size(); i++) {
       if( intervals[i].first > intervals[i-1].second) {
@@ -241,7 +241,7 @@ bool Architecture::postProcess( Network* network ) {
         rx = intervals[i].first;
         width = rx-lx;
         x = 0.5*(lx + rx);
-        Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+        network->createAndAddFillerNode(x, y, width, height);
       }
     }
     if (m_xmax > intervals.back().second) {
@@ -249,7 +249,7 @@ bool Architecture::postProcess( Network* network ) {
       rx = m_xmax;
       width = rx-lx;
       x = 0.5*(lx + rx);
-      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+      network->createAndAddFillerNode(x, y, width, height);
     }
   }
   // Replace original rows with new rows.
@@ -316,8 +316,6 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
 
   flip = false;
 
-  bool okayBot = false;
-  bool okayTop = false;
 
   int spanned =
       (int)((ndi->getHeight() / row->getHeight()) + 0.5);  // Number of spanned rows.
@@ -528,10 +526,10 @@ int Architecture::add_edge_type(const char* name) {
 Architecture::Row::Row()
     : m_rowLoc(0),
       m_rowHeight(0),
+      m_numSites(0),
       m_siteWidth(0),
-      m_siteSpacing(0),
       m_subRowOrigin(0),
-      m_numSites(0) {
+      m_siteSpacing(0) {
   m_powerTop = RowPower_UNK;
   m_powerBot = RowPower_UNK;
 }
@@ -555,8 +553,8 @@ Architecture::Region::Region(void)
     : m_id(-1),
       m_xmin(std::numeric_limits<double>::max()),
       m_ymin(std::numeric_limits<double>::max()),
-      m_xmax(-std::numeric_limits<double>::max()),
-      m_ymax(-std::numeric_limits<double>::max()) {}
+      m_xmax(std::numeric_limits<double>::lowest()),
+      m_ymax(std::numeric_limits<double>::lowest()) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
