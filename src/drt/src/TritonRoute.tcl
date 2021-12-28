@@ -42,23 +42,27 @@ sta::define_cmd_args "detailed_route" {
     [-db_process_node name]
     [-disable_via_gen]
     [-droute_end_iter iter]
-    [-droute_via_in_pin_bottom_layer_num num]
-    [-droute_via_in_pin_top_layer_num num]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-or_seed seed]
     [-or_k_ k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
     [-param filename]
+    [-distributed]
+    [-remote_host host]
+    [-remote_port port]
+    [-shared_volume vol]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
-      -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
-      -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose} \
-    flags {-disable_via_gen}
+      -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
+      -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
+      -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
+    flags {-disable_via_gen -distributed}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -111,17 +115,15 @@ proc detailed_route { args } {
     } else {
       set droute_end_iter -1
     }
-    if { [info exists keys(-droute_via_in_pin_bottom_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
-      set droute_via_in_pin_bottom_layer_num $keys(-droute_via_in_pin_bottom_layer_num)
+    if { [info exists keys(-via_in_pin_bottom_layer)] } {
+      set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
     } else {
-      set droute_via_in_pin_bottom_layer_num -1
+      set via_in_pin_bottom_layer ""
     }
-    if { [info exists keys(-droute_via_in_pin_top_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_top_layer_num" $keys(-droute_via_in_pin_top_layer_num)
-      set droute_via_in_pin_top_layer_num $keys(-droute_via_in_pin_top_layer_num)
+    if { [info exists keys(-via_in_pin_top_layer)] } {
+      set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
     } else {
-      set droute_via_in_pin_top_layer_num -1
+      set via_in_pin_top_layer ""
     }
     if { [info exists keys(-or_seed)] } {
       set or_seed $keys(-or_seed)
@@ -149,9 +151,27 @@ proc detailed_route { args } {
     } else {
       set verbose 1
     }
+    if { [info exists flags(-distributed)] } {
+      if { [info exists keys(-remote_host)] } {
+        set host $keys(-remote_host)
+      } else {
+        utl::error DRT 506 "-remote_host is required for distributed routing."
+      }
+      if { [info exists keys(-remote_port)] } {
+        set port $keys(-remote_port)
+      } else {
+        utl::error DRT 507 "-remote_port is required for distributed routing."
+      }
+      if { [info exists keys(-shared_volume)] } {
+        set vol $keys(-shared_volume)
+      } else {
+        utl::error DRT 508 "-shared_volume is required for distributed routing."
+      }
+      drt::detailed_route_distributed $host $port $vol
+    }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
-      $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
+      $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
   }
 }
@@ -170,17 +190,19 @@ sta::define_cmd_args "detailed_route_debug" {
     [-worker x y]
     [-iter iter]
     [-pa_markers]
+    [-dump_dr]
     [-pa_combining]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -worker -iter -pin} \
-      flags {-dr -maze -pa -pa_markers -pa_combining}
+      flags {-dr -maze -pa -pa_markers -pa_combining -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
   set dr [info exists flags(-dr)]
+  set dump_dr [info exists flags(-dump_dr)]
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
@@ -216,6 +238,11 @@ proc detailed_route_debug { args } {
     set iter 0
   }
 
-  drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
+  drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
       $worker_x $worker_y $iter $pa_markers $pa_combining
+}
+
+proc detailed_route_run_worker { args } {
+  sta::check_argc_eq1 "detailed_route_run_worker" $args
+  drt::run_worker_cmd $args
 }

@@ -14,15 +14,6 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via via1_4 as default.
-[INFO GRT-0224] Chose via via2_8 as default.
-[INFO GRT-0224] Chose via via3_2 as default.
-[INFO GRT-0224] Chose via via4_0 as default.
-[INFO GRT-0224] Chose via via5_0 as default.
-[INFO GRT-0224] Chose via via6_0 as default.
-[INFO GRT-0224] Chose via via7_0 as default.
-[INFO GRT-0224] Chose via via8_0 as default.
-[INFO GRT-0224] Chose via via9_0 as default.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -57,6 +48,9 @@ metal9     Horizontal        196           169          13.78%
 metal10    Vertical          196           169          13.78%
 ---------------------------------------------------------------
 
+[INFO GRT-0197] Via related to pin nodes: 29
+[INFO GRT-0198] Via related Steiner nodes: 0
+[INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 44
 [INFO GRT-0112] Final usage 3D: 178
 

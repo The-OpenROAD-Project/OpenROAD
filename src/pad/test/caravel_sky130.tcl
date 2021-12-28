@@ -69,7 +69,7 @@ initialize_floorplan \
   -site      unithd
 
 # source ../../../test/sky130hs/sky130hs.tracks
-
+set_padring_options -allow_filler_overlap
 if {[catch {ICeWall init_footprint caravel_sky130/chip_io.sigmap} msg]} {
   puts $errorInfo
   puts $msg

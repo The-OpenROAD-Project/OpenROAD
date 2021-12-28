@@ -35,15 +35,15 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
 
-#include <unordered_map>
-
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 

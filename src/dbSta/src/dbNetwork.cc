@@ -1093,7 +1093,8 @@ dbNetwork::connect(Instance *inst,
   else {
     dbInst *dinst = staToDb(inst);
     dbMTerm *dterm = staToDb(port);
-    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    dbITerm *iterm = dinst->getITerm(dterm);
+    iterm->connect(dnet);
     pin = dbToSta(iterm);
   }
   return pin;
@@ -1138,7 +1139,8 @@ dbNetwork::connect(Instance *inst,
     dbInst *dinst = staToDb(inst);
     dbMaster *master = dinst->getMaster();
     dbMTerm *dterm = master->findMTerm(port_name);
-    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    dbITerm *iterm = dinst->getITerm(dterm);
+    iterm->connect(dnet);
     pin = dbToSta(iterm);
   }
   return pin;
@@ -1151,7 +1153,7 @@ dbNetwork::disconnectPin(Pin *pin)
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm)
-    dbITerm::disconnect(iterm);
+    iterm->disconnect();
   else if (bterm)
     bterm->disconnect();
 }

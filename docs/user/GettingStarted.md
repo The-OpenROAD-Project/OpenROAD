@@ -112,7 +112,7 @@ at `flow/results/{platform}/{design_name}/6_final.gds`
 
 ## Miscellaneous
 
-### Nangate45 smoke-test harness for top-level Verilog designs
+### smoke-test harness for top-level Verilog designs
 
 1.  Drop your Verilog files into `designs/src/harness`
 2.  Start the workflow:
@@ -125,5 +125,14 @@ Start with a very small submodule in your design that has only a few pins.
 ---
 
 ``` shell
-make DESIGN_NAME=TopLevelName DESIGN_CONFIG=`pwd`/designs/harness.mk
+make DESIGN_NAME=TopLevelName DESIGN_CONFIG=$(pwd)/designs/harness.mk
 ```
+
+### AutoTuner: Automatic parameter tuning framework
+Automatic parameter tuning framework for commercial and academic RTL-to-GDS flows.
+AutoTuner provides two main functionalities as follows.
+
+- Automatic hyperparameter tuning framework for OpenROAD-flow-scripts 
+- Parametric sweeping experiments for OpenROAD-flow-scripts 
+
+Refer to the detailed [instructions here](./InstructionsForAutoTuner.md) for AutoTuner.

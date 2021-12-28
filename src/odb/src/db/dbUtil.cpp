@@ -702,9 +702,6 @@ dbNet* dbCreateNetUtil::createNet(dbNet* nn, bool create, bool destroy)
 dbITerm* dbCreateNetUtil::updateITerm(dbITerm* iterm,
                                       bool /* unused: disconnect */)
 {
-  //	if ( !disconnect)
-  //		return iterm;
-
   dbITerm* t = NULL;
   dbInst* ecoInst = _block->findInst(iterm->getInst()->getConstName());
   if (ecoInst != NULL) {
@@ -717,7 +714,8 @@ dbITerm* dbCreateNetUtil::updateITerm(dbITerm* iterm,
 
   dbNet* ecoNet = updateNet(iterm->getNet(), false, false);
 
-  dbITerm* ecoIterm = dbITerm::connect(ecoInst, ecoNet, iterm->getMTerm());
+  dbITerm* ecoIterm = ecoInst->getITerm(iterm->getMTerm());
+  ecoIterm->connect(ecoNet);
 
   return ecoIterm;
 }

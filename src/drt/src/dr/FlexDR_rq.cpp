@@ -28,19 +28,35 @@
 
 #include "dr/FlexDR.h"
 #include "frRTree.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
 
+// I believe it is safe not to sort the query results here despite the
+// use of the serializer.  Most of the use of the query is in init()
+// which we call pre-serialization.  The only post-serialization use I
+// see is in the graphics which don't care about order (it's just
+// drawing the shapes).
+
 struct FlexDRWorkerRegionQuery::Impl
 {
   FlexDRWorker* drWorker;
-  std::vector<bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>>
-      shapes_;  // only for drXXX in dr worker
+  std::vector<RTree<drConnFig*>> shapes_;  // only for drXXX in dr worker
 
   static void add(
       drConnFig* connFig,
       std::vector<std::vector<rq_box_value_t<drConnFig*>>>& allShapes);
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & drWorker;
+    (ar) & shapes_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
@@ -251,10 +267,28 @@ void FlexDRWorkerRegionQuery::init()
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    impl_->shapes_.at(i) = boost::move(
-        bgi::rtree<rq_box_value_t<drConnFig*>, bgi::quadratic<16>>(
-            allShapes.at(i)));
+    impl_->shapes_.at(i) = boost::move(RTree<drConnFig*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
 }
+
+bool FlexDRWorkerRegionQuery::isEmpty() const
+{
+  return impl_->shapes_.empty();
+}
+
+template <class Archive>
+void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void FlexDRWorkerRegionQuery::serialize<InputArchive>(
+    InputArchive& ar,
+    const unsigned int file_version);
+
+template void FlexDRWorkerRegionQuery::serialize<OutputArchive>(
+    OutputArchive& ar,
+    const unsigned int file_version);

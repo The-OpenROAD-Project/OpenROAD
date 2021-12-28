@@ -908,7 +908,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst, odb::dbNet* net,
     if (mterm->getSigType() != net->getSigType())
       continue;
 
-    iterm = odb::dbITerm::connect(inst, targetNet, mterm);
+    inst->getITerm(mterm)->connect(targetNet);
     break;
   }
   if (iterm == NULL) {
@@ -3309,7 +3309,9 @@ FILE* extMain::openNanoFile(const char* name, const char* name2,
   if (strlen(_node_blk_prefix) > 0) {
     char syscmd[1056];
     sprintf(syscmd, "mkdir -p %s", _node_blk_prefix);
-    system(syscmd);
+    if (system(syscmd) == -1) {
+      logger_->error(RCX, 492, "mkdir failed on {}", _node_blk_prefix);
+    }
     setPrefix(prefix);
     // sprintf(prefix, "%s/", _node_blk_prefix);
   }
@@ -3327,7 +3329,10 @@ void extMain::netDirPrefix(char* prefix, char* netName) {
   sprintf(prefix, "%s/%s/%s", _node_blk_dir, netName, _node_inst_prefix);
   char syscmd[2056];
   sprintf(syscmd, "mkdir -p %s/%s", _node_blk_dir, netName);
-  system(syscmd);
+  if (system(syscmd) == -1) {
+    logger_->error(RCX, 493, "mkdir failed on {}/{}", _node_blk_dir,
+                   netName);
+  }
 }
 FILE* extMain::openNanoFileNet(char* netname, const char* name,
                                const char* name2, const char* suffix,
@@ -3374,7 +3379,9 @@ void extMain::openNanoFilesDomain(odb::dbNet* pNet) {
   else
     sprintf(sysCmd, "echo %s %s/%s %s >> Extract.info", netName, _node_blk_dir,
             netName, ptype);
-  system(sysCmd);
+  if (system(sysCmd) == -1) {
+      logger_->error(RCX, 494, "system failed on {}", sysCmd);
+  }
 
   _subCktNodeFP[0][ii] = openNanoFileNet(netName, "std", vdd, "subckt", "w");
   _subCktNodeFP[1][ii] = openNanoFileNet(netName, "glob", vdd, "subckt", "w");
@@ -3621,15 +3628,7 @@ void extMain::closeNanoFiles() {
   addSubcktStatement("glob_GND.cir", "glob_GND.subckt");
   addSubcktStatement("std_VDD.cir", "std_VDD.subckt");
   addSubcktStatement("std_GND.cir", "std_GND.subckt");
-  /*
-          system("mv glob_VDD.cir glob_VDD.cir.TMP ; cat glob_VDD.subckt
-     glob_VDD.cir.TMP > glob_VDD.cir"); system("mv glob_GND.cir glob_GND.cir.TMP
-     ; cat std_GND.subckt glob_GND.cir.TMP > glob_GND.cir"); system("mv
-     std_VDD.cir std_VDD.cir.TMP ; cat std_VDD.subckt std_VDD.cir.TMP >
-     std_VDD.cir"); system("mv std_GND.cir std_GND.cir.TMP ; cat std_GND.subckt
-     std_GND.cir.TMP > std_GND.cir");
-          */
-  //.ends VDD_std_jpeg_e_ring_bad
+
   fclose(_viaStackGlobGND);
   fclose(_viaStackGlobVDD);
 }
@@ -3652,10 +3651,9 @@ void extMain::addSubcktStatementDomain(const char* cirFile1,
   sprintf(cmd, "mv %s %s.TMP ; cat %s %s.TMP > %s", cirFile, cirFile,
           subcktFile, cirFile, cirFile);
 
-  system(cmd);
-
-  // system("mv glob_VDD.cir glob_VDD.cir.TMP ; cat glob_VDD.subckt
-  // glob_VDD.cir.TMP > glob_VDD.cir");
+  if (system(cmd) == -1) {
+    logger_->error(RCX, 495, "failed on: {}", cmd);
+  }
 }
 void extMain::addSubcktStatement(const char* cirFile1,
                                  const char* subcktFile1) {
@@ -3675,10 +3673,9 @@ void extMain::addSubcktStatement(const char* cirFile1,
   char cmd[16384];
   sprintf(cmd, "mv %s %s.TMP ; cat %s %s.TMP > %s", cirFile, cirFile,
           subcktFile, cirFile, cirFile);
-  system(cmd);
-
-  // system("mv glob_VDD.cir glob_VDD.cir.TMP ; cat glob_VDD.subckt
-  // glob_VDD.cir.TMP > glob_VDD.cir");
+  if (system(cmd) == -1) {
+      logger_->error(RCX, 496, "system failed on {}", cmd);
+  }
 }
 bool extMain::isSignalNet(odb::dbNet* net) {
   odb::dbSigType type = net->getSigType();

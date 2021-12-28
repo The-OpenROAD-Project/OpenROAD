@@ -59,19 +59,19 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   cb->clearEvents();
   i1->setOrigin(100, 100);
   BOOST_TEST(cb->events.size() == 0);
-  dbITerm::connect(i1->findITerm("a"), n1);
+  i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreConnect iterm to net n1");
   BOOST_TEST(cb->events[1] == "PostConnect iterm to net n1");
   cb->clearEvents();
-  dbITerm::connect(i1->findITerm("a"), n1);
+  i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 0);
-  dbITerm::disconnect(i1->findITerm("a"));
+  i1->findITerm("a")->disconnect();
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreDisconnect iterm from net n1");
   BOOST_TEST(cb->events[1] == "PostDisconnect iterm from net n1");
   cb->clearEvents();
-  dbITerm::disconnect(i1->findITerm("a"));
+  i1->findITerm("a")->disconnect();
   BOOST_TEST(cb->events.size() == 0);
 
   i1->destroy(i1);

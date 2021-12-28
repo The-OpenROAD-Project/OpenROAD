@@ -31,9 +31,11 @@
 #include <fstream>
 #include <iostream>
 
+#include "RoutingCallBack.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
+#include "dst/Distributed.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "global.h"
@@ -43,10 +45,10 @@
 #include "ord/OpenRoad.hh"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
+#include "serialization.h"
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -63,7 +65,8 @@ extern int Drt_Init(Tcl_Interp* interp);
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       num_drvs_(-1),
-      gui_(gui::Gui::get())
+      gui_(gui::Gui::get()),
+      distributed_(false)
 {
 }
 
@@ -76,6 +79,11 @@ void TritonRoute::setDebugDR(bool on)
   debug_->debugDR = on;
 }
 
+void TritonRoute::setDebugDumpDR(bool on)
+{
+  debug_->debugDumpDR = on;
+}
+
 void TritonRoute::setDebugMaze(bool on)
 {
   debug_->debugMaze = on;
@@ -84,6 +92,25 @@ void TritonRoute::setDebugMaze(bool on)
 void TritonRoute::setDebugPA(bool on)
 {
   debug_->debugPA = on;
+}
+
+void TritonRoute::setDistributed(bool on)
+{
+  distributed_ = on;
+}
+
+void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
+{
+  dist_ip_ = ip;
+  dist_port_ = port;
+}
+
+void TritonRoute::setSharedVolume(const std::string& vol)
+{
+  shared_volume_ = vol;
+  if (!shared_volume_.empty() && shared_volume_.back() != '/') {
+    shared_volume_ += '/';
+  }
 }
 
 void TritonRoute::setDebugNetName(const char* name)
@@ -125,15 +152,42 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
+static bool readGlobals(const std::string& name)
+{
+  std::ifstream file(name);
+  if (!file.good())
+    return false;
+  InputArchive ar(file);
+  register_types(ar);
+  serialize_globals(ar);
+  file.close();
+  return true;
+}
+
+std::string TritonRoute::runDRWorker(const char* file_name)
+{
+  auto worker = FlexDRWorker::load(file_name, logger_, nullptr);
+  worker->setSharedVolume(shared_volume_);
+  return worker->reloadedMain();
+}
+
+void TritonRoute::updateGlobals(const char* file_name)
+{
+  readGlobals(file_name);
+}
+
 void TritonRoute::init(Tcl_Interp* tcl_interp,
                        odb::dbDatabase* db,
                        Logger* logger,
+                       dst::Distributed* dist,
                        stt::SteinerTreeBuilder* stt_builder)
 {
   db_ = db;
   logger_ = logger;
+  dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
+  dist->addCallBack(new fr::RoutingCallBack(this, dist, logger));
   // Define swig TCL commands.
   Drt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
@@ -143,12 +197,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 void TritonRoute::init()
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    VIAINPIN_BOTTOMLAYERNUM = 2;
-    VIAINPIN_TOPLAYERNUM = 2;
     USENONPREFTRACKS = false;
-    BOTTOM_ROUTING_LAYER = 4;
-    TOP_ROUTING_LAYER = 18;
-    ENABLE_VIA_GEN = false;
   }
 
   io::Parser parser(getDesign(), logger_);
@@ -179,6 +228,30 @@ void TritonRoute::init()
     }
   }
 
+  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
+    if (layer) {
+      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    606,
+                    "via in pin bottom layer {} not found.",
+                    VIAINPIN_BOTTOMLAYERNUM);
+    }
+  }
+
+  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
+    if (layer) {
+      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    607,
+                    "via in pin top layer {} not found.",
+                    VIAINPIN_TOPLAYERNUM);
+    }
+  }
+
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
@@ -189,7 +262,7 @@ void TritonRoute::init()
   pa.setDebug(debug_.get(), db_);
   pa.main();
   if (GUIDE_FILE != string("")) {
-    parser.postProcessGuide();
+    parser.postProcessGuide(db_);
   }
   // GR-related
   parser.initRPin();
@@ -218,6 +291,8 @@ void TritonRoute::dr()
   num_drvs_ = -1;
   FlexDR dr(getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
+  if (distributed_)
+    dr.setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
   dr.main();
 }
 
@@ -243,7 +318,7 @@ int TritonRoute::main()
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.postProcessGuide();
+    parser.postProcessGuide(db_);
   }
   prep();
   ta();
@@ -307,11 +382,11 @@ void TritonRoute::readParams(const string& fileName)
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
           ++readParamCnt;
-        } else if (field == "drouteViaInPinBottomLayerNum") {
-          VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());
+        } else if (field == "viaInPinBottomLayer") {
+          VIAINPIN_BOTTOMLAYER_NAME = value;
           ++readParamCnt;
-        } else if (field == "drouteViaInPinTopLayerNum") {
-          VIAINPIN_TOPLAYERNUM = atoi(value.c_str());
+        } else if (field == "viaInPinTopLayer") {
+          VIAINPIN_TOPLAYER_NAME = value;
           ++readParamCnt;
         } else if (field == "drouteEndIterNum") {
           END_ITERATION = atoi(value.c_str());
@@ -352,13 +427,13 @@ void TritonRoute::setParams(const ParamStruct& params)
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
-  if (params.drouteViaInPinBottomLayerNum > 0) {
-    VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;
+  if (!params.viaInPinBottomLayer.empty()) {
+    VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
-  if (params.drouteViaInPinTopLayerNum > 0) {
-    VIAINPIN_TOPLAYERNUM = params.drouteViaInPinTopLayerNum;
+  if (!params.viaInPinTopLayer.empty()) {
+    VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
   }
-  if (params.drouteEndIter > 0) {
+  if (params.drouteEndIter >= 0) {
     END_ITERATION = params.drouteEndIter;
   }
   OR_SEED = params.orSeed;

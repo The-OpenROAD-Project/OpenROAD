@@ -7,17 +7,14 @@
 #include <unordered_map>
 #include <vector>
 
-
-
-
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
-#include "sta/Bfs.hh"
 #include "odb/db.h"
-#include "sta/Liberty.hh"
+#include "sta/Bfs.hh"
 #include "sta/Graph.hh"
-#include "utl/Logger.h"
+#include "sta/Liberty.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace par {
 
@@ -213,7 +210,7 @@ class AutoClusterMgr
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;
-  utl::Logger* logger_;
+  utl::Logger* logger_ = nullptr;
   unsigned int max_num_macro_ = 0;
   unsigned int min_num_macro_ = 0;
   unsigned int max_num_inst_ = 0;
@@ -237,7 +234,6 @@ class AutoClusterMgr
   std::vector<float> L_pin_;
   std::vector<float> R_pin_;
 
-
   // Map all the BTerms to an IORegion
   std::unordered_map<std::string, IORegion> bterm_map_;
   std::unordered_map<IORegion, int> bundled_io_map_;
@@ -253,18 +249,19 @@ class AutoClusterMgr
   std::vector<sta::Net*> buffer_net_list_;
 
   // timing-driven related function
-  unsigned int num_hops_ = 0;
-  unsigned int timing_weight_ = 0;
-  
+  unsigned int num_hops_ = 5;
+  unsigned int timing_weight_ = 1;
+
   std::vector<sta::Instance*> macros_;
   std::vector<sta::Instance*> seeds_;
-  std::unordered_map<sta::Vertex*, std::unordered_map<sta::Pin*, int> > vertex_fanins_;
-  std::unordered_map<int, std::unordered_map<sta::Pin*, int> > virtual_vertex_map_;  
-  std::unordered_map<int, std::unordered_map<int, int> > virtual_timing_map_;
+  std::unordered_map<sta::Vertex*, std::unordered_map<sta::Pin*, int>>
+      vertex_fanins_;
+  std::unordered_map<int, std::unordered_map<sta::Pin*, int>>
+      virtual_vertex_map_;
+  std::unordered_map<int, std::unordered_map<int, int>> virtual_timing_map_;
   std::unordered_map<sta::Pin*, sta::Instance*> pin_inst_map_;
   void findAdjacencies();
-  
-  
+
   void seedFaninBfs(sta::BfsFwdIterator& bfs);
   void findFanins(sta::BfsFwdIterator& bfs);
   sta::Pin* findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port);
@@ -273,7 +270,6 @@ class AutoClusterMgr
   void addFanin(sta::Vertex*, sta::Pin*, int num_bit);
   void addWeight(int src_id, int target_id, int weight);
   void calculateSeed();
-
 
   std::vector<Cluster*> cluster_list_;
   std::vector<Cluster*> merge_cluster_list_;

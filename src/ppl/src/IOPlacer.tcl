@@ -45,6 +45,8 @@ proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
   keys {-layer -x_step -y_step -region -size -pin_keepout}
 
+  sta::check_argc_eq0 "define_pin_shape_pattern" $args
+
   if [info exists keys(-layer)] {
     set layer_name $keys(-layer)
     set layer_idx [ppl::parse_layer_name $layer_name]
@@ -117,6 +119,8 @@ sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
   keys {-direction -pin_names -region}
+
+  sta::check_argc_eq0 "set_io_pin_constraint" $args
 
   if [info exists keys(-region)] {
     set region $keys(-region)
@@ -196,6 +200,8 @@ proc set_pin_length { args } {
   sta::parse_key_args "set_pin_length" args \
   keys {-hor_length -ver_length}
 
+  sta::check_argc_eq0 "set_pin_length" $args
+
   if [info exists keys(-hor_length)] {
     ppl::set_hor_length $keys(-hor_length)
   }
@@ -213,6 +219,8 @@ proc set_pin_length_extension { args } {
   sta::parse_key_args "set_pin_length" args \
   keys {-hor_extension -ver_extension}
 
+  sta::check_argc_eq0 "set_pin_length_extension" $args
+
   if [info exists keys(-hor_extension)] {
     ppl::set_hor_length_extend $keys(-hor_extension)
   }
@@ -229,6 +237,8 @@ sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
 proc set_pin_thick_multiplier { args } {
   sta::parse_key_args "set_pin_length" args \
   keys {-hor_multiplier -ver_multiplier}
+
+  sta::check_argc_eq0 "set_pin_thick_multiplier" $args
 
   if [info exists keys(-hor_multiplier)] {
     ppl::set_hor_thick_multiplier $keys(-hor_multiplier)
@@ -250,6 +260,8 @@ proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
   keys {-pin_name -layer -location -pin_size}\
   flags {-force_to_die_boundary}
+
+  sta::check_argc_eq0 "place_pin" $args
 
   if [info exists keys(-pin_name)] {
     set pin_name $keys(-pin_name)
@@ -317,6 +329,8 @@ proc place_pins { args } {
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
         -min_distance -exclude -group_pins} \
   flags {-random -min_distance_in_tracks}
+
+  sta::check_argc_eq0 "place_pins" $args
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
@@ -404,7 +418,7 @@ proc place_pins { args } {
 
     set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
     if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
-      utl::warn PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
+      utl::error PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
     }
 
     set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
@@ -423,7 +437,7 @@ proc place_pins { args } {
 
     set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
     if { [$v_tech_layer getDirection] != "VERTICAL" } {
-      utl::warn PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
+      utl::error PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
     }
 
     set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]

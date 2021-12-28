@@ -974,6 +974,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
+  //gcWorker.setIgnoreLongSideEOL();
   Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
@@ -1218,7 +1219,11 @@ int FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm)
   }
 
   if (graphics_) {
-    graphics_->startPin(pin, instTerm);
+    set<frInst*, frBlockObjectComp>* instClass = nullptr;
+    if (instTerm) {
+      instClass = inst2Class_[instTerm->getInst()];
+    }
+    graphics_->startPin(pin, instTerm, instClass);
   }
 
   vector<gtl::polygon_90_set_data<frCoord>> pinShapes;
@@ -1647,7 +1652,12 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
   }
 
   if (instCnt != -1) {
-    logger_->error(DRT, 85, "Valid access pattern combination not found.");
+    std::string inst_names;
+    for (frInst* inst : insts) {
+      inst_names += '\n' + inst->getName();
+    }
+    logger_->error(DRT, 85, "Valid access pattern combination not found for {}",
+                   inst_names);
   }
 
   // for (int i = 0; i < (int)instAccessPatternIdx.size(); i++) {
@@ -2111,7 +2121,8 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
 
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
-
+  //gcWorker.setIgnoreLongSideEOL();
+  
   frCoord llx = std::numeric_limits<frCoord>::max();
   frCoord lly = std::numeric_limits<frCoord>::max();
   frCoord urx = std::numeric_limits<frCoord>::min();

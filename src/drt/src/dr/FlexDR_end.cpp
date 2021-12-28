@@ -498,7 +498,7 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
   // for (auto &m: getMarkers()) {
   for (auto& m : getBestMarkers()) {
     m.getBBox(mBox);
-    if (getDrcBox().overlaps(mBox)) {
+    if (getDrcBox().intersects(mBox)) {
       auto uptr = make_unique<frMarker>(m);
       auto ptr = uptr.get();
       regionQuery->addMarker(ptr);

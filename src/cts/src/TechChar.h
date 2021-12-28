@@ -35,11 +35,6 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
-#include "sta/Corner.hh"
-
 #include <algorithm>
 #include <bitset>
 #include <cassert>
@@ -52,9 +47,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CtsOptions.h"
+#include "db_sta/dbNetwork.hh"
+#include "ord/OpenRoad.hh"
+#include "sta/Corner.hh"
+
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -190,8 +190,8 @@ class TechChar
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
-  void write(const std::string& file) const;
-  void writeSol(const std::string& file) const;
+  void printCharacterization() const;
+  void printSolution() const;
 
   void report() const;
   void reportSegment(unsigned key) const;
@@ -287,10 +287,17 @@ class TechChar
                                 unsigned* max);
   void getClockLayerResCap(float dbUnitsPerMicron);
   void getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
-                              float &maxSlew, bool &maxSlewExist,
-                              float &maxCap, bool &maxCapExist, bool midValue = false);
-  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                float& maxCap, bool& maxCapExist, bool midValue = false);
+                              float& maxSlew,
+                              bool& maxSlewExist,
+                              float& maxCap,
+                              bool& maxCapExist,
+                              bool midValue = false);
+  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
+                                float& maxSlew,
+                                bool& maxSlewExist,
+                                float& maxCap,
+                                bool& maxCapExist,
+                                bool midValue = false);
 
   CtsOptions* _options;
   ord::OpenRoad* _openroad;
@@ -306,8 +313,8 @@ class TechChar
   odb::dbMaster* _charBuf = nullptr;
   std::string _charBufIn = "";
   std::string _charBufOut = "";
-  double _resPerDBU; // ohms/dbu
-  double _capPerDBU; // farads/dbu
+  double _resPerDBU;  // ohms/dbu
+  double _capPerDBU;  // farads/dbu
   float _charMaxSlew = 0.0;
   float _charMaxCap = 0.0;
   float _charSlewInter = 5.0e-12;  // Hard-coded interval

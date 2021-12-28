@@ -352,6 +352,24 @@ bool check_display_controls(const char* name, const char* display_type)
   return false;
 }
 
+void save_display_controls()
+{
+  if (!check_gui("set_display_controls")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveDisplayControls();
+}
+
+void restore_display_controls()
+{
+  if (!check_gui("restore_display_controls")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->restoreDisplayControls();
+}
+
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
 {
   if (!check_gui("create_toolbar_button")) {
@@ -493,18 +511,18 @@ const std::string get_selection_property(const std::string& prop_name)
   return prop_text;
 }
 
-void select_at(double x0, double y0, double x1, double y1, bool append = true)
+int select_at(double x0, double y0, double x1, double y1, bool append = true)
 {
   if (!check_gui("select_at")) {
-    return;
+    return 0;
   }  
   auto gui = gui::Gui::get();
-  gui->selectAt(make_rect(x0, y0, x1, y1), append);
+  return gui->selectAt(make_rect(x0, y0, x1, y1), append);
 }
 
-void select_at(double x, double y, bool append = true)
+int select_at(double x, double y, bool append = true)
 {
-  select_at(x, y, x, y, append);
+  return select_at(x, y, x, y, append);
 }
 
 int select_next()
@@ -525,13 +543,13 @@ int select_previous()
   return gui->selectPrevious();
 }
 
-void select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+int select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
 {
   if (!check_gui("select")) {
-    return;
+    return 0;
   }
   auto gui = gui::Gui::get();
-  gui->select(type, name_filter, case_sensitive, highlight_group);
+  return gui->select(type, name_filter, case_sensitive, highlight_group);
 }
 
 void selection_animate(int repeat = 0)
@@ -544,6 +562,15 @@ void selection_animate(int repeat = 0)
 }
 
 void set_heatmap(const std::string& name, const std::string& option, double value = 0.0)
+{
+  if (!check_gui("set_heatmap")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->setHeatMapSetting(name, option, value);
+}
+
+void set_heatmap(const std::string& name, const std::string& option, const std::string& value)
 {
   if (!check_gui("set_heatmap")) {
     return;

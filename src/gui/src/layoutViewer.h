@@ -206,7 +206,7 @@ class LayoutViewer : public QWidget
   void startRulerBuild();
   void cancelRulerBuild();
 
-  void selectArea(const odb::Rect& area, bool append);
+  int selectArea(const odb::Rect& area, bool append);
 
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus);

@@ -67,6 +67,8 @@ proc tapcell { args } {
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
     flags {-no_cell_at_top_bottom -add_boundary_cell}
 
+  sta::check_argc_eq0 "tapcell" $args
+
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
@@ -213,6 +215,8 @@ proc tapcell_ripup { args } {
   sta::parse_key_args "tapcell" args \
     keys {-tap_prefix -endcap_prefix} \
     flags {}
+
+  sta::check_argc_eq0 "tapcell_ripup" $args
 
   set tap_prefix "TAP_"
   if { [info exists keys(-tap_prefix)] } {

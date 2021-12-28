@@ -1169,7 +1169,7 @@ const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
   };
 }
 
-void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, double value)
+void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
 {
   HeatMapDataSource* source = nullptr;
 
@@ -1204,15 +1204,38 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
     }
 
     auto current_value = settings[option];
-    if (auto* v = std::get_if<bool>(&current_value)) {
+    if (std::holds_alternative<bool>(current_value)) {
       // is bool
-      settings[option] = value == 0.0 ? false : true;
-    } else if (auto* v = std::get_if<int>(&current_value)) {
+      if (auto* s = std::get_if<bool>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+      }
+    } else if (std::holds_alternative<int>(current_value)) {
       // is int
-      settings[option] = static_cast<int>(value);
-    } else {
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = static_cast<int>(*s);
+      } else {
+        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+      }
+    } else if (std::holds_alternative<double>(current_value)) {
       // is double
-      settings[option] = value;
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = static_cast<double>(*s);
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+      }
+    } else {
+      // is string
+      if (auto* s = std::get_if<std::string>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 63, "{} must be a string", option);
+      }
     }
     source->setSettings(settings);
   }

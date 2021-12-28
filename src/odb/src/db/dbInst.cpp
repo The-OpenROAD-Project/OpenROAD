@@ -1421,7 +1421,7 @@ void dbInst::destroy(dbInst* inst_)
   for (i = 0; i < n; ++i) {
     dbId<_dbITerm> id = inst->_iterms[i];
     _dbITerm* it = block->_iterm_tbl->getPtr(id);
-    dbITerm::disconnect((dbITerm*) it);
+    ((dbITerm*) it)->disconnect();
 
     // Bugzilla #7: notify when pins are deleted (assumption: pins
     // are destroyed only when the related instance is destroyed)

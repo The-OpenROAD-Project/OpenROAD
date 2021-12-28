@@ -156,18 +156,18 @@ class GlobalRouter
                            int max_y,
                            int layer,
                            float reduction_percentage);
-  void setVerbose(const int v);
+  void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
-  void setGridOrigin(long x, long y);
+  void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void printGrid();
 
   // flow functions
   void writeGuides(const char* file_name);
-  std::vector<Net*> startFastRoute(int min_routing_layer,
-                                   int max_routing_layer,
-                                   NetType type);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer);
+  void initFastRouteIncr(std::vector<Net*> &nets);
   void estimateRC();
   void estimateRC(odb::dbNet *db_net);
   void globalRoute();
@@ -213,16 +213,13 @@ class GlobalRouter
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
 
- protected:
+ private:
   // Net functions
   int getNetCount() const;
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
-  friend class AntennaRepair;
 
- private:
-  void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -230,7 +227,7 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
-  void initializeNets(std::vector<Net*>& nets);
+  void initNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -288,7 +285,7 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
 
   // incremental funcions
-  void updateDirtyRoutes(Capacities &capacities);
+  void updateDirtyRoutes();
   Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
   void restoreCapacities(Capacities capacities,
@@ -302,17 +299,15 @@ class GlobalRouter
                       odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
+  void updateDbCongestion();
 
   // db functions
   void initGrid(int max_layer);
   void initRoutingLayers(std::map<int, odb::dbTechLayer*>& routing_layers);
-  void initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
-                         int max_layer);
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
-  void initNetlist();
+  std::vector<Net*> initNetlist();
   Net* getNet(odb::dbNet* db_net);
-  void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -360,7 +355,7 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
 
-  int verbose_;
+  bool verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
 
@@ -381,6 +376,7 @@ class GlobalRouter
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
+  friend class AntennaRepair;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
@@ -423,7 +419,6 @@ public:
 
 private:
   GlobalRouter *groute_;
-  Capacities capacities_;
   GRouteDbCbk db_cbk_;
 };
 

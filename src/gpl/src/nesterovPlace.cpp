@@ -551,6 +551,9 @@ NesterovPlace::doNesterovPlace(int start_iter) {
       if( newStepLength > stepLength_ * 0.95) {
         stepLength_ = newStepLength;
         break;
+      } else if (newStepLength < 0.01) {
+        stepLength_ = 0.01;
+        break;
       }
       else {
         stepLength_ = newStepLength;
@@ -617,7 +620,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // timing driven feature
     // do reweight on timing-critical nets. 
     if( npVars_.timingDrivenMode 
-        && tb_->isTimingUpdateIter(sumOverflow_) ){
+        && tb_->isTimingNetWeightOverflow(sumOverflow_) ){
       // update db's instance location from current density coordinates
       updateDb();
 

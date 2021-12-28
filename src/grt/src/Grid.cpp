@@ -79,9 +79,14 @@ void Grid::clear()
 
 void Grid::addObstruction(int layer, const odb::Rect& obstruction)
 {
-  odb::Rect obs_inside_die = die_area_.intersect(obstruction);
-  if (!obs_inside_die.isInverted()) {
-    obstructions_[layer].push_back(obs_inside_die);
+  // compute the intersection between obstruction and the die area
+  // only when they are overlapping to avoid assert error during
+  // intersect() function
+  if (die_area_.overlaps(obstruction)) {
+    odb::Rect obs_inside_die = die_area_.intersect(obstruction);
+    if (!obs_inside_die.isInverted()) {
+      obstructions_[layer].push_back(obs_inside_die);
+    }
   }
 }
 
@@ -107,14 +112,14 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
   return odb::Point(center_x, center_y);
 }
 
-std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
+std::pair<Grid::Tile, Grid::Tile> Grid::getBlockedTiles(
     const odb::Rect& obstruction,
     odb::Rect& first_tile_bds,
     odb::Rect& last_tile_bds)
 {
-  std::pair<TILE, TILE> tiles;
-  TILE first_tile;
-  TILE last_tile;
+  std::pair<Tile, Tile> tiles;
+  Tile first_tile;
+  Tile last_tile;
 
   odb::Point lower = obstruction.ll();  // lower bound of obstruction
   odb::Point upper = obstruction.ur();  // upper bound of obstruction
@@ -127,12 +132,12 @@ std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
                                    // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  first_tile._x = (lower.x() - (getTileWidth() / 2)) / getTileWidth();
-  first_tile._y = (lower.y() - (getTileHeight() / 2)) / getTileHeight();
+  first_tile.x = (lower.x() - (getTileWidth() / 2)) / getTileWidth();
+  first_tile.y = (lower.y() - (getTileHeight() / 2)) / getTileHeight();
 
   // Get x and y indices of last blocked tile
-  last_tile._x = (upper.x() - (getTileWidth() / 2)) / getTileWidth();
-  last_tile._y = (upper.y() - (getTileHeight() / 2)) / getTileHeight();
+  last_tile.x = (upper.x() - (getTileWidth() / 2)) / getTileWidth();
+  last_tile.y = (upper.y() - (getTileHeight() / 2)) / getTileHeight();
 
   tiles = std::make_pair(first_tile, last_tile);
 
