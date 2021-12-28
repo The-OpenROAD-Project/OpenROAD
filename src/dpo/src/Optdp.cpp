@@ -633,12 +633,12 @@ void Optdp::createArchitecture() {
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->m_rowLoc = (double)originY;
-    archRow->m_rowHeight = (double)site->getHeight();
-    archRow->m_siteWidth = (double)site->getWidth();
-    archRow->m_siteSpacing = (double)row->getSpacing();
+    archRow->setBottom((double)originY);
+    archRow->setHeight((double)site->getHeight());
+    archRow->setSiteWidth((double)site->getWidth());
+    archRow->setSiteSpacing((double)row->getSpacing());
     archRow->m_subRowOrigin = (double)originX;
-    archRow->m_numSites = row->getSiteCount();
+    archRow->setNumSites(row->getSiteCount());
 
     // Set defaults.  Top and bottom power is set below.
     archRow->m_powerBot = RowPower_UNK;
@@ -682,11 +682,11 @@ void Optdp::createArchitecture() {
     for (int r = 0; r < arch_->getNumRows(); r++) {
       Architecture::Row* row = arch_->getRow(r);
 
-      double lx = row->m_subRowOrigin;
-      double rx = lx + row->m_numSites * row->m_siteSpacing;
+      double lx = row->getLeft();
+      double rx = row->getRight();
 
-      double yb = row->getY();
-      double yt = yb + row->getH();
+      double yb = row->getBottom();
+      double yt = row->getTop();
 
       xmin = std::min(xmin, lx);
       xmax = std::max(xmax, rx);
@@ -705,9 +705,9 @@ void Optdp::createArchitecture() {
   }
 
   for (int r = 0; r < arch_->getNumRows(); r++) {
-    int numSites = arch_->getRow(r)->m_numSites;
-    double originX = arch_->getRow(r)->m_subRowOrigin;
-    double siteSpacing = arch_->getRow(r)->m_siteSpacing;
+    int numSites = arch_->getRow(r)->getNumSites();
+    double originX = arch_->getRow(r)->getLeft();
+    double siteSpacing = arch_->getRow(r)->getSiteSpacing();
 
     double lx = originX;
     double rx = originX + numSites * siteSpacing;
@@ -723,8 +723,8 @@ void Optdp::createArchitecture() {
       if (arch_->getRow(r)->m_subRowOrigin != originX) {
         arch_->getRow(r)->m_subRowOrigin = originX;
       }
-      if (arch_->getRow(r)->m_numSites != numSites) {
-        arch_->getRow(r)->m_numSites = numSites;
+      if (arch_->getRow(r)->getNumSites() != numSites) {
+        arch_->getRow(r)->setNumSites(numSites);
       }
     }
   }
@@ -770,8 +770,8 @@ void Optdp::createArchitecture() {
         Rect rect;
         sbox->getBox(rect);
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
-          double yb = arch_->getRow(r)->getY();
-          double yt = yb + arch_->getRow(r)->getH();
+          double yb = arch_->getRow(r)->getBottom();
+          double yt = arch_->getRow(r)->getTop();
 
           if (yb >= rect.yMin() && yb <= rect.yMax()) {
             arch_->getRow(r)->m_powerBot = pwr;
