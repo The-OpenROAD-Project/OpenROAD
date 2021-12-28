@@ -147,6 +147,8 @@ entries:
     title: Metrics
   - file: user/InstructionsForAutoTuner
     title: AutoTuner
+  - file: user/FlowVariables
+    title: Flow Variables
 
 - file: user/FAQS
   title: FAQs
