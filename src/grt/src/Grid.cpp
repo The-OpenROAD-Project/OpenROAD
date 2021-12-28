@@ -50,8 +50,7 @@ void Grid::init(const odb::Rect& die_area,
                 const std::vector<int>& spacings,
                 const std::vector<int>& min_widths,
                 const std::vector<int>& horizontal_capacities,
-                const std::vector<int>& vertical_capacities,
-                const std::map<int, std::vector<odb::Rect>>& obstructions)
+                const std::vector<int>& vertical_capacities)
 {
   die_area_ = die_area;
   tile_width_ = tile_width;
@@ -65,7 +64,6 @@ void Grid::init(const odb::Rect& die_area,
   min_widths_ = min_widths;
   horizontal_edges_capacities_ = horizontal_capacities;
   vertical_edges_capacities_ = vertical_capacities;
-  obstructions_ = obstructions;
 }
 
 void Grid::clear()
@@ -74,20 +72,6 @@ void Grid::clear()
   min_widths_.clear();
   horizontal_edges_capacities_.clear();
   vertical_edges_capacities_.clear();
-  obstructions_.clear();
-}
-
-void Grid::addObstruction(int layer, const odb::Rect& obstruction)
-{
-  // compute the intersection between obstruction and the die area
-  // only when they are overlapping to avoid assert error during
-  // intersect() function
-  if (die_area_.overlaps(obstruction)) {
-    odb::Rect obs_inside_die = die_area_.intersect(obstruction);
-    if (!obs_inside_die.isInverted()) {
-      obstructions_[layer].push_back(obs_inside_die);
-    }
-  }
 }
 
 odb::Point Grid::getPositionOnGrid(const odb::Point& position)

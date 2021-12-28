@@ -62,8 +62,7 @@ class Grid
             const std::vector<int>& spacings,
             const std::vector<int>& min_widths,
             const std::vector<int>& horizontalCapacities,
-            const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstructions);
+            const std::vector<int>& verticalCapacities);
 
   struct Tile
   {
@@ -132,13 +131,6 @@ class Grid
     vertical_edges_capacities_[layer] = reduction;
   };
 
-  const std::map<int, std::vector<odb::Rect>>& getObstructions() const
-  {
-    return obstructions_;
-  }
-
-  void addObstruction(int layer, const odb::Rect& obstruction);
-
   odb::Point getPositionOnGrid(const odb::Point& position);
 
   std::pair<Tile, Tile> getBlockedTiles(const odb::Rect& obstruction,
@@ -168,7 +160,6 @@ class Grid
   std::vector<int> min_widths_;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
-  std::map<int, std::vector<odb::Rect>> obstructions_;
 };
 
 }  // namespace grt

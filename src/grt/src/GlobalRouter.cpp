@@ -2219,8 +2219,7 @@ void GlobalRouter::initGrid(int max_layer)
               generic_vector,
               generic_vector,
               generic_vector,
-              generic_vector,
-              generic_map);
+              generic_vector);
 }
 
 void GlobalRouter::initRoutingLayers(
