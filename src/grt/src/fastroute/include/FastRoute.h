@@ -38,9 +38,9 @@
 
 #include <boost/functional/hash.hpp>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -148,27 +148,12 @@ class FastRouteCore
 
   int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(int x1,
-                             int y1,
-                             int l1,
-                             int x2,
-                             int y2,
-                             int l2);
+  int getEdgeCurrentResource(int x1, int y1, int l1, int x2, int y2, int l2);
   int getEdgeCurrentUsage(int x1, int y1, int l1, int x2, int y2, int l2);
-  void setEdgeUsage(int x1,
-                    int y1,
-                    int l1,
-                    int x2,
-                    int y2,
-                    int l2,
-                    int newUsage);
-  void setEdgeCapacity(int x1,
-                       int y1,
-                       int l1,
-                       int x2,
-                       int y2,
-                       int l2,
-                       int newCap);
+  void
+  setEdgeUsage(int x1, int y1, int l1, int x2, int y2, int l2, int newUsage);
+  void
+  setEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2, int newCap);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);

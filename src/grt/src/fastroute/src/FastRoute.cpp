@@ -1173,7 +1173,7 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   newLA();
-  
+
   const clock_t t2 = clock();
   const float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
 
