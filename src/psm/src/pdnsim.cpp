@@ -202,7 +202,6 @@ int PDNSim::analyze_power_grid()
   }
 
   std::map<int, std::map<std::pair<int,int>,double>> ir_drop;
-  //std::map<odb::dbTechLayer*, std::map<std::pair<int,int>,double> ir_drop;
   std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
   int                vsize;
   vsize = nodes.size();
@@ -218,15 +217,6 @@ int PDNSim::analyze_power_grid()
   }
   
   _ir_drop = ir_drop;
-  std::map<int, std::map<std::pair<int,int>,double>> ir_drop2;
-  //PDNSim::getIRDropMap(ir_drop2);
-  //for(auto const& lyr : ir_drop2) {
-  //  std::cout << lyr.first << ": \n";
-  //  for(auto const& nd : lyr.second) {
-  //      std::cout <<"("<< nd.first.first<<", "<<nd.first.second << "): "<< nd.second<<"\n ";
-  //  }
-  //  std::cout << "\n";
-  //}
   delete irsolve_h;
   return 1;
 }
@@ -255,8 +245,8 @@ int PDNSim::check_connectivity()
 }
 
 void PDNSim::getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop) {
-  // TODO can be enhanced to check if it exists 
-  // and if it does not run analyze IR 
+  // TODO can be enhanced to check if it already exists 
+  // and if it does, then do not run analyze IR 
   ir_drop = _ir_drop;
 }
 
