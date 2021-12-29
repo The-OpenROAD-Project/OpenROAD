@@ -1201,10 +1201,21 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   Point lb = die_boundary.ll();
   Point ub = die_boundary.ur();
 
+  odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
+  float pin_width = std::min(width, height);
+  if (pin_width < tech_layer->getWidth()) {
+    logger_->error(PPL,
+                   34,
+                   "Pin {} has dimension {}u which is less than the min width {}u of layer {}.",
+                   bterm->getName(),
+                   dbuToMicrons(pin_width),
+                   dbuToMicrons(tech_layer->getWidth()),
+                   tech_layer->getName());
+  }
+
   if (force_to_die_bound) {
     movePinToTrack(pos, layer, width, height, die_boundary);
     Edge edge;
-    odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
     odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
     int min_spacing, init_track, num_track;
     bool horizontal = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
