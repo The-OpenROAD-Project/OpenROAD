@@ -1448,13 +1448,14 @@ bool FastRouteCore::checkRoute2DTree(int netID)
             = abs(gridsX[i + 1] - gridsX[i]) + abs(gridsY[i + 1] - gridsY[i]);
         if (distance != 1) {
           if (verbose_)
-            logger_->warn(GRT,
-                          166,
-                          "Net {} edge[{}] maze route wrong, distance {}, i {}.",
-                          netName(nets_[netID]),
-                          edgeID,
-                          distance,
-                          i);
+            logger_->warn(
+                GRT,
+                166,
+                "Net {} edge[{}] maze route wrong, distance {}, i {}.",
+                netName(nets_[netID]),
+                edgeID,
+                distance,
+                i);
           STHwrong = true;
         }
       }
