@@ -71,28 +71,26 @@ std::unique_ptr<std::filesystem::path> PlotEnv::plotPath = nullptr;
 //
 
 PlotEnv::PlotEnv()
-: pb_(nullptr), nb_(nullptr),
-  minLength(0),
+: minLength(0),
   imageWidth(0), imageHeight(0),
   xMargin(0), yMargin(0),
   origWidth(0),
   origHeight(0),
   unitX(0), unitY(0),
   dispWidth(0), dispHeight(0),
-  hasCellColor(false), log_(nullptr) {}
+  hasCellColor(false), pb_(nullptr), nb_(nullptr), log_(nullptr) {}
 
 PlotEnv::PlotEnv(
     std::shared_ptr<PlacerBase> pb,
     std::shared_ptr<NesterovBase> nb)
-: pb_(pb), nb_(nb),
-  minLength(1000),
+: minLength(1000),
   imageWidth(0), imageHeight(0), // init later
   xMargin(30), yMargin(30),
   origWidth(pb_->die().dieUx()-pb_->die().dieLx()),
   origHeight(pb_->die().dieUy()-pb_->die().dieLy()),
   unitX(0), unitY(0), // init later
   dispWidth(0), dispHeight(0), // init later
-  hasCellColor(false), log_(nullptr)
+  hasCellColor(false), pb_(pb), nb_(nb), log_(nullptr)
 {
   Init();
 }
@@ -371,7 +369,6 @@ void
 PlotEnv::CimgDrawArrow(CImgObj *img, int x1, int y1, int x3, int y3, int thick,
                    const unsigned char color[], float opacity) {
   // ARROW HEAD DRAWING
-  float arrowHeadSize = thick;
   float theta = atan(1.0 * (y3 - y1) / (x3 - x1));
   float invTheta = atan(-1.0 * (x3 - x1) / (y3 - y1));
 
@@ -435,7 +432,7 @@ PlotEnv::DrawArrowDensity(CImgObj *img, float opacity) {
   int arrowSpacing = (binMaxX / 16 <= 0) ? 1 : binMaxX / 16;
 
   // below is essential for extracting e?Max
-  float exMax = -1e30, eyMax = -1e30, ezMax = -1e30;
+  float exMax = -1e30, eyMax = -1e30;
   for(int i = 0; i < binMaxX; i += arrowSpacing) {
     for(int j = 0; j < binMaxY; j += arrowSpacing) {
       Bin* bin = nb_->bins()[binMaxX * j + i];
@@ -571,7 +568,6 @@ void PlotEnv::SaveCellPlotAsJPEG(string imgName, bool isGCell, string imgPositio
   //        GCellPinCoordiUpdate();
   //    }
 
-  float opacity = 0.7;
   CImg< unsigned char > img(GetTotalImageWidth(), GetTotalImageHeight(),
                             1, 3, 255);
 
