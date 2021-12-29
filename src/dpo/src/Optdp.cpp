@@ -193,10 +193,10 @@ void Optdp::updateDbInstLocations() {
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbInst> insts = block->getInsts();
   for (dbInst* inst : insts) {
-    auto type = inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
+    
     it_n = instMap_.find(inst);
     if (instMap_.end() != it_n) {
       Node* nd = it_n->second;
@@ -374,23 +374,32 @@ void Optdp::createNetwork() {
   int nEdges = 0;
   int nPins = 0;
   for (dbInst* inst : insts) {
-    dbMasterType type = inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    // Skip instances which are not placeable.
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
     ++nNodes;
   }
 
   for (dbNet* net : nets) {
-    //dbSigType netType = net->getSigType();
-    // Should probably skip global nets.
+    // Skip supply nets.
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
     ++nEdges;
-
-    nPins += net->getITerms().size();
+    // Only count pins in insts if they considered
+    // placeable since these are the only insts
+    // that will be in our network.
+    for (dbITerm* iTerm : net->getITerms()) {
+      if (iTerm->getInst()->getMaster()->isCoreAutoPlaceable()) {
+        ++nPins;
+      }
+    }
+    // Count pins on terminals.
     nPins += net->getBTerms().size();
   }
 
-  logger_->info(DPO, 100, "Created network with {:d} cells, {:d} terminals, "
+  logger_->info(DPO, 100, "Creating network with {:d} cells, {:d} terminals, "
                 "{:d} edges and {:d} pins.",
                 nNodes, nTerminals, nEdges, nPins);
 
@@ -402,8 +411,7 @@ void Optdp::createNetwork() {
   // Return instances to a north orientation.  This makes
   // importing easier.
   for (dbInst* inst : insts) {
-    dbMasterType type = inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
     inst->setLocationOrient(dbOrientType::R0);
@@ -412,8 +420,7 @@ void Optdp::createNetwork() {
   // Populate nodes.
   int n = 0;
   for (dbInst* inst : insts) {
-    auto type = inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
 
@@ -517,7 +524,7 @@ void Optdp::createNetwork() {
     ++n;  // Next node.
   }
   if (n != nNodes + nTerminals) {
-    logger_->error(DPO, 104, "Unexpected total node count.  Expected {:d}, but got {:d}",
+    logger_->error(DPO, 101, "Unexpected total node count.  Expected {:d}, but got {:d}",
         (nNodes+nTerminals), n);
     ++errors;
   }
@@ -526,8 +533,10 @@ void Optdp::createNetwork() {
   int e = 0;
   int p = 0;
   for (dbNet* net : nets) {
-    // Skip globals and pre-routes?
-    // dbSigType netType = net->getSigType();
+    // Skip supply nets.
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
 
     Edge* edi = network_->getEdge(e);
     edi->setId(e);
@@ -537,12 +546,16 @@ void Optdp::createNetwork() {
     network_->setEdgeName(e, net->getName().c_str());
 
     for (dbITerm* iTerm : net->getITerms()) {
+      if (!iTerm->getInst()->getMaster()->isCoreAutoPlaceable()) {
+        continue;
+      }
+
       it_n = instMap_.find(iTerm->getInst());
       if (instMap_.end() != it_n) {
         n = it_n->second->getId();  // The node id.
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
-          logger_->error(DPO, 108, "Improper node indexing while connecting pins.");
+          logger_->error(DPO, 102, "Improper node indexing while connecting pins.");
           ++errors;
         }
 
@@ -569,7 +582,7 @@ void Optdp::createNetwork() {
 
         ++p;  // next pin.
       } else {
-        logger_->error(DPO, 106, "Could not find node for instance while connecting pins.");
+        logger_->error(DPO, 103, "Could not find node for instance while connecting pins.");
         ++errors;
       }
     }
@@ -579,7 +592,7 @@ void Optdp::createNetwork() {
         n = it_p->second->getId();  // The node id.
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
-          logger_->error(DPO, 109, "Improper terminal indexing while connecting pins.");
+          logger_->error(DPO, 104, "Improper terminal indexing while connecting pins.");
           ++errors;
         }
 
@@ -594,7 +607,7 @@ void Optdp::createNetwork() {
 
         ++p;  // next pin.
       } else {
-        logger_->error(DPO, 107, "Could not find node for terminal while connecting pins.");
+        logger_->error(DPO, 105, "Could not find node for terminal while connecting pins.");
         ++errors;
       }
     }
@@ -602,20 +615,20 @@ void Optdp::createNetwork() {
     ++e;  // next edge.
   }
   if (e != nEdges) {
-    logger_->error(DPO, 104, "Unexpected total edge count.  Expected {:d}, but got {:d}",
+    logger_->error(DPO, 106, "Unexpected total edge count.  Expected {:d}, but got {:d}",
         nEdges, e);
     ++errors;
   }
   if (p != nPins) {
-    logger_->error(DPO, 105, "Unexpected total pin count.  Expected {:d}, but got {:d}",
+    logger_->error(DPO, 107, "Unexpected total pin count.  Expected {:d}, but got {:d}",
         nPins, p);
     ++errors;
   }
 
   if (errors != 0) {
-    logger_->error(DPO, 101, "Error creating network.");
+    logger_->error(DPO, 108, "Error creating network.");
   } else {
-    logger_->info(DPO, 102, "Network stats: inst {}, edges {}, pins {}",
+    logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
                   network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
   }
 }
@@ -861,7 +874,7 @@ void Optdp::setUpPlacementRegions() {
       }
     }
   }
-  logger_->info(DPO, 103, "Number of regions is {:d}", arch_->getNumRegions());
+  logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 
 }  // namespace dpo
