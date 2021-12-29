@@ -1206,8 +1206,9 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
       height < tech_layer->getWidth()) {
     logger_->error(PPL,
                    34,
-                   "Pin {} do not respect the min width {}u of layer {}",
+                   "Pin {} has dimension {}u which is less than the min width {}u of layer {}.",
                    bterm->getName(),
+                   dbuToMicrons(std::min(width, height)),
                    dbuToMicrons(tech_layer->getWidth()),
                    tech_layer->getName());
   }
