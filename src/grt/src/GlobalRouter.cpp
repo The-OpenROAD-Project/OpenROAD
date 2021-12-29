@@ -1072,10 +1072,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   bool vertical
       = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
 
-  odb::Rect first_tile_box;
-  odb::Rect last_tile_box;
-  odb::Point first_tile;
-  odb::Point last_tile;
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
   grid_->getBlockedTiles(region, first_tile_box, last_tile_box, first_tile, last_tile);
 
   RoutingTracks routing_tracks = getRoutingTracksByIndex(layer);
@@ -1092,57 +1090,19 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   if (!vertical) {
     // Setting capacities of edges completely contains the adjust region
     // according the percentage of reduction
-    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-        int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x + 1, y, layer);
-
-        if (y == first_tile.getY()) {
-          edge_cap -= first_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-              x, y, layer, x + 1, y, layer, edge_cap, true);
-        } else if (y == last_tile.getY()) {
-          edge_cap -= last_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-              x, y, layer, x + 1, y, layer, edge_cap, true);
-        } else {
-          edge_cap -= edge_cap * reduction_percentage;
-          fastroute_->addAdjustment(x, y, layer, x + 1, y, layer, 0, true);
-        }
-      }
-    }
+    fastroute_->applyHorizontalAdjustments(first_tile,
+                                           last_tile,
+                                           layer,
+                                           first_tile_reduce,
+                                           last_tile_reduce);
   } else {
     // If preferred direction is vertical, only first and last columns will have
     // specific adjustments
-    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-      // Setting capacities of edges completely contains the adjust region
-      // according the percentage of reduction
-      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-        int edge_cap
-            = fastroute_->getEdgeCapacity(x, y, layer, x, y + 1, layer);
-
-        if (x == first_tile.getX()) {
-          edge_cap -= first_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-              x, y, layer, x, y + 1, layer, edge_cap, true);
-        } else if (x == last_tile.getX()) {
-          edge_cap -= last_tile_reduce;
-          if (edge_cap < 0)
-            edge_cap = 0;
-          fastroute_->addAdjustment(
-              x, y, layer, x, y + 1, layer, edge_cap, true);
-        } else {
-          edge_cap -= edge_cap * reduction_percentage;
-          fastroute_->addAdjustment(x, y, layer, x, y + 1, layer, 0, true);
-        }
-      }
-    }
+    fastroute_->applyVerticalAdjustments(first_tile,
+                                         last_tile,
+                                         layer,
+                                         first_tile_reduce,
+                                         last_tile_reduce);
   }
 }
 
@@ -1160,10 +1120,9 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction, odb:
       return;
     }
   }
-  odb::Rect first_tile_box;
-  odb::Rect last_tile_box;
-  odb::Point first_tile;
-  odb::Point last_tile;
+  
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
   grid_->getBlockedTiles(obstruction_rect, first_tile_box, last_tile_box, first_tile, last_tile);
 
   bool vertical
