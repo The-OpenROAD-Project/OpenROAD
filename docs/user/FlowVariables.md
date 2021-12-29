@@ -51,7 +51,6 @@ Note:
 | `LATCH_MAP_FILE`                     | =            | =            | =             | =         |
 | `CLKGATE_MAP_FILE`                   | =            | =            | =             | =         |
 | `ADDER_MAP_FILE`                     | ?=           | ?=           | ?=            | ?=        |
-| `BLACKBOX_MAP_TCL`                   | N/A          | N/A          | N/A           | =         |
 | `TIEHI_CELL_AND_PORT`                | =            | =            | =             | =         |
 | `TIELO_CELL_AND_PORT`                | =            | =            | =             | =         |
 | `MIN_BUF_CELL_AND_PORTS`             | =            | =            | =             | =         |
@@ -65,7 +64,6 @@ Note:
 | `MACRO_PLACE_HALO`                   | ?=           | ?=           | ?=            | ?=        |
 | `MACRO_PLACE_CHANNEL`                | ?=           | ?=           | ?=            | ?=        |
 | `PDN_CFG`                            | ?=           | ?=           | ?=            | ?=        |
-| `IO_PIN_MARGIN`                      | ?=           | ?=           | ?=            | ?=        |
 | `IO_PLACER_H`                        | =            | =            | =             | =         |
 | `IO_PLACER_V`                        | =            | =            | =             | =         |
 | Placement                            |              |              |               |           |
@@ -120,13 +118,12 @@ Note:
 
 | Variable              | Description                                                                                                                                                                      |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `PLACE_SITE`          | Placement site for core cells defined in the `.lef`.                                                                                                                             |
+| `PLACE_SITE`          | Placement site for core cells defined in the technology LEF file.                                                                                                                |
 | `TAPCELL_TCL`         | Path to Endcap and Welltie cells file.                                                                                                                                           |
 | `MACRO_PLACE_HALO`    | horizontal/vertical halo around macros (microns).                                                                                                                                |
 | `MACRO_PLACE_CHANNEL` | horizontal/vertical channel width between macros (microns).                                                                                                                      |
 | `PDN_CFG`             | File path which has a set of power grid policies used by `pdn` to be applied to the design, such as layers to use, stripe width and spacing to generate the actual metal straps. |
 | `MAKE_TRACKS`         | Tcl file that defines add routing tracks to a floorplan.                                                                                                                         |
-| `IO_PIN_MARGIN`       | Maximum number of I/O pins placed outside floorplan boundary. Integer value.                                                                                                     |
 | `IO_PLACER_H`         | The metal layer on which to place the I/O pins horizontally (top and bottom of the die).                                                                                         |
 | `IO_PLACER_V`         | The metal layer on which to place the I/O pins vertically (sides of the die).                                                                                                    |
 
@@ -187,8 +184,6 @@ file for each design located in the OpenROAD-flow-scripts directory of
 | `DESIGN_NAME`   | The name of the top-level module of the design.                                                                                                                      |
 | `VERILOG_FILES` | The path to the design Verilog files.                                                                                                                                |
 | `SDC_FILE`      | The path to design constraint (SDC) file.                                                                                                                            |
-| `CLOCK_PORT`    | The name of the designs clock port used in Static Timing Analysis. If your design does not have a clock port defined as an empty variable `export CLOCK_PORT= ""`. |
-| `CLOCK_PERIOD`  | The clock period for the design to meet its goal.                                                                                                                    |
 
 
 ### Optional Variables
@@ -208,10 +203,8 @@ configuration file.
 | `ADDITIONAL_LIBS`        | Hardened macro library files listed here.                                                          |
 | `ADDITIONAL_GDS`         | Hardened macro GDS files listed here.                                                              |
 | `VERILOG_INCLUDE_DIRS`   | Specifies the include directories for the Verilog input files.                                     |
-| `VERILOG_FILES_BLACKBOX` | Hardened macro Verilog file list to be added here.                                                 |
-| `CORNER`                 | PVT corner library selection fast/typical/worst.                                                   |
-| `DFF_LIB_FILE`           | Define this variable if the design has asynchronous clocks.                                        |
-| `DESIGN_NICKNAME`        | If the design has a hierarchy, to select a specific module as top design this variable is defined. |
+| `CORNER`                 | PVT corner library selection.                                                                      |
+| `DESIGN_NICKNAME`        | DESIGN_NICKNAME just changes the directory name that ORFS outputs to be DESIGN_NICKNAME instead of DESIGN_NAME in case DESIGN_NAME is unwieldy or conflicts with a difference design.                                                                                    |
 | `ABC_AREA`               | Strategies for Yosys ABC synthesis: Area/Speed. Default ABC_SPEED.                                 |
 | `PWR_NETS_VOLTAGES`      | Used for IR Drop calculation.                                                                      |
 | `GND_NETS_VOLTAGES`      | Used for IR Drop calculation.                                                                      |
@@ -222,9 +215,9 @@ configuration file.
 
 | Variable              | Description                                                                                                                                                                                                                                |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `CORE_UTILIZATION`    | The core utilization percentage (0-100). Overrides DIE_AREA & CORE_AREA                                                                                                                                                                    |
-| `CORE_ASPECT_RATIO`   | The core aspect ratio (height / width). If CORE_UTILIZATION defined, it can be defined else ignore it.                                                                                                                                     |
-| `CORE_MARGIN`         | The core margin, in multiples of site heights, from the bottom boundary. If CORE_UTILIZATION defined, it can be defined else ignore it.                                                                                                    |
-| `DIE_AREA`            | Specify die area to be used in floorplanning. Specified as a 4-corner rectangle.Ignored if CORE_UTILIZATION is set. Unit microns.                                                                                                          |
-| `CORE_AREA`           | Specify core area to be used in floorplanning. Specified as a 4-corner rectangle. The core area can be specified in absolute terms and is mutually exclusive from `CORE_UTILIZATION` and `CORE_ASPECT_RATIO` specifications. Unit microns. |
+| `CORE_UTILIZATION`    | The core utilization percentage (0-100). Overrides `DIE_AREA` and `CORE_AREA`.                                                                                                                                                                   |
+| `CORE_ASPECT_RATIO`   | The core aspect ratio (height / width). This values is ignored if `CORE_UTILIZATION` undefined.                                                                                                                                            |
+| `CORE_MARGIN`         | The margin between the core area and die area, in multiples of SITE heights. The margin is applied to each side. This variable is ignored if `CORE_UTILIZATION` is undefined.                                                              |
+| `DIE_AREA`            | The die area specified as a list of lower-left and upper-right corners in microns (X1 Y1 X2 Y2). This variable is ignored if `CORE_UTILIZATION` and `CORE_ASPECT_RATIO` are defined.                                                       |
+| `CORE_AREA`           | The core area specified as a list of lower-left and upper-right corners in microns (X1 Y1 X2 Y2). This variable is ignored if `CORE_UTILIZATION` and `CORE_ASPECT_RATIO` are defined.                                                      |
 

@@ -99,7 +99,7 @@ yourself.
 Once the platform is set up, you can create a new design configuration with
 information about the design. See sample configurations in the `design`
 directory.
-Refer to the document [Flow variables](./FlowVariables.md) for details on how to use 
+Refer to the [Flow variables](./FlowVariables.md) document for details on how to use 
 environment variables in OpenROAD-flow-scripts to configure platform and design specific parameters. 
 
 ### Adding a New Platform
