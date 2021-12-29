@@ -2099,9 +2099,6 @@ void GlobalRouter::initGrid(int max_layer)
   if ((y_grids * tile_height) == upper_rightY)
     perfect_regular_y = true;
 
-  std::vector<int> generic_vector(num_layers);
-  std::map<int, std::vector<odb::Rect>> generic_map;
-
   grid_->init(rect,
               tile_width,
               tile_height,
@@ -2109,11 +2106,7 @@ void GlobalRouter::initGrid(int max_layer)
               y_grids,
               perfect_regular_x,
               perfect_regular_y,
-              num_layers,
-              generic_vector,
-              generic_vector,
-              generic_vector,
-              generic_vector);
+              num_layers);
 }
 
 void GlobalRouter::initRoutingLayers(

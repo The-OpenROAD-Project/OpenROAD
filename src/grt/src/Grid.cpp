@@ -46,11 +46,7 @@ void Grid::init(const odb::Rect& die_area,
                 const int y_grids,
                 const bool perfect_regular_x,
                 const bool perfect_regular_y,
-                const int num_layers,
-                const std::vector<int>& spacings,
-                const std::vector<int>& min_widths,
-                const std::vector<int>& horizontal_capacities,
-                const std::vector<int>& vertical_capacities)
+                const int num_layers)
 {
   die_area_ = die_area;
   tile_width_ = tile_width;
@@ -60,10 +56,10 @@ void Grid::init(const odb::Rect& die_area,
   perfect_regular_x_ = perfect_regular_x;
   perfect_regular_y_ = perfect_regular_y;
   num_layers_ = num_layers;
-  spacings_ = spacings;
-  min_widths_ = min_widths;
-  horizontal_edges_capacities_ = horizontal_capacities;
-  vertical_edges_capacities_ = vertical_capacities;
+  spacings_.resize(num_layers);
+  min_widths_.resize(num_layers);
+  horizontal_edges_capacities_.resize(num_layers);
+  vertical_edges_capacities_.resize(num_layers);
 }
 
 void Grid::clear()

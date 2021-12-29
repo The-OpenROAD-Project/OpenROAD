@@ -58,11 +58,7 @@ class Grid
             const int y_grids,
             const bool perfect_regular_x,
             const bool perfectR_rgular_y,
-            const int num_layers,
-            const std::vector<int>& spacings,
-            const std::vector<int>& min_widths,
-            const std::vector<int>& horizontalCapacities,
-            const std::vector<int>& verticalCapacities);
+            const int num_layers);
 
   void clear();
 
