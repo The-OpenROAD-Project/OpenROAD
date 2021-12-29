@@ -421,11 +421,11 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (node->isSource()) {
       if (i < (list.size() - 1)) {
         // get the next node
-        node->setPairedNode(list[i + 1].get());
+        node->addPairedNode(list[i + 1].get());
       }
     } else {
       // node is sink
-      node->setPairedNode(node);
+      node->addPairedNode(node);
     }
   }
 
@@ -810,7 +810,10 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
       inst = instance_node->getInstance();
     }
 
-    auto* sink_node = node->getPairedNode();
+    const TimingPathNode* sink_node = nullptr;
+    for (auto* pair_node : node->getPairedNodes()) {
+      sink_node = pair_node;
+    }
     if (sink_node != nullptr) {
       sink = sink_node->getPin();
     }
@@ -845,11 +848,12 @@ void TimingPathRenderer::drawNodesList(TimingPath::TimingNodeList* nodes,
     }
 
     if (node->isSource()) {
-      auto* sink_node = node->getPairedNode();
-      if (sink_node != nullptr) {
-        gui::Painter::Color wire_color = node->isClock() ? clock_color : TimingPathRenderer::signal_color_;
-        painter.setPenAndBrush(wire_color, true);
-        net_descriptor->highlight(node->getNet(), painter, sink_node->getPin());
+      for (auto* sink_node : node->getPairedNodes()) {
+        if (sink_node != nullptr) {
+          gui::Painter::Color wire_color = node->isClock() ? clock_color : TimingPathRenderer::signal_color_;
+          painter.setPenAndBrush(wire_color, true);
+          net_descriptor->highlight(node->getNet(), painter, sink_node->getPin());
+        }
       }
     }
   }
@@ -1067,22 +1071,19 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         bterm_descriptor->highlight(pin->getPinAsBTerm(), painter);
       }
 
-      auto* source_node = pin->getPairedNode();
-      if (source_node == nullptr) {
-        continue;
-      }
-
-      const odb::Rect source_rect = source_node->getPinLargestBox();
+      painter.setPen(color, true, line_width);
       const odb::Rect sink_rect = pin->getPinLargestBox();
-
-      const odb::Point source_pt(0.5 * (source_rect.xMin() + source_rect.xMax()),
-                                 0.5 * (source_rect.yMin() + source_rect.yMax()));
       const odb::Point sink_pt(0.5 * (sink_rect.xMin() + sink_rect.xMax()),
                                0.5 * (sink_rect.yMin() + sink_rect.yMax()));
 
-      const auto sink_color = color_generator_.getColor(timingToRatio(source_node), 255);
-      painter.setPen(sink_color, true, line_width);
-      painter.drawLine(source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
+      for (auto* source_node : pin->getPairedNodes()) {
+        const odb::Rect source_rect = source_node->getPinLargestBox();
+        const odb::Point source_pt(0.5 * (source_rect.xMin() + source_rect.xMax()),
+                                   0.5 * (source_rect.yMin() + source_rect.yMax()));
+        const auto source_color = color_generator_.getColor(timingToRatio(source_node), 255);
+        painter.setPen(source_color, true, line_width);
+        painter.drawLine(source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
+      }
     }
   }
 
@@ -1242,7 +1243,7 @@ void TimingConeRenderer::buildConnectivity()
   // clear map pairs
   for (const auto& [level, pin_list] : map_) {
     for (const auto& pin : pin_list) {
-      pin->setPairedNode(nullptr);
+      pin->clearPairedNodes();
     }
   }
 
@@ -1254,9 +1255,6 @@ void TimingConeRenderer::buildConnectivity()
 
     std::map<sta::Vertex*, TimingPathNode*> next_pins;
     for (const auto& pin : map_[next_level]) {
-      if (!pin->isSource()) {
-        continue;
-      }
       sta::Pin* sta_pin = nullptr;
       if (pin->isPinITerm()) {
         sta_pin = network->dbToSta(pin->getPinAsITerm());
@@ -1268,10 +1266,6 @@ void TimingConeRenderer::buildConnectivity()
     }
 
     for (const auto& source_pin : pin_list) {
-      if (!source_pin->isSource()) {
-        continue;
-      }
-
       sta::Pin* sta_pin = nullptr;
       if (source_pin->isPinITerm()) {
         sta_pin = network->dbToSta(source_pin->getPinAsITerm());
@@ -1284,7 +1278,7 @@ void TimingConeRenderer::buildConnectivity()
         sta::Vertex* fanout = edge->to(graph);
         auto next_pins_find = next_pins.find(fanout);
         if (next_pins_find != next_pins.end()) {
-          next_pins_find->second->setPairedNode(source_pin.get());
+          next_pins_find->second->addPairedNode(source_pin.get());
         }
       }
     }

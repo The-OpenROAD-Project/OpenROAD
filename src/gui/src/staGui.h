@@ -142,7 +142,7 @@ class TimingPathNode
         slew_(slew),
         load_(load),
         path_slack_(0.0),
-        paired_node_(nullptr),
+        paired_nodes_({}),
         instance_node_(nullptr)
   {
   }
@@ -178,8 +178,9 @@ class TimingPathNode
 
   bool hasValues() const { return has_values_; }
 
-  void setPairedNode(const TimingPathNode* node) { paired_node_ = node; }
-  const TimingPathNode* getPairedNode() const { return paired_node_; }
+  void addPairedNode(const TimingPathNode* node) { paired_nodes_.insert(node); }
+  void clearPairedNodes() { paired_nodes_.clear(); }
+  const std::set<const TimingPathNode*>& getPairedNodes() const { return paired_nodes_; }
   void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
   const TimingPathNode* getInstanceNode() const { return instance_node_; }
 
@@ -197,7 +198,7 @@ class TimingPathNode
   float load_;
   float path_slack_;
 
-  const TimingPathNode* paired_node_;
+  std::set<const TimingPathNode*> paired_nodes_;
   const TimingPathNode* instance_node_;
 };
 
