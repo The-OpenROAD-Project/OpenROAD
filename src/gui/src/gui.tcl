@@ -215,8 +215,11 @@ proc display_timing_cone { args } {
   foreach net $nets {
     lappend pins [sta::net_load_pins $net]
   }
+  if {[llength $pins] == 0} {
+    utl::error GUI 68 "Pin not found."
+  }
   if {[llength $pins] != 1} {
-    utl::error GUI 68 "Multiple pin timing cones are not supported."
+    utl::error GUI 69 "Multiple pin timing cones are not supported."
   }
 
   set term [sta::sta_to_db_pin $pins]
