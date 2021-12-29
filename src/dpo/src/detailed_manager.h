@@ -84,6 +84,8 @@ class DetailedMgr {
   void setLogger(utl::Logger* logger) { m_logger = logger; }
   utl::Logger* getLogger(void) const { return m_logger; }
 
+  void setSeed(int seed);
+
   void internalError( std::string msg );
 
   void setupObstaclesForDrc(void);

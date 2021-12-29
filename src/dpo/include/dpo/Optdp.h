@@ -79,7 +79,7 @@ public:
   void clear();
   void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
 
-  void improvePlacement();
+  void improvePlacement(int seed);
 
 protected:
   void import();

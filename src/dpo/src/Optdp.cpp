@@ -93,7 +93,7 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) 
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::improvePlacement() {
+void Optdp::improvePlacement(int seed) {
   logger_->report("Detailed placement improvement.");
 
   hpwlBefore_ = opendp_->hpwl();
@@ -105,6 +105,7 @@ void Optdp::improvePlacement() {
     // A manager to track cells.
     dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
     mgr.setLogger(logger_);
+    mgr.setSeed(seed);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed

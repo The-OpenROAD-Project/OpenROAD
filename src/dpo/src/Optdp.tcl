@@ -30,11 +30,21 @@
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "improve_placement" {}
+sta::define_cmd_args "improve_placement" {\
+    [-random_seed seed]\
+}
 
 proc improve_placement { args } {
+  sta::parse_key_args "improve_placement" args \
+    keys {-random_seed} flags {}
+
+  set seed 1
+  if { [info exists keys(-random_seed)] } {
+    set seed $keys(-random_seed)
+  }
+
   sta::check_argc_eq0 "improve_placement" $args
-  dpo::improve_placement_cmd
+  dpo::improve_placement_cmd $seed
 }
 
 namespace eval dpo {
