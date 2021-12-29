@@ -1202,13 +1202,13 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   Point ub = die_boundary.ur();
 
   odb::dbTechLayer* tech_layer = tech_->findRoutingLayer(layer);
-  if (width < tech_layer->getWidth() ||
-      height < tech_layer->getWidth()) {
+  float pin_width = std::min(width, height);
+  if (pin_width < tech_layer->getWidth()) {
     logger_->error(PPL,
                    34,
                    "Pin {} has dimension {}u which is less than the min width {}u of layer {}.",
                    bterm->getName(),
-                   dbuToMicrons(std::min(width, height)),
+                   dbuToMicrons(pin_width),
                    dbuToMicrons(tech_layer->getWidth()),
                    tech_layer->getName());
   }
