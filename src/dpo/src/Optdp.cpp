@@ -484,7 +484,7 @@ void Optdp::createNetwork() {
 
     // Fill in data.
     ndi->setId(n);
-    ndi->setType(NodeType_TERMINAL_NI);
+    ndi->setType(NodeType_TERMINAL); // Should be terminal, not terminal_NI, I think.
     ndi->setFixed(NodeFixed_FIXED_XY);
     ndi->setAttributes(NodeAttributes_EMPTY);
     ndi->setAvailOrient(Orientation_N);
@@ -517,6 +517,8 @@ void Optdp::createNetwork() {
     ++n;  // Next node.
   }
   if (n != nNodes + nTerminals) {
+    logger_->error(DPO, 104, "Unexpected total node count.  Expected {:d}, but got {:d}",
+        (nNodes+nTerminals), n);
     ++errors;
   }
 
@@ -540,6 +542,7 @@ void Optdp::createNetwork() {
         n = it_n->second->getId();  // The node id.
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
+          logger_->error(DPO, 108, "Improper node indexing while connecting pins.");
           ++errors;
         }
 
@@ -566,6 +569,7 @@ void Optdp::createNetwork() {
 
         ++p;  // next pin.
       } else {
+        logger_->error(DPO, 106, "Could not find node for instance while connecting pins.");
         ++errors;
       }
     }
@@ -575,6 +579,7 @@ void Optdp::createNetwork() {
         n = it_p->second->getId();  // The node id.
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
+          logger_->error(DPO, 109, "Improper terminal indexing while connecting pins.");
           ++errors;
         }
 
@@ -589,6 +594,7 @@ void Optdp::createNetwork() {
 
         ++p;  // next pin.
       } else {
+        logger_->error(DPO, 107, "Could not find node for terminal while connecting pins.");
         ++errors;
       }
     }
@@ -596,9 +602,13 @@ void Optdp::createNetwork() {
     ++e;  // next edge.
   }
   if (e != nEdges) {
+    logger_->error(DPO, 104, "Unexpected total edge count.  Expected {:d}, but got {:d}",
+        nEdges, e);
     ++errors;
   }
   if (p != nPins) {
+    logger_->error(DPO, 105, "Unexpected total pin count.  Expected {:d}, but got {:d}",
+        nPins, p);
     ++errors;
   }
 
