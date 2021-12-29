@@ -389,15 +389,10 @@ void TimingPath::populateNodeList(sta::Path* path,
     float cap = 0.0;
     if (is_driver
         && !(!clock_expanded && (sta->network()->isCheckClk(pin) || !i))) {
-      sta::Parasitic* parasitic = nullptr;
       sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      if (arc_delay_calc) {
-        parasitic = arc_delay_calc->findParasitic(
-            pin, ref->transition(sta), dcalc_ap);
-      }
+      sta::Parasitic* parasitic = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(
-          pin, parasitic, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(pin, parasitic, ref->transition(sta), dcalc_ap);
     }
 
     odb::dbITerm* term;
