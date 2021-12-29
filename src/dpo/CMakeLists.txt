@@ -38,6 +38,8 @@ swig_lib(NAME         dpo
          SCRIPTS      src/Optdp.tcl
 )
 
+find_package(LEMON REQUIRED)
+
 target_sources(dpo
   PRIVATE
     src/Optdp.cpp
@@ -65,6 +67,7 @@ target_sources(dpo
 target_include_directories(dpo
   PUBLIC
     include
+    ${LEMON_INCLUDE_DIRS}
 )
 
 target_link_libraries(dpo
