@@ -972,6 +972,8 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
     Gui::get()->registerRenderer(this);
   }
 
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+
   sta_->ensureGraph();
 
   map_.clear();
@@ -1000,6 +1002,8 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
 
   buildConnectivity();
   annotateTiming(pin);
+
+  QApplication::restoreOverrideCursor();
 
   redraw();
 }
