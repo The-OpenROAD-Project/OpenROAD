@@ -45,7 +45,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/ExceptionPath.hh"
@@ -1081,7 +1080,8 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       const odb::Point sink_pt(0.5 * (sink_rect.xMin() + sink_rect.xMax()),
                                0.5 * (sink_rect.yMin() + sink_rect.yMax()));
 
-      painter.setPen(color, true, line_width);
+      const auto sink_color = color_generator_.getColor(timingToRatio(source_node), 255);
+      painter.setPen(sink_color, true, line_width);
       painter.drawLine(source_pt.x(), source_pt.y(), sink_pt.x(), sink_pt.y());
     }
   }
@@ -1135,11 +1135,8 @@ void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_m
                                    true, // thru_disabled
                                    true); // thru_constants
 
-  sta::SearchPred2 srch_pred(sta_);
-  sta::BfsBkwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
-
   DepthMapSet depth_map_set;
-  getCone(source_pin, pins, bfs, depth_map_set);
+  getCone(source_pin, pins, depth_map_set, true);
   for (auto& [level, pin_list] : depth_map_set) {
     depth_map[-level].insert(pin_list.begin(), pin_list.end());
   }
@@ -1157,13 +1154,10 @@ void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin, DepthMapSet& depth_
                                     0,
                                     true, // thru_disabled
                                     true); // thru_constants
-  sta::SearchPred2 srch_pred(sta_);
-
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
-  getCone(source_pin, pins, bfs, depth_map);
+  getCone(source_pin, pins, depth_map, false);
 }
 
-void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, sta::BfsIterator& bfs, DepthMapSet& depth_map)
+void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, DepthMapSet& depth_map, bool is_fanin)
 {
   auto* network = sta_->getDbNetwork();
   auto* graph = sta_->graph();
@@ -1172,48 +1166,71 @@ void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, sta::B
     return network->isRegClkPin(pin);
   };
 
-  for (auto* pin : *pins) {
-    if (filter_pins(pin)) {
-      continue;
-    }
-    sta::Vertex* vertex = graph->pinDrvrVertex(pin);
-    bfs.enqueueAdjacentVertices(vertex);
-  }
-  bfs.enqueueAdjacentVertices(graph->pinDrvrVertex(source_pin));
-  bfs.enqueue(graph->pinDrvrVertex(source_pin));
-  delete pins;
-
-  int level = 0;
-  int last_bfs_level = -1;
-  while (bfs.hasNext()) {
-    auto* vertex = bfs.next();
-    if (last_bfs_level == -1) {
-      last_bfs_level = vertex->level();
-    }
-
-    if (last_bfs_level != vertex->level()) {
-      last_bfs_level = vertex->level();
-      level++;
-    }
-
-    auto& pin_list = depth_map[level];
-
+  auto pin_to_object = [network](sta::Pin* pin) -> odb::dbObject* {
     odb::dbITerm* iterm = nullptr;
     odb::dbBTerm* bterm = nullptr;
-
-    auto* sta_pin = vertex->pin();
-    if (filter_pins(sta_pin)) {
-      continue;
-    }
-
-    network->staToDb(sta_pin, iterm, bterm);
+    network->staToDb(pin, iterm, bterm);
     odb::dbObject* pin_term = nullptr;
     if (iterm != nullptr) {
       pin_term = iterm;
     } else {
       pin_term = bterm;
     }
-    pin_list.insert(pin_term);
+    return pin_term;
+  };
+
+  pins->erase(source_pin);
+
+  int level = 0;
+  std::map<int, std::set<sta::Pin*>> mapped_pins;
+  mapped_pins[level].insert(source_pin);
+  int pins_size = -1;
+  while (!pins->empty() && pins_size != pins->size()) {
+    pins_size = pins->size();
+    int next_level = level + 1;
+
+    auto& source_pins = mapped_pins[level];
+    auto& next_pins = mapped_pins[next_level];
+
+    for (auto* pin : source_pins) {
+      auto* pin_vertex = graph->pinDrvrVertex(pin);
+
+      sta::VertexEdgeIterator* itr = nullptr;
+      if (is_fanin) {
+        itr = new sta::VertexInEdgeIterator(pin_vertex, graph);
+      } else {
+        itr = new sta::VertexOutEdgeIterator(pin_vertex, graph);
+      }
+
+      while (itr->hasNext()) {
+        auto* next_edge = itr->next();
+        sta::Vertex* next_vertex = next_edge->to(graph);
+        if (next_vertex == pin_vertex) {
+          next_vertex = next_edge->from(graph);
+        }
+        auto* next_pin = next_vertex->pin();
+        auto pin_find = pins->find(next_pin);
+        if (pin_find != pins->end()) {
+          if (!filter_pins(next_pin)) {
+            next_pins.insert(next_pin);
+          }
+
+          pins->erase(pin_find);
+        }
+      }
+
+      delete itr;
+    }
+
+    level = next_level;
+  }
+  delete pins;
+
+  for (const auto& [level, pin_list] : mapped_pins) {
+    auto& dmap = depth_map[level];
+    for (auto* pin : pin_list) {
+      dmap.insert(pin_to_object(pin));
+    }
   }
 }
 

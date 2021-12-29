@@ -65,7 +65,6 @@ class dbRow;
 class dbSWire;
 }  // namespace odb
 namespace sta {
-class BfsIterator;
 class dbSta;
 class DcalcAnalysisPt;
 class Instance;
@@ -403,7 +402,7 @@ class TimingConeRenderer : public gui::Renderer
   using DepthMapSet = std::map<int, std::set<odb::dbObject*>>;
   void getFaninCone(sta::Pin* pin, DepthMapSet& depth_map);
   void getFanoutCone(sta::Pin* pin, DepthMapSet& depth_map);
-  void getCone(sta::Pin* pin, sta::PinSet* pin_set, sta::BfsIterator& bfs, DepthMapSet& depth_map);
+  void getCone(sta::Pin* pin, sta::PinSet* pin_set, DepthMapSet& depth_map, bool is_fanin);
   void buildConnectivity();
   void annotateTiming(sta::Pin* pin);
 };
