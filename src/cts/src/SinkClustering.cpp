@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "SinkClustering.h"
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -41,7 +43,6 @@
 #include <string>
 #include <tuple>
 
-#include "SinkClustering.h"
 #include "utl/Logger.h"
 
 namespace cts {
