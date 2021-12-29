@@ -56,4 +56,5 @@ record_tests {
   place_pin5
   place_pin_error1
   place_pin_error2
+  place_pin_error3
 }
