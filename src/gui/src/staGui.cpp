@@ -970,7 +970,6 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   sta_->ensureGraph();
-  sta_->ensureLevelized();
 
   map_.clear();
 
@@ -1125,11 +1124,22 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
 
 void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_map)
 {
+  sta::PinSeq pins_to;
+  pins_to.push_back(source_pin);
+
+  auto* pins = sta_->findFaninPins(&pins_to,
+                                   true, // flat
+                                   false, // startpoints_only
+                                   0,
+                                   0,
+                                   true, // thru_disabled
+                                   true); // thru_constants
+
   sta::SearchPred2 srch_pred(sta_);
   sta::BfsBkwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
 
   DepthMapSet depth_map_set;
-  getCone(source_pin, bfs, depth_map_set);
+  getCone(source_pin, pins, bfs, depth_map_set);
   for (auto& [level, pin_list] : depth_map_set) {
     depth_map[-level].insert(pin_list.begin(), pin_list.end());
   }
@@ -1137,13 +1147,23 @@ void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_m
 
 void TimingConeRenderer::getFanoutCone(sta::Pin* source_pin, DepthMapSet& depth_map)
 {
-  sta::SearchPred2 srch_pred(sta_);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
+  sta::PinSeq pins_from;
+  pins_from.push_back(source_pin);
 
-  getCone(source_pin, bfs, depth_map);
+  auto* pins = sta_->findFanoutPins(&pins_from,
+                                    true, // flat
+                                    false, // startpoints_only
+                                    0,
+                                    0,
+                                    true, // thru_disabled
+                                    true); // thru_constants
+  sta::SearchPred2 srch_pred(sta_);
+
+  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
+  getCone(source_pin, pins, bfs, depth_map);
 }
 
-void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::BfsIterator& bfs, DepthMapSet& depth_map)
+void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::PinSet* pins, sta::BfsIterator& bfs, DepthMapSet& depth_map)
 {
   auto* network = sta_->getDbNetwork();
   auto* graph = sta_->graph();
@@ -1152,8 +1172,16 @@ void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::BfsIterator& bfs, De
     return network->isRegClkPin(pin);
   };
 
+  for (auto* pin : *pins) {
+    if (filter_pins(pin)) {
+      continue;
+    }
+    sta::Vertex* vertex = graph->pinDrvrVertex(pin);
+    bfs.enqueueAdjacentVertices(vertex);
+  }
   bfs.enqueueAdjacentVertices(graph->pinDrvrVertex(source_pin));
   bfs.enqueue(graph->pinDrvrVertex(source_pin));
+  delete pins;
 
   int level = 0;
   int last_bfs_level = -1;
@@ -1186,8 +1214,6 @@ void TimingConeRenderer::getCone(sta::Pin* source_pin, sta::BfsIterator& bfs, De
       pin_term = bterm;
     }
     pin_list.insert(pin_term);
-
-    bfs.enqueueAdjacentVertices(vertex);
   }
 }
 
