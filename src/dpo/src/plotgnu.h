@@ -71,8 +71,7 @@ class PlotGnu {
  protected:
   void drawNodes(char* buf);
 
- protected:
-#define BUFFER_SIZE 2047
+  constexpr static int BUFFER_SIZE = 2047;
   Network* m_network;
   Architecture* m_arch;
   RoutingParams* m_rt;

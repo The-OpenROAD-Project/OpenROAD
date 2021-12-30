@@ -66,10 +66,10 @@ class DetailedHPWL : public DetailedObjective {
   // For WL objective.
  public:
   DetailedHPWL(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedHPWL(void);
+  virtual ~DetailedHPWL();
 
-  void init(void);
-  double curr(void);
+  void init();
+  double curr();
   double delta(int n, std::vector<Node*>& nodes, std::vector<double>& curX,
                std::vector<double>& curY, std::vector<unsigned>& curOri,
                std::vector<double>& newX, std::vector<double>& newY,

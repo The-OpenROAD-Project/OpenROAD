@@ -73,29 +73,29 @@ class DetailedSeg;
 class DetailedMgr {
  public:
   DetailedMgr(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedMgr(void);
+  virtual ~DetailedMgr();
 
-  void cleanup(void);
+  void cleanup();
 
-  Architecture* getArchitecture(void) const { return m_arch; }
-  Network* getNetwork(void) const { return m_network; }
-  RoutingParams* getRoutingParams(void) const { return m_rt; }
+  Architecture* getArchitecture() const { return m_arch; }
+  Network* getNetwork() const { return m_network; }
+  RoutingParams* getRoutingParams() const { return m_rt; }
 
   void setLogger(utl::Logger* logger) { m_logger = logger; }
-  utl::Logger* getLogger(void) const { return m_logger; }
+  utl::Logger* getLogger() const { return m_logger; }
 
   void setSeed(int seed);
 
   void internalError( std::string msg );
 
-  void setupObstaclesForDrc(void);
+  void setupObstaclesForDrc();
 
   void findBlockages(bool includeRouteBlockages = true);
   void findRegionIntervals(
       int regId,
       std::vector<std::vector<std::pair<double, double> > >& intervals);
 
-  void findSegments(void);
+  void findSegments();
   DetailedSeg* findClosestSegment(Node* nd);
   void findClosestSpanOfSegmentsDfs(
       Node* ndi, DetailedSeg* segPtr, double xmin, double xmax, int bot,
@@ -105,11 +105,11 @@ class DetailedMgr {
 
   void assignCellsToSegments(std::vector<Node*>& nodesToConsider);
   int checkSegments(double& worst);
-  int checkOverlapInSegments(int max_err_n = 0);
-  int checkEdgeSpacingInSegments(int max_err_n = 0);
-  int checkSiteAlignment(int max_err_n = 0);
+  int checkOverlapInSegments();
+  int checkEdgeSpacingInSegments();
+  int checkSiteAlignment();
   int checkRowAlignment(int max_err_n = 0);
-  int checkRegionAssignment(int max_err_n = 0);
+  int checkRegionAssignment();
 
   void removeCellFromSegmentTest(Node* nd, int seg, double& util, double& gapu);
   void addCellToSegmentTest(Node* nd, int seg, double x, double& util,
@@ -118,40 +118,40 @@ class DetailedMgr {
   void addCellToSegment(Node* nd, int seg);
   double getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells);
 
-  void collectSingleHeightCells(void);
-  void collectMultiHeightCells(void);
-  void moveMultiHeightCellsToFixed(void);
-  void collectFixedCells(void);
-  void collectWideCells(void);
+  void collectSingleHeightCells();
+  void collectMultiHeightCells();
+  void moveMultiHeightCellsToFixed();
+  void collectFixedCells();
+  void collectWideCells();
 
-  void restoreOriginalPositions(void);
-  void recordOriginalPositions(void);
-  void restoreOriginalDimensions(void);
-  void recordOriginalDimensions(void);
+  void restoreOriginalPositions();
+  void recordOriginalPositions();
+  void restoreOriginalDimensions();
+  void recordOriginalDimensions();
 
-  void restoreBestPositions(void);
-  void recordBestPositions(void);
+  void restoreBestPositions();
+  void recordBestPositions();
 
-  void resortSegments(void);
+  void resortSegments();
   void resortSegment(DetailedSeg* segPtr);
-  void removeAllCellsFromSegments(void);
+  void removeAllCellsFromSegments();
 
-  inline double getOrigX(Node* nd) const { return m_origX[nd->getId()]; }
-  inline double getOrigY(Node* nd) const { return m_origY[nd->getId()]; }
-  inline double getOrigW(Node* nd) const { return m_origW[nd->getId()]; }
-  inline double getOrigH(Node* nd) const { return m_origH[nd->getId()]; }
+  double getOrigX(Node* nd) const { return m_origX[nd->getId()]; }
+  double getOrigY(Node* nd) const { return m_origY[nd->getId()]; }
+  double getOrigW(Node* nd) const { return m_origW[nd->getId()]; }
+  double getOrigH(Node* nd) const { return m_origH[nd->getId()]; }
 
   bool isNodeAlignedToRow(Node* nd);
 
-  double measureMaximumDisplacement(bool print, bool& violated);
-  void removeOverlapMinimumShift(void);
+  double measureMaximumDisplacement(bool& violated);
+  void removeOverlapMinimumShift();
 
-  inline size_t getNumSegments() const { return m_segments.size(); }
+  size_t getNumSegments() const { return m_segments.size(); }
   DetailedSeg* getSegment(int s) const { return m_segments[s]; }
-  inline int getNumSingleHeightRows(void) const {
+  int getNumSingleHeightRows() const {
     return m_numSingleHeightRows;
   }
-  inline int getSingleRowHeight(void) const { return m_singleRowHeight; }
+  int getSingleRowHeight() const { return m_singleRowHeight; }
 
   void getSpaceAroundCell(int seg, int ix, double& space, double& larger,
                           int limit = 3);
@@ -159,7 +159,7 @@ class DetailedMgr {
                           double& space_right, double& large_left,
                           double& large_right, int limit = 3);
 
-  bool fixSegments(void);
+  bool fixSegments();
   void moveCellsBetweenSegments(int iteration);
   void pushCellsBetweenSegments(int iteration);
   void moveCellsBetweenSegments(DetailedSeg* segment, int leftRightTol,
@@ -169,12 +169,12 @@ class DetailedMgr {
   void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes, double l,
                                        double r, int rowId);
 
-  void debugSegments(void);
+  void debugSegments();
 
-  double getTargetUt(void) const { return m_targetUt; }
+  double getTargetUt() const { return m_targetUt; }
   void setTargetUt(double ut) { m_targetUt = ut; }
 
-  double getMaxMovement(void) const { return m_targetMaxMovement; }
+  double getMaxMovement() const { return m_targetMaxMovement; }
   void setTargetMaxMovement(double movement) { m_targetMaxMovement = movement; }
 
   bool alignPos(Node* ndi, double& xi, double xl, double xr);
@@ -192,13 +192,13 @@ class DetailedMgr {
   bool trySwap1(Node* ndi, double xi, double yi, int si, double xj, double yj,
                 int sj);
 
-  void acceptMove(void);
-  void rejectMove(void);
+  void acceptMove();
+  void rejectMove();
 
  public:
   struct compareBlockages {
-    inline bool operator()(std::pair<double, double> i1,
-                           std::pair<double, double> i2) const {
+    bool operator()(std::pair<double, double> i1,
+                    std::pair<double, double> i2) const {
       if (i1.first == i2.first) {
         return i1.second < i2.second;
       }
@@ -207,15 +207,15 @@ class DetailedMgr {
   };
 
   struct compareNodesX {
-    inline bool operator()(Node* p, Node* q) const {
+    bool operator()(Node* p, Node* q) const {
       return p->getX() < q->getX();
     }
-    inline bool operator()(Node*& s, double i) const { return s->getX() < i; }
-    inline bool operator()(double i, Node*& s) const { return i < s->getX(); }
+    bool operator()(Node*& s, double i) const { return s->getX() < i; }
+    bool operator()(double i, Node*& s) const { return i < s->getX(); }
   };
 
   struct compareNodesL {
-    inline bool operator()(Node* p, Node* q) const {
+    bool operator()(Node* p, Node* q) const {
       return p->getX() - 0.5 * p->getWidth() < q->getX() - 0.5 * q->getWidth();
     }
   };

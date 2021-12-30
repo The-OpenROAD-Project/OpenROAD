@@ -67,7 +67,7 @@ class DetailedMgr;
 class DetailedOrient {
  public:
   DetailedOrient(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedOrient(void);
+  virtual ~DetailedOrient();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
@@ -76,7 +76,7 @@ class DetailedOrient {
   int orientCells(int& changed);
   bool orientSingleHeightCellForRow(Node* ndi, int row);
   bool orientMultiHeightCellForRow(Node* ndi, int row);
-  int flipCells(void);
+  int flipCells();
 
   // Other.
   bool orientAdjust(Node* ndi, unsigned newOri);

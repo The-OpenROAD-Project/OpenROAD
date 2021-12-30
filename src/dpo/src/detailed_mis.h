@@ -71,7 +71,7 @@ class DetailedMisParams {
   };
 
  public:
-  DetailedMisParams(void)
+  DetailedMisParams()
       : _maxDifferenceInMetric(0.03),
         _maxNumNodes(15),
         _maxPasses(1),
@@ -105,7 +105,7 @@ class DetailedMis {
 
  public:
   DetailedMis(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedMis(void);
+  virtual ~DetailedMis();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
@@ -136,20 +136,20 @@ class DetailedMis {
           double 				getDetailedMisCost( Node *,
      SwapLocation * );
           double 				init( std::vector<Node *> & );
-          inline bool 			isSameSize( Node *, SwapLocation * );
-          inline bool 			isSameSize( Node *, Node * );
+          bool        			isSameSize( Node *, SwapLocation * );
+          bool       			isSameSize( Node *, Node * );
           void				place( std::vector<Node *> &,
      std::vector<SwapLocation *> &, unsigned, std::deque<SwapLocation *> & );
    */
 
-  void place(void);
-  void collectMovableCells(void);
-  void colorCells(void);
-  void buildGrid(void);
-  void clearGrid(void);
-  void populateGrid(void);
+  void place();
+  void collectMovableCells();
+  void colorCells();
+  void buildGrid();
+  void clearGrid();
+  void populateGrid();
   bool gatherNeighbours(Node* ndi);
-  void solveMatch(void);
+  void solveMatch();
   double getHpwl(Node* ndi, double xi, double yi);
   double getDisp(Node* ndi, double xi, double yi);
 

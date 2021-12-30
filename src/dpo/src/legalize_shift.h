@@ -63,40 +63,24 @@ class DetailedMgr;
 
 class ShiftLegalizerParams {
  public:
-  ShiftLegalizerParams(void) {}
-
- public:
+  ShiftLegalizerParams() {}
 };
 
 class ShiftLegalizer {
  public:
   ShiftLegalizer(ShiftLegalizerParams& params);
-  virtual ~ShiftLegalizer(void);
+  virtual ~ShiftLegalizer();
 
   bool legalize(DetailedMgr& mgr);
 
  protected:
-  class Clump {
-   public:
-    Clump() {}
-    virtual ~Clump() {}
+  class Clump;
 
-   public:
-    int m_id;
-    double m_weight;
-    double m_wposn;
-    double m_width;
-    double m_posn;
-    std::vector<Node*> m_nodes;
-  };
-
- protected:
   double shift(std::vector<Node*>& cells);
   double clump(std::vector<Node*>& order);
   void merge(Clump* r);
   bool violated(Clump* r, Clump*& l, double& dist);
 
- protected:
   ShiftLegalizerParams& m_params;
 
   DetailedMgr* m_mgr;

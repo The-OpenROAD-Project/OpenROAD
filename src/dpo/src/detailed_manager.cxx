@@ -106,7 +106,7 @@ DetailedMgr::DetailedMgr(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedMgr::~DetailedMgr(void) {
+DetailedMgr::~DetailedMgr() {
   m_blockages.clear();
 
   m_segsInRow.clear();
@@ -191,10 +191,10 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages) {
       for (int layer = 0; layer <= 1 && layer < m_rt->m_num_layers; layer++) {
         std::vector<Rectangle>& rects = m_rt->m_layerBlockages[layer];
         for (int b = 0; b < rects.size(); b++) {
-          double xmin = rects[b].m_xmin;
-          double xmax = rects[b].m_xmax;
-          double ymin = rects[b].m_ymin;
-          double ymax = rects[b].m_ymax;
+          double xmin = rects[b].xmin();
+          double xmax = rects[b].xmax();
+          double ymin = rects[b].ymin();
+          double ymax = rects[b].ymax();
 
           for (int r = 0; r < m_numSingleHeightRows; r++) {
             double lb = m_arch->getMinY() + r * m_singleRowHeight;
@@ -261,7 +261,7 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::findSegments(void) {
+void DetailedMgr::findSegments() {
   // Create the segments into which movable cells are placed.  I do make
   // segment ends line up with sites and that segments don't extend off
   // the chip.
@@ -1120,7 +1120,7 @@ void DetailedMgr::addCellToSegmentTest(Node* nd, int seg, double x,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::recordOriginalDimensions(void) {
+void DetailedMgr::recordOriginalDimensions() {
   m_origW.resize(m_network->getNumNodes() );
   m_origH.resize(m_network->getNumNodes() );
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
@@ -1132,7 +1132,7 @@ void DetailedMgr::recordOriginalDimensions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::restoreOriginalDimensions(void) {
+void DetailedMgr::restoreOriginalDimensions() {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
     nd->setWidth(m_origW[nd->getId()]);
@@ -1142,7 +1142,7 @@ void DetailedMgr::restoreOriginalDimensions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::recordOriginalPositions(void) {
+void DetailedMgr::recordOriginalPositions() {
   m_origX.resize(m_network->getNumNodes() );
   m_origY.resize(m_network->getNumNodes() );
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
@@ -1154,7 +1154,7 @@ void DetailedMgr::recordOriginalPositions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::restoreOriginalPositions(void) {
+void DetailedMgr::restoreOriginalPositions() {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
     nd->setX(m_origX[nd->getId()]);
@@ -1164,7 +1164,7 @@ void DetailedMgr::restoreOriginalPositions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::recordBestPositions(void) {
+void DetailedMgr::recordBestPositions() {
   m_bestX.resize(m_network->getNumNodes() );
   m_bestY.resize(m_network->getNumNodes() );
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
@@ -1176,7 +1176,7 @@ void DetailedMgr::recordBestPositions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::restoreBestPositions(void) {
+void DetailedMgr::restoreBestPositions() {
   // This also required redoing the segments.
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
@@ -1188,8 +1188,7 @@ void DetailedMgr::restoreBestPositions(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedMgr::measureMaximumDisplacement(bool print, bool& violated) {
-  (void)print;
+double DetailedMgr::measureMaximumDisplacement(bool& violated) {
   violated = false;
 
   // double limit = GET_PARAM_FLOAT( PLACER_MAX_DISPLACEMENT );  // XXX: Check
@@ -1245,7 +1244,7 @@ bool DetailedMgr::isNodeAlignedToRow(Node* nd) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::setupObstaclesForDrc(void) {
+void DetailedMgr::setupObstaclesForDrc() {
   // Setup rectangular obstacles for short and pin access checks.  Do only as
   // rectangles per row and per layer.  I had used rtrees, but it wasn't working
   // any better.
@@ -1272,10 +1271,10 @@ void DetailedMgr::setupObstaclesForDrc(void) {
         ymin = m_arch->getRow(row_id)->getBottom();
         ymax = m_arch->getRow(row_id)->getTop();
 
-        if (rects[b].m_xmax <= xmin) continue;
-        if (rects[b].m_xmin >= xmax) continue;
-        if (rects[b].m_ymax <= ymin) continue;
-        if (rects[b].m_ymin >= ymax) continue;
+        if (rects[b].xmax() <= xmin) continue;
+        if (rects[b].xmin() >= xmax) continue;
+        if (rects[b].ymax() <= ymin) continue;
+        if (rects[b].ymin() >= ymax) continue;
 
         m_obstacles[row_id][layer_id].push_back(rects[b]);
       }
@@ -1326,7 +1325,7 @@ int DetailedMgr::checkSegments(double& worst) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::collectSingleHeightCells(void) {
+void DetailedMgr::collectSingleHeightCells() {
   // Routine to collect only the movable single height cells.
   //
   // XXX: This code also shifts cells to ensure that they are within the
@@ -1357,7 +1356,7 @@ void DetailedMgr::collectSingleHeightCells(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::collectMultiHeightCells(void) {
+void DetailedMgr::collectMultiHeightCells() {
   // Routine to collect only the movable multi height cells.
   //
   // XXX: This code also shifts cells to ensure that they are within the
@@ -1405,7 +1404,7 @@ void DetailedMgr::collectMultiHeightCells(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::moveMultiHeightCellsToFixed(void) {
+void DetailedMgr::moveMultiHeightCellsToFixed() {
   // Adds multi height cells to the list of fixed cells.  This is a hack
   // if we are only placing single height cells; we really should not
   // need to do this...
@@ -1422,7 +1421,7 @@ void DetailedMgr::moveMultiHeightCellsToFixed(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::collectFixedCells(void) {
+void DetailedMgr::collectFixedCells() {
   // Fixed cells are used only to create blockages which, in turn, are used to
   // create obstacles.  Obstacles are then used to create the segments into
   // which cells can be placed.
@@ -1468,7 +1467,7 @@ void DetailedMgr::collectFixedCells(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::collectWideCells(void) {
+void DetailedMgr::collectWideCells() {
   // This is sort of a hack.  Some standard cells might be extremely wide and
   // based on how we set up segments (e.g., to take into account blockages of
   // different sorts), we might not be able to find a segment wide enough to
@@ -1497,7 +1496,7 @@ void DetailedMgr::collectWideCells(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::removeOverlapMinimumShift(void) {
+void DetailedMgr::removeOverlapMinimumShift() {
   // XXX: UPDATE TO ACCOMMODATE MULTI-HEIGHT CELLS.  Likely requires using the
   // bottom of the cell instead of the center of the cell.  Need to assign a
   // cell to multiple segments.
@@ -1710,7 +1709,7 @@ void DetailedMgr::removeOverlapMinimumShift(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::cleanup(void) {
+void DetailedMgr::cleanup() {
   // Various cleanups.
   for (int i = 0; i < m_wideCells.size(); i++) {
     Node* ndi = m_wideCells[i];
@@ -1720,7 +1719,7 @@ void DetailedMgr::cleanup(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int DetailedMgr::checkOverlapInSegments(int max_err_n) {
+int DetailedMgr::checkOverlapInSegments() {
   // Scan each segment and check for overlap between adjacent cells.
   // Also check for cells off the left and right edge of the segments.
   //
@@ -1732,7 +1731,6 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
   // I do not take into account padding when I check for overlap as
   // I consider that a different sort of issue.
 
-  (void)max_err_n;
   std::vector<Node*> temp;
   temp.reserve(m_network->getNumNodes() );
 
@@ -1782,8 +1780,7 @@ int DetailedMgr::checkOverlapInSegments(int max_err_n) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
-  (void)max_err_n;
+int DetailedMgr::checkEdgeSpacingInSegments() {
   // Check for spacing violations according to the spacing table.  Note
   // that there might not be a spacing table in which case we will
   // return no errors.  I should also check for padding errors although
@@ -1846,8 +1843,7 @@ int DetailedMgr::checkEdgeSpacingInSegments(int max_err_n) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int DetailedMgr::checkRegionAssignment(int max_err_n) {
-  (void)max_err_n;
+int DetailedMgr::checkRegionAssignment() {
   // Check cells are assigned (within) their proper regions.  This is sort
   // of a hack/cheat.  We assume that we have set up the segments correctly
   // and that all cells are in segments.  Multi-height cells can be in
@@ -1887,8 +1883,7 @@ int DetailedMgr::checkRegionAssignment(int max_err_n) {
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int DetailedMgr::checkSiteAlignment(int max_err_n) {
-  (void)max_err_n;
+int DetailedMgr::checkSiteAlignment() {
   // Ensure that the left edge of each cell is aligned with a site.  We only
   // consider cells that are within segments.
   int err_n = 0;
@@ -1921,13 +1916,10 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
     }
     ++nCellsInSegments;
 
-    bool okay = true;
-    (void)okay;
     if (rb < 0 || rt >= m_arch->getRows().size()) {
       // Either off the top of the bottom of the chip, so this is not
       // exactly an alignment problem, but still a problem so count it.
       ++err_n;
-      okay = false;
     }
     rb = std::max(rb, 0);
     rt = std::min(rt, (int)m_arch->getRows().size() - 1);
@@ -1942,7 +1934,6 @@ int DetailedMgr::checkSiteAlignment(int max_err_n) {
       double xt = originX + sid * siteSpacing;
       if (std::fabs(xl - xt) > 1.0e-3) {
         ++err_n;
-        okay = false;
       }
     }
   }
@@ -2214,10 +2205,10 @@ void DetailedMgr::findRegionIntervals(
   // Look at the rectangles within the region.
   std::vector<Rectangle>& rects = regPtr->m_rects;
   for (int b = 0; b < rects.size(); b++) {
-    double xmin = rects[b].m_xmin;
-    double xmax = rects[b].m_xmax;
-    double ymin = rects[b].m_ymin;
-    double ymax = rects[b].m_ymax;
+    double xmin = rects[b].xmin();
+    double xmax = rects[b].xmax();
+    double ymin = rects[b].ymin();
+    double ymax = rects[b].ymax();
 
     for (int r = 0; r < m_numSingleHeightRows; r++) {
       double lb = m_arch->getMinY() + r * m_singleRowHeight;
@@ -2378,8 +2369,6 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
   // we are placing cells.  If we don't need to shrink cells, then I
   // think this should work.
   {
-    bool adjusted = false;
-    (void)adjusted;
     double tot = 0;
     for (int i = 0; i < nodes.size(); i++) {
       tot += wid[i];
@@ -2390,7 +2379,6 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
       if (originX + ix * siteSpacing < xmin) ++ix;
       x = originX + ix * siteSpacing;
       if (xmax - x >= tot + 1.0e-3 && std::fabs(xmin - x) > 1.0e-3) {
-        adjusted = true;
         xmin = x;
       }
       space = xmax - xmin;
@@ -2401,7 +2389,6 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
       if (originX + ix * siteSpacing > xmax) --ix;
       x = originX + ix * siteSpacing;
       if (x - xmin >= tot + 1.0e-3 && std::fabs(xmax - x) > 1.0e-3) {
-        adjusted = true;
         xmax = x;
       }
       space = xmax - xmin;
@@ -2474,7 +2461,7 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::resortSegments(void) {
+void DetailedMgr::resortSegments() {
   // Resort the nodes in the segments.  This might be required if we did
   // something to move cells around and broke the ordering.
   for (size_t i = 0; i < m_segments.size(); i++) {
@@ -2504,7 +2491,7 @@ void DetailedMgr::resortSegment(DetailedSeg* segPtr) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::removeAllCellsFromSegments(void) {
+void DetailedMgr::removeAllCellsFromSegments() {
   // This routine removes _ALL_ cells from all segments.  It clears all
   // reverse maps and so forth.  Basically, it leaves things as if the
   // segments have all been created, but nothing has been inserted.
@@ -2525,8 +2512,8 @@ void DetailedMgr::removeAllCellsFromSegments(void) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 struct compare_node_segment_x {
-  inline bool operator()(Node*& s, double i) const { return s->getX() < i; }
-  inline bool operator()(double i, Node*& s) const { return i < s->getX(); }
+  bool operator()(Node*& s, double i) const { return s->getX() < i; }
+  bool operator()(double i, Node*& s) const { return i < s->getX(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2580,8 +2567,6 @@ bool DetailedMgr::shift(std::vector<Node*>& cells, std::vector<double>& tarX,
   double originX = m_arch->getRow(rowId)->getLeft();
   double siteSpacing = m_arch->getRow(rowId)->getSiteSpacing();
   double siteWidth = m_arch->getRow(rowId)->getSiteWidth();
-  int numSites = m_arch->getRow(rowId)->getNumSites();
-  (void)numSites;
 
   // Number of cells.
   int ncells = cells.size();
@@ -3245,10 +3230,7 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
 
   std::vector<Node*>::iterator it_i;
   std::vector<Node*>::iterator it_j;
-  int ix_i = -1;
   int ix_j = -1;
-  (void)ix_i;
-  (void)ix_j;
 
   double x1, x2;
   double space_left_j, space_right_j, large_left_j, large_right_j;
@@ -3283,7 +3265,6 @@ bool DetailedMgr::tryMove2(Node* ndi, double xi, double yi, int si, double xj,
                      large_right_j);
 
   it_i = std::find(m_cellsInSeg[si].begin(), m_cellsInSeg[si].end(), ndi);
-  ix_i = it_i - m_cellsInSeg[si].begin();
 
   if (ndi->getWidth() <= space_left_j) {
     // Might fit on the left, depending on spacing.
@@ -3774,7 +3755,7 @@ bool DetailedMgr::trySwap1(Node* ndi, double xi, double yi, int si, double xj,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::acceptMove(void) {
+void DetailedMgr::acceptMove() {
   // Moves stored list of cells.  XXX: Only single height cells.
 
   for (int i = 0; i < m_nMoved; i++) {
@@ -3800,13 +3781,13 @@ void DetailedMgr::acceptMove(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::rejectMove(void) {
+void DetailedMgr::rejectMove() {
   m_nMoved = 0;  // Sufficient, I think.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::debugSegments(void) {
+void DetailedMgr::debugSegments() {
   // Do some debug checks on segments.
 
   // Confirm the segments are sorted.
