@@ -154,9 +154,7 @@ class DetailedMis {
   double getDisp(Node* ndi, double xi, double yi);
 
  public:
-  /*
-          DetailedMisParams			_params;
-      */
+  /* DetailedMisParams _params; */
 
   DetailedMgr* m_mgrPtr;
 

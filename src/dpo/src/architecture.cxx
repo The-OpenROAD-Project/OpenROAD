@@ -529,9 +529,13 @@ Architecture::Row::Row()
       m_numSites(0),
       m_siteWidth(0),
       m_subRowOrigin(0),
-      m_siteSpacing(0) {
-  m_powerTop = RowPower_UNK;
-  m_powerBot = RowPower_UNK;
+      m_siteOrient(0),
+      m_siteSymmetry(0),
+      m_siteSpacing(0),
+      m_id(0),
+      m_powerTop(RowPower_UNK),
+      m_powerBot(RowPower_UNK)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

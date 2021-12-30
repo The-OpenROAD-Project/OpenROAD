@@ -54,7 +54,8 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 class DetailedGenerator {
  public:
-  DetailedGenerator() { m_name = "unknown generator"; }
+  DetailedGenerator(const char* name = "unknown generator")
+    : m_name(name) {}
   virtual ~DetailedGenerator() {}
 
   virtual const std::string& getName() const { return m_name; }
@@ -67,8 +68,8 @@ class DetailedGenerator {
 
   virtual void init(DetailedMgr* mgr) = 0;
 
- protected:
-  std::string m_name;
+ private:
+  const std::string m_name;
 };
 
 }  // namespace dpo

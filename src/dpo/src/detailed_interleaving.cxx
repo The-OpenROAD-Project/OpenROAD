@@ -234,7 +234,9 @@ DetailedInterleave::DetailedInterleave(Architecture* arch,
     : m_arch(arch),
       m_network(network),
       m_rt(rt),
+      m_mgrPtr(nullptr),
       m_skipNetsLargerThanThis(100),
+      m_traversal(0),
       m_windowStep(8),
       m_windowSize(20)
 {

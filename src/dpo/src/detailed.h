@@ -69,9 +69,14 @@ class DetailedParams {
 
 class Detailed {
  public:
- public:
-  Detailed(DetailedParams& params) : m_params(params) {}
-  virtual ~Detailed();
+  Detailed(DetailedParams& params)
+    : m_params(params),
+      m_mgr(nullptr),
+      m_arch(nullptr),
+      m_network(nullptr),
+      m_rt(nullptr)
+  {}
+  virtual ~Detailed() {}
 
   // Interface for script.
   // bool improve( Architecture* arch, Network* network, RoutingParams* rt );

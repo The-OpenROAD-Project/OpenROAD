@@ -62,17 +62,16 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedHPWL::DetailedHPWL(Architecture* arch, Network* network,
                            RoutingParams* rt)
-    : DetailedObjective(),
+    : DetailedObjective("hpwl"),
       m_arch(arch),
       m_network(network),
       m_rt(rt),
-      m_orientPtr(0),
-      m_skipNetsLargerThanThis(100) {
-  m_traversal = 0;
-  m_edgeMask.resize(m_network->getNumEdges());
-  std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
-
-  m_name = "hpwl";
+      m_mgrPtr(nullptr),
+      m_orientPtr(nullptr),
+      m_skipNetsLargerThanThis(100),
+      m_traversal(0),
+      m_edgeMask(m_network->getNumEdges(), m_traversal)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

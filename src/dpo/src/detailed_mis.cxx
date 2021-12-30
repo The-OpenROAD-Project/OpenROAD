@@ -72,21 +72,18 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 class DetailedMis::Bucket {
  public:
-  Bucket() {}
   virtual ~Bucket() {}
 
- public:
   void clear() { m_nodes.clear(); }
 
- public:
   std::deque<Node*> m_nodes;
-  double m_xmin;
-  double m_xmax;
-  double m_ymin;
-  double m_ymax;
-  int m_i;
-  int m_j;
-  int m_travId;
+  double m_xmin = 0.0;
+  double m_xmax = 0.0;
+  double m_ymin = 0.0;
+  double m_ymax = 0.0;
+  int m_i = 0;
+  int m_j = 0;
+  int m_travId = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,8 +94,13 @@ DetailedMis::DetailedMis(Architecture* arch, Network* network,
       m_arch(arch),
       m_network(network),
       m_rt(rt),
+      m_dimW(0),
+      m_dimH(0),
+      m_stepX(0.0),
+      m_stepY(0.0),
       m_skipEdgesLargerThanThis(100),
       m_maxProblemSize(25),
+      m_traversal(0),
       m_useSameSize(true),
       m_useSameColor(true),
       m_maxTimesUsed(2),
