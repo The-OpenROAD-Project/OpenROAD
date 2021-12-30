@@ -367,8 +367,6 @@ void Optdp::createNetwork() {
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbBTerm> bterms = block->getBTerms();
 
-  int errors = 0;
-
   // Number of this and that.
   int nTerminals = bterms.size();
   int nNodes = 0;
@@ -527,7 +525,6 @@ void Optdp::createNetwork() {
   if (n != nNodes + nTerminals) {
     logger_->error(DPO, 101, "Unexpected total node count.  Expected {:d}, but got {:d}",
         (nNodes+nTerminals), n);
-    ++errors;
   }
 
   // Populate edges and pins.
@@ -557,7 +554,6 @@ void Optdp::createNetwork() {
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
           logger_->error(DPO, 102, "Improper node indexing while connecting pins.");
-          ++errors;
         }
 
         Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
@@ -584,7 +580,6 @@ void Optdp::createNetwork() {
         ++p;  // next pin.
       } else {
         logger_->error(DPO, 103, "Could not find node for instance while connecting pins.");
-        ++errors;
       }
     }
     for (dbBTerm* bTerm : net->getBTerms()) {
@@ -594,7 +589,6 @@ void Optdp::createNetwork() {
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
           logger_->error(DPO, 104, "Improper terminal indexing while connecting pins.");
-          ++errors;
         }
 
         Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
@@ -609,7 +603,6 @@ void Optdp::createNetwork() {
         ++p;  // next pin.
       } else {
         logger_->error(DPO, 105, "Could not find node for terminal while connecting pins.");
-        ++errors;
       }
     }
 
@@ -618,20 +611,14 @@ void Optdp::createNetwork() {
   if (e != nEdges) {
     logger_->error(DPO, 106, "Unexpected total edge count.  Expected {:d}, but got {:d}",
         nEdges, e);
-    ++errors;
   }
   if (p != nPins) {
     logger_->error(DPO, 107, "Unexpected total pin count.  Expected {:d}, but got {:d}",
         nPins, p);
-    ++errors;
   }
 
-  if (errors != 0) {
-    logger_->error(DPO, 108, "Error creating network.");
-  } else {
-    logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
-                  network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
-  }
+  logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
+                network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
 }
 ////////////////////////////////////////////////////////////////
 void Optdp::createArchitecture() {
