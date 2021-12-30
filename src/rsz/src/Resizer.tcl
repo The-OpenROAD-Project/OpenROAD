@@ -282,8 +282,10 @@ proc remove_buffers { args } {
   rsz::remove_buffers_cmd
 }
 
-sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-                                        [-max_utilization util]}
+sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
+                                      [-max_utilization util] \
+                                      [-slew_margin slack_margin] \
+                                      [-cap_margin cap_margin]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
