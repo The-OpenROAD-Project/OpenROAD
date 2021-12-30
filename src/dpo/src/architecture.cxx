@@ -75,7 +75,7 @@ Architecture::~Architecture() {
   clearSpacingTable();
 }
 
-void Architecture::clearSpacingTable(void) {
+void Architecture::clearSpacingTable() {
   for (size_t i = 0; i < m_cellSpacings.size(); i++) {
     delete m_cellSpacings[i];
   }
@@ -105,8 +105,8 @@ int Architecture::getCellHeightInRows(Node* ndi) const {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 struct compareIntervals {
-  inline bool operator()(std::pair<double, double> i1,
-                           std::pair<double, double> i2) const {
+  bool operator()(std::pair<double, double> i1,
+                  std::pair<double, double> i2) const {
     if (i1.first == i2.first) {
       return i1.second < i2.second;
     }
@@ -115,14 +115,14 @@ struct compareIntervals {
 };
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Row* Architecture::createAndAddRow(void) {
+Architecture::Row* Architecture::createAndAddRow() {
   Architecture::Row* ptr = new Row();
   m_rows.push_back(ptr);
   return ptr;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Region* Architecture::createAndAddRegion(void) {
+Architecture::Region* Architecture::createAndAddRegion() {
   Architecture::Region* ptr = new Region();
   m_regions.push_back(ptr);
   return ptr;
@@ -545,11 +545,7 @@ Architecture::Spacing::Spacing(int i1, int i2, double sep)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Spacing::~Spacing() {}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Architecture::Region::Region(void)
+Architecture::Region::Region()
     : m_id(-1),
       m_xmin(std::numeric_limits<double>::max()),
       m_ymin(std::numeric_limits<double>::max()),
@@ -558,6 +554,6 @@ Architecture::Region::Region(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Region::~Region(void) { m_rects.clear(); }
+Architecture::Region::~Region() { m_rects.clear(); }
 
 }  // namespace dpo

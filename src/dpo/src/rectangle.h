@@ -52,10 +52,7 @@ namespace dpo {
 class Rectangle {
  public:
   Rectangle() {
-    m_xmin = std::numeric_limits<double>::max();
-    m_ymin = std::numeric_limits<double>::max();
-    m_xmax = std::numeric_limits<double>::lowest();
-    m_ymax = std::numeric_limits<double>::lowest();
+    reset();
   }
   Rectangle(double xmin, double ymin, double xmax, double ymax)
       : m_xmin(xmin), m_ymin(ymin), m_xmax(xmax), m_ymax(ymax) {}
@@ -75,7 +72,7 @@ class Rectangle {
   }
   virtual ~Rectangle() {}
 
-  void reset(void) {
+  void reset() {
     m_xmin = std::numeric_limits<double>::max();
     m_ymin = std::numeric_limits<double>::max();
     m_xmax = std::numeric_limits<double>::lowest();
@@ -132,7 +129,12 @@ class Rectangle {
 
   double area() const { return (m_xmax - m_xmin) * (m_ymax - m_ymin); }
 
- public:
+  void set_xmin(double val) { m_xmin = val; }
+  void set_xmax(double val) { m_xmax = val; }
+  void set_ymin(double val) { m_ymin = val; }
+  void set_ymax(double val) { m_ymax = val; }
+
+ private:
   double m_xmin;
   double m_ymin;
   double m_xmax;

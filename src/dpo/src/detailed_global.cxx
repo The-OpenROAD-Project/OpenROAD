@@ -90,7 +90,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::DetailedGlobalSwap(void)
+DetailedGlobalSwap::DetailedGlobalSwap()
     : DetailedGenerator(),
       m_mgr(0),
       m_arch(0),
@@ -105,7 +105,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::~DetailedGlobalSwap(void) {}
+DetailedGlobalSwap::~DetailedGlobalSwap() {}
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -244,10 +244,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
 
     ed = pin->getEdge();
 
-    nodeBbox.m_xmin = std::numeric_limits<float>::max();
-    nodeBbox.m_xmax = -std::numeric_limits<float>::max();
-    nodeBbox.m_ymin = std::numeric_limits<float>::max();
-    nodeBbox.m_ymax = -std::numeric_limits<float>::max();
+    nodeBbox.reset();
 
     //int numPins = ed->getNumPins();
     int numPins = ed->getPins().size();
@@ -263,26 +260,26 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
 
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
-    nodeBbox.m_xmin =
-        std::min(std::max(m_arch->getMinX(), nodeBbox.m_xmin - pin->getOffsetX()),
-                 m_arch->getMaxX());
-    nodeBbox.m_xmax =
-        std::max(std::min(m_arch->getMaxX(), nodeBbox.m_xmax - pin->getOffsetX()),
-                 m_arch->getMinX());
-    nodeBbox.m_ymin =
-        std::min(std::max(m_arch->getMinY(), nodeBbox.m_ymin - pin->getOffsetY()),
-                 m_arch->getMaxY());
-    nodeBbox.m_ymax =
-        std::max(std::min(m_arch->getMaxY(), nodeBbox.m_ymax - pin->getOffsetY()),
-                 m_arch->getMinY());
+    nodeBbox.set_xmin(
+        std::min(std::max(m_arch->getMinX(), nodeBbox.xmin() - pin->getOffsetX()),
+                 m_arch->getMaxX()));
+    nodeBbox.set_xmax(
+        std::max(std::min(m_arch->getMaxX(), nodeBbox.xmax() - pin->getOffsetX()),
+                 m_arch->getMinX()));
+    nodeBbox.set_ymin(
+        std::min(std::max(m_arch->getMinY(), nodeBbox.ymin() - pin->getOffsetY()),
+                 m_arch->getMaxY()));
+    nodeBbox.set_ymax(
+        std::max(std::min(m_arch->getMaxY(), nodeBbox.ymax() - pin->getOffsetY()),
+                 m_arch->getMinY()));
 
     // Record the location and pin offset used to generate this point.
 
-    m_xpts.push_back(nodeBbox.m_xmin);
-    m_xpts.push_back(nodeBbox.m_xmax);
+    m_xpts.push_back(nodeBbox.xmin());
+    m_xpts.push_back(nodeBbox.xmax());
 
-    m_ypts.push_back(nodeBbox.m_ymin);
-    m_ypts.push_back(nodeBbox.m_ymax);
+    m_ypts.push_back(nodeBbox.ymin());
+    m_ypts.push_back(nodeBbox.ymax());
 
     ++t;
     ++t;
@@ -300,11 +297,11 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
   std::sort(m_xpts.begin(), m_xpts.end());
   std::sort(m_ypts.begin(), m_ypts.end());
 
-  nodeBbox.m_xmin = m_xpts[mid - 1];
-  nodeBbox.m_xmax = m_xpts[mid];
+  nodeBbox.set_xmin(m_xpts[mid - 1]);
+  nodeBbox.set_xmax(m_xpts[mid]);
 
-  nodeBbox.m_ymin = m_ypts[mid - 1];
-  nodeBbox.m_ymax = m_ypts[mid];
+  nodeBbox.set_ymin(m_ypts[mid - 1]);
+  nodeBbox.set_ymax(m_ypts[mid]);
 
   return true;
 }
@@ -315,10 +312,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox) {
   // Computes the bounding box of an edge.  Node 'nd' is the node to SKIP.
   double curX, curY;
 
-  bbox.m_xmin = std::numeric_limits<float>::max();
-  bbox.m_xmax = -std::numeric_limits<float>::max();
-  bbox.m_ymin = std::numeric_limits<float>::max();
-  bbox.m_ymax = -std::numeric_limits<float>::max();
+  bbox.reset();
 
   int count = 0;
   for (int pe = 0; pe < ed->getPins().size(); pe++) {
@@ -331,10 +325,10 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox) {
     curX = other->getX() + pin->getOffsetX();
     curY = other->getY() + pin->getOffsetY();
 
-    bbox.m_xmin = std::min(curX, bbox.m_xmin);
-    bbox.m_xmax = std::max(curX, bbox.m_xmax);
-    bbox.m_ymin = std::min(curY, bbox.m_ymin);
-    bbox.m_ymax = std::max(curY, bbox.m_ymax);
+    bbox.set_xmin(std::min(curX, bbox.xmin()));
+    bbox.set_xmax(std::max(curX, bbox.xmax()));
+    bbox.set_ymin(std::min(curY, bbox.ymin()));
+    bbox.set_ymax(std::max(curY, bbox.ymax()));
 
     ++count;
   }
@@ -590,7 +584,7 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedGlobalSwap::stats(void) {
+void DetailedGlobalSwap::stats() {
   m_mgr->getLogger()->info( DPO, 334, "Generator {:s}, "
     "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
     getName().c_str(), m_attempts, m_swaps, m_moves );

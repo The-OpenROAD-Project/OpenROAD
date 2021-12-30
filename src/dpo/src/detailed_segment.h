@@ -68,24 +68,24 @@ class DetailedSeg {
   virtual ~DetailedSeg() {}
 
   void setSegId(int segId) { m_segId = segId; }
-  int getSegId(void) const { return m_segId; }
+  int getSegId() const { return m_segId; }
 
   void setRowId(int rowId) { m_rowId = rowId; }
-  int getRowId(void) const { return m_rowId; }
+  int getRowId() const { return m_rowId; }
 
   void setRegId(int regId) { m_regId = regId; }
-  int getRegId(void) const { return m_regId; }
+  int getRegId() const { return m_regId; }
 
   void setMinX(double xmin) { m_xmin = xmin; }
-  double getMinX(void) const { return m_xmin; }
+  double getMinX() const { return m_xmin; }
 
   void setMaxX(double xmax) { m_xmax = xmax; }
-  double getMaxX(void) const { return m_xmax; }
+  double getMaxX() const { return m_xmax; }
 
   void setUtil(double util) { m_util = util; }
-  double getUtil(void) const { return m_util; }
+  double getUtil() const { return m_util; }
 
-  double getWidth(void) const { return m_xmax-m_xmin; }
+  double getWidth() const { return m_xmax-m_xmin; }
 
  protected:
   int m_segId;

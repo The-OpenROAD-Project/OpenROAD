@@ -77,13 +77,13 @@ class DetailedRandom {
 
  public:
   DetailedRandom(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedRandom(void);
+  virtual ~DetailedRandom();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
  protected:
-  double go(void);
+  double go();
 
   double eval(std::vector<double>& costs, std::vector<std::string>& expr);
   double doOperation(double a, double b, char op);
@@ -91,9 +91,8 @@ class DetailedRandom {
   bool isObjective(char ch);
   bool isNumber(char ch);
 
-  void collectCandidates(void);
+  void collectCandidates();
 
- protected:
   // Standard stuff.
   DetailedMgr* m_mgrPtr;
 
@@ -125,13 +124,13 @@ class DetailedRandom {
 
 class RandomGenerator : public DetailedGenerator {
  public:
-  RandomGenerator(void);
-  virtual ~RandomGenerator(void);
+  RandomGenerator();
+  virtual ~RandomGenerator();
 
  public:
   virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats(void);
-  virtual void init(DetailedMgr* mgr) { (void)mgr; }
+  virtual void stats();
+  virtual void init(DetailedMgr*) {}
 
  protected:
   DetailedMgr* m_mgr;
@@ -146,13 +145,13 @@ class RandomGenerator : public DetailedGenerator {
 
 class DisplacementGenerator : public DetailedGenerator {
  public:
-  DisplacementGenerator(void);
-  virtual ~DisplacementGenerator(void);
+  DisplacementGenerator();
+  virtual ~DisplacementGenerator();
 
  public:
   virtual bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates);
-  virtual void stats(void);
-  virtual void init(DetailedMgr* mgr) { (void)mgr; }
+  virtual void stats();
+  virtual void init(DetailedMgr*) {}
 
  protected:
   DetailedMgr* m_mgr;

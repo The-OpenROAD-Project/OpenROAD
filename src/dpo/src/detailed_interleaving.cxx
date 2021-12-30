@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Description:
 // Simple implementation of optimal single row interleaving.
@@ -38,9 +37,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
-#include "detailed_interleaving.h"
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -48,10 +47,12 @@
 #include <iostream>
 #include <stack>
 #include <utility>
-#include "utl/Logger.h"
+
+#include "detailed_interleaving.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
 #include "utility.h"
+#include "utl/Logger.h"
 
 using utl::DPO;
 
@@ -64,34 +65,201 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
+class DetailedInterleave::EdgeAndOffset
+{
+ public:
+  EdgeAndOffset(int edge, double offset) : m_edge(edge), m_offset(offset) {}
+  EdgeAndOffset(const EdgeAndOffset& other)
+      : m_edge(other.m_edge), m_offset(other.m_offset)
+  {
+  }
+  EdgeAndOffset& operator=(const EdgeAndOffset& other)
+  {
+    if (this != &other) {
+      m_edge = other.m_edge;
+      m_offset = other.m_offset;
+    }
+    return *this;
+  }
+
+ public:
+  int m_edge;
+  double m_offset;
+};
+
+class DetailedInterleave::EdgeInterval
+{
+ public:
+  EdgeInterval()
+      : m_xmin(std::numeric_limits<double>::max()),
+        m_xmax(-std::numeric_limits<double>::max()),
+        m_empty(true)
+  {
+  }
+  EdgeInterval(double xmin, double xmax)
+      : m_xmin(xmin), m_xmax(xmax), m_empty(false)
+  {
+  }
+  EdgeInterval(const EdgeInterval& other)
+      : m_xmin(other.m_xmin), m_xmax(other.m_xmax), m_empty(other.m_empty)
+  {
+  }
+  EdgeInterval& operator=(const EdgeInterval& other)
+  {
+    if (this != &other) {
+      m_xmin = other.m_xmin;
+      m_xmax = other.m_xmax;
+      m_empty = other.m_empty;
+    }
+    return *this;
+  }
+
+  double width() const { return (m_empty ? 0.0 : (m_xmax - m_xmin)); }
+
+  void add(double x)
+  {
+    m_xmin = std::min(x, m_xmin);
+    m_xmax = std::max(x, m_xmax);
+    m_empty = false;
+  }
+
+ public:
+  double m_xmin;
+  double m_xmax;
+  bool m_empty;
+};
+
+class DetailedInterleave::SmallProblem
+{
+ public:
+  SmallProblem() { clear(); }
+  SmallProblem(int nNodes, int nEdges)
+  {
+    clear();
+    init(nNodes, nEdges);
+  }
+
+  void init(int nNodes, int nEdges)
+  {
+    m_nNodes = nNodes;
+    m_nEdges = nEdges;
+    m_adjEdges.resize(nNodes);
+    m_widths.resize(nNodes);
+    m_x.resize(nNodes);
+    m_netBoxes.resize(nEdges);
+  }
+  void clear()
+  {
+    m_xmin = std::numeric_limits<double>::max();
+    m_xmax = -std::numeric_limits<double>::min();
+    m_nNodes = 0;
+    m_nEdges = 0;
+    m_adjEdges.clear();
+    m_widths.clear();
+    m_x.clear();
+    m_netBoxes.clear();
+  }
+
+ public:
+  int m_nNodes;
+  int m_nEdges;
+  double m_xmin;
+  double m_xmax;
+  std::vector<std::vector<EdgeAndOffset>> m_adjEdges;
+  std::vector<double> m_widths;
+  std::vector<double> m_x;
+  std::vector<EdgeInterval> m_netBoxes;
+};
+
+class DetailedInterleave::TableEntry
+{
+ public:
+  TableEntry(SmallProblem* problem) : m_problem(problem), m_parent(0)
+  {
+    init();
+  }
+  void clear() { init(); }
+  void init()
+  {
+    m_leftEdge = m_problem->m_xmin;
+    m_cost = 0;
+    m_netBoxes.resize(m_problem->m_nEdges);
+    for (int i = 0; i < m_problem->m_nEdges; i++) {
+      m_netBoxes[i] = m_problem->m_netBoxes[i];
+      m_cost += m_netBoxes[i].width();
+    }
+  }
+  void copy(TableEntry* other)
+  {
+    m_leftEdge = other->m_leftEdge;
+    m_cost = other->m_cost;
+    m_netBoxes = other->m_netBoxes;
+  }
+  void add(int i)
+  {
+    double x = m_leftEdge + 0.5 * m_problem->m_widths[i];
+
+    std::vector<EdgeAndOffset>& pins = m_problem->m_adjEdges[i];
+    for (int p = 0; p < pins.size(); p++) {
+      int edge = pins[p].m_edge;
+      double offset = pins[p].m_offset;
+
+      m_cost -= m_netBoxes[edge].width();
+      m_netBoxes[edge].add(x + offset);
+      m_cost += m_netBoxes[edge].width();
+    }
+    m_leftEdge += m_problem->m_widths[i];
+  }
+
+ public:
+  SmallProblem* m_problem;
+  TableEntry* m_parent;
+
+  std::vector<EdgeInterval> m_netBoxes;
+  double m_leftEdge;
+  double m_cost;
+};
+
+struct DetailedInterleave::CompareNodesX {
+  bool operator()(Node* p, Node* q) const {
+    return p->getX() < q->getX();
+  }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedInterleave::DetailedInterleave(Architecture* arch, Network* network,
+DetailedInterleave::DetailedInterleave(Architecture* arch,
+                                       Network* network,
                                        RoutingParams* rt)
     : m_arch(arch),
       m_network(network),
       m_rt(rt),
       m_skipNetsLargerThanThis(100),
       m_windowStep(8),
-      m_windowSize(20) {}
+      m_windowSize(20)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedInterleave::~DetailedInterleave(void) {}
+DetailedInterleave::~DetailedInterleave()
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
-void DetailedInterleave::run(DetailedMgr* mgrPtr, std::string command) {
+void DetailedInterleave::run(DetailedMgr* mgrPtr, std::string command)
+{
   // Interface to allow for a string which can be decoded into arguments.
   std::string scriptString = command;
   boost::char_separator<char> separators(" \r\t\n;");
-  boost::tokenizer<boost::char_separator<char> > tokens(scriptString,
-                                                        separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(scriptString,
+                                                       separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char> >::iterator it =
-           tokens.begin();
-       it != tokens.end(); it++) {
+  for (boost::tokenizer<boost::char_separator<char>>::iterator it
+       = tokens.begin();
+       it != tokens.end();
+       it++) {
     args.push_back(*it);
   }
   run(mgrPtr, args);
@@ -100,7 +268,8 @@ void DetailedInterleave::run(DetailedMgr* mgrPtr, std::string command) {
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedInterleave::run(DetailedMgr* mgrPtr,
-                             std::vector<std::string>& args) {
+                             std::vector<std::string>& args)
+{
   m_mgrPtr = mgrPtr;
 
   // Defaults.
@@ -136,9 +305,11 @@ void DetailedInterleave::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(m_network, hpwl_x, hpwl_y);
 
-    m_mgrPtr->getLogger()->info(
-        DPO, 322, "Pass {:3d} of interleaving; hpwl is {:.6e}.", pass,
-        curr_hpwl);
+    m_mgrPtr->getLogger()->info(DPO,
+                                322,
+                                "Pass {:3d} of interleaving; hpwl is {:.6e}.",
+                                pass,
+                                curr_hpwl);
 
     if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
       break;
@@ -147,15 +318,18 @@ void DetailedInterleave::run(DetailedMgr* mgrPtr,
   m_mgrPtr->resortSegments();
 
   double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  m_mgrPtr->getLogger()->info(
-      DPO, 323,
-      "End of interleaving; objective is {:.6e}, improvement is {:.2f} percent.",
-      curr_hpwl, curr_imp);
+  m_mgrPtr->getLogger()->info(DPO,
+                              323,
+                              "End of interleaving; objective is {:.6e}, "
+                              "improvement is {:.2f} percent.",
+                              curr_hpwl,
+                              curr_imp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedInterleave::dp(void) {
+void DetailedInterleave::dp()
+{
   // Scan all segments and apply interleaving.  Interleaving only works for
   // single height cells (at this point).
   //
@@ -195,8 +369,7 @@ void DetailedInterleave::dp(void) {
     if (nodes.size() < 2) {
       continue;
     }
-    std::sort(nodes.begin(), nodes.end(), compareNodesX());
-
+    std::sort(nodes.begin(), nodes.end(), CompareNodesX());
 
     int j = 0;
     int n = nodes.size();
@@ -209,7 +382,6 @@ void DetailedInterleave::dp(void) {
         ++j;
       }
       int jstop = j - 1;
-
 
       // Single height cells in [jstrt,jstop].
       for (int i = jstrt; i <= jstop; i += m_windowStep) {
@@ -288,8 +460,9 @@ void DetailedInterleave::dp(void) {
           int nid = m_nodeMap[nd->getId()];
           nd->setX(sm.m_x[nid]);
         }
-        std::sort(nodes.begin() + jstrt, nodes.begin() + (jstop + 1),
-                  compareNodesX());
+        std::sort(nodes.begin() + jstrt,
+                  nodes.begin() + (jstop + 1),
+                  CompareNodesX());
       }
     }
   }
@@ -298,9 +471,13 @@ void DetailedInterleave::dp(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
-                               double rightLimit, std::vector<Node*>& nodes,
-                               int jstrt, int jstop) {
+bool DetailedInterleave::build(SmallProblem* sm,
+                               double leftLimit,
+                               double rightLimit,
+                               std::vector<Node*>& nodes,
+                               int jstrt,
+                               int jstop)
+{
   // Create a small problem for the cells indexed from [istrt,istop].
 
   double siteWidth = m_arch->getRow(0)->getSiteWidth();
@@ -355,8 +532,8 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
     double rightEdge = std::min(
         ndr->getX() + 0.5 * ndr->getWidth() + rightPadding, rightLimit);
     m_arch->getCellPadding(ndl, leftPadding, dummyPadding);
-    double leftEdge =
-        std::max(ndl->getX() - 0.5 * ndl->getWidth() - leftPadding, leftLimit);
+    double leftEdge = std::max(
+        ndl->getX() - 0.5 * ndl->getWidth() - leftPadding, leftLimit);
 
     // Determine width and padding requirements.
     double totalPadding = 0.;
@@ -370,8 +547,8 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
     // Enlarge if we do not have enough space.
     bool changed = true;
-    while (changed &&
-           (rightEdge - leftEdge < totalWidth + totalPadding - 1.0e-3)) {
+    while (changed
+           && (rightEdge - leftEdge < totalWidth + totalPadding - 1.0e-3)) {
       changed = false;
       if (rightEdge + siteWidth <= rightLimit) {
         rightEdge += siteWidth;
@@ -385,10 +562,9 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
     if (rightEdge - leftEdge >= totalWidth + totalPadding) {
       // Proceed with padding, and maybe a bit more space.
-      double amtPerCell =
-          ((rightEdge - leftEdge) - (totalWidth + totalPadding)) /
-          (double)sm->m_nNodes;
-      int sitesPerCell = std::max(1, (int)std::floor(amtPerCell / siteWidth));
+      double amtPerCell = ((rightEdge - leftEdge) - (totalWidth + totalPadding))
+                          / (double) sm->m_nNodes;
+      int sitesPerCell = std::max(1, (int) std::floor(amtPerCell / siteWidth));
 
       totalWidth = 0.;
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
@@ -410,9 +586,9 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
       }
     } else if (rightEdge - leftEdge >= totalWidth) {
       // Can proceed without padding, but maybe a bit of space.
-      double amtPerCell =
-          ((rightEdge - leftEdge) - (totalWidth)) / (double)sm->m_nNodes;
-      int sitesPerCell = std::max(1, (int)std::floor(amtPerCell / siteWidth));
+      double amtPerCell
+          = ((rightEdge - leftEdge) - (totalWidth)) / (double) sm->m_nNodes;
+      int sitesPerCell = std::max(1, (int) std::floor(amtPerCell / siteWidth));
 
       totalWidth = 0.;
       for (size_t n = 0; n < m_nodeIds.size(); n++) {
@@ -473,16 +649,19 @@ bool DetailedInterleave::build(SmallProblem* sm, double leftLimit,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-struct SortPosDP {
-  inline bool operator()(const std::pair<int, double>& p,
-                         const std::pair<int, double>& q) const {
+struct SortPosDP
+{
+  bool operator()(const std::pair<int, double>& p,
+                  const std::pair<int, double>& q) const
+  {
     return p.second < q.second;
   }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedInterleave::solve(SmallProblem* problem) {
+double DetailedInterleave::solve(SmallProblem* problem)
+{
   std::vector<int> a;
   std::vector<int> b;
   std::vector<int> q;
@@ -491,7 +670,7 @@ double DetailedInterleave::solve(SmallProblem* problem) {
   q.reserve(problem->m_nNodes);
 
   // Ensure the cells are sorted.
-  std::vector<std::pair<int, double> > pos;
+  std::vector<std::pair<int, double>> pos;
   for (int i = 0; i < problem->m_nNodes; i++) {
     pos.push_back(std::pair<int, double>(i, problem->m_x[i]));
   }
@@ -503,7 +682,7 @@ double DetailedInterleave::solve(SmallProblem* problem) {
   // Build the table.
   int nEntries = (problem->m_nNodes + 1) * (problem->m_nNodes + 1);
   std::vector<TableEntry> entries(nEntries, TableEntry(problem));
-  std::vector<std::vector<TableEntry*> > matrix;
+  std::vector<std::vector<TableEntry*>> matrix;
   matrix.resize(problem->m_nNodes + 1);
   for (size_t i = 0; i < matrix.size(); i++) {
     matrix[i].resize(problem->m_nNodes + 1);
@@ -619,7 +798,8 @@ double DetailedInterleave::solve(SmallProblem* problem) {
           --j;
           q.push_back(a[j]);
         } else {
-          m_mgrPtr->internalError( "Unable to trace solution while interleaving cells" );
+          m_mgrPtr->internalError(
+              "Unable to trace solution while interleaving cells");
         }
 
         curr = curr->m_parent;
@@ -639,8 +819,8 @@ double DetailedInterleave::solve(SmallProblem* problem) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
-                            double maxX) {
+void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX, double maxX)
+{
   if (nodes.size() < 2) {
     return;
   }
@@ -654,12 +834,12 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX,
   m_edgeIds.reserve(m_network->getNumEdges());
 
   m_edgeMask.resize(m_network->getNumEdges());
-  m_nodeMask.resize(m_network->getNumNodes() );
+  m_nodeMask.resize(m_network->getNumNodes());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
   std::fill(m_nodeMask.begin(), m_nodeMask.end(), m_traversal);
 
   m_edgeMap.resize(m_network->getNumEdges());
-  m_nodeMap.resize(m_network->getNumNodes() );
+  m_nodeMap.resize(m_network->getNumNodes());
   std::fill(m_edgeMap.begin(), m_edgeMap.end(), -1);
   std::fill(m_nodeMap.begin(), m_nodeMap.end(), -1);
 

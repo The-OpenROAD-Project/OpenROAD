@@ -98,7 +98,7 @@ DetailedRandom::DetailedRandom(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedRandom::~DetailedRandom(void) {}
+DetailedRandom::~DetailedRandom() {}
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -390,7 +390,7 @@ double DetailedRandom::eval(std::vector<double>& costs, std::vector<std::string>
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-double DetailedRandom::go(void) {
+double DetailedRandom::go() {
   if (m_generators.size() == 0) {
     m_mgrPtr->getLogger()->info(
         DPO, 329, "Random improver requires at least one generator.");
@@ -531,7 +531,7 @@ double DetailedRandom::go(void) {
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void DetailedRandom::collectCandidates(void) {
+void DetailedRandom::collectCandidates() {
   m_candidates.erase(m_candidates.begin(), m_candidates.end());
   m_candidates.insert(m_candidates.end(), m_mgrPtr->m_singleHeightCells.begin(),
                       m_mgrPtr->m_singleHeightCells.end());
@@ -544,7 +544,7 @@ void DetailedRandom::collectCandidates(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-RandomGenerator::RandomGenerator(void) : DetailedGenerator() {
+RandomGenerator::RandomGenerator() : DetailedGenerator() {
   m_name = "displacement";
   m_attempts = 0;
   m_moves = 0;
@@ -553,7 +553,7 @@ RandomGenerator::RandomGenerator(void) : DetailedGenerator() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-RandomGenerator::~RandomGenerator(void) {}
+RandomGenerator::~RandomGenerator() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -598,7 +598,6 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
   int rlx = 10;
   int rel_x, rel_y;
   bool is_move_okay;
-  bool is_swap_okay;
 
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
@@ -645,8 +644,6 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
     // Try to generate a move or a swap.  The result is stored in the manager.
     is_move_okay = false;
-    is_swap_okay = false;
-    (void)is_swap_okay;
 
     if (!is_move_okay) {
       if (si != sj) {
@@ -670,7 +667,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void RandomGenerator::stats(void) {
+void RandomGenerator::stats() {
   m_mgr->getLogger()->info( DPO, 335, "Generator {:s}, "
     "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
     getName().c_str(), m_attempts, m_swaps, m_moves );
@@ -678,7 +675,7 @@ void RandomGenerator::stats(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DisplacementGenerator::DisplacementGenerator(void) : DetailedGenerator() {
+DisplacementGenerator::DisplacementGenerator() : DetailedGenerator() {
   m_name = "random";
   m_attempts = 0;
   m_moves = 0;
@@ -687,7 +684,7 @@ DisplacementGenerator::DisplacementGenerator(void) : DetailedGenerator() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DisplacementGenerator::~DisplacementGenerator(void) {}
+DisplacementGenerator::~DisplacementGenerator() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -817,7 +814,6 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     // Try to generate a move or a swap.  The result is stored in the manager.
     is_move_okay = false;
     is_swap_okay = false;
-    (void)is_swap_okay;
 
     if (!is_move_okay) {
       if (spanned_i != 1) {
@@ -859,7 +855,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DisplacementGenerator::stats(void) {
+void DisplacementGenerator::stats() {
   m_mgr->getLogger()->info( DPO, 337, "Generator {:s}, "
     "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
     getName().c_str(), m_attempts, m_swaps, m_moves );

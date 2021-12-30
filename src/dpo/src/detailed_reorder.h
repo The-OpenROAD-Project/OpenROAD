@@ -47,18 +47,17 @@ class DetailedMgr;
 class DetailedReorderer {
  public:
   DetailedReorderer(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedReorderer(void);
+  virtual ~DetailedReorderer();
 
   void run(DetailedMgr* mgrPtr, std::string command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
  protected:
-  void reorder(void);
+  void reorder();
   void reorder(std::vector<Node*>& nodes, int istrt, int istop,
                double leftLimit, double rightLimit, int segId, int rowId);
   double cost(std::vector<Node*>& nodes, int istrt, int istop);
 
- protected:
   // Standard stuff.
   Architecture* m_arch;
   Network* m_network;

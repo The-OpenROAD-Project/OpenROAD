@@ -66,15 +66,15 @@ class Architecture {
   Architecture();
   virtual ~Architecture();
 
-  std::vector<Architecture::Row*>& getRows(void) { return m_rows; }
-  int getNumRows(void) const { return m_rows.size(); }
+  std::vector<Architecture::Row*>& getRows() { return m_rows; }
+  int getNumRows() const { return m_rows.size(); }
   Architecture::Row* getRow(int r) const { return m_rows[r]; }
-  Architecture::Row* createAndAddRow(void);
+  Architecture::Row* createAndAddRow();
 
-  std::vector<Architecture::Region*>& getRegions(void) { return m_regions; }
-  int getNumRegions(void) const { return m_regions.size(); }
+  std::vector<Architecture::Region*>& getRegions() { return m_regions; }
+  int getNumRegions() const { return m_regions.size(); }
   Architecture::Region* getRegion(int r) const { return m_regions[r]; }
-  Architecture::Region* createAndAddRegion(void);
+  Architecture::Region* createAndAddRegion();
 
   bool isSingleHeightCell(Node* ndi) const;
   bool isMultiHeightCell(Node* ndi) const;
@@ -91,18 +91,18 @@ class Architecture {
   void init_edge_type();
   int add_edge_type(const char* name);
 
-  double getMinX(void) const { return m_xmin; }
-  double getMaxX(void) const { return m_xmax; }
-  double getMinY(void) const { return m_ymin; }
-  double getMaxY(void) const { return m_ymax; }
+  double getMinX() const { return m_xmin; }
+  double getMaxX() const { return m_xmax; }
+  double getMinY() const { return m_ymin; }
+  double getMaxY() const { return m_ymax; }
 
   void setMinX(double xmin) { m_xmin = xmin; }
   void setMaxX(double xmax) { m_xmax = xmax; }
   void setMinY(double ymin) { m_ymin = ymin; }
   void setMaxY(double ymax) { m_ymax = ymax; }
 
-  double getWidth(void) const { return m_xmax - m_xmin; }
-  double getHeight(void) const { return m_ymax - m_ymin; }
+  double getWidth() const { return m_xmax - m_xmin; }
+  double getHeight() const { return m_ymax - m_ymin; }
 
   bool power_compatible(Node* ndi, Row* row, bool& flip);
 
@@ -113,20 +113,20 @@ class Architecture {
 
   // Using tables...
   void setUseSpacingTable(bool val = true) { m_useSpacingTable = val; }
-  bool getUseSpacingTable(void) const { return m_useSpacingTable; }
-  void clearSpacingTable(void);
+  bool getUseSpacingTable() const { return m_useSpacingTable; }
+  void clearSpacingTable();
   double getCellSpacingUsingTable(int firstEdge, int secondEdge);
   void addCellSpacingUsingTable(int firstEdge, int secondEdge, double sep);
-  std::vector<Architecture::Spacing*>& getCellSpacings(void) { 
+  std::vector<Architecture::Spacing*>& getCellSpacings() { 
     return m_cellSpacings;
   }
-  std::vector<std::pair<char*,int> >& getEdgeTypes(void) { 
+  std::vector<std::pair<char*,int> >& getEdgeTypes() { 
     return m_edgeTypes;
   }
 
   // Using padding...
   void setUsePadding(bool val = true) { m_usePadding = val; }
-  bool getUsePadding(void) const { return m_usePadding; }
+  bool getUsePadding() const { return m_usePadding; }
   void addCellPadding(Node* ndi, double leftPadding, double rightPadding);
   bool getCellPadding(Node* ndi, double& leftPadding, double& rightPadding);
 
@@ -159,13 +159,12 @@ class Architecture {
 class Architecture::Spacing {
  public:
   Spacing(int i1, int i2, double sep);
-  virtual ~Spacing();
 
-  int getFirstEdge(void) const { return m_i1; }
-  int getSecondEdge(void) const { return m_i2; }
-  double getSeparation(void) const { return m_sep; }
+  int getFirstEdge() const { return m_i1; }
+  int getSecondEdge() const { return m_i2; }
+  double getSeparation() const { return m_sep; }
 
- protected:
+ private:
   int m_i1;
   int m_i2;
   double m_sep;
@@ -186,17 +185,17 @@ class Architecture::Row {
   void setSiteWidth(double width) { m_siteWidth = width; }
   void setNumSites(int nsites) { m_numSites = nsites; }
 
-  inline double getBottom(void) const { return m_rowLoc; }
-  inline double getTop(void) const { return m_rowLoc+m_rowHeight; }
-  inline double getCenterY(void) const { return m_rowLoc+0.5*m_rowHeight; }
-  inline double getLeft(void) const { return m_subRowOrigin; }
-  inline double getRight(void) const { 
+  double getBottom() const { return m_rowLoc; }
+  double getTop() const { return m_rowLoc+m_rowHeight; }
+  double getCenterY() const { return m_rowLoc+0.5*m_rowHeight; }
+  double getLeft() const { return m_subRowOrigin; }
+  double getRight() const { 
     return m_subRowOrigin+m_numSites*m_siteSpacing; // ? add m_siteWidth
   }
-  inline double getHeight(void) const { return m_rowHeight; }
-  inline double getSiteWidth(void) const { return m_siteWidth; }
-  inline double getSiteSpacing(void) const { return m_siteSpacing; }
-  inline int getNumSites(void) const { return m_numSites; }
+  double getHeight() const { return m_rowHeight; }
+  double getSiteWidth() const { return m_siteWidth; }
+  double getSiteSpacing() const { return m_siteSpacing; }
+  int getNumSites() const { return m_numSites; }
 
  protected:
   double m_rowLoc;          // Y-location of the row.
@@ -222,17 +221,17 @@ class Architecture::Row {
   int m_powerBot;
 
   struct compare_row {
-    inline bool operator()(Architecture::Row*& s, double i) const {
+    bool operator()(Architecture::Row*& s, double i) const {
       return s->getBottom() < i;
     }
-    inline bool operator()(double i, Architecture::Row*& s) const {
+    bool operator()(double i, Architecture::Row*& s) const {
       return i < s->getBottom();
     }
   };
 };
 
 struct SortRow {
-  inline bool operator()(Architecture::Row* p, Architecture::Row* q) const {
+  bool operator()(Architecture::Row* p, Architecture::Row* q) const {
     return p->getBottom() < q->getBottom();
   }
 };
