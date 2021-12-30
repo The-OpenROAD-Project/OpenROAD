@@ -53,39 +53,39 @@ class DetailedABU : public DetailedObjective {
   // function for detailed improvement.
  public:
   DetailedABU(Architecture* arch, Network* network, RoutingParams* rt);
-  virtual ~DetailedABU(void);
+  virtual ~DetailedABU();
 
   // Those that must be overridden.
-  double curr(void);
+  double curr();
   double delta(int n, std::vector<Node*>& nodes, std::vector<double>& curX,
                std::vector<double>& curY, std::vector<unsigned>& curOri,
                std::vector<double>& newX, std::vector<double>& newY,
                std::vector<unsigned>& newOri);
-  void accept(void);
-  void reject(void);
+  void accept();
+  void reject();
 
   // Other.
   void init(DetailedMgr* mgr, DetailedOrient* orient);
-  void init(void);
+  void init();
   double calculateABU(bool print = false);
   double measureABU(bool print = false);
 
   void updateBins(Node* nd, double x, double y, int addSub);
-  void acceptBins(void);
-  void rejectBins(void);
-  void clearBins(void);
+  void acceptBins();
+  void rejectBins();
+  void clearBins();
 
-  double delta(void);
+  double delta();
 
-  double freeSpaceThreshold(void);
-  double binAreaThreshold(void);
-  double alpha(void);
+  double freeSpaceThreshold();
+  double binAreaThreshold();
+  double alpha();
 
-  void computeUtils(void);
-  void clearUtils(void);
+  void computeUtils();
+  void clearUtils();
 
-  void computeBuckets(void);
-  void clearBuckets(void);
+  void computeBuckets();
+  void clearBuckets();
   int getBucketId(int binId, double occ);
 
  protected:
@@ -100,7 +100,6 @@ class DetailedABU : public DetailedObjective {
     double free_space;  // bin's freespace area
   };
 
- protected:
   DetailedMgr* m_mgrPtr;
   DetailedOrient* m_orientPtr;
 

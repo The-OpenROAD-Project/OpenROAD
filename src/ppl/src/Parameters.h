@@ -98,7 +98,10 @@ class Parameters
   void setMinDistance(int min_dist) { min_dist_ = min_dist; }
   int getMinDistance() const { return min_dist_; }
 
-  void setMinDistanceInTracks(bool in_tracks) { distance_in_tracks_ = in_tracks; }
+  void setMinDistanceInTracks(bool in_tracks)
+  {
+    distance_in_tracks_ = in_tracks;
+  }
   bool getMinDistanceInTracks() const { return distance_in_tracks_; }
 
  private:

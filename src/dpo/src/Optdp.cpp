@@ -96,6 +96,7 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) 
 void Optdp::improvePlacement(int seed) {
   logger_->report("Detailed placement improvement.");
 
+  opendp_->initBlock();
   hpwlBefore_ = opendp_->hpwl();
 
   if (hpwlBefore_ != 0) {

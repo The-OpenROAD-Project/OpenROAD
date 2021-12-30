@@ -75,7 +75,7 @@ Edge::Edge() : m_id(0), m_ndr(0) {}
 
 Edge::~Edge() {}
 
-Pin::Pin(void)
+Pin::Pin()
     : m_pinW(0.0),
       m_pinH(0.0),
       m_dir(Pin::Dir_INOUT),
@@ -86,7 +86,7 @@ Pin::Pin(void)
       m_offsetY(0.0) {
 }
 
-Pin::~Pin(void) {}
+Pin::~Pin() {}
 
 Network::Network() {}
 
@@ -112,7 +112,7 @@ Network::~Network() {
   m_pins.clear();
 }
 
-void Network::deleteFillerNodes(void) {
+void Network::deleteFillerNodes() {
   for (int i = 0; i < m_filler.size(); i++) {
     delete m_filler[i];
   }
@@ -150,7 +150,7 @@ Node* Network::createAndAddShapeNode(Node* ndi,
   return shape;
 }
 
-Pin* Network::createAndAddPin(void) {
+Pin* Network::createAndAddPin() {
   Pin* ptr = new Pin();
   m_pins.push_back(ptr);
   return ptr;

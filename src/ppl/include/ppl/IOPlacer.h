@@ -85,7 +85,10 @@ struct Interval
   int layer;
   Interval() = default;
   Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e), layer(-1) {}
-  Interval(Edge edg, int b, int e, int l) : edge(edg), begin(b), end(e), layer(l) {}
+  Interval(Edge edg, int b, int e, int l)
+      : edge(edg), begin(b), end(e), layer(l)
+  {
+  }
   Edge getEdge() { return edge; }
   int getBegin() { return begin; }
   int getEnd() { return end; }
@@ -128,10 +131,28 @@ struct TopLayerGrid
   int height;
   int keepout;
   TopLayerGrid() = default;
-  TopLayerGrid(int l, int x_s, int y_s, int x_l, int y_l,
-               int x_u, int y_u, int w, int h, int k)
-    : layer(l), x_step(x_s), y_step(y_s), llx(x_l), lly(y_l),
-      urx(x_u), ury(y_u), width(w), height(h), keepout(k) {}
+  TopLayerGrid(int l,
+               int x_s,
+               int y_s,
+               int x_l,
+               int y_l,
+               int x_u,
+               int y_u,
+               int w,
+               int h,
+               int k)
+      : layer(l),
+        x_step(x_s),
+        y_step(y_s),
+        llx(x_l),
+        lly(y_l),
+        urx(x_u),
+        ury(y_u),
+        width(w),
+        height(h),
+        keepout(k)
+  {
+  }
 };
 
 class IOPlacer
@@ -151,17 +172,22 @@ class IOPlacer
                               Edge edge,
                               int begin,
                               int end);
-  void addTopLayerConstraint(PinList* pins,
-                             int x1, int y1,
-                             int x2, int y2);
+  void addTopLayerConstraint(PinList* pins, int x1, int y1, int x2, int y2);
   void addHorLayer(int layer) { hor_layers_.insert(layer); }
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
   void addPinGroup(PinGroup* group);
-  void addTopLayerPinPattern(int layer, int x_step, int y_step,
-                             int llx, int lly, int urx, int ury,
-                             int width, int height, int keepout);
+  void addTopLayerPinPattern(int layer,
+                             int x_step,
+                             int y_step,
+                             int llx,
+                             int lly,
+                             int urx,
+                             int ury,
+                             int width,
+                             int height,
+                             int keepout);
   int getTopLayer() { return top_grid_.layer; }
   void placePin(odb::dbBTerm* bterm,
                 int layer,
@@ -206,15 +232,22 @@ class IOPlacer
   void initParms();
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   void randomPlacement();
-  void randomPlacement(std::vector<int> pin_indices, std::vector<int> slot_indices, bool top_layer, bool is_group);
+  void randomPlacement(std::vector<int> pin_indices,
+                       std::vector<int> slot_indices,
+                       bool top_layer,
+                       bool is_group);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
   void defineSlots();
-  void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
-  std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
-  void getPinsFromDirectionConstraint(Constraint &constraint);
+  void findSections(int begin,
+                    int end,
+                    Edge edge,
+                    std::vector<Section>& sections);
+  std::vector<Section> createSectionsPerConstraint(
+      const Constraint& constraint);
+  void getPinsFromDirectionConstraint(Constraint& constraint);
   void initConstraints();
   void sortConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
@@ -222,14 +255,17 @@ class IOPlacer
   void createSections();
   void setupSections(int assigned_pins_count);
   bool assignPinsToSections(int assigned_pins_count);
-  bool assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections);
+  bool assignPinToSection(IOPin& io_pin,
+                          int idx,
+                          std::vector<Section>& sections);
   int assignGroupsToSections();
-  void assignConstrainedGroupsToSections(Constraint &constraint,
-                                         std::vector<Section> &sections);
-  int assignGroupToSection(const std::vector<int> &io_group,
-                           std::vector<Section> &sections);
-  std::vector<Section> assignConstrainedPinsToSections(Constraint &constraint);
-  std::vector<int> findPinsForConstraint(const Constraint &constraint, Netlist& netlist);
+  void assignConstrainedGroupsToSections(Constraint& constraint,
+                                         std::vector<Section>& sections);
+  int assignGroupToSection(const std::vector<int>& io_group,
+                           std::vector<Section>& sections);
+  std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint);
+  std::vector<int> findPinsForConstraint(const Constraint& constraint,
+                                         Netlist& netlist);
   int returnIONetsHPWL(Netlist&);
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();

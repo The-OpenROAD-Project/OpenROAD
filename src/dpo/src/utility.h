@@ -73,8 +73,8 @@ class Architecture;
 class Utility {
  public:
   template <class RandomAccessIter>
-  inline static void random_shuffle(RandomAccessIter first,
-                                    RandomAccessIter last, Placer_RNG* rng) {
+  static void random_shuffle(RandomAccessIter first,
+                             RandomAccessIter last, Placer_RNG* rng) {
     // This function implements the random_shuffle code from the STL, but
     // uses our Boost-based random number generator to get much better
     // random permutations.
@@ -91,8 +91,8 @@ class Utility {
   }
 
   struct compare_blockages {
-    inline bool operator()(std::pair<double, double> i1,
-                           std::pair<double, double> i2) const {
+    bool operator()(std::pair<double, double> i1,
+                    std::pair<double, double> i2) const {
       if (i1.first == i2.first) {
         return i1.second < i2.second;
       }

@@ -73,23 +73,23 @@ using utl::DPO;
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(USE_ISPD14)
-#define BIN_AREA_THRESHOLD 0.2
-#define FREE_SPACE_THRESHOLD 0.2
-#define BIN_DIM 4.0
-#define ABU_ALPHA 1.0
-#define ABU2_WGT 10
-#define ABU5_WGT 4
-#define ABU10_WGT 2
-#define ABU20_WGT 1
+constexpr double BIN_AREA_THRESHOLD = 0.2;
+constexpr double FREE_SPACE_THRESHOLD = 0.2;
+constexpr double BIN_DIM = 4.0;
+constexpr double ABU_ALPHA = 1.0;
+constexpr int ABU2_WGT = 10;
+constexpr int ABU5_WGT = 4;
+constexpr int ABU10_WGT = 2;
+constexpr int ABU20_WGT = 1;
 #else
-#define BIN_AREA_THRESHOLD 0.2
-#define FREE_SPACE_THRESHOLD 0.2
-#define BIN_DIM 9.0
-#define ABU_ALPHA 1.0
-#define ABU2_WGT 10
-#define ABU5_WGT 4
-#define ABU10_WGT 2
-#define ABU20_WGT 1
+constexpr double BIN_AREA_THRESHOLD = 0.2;
+constexpr double FREE_SPACE_THRESHOLD = 0.2;
+constexpr double BIN_DIM = 9.0;
+constexpr double ABU_ALPHA = 1.0;
+constexpr int ABU2_WGT = 10;
+constexpr int ABU5_WGT = 4;
+constexpr int ABU10_WGT = 2;
+constexpr int ABU20_WGT = 1;
 #endif
 
 namespace dpo {
@@ -108,11 +108,11 @@ DetailedABU::DetailedABU(Architecture* arch, Network* network,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedABU::~DetailedABU(void) {}
+DetailedABU::~DetailedABU() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::init(void) {
+void DetailedABU::init() {
   // Determine how to size the ABU grid.  We can set according to the detailed
   // placement contest, or we can set according to the GCELL size...  Or, we
   // can do something even different...
@@ -319,7 +319,7 @@ void DetailedABU::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::clearUtils(void) {
+void DetailedABU::clearUtils() {
   // Set utilizations to zero.
   for (int j = 0; j < m_abuGridNumY; j++) {
     for (int k = 0; k < m_abuGridNumX; k++) {
@@ -333,7 +333,7 @@ void DetailedABU::clearUtils(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::computeUtils(void) {
+void DetailedABU::computeUtils() {
   // Insert movables.
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
@@ -383,7 +383,7 @@ void DetailedABU::computeUtils(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::computeBuckets(void) {
+void DetailedABU::computeBuckets() {
   // Put bins into buckets.
   for (size_t i = 0; i < m_utilBuckets.size(); i++) {
     m_utilBuckets[i].erase(m_utilBuckets[i].begin(), m_utilBuckets[i].end());
@@ -638,7 +638,7 @@ double DetailedABU::delta(int n, std::vector<Node*>& nodes,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(void) {
+double DetailedABU::delta() {
   if (m_abuTargUt >= 0.999) return 0.0;
 
   double util_0 = 0., util_1 = 0.;
@@ -730,13 +730,13 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::acceptBins(void) {
+void DetailedABU::acceptBins() {
   m_abuChangedBins.erase(m_abuChangedBins.begin(), m_abuChangedBins.end());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::rejectBins(void) {
+void DetailedABU::rejectBins() {
   double space = 0.;
   double util = 0.;
   int ix = -1;
@@ -771,7 +771,7 @@ void DetailedABU::rejectBins(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::clearBins(void) {
+void DetailedABU::clearBins() {
   m_abuChangedBinsCounter = 0;
   m_abuChangedBinsMask.resize(m_abuNumBins);
   std::fill(m_abuChangedBinsMask.begin(), m_abuChangedBinsMask.end(),
@@ -782,7 +782,7 @@ void DetailedABU::clearBins(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::clearBuckets(void) {
+void DetailedABU::clearBuckets() {
   m_utilBuckets.resize(10);
   m_utilTotals.resize(10);
   std::fill(m_utilTotals.begin(), m_utilTotals.end(), 0.0);
@@ -790,22 +790,22 @@ void DetailedABU::clearBuckets(void) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::accept(void) { acceptBins(); }
+void DetailedABU::accept() { acceptBins(); }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::reject(void) { rejectBins(); }
+void DetailedABU::reject() { rejectBins(); }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::freeSpaceThreshold(void) { return FREE_SPACE_THRESHOLD; }
+double DetailedABU::freeSpaceThreshold() { return FREE_SPACE_THRESHOLD; }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::binAreaThreshold(void) { return BIN_AREA_THRESHOLD; }
+double DetailedABU::binAreaThreshold() { return BIN_AREA_THRESHOLD; }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::alpha(void) { return ABU_ALPHA; }
+double DetailedABU::alpha() { return ABU_ALPHA; }
 
 }  // namespace dpo

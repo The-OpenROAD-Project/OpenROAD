@@ -148,6 +148,13 @@ Opendp::init(dbDatabase *db,
 }
 
 void
+Opendp::initBlock()
+{
+  block_ = db_->getChip()->getBlock();
+  core_ = ord::getCore(block_);
+}
+
+void
 Opendp::setPaddingGlobal(int left,
                          int right)
 {
