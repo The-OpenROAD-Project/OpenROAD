@@ -39,7 +39,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace odb {
 class dbDatabase;
+class Point;
+class dbTechLayer;
 }
+
 namespace sta {
 class dbSta;
 }
@@ -69,7 +72,7 @@ class PDNSim
   void set_pdnsim_net_voltage(std::string net, float voltage);
   int  analyze_power_grid();
   void write_pg_spice();
-  void getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop);
+  void getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point ,double>>& ir_drop);
 
   int check_connectivity();
 
@@ -86,7 +89,7 @@ class PDNSim
   std::string                  _spice_out_file;
   std::string                  _power_net;
   std::map<std::string, float> _net_voltage_map;
-  std::map<int, std::map<std::pair<int,int>,double>> _ir_drop;
+  std::map<odb::dbTechLayer*, std::map<odb::Point ,double>> _ir_drop;
 };
 }  // namespace psm
 

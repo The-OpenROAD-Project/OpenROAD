@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "utl/Logger.h"
 
+
 namespace psm {
 
 PDNSim::PDNSim()
@@ -201,7 +202,7 @@ int PDNSim::analyze_power_grid()
     _logger->report("######################################");
   }
 
-  std::map<int, std::map<std::pair<int,int>,double>> ir_drop;
+  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drop;
   std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
   int                vsize;
   vsize = nodes.size();
@@ -210,12 +211,11 @@ int PDNSim::analyze_power_grid()
     Node* node = nodes[n];
     int node_layer_num = node->GetLayerNum();
     NodeLoc node_loc = node->GetLoc();
+    odb::Point point = odb::Point(node_loc.first, node_loc.second);
     double voltage = node->GetVoltage();
-    //odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
-    //ir_drop[node_layer][node_loc] = voltage;
-    ir_drop[node_layer_num][node_loc] = voltage;
+    odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
+    ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
   }
-  
   _ir_drop = ir_drop;
   delete irsolve_h;
   return 1;
@@ -244,7 +244,7 @@ int PDNSim::check_connectivity()
   return val;
 }
 
-void PDNSim::getIRDropMap(std::map<int, std::map<std::pair<int,int>,double>>& ir_drop) {
+void PDNSim::getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop) {
   // TODO can be enhanced to check if it already exists 
   // and if it does, then do not run analyze IR 
   ir_drop = _ir_drop;
