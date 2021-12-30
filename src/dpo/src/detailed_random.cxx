@@ -94,7 +94,13 @@ bool DetailedRandom::isNumber(char ch) {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedRandom::DetailedRandom(Architecture* arch, Network* network,
                                RoutingParams* rt)
-    : m_arch(arch), m_network(network), m_rt(rt), m_movesPerCandidate(3.0) {}
+  : m_mgrPtr(nullptr),
+    m_arch(arch),
+    m_network(network),
+    m_rt(rt),
+    m_movesPerCandidate(3.0)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -544,11 +550,16 @@ void DetailedRandom::collectCandidates() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-RandomGenerator::RandomGenerator() : DetailedGenerator() {
-  m_name = "displacement";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+RandomGenerator::RandomGenerator()
+  : DetailedGenerator("displacement"),
+    m_mgr(nullptr),
+    m_arch(nullptr),
+    m_network(nullptr),
+    m_rt(nullptr),
+    m_attempts(0),
+    m_moves(0),
+    m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -675,11 +686,16 @@ void RandomGenerator::stats() {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DisplacementGenerator::DisplacementGenerator() : DetailedGenerator() {
-  m_name = "random";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+DisplacementGenerator::DisplacementGenerator()
+  : DetailedGenerator("random"),
+    m_mgr(nullptr),
+    m_arch(nullptr),
+    m_network(nullptr),
+    m_rt(nullptr),
+    m_attempts(0),
+    m_moves(0),
+    m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

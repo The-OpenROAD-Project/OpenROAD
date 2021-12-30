@@ -54,12 +54,13 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 class DetailedObjective {
  public:
-  DetailedObjective() { m_name = "objective"; }
+  DetailedObjective(const char* name = "objective")
+    : m_name(name) {}
   virtual ~DetailedObjective() {}
 
   virtual const std::string& getName() const { return m_name; }
 
-  virtual double curr() { return 0.0; }
+  virtual double curr() = 0;
 
   // Different methods for generating moves.  We _must_ overload these.  The
   // generated move should be stored in the manager.
@@ -67,16 +68,13 @@ class DetailedObjective {
                        std::vector<double>& curX, std::vector<double>& curY,
                        std::vector<unsigned>& curOri, std::vector<double>& newX,
                        std::vector<double>& newY,
-                       std::vector<unsigned>& newOri) {
-    exit(-1);
-    return 0.0;
-  }
+                       std::vector<unsigned>& newOri) = 0;
 
   virtual void accept() {}
   virtual void reject() {}
 
- protected:
-  std::string m_name;
+ private:
+  const std::string m_name;
 };
 
 }  // namespace dpo

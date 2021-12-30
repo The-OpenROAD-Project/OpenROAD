@@ -80,7 +80,8 @@ using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
 Optdp::Optdp() : db_(nullptr), logger_(nullptr), opendp_(nullptr),
-    arch_(nullptr), network_(nullptr), routeinfo_(nullptr) {}
+                 arch_(nullptr), network_(nullptr), routeinfo_(nullptr),
+                 hpwlBefore_(0), hpwlAfter_(0) {}
 
 ////////////////////////////////////////////////////////////////
 Optdp::~Optdp() {}

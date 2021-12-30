@@ -121,7 +121,14 @@ class RoutingParams {
         m_num_ni_terminals(0),
         m_num_route_blockages(0),
         m_num_edge_adjusts(0),
-        m_hasObs(0) {
+        m_Xlowerbound(0.0),
+        m_Xupperbound(0.0),
+        m_Ylowerbound(0.0),
+        m_Yupperbound(0.0),
+        m_XpitchGcd(0.0),
+        m_YpitchGcd(0.0),
+        m_hasObs(0),
+        m_numRules(0) {
     m_v_capacity.erase(m_v_capacity.begin(), m_v_capacity.end());
     m_h_capacity.erase(m_h_capacity.begin(), m_h_capacity.end());
     m_wire_width.erase(m_wire_width.begin(), m_wire_width.end());

@@ -76,31 +76,33 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch, Network* network,
                                        RoutingParams* rt)
-    : DetailedGenerator(),
+    : DetailedGenerator("global swap"),
       m_mgr(0),
       m_arch(arch),
       m_network(network),
       m_rt(rt),
-      m_skipNetsLargerThanThis(100) {
-  m_name = "global swap";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+      m_skipNetsLargerThanThis(100),
+      m_traversal(0),
+      m_attempts(0),
+      m_moves(0),
+      m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedGlobalSwap::DetailedGlobalSwap()
-    : DetailedGenerator(),
-      m_mgr(0),
-      m_arch(0),
-      m_network(0),
-      m_rt(0),
-      m_skipNetsLargerThanThis(100) {
-  m_name = "global swap";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+    : DetailedGenerator("global swap"),
+      m_mgr(nullptr),
+      m_arch(nullptr),
+      m_network(nullptr),
+      m_rt(nullptr),
+      m_skipNetsLargerThanThis(100),
+      m_traversal(0),
+      m_attempts(0),
+      m_moves(0),
+      m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

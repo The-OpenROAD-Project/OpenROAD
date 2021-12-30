@@ -62,13 +62,15 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedDisplacement::DetailedDisplacement(Architecture* arch, Network* network,
                                            RoutingParams* rt)
-    : DetailedObjective(),
+    : DetailedObjective("disp"),
       m_arch(arch),
       m_network(network),
       m_rt(rt),
-      m_orientPtr(0) {
-  m_name = "disp";
-  m_singleRowHeight = m_arch->getRow(0)->getHeight();
+      m_mgrPtr(nullptr),
+      m_orientPtr(nullptr),
+      m_singleRowHeight(m_arch->getRow(0)->getHeight()),
+      m_nSets(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -76,31 +76,33 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedVerticalSwap::DetailedVerticalSwap(Architecture* arch, Network* network,
                                            RoutingParams* rt)
-    : DetailedGenerator(),
+    : DetailedGenerator("vertical swap"),
       m_mgr(0),
       m_arch(arch),
       m_network(network),
       m_rt(rt),
-      m_skipNetsLargerThanThis(100) {
-  m_name = "vertical swap";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+      m_skipNetsLargerThanThis(100),
+      m_traversal(0),
+      m_attempts(0),
+      m_moves(0),
+      m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedVerticalSwap::DetailedVerticalSwap()
-    : DetailedGenerator(),
+    : DetailedGenerator("vertical swap"),
       m_mgr(0),
       m_arch(0),
       m_network(0),
       m_rt(0),
-      m_skipNetsLargerThanThis(100) {
-  m_name = "vertical swap";
-  m_attempts = 0;
-  m_moves = 0;
-  m_swaps = 0;
+      m_skipNetsLargerThanThis(100),
+      m_traversal(0),
+      m_attempts(0),
+      m_moves(0),
+      m_swaps(0)
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

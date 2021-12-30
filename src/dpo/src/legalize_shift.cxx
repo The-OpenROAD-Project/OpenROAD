@@ -57,11 +57,11 @@ namespace dpo {
 class ShiftLegalizer::Clump
 {
  public:
-  int m_id;
-  double m_weight;
-  double m_wposn;
-  double m_width;
-  double m_posn;
+  int m_id = 0;
+  double m_weight = 0.0;
+  double m_wposn = 0.0;
+  double m_width = 0.0;
+  double m_posn = 0.0;
   std::vector<Node*> m_nodes;
 };
 

@@ -74,6 +74,7 @@ DetailedMgr::DetailedMgr(Architecture* arch, Network* network,
 
   // Utilization...
   m_targetUt = 1.0;
+  m_targetMaxMovement = 0.0;
 
   // For generating a move list...
   m_moveLimit = 10;
@@ -2742,6 +2743,10 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
   // Try to move a single height cell from its current position in a new
   // segment.
 
+  if (sj == -1) {
+    // Huh?
+    return false;
+  }
   int rj = m_segments[sj]->getRowId();
 
   double row_y = m_arch->getRow(rj)->getCenterY();
@@ -2753,10 +2758,6 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
 
   if (sj == si) {
     // Same segment.
-    return false;
-  }
-  if (sj == -1) {
-    // Huh?
     return false;
   }
   if (ndi->getRegionId() != m_segments[sj]->getRegId()) {

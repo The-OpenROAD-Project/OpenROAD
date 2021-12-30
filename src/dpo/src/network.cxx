@@ -56,6 +56,8 @@ Node::Node()
     : m_id(0),
       m_x(0.0),
       m_y(0.0),
+      m_origX(0.0),
+      m_origY(0.0),
       m_w(0.0),
       m_h(0.0),
       m_type(0),
@@ -63,11 +65,11 @@ Node::Node()
       m_attributes(NodeAttributes_EMPTY),
       m_etl(EDGETYPE_DEFAULT),
       m_etr(EDGETYPE_DEFAULT),
+      m_powerTop(dpo::RowPower_UNK),
+      m_powerBot(dpo::RowPower_UNK),
       m_regionId(0),
       m_currentOrient(Orientation_N),
       m_availOrient(Orientation_N) {
-  m_powerTop = dpo::RowPower_UNK;
-  m_powerBot = dpo::RowPower_UNK;
 }
 Node::~Node() {}
 
