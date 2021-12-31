@@ -579,7 +579,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->getRow(0)->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->getSiteSpacing();
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;
@@ -715,7 +715,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->getRow(0)->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->getSiteSpacing();
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;

@@ -107,7 +107,6 @@ class DetailedABU : public DetailedObjective {
   Network* m_network;
   RoutingParams* m_rt;
 
- public:
   // Utilization monitoring for ABU (if paying attention to ABU).
   std::vector<density_bin> m_abuBins;
   double m_abuGridUnit;

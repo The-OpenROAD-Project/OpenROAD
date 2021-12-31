@@ -152,8 +152,8 @@ bool Architecture::postProcess( Network* network ) {
   for (int r = 0; r < m_rows.size(); r++) {
     Architecture::Row* row = m_rows[r];
 
-    lx = row->m_subRowOrigin;
-    rx = lx + row->getNumSites() * row->m_siteSpacing;
+    lx = row->getLeft();
+    rx = row->getRight();
 
     yb = row->getBottom();
     yt = yb + row->getHeight();
@@ -178,8 +178,8 @@ bool Architecture::postProcess( Network* network ) {
     // Convert subrows to intervals.
     intervals.erase(intervals.begin(),intervals.end());
     for (size_t i = 0; i < subrows.size(); i++) {
-      lx = subrows[i]->m_subRowOrigin;
-      rx = lx + subrows[i]->getNumSites() * subrows[i]->m_siteSpacing;
+      lx = subrows[i]->getLeft();
+      rx = subrows[i]->getRight();
       intervals.push_back(std::make_pair(lx,rx));
     }
     std::sort(intervals.begin(), intervals.end(), compareIntervals());
@@ -212,8 +212,8 @@ bool Architecture::postProcess( Network* network ) {
     if (subrows.size() > 1) {
       lx = intervals.front().first;
       rx = intervals.back().second;
-      subrows[0]->setNumSites((rx -lx) / subrows[0]->m_siteSpacing);
-      rx = lx + subrows[0]->getNumSites() * subrows[0]->m_siteSpacing;
+      subrows[0]->setNumSites((rx -lx) / subrows[0]->getSiteSpacing());
+      rx = lx + subrows[0]->getNumSites() * subrows[0]->getSiteSpacing();
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {
@@ -259,7 +259,7 @@ bool Architecture::postProcess( Network* network ) {
   std::stable_sort(m_rows.begin(), m_rows.end(), SortRow());
   // Assign row ids.
   for (int r = 0; r < m_rows.size(); r++) {
-    m_rows[r]->m_id = r;
+    m_rows[r]->setId(r);
   }
   return true;
 }
@@ -319,7 +319,7 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
 
   int spanned =
       (int)((ndi->getHeight() / row->getHeight()) + 0.5);  // Number of spanned rows.
-  int lo = row->m_id;
+  int lo = row->getId();
   int hi = lo + spanned - 1;
   if (hi >= m_rows.size()) return false;  // off the top of the chip.
   if (hi == lo) {
@@ -328,8 +328,8 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
     // the top and the bottom...  However, I think this is beyond the current
     // goal...
 
-    int rowBot = m_rows[lo]->m_powerBot;
-    int rowTop = m_rows[hi]->m_powerTop;
+    int rowBot = m_rows[lo]->getPowerBottom();
+    int rowTop = m_rows[hi]->getPowerTop();
 
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
@@ -345,8 +345,8 @@ bool Architecture::power_compatible(Node* ndi, Row* row, bool& flip) {
     return true;
   } else {
     // Multi-height cell.
-    int rowBot = m_rows[lo]->m_powerBot;
-    int rowTop = m_rows[hi]->m_powerTop;
+    int rowBot = m_rows[lo]->getPowerBottom();
+    int rowTop = m_rows[hi]->getPowerTop();
 
     int ndBot = ndi->getBottomPower();
     int ndTop = ndi->getTopPower();
@@ -550,11 +550,9 @@ Architecture::Spacing::Spacing(int i1, int i2, double sep)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Region::Region()
-    : m_id(-1),
-      m_xmin(std::numeric_limits<double>::max()),
-      m_ymin(std::numeric_limits<double>::max()),
-      m_xmax(std::numeric_limits<double>::lowest()),
-      m_ymax(std::numeric_limits<double>::lowest()) {}
+    : m_id(-1)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

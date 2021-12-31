@@ -323,8 +323,8 @@ void DetailedMis::colorCells() {
   for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
     Node* ndi = m_network->getNode(i);
 
-    int color = gr.m_color[i];
-    if (color < 0 || color >= gr.m_ncolors) {
+    int color = gr.getColor(i);
+    if (color < 0 || color >= gr.getNColors()) {
       m_mgrPtr->internalError( "Unable to color cells during matching" );
     }
     if (m_movable[ndi->getId()]) {
