@@ -365,8 +365,9 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
       os << *static_cast<const frInstTerm*>(&fig);
       break;
     }
+    case frcMTerm:
     case frcBTerm: {
-      os << *static_cast<const frBTerm*>(&fig);
+      os << *static_cast<const frTerm*>(&fig);
       break;
     }
     // case fig is a frConnFig

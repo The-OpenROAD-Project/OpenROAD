@@ -148,10 +148,13 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         trueTerm = static_cast<frInstTerm*>(term)->getTerm();
         break;
       }
-      // TODO this can't be right, it should be a bterm
-      // TODO actually as written, frTerms don't even do anything in this loop
-      case frcBTerm:
-      case frcMTerm: {
+      // TODO FIXME
+      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
+      // actually act on BTerms. This code can be removed without changing
+      // functionality, but it is being left commented because it appears to be
+      // a bug with the way BTerms are handled and it may give a clue to what the
+      // anticipated behavior should be.
+      case frcBTerm: {
         /*auto bterm = static_cast<frBTerm*>(term);
         if (mterm->getNet() != net) {
           continue;
@@ -260,8 +263,13 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         trueTerm = iterm->getTerm();
         break;
       }
-      case frcBTerm:
-      case frcMTerm: {
+      // TODO FIXME
+      // BTerms don't have an inst*, so the if (trueTerm)... code below doesn't
+      // actually act on BTerms. This code can be removed without changing
+      // functionality, but it is being left commented because it appears to be
+      // a bug with the way BTerms are handled and it may give a clue to what the
+      // anticipated behavior should be.
+      case frcBTerm: {
         /*auto mterm = static_cast<frMTerm*>(term);
         if (mterm->getNet() != net) {
           continue;

@@ -199,8 +199,8 @@ inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
       return nullptr;
     }
     case frcBTerm: {
-      frTerm* srTerm = (static_cast<frTerm*>(obj));
-      return design->getTopBlock()->getTerm(srTerm->getName());
+      auto bTerm = static_cast<frBTerm*>(obj);
+      return design->getTopBlock()->getTerm(bTerm->getName());
     }
     case frcInstBlockage: {
       frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
