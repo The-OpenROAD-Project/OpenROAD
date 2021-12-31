@@ -268,6 +268,7 @@ class Descriptor
     ActionCallback callback;
   };
   using Actions = std::vector<Action>;
+  static constexpr std::string_view deselect_action_ = "deselect";
 
   // An editor is a callback function and a list of possible values (this can be empty),
   // the name of the editor should match the property it modifies
@@ -476,6 +477,21 @@ class Renderer
   DisplayControls controls_;
 };
 
+class SpectrumGenerator
+{
+ public:
+  SpectrumGenerator(double max_value);
+
+  int getColorCount() const;
+  Painter::Color getColor(double value, int alpha = 150) const;
+
+  void drawLegend(Painter& painter, const std::vector<std::pair<int, std::string>>& legend_key) const;
+
+ private:
+  static const unsigned char spectrum_[256][3];
+  double scale_;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -583,6 +599,8 @@ class Gui
 
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
+
+  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
 
   // open DRC
   void loadDRC(const std::string& filename);

@@ -579,5 +579,23 @@ void set_heatmap(const std::string& name, const std::string& option, const std::
   gui->setHeatMapSetting(name, option, value);
 }
 
+void timing_cone(odb::dbITerm* iterm, bool fanin, bool fanout)
+{
+  if (!check_gui("timing_cone")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->timingCone(iterm, fanin, fanout);
+}
+
+void timing_cone(odb::dbBTerm* bterm, bool fanin, bool fanout)
+{
+  if (!check_gui("timing_cone")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->timingCone(bterm, fanin, fanout);
+}
+
 %} // inline
 
