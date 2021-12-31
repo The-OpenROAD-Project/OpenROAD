@@ -265,7 +265,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row) {
     return false;
   }
 
-  unsigned rowOri = m_arch->getRow(row)->m_siteOrient;
+  unsigned rowOri = m_arch->getRow(row)->getSiteOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {
@@ -330,7 +330,7 @@ int DetailedOrient::flipCells() {
 
     int row = segment->getRowId();
 
-    if ((m_arch->getRow(row)->m_siteSymmetry & Symmetry_Y) == 0) {
+    if ((m_arch->getRow(row)->getSiteSymmetry() & Symmetry_Y) == 0) {
       continue;
     }
 
@@ -555,7 +555,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row) {
   // orientation, but this might be a little smarter if cells have been flipped
   // around the Y-axis previously to improve WL...
 
-  unsigned rowOri = m_arch->getRow(row)->m_siteOrient;
+  unsigned rowOri = m_arch->getRow(row)->getSiteOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {

@@ -205,8 +205,8 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages) {
               // Blockage overlaps with the entire row span in the Y-dir...
               // Sites are possibly completely covered!
 
-              double originX = m_arch->getRow(r)->m_subRowOrigin;
-              double siteSpacing = m_arch->getRow(r)->m_siteSpacing;
+              double originX = m_arch->getRow(r)->getLeft();
+              double siteSpacing = m_arch->getRow(r)->getSiteSpacing();
 
               int i0 = (int)std::floor((xmin - originX) / siteSpacing);
               int i1 = (int)std::floor((xmax - originX) / siteSpacing);
@@ -367,7 +367,7 @@ void DetailedMgr::findSegments() {
   for (size_t reg = 1; reg < m_arch->getRegions().size(); reg++) {
     Architecture::Region* regPtr = m_arch->getRegion(reg);
 
-    findRegionIntervals(regPtr->m_id, intervals);
+    findRegionIntervals(regPtr->getId(), intervals);
 
     int split = 0;
 
@@ -494,8 +494,8 @@ void DetailedMgr::findSegments() {
   for (int s = 0; s < m_segments.size(); s++) {
     int rowId = m_segments[s]->getRowId();
 
-    double originX = m_arch->getRow(rowId)->m_subRowOrigin;
-    double siteSpacing = m_arch->getRow(rowId)->m_siteSpacing;
+    double originX = m_arch->getRow(rowId)->getLeft();
+    double siteSpacing = m_arch->getRow(rowId)->getSiteSpacing();
 
     int ix;
 
@@ -1547,8 +1547,8 @@ void DetailedMgr::removeOverlapMinimumShift() {
 
     int rowId = segment->getRowId();
 
-    double originX = m_arch->getRow(rowId)->m_subRowOrigin;
-    double siteSpacing = m_arch->getRow(rowId)->m_siteSpacing;
+    double originX = m_arch->getRow(rowId)->getLeft();
+    double siteSpacing = m_arch->getRow(rowId)->getSiteSpacing();
 
     llx.resize(nodes.size());
     tmp.resize(nodes.size());
@@ -1926,8 +1926,8 @@ int DetailedMgr::checkSiteAlignment() {
     rt = std::min(rt, (int)m_arch->getRows().size() - 1);
 
     for (int r = rb; r <= rt; r++) {
-      double siteSpacing = m_arch->getRow(r)->m_siteSpacing;
-      double originX = m_arch->getRow(r)->m_subRowOrigin;
+      double siteSpacing = m_arch->getRow(r)->getSiteSpacing();
+      double originX = m_arch->getRow(r)->getLeft();
 
       // XXX: Should I check the site to the left and right to avoid rounding
       // errors???
@@ -2198,18 +2198,17 @@ void DetailedMgr::findRegionIntervals(
   }
 
   Architecture::Region* regPtr = m_arch->getRegion(regId);
-  if (regPtr->m_id != regId) {
+  if (regPtr->getId() != regId) {
     std::cout << "Error." << std::endl;
     exit(-1);
   }
 
   // Look at the rectangles within the region.
-  std::vector<Rectangle>& rects = regPtr->m_rects;
-  for (int b = 0; b < rects.size(); b++) {
-    double xmin = rects[b].xmin();
-    double xmax = rects[b].xmax();
-    double ymin = rects[b].ymin();
-    double ymax = rects[b].ymax();
+  for (const Rectangle& rect : regPtr->getRects()) {
+    double xmin = rect.xmin();
+    double xmax = rect.xmax();
+    double ymin = rect.ymin();
+    double ymax = rect.ymax();
 
     for (int r = 0; r < m_numSingleHeightRows; r++) {
       double lb = m_arch->getMinY() + r * m_singleRowHeight;
@@ -2219,8 +2218,8 @@ void DetailedMgr::findRegionIntervals(
         // Blockage overlaps with the entire row span in the Y-dir... Sites
         // are possibly completely covered!
 
-        double originX = m_arch->getRow(r)->m_subRowOrigin;
-        double siteSpacing = m_arch->getRow(r)->m_siteSpacing;
+        double originX = m_arch->getRow(r)->getLeft();
+        double siteSpacing = m_arch->getRow(r)->getSiteSpacing();
 
         int i0 = (int)std::floor((xmin - originX) / siteSpacing);
         int i1 = (int)std::floor((xmax - originX) / siteSpacing);
@@ -2345,8 +2344,8 @@ void DetailedMgr::removeSegmentOverlapSingleInner(std::vector<Node*>& nodes_in,
   wid.resize(nodes.size());
 
   double x;
-  double originX = m_arch->getRow(rowId)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(rowId)->m_siteSpacing;
+  double originX = m_arch->getRow(rowId)->getLeft();
+  double siteSpacing = m_arch->getRow(rowId)->getSiteSpacing();
   int ix;
 
   double space = xmax - xmin;
@@ -2523,8 +2522,8 @@ bool DetailedMgr::alignPos(Node* ndi, double& xi, double xl, double xr) {
   // Given a cell with a target, determine a close site aligned position
   // such that the cell falls entirely within [xl,xr].
 
-  double originX = m_arch->getRow(0)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(0)->m_siteSpacing;
+  double originX = m_arch->getRow(0)->getLeft();
+  double siteSpacing = m_arch->getRow(0)->getSiteSpacing();
 
   double xp;
   double w = ndi->getWidth();
@@ -2774,8 +2773,8 @@ bool DetailedMgr::tryMove1(Node* ndi, double xi, double yi, int si, double xj,
   double util, gapu, width, change;
   double x1, x2;
   int ix, n, site_id;
-  double originX = m_arch->getRow(rj)->m_subRowOrigin;
-  double siteSpacing = m_arch->getRow(rj)->m_siteSpacing;
+  double originX = m_arch->getRow(rj)->getLeft();
+  double siteSpacing = m_arch->getRow(rj)->getSiteSpacing();
   std::vector<Node*>::iterator it;
 
   // Find the cells to the left and to the right of the target location.

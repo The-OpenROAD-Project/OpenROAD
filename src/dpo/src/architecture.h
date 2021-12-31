@@ -196,6 +196,18 @@ class Architecture::Row {
   double getSiteWidth() const { return m_siteWidth; }
   double getSiteSpacing() const { return m_siteSpacing; }
   int getNumSites() const { return m_numSites; }
+  int getId() const { return m_id; }
+  int getPowerTop() const { return m_powerTop; }
+  int getPowerBottom() const { return m_powerBot; }
+  unsigned getSiteOrient() const { return m_siteOrient; }
+  unsigned getSiteSymmetry() const { return m_siteSymmetry; }
+
+  void setId(int id) { m_id = id; }
+  void setLeft(double val) { m_subRowOrigin = val; }
+  void setPowerTop(int val) { m_powerTop = val; }
+  void setPowerBottom(int val) { m_powerBot = val; }
+  void setSiteSymmetry(unsigned val) { m_siteSymmetry = val; }
+  void setSiteOrient(unsigned val) { m_siteOrient = val; }
 
  protected:
   double m_rowLoc;          // Y-location of the row.
@@ -204,7 +216,6 @@ class Architecture::Row {
                             // m_subRowOrigin + m_numSites * m_siteSpacing;
   double m_siteWidth;       // Width of sites in the row.
 
- public:
   // XXX: Ignores site orientation and symmetry right now...
   double m_subRowOrigin;    // Starting X location (xmin) of the row.
   unsigned m_siteOrient;    // Orientation of sites in the row.
@@ -220,6 +231,7 @@ class Architecture::Row {
   int m_powerTop;
   int m_powerBot;
 
+public:  
   struct compare_row {
     bool operator()(Architecture::Row*& s, double i) const {
       return s->getBottom() < i;
@@ -241,14 +253,19 @@ class Architecture::Region {
   Region();
   virtual ~Region();
 
- public:
+  int getId() const { return m_id; }
+  void setId(int id) { m_id = id; }
+  const std::vector<Rectangle>& getRects() const { return  m_rects; }
+  void addRect(const Rectangle& rect) {
+    m_rects.push_back(rect);
+    m_bbox.enlarge(rect);
+  }
+  
+private:
   int m_id;  // Artificial ID of the region.
 
   // Box around all sub-rectangles.
-  double m_xmin;
-  double m_ymin;
-  double m_xmax;
-  double m_ymax;
+  Rectangle m_bbox;
 
   // Rectangles forming the rectilinear region.
   std::vector<Rectangle> m_rects;

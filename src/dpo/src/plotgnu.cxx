@@ -218,9 +218,7 @@ void PlotGnu::drawNodes(char* buf) {
   // Draw regions with the exception of the default region.
   for (size_t r = 1; r < m_arch->getRegions().size(); r++) {
     Architecture::Region* regPtr = m_arch->getRegion(r);
-    for (size_t i = 0; i < regPtr->m_rects.size(); i++) {
-      Rectangle& rect = regPtr->m_rects[i];
-
+    for (const Rectangle& rect : regPtr->getRects()) {
       fprintf(fpArch,
               "\n"
               "%lf %lf\n"

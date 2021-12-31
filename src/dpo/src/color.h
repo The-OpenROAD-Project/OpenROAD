@@ -94,9 +94,12 @@ class Graph {
     }
   }
 
- public:
+  int getColor(int i) const { return m_color[i]; }
+  int getNColors() const { return m_ncolors; }
+
+ private:
   int m_v;
-  std::vector<std::vector<int> > m_adj;
+  std::vector<std::vector<int>> m_adj;
   std::vector<int> m_color;
   int m_ncolors;
 };

@@ -664,12 +664,12 @@ void Optdp::createArchitecture() {
     archRow->setHeight((double)site->getHeight());
     archRow->setSiteWidth((double)site->getWidth());
     archRow->setSiteSpacing((double)row->getSpacing());
-    archRow->m_subRowOrigin = (double)originX;
+    archRow->setLeft(originX);
     archRow->setNumSites(row->getSiteCount());
 
     // Set defaults.  Top and bottom power is set below.
-    archRow->m_powerBot = RowPower_UNK;
-    archRow->m_powerTop = RowPower_UNK;
+    archRow->setPowerBottom(RowPower_UNK);
+    archRow->setPowerTop(RowPower_UNK);
 
     // Symmetry.  From the site.
     unsigned symmetry = 0x00000000;
@@ -682,7 +682,7 @@ void Optdp::createArchitecture() {
     if (site->getSymmetryR90()) {
       symmetry |= dpo::Symmetry_ROT90;
     }
-    archRow->m_siteSymmetry = symmetry;
+    archRow->setSiteSymmetry(symmetry);
 
     // Orientation.  From the row.
     unsigned orient = Orientation_N;
@@ -697,7 +697,7 @@ void Optdp::createArchitecture() {
     case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
     default: break;
     }
-    archRow->m_siteOrient = orient;
+    archRow->setSiteOrient(orient);
   }
 
   // Get surrounding box.
@@ -747,8 +747,8 @@ void Optdp::createArchitecture() {
         numSites = (int)((arch_->getMaxX() - originX) / siteSpacing);
       }
 
-      if (arch_->getRow(r)->m_subRowOrigin != originX) {
-        arch_->getRow(r)->m_subRowOrigin = originX;
+      if (arch_->getRow(r)->getLeft() != originX) {
+        arch_->getRow(r)->setLeft(originX);
       }
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
@@ -801,10 +801,10 @@ void Optdp::createArchitecture() {
           double yt = arch_->getRow(r)->getTop();
 
           if (yb >= rect.yMin() && yb <= rect.yMax()) {
-            arch_->getRow(r)->m_powerBot = pwr;
+            arch_->getRow(r)->setPowerBottom(pwr);
           }
           if (yt >= rect.yMin() && yt <= rect.yMax()) {
-            arch_->getRow(r)->m_powerTop = pwr;
+            arch_->getRow(r)->setPowerTop(pwr);
           }
         }
       }
@@ -828,12 +828,8 @@ void Optdp::setUpPlacementRegions() {
 
   // Default region.
   rptr = arch_->createAndAddRegion();
-  rptr->m_id = count++;
-  rptr->m_rects.push_back(Rectangle(xmin, ymin, xmax, ymax));
-  rptr->m_xmin = xmin;
-  rptr->m_xmax = xmax;
-  rptr->m_ymin = ymin;
-  rptr->m_ymax = ymax;
+  rptr->setId(count++);
+  rptr->addRect({xmin, ymin, xmax, ymax});
 
   // Hmm.  I noticed a comment in the OpenDP interface that
   // the OpenDB represents groups as regions.  I'll follow
@@ -845,7 +841,7 @@ void Optdp::setUpPlacementRegions() {
     dbRegion* parent = db_region->getParent();
     if (parent) {
       rptr = arch_->createAndAddRegion();
-      rptr->m_id = count++;
+      rptr->setId(count++);
 
       // Assuming these are the rectangles making up the region...
       auto boundaries = db_region->getParent()->getBoundaries();
@@ -858,11 +854,7 @@ void Optdp::setUpPlacementRegions() {
         ymin = std::max(arch_->getMinY(), (double)box.yMin());
         ymax = std::min(arch_->getMaxY(), (double)box.yMax());
 
-        rptr->m_rects.push_back(Rectangle(xmin, ymin, xmax, ymax));
-        rptr->m_xmin = std::min(xmin, rptr->m_xmin);
-        rptr->m_xmax = std::max(xmax, rptr->m_xmax);
-        rptr->m_ymin = std::min(ymin, rptr->m_ymin);
-        rptr->m_ymax = std::max(ymax, rptr->m_ymax);
+        rptr->addRect({xmin, ymin, xmax, ymax});
       }
 
       // The instances within this region.
@@ -871,7 +863,7 @@ void Optdp::setUpPlacementRegions() {
         if (instMap_.end() != it_n) {
           Node* nd = it_n->second;
           if (nd->getRegionId() == 0) {
-            nd->setRegionId(rptr->m_id);
+            nd->setRegionId(rptr->getId());
           }
         }
       }

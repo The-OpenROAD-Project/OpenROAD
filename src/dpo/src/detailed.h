@@ -85,7 +85,6 @@ class Detailed {
  protected:
   void doDetailedCommand(std::vector<std::string>& args);
 
- public:
   DetailedParams& m_params;
 
   DetailedMgr* m_mgr;
