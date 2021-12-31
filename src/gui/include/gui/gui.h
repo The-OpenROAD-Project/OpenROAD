@@ -600,7 +600,9 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
-  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
+  using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  void timingCone(odbTerm term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<odbTerm>& terms);
 
   // open DRC
   void loadDRC(const std::string& filename);

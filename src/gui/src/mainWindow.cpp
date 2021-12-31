@@ -357,7 +357,7 @@ void MainWindow::init(sta::dbSta* sta)
   auto* gui = Gui::get();
   gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -1295,7 +1295,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   }
 }
 
-void MainWindow::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1304,6 +1304,22 @@ void MainWindow::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, boo
   } else {
     renderer->setBTerm(std::get<odb::dbBTerm*>(term), fanin, fanout);
   }
+}
+
+void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+{
+  auto* settings = timing_widget_->getSettings();
+  settings->setFromPin({});
+  std::set<sta::Pin*> pins;
+  for (const auto& term : terms) {
+    pins.insert(settings->convertTerm(term));
+  }
+  settings->setThruPin(pins);
+  settings->setToPin({});
+
+  timing_widget_->updatePaths();
+  timing_widget_->show();
+  timing_widget_->raise();
 }
 
 }  // namespace gui

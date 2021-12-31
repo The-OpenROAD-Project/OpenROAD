@@ -35,6 +35,8 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFormLayout>
+#include <QStandardItemModel>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -64,6 +66,8 @@
 #include "sta/Units.hh"
 #include "sta/VertexVisitor.hh"
 #include "staGui.h"
+
+Q_DECLARE_METATYPE(sta::Corner*);
 
 namespace gui {
 
@@ -206,16 +210,23 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   endResetModel();
 }
 
-void TimingPathsModel::populateModel(bool setup_hold, int path_count)
+void TimingPathsModel::populateModel(bool setup_hold,
+                                     int path_count,
+                                     const std::set<sta::Pin*>& from,
+                                     const std::set<sta::Pin*>& thru,
+                                     const std::set<sta::Pin*>& to)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(setup_hold, path_count);
+  populatePaths(setup_hold, path_count, from, thru, to);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(bool get_max,
-                                     int path_count)
+                                     int path_count,
+                                     const std::set<sta::Pin*>& from,
+                                     const std::set<sta::Pin*>& thru,
+                                     const std::set<sta::Pin*>& to)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -224,9 +235,9 @@ bool TimingPathsModel::populatePaths(bool get_max,
                          get_max,
                          false, // unconstrained
                          path_count,
-                         {}, // to
-                         {}, // through
-                         {}, // from
+                         from, // from
+                         thru, // through
+                         to, // to
                          true,
                          timing_paths_);
 
@@ -1349,6 +1360,161 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
     std::sort(pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
       return l->getPathSlack() > r->getPathSlack();
     });
+  }
+}
+
+/////////
+
+TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
+    QDialog(parent),
+    sta_(nullptr),
+    path_count_spin_box_(new QSpinBox(this)),
+    corner_box_(new QComboBox(this)),
+    from_({}),
+    thru_({}),
+    to_({}),
+    from_line_(new QLineEdit(this)),
+    thru_line_(new QLineEdit(this)),
+    to_line_(new QLineEdit(this))
+{
+  setWindowTitle("Timing Controls");
+
+  path_count_spin_box_->setRange(0, 10000);
+  path_count_spin_box_->setValue(100);
+
+  QFormLayout* layout = new QFormLayout;
+
+  layout->addRow("Paths:", path_count_spin_box_);
+  layout->addRow("Command corner:", corner_box_);
+  layout->addRow("From:", from_line_);
+  layout->addRow("Through:", thru_line_);
+  layout->addRow("To:", to_line_);
+
+  connect(from_line_, SIGNAL(returnPressed()), this, SLOT(setFromPin()));
+  connect(thru_line_, SIGNAL(returnPressed()), this, SLOT(setThruPin()));
+  connect(to_line_, SIGNAL(returnPressed()), this, SLOT(setToPin()));
+
+  setLayout(layout);
+
+  const int min_characters = 25;
+  const auto font_metrics = from_line_->fontMetrics();
+  const int min_width = min_characters * font_metrics.averageCharWidth();
+  from_line_->setMinimumWidth(min_width);
+  thru_line_->setMinimumWidth(min_width);
+  to_line_->setMinimumWidth(min_width);
+
+  connect(corner_box_,
+          QOverload<int>::of(&QComboBox::currentIndexChanged),
+          [this](int index) {
+            if (index < 0 || index >= corner_box_->count()) {
+              return;
+            }
+            auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
+            sta_->setCmdCorner(corner);
+          });
+}
+
+void TimingControlsDialog::populate()
+{
+  setPinSelections();
+
+  auto* current_corner = sta_->cmdCorner();
+  corner_box_->clear();
+  int selection = 0;
+  for (auto* corner : sta_->corners()->corners()) {
+    if (corner == current_corner) {
+      selection = corner_box_->count();
+    }
+    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+  }
+  corner_box_->setCurrentIndex(selection);
+}
+
+void TimingControlsDialog::setPinSelections()
+{
+  populateText(from_line_, from_);
+  populateText(thru_line_, thru_);
+  populateText(to_line_, to_);
+}
+
+void TimingControlsDialog::populateText(QLineEdit* line, const std::set<sta::Pin*>& pins)
+{
+  if (pins.empty()) {
+    line->clear();
+  } else {
+    auto* network = sta_->getDbNetwork();
+    QStringList text;
+    for (const auto* pin : pins) {
+      text.append(network->name(pin));
+    }
+    line->setText(text.join(" "));
+  }
+}
+
+void TimingControlsDialog::setFromPin()
+{
+  findPins(from_line_->text(), from_);
+  setPinSelections();
+}
+
+void TimingControlsDialog::setThruPin()
+{
+  findPins(thru_line_->text(), thru_);
+  setPinSelections();
+}
+
+void TimingControlsDialog::setToPin()
+{
+  findPins(to_line_->text(), to_);
+  setPinSelections();
+}
+
+void TimingControlsDialog::findPins(const QString& pin_names, std::set<sta::Pin*>& pins) const
+{
+  pins.clear();
+  if (pin_names.isEmpty()) {
+    return;
+  }
+  auto* network = sta_->getDbNetwork();
+
+  for (const QString pin_name : pin_names.split(" ")) {
+    sta::PatternMatch matcher(pin_name.toLatin1().constData());
+
+    sta::PinSeq found_pins;
+    network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
+
+    for (auto* pin : found_pins) {
+      pins.insert(pin);
+    }
+  }
+}
+
+void TimingControlsDialog::setFromPin(const std::set<sta::Pin*>& pins)
+{
+  from_ = pins;
+  setPinSelections();
+}
+
+void TimingControlsDialog::setThruPin(const std::set<sta::Pin*>& pins)
+{
+  thru_ = pins;
+  setPinSelections();
+}
+
+void TimingControlsDialog::setToPin(const std::set<sta::Pin*>& pins)
+{
+  to_ = pins;
+  setPinSelections();
+}
+
+sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
+{
+  auto* network = sta_->getDbNetwork();
+
+  if (std::holds_alternative<odb::dbITerm*>(term)) {
+    return network->dbToSta(std::get<odb::dbITerm*>(term));
+  } else {
+    return network->dbToSta(std::get<odb::dbBTerm*>(term));
   }
 }
 

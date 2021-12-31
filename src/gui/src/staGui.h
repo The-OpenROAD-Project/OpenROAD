@@ -37,9 +37,14 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 #include <QAbstractTableModel>
 #include <QColor>
+#include <QComboBox>
+#include <QDialog>
+#include <QLineEdit>
+#include <QSpinBox>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -99,13 +104,21 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(bool get_max, int path_count);
+  void populateModel(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::set<sta::Pin*>& thru,
+                     const std::set<sta::Pin*>& to);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max, int path_count);
+  bool populatePaths(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::set<sta::Pin*>& thru,
+                     const std::set<sta::Pin*>& to);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
@@ -496,6 +509,55 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   }
 
   bool is_modified_;
+};
+
+class TimingControlsDialog : public QDialog
+{
+ Q_OBJECT
+ public:
+  TimingControlsDialog(QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
+  int getPathCount() const { return path_count_spin_box_->value(); }
+
+  void setFromPin(const std::set<sta::Pin*>& pins);
+  void setThruPin(const std::set<sta::Pin*>& pins);
+  void setToPin(const std::set<sta::Pin*>& pins);
+
+  const std::set<sta::Pin*>& getFromPins() const { return from_; }
+  const std::set<sta::Pin*>& getThruPins() const { return thru_; }
+  const std::set<sta::Pin*>& getToPins() const { return to_; }
+
+  sta::Pin* convertTerm(Gui::odbTerm term) const;
+
+ public slots:
+  void populate();
+
+ private slots:
+  void setFromPin();
+  void setThruPin();
+  void setToPin();
+
+ private:
+  sta::dbSta* sta_;
+
+  QSpinBox* path_count_spin_box_;
+  QComboBox* corner_box_;
+
+  std::set<sta::Pin*> from_;
+  std::set<sta::Pin*> thru_;
+  std::set<sta::Pin*> to_;
+
+  QLineEdit* from_line_;
+  QLineEdit* thru_line_;
+  QLineEdit* to_line_;
+
+  void findPins(const QString& pin_names, std::set<sta::Pin*>& pins) const;
+  void setPinSelections();
+
+  void populateText(QLineEdit* line, const std::set<sta::Pin*>& pins);
 };
 
 }  // namespace gui

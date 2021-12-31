@@ -104,7 +104,7 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
 
 // timing cone actions
 template<typename T>
-static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
+static void addTimingActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
 {
   auto* gui = Gui::get();
 
@@ -118,6 +118,10 @@ static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Acti
   }});
   actions.push_back({"Fanout Cone", [obj, desc, gui]() {
     gui->timingCone(obj, false, true);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Timing", [obj, desc, gui]() {
+    gui->timingPathsThrough({obj});
     return desc->makeSelected(obj, nullptr);
   }});
 }
@@ -534,8 +538,9 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db, sta::dbSta* sta) :
+    db_(db),
+    sta_(sta)
 {
 }
 
@@ -1071,6 +1076,39 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
   return editors;
 }
 
+Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+  if (net->getSigType().isSupply()) {
+    return {};
+  }
+
+  return {{"Timing", [this, net]() {
+    auto* network = sta_->getDbNetwork();
+    auto* drivers = network->drivers(network->dbToSta(net));
+
+    if (drivers->size() > 0) {
+      std::set<Gui::odbTerm> terms;
+
+      for (auto* driver : *drivers) {
+        odb::dbITerm* iterm = nullptr;
+        odb::dbBTerm* bterm = nullptr;
+
+        network->staToDb(driver, iterm, bterm);
+        if (iterm != nullptr) {
+          terms.insert(iterm);
+        } else {
+          terms.insert(bterm);
+        }
+      }
+
+      auto* gui = Gui::get();
+      gui->timingPathsThrough(terms);
+    }
+    return makeSelected(net, nullptr);
+  }}};
+}
+
 Selected DbNetDescriptor::makeSelected(std::any object,
                                        void* additional_data) const
 {
@@ -1185,7 +1223,7 @@ Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
   auto iterm = std::any_cast<odb::dbITerm*>(object);
 
   Descriptor::Actions actions;
-  addTimingConeActions<odb::dbITerm*>(iterm, this, actions);
+  addTimingActions<odb::dbITerm*>(iterm, this, actions);
 
   return actions;
 }
@@ -1283,7 +1321,7 @@ Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
 
   Descriptor::Actions actions;
-  addTimingConeActions<odb::dbBTerm*>(bterm, this, actions);
+  addTimingActions<odb::dbBTerm*>(bterm, this, actions);
 
   return actions;
 }
