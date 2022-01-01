@@ -1343,7 +1343,9 @@ Resizer::repairNet(SteinerTree *tree,
         split_length = min(split_length, metersToDbu((max_cap - pin_cap) / wire_cap));
         split_wire = true;
       }
-      if (load_slew > max_load_slew) {
+      if (load_slew > max_load_slew
+          // Check that zero length wire meets max slew.
+          && r_drvr*pin_cap*k_threshold < max_load_slew) {
         // Using elmore delay to approximate wire
         // load_slew = (Rdrvr + L*Rwire) * (L*Cwire + Cpin) * k_threshold
         // Setting this to max_slew is a quadratic in L
