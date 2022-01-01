@@ -1330,14 +1330,19 @@ Resizer::repairNet(SteinerTree *tree,
            || load_slew > max_load_slew) {
       // Make the wire a bit shorter than necessary to allow for
       // offset from instance origin to pin and detailed placement movement.
-      double length_margin = .05;
-      int stub_length = std::numeric_limits<int>::max();
-      if (max_length > 0 && wire_length > max_length)
-        stub_length = min(stub_length, max_length);
+      static double length_margin = .05;
+      bool split_wire = false;
+      int split_length = std::numeric_limits<int>::max();
+      if (max_length > 0 && wire_length > max_length) {
+        split_length = min(split_length, max_length);
+        split_wire = true;
+      }
       if (wire_cap > 0.0
           && pin_cap < max_cap
-          && load_cap > max_cap)
-        stub_length = min(stub_length, metersToDbu((max_cap - pin_cap) / wire_cap));
+          && load_cap > max_cap) {
+        split_length = min(split_length, metersToDbu((max_cap - pin_cap) / wire_cap));
+        split_wire = true;
+      }
       if (load_slew > max_load_slew) {
         // Using elmore delay to approximate wire
         // load_slew = (Rdrvr + L*Rwire) * (L*Cwire + Cpin) * k_threshold
@@ -1348,34 +1353,40 @@ Resizer::repairNet(SteinerTree *tree,
         float b = r_drvr * wire_cap + wire_res * pin_cap;
         float c = r_drvr * pin_cap - max_load_slew / k_threshold;
         float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
-        stub_length = min(stub_length, metersToDbu(l));
+        if (l > 0.0) {
+          split_length = min(split_length, metersToDbu(l));
+          split_wire = true;
+        }
       }
+      if (split_wire) {
+        // Distance from pt to repeater backward toward prev_pt.
+        double buf_dist = length - (wire_length - split_length * (1.0 - length_margin));
+        double dx = prev_x - pt_x;
+        double dy = prev_y - pt_y;
+        double d = (length == 0) ? 0.0 : buf_dist / length;
+        int buf_x = pt_x + d * dx;
+        int buf_y = pt_y + d * dy;
+        makeRepeater("wire", buf_x, buf_y, buffer_lowest_drive_, level,
+                     wire_length, pin_cap, fanout, load_pins);
+        // Update for the next round.
+        length -= buf_dist;
+        wire_length = length;
+        pt_x = buf_x;
+        pt_y = buf_y;
 
-      // Distance from pt to repeater backward toward prev_pt.
-      double buf_dist = length - (wire_length - stub_length * (1.0 - length_margin));
-      double dx = prev_x - pt_x;
-      double dy = prev_y - pt_y;
-      double d = (length == 0) ? 0.0 : buf_dist / length;
-      int buf_x = pt_x + d * dx;
-      int buf_y = pt_y + d * dy;
-      makeRepeater("wire", buf_x, buf_y, buffer_lowest_drive_, level,
-                   wire_length, pin_cap, fanout, load_pins);
-      // Update for the next round.
-      length -= buf_dist;
-      wire_length = length;
-      pt_x = buf_x;
-      pt_y = buf_y;
-
-      wire_length1 = dbuToMeters(wire_length);
-      load_cap = pin_cap + wire_length1 * wire_cap;
-      load_slew = (r_drvr + wire_length1 * wire_res) * load_cap * k_threshold;
-      debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load_slew={}",
-                 "", level,
-                 delayAsString(load_slew, this, 3));
-      debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
-                 "", level,
-                 units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
-                 units_->distanceUnit()->asString(dbuToMeters(length), 1));
+        wire_length1 = dbuToMeters(wire_length);
+        load_cap = pin_cap + wire_length1 * wire_cap;
+        load_slew = (r_drvr + wire_length1 * wire_res) * load_cap * k_threshold;
+        debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}load_slew={}",
+                   "", level,
+                   delayAsString(load_slew, this, 3));
+        debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
+                   "", level,
+                   units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
+                   units_->distanceUnit()->asString(dbuToMeters(length), 1));
+      }
+      else
+        break;
     }
   }
 }
@@ -3487,6 +3498,8 @@ Resizer::findMaxWireLength(LibertyPort *drvr_port,
                            const Corner *corner)
 {
   LibertyCell *cell = drvr_port->libertyCell();
+  if (db_network_->staToDb(cell) == nullptr)
+    logger_->error(RSZ, 70, "no LEF cell for {}.", cell->name());
   double drvr_r = drvr_port->driveResistance();
   // wire_length1 lower bound
   // wire_length2 upper bound
