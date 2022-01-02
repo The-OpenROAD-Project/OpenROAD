@@ -1427,6 +1427,15 @@ void TimingControlsDialog::populate()
     }
     corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
   }
+
+  if (corner_box_->count() > 1) {
+    selection += 1;
+    corner_box_->insertItem(0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
+    if (current_corner == nullptr) {
+      selection = 0;
+    }
+  }
+
   corner_box_->setCurrentIndex(selection);
 }
 
