@@ -41,6 +41,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                Logger* logger)
     : logger_(logger),
       settings_(settings),
+      inst_(nullptr),
       gui_(gui::Gui::get()),
       pin_(nullptr),
       inst_term_(nullptr),
@@ -65,15 +66,17 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     MAX_THREADS = 1;
   }
 
-  // Break pinName into inst_name_ and term_name_ at ':'
-  size_t pos = settings_->pinName.rfind(':');
-  if (pos == std::string::npos) {
-    logger_->error(
-        DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+  if (!settings_->pinName.empty()) {
+    // Break pinName into inst_name_ and term_name_ at ':'
+    size_t pos = settings_->pinName.rfind(':');
+    if (pos == std::string::npos) {
+      logger_->error(
+          DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+    }
+    term_name_ = settings_->pinName.substr(pos + 1);
+    auto inst_name = settings_->pinName.substr(0, pos);
+    inst_ = design->getTopBlock()->getInst(inst_name);
   }
-  term_name_ = settings_->pinName.substr(pos + 1);
-  auto inst_name = settings_->pinName.substr(0, pos);
-  inst_ = design->getTopBlock()->getInst(inst_name);
 
   gui_->registerRenderer(this);
 }
@@ -159,16 +162,16 @@ void FlexPAGraphics::startPin(frMPin* pin,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
-  aps_.clear();
 
   frMTerm* term = pin->getTerm();
   std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
                      + term->getName();
   if (!settings_->pinName.empty()) {
-    if (term->getName() != term_name_) {
+    if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_term && instClass->find(inst_) == instClass->end()) {
+    if (inst_term == nullptr
+        || (inst_term && instClass->find(inst_) == instClass->end())) {
       return;
     }
   }
@@ -177,10 +180,12 @@ void FlexPAGraphics::startPin(frMPin* pin,
   pin_ = pin;
   inst_term_ = inst_term;
 
-  Rect box;
-  inst_term->getInst()->getBBox(box);
-  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
-  gui_->pause();
+  if (inst_term) {
+    Rect box;
+    inst_term->getInst()->getBBox(box);
+    gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+    gui_->pause();
+  }
 }
 
 void FlexPAGraphics::startPin(frBPin* pin,
@@ -225,6 +230,7 @@ void FlexPAGraphics::setAPs(
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
+  aps_.clear();
 }
 
 void FlexPAGraphics::setViaAP(

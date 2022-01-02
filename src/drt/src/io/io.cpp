@@ -2151,7 +2151,7 @@ void io::Parser::readGuide()
         }
         layerNum = tech->name2layer[vLine[4]]->getLayerNum();
 
-        if (layerNum < (BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
+        if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
             || layerNum > TOP_ROUTING_LAYER)
           logger->error(DRT,
                         155,

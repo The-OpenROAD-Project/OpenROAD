@@ -45,6 +45,7 @@ global_placement
     [-routability_pitch_scale routability_pitch_scale]
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
     [-routability_rc_coefficients routability_rc_coefficients]
+    [-timing_driven_net_reweight_overflow]
     [-pad_left pad_left]
     [-pad_right pad_right]
     [-verbose_level level]
@@ -64,6 +65,7 @@ global_placement
 - `-overflow`: set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`.
 - `-initial_place_max_iter`: set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`.
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
+- `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 
 

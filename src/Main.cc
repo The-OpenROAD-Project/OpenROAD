@@ -190,6 +190,14 @@ main(int argc,
   initPython();
 
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    // Setup the app with tcl
+    auto* interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    ord::initOpenRoad(interp);
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+      showSplash();
+    }
+
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
       size_t sz = strlen(cmd_argv[i]);
@@ -198,14 +206,6 @@ main(int argc,
       for(size_t j = 0;j < sz; j++) {
         args[i][j] = (wchar_t) cmd_argv[i][j];
       }
-    }
-
-    // Setup the app with tcl
-    auto* interp = Tcl_CreateInterp();
-    Tcl_Init(interp);
-    ord::initOpenRoad(interp);
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
-      showSplash();
     }
 
     return Py_Main(cmd_argc, args.data());

@@ -73,6 +73,13 @@ find_package(Boost REQUIRED)
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
+option(ALLOW_WARNINGS "Flag to allow compilation with compiler warnings: off by default" OFF)
+if (NOT ALLOW_WARNINGS)
+  add_compile_options(
+    $<$<CXX_COMPILER_ID:GNU>:-Werror>
+  )
+endif()
+
 add_compile_options(
   -Wall
   -Wredundant-decls
@@ -132,6 +139,7 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
+add_subdirectory(dpo)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -171,10 +179,12 @@ target_include_directories(openroad
 )
 
 target_link_libraries(openroad
+  libabc #libabc must be in the link order before OpenSTA due to a conflicting zlib
   ifp
   openroad_swig
   gpl
   dpl
+  dpo
   fin
   rsz
   ppl

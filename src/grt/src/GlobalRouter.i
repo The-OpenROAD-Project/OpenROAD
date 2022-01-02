@@ -97,7 +97,7 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_verbose(int v)
+set_verbose(bool v)
 {
   getGlobalRouter()->setVerbose(v);
 }
@@ -109,7 +109,7 @@ set_overflow_iterations(int iterations)
 }
 
 void
-set_grid_origin(long x, long y)
+set_grid_origin(int x, int y)
 {
   getGlobalRouter()->setGridOrigin(x, y);
 }

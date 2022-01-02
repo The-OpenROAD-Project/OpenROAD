@@ -268,6 +268,7 @@ class Descriptor
     ActionCallback callback;
   };
   using Actions = std::vector<Action>;
+  static constexpr std::string_view deselect_action_ = "deselect";
 
   // An editor is a callback function and a list of possible values (this can be empty),
   // the name of the editor should match the property it modifies
@@ -303,6 +304,7 @@ class Descriptor
   virtual void highlight(std::any object,
                          Painter& painter,
                          void* additional_data = nullptr) const = 0;
+  virtual bool isSlowHighlight(std::any /* object */) const { return false; }
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -344,6 +346,7 @@ class Selected
                  int pen_width = 0,
                  const Painter::Color& brush = Painter::transparent,
                  const Painter::Brush& brush_style = Painter::Brush::SOLID) const;
+  bool isSlowHighlight() const { return descriptor_->isSlowHighlight(object_); }
 
   Descriptor::Properties getProperties() const;
 
@@ -474,6 +477,21 @@ class Renderer
   DisplayControls controls_;
 };
 
+class SpectrumGenerator
+{
+ public:
+  SpectrumGenerator(double max_value);
+
+  int getColorCount() const;
+  Painter::Color getColor(double value, int alpha = 150) const;
+
+  void drawLegend(Painter& painter, const std::vector<std::pair<int, std::string>>& legend_key) const;
+
+ private:
+  static const unsigned char spectrum_[256][3];
+  double scale_;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -520,7 +538,7 @@ class Gui
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
-  void selectAt(const odb::Rect& area, bool append = true);
+  int selectAt(const odb::Rect& area, bool append = true);
   int selectNext();
   int selectPrevious();
   void animateSelection(int repeat = 0);
@@ -532,7 +550,7 @@ class Gui
   void clearHighlights(int highlight_group = 0);
   void clearRulers();
 
-  void select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
+  int select(const std::string& type, const std::string& name_filter = "", bool filter_case_sensitive = true, int highlight_group = -1);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -581,6 +599,8 @@ class Gui
 
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
+
+  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
 
   // open DRC
   void loadDRC(const std::string& filename);

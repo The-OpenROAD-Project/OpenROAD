@@ -39,7 +39,7 @@ namespace dst {
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
                                        LoadBalancer* owner,
                                        utl::Logger* logger)
-    : sock(io_service), owner_(owner), logger_(logger)
+  : sock(io_service), logger_(logger), owner_(owner)
 {
 }
 // socket creation

@@ -7,11 +7,16 @@ set design "tinyRocket"
 set top_module "RocketTile"
 set synth_verilog "tinyRocket_nangate45.v"
 set sdc_file "tinyRocket_nangate45.sdc"
-set extra_lef [glob "Nangate45/fakeram45*.lef"]
-set extra_liberty [glob "Nangate45/fakeram45*.lib"]
+set rams {fakeram45_64x32}
+set extra_lef {}
+set extra_liberty {}
+foreach ram $rams {
+  lappend extra_lef "Nangate45/$ram.lef"
+  lappend extra_liberty "Nangate45/$ram.lib"
+}
 set die_area {0 0 924.92 799.4}
 set core_area {10.07 9.8 914.85 789.6}
 
-set cap_margin 20
+set cap_margin 30
 
 source -echo "flow.tcl"

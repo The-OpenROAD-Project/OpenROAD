@@ -41,7 +41,7 @@ namespace ppl {
 
 Core::Core()
 {
-	database_unit_ = 0;
+  database_unit_ = 0;
 }
 
 int Core::getPerimeter() const

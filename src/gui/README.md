@@ -82,10 +82,27 @@ select -type object_type
        [-highlight group]
 ```
 
+Returns: number of objects selected.
+
 Options description:
-- ``object_type``: name of the object typ. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
+- ``object_type``: name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
 - ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
 - ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
+
+### Displaying timing cones
+
+```
+display_timing_cone" pin
+                     [-fanin]
+                     [-fanout]
+                     [-off]
+```
+
+Options description:
+- ``pin``: name of the instance or block pin.
+- ``fanin``: (optional) display the fanin timing cone.
+- ``fanout``: (optional) display the fanout timing cone.
+- ``off``: (optional) remove the timing cone.
 
 ## TCL functions
 

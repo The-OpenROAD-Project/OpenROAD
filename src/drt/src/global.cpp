@@ -68,6 +68,8 @@ bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
 
+std::string VIAINPIN_BOTTOMLAYER_NAME;
+std::string VIAINPIN_TOPLAYER_NAME;
 frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
 frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 int MINNUMACCESSPOINT_MACROCELLPIN = 3;

@@ -17,14 +17,13 @@ Options description:
 
 -   `guide_file`: Set the output guides file name (e.g., -guide_file
     `route.guide`)
--   `verbose`: Set verbosity of reporting: 0 for less verbosity, 1 for medium
-    verbosity, 2 for full verbosity (e.g., -verbose `1`)
 -   `congestion_iterations`: Set the number of iterations made to remove the
     overflow of the routing (e.g., `-congestion_iterations 50`)
 -   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
     example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
     x-, y- direction.
 -   `allow_congestion`: Allow global routing results to be generated with remaining congestion
+-   `verbose`: This flag enables the full reporting of the global routing.
 
 ```
 set_routing_layers [-signal min-max]
