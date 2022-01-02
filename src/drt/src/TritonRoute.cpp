@@ -198,12 +198,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 void TritonRoute::init(bool pin_access_only)
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    VIAINPIN_BOTTOMLAYERNUM = 2;
-    VIAINPIN_TOPLAYERNUM = 2;
     USENONPREFTRACKS = false;
-    BOTTOM_ROUTING_LAYER = 4;
-    TOP_ROUTING_LAYER = 18;
-    ENABLE_VIA_GEN = false;
   }
 
   io::Parser parser(getDesign(), logger_);
@@ -231,6 +226,30 @@ void TritonRoute::init(bool pin_access_only)
                     273,
                     "topRoutingLayer {} not found.",
                     TOP_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
+    if (layer) {
+      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    606,
+                    "via in pin bottom layer {} not found.",
+                    VIAINPIN_BOTTOMLAYERNUM);
+    }
+  }
+
+  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
+    if (layer) {
+      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    607,
+                    "via in pin top layer {} not found.",
+                    VIAINPIN_TOPLAYERNUM);
     }
   }
 
@@ -379,11 +398,11 @@ void TritonRoute::readParams(const string& fileName)
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
           ++readParamCnt;
-        } else if (field == "drouteViaInPinBottomLayerNum") {
-          VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());
+        } else if (field == "viaInPinBottomLayer") {
+          VIAINPIN_BOTTOMLAYER_NAME = value;
           ++readParamCnt;
-        } else if (field == "drouteViaInPinTopLayerNum") {
-          VIAINPIN_TOPLAYERNUM = atoi(value.c_str());
+        } else if (field == "viaInPinTopLayer") {
+          VIAINPIN_TOPLAYER_NAME = value;
           ++readParamCnt;
         } else if (field == "drouteEndIterNum") {
           END_ITERATION = atoi(value.c_str());
@@ -424,11 +443,11 @@ void TritonRoute::setParams(const ParamStruct& params)
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
-  if (params.drouteViaInPinBottomLayerNum > 0) {
-    VIAINPIN_BOTTOMLAYERNUM = params.drouteViaInPinBottomLayerNum;
+  if (!params.viaInPinBottomLayer.empty()) {
+    VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
-  if (params.drouteViaInPinTopLayerNum > 0) {
-    VIAINPIN_TOPLAYERNUM = params.drouteViaInPinTopLayerNum;
+  if (!params.viaInPinTopLayer.empty()) {
+    VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
   }
   if (params.drouteEndIter >= 0) {
     END_ITERATION = params.drouteEndIter;

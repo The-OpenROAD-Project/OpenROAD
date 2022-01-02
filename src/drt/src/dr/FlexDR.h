@@ -267,7 +267,7 @@ class FlexDRMinAreaVio
   }
   frCoord getGapArea() const { return gapArea_; }
 
- protected:
+ private:
   drNet* net_;
   FlexMazeIdx bp_, ep_;
   frCoord gapArea_;

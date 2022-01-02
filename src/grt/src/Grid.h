@@ -58,18 +58,7 @@ class Grid
             const int y_grids,
             const bool perfect_regular_x,
             const bool perfectR_rgular_y,
-            const int num_layers,
-            const std::vector<int>& spacings,
-            const std::vector<int>& min_widths,
-            const std::vector<int>& horizontalCapacities,
-            const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstructions);
-
-  struct Tile
-  {
-    int x;
-    int y;
-  };
+            const int num_layers);
 
   void clear();
 
@@ -132,18 +121,13 @@ class Grid
     vertical_edges_capacities_[layer] = reduction;
   };
 
-  const std::map<int, std::vector<odb::Rect>>& getAllObstructions() const
-  {
-    return obstructions_;
-  }
-
-  void addObstruction(int layer, const odb::Rect& obstruction);
-
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<Tile, Tile> getBlockedTiles(const odb::Rect& obstruction,
-                                        odb::Rect& first_tile_bds,
-                                        odb::Rect& last_tile_bds);
+  void getBlockedTiles(const odb::Rect& obstruction,
+                       odb::Rect& first_tile_bds,
+                       odb::Rect& last_tile_bds,
+                       odb::Point& first_tile,
+                       odb::Point& last_tile);
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
@@ -168,7 +152,6 @@ class Grid
   std::vector<int> min_widths_;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
-  std::map<int, std::vector<odb::Rect>> obstructions_;
 };
 
 }  // namespace grt

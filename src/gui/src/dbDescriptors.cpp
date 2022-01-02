@@ -102,6 +102,26 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
   })});
 }
 
+// timing cone actions
+template<typename T>
+static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
+{
+  auto* gui = Gui::get();
+
+  actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
+    gui->timingCone(static_cast<T>(nullptr), false, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanin Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, true, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanout Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, false, true);
+    return desc->makeSelected(obj, nullptr);
+  }});
+}
+
 // get list of tech layers as EditorOption list
 static void addLayersToOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
 {
@@ -1160,6 +1180,16 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
                      {"MTerm", iterm->getMTerm()->getConstName()}});
 }
 
+Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
+{
+  auto iterm = std::any_cast<odb::dbITerm*>(object);
+
+  Descriptor::Actions actions;
+  addTimingConeActions<odb::dbITerm*>(iterm, this, actions);
+
+  return actions;
+}
+
 Selected DbITermDescriptor::makeSelected(std::any object,
                                          void* additional_data) const
 {
@@ -1246,6 +1276,16 @@ Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
   Editors editors;
   addRenameEditor(bterm, editors);
   return editors;
+}
+
+Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
+{
+  auto bterm = std::any_cast<odb::dbBTerm*>(object);
+
+  Descriptor::Actions actions;
+  addTimingConeActions<odb::dbBTerm*>(bterm, this, actions);
+
+  return actions;
 }
 
 Selected DbBTermDescriptor::makeSelected(std::any object,

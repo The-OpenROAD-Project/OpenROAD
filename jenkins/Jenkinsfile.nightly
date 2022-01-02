@@ -1,7 +1,7 @@
 pipeline {
   agent any;
   options {
-    timeout(time: 8, unit: 'HOURS')
+    timeout(time: 9, unit: 'HOURS')
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
@@ -33,7 +33,7 @@ pipeline {
           post {
             always {
               sh "mv /home/jenkins/ispd/runs/*.tar.gz .";
-              sh "mv /home/jenkins/ispd/runs/*log .";
+              sh "mv /home/jenkins/ispd/runs/*/*log .";
               archiveArtifacts "*.tar.gz, *log";
             }
           }

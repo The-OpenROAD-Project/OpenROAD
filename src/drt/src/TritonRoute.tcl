@@ -42,8 +42,8 @@ sta::define_cmd_args "detailed_route" {
     [-db_process_node name]
     [-disable_via_gen]
     [-droute_end_iter iter]
-    [-droute_via_in_pin_bottom_layer_num num]
-    [-droute_via_in_pin_top_layer_num num]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-or_seed seed]
     [-or_k_ k]
     [-bottom_routing_layer layer]
@@ -59,8 +59,8 @@ sta::define_cmd_args "detailed_route" {
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
-      -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
-      -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
+      -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
+      -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
     flags {-disable_via_gen -distributed}
   sta::check_argc_eq0 "detailed_route" $args
@@ -115,17 +115,15 @@ proc detailed_route { args } {
     } else {
       set droute_end_iter -1
     }
-    if { [info exists keys(-droute_via_in_pin_bottom_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
-      set droute_via_in_pin_bottom_layer_num $keys(-droute_via_in_pin_bottom_layer_num)
+    if { [info exists keys(-via_in_pin_bottom_layer)] } {
+      set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
     } else {
-      set droute_via_in_pin_bottom_layer_num -1
+      set via_in_pin_bottom_layer ""
     }
-    if { [info exists keys(-droute_via_in_pin_top_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_top_layer_num" $keys(-droute_via_in_pin_top_layer_num)
-      set droute_via_in_pin_top_layer_num $keys(-droute_via_in_pin_top_layer_num)
+    if { [info exists keys(-via_in_pin_top_layer)] } {
+      set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
     } else {
-      set droute_via_in_pin_top_layer_num -1
+      set via_in_pin_top_layer ""
     }
     if { [info exists keys(-or_seed)] } {
       set or_seed $keys(-or_seed)
@@ -173,7 +171,7 @@ proc detailed_route { args } {
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
-      $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
+      $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
   }
 }

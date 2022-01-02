@@ -42,10 +42,8 @@
 #include <vector>
 
 #include "GRoute.h"
-
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-
 #include "sta/Liberty.hh"
 
 namespace ord {
@@ -156,20 +154,19 @@ class GlobalRouter
                            int max_y,
                            int layer,
                            float reduction_percentage);
-  void setVerbose(const int v);
+  void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
-  void setGridOrigin(long x, long y);
+  void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void printGrid();
 
   // flow functions
   void writeGuides(const char* file_name);
-  std::vector<Net*> startFastRoute(int min_routing_layer,
-                                   int max_routing_layer,
-                                   NetType type);
+  std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
+  void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
-  void estimateRC(odb::dbNet *db_net);
+  void estimateRC(odb::dbNet* db_net);
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
@@ -220,7 +217,6 @@ class GlobalRouter
   void removeNet(odb::dbNet* db_net);
   int getMaxNetDegree();
 
-  void clearObjects();
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -228,7 +224,7 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
-  void initializeNets(std::vector<Net*>& nets);
+  void initNets(std::vector<Net*>& nets);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -237,7 +233,8 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
-  void computeObstructionsAdjustments();
+  void applyObstructionAdjustment(const odb::Rect& obstruction,
+                                  odb::dbTechLayer* tech_layer);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   int computeTrackConsumption(const Net* net,
@@ -286,7 +283,7 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
 
   // incremental funcions
-  void updateDirtyRoutes(Capacities &capacities);
+  void updateDirtyRoutes();
   Capacities getCapacities();
   void mergeResults(NetRouteMap& routes);
   void restoreCapacities(Capacities capacities,
@@ -300,18 +297,16 @@ class GlobalRouter
                       odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
+  void updateDbCongestion();
 
   // db functions
   void initGrid(int max_layer);
   void initRoutingLayers(std::map<int, odb::dbTechLayer*>& routing_layers);
-  void initRoutingTracks(std::vector<RoutingTracks>& routing_tracks,
-                         int max_layer);
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
-  void initNetlist();
+  std::vector<Net*> initNetlist();
   Net* getNet(odb::dbNet* db_net);
-  void getNetsByType(NetType type, std::vector<Net*>& nets);
-  void initObstructions();
+  void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
   int findInstancesObstructions(odb::Rect& die_area,
@@ -358,7 +353,7 @@ class GlobalRouter
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
 
-  int verbose_;
+  bool verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
 
@@ -387,7 +382,7 @@ std::string getLayerName(int layer_idx, odb::dbDatabase* db);
 
 class GRouteDbCbk : public odb::dbBlockCallBackObj
 {
-public:
+ public:
   GRouteDbCbk(GlobalRouter* grouter);
   virtual void inDbPostMoveInst(odb::dbInst* inst);
   virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
@@ -401,7 +396,7 @@ public:
   virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
   virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
 
-private:
+ private:
   void instItermsDirty(odb::dbInst* inst);
 
   GlobalRouter* grouter_;
@@ -411,18 +406,16 @@ private:
 // to make incremental routing updates.
 class IncrementalGRoute
 {
-public:
+ public:
   // Saves global router state and enables db callbacks.
-  IncrementalGRoute(GlobalRouter *groute,
-                    odb::dbBlock *block);
+  IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
   void updateRoutes();
   // Disables db callbacks.
   ~IncrementalGRoute();
 
-private:
-  GlobalRouter *groute_;
-  Capacities capacities_;
+ private:
+  GlobalRouter* groute_;
   GRouteDbCbk db_cbk_;
 };
 

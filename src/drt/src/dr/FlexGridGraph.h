@@ -951,7 +951,7 @@ class FlexGridGraph
       cout << "fixedShapeCostPlanar " << n.fixedShapeCostPlanar << "\n";
   }
   
- protected:
+ private:
   frTechObject* tech_;
   FlexDRWorker* drWorker_;
   FlexDRGraphics* graphics_;  // owned by FlexDR

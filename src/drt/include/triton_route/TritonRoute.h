@@ -58,20 +58,20 @@ namespace triton_route {
 
 struct ParamStruct
 {
-  const std::string& guideFile;
-  const std::string& outputGuideFile;
-  const std::string& outputMazeFile;
-  const std::string& outputDrcFile;
-  const std::string& outputCmapFile;
-  const std::string& dbProcessNode;
+  const std::string guideFile;
+  const std::string outputGuideFile;
+  const std::string outputMazeFile;
+  const std::string outputDrcFile;
+  const std::string outputCmapFile;
+  const std::string dbProcessNode;
   bool enableViaGen;
   int drouteEndIter;
-  int drouteViaInPinBottomLayerNum;
-  int drouteViaInPinTopLayerNum;
+  const std::string viaInPinBottomLayer;
+  const std::string viaInPinTopLayer;
   int orSeed;
   double orK;
-  const std::string& bottomRoutingLayer;
-  const std::string& topRoutingLayer;
+  const std::string bottomRoutingLayer;
+  const std::string topRoutingLayer;
   int verbose;
 };
 

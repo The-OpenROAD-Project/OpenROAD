@@ -146,6 +146,10 @@ void Replace::reset() {
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
+
+  timingNetWeightOverflows_.clear();
+  timingNetWeightOverflows_.shrink_to_fit();
+
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
   gui_debug_update_iterations_ = 10;
@@ -295,6 +299,7 @@ void Replace::initNesterovPlace() {
 
   if( !tb_ ) {
     tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
+    tb_->setTimingNetWeightOverflows(timingNetWeightOverflows_);
   }
 
   if( !np_ ) {
@@ -497,6 +502,11 @@ Replace::setPadLeft(int pad) {
 void
 Replace::setPadRight(int pad) {
   padRight_ = pad;
+}
+
+void
+Replace::addTimingNetWeightOverflow(int overflow) {
+  timingNetWeightOverflows_.push_back(overflow);
 }
 
 void

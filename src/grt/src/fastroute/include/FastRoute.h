@@ -38,9 +38,9 @@
 
 #include <boost/functional/hash.hpp>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -102,6 +102,7 @@ class FastRouteCore
 
   void deleteComponents();
   void clear();
+  void clearNets();
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
@@ -121,46 +122,40 @@ class FastRouteCore
              int min_layer,
              int max_layer,
              std::vector<int> edge_cost_per_layer);
-  void resetNewNetID();
   void initEdges();
   void setNumAdjustments(int nAdjustements);
-  void addAdjustment(long x1,
-                     long y1,
+  void addAdjustment(int x1,
+                     int y1,
                      int l1,
-                     long x2,
-                     long y2,
+                     int x2,
+                     int y2,
                      int l2,
                      int reducedCap,
                      bool isReduce);
+  void applyVerticalAdjustments(const odb::Point& first_tile,
+                                const odb::Point& last_tile,
+                                int layer,
+                                int first_tile_reduce,
+                                int last_tile_reduce);
+  void applyHorizontalAdjustments(const odb::Point& first_tile,
+                                  const odb::Point& last_tile,
+                                  int layer,
+                                  int first_tile_reduce,
+                                  int last_tile_reduce);
   void initAuxVar();
   NetRouteMap run();
   void updateDbCongestion();
 
-  int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
+  int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(long x1,
-                             long y1,
-                             int l1,
-                             long x2,
-                             long y2,
-                             int l2);
-  int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  void setEdgeUsage(long x1,
-                    long y1,
-                    int l1,
-                    long x2,
-                    long y2,
-                    int l2,
-                    int newUsage);
-  void setEdgeCapacity(long x1,
-                       long y1,
-                       int l1,
-                       long x2,
-                       long y2,
-                       int l2,
-                       int newCap);
+  int getEdgeCurrentResource(int x1, int y1, int l1, int x2, int y2, int l2);
+  int getEdgeCurrentUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  void
+  setEdgeUsage(int x1, int y1, int l1, int x2, int y2, int l2, int newUsage);
+  void
+  setEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2, int newCap);
   void setMaxNetDegree(int);
-  void setVerbose(int v);
+  void setVerbose(bool v);
   void setOverflowIterations(int iterations);
   void setAllowOverflow(bool allow);
   void computeCongestionInformation();
@@ -484,7 +479,7 @@ class FastRouteCore
   int num_layers_;
   int total_overflow_;  // total # overflow
   int grid_hv_;
-  int verbose_;
+  bool verbose_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

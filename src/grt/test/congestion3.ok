@@ -14,15 +14,13 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via via1_4 as default.
-[INFO GRT-0224] Chose via via2_8 as default.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: -0.0005
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource

@@ -154,8 +154,7 @@ class HeatMapDataSource
 
   const std::vector<std::pair<int, double>> getLegendValues() const;
   const Painter::Color getColor(double value) const;
-  const Painter::Color getColor(int idx) const;
-  int getColorsCount() const { return turbo_srgb_count_; }
+  const SpectrumGenerator& getColorGenerator() const { return color_generator_; }
 
   virtual void onShow();
   virtual void onHide();
@@ -213,11 +212,9 @@ class HeatMapDataSource
   std::unique_ptr<HeatMapRenderer> renderer_;
   HeatMapSetup* setup_;
 
-  static const int turbo_srgb_count_;
-  static const unsigned char turbo_srgb_bytes_[256][3];
+  SpectrumGenerator color_generator_;
 
-  std::array<double, 256 + 1> color_lower_bounds_;
-
+  std::vector<double> color_lower_bounds_;
 };
 
 class HeatMapSetup : public QDialog
