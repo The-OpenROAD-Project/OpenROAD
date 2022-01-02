@@ -67,6 +67,7 @@
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"
+#include "dpo/MakeOptdp.h"
 #include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "mpl2/MakeMacroPlacer.h"
@@ -81,6 +82,7 @@
 #include "ant/MakeAntennaChecker.hh"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
+#include "dst/MakeDistributed.h"
 #include "stt/MakeSteinerTreeBuilder.h"
 
 namespace sta {
@@ -125,6 +127,7 @@ OpenRoad::OpenRoad()
     resizer_(nullptr),
     ioPlacer_(nullptr),
     opendp_(nullptr),
+    optdp_(nullptr),
     finale_(nullptr),
     macro_placer_(nullptr),
     macro_placer2_(nullptr),
@@ -139,6 +142,7 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr),
     partitionMgr_(nullptr),
     pdngen_(nullptr),
+    distributer_(nullptr),
     stt_builder_(nullptr),
     threads_(1)
 {
@@ -152,6 +156,7 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deleteOptdp(optdp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
@@ -166,6 +171,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
+  deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   delete logger_;
 }
@@ -213,6 +219,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  optdp_ = makeOptdp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
@@ -227,6 +234,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
 
   // Init components.
@@ -244,6 +252,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
+  initOptdp(this);
   initFinale(this);
   initGlobalRouter(this);
   initTritonCts(this);
@@ -257,6 +266,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initAntennaChecker(this);
   initPartitionMgr(this);
   initPdnGen(this);
+  initDistributed(this);
   initSteinerTreeBuilder(this);
 
   // Import exported commands to global namespace.

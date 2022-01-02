@@ -1717,8 +1717,7 @@ void FlexDRWorker::initNets_numPinsIn()
       }
     }
   }
-  bgi::rtree<rq_box_value_t<drPin*>, bgi::quadratic<16>> pinRegionQuery(
-      allPins);
+  RTree<drPin*> pinRegionQuery(allPins);
   for (auto& net : nets_) {
     frCoord x1 = getExtBox().xMax();
     frCoord x2 = getExtBox().xMin();
@@ -3411,9 +3410,9 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
     if (isAddPathCost) {
-      addPathCost(connFig.get(), true);
+      addPathCost(connFig.get());
     } else {
-      subPathCost(connFig.get(), true);
+      subPathCost(connFig.get());
     }
   }
 }

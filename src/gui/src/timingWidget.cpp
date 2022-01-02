@@ -64,6 +64,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_details_model_(nullptr),
       capture_details_model_(nullptr),
       path_renderer_(std::make_unique<TimingPathRenderer>()),
+      cone_renderer_(std::make_unique<TimingConeRenderer>()),
       dbchange_listener_(new GuiDBChangeListener(this)),
       delay_widget_(new QTabWidget(this)),
       detail_widget_(new QTabWidget(this)),
@@ -156,6 +157,8 @@ TimingWidget::~TimingWidget()
 
 void TimingWidget::init(sta::dbSta* sta)
 {
+  cone_renderer_->setSTA(sta);
+
   setup_timing_paths_model_ = new TimingPathsModel(sta, this);
   hold_timing_paths_model_ = new TimingPathsModel(sta, this);
   path_details_model_ = new TimingPathDetailModel(false, sta, this);

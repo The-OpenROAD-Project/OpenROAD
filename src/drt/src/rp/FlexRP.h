@@ -47,7 +47,7 @@ class FlexRP
 
   void main();
 
- protected:
+ private:
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;

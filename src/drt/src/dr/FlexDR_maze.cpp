@@ -1440,6 +1440,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
+    if (modEol)
+        modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1787,12 +1789,12 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape,
         low = min(edge->low().y(), edge->high().y());
         high = max(edge->low().y(), edge->high().y());
         line = edge->low().x();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
       } else {
         low = min(edge->low().x(), edge->high().x());
         high = max(edge->low().x(), edge->high().x());
         line = edge->low().y();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
       }
       modEolCost(low,
                  high,

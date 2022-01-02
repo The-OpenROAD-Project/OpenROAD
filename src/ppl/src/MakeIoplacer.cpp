@@ -33,10 +33,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Parameters.h"
-#include "ppl/IOPlacer.h"
 #include "ppl/MakeIoplacer.h"
+
+#include "Parameters.h"
 #include "ord/OpenRoad.hh"
+#include "ppl/IOPlacer.h"
 #include "sta/StaMain.hh"
 
 namespace sta {

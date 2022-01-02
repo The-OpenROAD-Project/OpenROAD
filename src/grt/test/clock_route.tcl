@@ -18,7 +18,7 @@ set_global_routing_layer_adjustment * 0.5
 
 set_routing_layers -signal met1-met5 -clock met3-met5
 
-global_route
+global_route -verbose
 
 write_guides $guide_file
 

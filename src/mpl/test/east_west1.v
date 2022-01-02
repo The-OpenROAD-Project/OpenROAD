@@ -1,6 +1,6 @@
 module mem2 (
 	clk, 
-	mem_out0, 
+	mem_out0,
 	mem_out1);
    input clk;
    output [6:0] mem_out0;

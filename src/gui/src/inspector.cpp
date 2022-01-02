@@ -726,6 +726,10 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  if (deselect_action_) {
+    deselect_action_();
+  }
+
   selection_ = object;
   emit selection(object);
 
@@ -771,13 +775,19 @@ void Inspector::loadActions()
     delete widget; // no longer in the map so it's safe to delete
   }
 
+  deselect_action_ = Descriptor::ActionCallback();
+
   if (!selection_) {
     return;
   }
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    makeAction(action);
+    if (action.name == Descriptor::deselect_action_) {
+      deselect_action_ = action.callback;
+    } else {
+      makeAction(action);
+    }
   }
   if (isHighlighted(selection_)) {
     makeAction({"Remove from highlight", [this]() -> Selected {
@@ -800,6 +810,10 @@ void Inspector::makeAction(const Descriptor::Action& action)
     {"Remove from highlight", ":/highlight_off.png"},
     {"Add to highlight", ":/highlight_on.png"}
   };
+  std::vector<std::pair<std::string, QString>> symbol_replacements{
+    {"Fanin Cone", "\u25B7"},
+    {"Fanout Cone", "\u25C1"}
+  };
 
   const std::string& name = action.name;
 
@@ -809,6 +823,15 @@ void Inspector::makeAction(const Descriptor::Action& action)
       button = new QPushButton(QIcon(icon), "", this);
       button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
       break;
+    }
+  }
+  if (button == nullptr) {
+    for (const auto& [label, new_text] : symbol_replacements) {
+      if (name == label) {
+        button = new QPushButton(new_text, this);
+        button->setToolTip(QString::fromStdString(name)); // set tool since this is a symbol
+        break;
+      }
     }
   }
 
@@ -873,8 +896,11 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
-    // emit the selected item as something to focus on
-    emit focus(item_data.value<Selected>());
+    Selected sel = item_data.value<Selected>();
+    if (!sel.isSlowHighlight()) {
+      // emit the selected item as something to focus on
+      emit focus(sel);
+    }
   }
 }
 

@@ -1295,4 +1295,15 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   }
 }
 
+void MainWindow::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+{
+  auto* renderer = timing_widget_->getConeRenderer();
+
+  if (std::holds_alternative<odb::dbITerm*>(term)) {
+    renderer->setITerm(std::get<odb::dbITerm*>(term), fanin, fanout);
+  } else {
+    renderer->setBTerm(std::get<odb::dbBTerm*>(term), fanin, fanout);
+  }
+}
+
 }  // namespace gui

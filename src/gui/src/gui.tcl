@@ -178,7 +178,57 @@ proc select { args } {
     set case_sense 0
   }
   
-  gui::select $type $name $case_sense $highlight
+  return [gui::select $type $name $case_sense $highlight]
+}
+
+sta::define_cmd_args "display_timing_cone" {pin \
+                                            [-fanin] \
+                                            [-fanout] \
+                                            [-off]
+}
+
+proc display_timing_cone { args } {
+  sta::parse_key_args "display_timing_cone" args \
+    keys {} flags {-fanin -fanout -off}
+  if { [info exists flags(-off)] } {
+    sta::check_argc_eq0 "timing_cone" $args
+
+    gui::timing_cone NULL 0 0
+    return
+  }
+
+  sta::check_argc_eq1 "select" $args
+
+  set fanin [info exists flags(-fanin)]
+  set fanout [info exists flags(-fanout)]
+
+  # clear old one
+  gui::timing_cone NULL 0 0
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GUI 67 "Design not loaded."
+  }
+
+  sta::parse_port_pin_net_arg $args pins nets
+
+  foreach net $nets {
+    lappend pins [sta::net_load_pins $net]
+  }
+  if {[llength $pins] == 0} {
+    utl::error GUI 68 "Pin not found."
+  }
+  if {[llength $pins] != 1} {
+    utl::error GUI 69 "Multiple pin timing cones are not supported."
+  }
+
+  set term [sta::sta_to_db_pin $pins]
+  if { $term == "NULL" } {
+    set term [sta::sta_to_db_port $pins]
+  }
+
+  # select new one
+  gui::timing_cone $term $fanin $fanout
 }
 
 namespace eval gui {

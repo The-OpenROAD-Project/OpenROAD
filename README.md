@@ -39,7 +39,7 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 |------------------------|---------------------------|
 | `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
 | `CMAKE_CXX_FLAGS`      | Additional compiler flags |
-| `TCL_LIB`              | Path to Tcl library       |
+| `TCL_LIBRARY`          | Path to Tcl library       |
 | `TCL_HEADER`           | Path to `tcl.h`           |
 | `ZLIB_ROOT`            | Path to `zlib`            |
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |
@@ -80,6 +80,12 @@ To install in a different directory use:
 ``` shell
 ./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
+
+### LTO Options
+By default, OpenROAD is built with link time optimizations enabled. This adds 
+about 1 minute to compile times and improves the runtime by about 11%. If
+you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
+generating a build.
 
 ## Regression Tests
 

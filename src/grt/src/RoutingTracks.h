@@ -47,15 +47,6 @@ namespace grt {
 
 class RoutingTracks
 {
- private:
-  int layer_index_;
-  int track_pitch_;
-  int line_2_via_pitch_up_;
-  int line_2_via_pitch_down_;
-  int location_;
-  int num_tracks_;
-  bool orientation_;
-
  public:
   RoutingTracks() = default;
   RoutingTracks(const int layer_index,
@@ -89,6 +80,15 @@ class RoutingTracks
   int getLocation() const { return location_; }
   int getNumTracks() const { return num_tracks_; }
   bool getOrientation() const { return orientation_; }
+
+ private:
+  int layer_index_;
+  int track_pitch_;
+  int line_2_via_pitch_up_;
+  int line_2_via_pitch_down_;
+  int location_;
+  int num_tracks_;
+  bool orientation_;
 };
 
 }  // namespace grt

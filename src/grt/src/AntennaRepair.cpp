@@ -91,7 +91,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
           logger_->error(GRT, 68, "Global route segment not valid.");
         }
 
-        if (std::find(segments_to_wires.begin(), segments_to_wires.end(), seg) == segments_to_wires.end()) {
+        if (std::find(segments_to_wires.begin(), segments_to_wires.end(), seg)
+            == segments_to_wires.end()) {
           int x1 = seg.init_x;
           int y1 = seg.init_y;
           int x2 = seg.final_x;

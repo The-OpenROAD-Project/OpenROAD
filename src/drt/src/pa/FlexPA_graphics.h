@@ -58,7 +58,9 @@ class FlexPAGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startPin(frPin* pin, frInstTerm* inst_term);
+  void startPin(frPin* pin,
+                frInstTerm* inst_term,
+                set<frInst*, frBlockObjectComp>* instClass);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,
@@ -88,6 +90,8 @@ class FlexPAGraphics : public gui::Renderer
  private:
   Logger* logger_;
   frDebugSettings* settings_;
+  frInst* inst_; // from settings_->pinName
+  std::string term_name_; // from settings_->pinName
   gui::Gui* gui_;
   frPin* pin_;
   frInstTerm* inst_term_;
