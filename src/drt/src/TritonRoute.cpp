@@ -195,7 +195,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   FlexDRGraphics::init();
 }
 
-void TritonRoute::init(bool pin_access)
+void TritonRoute::init(bool pin_access_only)
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     VIAINPIN_BOTTOMLAYERNUM = 2;
@@ -236,7 +236,7 @@ void TritonRoute::init(bool pin_access)
 
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
-  } else if (pin_access) {
+  } else if (pin_access_only) {
     ENABLE_VIA_GEN = true;
   } else {
     ENABLE_VIA_GEN = false;

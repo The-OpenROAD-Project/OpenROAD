@@ -3378,16 +3378,15 @@ class dbITerm : public dbObject
 
   ///
   /// Returns preferred access points per each pin.
-  /// The size of the vector is the number of pins.
   /// One preffered access point, if available, for each pin.
   ///
-  std::vector<dbAccessPoint*> getPrefAccessPoints() const;
+  std::map<dbMPin*, dbAccessPoint*> getPrefAccessPoints() const;
+
   ///
   /// Returns all access points for each pin.
-  /// The size of the vector is the number of pins.
-  /// The inner vector is the access points for the i_th pin.
   ///
-  std::vector<std::vector<dbAccessPoint*>> getAccessPoints() const;
+  std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
+
   ///
   /// Translate a database-id back to a pointer.
   ///
@@ -8888,7 +8887,7 @@ class dbGCellGrid : public dbObject
 class dbAccessPoint : public dbObject
 {
  public:
-  enum AccessType
+  enum AccessType : int8_t
   {
     OnGrid,
     HalfGrid,

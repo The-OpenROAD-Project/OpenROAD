@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     db2->read(read);
     auto aps = db2->getChip()->getBlock()->findInst("i1")->findITerm("a")->getPrefAccessPoints();
     BOOST_TEST(aps.size() == 1);
-    ap = aps[0];
+    ap = aps.begin()->second;
     BOOST_TEST(ap->getPoint().x() == 10);
     BOOST_TEST(ap->getPoint().y() == 250);
     BOOST_TEST(ap->getMPin()->getMTerm()->getName() == "a");

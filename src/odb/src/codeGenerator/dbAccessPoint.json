@@ -39,17 +39,17 @@
       },
       {
         "name": "accesses_",
-        "type": "dbVector<bool>",
-        "flags":["private"]
+        "type": "std::array<bool, 6>",
+        "flags":["private", "no-template"]
       },
       {
         "name": "low_type_",
-        "type": "uint",
+        "type": "int8_t",
         "flags" : ["private","cmpgt"]
       },
       {
         "name": "high_type_",
-        "type": "uint",
+        "type": "int8_t",
         "flags" : ["private","cmpgt"]
       },
       {
@@ -69,7 +69,8 @@
             "EncOpt",
             "NearbyGrid"
           ],
-          "public": true
+          "public": true,
+          "type" : "int8_t"
         }
       ],
       "h_includes": [

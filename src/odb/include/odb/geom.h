@@ -561,7 +561,7 @@ inline bool Point::operator<(const Point& rhs) const
 
 inline bool Point::operator>=(const Point& rhs) const
 {
-  return !(*this<rhs);
+  return !(*this < rhs);
 }
 
 inline bool Rect::operator<(const Rect& rhs) const

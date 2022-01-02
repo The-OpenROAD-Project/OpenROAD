@@ -2049,7 +2049,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
 void io::Parser::readDb(odb::dbDatabase* db)
 {
-  if(design->getTopBlock() != nullptr)
+  if (design->getTopBlock() != nullptr)
     return;
   if (VERBOSE > 0) {
     logger->info(DRT, 149, "Reading tech and libs.");
@@ -2691,9 +2691,10 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
   }
 }
 
-inline void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
-                                frAccessPoint* ap,
-                                odb::dbTech* tech)
+void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
+                         frAccessPoint* ap,
+                         odb::dbTech* db_tech,
+                         frTechObject* tech)
 {
   db_ap->setPoint(ap->getPoint());
   if (ap->hasAccess(frDirEnum::N))
@@ -2708,7 +2709,8 @@ inline void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     db_ap->setAccess(true, odb::dbDirection::UP);
   if (ap->hasAccess(frDirEnum::D))
     db_ap->setAccess(true, odb::dbDirection::DOWN);
-  auto layer = tech->findLayer(ap->getLayerNum());
+  auto layer = db_tech->findLayer(
+      tech->getLayer(ap->getLayerNum())->getName().c_str());
   db_ap->setLayer(layer);
   db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
       true));  // this works because both enums have the same order
@@ -2717,7 +2719,7 @@ inline void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
 
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
 {
-  for(auto ap : block->getAccessPoints())
+  for (auto ap : block->getAccessPoints())
     odb::dbAccessPoint::destroy(ap);
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
@@ -2746,7 +2748,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
           auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
-            updateDbAccessPoint(db_ap, ap.get(), tech);
+            updateDbAccessPoint(db_ap, ap.get(), tech, getTech());
             aps_map[ap.get()] = db_ap;
           }
           j++;
@@ -2803,7 +2805,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
         auto pa = pin->getPinAccess(j);
         for (auto& ap : pa->getAccessPoints()) {
           auto db_ap = odb::dbAccessPoint::create(db_pin);
-          updateDbAccessPoint(db_ap, ap.get(), tech);
+          updateDbAccessPoint(db_ap, ap.get(), tech, getTech());
         }
         j++;
       }

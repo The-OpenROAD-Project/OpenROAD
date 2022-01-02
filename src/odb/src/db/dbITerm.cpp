@@ -683,37 +683,36 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
 }
 
-std::vector<std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();
   uint pin_access_idx = getInst()->getPinAccessIdx();
-  auto mpins = mterm->getMPins();
-  std::vector<std::vector<dbAccessPoint*>> aps(mpins.size());
-  uint i = 0;
-  for(auto mpin : mpins)
+  std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
+  for(auto mpin : mterm->getMPins())
   {
     _dbMPin* pin = (_dbMPin*) mpin;
-    if(pin->aps_.size() > pin_access_idx)
+    if(pin->aps_.size() > pin_access_idx) {
       for(auto id : pin->aps_[pin_access_idx])
       {
-        aps[i].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
+        aps[mpin].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
       }
-    i++;
+    }
   }
   return aps;
 }
 
-std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
+std::map<dbMPin*,dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   _dbITerm* iterm = (_dbITerm*) this;
-  std::vector<dbAccessPoint*> aps;
+  _dbMaster* master = (_dbMaster*) getMTerm()->getMaster();
+  std::map<dbMPin*,dbAccessPoint*> aps;
   for (auto& [pin_id, ap_id] : iterm->aps_) {
-    if (ap_id.isValid())
-      aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
-    else
-      aps.push_back(nullptr);
+    if (ap_id.isValid()) {
+      auto mpin = (dbMPin*) master->_mpin_tbl->getPtr(pin_id);
+      aps[mpin] = (dbAccessPoint*) block->ap_tbl_->getPtr(ap_id);
+    }
   }
   return aps;
 }

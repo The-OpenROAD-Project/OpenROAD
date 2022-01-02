@@ -154,7 +154,7 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  accesses_.resize(6, false);
+  accesses_.fill(false);
   // User Code End Constructor
 }
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
