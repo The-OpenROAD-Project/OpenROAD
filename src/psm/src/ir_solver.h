@@ -108,6 +108,7 @@ class IRSolver
   int GetConnectionTest();
 
   bool GetResult();
+  int GetMinimumResolution();
 
   int PrintSpice();
 

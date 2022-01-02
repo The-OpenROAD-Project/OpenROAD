@@ -73,7 +73,7 @@ class PDNSim
   int  analyze_power_grid();
   void write_pg_spice();
   void getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point ,double>>& ir_drop);
-
+  int  getMinimumResolution();
   int check_connectivity();
 
  private:
@@ -90,6 +90,7 @@ class PDNSim
   std::string                  _power_net;
   std::map<std::string, float> _net_voltage_map;
   std::map<odb::dbTechLayer*, std::map<odb::Point ,double>> _ir_drop;
+  int                          _node_density;
 };
 }  // namespace psm
 

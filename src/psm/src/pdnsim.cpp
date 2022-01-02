@@ -217,6 +217,7 @@ int PDNSim::analyze_power_grid()
     ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
   }
   _ir_drop = ir_drop;
+  _node_density = irsolve_h->GetMinimumResolution();
   delete irsolve_h;
   return 1;
 }
@@ -249,5 +250,10 @@ void PDNSim::getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, doubl
   // and if it does, then do not run analyze IR 
   ir_drop = _ir_drop;
 }
+
+int PDNSim::getMinimumResolution() {
+   return _node_density;
+}
+
 
 }  // namespace psm
