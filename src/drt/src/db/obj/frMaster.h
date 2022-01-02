@@ -171,10 +171,12 @@ void frMaster::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
+  (ar) & masterType_;
   (ar) & name2term_;
   (ar) & terms_;
   (ar) & blockages_;
   (ar) & boundaries_;
+  (ar) & dieBox_;
 }
 }  // namespace fr
 
