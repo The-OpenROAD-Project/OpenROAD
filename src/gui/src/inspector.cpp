@@ -590,10 +590,7 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
   view_->setItemDelegate(new EditorItemDelegate(model_, this));
 
   QHeaderView* header = view_->header();
-  header->setSectionResizeMode(Name, QHeaderView::Stretch);
-  header->setSectionResizeMode(Value, QHeaderView::ResizeToContents);
-  // QTreeView defaults stretchLastSection to true, overriding setSectionResizeMode
-  header->setStretchLastSection(false);
+  header->setSectionResizeMode(Name, QHeaderView::Interactive);
 
   QWidget* container = new QWidget(this);
 
@@ -662,6 +659,32 @@ Inspector::Inspector(const SelectionSet& selected, const HighlightSet& highlight
           SLOT(indexClicked()));
 }
 
+void Inspector::adjustHeaders()
+{
+  if (selection_) {
+    // resize to fit the contents
+    view_->resizeColumnToContents(Name);
+    view_->resizeColumnToContents(Value);
+
+    const auto margins = view_->contentsMargins();
+    const int width = view_->size().width() - margins.left() - margins.right();
+    const int name_width = view_->columnWidth(Name);
+    const int value_width = view_->columnWidth(Value);
+
+    const int max_name_width = width - value_width;
+
+    // check if name column is wider than the widest available
+    if (name_width > max_name_width) {
+      const int min_name_width = 0.5 * name_width;
+      // check if using a smaller name column will be useful,
+      // otherwise keep full width column.
+      if (min_name_width <= max_name_width) {
+        view_->setColumnWidth(Name, max_name_width);
+      }
+    }
+  }
+}
+
 int Inspector::selectNext()
 {
   if (selected_.empty()) {
@@ -703,6 +726,10 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  if (deselect_action_) {
+    deselect_action_();
+  }
+
   selection_ = object;
   emit selection(object);
 
@@ -723,7 +750,7 @@ void Inspector::inspect(const Selected& object)
     }
   }
 
-  view_->resizeColumnToContents(0);
+  adjustHeaders();
 }
 
 void Inspector::reload()
@@ -748,13 +775,19 @@ void Inspector::loadActions()
     delete widget; // no longer in the map so it's safe to delete
   }
 
+  deselect_action_ = Descriptor::ActionCallback();
+
   if (!selection_) {
     return;
   }
 
   // add action buttons
   for (const auto& action : selection_.getActions()) {
-    makeAction(action);
+    if (action.name == Descriptor::deselect_action_) {
+      deselect_action_ = action.callback;
+    } else {
+      makeAction(action);
+    }
   }
   if (isHighlighted(selection_)) {
     makeAction({"Remove from highlight", [this]() -> Selected {
@@ -777,6 +810,10 @@ void Inspector::makeAction(const Descriptor::Action& action)
     {"Remove from highlight", ":/highlight_off.png"},
     {"Add to highlight", ":/highlight_on.png"}
   };
+  std::vector<std::pair<std::string, QString>> symbol_replacements{
+    {"Fanin Cone", "\u25B7"},
+    {"Fanout Cone", "\u25C1"}
+  };
 
   const std::string& name = action.name;
 
@@ -786,6 +823,15 @@ void Inspector::makeAction(const Descriptor::Action& action)
       button = new QPushButton(QIcon(icon), "", this);
       button->setToolTip(QString::fromStdString(name)); // set tool since this is an icon
       break;
+    }
+  }
+  if (button == nullptr) {
+    for (const auto& [label, new_text] : symbol_replacements) {
+      if (name == label) {
+        button = new QPushButton(new_text, this);
+        button->setToolTip(QString::fromStdString(name)); // set tool since this is a symbol
+        break;
+      }
     }
   }
 
@@ -850,8 +896,11 @@ void Inspector::focusIndex(const QModelIndex& focus_index)
   QVariant item_data = item->data(EditorItemDelegate::selected_);
 
   if (item_data.isValid()) {
-    // emit the selected item as something to focus on
-    emit focus(item_data.value<Selected>());
+    Selected sel = item_data.value<Selected>();
+    if (!sel.isSlowHighlight()) {
+      // emit the selected item as something to focus on
+      emit focus(sel);
+    }
   }
 }
 
@@ -937,8 +986,6 @@ void Inspector::updateSelectedFields(const QModelIndex& index)
       view_->setExpanded(row_index, (*itr).second);
     }
   }
-
-  view_->resizeColumnToContents(0);
 }
 
 bool Inspector::isHighlighted(const Selected& selected)

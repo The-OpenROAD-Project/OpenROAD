@@ -176,13 +176,13 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     if (graph->hasGridCost(x, y, z, dir)) {
       costs.push_back({name + " grid cost", true});
     }
-    if (graph->hasRouteShapeCost(x, y, z, dir)) {
+    if (graph->hasRouteShapeCostAdj(x, y, z, dir)) {
       costs.push_back({name + " route shape cost", true});
     }
-    if (graph->hasMarkerCost(x, y, z, dir)) {
+    if (graph->hasMarkerCostAdj(x, y, z, dir)) {
       costs.push_back({name + " marker cost", true});
     }
-    if (graph->hasFixedShapeCost(x, y, z, dir)) {
+    if (graph->hasFixedShapeCostAdj(x, y, z, dir)) {
       costs.push_back({name + " fixed shape cost", true});
     }
     if (!graph->hasGuide(x, y, z, dir)) {
@@ -234,11 +234,9 @@ const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
 
-static std::string workerOrigin(FlexDRWorker* worker, const frDesign* design)
+static std::string workerOrigin(FlexDRWorker* worker)
 {
-  Point ll = worker->getRouteBox().ll();
-  Point origin;
-  design->getTopBlock()->getGCellIdx(ll, origin);
+  Point origin = worker->getRouteBox().ll();
   return "(" + std::to_string(origin.x()) + ", " + std::to_string(origin.y())
          + ")";
 }
@@ -400,14 +398,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 painter.setPen(layer, true);
             }
         }
-        // Planar doesn't distinguish E vs N so just use one
         bool planar
             = (draw_drc
-               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::E))
+               && grid_graph_->hasRouteShapeCostAdj(x, y, z, frDirEnum::UNKNOWN))
               || (draw_marker
-                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
+                  && grid_graph_->hasMarkerCostAdj(x, y, z, frDirEnum::UNKNOWN))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::E));
+                  && grid_graph_->hasFixedShapeCostAdj(x, y, z, frDirEnum::UNKNOWN));
         if (planar) {
           painter.drawRect({grid_graph_->xCoord(x) - offset,
                             grid_graph_->yCoord(y) - offset,
@@ -416,11 +413,11 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         }
         bool via
             = (draw_drc
-               && grid_graph_->hasRouteShapeCost(x, y, z, frDirEnum::U))
+               && grid_graph_->hasRouteShapeCostAdj(x, y, z, frDirEnum::UNKNOWN))
               || (draw_marker
-                  && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
+                  && grid_graph_->hasMarkerCostAdj(x, y, z, frDirEnum::UNKNOWN))
               || (draw_shape
-                  && grid_graph_->hasFixedShapeCost(x, y, z, frDirEnum::U))
+                  && grid_graph_->hasFixedShapeCostAdj(x, y, z, frDirEnum::UNKNOWN))
               || (draw_gCostEdges
                   && grid_graph_->hasGridCostU(x, y, z))
               || (draw_blockedEdges
@@ -541,9 +538,9 @@ void FlexDRGraphics::show(bool checkStopConditions) {
         if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
             return;
         }
-        Rect gcellBox = worker_->getGCellBox();
-        if (settings_->gcellX >= 0
-            && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
+        const Rect& rBox = worker_->getRouteBox();
+        if (settings_->x >= 0
+            && !rBox.intersects(Point(settings_->x, settings_->y))) {
           return;
         }
     }
@@ -617,16 +614,12 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   if (current_iter_ < settings_->iter) {
     return;
   }
-
-  Rect gcellBox = in->getGCellBox();
-  if (settings_->gcellX >= 0
-      && !gcellBox.intersects(Point(settings_->gcellX, settings_->gcellY))) {
+  const Rect& rBox = in->getRouteBox();
+  if (settings_->x >= 0
+      && !rBox.intersects(Point(settings_->x, settings_->y))) {
     return;
   }
-
-  Point origin;
-  design_->getTopBlock()->getGCellIdx(in->getRouteBox().ll(), origin);
-  status("Start worker: gcell origin " + workerOrigin(in, design_) + " "
+  status("Start worker: origin " + workerOrigin(in) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -692,7 +685,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 
   status("Start net: " + net->getFrNet()->getName() + " "
-         + workerOrigin(worker_, design_));
+         + workerOrigin(worker_));
   logger_->info(
       DRT, 249, "Net {} (id = {}).", net->getFrNet()->getName(), net->getId());
   for (auto& pin : net->getPins()) {

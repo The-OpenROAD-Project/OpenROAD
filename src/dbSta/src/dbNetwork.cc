@@ -285,15 +285,13 @@ public:
   Pin *next();
 
 private:
-  const dbNetwork *network_;
   dbSet<dbITerm>::iterator iitr_;
   dbSet<dbITerm>::iterator iitr_end_;
   Pin *next_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
-				   const dbNetwork *network) :
-  network_(network)
+				   const dbNetwork* /* network */)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
   iitr_ = dnet->getITerms().begin();
@@ -1095,7 +1093,8 @@ dbNetwork::connect(Instance *inst,
   else {
     dbInst *dinst = staToDb(inst);
     dbMTerm *dterm = staToDb(port);
-    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    dbITerm *iterm = dinst->getITerm(dterm);
+    iterm->connect(dnet);
     pin = dbToSta(iterm);
   }
   return pin;
@@ -1140,7 +1139,8 @@ dbNetwork::connect(Instance *inst,
     dbInst *dinst = staToDb(inst);
     dbMaster *master = dinst->getMaster();
     dbMTerm *dterm = master->findMTerm(port_name);
-    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    dbITerm *iterm = dinst->getITerm(dterm);
+    iterm->connect(dnet);
     pin = dbToSta(iterm);
   }
   return pin;
@@ -1153,7 +1153,7 @@ dbNetwork::disconnectPin(Pin *pin)
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm)
-    dbITerm::disconnect(iterm);
+    iterm->disconnect();
   else if (bterm)
     bterm->disconnect();
 }

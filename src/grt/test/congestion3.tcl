@@ -7,5 +7,5 @@ set_global_routing_layer_adjustment metal2 0.9
 
 set_routing_layers -signal metal2-metal2
 
-catch {global_route} error
+catch {global_route -verbose} error
 puts $error

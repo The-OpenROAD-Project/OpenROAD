@@ -12,6 +12,7 @@ record_tests {
   est_rc2
   gcd
   gcd_flute
+  inst_pin_out_of_die
   invalid_routing_layer
   invalid_pin_placement
   multiple_calls
@@ -30,6 +31,7 @@ record_tests {
   repair_antennas3
   repair_antennas_error1
   repair_antennas_error2
+  silence
   tracks1
   tracks2
 }

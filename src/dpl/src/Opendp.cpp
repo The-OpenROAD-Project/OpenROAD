@@ -148,6 +148,13 @@ Opendp::init(dbDatabase *db,
 }
 
 void
+Opendp::initBlock()
+{
+  block_ = db_->getChip()->getBlock();
+  core_ = ord::getCore(block_);
+}
+
+void
 Opendp::setPaddingGlobal(int left,
                          int right)
 {
@@ -186,7 +193,6 @@ Opendp::setDebug(bool displacement,
 {
   if (Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(this,
-                                           displacement,
                                            min_displacement,
                                            debug_instance);
   }

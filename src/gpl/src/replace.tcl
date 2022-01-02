@@ -73,6 +73,7 @@ proc global_placement { args } {
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
       -routability_rc_coefficients \
+      -timing_driven_net_reweight_overflow \
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
@@ -98,7 +99,18 @@ proc global_placement { args } {
     if { [get_libs -quiet "*"] == {} } {
       utl::error GPL 121 "No liberty libraries found."
     }
+
+    if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
+      set overflow_list $keys(-timing_driven_net_reweight_overflow)
+    } else {
+      set overflow_list [list 79 64 49 29 21 15]
+    }
+
+    foreach overflow $overflow_list {
+      gpl::add_timing_net_reweight_overflow_cmd $overflow
+    }
   }
+
   if { [info exists flags(-disable_timing_driven)] } { 
     utl::warn "GPL" 115 "-disable_timing_driven is deprecated."
   }
@@ -137,7 +149,7 @@ proc global_placement { args } {
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
     sta::check_positive_float "-routability_max_density" $routability_max_density
-    set_routability_max_density_cmd $routability_max_density
+    gpl::set_routability_max_density_cmd $routability_max_density
   }
 
 

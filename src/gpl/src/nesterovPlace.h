@@ -126,6 +126,9 @@ public:
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
 private:
+#ifdef ENABLE_CIMG_LIB
+  void plot(const std::string& title, int iteration);
+#endif
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
   utl::Logger* log_;
@@ -181,7 +184,6 @@ private:
   float wireLengthCoefY_;
 
   // phi is described in ePlace paper.
-  float sumPhi_;
   float sumOverflow_;
 
   // half-parameter-wire-length

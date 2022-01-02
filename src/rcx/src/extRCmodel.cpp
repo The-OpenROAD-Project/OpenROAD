@@ -1872,7 +1872,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger) {
   _metLevel = 0;
 }
 extRCModel::extRCModel(const char* name, Logger* logger) {
-  logger = logger;
+  logger_ = logger;
   _layerCnt = 0;
   strcpy(_name, name);
   _resOver = NULL;
@@ -2903,7 +2903,9 @@ bool extRCModel::openCapLogFile() {
   } else {
     sprintf(cmd, "mv %s/%s/%s %s/%s/%s.in", _topDir, _patternName, capLog,
             _topDir, _patternName, capLog);
-    system(cmd);
+    if (system(cmd) == -1) {
+      logger_->error(RCX, 489, "mv failed: {}", cmd);
+    }
 
     _capLogFP = openFile(buff, capLog, NULL, "w");
 
@@ -3514,12 +3516,16 @@ void extRCModel::runSolver(const char* solverOption) {
     sprintf(cmd, "cd %s ; dir ; cd ../../../../../../ ", _wireDirName);
   logger_->info(RCX, 73, "{}", cmd);
 #endif
-  system(cmd);
+  if (system(cmd) == -1) {
+    logger_->error(RCX, 490, "system failed: {}", cmd);
+  }
 }
 void extRCModel::cleanFiles() {
   char cmd[4000];
   sprintf(cmd, "rm -rf %s ", _wireDirName);
-  system(cmd);
+  if (system(cmd) == -1) {
+    logger_->error(RCX, 491, "rm failed on {}", _wireDirName);
+  }
 }
 int extRCModel::getOverUnderIndex(extMeasure* m, uint maxCnt) {
   return getMetIndexOverUnder(m->_met, m->_underMet, m->_overMet, _layerCnt,

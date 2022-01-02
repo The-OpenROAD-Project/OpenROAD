@@ -229,6 +229,8 @@ class Inspector : public QDockWidget
   void handleAction(QWidget* action);
   void loadActions();
 
+  void adjustHeaders();
+
   int getSelectedIteratorPosition();
 
   bool isHighlighted(const Selected& selected);
@@ -259,6 +261,7 @@ class Inspector : public QDockWidget
   const HighlightSet& highlighted_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
+  Descriptor::ActionCallback deselect_action_;
 
   // used to finetune the double click interval
   static constexpr double mouse_double_click_scale_ = 0.75;

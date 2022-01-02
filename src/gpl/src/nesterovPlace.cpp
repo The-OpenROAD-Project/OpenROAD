@@ -56,11 +56,6 @@ getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 static float
 getSecondNorm(const vector<FloatPoint>& a);
 
-#ifdef ENABLE_CIMG_LIB
-static std::string
-getZeroFillStr(int iterNum);
-#endif
-
 NesterovPlaceVars::NesterovPlaceVars()
 {
   reset();
@@ -97,7 +92,6 @@ NesterovPlace::NesterovPlace()
   baseWireLengthCoef_(0), 
   wireLengthCoefX_(0), 
   wireLengthCoefY_(0),
-  sumPhi_(0),
   sumOverflow_(0),
   prevHpwl_(0),
   isDiverged_(false),
@@ -435,14 +429,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
   pe.setNesterovBase(nb_);
   pe.setLogger(log_);
   pe.Init();
-  if (PlotEnv::isPlotEnabled()) {
-      pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
-         "cell_0");
-      pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
-         "bin_0");
-      pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
-         "arrow_0");
-  }
+  plot("Nesterov - BeforeStart", 0);
 #endif
 
   if (graphics_) {
@@ -552,6 +539,9 @@ NesterovPlace::doNesterovPlace(int start_iter) {
       if( newStepLength > stepLength_ * 0.95) {
         stepLength_ = newStepLength;
         break;
+      } else if (newStepLength < 0.01) {
+        stepLength_ = 0.01;
+        break;
       }
       else {
         stepLength_ = newStepLength;
@@ -596,17 +586,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
           iter+1, sumOverflow_, prevHpwl_);
 
 #ifdef ENABLE_CIMG_LIB
-      if (PlotEnv::isPlotEnabled()) {
-        pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)), true,
-            string("cell_") +
-            getZeroFillStr(iter+1));
-        pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)),
-            string("bin_") +
-            getZeroFillStr(iter+1));
-        pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(iter+1)),
-            string("arrow_") +
-            getZeroFillStr(iter+1));
-      }
+      plot("Nesterov - Iter: " + std::to_string(iter + 1), iter + 1);
 #endif
     }
 
@@ -618,7 +598,7 @@ NesterovPlace::doNesterovPlace(int start_iter) {
     // timing driven feature
     // do reweight on timing-critical nets. 
     if( npVars_.timingDrivenMode 
-        && tb_->isTimingUpdateIter(sumOverflow_) ){
+        && tb_->isTimingNetWeightOverflow(sumOverflow_) ){
       // update db's instance location from current density coordinates
       updateDb();
 
@@ -941,11 +921,17 @@ getSecondNorm(const vector<FloatPoint>& a) {
 }
 
 #ifdef ENABLE_CIMG_LIB
-static std::string
-getZeroFillStr(int iterNum) {
-  std::ostringstream str;
-  str << std::setw(4) << std::setfill('0') << iterNum;
-  return str.str();
+void
+NesterovPlace::plot(const std::string& title, int iteration)
+{
+  if (PlotEnv::isPlotEnabled()) {
+    std::ostringstream iter_str;
+    iter_str << std::setw(4) << std::setfill('0') << iteration;
+
+    pe.SaveCellPlotAsJPEG(title, true, "cell_" + iter_str.str());
+    pe.SaveBinPlotAsJPEG(title, "bin_" + iter_str.str());
+    pe.SaveArrowPlotAsJPEG(title, "arrow_" + iter_str.str());
+  }
 }
 #endif
 

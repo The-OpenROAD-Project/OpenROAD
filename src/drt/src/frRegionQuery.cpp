@@ -43,9 +43,6 @@ namespace gtl = boost::polygon;
 struct frRegionQuery::Impl
 {
   template <typename T>
-  using RTree = bgi::rtree<rq_box_value_t<T*>, bgi::quadratic<16>>;
-
-  template <typename T>
   using RTreesByLayer = std::vector<RTree<T>>;
 
   template <typename T>
@@ -54,17 +51,18 @@ struct frRegionQuery::Impl
   frDesign* design_;
   Logger* logger_;
   // only for pin shapes, obs and snet
-  RTreesByLayer<frBlockObject> shapes_;
-  RTreesByLayer<frGuide> guides_;
-  RTreesByLayer<frNet> origGuides_;  // non-processed guides;
-  RTree<frBlockObject> grPins_;
-  RTreesByLayer<frRPin> rpins_;  // only for rpins
+  RTreesByLayer<frBlockObject*> shapes_;
+  RTreesByLayer<frGuide*> guides_;
+  RTreesByLayer<frNet*> origGuides_;  // non-processed guides;
+  RTree<frBlockObject*> grPins_;
+  RTreesByLayer<frRPin*> rpins_;  // only for rpins
   // only for gr objs, via only in via layer
-  RTreesByLayer<grBlockObject> grObjs_;
+  RTreesByLayer<grBlockObject*> grObjs_;
   // only for dr objs, via only in via layer
-  RTreesByLayer<frBlockObject> drObjs_;
-  RTreesByLayer<frMarker> markers_;  // use init()
+  RTreesByLayer<frBlockObject*> drObjs_;
+  RTreesByLayer<frMarker*> markers_;  // use init()
 
+  Impl() = default;
   void init();
   void initOrigGuide(map<frNet*, vector<frRect>, frBlockObjectComp>& tmpGuides);
   void initGuide();
@@ -90,6 +88,20 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
   void addGRObj(grShape* in);
   void addGRObj(grVia* in);
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & design_;
+    (ar) & shapes_;
+    (ar) & guides_;
+    (ar) & origGuides_;
+    // (ar) & grPins_;
+    (ar) & rpins_;
+    (ar) & grObjs_;
+    (ar) & drObjs_;
+    (ar) & markers_;
+  }
+  friend class boost::serialization::access;
 };
 
 frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
@@ -97,6 +109,11 @@ frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
 {
   impl_->design_ = design;
   impl_->logger_ = logger;
+}
+
+frRegionQuery::frRegionQuery()
+    : impl_(nullptr)
+{
 }
 
 frRegionQuery::~frRegionQuery() = default;
@@ -665,7 +682,7 @@ void frRegionQuery::Impl::init()
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    shapes_.at(i) = boost::move(RTree<frBlockObject>(allShapes.at(i)));
+    shapes_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
     if (VERBOSE > 0) {
@@ -710,7 +727,7 @@ void frRegionQuery::Impl::initOrigGuide(
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    origGuides_.at(i) = boost::move(RTree<frNet>(allShapes.at(i)));
+    origGuides_.at(i) = boost::move(RTree<frNet*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
     if (VERBOSE > 0) {
@@ -753,7 +770,7 @@ void frRegionQuery::Impl::initGuide()
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    guides_.at(i) = boost::move(RTree<frGuide>(allGuides.at(i)));
+    guides_.at(i) = boost::move(RTree<frGuide*>(allGuides.at(i)));
     allGuides.at(i).clear();
     allGuides.at(i).shrink_to_fit();
     if (VERBOSE > 0) {
@@ -780,7 +797,7 @@ void frRegionQuery::Impl::initGRPin(vector<pair<frBlockObject*, Point>>& in)
   }
   in.clear();
   in.shrink_to_fit();
-  grPins_ = boost::move(RTree<frBlockObject>(allGRPins));
+  grPins_ = boost::move(RTree<frBlockObject*>(allGRPins));
 }
 
 void frRegionQuery::initRPin()
@@ -803,7 +820,7 @@ void frRegionQuery::Impl::initRPin()
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    rpins_.at(i) = boost::move(RTree<frRPin>(allRPins.at(i)));
+    rpins_.at(i) = boost::move(RTree<frRPin*>(allRPins.at(i)));
     allRPins.at(i).clear();
     allRPins.at(i).shrink_to_fit();
   }
@@ -833,7 +850,7 @@ void frRegionQuery::Impl::initDRObj()
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    drObjs_.at(i) = boost::move(RTree<frBlockObject>(allShapes.at(i)));
+    drObjs_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
@@ -858,7 +875,7 @@ void frRegionQuery::Impl::initGRObj()
   }
 
   for (auto i = 0; i < numLayers; i++) {
-    grObjs_.at(i) = boost::move(RTree<grBlockObject>(allShapes.at(i)));
+    grObjs_.at(i) = boost::move(RTree<grBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
   }
@@ -931,3 +948,18 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
+
+template <class Archive>
+void frRegionQuery::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void frRegionQuery::serialize<InputArchive>(
+    InputArchive& ar,
+    const unsigned int file_version);
+
+template void frRegionQuery::serialize<OutputArchive>(
+    OutputArchive& ar,
+    const unsigned int file_version);

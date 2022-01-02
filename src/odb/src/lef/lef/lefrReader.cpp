@@ -43,6 +43,8 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
+#include "lef_parser.hpp"
+
 static const char *init_call_func = NULL;
 
 void

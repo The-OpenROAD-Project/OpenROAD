@@ -56,12 +56,13 @@ class TimingBase {
         rsz::Resizer* rs,
         utl::Logger* log);
 
-    // check whether overflow reached the timingIter
-    bool isTimingUpdateIter(float overflow);
-    void addTimingUpdateIter(int overflow);
-    void deleteTimingUpdateIter(int overflow);
-    void clearTimingUpdateIter();
-    size_t getTimingUpdateIterSize() const;
+    // check whether overflow reached the timingOverflow
+    bool isTimingNetWeightOverflow(float overflow);
+    void addTimingNetWeightOverflow(int overflow);
+    void setTimingNetWeightOverflows(std::vector<int>& overflows);
+    void deleteTimingNetWeightOverflow(int overflow);
+    void clearTimingNetWeightOverflow();
+    size_t getTimingNetWeightOverflowSize() const;
 
     // updateNetWeight.
     // True: successfully reweighted gnets
@@ -73,10 +74,10 @@ class TimingBase {
     utl::Logger* log_;
     std::shared_ptr<NesterovBase> nb_;
 
-    std::vector<int> timingUpdateIter_;
-    std::vector<int> timingIterChk_;
+    std::vector<int> timingNetWeightOverflow_;
+    std::vector<int> timingOverflowChk_;
     float net_weight_max_;
-    void initTimingIterChk();
+    void initTimingOverflowChk();
 };
 
 } // namespace

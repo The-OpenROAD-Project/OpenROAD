@@ -98,14 +98,16 @@ class Parameters
   void setMinDistance(int min_dist) { min_dist_ = min_dist; }
   int getMinDistance() const { return min_dist_; }
 
-  void setMinDistanceInTracks(bool in_tracks) { distance_in_tracks_ = in_tracks; }
+  void setMinDistanceInTracks(bool in_tracks)
+  {
+    distance_in_tracks_ = in_tracks;
+  }
   bool getMinDistanceInTracks() const { return distance_in_tracks_; }
 
  private:
   bool report_hpwl_ = false;
   int num_slots_ = -1;
   float slots_factor_ = -1;
-  float usage_ = -1;
   float horizontal_thickness_multiplier_ = 1;
   float vertical_thickness_multiplier_ = 1;
   float horizontal_length_extend_ = -1;

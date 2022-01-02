@@ -134,7 +134,10 @@ class IOPin
   odb::Point getLowerBound() const { return lower_bound_; };
   odb::Point getUpperBound() const { return upper_bound_; };
   std::string getNetName() const { return bterm_->getNet()->getName(); }
-  odb::dbPlacementStatus getPlacementStatus() const { return placement_status_; };
+  odb::dbPlacementStatus getPlacementStatus() const
+  {
+    return placement_status_;
+  };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
   bool isPlaced() const { return is_placed_; }
@@ -167,7 +170,10 @@ class Netlist
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
   void addIOGroup(const std::vector<int>& pin_group);
   std::vector<std::vector<int>>& getIOGroups() { return io_groups_; }
-  void setIOGroups(const std::vector<std::vector<int>>& io_groups) { io_groups_ = io_groups; }
+  void setIOGroups(const std::vector<std::vector<int>>& io_groups)
+  {
+    io_groups_ = io_groups;
+  }
   int numSinksOfIO(int idx);
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }

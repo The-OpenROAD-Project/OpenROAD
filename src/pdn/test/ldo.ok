@@ -1,0 +1,52 @@
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hvl/sky130_fd_sc_hvl.tlef
+[INFO ODB-0223]     Created 15 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hvl/sky130_fd_sc_hvl.tlef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hvl/sky130_fd_sc_hvl_merged.lef
+[INFO ODB-0225]     Created 69 library cells
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hvl/sky130_fd_sc_hvl_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130hvl/capacitor_test_nf.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hvl/capacitor_test_nf.lef
+[INFO ODB-0222] Reading LEF file: sky130hvl/LDO_COMPARATOR_LATCH.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hvl/LDO_COMPARATOR_LATCH.lef
+[INFO ODB-0222] Reading LEF file: sky130hvl/PMOS.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hvl/PMOS.lef
+[INFO ODB-0222] Reading LEF file: sky130hvl/PT_UNIT_CELL.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hvl/PT_UNIT_CELL.lef
+[INFO ODB-0222] Reading LEF file: sky130hvl/vref_gen_nmos_with_trim.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hvl/vref_gen_nmos_with_trim.lef
+[INFO ODB-0127] Reading DEF file: ldo/2_5_floorplan_tapcell.def
+[INFO ODB-0128] Design: ldoInst
+[INFO ODB-0130]     Created 34 pins.
+[INFO ODB-0131]     Created 454 components and 2681 component-terminals.
+[INFO ODB-0133]     Created 260 nets and 856 connections.
+[INFO ODB-0134] Finished DEF file: ldo/2_5_floorplan_tapcell.def
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: ldo/pdn.cfg
+[INFO PDN-0008] Design name is ldoInst.
+[INFO PDN-0009] Reading technology data.
+[INFO PDN-0011] ****** INFO ******
+Type: stdcell, grid
+    Core Rings
+      Layer: met4  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+      Layer: met5  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+    Stdcell Rails
+      Layer: met1  -  width: 0.490  pitch: 6.660  offset: 0.000 
+    Straps
+      Layer: met4  -  width: 0.960  pitch: 56.000  offset: 2.000 
+    Connect: {met4 met5} {met1 met4}
+Type: macro, CORE_macro_grid_1
+    Macro orientation: R0 R180 MX MY
+    Straps
+      Layer: met5  -  width: 1.600  pitch: 40.000  offset: 2.000 
+    Connect: {met4_PIN_ver met5}
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid.
+[WARNING PDN-0002] No shapes on layer met1 for POWER_VREG.
+[INFO PDN-0015] Writing to database.
+No differences found.

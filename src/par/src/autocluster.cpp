@@ -1,5 +1,20 @@
-#include "odb/db.h"
 #include "autocluster.h"
+
+#include <sys/stat.h>
+
+#include <algorithm>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <queue>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
+
+#include "MLPart.h"
+#include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
@@ -18,25 +33,10 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
-#include "sta/Sequential.hh"
 #include "sta/SearchPred.hh"
+#include "sta/Sequential.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
-
-#include "MLPart.h"
-#include <sys/stat.h>
-
-#include <algorithm>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <queue>
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-
 #include "utl/Logger.h"
 
 using utl::PAR;
@@ -52,6 +52,7 @@ using std::max;
 using std::min;
 using std::ofstream;
 using std::pair;
+using std::pow;
 using std::queue;
 using std::sort;
 using std::string;
@@ -59,12 +60,13 @@ using std::to_string;
 using std::tuple;
 using std::unordered_map;
 using std::vector;
-using std::pow;
 
 using odb::dbBlock;
 using odb::dbBox;
+using odb::dbBTerm;
 using odb::dbDatabase;
 using odb::dbInst;
+using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
@@ -72,8 +74,6 @@ using odb::dbSet;
 using odb::dbSigType;
 using odb::dbStringProperty;
 using odb::Rect;
-using odb::dbITerm;
-using odb::dbBTerm;
 
 using sta::Cell;
 using sta::Instance;
@@ -112,15 +112,14 @@ float Cluster::calculateArea(ord::dbVerilogNetwork* network) const
   return area;
 }
 
-void Cluster::calculateNumSeq(ord::dbVerilogNetwork* network) 
+void Cluster::calculateNumSeq(ord::dbVerilogNetwork* network)
 {
   for (auto* inst : inst_vec_) {
     LibertyCell* lib_cell = network->libertyCell(inst);
-    if(lib_cell->hasSequentials())
+    if (lib_cell->hasSequentials())
       num_seq_ += 1;
   }
 }
-
 
 // ******************************************************************************
 // Class AutoClusterMgr
@@ -358,8 +357,6 @@ void AutoClusterMgr::createBundledIO()
           PAR, 400, "Floorplan has not been initialized? Pin location error.");
     }
   }
-
-
 }
 
 void AutoClusterMgr::createCluster(int& cluster_id)
@@ -474,8 +471,8 @@ void AutoClusterMgr::createClusterUtil(Instance* inst, int& cluster_id)
 void AutoClusterMgr::updateConnection()
 {
   for (auto [id, cluster] : cluster_map_)
-      cluster->initConnection();
-  
+    cluster->initConnection();
+
   calculateConnection(network_->topInstance());
   calculateBufferNetConnection();
 }
@@ -493,7 +490,6 @@ void AutoClusterMgr::calculateBufferNetConnection()
   for (int i = 0; i < buffer_net_vec_.size(); i++) {
     int driver_id = 0;
     vector<int> loads_id;
-    vector<int>::iterator vec_iter;
     for (int j = 0; j < buffer_net_vec_[i].size(); j++) {
       Net* net = buffer_net_vec_[i][j];
       const bool is_top = network_->instance(net) == network_->topInstance();
@@ -529,7 +525,7 @@ void AutoClusterMgr::calculateBufferNetConnection()
 
     if (driver_id != 0 && loads_id.size() > 0) {
       for (int i = 0; i < loads_id.size(); i++) {
-        if(driver_id != loads_id[i]) {
+        if (driver_id != loads_id[i]) {
           cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
           cluster_map_[loads_id[i]]->addInputConnection(driver_id);
         }
@@ -546,7 +542,6 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
     Net* net = net_iter->next();
     int driver_id = 0;
     vector<int> loads_id;
-    vector<int>::iterator vec_iter;
     bool buffer_flag = false;
     if (find(buffer_net_list_.begin(), buffer_net_list_.end(), net)
         != buffer_net_list_.end())
@@ -579,7 +574,7 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
 
       if (driver_id != 0 && loads_id.size() > 0) {
         for (int i = 0; i < loads_id.size(); i++) {
-          if(loads_id[i] != driver_id) {
+          if (loads_id[i] != driver_id) {
             cluster_map_[driver_id]->addOutputConnection(loads_id[i]);
             cluster_map_[loads_id[i]]->addInputConnection(driver_id);
           }
@@ -1230,7 +1225,8 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
           output_file << "source: " << cluster->getName() << "   ";
           flag = false;
         }
-        output_file << cluster_map_[iter->first]->getName() << "   " << iter->second << "   ";
+        output_file << cluster_map_[iter->first]->getName() << "   "
+                    << iter->second << "   ";
       }
       iter++;
     }
@@ -1256,27 +1252,24 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
 pair<float, float> AutoClusterMgr::printPinPos(Instance* macro_inst)
 {
   const float dbu = db_->getTech()->getDbUnitsPerMicron();
-  int lx = 100000000;
-  int ly = 100000000;
-  int ux = 0;
-  int uy = 0;
+  Rect bbox;
+  bbox.mergeInit();
   const Cell* cell = network_->cell(macro_inst);
   const char* cell_name = network_->name(cell);
   dbMaster* master = db_->findMaster(cell_name);
   for (dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == 0) {
+    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
-          lx = min(lx, box->xMin());
-          ly = min(ly, box->yMin());
-          ux = max(ux, box->xMax());
-          uy = max(uy, box->yMax());
+          Rect rect;
+          box->getBox(rect);
+          bbox.merge(rect);
         }
       }
     }
   }
-  const float x_center = (lx + ux) / (2 * dbu);
-  const float y_center = (ly + uy) / (2 * dbu);
+  const float x_center = (bbox.xMin() + bbox.xMax()) / (2 * dbu);
+  const float y_center = (bbox.yMin() + bbox.yMax()) / (2 * dbu);
   return std::pair<float, float>(x_center, y_center);
 }
 
@@ -1382,14 +1375,14 @@ void AutoClusterMgr::findAdjacencies()
   sta_->ensureClkNetwork();
   sta::SearchPred2 srch_pred(sta_);
   sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
-  
+
   // calculate the seed
   calculateSeed();
 
   // seed the BFS
   seedFaninBfs(bfs);
 
-  for(int i = 0; i < num_hops_; i++) {
+  for (int i = 0; i < num_hops_; i++) {
     // Propagate fanins through combinational logics
     findFanins(bfs);
     logger_->info(PAR, 490, "Number of hops:  {}", i);
@@ -1397,14 +1390,13 @@ void AutoClusterMgr::findAdjacencies()
     addTimingWeight(1.0 / pow(2.0, i * 1.0));
     // Propagate fanins through register D->Q
     copyFaninsAcrossRegisters(bfs);
-  } 
+  }
 }
 
 void AutoClusterMgr::calculateSeed()
 {
   seeds_ = macros_;
 }
-
 
 void AutoClusterMgr::addFanin(sta::Vertex* vertex, Pin* pin, int num_bit)
 {
@@ -1415,14 +1407,14 @@ void AutoClusterMgr::seedFaninBfs(sta::BfsFwdIterator& bfs)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
- 
+
   // Seed the BFS with macro output pins (or boundary pins)
-  for(auto inst : seeds_) {
+  for (auto inst : seeds_) {
     std::string inst_name = network_->pathName(inst);
     dbInst* db_inst = block_->findInst(inst_name.c_str());
-    for(dbITerm* iterm : db_inst->getITerms()) {
+    for (dbITerm* iterm : db_inst->getITerms()) {
       sta::Pin* pin = network->dbToSta(iterm);
-      if(network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
+      if (network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
         pin_inst_map_[pin] = inst;
         sta::Vertex* vertex = graph->pinDrvrVertex(pin);
         addFanin(vertex, pin, 1);
@@ -1430,16 +1422,15 @@ void AutoClusterMgr::seedFaninBfs(sta::BfsFwdIterator& bfs)
       }
     }
   }
-  
 
   // Seed top level ports input ports
-  for(dbBTerm* bterm : block_->getBTerms()) {
+  for (dbBTerm* bterm : block_->getBTerms()) {
     sta::Pin* pin = network->dbToSta(bterm);
     string bterm_name = bterm->getName();
-    if(network->direction(pin)->isAnyInput() && !sta_->isClock(pin)) {
-        sta::Vertex* vertex = graph->pinDrvrVertex(pin);
-        addFanin(vertex, pin, 1);
-        bfs.enqueueAdjacentVertices(vertex);    
+    if (network->direction(pin)->isAnyInput() && !sta_->isClock(pin)) {
+      sta::Vertex* vertex = graph->pinDrvrVertex(pin);
+      addFanin(vertex, pin, 1);
+      bfs.enqueueAdjacentVertices(vertex);
     }
   }
 }
@@ -1448,22 +1439,22 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
-  while(bfs.hasNext()) {
+  while (bfs.hasNext()) {
     sta::Vertex* vertex = bfs.next();
     sta::VertexInEdgeIterator fanin_iter(vertex, graph);
     string fanin_name = "";
-    while(fanin_iter.hasNext()) {
+    while (fanin_iter.hasNext()) {
       sta::Edge* edge = fanin_iter.next();
       sta::Vertex* fanin = edge->from(graph);
-      if(fanin->name(network) == fanin_name) {
-          continue;
+      if (fanin->name(network) == fanin_name) {
+        continue;
       }
       fanin_name = fanin->name(network);
       // Union fanins sets of fanin vertices
-      if(vertex_fanins_.find(fanin) != vertex_fanins_.end()) {
+      if (vertex_fanins_.find(fanin) != vertex_fanins_.end()) {
         std::unordered_map<Pin*, int> macro_fanin = vertex_fanins_[fanin];
         std::unordered_map<Pin*, int>::iterator map_iter = macro_fanin.begin();
-        for(; map_iter != macro_fanin.end(); map_iter++) {
+        for (; map_iter != macro_fanin.end(); map_iter++) {
           addFanin(vertex, map_iter->first, map_iter->second);
         }
       }
@@ -1472,19 +1463,20 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
   }
 }
 
-sta::Pin* AutoClusterMgr::findSeqOutPin(sta::Instance* inst, sta::LibertyPort* out_port)
+sta::Pin* AutoClusterMgr::findSeqOutPin(sta::Instance* inst,
+                                        sta::LibertyPort* out_port)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  if(out_port->direction()->isInternal()) {
+  if (out_port->direction()->isInternal()) {
     sta::InstancePinIterator* pin_iter = network->pinIterator(inst);
-    while(pin_iter->hasNext()) {
+    while (pin_iter->hasNext()) {
       sta::Pin* pin = pin_iter->next();
       sta::LibertyPort* lib_port = network->libertyPort(pin);
-      if(lib_port->direction()->isAnyOutput()) {
+      if (lib_port->direction()->isAnyOutput()) {
         sta::FuncExpr* func = lib_port->function();
-        if(func->hasPort(out_port)) {
+        if (func->hasPort(out_port)) {
           sta::Pin* out_pin = network->findPin(inst, lib_port);
-          if(out_pin) {
+          if (out_pin) {
             delete pin_iter;
             return out_pin;
           }
@@ -1500,17 +1492,18 @@ sta::Pin* AutoClusterMgr::findSeqOutPin(sta::Instance* inst, sta::LibertyPort* o
 
 void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
 {
-  std::unordered_map<sta::Vertex*, std::unordered_map<Pin*, int> > vertex_fanins;
+  std::unordered_map<sta::Vertex*, std::unordered_map<Pin*, int>> vertex_fanins;
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
   sta::Instance* top_inst = network->topInstance();
-  sta::LeafInstanceIterator* leaf_iter = network->leafInstanceIterator(top_inst);
-  while(leaf_iter->hasNext()) {
+  sta::LeafInstanceIterator* leaf_iter
+      = network->leafInstanceIterator(top_inst);
+  while (leaf_iter->hasNext()) {
     sta::Instance* inst = leaf_iter->next();
     sta::LibertyCell* lib_cell = network->libertyCell(inst);
-    if(lib_cell->hasSequentials() && !lib_cell->isMacro()) {
+    if (lib_cell->hasSequentials() && !lib_cell->isMacro()) {
       sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while(seq_iter.hasNext()) {
+      while (seq_iter.hasNext()) {
         sta::Sequential* seq = seq_iter.next();
         sta::FuncExpr* data_expr = seq->data();
         sta::FuncExprPortIterator data_port_iter(data_expr);
@@ -1523,7 +1516,7 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
             sta::Vertex* data_vertex = graph->pinLoadVertex(data_pin);
             sta::Vertex* out_vertex = graph->pinDrvrVertex(out_pin);
             // Copy fanins from D to Q on register.
-            if(vertex_fanins_.find(data_vertex) != vertex_fanins_.end()) {
+            if (vertex_fanins_.find(data_vertex) != vertex_fanins_.end()) {
               vertex_fanins[out_vertex] = vertex_fanins_[data_vertex];
               bfs.enqueueAdjacentVertices(out_vertex);
             }
@@ -1532,22 +1525,21 @@ void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
       }
     }
   }
-  
+
   vertex_fanins_.clear();
   vertex_fanins_ = vertex_fanins;
   delete leaf_iter;
 }
 
-
 void AutoClusterMgr::addWeight(int src_id, int target_id, int weight)
 {
-  if (virtual_timing_map_.find(src_id) != virtual_timing_map_.end()) 
-    if (virtual_timing_map_[src_id].find(target_id) 
-      != virtual_timing_map_[src_id].end()) 
+  if (virtual_timing_map_.find(src_id) != virtual_timing_map_.end())
+    if (virtual_timing_map_[src_id].find(target_id)
+        != virtual_timing_map_[src_id].end())
       virtual_timing_map_[src_id][target_id] += weight;
-    else 
+    else
       virtual_timing_map_[src_id][target_id] = weight;
-  else 
+  else
     virtual_timing_map_[src_id][target_id] = weight;
 }
 
@@ -1561,104 +1553,92 @@ void AutoClusterMgr::addTimingWeight(float weight)
   virtual_vertex_map_.clear();
 
   // Find adjacencies from macro input pin fanins (boundary pin fanins)
-  for(auto inst : seeds_) {
+  for (auto inst : seeds_) {
     std::string inst_name = network_->pathName(inst);
     dbInst* db_inst = block_->findInst(inst_name.c_str());
     virtual_vertex_map_.clear();
     int sink_id = inst_map_[inst];
-    for(dbITerm* iterm : db_inst->getITerms()) {
+    for (dbITerm* iterm : db_inst->getITerms()) {
       sta::Pin* pin = network->dbToSta(iterm);
-      if(network->direction(pin)->isAnyInput()) {
+      if (network->direction(pin)->isAnyInput()) {
         sta::Vertex* vertex = graph->pinLoadVertex(pin);
-        if(vertex_fanins_.find(vertex) == vertex_fanins_.end())
+        if (vertex_fanins_.find(vertex) == vertex_fanins_.end())
           continue;
-       
+
         std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
         std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-        for(; map_it != pin_fanins.end(); map_it++) {
+        for (; map_it != pin_fanins.end(); map_it++) {
           virtual_vertex_map_[sink_id][map_it->first] = 1;
         }
       }
     }
 
-    unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-    for(; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
-    {
+    for (const auto& virtual_vertex : virtual_vertex_map_) {
       int src_id = 0;
-      for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
-        std::string src_pin_name = network->pathName(iter->first);
-        if(bterm_map_.find(src_pin_name) != bterm_map_.end()) {
+      for (const auto& pin_fanin : virtual_vertex.second) {
+        std::string src_pin_name = network->pathName(pin_fanin.first);
+        if (bterm_map_.find(src_pin_name) != bterm_map_.end())
           src_id = bundled_io_map_[bterm_map_[src_pin_name]];
-        } else {
-          src_id = inst_map_[pin_inst_map_[iter->first]];  
-        }
-        if(src_id != virtual_vertex_iter->first) {
-          addWeight(src_id, virtual_vertex_iter->first, 1);
-        }
+        else
+          src_id = inst_map_[pin_inst_map_[pin_fanin.first]];
+        if (src_id != virtual_vertex.first)
+          addWeight(src_id, virtual_vertex.first, 1);
       }
     }
-  } 
+  }
 
   virtual_vertex_map_.clear();
   // Find adjacencies from output pin fanins
-  for(dbBTerm* bterm : block_->getBTerms()) {
+  for (dbBTerm* bterm : block_->getBTerms()) {
     string bterm_name = bterm->getName();
     int sink_id = bundled_io_map_[bterm_map_[bterm_name]];
     sta::Pin* pin = network->dbToSta(bterm);
-    if(network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
+    if (network->direction(pin)->isAnyOutput() && !sta_->isClock(pin)) {
       sta::Vertex* vertex = graph->pinDrvrVertex(pin);
-      if(vertex_fanins_.find(vertex) == vertex_fanins_.end())
+      if (vertex_fanins_.find(vertex) == vertex_fanins_.end())
         continue;
-    
       std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
       std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
-      for(; map_it != pin_fanins.end(); map_it++) {
+      for (; map_it != pin_fanins.end(); map_it++) {
         virtual_vertex_map_[sink_id][map_it->first] = 1;
       }
     }
   }
 
-
-  unordered_map<int, unordered_map<Pin*, int> >::iterator virtual_vertex_iter = virtual_vertex_map_.begin();
-  for(; virtual_vertex_iter != virtual_vertex_map_.end(); virtual_vertex_iter++)
-  {
+  for (const auto& virtual_vertex : virtual_vertex_map_) {
     int src_id = 0;
-    for(auto iter = virtual_vertex_iter->second.begin(); iter != virtual_vertex_iter->second.end(); iter++) {
-      std::string src_pin_name = network->pathName(iter->first);
-      if(bterm_map_.find(src_pin_name) != bterm_map_.end()) {
+    for (const auto& pin_fanin : virtual_vertex.second) {
+      std::string src_pin_name = network->pathName(pin_fanin.first);
+      if (bterm_map_.find(src_pin_name) != bterm_map_.end())
         src_id = bundled_io_map_[bterm_map_[src_pin_name]];
-      } else {
-        src_id = inst_map_[pin_inst_map_[iter->first]];  
-      }
-      if(src_id != virtual_vertex_iter->first) {
-        addWeight(src_id, virtual_vertex_iter->first, 1);
-      }
+      else
+        src_id = inst_map_[pin_inst_map_[pin_fanin.first]];
+      if (src_id != virtual_vertex.first)
+        addWeight(src_id, virtual_vertex.first, 1);
     }
   }
 
-  unordered_map<int, unordered_map<int, int> >::iterator map_iter = virtual_timing_map_.begin();
-  for(; map_iter != virtual_timing_map_.end(); map_iter++) {
+  unordered_map<int, unordered_map<int, int>>::iterator map_iter
+      = virtual_timing_map_.begin();
+  for (; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
     unordered_map<int, int> sinks = map_iter->second;
-    unordered_map<int, int>::iterator map_it = sinks.begin();
-    for(; map_it != sinks.end(); map_it++) {
+    for (const auto& sink : sinks) {
       float level_weight = weight;
       bool src_io = src_id <= bundled_io_map_.size();
-      bool sink_io = map_it->first <= bundled_io_map_.size();
+      bool sink_io = sink.first <= bundled_io_map_.size();
       bool src_macro = cluster_map_[src_id]->getNumMacro() > 0;
-      bool sink_macro = cluster_map_[map_it->first]->getNumMacro() > 0;
- 
-      if((src_io && sink_io) || (src_io && sink_macro) || (src_macro && sink_io)) 
+      bool sink_macro = cluster_map_[sink.first]->getNumMacro() > 0;
+      if ((src_io && sink_io) || (src_io && sink_macro)
+          || (src_macro && sink_io))
         level_weight = weight * 100.0;
-      else if(src_macro && sink_macro) 
-        level_weight =  weight * 1;
-      else 
+      else if (src_macro && sink_macro)
+        level_weight = weight * 1;
+      else
         level_weight = 0.0;
-
-      
-      level_weight = map_it->second * level_weight;
-      cluster_map_[src_id]->addOutputConnection(map_it->first, level_weight);
-      cluster_map_[map_it->first]->addInputConnection(src_id, level_weight); 
+      level_weight = sink.second * level_weight;
+      cluster_map_[src_id]->addOutputConnection(sink.first, level_weight);
+      cluster_map_[sink.first]->addInputConnection(src_id, level_weight);
     }
   }
 }
@@ -1730,16 +1710,15 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   }
 
   Metric metric = computeMetrics(network_->topInstance());
-  logger_->info(
-      PAR,
-      402,
-      "Traversed logical hierarchy\n"
-      "\tNumber of std cell instances: {}\n"
-      "\tTotal area: {}\n"
-      "\tNumber of hard macros: {}",
-      metric.num_inst,
-      metric.area,
-      metric.num_macro);
+  logger_->info(PAR,
+                402,
+                "Traversed logical hierarchy\n"
+                "\tNumber of std cell instances: {}\n"
+                "\tTotal area: {}\n"
+                "\tNumber of hard macros: {}",
+                metric.num_inst,
+                metric.area,
+                metric.num_macro);
 
   // get all the nets with buffers
   getBufferNet();
@@ -1859,7 +1838,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   }
 
   updateConnection();
-  
+
   // add virtual weights between std cell and hard macro portion of the cluster
   // add virtual weights between hard macros
   unordered_map<int, int>::iterator weight_it = virtual_map_.begin();
@@ -1870,9 +1849,9 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     cluster_map_[target_id]->addInputConnection(id, virtual_weight_);
     weight_it++;
   }
- 
-  for(int i = 0; i < cluster_list_.size(); i++) {
-    cluster_list_[i]->calculateNumSeq(network_);  
+
+  for (int i = 0; i < cluster_list_.size(); i++) {
+    cluster_list_[i]->calculateNumSeq(network_);
   }
 
   // Timing-driven flow
@@ -1889,54 +1868,61 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // generate block file
   // Generates the output files needed by the macro placer
   //
-  
-  const float outline_width = (floorplan_ux_ - floorplan_lx_) / dbu_ ;
-  const float outline_height = (floorplan_uy_ - floorplan_ly_) / dbu_;
-  const float blockage_width = outline_width / 5.0;  // the depth (0.2) of macro blockage
-  const float blockage_height = outline_height / 5.0; // the depth (0.2) of macro blockage
 
+  const float outline_width = (floorplan_ux_ - floorplan_lx_) / dbu_;
+  const float outline_height = (floorplan_uy_ - floorplan_ly_) / dbu_;
+  const float blockage_width
+      = outline_width / 5.0;  // the depth (0.2) of macro blockage
+  const float blockage_height
+      = outline_height / 5.0;  // the depth (0.2) of macro blockage
 
   ofstream output_file;
 
-  string blockage_file = string(report_directory) + '/' + file_name + ".blockage";
+  string blockage_file
+      = string(report_directory) + '/' + file_name + ".blockage";
   output_file.open(blockage_file);
-  if(B_pin_.size() > 0) {
+  if (B_pin_.size() > 0) {
     sort(B_pin_.begin(), B_pin_.end());
-    output_file << "pin_blockage " << "  ";
+    output_file << "pin_blockage "
+                << "  ";
     output_file << B_pin_[0] / dbu_ << "  0.0  ";
-    output_file << B_pin_[B_pin_.size() - 1]  / dbu_ << "  " << blockage_height;
+    output_file << B_pin_[B_pin_.size() - 1] / dbu_ << "  " << blockage_height;
     output_file << endl;
   }
 
-  if(T_pin_.size() > 0) {
+  if (T_pin_.size() > 0) {
     sort(T_pin_.begin(), T_pin_.end());
-    output_file << "pin_blockage  " << "   ";
-    output_file << T_pin_[0] / dbu_ << " " << outline_height  -  blockage_height  << "   ";
+    output_file << "pin_blockage  "
+                << "   ";
+    output_file << T_pin_[0] / dbu_ << " " << outline_height - blockage_height
+                << "   ";
     output_file << T_pin_[T_pin_.size() - 1] / dbu_ << "  " << outline_height;
     output_file << endl;
   }
 
-  if(L_pin_.size() > 0 ) {
+  if (L_pin_.size() > 0) {
     sort(L_pin_.begin(), L_pin_.end());
-    output_file << "pin_blockage  " << "   ";
+    output_file << "pin_blockage  "
+                << "   ";
     output_file << "0.0  " << L_pin_[0] / dbu_ << "   ";
     output_file << blockage_width << "  " << L_pin_[L_pin_.size() - 1] / dbu_;
     output_file << endl;
   }
 
-  if(R_pin_.size() > 0 ) {
+  if (R_pin_.size() > 0) {
     sort(R_pin_.begin(), R_pin_.end());
-    output_file << "pin_blockage  " << "  ";
-    output_file << outline_width - blockage_width << "   " << R_pin_[0] / dbu_ << "   ";
-    output_file << outline_width  << "   " <<  R_pin_[R_pin_.size() - 1] / dbu_;
+    output_file << "pin_blockage  "
+                << "  ";
+    output_file << outline_width - blockage_width << "   " << R_pin_[0] / dbu_
+                << "   ";
+    output_file << outline_width << "   " << R_pin_[R_pin_.size() - 1] / dbu_;
     output_file << endl;
   }
-  output_file.close();  
+  output_file.close();
 
   unordered_map<int, Cluster*>::iterator map_iter = cluster_map_.begin();
 
-  string block_file
-      = string(report_directory) + '/' + file_name + ".block";
+  string block_file = string(report_directory) + '/' + file_name + ".block";
   output_file.open(block_file);
   output_file << "[INFO] Num clusters: " << cluster_list_.size() << endl;
   output_file << "[INFO] Floorplan width: "
@@ -2001,8 +1987,8 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
       while (iter != connection_map.end()) {
         if (iter->first != src_id) {
           int weight = iter->second;
-          if(weight < ignore_net_threshold) {
-              weight = 0;
+          if (weight < ignore_net_threshold) {
+            weight = 0;
           }
           output_file << cluster_map_[iter->first]->getName() << "   ";
           output_file << weight << "   ";

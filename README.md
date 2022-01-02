@@ -35,14 +35,14 @@ The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
 
-| Argument             | Value                     |
-|----------------------|---------------------------|
-| CMAKE_BUILD_TYPE     | DEBUG, RELEASE            |
-| CMAKE_CXX_FLAGS      | Additional compiler flags |
-| TCL_LIB              | Path to tcl library       |
-| TCL_HEADER           | Path to tcl.h             |
-| ZLIB_ROOT            | Path to zlib              |
-| CMAKE_INSTALL_PREFIX | Path to install binary    |
+| Argument               | Value                     |
+|------------------------|---------------------------|
+| `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
+| `CMAKE_CXX_FLAGS`      | Additional compiler flags |
+| `TCL_LIBRARY`          | Path to Tcl library       |
+| `TCL_HEADER`           | Path to `tcl.h`           |
+| `ZLIB_ROOT`            | Path to `zlib`            |
+| `CMAKE_INSTALL_PREFIX` | Path to install binary    |
 
 ### Build by hand
 
@@ -81,6 +81,12 @@ To install in a different directory use:
 ./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
+### LTO Options
+By default, OpenROAD is built with link time optimizations enabled. This adds 
+about 1 minute to compile times and improves the runtime by about 11%. If
+you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
+generating a build.
+
 ## Regression Tests
 
 There are a set of regression tests in `test/`.
@@ -109,7 +115,8 @@ gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004 
 ## Run
 
 ``` text
-openroad [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file
+openroad [-help] [-version] [-no_init] [-exit] [-gui]
+         [-threads count|max] [-log file_name] cmd_file
   -help              show help and exit
   -version           show version and exit
   -no_init           do not read .openroad init file
@@ -157,7 +164,7 @@ Below is a list of the available tools/modules included in the OpenROAD app.
 
 ### Chip level connections
 
-- [ICeWall](./src/ICeWall/README.md)
+- [ICeWall](./src/pad/README.md)
 
 ### Macro Placement
 

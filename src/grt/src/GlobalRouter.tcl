@@ -121,6 +121,8 @@ proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
     keys {-signal -clock}
 
+  sta::check_argc_eq0 "set_routing_layers" $args
+
   if { [info exists keys(-signal)] } {
     grt::define_layer_range $keys(-signal)
   }
@@ -151,6 +153,8 @@ proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
   keys { -seed -capacities_perturbation_percentage -perturbation_amount }
 
+  sta::check_argc_eq0 "set_global_routing_random" $args
+
   if { [info exists keys(-seed)] } {
     set seed $keys(-seed)
     sta::check_integer "set_global_routing_random" $seed
@@ -171,21 +175,22 @@ proc set_global_routing_random { args } {
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
-                                  [-verbose verbose] \
                                   [-congestion_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_congestion] \
                                   [-overflow_iterations iterations] \
-                                  [-allow_overflow]
+                                  [-allow_overflow] \
+                                  [-verbose]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -verbose \
-          -congestion_iterations \
+    keys {-guide_file -congestion_iterations \
           -overflow_iterations -grid_origin
          } \
-    flags {-allow_congestion -allow_overflow}
+    flags {-allow_congestion -allow_overflow -verbose}
+
+  sta::check_argc_eq0 "global_route" $args
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "Missing dbTech."
@@ -195,12 +200,7 @@ proc global_route { args } {
     utl::error GRT 52 "Missing dbBlock."
   }
 
-  if { [info exists keys(-verbose) ] } {
-    set verbose $keys(-verbose)
-    grt::set_verbose $verbose
-  } else {
-    grt::set_verbose 0
-  }
+  grt::set_verbose [info exists flags(-verbose)]
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)

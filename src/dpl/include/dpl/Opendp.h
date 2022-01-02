@@ -79,7 +79,7 @@ using odb::dbSite;
 using odb::Point;
 using odb::Rect;
 
-class Pixel;
+struct Pixel;
 struct Group;
 class Graphics;
 
@@ -179,6 +179,7 @@ public:
   void clear();
   void init(dbDatabase *db,
             Logger *logger);
+  void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,

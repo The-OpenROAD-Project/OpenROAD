@@ -42,7 +42,7 @@ class gcNet : public gcBlockObject
 {
  public:
   // constructors
-  gcNet(int numLayers)
+  gcNet(int numLayers = 0)  // = 0 for serialization
       : gcBlockObject(),
         fixedPolygons_(numLayers),
         routePolygons_(numLayers),
@@ -216,7 +216,7 @@ class gcNet : public gcBlockObject
     return false;
   }
 
- protected:
+ private:
   std::vector<gtl::polygon_90_set_data<frCoord>>
       fixedPolygons_;  // only routing layer
   std::vector<gtl::polygon_90_set_data<frCoord>>
@@ -232,7 +232,25 @@ class gcNet : public gcBlockObject
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
   vector<unique_ptr<gcRect>> specialSpacingRects;
+
   void init();
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<gcBlockObject>(*this);
+    (ar) & fixedPolygons_;
+    (ar) & routePolygons_;
+    (ar) & fixedRectangles_;
+    (ar) & routeRectangles_;
+    (ar) & pins_;
+    (ar) & owner_;
+    (ar) & taperedRects;
+    (ar) & nonTaperedRects;
+    (ar) & specialSpacingRects;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

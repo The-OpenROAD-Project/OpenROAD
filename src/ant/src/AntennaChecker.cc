@@ -1454,7 +1454,6 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename, bo
 
         if (wireroot) {
           bool find_root = 0;
-          std::vector<std::pair<dbWireGraph::Node*, int>>::iterator root_itr;
           for (auto root_itr = wireroots_info.begin();
                root_itr != wireroots_info.end();
                ++root_itr) {
@@ -1810,7 +1809,6 @@ std::vector<dbWireGraph::Node*> AntennaChecker::get_wireroots(dbWireGraph graph)
     dbWireGraph::Node* wireroot = wireroot_info;
     if (wireroot) {
       bool find_root = 0;
-      std::vector<std::pair<dbWireGraph::Node*, int>>::iterator root_itr;
       for (auto root_itr = wireroots_info.begin();
            root_itr != wireroots_info.end();
            ++root_itr) {

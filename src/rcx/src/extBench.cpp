@@ -778,7 +778,9 @@ uint extRCModel::netWiresBench(extMainOptions* opt, extMain* xMain, uint netId,
     sprintf(_wireDirName, "%s/%d/%d", _topDir, netId, shapeId);
     char cmd[2048];
     sprintf(cmd, "%s %s", "mkdir", _wireDirName);
-    system(cmd);
+    if (system(cmd) == -1) {
+      logger_->error(RCX, 488, "mkdir failed on {}", _wireDirName);
+    }
 
     FILE* fp = openFile(_wireDirName, "db_geoms", NULL, "w");
     fprintf(fp, "BBOX: (%g, %g)  (%g, %g)\n\n", 0.001 * measure._ll[0],

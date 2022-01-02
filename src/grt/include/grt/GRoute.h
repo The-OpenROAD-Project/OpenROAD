@@ -68,12 +68,10 @@ struct GSegment
   int length() { return std::abs(init_x - final_x) + std::abs(init_y - final_y); }
   bool operator==(const GSegment& segment) const
   {
-    return (init_layer == segment.init_layer &&
-            final_layer == segment.final_layer &&
-            init_x == segment.init_x &&
-            init_y == segment.init_y &&
-            final_x == segment.final_x &&
-            final_y == segment.final_y);
+    return (init_layer == segment.init_layer
+            && final_layer == segment.final_layer && init_x == segment.init_x
+            && init_y == segment.init_y && final_x == segment.final_x
+            && final_y == segment.final_y);
   }
 };
 

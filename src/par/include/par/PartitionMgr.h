@@ -238,7 +238,6 @@ class PartSolutions
   unsigned partitionId_ = 0;
   unsigned clusterId_ = 0;
   unsigned bestSolutionIdx_ = 0;
-  unsigned numOfRuns_ = 0;
   double bestSetSizeSD_ = 0;
   double bestSetAreaSD_ = 0;
   unsigned long bestNumTerminals_ = 0;

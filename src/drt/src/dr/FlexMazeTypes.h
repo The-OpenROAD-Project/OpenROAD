@@ -83,10 +83,19 @@ class FlexMazeIdx
     return os;
   }
 
- protected:
+ private:
   frMIdx xIdx_;
   frMIdx yIdx_;
   frMIdx zIdx_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & xIdx_;
+    (ar) & yIdx_;
+    (ar) & zIdx_;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 
