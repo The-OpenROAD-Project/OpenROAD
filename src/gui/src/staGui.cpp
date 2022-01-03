@@ -33,9 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QDebug>
 #include <QFormLayout>
+#include <QLineEdit>
+#include <QKeyEvent>
 #include <QStandardItemModel>
 #include <fstream>
 #include <iostream>
@@ -1365,17 +1368,112 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
 
 /////////
 
+bool ComboBoxPopupFilter::eventFilter(QObject* object, QEvent* event)
+{
+  if (event->type() == QEvent::KeyPress) {
+    auto* key_event = static_cast<QKeyEvent*>(event);
+
+    if (key_event->key() == Qt::Key_Delete) {
+      emit deletePressed();
+      return true;
+    }
+  }
+  return false;
+}
+
+/////////
+
+PinComboBox::PinComboBox(QWidget* parent) :
+    QComboBox(parent),
+    sta_(nullptr),
+    pins_({}),
+    highlight_selection_(-1),
+    view_filter_(new ComboBoxPopupFilter)
+{
+  const int min_characters = 25;
+  const auto font_metrics = fontMetrics();
+  const int min_width = min_characters * font_metrics.averageCharWidth();
+  setMinimumWidth(min_width);
+  setEditable(true);
+
+  connect(lineEdit(), SIGNAL(returnPressed()), this, SLOT(findPin()));
+  connect(this,
+          QOverload<int>::of(&QComboBox::highlighted),
+          [this](int index) {
+            highlight_selection_ = index;
+          });
+
+  connect(view_filter_,
+          &ComboBoxPopupFilter::deletePressed,
+          [this]() {
+            if (highlight_selection_ == -1 || count() == 0) {
+              return;
+            }
+
+            pins_.erase(pins_.find((sta::Pin*)itemData(highlight_selection_).value<void*>()));
+            removeItem(highlight_selection_);
+            // ensure highlight selection is updated
+            highlight_selection_ = std::min(highlight_selection_, count() - 1);
+          });
+
+  view()->installEventFilter(view_filter_);
+}
+
+void PinComboBox::updatePins()
+{
+  clear();
+  if (!pins_.empty()) {
+    auto* network = sta_->getDbNetwork();
+    for (const auto* pin : pins_) {
+      addItem(network->name(pin), QVariant::fromValue((void*)pin));
+    }
+  }
+}
+
+void PinComboBox::setPins(const std::set<sta::Pin*>& pins)
+{
+  pins_ = pins;
+  updatePins();
+}
+
+void PinComboBox::findPin()
+{
+  const QString text = lineEdit()->text();
+  if (text.isEmpty()) {
+    return;
+  }
+  auto* network = sta_->getDbNetwork();
+
+  for (QString pin_name : text.split(" ")) {
+    pin_name = pin_name.trimmed();
+
+    if (pin_name.isEmpty()) {
+      continue;
+    }
+
+    sta::PatternMatch matcher(pin_name.toLatin1().constData());
+
+    sta::PinSeq found_pins;
+    network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
+
+    for (auto* pin : found_pins) {
+      pins_.insert(pin);
+    }
+  }
+
+  updatePins();
+}
+
+/////////
+
 TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     QDialog(parent),
     sta_(nullptr),
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
-    from_({}),
-    thru_({}),
-    to_({}),
-    from_line_(new QLineEdit(this)),
-    thru_line_(new QLineEdit(this)),
-    to_line_(new QLineEdit(this))
+    from_(new PinComboBox(this)),
+    thru_(new PinComboBox(this)),
+    to_(new PinComboBox(this))
 {
   setWindowTitle("Timing Controls");
 
@@ -1386,22 +1484,11 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
 
   layout->addRow("Paths:", path_count_spin_box_);
   layout->addRow("Command corner:", corner_box_);
-  layout->addRow("From:", from_line_);
-  layout->addRow("Through:", thru_line_);
-  layout->addRow("To:", to_line_);
-
-  connect(from_line_, SIGNAL(returnPressed()), this, SLOT(setFromPin()));
-  connect(thru_line_, SIGNAL(returnPressed()), this, SLOT(setThruPin()));
-  connect(to_line_, SIGNAL(returnPressed()), this, SLOT(setToPin()));
+  layout->addRow("From:", from_);
+  layout->addRow("Through:", thru_);
+  layout->addRow("To:", to_);
 
   setLayout(layout);
-
-  const int min_characters = 25;
-  const auto font_metrics = from_line_->fontMetrics();
-  const int min_width = min_characters * font_metrics.averageCharWidth();
-  from_line_->setMinimumWidth(min_width);
-  thru_line_->setMinimumWidth(min_width);
-  to_line_->setMinimumWidth(min_width);
 
   connect(corner_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1412,6 +1499,14 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
             auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
             sta_->setCmdCorner(corner);
           });
+}
+
+void TimingControlsDialog::setSTA(sta::dbSta* sta)
+{
+  sta_ = sta;
+  from_->setSTA(sta_);
+  thru_->setSTA(sta_);
+  to_->setSTA(sta_);
 }
 
 void TimingControlsDialog::populate()
@@ -1441,79 +1536,9 @@ void TimingControlsDialog::populate()
 
 void TimingControlsDialog::setPinSelections()
 {
-  populateText(from_line_, from_);
-  populateText(thru_line_, thru_);
-  populateText(to_line_, to_);
-}
-
-void TimingControlsDialog::populateText(QLineEdit* line, const std::set<sta::Pin*>& pins)
-{
-  if (pins.empty()) {
-    line->clear();
-  } else {
-    auto* network = sta_->getDbNetwork();
-    QStringList text;
-    for (const auto* pin : pins) {
-      text.append(network->name(pin));
-    }
-    line->setText(text.join(" "));
-  }
-}
-
-void TimingControlsDialog::setFromPin()
-{
-  findPins(from_line_->text(), from_);
-  setPinSelections();
-}
-
-void TimingControlsDialog::setThruPin()
-{
-  findPins(thru_line_->text(), thru_);
-  setPinSelections();
-}
-
-void TimingControlsDialog::setToPin()
-{
-  findPins(to_line_->text(), to_);
-  setPinSelections();
-}
-
-void TimingControlsDialog::findPins(const QString& pin_names, std::set<sta::Pin*>& pins) const
-{
-  pins.clear();
-  if (pin_names.isEmpty()) {
-    return;
-  }
-  auto* network = sta_->getDbNetwork();
-
-  for (const QString pin_name : pin_names.split(" ")) {
-    sta::PatternMatch matcher(pin_name.toLatin1().constData());
-
-    sta::PinSeq found_pins;
-    network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
-
-    for (auto* pin : found_pins) {
-      pins.insert(pin);
-    }
-  }
-}
-
-void TimingControlsDialog::setFromPin(const std::set<sta::Pin*>& pins)
-{
-  from_ = pins;
-  setPinSelections();
-}
-
-void TimingControlsDialog::setThruPin(const std::set<sta::Pin*>& pins)
-{
-  thru_ = pins;
-  setPinSelections();
-}
-
-void TimingControlsDialog::setToPin(const std::set<sta::Pin*>& pins)
-{
-  to_ = pins;
-  setPinSelections();
+  from_->updatePins();
+  thru_->updatePins();
+  to_->updatePins();
 }
 
 sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const

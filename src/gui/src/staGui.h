@@ -43,7 +43,6 @@
 #include <QColor>
 #include <QComboBox>
 #include <QDialog>
-#include <QLineEdit>
 #include <QSpinBox>
 
 #include "gui/gui.h"
@@ -511,34 +510,65 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   bool is_modified_;
 };
 
+class ComboBoxPopupFilter : public QObject
+{
+ Q_OBJECT
+ public:
+  bool eventFilter(QObject* object, QEvent* event);
+
+ signals:
+  void deletePressed();
+};
+
+
+class PinComboBox : public QComboBox
+{
+ Q_OBJECT
+ public:
+  PinComboBox(QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  void updatePins();
+
+  void setPins(const std::set<sta::Pin*>& pins);
+  const std::set<sta::Pin*>& getPins() const { return pins_; }
+
+ private slots:
+  void findPin();
+
+ private:
+  sta::dbSta* sta_;
+  std::set<sta::Pin*> pins_;
+
+  int highlight_selection_;
+
+  ComboBoxPopupFilter* view_filter_;
+};
+
 class TimingControlsDialog : public QDialog
 {
  Q_OBJECT
  public:
   TimingControlsDialog(QWidget* parent = nullptr);
 
-  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  void setSTA(sta::dbSta* sta);
 
   void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
   int getPathCount() const { return path_count_spin_box_->value(); }
 
-  void setFromPin(const std::set<sta::Pin*>& pins);
-  void setThruPin(const std::set<sta::Pin*>& pins);
-  void setToPin(const std::set<sta::Pin*>& pins);
+  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
+  void setThruPin(const std::set<sta::Pin*>& pins) { thru_->setPins(pins); }
+  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
 
-  const std::set<sta::Pin*>& getFromPins() const { return from_; }
-  const std::set<sta::Pin*>& getThruPins() const { return thru_; }
-  const std::set<sta::Pin*>& getToPins() const { return to_; }
+  const std::set<sta::Pin*>& getFromPins() const { return from_->getPins(); }
+  const std::set<sta::Pin*>& getThruPins() const { return thru_->getPins(); }
+  const std::set<sta::Pin*>& getToPins() const { return to_->getPins(); }
 
   sta::Pin* convertTerm(Gui::odbTerm term) const;
 
  public slots:
   void populate();
-
- private slots:
-  void setFromPin();
-  void setThruPin();
-  void setToPin();
 
  private:
   sta::dbSta* sta_;
@@ -546,18 +576,11 @@ class TimingControlsDialog : public QDialog
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
 
-  std::set<sta::Pin*> from_;
-  std::set<sta::Pin*> thru_;
-  std::set<sta::Pin*> to_;
+  PinComboBox* from_;
+  PinComboBox* thru_;
+  PinComboBox* to_;
 
-  QLineEdit* from_line_;
-  QLineEdit* thru_line_;
-  QLineEdit* to_line_;
-
-  void findPins(const QString& pin_names, std::set<sta::Pin*>& pins) const;
   void setPinSelections();
-
-  void populateText(QLineEdit* line, const std::set<sta::Pin*>& pins);
 };
 
 }  // namespace gui
