@@ -1146,6 +1146,10 @@ int IRSolver::PrintSpice()
   return 1;
 }
 
+int IRSolver::GetMinimumResolution() {
+  return m_node_density;
+}
+
 bool IRSolver::Build()
 {
   bool res = true;
