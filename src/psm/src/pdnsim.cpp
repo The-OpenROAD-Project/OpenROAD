@@ -214,7 +214,7 @@ int PDNSim::analyze_power_grid()
     odb::Point point = odb::Point(node_loc.first, node_loc.second);
     double voltage = node->GetVoltage();
     odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
-    // Absolute is needed for GND nets. Incase of GND net voltage is higher
+    // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
     ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
   }

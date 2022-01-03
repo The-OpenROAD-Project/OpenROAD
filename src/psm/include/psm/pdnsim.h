@@ -89,7 +89,7 @@ class PDNSim
   std::string                  _spice_out_file;
   std::string                  _power_net;
   std::map<std::string, float> _net_voltage_map;
-  std::map<odb::dbTechLayer*, std::map<odb::Point ,double>> _ir_drop;
+  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> _ir_drop;
   int                          _node_density;
 };
 }  // namespace psm
