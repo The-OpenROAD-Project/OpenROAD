@@ -64,7 +64,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
     : max_degree_(0),
       db_(db),
       gui_(gui),
-      allow_overflow_(false),
       overflow_iterations_(0),
       num_nets_(0),
       layer_orientation_(0),
@@ -88,6 +87,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       num_valid_nets_(0),
       num_layers_(0),
       total_overflow_(0),
+      has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
       via_cost_(0),
@@ -109,6 +109,11 @@ FastRouteCore::~FastRouteCore()
 void FastRouteCore::clear()
 {
   deleteComponents();
+  num_adjust_ = 0;
+  v_capacity_ = 0;
+  h_capacity_ = 0;
+  total_overflow_ = 0;
+  has_2D_overflow_ = false;
 }
 
 void FastRouteCore::deleteComponents()
@@ -164,10 +169,6 @@ void FastRouteCore::deleteComponents()
   cost_hvh_test_.clear();
   cost_v_test_.clear();
   cost_tb_test_.clear();
-
-  num_adjust_ = 0;
-  v_capacity_ = 0;
-  h_capacity_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -1144,7 +1145,7 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  bool has_2D_overflow = total_overflow_ > 0;
+  has_2D_overflow_ = total_overflow_ > 0;
 
   if (minofl > 0) {
     debugPrint(logger_,
@@ -1216,18 +1217,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   NetRouteMap routes = getRoutes();
-
   net_eo_.clear();
-
-  if (has_2D_overflow && !allow_overflow_) {
-    logger_->error(GRT, 118, "Routing congestion too high.");
-  }
-
-  if (total_overflow_ > 0) {
-    if (verbose_)
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
-  }
-
   return routes;
 }
 
@@ -1239,11 +1229,6 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
-}
-
-void FastRouteCore::setAllowOverflow(bool allow)
-{
-  allow_overflow_ = allow;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()
