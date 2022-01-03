@@ -87,6 +87,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       num_valid_nets_(0),
       num_layers_(0),
       total_overflow_(0),
+      has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
       via_cost_(0),
@@ -108,6 +109,11 @@ FastRouteCore::~FastRouteCore()
 void FastRouteCore::clear()
 {
   deleteComponents();
+  num_adjust_ = 0;
+  v_capacity_ = 0;
+  h_capacity_ = 0;
+  total_overflow_ = 0;
+  has_2D_overflow_ = false;
 }
 
 void FastRouteCore::deleteComponents()
@@ -163,10 +169,6 @@ void FastRouteCore::deleteComponents()
   cost_hvh_test_.clear();
   cost_v_test_.clear();
   cost_tb_test_.clear();
-
-  num_adjust_ = 0;
-  v_capacity_ = 0;
-  h_capacity_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -1142,6 +1144,8 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+
+  has_2D_overflow_ = total_overflow_ > 0;
 
   if (minofl > 0) {
     debugPrint(logger_,

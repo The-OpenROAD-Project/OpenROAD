@@ -145,6 +145,7 @@ class FastRouteCore
   void initAuxVar();
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
+  bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
 
   int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
@@ -477,6 +478,7 @@ class FastRouteCore
                         // grids)
   int num_layers_;
   int total_overflow_;  // total # overflow
+  bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
   int via_cost_;

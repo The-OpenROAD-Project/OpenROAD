@@ -205,12 +205,11 @@ void GlobalRouter::globalRoute()
   routes_ = findRouting(nets, min_layer, max_layer);
   updateDbCongestion();
 
-  if (fastroute_->totalOverflow() > 0) {
-    if (!allow_congestion_) {
-      logger_->error(GRT, 118, "Routing congestion too high.");
-    }
-    else if (verbose_)
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
+  if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    logger_->error(GRT, 118, "Routing congestion too high.");
+  }
+  if (fastroute_->totalOverflow() > 0 && verbose_) {
+    logger_->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
   if (verbose_)
@@ -3519,8 +3518,7 @@ void GlobalRouter::updateDirtyRoutes()
     mergeResults(new_route);
     dirty_nets_.clear();
 
-    if (fastroute_->totalOverflow() > 0
-        && !allow_congestion_) {
+    if (fastroute_->has2Doverflow() && !allow_congestion_) {
       logger_->error(GRT, 232, "Routing congestion too high.");
     }
   }
