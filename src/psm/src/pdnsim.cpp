@@ -214,6 +214,8 @@ int PDNSim::analyze_power_grid()
     odb::Point point = odb::Point(node_loc.first, node_loc.second);
     double voltage = node->GetVoltage();
     odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
+    // Absolute is needed for GND nets. Incase of GND net voltage is higher
+    // than supply.
     ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
   }
   _ir_drop = ir_drop;
@@ -246,8 +248,6 @@ int PDNSim::check_connectivity()
 }
 
 void PDNSim::getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop) {
-  // TODO can be enhanced to check if it already exists 
-  // and if it does, then do not run analyze IR 
   ir_drop = _ir_drop;
 }
 

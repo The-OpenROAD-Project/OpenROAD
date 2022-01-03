@@ -72,7 +72,7 @@ class PDNSim
   void set_pdnsim_net_voltage(std::string net, float voltage);
   int  analyze_power_grid();
   void write_pg_spice();
-  void getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point ,double>>& ir_drop);
+  void getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop);
   int  getMinimumResolution();
   int check_connectivity();
 
