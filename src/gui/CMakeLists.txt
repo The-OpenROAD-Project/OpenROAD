@@ -57,6 +57,7 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Widgets
       utl
       Boost::boost
+      psm
   )
 
 messages(

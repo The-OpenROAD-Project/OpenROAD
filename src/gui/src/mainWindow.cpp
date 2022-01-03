@@ -348,7 +348,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   }
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, psm::PDNSim* psm)
 {
   // Setup timing widget
   timing_widget_->init(sta);
@@ -367,6 +367,7 @@ void MainWindow::init(sta::dbSta* sta)
 
   // renderers
   power_density_data_.setSTA(sta);
+  ir_drop_data_.setPSM(psm);
   for (auto* heat_map : getHeatMaps()) {
     gui->registerRenderer(heat_map->getRenderer());
   }
@@ -1165,7 +1166,8 @@ const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
   return {
     &routing_congestion_data_,
     &placement_density_data_,
-    &power_density_data_
+    &power_density_data_,
+    &ir_drop_data_
   };
 }
 
