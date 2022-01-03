@@ -93,7 +93,9 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) 
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::improvePlacement(int seed) {
+void Optdp::improvePlacement(int seed,
+                             int max_displacement_x, 
+                             int max_displacement_y) {
   logger_->report("Detailed placement improvement.");
 
   opendp_->initBlock();
@@ -106,7 +108,9 @@ void Optdp::improvePlacement(int seed) {
     // A manager to track cells.
     dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
     mgr.setLogger(logger_);
+    // Various settings.
     mgr.setSeed(seed);
+    mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed
@@ -405,8 +409,12 @@ void Optdp::createNetwork() {
 
   // Create and allocate the nodes.  I require nodes for
   // placeable instances as well as terminals.
-  network_->resizeNodes(nNodes + nTerminals);
-  network_->resizeEdges(nEdges);
+  for (int i = 0; i < nNodes+nTerminals; i++) {
+    network_->createAndAddNode();
+  }
+  for (int i = 0; i < nEdges; i++) {
+    network_->createAndAddEdge();
+  }
 
   // Return instances to a north orientation.  This makes
   // importing easier.
@@ -458,8 +466,8 @@ void Optdp::createNetwork() {
     ndi->setHeight(inst->getMaster()->getHeight());
     ndi->setWidth(inst->getMaster()->getWidth());
 
-    ndi->setOrigX(xc);
-    ndi->setOrigY(yc);
+    ndi->setOrigLeft(inst->getBBox()->xMin());
+    ndi->setOrigBottom(inst->getBBox()->yMin());
     ndi->setX(xc);
     ndi->setY(yc);
 
@@ -505,8 +513,8 @@ void Optdp::createNetwork() {
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigX(xx);
-    ndi->setOrigY(yy);
+    ndi->setOrigLeft(bterm->getBBox().xMin());
+    ndi->setOrigBottom(bterm->getBBox().yMin());
     ndi->setX(xx);
     ndi->setY(yy);
 
@@ -646,12 +654,12 @@ void Optdp::createArchitecture() {
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setBottom((double)originY);
-    archRow->setHeight((double)site->getHeight());
-    archRow->setSiteWidth((double)site->getWidth());
-    archRow->setSiteSpacing((double)row->getSpacing());
-    archRow->m_subRowOrigin = (double)originX;
+    archRow->setSubRowOrigin(originX);
+    archRow->setBottom(originY);
+    archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
+    archRow->setSiteWidth(site->getWidth());
+    archRow->setHeight(site->getHeight());
 
     // Set defaults.  Top and bottom power is set below.
     archRow->m_powerBot = RowPower_UNK;
@@ -719,23 +727,19 @@ void Optdp::createArchitecture() {
 
   for (int r = 0; r < arch_->getNumRows(); r++) {
     int numSites = arch_->getRow(r)->getNumSites();
-    double originX = arch_->getRow(r)->getLeft();
-    double siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    int originX = arch_->getRow(r)->getLeft();
+    int siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    int siteWidth = arch_->getRow(r)->getSiteWidth();
 
-    double lx = originX;
-    double rx = originX + numSites * siteSpacing;
-    if (lx < arch_->getMinX() || rx > arch_->getMaxX()) {
-      if (lx < arch_->getMinX()) {
-        originX = arch_->getMinX();
+    if (originX < arch_->getMinX()) {
+      originX = (int)std::ceil(arch_->getMinX());
+      if (arch_->getRow(r)->getLeft() != originX) {
+        arch_->getRow(r)->setSubRowOrigin(originX);
       }
-      rx = originX + numSites * siteSpacing;
-      if (rx > arch_->getMaxX()) {
-        numSites = (int)((arch_->getMaxX() - originX) / siteSpacing);
-      }
-
-      if (arch_->getRow(r)->m_subRowOrigin != originX) {
-        arch_->getRow(r)->m_subRowOrigin = originX;
-      }
+    }
+    if (originX+numSites*siteSpacing+siteWidth > arch_->getMaxX()) {
+      numSites = (int)std::floor(
+                    (arch_->getMaxX()-siteWidth-originX)/(double)siteSpacing);
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }

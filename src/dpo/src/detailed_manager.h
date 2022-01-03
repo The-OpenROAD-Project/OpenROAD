@@ -84,7 +84,18 @@ class DetailedMgr {
   void setLogger(utl::Logger* logger) { m_logger = logger; }
   utl::Logger* getLogger() const { return m_logger; }
 
-  void setSeed(int seed);
+  void setSeed(int s);
+
+  void setMaxDisplacement(int x, int y) {
+    m_maxDispX = x;
+    m_maxDispY = y;
+  }
+  void getMaxDisplacement(int& x, int& y) const {
+    x = m_maxDispX;
+    y = m_maxDispY;
+  }
+  int getMaxDisplacementX() const { return m_maxDispX; }
+  int getMaxDisplacementY() const { return m_maxDispY; }
 
   void internalError( std::string msg );
 
@@ -104,11 +115,10 @@ class DetailedMgr {
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
 
   void assignCellsToSegments(std::vector<Node*>& nodesToConsider);
-  int checkSegments(double& worst);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
   int checkSiteAlignment();
-  int checkRowAlignment(int max_err_n = 0);
+  int checkRowAlignment();
   int checkRegionAssignment();
 
   void removeCellFromSegmentTest(Node* nd, int seg, double& util, double& gapu);
@@ -126,27 +136,17 @@ class DetailedMgr {
 
   void restoreOriginalPositions();
   void recordOriginalPositions();
-  void restoreOriginalDimensions();
-  void recordOriginalDimensions();
-
-  void restoreBestPositions();
-  void recordBestPositions();
 
   void resortSegments();
   void resortSegment(DetailedSeg* segPtr);
   void removeAllCellsFromSegments();
-
-  double getOrigX(Node* nd) const { return m_origX[nd->getId()]; }
-  double getOrigY(Node* nd) const { return m_origY[nd->getId()]; }
-  double getOrigW(Node* nd) const { return m_origW[nd->getId()]; }
-  double getOrigH(Node* nd) const { return m_origH[nd->getId()]; }
 
   bool isNodeAlignedToRow(Node* nd);
 
   double measureMaximumDisplacement(bool& violated);
   void removeOverlapMinimumShift();
 
-  size_t getNumSegments() const { return m_segments.size(); }
+  int getNumSegments() const { return static_cast<int>(m_segments.size()); }
   DetailedSeg* getSegment(int s) const { return m_segments[s]; }
   int getNumSingleHeightRows() const {
     return m_numSingleHeightRows;
@@ -159,17 +159,9 @@ class DetailedMgr {
                           double& space_right, double& large_left,
                           double& large_right, int limit = 3);
 
-  bool fixSegments();
-  void moveCellsBetweenSegments(int iteration);
-  void pushCellsBetweenSegments(int iteration);
-  void moveCellsBetweenSegments(DetailedSeg* segment, int leftRightTol,
-                                double offsetTol, double scoringTol);
-
   void removeSegmentOverlapSingle(int regId = -1);
   void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes, double l,
                                        double r, int rowId);
-
-  void debugSegments();
 
   double getTargetUt() const { return m_targetUt; }
   void setTargetUt(double ut) { m_targetUt = ut; }
@@ -207,16 +199,17 @@ class DetailedMgr {
   };
 
   struct compareNodesX {
+    // Needs cell centers.
     bool operator()(Node* p, Node* q) const {
-      return p->getX() < q->getX();
+      return p->getLeft()+0.5*p->getWidth() < q->getLeft()+0.5*q->getWidth();
     }
-    bool operator()(Node*& s, double i) const { return s->getX() < i; }
-    bool operator()(double i, Node*& s) const { return i < s->getX(); }
+    bool operator()(Node*& s, double i) const { return s->getLeft()+0.5*s->getWidth() < i; }
+    bool operator()(double i, Node*& s) const { return i < s->getLeft()+0.5*s->getWidth(); }
   };
 
   struct compareNodesL {
     bool operator()(Node* p, Node* q) const {
-      return p->getX() - 0.5 * p->getWidth() < q->getX() - 0.5 * q->getWidth();
+      return p->getLeft() < q->getLeft();
     }
   };
 
@@ -231,11 +224,15 @@ class DetailedMgr {
 
   // Info about rows.
   int m_numSingleHeightRows;
-  double m_singleRowHeight;
+  int m_singleRowHeight;
 
   // Generic place for utilization.
   double m_targetUt;
   double m_targetMaxMovement;
+
+  // Target displacement limits.
+  int m_maxDispX; // 0 means no limit.
+  int m_maxDispY; // 0 means no limit.
 
   std::vector<Node*> m_fixedCells;   // Fixed; filler, macros, temporary, etc.
 
@@ -257,18 +254,12 @@ class DetailedMgr {
   std::vector<Node*> m_singleHeightCells;  // Single height cells.
   std::vector<std::vector<Node*> >
       m_multiHeightCells;            // Multi height cells by height.
-  std::vector<Node*> m_fixedMacros;  // Fixed; only macros.
   std::vector<Node*>
       m_wideCells;  // Wide movable cells.  Can be single of multi.
 
-  // Info about original cell positions and dimensions.
-  std::vector<double> m_origX;
-  std::vector<double> m_origY;
-  std::vector<double> m_origW;
-  std::vector<double> m_origH;
-
-  std::vector<double> m_bestX;
-  std::vector<double> m_bestY;
+  // Original cell positions.
+  std::vector<double> m_origBottom;
+  std::vector<double> m_origLeft;
 
   std::vector<Rectangle> m_boxes;
 

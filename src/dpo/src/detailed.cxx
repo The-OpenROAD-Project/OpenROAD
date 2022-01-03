@@ -56,14 +56,6 @@
 #include "detailed_vertical.h"
 #include "detailed_orient.h"
 
-// Other things not ready.
-//#include "detailed_global_vertical.h"
-// Detailed placement objectives.
-//#include "detailed_hpwl.h"
-//#include "detailed_drc.h"
-//#include "detailed_abu.h"
-//#include "detailed_pin.h"
-
 using utl::DPO;
 
 namespace dpo {

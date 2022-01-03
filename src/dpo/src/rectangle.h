@@ -115,12 +115,7 @@ class Rectangle {
   double getCenterY() { return 0.5 * (m_ymax + m_ymin); }
   double getWidth() { return m_xmax - m_xmin; }
   double getHeight() { return m_ymax - m_ymin; }
-  void clear() {
-    m_xmin = std::numeric_limits<double>::max();
-    m_ymin = std::numeric_limits<double>::max();
-    m_xmax = -std::numeric_limits<double>::max();
-    m_ymax = -std::numeric_limits<double>::max();
-  }
+  void clear() { reset(); }
 
   double xmin() const { return m_xmin; }
   double xmax() const { return m_xmax; }

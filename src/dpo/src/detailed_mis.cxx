@@ -62,6 +62,7 @@
 #include "detailed_segment.h"
 #include "network.h"
 #include "router.h"
+#include "rectangle.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
@@ -286,19 +287,19 @@ void DetailedMis::colorCells() {
   for (int e = 0; e < m_network->getNumEdges(); e++) {
     Edge* edi = m_network->getEdge(e);
 
-    int numPins = edi->getPins().size();
+    int numPins = edi->getNumPins();
     if (numPins <= 1 || numPins > m_skipEdgesLargerThanThis) {
       continue;
     }
 
-    for (int pi = 0; pi < edi->getPins().size(); pi++) {
+    for (int pi = 0; pi < edi->getNumPins(); pi++) {
       Pin* pini = edi->getPins()[pi];
       Node* ndi = pini->getNode();
       if (!m_movable[ndi->getId()]) {
         continue;
       }
 
-      for (int pj = pi + 1; pj < edi->getPins().size(); pj++) {
+      for (int pj = pi + 1; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
         Node* ndj = pinj->getNode();
         if (!m_movable[ndj->getId()]) {
@@ -318,7 +319,7 @@ void DetailedMis::colorCells() {
   gr.greedyColoring();
 
   std::vector<int> hist;
-  for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
+  for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* ndi = m_network->getNode(i);
 
     int color = gr.m_color[i];
@@ -370,9 +371,9 @@ void DetailedMis::buildGrid() {
 
   clearGrid();
   m_grid.resize(m_dimW);
-  for (size_t i = 0; i < m_grid.size(); i++) {
+  for (int i = 0; i < m_dimW; i++) {
     m_grid[i].resize(m_dimH);
-    for (size_t j = 0; j < m_grid[i].size(); j++) {
+    for (int j = 0; j < m_dimH; j++) {
       m_grid[i][j] = new Bucket;
       m_grid[i][j]->m_xmin = xmin + (i)*m_stepX;
       m_grid[i][j]->m_xmax = xmin + (i + 1) * m_stepX;
@@ -404,10 +405,13 @@ void DetailedMis::populateGrid() {
   for (size_t n = 0; n < m_candidates.size(); ++n) {
     Node* ndi = m_candidates[n];
 
-    int i = std::max(
-        std::min((int)((ndi->getX() - xmin) / m_stepX), m_dimW - 1), 0);
+    double y = ndi->getBottom()+0.5*ndi->getHeight();
+    double x = ndi->getLeft()+0.5*ndi->getWidth();
+
     int j = std::max(
-        std::min((int)((ndi->getY() - ymin) / m_stepY), m_dimH - 1), 0);
+        std::min((int)((y - ymin) / m_stepY), m_dimH - 1), 0);
+    int i = std::max(
+        std::min((int)((x - xmin) / m_stepX), m_dimW - 1), 0);
 
     m_grid[i][j]->m_nodes.push_back(ndi);
     m_cellToBinMap[ndi] = m_grid[i][j];
@@ -548,7 +552,9 @@ void DetailedMis::solveMatch() {
   seg.resize(nNodes);
   for (size_t i = 0; i < nodes.size(); i++) {
     Node* ndi = nodes[i];
-    pos[i] = std::make_pair(ndi->getX(), ndi->getY());     // COPY!
+    double y = ndi->getBottom()+0.5*ndi->getHeight();
+    double x = ndi->getLeft()+0.5*ndi->getWidth();
+    pos[i] = std::make_pair(x,y);                          // COPY!
     seg[i] = m_mgrPtr->m_reverseCellToSegs[ndi->getId()];  // COPY!
   }
 
@@ -728,8 +734,12 @@ void DetailedMis::solveMatch() {
 //////////////////////////////////////////////////////////////////////////////////
 double DetailedMis::getDisp(Node* ndi, double xi, double yi) {
   // Compute displacement of cell ndi if placed at (xi,y1) from its orig pos.
-  double dx = std::fabs(xi - ndi->getOrigX());
-  double dy = std::fabs(yi - ndi->getOrigY());
+
+  // Specified target is cell center.  Need to offset.
+  xi -= 0.5*ndi->getWidth();
+  yi -= 0.5*ndi->getHeight();
+  double dx = std::fabs(xi - ndi->getOrigLeft());
+  double dy = std::fabs(yi - ndi->getOrigBottom());
   return dx + dy;
 }
 
@@ -740,39 +750,33 @@ double DetailedMis::getHpwl(Node* ndi, double xi, double yi) {
   // specified (xi,yi).
 
   double hpwl = 0.;
-  double x, y, l, r, b, t;
-  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+  double x, y;
+  Rectangle box;
+  for (int pi = 0; pi < ndi->getNumPins(); pi++) {
     Pin* pini = ndi->getPins()[pi];
 
     Edge* edi = pini->getEdge();
 
-    int npins = edi->getPins().size();
+    int npins = edi->getNumPins();
     if (npins <= 1 || npins > m_skipEdgesLargerThanThis) {
       continue;
     }
 
-    l = std::numeric_limits<double>::max();
-    r = std::numeric_limits<double>::lowest();
-    b = std::numeric_limits<double>::max();
-    t = std::numeric_limits<double>::lowest();
-
-    for (int pj = 0; pj < edi->getPins().size(); pj++) {
+    box.reset();
+    for (int pj = 0; pj < edi->getNumPins(); pj++) {
       Pin* pinj = edi->getPins()[pj];
 
       Node* ndj = pinj->getNode();
 
       x = (ndj == ndi) ? (xi + pinj->getOffsetX())
-                       : (ndj->getX() + pinj->getOffsetX());
+                       : (ndj->getLeft()+0.5*ndj->getWidth() + pinj->getOffsetX());
       y = (ndj == ndi) ? (yi + pinj->getOffsetY())
-                       : (ndj->getY() + pinj->getOffsetY());
+                       : (ndj->getBottom()+0.5*ndj->getHeight() + pinj->getOffsetY());
 
-      l = std::min(l, x);
-      r = std::max(r, x);
-      b = std::min(b, y);
-      t = std::max(t, y);
+      box.addPt(x,y);
     }
-    if (r >= l && t >= b) {
-      hpwl += ((r - l) + (t - b));
+    if (box.xmax() >= box.xmin() && box.ymax() >= box.ymin()) {
+      hpwl += (box.getWidth()+box.getHeight());
     }
   }
 

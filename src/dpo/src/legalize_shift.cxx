@@ -100,9 +100,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
 
   std::vector<std::pair<double, double> > origPos;
   origPos.resize(m_network->getNumNodes() );
-  for (size_t i = 0; i < m_network->getNumNodes() ; i++) {
+  for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* ndi = m_network->getNode(i) ;
-    origPos[ndi->getId()] = std::make_pair(ndi->getX(), ndi->getY());
+    origPos[ndi->getId()] = std::make_pair(ndi->getLeft(), ndi->getBottom());
   }
 
   bool retval = true;
@@ -135,8 +135,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   for (size_t i = 0; i < cells.size(); i++) {
     Node* ndi = cells[i];
 
-    double dx = std::fabs(ndi->getX() - origPos[ndi->getId()].first);
-    double dy = std::fabs(ndi->getY() - origPos[ndi->getId()].second);
+    double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
+    double dy = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 1.0e-3 || dy > 1.0e-3) {
       isDisp = true;
     }
@@ -162,7 +162,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   order.reserve(size);
   for (size_t i = 0; i < cells.size(); i++) {
     Node* ndi = cells[i];
-    count[ndi->getId()] = m_incoming[ndi->getId()].size();
+    count[ndi->getId()] = (int)m_incoming[ndi->getId()].size();
     if (count[ndi->getId()] == 0) {
       visit[ndi->getId()] = true;
       order.push_back(ndi);
@@ -192,8 +192,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr) {
   for (size_t i = 0; i < cells.size(); i++) {
     Node* ndi = cells[i];
 
-    double dx = std::fabs(ndi->getX() - origPos[ndi->getId()].first);
-    double dy = std::fabs(ndi->getY() - origPos[ndi->getId()].second);
+    double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
+    double dy = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 1.0e-3 || dy > 1.0e-3) {
       isDisp = true;
     }
@@ -231,7 +231,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells) {
   // Note: I don't even try to correct for site alignment.  I'll
   // print a warning, but will otherwise continue.
 
-  int nnodes = m_network->getNumNodes() ;
+  int nnodes = m_network->getNumNodes();
   int nsegs = m_mgr->getNumSegments();
 
   std::vector<Node*>::iterator it;
@@ -370,7 +370,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
     r->m_width = ndi->getWidth();
-    r->m_wposn = wt * (ndi->getX() - 0.5 * ndi->getWidth());
+    r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;  // Massive weight for segment start.
     r->m_posn = r->m_wposn / r->m_weight;
 
@@ -387,11 +387,11 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
 
     double wt = 1.0;
 
-    r->m_id = i;
+    r->m_id = (int)i;
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
     r->m_width = ndi->getWidth();
-    r->m_wposn = wt * (ndi->getX() - 0.5 * ndi->getWidth());
+    r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;
     r->m_posn = r->m_wposn / r->m_weight;
 
@@ -424,7 +424,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
     r->m_nodes.erase(r->m_nodes.begin(), r->m_nodes.end());
     r->m_nodes.push_back(ndi);
     r->m_width = ndi->getWidth();
-    r->m_wposn = wt * (ndi->getX() - 0.5 * ndi->getWidth());
+    r->m_wposn = wt * ndi->getLeft();
     r->m_weight = wt;  // Massive weight for segment end.
     r->m_posn = r->m_wposn / r->m_weight;
 
@@ -450,15 +450,17 @@ double ShiftLegalizer::clump(std::vector<Node*>& order) {
 
     Clump* r = m_ptr[ndi->getId()];
 
-    double oldX = ndi->getX();
-    double newX = r->m_posn + m_offset[ndi->getId()] + 0.5 * ndi->getWidth();
+    // Left edge.
+    double oldX = ndi->getLeft();
+    double newX = r->m_posn + m_offset[ndi->getId()];
 
-    ndi->setX(newX);
+    ndi->setX(newX + 0.5*ndi->getWidth());
 
-    double oldY = ndi->getY();
-    double newY = m_arch->getRow(rowId)->getBottom() + 0.5 * ndi->getHeight();
+    // Bottom edge.
+    double oldY = ndi->getBottom();
+    double newY = m_arch->getRow(rowId)->getBottom();
 
-    ndi->setY(newY);
+    ndi->setY(newY + 0.5*ndi->getHeight());
 
     double dX = oldX - newX;
     double dY = oldY - newY;

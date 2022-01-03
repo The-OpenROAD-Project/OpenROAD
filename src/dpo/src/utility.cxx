@@ -30,13 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-// File: utility.h
-// Description:
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-// Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "utility.h"
 #include <stdio.h>
@@ -47,6 +42,7 @@
 #include <vector>
 #include "architecture.h"
 #include "network.h"
+#include "rectangle.h"
 
 namespace dpo {
 
@@ -57,11 +53,11 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
   tot = 0.;
   max = 0.;
   avg = 0.;
-  for (size_t i = 0; i < nw->getNumNodes(); i++) {
+  for (int i = 0; i < nw->getNumNodes(); i++) {
     Node* ndi = nw->getNode(i);
 
-    double dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    double dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     tot += dx + dx;
     max = std::max(max, dx + dy);
@@ -75,35 +71,10 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg) {
 ////////////////////////////////////////////////////////////////////////////////
 double Utility::hpwl(Network* nw) {
   // Compute the wire length for the given placement.
-  unsigned numEdges = nw->getNumEdges();
-  double xmin, xmax, ymin, ymax;
   double totWL = 0.0;
-  for (unsigned e = 0; e < numEdges; e++) {
+  for (unsigned e = 0; e < nw->getNumEdges(); e++) {
     Edge* ed = nw->getEdge(e);
-
-    //int numPins = ed->getNumPins();
-    int numPins = ed->getPins().size();
-    if (numPins <= 1) {
-      continue;
-    }
-
-    xmin = std::numeric_limits<double>::max();
-    xmax = -std::numeric_limits<double>::max();
-    ymin = std::numeric_limits<double>::max();
-    ymax = -std::numeric_limits<double>::max();
-
-    for (unsigned p = 0; p < ed->getPins().size(); p++) {
-      Pin* pin = ed->getPins()[p];
-
-      Node* node = pin->getNode();
-      double x = node->getX() + pin->getOffsetX();
-      double y = node->getY() + pin->getOffsetY();
-      xmin = (x < xmin) ? x : xmin;
-      xmax = (x > xmax) ? x : xmax;
-      ymin = (y < ymin) ? y : ymin;
-      ymax = (y > ymax) ? y : ymax;
-    }
-    totWL = totWL + ((xmax - xmin) + (ymax - ymin));
+    totWL += hpwl(nw, ed);
   }
   return totWL;
 }
@@ -113,170 +84,61 @@ double Utility::hpwl(Network* nw, double& hpwlx, double& hpwly) {
   hpwly = 0.0;
   // Compute the wire length for the given placement.
   unsigned numEdges = nw->getNumEdges();
-  double xmin, xmax, ymin, ymax;
-  double totWL = 0.0;
+  Rectangle box;
   for (unsigned e = 0; e < numEdges; e++) {
     Edge* ed = nw->getEdge(e);
 
-    int numPins = ed->getPins().size();
+    int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     }
 
-    xmin = std::numeric_limits<double>::max();
-    xmax = -std::numeric_limits<double>::max();
-    ymin = std::numeric_limits<double>::max();
-    ymax = -std::numeric_limits<double>::max();
-
+    box.reset();
     for (unsigned p = 0; p < ed->getPins().size(); p++) {
       Pin* pin = ed->getPins()[p];
 
-      Node* node = pin->getNode();
-      double x = node->getX() + pin->getOffsetX();
-      double y = node->getY() + pin->getOffsetY();
-      xmin = (x < xmin) ? x : xmin;
-      xmax = (x > xmax) ? x : xmax;
-      ymin = (y < ymin) ? y : ymin;
-      ymax = (y > ymax) ? y : ymax;
+      Node* ndi = pin->getNode();
+      double py = ndi->getBottom()+0.5*ndi->getHeight() + pin->getOffsetY();
+      double px = ndi->getLeft()+0.5*ndi->getWidth() + pin->getOffsetX();
+      box.addPt(px, py);
     }
-    totWL = totWL + ((xmax - xmin) + (ymax - ymin));
-    hpwlx += (xmax - xmin);
-    hpwly += (ymax - ymin);
+    hpwlx += box.getWidth();
+    hpwly += box.getHeight();
   }
-  return totWL;
+  return hpwlx+hpwly;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Utility::hpwl:
 ////////////////////////////////////////////////////////////////////////////////
 double Utility::hpwl(Network* nw, Edge* ed) {
-  double hpwlx;
-  double hpwly;
+  double hpwlx = 0.0;
+  double hpwly = 0.0;
   return hpwl(nw, ed, hpwlx, hpwly);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Utility::hpwl:
 ////////////////////////////////////////////////////////////////////////////////
 double Utility::hpwl(Network* nw, Edge* ed, double& hpwlx, double& hpwly) {
-  double xmin, xmax, ymin, ymax;
-  double totWL = 0.0;
-
   hpwlx = 0.0;
   hpwly = 0.0;
 
-  int numPins = ed->getPins().size();
+  int numPins = ed->getNumPins();
   if (numPins <= 1) {
     return 0.0;
   }
 
-  xmin = std::numeric_limits<double>::max();
-  xmax = -std::numeric_limits<double>::max();
-  ymin = std::numeric_limits<double>::max();
-  ymax = -std::numeric_limits<double>::max();
-
+  Rectangle box;
   for (int p = 0; p < ed->getPins().size(); p++) {
     Pin* pin = ed->getPins()[p];
 
-    Node* node = pin->getNode();
-    double x = node->getX() + pin->getOffsetX();
-    double y = node->getY() + pin->getOffsetY();
-    xmin = (x < xmin) ? x : xmin;
-    xmax = (x > xmax) ? x : xmax;
-    ymin = (y < ymin) ? y : ymin;
-    ymax = (y > ymax) ? y : ymax;
+    Node* ndi = pin->getNode();
+    double py = ndi->getBottom()+0.5*ndi->getHeight() + pin->getOffsetY();
+    double px = ndi->getLeft()+0.5*ndi->getWidth() + pin->getOffsetX();
+    box.addPt(px, py);
   }
-  totWL = totWL + ((xmax - xmin) + (ymax - ymin));
-  hpwlx += (xmax - xmin);
-  hpwly += (ymax - ymin);
-  return totWL;
-}
-
-double Utility::area(Network* nw, bool print) {
-  // Compute the area of the bounding boxes.  Also, compute a histogram of the
-  // aspect ratios with a cut off of 0.5.
-
-  unsigned numEdges = nw->getNumEdges();
-  double xmin, xmax, ymin, ymax;
-  double totArea = 0.0;
-  int nbins = 20;
-  std::vector<int> histogram;
-  histogram.resize(nbins);
-  std::fill(histogram.begin(), histogram.end(), 0);
-  for (unsigned e = 0; e < numEdges; e++) {
-    Edge* ed = nw->getEdge(e);
-
-    //int numPins = ed->getNumPins();
-    int numPins = ed->getPins().size();
-    if (numPins <= 1) {
-      continue;
-    }
-
-    xmin = std::numeric_limits<double>::max();
-    xmax = -std::numeric_limits<double>::max();
-    ymin = std::numeric_limits<double>::max();
-    ymax = -std::numeric_limits<double>::max();
-
-    for (unsigned p = 0; p < ed->getPins().size(); p++) {
-      Pin* pin = ed->getPins()[p];
-
-      Node* node = pin->getNode();
-      double x = node->getX() + pin->getOffsetX();
-      double y = node->getY() + pin->getOffsetY();
-
-      xmin = (x < xmin) ? x : xmin;
-      xmax = (x > xmax) ? x : xmax;
-      ymin = (y < ymin) ? y : ymin;
-      ymax = (y > ymax) ? y : ymax;
-    }
-    totArea = totArea + ((xmax - xmin) * (ymax - ymin));
-
-    // Aspect is height / width but we need to catch aspects of infinity (no
-    // width).
-    double w = xmax - xmin;
-    double h = ymax - ymin;
-    double aspect = (w < 1.0e-6) ? 0.0 : (h / w > 1 ? w / h : h / w);
-    int ix = std::max(0, std::min(nbins - 1, (int)(aspect * nbins)));
-    ++histogram[ix];
-  }
-
-  if (print == true) {
-    double width = 1. / (nbins);
-    for (int i = 0; i < nbins; i++) {
-      printf("[%lf to %lf] : %d\n", i * width, (i + 1) * width, histogram[i]);
-    }
-    std::cout << "Total net area is " << totArea << std::endl;
-  }
-
-  return totArea;
-}
-
-void Utility::map_shredded_to_original(
-    Network* original, Network* shredded, std::vector<Node*>& reverseMap,
-    std::vector<std::vector<Node*> >& forwardMap) {
-  // Map positions to the original network.
-  for (int k = 0; k < original->getNumNodes() ; k++) {
-    Node* nd = original->getNode(k);
-    if (nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
-      continue;
-    }
-
-    std::vector<Node*>& shreds = forwardMap[nd->getId()];
-    double x = 0.;
-    double y = 0.;
-    for (int i = 0; i < shreds.size(); i++) {
-      x += shreds[i]->getX();
-      y += shreds[i]->getY();
-    }
-    x /= (double)shreds.size();
-    y /= (double)shreds.size();
-
-    nd->setX(x);
-    nd->setY(y);
-  }
+  hpwlx = box.getWidth();
+  hpwly = box.getHeight();
+  return hpwlx+hpwly;
 }
 
 void Utility::get_row_blockages(
@@ -291,7 +153,7 @@ void Utility::get_row_blockages(
 
   blockages.erase(blockages.begin(), blockages.end());
 
-  int numRows = arch->getRows().size();
+  int numRows = arch->getNumRows();
 
   // Allocate proper space for the blockages.
   blockages.resize(numRows);
@@ -304,10 +166,10 @@ void Utility::get_row_blockages(
   for (int i = 0; i < fixed.size(); i++) {
     Node* nd = fixed[i];
 
-    double xmin = std::max(arch->getMinX(), nd->getX() - 0.5 * nd->getWidth());
-    double xmax = std::min(arch->getMaxX(), nd->getX() + 0.5 * nd->getWidth());
-    double ymin = std::max(arch->getMinY(), nd->getY() - 0.5 * nd->getHeight());
-    double ymax = std::min(arch->getMaxY(), nd->getY() + 0.5 * nd->getHeight());
+    double xmin = std::max(arch->getMinX(), nd->getLeft());
+    double xmax = std::min(arch->getMaxX(), nd->getRight());
+    double ymin = std::max(arch->getMinY(), nd->getBottom());
+    double ymax = std::min(arch->getMaxY(), nd->getTop());
 
     for (int r = 0; r < numRows; r++) {
       double lb = arch->getMinY() + r * arch->getRow(r)->getHeight();

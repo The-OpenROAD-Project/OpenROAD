@@ -113,16 +113,16 @@ double DetailedDisplacement::curr() {
   for (size_t i = 0; i < m_mgrPtr->m_singleHeightCells.size(); i++) {
     Node* ndi = m_mgrPtr->m_singleHeightCells[i];
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
     m_tot[1] += dx + dy;
   }
   for (size_t s = 2; s < m_mgrPtr->m_multiHeightCells.size(); s++) {
     for (size_t i = 0; i < m_mgrPtr->m_multiHeightCells[s].size(); i++) {
       Node* ndi = m_mgrPtr->m_multiHeightCells[s][i];
 
-      dx = std::fabs(ndi->getX() - ndi->getOrigX());
-      dy = std::fabs(ndi->getY() - ndi->getOrigY());
+      dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+      dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
       m_tot[s] += dx + dy;
     }
   }
@@ -169,8 +169,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
     int spanned = (int)(ndi->getHeight() / m_singleRowHeight + 0.5);
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     m_del[spanned] += (dx + dy);
     // old_disp += dx + dy;
@@ -190,8 +190,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
     int spanned = (int)(ndi->getHeight() / m_singleRowHeight + 0.5);
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     m_del[spanned] -= (dx + dy);
     // new_disp += dx + dy;
@@ -232,12 +232,16 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y) {
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  // Targets are centers, but computation is with left and bottom...
+  new_x -= 0.5*ndi->getWidth();
+  new_y -= 0.5*ndi->getHeight();
+
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp = dx + dy;
 
-  dx = std::fabs(new_x - ndi->getOrigX());
-  dy = std::fabs(new_y - ndi->getOrigY());
+  dx = std::fabs(new_x - ndi->getOrigLeft());
+  dy = std::fabs(new_y - ndi->getOrigBottom());
   new_disp = dx + dy;
 
   // +ve means improvement.
@@ -260,18 +264,18 @@ double DetailedDisplacement::delta(Node* ndi, Node* ndj) {
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp += dx + dy;
-  dx = std::fabs(ndj->getX() - ndj->getOrigX());
-  dy = std::fabs(ndj->getY() - ndj->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndj->getOrigBottom());
   old_disp += dx + dy;
 
-  dx = std::fabs(ndj->getX() - ndi->getOrigX());
-  dy = std::fabs(ndj->getY() - ndi->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndi->getOrigBottom());
   new_disp += dx + dy;
-  dx = std::fabs(ndi->getX() - ndj->getOrigX());
-  dy = std::fabs(ndi->getY() - ndj->getOrigY());
+  dx = std::fabs(ndi->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndj->getOrigBottom());
   new_disp += dx + dy;
 
   // +ve means improvement.
@@ -290,18 +294,25 @@ double DetailedDisplacement::delta(Node* ndi, double target_xi,
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  // Targets are centers, but computation is with left and bottom...
+  target_xi -= 0.5*ndi->getWidth();
+  target_yi -= 0.5*ndi->getHeight();
+
+  target_xj -= 0.5*ndj->getWidth();
+  target_yj -= 0.5*ndj->getHeight();
+
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp += dx + dy;
-  dx = std::fabs(ndj->getX() - ndj->getOrigX());
-  dy = std::fabs(ndj->getY() - ndj->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndj->getOrigBottom());
   old_disp += dx + dy;
 
-  dx = std::fabs(target_xi - ndi->getOrigX());
-  dy = std::fabs(target_yi - ndi->getOrigY());
+  dx = std::fabs(target_xi - ndi->getOrigLeft());
+  dy = std::fabs(target_yi - ndi->getOrigBottom());
   new_disp += dx + dy;
-  dx = std::fabs(target_xj - ndj->getOrigX());
-  dy = std::fabs(target_yj - ndj->getOrigY());
+  dx = std::fabs(target_xj - ndj->getOrigLeft());
+  dy = std::fabs(target_yj - ndj->getOrigBottom());
   new_disp += dx + dy;
 
   // +ve means improvement.

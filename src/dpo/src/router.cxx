@@ -84,9 +84,9 @@ double RoutingParams::get_spacing(int layer, double width, double parallel) {
     return m_wire_spacing[layer];
   }
 
-  int i = w.size() - 1;
+  int i = (int)w.size() - 1;
   while (i > 0 && width <= w[i]) i--;
-  int j = p.size() - 1;
+  int j = (int)p.size() - 1;
   while (j > 0 && parallel <= p[j]) j--;
 
   return m_spacingTable[layer][i][j];
@@ -102,8 +102,8 @@ double RoutingParams::get_maximum_spacing(int layer) {
     return m_wire_spacing[layer];
   }
 
-  int i = w.size() - 1;
-  int j = p.size() - 1;
+  int i = (int)w.size() - 1;
+  int j = (int)p.size() - 1;
 
   return m_spacingTable[layer][i][j];
 }

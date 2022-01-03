@@ -443,7 +443,7 @@ double DetailedRandom::go() {
   std::fill(gen_count.begin(), gen_count.end(), 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
-    int g = (*(m_mgrPtr->m_rng))() % (m_generators.size());
+    int g = (int)((*(m_mgrPtr->m_rng))() % (m_generators.size()));
     ++gen_count[g];
     // Generate a move list.
     if (m_generators[g]->generate(m_mgrPtr, m_candidates) == false) {
@@ -568,7 +568,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->getRow(0)->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->getSiteSpacing();
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;
@@ -602,8 +602,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
     // Position of the source.
-    xi = ndi->getX();
-    yi = ndi->getY();
+    yi = ndi->getBottom()+0.5*ndi->getHeight();
+    xi = ndi->getLeft()+0.5*ndi->getWidth();
 
     // Segment for the source.
     si = segs_i[0]->getSegId();
@@ -699,7 +699,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
   double ywid = m_mgr->getSingleRowHeight();
   int ydim = m_mgr->getNumSingleHeightRows();
-  double xwid = m_arch->getRow(0)->m_siteSpacing;
+  double xwid = m_arch->getRow(0)->getSiteSpacing();
   int xdim = std::max(0, (int)((m_arch->getMaxX() - m_arch->getMinX()) / xwid));
 
   xwid = (m_arch->getMaxX() - m_arch->getMinX()) / (double)xdim;
@@ -728,8 +728,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
     // Position of the source.
-    xi = ndi->getX();
-    yi = ndi->getY();
+    yi = ndi->getBottom()+0.5*ndi->getHeight();
+    xi = ndi->getLeft()+0.5*ndi->getWidth();
 
     // Segment for the source.
     si = segs_i[0]->getSegId();
@@ -740,12 +740,15 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     // this also be a randomized choice??????????????????????????????????
     if (1) {
       // Centered at the original position within a box.
+      double orig_yc = ndi->getOrigBottom()+0.5*ndi->getHeight();
+      double orig_xc = ndi->getOrigLeft()+0.5*ndi->getWidth();
+
       grid_xi = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getOrigX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((orig_xc - m_arch->getMinX()) / xwid)));
       grid_yi = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getOrigY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((orig_yc - m_arch->getMinY()) / ywid)));
 
       rel_x = (*(m_mgr->m_rng))() % (2 * rlx + 1);
       rel_y = (*(m_mgr->m_rng))() % (2 * rly + 1);
@@ -758,24 +761,30 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
     if (0) {
       // The original position.
-      xj = ndi->getOrigX();
-      yj = ndi->getOrigY();
+      xj = ndi->getOrigLeft() + 0.5*ndi->getWidth();
+      yj = ndi->getOrigBottom() + 0.5*ndi->getHeight();
     }
     if (0) {
       // Somewhere between current position and original position.
+      double orig_yc = ndi->getOrigBottom()+0.5*ndi->getHeight();
+      double orig_xc = ndi->getOrigLeft()+0.5*ndi->getWidth();
+
+      double curr_yc = ndi->getBottom()+0.5*ndi->getHeight();
+      double curr_xc = ndi->getLeft()+0.5*ndi->getWidth();
+
       grid_xi = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((curr_xc - m_arch->getMinX()) / xwid)));
       grid_yi = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((curr_yc - m_arch->getMinY()) / ywid)));
 
       grid_xj = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getOrigX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((orig_xc - m_arch->getMinX()) / xwid)));
       grid_yj = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getOrigY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((orig_yc - m_arch->getMinY()) / ywid)));
 
       if (grid_xi > grid_xj) std::swap(grid_xi, grid_xj);
       if (grid_yi > grid_yj) std::swap(grid_yi, grid_yj);

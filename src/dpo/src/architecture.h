@@ -67,12 +67,12 @@ class Architecture {
   virtual ~Architecture();
 
   std::vector<Architecture::Row*>& getRows() { return m_rows; }
-  int getNumRows() const { return m_rows.size(); }
+  int getNumRows() const { return (int)m_rows.size(); }
   Architecture::Row* getRow(int r) const { return m_rows[r]; }
   Architecture::Row* createAndAddRow();
 
   std::vector<Architecture::Region*>& getRegions() { return m_regions; }
-  int getNumRegions() const { return m_regions.size(); }
+  int getNumRegions() const { return (int)m_regions.size(); }
   Architecture::Region* getRegion(int r) const { return m_regions[r]; }
   Architecture::Region* createAndAddRegion();
 
@@ -81,7 +81,7 @@ class Architecture {
 
   int getCellHeightInRows(Node* ndi) const;
 
-  bool postProcess( Network* network );
+  int postProcess( Network* network );
   double compute_overlap(double xmin1, double xmax1, double ymin1, double ymax1,
                          double xmin2, double xmax2, double ymin2,
                          double ymax2);
@@ -164,7 +164,7 @@ class Architecture::Spacing {
   int getSecondEdge() const { return m_i2; }
   double getSeparation() const { return m_sep; }
 
- private:
+ protected:
   int m_i1;
   int m_i2;
   double m_sep;
@@ -179,39 +179,40 @@ class Architecture::Row {
   Row();
   virtual ~Row();
 
-  void setBottom(double bottom) { m_rowLoc = bottom; }
-  void setHeight(double height) { m_rowHeight = height; }
-  void setSiteSpacing(double spacing) { m_siteSpacing = spacing; }
-  void setSiteWidth(double width) { m_siteWidth = width; }
+  void setBottom(int bottom) { m_rowLoc = bottom; }
+  void setHeight(int height) { m_rowHeight = height; }
+  void setSubRowOrigin(int origin) { m_subRowOrigin = origin; }
+  void setSiteSpacing(int spacing) { m_siteSpacing = spacing; }
+  void setSiteWidth(int width) { m_siteWidth = width; }
   void setNumSites(int nsites) { m_numSites = nsites; }
 
-  double getBottom() const { return m_rowLoc; }
-  double getTop() const { return m_rowLoc+m_rowHeight; }
-  double getCenterY() const { return m_rowLoc+0.5*m_rowHeight; }
-  double getLeft() const { return m_subRowOrigin; }
-  double getRight() const { 
-    return m_subRowOrigin+m_numSites*m_siteSpacing; // ? add m_siteWidth
+  int getBottom() const { return m_rowLoc; }
+  int getTop() const { return m_rowLoc+m_rowHeight; }
+  int getLeft() const { return m_subRowOrigin; }
+  int getRight() const { 
+    return m_subRowOrigin+m_numSites*m_siteSpacing+m_siteWidth; 
   }
-  double getHeight() const { return m_rowHeight; }
-  double getSiteWidth() const { return m_siteWidth; }
-  double getSiteSpacing() const { return m_siteSpacing; }
+  int getHeight() const { return m_rowHeight; }
+  int getSiteWidth() const { return m_siteWidth; }
+  int getSiteSpacing() const { return m_siteSpacing; }
   int getNumSites() const { return m_numSites; }
 
+  double getCenterY() const { return m_rowLoc+0.5*m_rowHeight; } 
+
  protected:
-  double m_rowLoc;          // Y-location of the row.
-  double m_rowHeight;       // Height of the row.
-  int m_numSites;           // Number of sites...  Ending X location (xmax) is =
-                            // m_subRowOrigin + m_numSites * m_siteSpacing;
-  double m_siteWidth;       // Width of sites in the row.
+  int m_rowLoc;          // Y-location of the row.
+  int m_rowHeight;       // Height of the row.
+  int m_subRowOrigin;    // Starting X location (xmin) of the row.
+  int m_siteSpacing;     // Spacing between sites in the row. XXX: Likely
+                         // assumed to be the same as the width...
+  int m_siteWidth;       // Width of sites in the row.
+  int m_numSites;        // Number of sites...  Ending X location (xmax) is =
+                         // m_subRowOrigin + m_numSites * m_siteSpacing;
 
  public:
-  // XXX: Ignores site orientation and symmetry right now...
-  double m_subRowOrigin;    // Starting X location (xmin) of the row.
   unsigned m_siteOrient;    // Orientation of sites in the row.
   unsigned m_siteSymmetry;  // Symmetry of sites in the row.  Symmetry allows
                             // for certain orientations...
-  double m_siteSpacing;     // Spacing between sites in the row. XXX: Likely
-                            // assumed to be the same as the width...
   int m_id;  // Every row  needs an id...  Filled in after sorting.
 
   // The following is to try and monitor voltages at the top and bottom of the

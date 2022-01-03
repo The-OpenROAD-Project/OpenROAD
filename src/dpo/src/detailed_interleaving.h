@@ -65,7 +65,6 @@ class DetailedInterleave {
   class EdgeInterval;
   class SmallProblem;
   class TableEntry;
-  struct CompareNodesX;
 
   void dp();
   bool build(SmallProblem* probPtr, double leftLimit, double rightLimit,

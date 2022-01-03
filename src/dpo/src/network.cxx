@@ -31,11 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 ////////////////////////////////////////////////////////////////////////////////
-// File: network.cxx
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include <string.h>
 #include <deque>
@@ -46,11 +41,6 @@
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
 ////////////////////////////////////////////////////////////////////////////////
 Node::Node()
     : m_id(0),
@@ -65,97 +55,129 @@ Node::Node()
       m_etr(EDGETYPE_DEFAULT),
       m_regionId(0),
       m_currentOrient(Orientation_N),
-      m_availOrient(Orientation_N) {
+      m_availOrient(Orientation_N),
+      m_isDefinedByShapes(false) {
   m_powerTop = dpo::RowPower_UNK;
   m_powerBot = dpo::RowPower_UNK;
 }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Node::~Node() {}
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Edge::Edge() : m_id(0), m_ndr(0) {}
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Edge::~Edge() {}
 
-Pin::Pin()
-    : m_pinW(0.0),
-      m_pinH(0.0),
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Pin::Pin(void)
+    : m_pinWidth(0),
+      m_pinHeight(0),
       m_dir(Pin::Dir_INOUT),
-      m_pinLayer(0),  
+      m_pinLayer(0),
       m_node(nullptr),
       m_edge(nullptr),
       m_offsetX(0.0),
-      m_offsetY(0.0) {
-}
+      m_offsetY(0.0) {}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Pin::~Pin(void) {}
 
-Pin::~Pin() {}
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Network::Network() {}
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Network::~Network() {
-  deleteFillerNodes();
-
-  for (int i = 0; i < m_shapes.size(); i++) {
-    for (int j = 0; j < m_shapes[i].size(); j++) {
-      delete m_shapes[i][j];
-    }
-    m_shapes[i].clear();
+  // Delete edges.
+  for (int i = 0; i < m_edges.size(); i++) {
+    delete m_edges[i];
   }
-  m_shapes.clear();
-
-  m_nodeNames.clear();
-  m_edgeNames.clear();
-  m_nodes.clear();
   m_edges.clear();
+  m_edgeNames.clear();
 
+  // Delete cells.
+  for (int i = 0; i < m_nodes.size(); i++) {
+    delete m_nodes[i];
+  }
+  m_nodes.clear();
+  m_nodeNames.clear();
+
+  // Delete pins.
   for (int i = 0; i < m_pins.size(); i++) {
     delete m_pins[i];
   }
   m_pins.clear();
 }
-
-void Network::deleteFillerNodes() {
-  for (int i = 0; i < m_filler.size(); i++) {
-    delete m_filler[i];
-  }
-  m_filler.clear();
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Edge* Network::createAndAddEdge(void) {
+  // Just allocate an edge, append it and give it the id
+  // that corresponds to its index.
+  int id = (int)m_edges.size();
+  Edge* ptr = new Edge();
+  ptr->setId(id);
+  m_edges.push_back(ptr);
+  return ptr;
 }
-
-Node* Network::createAndAddFillerNode(double x,
-    double y, double width, double height) {
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Node* Network::createAndAddNode(void) {
+  // Just allocate a node, append it and give it the id
+  // that corresponds to its index.
+  int id = (int)m_nodes.size();
+  Node* ptr = new Node();
+  ptr->setId(id);
+  m_nodes.push_back(ptr);
+  return ptr;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Node* Network::createAndAddFillerNode(double x, double y, double width,
+                                      double height) {
   Node* ndi = new Node();
+  int id = (int)m_nodes.size();
   ndi->setFixed(NodeFixed_FIXED_XY);
   ndi->setType(NodeType_FILLER);
-  int id = m_nodes.size() + m_filler.size();
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);
   ndi->setY(y);
   ndi->setX(x);
-
-  m_filler.push_back(ndi);
-  return ndi;
+  m_nodes.push_back(ndi);
+  return getNode(id);
 }
-
-Node* Network::createAndAddShapeNode(Node* ndi,
-    double x, double y, double width, double height) {
-  Node* shape = new Node();
-  shape->setFixed(NodeFixed_FIXED_XY);
-  shape->setType(NodeType_SHAPE);
-  shape->setId(-1);
-  shape->setHeight(height);
-  shape->setWidth(width);
-  shape->setY(y);
-  shape->setX(x);
-
-  m_shapes[ndi->getId()].push_back(shape);
-  return shape;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Node* Network::createAndAddShapeNode(double x, double y,
+                                     double width, double height) {
+  // Add shape cells to list of network cells.  We have
+  // the parent node from which we can derive a name.
+  Node* ndi = new Node();
+  int id = (int)m_nodes.size();
+  ndi->setFixed(NodeFixed_FIXED_XY);
+  ndi->setType(NodeType_SHAPE);
+  ndi->setId(id);
+  ndi->setHeight(height);
+  ndi->setWidth(width);
+  ndi->setY(y);
+  ndi->setX(x);
+  m_nodes.push_back(ndi);
+  return getNode(id);
 }
-
-Pin* Network::createAndAddPin() {
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Pin* Network::createAndAddPin(void) {
   Pin* ptr = new Pin();
   m_pins.push_back(ptr);
   return ptr;
 }
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Pin* Network::createAndAddPin(Node* nd, Edge* ed) {
   Pin* ptr = createAndAddPin();
   ptr->m_node = nd;

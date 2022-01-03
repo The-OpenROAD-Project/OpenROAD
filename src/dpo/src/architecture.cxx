@@ -129,7 +129,7 @@ Architecture::Region* Architecture::createAndAddRegion() {
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool Architecture::postProcess( Network* network ) {
+int Architecture::postProcess( Network* network ) {
   // Sort the rows and assign ids.  Check for co-linear rows (sub-rows).
   // Right now, I am merging subrows back into single rows and adding
   // filler to block the gaps.
@@ -138,9 +138,9 @@ bool Architecture::postProcess( Network* network ) {
   // subrows...
 
   m_xmin = std::numeric_limits<double>::max();
-  m_xmax = -std::numeric_limits<double>::max();
+  m_xmax = std::numeric_limits<double>::lowest();
   m_ymin = std::numeric_limits<double>::max();
-  m_ymax = -std::numeric_limits<double>::max();
+  m_ymax = std::numeric_limits<double>::lowest();
 
   double height, width, x, y;
   double lx, rx, yb, yt;
@@ -152,8 +152,8 @@ bool Architecture::postProcess( Network* network ) {
   for (int r = 0; r < m_rows.size(); r++) {
     Architecture::Row* row = m_rows[r];
 
-    lx = row->m_subRowOrigin;
-    rx = lx + row->getNumSites() * row->m_siteSpacing;
+    lx = row->getLeft();
+    rx = lx + row->getNumSites() * row->getSiteSpacing();
 
     yb = row->getBottom();
     yt = yb + row->getHeight();
@@ -168,6 +168,7 @@ bool Architecture::postProcess( Network* network ) {
   std::vector<Architecture::Row*> subrows;
   std::vector<Architecture::Row*> rows;
   std::vector<std::pair<double,double> > intervals;
+  int count = 0;
   for (int r = 0; r < m_rows.size(); ) {
     subrows.erase(subrows.begin(), subrows.end());
     subrows.push_back(m_rows[r++]);
@@ -178,8 +179,8 @@ bool Architecture::postProcess( Network* network ) {
     // Convert subrows to intervals.
     intervals.erase(intervals.begin(),intervals.end());
     for (size_t i = 0; i < subrows.size(); i++) {
-      lx = subrows[i]->m_subRowOrigin;
-      rx = lx + subrows[i]->getNumSites() * subrows[i]->m_siteSpacing;
+      lx = subrows[i]->getLeft();
+      rx = lx + subrows[i]->getNumSites() * subrows[i]->getSiteSpacing();
       intervals.push_back(std::make_pair(lx,rx));
     }
     std::sort(intervals.begin(), intervals.end(), compareIntervals());
@@ -212,8 +213,8 @@ bool Architecture::postProcess( Network* network ) {
     if (subrows.size() > 1) {
       lx = intervals.front().first;
       rx = intervals.back().second;
-      subrows[0]->setNumSites((rx -lx) / subrows[0]->m_siteSpacing);
-      rx = lx + subrows[0]->getNumSites() * subrows[0]->m_siteSpacing;
+      subrows[0]->setNumSites((int)((rx -lx) / subrows[0]->getSiteSpacing()));
+      rx = lx + subrows[0]->getNumSites() * subrows[0]->getSiteSpacing();
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {
@@ -233,7 +234,10 @@ bool Architecture::postProcess( Network* network ) {
       rx = intervals.front().first;
       width = rx-lx;
       x = 0.5*(lx + rx);
-      network->createAndAddFillerNode(x, y, width, height);
+      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+      std::string name = "FILLER_" + std::to_string(count);
+      network->setNodeName(ndi->getId(), name);
+      ++count;
     }
     for (size_t i = 1; i < intervals.size(); i++) {
       if( intervals[i].first > intervals[i-1].second) {
@@ -241,7 +245,10 @@ bool Architecture::postProcess( Network* network ) {
         rx = intervals[i].first;
         width = rx-lx;
         x = 0.5*(lx + rx);
-        network->createAndAddFillerNode(x, y, width, height);
+        Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+        std::string name = "FILLER_" + std::to_string(count);
+        network->setNodeName(ndi->getId(), name);
+        ++count;
       }
     }
     if (m_xmax > intervals.back().second) {
@@ -249,7 +256,10 @@ bool Architecture::postProcess( Network* network ) {
       rx = m_xmax;
       width = rx-lx;
       x = 0.5*(lx + rx);
-      network->createAndAddFillerNode(x, y, width, height);
+      Node* ndi = network->createAndAddFillerNode(x, y, width, height);
+      std::string name = "FILLER_" + std::to_string(count);
+      network->setNodeName(ndi->getId(), name);
+      ++count;
     }
   }
   // Replace original rows with new rows.
@@ -261,7 +271,7 @@ bool Architecture::postProcess( Network* network ) {
   for (int r = 0; r < m_rows.size(); r++) {
     m_rows[r]->m_id = r;
   }
-  return true;
+  return count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +286,7 @@ int Architecture::find_closest_row(double y) {
     if (row_l == m_rows.end() || (*row_l)->getBottom() > y) {
       --row_l;
     }
-    r = row_l - m_rows.begin();
+    r = (int)(row_l - m_rows.begin());
 
     // Should we check actual distance?  The row we find is the one that the
     // bottom of the cell (specified in "y") overlaps with.  But, it could be
@@ -516,7 +526,7 @@ int Architecture::add_edge_type(const char* name) {
   }
   char* newName = new char[strlen(name) + 1];
   strcpy(newName, name);
-  int n = m_edgeTypes.size();
+  int n = (int)m_edgeTypes.size();
   m_edgeTypes.push_back(std::pair<char*, int>(newName, n));
   return n;
 }
@@ -526,10 +536,10 @@ int Architecture::add_edge_type(const char* name) {
 Architecture::Row::Row()
     : m_rowLoc(0),
       m_rowHeight(0),
-      m_numSites(0),
-      m_siteWidth(0),
       m_subRowOrigin(0),
-      m_siteSpacing(0) {
+      m_siteSpacing(0),
+      m_siteWidth(0),
+      m_numSites(0) {
   m_powerTop = RowPower_UNK;
   m_powerBot = RowPower_UNK;
 }

@@ -79,7 +79,9 @@ public:
   void clear();
   void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
 
-  void improvePlacement(int seed);
+  void improvePlacement(int seed,
+                        int max_displacement_x,
+                        int max_displacement_y);
 
 protected:
   void import();

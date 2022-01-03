@@ -232,22 +232,20 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
 
   Edge* ed;
   unsigned mid;
-  unsigned n;
 
   Pin* pin;
   unsigned t = 0;
 
   m_xpts.erase(m_xpts.begin(), m_xpts.end());
   m_ypts.erase(m_ypts.begin(), m_ypts.end());
-  for (n = 0; n < nd->getPins().size(); n++) {
+  for (int n = 0; n < nd->getNumPins(); n++) {
     pin = nd->getPins()[n];
 
     ed = pin->getEdge();
 
     nodeBbox.reset();
 
-    //int numPins = ed->getNumPins();
-    int numPins = ed->getPins().size();
+    int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
     } else if (numPins > m_skipNetsLargerThanThis) {
@@ -292,7 +290,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox) {
   }
 
   // Get the median values.
-  mid = t / 2;
+  mid = t >> 1;
 
   std::sort(m_xpts.begin(), m_xpts.end());
   std::sort(m_ypts.begin(), m_ypts.end());
@@ -322,8 +320,8 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox) {
     if (other == nd) {
       continue;
     }
-    curX = other->getX() + pin->getOffsetX();
-    curY = other->getY() + pin->getOffsetY();
+    curX = other->getLeft() + 0.5*other->getWidth() + pin->getOffsetX();
+    curY = other->getBottom() + 0.5*other->getHeight() + pin->getOffsetY();
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -344,8 +342,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y) {
   double old_wl = 0.;
   double new_wl = 0.;
   double x, y;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
 
   ++m_traversal;
   for (int pi = 0; pi < ndi->getPins().size(); pi++) {
@@ -353,8 +350,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y) {
 
     Edge* edi = pini->getEdge();
 
-    //int npins = edi->getNumPins();
-    int npins = edi->getPins().size();
+    int npins = edi->getNumPins();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
       continue;
     }
@@ -363,40 +359,28 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y) {
     }
     m_edgeMask[edi->getId()] = m_traversal;
 
-    old_xmin = std::numeric_limits<double>::max();
-    old_xmax = -std::numeric_limits<double>::max();
-    old_ymin = std::numeric_limits<double>::max();
-    old_ymax = -std::numeric_limits<double>::max();
-
-    new_xmin = std::numeric_limits<double>::max();
-    new_xmax = -std::numeric_limits<double>::max();
-    new_ymin = std::numeric_limits<double>::max();
-    new_ymax = -std::numeric_limits<double>::max();
+    old_box.reset();
+    new_box.reset();
 
     for (int pj = 0; pj < edi->getPins().size(); pj++) {
       Pin* pinj = edi->getPins()[pj];
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getX() + pinj->getOffsetX();
-      y = ndj->getY() + pinj->getOffsetY();
+      x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+      y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-      old_xmin = std::min(old_xmin, x);
-      old_xmax = std::max(old_xmax, x);
-      old_ymin = std::min(old_ymin, y);
-      old_ymax = std::max(old_ymax, y);
+      old_box.addPt(x,y);
 
       if (ndj == ndi) {
         x = new_x + pinj->getOffsetX();
         y = new_y + pinj->getOffsetY();
       }
-      new_xmin = std::min(new_xmin, x);
-      new_xmax = std::max(new_xmax, x);
-      new_ymin = std::min(new_ymin, y);
-      new_ymax = std::max(new_ymax, y);
+
+      new_box.addPt(x,y);
     }
-    old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
-    new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+    old_wl += old_box.getWidth() + old_box.getHeight();
+    new_wl += new_box.getWidth() + new_box.getHeight();
   }
   return old_wl - new_wl;
 }
@@ -409,8 +393,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
   double old_wl = 0.;
   double new_wl = 0.;
   double x, y;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
   Node* nodes[2];
   nodes[0] = ndi;
   nodes[1] = ndj;
@@ -423,7 +406,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -432,28 +415,18 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
       }
       m_edgeMask[edi->getId()] = m_traversal;
 
-      old_xmin = std::numeric_limits<double>::max();
-      old_xmax = -std::numeric_limits<double>::max();
-      old_ymin = std::numeric_limits<double>::max();
-      old_ymax = -std::numeric_limits<double>::max();
-
-      new_xmin = std::numeric_limits<double>::max();
-      new_xmax = -std::numeric_limits<double>::max();
-      new_ymin = std::numeric_limits<double>::max();
-      new_ymax = -std::numeric_limits<double>::max();
+      old_box.reset();
+      new_box.reset();
 
       for (int pj = 0; pj < edi->getPins().size(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getX() + pinj->getOffsetX();
-        y = ndj->getY() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-        old_xmin = std::min(old_xmin, x);
-        old_xmax = std::max(old_xmax, x);
-        old_ymin = std::min(old_ymin, y);
-        old_ymax = std::max(old_ymax, y);
+        old_box.addPt(x,y);
 
         if (ndj == nodes[0]) {
           ndj = nodes[1];
@@ -461,17 +434,14 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
           ndj = nodes[0];
         }
 
-        x = ndj->getX() + pinj->getOffsetX();
-        y = ndj->getY() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-        new_xmin = std::min(new_xmin, x);
-        new_xmax = std::max(new_xmax, x);
-        new_ymin = std::min(new_ymin, y);
-        new_ymax = std::max(new_ymax, y);
+        new_box.addPt(x,y);
       }
 
-      old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
-      new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+      old_wl += old_box.getWidth() + old_box.getHeight();
+      new_wl += new_box.getWidth() + new_box.getHeight();
     }
   }
   return old_wl - new_wl;
@@ -480,8 +450,8 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedGlobalSwap::generate(Node* ndi) {
-  double xi = ndi->getX();
-  double yi = ndi->getY();
+  double xi = ndi->getLeft()+0.5*ndi->getWidth();
+  double yi = ndi->getBottom()+0.5*ndi->getHeight();
 
   // Determine optimal region.
   Rectangle bbox;

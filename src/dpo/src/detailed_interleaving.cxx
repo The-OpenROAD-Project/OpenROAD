@@ -220,12 +220,6 @@ class DetailedInterleave::TableEntry
   double m_cost;
 };
 
-struct DetailedInterleave::CompareNodesX {
-  bool operator()(Node* p, Node* q) const {
-    return p->getX() < q->getX();
-  }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedInterleave::DetailedInterleave(Architecture* arch,
@@ -361,7 +355,7 @@ void DetailedInterleave::dp()
   double leftLimit, rightLimit, leftPadding, rightPadding;
 
   // Loop over each segment; find single height cells and interleave.
-  for (size_t s = 0; s < m_mgrPtr->getNumSegments(); s++) {
+  for (int s = 0; s < m_mgrPtr->getNumSegments(); s++) {
     DetailedSeg* segPtr = m_mgrPtr->getSegment(s);
     int segId = segPtr->getSegId();
 
@@ -369,10 +363,10 @@ void DetailedInterleave::dp()
     if (nodes.size() < 2) {
       continue;
     }
-    std::sort(nodes.begin(), nodes.end(), CompareNodesX());
+    std::sort(nodes.begin(), nodes.end(), DetailedMgr::compareNodesX());
 
     int j = 0;
-    int n = nodes.size();
+    int n = (int)nodes.size();
     while (j < n) {
       while (j < n && m_arch->isMultiHeightCell(nodes[j])) {
         ++j;
@@ -403,7 +397,7 @@ void DetailedInterleave::dp()
         if (nextPtr != 0) {
           m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
-              nextPtr->getX() - 0.5 * nextPtr->getWidth() - leftPadding,
+              nextPtr->getLeft() - leftPadding,
               rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
@@ -411,7 +405,7 @@ void DetailedInterleave::dp()
         if (prevPtr != 0) {
           m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
-              prevPtr->getX() + 0.5 * prevPtr->getWidth() + rightPadding,
+              prevPtr->getRight() + rightPadding,
               leftLimit);
         }
 
@@ -462,7 +456,7 @@ void DetailedInterleave::dp()
         }
         std::sort(nodes.begin() + jstrt,
                   nodes.begin() + (jstop + 1),
-                  CompareNodesX());
+                  DetailedMgr::compareNodesX());
       }
     }
   }
@@ -501,7 +495,7 @@ bool DetailedInterleave::build(SmallProblem* sm,
     for (int pj = 0; pj < nd->getPins().size(); pj++) {
       Pin* pin = nd->getPins()[pj];
       Edge* ed = pin->getEdge();
-      int npins = ed->getPins().size();
+      int npins = ed->getNumPins();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -530,10 +524,10 @@ bool DetailedInterleave::build(SmallProblem* sm,
     // involved.
     m_arch->getCellPadding(ndr, dummyPadding, rightPadding);
     double rightEdge = std::min(
-        ndr->getX() + 0.5 * ndr->getWidth() + rightPadding, rightLimit);
+        ndr->getRight() + rightPadding, rightLimit);
     m_arch->getCellPadding(ndl, leftPadding, dummyPadding);
     double leftEdge = std::max(
-        ndl->getX() - 0.5 * ndl->getWidth() - leftPadding, leftLimit);
+        ndl->getLeft() - leftPadding, leftLimit);
 
     // Determine width and padding requirements.
     double totalPadding = 0.;
@@ -619,7 +613,7 @@ bool DetailedInterleave::build(SmallProblem* sm,
   for (size_t n = 0; n < m_nodeIds.size(); n++) {
     Node* nd = m_network->getNode(m_nodeIds[n]);
     int nid = m_nodeMap[nd->getId()];
-    sm->m_x[nid] = nd->getX();
+    sm->m_x[nid] = nd->getLeft()+0.5*nd->getWidth();
   }
   // Setup connectivity and net boxes.
   double cost = 0.;
@@ -631,7 +625,7 @@ bool DetailedInterleave::build(SmallProblem* sm,
     for (int pi = 0; pi < ed->getPins().size(); pi++) {
       Pin* pin = ed->getPins()[pi];
       Node* nd = pin->getNode();
-      double x = nd->getX() + pin->getOffsetX();
+      double x = nd->getLeft()+0.5*nd->getWidth() + pin->getOffsetX();
       x = std::min(std::max(x, sm->m_xmin), sm->m_xmax);
       if (m_nodeMask[nd->getId()] == m_traversal) {
         int nid = m_nodeMap[nd->getId()];
@@ -720,8 +714,8 @@ double DetailedInterleave::solve(SmallProblem* problem)
       else
         b.push_back(q[i]);
     }
-    int na = a.size();
-    int nb = b.size();
+    int na = (int)a.size();
+    int nb = (int)b.size();
 
     {
       int k = 0;
@@ -880,7 +874,7 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX, double maxX)
     for (int pj = 0; pj < nd->getPins().size(); pj++) {
       Pin* pin = nd->getPins()[pj];
       Edge* ed = pin->getEdge();
-      int npins = ed->getPins().size();
+      int npins = ed->getNumPins();
       if (npins < 2 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -901,7 +895,7 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX, double maxX)
     int nid = m_nodeMap[nd->getId()];
 
     sm.m_widths[nid] = nd->getWidth() * scaling;
-    sm.m_x[nid] = nd->getX();
+    sm.m_x[nid] = nd->getLeft()+0.5*nd->getWidth();
   }
   double currCost = 0.;
   for (size_t e = 0; e < m_edgeIds.size(); e++) {
@@ -912,7 +906,8 @@ void DetailedInterleave::dp(std::vector<Node*>& nodes, double minX, double maxX)
     for (int pi = 0; pi < ed->getPins().size(); pi++) {
       Pin* pin = ed->getPins()[pi];
       Node* nd = pin->getNode();
-      double x = std::min(std::max(nd->getX() + pin->getOffsetX(), minX), maxX);
+      double x = nd->getLeft()+0.5*nd->getWidth() + pin->getOffsetX();
+      x = std::min(std::max(x, minX), maxX);
       if (m_nodeMask[nd->getId()] == m_traversal) {
         int nid = m_nodeMap[nd->getId()];
         sm.m_adjEdges[nid].push_back(EdgeAndOffset(eid, pin->getOffsetX()));

@@ -163,7 +163,7 @@ void DetailedReorderer::reorder() {
   double leftPadding = 0.;
 
   // Loop over each segment; find single height cells and reorder.
-  for (size_t s = 0; s < m_mgrPtr->getNumSegments(); s++) {
+  for (int s = 0; s < m_mgrPtr->getNumSegments(); s++) {
     DetailedSeg* segPtr = m_mgrPtr->getSegment(s);
     int segId = segPtr->getSegId();
     int rowId = segPtr->getRowId();
@@ -175,7 +175,7 @@ void DetailedReorderer::reorder() {
     std::sort(nodes.begin(), nodes.end(), DetailedMgr::compareNodesX());
 
     int j = 0;
-    int n = nodes.size();
+    int n = (int)nodes.size();
     while (j < n) {
       while (j < n && m_arch->isMultiHeightCell(nodes[j])) {
         ++j;
@@ -199,7 +199,7 @@ void DetailedReorderer::reorder() {
         if (nextPtr != 0) {
           m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
-              nextPtr->getX() - 0.5 * nextPtr->getWidth() - leftPadding,
+              nextPtr->getLeft() - leftPadding,
               rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
@@ -207,7 +207,7 @@ void DetailedReorderer::reorder() {
         if (prevPtr != 0) {
           m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
-              prevPtr->getX() + 0.5 * prevPtr->getWidth() + rightPadding,
+              prevPtr->getRight() + rightPadding,
               leftLimit);
         }
 
@@ -232,7 +232,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
   std::map<Node*, double> origX;
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
-    origX[ndi] = ndi->getX();
+    origX[ndi] = ndi->getLeft();
   }
 
   // We want to space cells out evenly while also satisfying gaps.
@@ -248,11 +248,11 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
     // Determine current left and right edge for the cells
     // involved.
     m_arch->getCellPadding(ndr, dummyPadding, rightPadding);
-    rightEdge = std::min(ndr->getX() + 0.5 * ndr->getWidth() + rightPadding,
+    rightEdge = std::min(ndr->getRight() + rightPadding,
                          rightLimit);
     m_arch->getCellPadding(ndl, leftPadding, dummyPadding);
     leftEdge =
-        std::max(ndl->getX() - 0.5 * ndl->getWidth() - leftPadding, leftLimit);
+        std::max(ndl->getLeft() - leftPadding, leftLimit);
 
     // Determine width and padding requirements.
     double totalPadding = 0.;
@@ -324,15 +324,6 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
       return;
     }
   }
-  // std::cout << "left edge " << leftEdge << ", right edge " << rightEdge <<
-  // std::endl;
-  //
-  // std::cout << "Solving => [" << leftEdge << "," << rightEdge << "]" <<
-  // std::endl; std::cout << "Widths "; for( int i = 0; i < size; i++ )
-  //{
-  //   std::cout << " " << widths[i];
-  //}
-  // std::cout << std::endl;
 
   // Generate the different permutations.  Evaluate each one and keep
   // the best one.  Note that the first permutation, which is the
@@ -343,17 +334,10 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
   std::vector<double> position(size, 0.0);
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
-    position[i] = ndi->getX();
+    position[i] = ndi->getLeft();
   }
   double best = cost(nodes, jstrt, jstop);
   double orig = best;
-  // std::cout << "orig:";
-  // for( int i = 0; i < size; i++ )
-  //{
-  //    Node* ndi = nodes[jstrt+i];
-  //    std::cout << " " << ndi->getId() << " @ " << ndi->getX();
-  //}
-  // std::cout << ", cost is " << best << std::endl;
 
   std::vector<int> order(size, 0);
   for (int i = 0; i < size; i++) {
@@ -364,9 +348,6 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
   do {
     ++count;
 
-    // std::cout << boost::format( "perm %3d, order: " ) % count;
-    // for( int i = 0; i < size; i++ ) { std::cout << " " << order[i]; }
-
     double x = leftEdge;
     for (int i = 0; i < size; i++) {
       int ix = order[i];
@@ -376,21 +357,13 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
       x += 0.5 * widths[ix];
       ndi->setX(x);
       x += 0.5 * widths[ix];
-
-      // std::cout << " " << ndi->getId() << " @ " << ndi->getX() << ", "
-      //    << ndi->getX()-0.5*ndi->getWidth() << "-" <<
-      //    ndi->getX()+0.5*ndi->getWidth()
-      //    << std::endl;
     }
     double curr = cost(nodes, jstrt, jstop);
 
-    // std::cout << ", cost is " << curr << std::endl;
-
     if (curr < best) {
-      // std::cout << "New best, " << curr << std::endl;
       for (int i = 0; i < size; i++) {
         int ix = order[i];
-        position[ix] = nodes[jstrt + ix]->getX();
+        position[ix] = nodes[jstrt + ix]->getLeft();
       }
       best = curr;
 
@@ -399,20 +372,19 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
   } while (std::next_permutation(order.begin(), order.end()));
 
   if (!found) {
-    // Might as well just put cells back at their original positions
-    // and return.
+    // No improvement.  Restore positions and return.
     for (size_t i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
-      ndi->setX(origX[ndi]);
+      ndi->setX(origX[ndi]+0.5*ndi->getWidth());
     }
     return;
   }
 
-  // We have found an apprarent lower cost reordering.
-
   // Put cells at their best positions.
   for (int i = 0; i < size; i++) {
-    nodes[jstrt + i]->setX(position[i]);
+    Node* ndi = nodes[jstrt+i];
+    double x = position[i]+0.5*ndi->getWidth();
+    ndi->setX(x);
   }
 
   double last = cost(nodes, jstrt, jstop);
@@ -431,19 +403,19 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
     for (int i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
 
-      x = ndi->getX() - 1.0e-3;
+      x = ndi->getLeft()+0.5*ndi->getWidth() - 1.0e-3;
       if (!m_mgrPtr->alignPos(ndi, x, left, rightEdge)) {
-        x = ndi->getX() + 1.0e-3;
+        x = ndi->getLeft()+0.5*ndi->getWidth() + 1.0e-3;
         if (!m_mgrPtr->alignPos(ndi, x, left, rightEdge)) {
           failed = true;
           break;
         }
       }
-      if (std::fabs(x - ndi->getX()) > 1.0e-3) {
+      if (std::fabs(x - (ndi->getLeft()+0.5*ndi->getWidth())) > 1.0e-3) {
         shifted = true;
       }
       ndi->setX(x);
-      left = ndi->getX() + 0.5 * ndi->getWidth();
+      left = ndi->getRight();
     }
     if (!failed) {
       // This implies everything got site aligned within the specified
@@ -458,11 +430,10 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
     }
 
     if (failed) {
-      // std::cout << "Restoring original placement." << std::endl;
       // Restore original placement.
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
-        ndi->setX(origX[ndi]);
+        ndi->setX(origX[ndi]+0.5*ndi->getWidth());
       }
       std::stable_sort(nodes.begin() + jstrt, nodes.begin() + jstop + 1,
                        DetailedMgr::compareNodesX());
@@ -482,12 +453,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
   for (int i = istrt; i <= istop; i++) {
     Node* ndi = nodes[i];
 
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -498,12 +469,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
 
       double xmin = std::numeric_limits<double>::max();
       double xmax = -std::numeric_limits<double>::max();
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* ndj = pinj->getNode();
 
-        double x = ndj->getX() + pinj->getOffsetX();
+        double x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);
