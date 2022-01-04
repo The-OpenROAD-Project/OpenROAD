@@ -132,8 +132,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   rq->queryGRPin(box, result);
   dbTransform instXform;  // (0,0), R0
   dbTransform shiftXform;
-  frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
+    frMTerm* trueTerm = nullptr;
     frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
@@ -247,8 +247,8 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   }
   dbTransform instXform;  // (0,0), R0
   dbTransform shiftXform;
-  frMTerm* trueTerm = nullptr;
   for (auto& term : result) {
+    frMTerm* trueTerm = nullptr;
     frInst* inst = nullptr;
     switch (term->typeId()) {
       case frcInstTerm: {
