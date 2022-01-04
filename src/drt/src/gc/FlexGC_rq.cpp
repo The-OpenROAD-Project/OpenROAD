@@ -30,7 +30,7 @@
 
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
-#include "serialization.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -298,10 +298,10 @@ void FlexGCWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexGCWorkerRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
+template void FlexGCWorkerRegionQuery::serialize<frIArchive>(
+    frIArchive& ar,
     const unsigned int file_version);
 
-template void FlexGCWorkerRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
+template void FlexGCWorkerRegionQuery::serialize<frOArchive>(
+    frOArchive& ar,
     const unsigned int file_version);

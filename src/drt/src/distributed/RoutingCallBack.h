@@ -31,12 +31,13 @@
 
 #include <mutex>
 
-#include "dr/FlexDR.h"
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
+#include "distributed/RoutingJobDescription.h"
+#include "db/infra/frTime.h"
 namespace odb {
 class dbDatabase;
 }
@@ -53,6 +54,7 @@ class RoutingCallBack : public dst::JobCallBack
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
+    time_.print(logger_);
     if (msg.getType() != dst::JobMessage::ROUTING)
       return;
     RoutingJobDescription* desc
@@ -80,6 +82,7 @@ class RoutingCallBack : public dst::JobCallBack
 
  private:
   triton_route::TritonRoute* router_;
+  frTime time_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
   std::string globals_path_;

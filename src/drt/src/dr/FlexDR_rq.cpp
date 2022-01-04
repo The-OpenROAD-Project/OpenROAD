@@ -26,9 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
+  #include "dr/FlexDR.h"
 #include "frRTree.h"
-#include "serialization.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -285,10 +285,10 @@ void FlexDRWorkerRegionQuery::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexDRWorkerRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
+template void FlexDRWorkerRegionQuery::serialize<frIArchive>(
+    frIArchive& ar,
     const unsigned int file_version);
 
-template void FlexDRWorkerRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
+template void FlexDRWorkerRegionQuery::serialize<frOArchive>(
+    frOArchive& ar,
     const unsigned int file_version);

@@ -42,6 +42,7 @@
 #include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include "db/infra/frTime.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -150,7 +151,7 @@ class FlexDR
   unsigned short dist_port_;
   std::string dist_dir_;
   std::string globals_path_;
-
+  frTime time_;
   // others
   void init();
   void initFromTA();
@@ -1021,37 +1022,37 @@ class FlexDRWorker
   friend class boost::serialization::access;
 };
 
-class RoutingJobDescription : public dst::JobDescription
-{
- public:
-  RoutingJobDescription(std::string pathIn,
-                        std::string globals = "",
-                        std::string dirIn = "")
-      : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
-  {
-  }
-  void setWorkerPath(const std::string& path) { path_ = path; }
-  void setGlobalsPath(const std::string& path) { globals_path_ = path; }
-  void setSharedDir(const std::string& path) { shared_dir_ = path; }
-  const std::string& getWorkerPath() const { return path_; }
-  const std::string& getGlobalsPath() const { return globals_path_; }
-  const std::string& getSharedDir() const { return shared_dir_; }
+// class RoutingJobDescription : public dst::JobDescription
+// {
+//  public:
+//   RoutingJobDescription(std::string pathIn,
+//                         std::string globals = "",
+//                         std::string dirIn = "")
+//       : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
+//   {
+//   }
+//   void setWorkerPath(const std::string& path) { path_ = path; }
+//   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
+//   void setSharedDir(const std::string& path) { shared_dir_ = path; }
+//   const std::string& getWorkerPath() const { return path_; }
+//   const std::string& getGlobalsPath() const { return globals_path_; }
+//   const std::string& getSharedDir() const { return shared_dir_; }
 
- private:
-  std::string path_;
-  std::string globals_path_;
-  std::string shared_dir_;
-  RoutingJobDescription() {}
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & path_;
-    (ar) & globals_path_;
-    (ar) & shared_dir_;
-  }
-  friend class boost::serialization::access;
-};
+//  private:
+//   std::string path_;
+//   std::string globals_path_;
+//   std::string shared_dir_;
+//   RoutingJobDescription() {}
+//   template <class Archive>
+//   void serialize(Archive& ar, const unsigned int version)
+//   {
+//     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+//     (ar) & path_;
+//     (ar) & globals_path_;
+//     (ar) & shared_dir_;
+//   }
+//   friend class boost::serialization::access;
+// };
 }  // namespace fr
 
 #endif

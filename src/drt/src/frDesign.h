@@ -91,6 +91,9 @@ class frDesign
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
+    (ar) & topBlock_;
+    (ar) & name2refBlock_;
+    (ar) & refBlocks_;
     (ar) & tech_;
     (ar) & rq_;
   }

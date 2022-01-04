@@ -590,7 +590,5 @@ void serialize_globals(Archive& ar)
   (ar) & CONGCOST;
 }
 
-using InputArchive = boost::archive::binary_iarchive;
-using OutputArchive = boost::archive::binary_oarchive;
 
 }  // namespace fr

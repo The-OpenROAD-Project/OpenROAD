@@ -29,7 +29,7 @@
 #include <iostream>
 
 #include "gc/FlexGC_impl.h"
-#include "serialization.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -246,10 +246,10 @@ void FlexGCWorker::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void FlexGCWorker::serialize<InputArchive>(
-    InputArchive& ar,
+template void FlexGCWorker::serialize<frIArchive>(
+    frIArchive& ar,
     const unsigned int file_version);
 
-template void FlexGCWorker::serialize<OutputArchive>(
-    OutputArchive& ar,
+template void FlexGCWorker::serialize<frOArchive>(
+    frOArchive& ar,
     const unsigned int file_version);

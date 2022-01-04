@@ -48,6 +48,8 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
+#include "distributed/RoutingJobDescription.h"
+#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -68,7 +70,7 @@ static bool serialize_worker(SerializationType type,
     std::ifstream file(name);
     if (!file.good())
       return false;
-    InputArchive ar(file);
+    frIArchive ar(file);
     register_types(ar);
     ar >> *worker;
     file.close();
@@ -76,7 +78,7 @@ static bool serialize_worker(SerializationType type,
     std::ofstream file(name);
     if (!file.good())
       return false;
-    OutputArchive ar(file);
+    frOArchive ar(file);
     register_types(ar);
     ar << *worker;
     file.close();
@@ -89,7 +91,7 @@ static bool writeGlobals(const std::string& name)
   std::ofstream file(name);
   if (!file.good())
     return false;
-  OutputArchive ar(file);
+  frOArchive ar(file);
   register_types(ar);
   serialize_globals(ar);
   file.close();

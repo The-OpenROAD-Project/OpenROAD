@@ -31,7 +31,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "RoutingCallBack.h"
+#include "distributed/RoutingCallBack.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
@@ -49,6 +49,7 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
+#include "distributed/frArchive.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -157,7 +158,7 @@ static bool readGlobals(const std::string& name)
   std::ifstream file(name);
   if (!file.good())
     return false;
-  InputArchive ar(file);
+  frIArchive ar(file);
   register_types(ar);
   serialize_globals(ar);
   file.close();
@@ -168,7 +169,9 @@ std::string TritonRoute::runDRWorker(const char* file_name)
 {
   auto worker = FlexDRWorker::load(file_name, logger_, nullptr);
   worker->setSharedVolume(shared_volume_);
-  return worker->reloadedMain();
+  std::string result = worker->reloadedMain();
+  delete worker->getDesign();
+  return result;
 }
 
 void TritonRoute::updateGlobals(const char* file_name)

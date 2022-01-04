@@ -35,6 +35,7 @@
 #include "frRTree.h"
 #include "global.h"
 #include "utl/algorithms.h"
+#include "distributed/frArchive.h"
 
 using namespace fr;
 using utl::enumerate;
@@ -956,10 +957,10 @@ void frRegionQuery::serialize(Archive& ar, const unsigned int version)
 }
 
 // Explicit instantiations
-template void frRegionQuery::serialize<InputArchive>(
-    InputArchive& ar,
+template void frRegionQuery::serialize<frIArchive>(
+    frIArchive& ar,
     const unsigned int file_version);
 
-template void frRegionQuery::serialize<OutputArchive>(
-    OutputArchive& ar,
+template void frRegionQuery::serialize<frOArchive>(
+    frOArchive& ar,
     const unsigned int file_version);
