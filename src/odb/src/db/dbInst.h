@@ -101,6 +101,7 @@ class _dbInst : public _dbObject
   dbId<_dbHier> _hierarchy;
   dbVector<uint> _iterms;
   dbId<_dbBox> _halo;
+  uint pin_access_idx_;
 
   _dbInst(_dbDatabase*);
   _dbInst(_dbDatabase*, const _dbInst& i);

@@ -31,13 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
+#include "dbTechLayer.h"
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTechLayer.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"

@@ -78,7 +78,7 @@ namespace odb {
     public:
     {% for _enum in klass.enums %}
       {% if not _enum.public %}
-        enum {{_enum.name}}
+        enum {{_enum.name}}{%if type in _enum%} : _enum.type{% endif %}
         {
           {% for value in _enum["values"] %}
             {% if not loop.first %},{% endif %}{{value}}

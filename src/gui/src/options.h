@@ -83,6 +83,7 @@ class Options
 
   virtual bool isScaleBarVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;
+  virtual bool areAccessPointsVisible() const = 0;
   virtual QFont pinMarkersFont() = 0;
 };
 
