@@ -46,8 +46,7 @@ namespace psm {
   Uses OpenSTA to report total power per instance and
   use it for IR drop estimation.
 */
-class SupplyVoltage
-{
+class SupplyVoltage {
  private:
   //! Instance to OpenSTA object.
   sta::dbSta* _sta;

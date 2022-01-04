@@ -49,8 +49,8 @@ using std::string;
 using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta, utl::Logger*  logger)
-{
+vector<pair<string, double>> PowerInst::executePowerPerInst(
+    sta::dbSta* sta, utl::Logger* logger) {
   // STA object create
   m_sta = sta;
   m_logger = logger;
@@ -67,9 +67,9 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta, utl
   Corner* corner = m_sta->cmdCorner();
 
   vector<pair<string, double>> power_report;
-  dbNetwork*            network   = m_sta->getDbNetwork();
+  dbNetwork* network = m_sta->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
-  PowerResult           total_calc;
+  PowerResult total_calc;
   total_calc.clear();
   while (inst_iter->hasNext()) {
     Instance* inst = inst_iter->next();
@@ -80,12 +80,15 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta, utl
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-      debugPrint(m_logger, utl::PSM, "get power", 2, "Power of instance {} is {}", network->name(inst), inst_power.total());
+      debugPrint(m_logger, utl::PSM, "get power", 2,
+                 "Power of instance {} is {}", network->name(inst),
+                 inst_power.total());
     }
   }
   delete inst_iter;
 
-  debugPrint(m_logger, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
+  debugPrint(m_logger, utl::PSM, "get power", 1, "Total power: {}",
+             total_calc.total());
   return power_report;
 }
 }  // namespace psm

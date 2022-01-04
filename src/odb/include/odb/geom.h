@@ -63,6 +63,7 @@ class Point
   bool operator==(const Point& p) const;
   bool operator!=(const Point& p) const;
   bool operator<(const Point& p) const;
+  bool operator>=(const Point& p) const;
 
   int getX() const;
   int getY() const;
@@ -556,6 +557,11 @@ inline bool Point::operator<(const Point& rhs) const
     return false;
 
   return _y < rhs._y;
+}
+
+inline bool Point::operator>=(const Point& rhs) const
+{
+  return !(*this < rhs);
 }
 
 inline bool Rect::operator<(const Rect& rhs) const

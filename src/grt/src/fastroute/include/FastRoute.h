@@ -144,6 +144,8 @@ class FastRouteCore
                                   int last_tile_reduce);
   void initAuxVar();
   NetRouteMap run();
+  int totalOverflow() const { return total_overflow_; }
+  bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
 
   int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
@@ -157,7 +159,6 @@ class FastRouteCore
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);
-  void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -452,7 +453,6 @@ class FastRouteCore
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
   gui::Gui* gui_;
-  bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
   int layer_orientation_;
@@ -478,6 +478,7 @@ class FastRouteCore
                         // grids)
   int num_layers_;
   int total_overflow_;  // total # overflow
+  bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
   int via_cost_;

@@ -57,128 +57,92 @@ PDNSim::PDNSim()
       _bump_pitch_x(0),
       _bump_pitch_y(0),
       _spice_out_file(""),
-      _power_net("")
-      {};
+      _power_net("") {};
 
-PDNSim::~PDNSim()
-{
-  _db             = nullptr;
-  _sta            = nullptr;
-  _vsrc_loc       = "";
-  _power_net      = "";
-  _out_file       = "";
-  _em_out_file    = "";
-  _enable_em      = 0;
+PDNSim::~PDNSim() {
+  _db = nullptr;
+  _sta = nullptr;
+  _vsrc_loc = "";
+  _power_net = "";
+  _out_file = "";
+  _em_out_file = "";
+  _enable_em = 0;
   _spice_out_file = "";
-  _bump_pitch_x   = 0;
-  _bump_pitch_y   = 0;
-  //_net_voltage_map = nullptr;
+  _bump_pitch_x = 0;
+  _bump_pitch_y = 0;
+  _node_density = -1;
 }
 
-void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
-{
-  _db     = db;
-  _sta    = sta;
+void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
+  _db = db;
+  _sta = sta;
   _logger = logger;
 }
 
-void PDNSim::set_power_net(std::string net)
-{
-  _power_net = net;
-}
+void PDNSim::set_power_net(std::string net) { _power_net = net; }
 
-void PDNSim::set_bump_pitch_x(float bump_pitch)
-{
-  _bump_pitch_x = bump_pitch;
-}
+void PDNSim::set_bump_pitch_x(float bump_pitch) { _bump_pitch_x = bump_pitch; }
 
-void PDNSim::set_bump_pitch_y(float bump_pitch)
-{
-  _bump_pitch_y = bump_pitch;
-}
+void PDNSim::set_bump_pitch_y(float bump_pitch) { _bump_pitch_y = bump_pitch; }
 
-void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
-{
+void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage) {
   _net_voltage_map.insert(std::pair<std::string, float>(net, voltage));
 }
 
-void PDNSim::import_vsrc_cfg(std::string vsrc)
-{
+void PDNSim::import_vsrc_cfg(std::string vsrc) {
   _vsrc_loc = vsrc;
   _logger->info(utl::PSM, 1, "Reading voltage source file: {}.", _vsrc_loc);
 }
 
-void PDNSim::import_out_file(std::string out_file)
-{
+void PDNSim::import_out_file(std::string out_file) {
   _out_file = out_file;
-  _logger->info(
-      utl::PSM, 2, "Output voltage file is specified as: {}.", _out_file);
+  _logger->info(utl::PSM, 2, "Output voltage file is specified as: {}.",
+                _out_file);
 }
 
-void PDNSim::import_em_out_file(std::string em_out_file)
-{
+void PDNSim::import_em_out_file(std::string em_out_file) {
   _em_out_file = em_out_file;
   _logger->info(utl::PSM, 3, "Output current file specified {}.", _em_out_file);
 }
-void PDNSim::import_enable_em(int enable_em)
-{
+void PDNSim::import_enable_em(int enable_em) {
   _enable_em = enable_em;
   if (_enable_em == 1) {
     _logger->info(utl::PSM, 4, "EM calculation is enabled.");
   }
 }
 
-void PDNSim::import_spice_out_file(std::string out_file)
-{
+void PDNSim::import_spice_out_file(std::string out_file) {
   _spice_out_file = out_file;
-  _logger->info(
-      utl::PSM, 5, "Output spice file is specified as: {}.", _spice_out_file);
+  _logger->info(utl::PSM, 5, "Output spice file is specified as: {}.",
+                _spice_out_file);
 }
 
-void PDNSim::write_pg_spice()
-{
-  IRSolver* irsolve_h = new IRSolver(_db,
-                                     _sta,
-                                     _logger,
-                                     _vsrc_loc,
-                                     _power_net,
-                                     _out_file,
-                                     _em_out_file,
-                                     _spice_out_file,
-                                     _enable_em,
-                                     _bump_pitch_x,
-                                     _bump_pitch_y,
-                                     _net_voltage_map);
+void PDNSim::write_pg_spice() {
+  IRSolver* irsolve_h =
+      new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
+                   _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
+                   _bump_pitch_y, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
   } else {
     int check_spice = irsolve_h->PrintSpice();
     if (check_spice) {
-      _logger->info(
-          utl::PSM, 6, "SPICE file is written at: {}.", _spice_out_file);
+      _logger->info(utl::PSM, 6, "SPICE file is written at: {}.",
+                    _spice_out_file);
     } else {
-      _logger->error(
-          utl::PSM, 7, "Failed to write out spice file: {}.", _spice_out_file);
+      _logger->error(utl::PSM, 7, "Failed to write out spice file: {}.",
+                     _spice_out_file);
     }
   }
 }
 
-int PDNSim::analyze_power_grid()
-{
-  GMat*     gmat_obj;
-  IRSolver* irsolve_h = new IRSolver(_db,
-                                     _sta,
-                                     _logger,
-                                     _vsrc_loc,
-                                     _power_net,
-                                     _out_file,
-                                     _em_out_file,
-                                     _spice_out_file,
-                                     _enable_em,
-                                     _bump_pitch_x,
-                                     _bump_pitch_y,
-                                     _net_voltage_map);
+int PDNSim::analyze_power_grid() {
+  GMat* gmat_obj;
+  IRSolver* irsolve_h =
+      new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
+                   _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
+                   _bump_pitch_y, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -186,14 +150,6 @@ int PDNSim::analyze_power_grid()
   }
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
-  std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
-  int                vsize;
-  vsize = nodes.size();
-  for (int n = 0; n < vsize; n++) {
-    Node* node = nodes[n];
-    if (node->GetLayerNum() != 1)
-      continue;
-  }
   _logger->report("########## IR report #################");
   _logger->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);
   _logger->report("Average IR drop  : {:3.2e} V",
@@ -209,24 +165,33 @@ int PDNSim::analyze_power_grid()
     _logger->report("######################################");
   }
 
+  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drop;
+  std::vector<Node*> nodes = gmat_obj->GetAllNodes();
+  int vsize;
+  vsize = nodes.size();
+  odb::dbTech* tech = _db->getTech();
+  for (int n = 0; n < vsize; n++) {
+    Node* node = nodes[n];
+    int node_layer_num = node->GetLayerNum();
+    NodeLoc node_loc = node->GetLoc();
+    odb::Point point = odb::Point(node_loc.first, node_loc.second);
+    double voltage = node->GetVoltage();
+    odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
+    // Absolute is needed for GND nets. In case of GND net voltage is higher
+    // than supply.
+    ir_drop[node_layer][point] = abs(irsolve_h->supply_voltage_src - voltage);
+  }
+  _ir_drop = ir_drop;
+  _node_density = irsolve_h->GetMinimumResolution();
   delete irsolve_h;
   return 1;
 }
 
-int PDNSim::check_connectivity()
-{
-  IRSolver* irsolve_h = new IRSolver(_db,
-                                     _sta,
-                                     _logger,
-                                     _vsrc_loc,
-                                     _power_net,
-                                     _out_file,
-                                     _em_out_file,
-                                     _spice_out_file,
-                                     _enable_em,
-                                     _bump_pitch_x,
-                                     _bump_pitch_y,
-                                     _net_voltage_map);
+int PDNSim::check_connectivity() {
+  IRSolver* irsolve_h =
+      new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
+                   _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
+                   _bump_pitch_y, _net_voltage_map);
   if (!irsolve_h->BuildConnection()) {
     delete irsolve_h;
     return 0;
@@ -234,6 +199,20 @@ int PDNSim::check_connectivity()
   int val = irsolve_h->GetConnectionTest();
   delete irsolve_h;
   return val;
+}
+
+void PDNSim::getIRDropMap(
+    std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop) {
+  ir_drop = _ir_drop;
+}
+
+int PDNSim::getMinimumResolution() {
+  if (_node_density <= 0) {
+    _logger->error(
+        utl::PSM, 68,
+        "Minimum resolution not set. Please run analyze_power_grid first.");
+  }
+  return _node_density;
 }
 
 }  // namespace psm

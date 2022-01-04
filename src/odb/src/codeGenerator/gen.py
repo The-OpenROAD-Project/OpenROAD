@@ -195,11 +195,10 @@ for klass in schema['classes']:
             field['functional_name'] = getFunctionalName(field['name'])
             field['components'] = components(klass['structs'], field['name'],
                                              field['type'])
-
-        field['setterFunctionName'] = 'set' + field['functional_name']
-        field['getterFunctionName'] = ('is' if field['type'] == 'bool' or
-                                       field.get('bits') == 1 else 'get') \
-            + field['functional_name']
+        field.setdefault('setterFunctionName','set' + field['functional_name'])
+        field.setdefault('getterFunctionName',('is' if field['type'] == 'bool' or
+                                             field.get('bits') == 1 else 'get') \
+            + field['functional_name'])
 
         if field['isRef']:
             field['setterArgumentType'] = \
