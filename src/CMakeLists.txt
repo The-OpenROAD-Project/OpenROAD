@@ -169,6 +169,12 @@ target_compile_options(openroad
     -Wextra -pedantic -Wcast-qual
 )
 
+# Needed for boost stacktrace
+if(APPLE)
+  target_compile_definitions(openroad PUBLIC "-D_GNU_SOURCE")
+endif()
+
+
 set_target_properties(openroad PROPERTIES
   # Disable compiler specific extensions like gnu++11.
   CXX_EXTENSIONS OFF
