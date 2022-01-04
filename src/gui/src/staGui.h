@@ -532,7 +532,11 @@ class PinComboBox : public QComboBox
   void updatePins();
 
   void setPins(const std::set<sta::Pin*>& pins);
+
   const std::set<sta::Pin*>& getPins() const { return pins_; }
+
+ public slots:
+  void clearPins() { setPins({}); }
 
  private slots:
   void findPin();
@@ -577,8 +581,11 @@ class TimingControlsDialog : public QDialog
   QComboBox* corner_box_;
 
   PinComboBox* from_;
+  QPushButton* from_clear_;
   PinComboBox* thru_;
+  QPushButton* thru_clear_;
   PinComboBox* to_;
+  QPushButton* to_clear_;
 
   void setPinSelections();
 };

@@ -39,6 +39,7 @@
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QKeyEvent>
+#include <QPushButton>
 #include <QStandardItemModel>
 #include <fstream>
 #include <iostream>
@@ -1472,8 +1473,11 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
     from_(new PinComboBox(this)),
+    from_clear_(new QPushButton(this)),
     thru_(new PinComboBox(this)),
-    to_(new PinComboBox(this))
+    thru_clear_(new QPushButton(this)),
+    to_(new PinComboBox(this)),
+    to_clear_(new QPushButton(this))
 {
   setWindowTitle("Timing Controls");
 
@@ -1484,9 +1488,20 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
 
   layout->addRow("Paths:", path_count_spin_box_);
   layout->addRow("Command corner:", corner_box_);
-  layout->addRow("From:", from_);
-  layout->addRow("Through:", thru_);
-  layout->addRow("To:", to_);
+
+  auto setup_pins_row = [this, layout](const QString& text, PinComboBox* box, QPushButton* clear) {
+    clear->setIcon(QIcon(":/delete.png"));
+    QHBoxLayout* row_layout = new QHBoxLayout;
+    row_layout->addWidget(box);
+    row_layout->addWidget(clear);
+    layout->addRow(text, row_layout);
+
+    connect(clear, SIGNAL(pressed()), box, SLOT(clearPins()));
+  };
+
+  setup_pins_row("From:", from_, from_clear_);
+  setup_pins_row("Through:", thru_, thru_clear_);
+  setup_pins_row("To:", to_, to_clear_);
 
   setLayout(layout);
 
