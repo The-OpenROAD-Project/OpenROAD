@@ -138,7 +138,7 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   if (targetObj_ == nullptr) { return false; }
   auto type = obj->typeId();
   switch(targetObj_->typeId()) {
-    case frcInst:
+    case frcInst: {
       if (type == frcInstTerm
           && static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
@@ -150,6 +150,7 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
         return true;
       }
       break;
+    }
     case frcBTerm: {
       return !(type == frcBTerm
         && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
