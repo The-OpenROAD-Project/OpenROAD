@@ -1,0 +1,145 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: gcd_sky130.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO ODB-0134] Finished DEF file: gcd_sky130.def
+[INFO DRT-0149] Reading tech and libs.
+
+Units:                1000
+Number of layers:     13
+Number of macros:     390
+Number of vias:       25
+Number of viarulegen: 25
+
+[INFO DRT-0150] Reading design.
+
+Design:                   gcd
+Die area:                 ( 0 0 ) ( 299960 300130 )
+Number of track patterns: 12
+Number of DEF vias:       3
+Number of components:     1360
+Number of terminals:      54
+Number of snets:          2
+Number of nets:           411
+
+[INFO DRT-0167] List of default vias:
+  Layer mcon
+    default via: L1M1_PR_MR
+  Layer via
+    default via: M1M2_PR
+  Layer via2
+    default via: M2M3_PR_M
+  Layer via3
+    default via: M3M4_PR_M
+  Layer via4
+    default via: M4M5_PR_C
+[INFO DRT-0162] Library cell analysis.
+[INFO DRT-0163] Instance analysis.
+[INFO DRT-0164] Number of unique instances = 82.
+[INFO DRT-0168] Init region query.
+[INFO DRT-0024]   Complete FR_MASTERSLICE.
+[INFO DRT-0024]   Complete FR_VIA.
+[INFO DRT-0024]   Complete li1.
+[INFO DRT-0024]   Complete mcon.
+[INFO DRT-0024]   Complete met1.
+[INFO DRT-0024]   Complete via.
+[INFO DRT-0024]   Complete met2.
+[INFO DRT-0024]   Complete via2.
+[INFO DRT-0024]   Complete met3.
+[INFO DRT-0024]   Complete via3.
+[INFO DRT-0024]   Complete met4.
+[INFO DRT-0024]   Complete via4.
+[INFO DRT-0024]   Complete met5.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] li1 shape region query size = 13509.
+[INFO DRT-0033] mcon shape region query size = 7822.
+[INFO DRT-0033] met1 shape region query size = 4351.
+[INFO DRT-0033] via shape region query size = 850.
+[INFO DRT-0033] met2 shape region query size = 884.
+[INFO DRT-0033] via2 shape region query size = 850.
+[INFO DRT-0033] met3 shape region query size = 870.
+[INFO DRT-0033] via3 shape region query size = 850.
+[INFO DRT-0033] met4 shape region query size = 435.
+[INFO DRT-0033] via4 shape region query size = 0.
+[INFO DRT-0033] met5 shape region query size = 0.
+[INFO DRT-0165] Start pin access.
+[INFO DRT-0076]   Complete 100 pins.
+[INFO DRT-0076]   Complete 200 pins.
+[INFO DRT-0078]   Complete 255 pins.
+[INFO DRT-0081]   Complete 80 unique inst patterns.
+[INFO DRT-0084]   Complete 375 groups.
+#scanned instances     = 1360
+#unique  instances     = 82
+#stdCellGenAp          = 1815
+#stdCellValidPlanarAp  = 0
+#stdCellValidViaAp     = 1472
+#stdCellPinNoAp        = 0
+#stdCellPinCnt         = 1210
+#instTermValidViaApCnt = 0
+#macroGenAp            = 0
+#macroValidPlanarAp    = 0
+#macroValidViaAp       = 0
+#macroNoAp             = 0
+[INFO DRT-0166] Complete pin access.
+[INFO DRT-0267] cpu time = 00:00:01, elapsed time = 00:00:01, memory = 133.41 (MB), peak = 133.41 (MB)
+[INFO DRT-0185] Post process initialize RPin region query.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 50%
+[INFO GRT-0023] Grid origin: (0, 0)
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 22
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 35
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      31939          5898          81.53%
+met2       Vertical        25215          7360          70.81%
+met3       Horizontal      15129          7040          53.47%
+met4       Vertical        10086          4968          50.74%
+met5       Horizontal       3362          1680          50.03%
+---------------------------------------------------------------
+
+[INFO GRT-0197] Via related to pin nodes: 1930
+[INFO GRT-0198] Via related Steiner nodes: 86
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 2327
+[INFO GRT-0112] Final usage 3D: 9969
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1              5898          1045           17.72%             0 /  0 /  0
+met2              7360          1280           17.39%             0 /  0 /  0
+met3              7040           459            6.52%             0 /  0 /  0
+met4              4968           204            4.11%             0 /  0 /  0
+met5              1680             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            26946          2988           11.09%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 30938 um
+[INFO GRT-0014] Routed nets: 411
+No differences found.
