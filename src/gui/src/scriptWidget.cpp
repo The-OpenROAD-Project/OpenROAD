@@ -182,6 +182,12 @@ void ScriptWidget::executeCommand(const QString& command, bool echo)
 void ScriptWidget::executeSilentCommand(const QString& command)
 {
   int return_code = executeTclCommand(command);
+
+  if (return_code != TCL_OK) {
+    // Show its error output
+    addTclResultToOutput(return_code);
+  }
+
   emit commandExecuted(return_code);
 }
 
