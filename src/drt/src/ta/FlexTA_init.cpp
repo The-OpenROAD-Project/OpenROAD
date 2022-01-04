@@ -156,11 +156,11 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
       // anticipated behavior should be.
       case frcBTerm: {
         /*auto bterm = static_cast<frBTerm*>(term);
-        if (mterm->getNet() != net) {
+        if (bterm->getNet() != net) {
           continue;
         }
-        trueTerm = mterm;
-        break;*/
+        trueTerm = bterm;*/
+        break;
       }
       default:
        break;
@@ -268,14 +268,15 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
       // actually act on BTerms. This code can be removed without changing
       // functionality, but it is being left commented because it appears to be
       // a bug with the way BTerms are handled and it may give a clue to what the
-      // anticipated behavior should be.
+      // anticipated behavior should be. Note that the bTerm can still affect
+      // whether wlen2 is set to 0 or not after if (trueTerm)...
       case frcBTerm: {
-        /*auto mterm = static_cast<frMTerm*>(term);
-        if (mterm->getNet() != net) {
+        auto bTerm = static_cast<frBTerm*>(term);
+        if (bTerm->getNet() != net) {
           continue;
         }
-        trueTerm = mterm;
-        break;*/
+        //trueTerm = bterm;
+        break;
       }
       default:
         break;
