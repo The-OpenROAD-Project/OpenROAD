@@ -122,7 +122,7 @@ metric(const char *metric,
 
 void
 metric_integer(const char *metric,
-       const int *value)
+       const int value)
 {
   Logger *logger = getLogger();
   logger->metric(metric, *value);
@@ -130,7 +130,7 @@ metric_integer(const char *metric,
 
 void
 metric_float(const char *metric,
-       const float *value)
+       const float value)
 {
   Logger *logger = getLogger();
   logger->metric(metric, *value);
