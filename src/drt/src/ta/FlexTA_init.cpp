@@ -682,10 +682,10 @@ void FlexTAWorker::initFixedObjs()
       bounds.bloat(-1, box);
       auto type = obj->typeId();
       // instterm term
-      if (type == frcInstTerm || type == frcBTerm || type == frcMTerm) {
+      if (type == frcInstTerm || type == frcBTerm) {
         bloatDist = TASHAPEBLOATWIDTH * width;
         frNet* netPtr = nullptr;
-        if (type == frcBTerm || type == frcMTerm) {
+        if (type == frcBTerm) {
           netPtr = static_cast<frBTerm*>(obj)->getNet();
         } else {
           netPtr = static_cast<frInstTerm*>(obj)->getNet();
