@@ -1496,6 +1496,8 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     row_layout->addWidget(clear);
     layout->addRow(text, row_layout);
 
+    clear->setAutoDefault(false);
+    clear->setDefault(false);
     connect(clear, SIGNAL(pressed()), box, SLOT(clearPins()));
   };
 
