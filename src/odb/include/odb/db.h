@@ -3380,7 +3380,7 @@ class dbITerm : public dbObject
   /// Returns preferred access points per each pin.
   /// One preffered access point, if available, for each pin.
   ///
-  std::map<dbMPin*, dbAccessPoint*> getPrefAccessPoints() const;
+  std::vector<dbAccessPoint*> getPrefAccessPoints() const;
 
   ///
   /// Returns all access points for each pin.

@@ -37,6 +37,7 @@
 #include "dbVector.h"
 #include "odb.h"
 // User Code Begin Includes
+#include <array>
 // User Code End Includes
 
 namespace odb {

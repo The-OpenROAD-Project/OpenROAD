@@ -702,16 +702,14 @@ std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
   return aps;
 }
 
-std::map<dbMPin*,dbAccessPoint*> dbITerm::getPrefAccessPoints() const
+std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   _dbITerm* iterm = (_dbITerm*) this;
-  _dbMaster* master = (_dbMaster*) getMTerm()->getMaster();
-  std::map<dbMPin*,dbAccessPoint*> aps;
+  std::vector<dbAccessPoint*> aps;
   for (auto& [pin_id, ap_id] : iterm->aps_) {
     if (ap_id.isValid()) {
-      auto mpin = (dbMPin*) master->_mpin_tbl->getPtr(pin_id);
-      aps[mpin] = (dbAccessPoint*) block->ap_tbl_->getPtr(ap_id);
+      aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
     }
   }
   return aps;

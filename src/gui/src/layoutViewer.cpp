@@ -1983,7 +1983,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter)
   if (shape_limit > shape_size)
     return;
   for (auto term : block_->getITerms()) {
-    for (auto& [pin, ap] : term->getPrefAccessPoints()) {
+    for (auto ap : term->getPrefAccessPoints()) {
       if (options_->isVisible(ap->getLayer())) {
         auto color = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
         painter.setPen(color, /* cosmetic */ true);

@@ -102,21 +102,12 @@ void pin_access_cmd(const char* dbProcessNode,
                     int verbose)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->setParams({"",
-                    "",
-                    "",
-                    "",
-                    "",
-                    dbProcessNode,
-                    false,
-                    -1,
-                    0,
-                    0,
-                    0,
-                    0,
-                    bottomRoutingLayer,
-                    topRoutingLayer,
-                    verbose});
+  triton_route::ParamStruct params;
+  params.dbProcessNode = dbProcessNode;
+  params.bottomRoutingLayer = bottomRoutingLayer;
+  params.topRoutingLayer = topRoutingLayer;
+  params.verbose = verbose;
+  router->setParams(params);
   router->pinAccess();
 }
 
