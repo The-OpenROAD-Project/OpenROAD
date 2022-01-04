@@ -1343,11 +1343,20 @@ double IRDropDataSource::getGridSizeMinimumValue() const
 {
   odb::dbBlock* block = getBlock();
   if (block == nullptr || psm_ == nullptr) {
-    return 0.0;
+    return RealValueHeatMapDataSource::getGridSizeMinimumValue();
   }
 
-  int resolution = psm_->getMinimumResolution();
-  return static_cast<double>(resolution) / block->getDbUnitsPerMicron();
+  try {
+    const double resolution = psm_->getMinimumResolution();
+    double resolution_um = resolution / block->getDbUnitsPerMicron();
+    if (resolution_um > getGridSizeMaximumValue()) {
+      resolution_um = RealValueHeatMapDataSource::getGridSizeMinimumValue();
+    }
+    return resolution_um;
+  } catch (const std::runtime_error& /* e */) {
+    // psm is not setup up
+    return RealValueHeatMapDataSource::getGridSizeMinimumValue();
+  }
 }
 
 bool IRDropDataSource::populateMap()
