@@ -73,7 +73,7 @@ PDNSim::~PDNSim()
   _spice_out_file = "";
   _bump_pitch_x   = 0;
   _bump_pitch_y   = 0;
-  //_net_voltage_map = nullptr;
+  _node_density   = -1;
 }
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
@@ -252,6 +252,9 @@ void PDNSim::getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, doubl
 }
 
 int PDNSim::getMinimumResolution() {
+   if(_node_density<=0){
+    _logger->error(utl::PSM, 68, "Minimum resolution not set. Please run analyze_power_grid first.");
+   }
    return _node_density;
 }
 
