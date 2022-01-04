@@ -343,6 +343,8 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     setup_(nullptr),
     color_generator_(SpectrumGenerator(100.0))
 {
+  // ensure color map is initialized
+  updateMapColors();
 }
 
 void HeatMapDataSource::setLogger(utl::Logger* logger)
