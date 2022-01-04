@@ -33,6 +33,7 @@
 #include "dbITerm.h"
 
 #include "db.h"
+#include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -46,6 +47,7 @@
 #include "dbInstHdr.h"
 #include "dbJournal.h"
 #include "dbLib.h"
+#include "dbMPin.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbNet.h"
@@ -85,6 +87,9 @@ bool _dbITerm::operator==(const _dbITerm& rhs) const
     return false;
 
   if (_prev_net_iterm != rhs._prev_net_iterm)
+    return false;
+
+  if (aps_ != rhs.aps_)
     return false;
 
   return true;
@@ -215,7 +220,7 @@ _dbInst* _dbITerm::getInst() const
 //
 ////////////////////////////////////////////////////////////////////
 
-dbInst* dbITerm::getInst()
+dbInst* dbITerm::getInst() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -235,7 +240,7 @@ dbNet* dbITerm::getNet()
   return (dbNet*) net;
 }
 
-dbMTerm* dbITerm::getMTerm()
+dbMTerm* dbITerm::getMTerm() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -265,7 +270,7 @@ dbBTerm* dbITerm::getBTerm()
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
-dbBlock* dbITerm::getBlock()
+dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
 }
@@ -664,6 +669,50 @@ void dbITerm::staSetVertexId(uint32_t id)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->_sta_vertex_id = id;
+}
+
+void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+  if (ap != nullptr) {
+    iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
+    _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
+    _ap->iterms_.push_back(iterm->getOID());
+  }
+  else
+    iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
+}
+
+std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+{
+  _dbBlock* block = (_dbBlock*) getBlock();
+  auto mterm = getMTerm();
+  uint pin_access_idx = getInst()->getPinAccessIdx();
+  std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
+  for(auto mpin : mterm->getMPins())
+  {
+    _dbMPin* pin = (_dbMPin*) mpin;
+    if(pin->aps_.size() > pin_access_idx) {
+      for(auto id : pin->aps_[pin_access_idx])
+      {
+        aps[mpin].push_back((dbAccessPoint*) block->ap_tbl_->getPtr(id));
+      }
+    }
+  }
+  return aps;
+}
+
+std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
+{
+  _dbBlock* block = (_dbBlock*) getBlock();
+  _dbITerm* iterm = (_dbITerm*) this;
+  std::vector<dbAccessPoint*> aps;
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
+    if (ap_id.isValid()) {
+      aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
+    }
+  }
+  return aps;
 }
 
 }  // namespace odb

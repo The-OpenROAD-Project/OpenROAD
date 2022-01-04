@@ -1705,6 +1705,12 @@ const char* dbDirection::getString() const
     case WEST:
       value = "WEST";
       break;
+    case UP:
+      value = "UP";
+      break;
+    case DOWN:
+      value = "DOWN";
+      break;
   }
 
   return value;
