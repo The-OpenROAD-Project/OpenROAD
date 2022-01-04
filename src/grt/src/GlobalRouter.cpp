@@ -146,7 +146,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
-  fastroute_->setAllowOverflow(allow_congestion_);
 
   initRoutingLayers();
   reportLayerSettings(min_routing_layer, max_routing_layer);
@@ -204,8 +203,15 @@ void GlobalRouter::globalRoute()
     reportResources();
 
   routes_ = findRouting(nets, min_layer, max_layer);
-
   updateDbCongestion();
+
+  if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    logger_->error(GRT, 118, "Routing congestion too high.");
+  }
+  if (fastroute_->totalOverflow() > 0 && verbose_) {
+    logger_->warn(GRT, 115, "Global routing finished with overflow.");
+  }
+
   if (verbose_)
     reportCongestion();
   computeWirelength();
@@ -3503,14 +3509,18 @@ void GlobalRouter::updateDirtyRoutes()
     if (logger_->debugCheck(GRT, "incr", 2)) {
       for (auto net : dirty_nets_)
         debugPrint(
-            logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
+                   logger_, GRT, "incr", 2, "dirty net {}", net->getConstName());
     }
     removeDirtyNetsRouting();
 
     NetRouteMap new_route
-        = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+      = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
     dirty_nets_.clear();
+
+    if (fastroute_->has2Doverflow() && !allow_congestion_) {
+      logger_->error(GRT, 232, "Routing congestion too high.");
+    }
   }
 }
 
