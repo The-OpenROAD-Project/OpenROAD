@@ -172,6 +172,7 @@ Resizer::wireSignalCapacitance(const Pin *drvr_pin,
   case ParasiticsSrc::placement:
     return wireSignalCapacitance(corner);
   case ParasiticsSrc::global_routing: {
+    // Use the global route capacitance / wire_length(net) as unit capacitance.
     sta::Parasitics *parasitics = sta_->parasitics();
     Parasitic *parasitic = parasitics->findPiElmore(drvr_pin,
                                                     RiseFall::rise(),
@@ -179,10 +180,6 @@ Resizer::wireSignalCapacitance(const Pin *drvr_pin,
     
     double net_cap = parasitics->capacitance(parasitic) - pinCap(drvr_pin, corner);
     double cap = net_cap / grouteLength(net);
-    printf("%s %.3e grt %.3e\n",
-           network_->pathName(drvr_pin),
-           wireSignalCapacitance(corner),
-           cap);
     return cap;
   }
   case ParasiticsSrc::none:

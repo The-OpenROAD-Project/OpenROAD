@@ -577,7 +577,8 @@ protected:
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                   SteinerPt k,
                                   SteinerPt prev,
-                                  int level);
+                                  int level,
+                                  double wire_signal_cap);
   void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);
@@ -586,7 +587,8 @@ protected:
                    SteinerTree *tree,
                    SteinerPt k,
                    SteinerPt prev,
-                   int level);
+                   int level,
+                   double wire_signal_cap);
   BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
   BufferedNet *makeBufferedNet(SteinerTree *tree,
                                SteinerPt k,
