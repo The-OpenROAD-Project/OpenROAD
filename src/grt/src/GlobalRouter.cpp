@@ -626,7 +626,7 @@ void GlobalRouter::findPins(Net* net)
     odb::Point pos_on_grid;
     // check if the pin has access points to avoid changing the position on grid
     // when the pin overlaps with a single track.
-    // this way, the result based on drt APs is maitained
+    // this way, the result based on drt APs is maintained
     if (!has_access_points && pinOverlapsWithSingleTrack(pin, pos_on_grid)) {
       int top_layer = pin.getTopLayer();
       odb::dbTechLayer* layer = routing_layers_[top_layer];
