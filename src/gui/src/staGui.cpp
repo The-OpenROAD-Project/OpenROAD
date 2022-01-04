@@ -1452,7 +1452,8 @@ void PinComboBox::findPin()
       continue;
     }
 
-    sta::PatternMatch matcher(pin_name.toLatin1().constData());
+    QByteArray name = pin_name.toLatin1();
+    sta::PatternMatch matcher(name.constData());
 
     sta::PinSeq found_pins;
     network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
