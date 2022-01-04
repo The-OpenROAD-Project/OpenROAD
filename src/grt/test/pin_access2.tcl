@@ -18,7 +18,7 @@ set_global_routing_layer_adjustment * 0.5
 
 set_routing_layers -signal met1-met5 -clock met3-met5
 
-pin_access -bottom_routing_layer met1 -top_routing_layer met5
+pin_access -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0
 
 global_route -verbose
 
