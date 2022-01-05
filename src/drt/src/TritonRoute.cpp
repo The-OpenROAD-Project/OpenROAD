@@ -140,9 +140,14 @@ void TritonRoute::setDebugPaMarkers(bool on)
   debug_->paMarkers = on;
 }
 
-void TritonRoute::setDebugPaCombining(bool on)
+void TritonRoute::setDebugPaEdge(bool on)
 {
-  debug_->paCombining = on;
+  debug_->paEdge = on;
+}
+
+void TritonRoute::setDebugPaCommit(bool on)
+{
+  debug_->paCommit = on;
 }
 
 int TritonRoute::getNumDRVs() const

@@ -282,7 +282,8 @@ struct frDebugSettings
         y(-1),
         iter(0),
         paMarkers(false),
-        paCombining(false)
+        paEdge(false),
+        paCommit(false)
   {
   }
 
@@ -300,7 +301,8 @@ struct frDebugSettings
   int y;
   int iter;
   bool paMarkers;
-  bool paCombining;
+  bool paEdge;
+  bool paCommit;
 };
 
 // Avoids the need to split the whole serializer like
