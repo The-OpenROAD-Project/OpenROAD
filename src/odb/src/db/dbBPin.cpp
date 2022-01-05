@@ -35,6 +35,7 @@
 #include <iostream>
 
 #include "db.h"
+#include "dbAccessPoint.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
@@ -63,7 +64,8 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
       _boxes(p._boxes),
       _next_bpin(p._next_bpin),
       _min_spacing(p._min_spacing),
-      _effective_width(p._effective_width)
+      _effective_width(p._effective_width),
+      aps_(p.aps_)
 {
 }
 
@@ -95,6 +97,9 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
     return false;
 
   if (_effective_width != rhs._effective_width)
+    return false;
+
+  if (aps_ != rhs.aps_)
     return false;
 
   return true;
@@ -139,6 +144,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
   stream << bpin._next_bpin;
   stream << bpin._min_spacing;
   stream << bpin._effective_width;
+  stream << bpin.aps_;
 
   return stream;
 }
@@ -152,6 +158,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
   stream >> bpin._next_bpin;
   stream >> bpin._min_spacing;
   stream >> bpin._effective_width;
+  stream >> bpin.aps_;
 
   return stream;
 }
@@ -162,7 +169,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
 //
 ////////////////////////////////////////////////////////////////////
 
-dbBTerm* dbBPin::getBTerm()
+dbBTerm* dbBPin::getBTerm() const
 {
   _dbBPin* pin = (_dbBPin*) this;
   _dbBlock* block = (_dbBlock*) pin->getOwner();
@@ -239,6 +246,18 @@ int dbBPin::getMinSpacing()
 {
   _dbBPin* bpin = (_dbBPin*) this;
   return bpin->_min_spacing;
+}
+
+std::vector<dbAccessPoint*> dbBPin::getAccessPoints() const
+{
+  _dbBPin* bpin = (_dbBPin*) this;
+  _dbBlock* block = (_dbBlock*) getBTerm()->getBlock();
+  std::vector<dbAccessPoint*> aps;
+  for(auto ap : bpin->aps_)
+  {
+    aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
+  }
+  return aps;
 }
 
 dbBPin* dbBPin::create(dbBTerm* bterm_)

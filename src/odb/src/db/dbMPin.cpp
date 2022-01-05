@@ -39,16 +39,17 @@
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbAccessPoint.h"
 
 namespace odb {
 
 template class dbTable<_dbMTerm>;
 
-_dbMPin::_dbMPin(_dbDatabase*)
+_dbMPin::_dbMPin(_dbDatabase* db)
 {
 }
 
-_dbMPin::_dbMPin(_dbDatabase*, const _dbMPin& p)
+_dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
     : _mterm(p._mterm), _geoms(p._geoms), _next_mpin(p._next_mpin)
 {
 }
@@ -62,6 +63,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
   stream << mpin._mterm;
   stream << mpin._geoms;
   stream << mpin._next_mpin;
+  stream << mpin.aps_;
   return stream;
 }
 
@@ -70,6 +72,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin._mterm;
   stream >> mpin._geoms;
   stream >> mpin._next_mpin;
+  stream >> mpin.aps_;
   return stream;
 }
 
@@ -84,6 +87,9 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   if (_next_mpin != rhs._next_mpin)
     return false;
 
+  if (aps_ != rhs.aps_)
+    return false;
+
   return true;
 }
 
@@ -95,6 +101,7 @@ void _dbMPin::differences(dbDiff& diff,
   DIFF_FIELD(_mterm);
   DIFF_FIELD(_geoms);
   DIFF_FIELD(_next_mpin);
+  // DIFF_VECTOR(aps_);
   DIFF_END
 }
 
@@ -104,9 +111,18 @@ void _dbMPin::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_mterm);
   DIFF_OUT_FIELD(_geoms);
   DIFF_OUT_FIELD(_next_mpin);
+  // DIFF_OUT_VECTOR(aps_);
   DIFF_END
 }
 
+void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
+{
+   if(aps_.size() <= idx)
+   {
+     aps_.resize(idx+1);
+   }
+   aps_[idx].push_back(ap->getOID());
+}
 ////////////////////////////////////////////////////////////////////
 //
 // dbMPin - Methods
@@ -160,5 +176,6 @@ dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->_mpin_tbl->getPtr(dbid_);
 }
+
 
 }  // namespace odb
