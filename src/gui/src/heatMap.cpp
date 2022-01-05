@@ -1326,8 +1326,7 @@ IRDropDataSource::IRDropDataSource() :
     RealValueHeatMapDataSource("V", "IR Drop", "IRDrop", "IRDrop"),
     psm_(nullptr),
     tech_(nullptr),
-    layer_(nullptr),
-    net_("")
+    layer_(nullptr)
 {
 }
 
@@ -1366,7 +1365,6 @@ bool IRDropDataSource::populateMap()
   }
 
   ensureLayer();
-  ensureNet();
 
   std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drops;
   psm_->getIRDropMap(ir_drops);
@@ -1407,20 +1405,6 @@ void IRDropDataSource::makeAdditionalSetupOptions(QWidget* parent,
   }
 
   ensureLayer();
-  ensureNet();
-
-  QComboBox* nets = new QComboBox(parent);
-  std::set<std::string> nets_names;
-  getNets(nets_names);
-  int net_selection = 0;
-  for (const auto net : nets_names) {
-    nets->addItem(QString::fromStdString(net));
-    if (net_ == net) {
-      net_selection = nets->count() - 1;
-    }
-  }
-  nets->setCurrentIndex(net_selection);
-  layout->addRow("Net", nets);
 
   QComboBox* layers = new QComboBox(parent);
   int layer_selection = 0;
@@ -1437,15 +1421,6 @@ void IRDropDataSource::makeAdditionalSetupOptions(QWidget* parent,
   layers->setCurrentIndex(layer_selection);
   layout->addRow("Layer", layers);
 
-  QObject::connect(nets,
-                   &QComboBox::currentTextChanged,
-                   [this, changed_callback](const QString& net) {
-                     setNet(net.toStdString());
-                     analyze();
-                     destroyMap();
-                     changed_callback();
-                   });
-
   QObject::connect(layers,
                    &QComboBox::currentTextChanged,
                    [this, changed_callback](const QString& layer) {
@@ -1459,7 +1434,6 @@ const Renderer::Settings IRDropDataSource::getSettings() const
 {
   auto settings = HeatMapDataSource::getSettings();
 
-  settings["net"] = net_;
   if (layer_ != nullptr) {
     settings["layer"] = std::string(layer_->getName());
   }
@@ -1479,42 +1453,6 @@ void IRDropDataSource::setSettings(const Renderer::Settings& settings)
   }
   Renderer::setSetting<std::string>(settings, "layer", layer);
   setLayer(layer);
-  std::string net;
-  Renderer::setSetting<std::string>(settings, "net", net);
-  setNet(net);
-}
-
-void IRDropDataSource::ensureNet()
-{
-  std::set<std::string> nets;
-  getNets(nets);
-
-  if (nets.count(net_) != 0) {
-    return;
-  }
-
-  if (nets.size() > 0) {
-    net_ = *nets.begin();
-  }
-}
-
-void IRDropDataSource::setNet(const std::string& name)
-{
-  net_ = name;
-}
-
-void IRDropDataSource::getNets(std::set<std::string>& nets) const
-{
-  auto* block = getBlock();
-  if (block == nullptr) {
-    return;
-  }
-
-  for (auto* net : block->getNets()) {
-    if (net->getSigType().isSupply()) {
-      nets.insert(net->getName());
-    }
-  }
 }
 
 void IRDropDataSource::ensureLayer()
@@ -1537,12 +1475,6 @@ void IRDropDataSource::setLayer(const std::string& name)
   }
 
   layer_ = tech_->findLayer(name.c_str());
-}
-
-void IRDropDataSource::analyze() const
-{
-  psm_->set_power_net(net_);
-  psm_->analyze_power_grid();
 }
 
 //////////

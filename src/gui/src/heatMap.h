@@ -472,16 +472,9 @@ class IRDropDataSource : public RealValueHeatMapDataSource
   odb::dbTech* tech_;
 
   odb::dbTechLayer* layer_;
-  std::string net_;
-
-  void ensureNet();
-  void setNet(const std::string& name);
-  void getNets(std::set<std::string>& nets) const;
 
   void ensureLayer();
   void setLayer(const std::string& name);
-
-  void analyze() const;
 };
 
 }  // namespace gui
