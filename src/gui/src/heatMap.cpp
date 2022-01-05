@@ -437,12 +437,14 @@ void HeatMapDataSource::setShowLegend(bool legend)
 const Painter::Color HeatMapDataSource::getColor(double value) const
 {
   if (log_scale_) {
-    if (value <= 0.0) {
-      return color_generator_.getColor(0.0, color_alpha_);
-    }
+    auto find_val = std::find_if(color_lower_bounds_.begin(), color_lower_bounds_.end(), [value](const double other) {
+      return other >= value;
+    });
+    const double color_index = std::distance(color_lower_bounds_.begin(), find_val);
+    return color_generator_.getColor(100.0 * color_index / color_generator_.getColorCount(), color_alpha_);
+  } else {
+    return color_generator_.getColor(value, color_alpha_);
   }
-
-  return color_generator_.getColor(value, color_alpha_);
 }
 
 void HeatMapDataSource::showSetup()
