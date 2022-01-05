@@ -1390,7 +1390,21 @@ void FlexPA::prepPattern()
       continue;
     }
 
-    prepPattern_inst(inst, currUniqueInstIdx);
+    int numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 1.0);
+
+    if (numValidPattern == 0) {
+      // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
+      // and sorting in X works poorly.  So we try again sorting in Y.
+      numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 0.0);
+      if (numValidPattern == 0) {
+        logger_->warn(
+            DRT,
+            87,
+            "No valid pattern for unique instance {}, refBlock is {}.",
+            inst->getName(),
+            inst->getRefBlock()->getName());
+      }
+    }
 #pragma omp critical
     {
       cnt++;
@@ -1463,7 +1477,7 @@ void FlexPA::prepPattern()
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int) instRows.size(); i++) {
     auto& instRow = instRows[i];
-    genInstPattern(instRow);
+    genInstRowPattern(instRow);
 #pragma omp critical
     {
       rowIdx++;
@@ -1515,7 +1529,7 @@ void FlexPA::revertAccessPoints()
 
 // calculate which pattern to be used for each inst
 // the insts must be in the same row and sorted from left to right
-void FlexPA::genInstPattern(std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
 {
   if (insts.empty()) {
     return;
@@ -1525,14 +1539,14 @@ void FlexPA::genInstPattern(std::vector<frInst*>& insts)
 
   std::vector<FlexDPNode> nodes(numNode);
 
-  genInstPattern_init(nodes, insts);
-  genInstPattern_perform(nodes, insts);
-  genInstPattern_commit(nodes, insts);
+  genInstRowPattern_init(nodes, insts);
+  genInstRowPattern_perform(nodes, insts);
+  genInstRowPattern_commit(nodes, insts);
 }
 
 // init dp node array for valide access patterns
-void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
-                                 const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
+                                    const std::vector<frInst*>& insts)
 {
   // init virutal nodes
   int startNodeIdx = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
@@ -1556,8 +1570,8 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode>& nodes,
   }
 }
 
-void FlexPA::genInstPattern_perform(std::vector<FlexDPNode>& nodes,
-                                    const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
+                                       const std::vector<frInst*>& insts)
 {
   for (int currIdx1 = 0; currIdx1 <= (int) insts.size(); currIdx1++) {
     bool isSet = false;
@@ -1594,8 +1608,8 @@ void FlexPA::genInstPattern_perform(std::vector<FlexDPNode>& nodes,
   }
 }
 
-void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
-                                   const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+                                      const std::vector<frInst*>& insts)
 {
   // bool isDebugMode = true;
   bool isDebugMode = false;
@@ -1656,12 +1670,12 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode>& nodes,
   // cout << "\n";
 
   if (isDebugMode) {
-    genInstPattern_print(nodes, insts);
+    genInstRowPattern_print(nodes, insts);
   }
 }
 
-void FlexPA::genInstPattern_print(std::vector<FlexDPNode>& nodes,
-                                  const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+                                     const std::vector<frInst*>& insts)
 {
   int currNodeIdx
       = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
@@ -1754,7 +1768,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
   addAccessPatternObj(prevInst, prevPinAccessPattern, objs, tempVias, true);
   addAccessPatternObj(currInst, currPinAccessPattern, objs, tempVias, false);
 
-  hasVio = !genPatterns_gc(nullptr, objs);
+  hasVio = !genPatterns_gc(nullptr, objs, Edge);
   if (!hasVio) {
     int prevNodeCost = nodes[prevNodeIdx].getNodeCost();
     int currNodeCost = nodes[currNodeIdx].getNodeCost();
@@ -1867,7 +1881,9 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
 }
 
 // the input inst must be unique instance
-void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
+int FlexPA::prepPattern_inst(frInst* inst,
+                             const int currUniqueInstIdx,
+                             const double xWeight)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
@@ -1891,9 +1907,9 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
       }
       nAps += cnt;
       if (cnt != 0) {
-        pins.push_back(
-            std::make_pair((sumXCoord + 0.0 * sumYCoord) / cnt,
-                           std::make_pair(pin.get(), instTerm.get())));
+        const double coord
+            = (xWeight * sumXCoord + (1.0 - xWeight) * sumYCoord) / cnt;
+        pins.push_back({coord, {pin.get(), instTerm.get()}});
       }
     }
     if (nAps == 0 && instTerm->getTerm()->getPins().size())
@@ -1911,15 +1927,14 @@ void FlexPA::prepPattern_inst(frInst* inst, int currUniqueInstIdx)
     pinInstTermPairs.push_back(m);
   }
 
-  genPatterns(pinInstTermPairs, currUniqueInstIdx);
+  return genPatterns(pinInstTermPairs, currUniqueInstIdx);
 }
 
-void FlexPA::genPatterns(
-    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-    int currUniqueInstIdx)
+int FlexPA::genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+                        int currUniqueInstIdx)
 {
   if (pins.empty()) {
-    return;
+    return -1;
   }
 
   int maxAccessPointSize = 0;
@@ -2014,32 +2029,7 @@ void FlexPA::genPatterns(
     }
   }
 
-  if (numValidPattern == 0) {
-    auto inst = pins[0].second->getInst();
-    logger_->warn(DRT,
-                  87,
-                  "No valid pattern for unique instance {}, master is {}.",
-                  inst->getName(),
-                  inst->getMaster()->getName());
-    // int paIdx = unique2paidx[pins[0].second->getInst()];
-    double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    dbTransform shiftXform;
-    inst->getTransform(shiftXform);
-    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-    ostringstream msg;
-    msg << "  pin ordering (with ap): ";
-    for (auto& [pin, instTerm] : pins) {
-      msg << "\n    " << instTerm->getTerm()->getName();
-      for (auto& ap : pin->getPinAccess(paIdx)->getAccessPoints()) {
-        Point pt;
-        ap->getPoint(pt);
-        shiftXform.apply(pt);
-        msg << " (" << pt.x() / dbu << ", " << pt.y() / dbu << ")";
-      }
-    }
-    logger_->warn(DRT, 88, "{}", msg.str());
-    // cout << "Error: no valid pattern for unique instance " ;
-  }
+  return numValidPattern;
 }
 
 // init dp node array for valid access points
@@ -2099,6 +2089,7 @@ void FlexPA::genPatterns_reset(
 // objs must hold at least 1 obj
 bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
                             vector<pair<frConnFig*, frBlockObject*>>& objs,
+                            const PatternType patternType,
                             std::set<frBlockObject*>* owners)
 {
   gcCallCnt++;
@@ -2153,7 +2144,7 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
     }
   }
   if (graphics_) {
-    graphics_->setObjsAndMakers(objs, gcWorker.getMarkers());
+    graphics_->setObjsAndMakers(objs, gcWorker.getMarkers(), patternType);
   }
   return sol;
 }
@@ -2263,7 +2254,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
       }
     }
 
-    hasVio = !genPatterns_gc(targetObj, objs);
+    hasVio = !genPatterns_gc(targetObj, objs, Edge);
     vioEdges[edgeIdx] = hasVio;
 
     // look back for GN14
@@ -2291,7 +2282,7 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
             }
           }
 
-          hasVio = !genPatterns_gc(targetObj, objs);
+          hasVio = !genPatterns_gc(targetObj, objs, Edge);
         }
       }
     }
@@ -2441,7 +2432,8 @@ bool FlexPA::genPatterns_commit(
     pinAccessPattern->setBoundaryAP(false, rightAP);
 
     set<frBlockObject*> owners;
-    if (targetObj != nullptr && genPatterns_gc(targetObj, objs, &owners)) {
+    if (targetObj != nullptr
+        && genPatterns_gc(targetObj, objs, Commit, &owners)) {
       pinAccessPattern->updateCost();
       // cout <<"commit ap:";
       // for (auto &ap: pinAccessPattern->getPattern()) {

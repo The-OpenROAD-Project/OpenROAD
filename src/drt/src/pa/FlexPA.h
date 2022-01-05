@@ -50,6 +50,11 @@ class FlexPAGraphics;
 class FlexPA
 {
  public:
+  enum PatternType {
+    Edge,
+    Commit
+  };
+
   // constructor
   FlexPA(frDesign* in, Logger* logger);
   ~FlexPA();
@@ -251,9 +256,11 @@ class FlexPA
       frAccessPointEnum upperType);
 
   void prepPattern();
-  void prepPattern_inst(frInst* inst, int currUniqueInstIdx);
-  void genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                   int currUniqueInstIdx);
+  int prepPattern_inst(frInst* inst,
+                       const int currUniqueInstIdx,
+                       const double xWeight);
+  int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+                  int currUniqueInstIdx);
   void genPatterns_init(std::vector<FlexDPNode>& nodes,
                         const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                         std::set<std::vector<int>>& instAccessPatterns,
@@ -304,18 +311,19 @@ class FlexPA
 
   bool genPatterns_gc(frBlockObject* targetObj,
                       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+                      const PatternType patternType,
                       std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
-  void genInstPattern(std::vector<frInst*>& insts);
-  void genInstPattern_init(std::vector<FlexDPNode>& nodes,
-                           const std::vector<frInst*>& insts);
-  void genInstPattern_perform(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern(std::vector<frInst*>& insts);
+  void genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
                               const std::vector<frInst*>& insts);
-  void genInstPattern_commit(std::vector<FlexDPNode>& nodes,
-                             const std::vector<frInst*>& insts);
-  void genInstPattern_print(std::vector<FlexDPNode>& nodes,
-                            const std::vector<frInst*>& insts);
+  void genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
+                                 const std::vector<frInst*>& insts);
+  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+                                const std::vector<frInst*>& insts);
+  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+                               const std::vector<frInst*>& insts);
   int getEdgeCost(int prevNodeIdx,
                   int currNodeIdx,
                   std::vector<FlexDPNode>& nodes,

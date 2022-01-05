@@ -306,9 +306,12 @@ void FlexPAGraphics::setPlanarAP(
 
 void FlexPAGraphics::setObjsAndMakers(
     const vector<pair<frConnFig*, frBlockObject*>>& objs,
-    const std::vector<std::unique_ptr<frMarker>>& markers)
+    const std::vector<std::unique_ptr<frMarker>>& markers,
+    const FlexPA::PatternType type)
 {
-  if (!settings_->paCombining) {
+  if ((!settings_->paCommit && !settings_->paEdge) ||
+      (settings_->paCommit && type != FlexPA::Commit) ||
+      (settings_->paEdge && type != FlexPA::Edge)) {
     return;
   }
 
