@@ -1418,24 +1418,29 @@ PinComboBox::PinComboBox(QWidget* parent) :
   setMinimumWidth(min_width);
   setEditable(true);
 
+  bool is_deleting = false;
   connect(lineEdit(), SIGNAL(returnPressed()), this, SLOT(findPin()));
   connect(this,
           QOverload<int>::of(&QComboBox::highlighted),
-          [this](int index) {
-            highlight_selection_ = index;
+          [this, &is_deleting](int index) {
+            if (!is_deleting) {
+              highlight_selection_ = index;
+            }
           });
 
   connect(view_filter_,
           &ComboBoxPopupFilter::deletePressed,
-          [this]() {
+          [this, &is_deleting]() {
             if (highlight_selection_ == -1 || count() == 0) {
               return;
             }
 
+            is_deleting = true;
             pins_.erase(pins_.find((sta::Pin*)itemData(highlight_selection_).value<void*>()));
             removeItem(highlight_selection_);
             // ensure highlight selection is updated
             highlight_selection_ = std::min(highlight_selection_, count() - 1);
+            is_deleting = false;
           });
 
   view()->installEventFilter(view_filter_);
