@@ -1400,9 +1400,9 @@ void FlexPA::prepPattern()
         logger_->warn(
             DRT,
             87,
-            "No valid pattern for unique instance {}, refBlock is {}.",
+            "No valid pattern for unique instance {}, master is {}.",
             inst->getName(),
-            inst->getRefBlock()->getName());
+            inst->getMaster()->getName());
       }
     }
 #pragma omp critical
