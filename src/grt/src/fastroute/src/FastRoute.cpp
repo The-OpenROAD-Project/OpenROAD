@@ -794,7 +794,6 @@ NetRouteMap FastRouteCore::run()
   int L = 0;
   int VIA = 2;
   const int Ripvalue = -1;
-  int ripupTH3D = 10;
   const bool goingLV = true;
   const bool noADJ = false;
   const int thStep1 = 10;
@@ -808,8 +807,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
-
-  const clock_t t1 = clock();
 
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
@@ -1175,19 +1172,8 @@ NetRouteMap FastRouteCore::run()
 
   newLA();
 
-  const clock_t t2 = clock();
-  const float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
-
   costheight_ = 3;
   via_cost_ = 1;
-
-  if (gen_brk_Time < 60) {
-    ripupTH3D = 15;
-  } else if (gen_brk_Time < 120) {
-    ripupTH3D = 18;
-  } else {
-    ripupTH3D = 20;
-  }
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
@@ -1199,11 +1185,8 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, ripupTH3D, layer_orientation_);
-
-    if (gen_brk_Time > 120) {
-      mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
-    }
+    mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
+    mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
   }
 
   fillVIA();
