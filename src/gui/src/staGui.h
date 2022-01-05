@@ -107,7 +107,7 @@ class TimingPathsModel : public QAbstractTableModel
   void populateModel(bool get_max,
                      int path_count,
                      const std::set<sta::Pin*>& from,
-                     const std::set<sta::Pin*>& thru,
+                     const std::vector<std::set<sta::Pin*>>& thru,
                      const std::set<sta::Pin*>& to,
                      bool unconstrainted);
 
@@ -118,7 +118,7 @@ class TimingPathsModel : public QAbstractTableModel
   bool populatePaths(bool get_max,
                      int path_count,
                      const std::set<sta::Pin*>& from,
-                     const std::set<sta::Pin*>& thru,
+                     const std::vector<std::set<sta::Pin*>>& thru,
                      const std::set<sta::Pin*>& to,
                      bool unconstrainted);
 
@@ -239,7 +239,7 @@ class TimingPath
                          bool include_unconstrained,
                          int path_count,
                          const std::set<sta::Pin*>& from,
-                         const std::set<sta::Pin*>& thrus,
+                         const std::vector<std::set<sta::Pin*>>& thrus,
                          const std::set<sta::Pin*>& to,
                          bool include_capture,
                          std::vector<std::unique_ptr<TimingPath>>& paths);

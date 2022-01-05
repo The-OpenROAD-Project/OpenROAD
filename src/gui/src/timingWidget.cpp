@@ -420,8 +420,8 @@ void TimingWidget::populatePaths()
   const auto to = settings_->getToPins();
   const bool unconstrained = settings_->getUnconstrained();
 
-  setup_timing_paths_model_->populateModel(true, count, from, thru, to, unconstrained);
-  hold_timing_paths_model_->populateModel(false, count, from, thru, to, unconstrained);
+  setup_timing_paths_model_->populateModel(true, count, from, {thru}, to, unconstrained);
+  hold_timing_paths_model_->populateModel(false, count, from, {thru}, to, unconstrained);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();

@@ -232,7 +232,7 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 void TimingPathsModel::populateModel(bool setup_hold,
                                      int path_count,
                                      const std::set<sta::Pin*>& from,
-                                     const std::set<sta::Pin*>& thru,
+                                     const std::vector<std::set<sta::Pin*>>& thru,
                                      const std::set<sta::Pin*>& to,
                                      bool unconstrainted)
 {
@@ -245,7 +245,7 @@ void TimingPathsModel::populateModel(bool setup_hold,
 bool TimingPathsModel::populatePaths(bool get_max,
                                      int path_count,
                                      const std::set<sta::Pin*>& from,
-                                     const std::set<sta::Pin*>& thru,
+                                     const std::vector<std::set<sta::Pin*>>& thru,
                                      const std::set<sta::Pin*>& to,
                                      bool unconstrainted)
 {
@@ -273,7 +273,7 @@ void TimingPath::buildPaths(sta::dbSta* sta,
                             bool include_unconstrained,
                             int path_count,
                             const std::set<sta::Pin*>& from,
-                            const std::set<sta::Pin*>& thrus,
+                            const std::vector<std::set<sta::Pin*>>& thrus,
                             const std::set<sta::Pin*>& to,
                             bool include_capture,
                             std::vector<std::unique_ptr<TimingPath>>& paths)
@@ -292,10 +292,15 @@ void TimingPath::buildPaths(sta::dbSta* sta,
   }
   sta::ExceptionThruSeq* e_thrus = nullptr;
   if (!thrus.empty()) {
-    e_thrus = new sta::ExceptionThruSeq;
-    for (sta::Pin* thru : thrus) {
+    for (const auto& thru_set : thrus) {
+      if (thru_set.empty()) {
+        continue;
+      }
+      if (e_thrus == nullptr) {
+        e_thrus = new sta::ExceptionThruSeq;
+      }
       sta::PinSet* pins = new sta::PinSet;
-      pins->insert(thru);
+      pins->insert(thru_set.begin(), thru_set.end());
       e_thrus->push_back(sta->makeExceptionThru(pins,
                                                 nullptr,
                                                 nullptr,
@@ -1343,7 +1348,7 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
       true, // unconstrained
       path_count, // paths
       {}, // from
-      {source_pin}, // thru
+      {{source_pin}}, // thru
       {}, // to
       false,
       paths);
