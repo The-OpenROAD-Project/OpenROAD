@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,55 +30,71 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
 #include "dbVector.h"
 #include "odb.h"
+// User Code Begin Includes
+#include <array>
+// User Code End Includes
 
 namespace odb {
 
-class _dbBTerm;
-class _dbBox;
-class _dbDatabase;
-class _dbAccessPoint;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbDatabase;
+class _dbTechLayer;
+class _dbLib;
+class _dbMaster;
+class _dbMPin;
+class _dbBPin;
+class _dbITerm;
+// User Code Begin Classes
+// User Code End Classes
 
-struct _dbBPinFlags
-{
-  dbPlacementStatus::Value _status : 4;
-  uint _has_min_spacing : 1;
-  uint _has_effective_width : 1;
-  uint _spare_bits : 26;
-};
+// User Code Begin Structs
+// User Code End Structs
 
-class _dbBPin : public _dbObject
+class _dbAccessPoint : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbBPinFlags _flags;
-  dbId<_dbBTerm> _bterm;
-  dbId<_dbBox> _boxes;
-  dbId<_dbBPin> _next_bpin;
-  uint _min_spacing;      // 5.6 DEF
-  uint _effective_width;  // 5.6 DEF
-  dbVector<dbId<_dbAccessPoint>> aps_;
+  // User Code Begin Enums
+  // User Code End Enums
 
-  _dbBPin(_dbDatabase*, const _dbBPin& p);
-  _dbBPin(_dbDatabase*);
-  ~_dbBPin();
+  Point point_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbLib> lib_;
+  dbId<_dbMaster> master_;
+  dbId<_dbMPin> mpin_;
+  dbId<_dbBPin> bpin_;
+  std::array<bool, 6> accesses_;
+  int8_t low_type_;
+  int8_t high_type_;
+  dbVector<dbId<_dbITerm>>
+      iterms_;  // list of iterms that prefer this access point
 
-  bool operator==(const _dbBPin& rhs) const;
-  bool operator!=(const _dbBPin& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbBPin& rhs) const;
+  // User Code Begin Fields
+  // User Code End Fields
+  _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
+  _dbAccessPoint(_dbDatabase*);
+  ~_dbAccessPoint();
+  bool operator==(const _dbAccessPoint& rhs) const;
+  bool operator!=(const _dbAccessPoint& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbAccessPoint& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbAccessPoint& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  void setMPin(_dbMPin* mpin);
+  // User Code End Methods
 };
-
-dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin);
-dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin);
-
+dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj);
+// User Code Begin General
+// User Code End General
 }  // namespace odb
+   // Generator Code End Header
