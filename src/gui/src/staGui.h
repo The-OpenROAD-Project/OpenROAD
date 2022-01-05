@@ -40,6 +40,7 @@
 #include <set>
 #include <vector>
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QColor>
 #include <QComboBox>
 #include <QDialog>
@@ -107,7 +108,8 @@ class TimingPathsModel : public QAbstractTableModel
                      int path_count,
                      const std::set<sta::Pin*>& from,
                      const std::set<sta::Pin*>& thru,
-                     const std::set<sta::Pin*>& to);
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
@@ -117,7 +119,8 @@ class TimingPathsModel : public QAbstractTableModel
                      int path_count,
                      const std::set<sta::Pin*>& from,
                      const std::set<sta::Pin*>& thru,
-                     const std::set<sta::Pin*>& to);
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
@@ -561,6 +564,9 @@ class TimingControlsDialog : public QDialog
   void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
   int getPathCount() const { return path_count_spin_box_->value(); }
 
+  void setUnconstrained(bool uncontrained);
+  bool getUnconstrained() const;
+
   void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
   void setThruPin(const std::set<sta::Pin*>& pins) { thru_->setPins(pins); }
   void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
@@ -579,6 +585,8 @@ class TimingControlsDialog : public QDialog
 
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
+
+  QCheckBox* uncontrained_;
 
   PinComboBox* from_;
   QPushButton* from_clear_;

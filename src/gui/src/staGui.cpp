@@ -84,6 +84,21 @@ const Painter::Color TimingPathRenderer::signal_color_ = Painter::Color(gui::Pai
 const Painter::Color TimingPathRenderer::clock_color_ = Painter::Color(gui::Painter::cyan, 100);
 const Painter::Color TimingPathRenderer::capture_clock_color_ = Painter::Color(gui::Painter::green, 100);
 
+static QString convertDelay(float time, sta::Unit* convert)
+{
+  if (sta::delayInf(time)) {
+    const QString infinity = "\u221E";
+
+    if (time < 0) {
+      return "-" + infinity;
+    } else {
+      return infinity;
+    }
+  } else {
+    return convert->asString(time);
+  }
+}
+
 /////////
 
 TimingPathsModel::TimingPathsModel(sta::dbSta* sta, QObject* parent)
@@ -128,11 +143,11 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Clock:
         return QString::fromStdString(timing_path->getEndClock());
       case Required:
-        return QString(time_units->asString(timing_path->getPathRequiredTime()));
+        return convertDelay(timing_path->getPathRequiredTime(), time_units);
       case Arrival:
-        return QString(time_units->asString(timing_path->getPathArrivalTime()));
+        return convertDelay(timing_path->getPathArrivalTime(), time_units);
       case Slack:
-        return QString(time_units->asString(timing_path->getSlack()));
+        return convertDelay(timing_path->getSlack(), time_units);
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -218,11 +233,12 @@ void TimingPathsModel::populateModel(bool setup_hold,
                                      int path_count,
                                      const std::set<sta::Pin*>& from,
                                      const std::set<sta::Pin*>& thru,
-                                     const std::set<sta::Pin*>& to)
+                                     const std::set<sta::Pin*>& to,
+                                     bool unconstrainted)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(setup_hold, path_count, from, thru, to);
+  populatePaths(setup_hold, path_count, from, thru, to, unconstrainted);
   endResetModel();
 }
 
@@ -230,14 +246,15 @@ bool TimingPathsModel::populatePaths(bool get_max,
                                      int path_count,
                                      const std::set<sta::Pin*>& from,
                                      const std::set<sta::Pin*>& thru,
-                                     const std::set<sta::Pin*>& to)
+                                     const std::set<sta::Pin*>& to,
+                                     bool unconstrainted)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   TimingPath::buildPaths(sta_,
                          get_max,
-                         false, // unconstrained
+                         unconstrainted, // unconstrained
                          path_count,
                          from, // from
                          thru, // through
@@ -706,9 +723,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case Pin:
         return "clock network delay";
       case Time:
-        return time_units->asString(node->getArrival());
+        return convertDelay(node->getArrival(), time_units);
       case Delay:
-        return time_units->asString(node->getArrival() - nodes_->at(0)->getArrival());
+        return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(), time_units);
       default:
         return QVariant();
       }
@@ -720,11 +737,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case RiseFall:
           return node->isRisingEdge() ? up_arrow_ : down_arrow_;
         case Time:
-          return time_units->asString(node->getArrival());
+          return convertDelay(node->getArrival(), time_units);
         case Delay:
-          return time_units->asString(node->getDelay());
+          return convertDelay(node->getDelay(), time_units);
         case Slew:
-          return time_units->asString(node->getSlew());
+          return convertDelay(node->getSlew(), time_units);
         case Load: {
           if (node->getLoad() == 0)
             return "";
@@ -1473,6 +1490,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     sta_(nullptr),
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
+    uncontrained_(new QCheckBox(this)),
     from_(new PinComboBox(this)),
     from_clear_(new QPushButton(this)),
     thru_(new PinComboBox(this)),
@@ -1506,6 +1524,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
   setup_pins_row("Through:", thru_, thru_clear_);
   setup_pins_row("To:", to_, to_clear_);
 
+  setUnconstrained(false);
+  layout->addRow("Unconstrained:", uncontrained_);
+
   setLayout(layout);
 
   connect(corner_box_,
@@ -1525,6 +1546,16 @@ void TimingControlsDialog::setSTA(sta::dbSta* sta)
   from_->setSTA(sta_);
   thru_->setSTA(sta_);
   to_->setSTA(sta_);
+}
+
+void TimingControlsDialog::setUnconstrained(bool unconstrained)
+{
+  uncontrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+}
+
+bool TimingControlsDialog::getUnconstrained() const
+{
+  return uncontrained_->checkState() == Qt::Checked;
 }
 
 void TimingControlsDialog::populate()
