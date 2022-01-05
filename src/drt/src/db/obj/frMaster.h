@@ -91,12 +91,12 @@ class frMaster : public frBlockObject
   }
   frMTerm* getTerm(const std::string& in) const
   {
-    auto it = name2term_.find(in);
-    if (it == name2term_.end()) {
-      return nullptr;
-    } else {
-      return it->second;
+    for (const auto& term : terms_) {
+      if (in == term->getName()) {
+        return term.get();
+      }
     }
+    return nullptr;
   }
   dbMasterType getMasterType() { return masterType_; }
 
@@ -105,7 +105,6 @@ class frMaster : public frBlockObject
   {
     in->setOrderId(terms_.size());
     in->setMaster(this);
-    name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
   }
   const Rect& getDieBox() const { return dieBox_; }
@@ -144,18 +143,12 @@ class frMaster : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcMaster; }
 
  protected:
-  frString name_;
-
-  dbMasterType masterType_;
-
-  std::map<std::string, frMTerm*> name2term_;
   std::vector<std::unique_ptr<frMTerm>> terms_;
-
   std::vector<std::unique_ptr<frBlockage>> blockages_;
-
   std::vector<frBoundary> boundaries_;
-
   Rect dieBox_;
+  frString name_;
+  dbMasterType masterType_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
@@ -172,7 +165,6 @@ void frMaster::serialize(Archive& ar, const unsigned int version)
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
   (ar) & masterType_;
-  (ar) & name2term_;
   (ar) & terms_;
   (ar) & blockages_;
   (ar) & boundaries_;
