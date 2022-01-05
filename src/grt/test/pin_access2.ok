@@ -20,7 +20,7 @@
   Layer via2
     default via: M2M3_PR_M
   Layer via3
-    default via: M3M4_PR
+    default via: M3M4_PR_M
   Layer via4
     default via: M4M5_PR_C
 [INFO DRT-0168] Init region query.
