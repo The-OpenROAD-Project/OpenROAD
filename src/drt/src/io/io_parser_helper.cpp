@@ -381,7 +381,8 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                              isNotUpperAlign,
                              layer2Area,
                              layer1Area,
-                             isNotLowerAlign);
+                             isNotLowerAlign,
+                             viaDef->getName());
 }
 
 // 13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB
