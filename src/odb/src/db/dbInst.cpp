@@ -127,6 +127,7 @@ _dbInst::_dbInst(_dbDatabase*)
   _x = 0;
   _y = 0;
   _weight = 0;
+  pin_access_idx_ = 0;
 }
 
 _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
@@ -147,7 +148,8 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       _region_prev(i._region_prev),
       _hierarchy(i._hierarchy),
       _iterms(i._iterms),
-      _halo(i._halo)
+      _halo(i._halo),
+      pin_access_idx_(i.pin_access_idx_)
 {
   if (i._name) {
     _name = strdup(i._name);
@@ -182,6 +184,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst._hierarchy;
   stream << inst._iterms;
   stream << inst._halo;
+  stream << inst.pin_access_idx_;
   return stream;
 }
 
@@ -206,6 +209,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._hierarchy;
   stream >> inst._iterms;
   stream >> inst._halo;
+  stream >> inst.pin_access_idx_;
 
   return stream;
 }
@@ -298,6 +302,9 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   if (_halo != rhs._halo)
     return false;
 
+  if (pin_access_idx_ != rhs.pin_access_idx_)
+    return false;
+
   return true;
 }
 
@@ -334,6 +341,7 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_region_prev);
   DIFF_FIELD(_hierarchy);
   DIFF_OBJECT(_halo, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
+  DIFF_FIELD(pin_access_idx_);
 
   if (!diff.deepDiff()) {
     DIFF_VECTOR(_iterms);
@@ -388,6 +396,7 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_region_prev);
   DIFF_OUT_FIELD(_hierarchy);
+  DIFF_OUT_FIELD(pin_access_idx_);
 
   if (!diff.deepDiff()) {
     DIFF_OUT_VECTOR(_iterms);
@@ -1306,6 +1315,19 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   return true;
 }
+
+void dbInst::setPinAccessIdx(uint idx)
+{
+  _dbInst* inst = (_dbInst*) this;
+  inst->pin_access_idx_ = idx;
+}
+
+uint dbInst::getPinAccessIdx() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  return inst->pin_access_idx_;
+}
+
 
 dbInst* dbInst::create(dbBlock* block_, dbMaster* master_, const char* name_)
 {

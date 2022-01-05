@@ -141,6 +141,7 @@ class dbModule;
 class dbModInst;
 class dbGroup;
 class dbGCellGrid;
+class dbAccessPoint;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -884,6 +885,11 @@ class dbBlock : public dbObject
   /// Get the groups of this block.
   ///
   dbSet<dbGroup> getGroups();
+
+  ///
+  /// Get the access points of this block.
+  ///
+  dbSet<dbAccessPoint> getAccessPoints();
 
   ///
   /// Find a specific instance of this block.
@@ -1795,7 +1801,7 @@ class dbBPin : public dbObject
   ///
   /// Get bterm of this pin.
   ///
-  dbBTerm* getBTerm();
+  dbBTerm* getBTerm() const;
 
   ///
   /// Get boxes of this pin
@@ -1837,6 +1843,7 @@ class dbBPin : public dbObject
   ///
   int getMinSpacing();
 
+  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Create a new block-terminal-pin
   ///
@@ -3148,6 +3155,10 @@ class dbInst : public dbObject
   ///
   bool isEndCap() const;
 
+  void setPinAccessIdx(uint idx);
+
+  uint getPinAccessIdx() const;
+
   ///
   /// Create a new instance.
   /// Returns NULL if an instance with this name already exists.
@@ -3198,7 +3209,7 @@ class dbITerm : public dbObject
   ///
   /// Get the instance of this instance-terminal.
   ///
-  dbInst* getInst();
+  dbInst* getInst() const;
 
   ///
   /// Get the net of this instance-terminal.
@@ -3210,7 +3221,7 @@ class dbITerm : public dbObject
   ///
   /// Get the master-terminal that this instance-terminal is representing.
   ///
-  dbMTerm* getMTerm();
+  dbMTerm* getMTerm() const;
 
   ///
   /// Get bbox of this iterm (ie the transfromed bbox of the mterm)
@@ -3220,7 +3231,7 @@ class dbITerm : public dbObject
   ///
   /// Get the block this instance-terminal belongs too.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the signal type of this instance-terminal.
@@ -3362,6 +3373,19 @@ class dbITerm : public dbObject
   /// Returns false if iterm has no shapes
   ///
   bool getAvgXY(int* x, int* y);
+
+  void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
+
+  ///
+  /// Returns preferred access points per each pin.
+  /// One preffered access point, if available, for each pin.
+  ///
+  std::vector<dbAccessPoint*> getPrefAccessPoints() const;
+
+  ///
+  /// Returns all access points for each pin.
+  ///
+  std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8858,6 +8882,61 @@ class dbGCellGrid : public dbObject
   std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
                                                               = nullptr);
   // User Code End dbGCellGrid
+};
+
+class dbAccessPoint : public dbObject
+{
+ public:
+  enum AccessType : int8_t
+  {
+    OnGrid,
+    HalfGrid,
+    Center,
+    EncOpt,
+    NearbyGrid
+  };
+  // User Code Begin dbAccessPointEnums
+  // User Code End dbAccessPointEnums
+  void setPoint(Point point);
+
+  Point getPoint() const;
+
+  void setLayer(dbTechLayer* layer);
+
+  // User Code Begin dbAccessPoint
+  void setAccesses(const std::vector<dbDirection>& accesses);
+
+  void getAccesses(std::vector<dbDirection>& tbl) const;
+
+  void setLowType(AccessType type_low);
+
+  AccessType getLowType() const;
+
+  void setHighType(AccessType type_high);
+
+  AccessType getHighType() const;
+
+  void setAccess(bool access, dbDirection dir);
+
+  bool hasAccess(dbDirection dir = dbDirection::NONE)
+      const;  // NONE refers to access in any direction
+
+  dbTechLayer* getLayer() const;
+
+  dbMPin* getMPin() const;
+
+  dbBPin* getBPin() const;
+
+  static dbAccessPoint* create(dbBlock* block,
+                               dbMPin* pin,
+                               uint pin_access_idx);
+
+  static dbAccessPoint* create(dbBPin* pin);
+
+  static dbAccessPoint* getAccessPoint(dbBlock* block, uint dbid);
+
+  static void destroy(dbAccessPoint* ap);
+  // User Code End dbAccessPoint
 };
 
 // Generator Code End ClassDefinition

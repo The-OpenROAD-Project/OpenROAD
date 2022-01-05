@@ -1133,6 +1133,10 @@
 		obj = PyString_FromString("SOUTH");
 	} else if ($1.getValue() == odb::dbDirection::Value::WEST) {
 		obj = PyString_FromString("WEST");
+	} else if ($1.getValue() == odb::dbDirection::Value::UP) {
+		obj = PyString_FromString("UP");
+	} else if ($1.getValue() == odb::dbDirection::Value::DOWN) {
+		obj = PyString_FromString("DOWN");
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown direction");
         }
@@ -1150,6 +1154,10 @@
 		$1 = odb::dbDirection::Value::SOUTH;
 	} else if (strcasecmp(str, "WEST") == 0) {
 		$1 = odb::dbDirection::Value::WEST;
+	} else if (strcasecmp(str, "UP") == 0) {
+		$1 = odb::dbDirection::Value::UP;
+	} else if (strcasecmp(str, "DOWN") == 0) {
+		$1 = odb::dbDirection::Value::DOWN;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown direction");
         }
@@ -1167,6 +1175,10 @@
 		} 	else if (strcasecmp(str, "SOUTH") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "WEST") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "UP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "DOWN") == 0) {
 			found = true;
 		}
 	}

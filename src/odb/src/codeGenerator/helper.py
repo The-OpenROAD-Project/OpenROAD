@@ -2,6 +2,7 @@ _comparable = [
     'int',
     'uint',
     'unint_32t',
+    'int8_t',
     'bool',
     'string',
     'std::string',
@@ -14,12 +15,14 @@ _comparable = [
     'char *',
     'char*',
     'char',
-    'Rect'
+    'Rect',
+    'Point'
 ]
 std = [
     'int',
     'uint',
     'unint_32t',
+    'int8_t',
     'bool',
     'string',
     'std::string',

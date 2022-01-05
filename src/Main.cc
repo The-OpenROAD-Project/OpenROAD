@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
+#include <boost/stacktrace.hpp>
+#include <iostream>
 #include <string>
 #include <libgen.h>
 // We have had too many problems with this std::filesytem on various platforms
@@ -152,6 +154,12 @@ initPython()
 }
 #endif
 
+static void handler(int) {
+  std::cerr << "Stack trace:\n";
+  std::cerr << boost::stacktrace::stacktrace();
+  exit(1);
+}
+
 int
 main(int argc,
      char *argv[])
@@ -160,6 +168,13 @@ main(int argc,
   // C functions like strtod (e.g. 0.5 vs 0,5).
   setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
   setenv("LANG", "en_US.UTF-8", /* override */ 1);
+
+  // Generate a stacktrace on crash
+  signal(SIGABRT, handler);
+  signal(SIGBUS, handler);
+  signal(SIGFPE, handler);
+  signal(SIGILL, handler);
+  signal(SIGSEGV, handler);
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);

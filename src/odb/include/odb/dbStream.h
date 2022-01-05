@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <array>
 #include <string.h>
 
 #include <string>
@@ -125,6 +126,14 @@ class dbOStream
     return *this;
   }
 
+  dbOStream& operator<<(int8_t c)
+  {
+    int n = fwrite(&c, sizeof(c), 1, _f);
+    if (n != 1)
+      write_error();
+    return *this;
+  }
+
   dbOStream& operator<<(float c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
@@ -190,6 +199,15 @@ class dbOStream
     *this << sz;
     for (auto const& [key, val] : m) {
       *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
+  template <class T, std::size_t SIZE>
+  dbOStream& operator<<(const std::array<T, SIZE>& a)
+  {
+    for(auto& val : a) {
       *this << val;
     }
     return *this;
@@ -302,6 +320,14 @@ class dbIStream
     return *this;
   }
 
+  dbIStream& operator>>(int8_t& c)
+  {
+    int n = fread(&c, sizeof(c), 1, _f);
+    if (n != 1)
+      read_error();
+    return *this;
+  }
+
   dbIStream& operator>>(float& c)
   {
     int n = fread(&c, sizeof(c), 1, _f);
@@ -361,6 +387,14 @@ class dbIStream
       *this >> key;
       *this >> val;
       m[key] = val;
+    }
+    return *this;
+  }
+  template <class T, std::size_t SIZE>
+  dbIStream& operator>>(std::array<T, SIZE>& a)
+  {
+    for (std::size_t i = 0; i < SIZE; i++) {
+      *this >> a[i];
     }
     return *this;
   }

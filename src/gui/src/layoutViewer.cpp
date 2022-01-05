@@ -1961,6 +1961,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawInstanceNames(painter, insts);
 
   drawRows(painter, bounds);
+  if (options_->areAccessPointsVisible()) {
+    drawAccessPoints(gui_painter);
+  }
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -1970,6 +1973,49 @@ void LayoutViewer::drawBlock(QPainter* painter,
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawAccessPoints(Painter& painter)
+{
+  const int shape_limit = shapeSizeLimit();
+  const int shape_size = 100;
+  if (shape_limit > shape_size)
+    return;
+  for (auto term : block_->getITerms()) {
+    for (auto ap : term->getPrefAccessPoints()) {
+      if (options_->isVisible(ap->getLayer())) {
+        auto color = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
+        painter.setPen(color, /* cosmetic */ true);
+        Point pt = ap->getPoint();
+        odb::dbTransform xform;
+        int x, y;
+        term->getInst()->getLocation(x, y);
+        xform.setOffset({x, y});
+        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+        xform.apply(pt);
+        painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
+                         {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
+        painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
+                         {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+      }
+    }
+  }
+  for (auto term : block_->getBTerms()) {
+    for (auto pin : term->getBPins()) {
+      for (auto ap : pin->getAccessPoints()) {
+        if (ap != nullptr && options_->isVisible(ap->getLayer())) {
+          auto color
+              = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
+          painter.setPen(color, /* cosmetic */ true);
+          Point pt = ap->getPoint();
+          painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
+                           {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
+          painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
+                           {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+        }
+      }
+    }
   }
 }
 

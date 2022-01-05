@@ -912,9 +912,10 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
   return spc;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass1,
-                                                     std::string cutClass2,
-                                                     LOOKUP_STRATEGY strategy) const
+int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(
+    std::string cutClass1,
+    std::string cutClass2,
+    LOOKUP_STRATEGY strategy) const
 {
   auto spc1 = getSpacing(cutClass1, true, cutClass2, true, strategy);
   auto spc2 = getSpacing(cutClass1, true, cutClass2, false, strategy);
@@ -940,7 +941,8 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
   return false;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getExactAlignedSpacing(std::string cutClass) const
+int dbTechLayerCutSpacingTableDefRule::getExactAlignedSpacing(
+    std::string cutClass) const
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1000,11 +1002,12 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdge(std::string cutClass1,
   return false;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getSpacing(std::string c1,
-                                                  bool SIDE1,
-                                                  std::string c2,
-                                                  bool SIDE2,
-                                                  LOOKUP_STRATEGY strategy) const
+int dbTechLayerCutSpacingTableDefRule::getSpacing(
+    std::string c1,
+    bool SIDE1,
+    std::string c2,
+    bool SIDE2,
+    LOOKUP_STRATEGY strategy) const
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;

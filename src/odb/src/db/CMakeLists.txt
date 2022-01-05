@@ -110,6 +110,7 @@ add_library(odb
     dbModInst.cpp
     dbGroup.cpp
     dbGCellGrid.cpp
+    dbAccessPoint.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
