@@ -2723,11 +2723,11 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbAccessPoint::destroy(ap);
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
-  for (auto& refBlk : design->getRefBlocks()) {
-    auto db_master = db->findMaster(refBlk->getName().c_str());
+  for (auto& master : design->getMasters()) {
+    auto db_master = db->findMaster(master->getName().c_str());
     if (db_master == nullptr)
-      logger->error(DRT, 294, "master {} not found in db", refBlk->getName());
-    for (auto& term : refBlk->getTerms()) {
+      logger->error(DRT, 294, "master {} not found in db", master->getName());
+    for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
       if (db_mterm == nullptr)
         logger->error(DRT, 295, "mterm {} not found in db", term->getName());
@@ -2736,7 +2736,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
         logger->error(DRT,
                       296,
                       "Mismatch in number of pins for term {}/{}",
-                      refBlk->getName(),
+                      master->getName(),
                       term->getName());
       frUInt4 i = 0;
       auto& pins = term->getPins();
