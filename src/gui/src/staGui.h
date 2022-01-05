@@ -44,6 +44,8 @@
 #include <QColor>
 #include <QComboBox>
 #include <QDialog>
+#include <QFormLayout>
+#include <QHBoxLayout>
 #include <QSpinBox>
 
 #include "gui/gui.h"
@@ -567,13 +569,13 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const;
 
-  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
-  void setThruPin(const std::set<sta::Pin*>& pins) { thru_->setPins(pins); }
-  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
+  void setFromPin(const std::set<sta::Pin*>& pins) { from_.pins->setPins(pins); }
+  void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
+  void setToPin(const std::set<sta::Pin*>& pins) { to_.pins->setPins(pins); }
 
-  const std::set<sta::Pin*>& getFromPins() const { return from_->getPins(); }
-  const std::set<sta::Pin*>& getThruPins() const { return thru_->getPins(); }
-  const std::set<sta::Pin*>& getToPins() const { return to_->getPins(); }
+  const std::set<sta::Pin*>& getFromPins() const { return from_.pins->getPins(); }
+  const std::vector<std::set<sta::Pin*>> getThruPins() const;
+  const std::set<sta::Pin*>& getToPins() const { return to_.pins->getPins(); }
 
   sta::Pin* convertTerm(Gui::odbTerm term) const;
 
@@ -583,19 +585,32 @@ class TimingControlsDialog : public QDialog
  private:
   sta::dbSta* sta_;
 
+  QFormLayout* layout_;
+
   QSpinBox* path_count_spin_box_;
   QComboBox* corner_box_;
 
   QCheckBox* uncontrained_;
 
-  PinComboBox* from_;
-  QPushButton* from_clear_;
-  PinComboBox* thru_;
-  QPushButton* thru_clear_;
-  PinComboBox* to_;
-  QPushButton* to_clear_;
+  struct PinRow {
+    PinComboBox* pins;
+    QPushButton* clear;
+  };
+  struct ThruRow {
+    PinRow pin_row;
+    QPushButton* add_remove;
+  };
+  PinRow from_;
+  std::vector<ThruRow> thru_;
+  PinRow to_;
+
+  static constexpr int thru_start_row_ = 3;
 
   void setPinSelections();
+
+  void addThruRow(const std::set<sta::Pin*>& pins);
+  QHBoxLayout* setupPinRow(const QString& label, const PinRow& row, int row_index = -1);
+  void addRemoveThru(const ThruRow& row);
 };
 
 }  // namespace gui

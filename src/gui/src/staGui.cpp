@@ -36,7 +36,6 @@
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QDebug>
-#include <QFormLayout>
 #include <QLineEdit>
 #include <QKeyEvent>
 #include <QPushButton>
@@ -1493,46 +1492,30 @@ void PinComboBox::findPin()
 TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     QDialog(parent),
     sta_(nullptr),
+    layout_(new QFormLayout),
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
     uncontrained_(new QCheckBox(this)),
-    from_(new PinComboBox(this)),
-    from_clear_(new QPushButton(this)),
-    thru_(new PinComboBox(this)),
-    thru_clear_(new QPushButton(this)),
-    to_(new PinComboBox(this)),
-    to_clear_(new QPushButton(this))
+    from_({new PinComboBox(this), new QPushButton(this)}),
+    thru_({}),
+    to_({new PinComboBox(this), new QPushButton(this)})
 {
   setWindowTitle("Timing Controls");
 
   path_count_spin_box_->setRange(0, 10000);
   path_count_spin_box_->setValue(100);
 
-  QFormLayout* layout = new QFormLayout;
+  layout_->addRow("Paths:", path_count_spin_box_);
+  layout_->addRow("Command corner:", corner_box_);
 
-  layout->addRow("Paths:", path_count_spin_box_);
-  layout->addRow("Command corner:", corner_box_);
-
-  auto setup_pins_row = [this, layout](const QString& text, PinComboBox* box, QPushButton* clear) {
-    clear->setIcon(QIcon(":/delete.png"));
-    QHBoxLayout* row_layout = new QHBoxLayout;
-    row_layout->addWidget(box);
-    row_layout->addWidget(clear);
-    layout->addRow(text, row_layout);
-
-    clear->setAutoDefault(false);
-    clear->setDefault(false);
-    connect(clear, SIGNAL(pressed()), box, SLOT(clearPins()));
-  };
-
-  setup_pins_row("From:", from_, from_clear_);
-  setup_pins_row("Through:", thru_, thru_clear_);
-  setup_pins_row("To:", to_, to_clear_);
+  setupPinRow("From:", from_);
+  setThruPin({});
+  setupPinRow("To:", to_);
 
   setUnconstrained(false);
-  layout->addRow("Unconstrained:", uncontrained_);
+  layout_->addRow("Unconstrained:", uncontrained_);
 
-  setLayout(layout);
+  setLayout(layout_);
 
   connect(corner_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1545,12 +1528,35 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
           });
 }
 
+QHBoxLayout* TimingControlsDialog::setupPinRow(const QString& label, const PinRow& row, int row_index)
+{
+  QHBoxLayout* row_layout = new QHBoxLayout;
+  row_layout->addWidget(row.pins);
+  row_layout->addWidget(row.clear);
+  if (row_index < 0) {
+    layout_->addRow(label, row_layout);
+  } else {
+    layout_->insertRow(row_index, label, row_layout);
+  }
+
+  row.clear->setIcon(QIcon(":/delete.png"));
+  row.clear->setAutoDefault(false);
+  row.clear->setDefault(false);
+  connect(row.clear, SIGNAL(pressed()), row.pins, SLOT(clearPins()));
+
+  row.pins->setSTA(sta_);
+
+  return row_layout;
+}
+
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
-  from_->setSTA(sta_);
-  thru_->setSTA(sta_);
-  to_->setSTA(sta_);
+  from_.pins->setSTA(sta_);
+  for (const auto& row : thru_) {
+    row.pin_row.pins->setSTA(sta_);
+  }
+  to_.pins->setSTA(sta_);
 }
 
 void TimingControlsDialog::setUnconstrained(bool unconstrained)
@@ -1590,9 +1596,11 @@ void TimingControlsDialog::populate()
 
 void TimingControlsDialog::setPinSelections()
 {
-  from_->updatePins();
-  thru_->updatePins();
-  to_->updatePins();
+  from_.pins->updatePins();
+  for (const auto& row : thru_) {
+    row.pin_row.pins->updatePins();
+  }
+  to_.pins->updatePins();
 }
 
 sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
@@ -1604,6 +1612,77 @@ sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
   } else {
     return network->dbToSta(std::get<odb::dbBTerm*>(term));
   }
+}
+
+void TimingControlsDialog::setThruPin(const std::vector<std::set<sta::Pin*>>& pins)
+{
+  for (size_t i = 0; i < thru_.size(); i++) {
+    layout_->removeRow(thru_start_row_);
+  }
+  thru_.clear();
+  adjustSize();
+
+  auto new_pins = pins;
+  if (pins.empty()) {
+    new_pins.push_back({}); // add one row
+  }
+
+  for (const auto& pin_set : new_pins) {
+    addThruRow(pin_set);
+  }
+}
+
+void TimingControlsDialog::addThruRow(const std::set<sta::Pin*>& pins)
+{
+  ThruRow row;
+  row.pin_row.pins = new PinComboBox(this);
+  row.pin_row.clear = new QPushButton(this);
+  row.add_remove = new QPushButton(this);
+  row.add_remove->setAutoDefault(false);
+  row.add_remove->setDefault(false);
+  row.add_remove->setIcon(QIcon(":/add.png"));
+
+  auto* layout = setupPinRow("Through:", row.pin_row, thru_start_row_ + thru_.size());
+  layout->addWidget(row.add_remove);
+
+  row.pin_row.pins->setPins(pins);
+
+  connect(row.add_remove,
+          &QPushButton::pressed,
+          [this, row]() {
+            addRemoveThru(row);
+          });
+
+  for (const auto& lower_row : thru_) {
+    lower_row.add_remove->setIcon(QIcon(":/remove.png"));
+  }
+  thru_.push_back(row);
+}
+
+void TimingControlsDialog::addRemoveThru(const ThruRow& row)
+{
+  auto find_row = std::find_if(thru_.begin(), thru_.end(), [row](const auto& other) {
+    return row.add_remove == other.add_remove; // compare using add remove button
+  });
+
+  const int row_index = std::distance(thru_.begin(), find_row);
+  if (row_index + 1 >= thru_.size()) {
+    addThruRow({});
+  } else {
+    layout_->removeRow(thru_start_row_ + row_index);
+    thru_.erase(thru_.begin() + row_index);
+    thru_.back().add_remove->setIcon(QIcon(":/add.png"));
+    adjustSize();
+  }
+}
+
+const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
+{
+  std::vector<std::set<sta::Pin*>> pins;
+  for (const auto& row : thru_) {
+    pins.push_back(row.pin_row.pins->getPins());
+  }
+  return pins;
 }
 
 }  // namespace gui
