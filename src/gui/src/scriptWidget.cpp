@@ -220,7 +220,15 @@ void ScriptWidget::addTclResultToOutput(int return_code)
   // Show the return value color-coded by ok/err.
   const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
   if (result[0] != '\0') {
-    addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
+    if (return_code == TCL_OK) {
+      addToOutput(result, tcl_ok_msg_);
+    } else {
+      try {
+        logger_->error(utl::GUI, 70, result);
+      } catch (const std::runtime_error& /* e */) {
+        // do nothing
+      }
+    }
   }
 }
 
