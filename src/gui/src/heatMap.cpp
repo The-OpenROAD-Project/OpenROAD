@@ -1375,13 +1375,29 @@ bool IRDropDataSource::populateMap()
     return false;
   }
 
-  auto& ir_drop = ir_drops[layer_];
+  // track min/max here to make it constant across all layers
+  double min = std::numeric_limits<double>::max();
+  double max = std::numeric_limits<double>::min();
+  for (const auto& [layer, drop_map] : ir_drops) {
+    for (const auto& [point, drop] : drop_map) {
+      min = std::min(min, drop);
+      max = std::max(max, drop);
+    }
+  }
+  setMinValue(min);
+  setMaxValue(max);
 
+  auto& ir_drop = ir_drops[layer_];
   for (const auto& [point, drop] : ir_drop) {
     addToMap({point, point}, drop);
   }
 
   return true;
+}
+
+void IRDropDataSource::determineMinMax(const HeatMapDataSource::Map& map)
+{
+  // do nothing handled in populateMap
 }
 
 void IRDropDataSource::combineMapData(bool base_has_value,
@@ -1489,11 +1505,34 @@ RealValueHeatMapDataSource::RealValueHeatMapDataSource(const std::string& unit_s
     unit_suffix_(unit_suffix),
     units_(unit_suffix_),
     min_(0.0),
-    max_(0.0)
+    max_(0.0),
+    scale_(1.0)
 {
 }
 
 void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
+{
+  determineMinMax(map);
+  determineUnits();
+  min_ = roundData(min_);
+  max_ = roundData(max_);
+
+  for (auto& [bbox, map_pt] : map) {
+    map_pt->value = convertValueToPercent(map_pt->value);
+  }
+
+  // reset since all data has been scaled by the appropriate amount
+  scale_ = 1.0;
+}
+
+double RealValueHeatMapDataSource::roundData(double value) const
+{
+  const double precision = 1000.0;
+  double new_value = value * scale_;
+  return std::round(new_value * precision) / precision;
+}
+
+void RealValueHeatMapDataSource::determineMinMax(const HeatMapDataSource::Map& map)
 {
   min_ = std::numeric_limits<double>::max();
   max_ = std::numeric_limits<double>::min();
@@ -1502,44 +1541,29 @@ void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
     min_ = std::min(min_, map_pt->value);
     max_ = std::max(max_, map_pt->value);
   }
-
-  auto round_data = [](double value, double scale) -> double {
-    const double precision = 1000.0;
-    double new_value = value * scale;
-    return std::round(new_value * precision) / precision;
-  };
-
-  double scale;
-  determineUnits(scale);
-  min_ = round_data(min_, scale);
-  max_ = round_data(max_, scale);
-
-  for (auto& [bbox, map_pt] : map) {
-    map_pt->value = convertValueToPercent(round_data(map_pt->value, scale));
-  }
 }
 
-void RealValueHeatMapDataSource::determineUnits(double& scale)
+void RealValueHeatMapDataSource::determineUnits()
 {
   const double range = max_ - min_;
   if (range > 1.0 || range == 0) {
     units_ = "";
-    scale = 1.0;
+    scale_ = 1.0;
   } else if (range > 1e-3) {
     units_ = "m";
-    scale = 1e3;
+    scale_ = 1e3;
   } else if (range > 1e-6) {
     units_ = "\u03BC"; // micro
-    scale = 1e6;
+    scale_ = 1e6;
   } else if (range > 1e-9) {
     units_ = "n";
-    scale = 1e9;
+    scale_ = 1e9;
   } else if (range > 1e-12) {
     units_ = "p";
-    scale = 1e12;
+    scale_ = 1e12;
   } else {
     units_ = "f";
-    scale = 1e15;
+    scale_ = 1e15;
   }
 
   units_ += unit_suffix_;
@@ -1576,7 +1600,7 @@ double RealValueHeatMapDataSource::convertValueToPercent(double value) const
   const double range = getValueRange();
   const double offset = min_;
 
-  return 100.0 * (value - offset) / range;
+  return roundData(100.0 * (value - offset) / range);
 }
 
 double RealValueHeatMapDataSource::convertPercentToValue(double percent) const
@@ -1584,7 +1608,7 @@ double RealValueHeatMapDataSource::convertPercentToValue(double percent) const
   const double range = getValueRange();
   const double offset = min_;
 
-  return percent * range / 100.0 + offset;
+  return roundData(percent * range / 100.0 + offset);
 }
 
 double RealValueHeatMapDataSource::getDisplayRangeIncrement() const

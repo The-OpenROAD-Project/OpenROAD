@@ -389,15 +389,24 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
   virtual double getDisplayRangeIncrement() const override;
 
  protected:
-  void determineUnits(double& scale);
+  void determineUnits();
 
   virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  virtual void determineMinMax(const HeatMapDataSource::Map& map);
+
+  void setMinValue(double value) { min_ = value; }
+  double getMinValue() const { return min_; }
+  void setMaxValue(double value) { max_ = value; }
+  double getMaxValue() const { return max_; }
+
+  double roundData(double value) const;
 
  private:
   const std::string unit_suffix_;
   std::string units_;
   double min_;
   double max_;
+  double scale_;
 
   double getValueRange() const;
 };
@@ -466,6 +475,8 @@ class IRDropDataSource : public RealValueHeatMapDataSource
                               const double data_area,
                               const double intersection_area,
                               const double rect_area) override;
+
+  virtual void determineMinMax(const HeatMapDataSource::Map& map) override;
 
  private:
   psm::PDNSim* psm_;
