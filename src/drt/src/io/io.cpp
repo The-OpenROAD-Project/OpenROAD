@@ -793,6 +793,24 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
+    switch (term->getSigType()) {
+      case odb::dbSigType::POWER:
+      case odb::dbSigType::GROUND:
+      case odb::dbSigType::TIEOFF:
+        // We allow for multuple pins
+        break;
+      case odb::dbSigType::SIGNAL:
+      case odb::dbSigType::CLOCK:
+      case odb::dbSigType::ANALOG:
+      case odb::dbSigType::RESET:
+      case odb::dbSigType::SCAN:
+        if (term->getBPins().size() > 1)
+          logger->error(utl::DRT,
+                        302,
+                        "Unsupported multiple pins on bterm {}",
+                        term->getName());
+        break;
+    }
     auto uTermIn = make_unique<frTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
@@ -2791,12 +2809,16 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
+    if (db_term->getSigType() == odb::dbSigType::POWER
+        || db_term->getSigType() == odb::dbSigType::GROUND
+        || db_term->getSigType() == odb::dbSigType::TIEOFF)
+      continue;
     auto db_pins = db_term->getBPins();
     frUInt4 i = 0;
     auto& pins = term->getPins();
     if (db_pins.size() != pins.size())
       logger->error(
-          DRT, 302, "Mismatch in number of pins for bterm {}", term->getName());
+          DRT, 303, "Mismatch in number of pins for bterm {}", term->getName());
     for (auto db_pin : db_pins) {
       auto& pin = pins[i++];
       int j = 0;
