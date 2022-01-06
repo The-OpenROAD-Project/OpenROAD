@@ -241,7 +241,9 @@ class GlobalRouter
                               std::vector<int>& edge_costs_per_layer);
 
   // aux functions
-  std::vector<odb::Point> findOnGridPositions(const Pin& pin, bool& has_access_points);
+  std::vector<odb::Point> findOnGridPositions(const Pin& pin,
+                                              bool& has_access_points,
+                                              odb::Point& pos_on_grid);
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
