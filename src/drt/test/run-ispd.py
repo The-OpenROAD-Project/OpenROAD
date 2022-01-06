@@ -88,11 +88,8 @@ def genFiles(run_dir, ispd_year, design, drv):
     script = f"""
             set -e
             cd {design_dir}
-            {args.program} -exit run.tcl > {design_dir}/run_{design}.log
-            echo
-            echo
-            echo Report for {design}
-            tail {design_dir}/run_{design}.log
+            echo Running {design}
+            {args.program} -exit run.tcl | tee {design_dir}/run_{design}.log
             cd '{bench_dir}/ispd{ispd_year}eval'
             ./ispd{ispd_year}eval \\
                 -lef {bench_dir}/{design}/{design}.input.lef \\
