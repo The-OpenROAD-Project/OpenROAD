@@ -1208,6 +1208,10 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
         settings[option] = *s;
+      } if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      } if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
       } else {
         logger_->error(utl::GUI, 60, "{} must be a boolean", option);
       }

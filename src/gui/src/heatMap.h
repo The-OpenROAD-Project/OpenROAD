@@ -127,6 +127,8 @@ class HeatMapDataSource
 
   void setLogScale(bool scale);
   bool getLogScale() const { return log_scale_; }
+  void setReverseLogScale(bool reverse_log);
+  bool getReverseLogScale() const { return reverse_log_; }
 
   void setShowNumbers(bool numbers);
   bool getShowNumbers() const { return show_numbers_; }
@@ -204,6 +206,7 @@ class HeatMapDataSource
   bool draw_above_max_display_range_;
   int color_alpha_;
   bool log_scale_;
+  bool reverse_log_;
   bool show_numbers_;
   bool show_legend_;
 
@@ -236,6 +239,7 @@ class HeatMapSetup : public QDialog
   void updateShowMinRange(int show);
   void updateShowMaxRange(int show);
   void updateScale(int option);
+  void updateReverseScale(int option);
   void updateAlpha(int alpha);
   void updateRange();
   void updateGridSize();
@@ -249,6 +253,7 @@ class HeatMapSetup : public QDialog
   int dbu_;
 
   QCheckBox* log_scale_;
+  QCheckBox* reverse_log_scale_;
   QCheckBox* show_numbers_;
   QCheckBox* show_legend_;
 
