@@ -42,7 +42,7 @@ namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
 typedef std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
+    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
         viaRawPriorityTuple;
 class FlexPinAccessPattern;
 class FlexDPNode;
