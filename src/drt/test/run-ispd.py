@@ -47,12 +47,19 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+if args.program is None or not os.path.isfile(args.program):
+    raise FileNotFoundError(f"openroad binary not found at '{args.program}'")
+
+if not os.path.isdir(args.dir):
+    raise FileNotFoundError(f"Benchmark root folder not found at '{args.dir}'")
+
+
 def genFiles(run_dir, ispd_year, design, drv):
     # host setup
     bench_dir = os.path.join(args.dir, "tests")
     if not os.path.exists(os.path.join(bench_dir, design)):
         raise Exception("Missing test {}".format(design))
-    
+
     # TritonRoute setup
     verbose = 1
     threads = multiprocessing.cpu_count()
@@ -71,7 +78,7 @@ def genFiles(run_dir, ispd_year, design, drv):
                            -output_drc {design}.output.drc.rpt \\
                            -verbose {verbose}
             write_def {run_dir}/{design}/{design}.output.def
-            set drv_count [detailed_route_num_drvs] 
+            set drv_count [detailed_route_num_drvs]
             if {{ $drv_count > {drv} }} {{
               puts \"ERROR: Increase in number of violations from {drv} to $drv_count\"
               exit 1
@@ -109,7 +116,7 @@ def test_enabled(design, patterns):
         if fnmatch.fnmatch(design, pattern):
             return True
     return False
-    
+
 
 design_list_ispd18 = [
     ("ispd18_test1",   0),
@@ -155,7 +162,7 @@ status = subprocess.run(['parallel',
                          '-j', str(args.jobs),
                          '--halt', 'never',
                          '--joblog', f"{run_dir}/log",
-                         './{}/run.sh', ':::', *list(running_tests)]) 
+                         './{}/run.sh', ':::', *list(running_tests)])
 for design in running_tests:
     subprocess.run(['tar', 'czvf', f"{design}.tar.gz", f"{design}"],
                    check=True)
