@@ -560,7 +560,9 @@ void GlobalRouter::updateDirtyNets()
   }
 }
 
-std::vector<odb::Point> GlobalRouter::findOnGridPositions(const Pin& pin, bool& has_access_points)
+std::vector<odb::Point> GlobalRouter::findOnGridPositions(const Pin& pin,
+                                                          bool& has_access_points,
+                                                          odb::Point& pos_on_grid)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get PAs from odb
@@ -587,7 +589,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(const Pin& pin, bool& 
         xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
         xform.apply(ap_position);
       }
-      odb::Point pos_on_grid = grid_->getPositionOnGrid(ap_position);
+      pos_on_grid = grid_->getPositionOnGrid(ap_position);
       positions_on_grid.push_back(pos_on_grid);
     }
   } else {
@@ -596,7 +598,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(const Pin& pin, bool& 
     const int top_layer = pin.getTopLayer();
     const std::vector<odb::Rect>& pin_boxes = pin.getBoxes().at(top_layer);
     for (const odb::Rect& pin_box : pin_boxes) {
-      odb::Point pos_on_grid  = grid_->getPositionOnGrid(getRectMiddle(pin_box));
+      pos_on_grid  = grid_->getPositionOnGrid(getRectMiddle(pin_box));
       positions_on_grid.push_back(pos_on_grid);
     }
   }
@@ -608,7 +610,9 @@ void GlobalRouter::findPins(Net* net)
 {
   for (Pin& pin : net->getPins()) {
     bool has_access_points;
-    std::vector<odb::Point> pin_positions_on_grid = findOnGridPositions(pin, has_access_points);
+    odb::Point pos_on_grid;
+    std::vector<odb::Point> pin_positions_on_grid
+      = findOnGridPositions(pin, has_access_points, pos_on_grid);
 
     int votes = -1;
 
@@ -625,7 +629,6 @@ void GlobalRouter::findPins(Net* net)
     // check if the pin has access points to avoid changing the position on grid
     // when the pin overlaps with a single track.
     // this way, the result based on drt APs is maintained
-    odb::Point pos_on_grid;
     if (!has_access_points && pinOverlapsWithSingleTrack(pin, pos_on_grid)) {
       const int top_layer = pin.getTopLayer();
       odb::dbTechLayer* layer = routing_layers_[top_layer];
