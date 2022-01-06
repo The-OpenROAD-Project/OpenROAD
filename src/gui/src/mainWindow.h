@@ -75,7 +75,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   ~MainWindow();
 
   void setDatabase(odb::dbDatabase* db);
-  void init(sta::dbSta* sta);
+  void init(sta::dbSta* sta, psm::PDNSim* psm);
 
   odb::dbDatabase* getDb() const { return db_; }
 
@@ -304,6 +304,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   RoutingCongestionDataSource routing_congestion_data_;
   PlacementDensityDataSource placement_density_data_;
   PowerDensityDataSource power_density_data_;
+  IRDropDataSource ir_drop_data_;
 };
 
 }  // namespace gui
