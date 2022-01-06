@@ -47,6 +47,8 @@ namespace io {
 class Parser;
 }
 
+using ForbiddenRanges = std::vector<std::pair<frCoord, frCoord>>;
+
 enum class frLef58CornerSpacingExceptionEnum
 {
   NONE,
@@ -2689,10 +2691,9 @@ class frNonDefaultRule
 
   bool hardSpacing_ = false;
 
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      via2ViaForbiddenLen;
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      viaForbiddenTurnLen;
+  // See comments in frTechObject's equivalent fields for the meaning
+  std::vector<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
+  std::vector<std::array<ForbiddenRanges, 4>> viaForbiddenTurnLen;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

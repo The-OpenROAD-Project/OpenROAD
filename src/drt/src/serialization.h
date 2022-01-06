@@ -31,6 +31,7 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/array.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
