@@ -40,9 +40,10 @@ class dbDatabase;
 
 namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower
-typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
-    viaRawPriorityTuple;
+// lowerArea, not align lower, via name
+typedef std::
+    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
+        viaRawPriorityTuple;
 class FlexPinAccessPattern;
 class FlexDPNode;
 class FlexPAGraphics;
@@ -50,7 +51,8 @@ class FlexPAGraphics;
 class FlexPA
 {
  public:
-  enum PatternType {
+  enum PatternType
+  {
     Edge,
     Commit
   };
