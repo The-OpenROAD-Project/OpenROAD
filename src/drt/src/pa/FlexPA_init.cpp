@@ -344,8 +344,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
                              isNotUpperAlign,
                              layer2Area,
                              layer1Area,
-                             isNotLowerAlign,
-                             viaDef->getName());
+                             isNotLowerAlign);
 }
 
 void FlexPA::initTrackCoords()
