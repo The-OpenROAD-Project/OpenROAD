@@ -53,6 +53,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     use_dbu_(use_dbu),
     dbu_(dbu),
     log_scale_(new QCheckBox(this)),
+    reverse_log_scale_(new QCheckBox(this)),
     show_numbers_(new QCheckBox(this)),
     show_legend_(new QCheckBox(this)),
     grid_x_size_(nullptr),
@@ -75,6 +76,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   source_.makeAdditionalSetupOptions(this, form, [this]() { source_.redraw(); });
 
   form->addRow(tr("Log scale"), log_scale_);
+  form->addRow(tr("Reverse Log scale"), reverse_log_scale_);
 
   form->addRow(tr("Show numbers"), show_numbers_);
 
@@ -148,6 +150,11 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           SIGNAL(stateChanged(int)),
           this,
           SLOT(updateScale(int)));
+
+  connect(reverse_log_scale_,
+          SIGNAL(stateChanged(int)),
+          this,
+          SLOT(updateReverseScale(int)));
 
   if (!use_dbu_) {
     connect(grid_x_size_,
@@ -250,6 +257,8 @@ void HeatMapSetup::updateWidgets()
   alpha_selector_->setValue(source_.getColorAlpha());
 
   log_scale_->setCheckState(source_.getLogScale() ? Qt::Checked : Qt::Unchecked);
+  reverse_log_scale_->setCheckState(source_.getReverseLogScale() ? Qt::Checked : Qt::Unchecked);
+  reverse_log_scale_->setEnabled(source_.getLogScale());
   show_numbers_->setCheckState(source_.getShowNumbers() ? Qt::Checked : Qt::Unchecked);
   show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked : Qt::Unchecked);
 }
@@ -262,6 +271,12 @@ void HeatMapSetup::destroyMap()
 void HeatMapSetup::updateScale(int option)
 {
   source_.setLogScale(option == Qt::Checked);
+  emit changed();
+}
+
+void HeatMapSetup::updateReverseScale(int option)
+{
+  source_.setReverseLogScale(option == Qt::Checked);
   emit changed();
 }
 
@@ -336,6 +351,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     draw_above_max_display_range_(true),
     color_alpha_(150),
     log_scale_(false),
+    reverse_log_(false),
     show_numbers_(false),
     show_legend_(false),
     map_(),
@@ -420,6 +436,14 @@ void HeatMapDataSource::setLogScale(bool scale)
   redraw();
 }
 
+void HeatMapDataSource::setReverseLogScale(bool reverse)
+{
+  reverse_log_ = reverse;
+  updateMapColors();
+
+  redraw();
+}
+
 void HeatMapDataSource::setShowNumbers(bool numbers)
 {
   show_numbers_ = numbers;
@@ -479,6 +503,7 @@ const Renderer::Settings HeatMapDataSource::getSettings() const
           {"GridY", grid_y_size_},
           {"Alpha", color_alpha_},
           {"LogScale", log_scale_},
+          {"ReverseLog", reverse_log_},
           {"ShowNumbers", show_numbers_},
           {"ShowLegend", show_legend_}};
 }
@@ -491,6 +516,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   Renderer::setSetting<double>(settings, "GridY", grid_y_size_);
   Renderer::setSetting<int>(settings, "Alpha", color_alpha_);
   Renderer::setSetting<bool>(settings, "LogScale", log_scale_);
+  Renderer::setSetting<bool>(settings, "ReverseLog", reverse_log_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
 
@@ -610,7 +636,15 @@ void HeatMapDataSource::updateMapColors()
       if (i == color_generator_.getColorCount()) {
         start = display_range_min_;
       }
-      color_lower_bounds_[color_count - i] = start;
+      color_lower_bounds_[i] = start;
+    }
+
+    if (reverse_log_) {
+      for (size_t i = 0; i < color_lower_bounds_.size(); i++) {
+        color_lower_bounds_[i] = display_range_max_ - color_lower_bounds_[i] + display_range_min_;
+      }
+    } else {
+      std::reverse(color_lower_bounds_.begin(), color_lower_bounds_.end());
     }
   } else {
     const double step = (display_range_max_ - display_range_min_) / color_count;
