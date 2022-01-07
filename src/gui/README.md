@@ -92,10 +92,10 @@ Options description:
 ### Displaying timing cones
 
 ```
-display_timing_cone" pin
-                     [-fanin]
-                     [-fanout]
-                     [-off]
+display_timing_cone pin
+                    [-fanin]
+                    [-fanout]
+                    [-off]
 ```
 
 Options description:
