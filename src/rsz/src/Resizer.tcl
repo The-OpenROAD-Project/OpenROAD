@@ -419,6 +419,8 @@ proc report_design_area { args } {
 
   if [info exists keys(-json_util)] {
     utl::metric_float $keys(-json_util) $util
+  }
+  if [info exists keys(-json_area)] {
     utl::metric_float $keys(-json_area) $area
   }
 }
