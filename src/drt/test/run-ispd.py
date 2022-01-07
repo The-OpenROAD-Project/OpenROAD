@@ -47,6 +47,13 @@ parser.add_argument(
     default=shutil.which('openroad'),
     help="Path to openroad to test"
 )
+parser.add_argument(
+    "-w",
+    "--workspace",
+    default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'results'),
+    help="Workspace directory to create the run scripts and save output files"
+)
 args = parser.parse_args()
 
 args.program = os.path.abspath(args.program)
@@ -59,7 +66,7 @@ if not os.path.isdir(args.dir):
     raise FileNotFoundError(f"Benchmark root folder not found at '{args.dir}'")
 
 
-def gen_files(ispd_year, design, drv):
+def gen_files(work_dir, ispd_year, design, drv):
     ''' host setup '''
     bench_dir = os.path.join(args.dir, "tests")
     if not os.path.exists(os.path.join(bench_dir, design)):
@@ -69,7 +76,7 @@ def gen_files(ispd_year, design, drv):
     verbose = 1
     threads = multiprocessing.cpu_count()
 
-    design_dir = os.path.abspath(design)
+    design_dir = os.path.join(work_dir, design)
     os.makedirs(design_dir, exist_ok=True)
 
     print(f"Create openroad tcl script for {design}")
@@ -148,27 +155,31 @@ design_list_ispd19 = [
     ("ispd19_test10", 19),
 ]
 
-run_dir = os.path.join(args.dir, "runs")
+os.makedirs(args.workspace, exist_ok=True)
 running_tests = set()
 for (design_name, drv_allowed) in design_list_ispd18:
     if test_enabled(design_name, args.tests):
-        gen_files(18, design_name, drv_allowed)
+        gen_files(args.workspace, 18, design_name, drv_allowed)
         running_tests.add(design_name)
 
 
 for (design_name, drv_allowed) in design_list_ispd19:
     if test_enabled(design_name, args.tests):
-        gen_files(19, design_name, drv_allowed)
+        gen_files(args.workspace, 19, design_name, drv_allowed)
         running_tests.add(design_name)
 
 status = subprocess.run(['parallel',
                          '-j', str(args.jobs),
                          '--halt', 'never',
-                         '--joblog', f"{run_dir}/log",
-                         './{}/run.sh', ':::', *list(running_tests)])
+                         '--joblog', f"{args.workspace}/ispd-parallel.log",
+                         os.path.join(args.workspace, '{}/run.sh'),
+                         ':::', *list(running_tests)],
+                        check=True)
 
 for design_name in running_tests:
-    subprocess.run(['tar', 'czvf', f"{design_name}.tar.gz", f"{design_name}"],
+    subprocess.run(['tar', 'czvf',
+                    f"{args.workspace}/{design_name}.tar.gz",
+                    f"{args.workspace}/{design_name}"],
                    check=True)
 
 print("=======================")
