@@ -47,6 +47,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+args.program = os.path.abspath(args.program)
+args.dir = os.path.abspath(args.dir)
+
 if args.program is None or not os.path.isfile(args.program):
     raise FileNotFoundError(f"openroad binary not found at '{args.program}'")
 
@@ -64,7 +67,7 @@ def genFiles(run_dir, ispd_year, design, drv):
     verbose = 1
     threads = multiprocessing.cpu_count()
 
-    design_dir = os.path.join(run_dir, design)
+    design_dir = os.path.abspath(design)
     os.makedirs(design_dir, exist_ok=True)
 
     print(f"Create openroad tcl script for {design}")
@@ -73,9 +76,9 @@ def genFiles(run_dir, ispd_year, design, drv):
             read_lef {bench_dir}/{design}/{design}.input.lef
             read_def {bench_dir}/{design}/{design}.input.def
             detailed_route -guide {bench_dir}/{design}/{design}.input.guide \\
-                           -output_guide {design}.output.guide.mod \\
-                           -output_maze {design}.output.maze.log \\
-                           -output_drc {design}.output.drc.rpt \\
+                           -output_guide {design_dir}/{design}.output.guide.mod \\
+                           -output_maze {design_dir}/{design}.output.maze.log \\
+                           -output_drc {design_dir}/{design}.output.drc.rpt \\
                            -verbose {verbose}
             write_def {run_dir}/{design}/{design}.output.def
             set drv_count [detailed_route_num_drvs]
@@ -94,17 +97,16 @@ def genFiles(run_dir, ispd_year, design, drv):
     run_sh = os.path.join(design_dir, "run.sh")
     script = f"""
             set -e
-            cd {design_dir}
             echo Running {design}
-            {args.program} -exit run.tcl | tee {design_dir}/run_{design}.log
-            cd '{bench_dir}/ispd{ispd_year}eval'
-            ./ispd{ispd_year}eval \\
+            {args.program} -exit {design_dir}/run.tcl 2>&1 \\
+                | tee {design_dir}/run_{design}.log
+            {bench_dir}/ispd{ispd_year}eval/ispd{ispd_year}eval \\
                 -lef {bench_dir}/{design}/{design}.input.lef \\
                 -def {design_dir}/{design}.output.def \\
                 -guide {bench_dir}/{design}/{design}.input.guide \\
               | grep -v WARNING | grep -v ERROR
             echo
-    """
+            """
     with open(run_sh, 'w') as f:
         print(textwrap.dedent(script), file=f)
     st = os.stat(run_sh)
@@ -156,13 +158,12 @@ for (design, drv) in design_list_ispd19:
         genFiles(run_dir, 19, design, drv)
         running_tests.add(design)
 
-os.chdir(run_dir)
-
 status = subprocess.run(['parallel',
                          '-j', str(args.jobs),
                          '--halt', 'never',
                          '--joblog', f"{run_dir}/log",
                          './{}/run.sh', ':::', *list(running_tests)])
+
 for design in running_tests:
     subprocess.run(['tar', 'czvf', f"{design}.tar.gz", f"{design}"],
                    check=True)
