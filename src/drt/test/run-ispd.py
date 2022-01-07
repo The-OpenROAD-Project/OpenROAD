@@ -109,7 +109,8 @@ def gen_files(work_dir, ispd_year, design, drv):
             echo Running {design}
             {args.program} -exit {design_dir}/run.tcl 2>&1 \\
                 | tee {design_dir}/run_{design}.log
-            {bench_dir}/ispd{ispd_year}eval/ispd{ispd_year}eval \\
+            cd '{bench_dir}/ispd{ispd_year}eval'
+            ./ispd{ispd_year}eval \\
                 -lef {bench_dir}/{design}/{design}.input.lef \\
                 -def {design_dir}/{design}.output.def \\
                 -guide {bench_dir}/{design}/{design}.input.guide \\
