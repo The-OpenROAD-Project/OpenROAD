@@ -14,12 +14,6 @@ pipeline {
       }
     }
 
-    // stage("Clean-up ISPD") {
-    //   steps {
-    //     sh "rm -rf /home/jenkins/ispd/runs/*";
-    //   }
-    // }
-
     stage('Test Matrix') {
       matrix {
         agent any;
@@ -71,7 +65,7 @@ pipeline {
         }
         post {
           always {
-            archiveArtifacts "**/*.tar.gz, **/*log";
+            archiveArtifacts "**/*.tar.gz, **/*.log";
           }
         }
 
@@ -79,15 +73,15 @@ pipeline {
     }
   }
 
-  // post {
-  //   failure {
-  //     script {
-  //       emailext (
-  //           to: "$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS",
-  //           subject: '$DEFAULT_SUBJECT',
-  //           body: '$DEFAULT_CONTENT',
-  //           );
-  //     }
-  //   }
-  // }
+  post {
+    failure {
+      script {
+        emailext (
+            to: "$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS",
+            subject: '$DEFAULT_SUBJECT',
+            body: '$DEFAULT_CONTENT',
+            );
+      }
+    }
+  }
 }
