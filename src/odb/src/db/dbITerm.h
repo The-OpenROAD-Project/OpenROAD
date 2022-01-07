@@ -36,6 +36,7 @@
 #include "dbDatabase.h"
 #include "dbId.h"
 #include "odb.h"
+#include <map>
 
 namespace odb {
 
@@ -47,6 +48,8 @@ class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbAccessPoint;
+class _dbMPin;
 
 struct dbITermFlags
 {
@@ -75,6 +78,7 @@ class _dbITerm : public _dbObject
   dbId<_dbITerm> _next_net_iterm;
   dbId<_dbITerm> _prev_net_iterm;
   uint32_t _sta_vertex_id;  // not saved
+  std::map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 
   _dbITerm(_dbDatabase*);
   _dbITerm(_dbDatabase*, const _dbITerm& i);
@@ -126,6 +130,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
   stream << iterm._inst;
   stream << iterm._next_net_iterm;
   stream << iterm._prev_net_iterm;
+  stream << iterm.aps_;
   return stream;
 }
 
@@ -138,6 +143,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> iterm._inst;
   stream >> iterm._next_net_iterm;
   stream >> iterm._prev_net_iterm;
+  stream >> iterm.aps_;
   return stream;
 }
 

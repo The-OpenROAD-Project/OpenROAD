@@ -96,6 +96,21 @@ void detailed_route_cmd(const char* guideFile,
   router->main();
 }
 
+void pin_access_cmd(const char* dbProcessNode,
+                    const char* bottomRoutingLayer,
+                    const char* topRoutingLayer,
+                    int verbose)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  triton_route::ParamStruct params;
+  params.dbProcessNode = dbProcessNode;
+  params.bottomRoutingLayer = bottomRoutingLayer;
+  params.topRoutingLayer = topRoutingLayer;
+  params.verbose = verbose;
+  router->setParams(params);
+  router->pinAccess();
+}
+
 void detailed_route_cmd(const char* param_file)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
@@ -119,7 +134,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              int x, int y,
                              int iter,
                              bool pa_markers,
-                             bool pa_combining)
+                             bool pa_edge,
+                             bool pa_commit)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -133,7 +149,8 @@ set_detailed_route_debug_cmd(const char* net_name,
   }
   router->setDebugIter(iter);
   router->setDebugPaMarkers(pa_markers);
-  router->setDebugPaCombining(pa_combining);
+  router->setDebugPaEdge(pa_edge);
+  router->setDebugPaCommit(pa_commit);
 }
 
 %} // inline

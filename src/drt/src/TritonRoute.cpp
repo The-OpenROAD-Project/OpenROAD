@@ -66,7 +66,8 @@ TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       num_drvs_(-1),
       gui_(gui::Gui::get()),
-      distributed_(false)
+      distributed_(false),
+      pin_access_valid_(false)
 {
 }
 
@@ -139,9 +140,14 @@ void TritonRoute::setDebugPaMarkers(bool on)
   debug_->paMarkers = on;
 }
 
-void TritonRoute::setDebugPaCombining(bool on)
+void TritonRoute::setDebugPaEdge(bool on)
 {
-  debug_->paCombining = on;
+  debug_->paEdge = on;
+}
+
+void TritonRoute::setDebugPaCommit(bool on)
+{
+  debug_->paCommit = on;
 }
 
 int TritonRoute::getNumDRVs() const
@@ -194,7 +200,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   FlexDRGraphics::init();
 }
 
-void TritonRoute::init()
+void TritonRoute::init(bool pin_access_only)
 {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     USENONPREFTRACKS = false;
@@ -254,18 +260,25 @@ void TritonRoute::init()
 
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
+  } else if (pin_access_only) {
+    ENABLE_VIA_GEN = true;
   } else {
     ENABLE_VIA_GEN = false;
   }
-  parser.postProcess();
-  FlexPA pa(getDesign(), logger_);
-  pa.setDebug(debug_.get(), db_);
-  pa.main();
+  if (!pin_access_valid_) {
+    parser.postProcess();
+    FlexPA pa(getDesign(), logger_);
+    pa.setDebug(debug_.get(), db_);
+    pa.main();
+  }
   if (GUIDE_FILE != string("")) {
     parser.postProcessGuide(db_);
   }
   // GR-related
-  parser.initRPin();
+  if (!pin_access_valid_) {
+    parser.initRPin();
+  }
+  pin_access_valid_ = true;
 }
 
 void TritonRoute::prep()
@@ -328,6 +341,14 @@ int TritonRoute::main()
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
   return 0;
+}
+
+void TritonRoute::pinAccess()
+{
+  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  init(true);
+  io::Writer writer(getDesign(), logger_);
+  writer.updateDb(db_, true);
 }
 
 void TritonRoute::readParams(const string& fileName)

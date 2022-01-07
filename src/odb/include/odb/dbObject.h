@@ -105,6 +105,7 @@ enum dbObjectType
   dbModInstObj,
   dbGroupObj,
   dbGCellGridObj,
+  dbAccessPointObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

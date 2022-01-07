@@ -191,13 +191,14 @@ sta::define_cmd_args "detailed_route_debug" {
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
-    [-pa_combining]
+    [-pa_edge]
+    [-pa_commit]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -worker -iter -pin} \
-      flags {-dr -maze -pa -pa_markers -pa_combining -dump_dr}
+      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -206,7 +207,8 @@ proc detailed_route_debug { args } {
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
-  set pa_combining [info exists flags(-pa_combining)]
+  set pa_edge [info exists flags(-pa_edge)]
+  set pa_commit [info exists flags(-pa_commit)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -239,9 +241,42 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_combining
+      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit
 }
-
+sta::define_cmd_args "pin_access" {
+    [-db_process_node name]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-verbose level]
+}
+proc pin_access { args } {
+  sta::parse_key_args "pin_access" args \
+      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose} \
+      flags {}
+  sta::check_argc_eq0 "detailed_route_debug" $args
+  if [info exists keys(-db_process_node)] {
+    set db_process_node $keys(-db_process_node)
+  } else {
+    set db_process_node ""
+  }
+  if { [info exists keys(-bottom_routing_layer)] } {
+    set bottom_routing_layer $keys(-bottom_routing_layer)
+  } else {
+    set bottom_routing_layer ""
+  }
+  if { [info exists keys(-top_routing_layer)] } {
+    set top_routing_layer $keys(-top_routing_layer)
+  } else {
+    set top_routing_layer ""
+  }
+  if { [info exists keys(-verbose)] } {
+    sta::check_positive_integer "-verbose" $keys(-verbose)
+    set verbose $keys(-verbose)
+  } else {
+    set verbose 1
+  }
+  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
+}
 proc detailed_route_run_worker { args } {
   sta::check_argc_eq1 "detailed_route_run_worker" $args
   drt::run_worker_cmd $args

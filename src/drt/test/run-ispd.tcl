@@ -1,7 +1,7 @@
 #!/usr/bin/tclsh
 
 set run_dir "$::env(HOME)/ispd/runs"
-set parallel_jobs 4
+set parallel_jobs 2
 
 
 proc genFiles { run_dir ispd_year design drv } {

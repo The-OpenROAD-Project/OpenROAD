@@ -1281,6 +1281,12 @@
 	 	case odb::dbDirection::Value::WEST:
 			obj = Tcl_NewStringObj("WEST", -1);
 			break;
+	 	case odb::dbDirection::Value::UP:
+			obj = Tcl_NewStringObj("UP", -1);
+			break;
+	 	case odb::dbDirection::Value::DOWN:
+			obj = Tcl_NewStringObj("DOWN", -1);
+			break;
 	}
 	Tcl_SetObjResult(interp, obj);
 }
@@ -1296,6 +1302,10 @@
 		$1 = odb::dbDirection::Value::SOUTH;
 	} else if (strcasecmp(str, "WEST") == 0) {
 		$1 = odb::dbDirection::Value::WEST;
+	} else if (strcasecmp(str, "UP") == 0) {
+		$1 = odb::dbDirection::Value::UP;
+	} else if (strcasecmp(str, "DOWN") == 0) {
+		$1 = odb::dbDirection::Value::DOWN;
 	}
 }
 %typemap(typecheck) odb::dbDirection, dbDirection {
@@ -1311,6 +1321,10 @@
 		} 	else if (strcasecmp(str, "SOUTH") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "WEST") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "UP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "DOWN") == 0) {
 			found = true;
 		}
 	}

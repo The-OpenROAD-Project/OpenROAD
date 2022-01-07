@@ -43,6 +43,7 @@ namespace fr {
 namespace io {
 class Parser;
 }
+
 class frTechObject
 {
  public:
@@ -85,21 +86,6 @@ class frTechObject
       const
   {
     return viaRuleGenerates;
-  }
-  const std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-  getVia2ViaForbiddenLen() const
-  {
-    return via2ViaForbiddenLen;
-  }
-  const std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-  getViaForbiddenTurnLen() const
-  {
-    return viaForbiddenTurnLen;
-  }
-  const std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>&
-  getViaForbiddenPlanarLen() const
-  {
-    return viaForbiddenPlanarLen;
   }
 
   // setters
@@ -300,71 +286,76 @@ class frTechObject
   std::vector<std::unique_ptr<frConstraint>> uConstraints;
   std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
 
-  // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forgidden x
-  // dist range (for non-shape-based rule) via2ViaForbiddenLen[z][1], prev via
-  // is down, curr via is down, forgidden y dist range (for non-shape-based
-  // rule) via2ViaForbiddenLen[z][2], prev via is down, curr via is up,
-  // forgidden x dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][3], prev via is down, curr via is up,   forgidden y
-  // dist range (for non-shape-based rule) via2ViaForbiddenLen[z][4], prev via
-  // is up,   curr via is down, forgidden x dist range (for non-shape-based
-  // rule) via2ViaForbiddenLen[z][5], prev via is up,   curr via is down,
-  // forgidden y dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][6], prev via is up,   curr via is up,   forgidden x
-  // dist range (for non-shape-based rule) via2ViaForbiddenLen[z][7], prev via
-  // is up,   curr via is up,   forgidden y dist range (for non-shape-based
-  // rule)
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      via2ViaForbiddenLen;
+  template<typename T>
+  using ByLayer = std::vector<T>;
+
+  // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][1], prev via is down, curr via is down, forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][2], prev via is down, curr via is up,   forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][3], prev via is down, curr via is up,   forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][4], prev via is up,   curr via is down, forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][5], prev via is up,   curr via is down, forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][6], prev via is up,   curr via is up,   forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][7], prev via is up,   curr via is up,   forbidden y
+  // dist range (for non-shape-based rule)
+  ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
 
   // via2ViaForbiddenOverlapLen[z][0], prev via is down, curr via is down,
-  // forgidden x dist range (for shape-based rule)
+  // forbidden x dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][1], prev via is down, curr via is down,
-  // forgidden y dist range (for shape-based rule)
+  // forbidden y dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][2], prev via is down, curr via is up,
-  // forgidden x dist range (for shape-based rule)
+  // forbidden x dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][3], prev via is down, curr via is up,
-  // forgidden y dist range (for shape-based rule)
+  // forbidden y dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][4], prev via is up,   curr via is down,
-  // forgidden x dist range (for shape-based rule)
+  // forbidden x dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][5], prev via is up,   curr via is down,
-  // forgidden y dist range (for shape-based rule)
+  // forbidden y dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][6], prev via is up,   curr via is up,
-  // forgidden x dist range (for shape-based rule)
+  // forbidden x dist range (for shape-based rule)
   // via2ViaForbiddenOverlapLen[z][7], prev via is up,   curr via is up,
-  // forgidden y dist range (for shape-based rule)
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      via2ViaForbiddenOverlapLen;
+  // forbidden y dist range (for shape-based rule)
+  ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenOverlapLen;
 
   // viaForbiddenTurnLen[z][0], last via is down, forbidden x dist range before
-  // turn viaForbiddenTurnLen[z][1], last via is down, forbidden y dist range
-  // before turn viaForbiddenTurnLen[z][2], last via is up,   forbidden x dist
-  // range before turn viaForbiddenTurnLen[z][3], last via is up,   forbidden y
-  // dist range before turn
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      viaForbiddenTurnLen;
+  // turn
+  // viaForbiddenTurnLen[z][1], last via is down, forbidden y dist range before
+  // turn
+  // viaForbiddenTurnLen[z][2], last via is up,   forbidden x dist range before
+  // turn
+  // viaForbiddenTurnLen[z][3], last via is up,   forbidden y dist range before
+  // turn
+  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenTurnLen;
 
   // viaForbiddenPlanarLen[z][0], last via is down, forbidden x dist range
   // viaForbiddenPlanarLen[z][1], last via is down, forbidden y dist range
   // viaForbiddenPlanarLen[z][2], last via is up,   forbidden x dist range
   // viaForbiddenPlanarLen[z][3], last via is up,   forbidden y dist range
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      viaForbiddenPlanarLen;
+  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenPlanarLen;
 
   // line2LineForbiddenForbiddenLen[z][0], z shape, forbidden x dist range
   // line2LineForbiddenForbiddenLen[z][1], z shape, forbidden y dist range
   // line2LineForbiddenForbiddenLen[z][2], u shape, forbidden x dist range
   // line2LineForbiddenForbiddenLen[z][3], u shape, forbidden y dist range
-  std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>>
-      line2LineForbiddenLen;
+  ByLayer<std::array<ForbiddenRanges, 4>> line2LineForbiddenLen;
 
   // viaForbiddenPlanarThrough[z][0], forbidden planar through along x direction
-  // for down via viaForbiddenPlanarThrough[z][1], forbidden planar through
-  // along y direction for down via viaForbiddenPlanarThrough[z][2], forbidden
-  // planar through along x direction for up via
+  // for down via
+  // viaForbiddenPlanarThrough[z][1], forbidden planar through along y direction
+  // for down via
+  // viaForbiddenPlanarThrough[z][2], forbidden planar through along x direction
+  // for up via
   // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
   // for up via
-  std::vector<std::vector<bool>> viaForbiddenThrough;
+  ByLayer<std::array<bool, 4>> viaForbiddenThrough;
   bool hasVia2viaMinStep_ = false;
 
   // forbidden length table related utilities
@@ -398,8 +389,7 @@ class frTechObject
     return retIdx;
   }
 
-  bool isIncluded(const std::vector<std::pair<frCoord, frCoord>>& intervals,
-                  const frCoord len)
+  bool isIncluded(const ForbiddenRanges& intervals, const frCoord len)
   {
     bool included = false;
     for (auto& interval : intervals) {

@@ -53,6 +53,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     use_dbu_(use_dbu),
     dbu_(dbu),
     log_scale_(new QCheckBox(this)),
+    reverse_log_scale_(new QCheckBox(this)),
     show_numbers_(new QCheckBox(this)),
     show_legend_(new QCheckBox(this)),
     grid_x_size_(nullptr),
@@ -75,6 +76,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
   source_.makeAdditionalSetupOptions(this, form, [this]() { source_.redraw(); });
 
   form->addRow(tr("Log scale"), log_scale_);
+  form->addRow(tr("Reverse Log scale"), reverse_log_scale_);
 
   form->addRow(tr("Show numbers"), show_numbers_);
 
@@ -148,6 +150,11 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
           SIGNAL(stateChanged(int)),
           this,
           SLOT(updateScale(int)));
+
+  connect(reverse_log_scale_,
+          SIGNAL(stateChanged(int)),
+          this,
+          SLOT(updateReverseScale(int)));
 
   if (!use_dbu_) {
     connect(grid_x_size_,
@@ -250,6 +257,8 @@ void HeatMapSetup::updateWidgets()
   alpha_selector_->setValue(source_.getColorAlpha());
 
   log_scale_->setCheckState(source_.getLogScale() ? Qt::Checked : Qt::Unchecked);
+  reverse_log_scale_->setCheckState(source_.getReverseLogScale() ? Qt::Checked : Qt::Unchecked);
+  reverse_log_scale_->setEnabled(source_.getLogScale());
   show_numbers_->setCheckState(source_.getShowNumbers() ? Qt::Checked : Qt::Unchecked);
   show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked : Qt::Unchecked);
 }
@@ -262,6 +271,12 @@ void HeatMapSetup::destroyMap()
 void HeatMapSetup::updateScale(int option)
 {
   source_.setLogScale(option == Qt::Checked);
+  emit changed();
+}
+
+void HeatMapSetup::updateReverseScale(int option)
+{
+  source_.setReverseLogScale(option == Qt::Checked);
   emit changed();
 }
 
@@ -336,6 +351,7 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     draw_above_max_display_range_(true),
     color_alpha_(150),
     log_scale_(false),
+    reverse_log_(false),
     show_numbers_(false),
     show_legend_(false),
     map_(),
@@ -343,6 +359,8 @@ HeatMapDataSource::HeatMapDataSource(const std::string& name,
     setup_(nullptr),
     color_generator_(SpectrumGenerator(100.0))
 {
+  // ensure color map is initialized
+  updateMapColors();
 }
 
 void HeatMapDataSource::setLogger(utl::Logger* logger)
@@ -420,6 +438,14 @@ void HeatMapDataSource::setLogScale(bool scale)
   redraw();
 }
 
+void HeatMapDataSource::setReverseLogScale(bool reverse)
+{
+  reverse_log_ = reverse;
+  updateMapColors();
+
+  redraw();
+}
+
 void HeatMapDataSource::setShowNumbers(bool numbers)
 {
   show_numbers_ = numbers;
@@ -437,12 +463,14 @@ void HeatMapDataSource::setShowLegend(bool legend)
 const Painter::Color HeatMapDataSource::getColor(double value) const
 {
   if (log_scale_) {
-    if (value <= 0.0) {
-      return color_generator_.getColor(0.0, color_alpha_);
-    }
+    auto find_val = std::find_if(color_lower_bounds_.begin(), color_lower_bounds_.end(), [value](const double other) {
+      return other >= value;
+    });
+    const double color_index = std::distance(color_lower_bounds_.begin(), find_val);
+    return color_generator_.getColor(100.0 * color_index / color_generator_.getColorCount(), color_alpha_);
+  } else {
+    return color_generator_.getColor(value, color_alpha_);
   }
-
-  return color_generator_.getColor(value, color_alpha_);
 }
 
 void HeatMapDataSource::showSetup()
@@ -477,6 +505,7 @@ const Renderer::Settings HeatMapDataSource::getSettings() const
           {"GridY", grid_y_size_},
           {"Alpha", color_alpha_},
           {"LogScale", log_scale_},
+          {"ReverseLog", reverse_log_},
           {"ShowNumbers", show_numbers_},
           {"ShowLegend", show_legend_}};
 }
@@ -489,6 +518,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   Renderer::setSetting<double>(settings, "GridY", grid_y_size_);
   Renderer::setSetting<int>(settings, "Alpha", color_alpha_);
   Renderer::setSetting<bool>(settings, "LogScale", log_scale_);
+  Renderer::setSetting<bool>(settings, "ReverseLog", reverse_log_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
 
@@ -510,7 +540,8 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
     const double value_area = region.area();
     const double region_area = map_pt->rect.area();
 
-    combineMapData(map_pt->value, value, value_area, intersect_area, region_area);
+    combineMapData(map_pt->has_value, map_pt->value, value, value_area, intersect_area, region_area);
+    map_pt->has_value = true;
 
     markColorsInvalid();
   }
@@ -541,6 +572,7 @@ void HeatMapDataSource::setupMap()
 
       auto map_pt = std::make_shared<MapColor>();
       map_pt->rect = odb::Rect(xMin, yMin, xMax, yMax);
+      map_pt->has_value = false;
       map_pt->value = 0.0;
       map_pt->color = getColor(0);
 
@@ -608,7 +640,15 @@ void HeatMapDataSource::updateMapColors()
       if (i == color_generator_.getColorCount()) {
         start = display_range_min_;
       }
-      color_lower_bounds_[color_count - i] = start;
+      color_lower_bounds_[i] = start;
+    }
+
+    if (reverse_log_) {
+      for (size_t i = 0; i < color_lower_bounds_.size(); i++) {
+        color_lower_bounds_[i] = display_range_max_ - color_lower_bounds_[i] + display_range_min_;
+      }
+    } else {
+      std::reverse(color_lower_bounds_.begin(), color_lower_bounds_.end());
     }
   } else {
     const double step = (display_range_max_ - display_range_min_) / color_count;
@@ -640,15 +680,16 @@ double HeatMapDataSource::getRealRangeMaximumValue() const
 
 const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
 {
+  const int color_count = color_generator_.getColorCount();
   const int count = 6;
   std::vector<std::pair<int, double>> values;
-  const double index_incr = static_cast<double>(color_generator_.getColorCount()) / (count - 1);
+  const double index_incr = static_cast<double>(color_count) / (count - 1);
   const double linear_start = getRealRangeMinimumValue();
   const double linear_step = (getRealRangeMaximumValue() - linear_start) / (count - 1);
   for (int i = 0; i < count; i++) {
     int idx = std::round(i * index_incr);
-    if (idx > color_generator_.getColorCount()) {
-      idx = color_generator_.getColorCount();
+    if (idx > color_count) {
+      idx = color_count;
     }
     double value = color_lower_bounds_[idx];
     if (!log_scale_) {
@@ -722,6 +763,9 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   const odb::Rect& bounds = painter.getBounds();
 
   for (const auto& [bbox, map_pt] : datasource_.getMap()) {
+    if (!map_pt->has_value) { // value not set so nothing to draw
+      continue;
+    }
     if (!show_mins && map_pt->value < min_value) {
       continue;
     }
@@ -805,7 +849,9 @@ RoutingCongestionDataSource::RoutingCongestionDataSource() :
 {
 }
 
-void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
+void RoutingCongestionDataSource::makeAdditionalSetupOptions(QWidget* parent,
+                                                             QFormLayout* layout,
+                                                             const std::function<void(void)>& changed_callback)
 {
   QComboBox* congestion_ = new QComboBox(parent);
   congestion_->addItems({"All", "Horizontal", "Vertical"});
@@ -937,7 +983,12 @@ bool RoutingCongestionDataSource::populateMap()
   return true;
 }
 
-void RoutingCongestionDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+void RoutingCongestionDataSource::combineMapData(bool base_has_value,
+                                                 double& base,
+                                                 const double new_data,
+                                                 const double data_area,
+                                                 const double intersection_area,
+                                                 const double rect_area)
 {
   base += new_data * intersection_area / rect_area;
 }
@@ -1000,12 +1051,19 @@ bool PlacementDensityDataSource::populateMap()
   return true;
 }
 
-void PlacementDensityDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+void PlacementDensityDataSource::combineMapData(bool base_has_value,
+                                                double& base,
+                                                const double new_data,
+                                                const double data_area,
+                                                const double intersection_area,
+                                                const double rect_area)
 {
   base += new_data * intersection_area / rect_area;
 }
 
-void PlacementDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
+void PlacementDensityDataSource::makeAdditionalSetupOptions(QWidget* parent,
+                                                            QFormLayout* layout,
+                                                            const std::function<void(void)>& changed_callback)
 {
   QCheckBox* taps = new QCheckBox(parent);
   taps->setCheckState(include_taps_ ? Qt::Checked : Qt::Unchecked);
@@ -1118,14 +1176,11 @@ void PlacementDensityDataSource::inDbPostMoveInst(odb::dbInst*)
 ////////////
 
 PowerDensityDataSource::PowerDensityDataSource() :
-    HeatMapDataSource("Power Density", "Power", "PowerDensity"),
+    RealValueHeatMapDataSource("W", "Power Density", "Power", "PowerDensity"),
     sta_(nullptr),
     include_internal_(true),
     include_leakage_(true),
     include_switching_(true),
-    min_power_(0.0),
-    max_power_(0.0),
-    units_("W"),
     corner_(nullptr)
 {
   setIssueRedraw(false); // disable during initial setup
@@ -1180,105 +1235,19 @@ bool PowerDensityDataSource::populateMap()
   return true;
 }
 
-void PowerDensityDataSource::combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area)
+void PowerDensityDataSource::combineMapData(bool base_has_value,
+                                            double& base,
+                                            const double new_data,
+                                            const double data_area,
+                                            const double intersection_area,
+                                            const double rect_area)
 {
   base += (new_data / data_area) * intersection_area;
 }
 
-void PowerDensityDataSource::correctMapScale(HeatMapDataSource::Map& map)
-{
-  min_power_ = std::numeric_limits<double>::max();
-  max_power_ = std::numeric_limits<double>::min();
-
-  for (const auto& [bbox, map_pt] : map) {
-    min_power_ = std::min(min_power_, map_pt->value);
-    max_power_ = std::max(max_power_, map_pt->value);
-  }
-
-  auto round_data = [](double value, double scale) -> double {
-    const double precision = 1000.0;
-    double new_value = value * scale;
-    return std::round(new_value * precision) / precision;
-  };
-
-  double scale;
-  determineUnits(units_, scale);
-  max_power_ = round_data(max_power_, scale);
-  min_power_ = round_data(min_power_, scale);
-
-  for (auto& [bbox, map_pt] : map) {
-    map_pt->value = convertValueToPercent(round_data(map_pt->value, scale));
-  }
-}
-
-void PowerDensityDataSource::determineUnits(std::string& text, double& scale) const
-{
-  if (max_power_ > 1 || max_power_ == 0.0) {
-    text = "W";
-    scale = 1.0;
-  } else if (max_power_ > 1e-3) {
-    text = "mW";
-    scale = 1e3;
-  } else if (max_power_ > 1e-6) {
-    text = "\u03BCW"; // micro W
-    scale = 1e6;
-  } else if (max_power_ > 1e-9) {
-    text = "nW";
-    scale = 1e9;
-  } else {
-    text = "pW";
-    scale = 1e12;
-  }
-}
-
-const std::string PowerDensityDataSource::formatValue(double value, bool legend) const
-{
-  int digits = legend ? 3 : 2;
-
-  QString text;
-  text.setNum(convertPercentToValue(value), 'f', digits);
-  if (legend) {
-    text += QString::fromStdString(getValueUnits());
-  }
-  return text.toStdString();
-}
-
-const std::string PowerDensityDataSource::getValueUnits() const
-{
-  return units_;
-}
-
-double PowerDensityDataSource::getValueRange() const
-{
-  double range = max_power_ - min_power_;
-  if (range == 0.0) {
-    range = 1.0; // dummy numbers until power has been populated
-  }
-  return range;
-}
-
-double PowerDensityDataSource::convertValueToPercent(double value) const
-{
-  const double range = getValueRange();
-  const double offset = min_power_;
-
-  return 100.0 * (value - offset) / range;
-}
-
-double PowerDensityDataSource::convertPercentToValue(double percent) const
-{
-  const double range = getValueRange();
-  const double offset = min_power_;
-
-  return percent * range / 100.0 + offset;
-}
-
-double PowerDensityDataSource::getDisplayRangeIncrement() const
-{
-  return getValueRange() / 100.0;
-}
-
-void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback)
+void PowerDensityDataSource::makeAdditionalSetupOptions(QWidget* parent,
+                                                        QFormLayout* layout,
+                                                        const std::function<void(void)>& changed_callback)
 {
   ensureCorner();
 
@@ -1385,6 +1354,300 @@ void PowerDensityDataSource::ensureCorner()
 void PowerDensityDataSource::setCorner(const std::string& name)
 {
   corner_ = sta_->findCorner(name.c_str());
+}
+
+////////////
+
+IRDropDataSource::IRDropDataSource() :
+    RealValueHeatMapDataSource("V", "IR Drop", "IRDrop", "IRDrop"),
+    psm_(nullptr),
+    tech_(nullptr),
+    layer_(nullptr)
+{
+}
+
+void IRDropDataSource::setBlock(odb::dbBlock* block)
+{
+  HeatMapDataSource::setBlock(block);
+  if (block != nullptr) {
+    tech_ = block->getDb()->getTech();
+  }
+}
+
+double IRDropDataSource::getGridSizeMinimumValue() const
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr || psm_ == nullptr) {
+    return RealValueHeatMapDataSource::getGridSizeMinimumValue();
+  }
+
+  try {
+    const double resolution = psm_->getMinimumResolution();
+    double resolution_um = resolution / block->getDbUnitsPerMicron();
+    if (resolution_um > getGridSizeMaximumValue()) {
+      resolution_um = RealValueHeatMapDataSource::getGridSizeMinimumValue();
+    }
+    return resolution_um;
+  } catch (const std::runtime_error& /* e */) {
+    // psm is not setup up
+    return RealValueHeatMapDataSource::getGridSizeMinimumValue();
+  }
+}
+
+bool IRDropDataSource::populateMap()
+{
+  if (getBlock() == nullptr || psm_ == nullptr || tech_ == nullptr) {
+    return false;
+  }
+
+  ensureLayer();
+
+  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drops;
+  psm_->getIRDropMap(ir_drops);
+
+  if (ir_drops.empty()) {
+    return false;
+  }
+
+  // track min/max here to make it constant across all layers
+  double min = std::numeric_limits<double>::max();
+  double max = std::numeric_limits<double>::min();
+  for (const auto& [layer, drop_map] : ir_drops) {
+    for (const auto& [point, drop] : drop_map) {
+      min = std::min(min, drop);
+      max = std::max(max, drop);
+    }
+  }
+  setMinValue(min);
+  setMaxValue(max);
+
+  auto& ir_drop = ir_drops[layer_];
+  for (const auto& [point, drop] : ir_drop) {
+    addToMap({point, point}, drop);
+  }
+
+  return true;
+}
+
+void IRDropDataSource::determineMinMax(const HeatMapDataSource::Map& map)
+{
+  // do nothing handled in populateMap
+}
+
+void IRDropDataSource::combineMapData(bool base_has_value,
+                                      double& base,
+                                      const double new_data,
+                                      const double data_area,
+                                      const double intersection_area,
+                                      const double rect_area)
+{
+  if (!base_has_value) {
+    base = new_data;
+  } else {
+    base = std::max(base, new_data);
+  }
+}
+
+void IRDropDataSource::makeAdditionalSetupOptions(QWidget* parent,
+                                                  QFormLayout* layout,
+                                                  const std::function<void(void)>& changed_callback)
+{
+  if (tech_ == nullptr) {
+    return;
+  }
+
+  ensureLayer();
+
+  QComboBox* layers = new QComboBox(parent);
+  int layer_selection = 0;
+  for (auto* layer : tech_->getLayers()) {
+    if (layer->getRoutingLevel() == 0) {
+      continue;
+    }
+
+    layers->addItem(layer->getConstName());
+    if (layer_ == layer) {
+      layer_selection = layers->count() - 1;
+    }
+  }
+  layers->setCurrentIndex(layer_selection);
+  layout->addRow("Layer", layers);
+
+  QObject::connect(layers,
+                   &QComboBox::currentTextChanged,
+                   [this, changed_callback](const QString& layer) {
+                     setLayer(layer.toStdString());
+                     destroyMap();
+                     changed_callback();
+                   });
+}
+
+const Renderer::Settings IRDropDataSource::getSettings() const
+{
+  auto settings = HeatMapDataSource::getSettings();
+
+  if (layer_ != nullptr) {
+    settings["layer"] = std::string(layer_->getName());
+  }
+
+  return settings;
+}
+
+void IRDropDataSource::setSettings(const Renderer::Settings& settings)
+{
+  ensureLayer();
+
+  HeatMapDataSource::setSettings(settings);
+
+  std::string layer = "";
+  if (layer_ != nullptr) {
+    layer = layer_->getName();
+  }
+  Renderer::setSetting<std::string>(settings, "layer", layer);
+  setLayer(layer);
+}
+
+void IRDropDataSource::ensureLayer()
+{
+  if (layer_ != nullptr) {
+    return;
+  }
+
+  if (tech_ == nullptr) {
+    return;
+  }
+
+  layer_ = tech_->findRoutingLayer(1);
+}
+
+void IRDropDataSource::setLayer(const std::string& name)
+{
+  if (tech_ == nullptr) {
+    return;
+  }
+
+  layer_ = tech_->findLayer(name.c_str());
+}
+
+//////////
+
+RealValueHeatMapDataSource::RealValueHeatMapDataSource(const std::string& unit_suffix,
+                                                       const std::string& name,
+                                                       const std::string& short_name,
+                                                       const std::string& settings_group) :
+    HeatMapDataSource(name, short_name, settings_group),
+    unit_suffix_(unit_suffix),
+    units_(unit_suffix_),
+    min_(0.0),
+    max_(0.0),
+    scale_(1.0)
+{
+}
+
+void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
+{
+  determineMinMax(map);
+  determineUnits();
+  min_ = roundData(min_);
+  max_ = roundData(max_);
+
+  for (auto& [bbox, map_pt] : map) {
+    map_pt->value = convertValueToPercent(map_pt->value);
+  }
+
+  // reset since all data has been scaled by the appropriate amount
+  scale_ = 1.0;
+}
+
+double RealValueHeatMapDataSource::roundData(double value) const
+{
+  const double precision = 1000.0;
+  double new_value = value * scale_;
+  return std::round(new_value * precision) / precision;
+}
+
+void RealValueHeatMapDataSource::determineMinMax(const HeatMapDataSource::Map& map)
+{
+  min_ = std::numeric_limits<double>::max();
+  max_ = std::numeric_limits<double>::min();
+
+  for (const auto& [bbox, map_pt] : map) {
+    min_ = std::min(min_, map_pt->value);
+    max_ = std::max(max_, map_pt->value);
+  }
+}
+
+void RealValueHeatMapDataSource::determineUnits()
+{
+  const double range = max_ - min_;
+  if (range > 1.0 || range == 0) {
+    units_ = "";
+    scale_ = 1.0;
+  } else if (range > 1e-3) {
+    units_ = "m";
+    scale_ = 1e3;
+  } else if (range > 1e-6) {
+    units_ = "\u03BC"; // micro
+    scale_ = 1e6;
+  } else if (range > 1e-9) {
+    units_ = "n";
+    scale_ = 1e9;
+  } else if (range > 1e-12) {
+    units_ = "p";
+    scale_ = 1e12;
+  } else {
+    units_ = "f";
+    scale_ = 1e15;
+  }
+
+  units_ += unit_suffix_;
+}
+
+const std::string RealValueHeatMapDataSource::formatValue(double value, bool legend) const
+{
+  int digits = legend ? 3 : 2;
+
+  QString text;
+  text.setNum(convertPercentToValue(value), 'f', digits);
+  if (legend) {
+    text += QString::fromStdString(getValueUnits());
+  }
+  return text.toStdString();
+}
+
+const std::string RealValueHeatMapDataSource::getValueUnits() const
+{
+  return units_;
+}
+
+double RealValueHeatMapDataSource::getValueRange() const
+{
+  double range = max_ - min_;
+  if (range == 0.0) {
+    range = 1.0; // dummy numbers until drops has been populated
+  }
+  return range;
+}
+
+double RealValueHeatMapDataSource::convertValueToPercent(double value) const
+{
+  const double range = getValueRange();
+  const double offset = min_;
+
+  return roundData(100.0 * (value - offset) / range);
+}
+
+double RealValueHeatMapDataSource::convertPercentToValue(double percent) const
+{
+  const double range = getValueRange();
+  const double offset = min_;
+
+  return roundData(percent * range / 100.0 + offset);
+}
+
+double RealValueHeatMapDataSource::getDisplayRangeIncrement() const
+{
+  return getValueRange() / 100.0;
 }
 
 }  // namespace gui

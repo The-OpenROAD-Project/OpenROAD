@@ -58,21 +58,21 @@ namespace triton_route {
 
 struct ParamStruct
 {
-  const std::string guideFile;
-  const std::string outputGuideFile;
-  const std::string outputMazeFile;
-  const std::string outputDrcFile;
-  const std::string outputCmapFile;
-  const std::string dbProcessNode;
-  bool enableViaGen;
-  int drouteEndIter;
-  const std::string viaInPinBottomLayer;
-  const std::string viaInPinTopLayer;
-  int orSeed;
-  double orK;
-  const std::string bottomRoutingLayer;
-  const std::string topRoutingLayer;
-  int verbose;
+  std::string guideFile;
+  std::string outputGuideFile;
+  std::string outputMazeFile;
+  std::string outputDrcFile;
+  std::string outputCmapFile;
+  std::string dbProcessNode;
+  bool enableViaGen = false;
+  int drouteEndIter = -1;
+  std::string viaInPinBottomLayer;
+  std::string viaInPinTopLayer;
+  int orSeed = 0;
+  double orK = 0;
+  std::string bottomRoutingLayer;
+  std::string topRoutingLayer;
+  int verbose = 1;
 };
 
 class TritonRoute
@@ -89,6 +89,7 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
+  void pinAccess();
 
   int getNumDRVs() const;
 
@@ -104,7 +105,8 @@ class TritonRoute
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
-  void setDebugPaCombining(bool on = true);
+  void setDebugPaEdge(bool on = true);
+  void setDebugPaCommit(bool on = true);
   void reportConstraints();
 
   void readParams(const std::string& fileName);
@@ -128,8 +130,9 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
+  bool pin_access_valid_;
 
-  void init();
+  void init(bool pin_access = false);
   void prep();
   void gr();
   void ta();

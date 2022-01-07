@@ -64,7 +64,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
     : max_degree_(0),
       db_(db),
       gui_(gui),
-      allow_overflow_(false),
       overflow_iterations_(0),
       num_nets_(0),
       layer_orientation_(0),
@@ -88,6 +87,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       num_valid_nets_(0),
       num_layers_(0),
       total_overflow_(0),
+      has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
       via_cost_(0),
@@ -109,6 +109,11 @@ FastRouteCore::~FastRouteCore()
 void FastRouteCore::clear()
 {
   deleteComponents();
+  num_adjust_ = 0;
+  v_capacity_ = 0;
+  h_capacity_ = 0;
+  total_overflow_ = 0;
+  has_2D_overflow_ = false;
 }
 
 void FastRouteCore::deleteComponents()
@@ -164,10 +169,6 @@ void FastRouteCore::deleteComponents()
   cost_hvh_test_.clear();
   cost_v_test_.clear();
   cost_tb_test_.clear();
-
-  num_adjust_ = 0;
-  v_capacity_ = 0;
-  h_capacity_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -793,7 +794,6 @@ NetRouteMap FastRouteCore::run()
   int L = 0;
   int VIA = 2;
   const int Ripvalue = -1;
-  int ripupTH3D = 10;
   const bool goingLV = true;
   const bool noADJ = false;
   const int thStep1 = 10;
@@ -807,8 +807,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
-
-  const clock_t t1 = clock();
 
   via_cost_ = 0;
   gen_brk_RSMT(false, false, false, false, noADJ);
@@ -1144,7 +1142,7 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  bool has_2D_overflow = total_overflow_ > 0;
+  has_2D_overflow_ = total_overflow_ > 0;
 
   if (minofl > 0) {
     debugPrint(logger_,
@@ -1174,19 +1172,8 @@ NetRouteMap FastRouteCore::run()
 
   newLA();
 
-  const clock_t t2 = clock();
-  const float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
-
   costheight_ = 3;
   via_cost_ = 1;
-
-  if (gen_brk_Time < 60) {
-    ripupTH3D = 15;
-  } else if (gen_brk_Time < 120) {
-    ripupTH3D = 18;
-  } else {
-    ripupTH3D = 20;
-  }
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
@@ -1198,11 +1185,8 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, ripupTH3D, layer_orientation_);
-
-    if (gen_brk_Time > 120) {
-      mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
-    }
+    mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
+    mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
   }
 
   fillVIA();
@@ -1216,18 +1200,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   NetRouteMap routes = getRoutes();
-
   net_eo_.clear();
-
-  if (has_2D_overflow && !allow_overflow_) {
-    logger_->error(GRT, 118, "Routing congestion too high.");
-  }
-
-  if (total_overflow_ > 0) {
-    if (verbose_)
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
-  }
-
   return routes;
 }
 
@@ -1239,11 +1212,6 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
-}
-
-void FastRouteCore::setAllowOverflow(bool allow)
-{
-  allow_overflow_ = allow;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()
