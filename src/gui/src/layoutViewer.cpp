@@ -2301,6 +2301,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.drawRect(rubber_band_.normalized());
   }
 
+  painter.end();
   // painting is done, okay to update outputs again
   output_widget_->bufferOutputs(false);
 }

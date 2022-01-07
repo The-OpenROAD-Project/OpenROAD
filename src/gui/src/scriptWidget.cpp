@@ -439,8 +439,8 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 
-    // process queue, if main thread will process new text, otherwise there is nothing to process from this thread.
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    // process widget event queue, if main thread will process new text, otherwise there is nothing to process from this thread.
+    QCoreApplication::sendPostedEvents(widget_);
   }
 
   void flush_() override {}
