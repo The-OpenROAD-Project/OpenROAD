@@ -363,6 +363,7 @@ void MainWindow::init(sta::dbSta* sta, psm::PDNSim* psm)
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
+  gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   // renderers
