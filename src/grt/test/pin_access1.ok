@@ -12,6 +12,31 @@
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO ODB-0134] Finished DEF file: clock_route.def
+[INFO DRT-0167] List of default vias:
+  Layer mcon
+    default via: L1M1_PR
+  Layer via
+    default via: M1M2_PR
+  Layer via2
+    default via: M2M3_PR
+  Layer via3
+    default via: M3M4_PR
+  Layer via4
+    default via: M4M5_PR
+[INFO DRT-0168] Init region query.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] li1 shape region query size = 5262.
+[INFO DRT-0033] mcon shape region query size = 2602.
+[INFO DRT-0033] met1 shape region query size = 706.
+[INFO DRT-0033] via shape region query size = 0.
+[INFO DRT-0033] met2 shape region query size = 0.
+[INFO DRT-0033] via2 shape region query size = 0.
+[INFO DRT-0033] met3 shape region query size = 1.
+[INFO DRT-0033] via3 shape region query size = 0.
+[INFO DRT-0033] met4 shape region query size = 0.
+[INFO DRT-0033] via4 shape region query size = 0.
+[INFO DRT-0033] met5 shape region query size = 0.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
@@ -41,24 +66,24 @@ met4       Vertical         8664          4625          46.62%
 met5       Horizontal       2888          1443          50.03%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 126
-[INFO GRT-0198] Via related Steiner nodes: 8
+[INFO GRT-0197] Via related to pin nodes: 122
+[INFO GRT-0198] Via related Steiner nodes: 11
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 147
-[INFO GRT-0112] Final usage 3D: 606
+[INFO GRT-0111] Final number of vias: 145
+[INFO GRT-0112] Final usage 3D: 597
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              5430            70            1.29%             0 /  0 /  0
-met2              6475            62            0.96%             0 /  0 /  0
+met1              5430            72            1.33%             0 /  0 /  0
+met2              6475            57            0.88%             0 /  0 /  0
 met3              6142            21            0.34%             0 /  0 /  0
 met4              4625            12            0.26%             0 /  0 /  0
 met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24115           165            0.68%             0 /  0 /  0
+Total            24115           162            0.67%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1814 um
+[INFO GRT-0018] Total wirelength: 1778 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

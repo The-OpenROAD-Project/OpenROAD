@@ -165,6 +165,7 @@ check_placement -verbose
 ################################################################
 # Global routing
 
+pin_access
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
   -congestion_iterations 100

@@ -399,7 +399,7 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
                                           const bool isZShape,
                                           const bool isCurrDirX)
 {
-  vector<pair<frCoord, frCoord>> forbiddenRanges;
+  ForbiddenRanges forbiddenRanges;
   prep_lineForbiddenLen_minSpc(lNum, isZShape, isCurrDirX, forbiddenRanges);
 
   // merge ranges
@@ -423,7 +423,7 @@ void FlexRP::prep_lineForbiddenLen_minSpc(
     const frLayerNum& lNum,
     const bool isZShape,
     const bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
 
@@ -491,7 +491,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
     return;
   }
 
-  vector<pair<frCoord, frCoord>> forbiddenRanges;
+  ForbiddenRanges forbiddenRanges;
   prep_viaForbiddenPlanarLen_minStep(lNum, viaDef, isCurrDirX, forbiddenRanges);
 
   // merge forbidden ranges
@@ -515,7 +515,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_minStep(
     const frLayerNum& lNum,
     frViaDef* viaDef,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   return;
 }
@@ -567,7 +567,7 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
 
   auto tech = getDesign()->getTech();
 
-  vector<pair<frCoord, frCoord>> forbiddenRanges;
+  ForbiddenRanges forbiddenRanges;
   prep_viaForbiddenTurnLen_minSpc(
       lNum, viaDef, isCurrDirX, forbiddenRanges, ndr);
 
@@ -594,7 +594,7 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(
     const frLayerNum& lNum,
     frViaDef* viaDef,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges,
+    ForbiddenRanges& forbiddenRanges,
     frNonDefaultRule* ndr)
 {
   if (!viaDef) {
@@ -698,7 +698,7 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
 {
   auto tech = getDesign()->getTech();
   // non-shape-based rule
-  vector<pair<frCoord, frCoord>> forbiddenRanges;
+  ForbiddenRanges forbiddenRanges;
   prep_via2viaForbiddenLen_minSpc(
       lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges, ndr);
   prep_via2viaForbiddenLen_minimumCut(
@@ -759,7 +759,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -873,7 +873,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -999,7 +999,7 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -1049,7 +1049,7 @@ void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -1161,7 +1161,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges)
+    ForbiddenRanges& forbiddenRanges)
 {
   if (!viaDef1 || !viaDef2) {
     return;
@@ -1314,7 +1314,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(
     frViaDef* viaDef1,
     frViaDef* viaDef2,
     bool isCurrDirX,
-    vector<pair<frCoord, frCoord>>& forbiddenRanges,
+    ForbiddenRanges& forbiddenRanges,
     frNonDefaultRule* ndr)
 {
   if (!viaDef1 || !viaDef2) {

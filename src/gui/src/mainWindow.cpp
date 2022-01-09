@@ -348,7 +348,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   }
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, psm::PDNSim* psm)
 {
   // Setup timing widget
   timing_widget_->init(sta);
@@ -367,6 +367,7 @@ void MainWindow::init(sta::dbSta* sta)
 
   // renderers
   power_density_data_.setSTA(sta);
+  ir_drop_data_.setPSM(psm);
   for (auto* heat_map : getHeatMaps()) {
     gui->registerRenderer(heat_map->getRenderer());
   }
@@ -1165,7 +1166,8 @@ const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
   return {
     &routing_congestion_data_,
     &placement_density_data_,
-    &power_density_data_
+    &power_density_data_,
+    &ir_drop_data_
   };
 }
 
@@ -1208,6 +1210,10 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
         settings[option] = *s;
+      } if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      } if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
       } else {
         logger_->error(utl::GUI, 60, "{} must be a boolean", option);
       }

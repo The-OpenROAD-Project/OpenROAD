@@ -24,6 +24,8 @@ record_tests {
   pd2
   pd3
   pd4
+  pin_access1
+  pin_access2
   pre_routed1
   region_adjustment
   repair_antennas1

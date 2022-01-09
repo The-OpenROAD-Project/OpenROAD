@@ -58,6 +58,8 @@
 #include "sta/Corner.hh"
 #include "utl/Logger.h"
 
+#include "psm/pdnsim.h"
+
 namespace gui {
 class HeatMapRenderer;
 class HeatMapSetup;
@@ -70,15 +72,9 @@ class HeatMapDataSource
  public:
   struct MapColor {
     odb::Rect rect;
+    bool has_value;
     double value;
     Painter::Color color;
-  };
-  struct ColorBand {
-    double lower;
-    Painter::Color lower_color;
-    double upper;
-    Painter::Color upper_color;
-    Painter::Color center_color;
   };
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
@@ -89,7 +85,7 @@ class HeatMapDataSource
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource() {}
 
-  void setBlock(odb::dbBlock* block) { block_ = block; }
+  virtual void setBlock(odb::dbBlock* block) { block_ = block; }
   void setLogger(utl::Logger* logger);
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
 
@@ -100,7 +96,9 @@ class HeatMapDataSource
 
   // setup
   void showSetup();
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) {}
+  virtual void makeAdditionalSetupOptions(QWidget* parent,
+                                          QFormLayout* layout,
+                                          const std::function<void(void)>& changed_callback) {}
   virtual const std::string formatValue(double value, bool legend) const;
 
   // settings
@@ -127,6 +125,8 @@ class HeatMapDataSource
 
   void setLogScale(bool scale);
   bool getLogScale() const { return log_scale_; }
+  void setReverseLogScale(bool reverse_log);
+  bool getReverseLogScale() const { return reverse_log_; }
 
   void setShowNumbers(bool numbers);
   bool getShowNumbers() const { return show_numbers_; }
@@ -143,8 +143,8 @@ class HeatMapDataSource
   void setGridSizes(double x, double y);
   virtual double getGridXSize() const { return grid_x_size_; }
   virtual double getGridYSize() const { return grid_y_size_; }
-  double getGridSizeMinimumValue() const { return 1.0; }
-  double getGridSizeMaximumValue() const { return 100.0; }
+  virtual double getGridSizeMinimumValue() const { return 1.0; }
+  virtual double getGridSizeMaximumValue() const { return 100.0; }
 
   // map controls
   void ensureMap();
@@ -167,7 +167,12 @@ class HeatMapDataSource
   void setupMap();
   virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
-  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) = 0;
+  virtual void combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
@@ -204,6 +209,7 @@ class HeatMapDataSource
   bool draw_above_max_display_range_;
   int color_alpha_;
   bool log_scale_;
+  bool reverse_log_;
   bool show_numbers_;
   bool show_legend_;
 
@@ -236,6 +242,7 @@ class HeatMapSetup : public QDialog
   void updateShowMinRange(int show);
   void updateShowMaxRange(int show);
   void updateScale(int option);
+  void updateReverseScale(int option);
   void updateAlpha(int alpha);
   void updateRange();
   void updateGridSize();
@@ -249,6 +256,7 @@ class HeatMapSetup : public QDialog
   int dbu_;
 
   QCheckBox* log_scale_;
+  QCheckBox* reverse_log_scale_;
   QCheckBox* show_numbers_;
   QCheckBox* show_legend_;
 
@@ -299,7 +307,9 @@ class RoutingCongestionDataSource : public HeatMapDataSource
   RoutingCongestionDataSource();
   ~RoutingCongestionDataSource() {}
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
+  virtual void makeAdditionalSetupOptions(QWidget* parent,
+                                          QFormLayout* layout,
+                                          const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
@@ -310,7 +320,12 @@ class RoutingCongestionDataSource : public HeatMapDataSource
 
  protected:
   virtual bool populateMap() override;
-  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
+  virtual void combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area) override;
 
  private:
   bool show_all_;
@@ -326,7 +341,9 @@ class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlock
   PlacementDensityDataSource();
   ~PlacementDensityDataSource() {}
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
+  virtual void makeAdditionalSetupOptions(QWidget* parent,
+                                          QFormLayout* layout,
+                                          const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
@@ -346,7 +363,12 @@ class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlock
 
  protected:
   virtual bool populateMap() override;
-  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
+  virtual void combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area) override;
 
   virtual bool destroyMapOnNotVisible() const override { return true; }
 
@@ -356,13 +378,14 @@ class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlock
   bool include_io_;
 };
 
-class PowerDensityDataSource : public HeatMapDataSource
+class RealValueHeatMapDataSource : public HeatMapDataSource
 {
  public:
-  PowerDensityDataSource();
-  ~PowerDensityDataSource() {}
-
-  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  RealValueHeatMapDataSource(const std::string& unit_suffix,
+                             const std::string& name,
+                             const std::string& short_name,
+                             const std::string& settings_group = "");
+  ~RealValueHeatMapDataSource() {}
 
   virtual const std::string formatValue(double value, bool legend) const override;
   virtual const std::string getValueUnits() const override;
@@ -370,16 +393,52 @@ class PowerDensityDataSource : public HeatMapDataSource
   virtual double convertPercentToValue(double percent) const override;
   virtual double getDisplayRangeIncrement() const override;
 
-  virtual void makeAdditionalSetupOptions(QWidget* parent, QFormLayout* layout, const std::function<void(void)>& changed_callback) override;
+ protected:
+  void determineUnits();
+
+  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  virtual void determineMinMax(const HeatMapDataSource::Map& map);
+
+  void setMinValue(double value) { min_ = value; }
+  double getMinValue() const { return min_; }
+  void setMaxValue(double value) { max_ = value; }
+  double getMaxValue() const { return max_; }
+
+  double roundData(double value) const;
+
+ private:
+  const std::string unit_suffix_;
+  std::string units_;
+  double min_;
+  double max_;
+  double scale_;
+
+  double getValueRange() const;
+};
+
+class PowerDensityDataSource : public RealValueHeatMapDataSource
+{
+ public:
+  PowerDensityDataSource();
+  ~PowerDensityDataSource() {}
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  virtual void makeAdditionalSetupOptions(QWidget* parent,
+                                          QFormLayout* layout,
+                                          const std::function<void(void)>& changed_callback) override;
 
   virtual const Renderer::Settings getSettings() const override;
   virtual void setSettings(const Renderer::Settings& settings) override;
 
  protected:
   virtual bool populateMap() override;
-  virtual void combineMapData(double& base, const double new_data, const double data_area, const double intersection_area, const double rect_area) override;
-
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  virtual void combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area) override;
 
  private:
   sta::dbSta* sta_;
@@ -388,17 +447,50 @@ class PowerDensityDataSource : public HeatMapDataSource
   bool include_leakage_;
   bool include_switching_;
 
-  double min_power_;
-  double max_power_;
-  std::string units_;
-
   sta::Corner* corner_;
-
-  void determineUnits(std::string& text, double& scale) const;
-  double getValueRange() const;
 
   void ensureCorner();
   void setCorner(const std::string& name);
+};
+
+class IRDropDataSource : public RealValueHeatMapDataSource
+{
+ public:
+  IRDropDataSource();
+  ~IRDropDataSource() {}
+
+  void setPSM(psm::PDNSim* psm) { psm_ = psm; }
+
+  virtual void setBlock(odb::dbBlock* block) override;
+
+  virtual double getGridSizeMinimumValue() const override;
+
+  virtual void makeAdditionalSetupOptions(QWidget* parent,
+                                          QFormLayout* layout,
+                                          const std::function<void(void)>& changed_callback) override;
+
+  virtual const Renderer::Settings getSettings() const override;
+  virtual void setSettings(const Renderer::Settings& settings) override;
+
+ protected:
+  virtual bool populateMap() override;
+  virtual void combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area) override;
+
+  virtual void determineMinMax(const HeatMapDataSource::Map& map) override;
+
+ private:
+  psm::PDNSim* psm_;
+  odb::dbTech* tech_;
+
+  odb::dbTechLayer* layer_;
+
+  void ensureLayer();
+  void setLayer(const std::string& name);
 };
 
 }  // namespace gui
