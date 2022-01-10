@@ -188,7 +188,13 @@ class Painter
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
 
+  // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
+
+  // Draw an 'X' with coordinates in DBU with the current pen.  The
+  // crossing point of the X is at (x,y). The size is the width and
+  // height of the X.
+  virtual void drawX(int x, int y, int size) = 0;
 
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 

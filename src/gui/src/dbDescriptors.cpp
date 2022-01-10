@@ -1692,10 +1692,7 @@ void DbItermAccessPointDescriptor::highlight(std::any object,
   odb::dbTransform xform({x, y});
   xform.apply(pt);
   const int shape_size = 100;
-  painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
-                   {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
-  painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
-                   {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+  painter.drawX(pt.x(), pt.y(), shape_size);
 }
 
 Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any object) const
