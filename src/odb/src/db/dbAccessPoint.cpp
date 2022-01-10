@@ -168,8 +168,8 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   int8_t low, high;
   stream >> low;
   stream >> high;
-  obj.low_type_ = (dbAccessType::Value) low;
-  obj.high_type_ = (dbAccessType::Value) high;
+  obj.low_type_ = static_cast<dbAccessType::Value>(low);
+  obj.high_type_ = static_cast<dbAccessType::Value>(high);
   // User Code End >>
   return stream;
 }
@@ -184,8 +184,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.accesses_;
   stream << obj.iterms_;
   // User Code Begin <<
-  stream << obj.low_type_;
-  stream << obj.high_type_;
+  int8_t low = static_cast<int8_t>(obj.low_type_);
+  int8_t high = static_cast<int8_t>(obj.high_type_);
+  stream << low;
+  stream << high;
   // User Code End <<
   return stream;
 }
