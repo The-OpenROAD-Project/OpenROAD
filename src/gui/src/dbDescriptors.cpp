@@ -1673,10 +1673,9 @@ bool DbItermAccessPointDescriptor::getBBox(std::any object, odb::Rect& bbox) con
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
-  odb::dbTransform xform;
   int x, y;
   iterm_ap.iterm->getInst()->getLocation(x, y);
-  xform.setOffset({x, y});
+  odb::dbTransform xform({x, y});
   xform.apply(pt);
   bbox = {pt, pt};
   return true;
@@ -1688,10 +1687,9 @@ void DbItermAccessPointDescriptor::highlight(std::any object,
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
-  odb::dbTransform xform;
   int x, y;
   iterm_ap.iterm->getInst()->getLocation(x, y);
-  xform.setOffset({x, y});
+  odb::dbTransform xform({x, y});
   xform.apply(pt);
   const int shape_size = 100;
   painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
