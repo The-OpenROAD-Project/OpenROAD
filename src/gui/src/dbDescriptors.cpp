@@ -1716,10 +1716,11 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any obje
     directions += dir.getString();
   }
 
-  Properties props({{"low type", ap->getLowType().getString()},
-                    {"high type", ap->getHighType().getString()},
-                    {"directions", directions},
-                    {"layer", ap->getLayer()->getName()}
+  auto gui = Gui::get();
+  Properties props({{"Low Type", ap->getLowType().getString()},
+                    {"High Type", ap->getHighType().getString()},
+                    {"Directions", directions},
+                    {"Layer", gui->makeSelected(ap->getLayer())}
                     });
   return props;
 }
