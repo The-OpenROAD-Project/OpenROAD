@@ -2730,9 +2730,9 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
   auto layer = db_tech->findLayer(
       tech->getLayer(ap->getLayerNum())->getName().c_str());
   db_ap->setLayer(layer);
-  db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
+  db_ap->setLowType((odb::dbAccessType::Value) ap->getType(
       true));  // this works because both enums have the same order
-  db_ap->setHighType((odb::dbAccessPoint::AccessType) ap->getType(false));
+  db_ap->setHighType((odb::dbAccessType::Value) ap->getType(false));
 }
 
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)

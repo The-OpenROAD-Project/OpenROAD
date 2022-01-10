@@ -1650,24 +1650,6 @@ bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-static const char*
-getAccessTypeName(odb::dbAccessPoint::AccessType type)
-{
-  switch(type) {
-  case odb::dbAccessPoint::OnGrid:
-    return "OnGrid";
-  case odb::dbAccessPoint::HalfGrid:
-    return "HalfGrid";
-  case odb::dbAccessPoint::Center:
-    return "Center";
-  case odb::dbAccessPoint::EncOpt:
-    return "EncOpt";
-  case odb::dbAccessPoint::NearbyGrid:
-    return "NearbyGrid";
-  }
-  return "Unknown";
-}
-
 DbItermAccessPointDescriptor::DbItermAccessPointDescriptor(odb::dbDatabase* db) :
     db_(db)
 {
@@ -1677,8 +1659,8 @@ std::string DbItermAccessPointDescriptor::getName(std::any object) const
 {
   auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
   auto ap = iterm_ap.ap;
-  std::string name(getAccessTypeName(ap->getLowType()));
-  name += std::string("/") + getAccessTypeName(ap->getHighType());
+  std::string name(ap->getLowType().getString());
+  name += std::string("/") + ap->getHighType().getString();
   return name;
 }
 
@@ -1734,8 +1716,8 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any obje
     directions += dir.getString();
   }
 
-  Properties props({{"low type", getAccessTypeName(ap->getLowType())},
-                    {"high type", getAccessTypeName(ap->getHighType())},
+  Properties props({{"low type", ap->getLowType().getString()},
+                    {"high type", ap->getHighType().getString()},
                     {"directions", directions},
                     {"layer", ap->getLayer()->getName()}
                     });

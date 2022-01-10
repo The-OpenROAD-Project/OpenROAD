@@ -77,12 +77,6 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (bpin_ != rhs.bpin_)
     return false;
 
-  if (low_type_ != rhs.low_type_)
-    return false;
-
-  if (high_type_ != rhs.high_type_)
-    return false;
-
   // User Code Begin ==
   // User Code End ==
   return true;
@@ -107,12 +101,6 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   if (bpin_ >= rhs.bpin_)
     return false;
 
-  if (low_type_ >= rhs.low_type_)
-    return false;
-
-  if (high_type_ >= rhs.high_type_)
-    return false;
-
   // User Code Begin <
   // User Code End <
   return true;
@@ -129,8 +117,6 @@ void _dbAccessPoint::differences(dbDiff& diff,
   DIFF_FIELD(master_);
   DIFF_FIELD(mpin_);
   DIFF_FIELD(bpin_);
-  DIFF_FIELD(low_type_);
-  DIFF_FIELD(high_type_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -144,8 +130,6 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(master_);
   DIFF_OUT_FIELD(mpin_);
   DIFF_OUT_FIELD(bpin_);
-  DIFF_OUT_FIELD(low_type_);
-  DIFF_OUT_FIELD(high_type_);
 
   // User Code Begin Out
   // User Code End Out
@@ -165,8 +149,6 @@ _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
   master_ = r.master_;
   mpin_ = r.mpin_;
   bpin_ = r.bpin_;
-  low_type_ = r.low_type_;
-  high_type_ = r.high_type_;
   // User Code Begin CopyConstructor
   iterms_ = r.iterms_;
   // User Code End CopyConstructor
@@ -181,10 +163,13 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.mpin_;
   stream >> obj.bpin_;
   stream >> obj.accesses_;
-  stream >> obj.low_type_;
-  stream >> obj.high_type_;
   stream >> obj.iterms_;
   // User Code Begin >>
+  int8_t low, high;
+  stream >> low;
+  stream >> high;
+  obj.low_type_ = (dbAccessType::Value) low;
+  obj.high_type_ = (dbAccessType::Value) high;
   // User Code End >>
   return stream;
 }
@@ -197,10 +182,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.mpin_;
   stream << obj.bpin_;
   stream << obj.accesses_;
-  stream << obj.low_type_;
-  stream << obj.high_type_;
   stream << obj.iterms_;
   // User Code Begin <<
+  stream << obj.low_type_;
+  stream << obj.high_type_;
   // User Code End <<
   return stream;
 }
@@ -267,30 +252,30 @@ void dbAccessPoint::getAccesses(std::vector<dbDirection>& tbl) const
   }
 }
 
-void dbAccessPoint::setLowType(AccessType low_type_)
+void dbAccessPoint::setLowType(dbAccessType low_type_)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
   obj->low_type_ = low_type_;
 }
 
-dbAccessPoint::AccessType dbAccessPoint::getLowType() const
+dbAccessType dbAccessPoint::getLowType() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  return dbAccessPoint::AccessType(obj->low_type_);
+  return obj->low_type_;
 }
 
-void dbAccessPoint::setHighType(AccessType high_type_)
+void dbAccessPoint::setHighType(dbAccessType high_type_)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
   obj->high_type_ = high_type_;
 }
 
-dbAccessPoint::AccessType dbAccessPoint::getHighType() const
+dbAccessType dbAccessPoint::getHighType() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  return dbAccessPoint::AccessType(obj->high_type_);
+  return obj->high_type_;
 }
 
 void dbAccessPoint::setAccess(bool access, dbDirection dir)

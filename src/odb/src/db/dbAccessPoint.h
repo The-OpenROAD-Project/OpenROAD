@@ -71,8 +71,8 @@ class _dbAccessPoint : public _dbObject
   dbId<_dbMPin> mpin_;
   dbId<_dbBPin> bpin_;
   std::array<bool, 6> accesses_;
-  int8_t low_type_;
-  int8_t high_type_;
+  dbAccessType::Value low_type_;
+  dbAccessType::Value high_type_;
   dbVector<dbId<_dbITerm>>
       iterms_;  // list of iterms that prefer this access point
 
