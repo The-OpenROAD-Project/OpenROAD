@@ -2302,6 +2302,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.drawRect(rubber_band_.normalized());
   }
 
+  painter.end();
   // painting is done, okay to update outputs again
   output_widget_->bufferOutputs(false);
 }
@@ -2734,7 +2735,7 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
   if (block_ != nullptr) {
     const double dbu_per_micron = block_->getDbUnitsPerMicron();
 
-    cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
+    cmds.push_back(fmt::format("gui::center_at {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
   }
 }
 
