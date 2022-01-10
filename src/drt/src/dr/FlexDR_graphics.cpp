@@ -332,8 +332,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (checkDisplayControl(maze_search_visible_) &&
         !points_by_layer_.empty()) {
     for (Point& pt : points_by_layer_[layerNum]) {
-      painter.drawLine({pt.x() - 20, pt.y() - 20}, {pt.x() + 20, pt.y() + 20});
-      painter.drawLine({pt.x() - 20, pt.y() + 20}, {pt.x() + 20, pt.y() - 20});
+      painter.drawX(pt.x(), pt.y(), 20);
     }
   }
   // Draw graphs
@@ -598,10 +597,7 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
       for (auto& ap : pin->getAccessPatterns()) {
         Point pt;
         ap->getPoint(pt);
-        painter.drawLine({pt.x() - 100, pt.y() - 100},
-                         {pt.x() + 100, pt.y() + 100});
-        painter.drawLine({pt.x() - 100, pt.y() + 100},
-                         {pt.x() + 100, pt.y() - 100});
+        painter.drawX(pt.x(), pt.y(), 100);
       }
     }
   }

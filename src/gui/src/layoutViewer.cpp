@@ -223,6 +223,13 @@ class GuiPainter : public Painter
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
 
+  void drawX(int x, int y, int size) override
+  {
+    const int o = size / 2;
+    painter_->drawLine(x - o, y - o, x + o, y + o);
+    painter_->drawLine(x - o, y + o, x + o, y - o);
+  }
+
   const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text)
   {
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
@@ -1994,10 +2001,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter)
         xform.setOffset({x, y});
         xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
         xform.apply(pt);
-        painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
-                         {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
-        painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
-                         {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+        painter.drawX(pt.x(), pt.y(), shape_size);
       }
     }
   }
@@ -2009,10 +2013,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter)
               = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
           painter.setPen(color, /* cosmetic */ true);
           Point pt = ap->getPoint();
-          painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
-                           {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
-          painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
-                           {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+          painter.drawX(pt.x(), pt.y(), shape_size);
         }
       }
     }

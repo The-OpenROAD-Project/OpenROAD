@@ -152,8 +152,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(color, /* cosmetic */ true);
 
     Point pt = ap.getPoint();
-    painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
-    painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
+    painter.drawX(pt.x(), pt.y(), 50);
   }
 }
 

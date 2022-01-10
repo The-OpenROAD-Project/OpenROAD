@@ -285,4 +285,35 @@ class DbTechLayerDescriptor : public Descriptor
   odb::dbDatabase* db_;
 };
 
+// The ap doesn't know its location as it is associated the master and
+// needs the iterm to get a location
+struct DbItermAccessPoint
+{
+  odb::dbAccessPoint* ap;
+  odb::dbITerm* iterm;
+};
+
+class DbItermAccessPointDescriptor : public Descriptor
+{
+ public:
+  DbItermAccessPointDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
 };  // namespace gui
