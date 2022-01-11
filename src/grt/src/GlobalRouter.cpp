@@ -66,6 +66,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "heatMap.h"
 
 namespace grt {
 
@@ -96,7 +97,8 @@ GlobalRouter::GlobalRouter()
       perturbation_amount_(1),
       sta_(nullptr),
       db_(nullptr),
-      block_(nullptr)
+      block_(nullptr),
+      heatmap_(nullptr)
 {
 }
 
@@ -110,6 +112,9 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   db_ = openroad_->getDb();
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = openroad_->getSta();
+
+  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
+  heatmap_->registerHeatMap();
 }
 
 void GlobalRouter::clear()
@@ -220,6 +225,7 @@ void GlobalRouter::globalRoute()
 void GlobalRouter::updateDbCongestion()
 {
   fastroute_->updateDbCongestion();
+  heatmap_->update();
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)

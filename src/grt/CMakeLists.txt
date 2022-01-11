@@ -54,6 +54,7 @@ target_sources(grt
     src/Net.cpp
     src/Pin.cpp
     src/MakeWireParasitics.cpp
+    src/heatMap.cpp
 )
 
 target_include_directories(grt
