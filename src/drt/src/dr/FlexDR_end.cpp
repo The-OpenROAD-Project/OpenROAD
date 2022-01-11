@@ -217,8 +217,7 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
           || viaPoint.y() == gridBBox.yMax())) {
     return;
   }
-  if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
-      && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
+  if (gridBBox.intersects(viaPoint)) {
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
   }
@@ -236,8 +235,7 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
           || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
     return;
   }
-  if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
+  if (gridBBox.intersects(origin)) {
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }
