@@ -66,6 +66,7 @@
 #include "db_sta/MakeDbSta.hh"
 
 #include "dbSdcNetwork.hh"
+#include "heatMap.h"
 
 namespace ord {
 
@@ -228,7 +229,8 @@ dbSta::dbSta() :
   Sta(),
   db_(nullptr),
   db_cbk_(nullptr),
-  path_renderer_(nullptr)
+  path_renderer_(nullptr),
+  power_density_heatmap_(nullptr)
 {
 }
 
@@ -250,6 +252,9 @@ dbSta::init(Tcl_Interp *tcl_interp,
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   evalTclInit(tcl_interp, dbSta_tcl_inits);
+
+  power_density_heatmap_ = std::make_unique<PowerDensityDataSource>(this, logger);
+  power_density_heatmap_->registerHeatMap();
 }
 
 void
