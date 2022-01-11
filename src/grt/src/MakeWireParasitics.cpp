@@ -151,7 +151,7 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
                  "{} -> {} {}u layer={} r={} c={}",
                  parasitics_->name(n1),
                  parasitics_->name(n2),
-                 static_cast<int>(dbuToMeters(wire_length_dbu) * 1e+6),
+                 dbuToMeters(wire_length_dbu) * 1e+6,
                  route.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
@@ -190,6 +190,18 @@ void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
         = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
     float res, cap;
     layerRC(wire_length_dbu, layer, res, cap);
+    sta::Units* units = sta_->units();
+    debugPrint(logger_,
+               GRT,
+               "est_rc",
+               1,
+               "{} -> {} {}u layer={} r={} c={}",
+               parasitics_->name(grid_node),
+               parasitics_->name(pin_node),
+               dbuToMeters(wire_length_dbu) * 1e+6,
+               layer,
+               units->resistanceUnit()->asString(res),
+               units->capacitanceUnit()->asString(cap));
 
     parasitics_->incrCap(pin_node, cap / 2.0, analysis_point_);
     parasitics_->makeResistor(
