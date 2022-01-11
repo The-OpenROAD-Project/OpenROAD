@@ -55,6 +55,7 @@ class Logger;
 } // namespace utl
 
 namespace gui {
+class HeatMapDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -675,6 +676,10 @@ class Gui
     unregisterDescriptor(typeid(T));
   }
 
+  void registerHeatMap(HeatMapDataSource* heatmap);
+  void unregisterHeatMap(HeatMapDataSource* heatmap);
+  const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+
   // returns the Gui singleton
   static Gui* get();
 
@@ -697,6 +702,8 @@ class Gui
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>> descriptors_;
+  // Heatmaps
+  std::set<HeatMapDataSource*> heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;

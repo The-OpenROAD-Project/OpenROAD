@@ -93,6 +93,11 @@ Renderer::~Renderer()
 {
 }
 
+SpectrumGenerator::SpectrumGenerator(double scale) :
+    scale_(scale)
+{
+}
+
 bool Renderer::checkDisplayControl(const std::string& /* name */)
 {
   return false;
