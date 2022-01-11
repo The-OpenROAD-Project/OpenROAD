@@ -333,9 +333,9 @@ void FlexDR::initFromTA()
               *(static_cast<frPathSeg*>(connFig.get())));
           Point bp, ep;
           static_cast<frPathSeg*>(ps.get())->getPoints(bp, ep);
-          if (ep.x() - bp.x() + ep.y() - bp.y() == 1) {
-            ;  // skip TA dummy segment
-          } else {
+
+          // skip TA dummy segment
+          if (Point::manhattanDistance(ep, bp) != 1) {
             net->addShape(std::move(ps));
           }
         } else {
@@ -371,8 +371,8 @@ void FlexDR::initGCell2BoundaryPin()
           ps->getPoints(bp, ep);
           layerNum = ps->getLayerNum();
           // skip TA dummy segment
-          if (ep.x() - bp.x() + ep.y() - bp.y() == 1
-              || ep.x() - bp.x() + ep.y() - bp.y() == 0) {
+          auto mdist = Point::manhattanDistance(ep, bp);
+          if (mdist == 1 || mdist == 0) {
             continue;
           }
           Point idx1, idx2;
