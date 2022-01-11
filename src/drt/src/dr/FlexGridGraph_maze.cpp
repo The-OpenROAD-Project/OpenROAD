@@ -55,8 +55,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   auto pathWidth = getTech()->getLayer(lNum)->getWidth();
   Point currPt;
   getPoint(currPt, gridX, gridY);
-  frCoord currDist
-      = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+  frCoord currDist = Point::manhattanDistance(currPt, centerPt);
 
   // vlength calculation
   frCoord currVLengthX = 0;
@@ -870,8 +869,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
     auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
     frCoord fakeArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
     getPoint(currPt, idx.x(), idx.y());
-    frCoord currDist
-        = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+    frCoord currDist = Point::manhattanDistance(currPt, centerPt);
     FlexWavefrontGrid currGrid(
         idx.x(),
         idx.y(),

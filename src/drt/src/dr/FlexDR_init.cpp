@@ -1813,7 +1813,7 @@ void FlexDRWorker::initNets_boundaryArea()
             if (bp == psBp && (!getRouteBox().intersects(psEp))) {
               // calc area
               obj->getStyle(segStyle);
-              currArea += (abs(psEp.x() - psBp.x()) + abs(psEp.y() - psBp.y()))
+              currArea += Point::manhattanDistance(psEp, psBp)
                           * segStyle.getWidth();
               results2.clear();
               queryBox2 = Rect(psEp, psEp);
@@ -1844,7 +1844,7 @@ void FlexDRWorker::initNets_boundaryArea()
             if ((!getRouteBox().intersects(psBp)) && bp == psEp) {
               // calc area
               obj->getStyle(segStyle);
-              currArea += (abs(psEp.x() - psBp.x()) + abs(psEp.y() - psBp.y()))
+              currArea += Point::manhattanDistance(psEp, psBp)
                           * segStyle.getWidth();
               results2.clear();
               queryBox2 = Rect(psEp, psEp);
