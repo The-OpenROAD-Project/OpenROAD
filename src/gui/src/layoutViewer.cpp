@@ -185,10 +185,9 @@ class GuiPainter : public Painter
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
     if (roundX > 0 || roundY > 0)
-      painter_->drawRoundRect(
-          QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
-          roundX,
-          roundY);
+      painter_->drawRoundedRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
+                              rect.dx() * (roundX / 200.0f), // convert roundX and roundY from percent to radius
+                              rect.dy() * (roundY / 200.0f));
     else
       painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
   }
