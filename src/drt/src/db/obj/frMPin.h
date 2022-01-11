@@ -1,4 +1,3 @@
-/* Authors: Lutong Wang and Bangqi Xu */
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
@@ -26,54 +25,42 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_RPIN_H_
-#define _FR_RPIN_H_
+#ifndef _FR_MPIN_H_
+#define _FR_MPIN_H_
 
-#include "db/infra/frBox.h"
-#include "db/obj/frBlockObject.h"
-#include "frBaseTypes.h"
-// #include "db/obj/frAccess.h"
+#include <iostream>
+
+#include "db/obj/frPin.h"
 
 namespace fr {
-class frNet;
-class frAccessPoint;
-// serve the same purpose as drPin and grPin, but on fr level
-class frRPin : public frBlockObject
+class frMTerm;
+
+class frMPin : public frPin
 {
  public:
   // constructors
-  frRPin() : frBlockObject(), term(nullptr), accessPoint(nullptr), net(nullptr)
-  {
-  }
-  // setters
-  void setFrTerm(frBlockObject* in) { term = in; }
-  void setAccessPoint(frAccessPoint*& in) { accessPoint = std::move(in); }
-  void addToNet(frNet* in) { net = in; }
+  frMPin() : frPin(), term_(nullptr) {}
+  frMPin(const frMPin& in) : frPin(in), term_(in.term_) {}
+  frMPin(const frMPin& in, const dbTransform& xform)
+      : frPin(in, xform), term_(in.term_) {}
+
   // getters
-  bool hasFrTerm() const { return (term); }
-  frBlockObject* getFrTerm() const { return term; }
-  frAccessPoint* getAccessPoint() const { return accessPoint; }
-  frNet* getNet() const { return net; }
+  frMTerm* getTerm() const { return term_; }
 
-  // utility
-  void getBBox(Rect& in);
-  frLayerNum getLayerNum();
-
+  // setters
+  // cannot have setterm, must be available when creating
+  void setTerm(frMTerm* in) { term_ = in; }
   // others
-  frBlockObjectEnum typeId() const override { return frcRPin; }
+  frBlockObjectEnum typeId() const override { return frcMPin; }
 
  protected:
-  frBlockObject* term;         // either frBTerm or frInstTerm
-  frAccessPoint* accessPoint;  // pref AP for frBTerm and frInstTerm
-  frNet* net;
+  frMTerm* term_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    (ar) & boost::serialization::base_object<frBlockObject>(*this);
-    (ar) & term;
-    (ar) & accessPoint;
-    (ar) & net;
+    (ar) & boost::serialization::base_object<frPin>(*this);
+    (ar) & term_;
   }
 
   friend class boost::serialization::access;

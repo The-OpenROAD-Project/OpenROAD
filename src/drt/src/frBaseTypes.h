@@ -86,10 +86,12 @@ enum frEndStyleEnum
 enum frBlockObjectEnum
 {
   frcNet,
-  frcTerm,
+  frcBTerm,
+  frcMTerm,
   frcInst,
   frcVia,
-  frcPin,
+  frcBPin,
+  frcMPin,
   frcInstTerm,
   frcRect,
   frcPolygon,
@@ -100,6 +102,7 @@ enum frBlockObjectEnum
   frcBlockage,
   frcLayerBlockage,
   frcBlock,
+  frcMaster,
   frcBoundary,
   frcInstBlockage,
   frcAccessPattern,

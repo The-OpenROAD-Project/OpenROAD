@@ -44,6 +44,7 @@ class frDesign;
 class frPin;
 class frInstTerm;
 class frBlock;
+class frMaster;
 class frAccessPoint;
 class frVia;
 class frMarker;
@@ -58,7 +59,11 @@ class FlexPAGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startPin(frPin* pin,
+  void startPin(frBPin* pin,
+                frInstTerm* inst_term,
+                set<frInst*, frBlockObjectComp>* instClass);
+                
+  void startPin(frMPin* pin,
                 frInstTerm* inst_term,
                 set<frInst*, frBlockObjectComp>* instClass);
 

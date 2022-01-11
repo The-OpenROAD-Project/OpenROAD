@@ -55,16 +55,16 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
   }
 }
 
-void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
-    map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-        refBlock2PinLayerRange)
+void FlexPA::initUniqueInstance_master2PinLayerRange(
+    map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+        master2PinLayerRange)
 {
   int numLayers = design_->getTech()->getLayers().size();
-  for (auto& uRefBlock : design_->getRefBlocks()) {
-    auto refBlock = uRefBlock.get();
+  for (auto& uMaster : design_->getMasters()) {
+    auto master = uMaster.get();
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
-    for (auto& uTerm : refBlock->getTerms()) {
+    for (auto& uTerm : master->getTerms()) {
       if (uTerm.get()->getType().isSupply()) {
         continue;
       }
@@ -94,13 +94,13 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(
       logger_->warn(DRT,
                     66,
                     "instAnalysis skips {} due to no pin shapes.",
-                    refBlock->getName());
+                    master->getName());
       continue;
     }
     maxLayerNum = std::min(maxLayerNum + 2, numLayers);
-    refBlock2PinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
+    master2PinLayerRange[master] = make_tuple(minLayerNum, maxLayerNum);
   }
-  // cout <<"  refBlock pin layer range done" <<endl;
+  // cout <<"  master pin layer range done" <<endl;
 }
 
 bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
@@ -120,8 +120,8 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 // must init all unique, including filler, macro, etc. to ensure frInst
 // pinAccessIdx is active
 void FlexPA::initUniqueInstance_main(
-    const map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-        refBlock2PinLayerRange,
+    const map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+        master2PinLayerRange,
     const vector<frTrackPattern*>& prefTrackPatterns)
 {
   vector<frInst*> ndrInsts;
@@ -138,7 +138,7 @@ void FlexPA::initUniqueInstance_main(
     inst->getBoundaryBBox(boundaryBBox);
     auto orient = inst->getOrient();
     auto& [minLayerNum, maxLayerNum]
-        = refBlock2PinLayerRange.find(inst->getRefBlock())->second;
+        = master2PinLayerRange.find(inst->getMaster())->second;
     offset.clear();
     for (auto& tp : prefTrackPatterns) {
       if (tp->getLayerNum() >= minLayerNum
@@ -157,7 +157,7 @@ void FlexPA::initUniqueInstance_main(
         offset.push_back(tp->getTrackSpacing());
       }
     }
-    refBlockOT2Insts[inst->getRefBlock()][orient][offset].insert(inst.get());
+    masterOT2Insts[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
     // if (VERBOSE > 0) {
     //   if (cnt < 100000) {
@@ -174,7 +174,7 @@ void FlexPA::initUniqueInstance_main(
 
   cnt = 0;
   frString orientName;
-  for (auto& [refBlock, orientMap] : refBlockOT2Insts) {
+  for (auto& [master, orientMap] : masterOT2Insts) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
       for (auto& [vec, insts] : offsetMap) {
@@ -220,11 +220,11 @@ void FlexPA::initUniqueInstance()
   vector<frTrackPattern*> prefTrackPatterns;
   getPrefTrackPatterns(prefTrackPatterns);
 
-  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
-      refBlock2PinLayerRange;
-  initUniqueInstance_refBlock2PinLayerRange(refBlock2PinLayerRange);
+  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+      master2PinLayerRange;
+  initUniqueInstance_master2PinLayerRange(master2PinLayerRange);
 
-  initUniqueInstance_main(refBlock2PinLayerRange, prefTrackPatterns);
+  initUniqueInstance_main(master2PinLayerRange, prefTrackPatterns);
 }
 
 void FlexPA::initPinAccess()

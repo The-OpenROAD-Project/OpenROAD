@@ -193,10 +193,15 @@ class frVia : public frRef
    */
   bool hasPin() const override
   {
-    return (owner_) && (owner_->typeId() == frcPin);
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
   }
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }

@@ -156,13 +156,13 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 }
 
-void FlexPAGraphics::startPin(frPin* pin,
+void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
 
-  frTerm* term = pin->getTerm();
+  frMTerm* term = pin->getTerm();
   std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
                      + term->getName();
   if (!settings_->pinName.empty()) {
@@ -185,6 +185,13 @@ void FlexPAGraphics::startPin(frPin* pin,
     gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
     gui_->pause();
   }
+}
+
+void FlexPAGraphics::startPin(frBPin* pin,
+                              frInstTerm* inst_term,
+                              set<frInst*, frBlockObjectComp>* instClass)
+{
+  // TODO
 }
 
 static const char* to_string(frAccessPointEnum e)
