@@ -961,7 +961,6 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
                  box.yMax(),
                  box.xMax() + eolWithin,
                  box.yMax() + eolSpace);
-    // if (!isInitDR()) {
     modEolSpacingCost_helper(testBox, z, type, 0);
     if (!isSkipVia) {
       modEolSpacingCost_helper(testBox, z, type, 1);
@@ -1093,12 +1092,12 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   }
 }
 
-/*inline*/ void FlexDRWorker::modCutSpacingCost(const Rect& box,
-                                                frMIdx z,
-                                                ModCostType type,
-                                                bool isBlockage,
-                                                int avoidI,
-                                                int avoidJ)
+void FlexDRWorker::modCutSpacingCost(const Rect& box,
+                                     frMIdx z,
+                                     ModCostType type,
+                                     bool isBlockage,
+                                     int avoidI,
+                                     int avoidJ)
 {
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
@@ -1576,7 +1575,6 @@ void FlexDRWorker::route_queue()
   // init marker cost
   route_queue_addMarkerCost();
   // init reroute queue
-  // route_queue_init_queue(rerouteNets);
   route_queue_init_queue(rerouteQueue);
 
   if (graphics_ && !rerouteQueue.empty()) {
@@ -3133,7 +3131,6 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                                                    bool epPatchStyle)
 {
   bool isPatchHorz;
-  // bool isLeftClean = true;
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   frCoord patchLength = frCoord(ceil(1.0 * gapArea / patchWidth
                                      / getTech()->getManufacturingGrid()))

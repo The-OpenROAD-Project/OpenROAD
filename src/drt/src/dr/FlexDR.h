@@ -501,7 +501,6 @@ class FlexDRWorker
   bool needRecheck_;
   bool skipRouting_;
   int ripupMode_;
-  // drNetOrderingEnum netOrderingMode;
   frUInt4 workerDRCCost_, workerMarkerCost_;
   // used in init route as gr boundary pin
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>

@@ -86,7 +86,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (end.y() > routeBox.yMin()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt());
           ps->setStyle(style);
         }
 
@@ -113,7 +113,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           frSegStyle style;
           pathSeg->getStyle(style);
           style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt());
           ps->setStyle(style);
         }
 
@@ -129,10 +129,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           boundPts.insert(make_pair(boundPt, lNum));
         }
       }
-      // std::cout << "  removingPathSeg " << &(*pathSeg) << " (" << begin.x()
-      // << ", " << begin.y()
-      //           << ") -- (" << end.x() << ", " << end.y() << ") " <<
-      //           drNet->getName() <<  "\n" << std::flush;
       regionQuery->removeDRObj(pathSeg);  // delete rq
       net->removeShape(pathSeg);          // delete segment
     }
@@ -146,8 +142,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         return;
     }
     // if cross routeBBox
-    bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
-        begin.x() <= routeBox.xMax());  // orthogonal to wire
+    bool condition2 = begin.x() <= routeBox.xMax();  // orthogonal to wire
     if (routeBox.yMin() <= begin.y() && begin.y() <= routeBox.yMax()
         && !(begin.x() > routeBox.xMax() || end.x() < routeBox.xMin())) {
       // left seg to ext
@@ -160,7 +155,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (end.x() > routeBox.xMin()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt());
           ps->setStyle(style);
         }
 
@@ -187,7 +182,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           frSegStyle style;
           pathSeg->getStyle(style);
           style
-              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
+              .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt());
           ps->setStyle(style);
         }
 
@@ -539,8 +534,6 @@ void FlexDRWorker::end(frDesign* design)
     return;
     // do not write back if current clip is worse than input
   } else if (getRipupMode() == 0 && getBestNumMarkers() > getInitNumMarkers()) {
-    // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
-    // <<getNumMarkers() <<endl;
     return;
   } else if (getDRIter() && getRipupMode() == 1
              && getBestNumMarkers() > 5 * getInitNumMarkers()) {

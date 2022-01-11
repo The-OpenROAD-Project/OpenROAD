@@ -654,7 +654,6 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
                                           frViaDef* viaDef2)
 {
   if (!(viaDef1 && viaDef2)) {
-    // cout <<"hehehehehe" <<endl;
     return 0;
   }
 
@@ -1751,9 +1750,6 @@ void FlexDR::searchRepair(int iter,
       if (dist_on_)
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
-        // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
-        //   cout << "@@@ debug: " << i << " " << j << endl;
-        // }
         // set boundary pin
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
         worker->setDRIter(0, bp);

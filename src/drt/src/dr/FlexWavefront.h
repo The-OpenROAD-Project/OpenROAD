@@ -37,7 +37,6 @@
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "global.h"
-//#include <boost/pool/pool_alloc.hpp>
 
 namespace fr {
 class FlexWavefrontGrid
@@ -68,7 +67,7 @@ class FlexWavefrontGrid
                     frCoord tLengthIn,
                     frCoord distIn,
                     frCost pathCostIn,
-                    frCost costIn /*, frDirEnum preTurnDirIn*/)
+                    frCost costIn)
       : xIdx_(xIn),
         yIdx_(yIn),
         zIdx_(zIn),
