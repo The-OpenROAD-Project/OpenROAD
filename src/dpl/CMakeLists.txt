@@ -48,6 +48,7 @@ target_sources(dpl
   PRIVATE
     src/Opendp.cpp
     src/dbToOpendp.cpp
+    src/dbHelpers.cpp
     src/MakeOpendp.cpp
     src/Grid.cpp
     src/CheckPlacement.cpp

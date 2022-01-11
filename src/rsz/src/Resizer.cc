@@ -37,7 +37,7 @@
 
 #include "rsz/SteinerTree.hh"
 
-#include "ord/OpenRoad.hh"
+#include "dpl/dbHelpers.h"
 #include "gui/gui.h"
 #include "utl/Logger.h"
 
@@ -86,7 +86,6 @@ using std::pair;
 using std::sqrt;
 
 using utl::RSZ;
-using ord::closestPtInRect;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -95,6 +94,7 @@ using odb::dbOrientType;
 using odb::dbMPin;
 using odb::dbBox;
 using odb::dbMasterType;
+using odb::closestPtInRect;
 
 using sta::evalTclInit;
 using sta::makeBlockSta;

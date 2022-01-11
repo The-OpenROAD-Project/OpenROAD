@@ -44,9 +44,9 @@
 #include <cstdlib>
 #include <limits>
 
+#include "dpl/dbHelpers.h"
 #include "Graphics.h"
 #include "utl/Logger.h"
-#include "ord/OpenRoad.hh"
 
 //#define ODP_DEBUG
 
@@ -60,7 +60,7 @@ using std::sort;
 using std::string;
 using std::vector;
 
-using ord::closestPtInRect;
+using odb::closestPtInRect;
 using utl::DPL;
 
 static bool

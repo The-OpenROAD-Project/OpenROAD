@@ -46,7 +46,6 @@
 
 #include "Graphics.h"
 #include "utl/Logger.h"
-#include "ord/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
 
@@ -151,7 +150,7 @@ void
 Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = ord::getCore(block_);
+  block_->getCoreArea(core_);
 }
 
 void
