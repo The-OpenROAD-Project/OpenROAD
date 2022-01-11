@@ -2408,13 +2408,6 @@ void GlobalRouter::computeCapacities(int max_layer)
 
 void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
 {
-  int min_spacing = 0;
-  int min_width;
-  int track_step_x = -1;
-  int track_step_y = -1;
-  int init_track_x, num_tracks_x;
-  int init_track_y, num_tracks_y;
-
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
       break;
@@ -2423,10 +2416,16 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
     odb::dbTrackGrid* track = block_->findTrackGrid(tech_layer);
 
     if (track == nullptr) {
-      logger_->error(
-          GRT, 90, "Track for layer {} not found.", tech_layer->getName());
+      logger_->error(GRT, 90, "Track for layer {} not found.",
+                     tech_layer->getName());
     }
 
+    int min_spacing = 0;
+    int min_width = 0;
+    int track_step_x = -1;
+    int track_step_y = -1;
+    int init_track_x, num_tracks_x;
+    int init_track_y, num_tracks_y;
     if (track->getNumGridPatternsX() > 0) {
       track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     }
