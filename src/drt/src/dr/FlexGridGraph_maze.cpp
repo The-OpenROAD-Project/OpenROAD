@@ -150,29 +150,10 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx2,
                                     const Point& centerPt)
 {
-  // N
-  if (isExpandable(currGrid, frDirEnum::N)) {
-    expand(currGrid, frDirEnum::N, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // E
-  if (isExpandable(currGrid, frDirEnum::E)) {
-    expand(currGrid, frDirEnum::E, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // S
-  if (isExpandable(currGrid, frDirEnum::S)) {
-    expand(currGrid, frDirEnum::S, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // W
-  if (isExpandable(currGrid, frDirEnum::W)) {
-    expand(currGrid, frDirEnum::W, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // U
-  if (isExpandable(currGrid, frDirEnum::U)) {
-    expand(currGrid, frDirEnum::U, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // D
-  if (isExpandable(currGrid, frDirEnum::D)) {
-    expand(currGrid, frDirEnum::D, dstMazeIdx1, dstMazeIdx2, centerPt);
+  for (const auto dir: frDirEnumAll) {
+    if (isExpandable(currGrid, dir)) {
+      expand(currGrid, dir, dstMazeIdx1, dstMazeIdx2, centerPt);
+    }
   }
 }
 

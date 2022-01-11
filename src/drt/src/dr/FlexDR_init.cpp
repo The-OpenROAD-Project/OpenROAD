@@ -2315,40 +2315,10 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
         }
       }
 
-      if (ap->hasValidAccess(frDirEnum::W)) {
-        if (!isStdCellPin) {
+      if (!isStdCellPin) {
+        for (const auto dir : frDirEnumPlanar) {
           initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::W,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::E)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::E,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::S)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::S,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::N)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::N,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
+            mi, dir, planarGridBloatNumWidth * defaultWidth, isAddPathCost);
         }
       }
     }
@@ -2363,40 +2333,12 @@ void FlexDRWorker::initMazeCost_ap()
     for (auto& pin : net->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
         ap->getMazeIdx(mi);
-        if (!ap->hasValidAccess(frDirEnum::E)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::E);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::E);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::W)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::W);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::W);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::N)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::N);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::N);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::S)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::S);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::S);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::U)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::U);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::U);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::D)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::D);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::D);
+        for (const auto dir : frDirEnumAll) {
+          if (!ap->hasValidAccess(dir)) {
+            gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), dir);
+          } else {
+            gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), dir);
+          }
         }
 
         if (ap->hasAccessViaDef(frDirEnum::U)) {

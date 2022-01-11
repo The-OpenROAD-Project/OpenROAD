@@ -245,6 +245,15 @@ enum class frDirEnum
   U = 6
 };
 
+static constexpr frDirEnum frDirEnumAll[] = {
+  frDirEnum::D, frDirEnum::S, frDirEnum::W,
+  frDirEnum::E, frDirEnum::N, frDirEnum::U
+};
+
+static constexpr frDirEnum frDirEnumPlanar[] = {
+  frDirEnum::S, frDirEnum::W, frDirEnum::E, frDirEnum::N
+};
+
 enum class AccessPointTypeEnum
 {
   Ideal,
