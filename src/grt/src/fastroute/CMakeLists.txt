@@ -60,3 +60,9 @@ target_link_libraries(FastRoute4.1
     odb
     Boost::boost
 )
+
+# False positive? inside Boost
+# error: ‘void* __builtin_memset(void*, int, long unsigned int)’ offset 0 is out of the bounds [0, 0] [-Werror=array-bounds]
+target_compile_options(FastRoute4.1
+  PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-array-bounds>
+)
