@@ -33,9 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dbHelpers.h"
+#include "dpl/dbHelpers.h"
+
+#include <algorithm>
 
 namespace odb {
+
+using std::min;
+using std::max;
 
 // Return the point inside rect that is closest to pt.
 Point
