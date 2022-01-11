@@ -49,14 +49,17 @@ void FlexGridGraph::initGrids(
   zCoords_.clear();
   zHeights_.clear();
   layerRouteDirections_.clear();
+  xCoords_.reserve(xMap.size());
   for (auto& [k, v] : xMap) {
     xCoords_.push_back(k);
   }
+  yCoords_.reserve(yMap.size());
   for (auto& [k, v] : yMap) {
     yCoords_.push_back(k);
   }
   frCoord zHeight = 0;
   // vector<frCoord> via2viaMinLenTmp(4, 0);
+  zCoords_.reserve(zMap.size());
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
