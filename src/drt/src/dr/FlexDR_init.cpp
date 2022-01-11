@@ -1743,18 +1743,10 @@ void FlexDRWorker::initNets_numPinsIn()
         firstAP->getPoint(pt);
       }
 
-      if (pt.x() < x1) {
-        x1 = pt.x();
-      }
-      if (pt.x() > x2) {
-        x2 = pt.x();
-      }
-      if (pt.y() < y1) {
-        y1 = pt.y();
-      }
-      if (pt.y() > y2) {
-        y2 = pt.y();
-      }
+      x1 = std::min(x1, pt.getX());
+      x2 = std::max(x2, pt.getX());
+      y1 = std::min(y1, pt.getY());
+      y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
       Rect box = Rect(x1, y1, x2, y2);
