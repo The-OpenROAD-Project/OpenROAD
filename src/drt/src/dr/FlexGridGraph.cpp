@@ -69,20 +69,23 @@ void FlexGridGraph::initGrids(
   // initialize all grids
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
+  int capacity = xDim * yDim * zDim;
+
   nodes_.clear();
-  nodes_.resize(xDim * yDim * zDim, Node());
+  nodes_.resize(capacity, Node());
   // new
   prevDirs_.clear();
   srcs_.clear();
   dsts_.clear();
-  prevDirs_.resize(xDim * yDim * zDim * 3, 0);
-  srcs_.resize(xDim * yDim * zDim, 0);
-  dsts_.resize(xDim * yDim * zDim, 0);
+
+  prevDirs_.resize(capacity * 3, 0);
+  srcs_.resize(capacity, 0);
+  dsts_.resize(capacity, 0);
   guides_.clear();
   if (followGuide) {
-    guides_.resize(xDim * yDim * zDim, 0);
+    guides_.resize(capacity, 0);
   } else {
-    guides_.resize(xDim * yDim * zDim, 1);
+    guides_.resize(capacity, 1);
   }
 }
 
