@@ -51,8 +51,6 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   // get cost
   nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
   nextPathCost = getNextPathCost(currGrid, dir);
-  auto lNum = getLayerNum(currGrid.z());
-  auto pathWidth = getTech()->getLayer(lNum)->getWidth();
   Point currPt;
   getPoint(currPt, gridX, gridY);
   frCoord currDist = Point::manhattanDistance(currPt, centerPt);
@@ -103,9 +101,6 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
       gridX,
       gridY,
       gridZ,
-      currGrid.getLayerPathArea()
-          + getEdgeLength(currGrid.x(), currGrid.y(), currGrid.z(), dir)
-                * pathWidth,
       nextVLengthX,
       nextVLengthY,
       nextIsPrevViaUp,
@@ -115,16 +110,12 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
       nextPathCost + nextEstCost,
       currGrid.getBackTraceBuffer());
   if (dir == frDirEnum::U || dir == frDirEnum::D) {
-    nextWavefrontGrid.resetLayerPathArea();
     nextWavefrontGrid.resetLength();
     if (dir == frDirEnum::U) {
       nextWavefrontGrid.setPrevViaUp(false);
     } else {
       nextWavefrontGrid.setPrevViaUp(true);
     }
-    nextWavefrontGrid.addLayerPathArea(
-        (dir == frDirEnum::U) ? getHalfViaEncArea(currGrid.z(), false)
-                              : getHalfViaEncArea(gridZ, true));
   }
   if (currGrid.getSrcTaperBox()
       && currGrid.getSrcTaperBox()->contains(
@@ -865,16 +856,12 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
       return true;
     }
     // get min area min length
-    auto lNum = getLayerNum(idx.z());
-    auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
-    frCoord fakeArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
     getPoint(currPt, idx.x(), idx.y());
     frCoord currDist = Point::manhattanDistance(currPt, centerPt);
     FlexWavefrontGrid currGrid(
         idx.x(),
         idx.y(),
         idx.z(),
-        fakeArea,
         std::numeric_limits<frCoord>::max(),
         std::numeric_limits<frCoord>::max(),
         true,
