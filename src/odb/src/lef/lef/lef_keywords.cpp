@@ -1130,7 +1130,7 @@ lefInfo(int         msgNum,
         if (!lefData->hasOpenedLogFile) {
             if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
                 printf("WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log in %s.\n",
-                       getcwd(NULL, 64));
+                       getcwd(NULL, 0));
                 printf("Info messages will not be printed.\n");
             } else {
                 lefData->hasOpenedLogFile = 1;
@@ -1141,7 +1141,7 @@ lefInfo(int         msgNum,
         } else {
             if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
                 printf("WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log in %s.\n",
-                       getcwd(NULL, 64));
+                       getcwd(NULL, 0));
                 printf("Info messages will not be printed.\n");
             } else {
                 fprintf(lefData->lefrLog, "\nInfo from file: %s\n\n", lefData->lefrFileName);
@@ -1206,7 +1206,7 @@ lefWarning(int          msgNum,
         if (!lefData->hasOpenedLogFile) {
             if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
                 printf("WARNING (LEFPARS-2500): Unable to open the file lefRWarning.log in %s.\n",
-                       getcwd(NULL, 64));
+                       getcwd(NULL, 0));
                 printf("Warning messages will not be printed.\n");
             } else {
                 lefData->hasOpenedLogFile = 1;
@@ -1217,7 +1217,7 @@ lefWarning(int          msgNum,
         } else {
             if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
                 printf("WARNING (LEFPARS-2501): Unable to open the file lefRWarning.log in %s.\n",
-                       getcwd(NULL, 64));
+                       getcwd(NULL, 0));
                 printf("Warning messages will not be printed.\n");
             } else {
                 fprintf(lefData->lefrLog, "\nWarnings from file: %s\n\n", lefData->lefrFileName);

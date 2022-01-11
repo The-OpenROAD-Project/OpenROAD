@@ -1026,7 +1026,7 @@ defrData::defInfo(int msgNum, const char *s) {
       if (!hasOpenedDefLogFile) {
          if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
             printf("WARNING(DEFPARS-8500): Unable to open the file defRWarning.log in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(NULL, 0));
             printf("Info messages will not be printed.\n");
          } else {
             hasOpenedDefLogFile = 1;
@@ -1037,7 +1037,7 @@ defrData::defInfo(int msgNum, const char *s) {
       } else {
          if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
             printf("WARNING (DEFPARS-8500): Unable to open the file defRWarning.log in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(NULL, 0));
             printf("Info messages will not be printed.\n");
          } else {
             hasOpenedDefLogFile = 1;
@@ -1081,7 +1081,7 @@ defrData::defWarning(int msgNum, const char *s) {
       if (!hasOpenedDefLogFile) {
          if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
             printf("WARNING (DEFPARS-7500): Unable to open the file defRWarning.log in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(NULL, 0));
             printf("Warning messages will not be printed.\n");
          } else {
             hasOpenedDefLogFile = 1;
@@ -1092,7 +1092,7 @@ defrData::defWarning(int msgNum, const char *s) {
       } else {
          if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
             printf("WARNING (DEFAPRS-7501): Unable to open the file defRWarning.log in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(NULL, 0));
             printf("Warning messages will not be printed.\n");
          } else {
             hasOpenedDefLogFile = 1;
