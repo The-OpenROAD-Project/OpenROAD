@@ -1733,10 +1733,7 @@ void FlexDR::searchRepair(int iter,
       const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
       const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
       getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
-      Rect routeBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
+      Rect routeBox(routeBox1.ll(), routeBox2.ur());
       Rect extBox;
       Rect drcBox;
       routeBox.bloat(MTSAFEDIST, extBox);

@@ -2466,7 +2466,7 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
 bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
 {
   frRegionQuery::Objects<frBlockObject> result;
-  Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
+  Rect bx(pt, pt);
   design_->getRegionQuery()->query(bx, lNum, result);
   for (auto& rqObj : result) {
     switch (rqObj.second->typeId()) {

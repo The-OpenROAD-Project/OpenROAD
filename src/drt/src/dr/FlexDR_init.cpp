@@ -1145,9 +1145,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           bool useCenterLine = true;
-          auto xSpan = instPinRectBBox.xMax() - instPinRectBBox.xMin();
-          auto ySpan = instPinRectBBox.yMax() - instPinRectBBox.yMin();
-          bool isPinRectHorz = (xSpan > ySpan);
+          bool isPinRectHorz = (instPinRectBBox.getDir() == 1);
 
           if (!useCenterLine) {
             // get intersecting tracks if any
@@ -1711,18 +1709,14 @@ void FlexDRWorker::initNets_numPinsIn()
         }
         if (ap->getPinCost() == 0) {
           ap->getPoint(pt);
-          allPins.push_back(
-              make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()),
-                        pin.get()));
+          allPins.push_back(make_pair(Rect(pt, pt), pin.get()));
           hasPrefAP = true;
           break;
         }
       }
       if (!hasPrefAP) {
         firstAP->getPoint(pt);
-        allPins.push_back(
-            make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()),
-                      pin.get()));
+        allPins.push_back(make_pair(Rect(pt, pt), pin.get()));
       }
     }
   }
@@ -1763,7 +1757,7 @@ void FlexDRWorker::initNets_numPinsIn()
       }
     }
     if (x1 <= x2 && y1 <= y2) {
-      Rect box = Rect(Point(x1, y1), Point(x2, y2));
+      Rect box = Rect(x1, y1, x2, y2);
       allPins.clear();
       pinRegionQuery.query(bgi::intersects(box), back_inserter(allPins));
       net->setNumPinsIn(allPins.size());
