@@ -322,18 +322,8 @@ void FlexDR::initGCell2BoundaryPin()
                   = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
-              bool hasLeftBound = true;
-              bool hasRightBound = true;
-              if (bp.x() < leftBound) {
-                hasLeftBound = true;
-              } else {
-                hasLeftBound = false;
-              }
-              if (ep.x() >= rightBound) {
-                hasRightBound = true;
-              } else {
-                hasRightBound = false;
-              }
+              const bool hasLeftBound = bp.x() < leftBound;
+              const bool hasRightBound = ep.x() >= rightBound;
               if (hasLeftBound) {
                 Point boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
@@ -354,18 +344,8 @@ void FlexDR::initGCell2BoundaryPin()
                   = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
-              bool hasBottomBound = true;
-              bool hasTopBound = true;
-              if (bp.y() < bottomBound) {
-                hasBottomBound = true;
-              } else {
-                hasBottomBound = false;
-              }
-              if (ep.y() >= topBound) {
-                hasTopBound = true;
-              } else {
-                hasTopBound = false;
-              }
+              const bool hasBottomBound = bp.y() < bottomBound;
+              const bool hasTopBound = ep.y() >= topBound;
               if (hasBottomBound) {
                 Point boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
