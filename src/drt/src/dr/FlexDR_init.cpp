@@ -1777,7 +1777,7 @@ void FlexDRWorker::initNets_numPinsIn()
 
 void FlexDRWorker::initNets_boundaryArea()
 {
-  Point bp, psBp, psEp, pt2 /*, psBp2, psEp2*/;
+  Point bp, psBp, psEp, pt2;
   frLayerNum lNum;
   auto& workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<drConnFig*>> results;
