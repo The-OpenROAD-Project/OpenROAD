@@ -764,6 +764,11 @@ void Inspector::highlightChanged()
   loadActions();
 }
 
+void Inspector::focusNetsChanged()
+{
+  loadActions();
+}
+
 void Inspector::loadActions()
 {
   // remove action buttons and ensure delete
