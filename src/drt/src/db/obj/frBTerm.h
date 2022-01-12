@@ -63,7 +63,7 @@ class frBTerm : public frTerm
     }
   }
   // getters
-  bool hasNet() const { return (net_); }
+  bool hasNet() const override { return (net_); }
   frNet* getNet() const { return net_; }
   frBlock* getBlock() const { return block_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
@@ -89,7 +89,7 @@ class frBTerm : public frTerm
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,
                                 frLayerNum lNum,
-                                int pinAccessIdx)
+                                int pinAccessIdx) override
   {
     if (pinAccessIdx == -1) {
       return nullptr;
@@ -108,7 +108,7 @@ class frBTerm : public frTerm
     return nullptr;
   }
   // fills outShapes with copies of the pinFigs
-  void getShapes(std::vector<frRect>& outShapes)
+  void getShapes(std::vector<frRect>& outShapes) override
   {
     for (auto& pin : pins_) {
       for (auto& pinShape : pin->getFigs()) {

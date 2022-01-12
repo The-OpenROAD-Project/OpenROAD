@@ -140,6 +140,9 @@ enum frBlockObjectEnum
   gccRect,
   gccPolygon
 };
+
+std::ostream& operator<<(std::ostream& os, frBlockObjectEnum type);
+
 enum class frGuideEnum
 {
   frcGuideX,
@@ -209,6 +212,8 @@ enum class frCornerTypeEnum
   CONVEX
 };
 
+std::ostream& operator<<(std::ostream& os, frCornerTypeEnum type);
+
 enum class frCornerDirEnum
 {
   UNKNOWN,
@@ -225,6 +230,8 @@ enum class frMinimumcutConnectionEnum
   FROMBELOW = 1
 };
 
+std::ostream& operator<<(std::ostream& os, frMinimumcutConnectionEnum conn);
+
 enum class frMinstepTypeEnum
 {
   UNKNOWN = -1,
@@ -232,6 +239,8 @@ enum class frMinstepTypeEnum
   OUTSIDECORNER = 1,
   STEP = 2
 };
+
+std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type);
 
 #define OPPOSITEDIR 7  // used in FlexGC_main.cpp
 enum class frDirEnum

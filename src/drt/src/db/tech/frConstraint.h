@@ -426,7 +426,7 @@ class frMinStepConstraint : public frConstraint
         "Min step length min {} type {} max {} "
         "insideCorner {} outsideCorner {} step {} maxEdges {}",
         minStepLength,
-        minstepType,
+        int(minstepType),
         maxLength,
         insideCorner,
         outsideCorner,

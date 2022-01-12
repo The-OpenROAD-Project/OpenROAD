@@ -64,7 +64,7 @@ class frMTerm : public frTerm
   }
   // getters
   bool hasNet() const { return false; }
-  frNet* getNet() const { return nullptr; }
+  frNet* getNet() const override { return nullptr; }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frMPin>>& getPins() const { return pins_; }
   // setters
@@ -88,7 +88,7 @@ class frMTerm : public frTerm
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,
                                 frLayerNum lNum,
-                                int pinAccessIdx)
+                                int pinAccessIdx) override
   {
     if (pinAccessIdx == -1) {
       return nullptr;
