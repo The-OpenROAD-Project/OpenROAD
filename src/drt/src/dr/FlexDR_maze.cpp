@@ -949,7 +949,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
   if (eolSpace == 0)
     return;
   Rect testBox;
-  if (box.xMax() - box.xMin() <= eolWidth) {
+  if (box.dx() <= eolWidth) {
     testBox.init(box.xMin() - eolWithin,
                  box.yMax(),
                  box.xMax() + eolWithin,
@@ -970,7 +970,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
     }
   }
   // eol to left and right
-  if (box.yMax() - box.yMin() <= eolWidth) {
+  if (box.dy() <= eolWidth) {
     testBox.init(box.xMax(),
                  box.yMin() - eolWithin,
                  box.xMax() + eolSpace,

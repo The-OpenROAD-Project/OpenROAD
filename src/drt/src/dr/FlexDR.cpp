@@ -1068,8 +1068,7 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
     via2.getLayer2BBox(viaBox2);
   }
   via2.getCutBBox(cutBox2);
-  auto boxLength = isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
-                              : (cutBox1.xMax() - cutBox1.xMin());
+  auto boxLength = isCurrDirY ? cutBox1.dy() : cutBox1.dx();
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
     auto layer = getTech()->getLayer(viaDef1->getCutLayerNum());
@@ -1188,15 +1187,11 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
-    isSide1
-        = (cutBox1.xMax() - cutBox1.xMin()) > (cutBox1.yMax() - cutBox1.yMin());
-    isSide2
-        = (cutBox2.xMax() - cutBox2.xMin()) > (cutBox2.yMax() - cutBox2.yMin());
+    isSide1 = cutBox1.dx() > cutBox1.dy();
+    isSide2 = cutBox2.dx() > cutBox2.dy();
   } else {
-    isSide1
-        = (cutBox1.xMax() - cutBox1.xMin()) < (cutBox1.yMax() - cutBox1.yMin());
-    isSide2
-        = (cutBox2.xMax() - cutBox2.xMin()) < (cutBox2.yMax() - cutBox2.yMin());
+    isSide1 = cutBox1.dx() < cutBox1.dy();
+    isSide2 = cutBox2.dx() < cutBox2.dy();
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
@@ -1389,8 +1384,8 @@ void FlexDR::init_halfViaEncArea()
       Rect layer2Box;
       via.getLayer1BBox(layer1Box);
       via.getLayer2BBox(layer2Box);
-      auto layer1HalfArea = layer1Box.minDXDY() * layer1Box.maxDXDY() / 2;
-      auto layer2HalfArea = layer2Box.minDXDY() * layer2Box.maxDXDY() / 2;
+      auto layer1HalfArea = layer1Box.area() / 2;
+      auto layer2HalfArea = layer2Box.area() / 2;
       halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
     } else {
       halfViaEncArea.push_back(make_pair(0, 0));
@@ -1477,8 +1472,8 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
     via1.getLayer2BBox(viaBox1);
   }
   bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
-                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
+                       ? (viaBox1.dy() > defaultWidth)
+                       : (viaBox1.dx() > defaultWidth);
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
