@@ -1416,10 +1416,9 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
   }
   int width1 = viaBox1.minDXDY();
   bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
-                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
-  auto prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
-                         : (viaBox1.xMax() - viaBox1.xMin());
+                       ? viaBox1.dy() > defaultWidth
+                       : viaBox1.dx() > defaultWidth;
+  auto prl1 = isCurrDirX ? viaBox1.dy() : viaBox1.dx();
 
   frCoord reqDist = 0;
   if (isVia1Fat) {
