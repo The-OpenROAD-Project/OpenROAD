@@ -1842,7 +1842,7 @@ void FlexDR::end(bool writeMetrics)
         auto obj = static_cast<frPathSeg*>(shape.get());
         obj->getPoints(bp, ep);
         auto lNum = obj->getLayerNum();
-        frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
+        frCoord psLen = Point::manhattanDistance(ep, bp);
         wlen[lNum] += psLen;
       }
     }
