@@ -808,7 +808,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
     {"Delete", ":/delete.png"},
     {"Zoom to", ":/zoom_to.png"},
     {"Remove from highlight", ":/highlight_off.png"},
-    {"Add to highlight", ":/highlight_on.png"}
+    {"Add to highlight", ":/highlight_on.png"},
+    {"Focus", ":/focus.png"}
   };
   std::vector<std::pair<std::string, QString>> symbol_replacements{
     {"Fanin Cone", "\u25B7"},
