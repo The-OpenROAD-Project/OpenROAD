@@ -205,6 +205,8 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint
 };
 
+std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
+
 enum class frCornerTypeEnum
 {
   UNKNOWN,
