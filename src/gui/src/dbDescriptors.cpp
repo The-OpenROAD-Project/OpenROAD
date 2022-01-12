@@ -1071,6 +1071,20 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
   return editors;
 }
 
+Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+
+  auto* gui = Gui::get();
+  Descriptor::Actions actions;
+  actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
+    gui->addFocusNet(net);
+    return makeSelected(net, nullptr);
+  }});
+
+  return actions;
+}
+
 Selected DbNetDescriptor::makeSelected(std::any object,
                                        void* additional_data) const
 {
