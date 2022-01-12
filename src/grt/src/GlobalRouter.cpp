@@ -43,6 +43,7 @@
 #include <istream>
 #include <random>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1356,6 +1357,59 @@ void GlobalRouter::perturbCapacities()
         fastroute_->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, new_v_capacity, subtract);
       }
+    }
+  }
+}
+
+void GlobalRouter::readGuides(const char* file_name)
+{
+  block_ = db_->getChip()->getBlock();
+  if (max_routing_layer_ == -1) {
+    max_routing_layer_ = computeMaxRoutingLayer();
+    initRoutingLayers();
+    initCoreGrid(max_routing_layer_);
+  }
+  odb::dbTech* tech = db_->getTech();
+
+  std::ifstream fin(file_name);
+  std::string line;
+  odb::dbNet* net = nullptr;
+
+  if (!fin.is_open()) {
+    logger_->error(GRT, 233, "Failed to open guide file {}.", file_name);
+  }
+
+  while (fin.good()) {
+    getline(fin, line);
+    if (line == "(" || line == "" || line == ")") {
+      continue;
+    }
+
+    std::stringstream ss(line);
+    std::string word;
+    std::vector<std::string> tokens;
+    while (!ss.eof()) {
+      ss >> word;
+      tokens.push_back(word);
+    }
+
+    if (tokens.size() == 1) {
+      net = block_->findNet(tokens[0].c_str());
+      if (!net) {
+        logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
+      }
+    } else if (tokens.size() == 5) {
+      auto layer = tech->findLayer(tokens[4].c_str());
+      if (!layer) {
+        logger_->error(GRT, 235, "Cannot find layer {}.", tokens[4]);
+      }
+
+      GRoute& route = routes_[net];
+      route.push_back({stoi(tokens[0]), stoi(tokens[1]),
+          layer->getRoutingLevel(), stoi(tokens[2]), stoi(tokens[3]),
+          layer->getRoutingLevel()});
+    } else {
+      logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
   }
 }
