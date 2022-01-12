@@ -534,8 +534,9 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db, const std::set<odb::dbNet*>& focus_nets) :
+    db_(db),
+    focus_nets_(focus_nets)
 {
 }
 
@@ -1077,10 +1078,17 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;
-  actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
-    gui->addFocusNet(net);
-    return makeSelected(net, nullptr);
-  }});
+  if (focus_nets_.count(net) == 0) {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
+      gui->addFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  } else {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, net]() {
+      gui->removeFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  }
 
   return actions;
 }
