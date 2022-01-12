@@ -2655,6 +2655,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2721,10 +2722,14 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, []() {
-    Gui::get()->clearSelections();
-    Gui::get()->clearHighlights(-1);
-    Gui::get()->clearRulers();
+  connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->removeFocusNet(nullptr);
+  });
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+    menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
+    menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
+    menu_actions_[CLEAR_RULERS_ACT]->trigger();
+    menu_actions_[CLEAR_FOCUS_ACT]->trigger();
   });
 }
 

@@ -104,6 +104,7 @@ class LayoutViewer : public QWidget
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
     CLEAR_RULERS_ACT,
+    CLEAR_FOCUS_ACT,
     CLEAR_ALL_ACT
   };
   // makeSelected is so that we don't have to pass in the whole
