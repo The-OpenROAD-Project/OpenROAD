@@ -1114,50 +1114,40 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
   } else {
     auto layerNum1 = viaDef1->getCutLayerNum();
     auto layerNum2 = viaDef2->getCutLayerNum();
+    auto layer1 = getTech()->getLayer(layerNum1);
+    auto layer2 = getTech()->getLayer(layerNum2);
     frCutSpacingConstraint* samenetCon = nullptr;
-    if (getTech()->getLayer(layerNum1)->hasInterLayerCutSpacing(layerNum2,
-                                                                true)) {
-      samenetCon = getTech()->getLayer(layerNum1)->getInterLayerCutSpacing(
-          layerNum2, true);
+    if (layer1->hasInterLayerCutSpacing(layerNum2, true)) {
+      samenetCon = layer1->getInterLayerCutSpacing(layerNum2, true);
     }
-    if (getTech()->getLayer(layerNum2)->hasInterLayerCutSpacing(layerNum1,
-                                                                true)) {
+    if (layer2->hasInterLayerCutSpacing(layerNum1, true)) {
       if (samenetCon) {
         cout << "Warning: duplicate diff layer samenet cut spacing, skipping "
                 "cut spacing from "
              << layerNum2 << " to " << layerNum1 << endl;
       } else {
-        samenetCon = getTech()->getLayer(layerNum2)->getInterLayerCutSpacing(
-            layerNum1, true);
+        samenetCon = layer2->getInterLayerCutSpacing(layerNum1, true);
       }
     }
     if (samenetCon == nullptr) {
-      if (getTech()->getLayer(layerNum1)->hasInterLayerCutSpacing(layerNum2,
-                                                                  false)) {
-        samenetCon = getTech()->getLayer(layerNum1)->getInterLayerCutSpacing(
-            layerNum2, false);
+      if (layer1->hasInterLayerCutSpacing(layerNum2, false)) {
+        samenetCon = layer1->getInterLayerCutSpacing(layerNum2, false);
       }
-      if (getTech()->getLayer(layerNum2)->hasInterLayerCutSpacing(layerNum1,
-                                                                  false)) {
+      if (layer2->hasInterLayerCutSpacing(layerNum1, false)) {
         if (samenetCon) {
           cout << "Warning: duplicate diff layer diffnet cut spacing, skipping "
                   "cut spacing from "
                << layerNum2 << " to " << layerNum1 << endl;
         } else {
-          samenetCon = getTech()->getLayer(layerNum2)->getInterLayerCutSpacing(
-              layerNum1, false);
+          samenetCon = layer2->getInterLayerCutSpacing(layerNum1, false);
         }
       }
     }
     if (samenetCon) {
       // filter rule, assuming default via will never trigger cutArea
       auto reqSpcVal = samenetCon->getCutSpacing();
-      if (reqSpcVal == 0) {
-        ;
-      } else {
-        if (!samenetCon->hasCenterToCenter()) {
-          reqSpcVal += boxLength;
-        }
+      if (reqSpcVal != 0 && !samenetCon->hasCenterToCenter()) {
+        reqSpcVal += boxLength;
       }
       sol = max(sol, reqSpcVal);
     }
@@ -1437,10 +1427,10 @@ frCoord FlexDR::init_via2turnMinLen_minSpc(frLayerNum lNum,
       }
     }
     if (isCurrDirX) {
-      reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
+      reqDist += max(viaBox1.xMax(), -viaBox1.xMin());
       reqDist += defaultWidth;
     } else {
-      reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
+      reqDist += max(viaBox1.yMax(), -viaBox1.yMin());
       reqDist += defaultWidth;
     }
     sol = max(sol, reqDist);
@@ -1481,10 +1471,10 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
         && con->hasMaxEdges()) {  // currently only consider maxedge violation
       reqDist = con->getMinStepLength();
       if (isCurrDirX) {
-        reqDist += max((viaBox1.xMax() - 0), (0 - viaBox1.xMin()));
+        reqDist += max(viaBox1.xMax(), -viaBox1.xMin());
         reqDist += defaultWidth;
       } else {
-        reqDist += max((viaBox1.yMax() - 0), (0 - viaBox1.yMin()));
+        reqDist += max(viaBox1.yMax(), -viaBox1.yMin());
         reqDist += defaultWidth;
       }
       sol = max(sol, reqDist);

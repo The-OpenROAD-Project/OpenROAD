@@ -1970,10 +1970,8 @@ void FlexDRWorker::routeNet_setSrc(
     if (getDRIter() >= beginDebugIter) {
       logger_->info(DRT,
                     2000,
-                    "({} {} {} coords: {} {} {}\n",
-                    mi.x(),
-                    mi.y(),
-                    mi.z(),
+                    "({} coords: {} {} {}\n",
+                    mi,
                     ap->getPoint().x(),
                     ap->getPoint().y(),
                     ap->getBeginLayerNum());
@@ -2771,7 +2769,8 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     // check minAreaViolation when change layer, or last segment
     if (currIdx.z() != prevIdx.z()) {
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
-      minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
+      auto layer = getTech()->getLayer(layerNum);
+      minAreaConstraint = layer->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add next via enclosure
@@ -2876,10 +2875,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     // add the wire area
     else {
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
-      minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
+      auto layer = getTech()->getLayer(layerNum);
+      minAreaConstraint = layer->getAreaConstraint();
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-      auto pathWidth = getTech()->getLayer(layerNum)->getWidth();
+      auto pathWidth = layer->getWidth();
       Point bp, ep;
       gridGraph_.getPoint(bp, prevIdx.x(), prevIdx.y());
       gridGraph_.getPoint(ep, currIdx.x(), currIdx.y());
