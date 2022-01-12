@@ -124,6 +124,9 @@ class LayoutViewer : public QWidget
 
   void restoreTclCommands(std::vector<std::string>& cmds);
 
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
   odb::Point screenToDBU(const QPointF& point);
@@ -318,6 +321,8 @@ class LayoutViewer : public QWidget
 
   void updateScaleAndCentering(const QSize& new_size);
 
+  bool isNetVisible(odb::dbNet* net);
+
   odb::dbBlock* block_;
   Options* options_;
   ScriptWidget* output_widget_;
@@ -382,6 +387,9 @@ class LayoutViewer : public QWidget
   // Cache of the maximum cut size per layer (units: dbu).
   // Used to determine when cuts are too small to be seen and should not be drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
+
+  // Set of nets to focus drawing on, if empty draw everything
+  std::set<odb::dbNet*> focus_nets_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

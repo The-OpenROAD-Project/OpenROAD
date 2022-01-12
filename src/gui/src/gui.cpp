@@ -728,6 +728,16 @@ void Gui::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin
   main_window->timingCone(term, fanin, fanout);
 }
 
+void Gui::addFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addFocusNet(net);
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeFocusNet(net);
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {

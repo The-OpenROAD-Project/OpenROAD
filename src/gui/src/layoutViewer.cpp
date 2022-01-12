@@ -800,7 +800,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
     auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, net] : shapes) {
-      if (options_->isNetVisible(net)) {
+      if (isNetVisible(net)) {
         boxes.push_back(box);
       }
     }
@@ -912,7 +912,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
+      if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(makeSelected_(net));
       }
     }
@@ -1916,7 +1916,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      instance_limit);
 
     for (auto& i : iter) {
-      if (!options_->isNetVisible(std::get<2>(i))) {
+      if (!isNetVisible(std::get<2>(i))) {
         continue;
       }
       auto poly = std::get<1>(i);
@@ -2751,6 +2751,32 @@ bool LayoutViewer::hasDesign() const
   }
 
   return true;
+}
+
+void LayoutViewer::addFocusNet(odb::dbNet* net)
+{
+  focus_nets_.insert(net);
+  fullRepaint();
+}
+
+void LayoutViewer::removeFocusNet(odb::dbNet* net)
+{
+  if (net == nullptr) {
+    focus_nets_.clear();
+  } else {
+    focus_nets_.erase(net);
+  }
+  fullRepaint();
+}
+
+bool LayoutViewer::isNetVisible(odb::dbNet* net)
+{
+  bool focus_visible = true;
+  if (!focus_nets_.empty()) {
+    focus_visible = focus_nets_.find(net) != focus_nets_.end();
+  }
+
+  return focus_visible && options_->isNetVisible(net);
 }
 
 ////// LayoutScroll ///////

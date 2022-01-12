@@ -597,5 +597,23 @@ void timing_cone(odb::dbBTerm* bterm, bool fanin, bool fanout)
   gui->timingCone(bterm, fanin, fanout);
 }
 
+void focus_net(odb::dbNet* net)
+{
+  if (!check_gui("focus_net")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->addFocusNet(net);
+}
+
+void remove_focus_net(odb::dbNet* net)
+{
+  if (!check_gui("remove_focus_net")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->removeFocusNet(net);
+}
+
 %} // inline
 
