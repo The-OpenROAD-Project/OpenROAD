@@ -63,7 +63,7 @@ class frMTerm : public frTerm
     }
   }
   // getters
-  bool hasNet() const { return false; }
+  bool hasNet() const override { return false; }
   frNet* getNet() const override { return nullptr; }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frMPin>>& getPins() const { return pins_; }

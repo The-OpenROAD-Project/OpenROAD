@@ -64,7 +64,7 @@ class frBTerm : public frTerm
   }
   // getters
   bool hasNet() const override { return (net_); }
-  frNet* getNet() const { return net_; }
+  frNet* getNet() const override { return net_; }
   frBlock* getBlock() const { return block_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   // setters
