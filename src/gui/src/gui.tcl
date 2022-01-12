@@ -242,7 +242,7 @@ proc focus_net { args } {
   if { [info exists flags(-clear)] } {
     sta::check_argc_eq0 "focus_net" $args
 
-    gui::remove_focus_net NULL
+    gui::clear_focus_nets
     return
   }
 

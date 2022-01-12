@@ -738,6 +738,11 @@ void Gui::removeFocusNet(odb::dbNet* net)
   main_window->getLayoutViewer()->removeFocusNet(net);
 }
 
+void Gui::clearFocusNets()
+{
+  main_window->getLayoutViewer()->clearFocusNets();
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {

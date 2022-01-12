@@ -2723,7 +2723,7 @@ void LayoutViewer::addMenuAndActions()
     Gui::get()->clearRulers();
   });
   connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
-    Gui::get()->removeFocusNet(nullptr);
+    Gui::get()->clearFocusNets();
   });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
@@ -2760,18 +2760,28 @@ bool LayoutViewer::hasDesign() const
 
 void LayoutViewer::addFocusNet(odb::dbNet* net)
 {
-  focus_nets_.insert(net);
-  fullRepaint();
+  const auto& [itr, inserted] = focus_nets_.insert(net);
+  if (inserted) {
+    emit focusNetsChanged();
+    fullRepaint();
+  }
 }
 
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
-  if (net == nullptr) {
-    focus_nets_.clear();
-  } else {
-    focus_nets_.erase(net);
+  if (focus_nets_.erase(net) > 0) {
+    emit focusNetsChanged();
+    fullRepaint();
   }
-  fullRepaint();
+}
+
+void LayoutViewer::clearFocusNets()
+{
+  if (!focus_nets_.empty()) {
+    focus_nets_.clear();
+    emit focusNetsChanged();
+    fullRepaint();
+  }
 }
 
 bool LayoutViewer::isNetVisible(odb::dbNet* net)

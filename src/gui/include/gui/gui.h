@@ -587,6 +587,7 @@ class Gui
   // Used to add and remove focus nets from layout
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);

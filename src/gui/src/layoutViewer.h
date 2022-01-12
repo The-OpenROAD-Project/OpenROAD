@@ -127,6 +127,8 @@ class LayoutViewer : public QWidget
 
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
+  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -157,6 +159,8 @@ class LayoutViewer : public QWidget
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
+
+  void focusNetsChanged();
 
  public slots:
   // zoom in the layout, keeping the current center_

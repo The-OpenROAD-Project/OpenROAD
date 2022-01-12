@@ -615,5 +615,14 @@ void remove_focus_net(odb::dbNet* net)
   gui->removeFocusNet(net);
 }
 
+void clear_focus_nets()
+{
+  if (!check_gui("clear_focus_nets")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearFocusNets();
+}
+
 %} // inline
 
