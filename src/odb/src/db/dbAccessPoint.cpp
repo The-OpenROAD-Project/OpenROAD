@@ -151,6 +151,8 @@ _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
   bpin_ = r.bpin_;
   // User Code Begin CopyConstructor
   iterms_ = r.iterms_;
+  low_type_ = r.low_type_;
+  high_type_ = r.high_type_;
   // User Code End CopyConstructor
 }
 
