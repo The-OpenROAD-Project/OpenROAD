@@ -56,6 +56,7 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
+class PlacementDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -641,9 +642,6 @@ class Gui
   // set the system logger
   void setLogger(utl::Logger* logger);
 
-  // set openroad database
-  void setDatabase(odb::dbDatabase* db);
-
   // check if tcl should take over after closing gui
   bool isContinueAfterClose() { return continue_after_close_; }
   // clear continue after close, needed to reset before GUI starts
@@ -686,6 +684,9 @@ class Gui
   // Will return true if the GUI is active, false otherwise
   static bool enabled();
 
+  // initialize the GUI
+  void init(odb::dbDatabase* db, utl::Logger* logger);
+
  private:
   Gui();
 
@@ -709,6 +710,9 @@ class Gui
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
+
+  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
+
   static Gui* singleton_;
 };
 

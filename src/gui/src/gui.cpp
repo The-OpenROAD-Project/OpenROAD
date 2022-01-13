@@ -78,9 +78,6 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
-// Placement density heatmap
-static std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map = nullptr;
-
 // Used by toString to convert dbu to microns (and back), will be set in main_window
 DBUToString Descriptor::Property::convert_dbu;
 StringToDBU Descriptor::Property::convert_string;
@@ -843,11 +840,6 @@ void Gui::setLogger(utl::Logger* logger)
   }
 }
 
-void Gui::setDatabase(odb::dbDatabase* db)
-{
-  db_ = db;
-}
-
 void Gui::hideGui()
 {
   // ensure continue after close is true, since we want to return to tcl
@@ -867,6 +859,16 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   // nullptr for tcl interp to indicate nothing to setup
   // and commands and interactive setting
   startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
+}
+
+void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
+{
+  db_ = db;
+  setLogger(logger);
+
+  // placement density heatmap
+  placement_density_heat_map_ = std::make_unique<PlacementDensityDataSource>(logger);
+  placement_density_heat_map_->registerHeatMap();
 }
 
 //////////////////////////////////////////////////
@@ -1089,12 +1091,7 @@ void initGui(OpenRoad* openroad)
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->setDatabase(openroad->getDb());
-  gui->setLogger(openroad->getLogger());
-
-  // placement density heatmap
-  gui::placement_density_heat_map = std::make_unique<gui::PlacementDensityDataSource>(openroad->getLogger());
-  gui::placement_density_heat_map->registerHeatMap();
+  gui->init(openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord
