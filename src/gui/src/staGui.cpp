@@ -949,6 +949,10 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
     return;
   }
 
+  if (isSupplyPin(pin)) {
+    return;
+  }
+
   if (pin != term_) {
     term_ = pin;
     fanin_ = fanin;
@@ -1004,6 +1008,25 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   QApplication::restoreOverrideCursor();
 
   redraw();
+}
+
+bool TimingConeRenderer::isSupplyPin(sta::Pin* pin) const
+{
+  auto* network = sta_->getDbNetwork();
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  network->staToDb(pin, iterm, bterm);
+  if (iterm != nullptr) {
+    if (iterm->getSigType().isSupply()) {
+      return true;
+    }
+  } else if (bterm != nullptr) {
+    if (bterm->getSigType().isSupply()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void TimingConeRenderer::drawObjects(gui::Painter& painter)
