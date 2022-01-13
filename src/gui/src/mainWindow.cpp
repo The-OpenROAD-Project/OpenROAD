@@ -205,6 +205,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           inspector_,
           SLOT(highlightChanged()));
+  connect(viewer_,
+          SIGNAL(focusNetsChanged()),
+          inspector_,
+          SLOT(focusNetsChanged()));
   connect(inspector_,
           SIGNAL(removeHighlight(const QList<const Selected*>&)),
           this,
@@ -327,8 +331,9 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
   auto* gui = Gui::get();
-  // unregister descriptors
+  // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
+  gui->unregisterDescriptor<odb::dbNet*>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -359,7 +364,7 @@ void MainWindow::init(sta::dbSta* sta)
   auto* gui = Gui::get();
   gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, viewer_->getFocusNets()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
