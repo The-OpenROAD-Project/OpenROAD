@@ -41,7 +41,7 @@ class frBTerm : public frTerm
  public:
   // constructors
   frBTerm(const frString& name)
-      : frTerm(name), block_(nullptr)
+    : frTerm(name), block_(nullptr), net_(nullptr)
   {
   }
   frBTerm(const frBTerm& in)
