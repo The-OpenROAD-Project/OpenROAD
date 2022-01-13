@@ -164,6 +164,7 @@ class GlobalRouter
   void printGrid();
 
   // flow functions
+  void readGuides(const char* file_name); // just for display
   void writeGuides(const char* file_name);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);

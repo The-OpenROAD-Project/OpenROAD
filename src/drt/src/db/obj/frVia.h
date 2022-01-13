@@ -321,7 +321,7 @@ class frVia : public frRef
     (ar) & origin_;
     (ar) & viaDef_;
     (ar) & owner_;
-    bool tmp;
+    bool tmp = false;
     if (is_loading(ar)) {
       (ar) & tmp;
       tapered_ = tmp;
