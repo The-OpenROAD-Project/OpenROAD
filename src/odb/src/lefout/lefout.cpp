@@ -40,6 +40,14 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
+#include <boost/polygon/polygon.hpp>
+
+using namespace boost::polygon::operators;
+
+using Rectangle = boost::polygon::rectangle_data<int>;
+using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+
 using namespace odb;
 
 void lefout::writeVersion(const char* version)
@@ -96,13 +104,8 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
   }
 }
 
-void lefout::writeBox(std::string indent, dbBox* box)
+void lefout::writeBox(std::string indent, int x1, int y1, int x2, int y2)
 {
-  int x1 = box->xMin();
-  int y1 = box->yMin();
-  int x2 = box->xMax();
-  int y2 = box->yMax();
-
   fprintf(_out,
           "%s  RECT  %g %g %g %g ;\n",
           indent.c_str(),
@@ -110,6 +113,16 @@ void lefout::writeBox(std::string indent, dbBox* box)
           lefdist(y1),
           lefdist(x2),
           lefdist(y2));
+}
+
+void lefout::writeBox(std::string indent, dbBox* box)
+{
+  int x1 = box->xMin();
+  int y1 = box->yMin();
+  int x2 = box->xMax();
+  int y2 = box->yMax();
+
+  writeBox(indent, x1, y1, x2, y2);
 }
 
 void lefout::writeHeader(dbBlock* db_block)
@@ -136,7 +149,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
 }
 
-void lefout::writeObstructions(dbBlock* db_block)
+void lefout::writeObstructions(dbBlock* db_block, bool pin_clearance)
 {
   std::set<dbTechLayer*> obstruction_layers;
   getTechLayerObstructions(db_block, obstruction_layers);
@@ -145,7 +158,34 @@ void lefout::writeObstructions(dbBlock* db_block)
   dbBox* block_bounding_box = db_block->getBBox();
   for (dbTechLayer* tech_layer : obstruction_layers) {
     fprintf(_out, "    LAYER %s ;\n", tech_layer->getName().c_str());
-    writeBox("  ", block_bounding_box);
+
+    if (pin_clearance) {
+      Polygon90Set polygon_set;
+
+      for (dbBTerm* term : db_block->getBTerms()) {
+        for (dbBPin* pin : term->getBPins()) {
+          for (dbBox* box : pin->getBoxes()) {
+            if (box->getTechLayer() == tech_layer) {
+              polygon_set.insert(Rectangle(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
+            }
+          }
+        }
+      }
+
+      Polygon90Set bloat_set = Polygon90Set(polygon_set + tech_layer->getSpacing());
+      Rectangle bounding_box_rect = Rectangle(block_bounding_box->xMin(), block_bounding_box->yMin(),
+                                               block_bounding_box->xMax(), block_bounding_box->yMax());
+      Polygon90Set obs_set = Polygon90Set(bounding_box_rect - bloat_set);
+
+      std::vector<Rectangle> rects;
+      obs_set.get_rectangles(rects);
+
+      for (auto& r : rects) {
+        writeBox("  ", xl(r), yl(r), xh(r), yh(r));
+      }
+    } else {
+        writeBox("  ", block_bounding_box);
+    }
   }
   fprintf(_out, "  END\n");
 }
@@ -288,7 +328,7 @@ void lefout::writeBlock(dbBlock* db_block)
   fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
   fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
   writePins(db_block);
-  writeObstructions(db_block);
+  writeObstructions(db_block, true);
   fprintf(_out, "END %s\n", db_block->getName().c_str());
 }
 

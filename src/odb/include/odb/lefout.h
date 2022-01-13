@@ -92,11 +92,12 @@ class lefout
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
   void writeUseMinSpacingObs(const bool state);
-  void writeObstructions(dbBlock* db_block);
+  void writeObstructions(dbBlock* db_block, bool pin_clearance);
   void getTechLayerObstructions(
       dbBlock* db_block,
       std::set<dbTechLayer*>& obstruction_layers) const;
   void writeBox(std::string indent, dbBox* box);
+  void writeBox(std::string indent, int x1, int y1, int x2, int y2);
   void findWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
                                  dbNet* net) const;
   void findSWireLayerObstructions(std::set<dbTechLayer*>& obstruction_layers,
