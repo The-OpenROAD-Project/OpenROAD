@@ -110,7 +110,8 @@ Gui* Gui::get()
 
 Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
-             db_(nullptr)
+             db_(nullptr),
+             placement_density_heat_map_(nullptr)
 {
   resetConversions();
 }
