@@ -452,9 +452,7 @@ OpenRoad::unitsInitialized()
 odb::Rect
 OpenRoad::getCore()
 {
-  odb::Rect core;
-  db_->getChip()->getBlock()->getCoreArea(core);
-  return core;
+  return ord::getCore(db_->getChip()->getBlock());
 }
 
 void OpenRoad::addObserver(Observer *observer)
@@ -530,6 +528,34 @@ OpenRoad::setThreadCount(const char* threads, bool printInfo) {
 int
 OpenRoad::getThreadCount() {
   return threads_;
+}
+
+////////////////////////////////////////////////////////////////
+
+// Need a header for these functions cherry uses in
+// InitFloorplan, Resizer, OpenDP.
+
+Rect
+getCore(dbBlock *block)
+{
+  odb::Rect core;
+  block->getCoreArea(core);
+  return core;
+}
+
+// Return the point inside rect that is closest to pt.
+Point
+closestPtInRect(Rect rect, Point pt)
+{
+  return Point(min(max(pt.getX(), rect.xMin()), rect.xMax()),
+               min(max(pt.getY(), rect.yMin()), rect.yMax()));
+}
+
+Point
+closestPtInRect(Rect rect, int x, int y)
+{
+  return Point(min(max(x, rect.xMin()), rect.xMax()),
+               min(max(y, rect.yMin()), rect.yMax()));
 }
 
 } // namespace

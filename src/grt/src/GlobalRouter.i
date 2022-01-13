@@ -187,6 +187,12 @@ highlight_net_route(const odb::dbNet *net)
   getGlobalRouter()->highlightRoute(net);
 }
 
+void
+read_guides(const char* fileName)
+{
+  getGlobalRouter()->readGuides(fileName);
+}
+
 void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D, bool tree3D){
   getGlobalRouter()->initDebugFastRoute();
   getGlobalRouter()->setDebugNet(net);

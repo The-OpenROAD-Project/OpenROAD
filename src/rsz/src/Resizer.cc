@@ -37,6 +37,7 @@
 
 #include "rsz/SteinerTree.hh"
 
+#include "ord/OpenRoad.hh"
 #include "gui/gui.h"
 #include "utl/Logger.h"
 
@@ -85,6 +86,7 @@ using std::pair;
 using std::sqrt;
 
 using utl::RSZ;
+using ord::closestPtInRect;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -513,7 +515,7 @@ Resizer::bufferInput(const Pin *top_pin,
   if (buffer) {
     journalMakeBuffer(buffer);
     Point pin_loc = db_network_->location(top_pin);
-    Point buf_loc = core_exists_ ? core_.closestPtInside(pin_loc) : pin_loc;
+    Point buf_loc = core_exists_ ? closestPtInRect(core_, pin_loc) : pin_loc;
     setLocation(buffer, buf_loc);
     designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
@@ -542,13 +544,18 @@ void
 Resizer::setLocation(Instance *inst,
                      Point pt)
 {
+  int x = pt.getX();
+  int y = pt.getY();
   // Stay inside the lines.
-  if (core_exists_)
-    pt = core_.closestPtInside(pt);
+  if (core_exists_) {
+    Point in_core = closestPtInRect(core_, x, y);
+    x = in_core.getX();
+    y = in_core.getY();
+  }
 
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(pt.getX(), pt.getY());
+  dinst->setLocation(x, y);
 }
 
 void
