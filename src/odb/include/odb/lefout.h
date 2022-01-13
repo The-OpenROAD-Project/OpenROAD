@@ -91,6 +91,7 @@ class lefout
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
+  void writeUseMinSpacingObs(const bool state);
   void writeObstructions(dbBlock* db_block);
   void getTechLayerObstructions(
       dbBlock* db_block,

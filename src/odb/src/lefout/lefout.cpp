@@ -132,6 +132,7 @@ void lefout::writeHeader(dbBlock* db_block)
   writeVersion("5.8");
   writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
   writeDividerChar(hier_delimeter);
+  writeUseMinSpacingObs(false);
   writeUnits(/*database_units = */db_block->getDbUnitsPerMicron());
 }
 
@@ -246,6 +247,11 @@ void lefout::writeHeader(dbLib* lib)
 void lefout::writeDividerChar(char hier_delimeter)
 {
   fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hier_delimeter);
+}
+
+void lefout::writeUseMinSpacingObs(const bool state)
+{
+  fprintf(_out, "USEMINSPACING OBS %s ;\n", state ? "ON" : "OFF");
 }
 
 void lefout::writeUnits(int database_units)
