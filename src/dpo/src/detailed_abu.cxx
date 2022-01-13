@@ -143,8 +143,8 @@ void DetailedABU::init() {
       m_abuBins[binId].hx = m_abuBins[binId].lx + m_abuGridUnit;
       m_abuBins[binId].hy = m_abuBins[binId].ly + m_abuGridUnit;
 
-      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, m_arch->getMaxX());
-      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, m_arch->getMaxY());
+      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, (double)m_arch->getMaxX());
+      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, (double)m_arch->getMaxY());
 
       double w = m_abuBins[binId].hx - m_abuBins[binId].lx;
       double h = m_abuBins[binId].hy - m_abuBins[binId].ly;
@@ -461,9 +461,11 @@ double DetailedABU::curr() {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedABU::delta(int n, std::vector<Node*>& nodes,
-                          std::vector<double>& curX, std::vector<double>& curY,
+                          std::vector<int>& curLeft, 
+                          std::vector<int>& curBottom,
                           std::vector<unsigned>& curOri,
-                          std::vector<double>& newX, std::vector<double>& newY,
+                          std::vector<int>& newLeft, 
+                          std::vector<int>& newBottom,
                           std::vector<unsigned>& newOri) {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
@@ -480,10 +482,16 @@ double DetailedABU::delta(int n, std::vector<Node*>& nodes,
   // Compute changed bins and changed occupancy.
   ++m_abuChangedBinsCounter;
   for (int i = 0; i < n; i++) {
-    updateBins(nodes[i], curX[i], curY[i], -1);
+    updateBins(nodes[i], 
+               curLeft[i]+0.5*nodes[i]->getWidth(), 
+               curBottom[i]+0.5*nodes[i]->getHeight(), 
+               -1);
   }
   for (int i = 0; i < n; i++) {
-    updateBins(nodes[i], newX[i], newY[i], +1);
+    updateBins(nodes[i], 
+               newLeft[i]+0.5*nodes[i]->getWidth(),
+               newBottom[i]+0.5*nodes[i]->getHeight(), 
+               +1);
   }
 
   double space = 0.;

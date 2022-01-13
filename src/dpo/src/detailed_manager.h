@@ -86,16 +86,15 @@ class DetailedMgr {
 
   void setSeed(int s);
 
-  void setMaxDisplacement(int x, int y) {
-    m_maxDispX = x;
-    m_maxDispY = y;
-  }
+  void setMaxDisplacement(int x, int y);
   void getMaxDisplacement(int& x, int& y) const {
     x = m_maxDispX;
     y = m_maxDispY;
   }
   int getMaxDisplacementX() const { return m_maxDispX; }
   int getMaxDisplacementY() const { return m_maxDispY; }
+  double measureMaximumDisplacement(double& maxX, double& maxY, 
+      int& violatedX, int& violatedY);
 
   void internalError( std::string msg );
 
@@ -121,16 +120,12 @@ class DetailedMgr {
   int checkRowAlignment();
   int checkRegionAssignment();
 
-  void removeCellFromSegmentTest(Node* nd, int seg, double& util, double& gapu);
-  void addCellToSegmentTest(Node* nd, int seg, double x, double& util,
-                            double& gapu);
   void removeCellFromSegment(Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
   double getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells);
 
   void collectSingleHeightCells();
   void collectMultiHeightCells();
-  void moveMultiHeightCellsToFixed();
   void collectFixedCells();
   void collectWideCells();
 
@@ -140,11 +135,6 @@ class DetailedMgr {
   void resortSegments();
   void resortSegment(DetailedSeg* segPtr);
   void removeAllCellsFromSegments();
-
-  bool isNodeAlignedToRow(Node* nd);
-
-  double measureMaximumDisplacement(bool& violated);
-  void removeOverlapMinimumShift();
 
   int getNumSegments() const { return static_cast<int>(m_segments.size()); }
   DetailedSeg* getSegment(int s) const { return m_segments[s]; }
@@ -160,32 +150,23 @@ class DetailedMgr {
                           double& large_right, int limit = 3);
 
   void removeSegmentOverlapSingle(int regId = -1);
-  void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes, double l,
-                                       double r, int rowId);
+  void removeSegmentOverlapSingleInner(std::vector<Node*>& nodes, 
+                                       int l, int r, int rowId);
 
   double getTargetUt() const { return m_targetUt; }
   void setTargetUt(double ut) { m_targetUt = ut; }
 
-  double getMaxMovement() const { return m_targetMaxMovement; }
-  void setTargetMaxMovement(double movement) { m_targetMaxMovement = movement; }
 
-  bool alignPos(Node* ndi, double& xi, double xl, double xr);
-  bool shift(std::vector<Node*>& cells, std::vector<double>& tarX,
-             std::vector<double>& posX, double left, double right, int segId,
-             int rowId);
+  // Routines for generating moves and swaps.
+  bool tryMove(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool trySwap(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
 
-  bool tryMove1(Node* ndi, double xi, double yi, int si, double xj, double yj,
-                int sj);
-  bool tryMove2(Node* ndi, double xi, double yi, int si, double xj, double yj,
-                int sj);
-  bool tryMove3(Node* ndi, double xi, double yi, int si, double xj, double yj,
-                int sj);
-
-  bool trySwap1(Node* ndi, double xi, double yi, int si, double xj, double yj,
-                int sj);
-
+  // For accepting or rejecting moves and swaps.
   void acceptMove();
   void rejectMove();
+
+  // For help aligning cells to sites.
+  bool alignPos(Node* ndi, int& xi, int xl, int xr);
 
  public:
   struct compareBlockages {
@@ -214,6 +195,33 @@ class DetailedMgr {
   };
 
  protected:
+  // Different routines for trying moves and swaps.
+  bool tryMove1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool tryMove2(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool tryMove3(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+
+  bool trySwap1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+
+  // Helper routines for making moves and swaps.
+  bool shift(std::vector<Node*>& cells, 
+             std::vector<int>& targetLeft,
+             std::vector<int>& posLeft, 
+             int leftLimit, int rightLimit, 
+             int segId, int rowId);
+  bool shiftRightHelper(Node *ndi, int xj, int sj, Node* ndr);
+  bool shiftLeftHelper(Node *ndi, int xj, int sj, Node* ndr);
+  void getSpaceToLeftAndRight(int seg, int ix, double& left, double& right);
+
+  // For composing list of cells for moves or swaps.
+  void clearMoveList();
+  bool addToMoveList(Node *ndi, 
+                     int curLeft, int curBottom, int curSeg, 
+                     int newLeft, int newBottom, int newSeg);
+  bool addToMoveList(Node *ndi, 
+                     int curLeft, int curBottom, std::vector<int>& curSegs, 
+                     int newLeft, int newBottom, std::vector<int>& newSegs);
+
+ protected:
   // Standard stuff.
   Architecture* m_arch;
   Network* m_network;
@@ -228,11 +236,10 @@ class DetailedMgr {
 
   // Generic place for utilization.
   double m_targetUt;
-  double m_targetMaxMovement;
 
   // Target displacement limits.
-  int m_maxDispX; // 0 means no limit.
-  int m_maxDispY; // 0 means no limit.
+  int m_maxDispX; 
+  int m_maxDispY;
 
   std::vector<Node*> m_fixedCells;   // Fixed; filler, macros, temporary, etc.
 
@@ -258,16 +265,16 @@ class DetailedMgr {
       m_wideCells;  // Wide movable cells.  Can be single of multi.
 
   // Original cell positions.
-  std::vector<double> m_origBottom;
-  std::vector<double> m_origLeft;
+  std::vector<int> m_origBottom;
+  std::vector<int> m_origLeft;
 
   std::vector<Rectangle> m_boxes;
 
   // For generating a move list...
-  std::vector<double> m_curX;
-  std::vector<double> m_curY;
-  std::vector<double> m_newX;
-  std::vector<double> m_newY;
+  std::vector<int> m_curLeft;
+  std::vector<int> m_curBottom;
+  std::vector<int> m_newLeft;
+  std::vector<int> m_newBottom;
   std::vector<unsigned> m_curOri;
   std::vector<unsigned> m_newOri;
   std::vector<std::vector<int> > m_curSeg;

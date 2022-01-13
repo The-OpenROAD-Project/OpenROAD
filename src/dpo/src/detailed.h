@@ -55,15 +55,13 @@ class DetailedMgr;
 class DetailedParams {
  public:
   DetailedParams()
-      : m_targetMaxMovement(std::numeric_limits<double>::max()),
-        m_targetUt(1.0) {
+      : m_targetUt(1.0) {
     m_script = "";
   }
   virtual ~DetailedParams() {}
 
  public:
   std::string m_script;
-  double m_targetMaxMovement;
   double m_targetUt;
 };
 

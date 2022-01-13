@@ -170,31 +170,35 @@ void PlotGnu::drawNodes(char* buf) {
   }
 
   // Output the architecture, which, at the moment is simply a box...
-  fprintf(fpArch,
+  {
+    int lx = m_arch->getMinX();
+    int rx = m_arch->getMaxX();
+    int yb = m_arch->getMinY();
+    int yt = m_arch->getMaxY();
+    fprintf(fpArch,
           "\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
           "\n",
-          m_arch->getMinX(), m_arch->getMinY(), m_arch->getMinX(), m_arch->getMaxY(),
-          m_arch->getMaxX(), m_arch->getMaxY(), m_arch->getMaxX(), m_arch->getMinY(),
-          m_arch->getMinX(), m_arch->getMinY());
+          lx, yb, lx, yt, rx, yt, rx, yb, lx, yb);
+  }
 
   // Draw regions with the exception of the default region.
   for (int r = 1; r < m_arch->getNumRegions(); r++) {
     Architecture::Region* regPtr = m_arch->getRegion(r);
-    for (size_t i = 0; i < regPtr->m_rects.size(); i++) {
-      Rectangle& rect = regPtr->m_rects[i];
+    for (int i = 0; i < regPtr->getNumRects(); i++) {
+      const Rectangle_i& rect = regPtr->getRect(i);
 
       fprintf(fpArch,
               "\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
               "\n",
               rect.xmin(), rect.ymin(), rect.xmin(), rect.ymax(), rect.xmax(),
               rect.ymax(), rect.xmax(), rect.ymin(), rect.xmin(), rect.ymin());

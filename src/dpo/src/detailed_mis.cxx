@@ -540,22 +540,19 @@ void DetailedMis::solveMatch() {
     return;
   }
   std::vector<Node*>& nodes = m_neighbours;
-  double singleRowHeight = m_arch->getRow(0)->getHeight();
 
   int nNodes = (int)nodes.size();
   int nSpots = (int)nodes.size();
-  std::vector<std::pair<double, double> >
-      pos;  // Original location of each node.
-  pos.resize(nNodes);
-  std::vector<std::vector<DetailedSeg*> >
-      seg;  // Original segments for each node.
-  seg.resize(nNodes);
+
+  // Original position of cells.
+  std::vector<std::pair<int, int> > pos(nNodes);
+  // Original segment assignment of cells.
+  std::vector<std::vector<DetailedSeg*> > seg(nNodes);
   for (size_t i = 0; i < nodes.size(); i++) {
     Node* ndi = nodes[i];
-    double y = ndi->getBottom()+0.5*ndi->getHeight();
-    double x = ndi->getLeft()+0.5*ndi->getWidth();
-    pos[i] = std::make_pair(x,y);                          // COPY!
-    seg[i] = m_mgrPtr->m_reverseCellToSegs[ndi->getId()];  // COPY!
+
+    pos[i] = std::make_pair(ndi->getLeft(), ndi->getBottom());    
+    seg[i] = m_mgrPtr->m_reverseCellToSegs[ndi->getId()]; // copy!
   }
 
   lemon::ListDigraph g;
@@ -594,29 +591,44 @@ void DetailedMis::solveMatch() {
     // Nodes to spots.
     Node* ndi = nodes[i];
     for (int j = 0; j < nSpots; j++) {
+      // Determine the cost of assigning cell "ndi" to the 
+      // current position.  Note that we might want to
+      // skip this location if it violates the maximum
+      // displacement limit.  We _never_ prevent a cell 
+      // from being assigned to its original position as
+      // this guarantees a solution!
+      if (i != j) {
+        double dx = std::fabs(pos[j].first - ndi->getOrigLeft());
+        if ((int)std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+          continue;
+        }
+        double dy = std::fabs(pos[j].second - ndi->getOrigBottom());
+        if ((int)std::ceil(dy) > m_mgrPtr->getMaxDisplacementY()) {
+          continue;
+        }
+      }
+
+      // Okay to assign the cell to this location.
       icost = 0;
       if (m_obj == DetailedMis::Hpwl) {
-        icost = (int)getHpwl(ndi, pos[j].first, pos[j].second);
+        icost = (int)getHpwl(ndi, 
+                             pos[j].first + 0.5*ndi->getWidth(), 
+                             pos[j].second + 0.5*ndi->getHeight());
       } else {
-        icost = (int)getDisp(ndi, pos[j].first, pos[j].second);
+        icost = (int)getDisp(ndi, 
+                             pos[j].first + 0.5*ndi->getWidth(), 
+                             pos[j].second + 0.5*ndi->getHeight());
       }
       origCost += (i != j) ? 0 : icost;
 
-      bool addEdge = true;
-      // Reasons to skip the edge?
-      ;
-
-      // Add the edge if its okay.
-      if (addEdge) {
-        // Node to spot.
-        lemon::ListDigraph::Arc arc_vu =
+      // Node to spot.
+      lemon::ListDigraph::Arc arc_vu =
             g.addArc(nodeForCell[i], nodeForSpot[j]);
-        l_i[arc_vu] = 0;
-        u_i[arc_vu] = 1;
-        c_i[arc_vu] = icost;
+      l_i[arc_vu] = 0;
+      u_i[arc_vu] = 1;
+      c_i[arc_vu] = icost;
 
-        reverseMap[arc_vu] = std::make_pair(i, j);
-      }
+      reverseMap[arc_vu] = std::make_pair(i, j);
     }
   }
   // Try max flow.
@@ -627,7 +639,6 @@ void DetailedMis::solveMatch() {
     return;
   }
   // Find mincost flow.
-  //lemon::CycleCanceling<lemon::ListDigraph> mincost(g);
   lemon::NetworkSimplex<lemon::ListDigraph> mincost(g);
   mincost.lowerMap(l_i);
   mincost.upperMap(u_i);
@@ -650,7 +661,6 @@ void DetailedMis::solveMatch() {
   mincost.flowMap(flow);
   int supplyFlow = 0;
   int demandFlow = 0;
-  int finalCost = 0;
   int nMoved = 0;
 
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
@@ -677,10 +687,10 @@ void DetailedMis::solveMatch() {
       // moved. We don't need to remove and reinsert it...
 
       Node* ndi = nodes[i];
-      Node* ndj =
-          nodes[j];  // We effectively "moved" into this cells's location.
-      int spanned_i = (int)(ndi->getHeight() / singleRowHeight + 0.5);
-      int spanned_j = (int)(ndj->getHeight() / singleRowHeight + 0.5);
+      Node* ndj = nodes[j];  
+
+      int spanned_i = m_arch->getCellHeightInRows(ndi);
+      int spanned_j = m_arch->getCellHeightInRows(ndj);
 
       if (ndi != ndj) {
         ++nMoved;
@@ -703,8 +713,8 @@ void DetailedMis::solveMatch() {
         }
 
         // Update the postion of cell "i".
-        ndi->setX(pos[j].first);
-        ndi->setY(pos[j].second);
+        ndi->setLeft(pos[j].first);
+        ndi->setBottom(pos[j].second);
 
         // Determine new segments and add cell "i" to its new segments.
         std::vector<DetailedSeg*>& new_segs = seg[j];
@@ -718,14 +728,6 @@ void DetailedMis::solveMatch() {
           m_mgrPtr->addCellToSegment(ndi, segId);
         }
       }
-
-      icost = 0;
-      if (m_obj == DetailedMis::Hpwl) {
-        icost = (int)getHpwl(ndi, pos[j].first, pos[j].second);
-      } else {
-        icost = (int)getDisp(ndi, pos[j].first, pos[j].second);
-      }
-      finalCost += icost;
     }
   }
 }

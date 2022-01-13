@@ -115,9 +115,6 @@ class Utility {
     return (x & 0x0000003f);
   }
 
-  static void get_row_blockages(
-      Network* network, Architecture* arch, std::vector<Node*>& fixed,
-      std::vector<std::vector<std::pair<double, double> > >& blockages);
   static void get_segments_from_blockages(
       Network* network, Architecture* arch,
       std::vector<std::vector<std::pair<double, double> > >& blockages,
@@ -126,8 +123,6 @@ class Utility {
   static double compute_overlap(double xmin1, double xmax1, double ymin1,
                                 double ymax1, double xmin2, double xmax2,
                                 double ymin2, double ymax2);
-
-  static bool setOrientation(Network* network, Node* node, unsigned newOri);
 };
 
 }  // namespace dpo

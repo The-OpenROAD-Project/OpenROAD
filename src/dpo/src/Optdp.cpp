@@ -207,8 +207,8 @@ void Optdp::updateDbInstLocations() {
     if (instMap_.end() != it_n) {
       Node* nd = it_n->second;
 
-      int y = (int)(nd->getY() - 0.5 * nd->getHeight());
-      int x = (int)(nd->getX() - 0.5 * nd->getWidth());
+      int y = nd->getBottom();
+      int x = nd->getLeft();
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
@@ -435,9 +435,6 @@ void Optdp::createNetwork() {
     Node* ndi = network_->getNode(n);
     instMap_[inst] = ndi;
 
-    double xc = inst->getBBox()->xMin() + 0.5 * inst->getMaster()->getWidth();
-    double yc = inst->getBBox()->yMin() + 0.5 * inst->getMaster()->getHeight();
-
     // Name of inst.
     network_->setNodeName(n, inst->getName().c_str());
 
@@ -468,8 +465,8 @@ void Optdp::createNetwork() {
 
     ndi->setOrigLeft(inst->getBBox()->xMin());
     ndi->setOrigBottom(inst->getBBox()->yMin());
-    ndi->setX(xc);
-    ndi->setY(yc);
+    ndi->setLeft(inst->getBBox()->xMin());
+    ndi->setBottom(inst->getBBox()->yMin());
 
     // Won't use edge types.
     ndi->setRightEdgeType(EDGETYPE_DEFAULT);
@@ -505,18 +502,16 @@ void Optdp::createNetwork() {
     ndi->setAvailOrient(Orientation_N);
     ndi->setCurrOrient(Orientation_N);
 
-    double ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
-    double hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
-    double xx = (bterm->getBBox().xMax() + bterm->getBBox().xMin()) * 0.5;
-    double yy = (bterm->getBBox().yMax() + bterm->getBBox().yMax()) * 0.5;
+    int ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
+    int hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
 
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
     ndi->setOrigLeft(bterm->getBBox().xMin());
     ndi->setOrigBottom(bterm->getBBox().yMin());
-    ndi->setX(xx);
-    ndi->setY(yy);
+    ndi->setLeft(bterm->getBBox().xMin());
+    ndi->setBottom(bterm->getBBox().yMin());
 
     // Not relevant for terminal.
     ndi->setRightEdgeType(EDGETYPE_DEFAULT);
@@ -662,8 +657,8 @@ void Optdp::createArchitecture() {
     archRow->setHeight(site->getHeight());
 
     // Set defaults.  Top and bottom power is set below.
-    archRow->m_powerBot = RowPower_UNK;
-    archRow->m_powerTop = RowPower_UNK;
+    archRow->setBottomPower(RowPower_UNK);
+    archRow->setTopPower(RowPower_UNK);
 
     // Symmetry.  From the site.
     unsigned symmetry = 0x00000000;
@@ -676,7 +671,7 @@ void Optdp::createArchitecture() {
     if (site->getSymmetryR90()) {
       symmetry |= dpo::Symmetry_ROT90;
     }
-    archRow->m_siteSymmetry = symmetry;
+    archRow->setSymmetry(symmetry);
 
     // Orientation.  From the row.
     unsigned orient = Orientation_N;
@@ -691,31 +686,25 @@ void Optdp::createArchitecture() {
     case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
     default: break;
     }
-    archRow->m_siteOrient = orient;
+    archRow->setOrient(orient);
   }
 
   // Get surrounding box.
   {
-    double xmin = std::numeric_limits<double>::max();
-    double xmax = std::numeric_limits<double>::lowest();
-    double ymin = std::numeric_limits<double>::max();
-    double ymax = std::numeric_limits<double>::lowest();
+    int xmin = std::numeric_limits<int>::max();
+    int xmax = std::numeric_limits<int>::lowest();
+    int ymin = std::numeric_limits<int>::max();
+    int ymax = std::numeric_limits<int>::lowest();
     for (int r = 0; r < arch_->getNumRows(); r++) {
       Architecture::Row* row = arch_->getRow(r);
 
-      double lx = row->getLeft();
-      double rx = row->getRight();
-
-      double yb = row->getBottom();
-      double yt = row->getTop();
-
-      xmin = std::min(xmin, lx);
-      xmax = std::max(xmax, rx);
-      ymin = std::min(ymin, yb);
-      ymax = std::max(ymax, yt);
+      xmin = std::min(xmin, row->getLeft());
+      xmax = std::max(xmax, row->getRight());
+      ymin = std::min(ymin, row->getBottom());
+      ymax = std::max(ymax, row->getTop());
     }
-    if (xmin != (double)dieRect.xMin() ||
-        xmax != (double)dieRect.xMax()) {
+    if (xmin != dieRect.xMin() ||
+        xmax != dieRect.xMax()) {
       xmin = dieRect.xMin();
       xmax = dieRect.xMax();
     }
@@ -738,8 +727,7 @@ void Optdp::createArchitecture() {
       }
     }
     if (originX+numSites*siteSpacing+siteWidth > arch_->getMaxX()) {
-      numSites = (int)std::floor(
-                    (arch_->getMaxX()-siteWidth-originX)/(double)siteSpacing);
+      numSites = (arch_->getMaxX()-siteWidth-originX)/siteSpacing;
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }
@@ -787,14 +775,14 @@ void Optdp::createArchitecture() {
         Rect rect;
         sbox->getBox(rect);
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
-          double yb = arch_->getRow(r)->getBottom();
-          double yt = arch_->getRow(r)->getTop();
+          int yb = arch_->getRow(r)->getBottom();
+          int yt = arch_->getRow(r)->getTop();
 
           if (yb >= rect.yMin() && yb <= rect.yMax()) {
-            arch_->getRow(r)->m_powerBot = pwr;
+            arch_->getRow(r)->setBottomPower(pwr);
           }
           if (yt >= rect.yMin() && yt <= rect.yMax()) {
-            arch_->getRow(r)->m_powerTop = pwr;
+            arch_->getRow(r)->setTopPower(pwr);
           }
         }
       }
@@ -804,26 +792,33 @@ void Optdp::createArchitecture() {
 }
 ////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementRegions() {
-  double xmin, xmax, ymin, ymax;
-  xmin = arch_->getMinX();
-  xmax = arch_->getMaxX();
-  ymin = arch_->getMinY();
-  ymax = arch_->getMaxY();
+  int xmin = arch_->getMinX();
+  int xmax = arch_->getMaxX();
+  int ymin = arch_->getMinY();
+  int ymax = arch_->getMaxY();
 
   dbBlock* block = db_->getChip()->getBlock();
 
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;
   int count = 0;
+  Rectangle_i tempRect;
 
   // Default region.
   rptr = arch_->createAndAddRegion();
-  rptr->m_id = count++;
-  rptr->m_rects.push_back(Rectangle(xmin, ymin, xmax, ymax));
-  rptr->m_xmin = xmin;
-  rptr->m_xmax = xmax;
-  rptr->m_ymin = ymin;
-  rptr->m_ymax = ymax;
+  rptr->setId(count);
+  ++count;
+
+  tempRect.set_xmin(xmin);
+  tempRect.set_xmax(xmax);
+  tempRect.set_ymin(ymin);
+  tempRect.set_ymax(ymax);
+  rptr->addRect(tempRect);
+
+  rptr->setMinX(xmin);
+  rptr->setMaxX(xmax);
+  rptr->setMinY(ymin);
+  rptr->setMaxY(ymax);
 
   // Hmm.  I noticed a comment in the OpenDP interface that
   // the OpenDB represents groups as regions.  I'll follow
@@ -835,7 +830,8 @@ void Optdp::setUpPlacementRegions() {
     dbRegion* parent = db_region->getParent();
     if (parent) {
       rptr = arch_->createAndAddRegion();
-      rptr->m_id = count++;
+      rptr->setId(count);
+      ++count;
 
       // Assuming these are the rectangles making up the region...
       auto boundaries = db_region->getParent()->getBoundaries();
@@ -843,16 +839,21 @@ void Optdp::setUpPlacementRegions() {
         Rect box;
         boundary->getBox(box);
 
-        xmin = std::max(arch_->getMinX(), (double)box.xMin());
-        xmax = std::min(arch_->getMaxX(), (double)box.xMax());
-        ymin = std::max(arch_->getMinY(), (double)box.yMin());
-        ymax = std::min(arch_->getMaxY(), (double)box.yMax());
+        xmin = std::max(arch_->getMinX(), box.xMin());
+        xmax = std::min(arch_->getMaxX(), box.xMax());
+        ymin = std::max(arch_->getMinY(), box.yMin());
+        ymax = std::min(arch_->getMaxY(), box.yMax());
 
-        rptr->m_rects.push_back(Rectangle(xmin, ymin, xmax, ymax));
-        rptr->m_xmin = std::min(xmin, rptr->m_xmin);
-        rptr->m_xmax = std::max(xmax, rptr->m_xmax);
-        rptr->m_ymin = std::min(ymin, rptr->m_ymin);
-        rptr->m_ymax = std::max(ymax, rptr->m_ymax);
+        tempRect.set_xmin(xmin);
+        tempRect.set_xmax(xmax);
+        tempRect.set_ymin(ymin);
+        tempRect.set_ymax(ymax);
+        rptr->addRect(tempRect);
+
+        rptr->setMinX(std::min(xmin, rptr->getMinX()));
+        rptr->setMaxX(std::max(xmax, rptr->getMaxX()));
+        rptr->setMinY(std::min(ymin, rptr->getMinY()));
+        rptr->setMaxY(std::max(ymax, rptr->getMaxY()));
       }
 
       // The instances within this region.
@@ -861,7 +862,7 @@ void Optdp::setUpPlacementRegions() {
         if (instMap_.end() != it_n) {
           Node* nd = it_n->second;
           if (nd->getRegionId() == 0) {
-            nd->setRegionId(rptr->m_id);
+            nd->setRegionId(rptr->getId());
           }
         }
       }

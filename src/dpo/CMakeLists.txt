@@ -53,7 +53,6 @@ target_sources(dpo
     src/detailed.cxx
     src/detailed_manager.cxx
     src/detailed_mis.cxx
-    src/detailed_interleaving.cxx
     src/detailed_reorder.cxx
     src/detailed_global.cxx
     src/detailed_vertical.cxx

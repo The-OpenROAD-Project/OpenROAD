@@ -44,10 +44,10 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 Node::Node()
     : m_id(0),
-      m_x(0.0),
-      m_y(0.0),
-      m_w(0.0),
-      m_h(0.0),
+      m_left(0),
+      m_bottom(0),
+      m_w(0),
+      m_h(0),
       m_type(0),
       m_fixed(NodeFixed_NOT_FIXED),
       m_attributes(NodeAttributes_EMPTY),
@@ -137,8 +137,8 @@ Node* Network::createAndAddNode(void) {
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddFillerNode(double x, double y, double width,
-                                      double height) {
+Node* Network::createAndAddFillerNode(int left, int bottom, int width,
+                                      int height) {
   Node* ndi = new Node();
   int id = (int)m_nodes.size();
   ndi->setFixed(NodeFixed_FIXED_XY);
@@ -146,15 +146,15 @@ Node* Network::createAndAddFillerNode(double x, double y, double width,
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);
-  ndi->setY(y);
-  ndi->setX(x);
+  ndi->setBottom(bottom);
+  ndi->setLeft(left);
   m_nodes.push_back(ndi);
   return getNode(id);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddShapeNode(double x, double y,
-                                     double width, double height) {
+Node* Network::createAndAddShapeNode(int left, int bottom, int width, 
+                                     int height) {
   // Add shape cells to list of network cells.  We have
   // the parent node from which we can derive a name.
   Node* ndi = new Node();
@@ -164,8 +164,8 @@ Node* Network::createAndAddShapeNode(double x, double y,
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);
-  ndi->setY(y);
-  ndi->setX(x);
+  ndi->setBottom(bottom);
+  ndi->setLeft(left);
   m_nodes.push_back(ndi);
   return getNode(id);
 }

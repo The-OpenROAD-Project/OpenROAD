@@ -49,7 +49,6 @@
 // Detailed placement algorithms.
 #include "detailed.h"
 #include "detailed_global.h"
-#include "detailed_interleaving.h"
 #include "detailed_mis.h"
 #include "detailed_random.h"
 #include "detailed_reorder.h"
@@ -121,11 +120,11 @@ bool Detailed::improve(DetailedMgr& mgr)
   }
 
   // Different checks which are useful for debugging.
-  //mgr.checkRegionAssignment();  
-  //mgr.checkRowAlignment();   
-  //mgr.checkSiteAlignment();  
-  //mgr.checkOverlapInSegments(); 
-  //mgr.checkEdgeSpacingInSegments(); 
+  mgr.checkRegionAssignment();  
+  mgr.checkRowAlignment();   
+  mgr.checkSiteAlignment();  
+  mgr.checkOverlapInSegments(); 
+  mgr.checkEdgeSpacingInSegments(); 
 
   return true;
 }
@@ -150,8 +149,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
     command = "global swaps";
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
     command = "vertical swaps";
-  //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
-  //  command = "interleaving";
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     command = "reordering";
   } else if (strcmp(args[0].c_str(), "default") == 0) {
@@ -189,11 +186,11 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args) {
   }
 
   // Different checks which are useful for debugging.
-  //mgr.checkRegionAssignment();  
-  //mgr.checkRowAlignment();   
-  //mgr.checkSiteAlignment();  
-  //mgr.checkOverlapInSegments(); 
-  //mgr.checkEdgeSpacingInSegments(); 
+  //m_mgr->checkRegionAssignment();  
+  //m_mgr->checkRowAlignment();   
+  //m_mgr->checkSiteAlignment();  
+  //m_mgr->checkOverlapInSegments(); 
+  //m_mgr->checkEdgeSpacingInSegments(); 
 }
 
 }  // namespace dpo

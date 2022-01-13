@@ -87,30 +87,26 @@ class Node {
   int getId() const { return m_id; }
   void setId(int id) { m_id = id; }
 
-  void setHeight(double h) { m_h = h; }
-  double getHeight() const { return m_h; }
+  void setHeight(int h) { m_h = h; }
+  int getHeight() const { return m_h; }
 
-  void setWidth(double w) { m_w = w; }
-  double getWidth() const { return m_w; }
+  void setWidth(int w) { m_w = w; }
+  int getWidth() const { return m_w; }
 
-  double getArea() const { return m_w * m_h; }
+  int getArea() const { return m_w * m_h; }
 
-  void setX(double x) { m_x = x; }
-  double getX() const { return m_x; }
+  void setLeft(int left) { m_left = left; }
+  int getLeft() const { return m_left; }
+  int getRight() const { return m_left + m_w; }
 
-  void setY(double y) { m_y = y; }
-  double getY() const { return m_y; }
+  void setBottom(int bottom) { m_bottom = bottom; }
+  int getBottom() const { return m_bottom; }
+  int getTop() const { return m_bottom + m_h; }
 
   void setOrigLeft(double left) { m_origLeft = left; }
   double getOrigLeft() const { return m_origLeft; }
-
   void setOrigBottom(double bottom) { m_origBottom = bottom; }
   double getOrigBottom() const { return m_origBottom; }
-
-  double getRight() const { return m_x + 0.5 * ((double)m_w); }
-  double getLeft() const { return m_x - 0.5 * ((double)m_w); }
-  double getBottom() const { return m_y - 0.5 * ((double)m_h); }
-  double getTop() const { return m_y + 0.5 * ((double)m_h); }
 
   void setFixed(unsigned fixed) { m_fixed = fixed; }
   unsigned getFixed() const { return m_fixed; }
@@ -160,15 +156,15 @@ class Node {
  protected:
   // Id.
   int m_id;
-  // Current position.
-  double m_x;
-  double m_y;
+  // Current position; bottom corner.
+  int m_left;
+  int m_bottom;
   // Original position.  Stored as double still.
   double m_origLeft;
   double m_origBottom;
   // Width and height.
-  double m_w;
-  double m_h;
+  int m_w;
+  int m_h;
   // Type.
   unsigned m_type;
   // Fixed or not fixed.
@@ -324,10 +320,11 @@ class Network {
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
   Node* createAndAddShapeNode(
-      double x, double y, double width,
-      double height);  // Extras for non-rectangular shapes.
-  Node* createAndAddFillerNode(double x, double y, double width,
-                               double height);  // Extras to block space.
+      int left, int bottom, int width,
+      int height);  // Extras for non-rectangular shapes.
+  Node* createAndAddFillerNode(
+      int left, int bottom, int width,
+      int height);  // Extras to block space.
 
   // For creating and adding edges.
   Edge* createAndAddEdge();
