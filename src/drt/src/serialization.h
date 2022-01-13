@@ -380,7 +380,7 @@ void serialize(Archive& ar,
                odb::dbMasterType& type,
                const unsigned int version)
 {
-  odb::dbMasterType::Value v;
+  odb::dbMasterType::Value v = odb::dbMasterType::NONE;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbMasterType(v);
