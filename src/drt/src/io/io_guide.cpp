@@ -745,8 +745,7 @@ bool io::Parser::genGuides_gCell2APTermMap(
 
     Point idx;
     design->getTopBlock()->getGCellIdx(bp, idx);
-    gCell2PinMap[make_pair(idx, bNum)].insert(
-        static_cast<frBlockObject*>(term));
+    gCell2PinMap[{idx, bNum}].insert(term);
     succesPinCnt++;
   }
   return succesPinCnt == term->getPins().size();
