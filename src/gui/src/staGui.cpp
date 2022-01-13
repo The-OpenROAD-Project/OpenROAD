@@ -1014,17 +1014,22 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
 
   // draw timing connections
   const double timing_range = max_timing_ - min_timing_;
+  const bool cone_unconstrained = max_timing_ < min_timing_;
 
-  auto timingToRatio = [this, timing_range](const TimingPathNode* node) {
-    if (timing_range == 0.0) {
-      return 1.0;
-    }
-    double value = 0.0;
-    if (node->hasValues()) {
-      value = 1.0 - (node->getPathSlack() - min_timing_) / timing_range;
-    }
-    return value;
-  };
+  std::function<double(const TimingPathNode* node)> timingToRatio;
+  if (timing_range == 0.0 || cone_unconstrained) {
+    timingToRatio = [](const TimingPathNode* node) {
+      return 0.5;
+    };
+  } else {
+    timingToRatio = [this, timing_range](const TimingPathNode* node) {
+      double value = 0.0;
+      if (node->hasValues()) {
+        value = 1.0 - (node->getPathSlack() - min_timing_) / timing_range;
+      }
+      return value;
+    };
+  }
 
   // draw instances
   std::map<odb::dbInst*, TimingPathNode*> instances;
@@ -1106,21 +1111,23 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     }
   }
 
-  // draw legend
-  const int legend_keys = 5;
-  const int color_count = color_generator_.getColorCount();
-  auto* units = sta_->units()->timeUnit();
-  const std::string text_units = std::string(units->scaleAbreviation()) + units->suffix();
-  std::vector<std::pair<int, std::string>> legend;
-  for (int i = 0; i < legend_keys; i++) {
-    const double scale = static_cast<double>(i) / (legend_keys - 1);
-    const int color_index = color_count * scale;
-    const double slack = max_timing_ - timing_range * scale;
-    const std::string text = units->asString(slack) + text_units;
-    legend.push_back({color_index, text});
+  if (!cone_unconstrained) {
+    // draw legend, dont draw if cone is unonstrained
+    const int legend_keys = 5;
+    const int color_count = color_generator_.getColorCount();
+    auto* units = sta_->units()->timeUnit();
+    const std::string text_units = std::string(units->scaleAbreviation()) + units->suffix();
+    std::vector<std::pair<int, std::string>> legend;
+    for (int i = 0; i < legend_keys; i++) {
+      const double scale = static_cast<double>(i) / (legend_keys - 1);
+      const int color_index = color_count * scale;
+      const double slack = max_timing_ - timing_range * scale;
+      const std::string text = units->asString(slack) + text_units;
+      legend.push_back({color_index, text});
+    }
+    std::reverse(legend.begin(), legend.end());
+    color_generator_.drawLegend(painter, legend);
   }
-  std::reverse(legend.begin(), legend.end());
-  color_generator_.drawLegend(painter, legend);
 }
 
 void TimingConeRenderer::getFaninCone(sta::Pin* source_pin, DepthMapSet& depth_map)
@@ -1333,7 +1340,7 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
   }
 
   min_timing_ = std::numeric_limits<float>::max();
-  max_timing_ = std::numeric_limits<float>::min();
+  max_timing_ = std::numeric_limits<float>::lowest();
   for (const auto& [level, pin_list] : map_) {
     for (const auto& pin : pin_list) {
       if (sta::delayInf(pin->getPathSlack()) || !pin->hasValues()) {
