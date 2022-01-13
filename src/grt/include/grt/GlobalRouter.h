@@ -222,7 +222,6 @@ class GlobalRouter
   // main functions
   void initCoreGrid(int max_routing_layer);
   void initRoutingLayers();
-  void initRoutingLayers1();
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
@@ -324,7 +323,6 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
-  int trackSpacing();
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;
