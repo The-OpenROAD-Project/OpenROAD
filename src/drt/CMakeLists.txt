@@ -119,6 +119,7 @@ target_sources(drt
     src/rp/FlexRP_prep.cpp
     src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
+    src/frBaseTypes.cpp
 )
 
 target_include_directories(drt
