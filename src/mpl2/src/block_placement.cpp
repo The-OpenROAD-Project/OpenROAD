@@ -1046,8 +1046,8 @@ void SimulatedAnnealingCore::CalculateNotchPenalty()
     }
   }
   // we define the notch threshold
-  const float threshold_H = min(50.0, outline_width_ / 10.0);
-  const float threshold_V = min(50.0, outline_height_ / 10.0);
+  const float threshold_H =  outline_width_ / 4.0;
+  const float threshold_V =  outline_height_ / 4.0;
   int num_notch = 0;
 
   for (int i = 0; i < num_x; i++) {

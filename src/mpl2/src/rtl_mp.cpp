@@ -107,7 +107,7 @@ bool rtl_macro_placer(const char* config_file,
   //  Default for Parameters
   //
   // These parameters are related to shape engine
-  float min_aspect_ratio = 0.40;
+  float min_aspect_ratio = 0.39;
   float dead_space = 0.05;
 
   string region_file = string(macro_blockage_file);
@@ -122,7 +122,7 @@ bool rtl_macro_placer(const char* config_file,
 
   // These parameters are related to "Go with the winner"
   float heat_rate = 0.5;
-  int num_level = 2;
+  int num_level = 1;
   int num_worker = 10;
 
   // These parameters are related to cost function
@@ -154,7 +154,7 @@ bool rtl_macro_placer(const char* config_file,
   int k = 5000000;
   float c = 1000.0;
   int max_num_step = 4000;
-  int perturb_per_step = 1000;
+  int perturb_per_step = 300;
 
   int snap_layer = 4;
 
