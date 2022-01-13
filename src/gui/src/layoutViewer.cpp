@@ -800,7 +800,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
     auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, net] : shapes) {
-      if (options_->isNetVisible(net)) {
+      if (isNetVisible(net)) {
         boxes.push_back(box);
       }
     }
@@ -912,7 +912,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
+      if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(makeSelected_(net));
       }
     }
@@ -1916,7 +1916,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      instance_limit);
 
     for (auto& i : iter) {
-      if (!options_->isNetVisible(std::get<2>(i))) {
+      if (!isNetVisible(std::get<2>(i))) {
         continue;
       }
       auto poly = std::get<1>(i);
@@ -2655,6 +2655,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2721,10 +2722,14 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, []() {
-    Gui::get()->clearSelections();
-    Gui::get()->clearHighlights(-1);
-    Gui::get()->clearRulers();
+  connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearFocusNets();
+  });
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+    menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
+    menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
+    menu_actions_[CLEAR_RULERS_ACT]->trigger();
+    menu_actions_[CLEAR_FOCUS_ACT]->trigger();
   });
 }
 
@@ -2751,6 +2756,42 @@ bool LayoutViewer::hasDesign() const
   }
 
   return true;
+}
+
+void LayoutViewer::addFocusNet(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = focus_nets_.insert(net);
+  if (inserted) {
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeFocusNet(odb::dbNet* net)
+{
+  if (focus_nets_.erase(net) > 0) {
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearFocusNets()
+{
+  if (!focus_nets_.empty()) {
+    focus_nets_.clear();
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+bool LayoutViewer::isNetVisible(odb::dbNet* net)
+{
+  bool focus_visible = true;
+  if (!focus_nets_.empty()) {
+    focus_visible = focus_nets_.find(net) != focus_nets_.end();
+  }
+
+  return focus_visible && options_->isNetVisible(net);
 }
 
 ////// LayoutScroll ///////
