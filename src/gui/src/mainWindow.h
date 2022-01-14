@@ -225,7 +225,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
  private slots:
   void setUseDBU(bool use_dbu);
   void setClearLocation();
-
+  void showApplicationFont();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -291,6 +291,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* font_;
 
   QLabel* location_;
 
