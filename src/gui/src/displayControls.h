@@ -63,6 +63,10 @@ class dbNet;
 class dbInst;
 }  // namespace odb
 
+namespace sta {
+class dbSta;
+} // namespace sta
+
 namespace utl {
 class Logger;
 } // namespace utl
@@ -160,6 +164,7 @@ class DisplayControls : public QDockWidget, public Options
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
+  void setSTA(sta::dbSta* sta);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -261,7 +266,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
-  struct InstanceModels
+  struct PhysicalInstanceModels
   {
     ModelRow core;
     ModelRow blocks;
@@ -270,6 +275,18 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow welltap;
     ModelRow pads;
     ModelRow cover;
+  };
+
+  struct FunctionalInstanceModels
+  {
+    ModelRow combinational;
+    ModelRow sequential;
+    ModelRow buffer_inv;
+    ModelRow clock_gate;
+    ModelRow levelshifter;
+    ModelRow pad;
+    ModelRow macro;
+    ModelRow memory;
   };
 
   struct BlockageModels
@@ -306,7 +323,7 @@ class DisplayControls : public QDockWidget, public Options
 
   QStandardItem* makeParentItem(ModelRow& row,
                                 const QString& text,
-                                QStandardItemModel* parent,
+                                QStandardItem* parent,
                                 Qt::CheckState checked,
                                 bool add_selectable = false,
                                 const QColor& color = Qt::transparent);
@@ -340,6 +357,11 @@ class DisplayControls : public QDockWidget, public Options
   void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
   void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
 
+  bool isPhysicalInstanceVisible(odb::dbInst* inst);
+  bool isPhysicalInstanceSelectable(odb::dbInst* inst);
+  bool isFunctionalInstanceVisible(odb::dbInst* inst);
+  bool isFunctionalInstanceSelectable(odb::dbInst* inst);
+
   QTreeView* view_;
   DisplayControlModel* model_;
   QMenu* layers_menu_;
@@ -352,13 +374,15 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
-  ModelRow instance_group_;
+  ModelRow physical_instance_group_;
+  ModelRow functional_instance_group_;
   ModelRow blockage_group_;
   ModelRow misc_group_;
 
   // Object controls
   NetModels nets_;
-  InstanceModels instances_;
+  PhysicalInstanceModels physical_instances_;
+  FunctionalInstanceModels functional_instances_;
   BlockageModels blockages_;
   ModelRow rows_;
   ModelRow pin_markers_;
@@ -373,6 +397,7 @@ class DisplayControls : public QDockWidget, public Options
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  sta::dbSta* sta_;
   bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
