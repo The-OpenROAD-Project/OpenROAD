@@ -106,6 +106,11 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
 template<typename T>
 static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
 {
+  if (obj->getSigType().isSupply()) {
+    // no timing actions needed
+    return;
+  }
+
   auto* gui = Gui::get();
 
   actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
