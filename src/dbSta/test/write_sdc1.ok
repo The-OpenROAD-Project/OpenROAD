@@ -1,6 +1,3 @@
-OpenROAD v2.0-2678-gf8f3d6bb3 
-This program is licensed under the BSD-3 license. See the LICENSE file for details.
-Components of this program may be licensed under more restrictive licenses which must be honored.
 [INFO ODB-0222] Reading LEF file: liberty1.lef
 [INFO ODB-0223]     Created 2 technology layers
 [INFO ODB-0225]     Created 6 library cells
