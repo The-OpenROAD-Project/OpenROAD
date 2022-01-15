@@ -362,6 +362,14 @@ class DisplayControls : public QDockWidget, public Options
   bool isFunctionalInstanceVisible(odb::dbInst* inst);
   bool isFunctionalInstanceSelectable(odb::dbInst* inst);
 
+  const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
+  const ModelRow* getPhysicalInstRow(odb::dbInst* inst) const;
+  const ModelRow* getFunctionalInstRow(odb::dbInst* inst) const;
+  const ModelRow* getNetRow(odb::dbNet* net) const;
+
+  bool isRowVisible(const ModelRow* row) const;
+  bool isRowSelectable(const ModelRow* row) const;
+
   QTreeView* view_;
   DisplayControlModel* model_;
   QMenu* layers_menu_;

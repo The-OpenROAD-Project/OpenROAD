@@ -1235,13 +1235,49 @@ QFont DisplayControls::instanceNameFont()
   return instance_name_font_;
 }
 
-bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
+bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
+{
+  if (row == nullptr) {
+    return true;
+  }
+  return row->visible->checkState() == Qt::Checked;
+}
+
+bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) const
+{
+  if (row == nullptr) {
+    return true;
+  }
+  return row->selectable->checkState() == Qt::Checked;
+}
+
+const DisplayControls::ModelRow* DisplayControls::getLayerRow(const odb::dbTechLayer* layer) const
 {
   auto it = layer_controls_.find(layer);
   if (it != layer_controls_.end()) {
-    return it->second.visible->checkState() == Qt::Checked;
+    return &it->second;
   }
-  return false;
+  return nullptr;
+}
+
+bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
+{
+  auto* row = getLayerRow(layer);
+  if (row == nullptr) {
+    return false;
+  }
+
+  return isRowVisible(row);
+}
+
+bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
+{
+  auto* row = getLayerRow(layer);
+  if (row == nullptr) {
+    return false;
+  }
+
+  return isRowSelectable(row);
 }
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
@@ -1249,66 +1285,76 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
   return isPhysicalInstanceVisible(inst) && isFunctionalInstanceVisible(inst);
 }
 
+const DisplayControls::ModelRow* DisplayControls::getPhysicalInstRow(odb::dbInst* inst) const
+{
+  dbMaster* master = inst->getMaster();
+  if (master->isEndCap()) {
+    return &physical_instances_.endcap;
+  } else if (master->isFiller()) {
+    return &physical_instances_.fill;
+  } else if (master->isCore()) {
+    if (master->getType() == dbMasterType::CORE_WELLTAP) {
+      return &physical_instances_.welltap;
+    } else {
+      return &physical_instances_.core;
+    }
+  } else if (master->isBlock()) {
+    return &physical_instances_.blocks;
+  } else if (master->isPad()) {
+    return &physical_instances_.pads;
+  } else if (master->isCover()) {
+    return &physical_instances_.cover;
+  } else {
+    return nullptr;
+  }
+}
+
 bool DisplayControls::isPhysicalInstanceVisible(odb::dbInst* inst)
 {
-  if (physical_instance_group_.visible->checkState() == Qt::Checked) {
+  if (isRowVisible(&physical_instance_group_)) {
     return true;
   }
 
-  dbMaster* master = inst->getMaster();
-  if (master->isEndCap()) {
-    return physical_instances_.endcap.visible->checkState() == Qt::Checked;
-  } else if (master->isFiller()) {
-    return physical_instances_.fill.visible->checkState() == Qt::Checked;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return physical_instances_.welltap.visible->checkState() == Qt::Checked;
-    } else {
-      return physical_instances_.core.visible->checkState() == Qt::Checked;
-    }
-  } else if (master->isBlock()) {
-    return physical_instances_.blocks.visible->checkState() == Qt::Checked;
-  } else if (master->isPad()) {
-    return physical_instances_.pads.visible->checkState() == Qt::Checked;
-  } else if (master->isCover()) {
-    return physical_instances_.cover.visible->checkState() == Qt::Checked;
+  return isRowVisible(getPhysicalInstRow(inst));
+}
+
+const DisplayControls::ModelRow* DisplayControls::getFunctionalInstRow(odb::dbInst* inst) const
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(inst->getMaster());
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return nullptr;
+  }
+  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+    return &functional_instances_.buffer_inv;
+  } else if (lib_cell->isClockGate()) {
+    return &functional_instances_.clock_gate;
+  } if (lib_cell->isLevelShifter()) {
+    return &functional_instances_.levelshifter;
+  } else if (lib_cell->isPad()) {
+    return &functional_instances_.pad;
+  } else if (lib_cell->isMacro()) {
+    return &functional_instances_.macro;
+  } else if (lib_cell->isMemory()) {
+    return &functional_instances_.memory;
+  } else if (lib_cell->hasSequentials()) {
+    return &functional_instances_.sequential;
+  } else if (lib_cell->portCount() == 0) {
+    return nullptr; // non-functional
   } else {
-    return true;
+    // not anything else, so combinational
+    return &functional_instances_.combinational;
   }
 }
 
 bool DisplayControls::isFunctionalInstanceVisible(odb::dbInst* inst)
 {
-  if (functional_instance_group_.visible->checkState() == Qt::Checked) {
+  if (isRowVisible(&functional_instance_group_)) {
     return true;
   }
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (lib_cell == nullptr) {
-    return true;
-  }
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    return functional_instances_.buffer_inv.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->isClockGate()) {
-    return functional_instances_.clock_gate.visible->checkState() == Qt::Checked;
-  } if (lib_cell->isLevelShifter()) {
-    return functional_instances_.levelshifter.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->isPad()) {
-    return functional_instances_.pad.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->isMacro()) {
-    return functional_instances_.macro.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->isMemory()) {
-    return functional_instances_.memory.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->hasSequentials()) {
-    return functional_instances_.sequential.visible->checkState() == Qt::Checked;
-  } else if (lib_cell->portCount() == 0) {
-    return true; // non-functional
-  } else {
-    // not anything else, so combinational
-    return functional_instances_.combinational.visible->checkState() == Qt::Checked;
-  }
+  return isRowVisible(getFunctionalInstRow(inst));
 }
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
@@ -1318,128 +1364,66 @@ bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 
 bool DisplayControls::isPhysicalInstanceSelectable(odb::dbInst* inst)
 {
-  if (physical_instance_group_.selectable->checkState() == Qt::Checked) {
+  if (isRowSelectable(&physical_instance_group_)) {
     return true;
   }
 
-  dbMaster* master = inst->getMaster();
-  if (master->isEndCap()) {
-    return physical_instances_.endcap.selectable->checkState() == Qt::Checked;
-  } else if (master->isFiller()) {
-    return physical_instances_.fill.selectable->checkState() == Qt::Checked;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return physical_instances_.welltap.selectable->checkState() == Qt::Checked;
-    } else {
-      return physical_instances_.core.selectable->checkState() == Qt::Checked;
-    }
-  } else if (master->isBlock()) {
-    return physical_instances_.blocks.selectable->checkState() == Qt::Checked;
-  } else if (master->isPad()) {
-    return physical_instances_.pads.selectable->checkState() == Qt::Checked;
-  } else if (master->isCover()) {
-    return physical_instances_.cover.selectable->checkState() == Qt::Checked;
-  } else {
-    return true;
-  }
+  return isRowSelectable(getPhysicalInstRow(inst));
 }
 
 bool DisplayControls::isFunctionalInstanceSelectable(odb::dbInst* inst)
 {
-  if (functional_instance_group_.selectable->checkState() == Qt::Checked) {
+  if (isRowSelectable(&functional_instance_group_)) {
     return true;
   }
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (lib_cell == nullptr) {
-    return true;
-  }
-  if (lib_cell == nullptr) {
-    return true;
-  }
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    return functional_instances_.buffer_inv.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->isClockGate()) {
-    return functional_instances_.clock_gate.selectable->checkState() == Qt::Checked;
-  } if (lib_cell->isLevelShifter()) {
-    return functional_instances_.levelshifter.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->isPad()) {
-    return functional_instances_.pad.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->isMacro()) {
-    return functional_instances_.macro.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->isMemory()) {
-    return functional_instances_.memory.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->hasSequentials()) {
-    return functional_instances_.sequential.selectable->checkState() == Qt::Checked;
-  } else if (lib_cell->portCount() == 0) {
-    return true; // non-functional
-  } else {
-    // not anything else, so combinational
-    return functional_instances_.combinational.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(getFunctionalInstRow(inst));
+}
+
+const DisplayControls::ModelRow* DisplayControls::getNetRow(odb::dbNet* net) const
+{
+  switch (net->getSigType()) {
+    case dbSigType::SIGNAL:
+      return &nets_.signal;
+    case dbSigType::POWER:
+      return &nets_.power;
+    case dbSigType::GROUND:
+      return &nets_.ground;
+    case dbSigType::CLOCK:
+      return &nets_.clock;
+    default:
+      return nullptr;
   }
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
-  switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
-      return nets_.signal.visible->checkState() == Qt::Checked;
-    case dbSigType::POWER:
-      return nets_.power.visible->checkState() == Qt::Checked;
-    case dbSigType::GROUND:
-      return nets_.ground.visible->checkState() == Qt::Checked;
-    case dbSigType::CLOCK:
-      return nets_.clock.visible->checkState() == Qt::Checked;
-    default:
-      return true;
-  }
+  return isRowVisible(getNetRow(net));
 }
 
 bool DisplayControls::isNetSelectable(odb::dbNet* net)
 {
-  switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
-      return nets_.signal.selectable->checkState() == Qt::Checked;
-    case dbSigType::POWER:
-      return nets_.power.selectable->checkState() == Qt::Checked;
-    case dbSigType::GROUND:
-      return nets_.ground.selectable->checkState() == Qt::Checked;
-    case dbSigType::CLOCK:
-      return nets_.clock.selectable->checkState() == Qt::Checked;
-    default:
-      return true;
-  }
-}
-
-bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
-{
-  auto it = layer_controls_.find(layer);
-  if (it != layer_controls_.end()) {
-    return it->second.selectable->checkState() == Qt::Checked;
-  }
-  return false;
+  return isRowSelectable(getNetRow(net));
 }
 
 bool DisplayControls::areInstanceNamesVisible()
 {
-  return misc_.instance_names.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.instance_names);
 }
 
 bool DisplayControls::areFillsVisible()
 {
-  return misc_.fills.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.fills);
 }
 
 bool DisplayControls::areRulersVisible()
 {
-  return rulers_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&rulers_);
 }
 
 bool DisplayControls::areRulersSelectable()
 {
-  return rulers_.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&rulers_);
 }
 
 QColor DisplayControls::rulerColor()
@@ -1454,27 +1438,27 @@ QFont DisplayControls::rulerFont()
 
 bool DisplayControls::areBlockagesVisible()
 {
-  return blockages_.blockages.visible->checkState() == Qt::Checked;
+  return isRowVisible(&blockages_.blockages);
 }
 
 bool DisplayControls::areBlockagesSelectable()
 {
-  return blockages_.blockages.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&blockages_.blockages);
 }
 
 bool DisplayControls::areObstructionsVisible()
 {
-  return blockages_.obstructions.visible->checkState() == Qt::Checked;
+  return isRowVisible(&blockages_.obstructions);
 }
 
 bool DisplayControls::areObstructionsSelectable()
 {
-  return blockages_.obstructions.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&blockages_.obstructions);
 }
 
 bool DisplayControls::areRowsVisible()
 {
-  return rows_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&rows_);
 }
 
 QColor DisplayControls::rowColor()
@@ -1484,37 +1468,37 @@ QColor DisplayControls::rowColor()
 
 bool DisplayControls::areSelectedVisible()
 {
-  return misc_.selected.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.selected);
 }
 
 bool DisplayControls::isDetailedVisibility()
 {
-  return misc_.detailed.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.detailed);
 }
 
 bool DisplayControls::arePrefTracksVisible()
 {
-  return tracks_.pref.visible->checkState() == Qt::Checked;
+  return isRowVisible(&tracks_.pref);
 }
 
 bool DisplayControls::areNonPrefTracksVisible()
 {
-  return tracks_.non_pref.visible->checkState() == Qt::Checked;
+  return isRowVisible(&tracks_.non_pref);
 }
 
 bool DisplayControls::isScaleBarVisible() const
 {
-  return misc_.scale_bar.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.scale_bar);
 }
 
 bool DisplayControls::arePinMarkersVisible() const
 {
-  return pin_markers_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&pin_markers_);
 }
 
 bool DisplayControls::areAccessPointsVisible() const
 {
-  return misc_.access_points.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.access_points);
 }
 
 QFont DisplayControls::pinMarkersFont()
