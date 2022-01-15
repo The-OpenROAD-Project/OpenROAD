@@ -36,4 +36,7 @@ record_tests {
   write_verilog6
   write_verilog7
   write_verilog8
+
+  write_sdc1.tcl
+
 }
