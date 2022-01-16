@@ -33,6 +33,7 @@
 #include "db/drObj/drBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 
 namespace fr {
 class drNet;

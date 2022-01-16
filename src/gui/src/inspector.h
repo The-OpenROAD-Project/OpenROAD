@@ -210,6 +210,7 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
   void highlightChanged();
+  void focusNetsChanged();
 
   int selectNext();
   int selectPrevious();

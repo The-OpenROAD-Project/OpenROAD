@@ -231,6 +231,42 @@ proc display_timing_cone { args } {
   gui::timing_cone $term $fanin $fanout
 }
 
+sta::define_cmd_args "focus_net" {net \
+                                  [-remove] \
+                                  [-clear]
+}
+
+proc focus_net { args } {
+  sta::parse_key_args "focus_net" args \
+    keys {} flags {-remove -clear}
+  if { [info exists flags(-clear)] } {
+    sta::check_argc_eq0 "focus_net" $args
+
+    gui::clear_focus_nets
+    return
+  }
+
+  sta::check_argc_eq1 "focus_net" $args
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GUI 70 "Design not loaded."
+  }
+
+  set net_name [lindex $args 0]
+  set net [$block findNet $net_name]
+
+  if { $net == "NULL" } {
+    utl::error GUI 71 "Unable to find net \"$net_name\"."
+  }
+  
+  if { [info exists flags(-remove)] } {
+    gui::remove_focus_net $net
+  } else {
+    gui::focus_net $net
+  }
+}
+
 namespace eval gui {
   proc parse_options { args_var } {
     set options [gui::DisplayControlMap]

@@ -2597,11 +2597,6 @@ class dbNet : public dbObject
   ///
   uint getBTermCount();
 
-  //
-  // Get the bounding box of the iterms and bterms.
-  //
-  Rect getTermBBox();
-
   ///
   /// Delete the swires of this net
   ///
@@ -8892,14 +8887,6 @@ class dbGCellGrid : public dbObject
 class dbAccessPoint : public dbObject
 {
  public:
-  enum AccessType : int8_t
-  {
-    OnGrid,
-    HalfGrid,
-    Center,
-    EncOpt,
-    NearbyGrid
-  };
   // User Code Begin dbAccessPointEnums
   // User Code End dbAccessPointEnums
   void setPoint(Point point);
@@ -8913,13 +8900,13 @@ class dbAccessPoint : public dbObject
 
   void getAccesses(std::vector<dbDirection>& tbl) const;
 
-  void setLowType(AccessType type_low);
+  void setLowType(dbAccessType type_low);
 
-  AccessType getLowType() const;
+  dbAccessType getLowType() const;
 
-  void setHighType(AccessType type_high);
+  void setHighType(dbAccessType type_high);
 
-  AccessType getHighType() const;
+  dbAccessType getHighType() const;
 
   void setAccess(bool access, dbDirection dir);
 

@@ -32,9 +32,9 @@
 #include <memory>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMTerm.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frTerm.h"
 #include "frBaseTypes.h"
 
 namespace fr {
@@ -46,7 +46,7 @@ class frInstTerm : public frBlockObject
 {
  public:
   // constructors
-  frInstTerm(frInst* inst, frTerm* term)
+  frInstTerm(frInst* inst, frMTerm* term)
       : inst_(inst), term_(term), net_(nullptr), ap_()
   {
   }
@@ -58,7 +58,7 @@ class frInstTerm : public frBlockObject
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
   frInst* getInst() const { return inst_; }
-  frTerm* getTerm() const { return term_; }
+  frMTerm* getTerm() const { return term_; }
   void addToNet(frNet* in) { net_ = in; }
   const std::vector<frAccessPoint*>& getAccessPoints() const { return ap_; }
   frAccessPoint* getAccessPoint(int idx) const { return ap_[idx]; }
@@ -76,7 +76,7 @@ class frInstTerm : public frBlockObject
 
  private:
   frInst* inst_;
-  frTerm* term_;
+  frMTerm* term_;
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
 

@@ -74,7 +74,7 @@ struct frRegionQuery::Impl
   void add(frShape* in, ObjectsByLayer<frBlockObject>& allShapes);
   void add(frVia* in, ObjectsByLayer<frBlockObject>& allShapes);
   void add(frInstTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frBTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
   void add(frBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
   void add(frInstBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
   void addGuide(frGuide* in, ObjectsByLayer<frGuide>& allShapes);
@@ -340,7 +340,7 @@ void frRegionQuery::Impl::add(frInstTerm* instTerm,
   }
 }
 
-void frRegionQuery::Impl::add(frTerm* term,
+void frRegionQuery::Impl::add(frBTerm* term,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
   Rect frb;

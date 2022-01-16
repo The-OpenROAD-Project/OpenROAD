@@ -39,6 +39,7 @@
 #include <limits>
 
 #include "utl/Logger.h"
+#include "ord/OpenRoad.hh"
 
 namespace dpl {
 
@@ -69,7 +70,7 @@ void
 Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  block_->getCoreArea(core_);
+  core_ = ord::getCore(block_);
 
   importClear();
   examineRows();

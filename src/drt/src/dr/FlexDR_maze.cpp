@@ -2478,16 +2478,23 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
   Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
   design_->getRegionQuery()->query(bx, lNum, result);
   for (auto& rqObj : result) {
-    if (rqObj.second->typeId() == frcInstTerm) {
-      auto instTerm = static_cast<frInstTerm*>(rqObj.second);
-      if (instTerm->getNet() == net
-          && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
-        return true;
-    } else if (rqObj.second->typeId() == frcTerm) {
-      auto term = static_cast<frTerm*>(rqObj.second);
-      if (term->getNet() == net
-          && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
-        return true;
+    switch (rqObj.second->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj.second);
+        if (instTerm->getNet() == net
+            && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+          return true;
+        break;
+      }
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj.second);
+        if (term->getNet() == net
+            && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
+          return true;
+        break;
+      }
+      default:
+        break;
     }
   }
   return false;

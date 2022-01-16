@@ -96,10 +96,10 @@ class FlexPA
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
   std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
-  map<frBlock*,
+  map<frMaster*,
       map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
-      refBlockOT2Insts;  // refblock orient track-offset to instances
+      masterOT2Insts;  // master orient track-offset to instances
 
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
@@ -110,13 +110,13 @@ class FlexPA
   // init
   void init();
   void initUniqueInstance();
-  void initUniqueInstance_refBlock2PinLayerRange(
-      std::map<frBlock*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-          refBlock2PinLayerRange);
+  void initUniqueInstance_master2PinLayerRange(
+      std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+          master2PinLayerRange);
   void initUniqueInstance_main(
-      const std::map<frBlock*,
+      const std::map<frMaster*,
                      std::tuple<frLayerNum, frLayerNum>,
-                     frBlockObjectComp>& refBlock2PinLayerRange,
+                     frBlockObjectComp>& master2PinLayerRange,
       const std::vector<frTrackPattern*>& prefTrackPatterns);
   bool isNDRInst(frInst& inst);
   void initPinAccess();
@@ -125,17 +125,20 @@ class FlexPA
   // prep
   void prep();
   void prepPoint();
-  int prepPoint_pin(frPin* pin, frInstTerm* instTerm = nullptr);
+  template <typename T>
+  int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
+  template <typename T>
   void prepPoint_pin_mergePinShapes(
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       bool isShrink = false);
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
+  template <typename T>
   void prepPoint_pin_genPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       frAccessPointEnum lowerType,
@@ -143,7 +146,6 @@ class FlexPA
   void prepPoint_pin_genPoints_layerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      frPin* pin,
       frInstTerm* instTerm,
       const gtl::polygon_90_set_data<frCoord>& layerShapes,
       frLayerNum layerNum,
@@ -201,22 +203,25 @@ class FlexPA
       bool allowVia,
       frAccessPointEnum lowCost,
       frAccessPointEnum highCost);
+  template <typename T>
   void prepPoint_pin_checkPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_checkPoint(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_checkPoint_planar(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       frDirEnum dir,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
   bool prepPoint_pin_checkPoint_planar_ep(
       Point& ep,
@@ -225,25 +230,29 @@ class FlexPA
       frLayerNum layerNum,
       frDirEnum dir,
       int stepSizeMultiplier = 2);
+  template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       frDirEnum dir,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   bool prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
                                            frVia* via,
-                                           frPin* pin,
+                                           T* pin,
                                            frInstTerm* instTerm);
+  template <typename T>
   void prepPoint_pin_updateStat(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm);
+  template <typename T>
   bool prepPoint_pin_helper(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frPin* pin,
+      T* pin,
       frInstTerm* instTerm,
       frAccessPointEnum lowerType,
       frAccessPointEnum upperType);
@@ -252,21 +261,21 @@ class FlexPA
   int prepPattern_inst(frInst* inst,
                        const int currUniqueInstIdx,
                        const double xWeight);
-  int genPatterns(const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+  int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   int currUniqueInstIdx);
   void genPatterns_init(std::vector<FlexDPNode>& nodes,
-                        const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                         std::set<std::vector<int>>& instAccessPatterns,
                         std::set<std::pair<int, int>>& usedAccessPoints,
                         std::set<std::pair<int, int>>& violAccessPoints,
                         int maxAccessPointSize);
   void genPatterns_reset(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   void genPatterns_perform(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vioEdges,
       const std::set<std::pair<int, int>>& usedAccessPoints,
       const std::set<std::pair<int, int>>& violAccessPoints,
@@ -275,7 +284,7 @@ class FlexPA
   int getEdgeCost(int prevNodeIdx,
                   int currNodeIdx,
                   const std::vector<FlexDPNode>& nodes,
-                  const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+                  const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vioEdges,
                   const std::set<std::pair<int, int>>& usedAccessPoints,
                   const std::set<std::pair<int, int>>& violAccessPoints,
@@ -283,7 +292,7 @@ class FlexPA
                   int maxAccessPointSize);
   bool genPatterns_commit(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& isValid,
       std::set<std::vector<int>>& instAccessPatterns,
       std::set<std::pair<int, int>>& usedAccessPoints,
@@ -292,11 +301,11 @@ class FlexPA
       int maxAccessPointSize);
   void genPatterns_print_debug(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   void genPatterns_print(
       std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frPin*, frInstTerm*>>& pins,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int maxAccessPointSize);
   int getFlatIdx(int idx1, int idx2, int idx2Dim);
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);

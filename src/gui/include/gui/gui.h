@@ -188,7 +188,13 @@ class Painter
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
 
+  // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
+
+  // Draw an 'X' with coordinates in DBU with the current pen.  The
+  // crossing point of the X is at (x,y). The size is the width and
+  // height of the X.
+  virtual void drawX(int x, int y, int size) = 0;
 
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
@@ -577,6 +583,11 @@ class Gui
   // Used to save and restore the display controls, useful for batch operations
   void saveDisplayControls();
   void restoreDisplayControls();
+
+  // Used to add and remove focus nets from layout
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
