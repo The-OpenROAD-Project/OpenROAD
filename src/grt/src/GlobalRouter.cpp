@@ -2158,34 +2158,39 @@ void GlobalRouter::initRoutingLayers1()
                        "Layer {} does not have a valid direction.",
                        tech_layer->getName());
       }
+      routing_layers_[valid_layers] = tech_layer;
+      valid_layers++;
 
       // Check track grid for the layer.
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-      int track_step_x = -1;
-      int track_step_y = -1;
-      int init_track_x, num_tracks_x;
-      int init_track_y, num_tracks_y;
-      if (track_grid->getNumGridPatternsX() > 0)
-        track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-      if (track_grid->getNumGridPatternsY() > 0)
-        track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
-          && track_step_y == -1) {
-        logger_->error(GRT,
-                       124,
-                       "Horizontal tracks for layer {} not found.",
-                       tech_layer->getName());
+      if (track_grid) {
+        int track_step_x = -1;
+        int track_step_y = -1;
+        int init_track_x, num_tracks_x;
+        int init_track_y, num_tracks_y;
+        if (track_grid->getNumGridPatternsX() > 0)
+          track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+        if (track_grid->getNumGridPatternsY() > 0)
+          track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+        if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+            && track_step_y == -1) {
+          logger_->error(GRT,
+                         124,
+                         "Horizontal tracks for layer {} not found.",
+                         tech_layer->getName());
+        }
+        if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+            && track_step_x == -1) {
+          logger_->error(GRT,
+                         147,
+                         "Vertical tracks for layer {} not found.",
+                         tech_layer->getName());
+        }
       }
-      if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL
-          && track_step_x == -1) {
-        logger_->error(GRT,
-                       147,
-                       "Vertical tracks for layer {} not found.",
+      else
+        logger_->error(GRT, 86, "Track for layer {} not found.",
                        tech_layer->getName());
-      }
-
-      routing_layers_[valid_layers] = tech_layer;
-      valid_layers++;
+ 
     }
   }
 }
