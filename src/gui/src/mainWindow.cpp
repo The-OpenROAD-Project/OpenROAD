@@ -355,8 +355,9 @@ void MainWindow::setBlock(odb::dbBlock* block)
 
 void MainWindow::init(sta::dbSta* sta, psm::PDNSim* psm)
 {
-  // Setup timing widget
+  // Setup widgets
   timing_widget_->init(sta);
+  controls_->setSTA(sta);
 
   // register descriptors
   auto* gui = Gui::get();
