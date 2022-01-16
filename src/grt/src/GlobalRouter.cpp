@@ -2364,12 +2364,7 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
       break;
     }
 
-    if (tech_layer == nullptr) {
-      logger_->error(GRT, 85, "Routing layer {} not found.", level);
-    }
-
     odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
     if (track_grid == nullptr) {
       logger_->error(
           GRT, 86, "Track for layer {} not found.", tech_layer->getName());
@@ -2379,17 +2374,12 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     int track_step_y = -1;
     int init_track_x, num_tracks_x;
     int init_track_y, num_tracks_y;
-    int track_pitch, line_2__via_pitch_down, line_2__via_pitch_up, location,
-        num_tracks;
-    bool orientation;
-    const bool horizontal = false;
-    const bool vertical = true;
-
     if (track_grid->getNumGridPatternsX() > 0)
       track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     if (track_grid->getNumGridPatternsY() > 0)
       track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
 
+    RoutingTracks layer_tracks;
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       if (track_step_y == -1) {
         logger_->error(GRT,
@@ -2414,13 +2404,6 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
                                    init_track_x, num_tracks_x, false);
     }
 
-    RoutingTracks layer_tracks = RoutingTracks(level,
-                                               track_pitch,
-                                               line_2__via_pitch_up,
-                                               line_2__via_pitch_down,
-                                               location,
-                                               num_tracks,
-                                               orientation);
     routing_tracks_->push_back(layer_tracks);
     if (verbose_)
       logger_->info(
