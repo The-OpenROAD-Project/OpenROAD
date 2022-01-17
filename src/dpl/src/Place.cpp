@@ -46,7 +46,6 @@
 
 #include "Graphics.h"
 #include "utl/Logger.h"
-#include "ord/OpenRoad.hh"
 
 //#define ODP_DEBUG
 
@@ -60,7 +59,6 @@ using std::sort;
 using std::string;
 using std::vector;
 
-using ord::closestPtInRect;
 using utl::DPL;
 
 static bool
@@ -713,8 +711,8 @@ Opendp::diamondSearch(const Cell *cell,
                        divCeil(group->boundary.yMin(), row_height_),
                        group->boundary.xMax() / site_width_,
                        group->boundary.yMax() / row_height_);
-    Point min = closestPtInRect(grid_boundary, x_min, y_min);
-    Point max = closestPtInRect(grid_boundary, x_max, y_max);
+    Point min = grid_boundary.closestPtInside(Point(x_min, y_min));
+    Point max = grid_boundary.closestPtInside(Point(x_max, y_max));
     x_min = min .getX();
     y_min = min .getY();
     x_max = max.getX();

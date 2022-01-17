@@ -46,7 +46,6 @@
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
 
-#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 namespace ifp {
@@ -477,7 +476,8 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTech *tech = db_->getTech();
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
-	Rect core = ord::getCore(block_);
+        odb::Rect core;
+        block_->getCoreArea(core);
 	autoPlacePins(pin_layer, core);
       }
       else
