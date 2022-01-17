@@ -33,6 +33,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 
 #include "odb.h"
 
@@ -386,6 +387,9 @@ class Rect : public GeomShape
 
   //  A rectangle is completely contained in the interior of this rectangle,
   bool inside(const Rect& r) const;
+
+  // Return the point inside rect that is closest to pt.
+  Point closestPtInside(Point pt) const;
 
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
@@ -796,6 +800,12 @@ inline bool Rect::inside(const Rect& r) const
 {
   return (_xlo < r._xlo) && (_ylo < r._ylo) && (_xhi > r._xhi)
          && (_yhi > r._yhi);
+}
+
+inline Point Rect::closestPtInside(Point pt) const
+{
+  return Point(std::min(std::max(pt.getX(), xMin()), xMax()),
+               std::min(std::max(pt.getY(), yMin()), yMax()));
 }
 
 // Compute the union of these two rectangles.

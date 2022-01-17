@@ -2842,6 +2842,45 @@ uint dbNet::getTermCount()
   return itc + btc;
 }
 
+Rect
+dbNet::getTermBBox()
+{
+  Rect net_box;
+  net_box.mergeInit();
+
+  for (dbITerm *iterm : getITerms()) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      Rect iterm_rect(x, y, x, y);
+      net_box.merge(iterm_rect);
+    }
+    else {
+      // This clause is sort of worthless because getAvgXY prints
+      // a warning when it fails.
+      dbInst *inst = iterm->getInst();
+      dbBox *inst_box = inst->getBBox();
+      int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
+      int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
+      Rect inst_center(center_x, center_y, center_x, center_y);
+      net_box.merge(inst_center);
+    }
+  }
+
+  for (dbBTerm *bterm : getBTerms()) {
+    for (dbBPin *bpin : bterm->getBPins()) {
+      dbPlacementStatus status = bpin->getPlacementStatus();
+      if (status.isPlaced()) {
+        Rect pin_bbox = bpin->getBBox();
+        int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
+        int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
+        Rect pin_center(center_x, center_y, center_x, center_y);
+        net_box.merge(pin_center);
+      }
+    }
+  }
+  return net_box;
+}
+
 void dbNet::destroySWires()
 {
   _dbNet* net = (_dbNet*) this;

@@ -2597,6 +2597,11 @@ class dbNet : public dbObject
   ///
   uint getBTermCount();
 
+  //
+  // Get the bounding box of the iterms and bterms.
+  //
+  Rect getTermBBox();
+
   ///
   /// Delete the swires of this net
   ///
