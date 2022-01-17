@@ -122,8 +122,7 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
         = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
     sta::ParasiticNode* n2
         = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
-    int wire_length_dbu
-        = abs(route.init_x - route.final_x) + abs(route.init_y - route.final_y);
+    int wire_length_dbu = route.length();
     sta::Units* units = sta_->units();
     float res = 0.0;
     float cap = 0.0;
