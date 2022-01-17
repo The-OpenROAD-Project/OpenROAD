@@ -106,6 +106,11 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
 template<typename T>
 static void addTimingConeActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
 {
+  if (obj->getSigType().isSupply()) {
+    // no timing actions needed
+    return;
+  }
+
   auto* gui = Gui::get();
 
   actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
@@ -534,8 +539,9 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db, const std::set<odb::dbNet*>& focus_nets) :
+    db_(db),
+    focus_nets_(focus_nets)
 {
 }
 
@@ -1069,6 +1075,27 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
     return true;
   })});
   return editors;
+}
+
+Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+
+  auto* gui = Gui::get();
+  Descriptor::Actions actions;
+  if (focus_nets_.count(net) == 0) {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
+      gui->addFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  } else {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, net]() {
+      gui->removeFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  }
+
+  return actions;
 }
 
 Selected DbNetDescriptor::makeSelected(std::any object,

@@ -34,4 +34,3 @@ Optimized to 257 instances in iteration 2 with max path depth decrease of 0, del
 [INFO RMP-0006] Found 89 inputs, 52 outputs, 0 clocks, 250 combinational gates, 0 registers after parsing the blif file.
 [INFO RMP-0007] Inserting 250 new instances.
 Design area 429 u^2 7% utilization.
-sdc file size is 5786
