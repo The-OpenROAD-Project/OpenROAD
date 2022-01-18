@@ -31,8 +31,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "distributed/RoutingCallBack.h"
 #include "db/tech/frTechObject.h"
+#include "distributed/RoutingCallBack.h"
+#include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"
@@ -49,7 +50,6 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-#include "distributed/frArchive.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -154,30 +154,35 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-static bool readGlobals(const std::string& name)
-{
-  std::ifstream file(name);
-  if (!file.good())
-    return false;
-  frIArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
-  file.close();
-  return true;
-}
-
 std::string TritonRoute::runDRWorker(const char* file_name)
 {
-  auto worker = FlexDRWorker::load(file_name, logger_, nullptr);
+  auto worker = FlexDRWorker::load(file_name, logger_, design_.get(), nullptr);
   worker->setSharedVolume(shared_volume_);
   std::string result = worker->reloadedMain();
-  delete worker->getDesign();
   return result;
 }
 
 void TritonRoute::updateGlobals(const char* file_name)
 {
-  readGlobals(file_name);
+  std::ifstream file(file_name);
+  if (!file.good())
+    return;
+  frIArchive ar(file);
+  register_types(ar);
+  serialize_globals(ar);
+  file.close();
+}
+
+void TritonRoute::updateDesign(const char* file_name)
+{
+  std::ifstream file(file_name);
+  if (!file.good())
+    return;
+  design_ = std::make_unique<frDesign>();
+  frIArchive ar(file);
+  register_types(ar);
+  ar >> *(design_.get());
+  file.close();
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,

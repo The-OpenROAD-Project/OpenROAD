@@ -299,7 +299,6 @@ class FlexDRWorker
         pinCnt_(0),
         initNumMarkers_(0),
         apSVia_(),
-        fixedObjs_(),
         planarHistoryMarkers_(),
         viaHistoryMarkers_(),
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
@@ -317,11 +316,13 @@ class FlexDRWorker
         graphics_(nullptr),
         debugSettings_(nullptr),
         via_data_(nullptr),
+        boundaryPin_(),
         rq_(nullptr),
         gcWorker_(nullptr)
   {
   }
   // setters
+  void setDebugSettings(frDebugSettings* settings) { debugSettings_ = settings; }
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
@@ -425,6 +426,7 @@ class FlexDRWorker
     }
   }
   frDesign* getDesign() { return design_; }
+  void setDesign(frDesign* design) { design_ = design; }
   const std::vector<frMarker>& getMarkers() const { return markers_; }
   std::vector<frMarker>& getMarkers() { return markers_; }
   const std::vector<frMarker>& getBestMarkers() const { return bestMarkers_; }
@@ -449,6 +451,7 @@ class FlexDRWorker
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
+                                            fr::frDesign* design,
                                             FlexDRGraphics* graphics);
 
   // distributed
@@ -510,7 +513,6 @@ class FlexDRWorker
   int pinCnt_;
   int initNumMarkers_;
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
-  std::vector<frBlockObject*> fixedObjs_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
   std::vector<std::set<FlexMazeIdx>> historyMarkers_;
@@ -536,7 +538,8 @@ class FlexDRWorker
   std::string dist_dir_;
 
   // init
-  void init(const frDesign* design);
+  void init0(const frDesign* design);
+  void init1(const frDesign* design);
   void initNets(const frDesign* design);
   void initNetObjs(
       const frDesign* design,
@@ -715,7 +718,6 @@ class FlexDRWorker
   void initMazeCost_boundary_helper(drNet* net, bool isAddPathCost);
 
   // DRC
-  void initFixedObjs(const frDesign* design);
   void initMarkers(const frDesign* design);
 
   // route_queue
@@ -977,82 +979,9 @@ class FlexDRWorker
   void endAddMarkers(frDesign* design);
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // // We always serialize before calling main on the work unit so various
-    // // fields are empty and don't need to be serialized.  I skip these to
-    // // save having to write lots of serializers that will never be called.
-    // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
-    //     || !rq_.isEmpty() || gcWorker_) {
-    //   logger_->error(DRT, 999, "Can't serialize used worker");
-    // }
-
-    // The logger_, graphics_ and debugSettings_ are handled by the caller to
-    // use the current ones.
-    (ar) & design_;
-    (ar) & via_data_;
-    (ar) & routeBox_;
-    (ar) & extBox_;
-    (ar) & drcBox_;
-    (ar) & gcellBox_;
-    (ar) & drIter_;
-    (ar) & mazeEndIter_;
-    (ar) & followGuide_;
-    (ar) & needRecheck_;
-    (ar) & skipRouting_;
-    (ar) & ripupMode_;
-    (ar) & workerDRCCost_;
-    (ar) & workerMarkerCost_;
-    (ar) & boundaryPin_;
-    (ar) & pinCnt_;
-    (ar) & initNumMarkers_;
-    (ar) & apSVia_;
-    (ar) & fixedObjs_;
-    (ar) & planarHistoryMarkers_;
-    (ar) & viaHistoryMarkers_;
-    (ar) & historyMarkers_;
-    (ar) & nets_;
-    (ar) & owner2nets_;
-    (ar) & gridGraph_;
-    (ar) & markers_;
-    (ar) & bestMarkers_;
-    (ar) & rq_;
-    (ar) & gcWorker_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;
 };
-
-// class RoutingJobDescription : public dst::JobDescription
-// {
-//  public:
-//   RoutingJobDescription(std::string pathIn,
-//                         std::string globals = "",
-//                         std::string dirIn = "")
-//       : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
-//   {
-//   }
-//   void setWorkerPath(const std::string& path) { path_ = path; }
-//   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
-//   void setSharedDir(const std::string& path) { shared_dir_ = path; }
-//   const std::string& getWorkerPath() const { return path_; }
-//   const std::string& getGlobalsPath() const { return globals_path_; }
-//   const std::string& getSharedDir() const { return shared_dir_; }
-
-//  private:
-//   std::string path_;
-//   std::string globals_path_;
-//   std::string shared_dir_;
-//   RoutingJobDescription() {}
-//   template <class Archive>
-//   void serialize(Archive& ar, const unsigned int version)
-//   {
-//     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-//     (ar) & path_;
-//     (ar) & globals_path_;
-//     (ar) & shared_dir_;
-//   }
-//   friend class boost::serialization::access;
-// };
 }  // namespace fr
 
 #endif

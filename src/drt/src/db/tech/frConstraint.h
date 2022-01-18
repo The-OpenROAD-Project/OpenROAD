@@ -82,13 +82,17 @@ class frConstraint
   virtual ~frConstraint() {}
   virtual frConstraintTypeEnum typeId() const = 0;
   virtual void report(utl::Logger* logger) const = 0;
+  void setId(int in) { id_ = in; }
+  int getId() const { return id_; }
 
  protected:
-  frConstraint() {}
+  int id_;
+  frConstraint() : id_(-1) {}
 
   template <class Archive>
-  void serialize(Archive& /* ar */, const unsigned int /* version */)
+  void serialize(Archive& ar, const unsigned int version)
   {
+    (ar) & id_;
   }
 
   friend class boost::serialization::access;
@@ -1527,6 +1531,16 @@ class frLef58CutSpacingTableConstraint : public frConstraint
   odb::dbTechLayerCutSpacingTableDefRule* db_rule_;
   std::pair<frCoord, frCoord> default_spacing_;
   bool default_center2center_, default_centerAndEdge_;
+  frLef58CutSpacingTableConstraint() {}
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConstraint>(*this);
+    (ar) & default_spacing_;
+    (ar) & default_center2center_;
+    (ar) & default_centerAndEdge_;
+  }
+  friend class boost::serialization::access;
 };
 
 // new SPACINGTABLE Constraints

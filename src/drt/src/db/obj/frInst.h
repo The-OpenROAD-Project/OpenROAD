@@ -67,6 +67,7 @@ class frInst : public frRef
   }
   void addInstBlockage(std::unique_ptr<frInstBlockage> in)
   {
+    in->setOrderId(instBlockages_.size());
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
@@ -157,6 +158,7 @@ class frInst : public frRef
     (ar) & boost::serialization::base_object<frRef>(*this);
     (ar) & name_;
     (ar) & refBlock_;
+    (ar) & instTerms_;
     (ar) & instBlockages_;
     (ar) & xform_;
     (ar) & pinAccessIdx_;

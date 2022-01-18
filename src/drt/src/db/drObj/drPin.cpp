@@ -1,6 +1,6 @@
 /* Authors: Osama */
 /*
- * Copyright (c) 2021, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,55 +26,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dst/JobMessage.h"
+#include "db/drObj/drPin.h"
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/unique_ptr.hpp>
-#include <sstream>
+#include "distributed/frArchive.h"
+#include "serialization.h"
 
-using namespace dst;
+using namespace fr;
 
 template <class Archive>
-inline bool is_loading(const Archive& ar)
+void drPin::serialize(Archive& ar, const unsigned int version)
 {
-  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+  (ar) & boost::serialization::base_object<drBlockObject>(*this);
+  (ar) & accessPatterns_;
+  (ar) & net_;
+  serializeBlockObject(ar, term_);
 }
 
-template <class Archive>
-void JobMessage::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & msg_type_;
-  (ar) & job_type_;
-  (ar) & desc_;
-  if (!is_loading(ar)) {
-    std::string eop = EOP;
-    (ar) & eop;
-  }
-}
+// Explicit instantiations
+template void drPin::serialize<frIArchive>(frIArchive& ar,
+                                           const unsigned int file_version);
 
-bool JobMessage::serializeMsg(SerializeType type,
-                              JobMessage& msg,
-                              std::string& str)
-{
-  if (type == WRITE) {
-    try {
-      std::ostringstream oarchive_stream;
-      boost::archive::text_oarchive archive(oarchive_stream);
-      archive << msg;
-      str = oarchive_stream.str();
-    } catch (const boost::archive::archive_exception& e) {
-      return false;
-    }
-  } else {
-    try {
-      std::istringstream iarchive_stream(str);
-      boost::archive::text_iarchive archive(iarchive_stream);
-      archive >> msg;
-    } catch (const boost::archive::archive_exception& e) {
-      return false;
-    }
-  }
-  return true;
-}
+template void drPin::serialize<frOArchive>(frOArchive& ar,
+                                           const unsigned int file_version);

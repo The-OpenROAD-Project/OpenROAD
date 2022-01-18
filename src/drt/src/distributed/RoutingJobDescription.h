@@ -1,9 +1,10 @@
 
 #pragma once
-#include "dst/JobMessage.h"
-#include <string>
 #include <boost/serialization/base_object.hpp>
-namespace boost::serialization{
+#include <string>
+
+#include "dst/JobMessage.h"
+namespace boost::serialization {
 class access;
 }
 namespace fr {
@@ -11,7 +12,7 @@ namespace fr {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription(std::string pathIn,
+  RoutingJobDescription(std::string pathIn = "",
                         std::string globals = "",
                         std::string dirIn = "")
       : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
@@ -31,7 +32,6 @@ class RoutingJobDescription : public dst::JobDescription
   std::string globals_path_;
   std::string design_path_;
   std::string shared_dir_;
-  RoutingJobDescription() {}
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -43,4 +43,4 @@ class RoutingJobDescription : public dst::JobDescription
   }
   friend class boost::serialization::access;
 };
-}
+}  // namespace fr

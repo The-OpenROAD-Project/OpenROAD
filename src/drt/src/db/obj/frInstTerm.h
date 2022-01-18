@@ -73,8 +73,11 @@ class frInstTerm : public frBlockObject
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes, bool updatedTransform = false);
   Rect getBBox();
+  void setOrderId(int in) { order_id_ = in; }
+  int getOrderId() const { return order_id_; }
 
  private:
+  int order_id_;
   frInst* inst_;
   frTerm* term_;
   frNet* net_;
@@ -84,20 +87,11 @@ class frInstTerm : public frBlockObject
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<frBlockObject>(*this);
+    (ar) & order_id_;
     (ar) & inst_;
     (ar) & term_;
-    (ar) & net_;
+    // (ar) & net_; handled by net
     (ar) & ap_;
-    if(fr::is_loading(ar)) {
-      if (inst_) {
-        std::unique_ptr<frInstTerm> ptr(this);
-        inst_->addInstTerm(std::move(ptr));
-      }
-
-      if (net_) {
-        net_->addInstTerm(this);
-      }
-    }
   }
 
   frInstTerm() = default;  // for serialization

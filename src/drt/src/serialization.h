@@ -39,16 +39,13 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 
-#include "db/obj/frShape.h"
-#include "db/obj/frNet.h"
-#include "db/tech/frConstraint.h"
-#include "global.h"
-#include "db/gcObj/gcNet.h"
-#include "db/gcObj/gcPin.h"
-#include "db/gcObj/gcShape.h"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/drObj/drPin.h"
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcShape.h"
+#include "db/infra/frBox.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
@@ -57,14 +54,18 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMarker.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frNode.h"
 #include "db/obj/frPin.h"
 #include "db/obj/frRPin.h"
-#include "db/obj/frVia.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
-#include "db/infra/frBox.h"
-#include "odb/geom.h"
+#include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
+#include "frDesign.h"
+#include "global.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -286,9 +287,7 @@ void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
 
 // odb classes
 template <class Archive>
-void serialize(Archive& ar,
-               odb::Rect& r,
-               const unsigned int version)
+void serialize(Archive& ar, odb::Rect& r, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
     fr::frCoord xlo, ylo, xhi, yhi;
@@ -311,9 +310,7 @@ void serialize(Archive& ar,
 }
 
 template <class Archive>
-void serialize(Archive& ar,
-               odb::Point& p,
-               const unsigned int version)
+void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
     fr::frCoord x, y;
@@ -330,9 +327,7 @@ void serialize(Archive& ar,
 }
 
 template <class Archive>
-void serialize(Archive& ar,
-               odb::dbSigType& type,
-               const unsigned int version)
+void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
   odb::dbSigType::Value v;
   if (fr::is_loading(ar)) {
@@ -345,9 +340,7 @@ void serialize(Archive& ar,
 }
 
 template <class Archive>
-void serialize(Archive& ar,
-               odb::dbIoType& type,
-               const unsigned int version)
+void serialize(Archive& ar, odb::dbIoType& type, const unsigned int version)
 {
   odb::dbIoType::Value v;
   if (fr::is_loading(ar)) {
@@ -375,9 +368,7 @@ void serialize(Archive& ar,
 }
 
 template <class Archive>
-void serialize(Archive& ar,
-               odb::dbMasterType& type,
-               const unsigned int version)
+void serialize(Archive& ar, odb::dbMasterType& type, const unsigned int version)
 {
   odb::dbMasterType::Value v;
   if (fr::is_loading(ar)) {
@@ -405,9 +396,7 @@ void serialize(Archive& ar,
 }
 
 template <class Archive>
-void serialize(Archive& ar,
-               odb::dbOrientType& type,
-               const unsigned int version)
+void serialize(Archive& ar, odb::dbOrientType& type, const unsigned int version)
 {
   odb::dbOrientType::Value v;
   if (fr::is_loading(ar)) {
@@ -438,7 +427,6 @@ void serialize(Archive& ar,
     (ar) & offset;
   }
 }
-
 
 }  // namespace boost::serialization
 
@@ -480,10 +468,12 @@ void register_types(Archive& ar)
       frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
   ar.template register_type<frLef58SpacingEndOfLineWithinConstraint>();
   ar.template register_type<frLef58SpacingEndOfLineConstraint>();
+  ar.template register_type<frLef58EolKeepOutConstraint>();
   ar.template register_type<frLef58CornerSpacingSpacingConstraint>();
   ar.template register_type<frSpacingConstraint>();
   ar.template register_type<frSpacingSamenetConstraint>();
   ar.template register_type<frSpacingTableInfluenceConstraint>();
+  ar.template register_type<frLef58CutSpacingTableConstraint>();
   ar.template register_type<frSpacingEndOfLineConstraint>();
   ar.template register_type<frSpacingTablePrlConstraint>();
   ar.template register_type<frSpacingTableTwConstraint>();
@@ -526,6 +516,145 @@ void register_types(Archive& ar)
   ar.template register_type<frVia>();
   ar.template register_type<frTrackPattern>();
   ar.template register_type<frBox3D>();
+}
+template <class Archive>
+void serializeBlockObject(Archive& ar, frBlockObject*& obj)
+{
+  frDesign* design = ar.getDesign();
+  if (is_loading(ar)) {
+    obj = nullptr;
+    frBlockObjectEnum type;
+    (ar) & type;
+    switch (type) {
+      case frcNet: {
+        bool fake;
+        bool special;
+        int id;
+        bool modified;
+        (ar) & fake;
+        (ar) & special;
+        (ar) & id;
+        (ar) & modified;
+        if (fake) {
+          if (id == 0)
+            obj = design->getTopBlock()->getFakeVSSNet();
+          else
+            obj = design->getTopBlock()->getFakeVDDNet();
+        } else {
+          if (special)
+            obj = design->getTopBlock()->getSNet(id);
+          else
+            obj = design->getTopBlock()->getNet(id);
+        }
+        if (obj != nullptr && modified)
+          ((frNet*) obj)->setModified(true);
+        break;
+      }
+      case frcTerm: {
+        int id;
+        (ar) & id;
+        obj = design->getTopBlock()->getTerms().at(id).get();
+        break;
+      }
+      case frcBlockage: {
+        int id;
+        (ar) & id;
+        obj = design->getTopBlock()->getBlockages().at(id).get();
+        break;
+      }
+      case frcInstTerm: {
+        int inst_id, id;
+        (ar) & inst_id;
+        (ar) & id;
+        auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
+        obj = inst->getInstTerms().at(id).get();
+        break;
+      }
+      case frcInstBlockage: {
+        int inst_id, id;
+        (ar) & inst_id;
+        (ar) & id;
+        auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
+        obj = inst->getInstBlockages().at(id).get();
+        break;
+      }
+      default:
+        break;
+    }
+  } else {
+    frBlockObjectEnum type;
+    if (obj != nullptr)
+      type = obj->typeId();
+    else
+      type = frcBlock;
+    (ar) & type;
+    switch (type) {
+      case frcNet: {
+        bool fake = ((frNet*) obj)->isFake();
+        bool special = ((frNet*) obj)->isSpecial();
+        int id = ((frNet*) obj)->getId();
+        bool modified = ((frNet*) obj)->isModified();
+        (ar) & fake;
+        (ar) & special;
+        if (fake) {
+          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND)
+            id = 0;
+          else
+            id = 1;
+        }
+        (ar) & id;
+        (ar) & modified;
+        break;
+      }
+      case frcTerm: {
+        int id = ((frTerm*) obj)->getOrderId();
+        (ar) & id;
+        break;
+      }
+      case frcBlockage: {
+        int id = ((frBlockage*) obj)->getOrderId();
+        (ar) & id;
+        break;
+      }
+      case frcInstTerm: {
+        int inst_id = ((frInstTerm*) obj)->getInst()->getId();
+        int id = ((frInstTerm*) obj)->getOrderId();
+        (ar) & inst_id;
+        (ar) & id;
+        break;
+      }
+      case frcInstBlockage: {
+        int inst_id = ((frInstBlockage*) obj)->getInst()->getId();
+        int id = ((frInstBlockage*) obj)->getOrderId();
+        (ar) & inst_id;
+        (ar) & id;
+        break;
+      }
+      default:
+        break;
+    }
+  }
+}
+
+template <class Archive>
+void serializeViaDef(Archive& ar, frViaDef*& viadef)
+{
+  frDesign* design = ar.getDesign();
+  if (is_loading(ar)) {
+    int via_id;
+    (ar) & via_id;
+    if (via_id >= 0)
+      viadef = design->getTech()->getVias().at(via_id).get();
+    else
+      viadef = nullptr;
+  } else {
+    int via_id;
+    if (viadef != nullptr)
+      via_id = viadef->getId();
+    else
+      via_id = -1;
+    (ar) & via_id;
+  }
 }
 
 template <class Archive>

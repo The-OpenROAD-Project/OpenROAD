@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,56 +26,71 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "db/drObj/drVia.h"
+#include "db/obj/frNet.h"
 
-#include "db/drObj/drNet.h"
-#include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
-#include "serialization.h"
+#include "frInstTerm.h"
 
-using namespace std;
 using namespace fr;
-
-drVia::drVia(const frVia& in)
-    : viaDef_(in.getViaDef()), owner_(nullptr), beginMazeIdx_(), endMazeIdx_()
-{
-  in.getOrigin(origin_);
-  setTapered(in.isTapered());
-  setBottomConnected(in.isBottomConnected());
-  setTopConnected(in.isTopConnected());
-}
-
 template <class Archive>
-void drVia::serialize(Archive& ar, const unsigned int version)
+void frNet::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & boost::serialization::base_object<drRef>(*this);
-  (ar) & origin_;
-  (ar) & owner_;
-  (ar) & beginMazeIdx_;
-  (ar) & endMazeIdx_;
-  serializeViaDef(ar, viaDef_);
-  bool tmp;
-  if (is_loading(ar)) {
-    (ar) & tmp;
-    tapered_ = tmp;
-    (ar) & tmp;
-    bottomConnected_ = tmp;
-    (ar) & tmp;
-    topConnected_ = tmp;
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & instTerms_;
+  (ar) & terms_;
+  (ar) & shapes_;
+  (ar) & vias_;
+  (ar) & pwires_;
+  // TODO for gr support
+  // (ar) & grShapes_;
+  // (ar) & grVias_;
+  (ar) & nodes_;
+  (ar) & root_;
+  (ar) & rootGCellNode_;
+  (ar) & firstNonRPinNode_;
+  (ar) & rpins_;
+  (ar) & guides_;
+  (ar) & type_;
+  (ar) & modified_;
+  (ar) & isFakeNet_;
+  (ar) & ndr_;
+  (ar) & absPriorityLvl;
+  (ar) & isClock_;
+  (ar) & isSpecial_;
 
-  } else {
-    tmp = tapered_;
-    (ar) & tmp;
-    tmp = bottomConnected_;
-    (ar) & tmp;
-    tmp = topConnected_;
-    (ar) & tmp;
+  // The list members can container an iterator representing their position
+  // in the list for fast removal.  It is tricky to serialize the iterator
+  // so just reset them from the list after loading.
+  if (is_loading(ar)) {
+    for (auto it = shapes_.begin(); it != shapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = vias_.begin(); it != vias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = pwires_.begin(); it != pwires_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grShapes_.begin(); it != grShapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grVias_.begin(); it != grVias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto term : instTerms_)
+      term->addToNet(this);
+    for (auto term : terms_)
+      term->addToNet(this);
   }
 }
 
 // Explicit instantiations
-template void drVia::serialize<frIArchive>(frIArchive& ar,
+template void frNet::serialize<frIArchive>(frIArchive& ar,
                                            const unsigned int file_version);
 
-template void drVia::serialize<frOArchive>(frOArchive& ar,
+template void frNet::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);

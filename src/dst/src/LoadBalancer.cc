@@ -73,25 +73,24 @@ void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
   }
   workers_.swap(newQueue);
 }
+void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
+{
+  std::lock_guard<std::mutex> lock(workers_mutex_);
+  if (!workers_.empty()) {
+    worker w = workers_.top();
+    workers_.pop();
+    ip = w.ip;
+    port = w.port;
+    w.priority--;
+    workers_.push(w);
+  }
+}
+
 void LoadBalancer::handle_accept(BalancerConnection::pointer connection,
                                  const boost::system::error_code& err)
 {
-  if (!err) {
-    ip::address workerAddress;
-    unsigned short port = 0;
-    {
-      std::lock_guard<std::mutex> lock(workers_mutex_);
-      if (!workers_.empty()) {
-        worker w = workers_.top();
-        workers_.pop();
-        workerAddress = w.ip;
-        port = w.port;
-        w.priority--;
-        workers_.push(w);
-      }
-    }
-    connection->start(workerAddress, port);
-  }
+  if (!err)
+    connection->start();
   start_accept();
 }
 }  // namespace dst

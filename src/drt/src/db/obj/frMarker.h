@@ -143,19 +143,7 @@ class frMarker : public frFig
   bool vioIsH_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frFig>(*this);
-    (ar) & constraint_;
-    (ar) & bbox_;
-    (ar) & layerNum_;
-    (ar) & srcs_;
-    (ar) & victims_;
-    (ar) & aggressors_;
-    // iter is handled by the owner
-    (ar) & vioHasDir_;
-    (ar) & vioIsH_;
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };

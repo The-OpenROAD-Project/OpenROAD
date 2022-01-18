@@ -115,6 +115,7 @@ class TritonRoute
   // for debugging and not general usage.
   std::string runDRWorker(const char* file_name);
   void updateGlobals(const char* file_name);
+  void updateDesign(const char* file_name);
 
  protected:
   std::unique_ptr<fr::frDesign> design_;

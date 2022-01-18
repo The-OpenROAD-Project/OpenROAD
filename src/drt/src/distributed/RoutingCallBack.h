@@ -31,13 +31,14 @@
 
 #include <mutex>
 
+#include "db/infra/frTime.h"
+#include "distributed/RoutingJobDescription.h"
+#include "dr/FlexDR.h"
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
-#include "distributed/RoutingJobDescription.h"
-#include "db/infra/frTime.h"
 namespace odb {
 class dbDatabase;
 }
@@ -55,28 +56,36 @@ class RoutingCallBack : public dst::JobCallBack
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
     time_.print(logger_);
-    if (msg.getType() != dst::JobMessage::ROUTING)
+    if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
+    dst::JobMessage result(dst::JobMessage::ROUTING);
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (access(desc->getWorkerPath().c_str(), F_OK) == -1) {
-      logger_->warn(
-          utl::DRT, 605, "Worker file {} not found", desc->getWorkerPath());
-      return;
-    }
-    if (globals_path_ != desc->getGlobalsPath()) {
+    if (desc->getDesignPath() != "") {
       std::lock_guard<std::mutex> lock(mx_);
-      globals_path_ = desc->getGlobalsPath();
-      router_->setSharedVolume(desc->getSharedDir());
-      router_->updateGlobals(desc->getGlobalsPath().c_str());
+      router_->updateDesign(desc->getDesignPath().c_str());
     }
-    logger_->info(utl::DRT, 600, "running worker {}", desc->getWorkerPath());
-    std::string resultPath
-        = router_->runDRWorker(desc->getWorkerPath().c_str());
-    logger_->info(utl::DRT, 603, "worker {} is done", resultPath);
-    dst::JobMessage result(dst::JobMessage::ROUTING);
-    result.setJobDescription(
-        std::make_unique<RoutingJobDescription>(resultPath));
+    if (desc->getGlobalsPath() != "") {
+      if (globals_path_ != desc->getGlobalsPath()) {
+        std::lock_guard<std::mutex> lock(mx_);
+        globals_path_ = desc->getGlobalsPath();
+        router_->setSharedVolume(desc->getSharedDir());
+        router_->updateGlobals(desc->getGlobalsPath().c_str());
+      }
+    }
+    if (desc->getWorkerPath() != "") {
+      if (access(desc->getWorkerPath().c_str(), F_OK) == -1) {
+        logger_->warn(
+            utl::DRT, 605, "Worker file {} not found", desc->getWorkerPath());
+        return;
+      }
+      logger_->info(utl::DRT, 600, "running worker {}", desc->getWorkerPath());
+      std::string resultPath
+          = router_->runDRWorker(desc->getWorkerPath().c_str());
+      logger_->info(utl::DRT, 603, "worker {} is done", resultPath);
+      result.setJobDescription(
+          std::make_unique<RoutingJobDescription>(resultPath));
+    }
     dist_->sendResult(result, sock);
   }
 

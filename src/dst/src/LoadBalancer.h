@@ -28,9 +28,9 @@
 
 #pragma once
 #include <boost/asio.hpp>
+#include <mutex>
 #include <queue>
 #include <vector>
-#include <mutex>
 
 #include "BalancerConnection.h"
 
@@ -49,6 +49,7 @@ class LoadBalancer
                unsigned short port = 1234);
   void addWorker(std::string ip, unsigned short port, unsigned short avail);
   void updateWorker(ip::address ip, unsigned short port);
+  void getNextWorker(ip::address& ip, unsigned short& port);
 
  private:
   struct worker
@@ -78,5 +79,6 @@ class LoadBalancer
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,
                      const boost::system::error_code& err);
+  friend class dst::BalancerConnection;
 };
 }  // namespace dst

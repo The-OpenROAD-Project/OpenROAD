@@ -3417,30 +3417,6 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
   }
 }
 
-void FlexDRWorker::initFixedObjs(const frDesign* design)
-{
-  auto& extBox = getExtBox();
-  box_t queryBox(point_t(extBox.xMin(), extBox.yMin()),
-                 point_t(extBox.xMax(), extBox.yMax()));
-  set<frBlockObject*> drcObjSet;
-  // fixed obj
-  int cnt = 0;
-  for (auto layerNum = getTech()->getBottomLayerNum();
-       layerNum <= getTech()->getTopLayerNum();
-       ++layerNum) {
-    auto regionQuery = design->getRegionQuery();
-    frRegionQuery::Objects<frBlockObject> queryResult;
-    regionQuery->query(queryBox, layerNum, queryResult);
-    for (auto& objPair : queryResult) {
-      cnt++;
-      if (drcObjSet.find(objPair.second) == drcObjSet.end()) {
-        drcObjSet.insert(objPair.second);
-        fixedObjs_.push_back(objPair.second);
-      }
-    }
-  }
-}
-
 void FlexDRWorker::initMarkers(const frDesign* design)
 {
   vector<frMarker*> result;
@@ -3465,7 +3441,7 @@ void FlexDRWorker::initMarkers(const frDesign* design)
   }
 }
 
-void FlexDRWorker::init(const frDesign* design)
+void FlexDRWorker::init0(const frDesign* design)
 {
   // if initDR
   //   get all instterm/term for each net
@@ -3481,8 +3457,11 @@ void FlexDRWorker::init(const frDesign* design)
   if (skipRouting_) {
     return;
   }
-  initFixedObjs(design);
   initNets(design);
+}
+
+void FlexDRWorker::init1(const frDesign* design)
+{
   initGridGraph(design);
   initMazeIdx();
   FlexGCWorker* gcWorker = new FlexGCWorker(design->getTech(), logger_, this);

@@ -42,14 +42,14 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "distributed/RoutingJobDescription.h"
+#include "distributed/frArchive.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
-#include "distributed/RoutingJobDescription.h"
-#include "distributed/frArchive.h"
 
 using namespace std;
 using namespace fr;
@@ -64,6 +64,7 @@ enum class SerializationType
 
 static bool serialize_worker(SerializationType type,
                              FlexDRWorker* worker,
+                             frDesign* design,
                              const std::string& name)
 {
   if (type == SerializationType::READ) {
@@ -71,6 +72,8 @@ static bool serialize_worker(SerializationType type,
     if (!file.good())
       return false;
     frIArchive ar(file);
+    ar.setDeepSerialize(false);
+    ar.setDesign(design);
     register_types(ar);
     ar >> *worker;
     file.close();
@@ -79,8 +82,35 @@ static bool serialize_worker(SerializationType type,
     if (!file.good())
       return false;
     frOArchive ar(file);
+    ar.setDeepSerialize(false);
     register_types(ar);
     ar << *worker;
+    file.close();
+  }
+  return true;
+}
+
+static bool serialize_design(SerializationType type,
+                             frDesign* design,
+                             const std::string& name)
+{
+  if (type == SerializationType::READ) {
+    std::ifstream file(name);
+    if (!file.good())
+      return false;
+    frIArchive ar(file);
+    ar.setDeepSerialize(true);
+    register_types(ar);
+    ar >> *design;
+    file.close();
+  } else {
+    std::ofstream file(name);
+    if (!file.good())
+      return false;
+    frOArchive ar(file);
+    ar.setDeepSerialize(true);
+    register_types(ar);
+    ar << *design;
     file.close();
   }
   return true;
@@ -122,6 +152,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 // from the serialization.
 std::string FlexDRWorker::reloadedMain()
 {
+  init1(design_);
   route_queue();
   setGCWorker(nullptr);
   cleanup();
@@ -130,7 +161,7 @@ std::string FlexDRWorker::reloadedMain()
                                  getDRIter(),
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
+  serialize_worker(SerializationType::WRITE, this, nullptr, name);
   return name;
   // reply with file path
 }
@@ -147,8 +178,10 @@ int FlexDRWorker::main(frDesign* design)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-
-  init(design);
+  init0(design);
+  if (!skipRouting_) {
+    init1(design);
+  }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
     route_queue();
@@ -170,120 +203,6 @@ int FlexDRWorker::main(frDesign* design)
 
   return 0;
 }
-/**
- * Finds an equivalent object from the current design to obj. This is
- * because obj is a copy of the actual object that resides in design and
- * it is assumed that it has a different memory allocation.
- *
- * @param[in] obj pointer to the serialized object. Should be a copy of an
- * object in design.
- * @param[in] design pointer to frDesign.
- * @returns pointer to the equivalent frBlockObject in design. Returns nullptr
- * if no equivalent object was found or if the object is of an unexpected type.
- */
-inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
-{
-  switch (obj->typeId()) {
-    case frcNet: {
-      frNet* srNet = (static_cast<frNet*>(obj));
-      auto net = design->getTopBlock()->findNet(srNet->getName());
-      return net;
-    }
-    case frcInstTerm: {
-      frInstTerm* srTerm = (static_cast<frInstTerm*>(obj));
-      auto srInst = srTerm->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& term : inst->getInstTerms())
-        if (term->getId() == srTerm->getId())
-          return term.get();
-      return nullptr;
-    }
-    case frcTerm: {
-      frTerm* srTerm = (static_cast<frTerm*>(obj));
-      return design->getTopBlock()->getTerm(srTerm->getName());
-    }
-    case frcInstBlockage: {
-      frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
-      auto srInst = srBlkg->getInst();
-      auto inst = design->getTopBlock()->findInst(srInst->getName());
-      if (inst == nullptr)
-        return nullptr;
-      for (auto& blkg : inst->getInstBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-      return nullptr;
-    }
-    case frcBlockage: {
-      frBlockage* srBlkg = (static_cast<frBlockage*>(obj));
-      for (auto& blkg : design->getTopBlock()->getBlockages())
-        if (blkg->getId() == srBlkg->getId())
-          return blkg.get();
-    }
-    default:
-      return nullptr;
-  }
-}
-void FlexDRWorker::updateDesign(frDesign* design)
-{
-  design_ = design;
-  for (auto& drNet_ : nets_) {
-    auto frNet_ = design->getTopBlock()->findNet(drNet_->getFrNet()->getName());
-    if (frNet_ != nullptr) {
-      if (drNet_->getFrNet()->isModified())
-        frNet_->setModified(true);
-      drNet_->setFrNet(frNet_);
-    } else {
-      logger_->error(DRT,
-                     501,
-                     "No matching net in design for net {}",
-                     drNet_->getFrNet()->getName());
-    }
-  }
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
-  for (auto [net, value] : boundaryPin_) {
-    auto frNet_ = design->getTopBlock()->findNet(net->getName());
-    if (frNet_ != nullptr) {
-      bp[frNet_] = value;
-    } else {
-      logger_->error(
-          DRT, 502, "No matching net in design for net {}", net->getName());
-    }
-  }
-  setBoundaryPins(bp);
-  std::vector<frMarker>& markers = getBestMarkers();
-  for (auto& marker : markers) {
-    std::set<frBlockObject*> newSrcs;
-    for (auto src : marker.getSrcs()) {
-      if (src != nullptr) {
-        auto newSrc = getEquivalentObject(src, design);
-        if (newSrc == nullptr)
-          logger_->error(DRT, 503, "Fail in mapping serialized marker src");
-        newSrcs.insert(newSrc);
-      } else
-        newSrcs.insert(nullptr);
-    }
-    marker.setSrcs(newSrcs);
-    for (auto& [obj, value] : marker.getVictims()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(DRT, 504, "Fail in mapping serialized marker victim");
-        obj = newObj;
-      }
-    }
-    for (auto& [obj, value] : marker.getAggressors()) {
-      if (obj != nullptr) {
-        auto newObj = getEquivalentObject(obj, design);
-        if (newObj == nullptr)
-          logger_->error(
-              DRT, 505, "Fail in mapping serialized marker aggressor");
-        obj = newObj;
-      }
-    }
-  }
-}
 
 void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
 {
@@ -295,8 +214,7 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-
-  init(design);
+  init0(design);
   if (skipRouting_)
     return;
   // Save the worker in its fully initialized state
@@ -305,7 +223,7 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
                                  getDRIter(),
                                  getGCellBox().xMin(),
                                  getGCellBox().yMin());
-  serialize_worker(SerializationType::WRITE, this, name);
+  serialize_worker(SerializationType::WRITE, this, nullptr, name);
   dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
@@ -313,12 +231,12 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (ok) {
     auto desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-    ok = serialize_worker(SerializationType::READ, this, desc->getWorkerPath());
+    ok = serialize_worker(
+        SerializationType::READ, this, design, desc->getWorkerPath());
     if (!ok)
       logger_->error(DRT, 511, "Deserialization failed");
     std::remove(name.c_str());
     std::remove(desc->getWorkerPath().c_str());
-    updateDesign(design);
   } else {
     logger_->error(utl::DRT, 500, "Sending worker {} failed", name);
   }
@@ -1790,6 +1708,23 @@ void FlexDR::searchRepair(int iter,
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
+        if (dist_on_) {
+          std::string design_path_
+              = fmt::format("{}iter{}.design", dist_dir_, iter);
+          serialize_design(SerializationType::WRITE, design_, design_path_);
+          dst::JobMessage msg(dst::JobMessage::ROUTING,
+                              dst::JobMessage::BROADCAST),
+              result(dst::JobMessage::NONE);
+          std::unique_ptr<dst::JobDescription> desc
+              = std::make_unique<RoutingJobDescription>();
+          RoutingJobDescription* desc_ptr = (RoutingJobDescription*) desc.get();
+          desc_ptr->setDesignPath(design_path_);
+          msg.setJobDescription(std::move(desc));
+          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+          if (!ok) {
+            logger_->error(DRT, 512, "Sending design to cloud failed");
+          }
+        }
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
@@ -2606,12 +2541,81 @@ int FlexDR::main()
   return 0;
 }
 
+template <class Archive>
+void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
+{
+  // // We always serialize before calling main on the work unit so various
+  // // fields are empty and don't need to be serialized.  I skip these to
+  // // save having to write lots of serializers that will never be called.
+  // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+  //     || !rq_.isEmpty() || gcWorker_) {
+  //   logger_->error(DRT, 999, "Can't serialize used worker");
+  // }
+
+  // The logger_, graphics_ and debugSettings_ are handled by the caller to
+  // use the current ones.
+  frDesign* design = ar.getDesign();
+  design_ = design;
+  (ar) & via_data_;
+  (ar) & routeBox_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & gcellBox_;
+  (ar) & drIter_;
+  (ar) & mazeEndIter_;
+  (ar) & followGuide_;
+  (ar) & needRecheck_;
+  (ar) & skipRouting_;
+  (ar) & ripupMode_;
+  (ar) & workerDRCCost_;
+  (ar) & workerMarkerCost_;
+  (ar) & pinCnt_;
+  (ar) & initNumMarkers_;
+  (ar) & apSVia_;
+  (ar) & planarHistoryMarkers_;
+  (ar) & viaHistoryMarkers_;
+  (ar) & historyMarkers_;
+  (ar) & nets_;
+  (ar) & gridGraph_;
+  (ar) & markers_;
+  (ar) & bestMarkers_;
+  (ar) & rq_;
+  (ar) & gcWorker_;
+  if (is_loading(ar)) {
+    // boundaryPin_
+    int sz;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      std::set<std::pair<Point, frLayerNum>> val;
+      (ar) & val;
+      boundaryPin_[(frNet*) obj] = val;
+    }
+    // owner2nets_
+    for (auto& net : nets_) {
+      if (net->getFrNet() != nullptr)
+        owner2nets_[net->getFrNet()].push_back(net.get());
+    }
+  } else {
+    // boundaryPin_
+    int sz = boundaryPin_.size();
+    (ar) & sz;
+    for (auto& [net, value] : boundaryPin_) {
+      frBlockObject* obj = (frBlockObject*) net;
+      serializeBlockObject(ar, obj);
+      (ar) & value;
+    }
+  }
+}
+
 std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
                                                  utl::Logger* logger,
+                                                 fr::frDesign* design,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();
-  serialize_worker(SerializationType::READ, worker.get(), file_name);
+  serialize_worker(SerializationType::READ, worker.get(), design, file_name);
 
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.

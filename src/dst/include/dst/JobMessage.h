@@ -54,21 +54,31 @@ class JobDescription
 class JobMessage
 {
  public:
-  enum JobType
+  enum JobType : int8_t
   {
     ROUTING,
     NONE
   };
-  JobMessage(JobType in) : type_(in) {}
+  enum MessageType : int8_t
+  {
+    UNICAST,
+    BROADCAST
+  };
+  JobMessage(JobType job_type, MessageType msg_type = UNICAST)
+      : msg_type_(msg_type), job_type_(job_type)
+  {
+  }
   void setJobDescription(std::unique_ptr<JobDescription> in)
   {
     desc_ = std::move(in);
   }
   JobDescription* getJobDescription() { return desc_.get(); }
-  JobType getType() const { return type_; }
+  JobType getJobType() const { return job_type_; }
+  MessageType getMessageType() const { return msg_type_; }
 
  private:
-  JobType type_;
+  MessageType msg_type_;
+  JobType job_type_;
   std::unique_ptr<JobDescription> desc_;
   JobMessage() : JobMessage(NONE) {}
 

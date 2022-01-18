@@ -96,7 +96,7 @@ struct frRegionQuery::Impl
     (ar) & shapes_;
     (ar) & guides_;
     (ar) & origGuides_;
-    // (ar) & grPins_;
+    (ar) & grPins_;
     (ar) & rpins_;
     (ar) & grObjs_;
     (ar) & drObjs_;

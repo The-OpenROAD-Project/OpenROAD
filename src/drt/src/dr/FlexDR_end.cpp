@@ -510,8 +510,6 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
 void FlexDRWorker::cleanup()
 {
   apSVia_.clear();
-  fixedObjs_.clear();
-  fixedObjs_.shrink_to_fit();
   planarHistoryMarkers_.clear();
   viaHistoryMarkers_.clear();
   historyMarkers_.clear();

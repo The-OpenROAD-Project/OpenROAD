@@ -92,7 +92,8 @@ class frViaDef
  public:
   // constructors
   frViaDef()
-      : name(),
+      : id_(0),
+        name(),
         isDefault(false),
         layer1Figs(),
         layer2Figs(),
@@ -106,7 +107,8 @@ class frViaDef
   {
   }
   frViaDef(const std::string& nameIn)
-      : name(nameIn),
+      : id_(0),
+        name(nameIn),
         isDefault(false),
         layer1Figs(),
         layer2Figs(),
@@ -204,8 +206,11 @@ class frViaDef
       return layer2ShapeBox; 
     throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
   }
+  void setId(int in) { id_ = in; }
+  int getId() const { return id_; }
 
  private:
+  int id_;
   std::string name;
   bool isDefault;
   std::vector<std::unique_ptr<frShape>> layer1Figs;
@@ -222,6 +227,7 @@ class frViaDef
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
+    (ar) & id_;
     (ar) & name;
     (ar) & isDefault;
     (ar) & layer1Figs;

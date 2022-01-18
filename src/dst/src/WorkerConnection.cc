@@ -80,7 +80,7 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
       sock.close();
       return;
     }
-    switch (msg.getType()) {
+    switch (msg.getJobType()) {
       case JobMessage::ROUTING:
         /* code */
         for (auto& cb : dist_->getCallBacks()) {
@@ -91,11 +91,11 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         logger_->warn(utl::DST,
                       5,
                       "Unsupported job type {} from port {}",
-                      msg.getType(),
+                      msg.getJobType(),
                       sock.remote_endpoint().port());
         asio::write(sock, asio::buffer("0"), error);
         sock.close();
-        break;
+        return;
     }
   } else {
     logger_->warn(utl::DST,

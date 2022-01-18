@@ -127,6 +127,18 @@ class frBlock : public frBlockObject
     else
       return nullptr;
   }
+  frNet* getNet(int id) const
+  {
+    if (id >= nets_.size())
+      return nullptr;
+    return nets_[id].get();
+  }
+  frNet* getSNet(int id) const
+  {
+    if (id >= snets_.size())
+      return nullptr;
+    return snets_[id].get();
+  }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
   frNet* findNet(std::string name) const
   {
@@ -294,11 +306,13 @@ class frBlock : public frBlockObject
   }
   void addNet(std::unique_ptr<frNet> in)
   {
+    in->setId(nets_.size());
     name2net_[in->getName()] = in.get();
     nets_.push_back(std::move(in));
   }
   void addSNet(std::unique_ptr<frNet> in)
   {
+    in->setId(snets_.size());
     name2snet_[in->getName()] = in.get();
     snets_.push_back(std::move(in));
   }
@@ -326,11 +340,13 @@ class frBlock : public frBlockObject
   void setBlockages(std::vector<std::unique_ptr<frBlockage>>& in)
   {
     for (auto& blk : in) {
+      blk->setOrderId(blockages_.size());
       blockages_.push_back(std::move(blk));
     }
   }
   void addBlockage(std::unique_ptr<frBlockage> in)
   {
+    in->setOrderId(blockages_.size());
     blockages_.push_back(std::move(in));
   }
   void setGCellPatterns(const std::vector<frGCellPattern>& gpIn)
@@ -398,20 +414,20 @@ void frBlock::serialize(Archive& ar, const unsigned int version)
   (ar) & name_;
   (ar) & dbUnit_;
   (ar) & masterType_;
-  (ar) & name2inst_;
   (ar) & insts_;
-  (ar) & name2term_;
   (ar) & terms_;
-  (ar) & name2net_;
   (ar) & nets_;
-  (ar) & name2snet_;
   (ar) & snets_;
+  (ar) & fakeSNets_;
+  (ar) & name2inst_;
+  (ar) & name2term_;
+  (ar) & name2net_;
+  (ar) & name2snet_;
   (ar) & blockages_;
   (ar) & boundaries_;
   (ar) & trackPatterns_;
   (ar) & gCellPatterns_;
   (ar) & markers_;
-  (ar) & fakeSNets_;
   (ar) & dieBox_;
 
   // The list members can container an iterator representing their position

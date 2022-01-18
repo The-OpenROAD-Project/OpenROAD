@@ -28,6 +28,11 @@ struct frOArchive : OutputArchive
     OutputArchive::save(t);
   }
   frDesign* getDesign() const { return nullptr; }
+  void setDeepSerialize(bool in) { deep_serialize = in; }
+  bool isDeepSerialize() const { return deep_serialize; }
+
+ private:
+  bool deep_serialize;
 };
 struct frIArchive : InputArchive
 {
@@ -41,9 +46,12 @@ struct frIArchive : InputArchive
   }
   frDesign* getDesign() const { return design; }
   void setDesign(frDesign* in) { design = in; }
+  void setDeepSerialize(bool in) { deep_serialize = in; }
+  bool isDeepSerialize() const { return deep_serialize; }
 
-  private:
+ private:
   frDesign* design;
+  bool deep_serialize;
 };
 }  // namespace fr
 // explicit instantiation of class templates involved

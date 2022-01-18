@@ -91,6 +91,8 @@ target_sources(drt
     src/gc/FlexGC_eol.cpp
     src/gc/FlexGC_inf.cpp
     src/gc/FlexGC_cut.cpp
+    src/db/drObj/drAccessPattern.cpp
+    src/db/drObj/drPin.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frTime_helper.cpp
@@ -102,8 +104,10 @@ target_sources(drt
     src/db/obj/frVia.cpp
     src/db/obj/frAccess.cpp
     src/db/obj/frRPin.cpp
+    src/db/obj/frNet.cpp
     src/db/obj/frNode.cpp
     src/db/obj/frInstTerm.cpp
+    src/db/obj/frMarker.cpp
     src/db/tech/frLayer.cc
     src/frRegionQuery.cpp
     src/io/io_pin.cpp
