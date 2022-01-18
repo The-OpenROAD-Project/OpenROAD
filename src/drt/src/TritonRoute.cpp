@@ -180,6 +180,7 @@ void TritonRoute::updateDesign(const char* file_name)
     return;
   design_ = std::make_unique<frDesign>();
   frIArchive ar(file);
+  ar.setDeepSerialize(true);
   register_types(ar);
   ar >> *(design_.get());
   file.close();
