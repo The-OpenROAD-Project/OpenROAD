@@ -62,7 +62,7 @@ NetBox::NetBox(dbNet *n) :
 int64_t
 NetBox::hpwl()
 {
-  return box.xMax() - box.xMin() + box.yMax() - box.yMin();
+  return box.dy() + box.dx();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ Opendp::findNetBoxes(NetBoxes &net_boxes)
     if (!isSupply(net)
         && !net->isSpecial()) {
       NetBox net_box(net);
-      net_box.box = getBox(net);
+      net_box.box = net->getTermBBox();
       net_boxes.push_back(net_box);
     }
   }

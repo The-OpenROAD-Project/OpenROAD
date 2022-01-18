@@ -727,45 +727,28 @@ bool io::Parser::genGuides_gCell2APTermMap(
     return isSuccess;
   }
 
-  // ap
-  frBTerm* trueTerm = term;
-
-  int pinIdx = 0;
-  int pinAccessIdx = 0;
-  int succesPinCnt = 0;
-  for (auto& pin : trueTerm->getPins()) {
-    frAccessPoint* prefAp = nullptr;
+  size_t succesPinCnt = 0;
+  for (auto& pin : term->getPins()) {
     if (!pin->hasPinAccess()) {
       continue;
     }
-    if (pinAccessIdx == -1) {
+
+    auto& access_points = pin->getPinAccess(0)->getAccessPoints();
+    if (access_points.empty()) {
       continue;
     }
+    frAccessPoint* prefAp = access_points[0].get();
 
-    if (!prefAp) {
-      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-        prefAp = ap.get();
-        break;
-      }
-    }
+    Point bp;
+    prefAp->getPoint(bp);
+    const auto bNum = prefAp->getLayerNum();
 
-    if (prefAp) {
-      Point bp;
-      prefAp->getPoint(bp);
-      auto bNum = prefAp->getLayerNum();
-
-      Point idx;
-      design->getTopBlock()->getGCellIdx(bp, idx);
-      gCell2PinMap[make_pair(idx, bNum)].insert(
-          static_cast<frBlockObject*>(term));
-      succesPinCnt++;
-      if (succesPinCnt == int(trueTerm->getPins().size())) {
-        isSuccess = true;
-      }
-    }
-    pinIdx++;
+    Point idx;
+    design->getTopBlock()->getGCellIdx(bp, idx);
+    gCell2PinMap[{idx, bNum}].insert(term);
+    succesPinCnt++;
   }
-  return isSuccess;
+  return succesPinCnt == term->getPins().size();
 }
 
 void io::Parser::genGuides_initPin2GCellMap(
