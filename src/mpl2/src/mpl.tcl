@@ -58,12 +58,12 @@ proc rtl_macro_placer { args } {
 #  Default values for the weights
 #
     set area_wt 0.01
-    set wirelength_wt 54.7
+    set wirelength_wt 88.7
     set outline_wt 74.71
-    set boundary_wt 100.0
+    set boundary_wt 25.0
     set macro_blockage_wt 50.0
     set location_wt 100.0
-    set notch_wt 100.0
+    set notch_wt 212.5
 
     set macro_halo 10.0
     set report_directory "rtl_mp"
