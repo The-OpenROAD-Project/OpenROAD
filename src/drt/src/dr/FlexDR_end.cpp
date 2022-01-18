@@ -332,14 +332,15 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     result.clear();
     regionQuery->query(Rect(pt, pt), lNum, result);
     for (auto& [bx, obj] : result) {
-      if (obj->typeId() == frcInstTerm) {
+      auto type = obj->typeId();
+      if (type == frcInstTerm) {
         auto instTerm = static_cast<frInstTerm*>(obj);
         if (instTerm->getNet() == net) {
           skip = true;
           break;
         }
-      } else if (obj->typeId() == frcTerm) {
-        auto term = static_cast<frTerm*>(obj);
+      } else if (type == frcBTerm) {
+        auto term = static_cast<frBTerm*>(obj);
         if (term->getNet() == net) {
           skip = true;
           break;

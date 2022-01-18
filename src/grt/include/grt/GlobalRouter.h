@@ -162,6 +162,7 @@ class GlobalRouter
   void printGrid();
 
   // flow functions
+  void readGuides(const char* file_name); // just for display
   void writeGuides(const char* file_name);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -241,6 +242,9 @@ class GlobalRouter
                               std::vector<int>& edge_costs_per_layer);
 
   // aux functions
+  std::vector<odb::Point> findOnGridPositions(const Pin& pin,
+                                              bool& has_access_points,
+                                              odb::Point& pos_on_grid);
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
@@ -319,6 +323,7 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
+  int trackSpacing();
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;

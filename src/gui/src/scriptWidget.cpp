@@ -182,6 +182,12 @@ void ScriptWidget::executeCommand(const QString& command, bool echo)
 void ScriptWidget::executeSilentCommand(const QString& command)
 {
   int return_code = executeTclCommand(command);
+
+  if (return_code != TCL_OK) {
+    // Show its error output
+    addTclResultToOutput(return_code);
+  }
+
   emit commandExecuted(return_code);
 }
 
@@ -214,7 +220,15 @@ void ScriptWidget::addTclResultToOutput(int return_code)
   // Show the return value color-coded by ok/err.
   const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
   if (result[0] != '\0') {
-    addToOutput(result, (return_code == TCL_OK) ? tcl_ok_msg_ : tcl_error_msg_);
+    if (return_code == TCL_OK) {
+      addToOutput(result, tcl_ok_msg_);
+    } else {
+      try {
+        logger_->error(utl::GUI, 70, result);
+      } catch (const std::runtime_error& /* e */) {
+        // do nothing
+      }
+    }
   }
 }
 
@@ -425,8 +439,8 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 
-    // process queue, if main thread will process new text, otherwise there is nothing to process from this thread.
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    // process widget event queue, if main thread will process new text, otherwise there is nothing to process from this thread.
+    QCoreApplication::sendPostedEvents(widget_);
   }
 
   void flush_() override {}

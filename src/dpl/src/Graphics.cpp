@@ -33,7 +33,6 @@
 
 #include "Graphics.h"
 #include "dpl/Opendp.h"
-#include "ord/OpenRoad.hh"
 
 namespace dpl {
 
@@ -108,7 +107,8 @@ Graphics::drawObjects(gui::Painter &painter)
   float min_length = min_displacement_ * dp_->getRowHeight();
   min_length *= min_length;
 
-  auto core = ord::getCore(block_);
+  odb::Rect core;
+  block_->getCoreArea(core);
 
   for (auto cell : dp_->getCells()) {
     if (!cell.is_placed_) {

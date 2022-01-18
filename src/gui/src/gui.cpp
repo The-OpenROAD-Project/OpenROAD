@@ -733,6 +733,21 @@ void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
   main_window->timingPathsThrough(terms);
 }
 
+void Gui::addFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addFocusNet(net);
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeFocusNet(net);
+}
+
+void Gui::clearFocusNets()
+{
+  main_window->getLayoutViewer()->clearFocusNets();
+}
+
 void Gui::setLogger(utl::Logger* logger)
 {
   if (logger == nullptr) {
@@ -814,7 +829,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   main_window->getScriptWidget()->setupTcl(interp, init_openroad);
 
   // openroad is guaranteed to be initialized here
-  main_window->init(open_road->getSta());
+  main_window->init(open_road->getSta(), open_road->getPDNSim());
 
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));

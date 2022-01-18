@@ -204,6 +204,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           inspector_,
           SLOT(highlightChanged()));
+  connect(viewer_,
+          SIGNAL(focusNetsChanged()),
+          inspector_,
+          SLOT(focusNetsChanged()));
   connect(inspector_,
           SIGNAL(removeHighlight(const QList<const Selected*>&)),
           this,
@@ -325,8 +329,9 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-  // unregister descriptors
+  // unregister descriptors with GUI dependencies
   Gui::get()->unregisterDescriptor<Ruler*>();
+  Gui::get()->unregisterDescriptor<odb::dbNet*>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -348,25 +353,28 @@ void MainWindow::setBlock(odb::dbBlock* block)
   }
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, psm::PDNSim* psm)
 {
-  // Setup timing widget
+  // Setup widgets
   timing_widget_->init(sta);
+  controls_->setSTA(sta);
 
   // register descriptors
   auto* gui = Gui::get();
   gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
+  gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   // renderers
   power_density_data_.setSTA(sta);
+  ir_drop_data_.setPSM(psm);
   for (auto* heat_map : getHeatMaps()) {
     gui->registerRenderer(heat_map->getRenderer());
   }
@@ -1165,7 +1173,8 @@ const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
   return {
     &routing_congestion_data_,
     &placement_density_data_,
-    &power_density_data_
+    &power_density_data_,
+    &ir_drop_data_
   };
 }
 
@@ -1208,6 +1217,10 @@ void MainWindow::setHeatMapSetting(const std::string& name, const std::string& o
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
         settings[option] = *s;
+      } if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      } if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
       } else {
         logger_->error(utl::GUI, 60, "{} must be a boolean", option);
       }

@@ -50,9 +50,10 @@ class Logger;
 namespace fr {
 namespace io {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower
-typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
-    viaRawPriorityTuple;
+// lowerArea, not align lower, via name
+typedef std::
+    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
+        viaRawPriorityTuple;
 
 class Parser
 {
@@ -68,7 +69,7 @@ class Parser
         tmpGRPins(),
         trackOffsetMap(),
         prefTrackPatterns(),
-        numRefBlocks(0),
+        numMasters(0),
         numInsts(0),
         numTerms(0),
         numNets(0),
@@ -82,7 +83,7 @@ class Parser
   void postProcessGuide(odb::dbDatabase* db);
   void initDefaultVias();
   void initRPin();
-  std::map<frBlock*,
+  std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
@@ -136,14 +137,14 @@ class Parser
   std::string masterSliceLayerName;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
   std::vector<std::pair<frBlockObject*, Point>> tmpGRPins;
-  std::map<frBlock*,
+  std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
                              std::set<frInst*, frBlockObjectComp>>>,
            frBlockObjectComp>
       trackOffsetMap;
   std::vector<frTrackPattern*> prefTrackPatterns;
-  int numRefBlocks;
+  int numMasters;
   int numInsts;
   int numTerms;      // including instterm and term
   int numNets;       // including snet and net
@@ -172,6 +173,10 @@ class Parser
   // postProcessGuide functions
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
+  template <typename T>
+  void genGuides_addCoverGuide_helper(frBlockObject* term, T* trueTerm, frInst* inst,
+                                      dbTransform& shiftXform,
+                                      vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,
@@ -197,10 +202,11 @@ class Parser
       frNet* net,
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
+  template <typename T>
   void genGuides_gCell2TermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frTerm* term,
+      T* term,
       frBlockObject* origTerm);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
@@ -209,7 +215,7 @@ class Parser
   bool genGuides_gCell2APTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frTerm* instTerm);
+      frBTerm* term);
   void genGuides_initPin2GCellMap(
       frNet* net,
       std::map<frBlockObject*,

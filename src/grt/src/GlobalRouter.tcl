@@ -350,7 +350,7 @@ proc check_routing_layer { layer } {
     utl::error GRT 60 "Layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName])."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "Layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName])."
+    utl::error GRT 61 "Layer [$tech_layer getConstName] is less than the min routing layer ([$min_tech_layer getConstName])."
   }
 }
 

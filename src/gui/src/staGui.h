@@ -423,6 +423,7 @@ class TimingConeRenderer : public gui::Renderer
   void getCone(sta::Pin* pin, sta::PinSet* pin_set, DepthMapSet& depth_map, bool is_fanin);
   void buildConnectivity();
   void annotateTiming(sta::Pin* pin);
+  bool isSupplyPin(sta::Pin* pin) const;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj

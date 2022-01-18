@@ -116,7 +116,9 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
-  DbNetDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  DbNetDescriptor(odb::dbDatabase* db,
+                  sta::dbSta* sta,
+                  const std::set<odb::dbNet*>& focus_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -162,6 +164,8 @@ class DbNetDescriptor : public Descriptor
                 std::vector<odb::Point>& path) const;
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
+
+  const std::set<odb::dbNet*>& focus_nets_;
 
   static const int max_iterms_ = 10000;
 };
@@ -268,6 +272,37 @@ class DbTechLayerDescriptor : public Descriptor
 {
  public:
   DbTechLayerDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+// The ap doesn't know its location as it is associated the master and
+// needs the iterm to get a location
+struct DbItermAccessPoint
+{
+  odb::dbAccessPoint* ap;
+  odb::dbITerm* iterm;
+};
+
+class DbItermAccessPointDescriptor : public Descriptor
+{
+ public:
+  DbItermAccessPointDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;

@@ -348,7 +348,7 @@ unsigned FlexGRCMap::getNumBlkTracks(
     }
     if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
       auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
-      if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
+      if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
         // actBloatDist = calcBloatDist(obj, lNum, boostB);
         // currently hack to prevent via EOL violation from above / below layer
         // (see TA prevention for prl)
@@ -423,8 +423,8 @@ unsigned FlexGRCMap::getNumPins(
       if (instTerm->hasNet()) {
         pins.insert(obj);
       }
-    } else if (obj->typeId() == frcTerm) {
-      auto term = static_cast<frTerm*>(obj);
+    } else if (obj->typeId() == frcBTerm) {
+      auto term = static_cast<frBTerm*>(obj);
       if (term->hasNet()) {
         pins.insert(obj);
       }

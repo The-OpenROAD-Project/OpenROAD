@@ -623,7 +623,7 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
   if (horizontal == 0 && vertical == 0 && up == 0
       && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
-  dbGCellGrid::GCellData &gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
   gcell.horizontal_capacity = horizontal;
   gcell.vertical_capacity = vertical;
   gcell.up_capacity = up;
@@ -641,7 +641,7 @@ void dbGCellGrid::setUsage(dbTechLayer* layer,
   if (horizontal == 0 && vertical == 0 && up == 0
       && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
-  dbGCellGrid::GCellData &gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
   gcell.horizontal_usage = horizontal;
   gcell.vertical_usage = vertical;
   gcell.up_usage = up;
@@ -659,7 +659,7 @@ void dbGCellGrid::setBlockage(dbTechLayer* layer,
   if (horizontal == 0 && vertical == 0 && up == 0
       && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
-  dbGCellGrid::GCellData &gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
   gcell.horizontal_blockage = horizontal;
   gcell.vertical_blockage = vertical;
   gcell.up_blockage = up;

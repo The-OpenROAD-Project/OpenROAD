@@ -36,16 +36,25 @@ using namespace fr;
 void frRPin::getBBox(Rect& in)
 {
   Point pt;
-  if (term->typeId() == frcInstTerm) {
-    auto inst = static_cast<frInstTerm*>(term)->getInst();
-    dbTransform shiftXform;
-    inst->getTransform(shiftXform);
-    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
-    accessPoint->getPoint(pt);
-    shiftXform.apply(pt);
-  } else if (term->typeId() == frcTerm) {
-    accessPoint->getPoint(pt);
+  switch(term->typeId()) {
+    case frcInstTerm:
+      {
+        auto inst = static_cast<frInstTerm*>(term)->getInst();
+        dbTransform shiftXform;
+        inst->getTransform(shiftXform);
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+
+        accessPoint->getPoint(pt);
+        shiftXform.apply(pt);
+        break;
+      }
+    case frcBTerm:
+      accessPoint->getPoint(pt);
+      break;
+    default:
+      cout << "ERROR: Invalid term type in frRPin." << endl;
+      break;
   }
 
   in.init(pt.x(), pt.y(), pt.x(), pt.y());

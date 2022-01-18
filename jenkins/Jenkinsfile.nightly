@@ -13,60 +13,71 @@ pipeline {
         stash name: "build", includes: "build/**";
       }
     }
-    stage("Nightly Tests") {
-      parallel {
-        stage("Detailed Router ISPD") {
-          agent any;
-          stages {
-            stage("Clean-up ISPD") {
-              steps {
-                sh "rm -rf /home/jenkins/ispd/runs/*";
-              }
-            }
-            stage("Test ISPD") {
-              steps {
-                unstash 'build';
-                sh "./src/drt/test/run-ispd.tcl";
-              }
-            }
+
+    stage('Test Matrix') {
+      matrix {
+        agent any;
+        axes {
+          axis {
+            name 'ISPD_YEAR';
+            values '18', '19';
           }
-          post {
-            always {
-              sh "mv /home/jenkins/ispd/runs/*.tar.gz .";
-              sh "mv /home/jenkins/ispd/runs/*/*log .";
-              archiveArtifacts "*.tar.gz, *log";
+          axis {
+            name 'TEST_TO_RUN';
+            values '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'GPL';
+          }
+        }
+        excludes {
+          // run GPL test only once
+          exclude {
+            axis {
+              name 'ISPD_YEAR';
+              values '19';
+            }
+            axis {
+              name 'TEST_TO_RUN';
+              values 'GPL';
             }
           }
         }
-        stage("Global Placer Large") {
-          agent any;
-          stages {
-            stage("Test Replace Large") {
-              steps {
-                unstash "build";
-                sh "./src/gpl/test/regression-large";
+        stages {
+          stage('Run Tests') {
+            steps {
+              script {
+
+                if (env.TEST_TO_RUN != "GPL") {
+                  stage("ISPD ${ISPD_YEAR} TEST ${TEST_TO_RUN}") {
+                    unstash "build";
+                    sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ISPD_YEAR}_test${TEST_TO_RUN}";
+                  }
+                }
+
+                if (env.TEST_TO_RUN == "GPL") {
+                  stage("GPL Tests") {
+                    unstash "build";
+                    sh "./src/gpl/test/regression-large";
+                  }
+                }
+
               }
             }
           }
-          post {
-            always {
-              sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-              archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
-            }
+        }
+        post {
+          always {
+            archiveArtifacts "**/*.tar.gz, **/*.log";
           }
         }
+
       }
     }
   }
+
   post {
     failure {
       script {
-        echo('Nightly build: report to stakeholders and commit author.');
-        EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS";
-        REPLY_TO="$EMAIL_TO";
         emailext (
-            to: "$EMAIL_TO",
-            replyTo: "$REPLY_TO",
+            to: "$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS",
             subject: '$DEFAULT_SUBJECT',
             body: '$DEFAULT_CONTENT',
             );

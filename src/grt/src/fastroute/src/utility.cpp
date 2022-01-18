@@ -2109,4 +2109,19 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
   return (numShift);
 }
 
+std::ostream& operator<<(std::ostream& os, RouteType type)
+{
+  switch(type) {
+  case RouteType::NoRoute:
+    return os << "NoRoute";
+  case RouteType::LRoute:
+    return os << "LRoute";
+  case RouteType::ZRoute:
+    return os << "ZRoute";
+  case RouteType::MazeRoute:
+    return os << "MazeRoute";
+  };
+  return os << "Bad RouteType";
+}
+
 }  // namespace grt

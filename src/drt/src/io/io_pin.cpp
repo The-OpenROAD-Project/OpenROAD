@@ -54,13 +54,13 @@ void io::Parser::instAnalysis()
   }
 
   int numLayers = design->getTech()->getLayers().size();
-  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
-      refBlockPinLayerRange;
-  for (auto& uRefBlock : design->getRefBlocks()) {
-    auto refBlock = uRefBlock.get();
+  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+      masterPinLayerRange;
+  for (auto& uMaster : design->getMasters()) {
+    auto master = uMaster.get();
     frLayerNum minLayerNum = numLayers;
     frLayerNum maxLayerNum = 0;
-    for (auto& uTerm : refBlock->getTerms()) {
+    for (auto& uTerm : master->getTerms()) {
       for (auto& uPin : uTerm->getPins()) {
         for (auto& uPinFig : uPin->getFigs()) {
           auto pinFig = uPinFig.get();
@@ -75,9 +75,9 @@ void io::Parser::instAnalysis()
       }
     }
     maxLayerNum = min(maxLayerNum + 2, numLayers);
-    refBlockPinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
+    masterPinLayerRange[master] = make_tuple(minLayerNum, maxLayerNum);
   }
-  // cout <<"  refBlock pin layer range done" <<endl;
+  // cout <<"  master pin layer range done" <<endl;
 
   if (VERBOSE > 0) {
     logger->info(DRT, 163, "Instance analysis.");
@@ -90,7 +90,7 @@ void io::Parser::instAnalysis()
     inst->getOrigin(origin);
     auto orient = inst->getOrient();
     auto [minLayerNum, maxLayerNum]
-        = refBlockPinLayerRange[inst->getRefBlock()];
+        = masterPinLayerRange[inst->getMaster()];
     offset.clear();
     for (auto& tp : prefTrackPatterns) {
       if (tp->getLayerNum() >= minLayerNum
@@ -113,7 +113,7 @@ void io::Parser::instAnalysis()
         }
       }
     }
-    trackOffsetMap[inst->getRefBlock()][orient][offset].insert(inst.get());
+    trackOffsetMap[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
     if (VERBOSE > 0) {
       if (cnt < 100000) {
@@ -130,7 +130,7 @@ void io::Parser::instAnalysis()
 
   cnt = 0;
   frString orientName;
-  for (auto& [refBlock, orientMap] : trackOffsetMap) {
+  for (auto& [master, orientMap] : trackOffsetMap) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
     }
