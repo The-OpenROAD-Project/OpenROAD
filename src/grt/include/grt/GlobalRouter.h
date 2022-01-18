@@ -323,6 +323,7 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
+  int trackSpacing();
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;

@@ -36,4 +36,5 @@ record_tests {
   silence
   tracks1
   tracks2
+  tracks3
 }

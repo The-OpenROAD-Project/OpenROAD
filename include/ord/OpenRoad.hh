@@ -283,19 +283,6 @@ private:
   int threads_;
 };
 
-// Return the bounding box of the db rows.
-odb::Rect
-getCore(odb::dbBlock *block);
-
-// Return the point inside rect that is closest to pt.
-odb::Point
-closestPtInRect(odb::Rect rect,
-		odb::Point pt);
-odb::Point
-closestPtInRect(odb::Rect rect,
-		int x,
-		int y);
-
 int
 tclAppInit(Tcl_Interp *interp);
 
