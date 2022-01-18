@@ -714,6 +714,7 @@ void FlexDRGraphics::endNet(drNet* net)
   if (!net_) {
     return;
   }
+  gui_->removeSelected<GridGraphDescriptor::Data>();
   assert(net == net_);
   int point_cnt = 0;
   for (auto& pts : points_by_layer_) {
