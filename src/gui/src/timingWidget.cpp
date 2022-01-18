@@ -147,6 +147,11 @@ TimingWidget::TimingWidget(QWidget* parent)
           this,
           SLOT(showSettings()));
 
+  connect(settings_,
+          SIGNAL(inspect(const Selected&)),
+          this,
+          SIGNAL(inspect(const Selected&)));
+
   connect(expand_clk_, SIGNAL(stateChanged(int)), this, SLOT(updateClockRows()));
 
   path_index_spin_box_->setRange(0, 0);

@@ -46,6 +46,7 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QListWidget>
 #include <QSpinBox>
 
 #include "gui/gui.h"
@@ -516,22 +517,11 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   bool is_modified_;
 };
 
-class ComboBoxPopupFilter : public QObject
+class PinSetWidget : public QWidget
 {
  Q_OBJECT
  public:
-  bool eventFilter(QObject* object, QEvent* event);
-
- signals:
-  void deletePressed();
-};
-
-
-class PinComboBox : public QComboBox
-{
- Q_OBJECT
- public:
-  PinComboBox(QWidget* parent = nullptr);
+  PinSetWidget(bool add_remove_button, QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
 
@@ -539,21 +529,37 @@ class PinComboBox : public QComboBox
 
   void setPins(const std::set<sta::Pin*>& pins);
 
-  const std::set<sta::Pin*>& getPins() const { return pins_; }
+  const std::set<sta::Pin*> getPins() const;
+
+  bool isAddMode() const { return add_mode_; }
+  bool isRemoveMode() const { return !isAddMode(); }
+  void setAddMode();
+  void setRemoveMode();
+
+ signals:
+  void addRemoveTriggered(PinSetWidget*);
+  void inspect(const Selected& selected);
 
  public slots:
   void clearPins() { setPins({}); }
 
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
  private slots:
   void findPin();
+  void showMenu(const QPoint& point);
 
  private:
   sta::dbSta* sta_;
-  std::set<sta::Pin*> pins_;
+  std::vector<sta::Pin*> pins_;
 
-  int highlight_selection_;
+  QListWidget* box_;
+  QLineEdit* find_pin_;
+  QPushButton* clear_;
+  QPushButton* add_remove_;
 
-  ComboBoxPopupFilter* view_filter_;
+  bool add_mode_;
 };
 
 class TimingControlsDialog : public QDialog
@@ -570,18 +576,24 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const;
 
-  void setFromPin(const std::set<sta::Pin*>& pins) { from_.pins->setPins(pins); }
+  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
   void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
-  void setToPin(const std::set<sta::Pin*>& pins) { to_.pins->setPins(pins); }
+  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
 
-  const std::set<sta::Pin*>& getFromPins() const { return from_.pins->getPins(); }
+  const std::set<sta::Pin*> getFromPins() const { return from_->getPins(); }
   const std::vector<std::set<sta::Pin*>> getThruPins() const;
-  const std::set<sta::Pin*>& getToPins() const { return to_.pins->getPins(); }
+  const std::set<sta::Pin*> getToPins() const { return to_->getPins(); }
 
   sta::Pin* convertTerm(Gui::odbTerm term) const;
 
+ signals:
+  void inspect(const Selected& selected);
+
  public slots:
   void populate();
+
+ private slots:
+  void addRemoveThru(PinSetWidget* row);
 
  private:
   sta::dbSta* sta_;
@@ -593,25 +605,16 @@ class TimingControlsDialog : public QDialog
 
   QCheckBox* uncontrained_;
 
-  struct PinRow {
-    PinComboBox* pins;
-    QPushButton* clear;
-  };
-  struct ThruRow {
-    PinRow pin_row;
-    QPushButton* add_remove;
-  };
-  PinRow from_;
-  std::vector<ThruRow> thru_;
-  PinRow to_;
+  PinSetWidget* from_;
+  std::vector<PinSetWidget*> thru_;
+  PinSetWidget* to_;
 
   static constexpr int thru_start_row_ = 3;
 
   void setPinSelections();
 
   void addThruRow(const std::set<sta::Pin*>& pins);
-  QHBoxLayout* setupPinRow(const QString& label, const PinRow& row, int row_index = -1);
-  void addRemoveThru(const ThruRow& row);
+  void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 
 }  // namespace gui

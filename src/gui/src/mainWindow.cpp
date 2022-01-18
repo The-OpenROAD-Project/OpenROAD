@@ -217,6 +217,12 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addHighlighted(const SelectionSet&)));
 
+  connect(timing_widget_,
+          &TimingWidget::inspect,
+          [this](const Selected& selected) {
+            inspector_->inspect(selected);
+            inspector_->raise();
+          });
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
           inspector_,

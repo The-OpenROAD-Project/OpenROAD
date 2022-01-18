@@ -34,10 +34,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <QAbstractItemView>
+#include <QAction>
 #include <QApplication>
 #include <QDebug>
 #include <QLineEdit>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <fstream>
@@ -1420,82 +1422,134 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
 
 /////////
 
-bool ComboBoxPopupFilter::eventFilter(QObject* object, QEvent* event)
-{
-  if (event->type() == QEvent::KeyPress) {
-    auto* key_event = static_cast<QKeyEvent*>(event);
-
-    if (key_event->key() == Qt::Key_Delete) {
-      emit deletePressed();
-      return true;
-    }
-  }
-  return false;
-}
-
-/////////
-
-PinComboBox::PinComboBox(QWidget* parent) :
-    QComboBox(parent),
+PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent) :
+    QWidget(parent),
     sta_(nullptr),
     pins_({}),
-    highlight_selection_(-1),
-    view_filter_(new ComboBoxPopupFilter)
+    box_(new QListWidget(this)),
+    find_pin_(new QLineEdit(this)),
+    clear_(new QPushButton(this)),
+    add_remove_(nullptr),
+    add_mode_(true)
 {
   const int min_characters = 25;
   const auto font_metrics = fontMetrics();
   const int min_width = min_characters * font_metrics.averageCharWidth();
-  setMinimumWidth(min_width);
-  setEditable(true);
+  find_pin_->setMinimumWidth(min_width);
 
-  bool is_deleting = false;
-  connect(lineEdit(), SIGNAL(returnPressed()), this, SLOT(findPin()));
-  connect(this,
-          QOverload<int>::of(&QComboBox::highlighted),
-          [this, &is_deleting](int index) {
-            if (!is_deleting) {
-              highlight_selection_ = index;
-            }
-          });
+  box_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  const int max_rows = 5;
+  const int row_height = font_metrics.height();
+  box_->setFixedHeight(max_rows * row_height);
 
-  connect(view_filter_,
-          &ComboBoxPopupFilter::deletePressed,
-          [this, &is_deleting]() {
-            if (highlight_selection_ == -1 || count() == 0) {
-              return;
-            }
+  clear_->setIcon(QIcon(":/delete.png"));
+  clear_->setToolTip(tr("Clear pins"));
+  clear_->setAutoDefault(false);
+  clear_->setDefault(false);
+  connect(clear_,
+          SIGNAL(pressed()),
+          this,
+          SLOT(clearPins()));
 
-            is_deleting = true;
-            pins_.erase(pins_.find((sta::Pin*)itemData(highlight_selection_).value<void*>()));
-            removeItem(highlight_selection_);
-            // ensure highlight selection is updated
-            highlight_selection_ = std::min(highlight_selection_, count() - 1);
-            is_deleting = false;
-          });
+  connect(find_pin_,
+          SIGNAL(returnPressed()),
+          this,
+          SLOT(findPin()));
 
-  view()->installEventFilter(view_filter_);
+  QVBoxLayout* layout = new QVBoxLayout;
+  QHBoxLayout* row_layout = new QHBoxLayout;
+  row_layout->addWidget(find_pin_);
+  row_layout->addWidget(clear_);
+  if (add_remove_button) {
+    add_remove_ = new QPushButton(this);
+    add_remove_->setToolTip(tr("Add/Remove rows"));
+    row_layout->addWidget(add_remove_);
+
+    add_remove_->setAutoDefault(false);
+    add_remove_->setDefault(false);
+    connect(add_remove_,
+            &QPushButton::pressed,
+            [this]() {
+              emit addRemoveTriggered(this);
+            });
+    setAddMode();
+  }
+
+  layout->addLayout(row_layout);
+  layout->addWidget(box_);
+
+  setLayout(layout);
+
+  box_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(box_,
+          SIGNAL(customContextMenuRequested(const QPoint&)),
+          this,
+          SLOT(showMenu(const QPoint)));
 }
 
-void PinComboBox::updatePins()
+void PinSetWidget::setAddMode()
 {
-  clear();
+  if (add_remove_ == nullptr) {
+    return;
+  }
+
+  add_mode_ = true;
+  add_remove_->setIcon(QIcon(":/add.png"));
+}
+
+void PinSetWidget::setRemoveMode()
+{
+  if (add_remove_ == nullptr) {
+    return;
+  }
+
+  add_mode_ = false;
+  add_remove_->setIcon(QIcon(":/remove.png"));
+}
+
+void PinSetWidget::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Delete && box_->hasFocus()) {
+    for (auto* selection : box_->selectedItems()) {
+      auto* pin_data = selection->data(Qt::UserRole).value<void*>();
+      sta::Pin* pin = (sta::Pin*)pin_data;
+      pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+    }
+    updatePins();
+  } else {
+    QWidget::keyPressEvent(event);
+  }
+}
+
+void PinSetWidget::updatePins()
+{
+  box_->clear();
   if (!pins_.empty()) {
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
-      addItem(network->name(pin), QVariant::fromValue((void*)pin));
+      auto* item = new QListWidgetItem(network->name(pin));
+      item->setData(Qt::UserRole, QVariant::fromValue((void*)pin));
+      box_->addItem(item);
     }
   }
 }
 
-void PinComboBox::setPins(const std::set<sta::Pin*>& pins)
+void PinSetWidget::setPins(const std::set<sta::Pin*>& pins)
 {
-  pins_ = pins;
+  pins_.clear();
+  pins_.insert(pins_.end(), pins.begin(), pins.end());
   updatePins();
 }
 
-void PinComboBox::findPin()
+const std::set<sta::Pin*> PinSetWidget::getPins() const
 {
-  const QString text = lineEdit()->text();
+  std::set<sta::Pin*> pins(pins_.begin(), pins_.end());
+  return pins;
+}
+
+void PinSetWidget::findPin()
+{
+  const QString text = find_pin_->text();
   if (text.isEmpty()) {
     return;
   }
@@ -1515,11 +1569,52 @@ void PinComboBox::findPin()
     network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
 
     for (auto* pin : found_pins) {
-      pins_.insert(pin);
+      if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+        continue;
+      }
+      pins_.push_back(pin);
     }
   }
 
   updatePins();
+}
+
+void PinSetWidget::showMenu(const QPoint& point)
+{
+  // Handle global position
+  const QPoint global = box_->mapToGlobal(point);
+
+  auto* pin_item = box_->itemAt(box_->viewport()->mapFromGlobal(global));
+  if (pin_item == nullptr) {
+    return;
+  }
+
+  sta::Pin* pin = (sta::Pin*)pin_item->data(Qt::UserRole).value<void*>();
+
+  // Create menu and insert some actions
+  QMenu pin_menu;
+  QAction* clear_all = pin_menu.addAction("Clear all");
+  connect(clear_all,
+          SIGNAL(triggered()),
+          this,
+          SLOT(clearPins()));
+  QAction* inspect_action = pin_menu.addAction("Inspect");
+  connect(inspect_action,
+          &QAction::triggered,
+          [this, pin]() {
+            auto* gui = Gui::get();
+            odb::dbITerm* iterm;
+            odb::dbBTerm* bterm;
+            sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+            if (iterm != nullptr) {
+              emit inspect(gui->makeSelected(iterm));
+            } else {
+              emit inspect(gui->makeSelected(bterm));
+            }
+          });
+
+  // Show context menu at handling position
+  pin_menu.exec(global);
 }
 
 /////////
@@ -1531,9 +1626,9 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
     uncontrained_(new QCheckBox(this)),
-    from_({new PinComboBox(this), new QPushButton(this)}),
+    from_(new PinSetWidget(false, this)),
     thru_({}),
-    to_({new PinComboBox(this), new QPushButton(this)})
+    to_(new PinSetWidget(false, this))
 {
   setWindowTitle("Timing Controls");
 
@@ -1563,35 +1658,30 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
           });
 }
 
-QHBoxLayout* TimingControlsDialog::setupPinRow(const QString& label, const PinRow& row, int row_index)
+void TimingControlsDialog::setupPinRow(const QString& label, PinSetWidget* row, int row_index)
 {
-  QHBoxLayout* row_layout = new QHBoxLayout;
-  row_layout->addWidget(row.pins);
-  row_layout->addWidget(row.clear);
   if (row_index < 0) {
-    layout_->addRow(label, row_layout);
+    layout_->addRow(label, row);
   } else {
-    layout_->insertRow(row_index, label, row_layout);
+    layout_->insertRow(row_index, label, row);
   }
 
-  row.clear->setIcon(QIcon(":/delete.png"));
-  row.clear->setAutoDefault(false);
-  row.clear->setDefault(false);
-  connect(row.clear, SIGNAL(pressed()), row.pins, SLOT(clearPins()));
+  row->setSTA(sta_);
 
-  row.pins->setSTA(sta_);
-
-  return row_layout;
+  connect(row,
+          SIGNAL(inspect(const Selected&)),
+          this,
+          SIGNAL(inspect(const Selected&)));
 }
 
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
-  from_.pins->setSTA(sta_);
-  for (const auto& row : thru_) {
-    row.pin_row.pins->setSTA(sta_);
+  from_->setSTA(sta_);
+  for (auto* row : thru_) {
+    row->setSTA(sta_);
   }
-  to_.pins->setSTA(sta_);
+  to_->setSTA(sta_);
 }
 
 void TimingControlsDialog::setUnconstrained(bool unconstrained)
@@ -1631,11 +1721,11 @@ void TimingControlsDialog::populate()
 
 void TimingControlsDialog::setPinSelections()
 {
-  from_.pins->updatePins();
-  for (const auto& row : thru_) {
-    row.pin_row.pins->updatePins();
+  from_->updatePins();
+  for (auto* row : thru_) {
+    row->updatePins();
   }
-  to_.pins->updatePins();
+  to_->updatePins();
 }
 
 sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
@@ -1669,44 +1759,33 @@ void TimingControlsDialog::setThruPin(const std::vector<std::set<sta::Pin*>>& pi
 
 void TimingControlsDialog::addThruRow(const std::set<sta::Pin*>& pins)
 {
-  ThruRow row;
-  row.pin_row.pins = new PinComboBox(this);
-  row.pin_row.clear = new QPushButton(this);
-  row.add_remove = new QPushButton(this);
-  row.add_remove->setAutoDefault(false);
-  row.add_remove->setDefault(false);
-  row.add_remove->setIcon(QIcon(":/add.png"));
+  auto* row = new PinSetWidget(true, this);
 
-  auto* layout = setupPinRow("Through:", row.pin_row, thru_start_row_ + thru_.size());
-  layout->addWidget(row.add_remove);
+  setupPinRow("Through:", row, thru_start_row_ + thru_.size());
+  row->setPins(pins);
 
-  row.pin_row.pins->setPins(pins);
-
-  connect(row.add_remove,
-          &QPushButton::pressed,
-          [this, row]() {
-            addRemoveThru(row);
-          });
+  connect(row,
+          SIGNAL(addRemoveTriggered(PinSetWidget*)),
+          this,
+          SLOT(addRemoveThru(PinSetWidget*)));
 
   for (const auto& lower_row : thru_) {
-    lower_row.add_remove->setIcon(QIcon(":/remove.png"));
+    lower_row->setRemoveMode();
   }
   thru_.push_back(row);
 }
 
-void TimingControlsDialog::addRemoveThru(const ThruRow& row)
+void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
 {
-  auto find_row = std::find_if(thru_.begin(), thru_.end(), [row](const auto& other) {
-    return row.add_remove == other.add_remove; // compare using add remove button
-  });
-
-  const int row_index = std::distance(thru_.begin(), find_row);
-  if (row_index + 1 >= thru_.size()) {
+  if (row->isAddMode()) {
     addThruRow({});
   } else {
+    auto find_row = std::find(thru_.begin(), thru_.end(), row);
+    const int row_index = std::distance(thru_.begin(), find_row);
+
     layout_->removeRow(thru_start_row_ + row_index);
     thru_.erase(thru_.begin() + row_index);
-    thru_.back().add_remove->setIcon(QIcon(":/add.png"));
+    thru_.back()->setAddMode();
     adjustSize();
   }
 }
@@ -1714,8 +1793,8 @@ void TimingControlsDialog::addRemoveThru(const ThruRow& row)
 const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
 {
   std::vector<std::set<sta::Pin*>> pins;
-  for (const auto& row : thru_) {
-    pins.push_back(row.pin_row.pins->getPins());
+  for (auto* row : thru_) {
+    pins.push_back(row->getPins());
   }
   return pins;
 }
