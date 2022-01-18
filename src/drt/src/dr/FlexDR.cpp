@@ -2624,3 +2624,12 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& file_name,
 
   return worker;
 }
+
+// Explicit instantiations
+template void FlexDRWorker::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void FlexDRWorker::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);
