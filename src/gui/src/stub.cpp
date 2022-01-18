@@ -132,6 +132,15 @@ void Gui::unregisterDescriptor(const std::type_info& type)
 {
 }
 
+const Descriptor* Gui::getDescriptor(const std::type_info& /* type */) const
+{
+  return nullptr;
+}
+
+void Gui::removeSelectedByType(const std::string& /* type */)
+{
+}
+
 std::string Descriptor::Property::toString(const std::any& /* value */)
 {
   return "";
