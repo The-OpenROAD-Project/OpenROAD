@@ -422,7 +422,7 @@ Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                        frCoord width,
                                        frCoord within)
 {
-  auto con = std::make_shared<frLef58SpacingEndOfLineConstraint>();
+  auto con = std::make_unique<frLef58SpacingEndOfLineConstraint>();
   con->setEol(space, width);
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
@@ -430,7 +430,7 @@ Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58SpacingEndOfLineConstraint(con.get());
-  tech->addConstraint(con);
+  tech->addUConstraint(std::move(con));
   return con;
 }
 
@@ -497,7 +497,7 @@ void Fixture::makeCutClass(frLayerNum layer_num,
 void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
                                  odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
-  auto con = make_shared<frLef58CutSpacingTableConstraint>(dbRule);
+  auto con = make_unique<frLef58CutSpacingTableConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   if (dbRule->isLayerValid()) {
     if (dbRule->isSameMetal()) {
@@ -516,7 +516,7 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
       layer->setLef58DiffNetCutSpcTblConstraint(con.get());
     }
   }
-  design->getTech()->addConstraint(con);
+  design->getTech()->addUConstraint(std::move(con));
 }
 
 frNet* Fixture::makeNet(const char* name)
