@@ -1969,7 +1969,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawRows(painter, bounds);
   if (options_->areAccessPointsVisible()) {
-    drawAccessPoints(gui_painter);
+    drawAccessPoints(gui_painter, insts);
   }
 
   if (options_->arePinMarkersVisible()) {
@@ -1983,38 +1983,48 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 }
 
-void LayoutViewer::drawAccessPoints(Painter& painter)
+void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
-  const int shape_size = 100;
-  if (shape_limit > shape_size)
+  const int shape_size = 100; // units DBU
+  if (shape_limit > shape_size) {
     return;
-  for (auto term : block_->getITerms()) {
-    for (auto ap : term->getPrefAccessPoints()) {
-      if (options_->isVisible(ap->getLayer())) {
-        auto color = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
-        painter.setPen(color, /* cosmetic */ true);
-        Point pt = ap->getPoint();
-        odb::dbTransform xform;
-        int x, y;
-        term->getInst()->getLocation(x, y);
-        xform.setOffset({x, y});
-        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-        xform.apply(pt);
-        painter.drawX(pt.x(), pt.y(), shape_size);
+  }
+
+  const Painter::Color has_access = Painter::green;
+  const Painter::Color not_access = Painter::red;
+
+  auto draw = [&](odb::dbAccessPoint* ap, const odb::dbTransform& transform) {
+    if (ap == nullptr) {
+      return;
+    }
+    if (!options_->isVisible(ap->getLayer())) {
+      return;
+    }
+
+    Point pt = ap->getPoint();
+    transform.apply(pt);
+
+    auto color = ap->hasAccess() ? has_access : not_access;
+    painter.setPen(color, /* cosmetic */ true);
+    painter.drawX(pt.x(), pt.y(), shape_size);
+  };
+
+  for (auto* inst : insts) {
+    int x, y;
+    inst->getLocation(x, y);
+    odb::dbTransform xform({x, y});
+
+    for (auto term : inst->getITerms()) {
+      for (auto ap : term->getPrefAccessPoints()) {
+        draw(ap, xform);
       }
     }
   }
   for (auto term : block_->getBTerms()) {
     for (auto pin : term->getBPins()) {
       for (auto ap : pin->getAccessPoints()) {
-        if (ap != nullptr && options_->isVisible(ap->getLayer())) {
-          auto color
-              = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
-          painter.setPen(color, /* cosmetic */ true);
-          Point pt = ap->getPoint();
-          painter.drawX(pt.x(), pt.y(), shape_size);
-        }
+        draw(ap, {});
       }
     }
   }
