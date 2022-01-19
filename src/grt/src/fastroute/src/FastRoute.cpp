@@ -79,8 +79,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       y_grid_(0),
       x_corner_(0),
       y_corner_(0),
-      w_tile_(0),
-      h_tile_(0),
+      tile_size_(0),
       enlarge_(0),
       costheight_(0),
       ahth_(0),
@@ -277,10 +276,9 @@ void FastRouteCore::setLowerLeft(int x, int y)
   y_corner_ = y;
 }
 
-void FastRouteCore::setTileSize(int width, int height)
+void FastRouteCore::setTileSize(int size)
 {
-  w_tile_ = width;
-  h_tile_ = height;
+  tile_size_ = size;
 }
 
 void FastRouteCore::setLayerOrientation(int x)
@@ -712,12 +710,12 @@ NetRouteMap FastRouteCore::getRoutes()
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
-        int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+        int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
+        int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL = gridsL[0];
         for (int i = 1; i <= routeLen; i++) {
-          const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+          const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
+          const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
           GSegment segment
               = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
@@ -742,8 +740,8 @@ void FastRouteCore::updateDbCongestion()
   else
     db_gcell = odb::dbGCellGrid::create(block);
 
-  db_gcell->addGridPatternX(x_corner_, x_grid_, w_tile_);
-  db_gcell->addGridPatternY(y_corner_, y_grid_, h_tile_);
+  db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
+  db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
   auto db_tech = db_->getTech();
   for (int k = 0; k < num_layers_; k++) {
     auto layer = db_tech->findRoutingLayer(k + 1);
@@ -1290,8 +1288,7 @@ class FastRouteRenderer : public gui::Renderer
 {
  public:
   FastRouteRenderer(odb::dbTech* tech,
-                    int w_tile,
-                    int h_tile,
+                    int tile_size,
                     int x_corner,
                     int y_corner);
   void highlight(const FrNet* net);
@@ -1329,20 +1326,18 @@ class FastRouteRenderer : public gui::Renderer
   int num_pins_;
 
   odb::dbTech* tech_;
-  int w_tile_, h_tile_, x_corner_, y_corner_;
+  int tile_size_, x_corner_, y_corner_;
 };
 
 FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech,
-                                     int w_tile,
-                                     int h_tile,
+                                     int tile_size,
                                      int x_corner,
                                      int y_corner)
     : treeStructure_(TreeStructure::steinerTreeByStt),
       is3DVisualization_(false),
       num_pins_(0),
       tech_(tech),
-      w_tile_(w_tile),
-      h_tile_(h_tile),
+      tile_size_(tile_size),
       x_corner_(x_corner),
       y_corner_(y_corner)
 {
@@ -1414,15 +1409,15 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
     const std::vector<short>& gridsX = treeEdge.route.gridsX;
     const std::vector<short>& gridsY = treeEdge.route.gridsY;
     const std::vector<short>& gridsL = treeEdge.route.gridsL;
-    int lastX = w_tile_ * (gridsX[0] + 0.5) + x_corner_;
-    int lastY = h_tile_ * (gridsY[0] + 0.5) + y_corner_;
+    int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
+    int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
 
     if (is3DVisualization_)
       lastL = gridsL[0];
 
     for (int i = 1; i <= routeLen; i++) {
-      const int xreal = w_tile_ * (gridsX[i] + 0.5) + x_corner_;
-      const int yreal = h_tile_ * (gridsY[i] + 0.5) + y_corner_;
+      const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
+      const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
       if (is3DVisualization_) {
         drawLineObject(
@@ -1441,8 +1436,8 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 {
   painter.setPenWidth(700);
   for (int i = 0; i < num_pins_; i++) {
-    const int xreal = w_tile_ * (pinX_[i] + 0.5) + x_corner_;
-    const int yreal = h_tile_ * (pinY_[i] + 0.5) + y_corner_;
+    const int xreal = tile_size_ * (pinX_[i] + 0.5) + x_corner_;
+    const int yreal = tile_size_ * (pinY_[i] + 0.5) + y_corner_;
 
     odb::dbTechLayer* layer = tech_->findRoutingLayer(pinL_[i] + 1);
     painter.setPen(layer);
@@ -1460,11 +1455,11 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
 
     const int deg = stree_.deg;
     for (int i = 0; i < 2 * deg - 2; i++) {
-      const int x1 = w_tile_ * (stree_.branch[i].x + 0.5) + x_corner_;
-      const int y1 = h_tile_ * (stree_.branch[i].y + 0.5) + y_corner_;
+      const int x1 = tile_size_ * (stree_.branch[i].x + 0.5) + x_corner_;
+      const int y1 = tile_size_ * (stree_.branch[i].y + 0.5) + y_corner_;
       const int n = stree_.branch[i].n;
-      const int x2 = w_tile_ * (stree_.branch[n].x + 0.5) + x_corner_;
-      const int y2 = h_tile_ * (stree_.branch[n].y + 0.5) + y_corner_;
+      const int x2 = tile_size_ * (stree_.branch[n].x + 0.5) + x_corner_;
+      const int y2 = tile_size_ * (stree_.branch[n].y + 0.5) + y_corner_;
       const int len = abs(x1 - x2) + abs(y1 - y2);
       if (len > 0) {
         painter.drawLine(x1, y1, x2, y2);
@@ -1511,7 +1506,7 @@ void FastRouteCore::steinerTreeVisualization(const stt::Tree& stree, FrNet* net)
   if (gui::Gui::enabled()) {
     if (fastrouteRender_ == nullptr) {
       fastrouteRender_ = new FastRouteRenderer(
-          db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
+          db_->getTech(), tile_size_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
     fastrouteRender_->highlight(net);
@@ -1532,7 +1527,7 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
   if (gui_) {
     if (fastrouteRender_ == nullptr) {
       fastrouteRender_ = new FastRouteRenderer(
-          db_->getTech(), w_tile_, h_tile_, x_corner_, y_corner_);
+          db_->getTech(), tile_size_, x_corner_, y_corner_);
       gui_->registerRenderer(fastrouteRender_);
     }
     fastrouteRender_->highlight(net);
