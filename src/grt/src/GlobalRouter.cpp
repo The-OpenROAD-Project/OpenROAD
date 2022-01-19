@@ -1761,21 +1761,29 @@ void GlobalRouter::checkPinPlacement()
   }
 }
 
+int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
+{
+  const GRoute& route = routes_[db_net];
+  int net_wl = 0;
+  for (const GSegment& segment : route) {
+    int segment_wl = std::abs(segment.final_x - segment.init_x)
+                    + std::abs(segment.final_y - segment.init_y);
+    net_wl += segment_wl;
+
+    if (segment_wl > 0) {
+      net_wl
+          += (grid_->getTileSize() + grid_->getTileSize()) / 2;
+    }
+  }
+
+  return net_wl;
+}
+
 void GlobalRouter::computeWirelength()
 {
   long total_wirelength = 0;
   for (auto& net_route : routes_) {
-    GRoute& route = net_route.second;
-    for (GSegment& segment : route) {
-      int segmentWl = std::abs(segment.final_x - segment.init_x)
-                      + std::abs(segment.final_y - segment.init_y);
-      total_wirelength += segmentWl;
-
-      if (segmentWl > 0) {
-        total_wirelength
-            += (grid_->getTileSize() + grid_->getTileSize()) / 2;
-      }
-    }
+    total_wirelength += computeNetWirelength(net_route.first);
   }
   if (verbose_)
     logger_->info(GRT,
