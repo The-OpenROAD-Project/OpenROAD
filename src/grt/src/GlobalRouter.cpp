@@ -1382,13 +1382,11 @@ void GlobalRouter::readGuides(const char* file_name)
         logger_->error(GRT, 235, "Cannot find layer {}.", tokens[4]);
       }
 
+      odb::Rect rect(
+          stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
+
       GRoute& route = routes_[net];
-      route.push_back({stoi(tokens[0]),
-                       stoi(tokens[1]),
-                       layer->getRoutingLevel(),
-                       stoi(tokens[2]),
-                       stoi(tokens[3]),
-                       layer->getRoutingLevel()});
+      route.push_back(boxToGlobalRouting(rect, layer->getRoutingLevel()));
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
@@ -1724,6 +1722,21 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
   odb::Rect route_bds = odb::Rect(lower_left, upper_right);
   return route_bds;
+}
+
+GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
+{
+  odb::Rect die_bounds = grid_->getGridArea();
+  int x0, y0;
+  int x1, y1;
+
+  x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
+  y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
+
+  x1 = route_bds.xMax() - (grid_->getTileSize() / 2);
+  y1 = route_bds.yMax() - (grid_->getTileSize() / 2);
+
+  return GSegment(x0, y0, layer, x1, y1, layer);
 }
 
 void GlobalRouter::checkPinPlacement()
