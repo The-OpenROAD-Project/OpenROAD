@@ -33,6 +33,7 @@
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QInputDialog>
+#include <QFontDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -307,6 +308,7 @@ MainWindow::MainWindow(QWidget* parent)
   settings.beginGroup("main");
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
+  QApplication::setFont(settings.value("font", QApplication::font()).value<QFont>());
   hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
   show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
   script_->readSettings(&settings);
@@ -436,6 +438,8 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  font_ = new QAction("Application font", this);
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -453,12 +457,25 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
+
+  connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
 {
   for (auto* heat_map : getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
+  }
+}
+
+void MainWindow::showApplicationFont()
+{
+  bool okay = false;
+  QFont font = QFontDialog::getFont(&okay, QApplication::font(), this, "Application font");
+
+  if (okay) {
+    QApplication::setFont(font);
+    update();
   }
 }
 
@@ -495,6 +512,7 @@ void MainWindow::createMenus()
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
+  option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
 }
@@ -1038,6 +1056,7 @@ void MainWindow::saveSettings()
   settings.beginGroup("main");
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
+  settings.setValue("font", QApplication::font());
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
   script_->writeSettings(&settings);

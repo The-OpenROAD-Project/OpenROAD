@@ -319,11 +319,13 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
     sel_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
   }
   sel_header->setSectionResizeMode(sel_header->count()-1, QHeaderView::Stretch);
+  ui_.selTableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   auto hlt_header = ui_.hltTableView->horizontalHeader();
   for (int i = 0; i < hlt_header->count()-1; i++) {
     hlt_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
   }
   hlt_header->setSectionResizeMode(hlt_header->count()-1, QHeaderView::Stretch);
+  ui_.hltTableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
   QAction* remove_all_sel_items = select_context_menu_->addAction("Clear All");
