@@ -275,6 +275,13 @@ proc repair_antennas { args } {
   }
 }
 
+sta::define_cmd_args "read_guides" { file_name }
+
+proc read_guides { args } {
+  set file_name $args
+  grt::read_guides $file_name
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
