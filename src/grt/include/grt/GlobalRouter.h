@@ -164,7 +164,7 @@ class GlobalRouter
   void printGrid();
 
   // flow functions
-  void readGuides(const char* file_name); // just for display
+  void readGuides(const char* file_name);  // just for display
   void writeGuides(const char* file_name);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -212,7 +212,7 @@ class GlobalRouter
   // Report the wire length on each layer.
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
-  
+
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
@@ -243,6 +243,7 @@ class GlobalRouter
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
+  int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
   int computeTrackConsumption(const Net* net,

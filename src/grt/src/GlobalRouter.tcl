@@ -338,6 +338,32 @@ proc global_route_debug { args } {
   }
 }
 
+sta::define_cmd_args "report_wire_length" { [-net net_list] \
+                                            [-global_route] \
+                                            [-detailed_route]
+}
+
+proc report_wire_length { args } {
+  sta::parse_key_args "report_wire_length" args \
+                 keys {-net} \
+                 flags {-global_route -detailed_route}
+  
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 224 "Missing dbBlock."
+  }
+
+  set global_route_wl [info exists flags(-global_route)]
+  set detailed_route_wl [info exists flags(-detailed_route)]
+  if { [info exists keys(-net)] } {
+    foreach net [get_nets $keys(-net)] {
+      grt::report_net_wire_length [sta::sta_to_db_net $net] $global_route_wl $detailed_route_wl
+    }
+  } else {
+    utl::errpr GRT 237 "-net is required."
+  }
+}
+
 namespace eval grt {
 
 proc check_routing_layer { layer } {
