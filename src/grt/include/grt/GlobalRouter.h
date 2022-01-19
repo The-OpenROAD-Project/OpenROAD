@@ -36,6 +36,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -88,6 +89,7 @@ class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
 class GlobalRouter;
+class RoutingCongestionDataSource;
 
 struct RegionAdjustment
 {
@@ -376,6 +378,8 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+
+  std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

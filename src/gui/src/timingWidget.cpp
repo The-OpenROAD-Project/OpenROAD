@@ -178,6 +178,7 @@ void TimingWidget::init(sta::dbSta* sta)
     view->setSelectionMode(QAbstractItemView::SingleSelection);
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
     view->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   };
 
   setupTableView(setup_timing_table_view_, setup_timing_paths_model_);

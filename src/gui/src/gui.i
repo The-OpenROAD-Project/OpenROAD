@@ -563,18 +563,12 @@ void selection_animate(int repeat = 0)
 
 void set_heatmap(const std::string& name, const std::string& option, double value = 0.0)
 {
-  if (!check_gui("set_heatmap")) {
-    return;
-  }
   auto gui = gui::Gui::get();
   gui->setHeatMapSetting(name, option, value);
 }
 
 void set_heatmap(const std::string& name, const std::string& option, const std::string& value)
 {
-  if (!check_gui("set_heatmap")) {
-    return;
-  }
   auto gui = gui::Gui::get();
   gui->setHeatMapSetting(name, option, value);
 }
