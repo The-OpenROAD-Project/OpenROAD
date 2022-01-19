@@ -2376,6 +2376,11 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
                        "Vertical tracks for layer {} not found.",
                        tech_layer->getName());
       }
+    } else {
+      logger_->error(GRT,
+                     148,
+                     "Layer {} has invalid direction.",
+                     tech_layer->getName());
     }
 
     routing_tracks_->push_back(layer_tracks);
