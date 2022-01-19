@@ -38,4 +38,6 @@ if (CMAKE_OSX_SYSROOT)
    set(ABC_USE_STDINT_H 1)
 endif()
 
+set(ABC_USE_NAMESPACE "abc")
+
 add_subdirectory(abc)
