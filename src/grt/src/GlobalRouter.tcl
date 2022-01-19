@@ -340,13 +340,14 @@ proc global_route_debug { args } {
 
 sta::define_cmd_args "report_wire_length" { [-net net_list] \
                                             [-global_route] \
-                                            [-detailed_route]
+                                            [-detailed_route] \
+                                            [-verbose]
 }
 
 proc report_wire_length { args } {
   sta::parse_key_args "report_wire_length" args \
                  keys {-net} \
-                 flags {-global_route -detailed_route}
+                 flags {-global_route -detailed_route -verbose}
   
   set block [ord::get_db_block]
   if { $block == "NULL" } {
@@ -355,9 +356,10 @@ proc report_wire_length { args } {
 
   set global_route_wl [info exists flags(-global_route)]
   set detailed_route_wl [info exists flags(-detailed_route)]
+  set verbose [info exists flags(-verbose)]
   if { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
-      grt::report_net_wire_length [sta::sta_to_db_net $net] $global_route_wl $detailed_route_wl
+      grt::report_net_wire_length [sta::sta_to_db_net $net] $global_route_wl $detailed_route_wl $verbose
     }
   } else {
     utl::errpr GRT 237 "-net is required."

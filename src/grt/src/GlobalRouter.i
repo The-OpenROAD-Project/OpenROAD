@@ -203,9 +203,9 @@ void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool re
   getGlobalRouter()->setDebugTree3D(tree3D);
 }
 
-void report_net_wire_length(odb::dbNet *net, bool global_route, bool detailed_route)
+void report_net_wire_length(odb::dbNet *net, bool global_route, bool detailed_route, bool verbose)
 {
-  getGlobalRouter()->reportNetWireLength(net, global_route, detailed_route);
+  getGlobalRouter()->reportNetWireLength(net, global_route, detailed_route, verbose);
 }
 
 void
