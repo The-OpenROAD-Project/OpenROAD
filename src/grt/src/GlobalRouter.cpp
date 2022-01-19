@@ -382,48 +382,37 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
 
 Capacities GlobalRouter::getCapacities()
 {
-  int old_cap;
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-
-  auto gcell_grid = block_->getGCellGrid();
-
   Capacities capacities;
-
   CapacitiesVec& h_caps = capacities.getHorCapacities();
   CapacitiesVec& v_caps = capacities.getVerCapacities();
 
   h_caps.resize(grid_->getNumLayers());
+  v_caps.resize(grid_->getNumLayers());
+
+  int x_grids = grid_->getXGrids();
+  int y_grids = grid_->getYGrids();
+  auto gcell_grid = block_->getGCellGrid();
   for (int l = 0; l < grid_->getNumLayers(); l++) {
     h_caps[l].resize(y_grids);
     for (int i = 0; i < y_grids; i++) {
       h_caps[l][i].resize(x_grids);
     }
-  }
 
-  v_caps.resize(grid_->getNumLayers());
-  for (int l = 0; l < grid_->getNumLayers(); l++) {
     v_caps[l].resize(x_grids);
     for (int i = 0; i < x_grids; i++) {
       v_caps[l][i].resize(y_grids);
     }
-  }
 
-  for (int layer = min_routing_layer_; layer <= max_routing_layer_; layer++) {
-    auto tech_layer = routing_layers_[layer];
+    auto tech_layer = routing_layers_[l];
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap
+        int old_cap
             = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
-        h_caps[layer - 1][y - 1][x - 1] = old_cap;
-      }
-    }
+        h_caps[l - 1][y - 1][x - 1] = old_cap;
 
-    for (int x = 1; x < x_grids; x++) {
-      for (int y = 1; y < y_grids; y++) {
         old_cap
             = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
-        v_caps[layer - 1][x - 1][y - 1] = old_cap;
+        v_caps[l - 1][x - 1][y - 1] = old_cap;
       }
     }
   }
@@ -435,32 +424,25 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
                                      int previous_min_layer,
                                      int previous_max_layer)
 {
-  int old_cap;
   // Check if current edge capacity is larger than the old edge capacity
   // before applying adjustments.
   // After inserting diodes, edges can have less capacity than before,
   // and apply adjustment without a check leads to warns and wrong adjustments.
-  int cap;
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-
   const CapacitiesVec& h_caps = capacities.getHorCapacities();
   const CapacitiesVec& v_caps = capacities.getVerCapacities();
 
+  int x_grids = grid_->getXGrids();
+  int y_grids = grid_->getYGrids();
   for (int layer = previous_min_layer; layer <= previous_max_layer; layer++) {
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap = h_caps[layer - 1][y - 1][x - 1];
-        cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+        int old_cap = h_caps[layer - 1][y - 1][x - 1];
+        int cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
         if (old_cap <= cap) {
           fastroute_->addAdjustment(
               x - 1, y - 1, layer, x, y - 1, layer, old_cap, true);
         }
-      }
-    }
 
-    for (int x = 1; x < x_grids; x++) {
-      for (int y = 1; y < y_grids; y++) {
         old_cap = v_caps[layer - 1][x - 1][y - 1];
         cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
         if (old_cap <= cap) {
