@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gmat.h"
 #include "node.h"
 #include "utl/Logger.h"
+#include "heatMap.h"
 
 namespace psm {
 
@@ -57,7 +58,11 @@ PDNSim::PDNSim()
       _bump_pitch_x(0),
       _bump_pitch_y(0),
       _spice_out_file(""),
-      _power_net("") {};
+      _power_net(""),
+      _node_density(-1),
+      heatmap_(nullptr)
+{
+}
 
 PDNSim::~PDNSim() {
   _db = nullptr;
@@ -77,6 +82,8 @@ void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
   _db = db;
   _sta = sta;
   _logger = logger;
+  heatmap_ = std::make_unique<IRDropDataSource>(this, _logger);
+  heatmap_->registerHeatMap();
 }
 
 void PDNSim::set_power_net(std::string net) { _power_net = net; }
@@ -183,6 +190,9 @@ int PDNSim::analyze_power_grid() {
   }
   _ir_drop = ir_drop;
   _node_density = irsolve_h->GetMinimumResolution();
+
+  heatmap_->update();
+
   delete irsolve_h;
   return 1;
 }

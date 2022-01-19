@@ -45,9 +45,20 @@ Gui* Gui::singleton_ = nullptr;
 DBUToString Descriptor::Property::convert_dbu = [](int value, bool) { return std::to_string(value); };
 StringToDBU Descriptor::Property::convert_string = [](const std::string& value, bool*) { return 0; };
 
+// empty heat map class
+class PlacementDensityDataSource
+{
+ public:
+   PlacementDensityDataSource() {}
+   ~PlacementDensityDataSource() {}
+};
+
+////
+
 Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
-             db_(nullptr)
+             db_(nullptr),
+             placement_density_heat_map_(nullptr)
 {
 }
 
@@ -90,6 +101,11 @@ void Renderer::redraw()
 }
 
 Renderer::~Renderer()
+{
+}
+
+SpectrumGenerator::SpectrumGenerator(double scale) :
+    scale_(scale)
 {
 }
 

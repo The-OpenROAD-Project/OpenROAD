@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,29 +36,22 @@
 #include <boost/geometry/index/rtree.hpp>
 
 #include <array>
+#include <functional>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
-#include <QCheckBox>
-#include <QDialog>
-#include <QDoubleSpinBox>
-#include <QGroupBox>
-#include <QLabel>
-#include <QListWidget>
-#include <QFormLayout>
-#include <QPushButton>
-#include <QSpinBox>
-#include <QWidget>
-
-#include "db_sta/dbSta.hh"
 #include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "sta/Corner.hh"
-#include "utl/Logger.h"
 
-#include "psm/pdnsim.h"
+namespace odb {
+class dbBlock;
+class Rect;
+} // namespace odb
+
+namespace utl {
+class Logger;
+} // namespace utl
 
 namespace gui {
 class HeatMapRenderer;
@@ -70,6 +63,20 @@ namespace bgi = boost::geometry::index;
 class HeatMapDataSource
 {
  public:
+  struct MapSettingBoolean {
+    std::string name;
+    std::string label;
+    std::function<bool(void)> getter;
+    std::function<void(bool)> setter;
+  };
+  struct MapSettingMultiChoice {
+    std::string name;
+    std::string label;
+    std::function<std::vector<std::string>(void)> choices;
+    std::function<const std::string(void)> getter;
+    std::function<void(const std::string&)> setter;
+  };
+
   struct MapColor {
     odb::Rect rect;
     bool has_value;
@@ -80,13 +87,17 @@ class HeatMapDataSource
   using Box = bg::model::box<Point>;
   using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>, bgi::quadratic<16>>;
 
-  HeatMapDataSource(const std::string& name,
+  using MapSetting = std::variant<MapSettingBoolean, MapSettingMultiChoice>;
+
+  HeatMapDataSource(utl::Logger* logger,
+                    const std::string& name,
                     const std::string& short_name,
                     const std::string& settings_group = "");
-  virtual ~HeatMapDataSource() {}
+  virtual ~HeatMapDataSource();
+
+  void registerHeatMap();
 
   virtual void setBlock(odb::dbBlock* block) { block_ = block; }
-  void setLogger(utl::Logger* logger);
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
@@ -96,10 +107,8 @@ class HeatMapDataSource
 
   // setup
   void showSetup();
-  virtual void makeAdditionalSetupOptions(QWidget* parent,
-                                          QFormLayout* layout,
-                                          const std::function<void(void)>& changed_callback) {}
   virtual const std::string formatValue(double value, bool legend) const;
+  const std::vector<MapSetting>& getMapSettings() const { return settings_; }
 
   // settings
   const std::string& getSettingsGroupName() const { return settings_group_; }
@@ -147,6 +156,7 @@ class HeatMapDataSource
   virtual double getGridSizeMaximumValue() const { return 100.0; }
 
   // map controls
+  void update() { destroyMap(); }
   void ensureMap();
   void destroyMap();
   const Map& getMap() const { return map_; }
@@ -162,6 +172,16 @@ class HeatMapDataSource
   void redraw();
 
  protected:
+  void addBooleanSetting(const std::string& name,
+                         const std::string& label,
+                         const std::function<bool(void)>& getter,
+                         const std::function<void(bool)>& setter);
+  void addMultipleChoiceSetting(const std::string& name,
+                                const std::string& label,
+                                const std::function<std::vector<std::string>(void)>& choices,
+                                const std::function<std::string(void)>& getter,
+                                const std::function<void(std::string)>& setter);
+
   odb::dbBlock* getBlock() const { return block_; }
 
   void setupMap();
@@ -221,65 +241,14 @@ class HeatMapDataSource
   SpectrumGenerator color_generator_;
 
   std::vector<double> color_lower_bounds_;
-};
 
-class HeatMapSetup : public QDialog
-{
-  Q_OBJECT
- public:
-  HeatMapSetup(HeatMapDataSource& source,
-               const QString& title,
-               bool use_dbu,
-               int dbu,
-               QWidget* parent = nullptr);
-
- signals:
-  void changed();
-
- private slots:
-  void updateShowNumbers(int option);
-  void updateShowLegend(int option);
-  void updateShowMinRange(int show);
-  void updateShowMaxRange(int show);
-  void updateScale(int option);
-  void updateReverseScale(int option);
-  void updateAlpha(int alpha);
-  void updateRange();
-  void updateGridSize();
-  void updateWidgets();
-
-  void destroyMap();
-
- private:
-  HeatMapDataSource& source_;
-  bool use_dbu_;
-  int dbu_;
-
-  QCheckBox* log_scale_;
-  QCheckBox* reverse_log_scale_;
-  QCheckBox* show_numbers_;
-  QCheckBox* show_legend_;
-
-  QDoubleSpinBox* grid_x_size_;
-  QDoubleSpinBox* grid_y_size_;
-  QSpinBox* grid_x_size_dbu_;
-  QSpinBox* grid_y_size_dbu_;
-
-  QDoubleSpinBox* min_range_selector_;
-  QCheckBox* show_mins_;
-  QDoubleSpinBox* max_range_selector_;
-  QCheckBox* show_maxs_;
-
-  QSpinBox* alpha_selector_;
-
-  QPushButton* rebuild_;
-  QPushButton* close_;
+  std::vector<MapSetting> settings_;
 };
 
 class HeatMapRenderer : public Renderer
 {
  public:
-  HeatMapRenderer(const std::string& display_control, HeatMapDataSource& datasource);
+  HeatMapRenderer(HeatMapDataSource& datasource);
 
   virtual const char* getDisplayControlGroupName() override
   {
@@ -293,7 +262,6 @@ class HeatMapRenderer : public Renderer
   virtual void setSettings(const Settings& settings) override;
 
  private:
-  std::string display_control_;
   HeatMapDataSource& datasource_;
   bool first_paint_;
 
@@ -301,87 +269,11 @@ class HeatMapRenderer : public Renderer
   static constexpr char groupname_prefix_[] = "HeatMap#";
 };
 
-class RoutingCongestionDataSource : public HeatMapDataSource
-{
- public:
-  RoutingCongestionDataSource();
-  ~RoutingCongestionDataSource() {}
-
-  virtual void makeAdditionalSetupOptions(QWidget* parent,
-                                          QFormLayout* layout,
-                                          const std::function<void(void)>& changed_callback) override;
-
-  virtual const Renderer::Settings getSettings() const override;
-  virtual void setSettings(const Renderer::Settings& settings) override;
-
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-
- private:
-  bool show_all_;
-  bool show_hor_;
-  bool show_ver_;
-
-  static constexpr double default_grid_ = 10.0;
-};
-
-class PlacementDensityDataSource : public HeatMapDataSource, public odb::dbBlockCallBackObj
-{
- public:
-  PlacementDensityDataSource();
-  ~PlacementDensityDataSource() {}
-
-  virtual void makeAdditionalSetupOptions(QWidget* parent,
-                                          QFormLayout* layout,
-                                          const std::function<void(void)>& changed_callback) override;
-
-  virtual const Renderer::Settings getSettings() const override;
-  virtual void setSettings(const Renderer::Settings& settings) override;
-
-  virtual void onShow() override;
-  virtual void onHide() override;
-
-  // from dbBlockCallBackObj API
-  virtual void inDbInstCreate(odb::dbInst*) override;
-  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
-  virtual void inDbInstDestroy(odb::dbInst*) override;
-  virtual void inDbInstPlacementStatusBefore(odb::dbInst*, const odb::dbPlacementStatus&) override;
-  virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
-  virtual void inDbPreMoveInst(odb::dbInst*) override;
-  virtual void inDbPostMoveInst(odb::dbInst*) override;
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-
-  virtual bool destroyMapOnNotVisible() const override { return true; }
-
- private:
-  bool include_taps_;
-  bool include_filler_;
-  bool include_io_;
-};
-
 class RealValueHeatMapDataSource : public HeatMapDataSource
 {
  public:
-  RealValueHeatMapDataSource(const std::string& unit_suffix,
+  RealValueHeatMapDataSource(utl::Logger* logger,
+                             const std::string& unit_suffix,
                              const std::string& name,
                              const std::string& short_name,
                              const std::string& settings_group = "");
@@ -414,83 +306,6 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
   double scale_;
 
   double getValueRange() const;
-};
-
-class PowerDensityDataSource : public RealValueHeatMapDataSource
-{
- public:
-  PowerDensityDataSource();
-  ~PowerDensityDataSource() {}
-
-  void setSTA(sta::dbSta* sta) { sta_ = sta; }
-
-  virtual void makeAdditionalSetupOptions(QWidget* parent,
-                                          QFormLayout* layout,
-                                          const std::function<void(void)>& changed_callback) override;
-
-  virtual const Renderer::Settings getSettings() const override;
-  virtual void setSettings(const Renderer::Settings& settings) override;
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-
- private:
-  sta::dbSta* sta_;
-
-  bool include_internal_;
-  bool include_leakage_;
-  bool include_switching_;
-
-  sta::Corner* corner_;
-
-  void ensureCorner();
-  void setCorner(const std::string& name);
-};
-
-class IRDropDataSource : public RealValueHeatMapDataSource
-{
- public:
-  IRDropDataSource();
-  ~IRDropDataSource() {}
-
-  void setPSM(psm::PDNSim* psm) { psm_ = psm; }
-
-  virtual void setBlock(odb::dbBlock* block) override;
-
-  virtual double getGridSizeMinimumValue() const override;
-
-  virtual void makeAdditionalSetupOptions(QWidget* parent,
-                                          QFormLayout* layout,
-                                          const std::function<void(void)>& changed_callback) override;
-
-  virtual const Renderer::Settings getSettings() const override;
-  virtual void setSettings(const Renderer::Settings& settings) override;
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-
-  virtual void determineMinMax(const HeatMapDataSource::Map& map) override;
-
- private:
-  psm::PDNSim* psm_;
-  odb::dbTech* tech_;
-
-  odb::dbTechLayer* layer_;
-
-  void ensureLayer();
-  void setLayer(const std::string& name);
 };
 
 }  // namespace gui
