@@ -194,9 +194,7 @@ void GlobalRouter::globalRoute()
   int min_layer = min_layer_for_clock_ > 0
                       ? std::min(min_routing_layer_, min_layer_for_clock_)
                       : min_routing_layer_;
-  int max_layer = max_layer_for_clock_ > 0
-                      ? std::max(max_routing_layer_, max_layer_for_clock_)
-                      : max_routing_layer_;
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
   std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
@@ -2137,8 +2135,8 @@ void GlobalRouter::initGrid(int max_layer)
   int tile_width = grid_->getPitchesInTile() * track_spacing;
   int tile_height = grid_->getPitchesInTile() * track_spacing;
 
-  int x_grids = std::floor((float) upper_rightX / tile_width);
-  int y_grids = std::floor((float) upper_rightY / tile_height);
+  int x_grids = upper_rightX / tile_width;
+  int y_grids = upper_rightY / tile_height;
 
   bool perfect_regular_x = false;
   bool perfect_regular_y = false;
