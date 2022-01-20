@@ -122,6 +122,7 @@ Opendp::placeRowFillers(int row,
           inst->setOrient(orient);
           inst->setLocation(x, y);
           inst->setPlacementStatus(dbPlacementStatus::PLACED);
+          inst->setSourceType(odb::dbSourceType::DIST);
           filler_count_++;
           k += master->getWidth() / site_width_;
         }
