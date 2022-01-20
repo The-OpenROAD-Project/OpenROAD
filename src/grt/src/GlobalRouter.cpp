@@ -3425,6 +3425,10 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
 {
   block_ = db_->getChip()->getBlock();
   if (global_route) {
+    if (routes_.find(net) == routes_.end()) {
+      logger_->warn(GRT, 241, "Net {} does not have global route.", net->getName());
+      return;
+    }
     int wl = computeNetWirelength(net);
     logger_->info(GRT,
                   237,
@@ -3441,7 +3445,7 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
     odb::dbWire* wire = net->getWire();
 
     if (wire == nullptr) {
-      logger_->warn(GRT, 239, "Net {} does not have routes.", net->getName());
+      logger_->warn(GRT, 239, "Net {} does not have detailed route.", net->getName());
       return;
     }
 
