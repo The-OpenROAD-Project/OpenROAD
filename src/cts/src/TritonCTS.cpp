@@ -847,6 +847,7 @@ void TritonCTS::createClockBuffers(Clock& clockNet)
     odb::dbMaster* master = _db->findMaster(inst.getMaster().c_str());
     odb::dbInst* newInst
         = odb::dbInst::create(_block, master, inst.getName().c_str());
+    newInst->setSourceType(odb::dbSourceType::TIMING);
     inst.setInstObj(newInst);
     inst2clkbuf[newInst] = &inst;
     inst.setInputPinObj(getFirstInput(newInst));
