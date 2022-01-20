@@ -3428,7 +3428,7 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
     int wl = computeNetWirelength(net);
     logger_->info(GRT,
                   237,
-                  "Net {} global route wire length: {}u",
+                  "Net {} global route wire length: {:.2f}um",
                   net->getName(),
                   dbuToMicrons(wl));
 
@@ -3446,7 +3446,7 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
     int64_t wl = wire->getLength();
     logger_->info(GRT,
                   240,
-                  "Net {} detailed route wire length: {}u",
+                  "Net {} detailed route wire length: {:.2f}um",
                   net->getName(),
                   dbuToMicrons(wl));
 
