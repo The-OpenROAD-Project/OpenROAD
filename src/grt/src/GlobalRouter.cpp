@@ -2329,44 +2329,39 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
           GRT, 86, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    RoutingTracks layer_tracks;
+    int track_step, track_init, num_tracks;
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       if (track_grid->getNumGridPatternsY() > 0) {
-        int track_step_y = -1;
-        int init_track_y, num_tracks_y;
-        track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-        layer_tracks = RoutingTracks(level, track_step_y,
-                                     l2vPitches[level].first,
-                                     l2vPitches[level].second,
-                                     init_track_y, num_tracks_y, true);
+        track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
       } else {
         logger_->error(GRT,
                        124,
                        "Horizontal tracks for layer {} not found.",
                        tech_layer->getName());
+         return; // error throws
       }
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       if (track_grid->getNumGridPatternsX() > 0) {
-        int track_step_x = -1;
-        int init_track_x, num_tracks_x;
-        track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-        layer_tracks = RoutingTracks(level, track_step_x,
-                                     l2vPitches[level].first,
-                                     l2vPitches[level].second,
-                                     init_track_x, num_tracks_x, false);
+        track_grid->getGridPatternX(0, track_init, num_tracks, track_step);;
       } else {
         logger_->error(GRT,
                        147,
                        "Vertical tracks for layer {} not found.",
                        tech_layer->getName());
+        return; // error throws
       }
     } else {
       logger_->error(GRT,
                      148,
                      "Layer {} has invalid direction.",
                      tech_layer->getName());
+      return; // error throws
     }
 
+    RoutingTracks layer_tracks = RoutingTracks(level, track_step,
+                                               l2vPitches[level].first,
+                                               l2vPitches[level].second,
+                                               track_init, num_tracks);
     routing_tracks_->push_back(layer_tracks);
     if (verbose_)
       logger_->info(
