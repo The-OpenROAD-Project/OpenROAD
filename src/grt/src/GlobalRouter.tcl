@@ -357,6 +357,12 @@ proc report_wire_length { args } {
   set global_route_wl [info exists flags(-global_route)]
   set detailed_route_wl [info exists flags(-detailed_route)]
   set verbose [info exists flags(-verbose)]
+
+  if {!$global_route_wl && !$detailed_route_wl} {
+    set global_route_wl [grt::have_routes]
+    set detailed_route_wl [grt::have_detailed_route $block]
+  }
+
   if { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
@@ -475,6 +481,17 @@ proc define_clock_layer_range { layers } {
   } else {
     utl::error GRT 56 "In argument -clock_layers, min routing layer is greater than max routing layer."
   }
+}
+
+proc have_detailed_route { block } {
+  set nets [$block getNets]
+  foreach net $nets {
+    if { [$net getWire] != "NULL" } {
+      return 1
+    }
+  }
+
+  return 0
 }
 
 # grt namespace end
