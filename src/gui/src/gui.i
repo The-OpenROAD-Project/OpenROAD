@@ -563,18 +563,12 @@ void selection_animate(int repeat = 0)
 
 void set_heatmap(const std::string& name, const std::string& option, double value = 0.0)
 {
-  if (!check_gui("set_heatmap")) {
-    return;
-  }
   auto gui = gui::Gui::get();
   gui->setHeatMapSetting(name, option, value);
 }
 
 void set_heatmap(const std::string& name, const std::string& option, const std::string& value)
 {
-  if (!check_gui("set_heatmap")) {
-    return;
-  }
   auto gui = gui::Gui::get();
   gui->setHeatMapSetting(name, option, value);
 }
@@ -595,6 +589,33 @@ void timing_cone(odb::dbBTerm* bterm, bool fanin, bool fanout)
   }
   auto gui = gui::Gui::get();
   gui->timingCone(bterm, fanin, fanout);
+}
+
+void focus_net(odb::dbNet* net)
+{
+  if (!check_gui("focus_net")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->addFocusNet(net);
+}
+
+void remove_focus_net(odb::dbNet* net)
+{
+  if (!check_gui("remove_focus_net")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->removeFocusNet(net);
+}
+
+void clear_focus_nets()
+{
+  if (!check_gui("clear_focus_nets")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearFocusNets();
 }
 
 %} // inline

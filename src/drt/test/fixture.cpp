@@ -39,7 +39,7 @@ Fixture::Fixture()
       design(std::make_unique<frDesign>(logger.get())),
       numBlockages(0),
       numTerms(0),
-      numRefBlocks(0),
+      numMasters(0),
       numInsts(0)
 {
   makeDesign();
@@ -94,13 +94,13 @@ void Fixture::setupTech(frTechObject* tech)
   addLayer(tech, "m1", dbTechLayerType::ROUTING);
 }
 
-frBlock* Fixture::makeMacro(const char* name,
+frMaster* Fixture::makeMacro(const char* name,
                             frCoord originX,
                             frCoord originY,
                             frCoord sizeX,
                             frCoord sizeY)
 {
-  auto block = make_unique<frBlock>(name);
+  auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<Point> points;
@@ -112,13 +112,13 @@ frBlock* Fixture::makeMacro(const char* name,
   bounds.push_back(bound);
   block->setBoundaries(bounds);
   block->setMasterType(dbMasterType::CORE);
-  block->setId(++numRefBlocks);
+  block->setId(++numMasters);
   auto blkPtr = block.get();
-  design->addRefBlock(std::move(block));
+  design->addMaster(std::move(block));
   return blkPtr;
 }
 
-frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
+frBlockage* Fixture::makeMacroObs(frMaster* master,
                                   frCoord xl,
                                   frCoord yl,
                                   frCoord xh,
@@ -126,11 +126,11 @@ frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
                                   frLayerNum lNum,
                                   frCoord designRuleWidth)
 {
-  int id = refBlock->getBlockages().size();
+  int id = master->getBlockages().size();
   auto blkIn = make_unique<frBlockage>();
   blkIn->setId(id);
   blkIn->setDesignRuleWidth(designRuleWidth);
-  auto pinIn = make_unique<frPin>();
+  auto pinIn = make_unique<frBPin>();
   pinIn->setId(0);
   // pinFig
   unique_ptr<frRect> pinFig = make_unique<frRect>();
@@ -141,11 +141,11 @@ frBlockage* Fixture::makeMacroObs(frBlock* refBlock,
   pinIn->addPinFig(std::move(uptr));
   blkIn->setPin(std::move(pinIn));
   auto blk = blkIn.get();
-  refBlock->addBlockage(std::move(blkIn));
+  master->addBlockage(std::move(blkIn));
   return blk;
 }
 
-frTerm* Fixture::makeMacroPin(frBlock* refBlock,
+frTerm* Fixture::makeMacroPin(frMaster* master,
                               std::string name,
                               frCoord xl,
                               frCoord yl,
@@ -153,16 +153,16 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
                               frCoord yh,
                               frLayerNum lNum)
 {
-  int id = refBlock->getTerms().size();
-  unique_ptr<frTerm> uTerm = make_unique<frTerm>(name);
+  int id = master->getTerms().size();
+  unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(name);
   auto term = uTerm.get();
   term->setId(id);
-  refBlock->addTerm(std::move(uTerm));
+  master->addTerm(std::move(uTerm));
   dbSigType termType = dbSigType::SIGNAL;
   term->setType(termType);
   dbIoType termDirection = dbIoType::INPUT;
   term->setDirection(termDirection);
-  auto pinIn = make_unique<frPin>();
+  auto pinIn = make_unique<frMPin>();
   pinIn->setId(0);
   unique_ptr<frRect> pinFig = make_unique<frRect>();
   pinFig->setBBox(Rect(xl, yl, xh, yh));
@@ -175,16 +175,16 @@ frTerm* Fixture::makeMacroPin(frBlock* refBlock,
 }
 
 frInst* Fixture::makeInst(const char* name,
-                          frBlock* refBlock,
+                          frMaster* master,
                           frCoord x,
                           frCoord y)
 {
-  auto uInst = make_unique<frInst>(name, refBlock);
+  auto uInst = make_unique<frInst>(name, master);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   tmpInst->setOrigin(Point(x, y));
   tmpInst->setOrient(dbOrientType::R0);
-  for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
+  for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();
     unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
     instTerm->setId(numTerms++);
@@ -192,7 +192,7 @@ frInst* Fixture::makeInst(const char* name,
     instTerm->setAPSize(pinCnt);
     tmpInst->addInstTerm(std::move(instTerm));
   }
-  for (auto& uBlk : tmpInst->getRefBlock()->getBlockages()) {
+  for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
     auto blk = uBlk.get();
     unique_ptr<frInstBlockage> instBlk
         = make_unique<frInstBlockage>(tmpInst, blk);

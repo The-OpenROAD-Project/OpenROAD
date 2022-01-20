@@ -49,13 +49,13 @@ class Fixture
 
   void makeDesign();
 
-  frBlock* makeMacro(const char* name,
+  frMaster* makeMacro(const char* name,
                      frCoord originX = 0,
                      frCoord originY = 0,
                      frCoord sizeX = 0,
                      frCoord sizeY = 0);
 
-  frBlockage* makeMacroObs(frBlock* refBlock,
+  frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
                            frCoord yl,
                            frCoord xh,
@@ -63,7 +63,7 @@ class Fixture
                            frLayerNum lNum = 2,
                            frCoord designRuleWidth = -1);
 
-  frTerm* makeMacroPin(frBlock* refBlock,
+  frTerm* makeMacroPin(frMaster* master,
                        std::string name,
                        frCoord xl,
                        frCoord yl,
@@ -71,7 +71,7 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frBlock* refBlock, frCoord x, frCoord y);
+  frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
 
   void makeCornerConstraint(frLayerNum layer_num,
                             frCoord eolWidth = -1,
@@ -193,7 +193,7 @@ class Fixture
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;
-  frUInt4 numBlockages, numTerms, numRefBlocks, numInsts;
+  frUInt4 numBlockages, numTerms, numMasters, numInsts;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

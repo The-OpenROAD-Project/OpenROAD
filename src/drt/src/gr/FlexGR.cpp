@@ -174,7 +174,7 @@ void FlexGR::searchRepairMacro(int iter,
   vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
+    if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
       Rect macroBBox;
       inst->getBBox(macroBBox);
       Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
@@ -1563,7 +1563,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
           sinkIdx++;
         }
         pin2Nodes[node->getPin()].push_back(node.get());
-      } else if (node->getPin()->typeId() == frcTerm) {
+      } else if (node->getPin()->typeId() == frcBTerm ||
+                 node->getPin()->typeId() == frcMTerm) {
         auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
         if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {

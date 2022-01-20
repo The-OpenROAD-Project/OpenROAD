@@ -48,6 +48,7 @@ target_sources(psm
   get_voltage.cpp
   pdnsim.cpp
   MakePDNSim.cpp
+  heatMap.cpp
 )
 
 target_include_directories( psm
@@ -62,6 +63,7 @@ target_link_libraries(psm
     OpenSTA
     dbSta
     Eigen3::Eigen
+    gui
 )
 
 messages(

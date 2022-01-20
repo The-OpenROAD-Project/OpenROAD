@@ -36,6 +36,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -88,6 +89,7 @@ class SteinerTree;
 class RoutePt;
 class GrouteRenderer;
 class GlobalRouter;
+class RoutingCongestionDataSource;
 
 struct RegionAdjustment
 {
@@ -162,6 +164,7 @@ class GlobalRouter
   void printGrid();
 
   // flow functions
+  void readGuides(const char* file_name); // just for display
   void writeGuides(const char* file_name);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -322,6 +325,7 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool isNonLeafClock(odb::dbNet* db_net);
+  int trackSpacing();
 
   ord::OpenRoad* openroad_;
   utl::Logger* logger_;
@@ -374,6 +378,8 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+
+  std::unique_ptr<RoutingCongestionDataSource> heatmap_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

@@ -272,7 +272,7 @@ void lefout::writeBlock(dbBlock* db_block)
 {
   dbBox* bounding_box = db_block->getBBox();
   double origin_x = lefdist(bounding_box->xMin());
-  double origin_y = lefdist(bounding_box->xMin());
+  double origin_y = lefdist(bounding_box->yMin());
   double size_x = lefdist(bounding_box->getDX());
   double size_y = lefdist(bounding_box->getDY());
 

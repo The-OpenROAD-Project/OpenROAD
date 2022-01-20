@@ -43,6 +43,7 @@
 #include <istream>
 #include <random>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -66,6 +67,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "heatMap.h"
 
 namespace grt {
 
@@ -96,7 +98,8 @@ GlobalRouter::GlobalRouter()
       perturbation_amount_(1),
       sta_(nullptr),
       db_(nullptr),
-      block_(nullptr)
+      block_(nullptr),
+      heatmap_(nullptr)
 {
 }
 
@@ -110,6 +113,9 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
   db_ = openroad_->getDb();
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = openroad_->getSta();
+
+  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
+  heatmap_->registerHeatMap();
 }
 
 void GlobalRouter::clear()
@@ -193,9 +199,7 @@ void GlobalRouter::globalRoute()
   int min_layer = min_layer_for_clock_ > 0
                       ? std::min(min_routing_layer_, min_layer_for_clock_)
                       : min_routing_layer_;
-  int max_layer = max_layer_for_clock_ > 0
-                      ? std::max(max_routing_layer_, max_layer_for_clock_)
-                      : max_routing_layer_;
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
   std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
@@ -220,6 +224,7 @@ void GlobalRouter::globalRoute()
 void GlobalRouter::updateDbCongestion()
 {
   fastroute_->updateDbCongestion();
+  heatmap_->update();
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
@@ -316,14 +321,33 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   computeSpacingsAndMinWidth(max_routing_layer);
 
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
-  fastroute_->setTileSize(grid_->getTileWidth(), grid_->getTileHeight());
+  fastroute_->setTileSize(grid_->getTileSize());
   fastroute_->setGridsAndLayers(
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
 }
 
 void GlobalRouter::initRoutingLayers()
 {
-  initRoutingLayers(routing_layers_);
+  odb::dbTech* tech = db_->getTech();
+
+  int valid_layers = 1;
+  for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    if (tech_layer == nullptr) {
+      logger_->error(GRT, 85, "Routing layer {} not found.", l);
+    }
+    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
+      if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+          && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
+        logger_->error(GRT,
+                       84,
+                       "Layer {} does not have a valid direction.",
+                       tech_layer->getName());
+      }
+      routing_layers_[valid_layers] = tech_layer;
+      valid_layers++;
+    }
+  }
 
   odb::dbTechLayer* routing_layer = routing_layers_[1];
   bool vertical
@@ -362,48 +386,37 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
 
 Capacities GlobalRouter::getCapacities()
 {
-  int old_cap;
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-
-  auto gcell_grid = block_->getGCellGrid();
-
   Capacities capacities;
-
   CapacitiesVec& h_caps = capacities.getHorCapacities();
   CapacitiesVec& v_caps = capacities.getVerCapacities();
 
   h_caps.resize(grid_->getNumLayers());
+  v_caps.resize(grid_->getNumLayers());
+
+  int x_grids = grid_->getXGrids();
+  int y_grids = grid_->getYGrids();
+  auto gcell_grid = block_->getGCellGrid();
   for (int l = 0; l < grid_->getNumLayers(); l++) {
     h_caps[l].resize(y_grids);
     for (int i = 0; i < y_grids; i++) {
       h_caps[l][i].resize(x_grids);
     }
-  }
 
-  v_caps.resize(grid_->getNumLayers());
-  for (int l = 0; l < grid_->getNumLayers(); l++) {
     v_caps[l].resize(x_grids);
     for (int i = 0; i < x_grids; i++) {
       v_caps[l][i].resize(y_grids);
     }
-  }
 
-  for (int layer = min_routing_layer_; layer <= max_routing_layer_; layer++) {
-    auto tech_layer = routing_layers_[layer];
+    auto tech_layer = routing_layers_[l];
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap
+        int old_cap
             = getEdgeResource(x - 1, y - 1, x, y - 1, tech_layer, gcell_grid);
-        h_caps[layer - 1][y - 1][x - 1] = old_cap;
-      }
-    }
+        h_caps[l - 1][y - 1][x - 1] = old_cap;
 
-    for (int x = 1; x < x_grids; x++) {
-      for (int y = 1; y < y_grids; y++) {
         old_cap
             = getEdgeResource(x - 1, y - 1, x - 1, y, tech_layer, gcell_grid);
-        v_caps[layer - 1][x - 1][y - 1] = old_cap;
+        v_caps[l - 1][x - 1][y - 1] = old_cap;
       }
     }
   }
@@ -415,32 +428,25 @@ void GlobalRouter::restoreCapacities(Capacities capacities,
                                      int previous_min_layer,
                                      int previous_max_layer)
 {
-  int old_cap;
   // Check if current edge capacity is larger than the old edge capacity
   // before applying adjustments.
   // After inserting diodes, edges can have less capacity than before,
   // and apply adjustment without a check leads to warns and wrong adjustments.
-  int cap;
-  int x_grids = grid_->getXGrids();
-  int y_grids = grid_->getYGrids();
-
   const CapacitiesVec& h_caps = capacities.getHorCapacities();
   const CapacitiesVec& v_caps = capacities.getVerCapacities();
 
+  int x_grids = grid_->getXGrids();
+  int y_grids = grid_->getYGrids();
   for (int layer = previous_min_layer; layer <= previous_max_layer; layer++) {
     for (int y = 1; y < y_grids; y++) {
       for (int x = 1; x < x_grids; x++) {
-        old_cap = h_caps[layer - 1][y - 1][x - 1];
-        cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
+        int old_cap = h_caps[layer - 1][y - 1][x - 1];
+        int cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x, y - 1, layer);
         if (old_cap <= cap) {
           fastroute_->addAdjustment(
               x - 1, y - 1, layer, x, y - 1, layer, old_cap, true);
         }
-      }
-    }
 
-    for (int x = 1; x < x_grids; x++) {
-      for (int y = 1; y < y_grids; y++) {
         old_cap = v_caps[layer - 1][x - 1][y - 1];
         cap = fastroute_->getEdgeCapacity(x - 1, y - 1, layer, x - 1, y, layer);
         if (old_cap <= cap) {
@@ -491,10 +497,10 @@ void GlobalRouter::removeDirtyNetsRouting()
                           ? init_on_grid.x()
                           : final_on_grid.x();
 
-          min_x = (min_x - (grid_->getTileWidth() / 2)) / grid_->getTileWidth();
-          max_x = (max_x - (grid_->getTileWidth() / 2)) / grid_->getTileWidth();
-          int y = (init_on_grid.y() - (grid_->getTileHeight() / 2))
-                  / grid_->getTileHeight();
+          min_x = (min_x - (grid_->getTileSize() / 2)) / grid_->getTileSize();
+          max_x = (max_x - (grid_->getTileSize() / 2)) / grid_->getTileSize();
+          int y = (init_on_grid.y() - (grid_->getTileSize() / 2))
+                  / grid_->getTileSize();
 
           for (int x = min_x; x < max_x; x++) {
             int new_cap
@@ -519,11 +525,11 @@ void GlobalRouter::removeDirtyNetsRouting()
                           : final_on_grid.y();
 
           min_y
-              = (min_y - (grid_->getTileHeight() / 2)) / grid_->getTileHeight();
+              = (min_y - (grid_->getTileSize() / 2)) / grid_->getTileSize();
           max_y
-              = (max_y - (grid_->getTileHeight() / 2)) / grid_->getTileHeight();
-          int x = (init_on_grid.x() - (grid_->getTileWidth() / 2))
-                  / grid_->getTileWidth();
+              = (max_y - (grid_->getTileSize() / 2)) / grid_->getTileSize();
+          int x = (init_on_grid.x() - (grid_->getTileSize() / 2))
+                  / grid_->getTileSize();
 
           for (int y = min_y; y < max_y; y++) {
             int new_cap
@@ -665,9 +671,9 @@ void GlobalRouter::findPins(Net* net,
     }
 
     int pinX
-        = (int) ((pin_position.x() - grid_->getXMin()) / grid_->getTileWidth());
+        = (int) ((pin_position.x() - grid_->getXMin()) / grid_->getTileSize());
     int pinY = (int) ((pin_position.y() - grid_->getYMin())
-                      / grid_->getTileHeight());
+                      / grid_->getTileSize());
 
     if (!(pinX < 0 || pinX >= grid_->getXGrids() || pinY < -1
           || pinY >= grid_->getYGrids() || top_layer > grid_->getNumLayers()
@@ -831,8 +837,8 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  odb::Point upper_grid_bounds(x_grids * grid_->getTileWidth(),
-                               y_grids * grid_->getTileHeight());
+  odb::Point upper_grid_bounds(x_grids * grid_->getTileSize(),
+                               y_grids * grid_->getTileSize());
   int x_extra = upper_die_bounds.x() - upper_grid_bounds.x();
   int y_extra = upper_die_bounds.y() - upper_grid_bounds.y();
 
@@ -849,10 +855,10 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
 
     if (routing_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       h_space = grid_->getMinWidths()[level - 1];
-      new_h_capacity = std::floor((grid_->getTileHeight() + y_extra) / h_space);
+      new_h_capacity = std::floor((grid_->getTileSize() + y_extra) / h_space);
     } else if (routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       v_space = grid_->getMinWidths()[level - 1];
-      new_v_capacity = std::floor((grid_->getTileWidth() + x_extra) / v_space);
+      new_v_capacity = std::floor((grid_->getTileSize() + x_extra) / v_space);
     } else {
       logger_->error(GRT, 71, "Layer spacing not found.");
     }
@@ -913,10 +919,10 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
             = track_location + (track_space * (num_tracks - 1));
         int remaining_final_space = upper_die_bounds.y() - final_track_location;
         int extra_space = upper_die_bounds.y()
-                          - (grid_->getTileHeight() * grid_->getYGrids());
+                          - (grid_->getTileSize() * grid_->getYGrids());
         if (grid_->isPerfectRegularY()) {
           num_final_adjustments = std::ceil((float) remaining_final_space
-                                            / grid_->getTileHeight());
+                                            / grid_->getTileSize());
         } else {
           if (remaining_final_space != 0) {
             int final_space = remaining_final_space - extra_space;
@@ -924,28 +930,28 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
               num_final_adjustments = 1;
             else
               num_final_adjustments
-                  = std::ceil((float) final_space / grid_->getTileHeight());
+                  = std::ceil((float) final_space / grid_->getTileSize());
           } else
             num_final_adjustments = 0;
         }
 
         num_final_adjustments *= grid_->getXGrids();
         num_init_adjustments
-            = std::ceil((float) track_location / grid_->getTileHeight());
+            = std::ceil((float) track_location / grid_->getTileSize());
         num_init_adjustments *= grid_->getXGrids();
         fastroute_->setNumAdjustments(num_init_adjustments
                                       + num_final_adjustments);
 
         int y = 0;
-        while (track_location >= grid_->getTileHeight()) {
+        while (track_location >= grid_->getTileSize()) {
           for (int x = 1; x < grid_->getXGrids(); x++) {
             fastroute_->addAdjustment(x - 1, y, level, x, y, level, 0, true);
           }
           y++;
-          track_location -= grid_->getTileHeight();
+          track_location -= grid_->getTileSize();
         }
         if (track_location > 0) {
-          int remaining_tile = grid_->getTileHeight() - track_location;
+          int remaining_tile = grid_->getTileSize() - track_location;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int x = 1; x < grid_->getXGrids(); x++) {
             fastroute_->addAdjustment(
@@ -954,17 +960,17 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
         }
 
         y = grid_->getYGrids() - 1;
-        while (remaining_final_space >= grid_->getTileHeight() + extra_space) {
+        while (remaining_final_space >= grid_->getTileSize() + extra_space) {
           for (int x = 1; x < grid_->getXGrids(); x++) {
             fastroute_->addAdjustment(x - 1, y, level, x, y, level, 0, true);
           }
           y--;
-          remaining_final_space -= (grid_->getTileHeight() + extra_space);
+          remaining_final_space -= (grid_->getTileSize() + extra_space);
           extra_space = 0;
         }
         if (remaining_final_space > 0) {
           int remaining_tile
-              = (grid_->getTileHeight() + extra_space) - remaining_final_space;
+              = (grid_->getTileSize() + extra_space) - remaining_final_space;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int x = 1; x < grid_->getXGrids(); x++) {
             fastroute_->addAdjustment(
@@ -983,10 +989,10 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
             = track_location + (track_space * (num_tracks - 1));
         int remaining_final_space = upper_die_bounds.x() - final_track_location;
         int extra_space = upper_die_bounds.x()
-                          - (grid_->getTileWidth() * grid_->getXGrids());
+                          - (grid_->getTileSize() * grid_->getXGrids());
         if (grid_->isPerfectRegularX()) {
           num_final_adjustments = std::ceil((float) remaining_final_space
-                                            / grid_->getTileWidth());
+                                            / grid_->getTileSize());
         } else {
           if (remaining_final_space != 0) {
             int final_space = remaining_final_space - extra_space;
@@ -994,28 +1000,28 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
               num_final_adjustments = 1;
             else
               num_final_adjustments
-                  = std::ceil((float) final_space / grid_->getTileWidth());
+                  = std::ceil((float) final_space / grid_->getTileSize());
           } else
             num_final_adjustments = 0;
         }
 
         num_final_adjustments *= grid_->getYGrids();
         num_init_adjustments
-            = std::ceil((float) track_location / grid_->getTileWidth());
+            = std::ceil((float) track_location / grid_->getTileSize());
         num_init_adjustments *= grid_->getYGrids();
         fastroute_->setNumAdjustments(num_init_adjustments
                                       + num_final_adjustments);
 
         int x = 0;
-        while (track_location >= grid_->getTileWidth()) {
+        while (track_location >= grid_->getTileSize()) {
           for (int y = 1; y < grid_->getYGrids(); y++) {
             fastroute_->addAdjustment(x, y - 1, level, x, y, level, 0, true);
           }
           x++;
-          track_location -= grid_->getTileWidth();
+          track_location -= grid_->getTileSize();
         }
         if (track_location > 0) {
-          int remaining_tile = grid_->getTileWidth() - track_location;
+          int remaining_tile = grid_->getTileSize() - track_location;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int y = 1; y < grid_->getYGrids(); y++) {
             fastroute_->addAdjustment(
@@ -1024,17 +1030,17 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
         }
 
         x = grid_->getXGrids() - 1;
-        while (remaining_final_space >= grid_->getTileWidth() + extra_space) {
+        while (remaining_final_space >= grid_->getTileSize() + extra_space) {
           for (int y = 1; y < grid_->getYGrids(); y++) {
             fastroute_->addAdjustment(x, y - 1, level, x, y, level, 0, true);
           }
           x--;
-          remaining_final_space -= (grid_->getTileWidth() + extra_space);
+          remaining_final_space -= (grid_->getTileSize() + extra_space);
           extra_space = 0;
         }
         if (remaining_final_space > 0) {
           int remaining_tile
-              = (grid_->getTileWidth() + extra_space) - remaining_final_space;
+              = (grid_->getTileSize() + extra_space) - remaining_final_space;
           int new_capacity = std::floor((float) remaining_tile / track_space);
           for (int y = 1; y < grid_->getYGrids(); y++) {
             fastroute_->addAdjustment(
@@ -1327,6 +1333,59 @@ void GlobalRouter::perturbCapacities()
         fastroute_->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, new_v_capacity, subtract);
       }
+    }
+  }
+}
+
+void GlobalRouter::readGuides(const char* file_name)
+{
+  block_ = db_->getChip()->getBlock();
+  if (max_routing_layer_ == -1) {
+    max_routing_layer_ = computeMaxRoutingLayer();
+    initRoutingLayers();
+    initCoreGrid(max_routing_layer_);
+  }
+  odb::dbTech* tech = db_->getTech();
+
+  std::ifstream fin(file_name);
+  std::string line;
+  odb::dbNet* net = nullptr;
+
+  if (!fin.is_open()) {
+    logger_->error(GRT, 233, "Failed to open guide file {}.", file_name);
+  }
+
+  while (fin.good()) {
+    getline(fin, line);
+    if (line == "(" || line == "" || line == ")") {
+      continue;
+    }
+
+    std::stringstream ss(line);
+    std::string word;
+    std::vector<std::string> tokens;
+    while (!ss.eof()) {
+      ss >> word;
+      tokens.push_back(word);
+    }
+
+    if (tokens.size() == 1) {
+      net = block_->findNet(tokens[0].c_str());
+      if (!net) {
+        logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
+      }
+    } else if (tokens.size() == 5) {
+      auto layer = tech->findLayer(tokens[4].c_str());
+      if (!layer) {
+        logger_->error(GRT, 235, "Cannot find layer {}.", tokens[4]);
+      }
+
+      GRoute& route = routes_[net];
+      route.push_back({stoi(tokens[0]), stoi(tokens[1]),
+          layer->getRoutingLevel(), stoi(tokens[2]), stoi(tokens[3]),
+          layer->getRoutingLevel()});
+    } else {
+      logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
   }
 }
@@ -1642,16 +1701,16 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
     final_y = route.init_y;
   }
 
-  int llX = init_x - (grid_->getTileWidth() / 2);
-  int llY = init_y - (grid_->getTileHeight() / 2);
+  int llX = init_x - (grid_->getTileSize() / 2);
+  int llY = init_y - (grid_->getTileSize() / 2);
 
-  int urX = final_x + (grid_->getTileWidth() / 2);
-  int urY = final_y + (grid_->getTileHeight() / 2);
+  int urX = final_x + (grid_->getTileSize() / 2);
+  int urY = final_y + (grid_->getTileSize() / 2);
 
-  if ((die_bounds.xMax() - urX) / grid_->getTileWidth() < 1) {
+  if ((die_bounds.xMax() - urX) / grid_->getTileSize() < 1) {
     urX = die_bounds.xMax();
   }
-  if ((die_bounds.yMax() - urY) / grid_->getTileHeight() < 1) {
+  if ((die_bounds.yMax() - urY) / grid_->getTileSize() < 1) {
     urY = die_bounds.yMax();
   }
 
@@ -1714,7 +1773,7 @@ void GlobalRouter::computeWirelength()
 
       if (segmentWl > 0) {
         total_wirelength
-            += (grid_->getTileWidth() + grid_->getTileHeight()) / 2;
+            += (grid_->getTileSize() + grid_->getTileSize()) / 2;
       }
     }
   }
@@ -1969,14 +2028,14 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     int new_x_position;
     if (pin.getOrientation() == PinOrientation::west) {
       new_x_position
-          = pin_position.x() + (gcells_offset_ * grid_->getTileWidth());
+          = pin_position.x() + (gcells_offset_ * grid_->getTileSize());
       if (new_x_position <= grid_->getXMax()) {
         pin_connection.init_x = new_x_position;
         pin_position.setX(new_x_position);
       }
     } else if (pin.getOrientation() == PinOrientation::east) {
       new_x_position
-          = pin_position.x() - (gcells_offset_ * grid_->getTileWidth());
+          = pin_position.x() - (gcells_offset_ * grid_->getTileSize());
       if (new_x_position >= grid_->getXMin()) {
         pin_connection.init_x = new_x_position;
         pin_position.setX(new_x_position);
@@ -1990,14 +2049,14 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     int new_y_position;
     if (pin.getOrientation() == PinOrientation::south) {
       new_y_position
-          = pin_position.y() + (gcells_offset_ * grid_->getTileHeight());
+          = pin_position.y() + (gcells_offset_ * grid_->getTileSize());
       if (new_y_position <= grid_->getYMax()) {
         pin_connection.init_y = new_y_position;
         pin_position.setY(new_y_position);
       }
     } else if (pin.getOrientation() == PinOrientation::north) {
       new_y_position
-          = pin_position.y() - (gcells_offset_ * grid_->getTileHeight());
+          = pin_position.y() - (gcells_offset_ * grid_->getTileSize());
       if (new_y_position >= grid_->getYMin()) {
         pin_connection.init_y = new_y_position;
         pin_position.setY(new_y_position);
@@ -2069,56 +2128,9 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
                     (rect.yMin() + (rect.yMax() - rect.yMin()) / 2.0));
 }
 
-// db functions
-
 void GlobalRouter::initGrid(int max_layer)
 {
-  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
-
-  if (tech_layer == nullptr) {
-    logger_->error(GRT, 81, "Layer {} not found.", layer_for_guide_dimension_);
-  }
-
-  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
-  if (track_grid == nullptr) {
-    logger_->error(
-        GRT, 82, "Track for layer {} not found.", tech_layer->getName());
-  }
-
-  int track_step_x = -1;
-  int track_step_y = -1;
-  int init_track_x, num_tracks_x;
-  int init_track_y, num_tracks_y;
-  int track_spacing;
-
-  if (track_grid->getNumGridPatternsX() > 0)
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-  if (track_grid->getNumGridPatternsY() > 0)
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-
-  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    if (track_step_y == -1) {
-      logger_->error(GRT,
-                     124,
-                     "Horizontal tracks for layer {} not found.",
-                     tech_layer->getName());
-    }
-    track_spacing = track_step_y;
-  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    if (track_step_x == -1) {
-      logger_->error(GRT,
-                     147,
-                     "Vertical tracks for layer {} not found.",
-                     tech_layer->getName());
-    }
-    track_spacing = track_step_x;
-  } else {
-    logger_->error(GRT,
-                   83,
-                   "Layer {} does not have valid direction.",
-                   tech_layer->getName());
-  }
+  int track_spacing = trackSpacing();
 
   odb::Rect rect;
   block_->getDieArea(rect);
@@ -2126,11 +2138,10 @@ void GlobalRouter::initGrid(int max_layer)
   int upper_rightX = rect.xMax();
   int upper_rightY = rect.yMax();
 
-  int tile_width = grid_->getPitchesInTile() * track_spacing;
-  int tile_height = grid_->getPitchesInTile() * track_spacing;
+  int tile_size = grid_->getPitchesInTile() * track_spacing;
 
-  int x_grids = std::floor((float) upper_rightX / tile_width);
-  int y_grids = std::floor((float) upper_rightY / tile_height);
+  int x_grids = upper_rightX / tile_size;
+  int y_grids = upper_rightY / tile_size;
 
   bool perfect_regular_x = false;
   bool perfect_regular_y = false;
@@ -2140,15 +2151,14 @@ void GlobalRouter::initGrid(int max_layer)
     num_layers = max_layer;
   }
 
-  if ((x_grids * tile_width) == upper_rightX)
+  if ((x_grids * tile_size) == upper_rightX)
     perfect_regular_x = true;
 
-  if ((y_grids * tile_height) == upper_rightY)
+  if ((y_grids * tile_size) == upper_rightY)
     perfect_regular_y = true;
 
   grid_->init(rect,
-              tile_width,
-              tile_height,
+              tile_size,
               x_grids,
               y_grids,
               perfect_regular_x,
@@ -2156,27 +2166,26 @@ void GlobalRouter::initGrid(int max_layer)
               num_layers);
 }
 
-void GlobalRouter::initRoutingLayers(
-    std::map<int, odb::dbTechLayer*>& routing_layers)
+// Assumes initRoutingLayers and initRoutingTracks have been called
+// to check layers and tracks.
+int GlobalRouter::trackSpacing()
 {
-  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
 
-  int valid_layers = 1;
-  for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
-    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
-      if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
-          && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
-        logger_->error(GRT,
-                       84,
-                       "Layer {} does not have valid direction.",
-                       tech_layer->getName());
-      }
-
-      routing_layers[valid_layers] = tech_layer;
-      valid_layers++;
-    }
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    int track_step_y = -1;
+    int init_track_y, num_tracks_y;
+    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    return track_step_y;
+  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    int track_step_x = -1;
+    int init_track_x, num_tracks_x;
+    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+    return track_step_x;
   }
+  logger_->error(GRT, 82, "Cannot find track spacing.");
+  return 0;
 }
 
 void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
@@ -2314,72 +2323,45 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
       break;
     }
 
-    if (tech_layer == nullptr) {
-      logger_->error(GRT, 85, "Routing layer {} not found.", level);
-    }
-
     odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
     if (track_grid == nullptr) {
       logger_->error(
           GRT, 86, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    int track_step_x = -1;
-    int track_step_y = -1;
-    int init_track_x, num_tracks_x;
-    int init_track_y, num_tracks_y;
-    int track_pitch, line_2__via_pitch_down, line_2__via_pitch_up, location,
-        num_tracks;
-    bool orientation;
-    const bool horizontal = false;
-    const bool vertical = true;
-
-    if (track_grid->getNumGridPatternsX() > 0)
-      track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    if (track_grid->getNumGridPatternsY() > 0)
-      track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-
+    int track_step, track_init, num_tracks;
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      if (track_step_y == -1) {
+      if (track_grid->getNumGridPatternsY() > 0) {
+        track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
+      } else {
         logger_->error(GRT,
-                       148,
+                       124,
                        "Horizontal tracks for layer {} not found.",
                        tech_layer->getName());
+         return; // error throws
       }
-      track_pitch = track_step_y;
-      line_2__via_pitch_up = l2vPitches[level].first;
-      line_2__via_pitch_down = l2vPitches[level].second;
-      location = init_track_y;
-      num_tracks = num_tracks_y;
-      orientation = horizontal;
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      if (track_step_x == -1) {
+      if (track_grid->getNumGridPatternsX() > 0) {
+        track_grid->getGridPatternX(0, track_init, num_tracks, track_step);;
+      } else {
         logger_->error(GRT,
-                       149,
+                       147,
                        "Vertical tracks for layer {} not found.",
                        tech_layer->getName());
+        return; // error throws
       }
-      track_pitch = track_step_x;
-      line_2__via_pitch_up = l2vPitches[level].first;
-      line_2__via_pitch_down = l2vPitches[level].second;
-      location = init_track_x;
-      num_tracks = num_tracks_x;
-      orientation = vertical;
     } else {
       logger_->error(GRT,
-                     87,
-                     "Layer {} does not have valid direction.",
+                     148,
+                     "Layer {} has invalid direction.",
                      tech_layer->getName());
+      return; // error throws
     }
 
-    RoutingTracks layer_tracks = RoutingTracks(level,
-                                               track_pitch,
-                                               line_2__via_pitch_up,
-                                               line_2__via_pitch_down,
-                                               location,
-                                               num_tracks,
-                                               orientation);
+    RoutingTracks layer_tracks = RoutingTracks(level, track_step,
+                                               l2vPitches[level].first,
+                                               l2vPitches[level].second,
+                                               track_init, num_tracks);
     routing_tracks_->push_back(layer_tracks);
     if (verbose_)
       logger_->info(
@@ -2405,7 +2387,7 @@ void GlobalRouter::computeCapacities(int max_layer)
     int track_spacing = routing_tracks.getUsePitch();
 
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      h_capacity = std::floor((float) grid_->getTileWidth() / track_spacing);
+      h_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
 
       grid_->addHorizontalCapacity(h_capacity, level - 1);
       grid_->addVerticalCapacity(0, level - 1);
@@ -2417,7 +2399,7 @@ void GlobalRouter::computeCapacities(int max_layer)
                  tech_layer->getConstName(),
                  h_capacity);
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      v_capacity = std::floor((float) grid_->getTileWidth() / track_spacing);
+      v_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
 
       grid_->addHorizontalCapacity(0, level - 1);
       grid_->addVerticalCapacity(v_capacity, level - 1);
@@ -2428,24 +2410,12 @@ void GlobalRouter::computeCapacities(int max_layer)
                  "Layer {} has {} v-capacity",
                  tech_layer->getConstName(),
                  v_capacity);
-    } else {
-      logger_->error(GRT,
-                     89,
-                     "Layer {} does not have valid direction.",
-                     tech_layer->getName());
     }
   }
 }
 
 void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
 {
-  int min_spacing = 0;
-  int min_width;
-  int track_step_x = -1;
-  int track_step_y = -1;
-  int init_track_x, num_tracks_x;
-  int init_track_y, num_tracks_y;
-
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
       break;
@@ -2454,10 +2424,16 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
     odb::dbTrackGrid* track = block_->findTrackGrid(tech_layer);
 
     if (track == nullptr) {
-      logger_->error(
-          GRT, 90, "Track for layer {} not found.", tech_layer->getName());
+      logger_->error(GRT, 90, "Track for layer {} not found.",
+                     tech_layer->getName());
     }
 
+    int min_spacing = 0;
+    int min_width = 0;
+    int track_step_x = -1;
+    int track_step_y = -1;
+    int init_track_x, num_tracks_x;
+    int init_track_y, num_tracks_y;
     if (track->getNumGridPatternsX() > 0) {
       track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     }
@@ -2466,26 +2442,9 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
     }
 
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      if (track_step_y == -1) {
-        logger_->error(GRT,
-                       116,
-                       "Horizontal tracks for layer {} not found.",
-                       tech_layer->getName());
-      }
       min_width = track_step_y;
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      if (track_step_x == -1) {
-        logger_->error(GRT,
-                       117,
-                       "Vertical tracks for layer {} not found.",
-                       tech_layer->getName());
-      }
       min_width = track_step_x;
-    } else {
-      logger_->error(GRT,
-                     91,
-                     "Layer {} does not have valid direction.",
-                     tech_layer->getName());
     }
 
     grid_->addSpacing(min_spacing, level - 1);
@@ -2974,7 +2933,7 @@ int GlobalRouter::findInstancesObstructions(
         if (isMacro) {
           layer_extension
               = layer_extensions[box->getTechLayer()->getRoutingLevel()];
-          layer_extension += macro_extension_ * grid_->getTileWidth();
+          layer_extension += macro_extension_ * grid_->getTileSize();
         }
 
         odb::Point lower_bound = odb::Point(rect.xMin() - layer_extension,
@@ -3131,9 +3090,6 @@ int GlobalRouter::computeMaxRoutingLayer()
   int valid_layers = 1;
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(valid_layers);
-    if (tech_layer == nullptr) {
-      logger_->error(GRT, 95, "Layer {} not found.", valid_layers);
-    }
     if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid == nullptr) {

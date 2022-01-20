@@ -42,7 +42,6 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
-#include "heatMap.h"
 #include "ruler.h"
 
 namespace odb {
@@ -75,7 +74,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   ~MainWindow();
 
   void setDatabase(odb::dbDatabase* db);
-  void init(sta::dbSta* sta, psm::PDNSim* psm);
+  void init(sta::dbSta* sta);
 
   odb::dbDatabase* getDb() const { return db_; }
 
@@ -97,8 +96,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   Inspector* getInspector() const { return inspector_; }
 
   const std::vector<std::string> getRestoreTclCommands();
-
-  void setHeatMapSetting(const std::string& map, const std::string& option, const Renderer::Setting& value);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -222,10 +219,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
 
+  void registerHeatMap(HeatMapDataSource* heatmap);
+  void unregisterHeatMap(HeatMapDataSource* heatmap);
+
  private slots:
   void setUseDBU(bool use_dbu);
   void setClearLocation();
-
+  void showApplicationFont();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -245,8 +245,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void removeMenu(QMenu* menu);
 
   int requestHighlightGroup();
-
-  const std::vector<HeatMapDataSource*> getHeatMaps();
 
   odb::dbBlock* getBlock() const;
 
@@ -291,6 +289,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* font_;
 
   QLabel* location_;
 
@@ -300,11 +299,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // created menu actions
   std::map<const std::string, std::unique_ptr<QAction>> menu_actions_;
 
-  // global heat maps
-  RoutingCongestionDataSource routing_congestion_data_;
-  PlacementDensityDataSource placement_density_data_;
-  PowerDensityDataSource power_density_data_;
-  IRDropDataSource ir_drop_data_;
+  // heat map actions
+  std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
 };
 
 }  // namespace gui
