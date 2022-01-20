@@ -17,10 +17,10 @@
 [INFO GRT-0240] Net clk detailed route wire length: 184.95um
 	Layer met1 :  0.21um
 	Layer met2 :  0.18um
-	Layer met3 : 117.84um
+	Layer met3 : 134.97um
 	Layer met4 : 49.58um
 [INFO GRT-0237] Net net60 global route wire length: 14.40um
 	Layer met2 : 14.40um
 [INFO GRT-0240] Net net60 detailed route wire length: 13.39um
-	Layer met1 :  3.29um
+	Layer met1 :  3.77um
 	Layer met2 :  9.62um

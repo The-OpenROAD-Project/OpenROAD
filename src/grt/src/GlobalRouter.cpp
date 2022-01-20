@@ -3378,7 +3378,7 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net)
   for (size_t i = 0; i < lengths.size(); i++) {
     int64_t length = lengths[i];
     if (length > 0) {
-      odb::dbTechLayer* layer = routing_layers_[i];
+      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       logger_->report("\tLayer {:5s}: {:5.2f}um",
                       layer->getName(),
                       dbuToMicrons(length));
@@ -3468,14 +3468,14 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire)
       tplen = s.getDX() - s.getDY();
       if (tplen < 0)
         tplen = -tplen;
-      lengths[s.getTechLayer()->getRoutingLevel()] = tplen;
+      lengths[s.getTechLayer()->getRoutingLevel()] += tplen;
     }
   }
 
-  for (size_t i = 0; i < lengths.size(); i++) {
+  for (size_t i = 1; i < lengths.size(); i++) {
     int64_t length = lengths[i];
     if (length > 0) {
-      odb::dbTechLayer* layer = routing_layers_[i];
+      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       logger_->report("\tLayer {:5s}: {:5.2f}um",
                       layer->getName(),
                       dbuToMicrons(length));
