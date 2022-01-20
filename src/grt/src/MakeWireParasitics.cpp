@@ -202,7 +202,6 @@ void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
                units->resistanceUnit()->asString(res),
                units->capacitanceUnit()->asString(cap));
 
-    sta::Units* units = sta_->units();
     debugPrint(logger_, GRT, "est_rc", 1,
                "pin {} -> to grid {}u layer={} r={} c={}",
                pin.getName(),
