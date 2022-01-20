@@ -603,6 +603,10 @@ protected:
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
+  Instance *makeInstance(LibertyCell *cell,
+                         const char *name,
+                         Instance *parent,
+                         bool use_network_api = true);
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
