@@ -3440,8 +3440,10 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
   if (detailed_route) {
     odb::dbWire* wire = net->getWire();
 
-    if (wire == nullptr)
+    if (wire == nullptr) {
       logger_->warn(GRT, 239, "Net {} does not have routes.", net->getName());
+      return;
+    }
 
     int64_t wl = wire->getLength();
     logger_->info(GRT,

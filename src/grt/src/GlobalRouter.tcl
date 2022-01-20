@@ -359,7 +359,12 @@ proc report_wire_length { args } {
   set verbose [info exists flags(-verbose)]
   if { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
-      grt::report_net_wire_length [sta::sta_to_db_net $net] $global_route_wl $detailed_route_wl $verbose
+      set db_net [sta::sta_to_db_net $net]
+      if { [$db_net getSigType] != "POWER" && \
+           [$db_net getSigType] != "GROUND" && \
+           ![$db_net isSpecial]} {
+        grt::report_net_wire_length $db_net $global_route_wl $detailed_route_wl $verbose
+      }
     }
   } else {
     utl::errpr GRT 237 "-net is required."
