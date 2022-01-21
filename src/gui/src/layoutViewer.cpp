@@ -741,6 +741,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   boxes.push_back({{bbox.xMin(), bbox.yMin()},
                    {bbox.xMax(), bbox.yMax()}});
 
+  if (options_->areRegionsVisible()) {
+    for (auto* region : block_->getRegions()) {
+      const odb::Rect region_box = getRegionRect(region);
+      boxes.push_back({{region_box.xMin(), region_box.yMin()},
+                       {region_box.xMax(), region_box.yMax()}});
+    }
+  }
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -1869,6 +1877,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
+  drawRegionOutlines(painter);
 
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
@@ -1980,6 +1989,46 @@ void LayoutViewer::drawBlock(QPainter* painter,
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawRegionOutlines(QPainter* painter)
+{
+  if (!options_->areRegionsVisible()) {
+    return;
+  }
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(Qt::BrushStyle::NoBrush);
+
+  for (auto* region : block_->getRegions()) {
+    const odb::Rect region_box = getRegionRect(region);
+    if (region_box.area() > 0) {
+      painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+    }
+  }
+}
+
+odb::Rect LayoutViewer::getRegionRect(odb::dbRegion* region) const
+{
+  if (region == nullptr) {
+    return {};
+  }
+
+  auto boundaries = region->getBoundaries();
+  if (boundaries.empty()) {
+    return getRegionRect(region->getParent());
+  } else {
+    odb::Rect region_box;
+    region_box.mergeInit();
+
+    for (auto* box : boundaries) {
+      odb::Rect box_rect;
+      box->getBox(box_rect);
+      region_box.merge(box_rect);
+    }
+
+    return region_box;
   }
 }
 

@@ -255,6 +255,7 @@ class LayoutViewer : public QWidget
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  int depth);
+  void drawRegionOutlines(QPainter* painter);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -320,6 +321,8 @@ class LayoutViewer : public QWidget
   odb::Point findNextSnapPoint(const odb::Point& end_pt, const odb::Point& start_pt, bool snap = true);
 
   odb::Point findNextRulerPoint(const odb::Point& mouse);
+
+  odb::Rect getRegionRect(odb::dbRegion* region) const;
 
   // build a cache of the layout to speed up future repainting
   void updateBlockPainting(const QRect& area);
