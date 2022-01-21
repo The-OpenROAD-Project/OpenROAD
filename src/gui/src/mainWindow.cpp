@@ -885,8 +885,10 @@ void MainWindow::clearHighlighted(int highlight_group)
 
 void MainWindow::clearRulers()
 {
-  if (rulers_.empty())
+  if (rulers_.empty()) {
     return;
+  }
+  Gui::get()->removeSelected<Ruler*>();
   rulers_.clear();
   emit rulersChanged();
 }
