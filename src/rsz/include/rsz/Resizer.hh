@@ -605,8 +605,7 @@ protected:
   void removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
-                         Instance *parent,
-                         bool use_network_api = true);
+                         Instance *parent);
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);

@@ -2225,7 +2225,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             Instance *load_inst = network_->instance(load);
             string tie_name = makeUniqueInstName(inst_name, true);
             Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
-                                         top_inst, false);
+                                         top_inst);
             setLocation(tie, tie_loc);
 
             // Make tie output net.
@@ -3825,7 +3825,7 @@ Resizer::cloneClkInverter(Instance *inv)
       if (load_pin != out_pin) {
         string clone_name = makeUniqueInstName(inv_name, true);
         Instance *clone = makeInstance(inv_cell, clone_name.c_str(),
-                                       top_inst, false);
+                                       top_inst);
         Point clone_loc = db_network_->location(load_pin);
         journalMakeBuffer(clone);
         setLocation(clone, clone_loc);
@@ -4098,15 +4098,9 @@ Resizer::isRegister(Vertex *vertex)
 
 Instance *Resizer::makeInstance(LibertyCell *cell,
                                 const char *name,
-                                Instance *parent,
-                                bool use_network_api)
+                                Instance *parent)
 {
-  Instance *inst;
-  if (use_network_api) {
-    inst = db_network_->makeInstance(cell, name, parent);
-  } else {
-    inst = sta_->makeInstance(name, cell, parent);
-  }
+  Instance *inst = db_network_->makeInstance(cell, name, parent);
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   return inst;
