@@ -1727,14 +1727,12 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 GSegment GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds, int layer)
 {
   odb::Rect die_bounds = grid_->getGridArea();
-  int x0, y0;
-  int x1, y1;
 
-  x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
-  y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
+  const int x0 = route_bds.xMin() + (grid_->getTileSize() / 2);
+  const int y0 = route_bds.yMin() + (grid_->getTileSize() / 2);
 
-  x1 = route_bds.xMax() - (grid_->getTileSize() / 2);
-  y1 = route_bds.yMax() - (grid_->getTileSize() / 2);
+  const int x1 = route_bds.xMax() - (grid_->getTileSize() / 2);
+  const int y1 = route_bds.yMax() - (grid_->getTileSize() / 2);
 
   return GSegment(x0, y0, layer, x1, y1, layer);
 }
@@ -1784,12 +1782,10 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
   const GRoute& route = routes_[db_net];
   int net_wl = 0;
   for (const GSegment& segment : route) {
-    int segment_wl = std::abs(segment.final_x - segment.init_x)
+    const int segment_wl = std::abs(segment.final_x - segment.init_x)
                      + std::abs(segment.final_y - segment.init_y);
-    net_wl += segment_wl;
-
     if (segment_wl > 0) {
-      net_wl += grid_->getTileSize();
+      net_wl += segment_wl + grid_->getTileSize();
     }
   }
 
@@ -3367,11 +3363,10 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net)
     int layer1 = seg.init_layer;
     int layer2 = seg.final_layer;
     if (layer1 == layer2) {
-      int seg_length
+      const int seg_length
           = abs(seg.init_x - seg.final_x) + abs(seg.init_y - seg.final_y);
-      lengths[layer1] += seg_length;
       if (seg_length > 0) {
-        lengths[layer1] += grid_->getTileSize();
+        lengths[layer1] += seg_length + grid_->getTileSize();
       }
     }
   }
@@ -3471,9 +3466,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire)
   int tplen;
   for (shapes.begin(wire); shapes.next(s);) {
     if (!s.isVia()) {
-      tplen = s.getDX() - s.getDY();
-      if (tplen < 0)
-        tplen = -tplen;
+      tplen = std::abs((int)(s.getDX() - s.getDY()));
       lengths[s.getTechLayer()->getRoutingLevel()] += tplen;
     }
   }
