@@ -343,9 +343,9 @@ Resizer::bufferLoads(Pin *drvr_pin,
       string load_net_name = makeUniqueNetName();
       Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
       string inst_name = makeUniqueInstName(reason);
-      Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                                   inst_name.c_str(),
-                                                   top_inst);
+      Instance *buffer = makeInstance(buffer_cell,
+                                      inst_name.c_str(),
+                                      top_inst);
       setLocation(buffer, Point((drvr_loc.getX() + center.getX()) / 2,
                                 (drvr_loc.getX() + center.getY()) / 2));
       inserted_buffer_count_++;

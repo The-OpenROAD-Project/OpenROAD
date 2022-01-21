@@ -54,15 +54,13 @@ class RoutingTracks
                 const int line_2_via_pitch_up,
                 const int line_2_via_pitch_down,
                 const int location,
-                const int num_tracks,
-                const bool orientation)
+                const int num_tracks)
       : layer_index_(layer_index),
         track_pitch_(track_pitch),
         line_2_via_pitch_up_(line_2_via_pitch_up),
         line_2_via_pitch_down_(line_2_via_pitch_down),
         location_(location),
-        num_tracks_(num_tracks),
-        orientation_(orientation)
+        num_tracks_(num_tracks)
   {
   }
 
@@ -79,7 +77,6 @@ class RoutingTracks
   }
   int getLocation() const { return location_; }
   int getNumTracks() const { return num_tracks_; }
-  bool getOrientation() const { return orientation_; }
 
  private:
   int layer_index_;
@@ -88,7 +85,6 @@ class RoutingTracks
   int line_2_via_pitch_down_;
   int location_;
   int num_tracks_;
-  bool orientation_;
 };
 
 }  // namespace grt
