@@ -743,9 +743,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
   if (options_->areRegionsVisible()) {
     for (auto* region : block_->getRegions()) {
-      const odb::Rect region_box = getRegionRect(region);
-      boxes.push_back({{region_box.xMin(), region_box.yMin()},
-                       {region_box.xMax(), region_box.yMax()}});
+      for (auto* box : region->getBoundaries()) {
+        odb::Rect region_box;
+        box->getBox(region_box);
+        if (region_box.area() > 0) {
+          boxes.push_back({{region_box.xMin(), region_box.yMin()},
+                           {region_box.xMax(), region_box.yMax()}});
+        }
+      }
     }
   }
 
@@ -2002,33 +2007,13 @@ void LayoutViewer::drawRegionOutlines(QPainter* painter)
   painter->setBrush(Qt::BrushStyle::NoBrush);
 
   for (auto* region : block_->getRegions()) {
-    const odb::Rect region_box = getRegionRect(region);
-    if (region_box.area() > 0) {
-      painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+    for (auto* box : region->getBoundaries()) {
+      odb::Rect region_box;
+      box->getBox(region_box);
+      if (region_box.area() > 0) {
+        painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+      }
     }
-  }
-}
-
-odb::Rect LayoutViewer::getRegionRect(odb::dbRegion* region) const
-{
-  if (region == nullptr) {
-    return {};
-  }
-
-  auto boundaries = region->getBoundaries();
-  if (boundaries.empty()) {
-    return getRegionRect(region->getParent());
-  } else {
-    odb::Rect region_box;
-    region_box.mergeInit();
-
-    for (auto* box : boundaries) {
-      odb::Rect box_rect;
-      box->getBox(box_rect);
-      region_box.merge(box_rect);
-    }
-
-    return region_box;
   }
 }
 

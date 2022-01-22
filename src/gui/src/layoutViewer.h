@@ -322,8 +322,6 @@ class LayoutViewer : public QWidget
 
   odb::Point findNextRulerPoint(const odb::Point& mouse);
 
-  odb::Rect getRegionRect(odb::dbRegion* region) const;
-
   // build a cache of the layout to speed up future repainting
   void updateBlockPainting(const QRect& area);
 
