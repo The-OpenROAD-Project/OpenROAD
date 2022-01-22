@@ -1,0 +1,36 @@
+VERSION 5.6 ;
+
+MACRO POWER_SWITCH
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 4.6 BY 5.44 ;
+  PIN VPWR
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER met1 ;
+        RECT 0.0 -0.24 4.6 0.24 ;
+        RECT 0.0  5.20 4.6 5.68 ;
+    END
+  END VPWR
+  PIN VGND
+    DIRECTION INOUT ;
+    USE GROUND ; 
+    SHAPE ABUTMENT ;
+
+    PORT
+      LAYER met1 ;
+        RECT  0.0 2.48 4.6 2.96 ;
+    END
+  END VGND
+  PIN VDDG
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met1 ;
+        RECT 0.54 0.54 1.02 0.82 ;
+        RECT 0.54 4.62 1.02 4.90 ;
+    END
+  END VDDG
+END POWER_SWITCH
