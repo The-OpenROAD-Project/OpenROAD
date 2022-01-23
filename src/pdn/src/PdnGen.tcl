@@ -4449,16 +4449,10 @@ proc export_opendb_specialnet {net_name signal_type} {
 
   # debug "layers - $metal_layers"
   foreach lay $metal_layers {
-    if {[array names stripe_locs "$lay,${signal_type}_${net_name}"] != ""} {
-      set tag "${signal_type}_${net_name}"
-    } elseif {[array names stripe_locs "$lay,$signal_type"] == ""} {
-      continue
-    } else {
-      set tag $signal_type
-    }
+    if {[array names stripe_locs "$lay,$signal_type"] == ""} { continue } 
 
     set layer [find_layer $lay]
-    foreach rect [::odb::getRectangles $stripe_locs($lay,$tag)] {
+    foreach rect [::odb::getRectangles $stripe_locs($lay,$signal_type)] {
       set xMin [$rect xMin]
       set xMax [$rect xMax]
       set yMin [$rect yMin]
