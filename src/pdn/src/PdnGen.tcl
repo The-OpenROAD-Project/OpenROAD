@@ -3678,6 +3678,62 @@ proc generate_stripes {tag net_name} {
   }
 }
 
+proc insert_power_switches {} {
+  variable grid_data
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  set psw [$db findMaster [dict get $grid_data switch_cell]]
+  # The selected power switch is double height, and has a central VSS pin, so align with VSS rails
+  set vgnd [[$psw findMTerm VGND] getMPins]
+  set vddg [[$psw findMTerm VDDG] getMPins]
+
+  set rail_lay [lindex [get_rails_layers] 0]
+  set rail_width [dict get $grid_data rails $rail_lay width]
+
+  set strap_lay [lindex [dict get $grid_data straps] 0]
+  set strap_lay_info [dict get $grid_data straps $strap_lay]
+  set strap_width [dict get $strap_lay_info width]
+
+  set area [dict get $grid_data area]
+  set offset [expr [lindex $area 0] + [dict get $strap_lay_info offset]]
+
+  set row_idx 0
+
+  foreach row [$block getRows] {
+    set orient [$row getOrient]
+    set box [$row getBBox]
+    if {$orient == "R0"} {
+      set vss_y [$box yMin]
+      set overlap_y [expr $vss_y - $rail_width / 2]
+      
+      set col_idx 0
+
+      for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $strap_lay_info width]}]} {set x [expr {[dict get $strap_lay_info pitch] + $x}]} {
+        set overlap_x [expr $x - $strap_width / 2]
+
+        set location [list \
+          [expr $overlap_x - [[$vddg getBBox] xMin]] \
+          [expr $overlap_y - [[$vgnd getBBox] yMin]] \
+        ]
+
+        set inst_name "PSW_${row_idx}_${col_idx}"
+        if {[set inst [$block findInst $inst_name]] == "NULL"} {
+          set inst [odb::dbInst_create $block $psw $inst_name]
+        }
+
+        $inst setOrigin {*}$location
+        $inst setPlacementStatus "FIRM"
+
+        incr col_idx
+      }
+
+      incr row_idx
+    }
+  }
+}
+
 proc cut_blocked_areas {tag} {
   variable stripe_locs
   variable grid_data
@@ -5479,6 +5535,10 @@ proc add_grid {} {
   }
 
   merge_stripes
+
+  if {[get_voltage_domain_unswitched_power [dict get $design_data core_domain]] != ""} {
+    insert_power_switches
+  }
 
   ## Power nets
   # debug "Power straps"
