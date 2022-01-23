@@ -12,4 +12,4 @@ pdngen power_switch/pdn.cfg -verbose
 set def_file results/power_switch.def
 write_def $def_file 
 
-# diff_files $def_file power_switch.defok
+diff_files $def_file power_switch.defok

@@ -47,4 +47,4 @@ pdngen -verbose
 set def_file results/power_switch.api.def
 write_def $def_file 
 
-# diff_files $def_file power_switch.api.defok
+diff_files $def_file power_switch.defok
