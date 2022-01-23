@@ -1,5 +1,6 @@
 # Record tests in /test
 record_tests {
+  power_switch
   test_gcd
   test_gcd_dual_rails
   test_gcd.invert_viarule
