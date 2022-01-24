@@ -3510,11 +3510,9 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& ou
 
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
-  std::string file(file_name);
+  remove(file_name);
   std::ofstream out;
-  if (!file.empty()) {
-    out.open(file, std::ios::app);
-  }
+  out.open(file_name, std::ios::app);
   out << "tool " << "net " << "total_wl " << "#pins ";
 
   if (verbose) {
