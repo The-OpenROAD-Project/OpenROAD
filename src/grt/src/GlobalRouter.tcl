@@ -339,6 +339,7 @@ proc global_route_debug { args } {
 }
 
 sta::define_cmd_args "report_wire_length" { [-net net_list] \
+                                            [-file file] \
                                             [-global_route] \
                                             [-detailed_route] \
                                             [-verbose]
@@ -346,7 +347,7 @@ sta::define_cmd_args "report_wire_length" { [-net net_list] \
 
 proc report_wire_length { args } {
   sta::parse_key_args "report_wire_length" args \
-                 keys {-net} \
+                 keys {-net -file} \
                  flags {-global_route -detailed_route -verbose}
   
   set block [ord::get_db_block]
@@ -363,13 +364,18 @@ proc report_wire_length { args } {
     set detailed_route_wl [grt::have_detailed_route $block]
   }
 
+  set file ""
+  if { [info exists keys(-file)] } {
+    set file $keys(-file)
+  }
+
   if { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
       if { [$db_net getSigType] != "POWER" && \
            [$db_net getSigType] != "GROUND" && \
            ![$db_net isSpecial]} {
-        grt::report_net_wire_length $db_net $global_route_wl $detailed_route_wl $verbose
+        grt::report_net_wire_length $db_net $global_route_wl $detailed_route_wl $verbose $file
       }
     }
   } else {

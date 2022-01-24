@@ -210,7 +210,7 @@ class GlobalRouter
   // Clear routes in the gui
   void clearRouteGui();
   // Report the wire length on each layer.
-  void reportNetLayerWirelengths(odb::dbNet* db_net);
+  void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
   GSegment boxToGlobalRouting(const odb::Rect& route_bds, int layer);
@@ -219,8 +219,9 @@ class GlobalRouter
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
                            bool detailed_route,
-                           bool verbose);
-  void reportNetDetailedRouteWL(odb::dbWire* wire);
+                           bool verbose,
+                           const char* file_name);
+  void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
 
  private:
   // Net functions
