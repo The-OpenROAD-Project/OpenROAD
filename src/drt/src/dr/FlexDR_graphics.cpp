@@ -534,7 +534,9 @@ void FlexDRGraphics::drawMarker(int xl,
 
 void FlexDRGraphics::show(bool checkStopConditions) {
     if (checkStopConditions) {
-        if (!worker_ || current_iter_ < settings_->iter || !settings_->netName.empty()) {
+        if (!worker_ || current_iter_ < settings_->iter || 
+            (net_ && !settings_->netName.empty() && 
+            net_->getFrNet()->getName() != settings_->netName)) {
             return;
         }
         const Rect& rBox = worker_->getRouteBox();
