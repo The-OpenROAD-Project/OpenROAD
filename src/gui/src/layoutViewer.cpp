@@ -741,6 +741,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   boxes.push_back({{bbox.xMin(), bbox.yMin()},
                    {bbox.xMax(), bbox.yMax()}});
 
+  if (options_->areRegionsVisible()) {
+    for (auto* region : block_->getRegions()) {
+      for (auto* box : region->getBoundaries()) {
+        odb::Rect region_box;
+        box->getBox(region_box);
+        if (region_box.area() > 0) {
+          boxes.push_back({{region_box.xMin(), region_box.yMin()},
+                           {region_box.xMax(), region_box.yMax()}});
+        }
+      }
+    }
+  }
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -1972,6 +1985,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     drawAccessPoints(gui_painter);
   }
 
+  drawRegionOutlines(painter);
+
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
   }
@@ -1980,6 +1995,26 @@ void LayoutViewer::drawBlock(QPainter* painter,
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawRegionOutlines(QPainter* painter)
+{
+  if (!options_->areRegionsVisible()) {
+    return;
+  }
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(Qt::BrushStyle::NoBrush);
+
+  for (auto* region : block_->getRegions()) {
+    for (auto* box : region->getBoundaries()) {
+      odb::Rect region_box;
+      box->getBox(region_box);
+      if (region_box.area() > 0) {
+        painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+      }
+    }
   }
 }
 

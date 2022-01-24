@@ -166,6 +166,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
   virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
   virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
+  virtual void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
+  virtual void inDbRegionDestroy(odb::dbRegion* region) override;
 
  signals:
   void modified();

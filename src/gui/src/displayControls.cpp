@@ -378,6 +378,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
+  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
@@ -560,6 +561,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, misc_.scale_bar);
   readSettingsForRow(settings, misc_.fills);
   readSettingsForRow(settings, misc_.access_points);
+  readSettingsForRow(settings, misc_.regions);
   readSettingsForRow(settings, misc_.detailed);
   readSettingsForRow(settings, misc_.selected);
   getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
@@ -668,6 +670,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, misc_.scale_bar);
   writeSettingsForRow(settings, misc_.fills);
   writeSettingsForRow(settings, misc_.access_points);
+  writeSettingsForRow(settings, misc_.regions);
   writeSettingsForRow(settings, misc_.detailed);
   writeSettingsForRow(settings, misc_.selected);
   settings->setValue("instance_name_color", instance_name_color_);
@@ -1496,14 +1499,19 @@ bool DisplayControls::arePinMarkersVisible() const
   return isRowVisible(&pin_markers_);
 }
 
+QFont DisplayControls::pinMarkersFont()
+{
+  return pin_markers_font_;
+}
+
 bool DisplayControls::areAccessPointsVisible() const
 {
   return isRowVisible(&misc_.access_points);
 }
 
-QFont DisplayControls::pinMarkersFont()
+bool DisplayControls::areRegionsVisible() const
 {
-  return pin_markers_font_;
+  return isRowVisible(&misc_.regions);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)

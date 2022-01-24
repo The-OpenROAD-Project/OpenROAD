@@ -215,8 +215,9 @@ class DisplayControls : public QDockWidget, public Options
 
   bool isScaleBarVisible() const override;
   bool arePinMarkersVisible() const override;
-  bool areAccessPointsVisible() const override;
   QFont pinMarkersFont() override;
+  bool areAccessPointsVisible() const override;
+  bool areRegionsVisible() const override;
 
  signals:
   // The display options have changed and clients need to update
@@ -307,6 +308,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow scale_bar;
     ModelRow fills;
     ModelRow access_points;
+    ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
   };
