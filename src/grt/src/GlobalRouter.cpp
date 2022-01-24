@@ -3343,11 +3343,12 @@ void GlobalRouter::reportCongestion()
   logger_->report("");
 }
 
-void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net)
+void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out)
 {
   std::vector<int64_t> lengths;
   lengths.resize(db_->getTech()->getRoutingLayerCount() + 1);
   GRoute& route = routes_[db_net];
+  int via_count = 0;
   for (GSegment& seg : route) {
     int layer1 = seg.init_layer;
     int layer2 = seg.final_layer;
@@ -3357,12 +3358,17 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net)
       if (seg_length > 0) {
         lengths[layer1] += seg_length + grid_->getTileSize();
       }
+    } else {
+      via_count++;
     }
   }
   for (size_t i = 0; i < lengths.size(); i++) {
     int64_t length = lengths[i];
+    odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+    if (i > 0 && out.is_open()) {
+      out << " " << via_count << " " << layer->getName() << " " << dbuToMicrons(length);
+    }
     if (length > 0) {
-      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       logger_->report("\tLayer {:5s}: {:5.2f}um",
                       layer->getName(),
                       dbuToMicrons(length));
@@ -3405,8 +3411,17 @@ void GlobalRouter::reportLayerWireLengths()
 void GlobalRouter::reportNetWireLength(odb::dbNet* net,
                                        bool global_route,
                                        bool detailed_route,
-                                       bool verbose)
+                                       bool verbose,
+                                       const char* file_name)
 {
+  std::string file(file_name);
+  std::ofstream out;
+  if (!file.empty()) {
+    out.open(file, std::ios::app);
+  }
+
+  int pin_count = net->getITermCount() + net->getBTermCount();
+
   block_ = db_->getChip()->getBlock();
   if (global_route) {
     if (routes_.find(net) == routes_.end()) {
@@ -3420,8 +3435,16 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
                   net->getName(),
                   dbuToMicrons(wl));
 
+    if (out.is_open()) {
+      out << "grt: " << net->getName() << " " << dbuToMicrons(wl) << " " << pin_count;
+    }
+
     if (verbose) {
-      reportNetLayerWirelengths(net);
+      reportNetLayerWirelengths(net, out);
+    }
+
+    if (out.is_open()) {
+      out << "\n";
     }
   }
 
@@ -3440,30 +3463,48 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
                   net->getName(),
                   dbuToMicrons(wl));
 
-    if (verbose) {
-      reportNetDetailedRouteWL(wire);
+    if (out.is_open()) {
+      out << "drt: " << net->getName() << " " << dbuToMicrons(wl) << " " << pin_count;
     }
+
+    if (verbose) {
+      reportNetDetailedRouteWL(wire, out);
+    }
+
+    if (out.is_open()) {
+      out << "\n";
+    }
+  }
+
+  if (out.is_open()) {
+    out.close();
   }
 }
 
-void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire)
+void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out)
 {
   std::vector<int64_t> lengths;
   lengths.resize(db_->getTech()->getRoutingLayerCount() + 1);
   odb::dbWireShapeItr shapes;
   odb::dbShape s;
   int tplen;
+  int via_count = 0;
   for (shapes.begin(wire); shapes.next(s);) {
     if (!s.isVia()) {
       tplen = std::abs((int)(s.getDX() - s.getDY()));
       lengths[s.getTechLayer()->getRoutingLevel()] += tplen;
+    } else {
+      via_count++;
     }
   }
 
   for (size_t i = 1; i < lengths.size(); i++) {
     int64_t length = lengths[i];
+    odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+    if (i > 0 && out.is_open()) {
+      out << " " << via_count << " " << layer->getName() << " " << dbuToMicrons(length);
+    }
     if (length > 0) {
-      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       logger_->report("\tLayer {:5s}: {:5.2f}um",
                       layer->getName(),
                       dbuToMicrons(length));
