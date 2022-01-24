@@ -932,14 +932,10 @@ uint64 dbWire::getLength()
 {
   dbWireShapeItr shapes;
   dbShape s;
-  int tplen;
   uint64 rtlen = 0;
   for (shapes.begin(this); shapes.next(s);) {
     if (!s.isVia()) {
-      tplen = s.getDX() - s.getDY();
-      if (tplen < 0)
-        tplen = -tplen;
-      rtlen += tplen;
+      rtlen += s.getLength();
     }
   }
 
