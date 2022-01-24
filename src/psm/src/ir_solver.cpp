@@ -69,6 +69,7 @@ using odb::dbSWire;
 using odb::dbTech;
 using odb::dbTechLayer;
 using odb::dbTechLayerDir;
+using odb::dbTechVia;
 using odb::dbVia;
 using odb::dbViaParams;
 
@@ -484,8 +485,12 @@ bool IRSolver::CreateGmat(bool connection_only) {
         int l;
         dbTechLayerDir::Value layer_dir;
         if (curWire->isVia()) {
-          dbVia* via = curWire->getBlockVia();
-          dbTechLayer* via_layer = via->getTopLayer();
+          dbTechLayer* via_layer;
+          if (curWire->getBlockVia()) {
+            via_layer = curWire->getBlockVia()->getTopLayer();
+          } else {
+            via_layer = curWire->getTechVia()->getTopLayer();
+          }
           l = via_layer->getRoutingLevel();
           layer_dir = via_layer->getDirection();
         } else {
@@ -515,18 +520,37 @@ bool IRSolver::CreateGmat(bool connection_only) {
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
-          dbVia* via = curWire->getBlockVia();
-          dbBox* via_bBox = via->getBBox();
-          int check_params = via->hasParams();
+          bool check_params;
+          dbBox* via_bBox;
+          dbViaParams params;
+          dbTechLayer* via_bottom_layer;
+          dbTechLayer* via_top_layer;
+          if (curWire->getBlockVia()) {
+            dbVia* via = curWire->getBlockVia();
+            via_bBox = via->getBBox();
+            check_params = via->hasParams();
+            if (check_params) {
+              via->getViaParams(params);
+            }
+            via_top_layer = via->getTopLayer();
+            via_bottom_layer = via->getBottomLayer();
+          } else {
+            dbTechVia* via = curWire->getTechVia();
+            via_bBox = via->getBBox();
+            check_params = via->hasParams();
+            if (check_params) {
+              via->getViaParams(params);
+            }
+            via_top_layer = via->getTopLayer();
+            via_bottom_layer = via->getBottomLayer();
+          }
           int x_cut_size = 0;
           int y_cut_size = 0;
           int x_bottom_enclosure = 0;
           int y_bottom_enclosure = 0;
           int x_top_enclosure = 0;
           int y_top_enclosure = 0;
-          if (check_params == 1) {
-            dbViaParams params;
-            via->getViaParams(params);
+          if (check_params) {
             x_cut_size = params.getXCutSize();
             y_cut_size = params.getYCutSize();
             x_bottom_enclosure = params.getXBottomEnclosure();
@@ -538,9 +562,8 @@ bool IRSolver::CreateGmat(bool connection_only) {
               make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
           int x, y;
           curWire->getViaXY(x, y);
-          dbTechLayer* via_layer = via->getBottomLayer();
-          dbTechLayerDir::Value layer_dir = via_layer->getDirection();
-          int l = via_layer->getRoutingLevel();
+          dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
+          int l = via_bottom_layer->getRoutingLevel();
           int x_loc1, x_loc2, y_loc1, y_loc2;
           if (m_bottom_layer != l &&
               l != m_top_layer) {  // do not set for top and bottom layers
@@ -559,12 +582,11 @@ bool IRSolver::CreateGmat(bool connection_only) {
             m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
             m_Gmat->SetNode(x, y, l, bBox);
           }
-          via_layer = via->getTopLayer();
-          l = via_layer->getRoutingLevel();
+          l = via_top_layer->getRoutingLevel();
 
           // TODO this may count the stripe conductance twice but is needed to
           // fix a staggered stacked via
-          layer_dir = via_layer->getDirection();
+          layer_dir = via_top_layer->getDirection();
           if (m_bottom_layer != l &&
               l != m_top_layer) {  // do not set for top and bottom layers
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -702,19 +724,36 @@ bool IRSolver::CreateGmat(bool connection_only) {
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
-          dbVia* via = curWire->getBlockVia();
+          bool check_params;
+          dbViaParams params;
+          dbTechLayer* via_top_layer;
+          dbTechLayer* via_bottom_layer;
+          if (curWire->getBlockVia()) {
+            dbVia* via = curWire->getBlockVia();
+            check_params = via->hasParams();
+            if (check_params) {
+              via->getViaParams(params);
+            }
+            via_top_layer = via->getTopLayer();
+            via_bottom_layer = via->getBottomLayer();
+          } else {
+            dbTechVia* via = curWire->getTechVia();
+            check_params = via->hasParams();
+            if (check_params) {
+              via->getViaParams(params);
+            }
+            via_top_layer = via->getTopLayer();
+            via_bottom_layer = via->getBottomLayer();
+          }
           int num_via_rows = 1;
           int num_via_cols = 1;
-          int check_params = via->hasParams();
           int x_cut_size = 0;
           int y_cut_size = 0;
           int x_bottom_enclosure = 0;
           int y_bottom_enclosure = 0;
           int x_top_enclosure = 0;
           int y_top_enclosure = 0;
-          if (check_params == 1) {
-            dbViaParams params;
-            via->getViaParams(params);
+          if (check_params) {
             num_via_rows = params.getNumCutRows();
             num_via_cols = params.getNumCutCols();
             x_cut_size = params.getXCutSize();
@@ -726,16 +765,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
           int x, y;
           curWire->getViaXY(x, y);
-          dbTechLayer* via_layer = via->getBottomLayer();
-          int l = via_layer->getRoutingLevel();
+          int l = via_bottom_layer->getRoutingLevel();
 
-          double R = via_layer->getUpperLayer()->getResistance();
+          double R = via_bottom_layer->getUpperLayer()->getResistance();
           R = R / (num_via_rows * num_via_cols);
           if (!CheckValidR(R) && !connection_only) {
             m_logger->error(utl::PSM, 35,
                             "{} resistance not found in DB. Check the LEF or "
                             "set it using the 'set_layer_rc' command.",
-                            via_layer->getName());
+                            via_bottom_layer->getName());
           }
           bool top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
           Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
@@ -747,8 +785,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
                            node_loc.first, node_loc.second, l, x, y);
           }
 
-          via_layer = via->getTopLayer();
-          l = via_layer->getRoutingLevel();
+          l = via_top_layer->getRoutingLevel();
           top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
           Node* node_top = m_Gmat->GetNode(x, y, l, top_or_bottom);
           node_loc = node_top->GetLoc();
@@ -771,17 +808,16 @@ bool IRSolver::CreateGmat(bool connection_only) {
             }
           }
 
-          via_layer = via->getBottomLayer();
-          dbTechLayerDir::Value layer_dir = via_layer->getDirection();
-          l = via_layer->getRoutingLevel();
+          dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
+          l = via_bottom_layer->getRoutingLevel();
           if (l != m_bottom_layer) {
-            double rho = via_layer->getResistance();
+            double rho = via_bottom_layer->getResistance();
             if (!CheckValidR(rho) && !connection_only) {
               m_logger->error(utl::PSM, 36,
                               "Layer {} per-unit resistance not found in DB. "
                               "Check the LEF or set it using the command "
                               "'set_layer_rc -layer'.",
-                              via_layer->getName());
+                              via_bottom_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -795,21 +831,20 @@ bool IRSolver::CreateGmat(bool connection_only) {
               x_loc1 = x - x_cut_size / 2;
               x_loc2 = x + x_cut_size / 2;
             }
-            m_Gmat->GenerateStripeConductance(via_layer->getRoutingLevel(),
+            m_Gmat->GenerateStripeConductance(via_bottom_layer->getRoutingLevel(),
                                               layer_dir, x_loc1, x_loc2, y_loc1,
                                               y_loc2, rho);
           }
-          via_layer = via->getTopLayer();
-          layer_dir = via_layer->getDirection();
-          l = via_layer->getRoutingLevel();
+          layer_dir = via_top_layer->getDirection();
+          l = via_top_layer->getRoutingLevel();
           if (l != m_top_layer) {
-            double rho = via_layer->getResistance();
+            double rho = via_top_layer->getResistance();
             if (!CheckValidR(rho) && !connection_only) {
               m_logger->error(utl::PSM, 37,
                               "Layer {} per-unit resistance not found in DB. "
                               "Check the LEF or set it using the command "
                               "'set_layer_rc -layer'.",
-                              via_layer->getName());
+                              via_top_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -823,7 +858,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
               x_loc1 = x - x_cut_size / 2;
               x_loc2 = x + x_cut_size / 2;
             }
-            m_Gmat->GenerateStripeConductance(via_layer->getRoutingLevel(),
+            m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
                                               layer_dir, x_loc1, x_loc2, y_loc1,
                                               y_loc2, rho);
           }
