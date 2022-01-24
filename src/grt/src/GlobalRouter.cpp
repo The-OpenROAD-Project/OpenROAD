@@ -3366,7 +3366,7 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& 
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << layer->getName() << " " << dbuToMicrons(length);
+      out << " " << via_count << " " << dbuToMicrons(length);
     }
     if (length > 0) {
       logger_->report("\tLayer {:5s}: {:5.2f}um",
@@ -3475,10 +3475,6 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
       out << "\n";
     }
   }
-
-  if (out.is_open()) {
-    out.close();
-  }
 }
 
 void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out)
@@ -3502,7 +3498,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& ou
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << layer->getName() << " " << dbuToMicrons(length);
+      out << " " << via_count << " " << dbuToMicrons(length);
     }
     if (length > 0) {
       logger_->report("\tLayer {:5s}: {:5.2f}um",
