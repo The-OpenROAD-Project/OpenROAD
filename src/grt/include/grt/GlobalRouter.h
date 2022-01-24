@@ -222,7 +222,7 @@ class GlobalRouter
                            bool verbose,
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
-  void createWLReportFile(const char* file_name);
+  void createWLReportFile(const char* file_name, bool verbose);
 
  private:
   // Net functions

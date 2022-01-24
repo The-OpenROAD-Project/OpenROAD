@@ -3508,17 +3508,21 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& ou
   }
 }
 
-void GlobalRouter::createWLReportFile(const char* file_name)
+void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::string file(file_name);
   std::ofstream out;
   if (!file.empty()) {
     out.open(file, std::ios::app);
   }
-  out << "tool " << "net " << "total_wl " << "#pins " << "#vias ";
-  for (int i = 1; i <= db_->getTech()->getRoutingLayerCount(); i++) {
-    odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
-    out << layer->getName() << "_wl ";
+  out << "tool " << "net " << "total_wl " << "#pins ";
+
+  if (verbose) {
+    out << "#vias ";
+    for (int i = 1; i <= db_->getTech()->getRoutingLayerCount(); i++) {
+      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+      out << layer->getName() << "_wl ";
+    }
   }
   out << "\n";
 }

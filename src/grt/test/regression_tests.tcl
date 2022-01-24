@@ -37,6 +37,7 @@ record_tests {
   report_wire_length2
   report_wire_length3
   report_wire_length4
+  report_wire_length5
   silence
   tracks1
   tracks2

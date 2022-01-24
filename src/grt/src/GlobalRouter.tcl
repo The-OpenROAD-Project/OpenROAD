@@ -367,7 +367,7 @@ proc report_wire_length { args } {
   set file ""
   if { [info exists keys(-file)] } {
     set file $keys(-file)
-    grt::create_wl_report_file $file
+    grt::create_wl_report_file $file $verbose
   }
 
   if { [info exists keys(-net)] } {
