@@ -1,0 +1,4 @@
+grt: clk 201.6 2 0 li1 0 0 met1 0 0 met2 0 0 met3 144 0 met4 57.6 0 met5 0
+drt: clk 184.95 2 5 li1 0 5 met1 0.215 5 met2 0.185 5 met3 134.97 5 met4 49.58 5 met5 0
+grt: net60 14.4 2 0 li1 0 0 met1 0 0 met2 14.4 0 met3 0 0 met4 0 0 met5 0
+drt: net60 13.39 2 3 li1 0 3 met1 3.77 3 met2 9.62 3 met3 0 3 met4 0 3 met5 0
