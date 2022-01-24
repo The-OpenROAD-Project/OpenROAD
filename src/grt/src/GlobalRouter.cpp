@@ -3483,12 +3483,10 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& ou
   lengths.resize(db_->getTech()->getRoutingLayerCount() + 1);
   odb::dbWireShapeItr shapes;
   odb::dbShape s;
-  int tplen;
   int via_count = 0;
   for (shapes.begin(wire); shapes.next(s);) {
     if (!s.isVia()) {
-      tplen = std::abs((int)(s.getDX() - s.getDY()));
-      lengths[s.getTechLayer()->getRoutingLevel()] += tplen;
+      lengths[s.getTechLayer()->getRoutingLevel()] += s.getLength();
     } else {
       via_count++;
     }
