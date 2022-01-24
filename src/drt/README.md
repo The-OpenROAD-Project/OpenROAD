@@ -17,6 +17,11 @@ guide format.
 
 ## Commands
 
+## Report wire length
+
+Check the [global router README](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/grt/README.md)
+file for the full description of the `report_wire_length` command.
+
 ## Example scripts
 
 ## Regression tests
