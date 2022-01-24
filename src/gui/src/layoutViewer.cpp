@@ -1882,7 +1882,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
-  drawRegionOutlines(painter);
 
   auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), instance_limit);
@@ -1985,6 +1984,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
   if (options_->areAccessPointsVisible()) {
     drawAccessPoints(gui_painter);
   }
+
+  drawRegionOutlines(painter);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
