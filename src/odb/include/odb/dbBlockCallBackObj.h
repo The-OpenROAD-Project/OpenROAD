@@ -39,6 +39,7 @@
 namespace odb {
 
 class dbBlock;
+class dbBox;
 class dbFill;
 class dbInst;
 class dbMaster;
@@ -115,6 +116,7 @@ class dbBlockCallBackObj
 
   // dbRegion Start
   virtual void inDbRegionCreate(dbRegion*) {}
+  virtual void inDbRegionAddBox(dbRegion*, dbBox*) {}
   virtual void inDbRegionDestroy(dbRegion*) {}
   // dbRegion End
 

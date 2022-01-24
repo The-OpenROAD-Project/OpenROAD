@@ -175,6 +175,10 @@ BOOST_AUTO_TEST_CASE(test_region)
   BOOST_TEST(cb->events[0] == "Create region parent");
   BOOST_TEST(cb->events[1] == "Create region child");
   cb->clearEvents();
+  dbBox::create(parent_region, 0, 0, 1, 1);
+  BOOST_TEST(cb->events.size() == 1);
+  BOOST_TEST(cb->events[0] == "Add box (0, 0) (1, 1) to region parent");
+  cb->clearEvents();
   dbRegion::destroy(parent_region);
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "Destroy region child");
