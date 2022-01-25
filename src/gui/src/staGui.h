@@ -560,6 +560,10 @@ class PinSetWidget : public QWidget
   QPushButton* add_remove_;
 
   bool add_mode_;
+
+  void addPin(sta::Pin* pin);
+  void removePin(sta::Pin* pin);
+  void removeSelectedPins();
 };
 
 class TimingControlsDialog : public QDialog

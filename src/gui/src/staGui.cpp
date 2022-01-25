@@ -1510,12 +1510,7 @@ void PinSetWidget::setRemoveMode()
 void PinSetWidget::keyPressEvent(QKeyEvent* event)
 {
   if (event->key() == Qt::Key_Delete && box_->hasFocus()) {
-    for (auto* selection : box_->selectedItems()) {
-      auto* pin_data = selection->data(Qt::UserRole).value<void*>();
-      sta::Pin* pin = (sta::Pin*)pin_data;
-      pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
-    }
-    updatePins();
+    removeSelectedPins();
   } else {
     QWidget::keyPressEvent(event);
   }
@@ -1547,6 +1542,34 @@ const std::set<sta::Pin*> PinSetWidget::getPins() const
   return pins;
 }
 
+void PinSetWidget::addPin(sta::Pin* pin)
+{
+  if (pin == nullptr) {
+    return;
+  }
+
+  if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+    return;
+  }
+
+  pins_.push_back(pin);
+
+}
+
+void PinSetWidget::removePin(sta::Pin* pin)
+{
+  pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+}
+
+void PinSetWidget::removeSelectedPins()
+{
+  for (auto* selection : box_->selectedItems()) {
+    void* pin_data = selection->data(Qt::UserRole).value<void*>();
+    removePin((sta::Pin*)pin_data);
+  }
+  updatePins();
+}
+
 void PinSetWidget::findPin()
 {
   const QString text = find_pin_->text();
@@ -1554,6 +1577,7 @@ void PinSetWidget::findPin()
     return;
   }
   auto* network = sta_->getDbNetwork();
+  auto* top_inst = network->topInstance();
 
   for (QString pin_name : text.split(" ")) {
     pin_name = pin_name.trimmed();
@@ -1565,14 +1589,29 @@ void PinSetWidget::findPin()
     QByteArray name = pin_name.toLatin1();
     sta::PatternMatch matcher(name.constData());
 
+    // search pins
     sta::PinSeq found_pins;
-    network->findPinsHierMatching(network->topInstance(), &matcher, &found_pins);
+    network->findPinsHierMatching(top_inst, &matcher, &found_pins);
 
     for (auto* pin : found_pins) {
-      if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
-        continue;
+      addPin(pin);
+    }
+
+    // search ports
+    sta::PortSeq found_ports;
+    network->findPortsMatching(network->cell(top_inst), &matcher, &found_ports);
+
+    for (auto* port : found_ports) {
+      if (network->isBus(port) || network->isBundle(port)) {
+        sta::PortMemberIterator* member_iter = network->memberIterator(port);
+        while (member_iter->hasNext()) {
+          sta::Port* member = member_iter->next();
+          addPin(network->findPin(top_inst, member));
+        }
+        delete member_iter;
+      } else {
+        addPin(network->findPin(top_inst, port));
       }
-      pins_.push_back(pin);
     }
   }
 
