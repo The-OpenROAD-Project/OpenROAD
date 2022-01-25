@@ -1632,6 +1632,19 @@ void PinSetWidget::showMenu(const QPoint& point)
 
   // Create menu and insert some actions
   QMenu pin_menu;
+  QAction* remove = pin_menu.addAction("Remove");
+  connect(remove,
+          &QAction::triggered,
+          [this, pin]() {
+            removePin(pin);
+            updatePins();
+          });
+  QAction* remove_sel = pin_menu.addAction("Remove selected");
+  connect(remove_sel,
+          &QAction::triggered,
+          [this]() {
+            removeSelectedPins();
+          });
   QAction* clear_all = pin_menu.addAction("Clear all");
   connect(clear_all,
           SIGNAL(triggered()),
