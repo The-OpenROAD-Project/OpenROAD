@@ -535,8 +535,7 @@ void FlexDRGraphics::drawMarker(int xl,
 void FlexDRGraphics::show(bool checkStopConditions) {
     if (checkStopConditions) {
         if (!worker_ || current_iter_ < settings_->iter || 
-            (net_ && !settings_->netName.empty() && 
-            net_->getFrNet()->getName() != settings_->netName)) {
+            (!settings_->netName.empty() && (!net_ || net_->getFrNet()->getName() != settings_->netName))) {
             return;
         }
         const Rect& rBox = worker_->getRouteBox();
@@ -737,6 +736,7 @@ void FlexDRGraphics::endNet(drNet* net)
   for (auto& points : points_by_layer_) {
     points.clear();
   }
+  net_ = nullptr;
 }
 
 void FlexDRGraphics::startIter(int iter)

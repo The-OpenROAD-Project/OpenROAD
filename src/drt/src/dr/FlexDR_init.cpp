@@ -3149,6 +3149,32 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
   }
 }
 
+void FlexDRWorker::modBlockedEdgesForMacroPin(frInstTerm* instTerm, dbTransform& xform, bool isAddCost) {
+    frDirEnum dirs[4]{frDirEnum::E, frDirEnum::W, frDirEnum::N, frDirEnum::S };
+    int pinAccessIdx = instTerm->getInst()->getPinAccessIdx();
+    for (auto& pin : instTerm->getTerm()->getPins()) {
+        if (!pin->hasPinAccess()) {
+          continue;
+        }
+        for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
+            Point bp;
+            ap->getPoint(bp);
+            xform.apply(bp);
+            frMIdx xIdx = gridGraph_.getMazeXIdx(bp.x());
+            frMIdx yIdx = gridGraph_.getMazeYIdx(bp.y());
+            frMIdx zIdx = gridGraph_.getMazeZIdx(ap->getLayerNum());
+            for (frDirEnum dir : dirs) {
+                if (ap->hasAccess(dir)) {
+                    if (isAddCost)
+                        gridGraph_.setBlocked(xIdx, yIdx, zIdx, dir);
+                    else 
+                        gridGraph_.resetBlocked(xIdx, yIdx, zIdx, dir);
+                }
+            }
+        }
+    }
+}
+
 void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                                       bool isAddPathCost,
                                       bool isSkipVia)
@@ -3215,8 +3241,10 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      dbTransform xform;
+      dbTransform xform, shiftXform;
       inst->getUpdatedXform(xform);
+      inst->getTransform(shiftXform);
+      shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
@@ -3263,25 +3291,13 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                   modMinSpacingCostVia(box, zIdx, type, true, false);
                   modMinSpacingCostVia(box, zIdx, type, false, false);
                 }
-                if (masterType.isBlock()) { 
+                if (masterType.isBlock()) {
                     modCornerToCornerSpacing(box, zIdx, type); // temp solution for ISPD19 benchmarks
-                    if (isAddPathCost) {
+                    modBlockedEdgesForMacroPin(instTerm, shiftXform, isAddPathCost);
+                    if (isAddPathCost)
                       type = ModCostType::setFixedShape;
-                      modMinSpacingCostPlanar(box,
-                                              zIdx,
-                                              ModCostType::setBlocked,
-                                              false,
-                                              nullptr,
-                                              true);
-                    } else {
+                    else 
                       type = ModCostType::resetFixedShape;
-                      modMinSpacingCostPlanar(box,
-                                              zIdx,
-                                              ModCostType::resetBlocked,
-                                              false,
-                                              nullptr,
-                                              true);
-                    }
                 }
                 modEolSpacingRulesCost(box, zIdx, type);
                 modMinSpacingCostPlanar(box, zIdx, type, false, nullptr, masterType.isBlock());
