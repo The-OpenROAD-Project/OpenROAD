@@ -109,7 +109,7 @@ following commands:
 cd OpenROAD-flow-scripts
 git checkout master
 git pull
-./build_openroad.sh --latest
+git submodule update
 ```
 
 #### Building OpenROAD Locally
