@@ -822,9 +822,14 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
+}
+
+void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+{
+  main_window->timingPathsThrough(terms);
 }
 
 void Gui::addFocusNet(odb::dbNet* net)

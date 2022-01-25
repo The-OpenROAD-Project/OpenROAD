@@ -116,7 +116,9 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
-  DbNetDescriptor(odb::dbDatabase* db, const std::set<odb::dbNet*>& focus_nets);
+  DbNetDescriptor(odb::dbDatabase* db,
+                  sta::dbSta* sta,
+                  const std::set<odb::dbNet*>& focus_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -139,6 +141,7 @@ class DbNetDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
 
   using Node = odb::dbWireGraph::Node;
   using NodeList = std::set<const Node*>;
