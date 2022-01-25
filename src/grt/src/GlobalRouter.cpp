@@ -579,13 +579,14 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
       access_points.insert(
           access_points.begin(), bpin_pas.begin(), bpin_pas.end());
     }
-  } else if (pin.isConnectedToPad()) {
-    // get APs for macro pins and pins connected to pads
-    for (const auto& [mpin, aps] : pin.getITerm()->getAccessPoints()) {
-      access_points.insert(access_points.end(), aps.begin(), aps.end());
-    }
   } else {
     access_points = pin.getITerm()->getPrefAccessPoints();
+    if (access_points.empty()) {
+      // get all APs if there are no preferred access points
+      for (const auto& [mpin, aps] : pin.getITerm()->getAccessPoints()) {
+        access_points.insert(access_points.end(), aps.begin(), aps.end());
+      }
+    }
   }
 
   std::vector<odb::Point> positions_on_grid;
