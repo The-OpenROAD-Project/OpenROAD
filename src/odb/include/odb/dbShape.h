@@ -248,6 +248,11 @@ class dbShape
   ///
   uint getDY() const;
 
+  ///
+  /// Get the length of the box
+  ///
+  int getLength() const;
+
   //
   //  Dump contents into logger
   //
@@ -591,6 +596,11 @@ inline uint dbShape::getDX() const
 inline uint dbShape::getDY() const
 {
   return _rect.dy();
+}
+
+inline int dbShape::getLength() const
+{
+  return std::abs((int)(_rect.dx() - _rect.dy()));
 }
 
 inline void dbShape::setSegment(int prev_x,
