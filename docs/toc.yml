@@ -153,3 +153,6 @@ entries:
 
 - file: user/FAQS
   title: FAQs
+
+- file: tutorials/FlowTutorial
+  title: Flow Tutorial
