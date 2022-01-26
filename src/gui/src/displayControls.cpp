@@ -484,111 +484,93 @@ void DisplayControls::createLayerMenu()
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto asBool
-      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+  writeSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
 
-  settings->beginGroup(row.name->text());
-  settings->setValue("visible", asBool(row.visible));
-  if (row.selectable != nullptr) {
-    settings->setValue("selectable", asBool(row.selectable));
+void DisplayControls::writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible, const QStandardItem* selectable)
+{
+  auto asBool
+      = [](const QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      writeSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    settings->setValue("visible", asBool(visible));
+    if (selectable != nullptr) {
+      settings->setValue("selectable", asBool(selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto getChecked = [](QSettings* settings, QString name, bool default_value) {
-    return settings->value(name, default_value).toBool() ? Qt::Checked : Qt::Unchecked;
+  readSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
+
+void DisplayControls::readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible, QStandardItem* selectable)
+{
+  auto getChecked = [](QSettings* settings, QString name, const QStandardItem* item) {
+    return settings->value(name, item->checkState() == Qt::Checked).toBool() ? Qt::Checked : Qt::Unchecked;
   };
 
-  settings->beginGroup(row.name->text());
-  row.visible->setCheckState(getChecked(settings, "visible", row.visible->checkState() == Qt::Checked));
-  if (row.selectable != nullptr) {
-    row.selectable->setCheckState(getChecked(settings, "selectable", row.selectable->checkState() == Qt::Checked));
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      readSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    visible->setCheckState(getChecked(settings, "visible", visible));
+    if (selectable != nullptr) {
+      selectable->setCheckState(getChecked(settings, "selectable", selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettings(QSettings* settings)
 {
-  auto getColor = [this, settings](QStandardItem* item, QColor& color, const char* key) {
+  auto getColor = [this, settings](const ModelRow& row, QColor& color, const char* key) {
     color = settings->value(key, color).value<QColor>();
-    item->setIcon(makeSwatchIcon(color));
+    row.swatch->setIcon(makeSwatchIcon(color));
   };
+  auto getPattern = [settings](Qt::BrushStyle& style, const char* key) {
+    style = static_cast<Qt::BrushStyle>(settings->value(key,
+                                        static_cast<int>(style)).toInt());
+  };
+  auto getFont = [settings](QFont& font, const char* key) {
+    font = settings->value(key, font).value<QFont>();
+  };
+
   settings->beginGroup("display_controls");
 
-  settings->beginGroup("nets");
-  readSettingsForRow(settings, nets_.signal);
-  readSettingsForRow(settings, nets_.power);
-  readSettingsForRow(settings, nets_.ground);
-  readSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // instances
-  settings->beginGroup("instances");
-  settings->beginGroup("stdcells");
-  settings->beginGroup("bufinv");
-  readSettingsForRow(settings, bufinv_instances_.timing);
-  readSettingsForRow(settings, bufinv_instances_.other);
-  settings->endGroup();
-  readSettingsForRow(settings, stdcell_instances_.combinational);
-  readSettingsForRow(settings, stdcell_instances_.sequential);
-  settings->beginGroup("clocktree");
-  readSettingsForRow(settings, clock_tree_instances_.bufinv);
-  readSettingsForRow(settings, clock_tree_instances_.clock_gates);
-  settings->endGroup();
-  readSettingsForRow(settings, stdcell_instances_.level_shiters);
-  settings->beginGroup("physical");
-  readSettingsForRow(settings, physical_instances_.fill);
-  readSettingsForRow(settings, physical_instances_.endcap);
-  readSettingsForRow(settings, physical_instances_.tap);
-  settings->endGroup();
-  settings->endGroup();
-  readSettingsForRow(settings, instances_.blocks);
-  readSettingsForRow(settings, instances_.pads);
-  readSettingsForRow(settings, instances_.cover);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  readSettingsForRow(settings, blockages_.blockages);
-  readSettingsForRow(settings, blockages_.obstructions);
-  getColor(blockages_.blockages.swatch, placement_blockage_color_, "placement_color");
-  // pattern saved as int
-  placement_blockage_pattern_ =
-      static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
-                                  static_cast<int>(placement_blockage_pattern_)).toInt());
-  settings->endGroup();
-
-  // rows
+  readSettingsForRow(settings, nets_group_);
+  readSettingsForRow(settings, instance_group_);
+  readSettingsForRow(settings, blockage_group_);
   readSettingsForRow(settings, rows_);
-  getColor(rows_.swatch, row_color_, "row_color");
-  // pin markers
   readSettingsForRow(settings, pin_markers_);
-  pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
-
-  // rulers
   readSettingsForRow(settings, rulers_);
-  getColor(rulers_.swatch, ruler_color_, "ruler_color");
-  ruler_font_ = settings->value("ruler_font", ruler_font_).value<QFont>();
+  readSettingsForRow(settings, tracks_group_);
+  readSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  readSettingsForRow(settings, tracks_.pref);
-  readSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  getColor(blockages_.blockages, placement_blockage_color_, "blockages_placement");
+  getColor(rows_, row_color_, "row");
+  getColor(rulers_, ruler_color_, "ruler");
+  getColor(misc_.instance_names, instance_name_color_, "instance_name");
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  readSettingsForRow(settings, misc_.instance_names);
-  readSettingsForRow(settings, misc_.scale_bar);
-  readSettingsForRow(settings, misc_.fills);
-  readSettingsForRow(settings, misc_.access_points);
-  readSettingsForRow(settings, misc_.regions);
-  readSettingsForRow(settings, misc_.detailed);
-  readSettingsForRow(settings, misc_.selected);
-  getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
-  instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
+  settings->beginGroup("pattern");
+  getPattern(placement_blockage_pattern_, "blockages_placement");
+  settings->endGroup();
+  settings->beginGroup("font");
+  getFont(pin_markers_font_, "pin_markers");
+  getFont(ruler_font_, "ruler");
+  getFont(instance_name_font_, "instance_name");
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers
@@ -629,77 +611,31 @@ void DisplayControls::writeSettings(QSettings* settings)
 {
   settings->beginGroup("display_controls");
 
-  // nets
-  settings->beginGroup("nets");
-  writeSettingsForRow(settings, nets_.signal);
-  writeSettingsForRow(settings, nets_.power);
-  writeSettingsForRow(settings, nets_.ground);
-  writeSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // instances
-  settings->beginGroup("instances");
-  settings->beginGroup("stdcells");
-  settings->beginGroup("bufinv");
-  writeSettingsForRow(settings, bufinv_instances_.timing);
-  writeSettingsForRow(settings, bufinv_instances_.other);
-  settings->endGroup();
-  writeSettingsForRow(settings, stdcell_instances_.combinational);
-  writeSettingsForRow(settings, stdcell_instances_.sequential);
-  settings->beginGroup("clocktree");
-  writeSettingsForRow(settings, clock_tree_instances_.bufinv);
-  writeSettingsForRow(settings, clock_tree_instances_.clock_gates);
-  settings->endGroup();
-  writeSettingsForRow(settings, stdcell_instances_.level_shiters);
-  settings->beginGroup("physical");
-  writeSettingsForRow(settings, physical_instances_.fill);
-  writeSettingsForRow(settings, physical_instances_.endcap);
-  writeSettingsForRow(settings, physical_instances_.tap);
-  settings->endGroup();
-  settings->endGroup();
-  writeSettingsForRow(settings, instances_.blocks);
-  writeSettingsForRow(settings, instances_.pads);
-  writeSettingsForRow(settings, instances_.cover);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  writeSettingsForRow(settings, blockages_.blockages);
-  writeSettingsForRow(settings, blockages_.obstructions);
-  settings->setValue("placement_color", placement_blockage_color_);
-  // save pattern as int
-  settings->setValue("placement_pattern", static_cast<int>(placement_blockage_pattern_));
-  settings->endGroup();
-
-  // rows
+  writeSettingsForRow(settings, nets_group_);
+  writeSettingsForRow(settings, instance_group_);
+  writeSettingsForRow(settings, blockage_group_);
   writeSettingsForRow(settings, rows_);
-  settings->setValue("row_color", row_color_);
-  // pin markers
   writeSettingsForRow(settings, pin_markers_);
-  settings->setValue("pin_markers_font", pin_markers_font_);
-
-  // rulers
   writeSettingsForRow(settings, rulers_);
-  settings->setValue("ruler_color", ruler_color_);
-  settings->setValue("ruler_font", ruler_font_);
+  writeSettingsForRow(settings, tracks_group_);
+  writeSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  writeSettingsForRow(settings, tracks_.pref);
-  writeSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  settings->setValue("blockages_placement", placement_blockage_color_);
+  settings->setValue("row", row_color_);
+  settings->setValue("ruler", ruler_color_);
+  settings->setValue("instance_name", instance_name_color_);
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  writeSettingsForRow(settings, misc_.instance_names);
-  writeSettingsForRow(settings, misc_.scale_bar);
-  writeSettingsForRow(settings, misc_.fills);
-  writeSettingsForRow(settings, misc_.access_points);
-  writeSettingsForRow(settings, misc_.regions);
-  writeSettingsForRow(settings, misc_.detailed);
-  writeSettingsForRow(settings, misc_.selected);
-  settings->setValue("instance_name_color", instance_name_color_);
-  settings->setValue("instance_name_font", instance_name_font_);
+  settings->beginGroup("pattern");
+  // save pattern as int
+  settings->setValue("blockages_placement", static_cast<int>(placement_blockage_pattern_));
+  settings->endGroup();
+  settings->beginGroup("font");
+  settings->setValue("pin_markers", pin_markers_font_);
+  settings->setValue("ruler", ruler_font_);
+  settings->setValue("instance_name", instance_name_font_);
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers

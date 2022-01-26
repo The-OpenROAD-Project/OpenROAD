@@ -360,7 +360,9 @@ class DisplayControls : public QDockWidget, public Options
   void toggleParent(ModelRow& row);
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible = nullptr, QStandardItem* selectable = nullptr);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+  void writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible = nullptr, const QStandardItem* selectable = nullptr);
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
@@ -391,7 +393,6 @@ class DisplayControls : public QDockWidget, public Options
 
   // Categories in the model
   ModelRow layers_group_;
-  ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
   ModelRow instance_group_;
