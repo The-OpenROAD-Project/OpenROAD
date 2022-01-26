@@ -1258,7 +1258,7 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
     return &instances_.pads;
   } else if (master->isCover()) {
     return &instances_.cover;
-  } else if (master->isCore()) {
+  } else {
     return getStandardCellRow(inst, master);
   }
   return nullptr;
