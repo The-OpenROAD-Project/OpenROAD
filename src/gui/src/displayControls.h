@@ -65,6 +65,7 @@ class dbInst;
 
 namespace sta {
 class dbSta;
+class LibertyCell;
 } // namespace sta
 
 namespace utl {
@@ -267,27 +268,41 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
-  struct PhysicalInstanceModels
+  struct InstanceModels
   {
-    ModelRow core;
+    ModelRow stdcells;
     ModelRow blocks;
-    ModelRow fill;
-    ModelRow endcap;
-    ModelRow welltap;
     ModelRow pads;
     ModelRow cover;
   };
 
-  struct FunctionalInstanceModels
+  struct StdCellModels
   {
+    ModelRow bufinv;
     ModelRow combinational;
     ModelRow sequential;
-    ModelRow buffer_inv;
-    ModelRow clock_gate;
-    ModelRow levelshifter;
-    ModelRow pad;
-    ModelRow macro;
-    ModelRow memory;
+    ModelRow clock_tree;
+    ModelRow level_shiters;
+    ModelRow physical;
+  };
+
+  struct BufferInverterModels
+  {
+    ModelRow timing;
+    ModelRow other;
+  };
+
+  struct ClockTreeModels
+  {
+    ModelRow bufinv;
+    ModelRow clock_gates;
+  };
+
+  struct PhysicalModels
+  {
+    ModelRow fill;
+    ModelRow endcap;
+    ModelRow tap;
   };
 
   struct BlockageModels
@@ -359,14 +374,9 @@ class DisplayControls : public QDockWidget, public Options
   void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
   void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
 
-  bool isPhysicalInstanceVisible(odb::dbInst* inst);
-  bool isPhysicalInstanceSelectable(odb::dbInst* inst);
-  bool isFunctionalInstanceVisible(odb::dbInst* inst);
-  bool isFunctionalInstanceSelectable(odb::dbInst* inst);
-
   const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
-  const ModelRow* getPhysicalInstRow(odb::dbInst* inst) const;
-  const ModelRow* getFunctionalInstRow(odb::dbInst* inst) const;
+  const ModelRow* getInstRow(odb::dbInst* inst) const;
+  const ModelRow* getStandardCellRow(odb::dbInst* inst, odb::dbMaster* master) const;
   const ModelRow* getNetRow(odb::dbNet* net) const;
 
   bool isRowVisible(const ModelRow* row) const;
@@ -384,19 +394,23 @@ class DisplayControls : public QDockWidget, public Options
   ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
-  ModelRow physical_instance_group_;
-  ModelRow functional_instance_group_;
+  ModelRow instance_group_;
   ModelRow blockage_group_;
   ModelRow misc_group_;
 
+  // instances
+  InstanceModels instances_;
+  StdCellModels stdcell_instances_;
+  BufferInverterModels bufinv_instances_;
+  ClockTreeModels clock_tree_instances_;
+  PhysicalModels physical_instances_;
+
   // Object controls
   NetModels nets_;
-  PhysicalInstanceModels physical_instances_;
-  FunctionalInstanceModels functional_instances_;
-  BlockageModels blockages_;
   ModelRow rows_;
   ModelRow pin_markers_;
   ModelRow rulers_;
+  BlockageModels blockages_;
   TrackModels tracks_;
   MiscModels misc_;
 

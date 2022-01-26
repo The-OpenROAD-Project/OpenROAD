@@ -293,41 +293,62 @@ DisplayControls::DisplayControls(QWidget* parent)
   toggleParent(nets_group_);
 
   // Physical Instance group
-  auto phys_instances_parent = makeParentItem(
-      physical_instance_group_,
+  auto instances_parent = makeParentItem(
+      instance_group_,
       "Instances",
       root,
       Qt::Checked,
       true);
 
   // make instance items, non-null last argument to create checkbox
-  makeLeafItem(physical_instances_.core, "StdCells", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.blocks, "Macros", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.fill, "Fill", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.endcap, "Endcap", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.welltap, "Welltap", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.pads, "Pads", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.cover, "Cover", phys_instances_parent, Qt::Checked, true);
-  toggleParent(physical_instance_group_);
-
-  // Functional Instance group
-  auto func_instances_parent = makeParentItem(
-      functional_instance_group_,
-      "Function",
-      physical_instance_group_.name,
+  // stdcell instances
+  auto stdcell_parent = makeParentItem(
+      instances_.stdcells,
+      "StdCells",
+      instance_group_.name,
       Qt::Checked,
       true);
 
-  // make instance items, non-null last argument to create checkbox
-  makeLeafItem(functional_instances_.combinational, "Combinational", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.sequential, "Sequential", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.buffer_inv, "Buffers/Inverters", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.clock_gate, "Clock gates", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.levelshifter, "Level shifters", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.pad, "Pad", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.macro, "Macro", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.memory, "Memory", func_instances_parent, Qt::Checked, true);
-  toggleParent(functional_instance_group_);
+  auto bufinv_parent = makeParentItem(
+      stdcell_instances_.bufinv,
+      "Buffers/Inverters",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(bufinv_instances_.timing, "Timing opt.", bufinv_parent, Qt::Checked, true);
+  makeLeafItem(bufinv_instances_.other, "Netlist", bufinv_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.bufinv);
+
+  makeLeafItem(stdcell_instances_.combinational, "Combinational", stdcell_parent, Qt::Checked, true);
+  makeLeafItem(stdcell_instances_.sequential, "Sequential", stdcell_parent, Qt::Checked, true);
+  auto clock_tree_parent = makeParentItem(
+      stdcell_instances_.clock_tree,
+      "Clock tree",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(clock_tree_instances_.bufinv, "Buffers/Inverters", clock_tree_parent, Qt::Checked, true);
+  makeLeafItem(clock_tree_instances_.clock_gates, "Clock gates", clock_tree_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.clock_tree);
+
+  makeLeafItem(stdcell_instances_.level_shiters, "Level shifters", stdcell_parent, Qt::Checked, true);
+
+  auto phys_parent = makeParentItem(
+      stdcell_instances_.physical,
+      "Physical",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(physical_instances_.fill, "Fill cells", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.endcap, "Endcaps", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tap, "Welltaps", phys_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.physical);
+  toggleParent(instances_.stdcells);
+
+  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
+  toggleParent(instance_group_);
 
   // Blockages group
   auto blockages = makeParentItem(
@@ -503,27 +524,29 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, nets_.clock);
   settings->endGroup();
 
-  // physical instances
-  settings->beginGroup("physical_instances");
-  readSettingsForRow(settings, physical_instances_.core);
-  readSettingsForRow(settings, physical_instances_.blocks);
+  // instances
+  settings->beginGroup("instances");
+  settings->beginGroup("stdcells");
+  settings->beginGroup("bufinv");
+  readSettingsForRow(settings, bufinv_instances_.timing);
+  readSettingsForRow(settings, bufinv_instances_.other);
+  settings->endGroup();
+  readSettingsForRow(settings, stdcell_instances_.combinational);
+  readSettingsForRow(settings, stdcell_instances_.sequential);
+  settings->beginGroup("clocktree");
+  readSettingsForRow(settings, clock_tree_instances_.bufinv);
+  readSettingsForRow(settings, clock_tree_instances_.clock_gates);
+  settings->endGroup();
+  readSettingsForRow(settings, stdcell_instances_.level_shiters);
+  settings->beginGroup("physical");
   readSettingsForRow(settings, physical_instances_.fill);
   readSettingsForRow(settings, physical_instances_.endcap);
-  readSettingsForRow(settings, physical_instances_.welltap);
-  readSettingsForRow(settings, physical_instances_.pads);
-  readSettingsForRow(settings, physical_instances_.cover);
+  readSettingsForRow(settings, physical_instances_.tap);
   settings->endGroup();
-
-  // functional instances
-  settings->beginGroup("functional_instances");
-  readSettingsForRow(settings, functional_instances_.combinational);
-  readSettingsForRow(settings, functional_instances_.sequential);
-  readSettingsForRow(settings, functional_instances_.buffer_inv);
-  readSettingsForRow(settings, functional_instances_.clock_gate);
-  readSettingsForRow(settings, functional_instances_.levelshifter);
-  readSettingsForRow(settings, functional_instances_.pad);
-  readSettingsForRow(settings, functional_instances_.macro);
-  readSettingsForRow(settings, functional_instances_.memory);
+  settings->endGroup();
+  readSettingsForRow(settings, instances_.blocks);
+  readSettingsForRow(settings, instances_.pads);
+  readSettingsForRow(settings, instances_.cover);
   settings->endGroup();
 
   // blockages
@@ -615,26 +638,28 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->endGroup();
 
   // instances
-  settings->beginGroup("physical_instances");
-  writeSettingsForRow(settings, physical_instances_.core);
-  writeSettingsForRow(settings, physical_instances_.blocks);
+  settings->beginGroup("instances");
+  settings->beginGroup("stdcells");
+  settings->beginGroup("bufinv");
+  writeSettingsForRow(settings, bufinv_instances_.timing);
+  writeSettingsForRow(settings, bufinv_instances_.other);
+  settings->endGroup();
+  writeSettingsForRow(settings, stdcell_instances_.combinational);
+  writeSettingsForRow(settings, stdcell_instances_.sequential);
+  settings->beginGroup("clocktree");
+  writeSettingsForRow(settings, clock_tree_instances_.bufinv);
+  writeSettingsForRow(settings, clock_tree_instances_.clock_gates);
+  settings->endGroup();
+  writeSettingsForRow(settings, stdcell_instances_.level_shiters);
+  settings->beginGroup("physical");
   writeSettingsForRow(settings, physical_instances_.fill);
   writeSettingsForRow(settings, physical_instances_.endcap);
-  writeSettingsForRow(settings, physical_instances_.welltap);
-  writeSettingsForRow(settings, physical_instances_.pads);
-  writeSettingsForRow(settings, physical_instances_.cover);
+  writeSettingsForRow(settings, physical_instances_.tap);
   settings->endGroup();
-
-  // functional instances
-  settings->beginGroup("functional_instances");
-  writeSettingsForRow(settings, functional_instances_.combinational);
-  writeSettingsForRow(settings, functional_instances_.sequential);
-  writeSettingsForRow(settings, functional_instances_.buffer_inv);
-  writeSettingsForRow(settings, functional_instances_.clock_gate);
-  writeSettingsForRow(settings, functional_instances_.levelshifter);
-  writeSettingsForRow(settings, functional_instances_.pad);
-  writeSettingsForRow(settings, functional_instances_.macro);
-  writeSettingsForRow(settings, functional_instances_.memory);
+  settings->endGroup();
+  writeSettingsForRow(settings, instances_.blocks);
+  writeSettingsForRow(settings, instances_.pads);
+  writeSettingsForRow(settings, instances_.cover);
   settings->endGroup();
 
   // blockages
@@ -1285,102 +1310,74 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 {
-  return isPhysicalInstanceVisible(inst) && isFunctionalInstanceVisible(inst);
+  return isRowVisible(getInstRow(inst));
 }
 
-const DisplayControls::ModelRow* DisplayControls::getPhysicalInstRow(odb::dbInst* inst) const
+const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) const
 {
   dbMaster* master = inst->getMaster();
+  if (master->isBlock()) {
+    return &instances_.blocks;
+  } else if (master->isPad()) {
+    return &instances_.pads;
+  } else if (master->isCover()) {
+    return &instances_.cover;
+  } else if (master->isCore()) {
+    return getStandardCellRow(inst, master);
+  }
+  return nullptr;
+}
+
+const DisplayControls::ModelRow* DisplayControls::getStandardCellRow(odb::dbInst* inst, odb::dbMaster* master) const
+{
+  // physical
   if (master->isEndCap()) {
     return &physical_instances_.endcap;
   } else if (master->isFiller()) {
     return &physical_instances_.fill;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return &physical_instances_.welltap;
-    } else {
-      return &physical_instances_.core;
-    }
-  } else if (master->isBlock()) {
-    return &physical_instances_.blocks;
-  } else if (master->isPad()) {
-    return &physical_instances_.pads;
-  } else if (master->isCover()) {
-    return &physical_instances_.cover;
-  } else {
-    return nullptr;
-  }
-}
-
-bool DisplayControls::isPhysicalInstanceVisible(odb::dbInst* inst)
-{
-  if (isRowVisible(&physical_instance_group_)) {
-    return true;
+  } else if (master->getType() == dbMasterType::CORE_WELLTAP) {
+    return &physical_instances_.tap;
+  } else if (inst->getSourceType() == odb::dbSourceType::DIST) {
+    return &stdcell_instances_.physical;
   }
 
-  return isRowVisible(getPhysicalInstRow(inst));
-}
-
-const DisplayControls::ModelRow* DisplayControls::getFunctionalInstRow(odb::dbInst* inst) const
-{
   sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(inst->getMaster());
+  sta::Cell* cell = network->dbToSta(master);
   sta::LibertyCell* lib_cell = network->libertyCell(cell);
   if (lib_cell == nullptr) {
     return nullptr;
   }
+
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    return &functional_instances_.buffer_inv;
+    if (inst->getSourceType() == odb::dbSourceType::TIMING) {
+      auto* net = inst->getOutputTerm()->getNet();
+      if (net == nullptr) {
+        return &bufinv_instances_.timing;
+      } else if (net->getSigType() == odb::dbSigType::CLOCK) {
+        return &clock_tree_instances_.bufinv;
+      } else {
+        return &bufinv_instances_.timing;
+      }
+    } else {
+      return &bufinv_instances_.other;
+    }
   } else if (lib_cell->isClockGate()) {
-    return &functional_instances_.clock_gate;
+    return &clock_tree_instances_.clock_gates;
   } if (lib_cell->isLevelShifter()) {
-    return &functional_instances_.levelshifter;
-  } else if (lib_cell->isPad()) {
-    return &functional_instances_.pad;
-  } else if (lib_cell->isMacro()) {
-    return &functional_instances_.macro;
-  } else if (lib_cell->isMemory()) {
-    return &functional_instances_.memory;
+    return &stdcell_instances_.level_shiters;
   } else if (lib_cell->hasSequentials()) {
-    return &functional_instances_.sequential;
+    return &stdcell_instances_.sequential;
   } else if (lib_cell->portCount() == 0) {
-    return nullptr; // non-functional
+    return &stdcell_instances_.physical; // generic physical
   } else {
     // not anything else, so combinational
-    return &functional_instances_.combinational;
+    return &stdcell_instances_.combinational;
   }
-}
-
-bool DisplayControls::isFunctionalInstanceVisible(odb::dbInst* inst)
-{
-  if (isRowVisible(&functional_instance_group_)) {
-    return true;
-  }
-
-  return isRowVisible(getFunctionalInstRow(inst));
 }
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 {
-  return isPhysicalInstanceSelectable(inst) && isFunctionalInstanceSelectable(inst);
-}
-
-bool DisplayControls::isPhysicalInstanceSelectable(odb::dbInst* inst)
-{
-  if (isRowSelectable(&physical_instance_group_)) {
-    return true;
-  }
-
-  return isRowSelectable(getPhysicalInstRow(inst));
-}
-
-bool DisplayControls::isFunctionalInstanceSelectable(odb::dbInst* inst)
-{
-  if (isRowSelectable(&functional_instance_group_)) {
-    return true;
-  }
-
-  return isRowSelectable(getFunctionalInstRow(inst));
+  return isRowSelectable(getInstRow(inst));
 }
 
 const DisplayControls::ModelRow* DisplayControls::getNetRow(odb::dbNet* net) const
