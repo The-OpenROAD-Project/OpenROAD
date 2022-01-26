@@ -1191,6 +1191,7 @@ float SimulatedAnnealingCore::NormCost(float area,
 
 void SimulatedAnnealingCore::Initialize()
 {
+  std::cout << "test";
   vector<float> area_list;
   vector<float> wirelength_list;
   vector<float> outline_penalty_list;
@@ -1252,7 +1253,12 @@ void SimulatedAnnealingCore::Initialize()
   for (int i = 1; i < cost_list.size(); i++)
     delta_cost += abs(cost_list[i] - cost_list[i - 1]);
 
+  std::cout <<"\tdelta_cost: " << delta_cost;
+  std::cout <<"\tpertrub: {}." << perturb_per_step_;
+  std::cout <<"\tlog init prob: {}" << log(init_prob_);
   init_T_ = (-1.0) * (delta_cost / (perturb_per_step_ - 1)) / log(init_prob_);
+  std::cout << "\tinit_T: {}." <<init_T_;
+
 }
 
 void SimulatedAnnealingCore::Initialize(float init_T,
@@ -1633,8 +1639,10 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   int seed_id = 0;
   vector<unsigned> seed_list(num_seed);
   std::mt19937 rand_generator(seed);
-  for (int i = 0; i < num_seed; i++)
+  for (int i = 0; i < num_seed; i++) {
     seed_list[i] = (unsigned) rand_generator();
+    logger->info(MPL, 9003, "\tSeed: {}.", seed_list[i]);
+  }
 
   SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
                                                           outline_height,
