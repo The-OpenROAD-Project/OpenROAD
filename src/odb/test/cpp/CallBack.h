@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include "spdlog/fmt/fmt.h"
 
 #include "db.h"
 #include "dbBlockCallBackObj.h"
@@ -198,6 +199,16 @@ class CallBack : public dbBlockCallBackObj
   {
     if (!_pause)
       events.push_back("Create region " + region->getName());
+  }
+  void inDbRegionAddBox(dbRegion* region, dbBox* box) override
+  {
+    if (!_pause)
+      events.push_back(fmt::format("Add box ({}, {}) ({}, {}) to region {}",
+                                   box->xMin(),
+                                   box->yMin(),
+                                   box->xMax(),
+                                   box->yMax(),
+                                   region->getName()));
   }
   void inDbRegionDestroy(dbRegion* region) override
   {

@@ -1,0 +1,5 @@
+tool net total_wl #pins 
+grt: clk 201.6 2
+drt: clk 184.95 2
+grt: net60 14.4 2
+drt: net60 13.39 2

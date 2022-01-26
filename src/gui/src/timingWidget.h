@@ -62,8 +62,13 @@ class TimingWidget : public QDockWidget
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
+  TimingControlsDialog* getSettings() { return settings_; }
+
+  void updatePaths();
+
  signals:
   void highlightTimingPath(TimingPath* timing_path);
+  void inspect(const Selected& selection);
 
  public slots:
   void showPathDetails(const QModelIndex& index);
@@ -89,6 +94,8 @@ class TimingWidget : public QDockWidget
 
   void updateClockRows();
 
+  void showSettings();
+
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
   void showEvent(QShowEvent* event) override;
@@ -104,9 +111,11 @@ class TimingWidget : public QDockWidget
 
   QLineEdit* find_object_edit_;
   QSpinBox* path_index_spin_box_;
-  QSpinBox* path_count_spin_box_;
   QPushButton* update_button_;
+  QPushButton* settings_button_;
   QCheckBox* expand_clk_;
+
+  TimingControlsDialog* settings_;
 
   TimingPathsModel* setup_timing_paths_model_;
   TimingPathsModel* hold_timing_paths_model_;
