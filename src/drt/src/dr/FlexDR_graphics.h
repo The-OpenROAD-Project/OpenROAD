@@ -36,7 +36,7 @@
 namespace odb {
 class dbDatabase;
 class Point;
-}
+}  // namespace odb
 
 namespace fr {
 
@@ -81,9 +81,9 @@ class FlexDRGraphics : public gui::Renderer
   static bool guiActive();
 
   static void init();
-  
+
   void show(bool checkStopConditions);
-  
+
   void update();
 
   void pause(drNet* net);
