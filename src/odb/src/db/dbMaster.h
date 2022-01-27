@@ -98,8 +98,6 @@ class _dbMaster : public _dbObject
   dbBoxItr* _box_itr;
   dbMPinItr* _mpin_itr;
   dbTargetItr* _target_itr;
-  int _clocked_mterm_index;
-  int _output_mterm_index;
 
   _dbMaster(_dbDatabase* db);
   _dbMaster(_dbDatabase* db, const _dbMaster& m);
