@@ -292,7 +292,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
   toggleParent(nets_group_);
 
-  // Physical Instance group
+  // Instance group
   auto instances_parent = makeParentItem(
       instance_group_,
       "Instances",
@@ -327,23 +327,23 @@ DisplayControls::DisplayControls(QWidget* parent)
       stdcell_parent,
       Qt::Checked,
       true);
-  makeLeafItem(clock_tree_instances_.bufinv, "Buffers/Inverters", clock_tree_parent, Qt::Checked, true);
-  makeLeafItem(clock_tree_instances_.clock_gates, "Clock gates", clock_tree_parent, Qt::Checked, true);
+  makeLeafItem(clock_tree_instances_.bufinv, "Buffer/Inverter", clock_tree_parent, Qt::Checked, true);
+  makeLeafItem(clock_tree_instances_.clock_gates, "Clock gate", clock_tree_parent, Qt::Checked, true);
   toggleParent(stdcell_instances_.clock_tree);
-  makeLeafItem(stdcell_instances_.level_shiters, "Level shifters", stdcell_parent, Qt::Checked, true);
+  makeLeafItem(stdcell_instances_.level_shiters, "Level shifter", stdcell_parent, Qt::Checked, true);
   toggleParent(instances_.stdcells);
 
-  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.blocks, "Macro", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pad", instances_parent, Qt::Checked, true);
   auto phys_parent = makeParentItem(
       instances_.physical,
       "Physical",
       instances_parent,
       Qt::Checked,
       true);
-  makeLeafItem(physical_instances_.fill, "Fill cells", phys_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.endcap, "Endcaps", phys_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.tap, "Welltaps", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.fill, "Fill cell", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.endcap, "Endcap", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tap, "Welltap", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.tie, "Tie high/low", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.antenna, "Antenna", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.cover, "Cover", phys_parent, Qt::Checked, true);
