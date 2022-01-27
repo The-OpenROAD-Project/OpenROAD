@@ -882,25 +882,6 @@ bool dbInst::isEndCap() const
   return getMaster()->isEndCap();
 }
 
-dbITerm* dbInst::getClockedTerm()
-{
-  dbMaster* m = getMaster();
-  if (m->getType() != dbMasterType::CORE)
-    return NULL;
-  int ii = m->getClockedIndex();
-  if (ii < 0)
-    return NULL;
-  return getITerm(ii);
-}
-dbITerm* dbInst::getOutputTerm()
-{
-  dbMaster* m = getMaster();
-  int ii = m->getOutputIndex();
-  if (ii < 0)
-    return NULL;
-  return getITerm(ii);
-}
-
 dbSet<dbITerm> dbInst::getITerms()
 {
   _dbInst* inst = (_dbInst*) this;

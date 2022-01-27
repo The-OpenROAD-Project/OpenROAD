@@ -253,8 +253,6 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _mterm_hash.setTable(_mterm_tbl);
 
   _sta_cell = nullptr;
-  _clocked_mterm_index = 0;
-  _output_mterm_index = 0;
 }
 
 _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
@@ -272,9 +270,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _obstructions(m._obstructions),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
-      _sta_cell(m._sta_cell),
-      _clocked_mterm_index(m._clocked_mterm_index),
-      _output_mterm_index(m._output_mterm_index)
+      _sta_cell(m._sta_cell)
 {
   if (m._name) {
     _name = strdup(m._name);
@@ -646,26 +642,7 @@ void dbMaster::setFrozen()
     mterm->_order_id = i++;
   }
 }
-int dbMaster::getOutputIndex()
-{
-  _dbMaster* master = (_dbMaster*) this;
-  return master->_output_mterm_index;
-}
-void dbMaster::setOutputIndex(int v)
-{
-  _dbMaster* master = (_dbMaster*) this;
-  master->_output_mterm_index = v;
-}
-void dbMaster::setClockedIndex(int v)
-{
-  _dbMaster* master = (_dbMaster*) this;
-  master->_clocked_mterm_index = v;
-}
-int dbMaster::getClockedIndex()
-{
-  _dbMaster* master = (_dbMaster*) this;
-  return master->_clocked_mterm_index;
-}
+
 void dbMaster::setSequential(uint v)
 {
   _dbMaster* master = (_dbMaster*) this;
