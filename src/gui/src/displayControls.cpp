@@ -330,24 +330,25 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(clock_tree_instances_.bufinv, "Buffers/Inverters", clock_tree_parent, Qt::Checked, true);
   makeLeafItem(clock_tree_instances_.clock_gates, "Clock gates", clock_tree_parent, Qt::Checked, true);
   toggleParent(stdcell_instances_.clock_tree);
-
   makeLeafItem(stdcell_instances_.level_shiters, "Level shifters", stdcell_parent, Qt::Checked, true);
+  toggleParent(instances_.stdcells);
 
+  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
   auto phys_parent = makeParentItem(
-      stdcell_instances_.physical,
+      instances_.physical,
       "Physical",
-      stdcell_parent,
+      instances_parent,
       Qt::Checked,
       true);
   makeLeafItem(physical_instances_.fill, "Fill cells", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.endcap, "Endcaps", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.tap, "Welltaps", phys_parent, Qt::Checked, true);
-  toggleParent(stdcell_instances_.physical);
-  toggleParent(instances_.stdcells);
-
-  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tie, "Tie high/low", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.antenna, "Antenna", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.cover, "Cover", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.bump, "Bump", phys_parent, Qt::Checked, true);
+  toggleParent(instances_.physical);
   toggleParent(instance_group_);
 
   // Blockages group
@@ -1252,29 +1253,30 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) const
 {
   dbMaster* master = inst->getMaster();
+  const dbMasterType master_type = master->getType();
+  const dbSourceType source_type = inst->getSourceType();
   if (master->isBlock()) {
     return &instances_.blocks;
   } else if (master->isPad()) {
     return &instances_.pads;
-  } else if (master->isCover()) {
-    return &instances_.cover;
-  } else {
-    return getStandardCellRow(inst, master);
-  }
-  return nullptr;
-}
-
-const DisplayControls::ModelRow* DisplayControls::getStandardCellRow(odb::dbInst* inst, odb::dbMaster* master) const
-{
-  // physical
-  if (master->isEndCap()) {
+  } else if (master->isEndCap()) {
     return &physical_instances_.endcap;
   } else if (master->isFiller()) {
     return &physical_instances_.fill;
-  } else if (master->getType() == dbMasterType::CORE_WELLTAP) {
+  } else if (master_type == dbMasterType::CORE_WELLTAP) {
     return &physical_instances_.tap;
-  } else if (inst->getSourceType() == odb::dbSourceType::DIST) {
-    return &stdcell_instances_.physical;
+  } else if (master->isCover()) {
+    if (master_type == dbMasterType::COVER_BUMP) {
+      return &physical_instances_.bump;
+    } else {
+      return &physical_instances_.cover;
+    }
+  } else if (master_type == dbMasterType::CORE_ANTENNACELL) {
+    return &physical_instances_.antenna;
+  } else if (master_type == dbMasterType::CORE_TIEHIGH || master_type == dbMasterType::CORE_TIELOW) {
+    return &physical_instances_.tie;
+  } else if (source_type == odb::dbSourceType::DIST) {
+    return &instances_.physical;
   }
 
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -1285,7 +1287,7 @@ const DisplayControls::ModelRow* DisplayControls::getStandardCellRow(odb::dbInst
   }
 
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    if (inst->getSourceType() == odb::dbSourceType::TIMING) {
+    if (source_type == odb::dbSourceType::TIMING) {
       auto* net = inst->getOutputTerm()->getNet();
       if (net == nullptr) {
         return &bufinv_instances_.timing;
@@ -1304,7 +1306,7 @@ const DisplayControls::ModelRow* DisplayControls::getStandardCellRow(odb::dbInst
   } else if (lib_cell->hasSequentials()) {
     return &stdcell_instances_.sequential;
   } else if (lib_cell->portCount() == 0) {
-    return &stdcell_instances_.physical; // generic physical
+    return &instances_.physical; // generic physical
   } else {
     // not anything else, so combinational
     return &stdcell_instances_.combinational;

@@ -273,7 +273,7 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow stdcells;
     ModelRow blocks;
     ModelRow pads;
-    ModelRow cover;
+    ModelRow physical;
   };
 
   struct StdCellModels
@@ -283,7 +283,6 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow sequential;
     ModelRow clock_tree;
     ModelRow level_shiters;
-    ModelRow physical;
   };
 
   struct BufferInverterModels
@@ -303,6 +302,10 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow fill;
     ModelRow endcap;
     ModelRow tap;
+    ModelRow antenna;
+    ModelRow tie;
+    ModelRow cover;
+    ModelRow bump;
   };
 
   struct BlockageModels
@@ -378,7 +381,6 @@ class DisplayControls : public QDockWidget, public Options
 
   const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
   const ModelRow* getInstRow(odb::dbInst* inst) const;
-  const ModelRow* getStandardCellRow(odb::dbInst* inst, odb::dbMaster* master) const;
   const ModelRow* getNetRow(odb::dbNet* net) const;
 
   bool isRowVisible(const ModelRow* row) const;
