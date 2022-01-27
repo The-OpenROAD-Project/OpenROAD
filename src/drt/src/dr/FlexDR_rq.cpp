@@ -26,9 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-  #include "dr/FlexDR.h"
-#include "frRTree.h"
 #include "distributed/frArchive.h"
+#include "dr/FlexDR.h"
+#include "frRTree.h"
 
 using namespace std;
 using namespace fr;
@@ -63,6 +63,15 @@ FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
     : impl_(make_unique<Impl>())
 {
   impl_->drWorker = in;
+}
+
+void FlexDRWorkerRegionQuery::dummyUpdate()
+{
+  for (auto& small : impl_->shapes_) {
+    std::vector<std::pair<Rect, drConnFig*>> objects(small.begin(),
+                                                     small.end());
+    small = boost::move(RTree<drConnFig*, Rect>(objects));
+  }
 }
 
 FlexDRWorkerRegionQuery::~FlexDRWorkerRegionQuery() = default;

@@ -63,11 +63,14 @@ class RoutingCallBack : public dst::JobCallBack
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (desc->getDesignPath() != "") {
       std::lock_guard<std::mutex> lock(mx_);
-      router_->updateDesign(desc->getDesignPath().c_str());
+      if (design_path_ != desc->getDesignPath()) {
+        router_->updateDesign(desc->getDesignPath().c_str());
+        design_path_ = desc->getDesignPath();
+      }
     }
     if (desc->getGlobalsPath() != "") {
+      std::lock_guard<std::mutex> lock(mx_);
       if (globals_path_ != desc->getGlobalsPath()) {
-        std::lock_guard<std::mutex> lock(mx_);
         globals_path_ = desc->getGlobalsPath();
         router_->setSharedVolume(desc->getSharedDir());
         router_->updateGlobals(desc->getGlobalsPath().c_str());
@@ -83,8 +86,10 @@ class RoutingCallBack : public dst::JobCallBack
       std::string resultPath
           = router_->runDRWorker(desc->getWorkerPath().c_str());
       logger_->info(utl::DRT, 603, "worker {} is done", resultPath);
-      result.setJobDescription(
-          std::make_unique<RoutingJobDescription>(resultPath));
+      auto uResultDesc = std::make_unique<RoutingJobDescription>();
+      auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
+      resultDesc->setWorkerPath(resultPath);
+      result.setJobDescription(std::move(uResultDesc));
     }
     dist_->sendResult(result, sock);
   }
@@ -94,6 +99,7 @@ class RoutingCallBack : public dst::JobCallBack
   frTime time_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
+  std::string design_path_;
   std::string globals_path_;
   std::mutex mx_;
 };

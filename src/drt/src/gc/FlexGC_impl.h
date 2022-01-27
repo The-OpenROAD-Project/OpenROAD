@@ -111,6 +111,7 @@ class FlexGCWorker::Impl
     auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
     auto net = uNet.get();
     net->setOwner(owner);
+    net->setId(nets_.size());
     nets_.push_back(std::move(uNet));
     owner2nets_[owner] = net;
     return net;

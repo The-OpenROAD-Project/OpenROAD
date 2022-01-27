@@ -94,7 +94,7 @@ class frInstTerm : public frBlockObject
     (ar) & ap_;
   }
 
-  frInstTerm() = default;  // for serialization
+  frInstTerm() : net_(nullptr) {};  // for serialization
 
   friend class boost::serialization::access;
 };

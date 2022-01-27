@@ -156,8 +156,17 @@ int TritonRoute::getNumDRVs() const
 
 std::string TritonRoute::runDRWorker(const char* file_name)
 {
-  auto worker = FlexDRWorker::load(file_name, logger_, design_.get(), nullptr);
+  bool on = debug_->debugDR;
+  std::unique_ptr<FlexDRGraphics> graphics_
+      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
+            debug_.get(), design_.get(), db_, logger_)
+                                          : nullptr;
+  auto worker
+      = FlexDRWorker::load(file_name, logger_, design_.get(), graphics_.get());
   worker->setSharedVolume(shared_volume_);
+  worker->setDebugSettings(debug_.get());
+  if (graphics_)
+    graphics_->startIter(worker->getDRIter());
   std::string result = worker->reloadedMain();
   return result;
 }

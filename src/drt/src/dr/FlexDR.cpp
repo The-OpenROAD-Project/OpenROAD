@@ -179,6 +179,7 @@ int FlexDRWorker::main(frDesign* design)
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
   init0(design);
+  getWorkerRegionQuery().dummyUpdate();
   if (!skipRouting_) {
     init1(design);
   }
@@ -204,7 +205,9 @@ int FlexDRWorker::main(frDesign* design)
   return 0;
 }
 
-void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
+void FlexDRWorker::distributedMain(frDesign* design,
+                                   const char* globals_path,
+                                   const char* design_path)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -226,7 +229,12 @@ void FlexDRWorker::distributedMain(frDesign* design, const char* globals_path)
   serialize_worker(SerializationType::WRITE, this, nullptr, name);
   dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>(name, globals_path, dist_dir_);
+      = std::make_unique<RoutingJobDescription>();
+  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+  rjd->setDesignPath(design_path);
+  rjd->setWorkerPath(name);
+  rjd->setGlobalsPath(globals_path);
+  rjd->setSharedDir(dist_dir_);
   msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (ok) {
@@ -1698,7 +1706,8 @@ void FlexDR::searchRepair(int iter,
   }
 
   omp_set_num_threads(MAX_THREADS);
-
+  int design_version = 0;
+  bool design_updated = true;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1708,29 +1717,23 @@ void FlexDR::searchRepair(int iter,
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        if (dist_on_) {
-          std::string design_path_
-              = fmt::format("{}iter{}.design", dist_dir_, iter);
+        if (dist_on_ && design_updated) {
+          if (iter != 0 || design_version != 0)
+            std::remove(design_path_.c_str());
+          design_path_ = fmt::format(
+              "{}iter{}_{}.design", dist_dir_, iter, design_version++);
           serialize_design(SerializationType::WRITE, design_, design_path_);
-          dst::JobMessage msg(dst::JobMessage::ROUTING,
-                              dst::JobMessage::BROADCAST),
-              result(dst::JobMessage::NONE);
-          std::unique_ptr<dst::JobDescription> desc
-              = std::make_unique<RoutingJobDescription>();
-          RoutingJobDescription* desc_ptr = (RoutingJobDescription*) desc.get();
-          desc_ptr->setDesignPath(design_path_);
-          msg.setJobDescription(std::move(desc));
-          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-          if (!ok) {
-            logger_->error(DRT, 512, "Sending design to cloud failed");
-          }
+        }
+        if (design_updated) {
+          design_->getRegionQuery()->dummyUpdate();
+          design_updated = false;
         }
 // multi thread
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           if (dist_on_)
-            workersInBatch[i]->distributedMain(getDesign(),
-                                               globals_path_.c_str());
+            workersInBatch[i]->distributedMain(
+                getDesign(), globals_path_.c_str(), design_path_.c_str());
           else
             workersInBatch[i]->main(getDesign());
 #pragma omp critical
@@ -1758,7 +1761,7 @@ void FlexDR::searchRepair(int iter,
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end(getDesign());
+          design_updated |= workersInBatch[i]->end(getDesign());
         }
         workersInBatch.clear();
       }
@@ -2580,7 +2583,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & rq_;
-  (ar) & gcWorker_;
   if (is_loading(ar)) {
     // boundaryPin_
     int sz;
@@ -2594,8 +2596,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
     }
     // owner2nets_
     for (auto& net : nets_) {
-      if (net->getFrNet() != nullptr)
-        owner2nets_[net->getFrNet()].push_back(net.get());
+      owner2nets_[net->getFrNet()].push_back(net.get());
     }
   } else {
     // boundaryPin_

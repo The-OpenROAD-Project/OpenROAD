@@ -36,13 +36,13 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frTime.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
-#include "db/infra/frTime.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -151,6 +151,7 @@ class FlexDR
   unsigned short dist_port_;
   std::string dist_dir_;
   std::string globals_path_;
+  std::string design_path_;
   frTime time_;
   // others
   void init();
@@ -226,6 +227,7 @@ class FlexDRWorkerRegionQuery
   void init();
   void cleanup();
   bool isEmpty() const;
+  void dummyUpdate();
 
  private:
   struct Impl;
@@ -322,7 +324,10 @@ class FlexDRWorker
   {
   }
   // setters
-  void setDebugSettings(frDebugSettings* settings) { debugSettings_ = settings; }
+  void setDebugSettings(frDebugSettings* settings)
+  {
+    debugSettings_ = settings;
+  }
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
@@ -387,10 +392,7 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in)
-  {
-    gcWorker_ = unique_ptr<FlexGCWorker>(in);
-  }
+  void setGCWorker(unique_ptr<FlexGCWorker> in) { gcWorker_ = std::move(in); }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -441,10 +443,12 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
-  void distributedMain(frDesign* design, const char* globals_path);
+  void distributedMain(frDesign* design,
+                       const char* globals_path,
+                       const char* design_path);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
-  void end(frDesign* design);
+  bool end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
   void setLogger(Logger* logger) { logger_ = logger; }
@@ -835,6 +839,9 @@ class FlexDRWorker
 
   bool mazeIterInit_sortRerouteNets(int mazeIter,
                                     std::vector<drNet*>& rerouteNets);
+
+  bool mazeIterInit_sortRerouteQueue(int mazeIter,
+                                     std::vector<RouteQueueEntry>& rerouteNets);
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);

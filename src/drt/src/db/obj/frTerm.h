@@ -168,7 +168,7 @@ class frTerm : public frBlockObject
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
 
-  frTerm() = default;  // for serialization
+  frTerm() : net_(nullptr) {};  // for serialization
 
   friend class boost::serialization::access;
 };

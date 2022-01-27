@@ -12,12 +12,7 @@ namespace fr {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription(std::string pathIn = "",
-                        std::string globals = "",
-                        std::string dirIn = "")
-      : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
-  {
-  }
+  RoutingJobDescription() {}
   void setWorkerPath(const std::string& path) { path_ = path; }
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }

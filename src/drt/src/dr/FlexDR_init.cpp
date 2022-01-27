@@ -2677,6 +2677,8 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       route_queue_update_from_marker(
           &marker, uniqueVictims, uniqueAggressors, checks, routes);
     }
+    mazeIterInit_sortRerouteQueue(0, checks);
+    mazeIterInit_sortRerouteQueue(0, routes);
   } else if (getRipupMode() == 1 || getRipupMode() == 2) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
@@ -3457,18 +3459,18 @@ void FlexDRWorker::init0(const frDesign* design)
   if (skipRouting_) {
     return;
   }
-  initNets(design);
 }
 
 void FlexDRWorker::init1(const frDesign* design)
 {
+  initNets(design);
   initGridGraph(design);
   initMazeIdx();
-  FlexGCWorker* gcWorker = new FlexGCWorker(design->getTech(), logger_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker = make_unique<FlexGCWorker>(design->getTech(), logger_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);
   gcWorker->setEnableSurgicalFix(true);
-  setGCWorker(gcWorker);
+  setGCWorker(std::move(gcWorker));
   initMazeCost(design);
 }

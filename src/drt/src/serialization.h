@@ -517,6 +517,11 @@ void register_types(Archive& ar)
   ar.template register_type<frTrackPattern>();
   ar.template register_type<frBox3D>();
 }
+
+inline bool inBounds(int id, int sz)
+{
+  return id >= 0 && id < sz;
+}
 template <class Archive>
 void serializeBlockObject(Archive& ar, frBlockObject*& obj)
 {
@@ -553,12 +558,16 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
       case frcTerm: {
         int id;
         (ar) & id;
+        if (!inBounds(id, design->getTopBlock()->getTerms().size()))
+          exit(1); // should throw error
         obj = design->getTopBlock()->getTerms().at(id).get();
         break;
       }
       case frcBlockage: {
         int id;
         (ar) & id;
+        if (!inBounds(id, design->getTopBlock()->getBlockages().size()))
+          exit(1);
         obj = design->getTopBlock()->getBlockages().at(id).get();
         break;
       }
@@ -566,7 +575,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int inst_id, id;
         (ar) & inst_id;
         (ar) & id;
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+          exit(1);
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
+        if (!inBounds(id, inst->getInstTerms().size()))
+          exit(1);
         obj = inst->getInstTerms().at(id).get();
         break;
       }
@@ -574,11 +587,18 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int inst_id, id;
         (ar) & inst_id;
         (ar) & id;
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+          exit(1);
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
+        if (!inBounds(id, inst->getInstBlockages().size()))
+          exit(1);
         obj = inst->getInstBlockages().at(id).get();
         break;
       }
+      case frcBlock:
+        break;
       default:
+        exit(1);
         break;
     }
   } else {
@@ -630,7 +650,10 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & id;
         break;
       }
+      case frcBlock:
+        break;
       default:
+        exit(1);
         break;
     }
   }
@@ -687,6 +710,8 @@ void serialize_globals(Archive& ar)
   (ar) & VIAINPIN_TOPLAYER_NAME;
   (ar) & VIAINPIN_BOTTOMLAYERNUM;
   (ar) & VIAINPIN_TOPLAYERNUM;
+  // (ar) & VIAONLY_STDCELLPIN_BOTTOMLAYERNUM;
+  // (ar) & VIAONLY_STDCELLPIN_TOPLAYERNUM;
   (ar) & VIA_ACCESS_LAYERNUM;
   (ar) & MINNUMACCESSPOINT_MACROCELLPIN;
   (ar) & MINNUMACCESSPOINT_STDCELLPIN;
@@ -718,6 +743,5 @@ void serialize_globals(Archive& ar)
   (ar) & HISTCOST;
   (ar) & CONGCOST;
 }
-
 
 }  // namespace fr

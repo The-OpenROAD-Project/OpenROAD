@@ -31,11 +31,11 @@
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
 
+#include "distributed/frArchive.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
 #include "utl/algorithms.h"
-#include "distributed/frArchive.h"
 
 using namespace fr;
 using utl::enumerate;
@@ -89,6 +89,29 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
   void addGRObj(grShape* in);
   void addGRObj(grVia* in);
+  template <class T>
+  static inline void updateRTree(RTree<T>& tree)
+  {
+    std::vector<std::pair<Rect, T>> objects(tree.begin(), tree.end());
+    tree = boost::move(RTree<T, Rect>(objects));
+  }
+  template <class T>
+  static inline void updateRTreeByLayer(RTreesByLayer<T>& tr)
+  {
+    for (auto& small : tr)
+      updateRTree(small);
+  }
+  void dummyUpdate()
+  {
+    updateRTreeByLayer(shapes_);
+    updateRTreeByLayer(guides_);
+    updateRTreeByLayer(origGuides_);
+    updateRTree(grPins_);
+    updateRTreeByLayer(rpins_);
+    updateRTreeByLayer(grObjs_);
+    updateRTreeByLayer(drObjs_);
+    updateRTreeByLayer(markers_);
+  }
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -112,8 +135,7 @@ frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
   impl_->logger_ = logger;
 }
 
-frRegionQuery::frRegionQuery()
-    : impl_(nullptr)
+frRegionQuery::frRegionQuery() : impl_(nullptr)
 {
 }
 
@@ -122,6 +144,11 @@ frRegionQuery::~frRegionQuery() = default;
 frDesign* frRegionQuery::getDesign() const
 {
   return impl_->design_;
+}
+
+void frRegionQuery::dummyUpdate()
+{
+  impl_->dummyUpdate();
 }
 
 void frRegionQuery::Impl::add(frShape* shape,
@@ -473,8 +500,7 @@ void frRegionQuery::queryRPin(const Rect& box,
                               const frLayerNum layerNum,
                               Objects<frRPin>& result) const
 {
-  impl_->rpins_.at(layerNum).query(bgi::intersects(box),
-                                   back_inserter(result));
+  impl_->rpins_.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
 
 void frRegionQuery::queryGuide(const Rect& box,
@@ -546,8 +572,7 @@ void frRegionQuery::queryDRObj(const Rect& box,
                                vector<frBlockObject*>& result) const
 {
   Objects<frBlockObject> temp;
-  impl_->drObjs_.at(layerNum).query(bgi::intersects(box),
-                                    back_inserter(temp));
+  impl_->drObjs_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });
@@ -582,8 +607,7 @@ void frRegionQuery::queryMarker(const Rect& box,
                                 vector<frMarker*>& result) const
 {
   Objects<frMarker> temp;
-  impl_->markers_.at(layerNum).query(bgi::intersects(box),
-                                     back_inserter(temp));
+  impl_->markers_.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
     return kv.second;
   });

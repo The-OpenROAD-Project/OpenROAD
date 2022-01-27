@@ -106,7 +106,7 @@ class drNet : public drBlockObject
   void addPin(std::unique_ptr<drPin> pinIn)
   {
     pinIn->setNet(this);
-    // pinIn->setId(pins.size());
+    pinIn->setId(pins_.size());
     pins_.push_back(std::move(pinIn));
   }
   void addRoute(std::unique_ptr<drConnFig> in, bool isExt = false)
