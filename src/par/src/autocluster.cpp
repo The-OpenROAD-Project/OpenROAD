@@ -1180,7 +1180,6 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
       module_name[i] = '*';
   }
 
-  cout << "Print Macro Cluster file" << endl;
   const string block_file_name
       = string("./rtl_mp/") + module_name + string(".txt.block");
   const string net_file_name
@@ -1192,7 +1191,6 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
     const pair<float, float> pin_pos = printPinPos(macro_vec[i]);
     const Cell* cell = network_->cell(macro_vec[i]);
     const char* cell_name = network_->name(cell);
-    cout << "cell: " << cell_name << endl;
     const dbMaster* master = db_->findMaster(cell_name);
     const float width = master->getWidth() / dbu_;
     const float height = master->getHeight() / dbu_;
@@ -1950,7 +1948,6 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   while (map_iter != cluster_map_.end()) {
     float area = map_iter->second->calculateArea(network_);
     if (area != 0.0) {
-      cout <<"cluster name = " << map_iter->second->getName() << endl;
       output_file << "cluster: " << map_iter->second->getName() << endl;
       output_file << "area:  " << area << endl;
       if (map_iter->second->getNumMacro() > 0) {

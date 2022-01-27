@@ -37,7 +37,7 @@
 #include <iostream>
 #include <random>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "block_placement.h"
@@ -85,8 +85,8 @@ class SimulatedAnnealingCore
   bool flip_flag_ = true;
   std::vector<shape_engine::Macro> macros_;
   std::vector<block_placement::Net*> nets_;
-  std::unordered_map<std::string, std::pair<float, float>> terminal_position_;
-  std::unordered_map<std::string, int> macro_map_;
+  std::map<std::string, std::pair<float, float>> terminal_position_;
+  std::map<std::string, int> macro_map_;
 
   std::vector<int> pos_seq_;
   std::vector<int> neg_seq_;
@@ -119,7 +119,7 @@ class SimulatedAnnealingCore
   SimulatedAnnealingCore(
       const std::vector<shape_engine::Macro>& macros,
       const std::vector<block_placement::Net*>& nets,
-      const std::unordered_map<std::string, std::pair<float, float>>&
+      const std::map<std::string, std::pair<float, float>>&
           terminal_position,
       float cooling_rate,
       float outline_width,
@@ -163,7 +163,7 @@ void ParseMacroFile(std::vector<shape_engine::Macro>& macros,
 bool PinAlignmentSingleCluster(
     const char *report_directory,
     shape_engine::Cluster* cluster,
-    const std::unordered_map<std::string, std::pair<float, float>>&
+    const std::map<std::string, std::pair<float, float>>&
         terminal_position,
     const std::vector<block_placement::Net*>& nets,
     utl::Logger* logger,

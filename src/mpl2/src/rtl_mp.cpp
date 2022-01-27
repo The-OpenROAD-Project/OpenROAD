@@ -40,7 +40,7 @@
 #include <random>
 #include <sstream>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "block_placement.h"
@@ -63,13 +63,13 @@ using std::endl;
 using std::ofstream;
 using std::string;
 using std::to_string;
-using std::unordered_map;
+using std::map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
 
 template <class T>
-static void get_param(const unordered_map<string, string>& params,
+static void get_param(const map<string, string>& params,
                       const char* name,
                       T& param,
                       Logger* logger)
@@ -163,7 +163,7 @@ bool rtl_macro_placer(const char* config_file,
   // It is still supported for developer tuning of the parameters
   //
   if (strcmp(config_file, "") != 0) {
-    unordered_map<string, string> params = ParseConfigFile(config_file);
+    map<string, string> params = ParseConfigFile(config_file);
 
     get_param(params, "min_aspect_ratio", min_aspect_ratio, logger);
     get_param(params, "dead_space", dead_space, logger);
@@ -273,7 +273,7 @@ bool rtl_macro_placer(const char* config_file,
                                                     shrink_freq,
                                                     seed);
 
-  unordered_map<string, int> block_map;
+  map<string, int> block_map;
 
   for (int i = 0; i < clusters.size(); i++)
     block_map[blocks[i].GetName()] = i;

@@ -35,7 +35,7 @@
 
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 using namespace std;
@@ -99,9 +99,9 @@ vector<string> Split(const string& str, string delim)
   return ret;
 }
 
-unordered_map<string, string> ParseConfigFile(const char* file_name)
+map<string, string> ParseConfigFile(const char* file_name)
 {
-  unordered_map<string, string> params;
+  map<string, string> params;
   fstream f;
   string line;
   f.open(file_name, ios::in);

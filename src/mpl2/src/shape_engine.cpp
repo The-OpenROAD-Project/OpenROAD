@@ -37,7 +37,7 @@
 #include <random>
 #include <string>
 #include <thread>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "shape_engine.h"
@@ -62,7 +62,7 @@ using std::string;
 using std::swap;
 using std::thread;
 using std::to_string;
-using std::unordered_map;
+using std::map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;

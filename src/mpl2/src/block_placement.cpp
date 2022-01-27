@@ -43,7 +43,7 @@
 #include <random>
 #include <stdexcept>
 #include <thread>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "shape_engine.h"
@@ -74,7 +74,7 @@ using std::swap;
 using std::tanh;
 using std::thread;
 using std::to_string;
-using std::unordered_map;
+using std::map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
@@ -263,7 +263,7 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
     const std::vector<Net*>& nets,
     const std::vector<Region*>& regions,
     const std::vector<Location*>& locations,
-    const std::unordered_map<std::string, std::pair<float, float>>&
+    const std::map<std::string, std::pair<float, float>>&
         terminal_position,
     float cooling_rate,
     float alpha,
@@ -1253,11 +1253,7 @@ void SimulatedAnnealingCore::Initialize()
   for (int i = 1; i < cost_list.size(); i++)
     delta_cost += abs(cost_list[i] - cost_list[i - 1]);
 
-  std::cout <<"\tdelta_cost: " << delta_cost;
-  std::cout <<"\tpertrub: {}." << perturb_per_step_;
-  std::cout <<"\tlog init prob: {}" << log(init_prob_);
   init_T_ = (-1.0) * (delta_cost / (perturb_per_step_ - 1)) / log(init_prob_);
-  std::cout << "\tinit_T: {}." <<init_T_;
 
 }
 
@@ -1458,7 +1454,7 @@ void Run(SimulatedAnnealingCore* sa)
 }
 
 void ParseNetFile(vector<Net*>& nets,
-                  unordered_map<string, pair<float, float>>& terminal_position,
+                  map<string, pair<float, float>>& terminal_position,
                   const string& net_file)
 {
   fstream f;
@@ -1468,7 +1464,7 @@ void ParseNetFile(vector<Net*>& nets,
   while (getline(f, line))
     content.push_back(line);
   f.close();
-  unordered_map<string, pair<float, float>>::iterator terminal_iter;
+  map<string, pair<float, float>>::iterator terminal_iter;
   int i = 0;
   while (i < content.size()) {
     vector<string> words = Split(content[i]);
@@ -1594,7 +1590,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     blocks.push_back(Block(name, area, num_macro, aspect_ratio));
   }
 
-  unordered_map<string, pair<float, float>> terminal_position;
+  map<string, pair<float, float>> terminal_position;
   string word = string("LL");
   terminal_position[word] = pair<float, float>(0.0, outline_height / 6.0);
   word = string("RL");
