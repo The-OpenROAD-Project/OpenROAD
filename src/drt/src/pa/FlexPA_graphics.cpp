@@ -152,18 +152,17 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(color, /* cosmetic */ true);
 
     Point pt = ap.getPoint();
-    painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
-    painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
+    painter.drawX(pt.x(), pt.y(), 50);
   }
 }
 
-void FlexPAGraphics::startPin(frPin* pin,
+void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
 
-  frTerm* term = pin->getTerm();
+  frMTerm* term = pin->getTerm();
   std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
                      + term->getName();
   if (!settings_->pinName.empty()) {
@@ -186,6 +185,13 @@ void FlexPAGraphics::startPin(frPin* pin,
     gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
     gui_->pause();
   }
+}
+
+void FlexPAGraphics::startPin(frBPin* pin,
+                              frInstTerm* inst_term,
+                              set<frInst*, frBlockObjectComp>* instClass)
+{
+  // TODO
 }
 
 static const char* to_string(frAccessPointEnum e)
@@ -299,9 +305,12 @@ void FlexPAGraphics::setPlanarAP(
 
 void FlexPAGraphics::setObjsAndMakers(
     const vector<pair<frConnFig*, frBlockObject*>>& objs,
-    const std::vector<std::unique_ptr<frMarker>>& markers)
+    const std::vector<std::unique_ptr<frMarker>>& markers,
+    const FlexPA::PatternType type)
 {
-  if (!settings_->paCombining) {
+  if ((!settings_->paCommit && !settings_->paEdge) ||
+      (settings_->paCommit && type != FlexPA::Commit) ||
+      (settings_->paEdge && type != FlexPA::Edge)) {
     return;
   }
 

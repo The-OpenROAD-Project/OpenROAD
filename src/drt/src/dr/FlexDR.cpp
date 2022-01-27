@@ -2123,9 +2123,9 @@ void FlexDR::reportDRC(const string& file_name)
                      << instTerm->getTerm()->getName() << " ";
               break;
             }
-            case frcTerm: {
-              frTerm* term = (static_cast<frTerm*>(src));
-              drcRpt << "bterm:" << term->getName() << " ";
+            case frcBTerm: {
+              frBTerm* bterm = (static_cast<frBTerm*>(src));
+              drcRpt << "bterm:" << bterm->getName() << " ";
               break;
             }
             case frcInstBlockage: {

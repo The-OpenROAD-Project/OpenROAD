@@ -33,9 +33,15 @@
 ##
 ###############################################################################
 
-# abc does not have "platform" support for macos so force it to use stdint.h
-if (CMAKE_OSX_SYSROOT)
-   set(ABC_USE_STDINT_H 1)
-endif()
+if (NOT USE_SYSTEM_ABC)
 
-add_subdirectory(abc)
+  set(ABC_USE_NAMESPACE "abc")
+
+  # abc does not have "platform" support for macos so force it to use stdint.h
+  if (CMAKE_OSX_SYSROOT)
+     set(ABC_USE_STDINT_H 1)
+  endif()
+
+  add_subdirectory(abc)
+
+endif()

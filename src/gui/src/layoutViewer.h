@@ -104,6 +104,7 @@ class LayoutViewer : public QWidget
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
     CLEAR_RULERS_ACT,
+    CLEAR_FOCUS_ACT,
     CLEAR_ALL_ACT
   };
   // makeSelected is so that we don't have to pass in the whole
@@ -123,6 +124,11 @@ class LayoutViewer : public QWidget
   void setScroller(LayoutScroll* scroller);
 
   void restoreTclCommands(std::vector<std::string>& cmds);
+
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
+  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -153,6 +159,8 @@ class LayoutViewer : public QWidget
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
+
+  void focusNetsChanged();
 
  public slots:
   // zoom in the layout, keeping the current center_
@@ -247,6 +255,7 @@ class LayoutViewer : public QWidget
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  int depth);
+  void drawRegionOutlines(QPainter* painter);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -318,6 +327,8 @@ class LayoutViewer : public QWidget
 
   void updateScaleAndCentering(const QSize& new_size);
 
+  bool isNetVisible(odb::dbNet* net);
+
   odb::dbBlock* block_;
   Options* options_;
   ScriptWidget* output_widget_;
@@ -382,6 +393,9 @@ class LayoutViewer : public QWidget
   // Cache of the maximum cut size per layer (units: dbu).
   // Used to determine when cuts are too small to be seen and should not be drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
+
+  // Set of nets to focus drawing on, if empty draw everything
+  std::set<odb::dbNet*> focus_nets_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

@@ -223,6 +223,13 @@ class GuiPainter : public Painter
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
 
+  void drawX(int x, int y, int size) override
+  {
+    const int o = size / 2;
+    painter_->drawLine(x - o, y - o, x + o, y + o);
+    painter_->drawLine(x - o, y + o, x + o, y - o);
+  }
+
   const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text)
   {
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
@@ -734,6 +741,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   boxes.push_back({{bbox.xMin(), bbox.yMin()},
                    {bbox.xMax(), bbox.yMax()}});
 
+  if (options_->areRegionsVisible()) {
+    for (auto* region : block_->getRegions()) {
+      for (auto* box : region->getBoundaries()) {
+        odb::Rect region_box;
+        box->getBox(region_box);
+        if (region_box.area() > 0) {
+          boxes.push_back({{region_box.xMin(), region_box.yMin()},
+                           {region_box.xMax(), region_box.yMax()}});
+        }
+      }
+    }
+  }
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -793,7 +813,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
 
     auto shapes = search_.searchShapes(layer, search_line.xMin(), search_line.yMin(), search_line.xMax(), search_line.yMax(), shape_limit);
     for (auto& [box, poly, net] : shapes) {
-      if (options_->isNetVisible(net)) {
+      if (isNetVisible(net)) {
         boxes.push_back(box);
       }
     }
@@ -905,7 +925,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     // Just return the first one
     for (auto iter : shapes) {
       dbNet* net = std::get<2>(iter);
-      if (options_->isNetVisible(net) && options_->isNetSelectable(net)) {
+      if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(makeSelected_(net));
       }
     }
@@ -1909,7 +1929,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      instance_limit);
 
     for (auto& i : iter) {
-      if (!options_->isNetVisible(std::get<2>(i))) {
+      if (!isNetVisible(std::get<2>(i))) {
         continue;
       }
       auto poly = std::get<1>(i);
@@ -1965,6 +1985,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     drawAccessPoints(gui_painter);
   }
 
+  drawRegionOutlines(painter);
+
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
   }
@@ -1973,6 +1995,26 @@ void LayoutViewer::drawBlock(QPainter* painter,
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+}
+
+void LayoutViewer::drawRegionOutlines(QPainter* painter)
+{
+  if (!options_->areRegionsVisible()) {
+    return;
+  }
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(Qt::BrushStyle::NoBrush);
+
+  for (auto* region : block_->getRegions()) {
+    for (auto* box : region->getBoundaries()) {
+      odb::Rect region_box;
+      box->getBox(region_box);
+      if (region_box.area() > 0) {
+        painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+      }
+    }
   }
 }
 
@@ -1994,10 +2036,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter)
         xform.setOffset({x, y});
         xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
         xform.apply(pt);
-        painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
-                         {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
-        painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
-                         {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+        painter.drawX(pt.x(), pt.y(), shape_size);
       }
     }
   }
@@ -2009,10 +2048,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter)
               = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
           painter.setPen(color, /* cosmetic */ true);
           Point pt = ap->getPoint();
-          painter.drawLine({pt.x() - shape_size / 2, pt.y() - shape_size / 2},
-                           {pt.x() + shape_size / 2, pt.y() + shape_size / 2});
-          painter.drawLine({pt.x() - shape_size / 2, pt.y() + shape_size / 2},
-                           {pt.x() + shape_size / 2, pt.y() - shape_size / 2});
+          painter.drawX(pt.x(), pt.y(), shape_size);
         }
       }
     }
@@ -2301,6 +2337,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     painter.drawRect(rubber_band_.normalized());
   }
 
+  painter.end();
   // painting is done, okay to update outputs again
   output_widget_->bufferOutputs(false);
 }
@@ -2653,6 +2690,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
+  menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -2719,10 +2757,14 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRulers();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, []() {
-    Gui::get()->clearSelections();
-    Gui::get()->clearHighlights(-1);
-    Gui::get()->clearRulers();
+  connect(menu_actions_[CLEAR_FOCUS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearFocusNets();
+  });
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+    menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
+    menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
+    menu_actions_[CLEAR_RULERS_ACT]->trigger();
+    menu_actions_[CLEAR_FOCUS_ACT]->trigger();
   });
 }
 
@@ -2733,7 +2775,7 @@ void LayoutViewer::restoreTclCommands(std::vector<std::string>& cmds)
   if (block_ != nullptr) {
     const double dbu_per_micron = block_->getDbUnitsPerMicron();
 
-    cmds.push_back(fmt::format("gui::set_center {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
+    cmds.push_back(fmt::format("gui::center_at {} {}", center_.x() / dbu_per_micron, center_.y() / dbu_per_micron));
   }
 }
 
@@ -2749,6 +2791,42 @@ bool LayoutViewer::hasDesign() const
   }
 
   return true;
+}
+
+void LayoutViewer::addFocusNet(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = focus_nets_.insert(net);
+  if (inserted) {
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeFocusNet(odb::dbNet* net)
+{
+  if (focus_nets_.erase(net) > 0) {
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearFocusNets()
+{
+  if (!focus_nets_.empty()) {
+    focus_nets_.clear();
+    emit focusNetsChanged();
+    fullRepaint();
+  }
+}
+
+bool LayoutViewer::isNetVisible(odb::dbNet* net)
+{
+  bool focus_visible = true;
+  if (!focus_nets_.empty()) {
+    focus_visible = focus_nets_.find(net) != focus_nets_.end();
+  }
+
+  return focus_visible && options_->isNetVisible(net);
 }
 
 ////// LayoutScroll ///////

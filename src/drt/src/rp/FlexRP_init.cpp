@@ -41,29 +41,22 @@ void FlexRP::init()
 {
   ProfileTask profile("RP:init");
 
-  vector<pair<frCoord, frCoord>> forbiddenRanges;
-  vector<vector<pair<frCoord, frCoord>>> eightForbiddenRanges(8,
-                                                              forbiddenRanges);
-  vector<vector<pair<frCoord, frCoord>>> fourForbiddenRanges(4,
-                                                             forbiddenRanges);
-  vector<bool> fourForbidden(4, false);
-
-  auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
-  auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  const auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
+  const auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    tech_->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
-    tech_->via2ViaForbiddenOverlapLen.push_back(eightForbiddenRanges);
-    tech_->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
-    tech_->viaForbiddenPlanarLen.push_back(fourForbiddenRanges);
-    tech_->line2LineForbiddenLen.push_back(fourForbiddenRanges);
-    tech_->viaForbiddenThrough.push_back(fourForbidden);
+    tech_->via2ViaForbiddenLen.push_back({});
+    tech_->via2ViaForbiddenOverlapLen.push_back({});
+    tech_->viaForbiddenTurnLen.push_back({});
+    tech_->viaForbiddenPlanarLen.push_back({});
+    tech_->line2LineForbiddenLen.push_back({});
+    tech_->viaForbiddenThrough.push_back({});
     for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
-      ndr->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
+      ndr->via2ViaForbiddenLen.push_back({});
+      ndr->viaForbiddenTurnLen.push_back({});
     }
   }
 }

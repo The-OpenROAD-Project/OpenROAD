@@ -114,15 +114,15 @@ void io::Parser::setTracks(odb::dbBlock* block)
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
-    if (design->name2refBlock_.find(inst->getMaster()->getName())
-        == design->name2refBlock_.end())
+    if (design->name2master_.find(inst->getMaster()->getName())
+        == design->name2master_.end())
       logger->error(
           DRT, 95, "Library cell {} not found.", inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "Same cell name: {}.", inst->getName());
-    frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
-    auto uInst = make_unique<frInst>(inst->getName(), refBlock);
+    frMaster* master = design->name2master_.at(inst->getMaster()->getName());
+    auto uInst = make_unique<frInst>(inst->getName(), master);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts);
     numInsts++;
@@ -134,7 +134,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     tmpInst->setOrigin(Point(x, y));
     tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
-    for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
+    for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms++);
@@ -143,7 +143,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
       instTerm->setAPSize(pinCnt);
       tmpInst->addInstTerm(std::move(instTerm));
     }
-    for (auto& uBlk : tmpInst->getRefBlock()->getBlockages()) {
+    for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
       auto blk = uBlk.get();
       unique_ptr<frInstBlockage> instBlk
           = make_unique<frInstBlockage>(tmpInst, blk);
@@ -168,7 +168,7 @@ void io::Parser::setObstructions(odb::dbBlock* block)
     auto blkIn = make_unique<frBlockage>();
     blkIn->setId(numBlockages);
     numBlockages++;
-    auto pinIn = make_unique<frPin>();
+    auto pinIn = make_unique<frBPin>();
     pinIn->setId(0);
     frCoord xl = blockage->getBBox()->xMin();
     frCoord yl = blockage->getBBox()->yMin();
@@ -504,13 +504,13 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
         logger->error(DRT, 104, "Terminal {} not found.", term->getName());
-      auto frterm = tmpBlock->name2term_[term->getName()];  // frTerm*
-      frterm->addToNet(netIn);
-      netIn->addTerm(frterm);
+      auto frbterm = tmpBlock->name2term_[term->getName()];  // frBTerm*
+      frbterm->addToNet(netIn);
+      netIn->addBTerm(frbterm);
       if (!is_special) {
         // graph enablement
         auto termNode = make_unique<frNode>();
-        termNode->setPin(frterm);
+        termNode->setPin(frbterm);
         termNode->setType(frNodeTypeEnum::frcPin);
         netIn->addNode(termNode);
       }
@@ -522,7 +522,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             DRT, 105, "Component {} not found.", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
-      auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
+      auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
       if (frterm == nullptr)
         logger->error(DRT,
                       106,
@@ -794,13 +794,31 @@ void io::Parser::setNets(odb::dbBlock* block)
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    auto uTermIn = make_unique<frTerm>(term->getName());
+    switch (term->getSigType()) {
+      case odb::dbSigType::POWER:
+      case odb::dbSigType::GROUND:
+      case odb::dbSigType::TIEOFF:
+        // We allow for multuple pins
+        break;
+      case odb::dbSigType::SIGNAL:
+      case odb::dbSigType::CLOCK:
+      case odb::dbSigType::ANALOG:
+      case odb::dbSigType::RESET:
+      case odb::dbSigType::SCAN:
+        if (term->getBPins().size() > 1)
+          logger->error(utl::DRT,
+                        302,
+                        "Unsupported multiple pins on bterm {}",
+                        term->getName());
+        break;
+    }
+    auto uTermIn = make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms);
     numTerms++;
     termIn->setType(term->getSigType());
     termIn->setDirection(term->getIoType());
-    auto pinIn = make_unique<frPin>();
+    auto pinIn = make_unique<frBPin>();
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
       for (auto box : pin->getBoxes()) {
@@ -1726,7 +1744,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 {
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
-      tmpBlock = make_unique<frBlock>(master->getName());
+      auto tmpMaster = make_unique<frMaster>(master->getName());
       frCoord originX;
       frCoord originY;
       master->getOrigin(originX, originY);
@@ -1741,22 +1759,22 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       points.push_back(Point(originX, sizeY));
       bound.setPoints(points);
       bounds.push_back(bound);
-      tmpBlock->setBoundaries(bounds);
-      tmpBlock->setMasterType(master->getType());
+      tmpMaster->setBoundaries(bounds);
+      tmpMaster->setMasterType(master->getType());
 
       for (auto _term : master->getMTerms()) {
-        unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
+        unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(_term->getName());
         auto term = uTerm.get();
         term->setId(numTerms);
         numTerms++;
-        tmpBlock->addTerm(std::move(uTerm));
+        tmpMaster->addTerm(std::move(uTerm));
 
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {
-          auto pinIn = make_unique<frPin>();
+          auto pinIn = make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
@@ -1769,7 +1787,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
                              122,
                              "Layer {} is skipped for {}/{}.",
                              layer,
-                             tmpBlock->getName(),
+                             tmpMaster->getName(),
                              _term->getName());
               continue;
             } else
@@ -1801,7 +1819,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
                          123,
                          "Layer {} is skipped for {}/OBS.",
                          layer,
-                         tmpBlock->getName());
+                         tmpMaster->getName());
           continue;
         } else
           layerNum = tech->name2layer.at(layer)->getLayerNum();
@@ -1809,7 +1827,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         blkIn->setId(numBlockages);
         blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages++;
-        auto pinIn = make_unique<frPin>();
+        auto pinIn = make_unique<frBPin>();
         pinIn->setId(0);
         frCoord xl = obs->xMin();
         frCoord yl = obs->yMin();
@@ -1823,11 +1841,11 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
         blkIn->setPin(std::move(pinIn));
-        tmpBlock->addBlockage(std::move(blkIn));
+        tmpMaster->addBlockage(std::move(blkIn));
       }
-      tmpBlock->setId(numRefBlocks + 1);
-      design->addRefBlock(std::move(tmpBlock));
-      numRefBlocks++;
+      tmpMaster->setId(numMasters + 1);
+      design->addMaster(std::move(tmpMaster));
+      numMasters++;
       numTerms = 0;
       numBlockages = 0;
     }
@@ -2058,7 +2076,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->report("");
     logger->report("Units:                {}", tech->getDBUPerUU());
     logger->report("Number of layers:     {}", tech->layers.size());
-    logger->report("Number of macros:     {}", design->refBlocks_.size());
+    logger->report("Number of macros:     {}", design->masters_.size());
     logger->report("Number of vias:       {}", tech->vias.size());
     logger->report("Number of viarulegen: {}", tech->viaRuleGenerates.size());
     logger->report("");
@@ -2711,9 +2729,9 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
   auto layer = db_tech->findLayer(
       tech->getLayer(ap->getLayerNum())->getName().c_str());
   db_ap->setLayer(layer);
-  db_ap->setLowType((odb::dbAccessPoint::AccessType) ap->getType(
+  db_ap->setLowType((odb::dbAccessType::Value) ap->getType(
       true));  // this works because both enums have the same order
-  db_ap->setHighType((odb::dbAccessPoint::AccessType) ap->getType(false));
+  db_ap->setHighType((odb::dbAccessType::Value) ap->getType(false));
 }
 
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
@@ -2722,11 +2740,11 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbAccessPoint::destroy(ap);
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
-  for (auto& refBlk : design->getRefBlocks()) {
-    auto db_master = db->findMaster(refBlk->getName().c_str());
+  for (auto& master : design->getMasters()) {
+    auto db_master = db->findMaster(master->getName().c_str());
     if (db_master == nullptr)
-      logger->error(DRT, 294, "master {} not found in db", refBlk->getName());
-    for (auto& term : refBlk->getTerms()) {
+      logger->error(DRT, 294, "master {} not found in db", master->getName());
+    for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
       if (db_mterm == nullptr)
         logger->error(DRT, 295, "mterm {} not found in db", term->getName());
@@ -2735,7 +2753,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
         logger->error(DRT,
                       296,
                       "Mismatch in number of pins for term {}/{}",
-                      refBlk->getName(),
+                      master->getName(),
                       term->getName());
       frUInt4 i = 0;
       auto& pins = term->getPins();
@@ -2790,12 +2808,16 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
+    if (db_term->getSigType() == odb::dbSigType::POWER
+        || db_term->getSigType() == odb::dbSigType::GROUND
+        || db_term->getSigType() == odb::dbSigType::TIEOFF)
+      continue;
     auto db_pins = db_term->getBPins();
     frUInt4 i = 0;
     auto& pins = term->getPins();
     if (db_pins.size() != pins.size())
       logger->error(
-          DRT, 302, "Mismatch in number of pins for bterm {}", term->getName());
+          DRT, 303, "Mismatch in number of pins for bterm {}", term->getName());
     for (auto db_pin : db_pins) {
       auto& pin = pins[i++];
       int j = 0;

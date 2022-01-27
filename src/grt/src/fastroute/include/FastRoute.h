@@ -111,7 +111,7 @@ class FastRouteCore
   void addViaSpacing(int spacing, int layer);
   void setNumberNets(int nNets);
   void setLowerLeft(int x, int y);
-  void setTileSize(int width, int height);
+  void setTileSize(int size);
   void setLayerOrientation(int x);
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
@@ -469,8 +469,7 @@ class FastRouteCore
   int y_grid_;
   int x_corner_;
   int y_corner_;
-  int w_tile_;
-  int h_tile_;
+  int tile_size_;
   int enlarge_;
   int costheight_;
   int ahth_;

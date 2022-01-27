@@ -381,7 +381,8 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
                              isNotUpperAlign,
                              layer2Area,
                              layer1Area,
-                             isNotLowerAlign);
+                             isNotLowerAlign,
+                             viaDef->getName());
 }
 
 // 13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB
@@ -741,7 +742,7 @@ void io::Parser::initRPin_rpin()
 
         // MACRO does not go through PA
         if (prefAp == nullptr) {
-          dbMasterType masterType = inst->getRefBlock()->getMasterType();
+          dbMasterType masterType = inst->getMaster()->getMasterType();
           if (masterType.isBlock() || masterType.isPad()
               || masterType == dbMasterType::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
@@ -768,7 +769,7 @@ void io::Parser::initRPin_rpin()
       }
     }
     // term
-    for (auto& term : net->getTerms()) {
+    for (auto& term : net->getBTerms()) {
       int pinIdx = 0;
       auto trueTerm = term;
       for (auto& pin : trueTerm->getPins()) {

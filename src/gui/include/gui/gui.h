@@ -55,6 +55,8 @@ class Logger;
 } // namespace utl
 
 namespace gui {
+class HeatMapDataSource;
+class PlacementDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -188,7 +190,13 @@ class Painter
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
 
+  // Draw a circle with coordinates in DBU with the current pen
   virtual void drawCircle(int x, int y, int r) = 0;
+
+  // Draw an 'X' with coordinates in DBU with the current pen.  The
+  // crossing point of the X is at (x,y). The size is the width and
+  // height of the X.
+  virtual void drawX(int x, int y, int size) = 0;
 
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
@@ -578,6 +586,11 @@ class Gui
   void saveDisplayControls();
   void restoreDisplayControls();
 
+  // Used to add and remove focus nets from layout
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
+
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 
@@ -600,7 +613,9 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
-  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
+  using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  void timingCone(odbTerm term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<odbTerm>& terms);
 
   // open DRC
   void loadDRC(const std::string& filename);
@@ -634,9 +649,6 @@ class Gui
   // set the system logger
   void setLogger(utl::Logger* logger);
 
-  // set openroad database
-  void setDatabase(odb::dbDatabase* db);
-
   // check if tcl should take over after closing gui
   bool isContinueAfterClose() { return continue_after_close_; }
   // clear continue after close, needed to reset before GUI starts
@@ -669,11 +681,18 @@ class Gui
     unregisterDescriptor(typeid(T));
   }
 
+  void registerHeatMap(HeatMapDataSource* heatmap);
+  void unregisterHeatMap(HeatMapDataSource* heatmap);
+  const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+
   // returns the Gui singleton
   static Gui* get();
 
   // Will return true if the GUI is active, false otherwise
   static bool enabled();
+
+  // initialize the GUI
+  void init(odb::dbDatabase* db, utl::Logger* logger);
 
  private:
   Gui();
@@ -691,11 +710,16 @@ class Gui
 
   // Maps types to descriptors
   std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>> descriptors_;
+  // Heatmaps
+  std::set<HeatMapDataSource*> heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
+
+  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
+
   static Gui* singleton_;
 };
 

@@ -105,7 +105,8 @@ class TritonRoute
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
-  void setDebugPaCombining(bool on = true);
+  void setDebugPaEdge(bool on = true);
+  void setDebugPaCommit(bool on = true);
   void reportConstraints();
 
   void readParams(const std::string& fileName);

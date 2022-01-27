@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     auto iterm = inst->getITerm(term);
     ap->setPoint(Point(10,250));
     ap->setLayer(layer);
-    ap->setHighType(dbAccessPoint::HalfGrid);
+    ap->setHighType(dbAccessType::HalfGrid);
     ap->setAccess(true, dbDirection::DOWN);
     iterm->setAccessPoint(pin, ap);
     FILE *write, *read;
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(ap->getMPin()->getMTerm()->getName() == "a");
     BOOST_TEST(ap->getLayer()->getName() == "L1");
     BOOST_TEST(ap->hasAccess());
-    BOOST_TEST(ap->getHighType() == dbAccessPoint::HalfGrid);
+    BOOST_TEST(ap->getHighType() == dbAccessType::HalfGrid);
     BOOST_TEST(ap->hasAccess(dbDirection::DOWN));
     std::vector<dbDirection> dirs;
     ap->getAccesses(dirs);

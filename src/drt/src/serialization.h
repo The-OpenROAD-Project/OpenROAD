@@ -31,6 +31,7 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/array.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/set.hpp>
@@ -110,8 +111,8 @@ void serialize(Archive& ar,
                const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord x;
-    fr::frCoord y;
+    fr::frCoord x = 0;
+    fr::frCoord y = 0;
     (ar) & x;
     (ar) & y;
     point.x(x);
@@ -130,8 +131,8 @@ void serialize(Archive& ar,
                const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord low;
-    fr::frCoord high;
+    fr::frCoord low = 0;
+    fr::frCoord high = 0;
     (ar) & low;
     (ar) & high;
     interval.low(low);
@@ -243,8 +244,8 @@ template <class Archive>
 void serialize(Archive& ar, fr::point_t& point, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord x;
-    fr::frCoord y;
+    fr::frCoord x = 0;
+    fr::frCoord y = 0;
     (ar) & x;
     (ar) & y;
     point.x(x);
@@ -261,10 +262,10 @@ template <class Archive>
 void serialize(Archive& ar, fr::segment_t& segment, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord xl;
-    fr::frCoord xh;
-    fr::frCoord yl;
-    fr::frCoord yh;
+    fr::frCoord xl = 0;
+    fr::frCoord xh = 0;
+    fr::frCoord yl = 0;
+    fr::frCoord yh = 0;
     (ar) & xl;
     (ar) & xh;
     (ar) & yl;
@@ -290,7 +291,7 @@ template <class Archive>
 void serialize(Archive& ar, odb::Rect& r, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord xlo, ylo, xhi, yhi;
+    fr::frCoord xlo = 0, ylo = 0, xhi = 0, yhi = 0;
     (ar) & xlo;
     (ar) & ylo;
     (ar) & xhi;
@@ -313,7 +314,7 @@ template <class Archive>
 void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 {
   if (fr::is_loading(ar)) {
-    fr::frCoord x, y;
+    fr::frCoord x = 0, y = 0;
     (ar) & x;
     (ar) & y;
     p.set(x, y);
@@ -329,7 +330,7 @@ void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
-  odb::dbSigType::Value v;
+  odb::dbSigType::Value v = odb::dbSigType::SIGNAL;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbSigType(v);
@@ -342,7 +343,7 @@ void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::dbIoType& type, const unsigned int version)
 {
-  odb::dbIoType::Value v;
+  odb::dbIoType::Value v = odb::dbIoType::INOUT;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbIoType(v);
@@ -357,7 +358,7 @@ void serialize(Archive& ar,
                odb::dbTechLayerType& type,
                const unsigned int version)
 {
-  odb::dbTechLayerType::Value v;
+  odb::dbTechLayerType::Value v = odb::dbTechLayerType::NONE;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbTechLayerType(v);
@@ -370,7 +371,7 @@ void serialize(Archive& ar,
 template <class Archive>
 void serialize(Archive& ar, odb::dbMasterType& type, const unsigned int version)
 {
-  odb::dbMasterType::Value v;
+  odb::dbMasterType::Value v = odb::dbMasterType::NONE;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbMasterType(v);
@@ -385,7 +386,7 @@ void serialize(Archive& ar,
                odb::dbTechLayerDir& type,
                const unsigned int version)
 {
-  odb::dbTechLayerDir::Value v;
+  odb::dbTechLayerDir::Value v = odb::dbTechLayerDir::NONE;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbTechLayerDir(v);
@@ -398,7 +399,7 @@ void serialize(Archive& ar,
 template <class Archive>
 void serialize(Archive& ar, odb::dbOrientType& type, const unsigned int version)
 {
-  odb::dbOrientType::Value v;
+  odb::dbOrientType::Value v = odb::dbOrientType::R0;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbOrientType(v);
@@ -413,7 +414,7 @@ void serialize(Archive& ar,
                odb::dbTransform& transform,
                const unsigned int version)
 {
-  odb::dbOrientType type;
+  odb::dbOrientType type = odb::dbOrientType::R0;
   odb::Point offset;
   if (fr::is_loading(ar)) {
     (ar) & type;
@@ -445,7 +446,9 @@ void register_types(Archive& ar)
   ar.template register_type<frPatchWire>();
   ar.template register_type<frPolygon>();
   ar.template register_type<frInstTerm>();
-  ar.template register_type<frTerm>();
+  ar.template register_type<frBTerm>();
+  ar.template register_type<frMTerm>();
+  ar.template register_type<frMaster>();
   ar.template register_type<frNet>();
 
   ar.template register_type<frLef58CutClassConstraint>();
@@ -511,7 +514,8 @@ void register_types(Archive& ar)
   ar.template register_type<frInstBlockage>();
   ar.template register_type<frMarker>();
   ar.template register_type<frNode>();
-  ar.template register_type<frPin>();
+  ar.template register_type<frBPin>();
+  ar.template register_type<frMPin>();
   ar.template register_type<frRPin>();
   ar.template register_type<frVia>();
   ar.template register_type<frTrackPattern>();
@@ -555,7 +559,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
           ((frNet*) obj)->setModified(true);
         break;
       }
-      case frcTerm: {
+      case frcBTerm: {
         int id;
         (ar) & id;
         if (!inBounds(id, design->getTopBlock()->getTerms().size()))
@@ -626,8 +630,8 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & modified;
         break;
       }
-      case frcTerm: {
-        int id = ((frTerm*) obj)->getOrderId();
+      case frcBTerm: {
+        int id = ((frBTerm*) obj)->getOrderId();
         (ar) & id;
         break;
       }

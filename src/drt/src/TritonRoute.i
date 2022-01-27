@@ -134,7 +134,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              int x, int y,
                              int iter,
                              bool pa_markers,
-                             bool pa_combining)
+                             bool pa_edge,
+                             bool pa_commit)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -148,7 +149,8 @@ set_detailed_route_debug_cmd(const char* net_name,
   }
   router->setDebugIter(iter);
   router->setDebugPaMarkers(pa_markers);
-  router->setDebugPaCombining(pa_combining);
+  router->setDebugPaEdge(pa_edge);
+  router->setDebugPaCommit(pa_commit);
 }
 
 void

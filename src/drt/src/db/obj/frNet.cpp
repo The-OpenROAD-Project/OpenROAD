@@ -38,7 +38,7 @@ void frNet::serialize(Archive& ar, const unsigned int version)
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
   (ar) & instTerms_;
-  (ar) & terms_;
+  (ar) & bterms_;
   (ar) & shapes_;
   (ar) & vias_;
   (ar) & pwires_;
@@ -83,7 +83,7 @@ void frNet::serialize(Archive& ar, const unsigned int version)
     }
     for (auto term : instTerms_)
       term->addToNet(this);
-    for (auto term : terms_)
+    for (auto term : bterms_)
       term->addToNet(this);
   }
 }

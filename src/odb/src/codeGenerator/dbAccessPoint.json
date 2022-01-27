@@ -44,13 +44,13 @@
       },
       {
         "name": "low_type_",
-        "type": "int8_t",
-        "flags" : ["private","cmpgt"]
+        "type": "dbAccessType::Value",
+        "flags" : ["private","cmpgt","no-serial"]
       },
       {
         "name": "high_type_",
-        "type": "int8_t",
-        "flags" : ["private","cmpgt"]
+        "type": "dbAccessType::Value",
+        "flags" : ["private","cmpgt","no-serial"]
       },
       {
         "name": "iterms_",
@@ -59,22 +59,8 @@
         "flags" : ["private"]
       }
     ],
-    "enums": [
-        {
-          "name": "AccessType",
-          "values": [
-            "OnGrid",
-            "HalfGrid",
-            "Center",
-            "EncOpt",
-            "NearbyGrid"
-          ],
-          "public": true,
-          "type" : "int8_t"
-        }
-      ],
-      "h_includes": [
-        "dbVector.h"
-      ],
-      "cpp_includes": ["dbTypes.h"]
+    "h_includes": [
+      "dbVector.h"
+    ],
+    "cpp_includes": ["dbTypes.h"]
   }

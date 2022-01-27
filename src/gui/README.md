@@ -92,10 +92,10 @@ Options description:
 ### Displaying timing cones
 
 ```
-display_timing_cone" pin
-                     [-fanin]
-                     [-fanout]
-                     [-off]
+display_timing_cone pin
+                    [-fanin]
+                    [-fanout]
+                    [-off]
 ```
 
 Options description:
@@ -103,6 +103,19 @@ Options description:
 - ``fanin``: (optional) display the fanin timing cone.
 - ``fanout``: (optional) display the fanout timing cone.
 - ``off``: (optional) remove the timing cone.
+
+### Limit drawing to specific nets
+
+```
+focus_net net
+          [-remove]
+          [-clear]
+```
+
+Options description:
+- ``pin``: name of the net.
+- ``remove``: (optional) removes the net from from the focus.
+- ``clear``: (optional) clears all nets from focus.
 
 ## TCL functions
 

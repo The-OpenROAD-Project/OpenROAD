@@ -52,8 +52,7 @@ class Grid
   ~Grid() = default;
 
   void init(const odb::Rect& die_area,
-            const int tile_width,
-            const int tile_height,
+            const int tile_size,
             const int x_grids,
             const int y_grids,
             const bool perfect_regular_x,
@@ -71,8 +70,7 @@ class Grid
   int getXMax() const { return die_area_.xMax(); }
   int getYMax() const { return die_area_.yMax(); }
 
-  int getTileWidth() const { return tile_width_; }
-  int getTileHeight() const { return tile_height_; }
+  int getTileSize() const { return tile_size_; }
 
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
@@ -140,8 +138,7 @@ class Grid
 
  private:
   odb::Rect die_area_;
-  int tile_width_;
-  int tile_height_;
+  int tile_size_;
   int x_grids_;
   int y_grids_;
   bool perfect_regular_x_;

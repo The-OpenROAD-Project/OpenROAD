@@ -187,13 +187,30 @@ highlight_net_route(const odb::dbNet *net)
   getGlobalRouter()->highlightRoute(net);
 }
 
-void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D, bool tree3D){
+void
+read_guides(const char* fileName)
+{
+  getGlobalRouter()->readGuides(fileName);
+}
+
+void set_global_route_debug_cmd(const odb::dbNet *net, bool steinerTree, bool rectilinearSTree, bool tree2D, bool tree3D)
+{
   getGlobalRouter()->initDebugFastRoute();
   getGlobalRouter()->setDebugNet(net);
   getGlobalRouter()->setDebugSteinerTree(steinerTree);
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
+}
+
+void create_wl_report_file(const char* file_name, bool verbose)
+{
+  getGlobalRouter()->createWLReportFile(file_name, verbose);
+}
+
+void report_net_wire_length(odb::dbNet *net, bool global_route, bool detailed_route, bool verbose, const char* file_name)
+{
+  getGlobalRouter()->reportNetWireLength(net, global_route, detailed_route, verbose, file_name);
 }
 
 void

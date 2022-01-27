@@ -38,19 +38,20 @@
 
 namespace fr {
 class frBlock;
+class frMaster;
 class frInstTerm;
 
 class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frBlock* refBlock)
-      : name_(name), refBlock_(refBlock), pinAccessIdx_(0)
+  frInst(const frString& name, frMaster* master)
+      : name_(name), master_(master), pinAccessIdx_(0)
   {
   }
   // getters
   const frString& getName() const { return name_; }
-  frBlock* getRefBlock() const { return refBlock_; }
+  frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
   {
     return instTerms_;
@@ -109,6 +110,7 @@ class frInst : public frRef
   bool hasPin() const override { return false; }
   frPin* getPin() const override { return nullptr; }
   void addToPin(frPin* in) override { ; }
+  void addToPin(frBPin* in) override { ; }
   void removeFromPin() override { ; }
 
   /* from frConnFig
@@ -142,7 +144,7 @@ class frInst : public frRef
 
  private:
   frString name_;
-  fr::frBlock* refBlock_;
+  fr::frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
@@ -157,7 +159,7 @@ class frInst : public frRef
 
     (ar) & boost::serialization::base_object<frRef>(*this);
     (ar) & name_;
-    (ar) & refBlock_;
+    (ar) & master_;
     (ar) & instTerms_;
     (ar) & instBlockages_;
     (ar) & xform_;

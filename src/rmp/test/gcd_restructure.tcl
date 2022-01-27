@@ -17,6 +17,3 @@ ord::set_thread_count "3"
 restructure -liberty_file Nangate45/Nangate45_typ.lib -target area -abc_logfile results/abc_rcon.log  -tielo_port $tielo -tiehi_port $tiehi -work_dir ./results
 
 report_design_area
-set sdc_out_file [file join "results" "out.sdc"]
-write_sdc $sdc_out_file
-puts "sdc file size is [file size $sdc_out_file]"

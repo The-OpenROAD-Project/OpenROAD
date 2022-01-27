@@ -41,46 +41,60 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
   bool isFloatingVDD = false;
   bool isFloatingVSS = false;
   frBlockObject* owner = nullptr;
-  if (obj->typeId() == frcTerm) {
-    auto term = static_cast<frTerm*>(obj);
-    if (term->hasNet()) {
-      owner = term->getNet();
-    } else {
-      dbSigType sigType = term->getType();
-      isFloatingVDD = (sigType == dbSigType::POWER);
-      isFloatingVSS = (sigType == dbSigType::GROUND);
+  switch (obj->typeId()) {
+    case frcBTerm: {
+      auto bterm = static_cast<frBTerm*>(obj);
+      if (bterm->hasNet()) {
+        owner = bterm->getNet();
+      } else {
+        dbSigType sigType = bterm->getType();
+        isFloatingVDD = (sigType == dbSigType::POWER);
+        isFloatingVSS = (sigType == dbSigType::GROUND);
+        owner = obj;
+      }
+      break;
+    }
+    case frcInstTerm: {
+      auto instTerm = static_cast<frInstTerm*>(obj);
+      if (instTerm->hasNet()) {
+        owner = instTerm->getNet();
+      } else {
+        dbSigType sigType = instTerm->getTerm()->getType();
+        isFloatingVDD = (sigType == dbSigType::POWER);
+        isFloatingVSS = (sigType == dbSigType::GROUND);
+        owner = obj;
+      }
+      break;
+    }
+    case frcInstBlockage:
+    case frcBlockage: {
       owner = obj;
+      break;
     }
-  } else if (obj->typeId() == frcInstTerm) {
-    auto instTerm = static_cast<frInstTerm*>(obj);
-    if (instTerm->hasNet()) {
-      owner = instTerm->getNet();
-    } else {
-      dbSigType sigType = instTerm->getTerm()->getType();
-      isFloatingVDD = (sigType == dbSigType::POWER);
-      isFloatingVSS = (sigType == dbSigType::GROUND);
-      owner = obj;
+    case frcPathSeg:
+    case frcVia:
+    case frcPatchWire: {
+      auto shape = static_cast<frShape*>(obj);
+      if (shape->hasNet()) {
+        owner = shape->getNet();
+      } else {
+        logger_->error(DRT, 37, "init_design_helper shape does not have net.");
+      }
+      break;
     }
-  } else if (obj->typeId() == frcInstBlockage || obj->typeId() == frcBlockage) {
-    owner = obj;
-  } else if (obj->typeId() == frcPathSeg || obj->typeId() == frcVia
-             || obj->typeId() == frcPatchWire) {
-    auto shape = static_cast<frShape*>(obj);
-    if (shape->hasNet()) {
-      owner = shape->getNet();
-    } else {
-      logger_->error(DRT, 37, "init_design_helper shape does not have net.");
+    case drcPathSeg:
+    case drcVia:
+    case drcPatchWire: {
+      auto shape = static_cast<drShape*>(obj);
+      if (shape->hasNet()) {
+        owner = shape->getNet()->getFrNet();
+      } else {
+        logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
+      }
+      break;
     }
-  } else if (obj->typeId() == drcPathSeg || obj->typeId() == drcVia
-             || obj->typeId() == drcPatchWire) {
-    auto shape = static_cast<drShape*>(obj);
-    if (shape->hasNet()) {
-      owner = shape->getNet()->getFrNet();
-    } else {
-      logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
-    }
-  } else {
-    logger_->error(DRT, 39, "init_design_helper unsupported type.");
+    default:
+      logger_->error(DRT, 39, "init_design_helper unsupported type.");
   }
 
   if (isFloatingVSS) {
@@ -121,31 +135,30 @@ void FlexGCWorker::Impl::initObj(const Rect& box,
 
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 {
-  if (targetObj_) {
-    if (targetObj_->typeId() == frcInst) {
-      if (obj->typeId() == frcInstTerm
+  if (targetObj_ == nullptr) { return false; }
+  auto type = obj->typeId();
+  switch(targetObj_->typeId()) {
+    case frcInst: {
+      if (type == frcInstTerm
           && static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
-      } else if (obj->typeId() == frcInstBlockage
+      } else if (type == frcInstBlockage
                  && static_cast<frInstBlockage*>(obj)->getInst()
                         == targetObj_) {
         return false;
       } else {
         return true;
       }
-    } else if (targetObj_->typeId() == frcTerm) {
-      if (obj->typeId() == frcTerm
-          && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_)) {
-        return false;
-      } else {
-        return true;
-      }
-    } else {
+      break;
+    }
+    case frcBTerm: {
+      return !(type == frcBTerm
+        && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_));
+      break;
+    }
+    default:
       logger_->error(
           DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
-    }
-  } else {
-    return false;
   }
   return false;
 }
@@ -280,33 +293,6 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
     pathSeg->getBBox(box);
-    // debug
-    // if (pathSeg->getLayerNum() == 4 && box.xMin() < 470300 && box.xMax() >
-    // 470300 && box.yMin() < 100800 && box.yMax() > 100800) {
-    //   cout << "  @@@ debug: initDRObj catches wire on M2 (";
-    //   auto owner = currNet->getOwner();
-    //   if (owner == nullptr) {
-    //     cout <<" FLOATING";
-    //   } else {
-    //     if (owner->typeId() == frcNet) {
-    //       cout <<static_cast<frNet*>(owner)->getName();
-    //     } else if (owner->typeId() == frcInstTerm) {
-    //       cout <<static_cast<frInstTerm*>(owner)->getInst()->getName() <<"/"
-    //            <<static_cast<frInstTerm*>(owner)->getTerm()->getName();
-    //     } else if (owner->typeId() == frcTerm) {
-    //       cout <<"PIN/" <<static_cast<frTerm*>(owner)->getName();
-    //     } else if (owner->typeId() == frcInstBlockage) {
-    //       cout <<static_cast<frInstBlockage*>(owner)->getInst()->getName()
-    //       <<"/OBS";
-    //     } else if (owner->typeId() == frcBlockage) {
-    //       cout <<"PIN/OBS";
-    //     } else {
-    //       cout <<"UNKNOWN";
-    //     }
-    //   }
-    //   cout <<  ") (" << box.xMin() << ", " << box.yMin() << ") - (" <<
-    //   box.xMax() << ", " << box.yMax() << ")\n";
-    // }
     currNet->addPolygon(box, pathSeg->getLayerNum());
     if (pathSeg->isTapered())
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);

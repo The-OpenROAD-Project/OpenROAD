@@ -37,7 +37,6 @@
 
 #include "rsz/SteinerTree.hh"
 
-#include "ord/OpenRoad.hh"
 #include "gui/gui.h"
 #include "utl/Logger.h"
 
@@ -86,7 +85,6 @@ using std::pair;
 using std::sqrt;
 
 using utl::RSZ;
-using ord::closestPtInRect;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -509,13 +507,13 @@ Resizer::bufferInput(const Pin *top_pin,
   string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
   Net *buffer_out = makeUniqueNet();
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   if (buffer) {
     journalMakeBuffer(buffer);
     Point pin_loc = db_network_->location(top_pin);
-    Point buf_loc = core_exists_ ? closestPtInRect(core_, pin_loc) : pin_loc;
+    Point buf_loc = core_exists_ ? core_.closestPtInside(pin_loc) : pin_loc;
     setLocation(buffer, buf_loc);
     designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
@@ -544,18 +542,13 @@ void
 Resizer::setLocation(Instance *inst,
                      Point pt)
 {
-  int x = pt.getX();
-  int y = pt.getY();
   // Stay inside the lines.
-  if (core_exists_) {
-    Point in_core = closestPtInRect(core_, x, y);
-    x = in_core.getX();
-    y = in_core.getY();
-  }
+  if (core_exists_)
+    pt = core_.closestPtInside(pt);
 
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(x, y);
+  dinst->setLocation(pt.getX(), pt.getY());
 }
 
 void
@@ -622,9 +615,9 @@ Resizer::bufferOutput(Pin *top_pin,
   string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
   Net *buffer_in = makeUniqueNet();
-  Instance *buffer = network->makeInstance(buffer_cell,
-                                           buffer_name.c_str(),
-                                           parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   if (buffer) {
     journalMakeBuffer(buffer);
     setLocation(buffer, db_network_->location(top_pin));
@@ -1500,9 +1493,9 @@ Resizer::makeRepeater(const char *where,
     }
   }
 
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   journalMakeBuffer(buffer);
   Point buf_loc(x, y);
   setLocation(buffer, buf_loc);
@@ -2231,8 +2224,8 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             Point tie_loc = tieLocation(load, separation_dbu);
             Instance *load_inst = network_->instance(load);
             string tie_name = makeUniqueInstName(inst_name, true);
-            Instance *tie = sta_->makeInstance(tie_name.c_str(),
-                                               tie_cell, top_inst);
+            Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
+                                         top_inst);
             setLocation(tie, tie_loc);
 
             // Make tie output net.
@@ -2563,9 +2556,9 @@ Resizer::splitLoads(PathRef *drvr_path,
   string buffer_name = makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
   LibertyCell *buffer_cell = buffer_lowest_drive_;
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   journalMakeBuffer(buffer);
   inserted_buffer_count_++;
   designAreaIncr(area(db_network_->cell(buffer_cell)));
@@ -3022,8 +3015,8 @@ Resizer::makeHoldDelay(Vertex *drvr,
     Net *buf_out_net = (i == buffer_count - 1) ? out_net : makeUniqueNet();
     // drvr_pin->drvr_net->hold_buffer->net2->load_pins
     string buffer_name = makeUniqueInstName("hold");
-    buffer = db_network_->makeInstance(buffer_cell, buffer_name.c_str(),
-                                       parent);
+    buffer = makeInstance(buffer_cell, buffer_name.c_str(),
+                          parent);
     journalMakeBuffer(buffer);
     inserted_buffer_count_++;
     designAreaIncr(area(db_network_->cell(buffer_cell)));
@@ -3831,8 +3824,8 @@ Resizer::cloneClkInverter(Instance *inv)
       Pin *load_pin = load_iter->next();
       if (load_pin != out_pin) {
         string clone_name = makeUniqueInstName(inv_name, true);
-        Instance *clone = sta_->makeInstance(clone_name.c_str(),
-                                             inv_cell, top_inst);
+        Instance *clone = makeInstance(inv_cell, clone_name.c_str(),
+                                       top_inst);
         Point clone_loc = db_network_->location(load_pin);
         journalMakeBuffer(clone);
         setLocation(clone, clone_loc);
@@ -4101,6 +4094,16 @@ Resizer::isRegister(Vertex *vertex)
     return cell && cell->hasSequentials();
   }
   return false;
+}
+
+Instance *Resizer::makeInstance(LibertyCell *cell,
+                                const char *name,
+                                Instance *parent)
+{
+  Instance *inst = db_network_->makeInstance(cell, name, parent);
+  dbInst *db_inst = db_network_->staToDb(inst);
+  db_inst->setSourceType(odb::dbSourceType::TIMING);
+  return inst;
 }
 
 } // namespace

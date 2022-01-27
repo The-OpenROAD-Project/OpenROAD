@@ -54,6 +54,7 @@
 
 #include "drcWidget.h"
 #include "ruler.h"
+#include "heatMapPlacementDensity.h"
 
 extern int cmd_argc;
 extern char **cmd_argv;
@@ -109,7 +110,8 @@ Gui* Gui::get()
 
 Gui::Gui() : continue_after_close_(false),
              logger_(nullptr),
-             db_(nullptr)
+             db_(nullptr),
+             placement_density_heat_map_(nullptr)
 {
   resetConversions();
 }
@@ -121,7 +123,9 @@ bool Gui::enabled()
 
 void Gui::registerRenderer(Renderer* renderer)
 {
-  main_window->getControls()->registerRenderer(renderer);
+  if (Gui::enabled()) {
+    main_window->getControls()->registerRenderer(renderer);
+  }
 
   renderers_.insert(renderer);
   redraw();
@@ -542,9 +546,104 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
+void Gui::registerHeatMap(HeatMapDataSource* heatmap)
+{
+  heat_maps_.insert(heatmap);
+  registerRenderer(heatmap->getRenderer());
+  if (Gui::enabled()) {
+    main_window->registerHeatMap(heatmap);
+  }
+}
+
+void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
+{
+  if (heat_maps_.count(heatmap) == 0) {
+      return;
+  }
+
+  unregisterRenderer(heatmap->getRenderer());
+  if (Gui::enabled()) {
+    main_window->unregisterHeatMap(heatmap);
+  }
+  heat_maps_.erase(heatmap);
+}
+
 void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
 {
-  main_window->setHeatMapSetting(name, option, value);
+  HeatMapDataSource* source = nullptr;
+
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getShortName() == name) {
+      source = heat_map;
+      break;
+    }
+  }
+
+  if (source == nullptr) {
+    QStringList options;
+    for (auto* heat_map : heat_maps_) {
+      options.append(QString::fromStdString(heat_map->getShortName()));
+    }
+    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
+  }
+
+  const std::string rebuild_map_option = "rebuild";
+  if (option == rebuild_map_option) {
+    source->destroyMap();
+  } else {
+    auto settings = source->getSettings();
+
+    if (settings.count(option) == 0) {
+      QStringList options;
+      options.append(QString::fromStdString(rebuild_map_option));
+      for (const auto& [key, kv] : settings) {
+        options.append(QString::fromStdString(key));
+      }
+      logger_->error(utl::GUI, 29, "{} is not a valid option. Valid options are: {}", option, options.join(", ").toStdString());
+    }
+
+    auto current_value = settings[option];
+    if (std::holds_alternative<bool>(current_value)) {
+      // is bool
+      if (auto* s = std::get_if<bool>(&value)) {
+        settings[option] = *s;
+      } if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s != 0;
+      } if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s != 0.0;
+      } else {
+        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
+      }
+    } else if (std::holds_alternative<int>(current_value)) {
+      // is int
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = *s;
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = static_cast<int>(*s);
+      } else {
+        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
+      }
+    } else if (std::holds_alternative<double>(current_value)) {
+      // is double
+      if (auto* s = std::get_if<int>(&value)) {
+        settings[option] = static_cast<double>(*s);
+      } else if (auto* s = std::get_if<double>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
+      }
+    } else {
+      // is string
+      if (auto* s = std::get_if<std::string>(&value)) {
+        settings[option] = *s;
+      } else {
+        logger_->error(utl::GUI, 63, "{} must be a string", option);
+      }
+    }
+    source->setSettings(settings);
+  }
+
+  source->getRenderer()->redraw();
 }
 
 Renderer::~Renderer()
@@ -723,9 +822,29 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
+}
+
+void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+{
+  main_window->timingPathsThrough(terms);
+}
+
+void Gui::addFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addFocusNet(net);
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeFocusNet(net);
+}
+
+void Gui::clearFocusNets()
+{
+  main_window->getLayoutViewer()->clearFocusNets();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -740,11 +859,6 @@ void Gui::setLogger(utl::Logger* logger)
     // gui already requested, so go ahead and set the logger
     main_window->setLogger(logger);
   }
-}
-
-void Gui::setDatabase(odb::dbDatabase* db)
-{
-  db_ = db;
 }
 
 void Gui::hideGui()
@@ -766,6 +880,16 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   // nullptr for tcl interp to indicate nothing to setup
   // and commands and interactive setting
   startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
+}
+
+void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
+{
+  db_ = db;
+  setLogger(logger);
+
+  // placement density heatmap
+  placement_density_heat_map_ = std::make_unique<PlacementDensityDataSource>(logger);
+  placement_density_heat_map_->registerHeatMap();
 }
 
 //////////////////////////////////////////////////
@@ -988,8 +1112,7 @@ void initGui(OpenRoad* openroad)
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->setDatabase(openroad->getDb());
-  gui->setLogger(openroad->getLogger());
+  gui->init(openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord

@@ -38,7 +38,7 @@
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
-#include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
 
@@ -54,8 +54,7 @@ class frBlock : public frBlockObject
   frBlock(const frString& name)
       : frBlockObject(),
         name_(name),
-        dbUnit_(0) /*, manufacturingGrid_(0)*/,
-        masterType_(dbMasterType::NONE){};
+        dbUnit_(0){};
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   void getBBox(Rect& boxIn) const
@@ -165,11 +164,11 @@ class frBlock : public frBlockObject
   {
     return trackPatterns_.at(lNum);
   }
-  const std::vector<std::unique_ptr<frTerm>>& getTerms() const
+  const std::vector<std::unique_ptr<frBTerm>>& getTerms() const
   {
     return terms_;
   }
-  frTerm* getTerm(const std::string& in) const
+  frBTerm* getTerm(const std::string& in) const
   {
     auto it = name2term_.find(in);
     if (it == name2term_.end()) {
@@ -281,7 +280,6 @@ class frBlock : public frBlockObject
     }
     idx.set(idxX, idxY);
   }
-  dbMasterType getMasterType() { return masterType_; }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
     return markers_;
@@ -292,7 +290,7 @@ class frBlock : public frBlockObject
 
   // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
-  void addTerm(std::unique_ptr<frTerm> in)
+  void addTerm(std::unique_ptr<frBTerm> in)
   {
     in->setOrderId(terms_.size());
     in->setBlock(this);
@@ -353,7 +351,6 @@ class frBlock : public frBlockObject
   {
     gCellPatterns_ = gpIn;
   }
-  void setMasterType(const dbMasterType& in) { masterType_ = in; }
   void addMarker(std::unique_ptr<frMarker> in)
   {
     auto rptr = in.get();
@@ -372,13 +369,11 @@ class frBlock : public frBlockObject
   frString name_;
   frUInt4 dbUnit_;
 
-  dbMasterType masterType_;
-
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;
 
-  std::map<std::string, frTerm*> name2term_;
-  std::vector<std::unique_ptr<frTerm>> terms_;
+  std::map<std::string, frBTerm*> name2term_;
+  std::vector<std::unique_ptr<frBTerm>> terms_;
 
   std::map<std::string, frNet*> name2net_;
   std::vector<std::unique_ptr<frNet>> nets_;
@@ -413,7 +408,6 @@ void frBlock::serialize(Archive& ar, const unsigned int version)
   (ar) & boost::serialization::base_object<frBlockObject>(*this);
   (ar) & name_;
   (ar) & dbUnit_;
-  (ar) & masterType_;
   (ar) & insts_;
   (ar) & terms_;
   (ar) & nets_;
