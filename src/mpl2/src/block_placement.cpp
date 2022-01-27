@@ -1637,7 +1637,6 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   std::mt19937 rand_generator(seed);
   for (int i = 0; i < num_seed; i++) {
     seed_list[i] = (unsigned) rand_generator();
-    logger->info(MPL, 9003, "\tSeed: {}.", seed_list[i]);
   }
 
   SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
