@@ -1288,14 +1288,17 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
 
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
     if (source_type == odb::dbSourceType::TIMING) {
-      auto* net = inst->getOutputTerm()->getNet();
-      if (net == nullptr) {
-        return &bufinv_instances_.timing;
-      } else if (net->getSigType() == odb::dbSigType::CLOCK) {
-        return &clock_tree_instances_.bufinv;
-      } else {
-        return &bufinv_instances_.timing;
+      for (auto* iterm : inst->getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return &clock_tree_instances_.bufinv;
+        }
       }
+      return &bufinv_instances_.timing;
     } else {
       return &bufinv_instances_.other;
     }
