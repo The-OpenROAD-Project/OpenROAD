@@ -10,7 +10,7 @@
 #include <queue>
 #include <string>
 #include <tuple>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "MLPart.h"
@@ -58,7 +58,7 @@ using std::sort;
 using std::string;
 using std::to_string;
 using std::tuple;
-using std::unordered_map;
+using std::map;
 using std::vector;
 
 using odb::dbBlock;
@@ -839,14 +839,14 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   cluster_list_.erase(vec_it);
 
   const int src_id = cluster->getId();
-  unordered_map<int, Instance*> idx_to_inst;
-  unordered_map<Instance*, int> inst_to_idx;
+  map<int, Instance*> idx_to_inst;
+  map<Instance*, int> inst_to_idx;
   vector<double> vertex_weight;
   vector<double> edge_weight;
   vector<int> col_idx;  // edges represented by vertex indices
   vector<int> row_ptr;  // pointers for edges
   int inst_id = 0;
-  unordered_map<Cluster*, int> node_map;
+  map<Cluster*, int> node_map;
   // we also consider outside world
   for (int i = 0; i < cluster_list_.size(); i++) {
     vertex_weight.push_back(1.0);
@@ -967,9 +967,9 @@ void AutoClusterMgr::MLPartNetUtil(Instance* inst,
                                    vector<int>& col_idx,
                                    vector<int>& row_ptr,
                                    vector<double>& edge_weight,
-                                   unordered_map<Cluster*, int>& node_map,
-                                   unordered_map<int, Instance*>& idx_to_inst,
-                                   unordered_map<Instance*, int>& inst_to_idx)
+                                   map<Cluster*, int>& node_map,
+                                   map<int, Instance*>& idx_to_inst,
+                                   map<Instance*, int>& inst_to_idx)
 {
   const bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
@@ -1054,9 +1054,9 @@ void AutoClusterMgr::MLPartBufferNetUtil(
     vector<int>& col_idx,
     vector<int>& row_ptr,
     vector<double>& edge_weight,
-    unordered_map<Cluster*, int>& node_map,
-    unordered_map<int, Instance*>& idx_to_inst,
-    unordered_map<Instance*, int>& inst_to_idx)
+    map<Cluster*, int>& node_map,
+    map<int, Instance*>& idx_to_inst,
+    map<Instance*, int>& inst_to_idx)
 {
   for (int i = 0; i < buffer_net_vec_.size(); i++) {
     int driver_id = -1;
@@ -1180,6 +1180,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
       module_name[i] = '*';
   }
 
+  cout << "Print Macro Cluster file" << endl;
   const string block_file_name
       = string("./rtl_mp/") + module_name + string(".txt.block");
   const string net_file_name
@@ -1191,6 +1192,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
     const pair<float, float> pin_pos = printPinPos(macro_vec[i]);
     const Cell* cell = network_->cell(macro_vec[i]);
     const char* cell_name = network_->name(cell);
+    cout << "cell: " << cell_name << endl;
     const dbMaster* master = db_->findMaster(cell_name);
     const float width = master->getWidth() / dbu_;
     const float height = master->getHeight() / dbu_;
@@ -1213,9 +1215,9 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
   output_file.open(net_file_name.c_str());
   int net_id = 0;
   for (auto [src_id, cluster] : cluster_map_) {
-    unordered_map<int, unsigned int> connection_map
+    map<int, unsigned int> connection_map
         = cluster->getOutputConnections();
-    unordered_map<int, unsigned int>::iterator iter = connection_map.begin();
+    map<int, unsigned int>::iterator iter = connection_map.begin();
     bool flag = true;
     while (iter != connection_map.end()) {
       if (iter->first != src_id) {
@@ -1452,8 +1454,8 @@ void AutoClusterMgr::findFanins(sta::BfsFwdIterator& bfs)
       fanin_name = fanin->name(network);
       // Union fanins sets of fanin vertices
       if (vertex_fanins_.find(fanin) != vertex_fanins_.end()) {
-        std::unordered_map<Pin*, int> macro_fanin = vertex_fanins_[fanin];
-        std::unordered_map<Pin*, int>::iterator map_iter = macro_fanin.begin();
+        std::map<Pin*, int> macro_fanin = vertex_fanins_[fanin];
+        std::map<Pin*, int>::iterator map_iter = macro_fanin.begin();
         for (; map_iter != macro_fanin.end(); map_iter++) {
           addFanin(vertex, map_iter->first, map_iter->second);
         }
@@ -1492,7 +1494,7 @@ sta::Pin* AutoClusterMgr::findSeqOutPin(sta::Instance* inst,
 
 void AutoClusterMgr::copyFaninsAcrossRegisters(sta::BfsFwdIterator& bfs)
 {
-  std::unordered_map<sta::Vertex*, std::unordered_map<Pin*, int>> vertex_fanins;
+  std::map<sta::Vertex*, std::map<Pin*, int>> vertex_fanins;
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
   sta::Instance* top_inst = network->topInstance();
@@ -1565,8 +1567,8 @@ void AutoClusterMgr::addTimingWeight(float weight)
         if (vertex_fanins_.find(vertex) == vertex_fanins_.end())
           continue;
 
-        std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
-        std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
+        std::map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
+        std::map<Pin*, int>::iterator map_it = pin_fanins.begin();
         for (; map_it != pin_fanins.end(); map_it++) {
           virtual_vertex_map_[sink_id][map_it->first] = 1;
         }
@@ -1597,8 +1599,8 @@ void AutoClusterMgr::addTimingWeight(float weight)
       sta::Vertex* vertex = graph->pinDrvrVertex(pin);
       if (vertex_fanins_.find(vertex) == vertex_fanins_.end())
         continue;
-      std::unordered_map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
-      std::unordered_map<Pin*, int>::iterator map_it = pin_fanins.begin();
+      std::map<Pin*, int> pin_fanins = vertex_fanins_[vertex];
+      std::map<Pin*, int>::iterator map_it = pin_fanins.begin();
       for (; map_it != pin_fanins.end(); map_it++) {
         virtual_vertex_map_[sink_id][map_it->first] = 1;
       }
@@ -1618,11 +1620,11 @@ void AutoClusterMgr::addTimingWeight(float weight)
     }
   }
 
-  unordered_map<int, unordered_map<int, int>>::iterator map_iter
+  map<int, map<int, int>>::iterator map_iter
       = virtual_timing_map_.begin();
   for (; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
-    unordered_map<int, int> sinks = map_iter->second;
+    map<int, int> sinks = map_iter->second;
     for (const auto& sink : sinks) {
       float level_weight = weight;
       bool src_io = src_id <= bundled_io_map_.size();
@@ -1841,7 +1843,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
 
   // add virtual weights between std cell and hard macro portion of the cluster
   // add virtual weights between hard macros
-  unordered_map<int, int>::iterator weight_it = virtual_map_.begin();
+  map<int, int>::iterator weight_it = virtual_map_.begin();
   while (weight_it != virtual_map_.end()) {
     int id = weight_it->second;
     int target_id = weight_it->first;
@@ -1920,7 +1922,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   }
   output_file.close();
 
-  unordered_map<int, Cluster*>::iterator map_iter = cluster_map_.begin();
+  map<int, Cluster*>::iterator map_iter = cluster_map_.begin();
 
   string block_file = string(report_directory) + '/' + file_name + ".block";
   output_file.open(block_file);
@@ -1948,6 +1950,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   while (map_iter != cluster_map_.end()) {
     float area = map_iter->second->calculateArea(network_);
     if (area != 0.0) {
+      cout <<"cluster name = " << map_iter->second->getName() << endl;
       output_file << "cluster: " << map_iter->second->getName() << endl;
       output_file << "area:  " << area << endl;
       if (map_iter->second->getNumMacro() > 0) {
@@ -1976,9 +1979,9 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   map_iter = cluster_map_.begin();
   while (map_iter != cluster_map_.end()) {
     int src_id = map_iter->first;
-    unordered_map<int, unsigned int> connection_map
+    map<int, unsigned int> connection_map
         = map_iter->second->getOutputConnections();
-    unordered_map<int, unsigned int>::iterator iter = connection_map.begin();
+    map<int, unsigned int>::iterator iter = connection_map.begin();
 
     if (!(connection_map.size() == 0
           || (connection_map.size() == 1 && iter->first == src_id))) {
