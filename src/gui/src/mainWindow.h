@@ -217,7 +217,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool input,
                                     int highlight_group = 0);
 
-  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
+  void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<Gui::odbTerm>& terms);
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);

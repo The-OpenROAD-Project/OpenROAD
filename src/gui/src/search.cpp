@@ -145,6 +145,16 @@ void Search::inDbBlockSetDieArea(odb::dbBlock* block)
   setBlock(block);
 }
 
+void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
+{
+  emit modified();
+}
+
+void Search::inDbRegionDestroy(odb::dbRegion* region)
+{
+  emit modified();
+}
+
 void Search::setBlock(odb::dbBlock* block)
 {
   if (block_ != block) {

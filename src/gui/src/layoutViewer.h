@@ -255,6 +255,7 @@ class LayoutViewer : public QWidget
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  int depth);
+  void drawRegionOutlines(QPainter* painter);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -280,7 +281,8 @@ class LayoutViewer : public QWidget
   void drawHighlighted(Painter& painter);
   void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds);
-  void drawAccessPoints(Painter& painter);
+  void drawAccessPoints(Painter& painter,
+                        const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);

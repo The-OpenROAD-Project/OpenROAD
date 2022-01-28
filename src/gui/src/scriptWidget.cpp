@@ -39,6 +39,7 @@
 #include <QCoreApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -440,7 +441,9 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     }
 
     // process widget event queue, if main thread will process new text, otherwise there is nothing to process from this thread.
-    QCoreApplication::sendPostedEvents(widget_);
+    if (QThread::currentThread() == widget_->thread()) {
+      QCoreApplication::sendPostedEvents(widget_);
+    }
   }
 
   void flush_() override {}

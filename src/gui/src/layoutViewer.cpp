@@ -741,6 +741,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
   boxes.push_back({{bbox.xMin(), bbox.yMin()},
                    {bbox.xMax(), bbox.yMax()}});
 
+  if (options_->areRegionsVisible()) {
+    for (auto* region : block_->getRegions()) {
+      for (auto* box : region->getBoundaries()) {
+        odb::Rect region_box;
+        box->getBox(region_box);
+        if (region_box.area() > 0) {
+          boxes.push_back({{region_box.xMin(), region_box.yMin()},
+                           {region_box.xMax(), region_box.yMax()}});
+        }
+      }
+    }
+  }
+
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
@@ -1969,8 +1982,10 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
   drawRows(painter, bounds);
   if (options_->areAccessPointsVisible()) {
-    drawAccessPoints(gui_painter);
+    drawAccessPoints(gui_painter, insts);
   }
+
+  drawRegionOutlines(painter);
 
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
@@ -1983,38 +1998,68 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 }
 
-void LayoutViewer::drawAccessPoints(Painter& painter)
+void LayoutViewer::drawRegionOutlines(QPainter* painter)
+{
+  if (!options_->areRegionsVisible()) {
+    return;
+  }
+
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(Qt::BrushStyle::NoBrush);
+
+  for (auto* region : block_->getRegions()) {
+    for (auto* box : region->getBoundaries()) {
+      odb::Rect region_box;
+      box->getBox(region_box);
+      if (region_box.area() > 0) {
+        painter->drawRect(region_box.xMin(), region_box.yMin(), region_box.dx(), region_box.dy());
+      }
+    }
+  }
+}
+
+void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = shapeSizeLimit();
-  const int shape_size = 100;
-  if (shape_limit > shape_size)
+  const int shape_size = 100; // units DBU
+  if (shape_limit > shape_size) {
     return;
-  for (auto term : block_->getITerms()) {
-    for (auto ap : term->getPrefAccessPoints()) {
-      if (options_->isVisible(ap->getLayer())) {
-        auto color = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
-        painter.setPen(color, /* cosmetic */ true);
-        Point pt = ap->getPoint();
-        odb::dbTransform xform;
-        int x, y;
-        term->getInst()->getLocation(x, y);
-        xform.setOffset({x, y});
-        xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-        xform.apply(pt);
-        painter.drawX(pt.x(), pt.y(), shape_size);
+  }
+
+  const Painter::Color has_access = Painter::green;
+  const Painter::Color not_access = Painter::red;
+
+  auto draw = [&](odb::dbAccessPoint* ap, const odb::dbTransform& transform) {
+    if (ap == nullptr) {
+      return;
+    }
+    if (!options_->isVisible(ap->getLayer())) {
+      return;
+    }
+
+    Point pt = ap->getPoint();
+    transform.apply(pt);
+
+    auto color = ap->hasAccess() ? has_access : not_access;
+    painter.setPen(color, /* cosmetic */ true);
+    painter.drawX(pt.x(), pt.y(), shape_size);
+  };
+
+  for (auto* inst : insts) {
+    int x, y;
+    inst->getLocation(x, y);
+    odb::dbTransform xform({x, y});
+
+    for (auto term : inst->getITerms()) {
+      for (auto ap : term->getPrefAccessPoints()) {
+        draw(ap, xform);
       }
     }
   }
   for (auto term : block_->getBTerms()) {
     for (auto pin : term->getBPins()) {
       for (auto ap : pin->getAccessPoints()) {
-        if (ap != nullptr && options_->isVisible(ap->getLayer())) {
-          auto color
-              = ap->hasAccess() ? gui::Painter::green : gui::Painter::red;
-          painter.setPen(color, /* cosmetic */ true);
-          Point pt = ap->getPoint();
-          painter.drawX(pt.x(), pt.y(), shape_size);
-        }
+        draw(ap, {});
       }
     }
   }

@@ -37,9 +37,17 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QColor>
+#include <QComboBox>
+#include <QDialog>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QListWidget>
+#include <QSpinBox>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -99,13 +107,23 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(bool get_max, int path_count);
+  void populateModel(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::vector<std::set<sta::Pin*>>& thru,
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max, int path_count);
+  bool populatePaths(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::vector<std::set<sta::Pin*>>& thru,
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
@@ -224,7 +242,7 @@ class TimingPath
                          bool include_unconstrained,
                          int path_count,
                          const std::set<sta::Pin*>& from,
-                         const std::set<sta::Pin*>& thrus,
+                         const std::vector<std::set<sta::Pin*>>& thrus,
                          const std::set<sta::Pin*>& to,
                          bool include_capture,
                          std::vector<std::unique_ptr<TimingPath>>& paths);
@@ -497,6 +515,110 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   }
 
   bool is_modified_;
+};
+
+class PinSetWidget : public QWidget
+{
+ Q_OBJECT
+ public:
+  PinSetWidget(bool add_remove_button, QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  void updatePins();
+
+  void setPins(const std::set<sta::Pin*>& pins);
+
+  const std::set<sta::Pin*> getPins() const;
+
+  bool isAddMode() const { return add_mode_; }
+  bool isRemoveMode() const { return !isAddMode(); }
+  void setAddMode();
+  void setRemoveMode();
+
+ signals:
+  void addRemoveTriggered(PinSetWidget*);
+  void inspect(const Selected& selected);
+
+ public slots:
+  void clearPins() { setPins({}); }
+
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
+ private slots:
+  void findPin();
+  void showMenu(const QPoint& point);
+
+ private:
+  sta::dbSta* sta_;
+  std::vector<sta::Pin*> pins_;
+
+  QListWidget* box_;
+  QLineEdit* find_pin_;
+  QPushButton* clear_;
+  QPushButton* add_remove_;
+
+  bool add_mode_;
+
+  void addPin(sta::Pin* pin);
+  void removePin(sta::Pin* pin);
+  void removeSelectedPins();
+};
+
+class TimingControlsDialog : public QDialog
+{
+ Q_OBJECT
+ public:
+  TimingControlsDialog(QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta);
+
+  void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
+  int getPathCount() const { return path_count_spin_box_->value(); }
+
+  void setUnconstrained(bool uncontrained);
+  bool getUnconstrained() const;
+
+  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
+  void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
+  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
+
+  const std::set<sta::Pin*> getFromPins() const { return from_->getPins(); }
+  const std::vector<std::set<sta::Pin*>> getThruPins() const;
+  const std::set<sta::Pin*> getToPins() const { return to_->getPins(); }
+
+  sta::Pin* convertTerm(Gui::odbTerm term) const;
+
+ signals:
+  void inspect(const Selected& selected);
+
+ public slots:
+  void populate();
+
+ private slots:
+  void addRemoveThru(PinSetWidget* row);
+
+ private:
+  sta::dbSta* sta_;
+
+  QFormLayout* layout_;
+
+  QSpinBox* path_count_spin_box_;
+  QComboBox* corner_box_;
+
+  QCheckBox* uncontrained_;
+
+  PinSetWidget* from_;
+  std::vector<PinSetWidget*> thru_;
+  PinSetWidget* to_;
+
+  static constexpr int thru_start_row_ = 3;
+
+  void setPinSelections();
+
+  void addThruRow(const std::set<sta::Pin*>& pins);
+  void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 
 }  // namespace gui

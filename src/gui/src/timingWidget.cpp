@@ -56,9 +56,10 @@ TimingWidget::TimingWidget(QWidget* parent)
       capture_details_table_view_(new QTableView(this)),
       find_object_edit_(new QLineEdit(this)),
       path_index_spin_box_(new QSpinBox(this)),
-      path_count_spin_box_(new QSpinBox(this)),
       update_button_(new QPushButton("Update", this)),
+      settings_button_(new QPushButton("Settings", this)),
       expand_clk_(new QCheckBox("Expand clock", this)),
+      settings_(new TimingControlsDialog(this)),
       setup_timing_paths_model_(nullptr),
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
@@ -72,9 +73,6 @@ TimingWidget::TimingWidget(QWidget* parent)
 {
   setObjectName("timing_report"); // for settings
 
-  path_count_spin_box_->setRange(0, 10000);
-  path_count_spin_box_->setValue(100);
-
   QWidget* container = new QWidget(this);
   QGridLayout* layout = new QGridLayout;
 
@@ -83,10 +81,9 @@ TimingWidget::TimingWidget(QWidget* parent)
   control_frame->setFrameShadow(QFrame::Raised);
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(new QLabel("Paths:", this));
-  controls_layout->addWidget(path_count_spin_box_);
+  controls_layout->addWidget(settings_button_);
   controls_layout->addWidget(update_button_);
-  controls_layout->insertStretch(0);
+  controls_layout->insertStretch(1);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame, 0, 0);
 
@@ -145,6 +142,16 @@ TimingWidget::TimingWidget(QWidget* parent)
   connect(
       update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
 
+  connect(settings_button_,
+          SIGNAL(clicked()),
+          this,
+          SLOT(showSettings()));
+
+  connect(settings_,
+          SIGNAL(inspect(const Selected&)),
+          this,
+          SIGNAL(inspect(const Selected&)));
+
   connect(expand_clk_, SIGNAL(stateChanged(int)), this, SLOT(updateClockRows()));
 
   path_index_spin_box_->setRange(0, 0);
@@ -158,6 +165,7 @@ TimingWidget::~TimingWidget()
 void TimingWidget::init(sta::dbSta* sta)
 {
   cone_renderer_->setSTA(sta);
+  settings_->setSTA(sta);
 
   setup_timing_paths_model_ = new TimingPathsModel(sta, this);
   hold_timing_paths_model_ = new TimingPathsModel(sta, this);
@@ -224,11 +232,16 @@ void TimingWidget::init(sta::dbSta* sta)
   clearPathDetails();
 }
 
+void TimingWidget::updatePaths()
+{
+  update_button_->click();
+}
+
 void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  path_count_spin_box_->setValue(settings->value("path_count", path_count_spin_box_->value()).toInt());
+  settings_->setPathCount(settings->value("path_count", settings_->getPathCount()).toInt());
   expand_clk_->setCheckState(settings->value("expand_clk", expand_clk_->checkState()).value<Qt::CheckState>());
 
   settings->endGroup();
@@ -238,7 +251,7 @@ void TimingWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings->setValue("path_count", path_count_spin_box_->value());
+  settings->setValue("path_count", settings_->getPathCount());
   settings->setValue("expand_clk", expand_clk_->checkState());
 
   settings->endGroup();
@@ -407,10 +420,14 @@ void TimingWidget::populatePaths()
 {
   clearPathDetails();
 
-  int count = path_count_spin_box_->value();
+  const int count = settings_->getPathCount();
+  const auto from = settings_->getFromPins();
+  const auto thru = settings_->getThruPins();
+  const auto to = settings_->getToPins();
+  const bool unconstrained = settings_->getUnconstrained();
 
-  setup_timing_paths_model_->populateModel(true, count);
-  hold_timing_paths_model_->populateModel(false, count);
+  setup_timing_paths_model_->populateModel(true, count, from, thru, to, unconstrained);
+  hold_timing_paths_model_->populateModel(false, count, from, thru, to, unconstrained);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
@@ -532,6 +549,12 @@ void TimingWidget::toggleRenderer(bool visible)
 void TimingWidget::setBlock(odb::dbBlock* block)
 {
   dbchange_listener_->addOwner(block);
+}
+
+void TimingWidget::showSettings()
+{
+  settings_->populate();
+  settings_->show();
 }
 
 }  // namespace gui

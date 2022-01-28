@@ -33,6 +33,11 @@ record_tests {
   repair_antennas3
   repair_antennas_error1
   repair_antennas_error2
+  report_wire_length1
+  report_wire_length2
+  report_wire_length3
+  report_wire_length4
+  report_wire_length5
   silence
   tracks1
   tracks2
