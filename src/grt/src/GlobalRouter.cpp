@@ -45,6 +45,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -2963,36 +2964,63 @@ int GlobalRouter::findInstancesObstructions(
       isMacro = true;
     }
 
-    for (odb::dbBox* box : master->getObstructions()) {
-      int layer = box->getTechLayer()->getRoutingLevel();
+    if (isMacro) {
+      std::unordered_map<int, odb::Rect> macro_obs_per_layer;
+      int bottom_layer = std::numeric_limits<int>::max();
+      int top_layer = std::numeric_limits<int>::min();
 
-      if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
-        odb::Rect rect;
-        box->getBox(rect);
-        transform.apply(rect);
+      for (odb::dbBox* box : master->getObstructions()) {
+        int layer = box->getTechLayer()->getRoutingLevel();
+        if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
+          odb::Rect rect;
+          box->getBox(rect);
+          transform.apply(rect);
 
-        int layer_extension = 0;
+          if (macro_obs_per_layer.find(layer) ==
+              macro_obs_per_layer.end()) {
+            macro_obs_per_layer[layer] = rect;
+          } else {
+            macro_obs_per_layer[layer].merge(rect);
+          }
+          obstructions_cnt++;
 
-        if (isMacro) {
-          layer_extension
-              = layer_extensions[box->getTechLayer()->getRoutingLevel()];
-          layer_extension += macro_extension_ * grid_->getTileSize();
+          bottom_layer = std::min(bottom_layer, layer);
+          top_layer = std::max(top_layer, layer);
         }
+      }
 
-        odb::Point lower_bound = odb::Point(rect.xMin() - layer_extension,
-                                            rect.yMin() - layer_extension);
-        odb::Point upper_bound = odb::Point(rect.xMax() + layer_extension,
-                                            rect.yMax() + layer_extension);
-        odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-        if (!die_area.contains(obstruction_rect)) {
-          if (verbose_)
-            logger_->warn(GRT,
-                          38,
-                          "Found blockage outside die area in instance {}.",
-                          inst->getConstName());
+      extendObstructions(macro_obs_per_layer, bottom_layer, top_layer);
+
+      for (auto& [layer, obs] : macro_obs_per_layer) {
+        int layer_extension = layer_extensions[layer];
+        layer_extension += macro_extension_ * grid_->getTileSize();
+        obs.set_xlo(obs.xMin() - layer_extension);
+        obs.set_ylo(obs.yMin() - layer_extension);
+        obs.set_xhi(obs.xMax() + layer_extension);
+        obs.set_yhi(obs.yMax() + layer_extension);
+        applyObstructionAdjustment(obs, tech->findRoutingLayer(layer));
+      }
+    } else {
+      for (odb::dbBox* box : master->getObstructions()) {
+        int layer = box->getTechLayer()->getRoutingLevel();
+        if (min_routing_layer_ <= layer && layer <= max_routing_layer_) {
+          odb::Rect rect;
+          box->getBox(rect);
+          transform.apply(rect);
+
+          odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
+          odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
+          odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+          if (!die_area.contains(obstruction_rect)) {
+            if (verbose_)
+              logger_->warn(GRT,
+                            38,
+                            "Found blockage outside die area in instance {}.",
+                            inst->getConstName());
+          }
+          applyObstructionAdjustment(obstruction_rect, box->getTechLayer());
+          obstructions_cnt++;
         }
-        applyObstructionAdjustment(obstruction_rect, box->getTechLayer());
-        obstructions_cnt++;
       }
     }
 
