@@ -2924,6 +2924,21 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
   return obstructions_cnt;
 }
 
+void GlobalRouter::extendObstructions(
+    std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+    int bottom_layer,
+    int top_layer)
+{
+  for (int l = top_layer; l > bottom_layer; l--) {
+    odb::Rect& layer_obs = macro_obs_per_layer[l - 1];
+    odb::Rect& upper_layer_obs = macro_obs_per_layer[l];
+    layer_obs.set_xlo(std::min(layer_obs.xMin(), upper_layer_obs.xMin()));
+    layer_obs.set_ylo(std::min(layer_obs.yMin(), upper_layer_obs.yMin()));
+    layer_obs.set_xhi(std::max(layer_obs.xMax(), upper_layer_obs.xMax()));
+    layer_obs.set_yhi(std::max(layer_obs.yMax(), upper_layer_obs.yMax()));
+  }
+}
+
 int GlobalRouter::findInstancesObstructions(
     odb::Rect& die_area,
     const std::vector<int>& layer_extensions)
@@ -2931,6 +2946,7 @@ int GlobalRouter::findInstancesObstructions(
   int macros_cnt = 0;
   int obstructions_cnt = 0;
   int pin_out_of_die_count = 0;
+  odb::dbTech* tech = db_->getTech();
   for (odb::dbInst* inst : block_->getInsts()) {
     int pX, pY;
 
