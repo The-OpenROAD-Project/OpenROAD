@@ -36,7 +36,7 @@
 #include <iostream>
 #include <random>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "shape_engine.h"
@@ -233,9 +233,9 @@ class SimulatedAnnealingCore
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
 
-  std::map<std::string, int> block_map_;
-  std::map<int, int> location_map_;
-  std::map<std::string, std::pair<float, float>> terminal_position_;
+  std::unordered_map<std::string, int> block_map_;
+  std::unordered_map<int, int> location_map_;
+  std::unordered_map<std::string, std::pair<float, float>> terminal_position_;
   std::vector<Net*> nets_;
   std::vector<Region*> regions_;
   std::vector<Location*> locations_;
@@ -285,7 +285,7 @@ class SimulatedAnnealingCore
       const std::vector<Net*>& nets,
       const std::vector<Region*>& regions,
       const std::vector<Location*>& locations,
-      const std::map<std::string, std::pair<float, float>>&
+      const std::unordered_map<std::string, std::pair<float, float>>&
           terminal_position,
       float cooling_rate,
       float alpha,
@@ -368,7 +368,7 @@ void Run(SimulatedAnnealingCore* sa);
 
 void ParseNetFile(
     std::vector<Net*>& nets,
-    std::map<std::string, std::pair<float, float>>& terminal_position,
+    std::unordered_map<std::string, std::pair<float, float>>& terminal_position,
     const std::string& net_file);
 
 void ParseRegionFile(std::vector<Region*>& regions,

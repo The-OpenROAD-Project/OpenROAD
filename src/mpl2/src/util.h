@@ -34,7 +34,7 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -43,5 +43,5 @@ bool SortBySecond(const std::pair<int, float>& a,
 
 std::vector<std::string> Split(const std::string& str, std::string delim = " ");
 
-std::map<std::string, std::string> ParseConfigFile(
+std::unordered_map<std::string, std::string> ParseConfigFile(
     const char* file_name);

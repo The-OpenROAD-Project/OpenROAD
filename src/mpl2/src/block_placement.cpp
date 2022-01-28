@@ -43,7 +43,7 @@
 #include <random>
 #include <stdexcept>
 #include <thread>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "shape_engine.h"
@@ -74,7 +74,7 @@ using std::swap;
 using std::tanh;
 using std::thread;
 using std::to_string;
-using std::map;
+using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
@@ -263,7 +263,7 @@ SimulatedAnnealingCore::SimulatedAnnealingCore(
     const std::vector<Net*>& nets,
     const std::vector<Region*>& regions,
     const std::vector<Location*>& locations,
-    const std::map<std::string, std::pair<float, float>>&
+    const std::unordered_map<std::string, std::pair<float, float>>&
         terminal_position,
     float cooling_rate,
     float alpha,
@@ -1191,7 +1191,6 @@ float SimulatedAnnealingCore::NormCost(float area,
 
 void SimulatedAnnealingCore::Initialize()
 {
-  std::cout << "test";
   vector<float> area_list;
   vector<float> wirelength_list;
   vector<float> outline_penalty_list;
@@ -1254,7 +1253,6 @@ void SimulatedAnnealingCore::Initialize()
     delta_cost += abs(cost_list[i] - cost_list[i - 1]);
 
   init_T_ = (-1.0) * (delta_cost / (perturb_per_step_ - 1)) / log(init_prob_);
-
 }
 
 void SimulatedAnnealingCore::Initialize(float init_T,
@@ -1454,7 +1452,7 @@ void Run(SimulatedAnnealingCore* sa)
 }
 
 void ParseNetFile(vector<Net*>& nets,
-                  map<string, pair<float, float>>& terminal_position,
+                  unordered_map<string, pair<float, float>>& terminal_position,
                   const string& net_file)
 {
   fstream f;
@@ -1464,7 +1462,7 @@ void ParseNetFile(vector<Net*>& nets,
   while (getline(f, line))
     content.push_back(line);
   f.close();
-  map<string, pair<float, float>>::iterator terminal_iter;
+  unordered_map<string, pair<float, float>>::iterator terminal_iter;
   int i = 0;
   while (i < content.size()) {
     vector<string> words = Split(content[i]);
@@ -1590,7 +1588,7 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
     blocks.push_back(Block(name, area, num_macro, aspect_ratio));
   }
 
-  map<string, pair<float, float>> terminal_position;
+  unordered_map<string, pair<float, float>> terminal_position;
   string word = string("LL");
   terminal_position[word] = pair<float, float>(0.0, outline_height / 6.0);
   word = string("RL");
@@ -1635,9 +1633,8 @@ vector<Block> Floorplan(const vector<shape_engine::Cluster*>& clusters,
   int seed_id = 0;
   vector<unsigned> seed_list(num_seed);
   std::mt19937 rand_generator(seed);
-  for (int i = 0; i < num_seed; i++) {
+  for (int i = 0; i < num_seed; i++)
     seed_list[i] = (unsigned) rand_generator();
-  }
 
   SimulatedAnnealingCore* sa = new SimulatedAnnealingCore(outline_width,
                                                           outline_height,

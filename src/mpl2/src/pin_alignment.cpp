@@ -38,7 +38,7 @@
 #include <random>
 #include <string>
 #include <thread>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "block_placement.h"
@@ -66,7 +66,7 @@ using std::string;
 using std::swap;
 using std::thread;
 using std::to_string;
-using std::map;
+using std::unordered_map;
 using std::vector;
 
 using block_placement::Net;
@@ -79,7 +79,7 @@ using utl::MPL;
 SimulatedAnnealingCore::SimulatedAnnealingCore(
     const std::vector<shape_engine::Macro>& macros,
     const std::vector<block_placement::Net*>& nets,
-    const std::map<std::string, std::pair<float, float>>&
+    const std::unordered_map<std::string, std::pair<float, float>>&
         terminal_position,
     float cooling_rate,
     float outline_width,
@@ -535,7 +535,7 @@ void ParseMacroFile(vector<Macro>& macros,
                     float halo_width,
                     const string& file_name)
 {
-  map<string, pair<float, float>> pin_loc;
+  unordered_map<string, pair<float, float>> pin_loc;
   fstream f;
   string line;
   f.open(file_name, ios::in);
@@ -557,7 +557,7 @@ void ParseMacroFile(vector<Macro>& macros,
 bool PinAlignmentSingleCluster(
     const char *report_directory,
     Cluster* cluster,
-    const map<string, pair<float, float>>& terminal_position,
+    const unordered_map<string, pair<float, float>>& terminal_position,
     const vector<Net*>& nets,
     Logger* logger,
     float halo_width,
@@ -692,7 +692,7 @@ bool PinAlignment(const vector<Cluster*>& clusters,
 {
   logger->info(MPL, 3001, "Starting pin alignment.");
 
-  map<string, pair<float, float>> terminal_position;
+  unordered_map<string, pair<float, float>> terminal_position;
   vector<Net*> nets;
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
