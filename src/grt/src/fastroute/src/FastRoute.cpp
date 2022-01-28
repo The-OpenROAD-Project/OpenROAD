@@ -46,6 +46,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include "DataType.h"
@@ -699,6 +700,7 @@ NetRouteMap FastRouteCore::getRoutes()
   for (int netID = 0; netID < num_valid_nets_; netID++) {
     odb::dbNet* db_net = nets_[netID]->db_net;
     GRoute& route = routes[db_net];
+    std::unordered_set<GSegment, GSegmentHash> net_segs;
 
     TreeEdge* treeedges = sttrees_[netID].edges;
     const int deg = sttrees_[netID].deg;
@@ -722,7 +724,10 @@ NetRouteMap FastRouteCore::getRoutes()
           lastX = xreal;
           lastY = yreal;
           lastL = gridsL[i];
-          route.push_back(segment);
+          if (net_segs.find(segment) == net_segs.end()) {
+            net_segs.insert(segment);
+            route.push_back(segment);
+          }
         }
       }
     }
