@@ -316,8 +316,6 @@ bool rtl_macro_placer(const char* config_file,
       = static_cast<float>(tech->findRoutingLayer(snap_layer_y)->getPitchY())
         / dbu;
 
-  cout <<"pitch_x = " << pitch_x << endl;
-  cout <<"pitch_y = " << pitch_y << endl;
   string openroad_filename
       = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
@@ -336,10 +334,10 @@ bool rtl_macro_placer(const char* config_file,
         string orientation = macros[j].GetOrientation();
         float ux = lx + width;
         float uy = ly + height;
-        lx = round(lx / pitch_x) * pitch_x;
-        ux = round(ux / pitch_x) * pitch_x;
-        ly = round(ly / pitch_y) * pitch_y;
-        uy = round(uy / pitch_y) * pitch_y;
+        lx = ceil(lx / pitch_x) * pitch_x;
+        ux = ceil(ux / pitch_x) * pitch_x;
+        ly = ceil(ly / pitch_y) * pitch_y;
+        uy = ceil(uy / pitch_y) * pitch_y;
 
         if (orientation == string("MX"))
           line += string("  MX  ") + to_string(lx) + string("   ")
