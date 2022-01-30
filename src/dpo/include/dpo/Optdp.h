@@ -60,6 +60,7 @@ class Node;
 class Edge;
 class Pin;
 
+using odb::dbOrientType;
 using odb::dbDatabase;
 using utl::Logger;
 using dpl::Opendp;
@@ -96,6 +97,7 @@ protected:
   void createRouteInformation();
   void setUpNdrRules();
   void setUpPlacementRegions();
+  unsigned dbToDpoOrient(dbOrientType orient);
 
 protected:
   odb::dbDatabase *db_;

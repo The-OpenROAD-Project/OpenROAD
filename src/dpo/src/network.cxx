@@ -66,6 +66,94 @@ Node::~Node() {}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+bool Node::adjustCurrOrient(unsigned newOri) {
+  // Change the orientation of the cell, but leave the lower-left corner
+  // alone.  This means changing the locations of pins and possibly
+  // changing the edge types as well as the height and width.
+  unsigned curOri = m_currentOrient;
+  if (newOri == curOri) {
+    return true;
+  }
+
+  if (curOri == Orientation_E || curOri == Orientation_FE || curOri == Orientation_FW || curOri == Orientation_W) {
+    if (newOri == Orientation_N || curOri == Orientation_FN || curOri == Orientation_FS || curOri == Orientation_S) {
+      // Rotate the cell counter-clockwise by 90 degrees.
+      for (int pi = 0; pi < m_pins.size(); pi++) {
+        Pin* pin = m_pins[pi];
+        double dx = pin->getOffsetX();
+        double dy = pin->getOffsetY();
+        pin->setOffsetX(-dy);
+        pin->setOffsetY(dx);
+      }
+      std::swap(m_h, m_w);
+      if (curOri == Orientation_E) { curOri = Orientation_N; }
+      else if (curOri == Orientation_FE) { curOri = Orientation_FS; }
+      else if (curOri == Orientation_FW) { curOri = Orientation_FN; }
+      else { curOri = Orientation_S; }
+    }
+  }
+  else {
+    if (newOri == Orientation_E || curOri == Orientation_FE || curOri == Orientation_FW || curOri == Orientation_W) {
+      // Rotate the cell clockwise by 90 degrees.
+      for (int pi = 0; pi < m_pins.size(); pi++) {
+        Pin* pin = m_pins[pi];
+        double dx = pin->getOffsetX();
+        double dy = pin->getOffsetY();
+        pin->setOffsetX(dy);
+        pin->setOffsetY(-dx);
+      }
+      std::swap(m_h, m_w);
+      if (curOri == Orientation_N) { curOri = Orientation_E; }
+      else if (curOri == Orientation_FS) { curOri = Orientation_FE; }
+      else if (curOri == Orientation_FN) { curOri = Orientation_FW; }
+      else { curOri = Orientation_W; }
+    }
+  }
+  // Both the current and new orientations should be {N, FN, FS, S} or {E, FE, FW, W}.
+  int mX = 1;
+  int mY = 1;
+  bool changeEdgeTypes = false;
+  if (curOri == Orientation_E || curOri == Orientation_FE || curOri == Orientation_FW || curOri == Orientation_W) {
+    bool test1 = (curOri == Orientation_E || curOri == Orientation_FW);
+    bool test2 = (newOri == Orientation_E || newOri == Orientation_FW);
+    if (test1 != test2) {
+      mX = -1;
+    }
+    bool test3 = (curOri == Orientation_E || curOri == Orientation_FE);
+    bool test4 = (newOri == Orientation_E || newOri == Orientation_FE);
+    if (test3 != test4) {
+      changeEdgeTypes = true;
+      mY = -1;
+    }
+  }
+  else {
+    bool test1 = (curOri == Orientation_N || curOri == Orientation_FS);
+    bool test2 = (newOri == Orientation_N || newOri == Orientation_FS);
+    if (test1 != test2) {
+      changeEdgeTypes = true;
+      mX = -1;
+    }
+    bool test3 = (curOri == Orientation_N || curOri == Orientation_FN);
+    bool test4 = (newOri == Orientation_N || newOri == Orientation_FN);
+    if (test3 != test4) {
+      mY = -1;
+    }
+  }
+
+  for (int pi = 0; pi < m_pins.size(); pi++) {
+    Pin* pin = m_pins[pi];
+    pin->setOffsetX(pin->getOffsetX()*mX);
+    pin->setOffsetY(pin->getOffsetY()*mY);
+  }
+  if (changeEdgeTypes) {
+    std::swap(m_etl, m_etr);
+  }
+  m_currentOrient = newOri;
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Edge::Edge() : m_id(0), m_ndr(0) {}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

@@ -417,12 +417,16 @@ void Optdp::createNetwork() {
   }
 
   // Return instances to a north orientation.  This makes
-  // importing easier.
+  // importing easier as I think it ensures all the pins,
+  // etc. will be where I expect them to be.  Record the
+  // original orientation to I can correct fixed objects.
+  std::unordered_map<dbInst*, dbOrientType> origOrient;
   for (dbInst* inst : insts) {
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
-    inst->setLocationOrient(dbOrientType::R0);
+    origOrient[inst] = inst->getOrient();
+    inst->setLocationOrient(dbOrientType::R0); // Preserve lower-left.
   }
 
   // Populate nodes.
@@ -621,6 +625,30 @@ void Optdp::createNetwork() {
         nPins, p);
   }
 
+  // Return the orientation of fixed objects to their proper
+  // values since I will never reorient a fixed object.
+  for (dbInst* inst : insts) {
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+      continue;
+    }
+    if (inst->isFixed()) {
+      dbOrientType orient = origOrient[inst];
+      if (inst->getOrient() != orient) {
+        // I messed around with this, so I should restore it.
+        inst->setLocationOrient(orient);
+
+        // Reorient the cell in my network too.
+        it_n = instMap_.find(inst);
+        if (instMap_.end() != it_n) {
+          n = it_n->second->getId();  
+          if (network_->getNode(n)->getId() == n) {
+            network_->getNode(n)->adjustCurrOrient(dbToDpoOrient(orient));
+          }
+        }
+      }
+    }
+  }
+
   logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
                 network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
 }
@@ -674,18 +702,7 @@ void Optdp::createArchitecture() {
     archRow->setSymmetry(symmetry);
 
     // Orientation.  From the row.
-    unsigned orient = Orientation_N;
-    switch (row->getOrient()) {
-    case dbOrientType::R0    : orient = dpo::Orientation_N  ; break;
-    case dbOrientType::MY    : orient = dpo::Orientation_FN ; break;
-    case dbOrientType::MX    : orient = dpo::Orientation_FS ; break;
-    case dbOrientType::R180  : orient = dpo::Orientation_S  ; break;
-    case dbOrientType::R90   : orient = dpo::Orientation_E  ; break;
-    case dbOrientType::MXR90 : orient = dpo::Orientation_FE ; break;
-    case dbOrientType::R270  : orient = dpo::Orientation_W  ; break;
-    case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
-    default: break;
-    }
+    unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
 
@@ -869,6 +886,22 @@ void Optdp::setUpPlacementRegions() {
     }
   }
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
+}
+////////////////////////////////////////////////////////////////
+unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient) {
+  unsigned orient = dpo::Orientation_N;
+  switch (dbOrient) {
+  case dbOrientType::R0    : orient = dpo::Orientation_N  ; break;
+  case dbOrientType::MY    : orient = dpo::Orientation_FN ; break;
+  case dbOrientType::MX    : orient = dpo::Orientation_FS ; break;
+  case dbOrientType::R180  : orient = dpo::Orientation_S  ; break;
+  case dbOrientType::R90   : orient = dpo::Orientation_E  ; break;
+  case dbOrientType::MXR90 : orient = dpo::Orientation_FE ; break;
+  case dbOrientType::R270  : orient = dpo::Orientation_W  ; break;
+  case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
+  default: break;
+  }
+  return orient;
 }
 
 }  // namespace dpo

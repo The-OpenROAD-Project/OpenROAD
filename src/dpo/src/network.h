@@ -121,6 +121,7 @@ class Node {
   unsigned getCurrOrient() const { return m_currentOrient; }
   void setAvailOrient(unsigned avail) { m_availOrient = avail; }
   unsigned getAvailOrient() const { return m_availOrient; }
+  bool adjustCurrOrient(unsigned newOrient);
 
   void setAttributes(unsigned attributes) { m_attributes = attributes; }
   unsigned getAttributes() const { return m_attributes; }
