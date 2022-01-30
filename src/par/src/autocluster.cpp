@@ -1953,9 +1953,9 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
       if (map_iter->second->getNumMacro() > 0) {
         vector<Instance*> macro_vec = map_iter->second->getMacros();
         for (int i = 0; i < macro_vec.size(); i++) {
-	  const char* inst_name = network_->pathName(macro_vec[i]);
-	  dbInst* inst = block_->findInst(inst_name);
-	  dbMaster* master = inst->getMaster();
+	      const char* inst_name = network_->pathName(macro_vec[i]);
+	      dbInst* inst = block_->findInst(inst_name);
+	      dbMaster* master = inst->getMaster();
           float width = master->getWidth() / dbu;
           float height = master->getHeight() / dbu;
           output_file << network_->pathName(macro_vec[i]) << "  ";
