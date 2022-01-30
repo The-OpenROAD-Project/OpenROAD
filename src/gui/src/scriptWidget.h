@@ -68,7 +68,7 @@ class ScriptWidget : public QDockWidget
 
   void setLogger(utl::Logger* logger);
 
-  void setupTcl(Tcl_Interp* interp, bool do_init_openroad);
+  void setupTcl(Tcl_Interp* interp, bool do_init_openroad, const std::function<void(void)>& post_or_init);
 
   void setFont(const QFont& font);
 
