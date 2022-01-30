@@ -1205,7 +1205,7 @@ bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
   if (row == nullptr) {
     return true;
   }
-  return row->visible->checkState() == Qt::Checked;
+  return row->visible->checkState() != Qt::Unchecked;
 }
 
 bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) const
@@ -1213,7 +1213,7 @@ bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) cons
   if (row == nullptr) {
     return true;
   }
-  return row->selectable->checkState() == Qt::Checked;
+  return row->selectable->checkState() != Qt::Unchecked;
 }
 
 const DisplayControls::ModelRow* DisplayControls::getLayerRow(const odb::dbTechLayer* layer) const
