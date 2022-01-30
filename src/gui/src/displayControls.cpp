@@ -1283,7 +1283,11 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
   sta::Cell* cell = network->dbToSta(master);
   sta::LibertyCell* lib_cell = network->libertyCell(cell);
   if (lib_cell == nullptr) {
-    return nullptr;
+    if (master->isCore()) {
+      return &instances_.stdcells;
+    }
+    // default to use overall instance setting if there is no liberty cell and it's not a core cell.
+    return &instance_group_;
   }
 
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
