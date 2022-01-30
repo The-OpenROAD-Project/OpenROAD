@@ -287,6 +287,10 @@ void DetailedMgr::findSegments() {
   // segment ends line up with sites and that segments don't extend off
   // the chip.
 
+  m_logger->info(DPO, 322, "Image ({:d}, {:d}) - ({:d}, {:d})",
+                m_arch->getMinX(), m_arch->getMinY(), 
+                m_arch->getMaxX(), m_arch->getMaxY());
+
   for (int i = 0; i < m_segments.size(); i++) {
     delete m_segments[i];
   }

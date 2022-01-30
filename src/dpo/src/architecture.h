@@ -191,7 +191,7 @@ class Architecture::Row {
   int getTop() const { return m_rowLoc+m_rowHeight; }
   int getLeft() const { return m_subRowOrigin; }
   int getRight() const { 
-    return m_subRowOrigin+m_numSites*m_siteSpacing+m_siteWidth; 
+    return m_subRowOrigin+m_numSites*m_siteSpacing; 
   }
   int getHeight() const { return m_rowHeight; }
   int getSiteWidth() const { return m_siteWidth; }
