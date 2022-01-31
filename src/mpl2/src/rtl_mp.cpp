@@ -156,9 +156,7 @@ bool rtl_macro_placer(const char* config_file,
   int max_num_step = 4000;
   int perturb_per_step = 300;
 
-  // Platform (and design macro specific)
-  int snap_layer_x = 4;
-  int snap_layer_y = 5;
+  int snap_layer = 4;
 
   //
   // config_file is not required in the default flow.
@@ -195,8 +193,7 @@ bool rtl_macro_placer(const char* config_file,
     get_param(params, "rej_ratio", rej_ratio, logger);
     get_param(params, "k", k, logger);
     get_param(params, "c", c, logger);
-    get_param(params, "snap_layer_x", snap_layer_x, logger);
-    get_param(params, "snap_layer_y", snap_layer_y, logger);
+    get_param(params, "snap_layer", snap_layer, logger);
     get_param(params, "max_num_step", max_num_step, logger);
     get_param(params, "perturb_per_step", perturb_per_step, logger);
     get_param(params, "seed", seed, logger);
@@ -310,10 +307,10 @@ bool rtl_macro_placer(const char* config_file,
   odb::dbTech* tech = db->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
   float pitch_x
-      = static_cast<float>(tech->findRoutingLayer(snap_layer_x)->getPitchX())
+      = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX())
         / dbu;
   float pitch_y
-      = static_cast<float>(tech->findRoutingLayer(snap_layer_y)->getPitchY())
+      = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY())
         / dbu;
 
   string openroad_filename
@@ -334,10 +331,10 @@ bool rtl_macro_placer(const char* config_file,
         string orientation = macros[j].GetOrientation();
         float ux = lx + width;
         float uy = ly + height;
-        lx = ceil(lx / pitch_x) * pitch_x;
-        ux = ceil(ux / pitch_x) * pitch_x;
-        ly = ceil(ly / pitch_y) * pitch_y;
-        uy = ceil(uy / pitch_y) * pitch_y;
+        lx = round(lx / pitch_x) * pitch_x;
+        ux = round(ux / pitch_x) * pitch_x;
+        ly = round(ly / pitch_y) * pitch_y;
+        uy = round(uy / pitch_y) * pitch_y;
 
         if (orientation == string("MX"))
           line += string("  MX  ") + to_string(lx) + string("   ")
