@@ -408,6 +408,8 @@ DisplayControls::DisplayControls(QWidget* parent)
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
   });
 
+  checkLiberty();
+
   setWidget(view_);
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -1079,6 +1081,9 @@ void DisplayControls::setLogger(utl::Logger* logger)
 void DisplayControls::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
+  sta_->getDbNetwork()->addObserver(this);
+
+  checkLiberty();
 }
 
 QStandardItem* DisplayControls::makeParentItem(
@@ -1205,7 +1210,7 @@ bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
   if (row == nullptr) {
     return true;
   }
-  return row->visible->checkState() == Qt::Checked;
+  return row->visible->checkState() != Qt::Unchecked;
 }
 
 bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) const
@@ -1213,7 +1218,7 @@ bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) cons
   if (row == nullptr) {
     return true;
   }
-  return row->selectable->checkState() == Qt::Checked;
+  return row->selectable->checkState() != Qt::Unchecked;
 }
 
 const DisplayControls::ModelRow* DisplayControls::getLayerRow(const odb::dbTechLayer* layer) const
@@ -1283,7 +1288,11 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
   sta::Cell* cell = network->dbToSta(master);
   sta::LibertyCell* lib_cell = network->libertyCell(cell);
   if (lib_cell == nullptr) {
-    return nullptr;
+    if (master->isCore()) {
+      return &instances_.stdcells;
+    }
+    // default to use overall instance setting if there is no liberty cell and it's not a core cell.
+    return &instance_group_;
   }
 
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
@@ -1727,6 +1736,51 @@ void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer
   for (auto* layer : layers) {
     if (layer_controls_.count(layer) != 0) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
+    }
+  }
+}
+
+void DisplayControls::postReadLiberty()
+{
+  checkLiberty(true);
+}
+
+void DisplayControls::checkLiberty(bool assume_loaded)
+{
+  bool enable = true;
+
+  if (sta_ == nullptr) {
+    enable = false;
+  } else {
+    if (!assume_loaded) {
+      auto* network = sta_->getDbNetwork();
+      if (network->defaultLibertyLibrary() == nullptr) {
+        enable = false;
+      }
+    }
+  }
+
+  std::vector<ModelRow*> liberty_dependent_rows{
+    &stdcell_instances_.bufinv,
+    &stdcell_instances_.clock_tree,
+    &stdcell_instances_.combinational,
+    &stdcell_instances_.level_shiters,
+    &stdcell_instances_.sequential,
+    &bufinv_instances_.timing,
+    &bufinv_instances_.other,
+    &clock_tree_instances_.bufinv,
+    &clock_tree_instances_.clock_gates
+  };
+
+  for (auto* row : liberty_dependent_rows) {
+    auto* name = row->name;
+    auto* visible = row->visible;
+    auto* selectable = row->selectable;
+
+    name->setEnabled(enable);
+    visible->setEnabled(enable);
+    if (selectable != nullptr) {
+      selectable->setEnabled(enable);
     }
   }
 }

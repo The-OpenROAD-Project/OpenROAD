@@ -39,6 +39,8 @@
 #include "sta/GraphClass.hh"
 #include "odb/db.h"
 
+#include <set>
+
 namespace utl {
 class Logger;
 }
@@ -62,6 +64,20 @@ using odb::dbIoType;
 using odb::dbSet;
 using odb::Point;
 
+class dbNetwork;
+// This class handles callbacks from the network to the listeners
+class dbNetworkObserver
+{
+  public:
+   virtual ~dbNetworkObserver();
+
+   virtual void postReadLiberty() = 0;
+
+  private:
+   dbNetwork* owner_ = nullptr;
+   friend class dbNetwork;
+};
+
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
 class dbNetwork : public ConcreteNetwork
@@ -78,6 +94,9 @@ public:
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
   void readLibertyAfter(LibertyLibrary *lib);
+
+  void addObserver(dbNetworkObserver* observer);
+  void removeObserver(dbNetworkObserver* observer);
 
   dbBlock *block() const { return block_; }
   void makeLibrary(dbLib *lib);
@@ -251,6 +270,8 @@ protected:
   dbBlock *block_;
   Instance *top_instance_;
   Cell *top_cell_;
+
+  std::set<dbNetworkObserver*> observers_;
 };
 
 } // namespace
