@@ -1023,6 +1023,10 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
       delete cell_iter;
     }
   }
+
+  for (auto* observer : observers_) {
+    observer->postReadLiberty();
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1411,6 +1415,32 @@ LibertyCell *
 dbNetwork::libertyCell(dbInst *inst)
 {
   return libertyCell(dbToSta(inst));
+}
+
+////////////////////////////////////////////////////////////////
+// Observer
+
+void
+dbNetwork::addObserver(dbNetworkObserver* observer)
+{
+  observer->owner_ = this;
+  observers_.insert(observer);
+}
+
+void
+dbNetwork::removeObserver(dbNetworkObserver* observer)
+{
+  observer->owner_ = nullptr;
+  observers_.erase(observer);
+}
+
+////////
+
+dbNetworkObserver::~dbNetworkObserver()
+{
+  if (owner_ != nullptr) {
+    owner_->removeObserver(this);
+  }
 }
 
 } // namespace
