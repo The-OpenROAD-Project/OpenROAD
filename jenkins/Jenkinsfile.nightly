@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage("Build") {
       steps {
-        sh "./etc/Build.sh";
+        sh "./etc/Build.sh -no-warnings";
         stash name: "build", includes: "build/**";
       }
     }
