@@ -49,6 +49,9 @@ while [ "$#" -gt 0 ]; do
         -compiler=*)
             compiler="${1#*=}"
             ;;
+        -no-warnings )
+            cmakeOptions+=( -DALLOW_WARNINGS=OFF )
+            ;;
         -coverage )
             cmakeOptions+=( -DCMAKE_BUILD_TYPE=Debug )
             cmakeOptions+=( -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage" )
