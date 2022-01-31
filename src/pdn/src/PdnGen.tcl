@@ -5862,16 +5862,17 @@ proc repair_channel {channel layer_name tag min_size} {
 
     if {[get_dir $layer_name] == "hor"} {
       set center [expr ($xMax + $xMin) / 2]
+      set mid_channel [expr ($yMax + $yMin) / 2]
       if {$xMax - $xMin < $min_size} {
         set xMin [expr $center - $min_size / 2]
         set xMax [expr $center + $min_size / 2]
       }
 
-      set other_strap_center [expr ([$other_strap yMin] + [$other_strap yMax]) / 2]
-      if {($center <= $other_strap_center) && ([$other_strap yMin] - $channel_spacing - $width > $yMin)} {
+      set other_strap_mid [expr ([$other_strap yMin] + [$other_strap yMax]) / 2]
+      if {($mid_channel <= $other_strap_mid) && ([$other_strap yMin] - $channel_spacing - $width > $yMin)} {
         # debug "Stripe below $other_strap"
         set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMin] - $channel_spacing - $width] $xMax [expr [$other_strap yMin] - $channel_spacing]]
-      } elseif {($center > $other_strap_center) && ([$other_strap yMax] + $channel_spacing + $width < $yMax)} {
+      } elseif {($mid_channel > $other_strap_mid) && ([$other_strap yMax] + $channel_spacing + $width < $yMax)} {
         # debug "Stripe above $other_strap"
         set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMax] + $channel_spacing] $xMax [expr [$other_strap yMax] + $channel_spacing + $width]]
       } else {
@@ -5880,16 +5881,17 @@ proc repair_channel {channel layer_name tag min_size} {
       }
     } else {
       set center [expr ($yMax + $yMin) / 2]
+      set mid_channel [expr ($xMax + $xMin) / 2]
       if {$yMax - $yMin < $min_size} {
         set yMin [expr $center - $min_size / 2]
         set yMax [expr $center + $min_size / 2]
       }
 
-      set other_strap_center [expr ([$other_strap xMin] + [$other_strap xMax]) / 2]
-      if {($center <= $other_strap_center) && ([$other_strap xMin] - $channel_spacing - $width > $xMin)} {
+      set other_strap_mid [expr ([$other_strap xMin] + [$other_strap xMax]) / 2]
+      if {($mid_channel <= $other_strap_mid) && ([$other_strap xMin] - $channel_spacing - $width > $xMin)} {
         # debug "Stripe left of $other_strap on layer $layer_name, spacing: $channel_spacing, width $width, strap_edge: [$other_strap xMin]"
         set stripe [odb::newSetFromRect [expr [$other_strap xMin] - $channel_spacing - $width] $yMin [expr [$other_strap xMin] - $channel_spacing] $yMax]
-      } elseif {($center > $other_strap_center) && ([$other_strap xMax] + $channel_spacing + $width < $xMax)} {
+      } elseif {($mid_channel > $other_strap_mid) && ([$other_strap xMax] + $channel_spacing + $width < $xMax)} {
         # debug "Stripe right of $other_strap"
         set stripe [odb::newSetFromRect [expr [$other_strap xMax] + $channel_spacing] $yMin [expr [$other_strap xMax] + $channel_spacing + $width] $yMax]
       } else {
