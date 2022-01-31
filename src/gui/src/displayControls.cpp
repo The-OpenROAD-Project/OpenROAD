@@ -1742,19 +1742,21 @@ void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer
 
 void DisplayControls::postReadLiberty()
 {
-  checkLiberty();
+  checkLiberty(true);
 }
 
-void DisplayControls::checkLiberty()
+void DisplayControls::checkLiberty(bool assume_loaded)
 {
   bool enable = true;
 
   if (sta_ == nullptr) {
     enable = false;
   } else {
-    auto* network = sta_->getDbNetwork();
-    if (network->defaultLibertyLibrary() == nullptr) {
-      enable = false;
+    if (!assume_loaded) {
+      auto* network = sta_->getDbNetwork();
+      if (network->defaultLibertyLibrary() == nullptr) {
+        enable = false;
+      }
     }
   }
 

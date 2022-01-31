@@ -390,7 +390,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   bool isRowVisible(const ModelRow* row) const;
   bool isRowSelectable(const ModelRow* row) const;
 
-  void checkLiberty();
+  void checkLiberty(bool assume_loaded = false);
 
   QTreeView* view_;
   DisplayControlModel* model_;
