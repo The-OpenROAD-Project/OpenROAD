@@ -281,7 +281,8 @@ class LayoutViewer : public QWidget
   void drawHighlighted(Painter& painter);
   void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds);
-  void drawAccessPoints(Painter& painter);
+  void drawAccessPoints(Painter& painter,
+                        const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);

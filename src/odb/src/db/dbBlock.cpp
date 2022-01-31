@@ -3753,53 +3753,6 @@ int dbBlock::markBackwardsUser2(dbNet* net,
   return instsToMark.size();
 }
 
-void dbBlock::markClockIterms()
-{
-  std::vector<dbMaster*> masters;
-  getMasters(masters);
-  std::vector<dbMaster*>::iterator mtr;
-  for (mtr = masters.begin(); mtr != masters.end(); ++mtr) {
-    dbMaster* master = *mtr;
-    if (master->getType() != dbMasterType::CORE)
-      continue;
-
-    bool clocked = false;
-    int order_id = -1;
-    master->setClockedIndex(-1);
-    dbSet<dbMTerm> mterms = master->getMTerms();
-    dbSet<dbMTerm>::iterator mitr;
-    for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-      dbMTerm* mterm = *mitr;
-      if (mterm->getSigType() == dbSigType::CLOCK) {
-        clocked = true;
-        order_id = mterm->getIndex();
-        break;
-      }
-    }
-    if (clocked) {
-      master->setSequential(1);
-      master->setClockedIndex(order_id);
-    }
-  }
-  dbSet<dbInst> insts = getInsts();
-  dbSet<dbInst>::iterator itr;
-  for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst* inst = *itr;
-    if (!inst->getMaster()->isSequential())
-      continue;
-
-    dbSet<dbITerm> iterms = inst->getITerms();
-    dbSet<dbITerm>::iterator iitr;
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* iterm = *iitr;
-
-      if (iterm->getMTerm()->getSigType() == dbSigType::CLOCK) {
-        iterm->setClocked(1);
-        continue;
-      }
-    }
-  }
-}
 void dbBlock::clearUserInstFlags()
 {
   dbSet<dbInst> insts = getInsts();

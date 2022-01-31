@@ -1457,12 +1457,6 @@ class dbBlock : public dbObject
                          std::vector<dbInst*>& resultTable);
 
   ///
-  ///  Mark masters as sequential based on mterms being of "use clock"; mark
-  ///  iterms as clocked
-  ///
-  void markClockIterms();
-
-  ///
   /// set First driving iterm on all signal nets; set 0 is none exists
   void setDrivingItermsforNets();
 
@@ -3004,8 +2998,6 @@ class dbInst : public dbObject
   /// Find the iterm of the given terminal name given the master term order
   ///
   dbITerm* getITerm(uint mterm_order_id);
-  dbITerm* getClockedTerm();
-  dbITerm* getOutputTerm();
 
   ///
   /// Get the all the instances connected to the net of each iterm of this
@@ -5435,11 +5427,6 @@ class dbMaster : public dbObject
   /// Returns true if the master is frozen
   ///
   bool isFrozen();
-
-  int getOutputIndex();
-  void setOutputIndex(int v);
-  void setClockedIndex(int v);
-  int getClockedIndex();
 
   ///
   /// Set _sequential of this master.

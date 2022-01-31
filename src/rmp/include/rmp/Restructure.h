@@ -41,6 +41,9 @@
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 
+namespace abc {
+}  // namespace abc
+
 namespace ord {
 class OpenRoad;
 }  // namespace ord

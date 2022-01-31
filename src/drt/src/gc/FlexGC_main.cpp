@@ -1283,7 +1283,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
     frMinStepConstraint* con,
     bool hasInsideCorner,
     bool hasOutsideCorner,
-    bool hasStep,
     int currEdges,
     frCoord currLength,
     bool hasRoute)
@@ -1307,11 +1306,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
         break;
       case frMinstepTypeEnum::OUTSIDECORNER:
         if (!hasOutsideCorner) {
-          return;
-        }
-        break;
-      case frMinstepTypeEnum::STEP:
-        if (!hasStep) {
           return;
         }
         break;
@@ -1527,7 +1521,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
   Rect markerBox;
   bool hasInsideCorner = false;
   bool hasOutsideCorner = false;
-  bool hasStep = false;
   auto minStepLength = con->getMinStepLength();
   for (auto& edges : pin->getPolygonEdges()) {
     // get the first edge that is >= minstep length
@@ -1550,7 +1543,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
     hasRoute = edge->isFixed() ? false : true;
     hasInsideCorner = false;
     hasOutsideCorner = false;
-    hasStep = false;
     llx = edge->high().x();
     lly = edge->high().y();
     urx = edge->high().x();
@@ -1580,7 +1572,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
                                        con,
                                        hasInsideCorner,
                                        hasOutsideCorner,
-                                       hasStep,
                                        currEdges,
                                        currLength,
                                        hasRoute);
@@ -1594,7 +1585,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
         hasRoute = edge->isFixed() ? false : true;
         hasInsideCorner = false;
         hasOutsideCorner = false;
-        hasStep = false;
         llx = edge->high().x();
         lly = edge->high().y();
         urx = edge->high().x();

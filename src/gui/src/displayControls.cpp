@@ -292,42 +292,64 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
   toggleParent(nets_group_);
 
-  // Physical Instance group
-  auto phys_instances_parent = makeParentItem(
-      physical_instance_group_,
+  // Instance group
+  auto instances_parent = makeParentItem(
+      instance_group_,
       "Instances",
       root,
       Qt::Checked,
       true);
 
   // make instance items, non-null last argument to create checkbox
-  makeLeafItem(physical_instances_.core, "StdCells", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.blocks, "Macros", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.fill, "Fill", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.endcap, "Endcap", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.welltap, "Welltap", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.pads, "Pads", phys_instances_parent, Qt::Checked, true);
-  makeLeafItem(physical_instances_.cover, "Cover", phys_instances_parent, Qt::Checked, true);
-  toggleParent(physical_instance_group_);
-
-  // Functional Instance group
-  auto func_instances_parent = makeParentItem(
-      functional_instance_group_,
-      "Function",
-      physical_instance_group_.name,
+  // stdcell instances
+  auto stdcell_parent = makeParentItem(
+      instances_.stdcells,
+      "StdCells",
+      instance_group_.name,
       Qt::Checked,
       true);
 
-  // make instance items, non-null last argument to create checkbox
-  makeLeafItem(functional_instances_.combinational, "Combinational", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.sequential, "Sequential", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.buffer_inv, "Buffers/Inverters", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.clock_gate, "Clock gates", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.levelshifter, "Level shifters", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.pad, "Pad", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.macro, "Macro", func_instances_parent, Qt::Checked, true);
-  makeLeafItem(functional_instances_.memory, "Memory", func_instances_parent, Qt::Checked, true);
-  toggleParent(functional_instance_group_);
+  auto bufinv_parent = makeParentItem(
+      stdcell_instances_.bufinv,
+      "Buffers/Inverters",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(bufinv_instances_.timing, "Timing opt.", bufinv_parent, Qt::Checked, true);
+  makeLeafItem(bufinv_instances_.other, "Netlist", bufinv_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.bufinv);
+
+  makeLeafItem(stdcell_instances_.combinational, "Combinational", stdcell_parent, Qt::Checked, true);
+  makeLeafItem(stdcell_instances_.sequential, "Sequential", stdcell_parent, Qt::Checked, true);
+  auto clock_tree_parent = makeParentItem(
+      stdcell_instances_.clock_tree,
+      "Clock tree",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(clock_tree_instances_.bufinv, "Buffer/Inverter", clock_tree_parent, Qt::Checked, true);
+  makeLeafItem(clock_tree_instances_.clock_gates, "Clock gate", clock_tree_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.clock_tree);
+  makeLeafItem(stdcell_instances_.level_shiters, "Level shifter", stdcell_parent, Qt::Checked, true);
+  toggleParent(instances_.stdcells);
+
+  makeLeafItem(instances_.blocks, "Macro", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pad", instances_parent, Qt::Checked, true);
+  auto phys_parent = makeParentItem(
+      instances_.physical,
+      "Physical",
+      instances_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(physical_instances_.fill, "Fill cell", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.endcap, "Endcap", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tap, "Welltap", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tie, "Tie high/low", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.antenna, "Antenna", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.cover, "Cover", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.bump, "Bump", phys_parent, Qt::Checked, true);
+  toggleParent(instances_.physical);
+  toggleParent(instance_group_);
 
   // Blockages group
   auto blockages = makeParentItem(
@@ -463,109 +485,93 @@ void DisplayControls::createLayerMenu()
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto asBool
-      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+  writeSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
 
-  settings->beginGroup(row.name->text());
-  settings->setValue("visible", asBool(row.visible));
-  if (row.selectable != nullptr) {
-    settings->setValue("selectable", asBool(row.selectable));
+void DisplayControls::writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible, const QStandardItem* selectable)
+{
+  auto asBool
+      = [](const QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      writeSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    settings->setValue("visible", asBool(visible));
+    if (selectable != nullptr) {
+      settings->setValue("selectable", asBool(selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto getChecked = [](QSettings* settings, QString name, bool default_value) {
-    return settings->value(name, default_value).toBool() ? Qt::Checked : Qt::Unchecked;
+  readSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
+
+void DisplayControls::readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible, QStandardItem* selectable)
+{
+  auto getChecked = [](QSettings* settings, QString name, const QStandardItem* item) {
+    return settings->value(name, item->checkState() == Qt::Checked).toBool() ? Qt::Checked : Qt::Unchecked;
   };
 
-  settings->beginGroup(row.name->text());
-  row.visible->setCheckState(getChecked(settings, "visible", row.visible->checkState() == Qt::Checked));
-  if (row.selectable != nullptr) {
-    row.selectable->setCheckState(getChecked(settings, "selectable", row.selectable->checkState() == Qt::Checked));
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      readSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    visible->setCheckState(getChecked(settings, "visible", visible));
+    if (selectable != nullptr) {
+      selectable->setCheckState(getChecked(settings, "selectable", selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettings(QSettings* settings)
 {
-  auto getColor = [this, settings](QStandardItem* item, QColor& color, const char* key) {
+  auto getColor = [this, settings](const ModelRow& row, QColor& color, const char* key) {
     color = settings->value(key, color).value<QColor>();
-    item->setIcon(makeSwatchIcon(color));
+    row.swatch->setIcon(makeSwatchIcon(color));
   };
+  auto getPattern = [settings](Qt::BrushStyle& style, const char* key) {
+    style = static_cast<Qt::BrushStyle>(settings->value(key,
+                                        static_cast<int>(style)).toInt());
+  };
+  auto getFont = [settings](QFont& font, const char* key) {
+    font = settings->value(key, font).value<QFont>();
+  };
+
   settings->beginGroup("display_controls");
 
-  settings->beginGroup("nets");
-  readSettingsForRow(settings, nets_.signal);
-  readSettingsForRow(settings, nets_.power);
-  readSettingsForRow(settings, nets_.ground);
-  readSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // physical instances
-  settings->beginGroup("physical_instances");
-  readSettingsForRow(settings, physical_instances_.core);
-  readSettingsForRow(settings, physical_instances_.blocks);
-  readSettingsForRow(settings, physical_instances_.fill);
-  readSettingsForRow(settings, physical_instances_.endcap);
-  readSettingsForRow(settings, physical_instances_.welltap);
-  readSettingsForRow(settings, physical_instances_.pads);
-  readSettingsForRow(settings, physical_instances_.cover);
-  settings->endGroup();
-
-  // functional instances
-  settings->beginGroup("functional_instances");
-  readSettingsForRow(settings, functional_instances_.combinational);
-  readSettingsForRow(settings, functional_instances_.sequential);
-  readSettingsForRow(settings, functional_instances_.buffer_inv);
-  readSettingsForRow(settings, functional_instances_.clock_gate);
-  readSettingsForRow(settings, functional_instances_.levelshifter);
-  readSettingsForRow(settings, functional_instances_.pad);
-  readSettingsForRow(settings, functional_instances_.macro);
-  readSettingsForRow(settings, functional_instances_.memory);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  readSettingsForRow(settings, blockages_.blockages);
-  readSettingsForRow(settings, blockages_.obstructions);
-  getColor(blockages_.blockages.swatch, placement_blockage_color_, "placement_color");
-  // pattern saved as int
-  placement_blockage_pattern_ =
-      static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
-                                  static_cast<int>(placement_blockage_pattern_)).toInt());
-  settings->endGroup();
-
-  // rows
+  readSettingsForRow(settings, nets_group_);
+  readSettingsForRow(settings, instance_group_);
+  readSettingsForRow(settings, blockage_group_);
   readSettingsForRow(settings, rows_);
-  getColor(rows_.swatch, row_color_, "row_color");
-  // pin markers
   readSettingsForRow(settings, pin_markers_);
-  pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
-
-  // rulers
   readSettingsForRow(settings, rulers_);
-  getColor(rulers_.swatch, ruler_color_, "ruler_color");
-  ruler_font_ = settings->value("ruler_font", ruler_font_).value<QFont>();
+  readSettingsForRow(settings, tracks_group_);
+  readSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  readSettingsForRow(settings, tracks_.pref);
-  readSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  getColor(blockages_.blockages, placement_blockage_color_, "blockages_placement");
+  getColor(rows_, row_color_, "row");
+  getColor(rulers_, ruler_color_, "ruler");
+  getColor(misc_.instance_names, instance_name_color_, "instance_name");
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  readSettingsForRow(settings, misc_.instance_names);
-  readSettingsForRow(settings, misc_.scale_bar);
-  readSettingsForRow(settings, misc_.fills);
-  readSettingsForRow(settings, misc_.access_points);
-  readSettingsForRow(settings, misc_.regions);
-  readSettingsForRow(settings, misc_.detailed);
-  readSettingsForRow(settings, misc_.selected);
-  getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
-  instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
+  settings->beginGroup("pattern");
+  getPattern(placement_blockage_pattern_, "blockages_placement");
+  settings->endGroup();
+  settings->beginGroup("font");
+  getFont(pin_markers_font_, "pin_markers");
+  getFont(ruler_font_, "ruler");
+  getFont(instance_name_font_, "instance_name");
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers
@@ -606,75 +612,31 @@ void DisplayControls::writeSettings(QSettings* settings)
 {
   settings->beginGroup("display_controls");
 
-  // nets
-  settings->beginGroup("nets");
-  writeSettingsForRow(settings, nets_.signal);
-  writeSettingsForRow(settings, nets_.power);
-  writeSettingsForRow(settings, nets_.ground);
-  writeSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // instances
-  settings->beginGroup("physical_instances");
-  writeSettingsForRow(settings, physical_instances_.core);
-  writeSettingsForRow(settings, physical_instances_.blocks);
-  writeSettingsForRow(settings, physical_instances_.fill);
-  writeSettingsForRow(settings, physical_instances_.endcap);
-  writeSettingsForRow(settings, physical_instances_.welltap);
-  writeSettingsForRow(settings, physical_instances_.pads);
-  writeSettingsForRow(settings, physical_instances_.cover);
-  settings->endGroup();
-
-  // functional instances
-  settings->beginGroup("functional_instances");
-  writeSettingsForRow(settings, functional_instances_.combinational);
-  writeSettingsForRow(settings, functional_instances_.sequential);
-  writeSettingsForRow(settings, functional_instances_.buffer_inv);
-  writeSettingsForRow(settings, functional_instances_.clock_gate);
-  writeSettingsForRow(settings, functional_instances_.levelshifter);
-  writeSettingsForRow(settings, functional_instances_.pad);
-  writeSettingsForRow(settings, functional_instances_.macro);
-  writeSettingsForRow(settings, functional_instances_.memory);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  writeSettingsForRow(settings, blockages_.blockages);
-  writeSettingsForRow(settings, blockages_.obstructions);
-  settings->setValue("placement_color", placement_blockage_color_);
-  // save pattern as int
-  settings->setValue("placement_pattern", static_cast<int>(placement_blockage_pattern_));
-  settings->endGroup();
-
-  // rows
+  writeSettingsForRow(settings, nets_group_);
+  writeSettingsForRow(settings, instance_group_);
+  writeSettingsForRow(settings, blockage_group_);
   writeSettingsForRow(settings, rows_);
-  settings->setValue("row_color", row_color_);
-  // pin markers
   writeSettingsForRow(settings, pin_markers_);
-  settings->setValue("pin_markers_font", pin_markers_font_);
-
-  // rulers
   writeSettingsForRow(settings, rulers_);
-  settings->setValue("ruler_color", ruler_color_);
-  settings->setValue("ruler_font", ruler_font_);
+  writeSettingsForRow(settings, tracks_group_);
+  writeSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  writeSettingsForRow(settings, tracks_.pref);
-  writeSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  settings->setValue("blockages_placement", placement_blockage_color_);
+  settings->setValue("row", row_color_);
+  settings->setValue("ruler", ruler_color_);
+  settings->setValue("instance_name", instance_name_color_);
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  writeSettingsForRow(settings, misc_.instance_names);
-  writeSettingsForRow(settings, misc_.scale_bar);
-  writeSettingsForRow(settings, misc_.fills);
-  writeSettingsForRow(settings, misc_.access_points);
-  writeSettingsForRow(settings, misc_.regions);
-  writeSettingsForRow(settings, misc_.detailed);
-  writeSettingsForRow(settings, misc_.selected);
-  settings->setValue("instance_name_color", instance_name_color_);
-  settings->setValue("instance_name_font", instance_name_font_);
+  settings->beginGroup("pattern");
+  // save pattern as int
+  settings->setValue("blockages_placement", static_cast<int>(placement_blockage_pattern_));
+  settings->endGroup();
+  settings->beginGroup("font");
+  settings->setValue("pin_markers", pin_markers_font_);
+  settings->setValue("ruler", ruler_font_);
+  settings->setValue("instance_name", instance_name_font_);
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers
@@ -1285,102 +1247,78 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 {
-  return isPhysicalInstanceVisible(inst) && isFunctionalInstanceVisible(inst);
+  return isRowVisible(getInstRow(inst));
 }
 
-const DisplayControls::ModelRow* DisplayControls::getPhysicalInstRow(odb::dbInst* inst) const
+const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) const
 {
   dbMaster* master = inst->getMaster();
-  if (master->isEndCap()) {
+  const dbMasterType master_type = master->getType();
+  const dbSourceType source_type = inst->getSourceType();
+  if (master->isBlock()) {
+    return &instances_.blocks;
+  } else if (master->isPad()) {
+    return &instances_.pads;
+  } else if (master->isEndCap()) {
     return &physical_instances_.endcap;
   } else if (master->isFiller()) {
     return &physical_instances_.fill;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return &physical_instances_.welltap;
-    } else {
-      return &physical_instances_.core;
-    }
-  } else if (master->isBlock()) {
-    return &physical_instances_.blocks;
-  } else if (master->isPad()) {
-    return &physical_instances_.pads;
+  } else if (master_type == dbMasterType::CORE_WELLTAP) {
+    return &physical_instances_.tap;
   } else if (master->isCover()) {
-    return &physical_instances_.cover;
-  } else {
-    return nullptr;
+    if (master_type == dbMasterType::COVER_BUMP) {
+      return &physical_instances_.bump;
+    } else {
+      return &physical_instances_.cover;
+    }
+  } else if (master_type == dbMasterType::CORE_ANTENNACELL) {
+    return &physical_instances_.antenna;
+  } else if (master_type == dbMasterType::CORE_TIEHIGH || master_type == dbMasterType::CORE_TIELOW) {
+    return &physical_instances_.tie;
+  } else if (source_type == odb::dbSourceType::DIST) {
+    return &instances_.physical;
   }
-}
 
-bool DisplayControls::isPhysicalInstanceVisible(odb::dbInst* inst)
-{
-  if (isRowVisible(&physical_instance_group_)) {
-    return true;
-  }
-
-  return isRowVisible(getPhysicalInstRow(inst));
-}
-
-const DisplayControls::ModelRow* DisplayControls::getFunctionalInstRow(odb::dbInst* inst) const
-{
   sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(inst->getMaster());
+  sta::Cell* cell = network->dbToSta(master);
   sta::LibertyCell* lib_cell = network->libertyCell(cell);
   if (lib_cell == nullptr) {
     return nullptr;
   }
+
   if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    return &functional_instances_.buffer_inv;
+    if (source_type == odb::dbSourceType::TIMING) {
+      for (auto* iterm : inst->getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return &clock_tree_instances_.bufinv;
+        }
+      }
+      return &bufinv_instances_.timing;
+    } else {
+      return &bufinv_instances_.other;
+    }
   } else if (lib_cell->isClockGate()) {
-    return &functional_instances_.clock_gate;
+    return &clock_tree_instances_.clock_gates;
   } if (lib_cell->isLevelShifter()) {
-    return &functional_instances_.levelshifter;
-  } else if (lib_cell->isPad()) {
-    return &functional_instances_.pad;
-  } else if (lib_cell->isMacro()) {
-    return &functional_instances_.macro;
-  } else if (lib_cell->isMemory()) {
-    return &functional_instances_.memory;
+    return &stdcell_instances_.level_shiters;
   } else if (lib_cell->hasSequentials()) {
-    return &functional_instances_.sequential;
+    return &stdcell_instances_.sequential;
   } else if (lib_cell->portCount() == 0) {
-    return nullptr; // non-functional
+    return &instances_.physical; // generic physical
   } else {
     // not anything else, so combinational
-    return &functional_instances_.combinational;
+    return &stdcell_instances_.combinational;
   }
-}
-
-bool DisplayControls::isFunctionalInstanceVisible(odb::dbInst* inst)
-{
-  if (isRowVisible(&functional_instance_group_)) {
-    return true;
-  }
-
-  return isRowVisible(getFunctionalInstRow(inst));
 }
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 {
-  return isPhysicalInstanceSelectable(inst) && isFunctionalInstanceSelectable(inst);
-}
-
-bool DisplayControls::isPhysicalInstanceSelectable(odb::dbInst* inst)
-{
-  if (isRowSelectable(&physical_instance_group_)) {
-    return true;
-  }
-
-  return isRowSelectable(getPhysicalInstRow(inst));
-}
-
-bool DisplayControls::isFunctionalInstanceSelectable(odb::dbInst* inst)
-{
-  if (isRowSelectable(&functional_instance_group_)) {
-    return true;
-  }
-
-  return isRowSelectable(getFunctionalInstRow(inst));
+  return isRowSelectable(getInstRow(inst));
 }
 
 const DisplayControls::ModelRow* DisplayControls::getNetRow(odb::dbNet* net) const
