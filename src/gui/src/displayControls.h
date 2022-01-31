@@ -55,6 +55,7 @@
 #include "options.h"
 
 #include "gui/gui.h"
+#include "db_sta/dbNetwork.hh"
 
 namespace odb {
 class dbDatabase;
@@ -155,7 +156,7 @@ class DisplayControlModel : public QStandardItemModel
 //
 // It also implements the Options interface so that other clients can
 // access the data.
-class DisplayControls : public QDockWidget, public Options
+class DisplayControls : public QDockWidget, public Options, public sta::dbNetworkObserver
 {
   Q_OBJECT
 
@@ -219,6 +220,9 @@ class DisplayControls : public QDockWidget, public Options
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+
+  // API from dbNetworkObserver
+  virtual void postReadLiberty() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -385,6 +389,8 @@ class DisplayControls : public QDockWidget, public Options
 
   bool isRowVisible(const ModelRow* row) const;
   bool isRowSelectable(const ModelRow* row) const;
+
+  void checkLiberty();
 
   QTreeView* view_;
   DisplayControlModel* model_;

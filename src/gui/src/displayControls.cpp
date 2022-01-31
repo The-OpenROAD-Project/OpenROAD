@@ -408,6 +408,8 @@ DisplayControls::DisplayControls(QWidget* parent)
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
   });
 
+  checkLiberty();
+
   setWidget(view_);
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -1079,6 +1081,9 @@ void DisplayControls::setLogger(utl::Logger* logger)
 void DisplayControls::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
+  sta_->getDbNetwork()->addObserver(this);
+
+  checkLiberty();
 }
 
 QStandardItem* DisplayControls::makeParentItem(
@@ -1731,6 +1736,49 @@ void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer
   for (auto* layer : layers) {
     if (layer_controls_.count(layer) != 0) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
+    }
+  }
+}
+
+void DisplayControls::postReadLiberty()
+{
+  checkLiberty();
+}
+
+void DisplayControls::checkLiberty()
+{
+  bool enable = true;
+
+  if (sta_ == nullptr) {
+    enable = false;
+  } else {
+    auto* network = sta_->getDbNetwork();
+    if (network->defaultLibertyLibrary() == nullptr) {
+      enable = false;
+    }
+  }
+
+  std::vector<ModelRow*> liberty_dependent_rows{
+    &stdcell_instances_.bufinv,
+    &stdcell_instances_.clock_tree,
+    &stdcell_instances_.combinational,
+    &stdcell_instances_.level_shiters,
+    &stdcell_instances_.sequential,
+    &bufinv_instances_.timing,
+    &bufinv_instances_.other,
+    &clock_tree_instances_.bufinv,
+    &clock_tree_instances_.clock_gates
+  };
+
+  for (auto* row : liberty_dependent_rows) {
+    auto* name = row->name;
+    auto* visible = row->visible;
+    auto* selectable = row->selectable;
+
+    name->setEnabled(enable);
+    visible->setEnabled(enable);
+    if (selectable != nullptr) {
+      selectable->setEnabled(enable);
     }
   }
 }
