@@ -30,6 +30,8 @@
 ***
 ***************************************************************************/
 
+#include <memory>
+
 #include "SolveMulti.h"
 
 #include "Annealer.h"
