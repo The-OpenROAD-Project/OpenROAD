@@ -59,7 +59,7 @@ met5              3280             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total           105769          2971            2.81%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30441 um
+[INFO GRT-0018] Total wirelength: 30427 um
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069
