@@ -123,7 +123,7 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   return TCL_OK;
 }
 
-void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad)
+void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad, const std::function<void(void)>& post_or_init)
 {
   interp_ = interp;
 
@@ -136,11 +136,13 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad)
     pauser_->setText("Running");
     pauser_->setStyleSheet("background-color: red");
     int setup_tcl_result = ord::tclAppInit(interp_);
+    post_or_init();
     pauser_->setText("Idle");
     pauser_->setStyleSheet("");
 
     addTclResultToOutput(setup_tcl_result);
   } else {
+    post_or_init();
     Gui::get()->load_design();
   }
 

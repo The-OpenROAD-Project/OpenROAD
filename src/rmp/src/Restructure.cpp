@@ -65,10 +65,11 @@
 #include "utl/Logger.h"
 
 using utl::RMP;
+using namespace abc;
 
 namespace rmp {
 
-  
+
 
 void Restructure::init(ord::OpenRoad* openroad)
 {
@@ -211,8 +212,8 @@ void Restructure::runABC()
 
     if (writeAbcScript(abc_script_file)) {
       // call linked abc
-      abc::Abc_Start();
-      abc::Abc_Frame_t * abc_frame = abc::Abc_FrameGetGlobalFrame();
+      Abc_Start();
+      Abc_Frame_t * abc_frame = Abc_FrameGetGlobalFrame();
       const std::string command = "source " + abc_script_file;
       child_proc[curr_mode_idx] = Cmd_CommandExecute( abc_frame, command.c_str() );
       if ( child_proc[curr_mode_idx] )
@@ -220,7 +221,7 @@ void Restructure::runABC()
 	  logger_->error(RMP, 26, "Error executing ABC command {}.", command);
 	  return;
 	}
-      abc::Abc_Stop();
+      Abc_Stop();
       // exit linked abc
       files_to_remove.emplace_back(abc_script_file);
     }

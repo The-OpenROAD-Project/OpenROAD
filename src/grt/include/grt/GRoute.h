@@ -75,6 +75,17 @@ struct GSegment
   }
 };
 
+struct GSegmentHash
+{
+  std::size_t operator() (const GSegment& seg) const
+  {
+    std::size_t h1 = std::hash<int>()(seg.init_x*seg.init_y*seg.init_layer);
+    std::size_t h2 = std::hash<int>()(seg.final_x*seg.final_y*seg.final_layer);
+
+    return h1 ^ h2;
+  }
+};
+
 class Capacities
 {
  public:
