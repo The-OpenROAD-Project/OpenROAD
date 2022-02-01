@@ -99,7 +99,6 @@ Resizer::rebuffer(const Pin *drvr_pin)
       Required best_slack_penalized = -INF;
       BufferedNet *best_option = nullptr;
       int best_index = 0;
-      int best_buffer_count = 0;
       int i = 1;
       for (BufferedNet *p : Z) {
         // Find slack for drvr_pin into option.
@@ -125,7 +124,6 @@ Resizer::rebuffer(const Pin *drvr_pin)
             best_slack = slack;
             best_slack_penalized = slack_penalized;
             best_option = p;
-            best_buffer_count = buffer_count;
             best_index = i;
           }
           i++;
