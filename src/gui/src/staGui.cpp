@@ -1678,6 +1678,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
     path_count_spin_box_(new QSpinBox(this)),
     corner_box_(new QComboBox(this)),
     uncontrained_(new QCheckBox(this)),
+    expand_clk_(new QCheckBox(this)),
     from_(new PinSetWidget(false, this)),
     thru_({}),
     to_(new PinSetWidget(false, this))
@@ -1688,6 +1689,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
   path_count_spin_box_->setValue(100);
 
   layout_->addRow("Paths:", path_count_spin_box_);
+  layout_->addRow("Expand clock:", expand_clk_);
   layout_->addRow("Command corner:", corner_box_);
 
   setupPinRow("From:", from_);
@@ -1708,6 +1710,11 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
             auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
             sta_->setCmdCorner(corner);
           });
+
+  connect(expand_clk_,
+          SIGNAL(toggled(bool)),
+          this,
+          SIGNAL(expandClock(bool)));
 }
 
 void TimingControlsDialog::setupPinRow(const QString& label, PinSetWidget* row, int row_index)
@@ -1744,6 +1751,16 @@ void TimingControlsDialog::setUnconstrained(bool unconstrained)
 bool TimingControlsDialog::getUnconstrained() const
 {
   return uncontrained_->checkState() == Qt::Checked;
+}
+
+void TimingControlsDialog::setExpandClock(bool expand)
+{
+  expand_clk_->setCheckState(expand ? Qt::Checked : Qt::Unchecked);
+}
+
+bool TimingControlsDialog::getExpandClock() const
+{
+  return expand_clk_->checkState() == Qt::Checked;
 }
 
 void TimingControlsDialog::populate()
