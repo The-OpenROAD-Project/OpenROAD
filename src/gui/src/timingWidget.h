@@ -75,14 +75,12 @@ class TimingWidget : public QDockWidget
   void showPathDetails(const QModelIndex& index);
   void clearPathDetails();
   void highlightPathStage(TimingPathDetailModel* model, const QModelIndex& index);
-  void findNodeInPathDetails();
 
   void toggleRenderer(bool enable);
 
   void populatePaths();
   void modelWasReset();
 
-  void showPathIndex(int pathId);
   void selectedRowChanged(const QItemSelection& prev_index,
                           const QItemSelection& curr_index);
   void selectedDetailRowChanged(const QItemSelection& prev_index,
@@ -110,11 +108,8 @@ class TimingWidget : public QDockWidget
   QTableView* path_details_table_view_;
   QTableView* capture_details_table_view_;
 
-  QLineEdit* find_object_edit_;
-  QSpinBox* path_index_spin_box_;
   QPushButton* update_button_;
   QPushButton* settings_button_;
-  QCheckBox* expand_clk_;
 
   TimingControlsDialog* settings_;
 
