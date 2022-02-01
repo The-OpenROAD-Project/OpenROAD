@@ -2983,13 +2983,22 @@ void GlobalRouter::extendObstructions(
     int bottom_layer,
     int top_layer)
 {
-  for (int l = top_layer; l > bottom_layer; l--) {
-    odb::Rect& layer_obs = macro_obs_per_layer[l - 1];
-    odb::Rect& upper_layer_obs = macro_obs_per_layer[l];
-    layer_obs.set_xlo(std::min(layer_obs.xMin(), upper_layer_obs.xMin()));
-    layer_obs.set_ylo(std::min(layer_obs.yMin(), upper_layer_obs.yMin()));
-    layer_obs.set_xhi(std::max(layer_obs.xMax(), upper_layer_obs.xMax()));
-    layer_obs.set_yhi(std::max(layer_obs.yMax(), upper_layer_obs.yMax()));
+  odb::dbTech* tech = db_->getTech();
+  for (int layer = bottom_layer; layer <= top_layer; layer++) {
+    odb::Rect& obs = macro_obs_per_layer[layer];
+    odb::Rect extended_obs = obs;
+    odb::dbTechLayerDir direction = tech->findRoutingLayer(layer)->getDirection();
+    if (layerIsBlocked(layer, direction, macro_obs_per_layer, extended_obs)) {
+      if (direction == odb::dbTechLayerDir::VERTICAL) {
+        // extend west and east edges
+        obs.set_xlo(std::min(obs.xMin(), extended_obs.xMin()));
+        obs.set_xhi(std::max(obs.xMax(), extended_obs.xMax()));
+      } else {
+        // extend south and north edges
+        obs.set_ylo(std::min(obs.yMin(), extended_obs.yMin()));
+        obs.set_yhi(std::max(obs.yMax(), extended_obs.yMax()));
+      }
+    }
   }
 }
 
