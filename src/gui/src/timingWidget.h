@@ -41,6 +41,7 @@
 #include <QSpinBox>
 #include <QPushButton>
 #include <QSettings>
+#include <QSplitter>
 #include <vector>
 
 #include "odb/db.h"
@@ -124,6 +125,8 @@ class TimingWidget : public QDockWidget
   std::unique_ptr<TimingPathRenderer> path_renderer_;
   std::unique_ptr<TimingConeRenderer> cone_renderer_;
   GuiDBChangeListener* dbchange_listener_;
+
+  QSplitter* delay_detail_splitter_;
   QTabWidget* delay_widget_;
   QTabWidget* detail_widget_;
 

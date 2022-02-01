@@ -67,6 +67,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_renderer_(std::make_unique<TimingPathRenderer>()),
       cone_renderer_(std::make_unique<TimingConeRenderer>()),
       dbchange_listener_(new GuiDBChangeListener(this)),
+      delay_detail_splitter_(new QSplitter(Qt::Vertical, this)),
       delay_widget_(new QTabWidget(this)),
       detail_widget_(new QTabWidget(this)),
       focus_view_(nullptr)
@@ -90,7 +91,7 @@ TimingWidget::TimingWidget(QWidget* parent)
   // top half
   delay_widget_->addTab(setup_timing_table_view_, "Setup");
   delay_widget_->addTab(hold_timing_table_view_, "Hold");
-  layout->addWidget(delay_widget_, 1, 0);
+  delay_detail_splitter_->addWidget(delay_widget_);
 
   // bottom half
   QTabWidget* path_widget = new QTabWidget(this);
@@ -119,8 +120,11 @@ TimingWidget::TimingWidget(QWidget* parent)
   detail_widget_->addTab(path_details_table_view_, "Data");
   detail_widget_->addTab(capture_details_table_view_, "Capture");
   bottom_widg_layout->addWidget(detail_widget_);
+  delay_detail_splitter_->addWidget(path_widget);
 
-  layout->addWidget(path_widget, 2, 0);
+  layout->addWidget(delay_detail_splitter_, 1, 0);
+  delay_detail_splitter_->setCollapsible(0, false);
+  delay_detail_splitter_->setCollapsible(1, false);
 
   container->setLayout(layout);
   setWidget(container);
@@ -243,6 +247,7 @@ void TimingWidget::readSettings(QSettings* settings)
 
   settings_->setPathCount(settings->value("path_count", settings_->getPathCount()).toInt());
   expand_clk_->setCheckState(settings->value("expand_clk", expand_clk_->checkState()).value<Qt::CheckState>());
+  delay_detail_splitter_->restoreState(settings->value("splitter", delay_detail_splitter_->saveState()).toByteArray());
 
   settings->endGroup();
 }
@@ -253,6 +258,7 @@ void TimingWidget::writeSettings(QSettings* settings)
 
   settings->setValue("path_count", settings_->getPathCount());
   settings->setValue("expand_clk", expand_clk_->checkState());
+  settings->setValue("splitter", delay_detail_splitter_->saveState());
 
   settings->endGroup();
 }
