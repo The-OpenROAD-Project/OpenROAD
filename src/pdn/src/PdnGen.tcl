@@ -3062,7 +3062,7 @@ proc get_grid_channel_layers {} {
   return $channel_layers
 }
 
-proc get_grid_channel_spacing {layer_name channel_height} {
+proc get_grid_channel_spacing {layer_name parallel_length} {
   variable grid_data
   variable def_units
 
@@ -3093,7 +3093,7 @@ proc get_grid_channel_spacing {layer_name channel_height} {
             set non_prl_rule $rule
             set prl_rule -1
           } else {
-            if {$channel_height > [$layer getTwoWidthsSpacingTablePRL $rule]} {
+            if {$parallel_length > [$layer getTwoWidthsSpacingTablePRL $rule]} {
               set prl_rule $rule
             }
           }
@@ -3111,8 +3111,8 @@ proc get_grid_channel_spacing {layer_name channel_height} {
       set spacing [$layer getTwoWidthsSpacingTableEntry $use_rule $use_rule]
       # debug "Two widths spacing: layer: $layer_name, rule: $use_rule, spacing: $spacing"
     } elseif {[$layer hasV55SpacingRules]} {
-      utl::warn PDN 173 "V55 spacing rule for layer $layer_name detected, using normal spacing rule instead"
-      set spacing [$layer getSpacing]
+      set layer_width [get_grid_wire_width $layer_name]
+      set spacing [$layer findV55Spacing $layer_width $parallel_length]
     } else {
       set spacing [$layer getSpacing]
     }
@@ -5843,7 +5843,6 @@ proc repair_channel {channel layer_name tag min_size} {
   } else {
     set channel_height [$channel dy]
   }
-  set channel_spacing [get_grid_channel_spacing $layer_name $channel_height]
   set width [get_grid_wire_width $layer_name]
 
   set xMin [$channel xMin]
@@ -5867,6 +5866,7 @@ proc repair_channel {channel layer_name tag min_size} {
         set xMin [expr $center - $min_size / 2]
         set xMax [expr $center + $min_size / 2]
       }
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $xMax - $xMin]]
 
       set other_strap_mid [expr ([$other_strap yMin] + [$other_strap yMax]) / 2]
       if {($mid_channel <= $other_strap_mid) && ([$other_strap yMin] - $channel_spacing - $width > $yMin)} {
@@ -5886,6 +5886,7 @@ proc repair_channel {channel layer_name tag min_size} {
         set yMin [expr $center - $min_size / 2]
         set yMax [expr $center + $min_size / 2]
       }
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $yMax - $yMin]]
 
       set other_strap_mid [expr ([$other_strap xMin] + [$other_strap xMax]) / 2]
       if {($mid_channel <= $other_strap_mid) && ([$other_strap xMin] - $channel_spacing - $width > $xMin)} {

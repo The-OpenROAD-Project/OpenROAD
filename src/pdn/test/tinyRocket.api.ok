@@ -38,8 +38,6 @@ Type: macro, CORE_macro_grid_2 -grid_over_pg_pins
     Connect: {metal4 metal6} {metal6 metal7}
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid.
-[WARNING PDN-0173] V55 spacing rule for layer metal4 detected, using normal spacing rule instead
-[WARNING PDN-0173] V55 spacing rule for layer metal7 detected, using normal spacing rule instead
 [INFO PDN-0010] Inserting macro grid for 2 macros.
 [INFO PDN-0034]   - grid CORE_macro_grid_1 for instance dcache.data.data_arrays_0.data_arrays_0_ext.mem
 [INFO PDN-0034]   - grid CORE_macro_grid_1 for instance frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
