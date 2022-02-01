@@ -15,6 +15,7 @@ record_tests {
   inst_pin_out_of_die
   invalid_routing_layer
   invalid_pin_placement
+  macro_obs_not_aligned
   multiple_calls
   ndr_1w_3s
   ndr_2w_3s
