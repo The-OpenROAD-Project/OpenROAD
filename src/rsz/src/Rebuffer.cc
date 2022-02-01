@@ -95,7 +95,6 @@ Resizer::rebuffer(const Pin *drvr_pin)
       sta_->findRequireds();
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
                                           drvr_pt, 1);
-      Required best_slack = -INF;
       Required best_slack_penalized = -INF;
       BufferedNet *best_option = nullptr;
       int best_index = 0;
@@ -121,7 +120,6 @@ Resizer::rebuffer(const Pin *drvr_pin)
           double slack_penalized = slack * (1.0 - buffer_count * rebuffer_buffer_penalty);
           if (best_option == nullptr
               || fuzzyGreater(slack_penalized, best_slack_penalized)) {
-            best_slack = slack;
             best_slack_penalized = slack_penalized;
             best_option = p;
             best_index = i;
