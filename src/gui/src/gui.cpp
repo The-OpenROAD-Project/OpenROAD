@@ -930,10 +930,10 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   }
 
   // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  main_window->getScriptWidget()->setupTcl(interp, init_openroad);
-
-  // openroad is guaranteed to be initialized here
-  main_window->init(open_road->getSta());
+  main_window->getScriptWidget()->setupTcl(interp, init_openroad, [&]() {
+    // init remainder of GUI, to be called immediately after OpenRoad is guaranteed to be initialized.
+    main_window->init(open_road->getSta());
+  });
 
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
