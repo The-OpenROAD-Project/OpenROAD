@@ -39,9 +39,11 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <stack>
 #include <string_view>
 #include <cstdlib>
 #include <type_traits>
+#include <format>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
@@ -181,6 +183,8 @@ class Logger
     log_metric(metric, '"' +  value + '"');
   }
 
+
+
   void setDebugLevel(ToolId tool, const char* group, int level);
 
   bool debugCheck(ToolId tool, const char* group, int level) const {
@@ -195,6 +199,11 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
+
+  void setMetricsStage(std::string fmt);
+  void clearMetricsStage();
+  void pushMetricsStage(std::string fmt);
+  std::string popMetricsStage();
 
  private:
   template <typename... Args>
@@ -233,9 +242,15 @@ class Logger
     inline void log_metric(const std::string_view metric,
                            const Value& value)
     {
+      std::string key;
+      if (metrics_stages_.empty()) 
+        key = std::string(metric);
+      else 
+        key = std::vformat(metrics_stages_.top(), metric);
+
       metrics_logger_->info("  {}\"{}\" : {}",
                             first_metric_ ? "  " : ", ",
-                            metric,
+                            key,
                             value);
       first_metric_ = false;
     }
@@ -258,6 +273,7 @@ class Logger
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::shared_ptr<spdlog::logger> metrics_logger_;
+  std::stack<std::string> metrics_stages_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.

@@ -138,4 +138,26 @@ void Logger::removeSink(spdlog::sink_ptr sink)
   }
 }
 
+void Logger::setMetricsStage(std::string fmt) {
+  metrics_logger_->popMetricsStage();
+  metrics_logger_->pushMetricsStage(fmt);
+}
+void Logger::clearMetricsStage() {
+  while(!metrics_stages_.empty()) {
+    metrics_stages_.pop();
+  }
+}
+void Logger::pushMetricsStage(std::string fmt) {
+  metrics_stages_.push(fmt);
+}
+std::string Logger::popMetricsStage() {
+  if(!metrics_stages_.empty()) {
+    auto stage = metrics_stages_.top();
+    metrics_stages_.pop();
+  }
+  else {
+    return "";
+  }
+}
+
 }  // namespace
