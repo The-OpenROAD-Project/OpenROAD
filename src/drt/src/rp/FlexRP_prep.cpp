@@ -693,24 +693,24 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
                                              const int& tableEntryIdx,
                                              frViaDef* viaDef1,
                                              frViaDef* viaDef2,
-                                             bool isCurrDirX,
+                                             bool isHorizontal,
                                              frNonDefaultRule* ndr)
 {
   auto tech = getDesign()->getTech();
   // non-shape-based rule
   ForbiddenRanges forbiddenRanges;
   prep_via2viaForbiddenLen_minSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges, ndr);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges, ndr);
   prep_via2viaForbiddenLen_minimumCut(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_cutSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpcTbl(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_minStep(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, !isHorizontal, forbiddenRanges);
 
   // merge forbidden ranges
   boost::icl::interval_set<frCoord> forbiddenIntvSet;
@@ -734,7 +734,7 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.clear();
     forbiddenIntvSet = boost::icl::interval_set<frCoord>();
     prep_via2viaForbiddenLen_minStepGF12(
-        lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+        lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
 
     // merge forbidden ranges
     for (auto& range : forbiddenRanges) {
@@ -963,7 +963,7 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
       }
   }
 //  cout << "putting [" << minRange << " " << (minRange+shift) << " for lNum " << lNum << " isVertical " << isVertical << "\n";
-  forbiddenRanges.push_back(make_pair(minRange, minRange+shift));
+  forbiddenRanges.push_back(make_pair(minRange-1, minRange+shift+1));
 }
 
 
