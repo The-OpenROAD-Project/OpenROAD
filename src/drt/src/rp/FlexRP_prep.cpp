@@ -835,7 +835,6 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
   if (viaDef1->getLayer1Num() == viaDef2->getLayer1Num()) {
     return;
   }
-//  cout << "viaDef1 " << *viaDef1 << "\nviaDef2 " << *viaDef2 << "\n";
   Rect enclosureBox1, enclosureBox2;
   frVia via1(viaDef1);
   frVia via2(viaDef2);
@@ -962,7 +961,6 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
             } else return;
       }
   }
-//  cout << "putting [" << minRange << " " << (minRange+shift) << " for lNum " << lNum << " isVertical " << isVertical << "\n";
   forbiddenRanges.push_back(make_pair(minRange-1, minRange+shift+1));
 }
 
