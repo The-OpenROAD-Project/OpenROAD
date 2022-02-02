@@ -3680,7 +3680,7 @@ class GrouteRenderer : public gui::Renderer
 {
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
-  void highlight(const odb::dbNet* net);
+  void highlight(odb::dbNet* net, bool show_pin_locations);
   void clear();
   virtual void drawLayer(odb::dbTechLayer* layer,
                          gui::Painter& painter) override;
@@ -3688,18 +3688,19 @@ class GrouteRenderer : public gui::Renderer
  private:
   GlobalRouter* groute_;
   odb::dbTech* tech_;
-  std::set<const odb::dbNet*> nets_;
+  std::set<odb::dbNet*> nets_;
+  std::unordered_map<odb::dbNet*, bool> show_pin_locations_;
 };
 
 // Highlight guide in the gui.
-void GlobalRouter::highlightRoute(const odb::dbNet* net)
+void GlobalRouter::highlightRoute(odb::dbNet* net, bool show_pin_locations)
 {
   if (gui::Gui::enabled()) {
     if (groute_renderer_ == nullptr) {
       groute_renderer_ = new GrouteRenderer(this, db_->getTech());
       gui_->registerRenderer(groute_renderer_);
     }
-    groute_renderer_->highlight(net);
+    groute_renderer_->highlight(net, show_pin_locations);
   }
 }
 
@@ -3711,6 +3712,7 @@ void GlobalRouter::clearRouteGui()
 void GrouteRenderer::clear()
 {
   nets_.clear();
+  show_pin_locations_.clear();
   redraw();
 }
 
@@ -3719,9 +3721,10 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
 {
 }
 
-void GrouteRenderer::highlight(const odb::dbNet* net)
+void GrouteRenderer::highlight(odb::dbNet* net, bool show_pin_locations)
 {
   nets_.insert(net);
+  show_pin_locations_[net] = show_pin_locations;
   redraw();
 }
 
