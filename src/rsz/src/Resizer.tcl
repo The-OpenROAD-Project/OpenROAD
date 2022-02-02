@@ -416,20 +416,13 @@ proc repair_timing { args } {
 
 ################################################################
 
-sta::define_cmd_args "report_design_area" {[-json_util key] [-json_area key] }
-
-proc report_design_area { args } {
-    sta::parse_key_args "report_design_area" args keys {-json_util -json_area} flags {}
+proc report_design_area { } {
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 
-  if [info exists keys(-json_util)] {
-    utl::metric_float $keys(-json_util) $util
-  }
-  if [info exists keys(-json_area)] {
-    utl::metric_float $keys(-json_area) $area
-  }
+  utl::metric_float "design__instance__area__stdcell" $util
+  utl::metric_float "design__instance__utilization" $area
 }
 
 sta::define_cmd_args "report_floating_nets" {[-verbose]}
