@@ -174,6 +174,8 @@ class GlobalRouter
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
+  Net* getNet(odb::dbNet* db_net);
+  int getTileSize() const;
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);
@@ -206,7 +208,7 @@ class GlobalRouter
   void setDebugTree3D(bool tree3D);
 
   // Highlight route in the gui.
-  void highlightRoute(const odb::dbNet* net);
+  void highlightRoute(odb::dbNet* net, bool show_pin_locations);
 
   // Clear routes in the gui
   void clearRouteGui();
@@ -324,7 +326,6 @@ class GlobalRouter
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
   std::vector<Net*> initNetlist();
-  Net* getNet(odb::dbNet* db_net);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
