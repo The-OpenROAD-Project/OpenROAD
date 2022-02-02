@@ -201,9 +201,9 @@ class Logger
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
 
-  void setMetricsStage(std::string fmt);
+  void setMetricsStage(std::string_view fmt);
   void clearMetricsStage();
-  void pushMetricsStage(std::string fmt);
+  void pushMetricsStage(std::string_view fmt);
   std::string popMetricsStage();
 
  private:
