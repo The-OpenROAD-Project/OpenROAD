@@ -174,6 +174,8 @@ class GlobalRouter
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
+  Net* getNet(odb::dbNet* db_net);
+  int getTileSize() const;
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);

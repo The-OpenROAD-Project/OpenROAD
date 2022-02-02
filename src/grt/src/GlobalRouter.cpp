@@ -2533,6 +2533,10 @@ Net* GlobalRouter::getNet(odb::dbNet* db_net)
   return db_net_map_[db_net];
 }
 
+int GlobalRouter::getTileSize() const {
+  return grid_->getTileSize();
+}
+
 void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> clock_nets = sta_->findClkNets();
@@ -3725,7 +3729,21 @@ void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   painter.setPen(layer);
   painter.setBrush(layer);
-  for (const odb::dbNet* net : nets_) {
+
+  for (odb::dbNet* net : nets_) {
+    Net* gr_net = groute_->getNet(net);
+    if (show_pin_locations_[net]) {
+      // draw on grid pin locations 
+      for (const Pin& pin : gr_net->getPins()) {
+        if (pin.getTopLayer() == layer->getRoutingLevel()) {
+          painter.drawCircle(pin.getOnGridPosition().x(),
+                        pin.getOnGridPosition().y(),
+                        (int)(groute_->getTileSize() / 1.5));
+        }
+      }
+    }
+
+    // draw guides
     NetRouteMap& routes = groute_->getRoutes();
     GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
     for (GSegment& seg : groute) {
