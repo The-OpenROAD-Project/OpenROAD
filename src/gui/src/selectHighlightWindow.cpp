@@ -291,6 +291,9 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   highlight_context_menu_->addSeparator();
   QAction* show_hlt_item_act
       = highlight_context_menu_->addAction("Zoom In Layout");
+  highlight_context_menu_->addSeparator();
+  QAction* change_group_act
+      = highlight_context_menu_->addAction("Change group");
 
   connect(
       remove_hlt_item_act, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
@@ -301,6 +304,10 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           SIGNAL(triggered()),
           this,
           SLOT(zoomInHighlightedItems()));
+  connect(change_group_act,
+          SIGNAL(triggered()),
+          this,
+          SLOT(changeHighlight()));
 
   connect(ui_.selTableView->selectionModel(),
           &QItemSelectionModel::selectionChanged,
@@ -407,6 +414,16 @@ void SelectHighlightWindow::zoomInHighlightedItems()
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
+}
+
+void SelectHighlightWindow::changeHighlight()
+{
+  auto sel_indices = ui_.hltTableView->selectionModel()->selectedRows();
+  QList<const Selected*> items;
+  for (auto& sel_item : sel_indices) {
+    items << highlight_model_.getItemAt(sel_item.row());
+  }
+  emit highlightSelectedItemsSig(items);
 }
 
 }  // namespace gui

@@ -134,6 +134,8 @@ class SelectHighlightWindow : public QDockWidget
   void showSelectCustomMenu(QPoint pos);
   void showHighlightCustomMenu(QPoint pos);
 
+  void changeHighlight();
+
   void deselectItems();
   void highlightSelectedItems();
   void zoomInSelectedItems();
