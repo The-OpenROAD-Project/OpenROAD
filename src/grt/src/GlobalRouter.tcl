@@ -289,9 +289,15 @@ proc write_guides { args } {
   grt::write_guides $file_name
 }
 
-sta::define_cmd_args "draw_route_guides" { net_names }
+sta::define_cmd_args "draw_route_guides" { net_names \
+                                           [-show_pin_locations] }
 
-proc draw_route_guides { net_names } {
+proc draw_route_guides { args } {
+  sta::parse_key_args "draw_route_guides" args \
+                 keys {} \
+                 flags {-show_pin_locations}
+  sta::check_argc_eq1 "repair_antennas" $args
+  set net_names [lindex $args 0]
   set block [ord::get_db_block]
   if { $block == "NULL" } {
     utl::error GRT 223 "Missing dbBlock."
@@ -300,7 +306,7 @@ proc draw_route_guides { net_names } {
   if {[llength $net_names] > 0} {
     foreach net [get_nets $net_names] {
       if { $net != "NULL" } {
-        grt::highlight_net_route [sta::sta_to_db_net $net]
+        grt::highlight_net_route [sta::sta_to_db_net $net] [info exists flags(-show_pin_locations)]
       }
     }
   } else {

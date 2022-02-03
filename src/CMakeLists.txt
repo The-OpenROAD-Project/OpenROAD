@@ -135,7 +135,7 @@ find_package(Boost REQUIRED)
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
-option(ALLOW_WARNINGS "Flag to allow compilation with compiler warnings: off by default" OFF)
+option(ALLOW_WARNINGS "Flag to allow compilation with compiler warnings: on by default" ON)
 if (NOT ALLOW_WARNINGS)
   add_compile_options(
     $<$<CXX_COMPILER_ID:GNU>:-Werror>
