@@ -63,6 +63,8 @@ class Options
   virtual bool isInstanceVisible(odb::dbInst* inst) = 0;
   virtual bool isInstanceSelectable(odb::dbInst* inst) = 0;
   virtual bool areInstanceNamesVisible() = 0;
+  virtual bool areInstancePinsHidden() = 0;
+  virtual bool areInstanceBlockagesHidden() = 0;
   virtual bool areFillsVisible() = 0;
   virtual bool areBlockagesVisible() = 0;
   virtual bool areBlockagesSelectable() = 0;

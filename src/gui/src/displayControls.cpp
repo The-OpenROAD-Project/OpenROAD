@@ -396,7 +396,16 @@ DisplayControls::DisplayControls(QWidget* parent)
   instance_name_font_ = QApplication::font(); // use default font
   instance_name_color_ = Qt::yellow;
 
-  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
+  auto instance_shape = makeParentItem(
+      misc_.instances, "Instances", misc, Qt::Checked);
+  makeLeafItem(instance_shapes_.names, "Names", instance_shape, Qt::Checked, false, instance_name_color_);
+  makeLeafItem(instance_shapes_.pins, "Hide pins", instance_shape, Qt::Unchecked);
+  makeLeafItem(instance_shapes_.blockages, "Hide blockages", instance_shape, Qt::Unchecked);
+  toggleParent(misc_.instances);
+  setNameItemDoubleClickAction(instance_shapes_.names, [this]() {
+    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+  });
+
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
@@ -404,9 +413,6 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
-  setNameItemDoubleClickAction(misc_.instance_names, [this]() {
-    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
-  });
 
   checkLiberty();
 
@@ -564,7 +570,7 @@ void DisplayControls::readSettings(QSettings* settings)
   getColor(blockages_.blockages, placement_blockage_color_, "blockages_placement");
   getColor(rows_, row_color_, "row");
   getColor(rulers_, ruler_color_, "ruler");
-  getColor(misc_.instance_names, instance_name_color_, "instance_name");
+  getColor(instance_shapes_.names, instance_name_color_, "instance_name");
   settings->endGroup();
   settings->beginGroup("pattern");
   getPattern(placement_blockage_pattern_, "blockages_placement");
@@ -859,7 +865,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
-    } else if (color_item == misc_.instance_names.swatch) {
+    } else if (color_item == instance_shapes_.names.swatch) {
       item_color = &instance_name_color_;
     } else if (color_item == rows_.swatch) {
       item_color = &row_color_;
@@ -1358,7 +1364,17 @@ bool DisplayControls::isNetSelectable(odb::dbNet* net)
 
 bool DisplayControls::areInstanceNamesVisible()
 {
-  return isRowVisible(&misc_.instance_names);
+  return isRowVisible(&instance_shapes_.names);
+}
+
+bool DisplayControls::areInstancePinsHidden()
+{
+  return isRowVisible(&instance_shapes_.pins);
+}
+
+bool DisplayControls::areInstanceBlockagesHidden()
+{
+  return isRowVisible(&instance_shapes_.blockages);
 }
 
 bool DisplayControls::areFillsVisible()

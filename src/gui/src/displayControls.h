@@ -197,6 +197,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
+  bool areInstancePinsHidden() override;
+  bool areInstanceBlockagesHidden() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
@@ -326,13 +328,20 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
 
   struct MiscModels
   {
-    ModelRow instance_names;
+    ModelRow instances;
     ModelRow scale_bar;
     ModelRow fills;
     ModelRow access_points;
     ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
+  };
+
+  struct InstanceShapeModels
+  {
+    ModelRow names;
+    ModelRow pins;
+    ModelRow blockages;
   };
 
   void techInit();
@@ -413,6 +422,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   BufferInverterModels bufinv_instances_;
   ClockTreeModels clock_tree_instances_;
   PhysicalModels physical_instances_;
+
+  InstanceShapeModels instance_shapes_;
 
   // Object controls
   NetModels nets_;

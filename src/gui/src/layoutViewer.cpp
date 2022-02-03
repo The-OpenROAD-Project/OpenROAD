@@ -1674,6 +1674,12 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
+  const bool hide_blockages = options_->areInstanceBlockagesHidden();
+  const bool hide_pins = options_->areInstancePinsHidden();
+  if (hide_blockages && hide_pins) {
+    return;
+  }
+
   const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
@@ -1701,16 +1707,18 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
 
-    if (options_->areObstructionsVisible()) {
+    if (!hide_blockages && options_->areObstructionsVisible()) {
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
     }
 
-    painter->setBrush(QBrush(color, brush_pattern));
-    for (auto& box : boxes->mterms) {
-      painter->drawRect(box);
+    if (!hide_pins) {
+      painter->setBrush(QBrush(color, brush_pattern));
+      for (auto& box : boxes->mterms) {
+        painter->drawRect(box);
+      }
     }
   }
 
@@ -2045,14 +2053,16 @@ void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbI
     painter.drawX(pt.x(), pt.y(), shape_size);
   };
 
-  for (auto* inst : insts) {
-    int x, y;
-    inst->getLocation(x, y);
-    odb::dbTransform xform({x, y});
+  if (!options_->areInstancePinsHidden()) {
+    for (auto* inst : insts) {
+      int x, y;
+      inst->getLocation(x, y);
+      odb::dbTransform xform({x, y});
 
-    for (auto term : inst->getITerms()) {
-      for (auto ap : term->getPrefAccessPoints()) {
-        draw(ap, xform);
+      for (auto term : inst->getITerms()) {
+        for (auto ap : term->getPrefAccessPoints()) {
+          draw(ap, xform);
+        }
       }
     }
   }
