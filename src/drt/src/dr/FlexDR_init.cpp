@@ -202,7 +202,7 @@ void FlexDRWorker::initNetObjs_pathSeg(
       netExtObjs[net].push_back(std::move(uDRObj));
     }
   } else {
-    cout << "wtf" << endl;
+    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
   }
 }
 

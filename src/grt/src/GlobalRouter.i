@@ -182,9 +182,9 @@ write_guides(char* fileName)
 }
 
 void
-highlight_net_route(const odb::dbNet *net)
+highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
-  getGlobalRouter()->highlightRoute(net);
+  getGlobalRouter()->highlightRoute(net, show_pin_locations);
 }
 
 void
