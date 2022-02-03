@@ -5902,6 +5902,7 @@ proc repair_channel {channel layer_name tag min_size} {
     }
   } else {
     if {[get_dir $layer_name] == "hor"} {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $xMax - $xMin]]
       set routing_grid [round_to_routing_grid $layer_name [expr ($yMax + $yMin - $channel_spacing) / 2]]
       if {([expr $routing_grid - $width / 2] < $yMin) || ([expr $routing_grid + $width / 2] > $yMax)} {
         utl::warn "PDN" 171 "Channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin] [ord::dbu_to_microns $xMax] [ord::dbu_to_microns $yMax]) too narrow. Channel on layer $layer_name must be at least [ord::dbu_to_microns [expr round(2.0 * $width + $channel_spacing)]] wide."
@@ -5909,6 +5910,7 @@ proc repair_channel {channel layer_name tag min_size} {
 
       set stripe [odb::newSetFromRect $xMin [expr $routing_grid - $width / 2] $xMax [expr $routing_grid + $width / 2]]
     } else {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $yMax - $yMin]]
       set routing_grid [round_to_routing_grid $layer_name [expr ($xMax + $xMin - $channel_spacing) / 2]]
 
       if {([expr $routing_grid - $width / 2] < $xMin) || ([expr $routing_grid + $width / 2] > $xMax)} {
