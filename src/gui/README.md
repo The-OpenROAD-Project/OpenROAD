@@ -437,7 +437,7 @@ When performing a batch operation changing the display controls settings, the fo
 
 ```
 gui::save_display_controls
-gui::restroe_display_controls
+gui::restore_display_controls
 ```
 
 ### GUI Controls
