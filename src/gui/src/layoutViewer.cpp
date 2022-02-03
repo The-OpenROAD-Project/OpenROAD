@@ -1655,12 +1655,12 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
           master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
       // Draw an orientation tag in corner if useful in size
-      int master_h = master->getHeight();
+      qreal master_h = master->getHeight();
       if (master_h >= minimum_height_for_tag) {
         qreal master_w = master->getWidth();
-        qreal tag_size = 0.1 * master_h;
-        qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-        qreal tag_y = master_box.yMin() + tag_size;
+        qreal tag_width = std::min(0.25 * master_w, 0.125 * master_h);
+        qreal tag_x = master_box.xMin() + tag_width;
+        qreal tag_y = master_box.yMin() + tag_width * 2;
         painter->drawLine(QPointF(tag_x, master_box.yMin()),
                           QPointF(master_box.xMin(), tag_y));
       }
