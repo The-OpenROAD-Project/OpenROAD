@@ -98,8 +98,10 @@ void FlexRP::prep_minStepViasCheck()
       continue;
 
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-    gcNet* testNet = new gcNet(0);
-    gcPin* testPin = new gcPin(poly, lNum, testNet);
+    unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
+    gcNet* testNet = uTestNet.get();
+    unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
+    gcPin* testPin = uTestPin.get();
     testPin->setNet(testNet);
 
     bool first = true;
@@ -774,8 +776,10 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum) {
       return false;
 
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-    gcNet* testNet = new gcNet(0);
-    gcPin* testPin = new gcPin(poly, lNum, testNet);
+    unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
+    gcNet* testNet = uTestNet.get();
+    unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
+    gcPin* testPin = uTestPin.get();
     testPin->setNet(testNet);
 
     bool first = true;
@@ -877,25 +881,25 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(
   int shiftingEdge, otherEdge, shiftingLow, otherLow, otherHigh, minRange = 0;
   if (other->contains(*shifting)) {
       if (isVertical) {
-        minRange = other->ur().y() - shifting->ur().y() + 1;
+        minRange = other->yMax() - shifting->yMax() + 1;
         shifting->moveDelta(0, minRange);
       } else {
-        minRange = other->ur().x() - shifting->ur().x() + 1;
+        minRange = other->xMax() - shifting->xMax() + 1;
         shifting->moveDelta(minRange, 0);
       }
   }
   if (isVertical) {
-      shiftingEdge = shifting->ur().y() - other->ur().y();
-      otherEdge = other->ur().x() - shifting->ur().x();
-      shiftingLow = shifting->ll().y();
-      otherLow = other->ll().y();
-      otherHigh = other->ur().y();
+      shiftingEdge = shifting->yMax() - other->yMax();
+      otherEdge = other->xMax() - shifting->xMax();
+      shiftingLow = shifting->yMin();
+      otherLow = other->yMin();
+      otherHigh = other->yMax();
   } else {
-      shiftingEdge = shifting->ur().x() - other->ur().x();
-      otherEdge = other->ur().y() - shifting->ur().y();
-      shiftingLow = shifting->ll().x();
-      otherLow = other->ll().x();
-      otherHigh = other->ur().x();
+      shiftingEdge = shifting->xMax() - other->xMax();
+      otherEdge = other->yMax() - shifting->yMax();
+      shiftingLow = shifting->xMin();
+      otherLow = other->xMin();
+      otherHigh = other->xMax();
   }
   int shift;
   if (hasMinStepViol(*shifting, *other, lNum)) {
