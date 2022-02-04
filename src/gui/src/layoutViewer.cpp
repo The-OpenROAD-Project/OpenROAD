@@ -1674,9 +1674,9 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
-  const bool hide_blockages = options_->areInstanceBlockagesHidden();
-  const bool hide_pins = options_->areInstancePinsHidden();
-  if (hide_blockages && hide_pins) {
+  const bool show_blockages = options_->areInstanceBlockagesVisible();
+  const bool show_pins = options_->areInstancePinsVisible();
+  if (!show_blockages && !show_pins) {
     return;
   }
 
@@ -1707,14 +1707,14 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
 
-    if (!hide_blockages && options_->areObstructionsVisible()) {
+    if (show_blockages) {
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
     }
 
-    if (!hide_pins) {
+    if (show_pins) {
       painter->setBrush(QBrush(color, brush_pattern));
       for (auto& box : boxes->mterms) {
         painter->drawRect(box);
@@ -2053,7 +2053,7 @@ void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbI
     painter.drawX(pt.x(), pt.y(), shape_size);
   };
 
-  if (!options_->areInstancePinsHidden()) {
+  if (options_->areInstancePinsVisible()) {
     for (auto* inst : insts) {
       int x, y;
       inst->getLocation(x, y);

@@ -399,8 +399,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto instance_shape = makeParentItem(
       misc_.instances, "Instances", misc, Qt::Checked);
   makeLeafItem(instance_shapes_.names, "Names", instance_shape, Qt::Checked, false, instance_name_color_);
-  makeLeafItem(instance_shapes_.pins, "Hide pins", instance_shape, Qt::Unchecked);
-  makeLeafItem(instance_shapes_.blockages, "Hide blockages", instance_shape, Qt::Unchecked);
+  makeLeafItem(instance_shapes_.pins, "Pins", instance_shape, Qt::Checked);
+  makeLeafItem(instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
   setNameItemDoubleClickAction(instance_shapes_.names, [this]() {
     instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
@@ -1367,12 +1367,12 @@ bool DisplayControls::areInstanceNamesVisible()
   return isRowVisible(&instance_shapes_.names);
 }
 
-bool DisplayControls::areInstancePinsHidden()
+bool DisplayControls::areInstancePinsVisible()
 {
   return isRowVisible(&instance_shapes_.pins);
 }
 
-bool DisplayControls::areInstanceBlockagesHidden()
+bool DisplayControls::areInstanceBlockagesVisible()
 {
   return isRowVisible(&instance_shapes_.blockages);
 }

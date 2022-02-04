@@ -197,8 +197,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
-  bool areInstancePinsHidden() override;
-  bool areInstanceBlockagesHidden() override;
+  bool areInstancePinsVisible() override;
+  bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
