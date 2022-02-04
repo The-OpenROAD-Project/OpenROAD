@@ -96,6 +96,9 @@ proc global_placement { args } {
 
   set skip_io [info exists flags(-skip_io)]
   gpl::set_skip_io_mode_cmd $skip_io
+  if { $skip_io } {
+    gpl::set_initial_place_max_iter_cmd 0
+  }
 
   set timing_driven [info exists flags(-timing_driven)]
   gpl::set_timing_driven_mode $timing_driven
