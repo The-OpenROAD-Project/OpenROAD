@@ -211,7 +211,7 @@ private:
 class Net {
 public:
   Net();
-  Net(odb::dbNet* net);
+  Net(odb::dbNet* net, bool skipIoMode);
   ~Net();
 
   int lx() const;
@@ -224,7 +224,7 @@ public:
   // HPWL: half-parameter-wire-length
   int64_t hpwl() const;
 
-  void updateBox();
+  void updateBox(bool skipIoMode = false);
 
   const std::vector<Pin*> & pins() const { return pins_; }
 
@@ -288,6 +288,7 @@ class PlacerBaseVars {
 public:
   int padLeft;
   int padRight;
+  bool skipIoMode;
 
   PlacerBaseVars();
   void reset(); 

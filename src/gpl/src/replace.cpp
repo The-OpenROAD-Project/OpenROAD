@@ -83,6 +83,7 @@ Replace::Replace()
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
   uniformTargetDensityMode_(false),
+  skipIoMode_(false),
   padLeft_(0), padRight_(0),
   verbose_(0),
   gui_debug_(false),
@@ -143,6 +144,7 @@ void Replace::reset() {
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true; 
   uniformTargetDensityMode_ = false;
+  skipIoMode_ = false;
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
@@ -175,6 +177,8 @@ void Replace::doIncrementalPlace()
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
   pbVars.padRight = padRight_;
+  pbVars.skipIoMode = skipIoMode_;
+
   pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
 
   // Lock down already placed objects
@@ -234,6 +238,7 @@ void Replace::doInitialPlace()
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
@@ -258,6 +263,7 @@ void Replace::initNesterovPlace() {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
@@ -439,6 +445,11 @@ Replace::setDebug(int pause_iterations,
   gui_debug_update_iterations_ = update_iterations;
   gui_debug_draw_bins_ = draw_bins;
   gui_debug_initial_ = initial;
+}
+
+void
+Replace::setSkipIoMode(bool mode) {
+  skipIoMode_ = mode;
 }
 
 void
