@@ -356,7 +356,18 @@ proc repair_tie_fanout { args } {
   }
 }
 
-sta::define_cmd_args "repair_timing" {[-setup] [-hold] -max_passes} \
+# -max_passes is for developer debugging so intentionally not documented
+# in define_cmd_args
+sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                        [-slack_margin slack_margin]\
+                                        [-max_buffer_percent buffer_percent]\
+                                        [-allow_setup_violations]\
+                                        [-max_utilization util]}
+
+proc repair_timing { args } {
+  sta::parse_key_args "repair_timing" args \
+    keys {-slack_margin -libraries -max_utilization
+      -max_buffer_percent -max_passes} \
     flags {-setup -hold -allow_setup_violations}
   
   if { [info exists keys(-libraries)] } {
