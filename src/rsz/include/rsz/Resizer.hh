@@ -45,10 +45,15 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
+#include "sta/Path.hh"
 
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
+}
+
+namespace sta {
+class PathExpanded;
 }
 
 namespace rsz {
@@ -114,6 +119,7 @@ using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
+using sta::PathExpanded;
 
 class SteinerRenderer;
 
@@ -557,8 +563,13 @@ protected:
 
   bool repairSetup(PathRef &path,
                    Slack path_slack);
+  bool upsizeDrvr(PathRef *drvr_path,
+                  int drvr_index,
+                  PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
-                  Slack drvr_slack);
+                  int drvr_index,
+                  Slack drvr_slack,
+                  PathExpanded *expanded);
   LibertyCell *upsizeCell(LibertyPort *in_port,
                           LibertyPort *drvr_port,
                           float load_cap,
@@ -568,7 +579,7 @@ protected:
                    LibertyCell *cell,
                    bool journal);
 
-  void rebuffer(const Pin *drvr_pin);
+  int rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                   SteinerPt k,
                                   SteinerPt prev,

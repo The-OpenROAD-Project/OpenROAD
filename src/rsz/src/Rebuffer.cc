@@ -65,9 +65,11 @@ using sta::fuzzyLess;
 using sta::fuzzyInf;
 using sta::INF;
 
-void
+// Return inserted buffer count.
+int
 Resizer::rebuffer(const Pin *drvr_pin)
 {
+  int inserted_buffer_count = 0;
   Net *net;
   LibertyPort *drvr_port;
   if (network_->isTopLevelPort(drvr_pin)) {
@@ -134,13 +136,19 @@ Resizer::rebuffer(const Pin *drvr_pin)
         debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
         int before = inserted_buffer_count_;
         rebufferTopDown(best_option, net, 1);
-        if (inserted_buffer_count_ != before)
+        if (inserted_buffer_count_ != before) {
           rebuffer_net_count_++;
+          inserted_buffer_count = inserted_buffer_count_ - before;
+          debugPrint(logger_, RSZ, "rebuffer", 2, "rebuffer {} inserted {}",
+                     network_->pathName(drvr_pin),
+                     inserted_buffer_count);
+        }
       }
       rebuffer_options_.deleteContentsClear();
     }
     delete tree;
   }
+  return inserted_buffer_count;
 }
 
 // For testing.
