@@ -35,6 +35,5 @@ Type: macro, CORE_macro_grid_2
     Connect: {met4_PIN_hor met5}
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid.
-[WARNING PDN-0002] No shapes on layer met1 for POWER.
 [INFO PDN-0015] Writing to database.
 No differences found.

@@ -3705,38 +3705,48 @@ proc insert_power_switches {} {
   set offset [expr [lindex $area 0] + [dict get $strap_lay_info offset]]
 
   set row_idx 0
+  set psw_instance {}
 
   foreach row [$block getRows] {
     set orient [$row getOrient]
     set box [$row getBBox]
     if {$orient == "R0"} {
-      set vss_y [$box yMin]
-      set overlap_y [expr $vss_y - $rail_width / 2]
-      
-      set col_idx 0
+      if { [expr $row_idx % 2] == 0 } {
+        set vss_y [$box yMin]
+        set overlap_y [expr $vss_y - $rail_width / 2]
+        
+        set col_idx 0
 
-      for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $strap_lay_info width]}]} {set x [expr {[dict get $strap_lay_info pitch] + $x}]} {
-        set overlap_x [expr $x - $strap_width / 2]
+        for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $strap_lay_info width]}]} {set x [expr {[dict get $strap_lay_info pitch] + $x}]} {
+          set overlap_x [expr $x - $strap_width / 2]
 
-        set location [list \
-          [expr $overlap_x - [[$vddg getBBox] xMin]] \
-          [expr $overlap_y - [[$vgnd getBBox] yMin]] \
-        ]
+          set location [list \
+            [expr $overlap_x - [[$vddg getBBox] xMin]] \
+            [expr $overlap_y - [[$vgnd getBBox] yMin]] \
+          ]
 
-        set inst_name "PSW_${row_idx}_${col_idx}"
-        if {[set inst [$block findInst $inst_name]] == "NULL"} {
-          set inst [odb::dbInst_create $block $psw $inst_name]
+          set inst_name "PSW_${row_idx}_${col_idx}"
+          if {[set inst [$block findInst $inst_name]] == "NULL"} {
+            set inst [odb::dbInst_create $block $psw $inst_name]
+          }
+
+          $inst setOrigin {*}$location
+          $inst setPlacementStatus "FIRM"
+
+          lappend psw_instance $inst
+          incr col_idx
         }
-
-        $inst setOrigin {*}$location
-        $inst setPlacementStatus "FIRM"
-
-        incr col_idx
       }
 
       incr row_idx
     }
   }
+
+  foreach inst $psw_instance {
+    set vddg [$inst findITerm VDDG]
+    add_stripe "met1" "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
+  }
+  merge_stripes
 }
 
 proc cut_blocked_areas {tag} {
