@@ -2322,7 +2322,8 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup(float slack_margin)
+Resizer::repairSetup(float slack_margin,
+                     int max_passes)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -2335,7 +2336,8 @@ Resizer::repairSetup(float slack_margin)
   int pass = 1;
   int decreasing_slack_passes = 0;
   incrementalParasiticsBegin();
-  while (fuzzyLess(worst_slack, slack_margin)) {
+  while (fuzzyLess(worst_slack, slack_margin)
+         && pass <= max_passes) {
     PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
     bool changed = repairSetup(worst_path, worst_slack);
     updateParasitics();
@@ -2449,42 +2451,17 @@ Resizer::repairSetup(PathRef &path,
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       Pin *drvr_pin = drvr_vertex->pin();
+      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+      LibertyCell *drvr_cell = drvr_port->libertyCell();
       PathRef *load_path = expanded.path(drvr_index + 1);
       Vertex *load_vertex = load_path->vertex(sta_);
       Pin *load_pin = load_vertex->pin();
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "repair_setup", 2, "{} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "{} {} fanout = {}",
                  network_->pathName(drvr_pin),
+                 drvr_cell->name(),
                  fanout);
-      // For tristate nets all we can do is resize the driver.
-      bool tristate_drvr = isTristateDriver(drvr_pin);
-      if (fanout > 1
-          // Rebuffer blows up on large fanout nets.
-          && fanout < rebuffer_max_fanout_
-          && !tristate_drvr) {
-        int count_before = inserted_buffer_count_;
-        rebuffer(drvr_pin);
-        int insert_count = inserted_buffer_count_ - count_before;
-        if (insert_count > 0) {
-          debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
-                     network_->pathName(drvr_pin),
-                     insert_count);
-          changed = true;
-          break;
-        }
-      }
-      // Don't split loads on low fanout nets.
-      if (fanout > split_load_min_fanout_
-          && !tristate_drvr) {
-        // Divide and conquer.
-        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
-                   network_->pathName(drvr_pin),
-                   network_->pathName(load_pin));
-        splitLoads(drvr_path, path_slack);
-        changed = true;
-        break;
-      }
-      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+
       float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
       int in_index = drvr_index - 1;
       PathRef *in_path = expanded.path(in_index);
@@ -2517,6 +2494,36 @@ Resizer::repairSetup(PathRef &path,
           changed = true;
           break;
         }
+      }
+
+      // For tristate nets all we can do is resize the driver.
+      bool tristate_drvr = isTristateDriver(drvr_pin);
+      if (fanout > 1
+          // Rebuffer blows up on large fanout nets.
+          && fanout < rebuffer_max_fanout_
+          && !tristate_drvr) {
+        int count_before = inserted_buffer_count_;
+        rebuffer(drvr_pin);
+        int insert_count = inserted_buffer_count_ - count_before;
+        if (insert_count > 0) {
+          debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
+
+                     network_->pathName(drvr_pin),
+                     insert_count);
+          changed = true;
+          break;
+        }
+      }
+      // Don't split loads on low fanout nets.
+      if (fanout > split_load_min_fanout_
+          && !tristate_drvr) {
+        // Divide and conquer.
+        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
+                   network_->pathName(drvr_pin),
+                   network_->pathName(load_pin));
+        splitLoads(drvr_path, path_slack);
+        changed = true;
+        break;
       }
     }
   }
@@ -4100,6 +4107,7 @@ Instance *Resizer::makeInstance(LibertyCell *cell,
                                 const char *name,
                                 Instance *parent)
 {
+  debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
   Instance *inst = db_network_->makeInstance(cell, name, parent);
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);

@@ -95,10 +95,9 @@ Resizer::rebuffer(const Pin *drvr_pin)
       sta_->findRequireds();
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
                                           drvr_pt, 1);
-      Required best_slack = -INF;
+      Required best_slack_penalized = -INF;
       BufferedNet *best_option = nullptr;
       int best_index = 0;
-      int best_buffer_count = 0;
       int i = 1;
       for (BufferedNet *p : Z) {
         // Find slack for drvr_pin into option.
@@ -107,25 +106,25 @@ Resizer::rebuffer(const Pin *drvr_pin)
           Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
                                        p->cap(), req_path.dcalcAnalysisPt(sta_));
           Slack slack = p->required(sta_) - drvr_delay;
+          int buffer_count = p->bufferCount();
+          double buffer_penalty = (1.0 - buffer_count * rebuffer_buffer_penalty);
+          double slack_penalized = slack * buffer_penalty;
           debugPrint(logger_, RSZ, "rebuffer", 2,
-                     "option {:3d}: {:2d} buffers req {} - {} = {} cap {}",
+                     "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
                      i,
                      p->bufferCount(),
                      delayAsString(p->required(sta_), this, 3),
                      delayAsString(drvr_delay, this, 3),
                      delayAsString(slack, this, 3),
+                     buffer_penalty,
+                     delayAsString(slack_penalized, this, 3),
                      units_->capacitanceUnit()->asString(p->cap()));
           if (logger_->debugCheck(RSZ, "rebuffer", 4))
             p->reportTree(this);
-          int buffer_count = p->bufferCount();
-          float buffer_penalty = .005;
           if (best_option == nullptr
-              || fuzzyGreater(slack * (1.0 - buffer_count * buffer_penalty),
-                              best_slack * (1.0 - best_buffer_count
-                                            * buffer_penalty))) {
-            best_slack = slack;
+              || fuzzyGreater(slack_penalized, best_slack_penalized)) {
+            best_slack_penalized = slack_penalized;
             best_option = p;
-            best_buffer_count = buffer_count;
             best_index = i;
           }
           i++;

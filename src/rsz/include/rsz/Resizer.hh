@@ -213,7 +213,8 @@ public:
                   float slack_margin,
                   bool allow_setup_violations,
                   float max_buffer_percent);
-  void repairSetup(float slack_margin);
+  void repairSetup(float slack_margin,
+                   int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
   // Area of the design in meter^2.
@@ -695,6 +696,7 @@ protected:
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
+  static constexpr double rebuffer_buffer_penalty = .005;
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
