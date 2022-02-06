@@ -153,7 +153,7 @@ void push_metrics_stage(const char *fmt){
 
 char* pop_metrics_stage(){
   Logger* logger = getLogger();
-  return logger->popMetricsStage();
+  return logger->popMetricsStage().c_str();
 }
 
 } // namespace
