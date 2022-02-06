@@ -43,10 +43,11 @@
 #include <string_view>
 #include <cstdlib>
 #include <type_traits>
-#include <format>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/fmt/fmt.h"
+
 
 namespace utl {
 
@@ -200,9 +201,9 @@ class Logger
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char *metrics_filename);
 
-  void setMetricsStage(std::string_view fmt);
+  void setMetricsStage(std::string_view format);
   void clearMetricsStage();
-  void pushMetricsStage(std::string_view fmt);
+  void pushMetricsStage(std::string_view format);
   std::string popMetricsStage();
 
  private:
@@ -246,7 +247,7 @@ class Logger
       if (metrics_stages_.empty()) 
         key = std::string(metric);
       else 
-        key = std::vformat(metrics_stages_.top(), metric);
+        key = fmt::format(metrics_stages_.top(), metric);
 
       metrics_logger_->info("  {}\"{}\" : {}",
                             first_metric_ ? "  " : ", ",
