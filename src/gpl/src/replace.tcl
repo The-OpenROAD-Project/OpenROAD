@@ -82,6 +82,7 @@ proc global_placement { args } {
       -routability_driven \
       -disable_timing_driven \
       -disable_routability_driven \
+      -skip_io \
       -incremental}
 
   # flow control for initial_place
@@ -93,11 +94,22 @@ proc global_placement { args } {
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
   } 
 
+  set skip_io [info exists flags(-skip_io)]
+  gpl::set_skip_io_mode_cmd $skip_io
+  if { $skip_io } {
+    gpl::set_initial_place_max_iter_cmd 0
+  }
+
   set timing_driven [info exists flags(-timing_driven)]
   gpl::set_timing_driven_mode $timing_driven
   if { $timing_driven } {
     if { [get_libs -quiet "*"] == {} } {
       utl::error GPL 121 "No liberty libraries found."
+    }
+
+    if { $skip_io } {
+      utl::warn "GPL" 150 "-skip_io will disable timing driven mode."
+      gpl::set_timing_driven_mode 0 
     }
 
     if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
@@ -117,6 +129,12 @@ proc global_placement { args } {
 
   set routability_driven [info exists flags(-routability_driven)]
   gpl::set_routability_driven_mode $routability_driven
+  if { $routability_driven } {
+    if { $skip_io } {
+      utl::warn "GPL" 151 "-skip_io will disable routability driven mode."
+      gpl::set_routability_driven_mode 0 
+    }
+  }
   if { [info exists flags(-disable_routability_driven)] } {
     utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
   }
@@ -308,7 +326,6 @@ proc global_placement_debug { args } {
   }
 
   set draw_bins [info exists flags(-draw_bins)]
-
   set initial [info exists flags(-initial)]
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial

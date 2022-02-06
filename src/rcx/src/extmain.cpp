@@ -805,6 +805,9 @@ double extMain::getResistance(uint level, uint width, uint len, uint model) {
   */
 }
 void extMain::setBlockFromChip() {
+  if (_db->getChip() == nullptr) {
+    logger_->error(RCX, 497, "No design is loaded.");
+  }
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
   _blockId = _block->getId();

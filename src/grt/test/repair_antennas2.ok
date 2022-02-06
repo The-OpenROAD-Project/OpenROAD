@@ -59,7 +59,7 @@ met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            55327          2052            3.71%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 22442 um
+[INFO GRT-0018] Total wirelength: 22428 um
 [INFO GRT-0006] Repairing antennas, iteration 1.
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.
