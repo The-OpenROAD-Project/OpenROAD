@@ -19,7 +19,7 @@ set ::ground_nets "VSS"
 
 set ::core_domain "CORE"
 # Voltage domain
-set_voltage_domain -name CORE -power VDD -ground VSS -unswitched_power VDD_SW
+set_voltage_domain -name CORE -power VDD -ground VSS -switched_power VDD_SW
 
 add_global_connection -net VDD -pin_pattern VDDG -power
 add_global_connection -net VDD_SW -pin_pattern VPB

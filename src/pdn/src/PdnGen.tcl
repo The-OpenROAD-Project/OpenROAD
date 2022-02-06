@@ -179,7 +179,7 @@ proc define_pdn_grid {args} {
 
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            [-region region_name] \
-                                           [-unswitched_power unswitched_power_net_name] \
+                                           [-switched_power switched_power_net_name] \
                                            -power power_net_name \
                                            [-secondary_power secondary_power_net_name] \
                                            -ground ground_net_name}
@@ -188,7 +188,7 @@ proc set_voltage_domain {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -unswitched_power -power -secondary_power -ground}
+    keys {-name -region -switched_power -power -secondary_power -ground}
 
   if {[llength $args] > 0} {
     utl::error PDN 133 "Unexpected argument [lindex $args 0] for set_voltage_domain command."
@@ -652,19 +652,19 @@ proc check_switch_cells {switch_cells} {
   return $switch_cells
 }
 
-proc check_unswitched_power {unswitched_power_net_name} {
+proc check_switched_power {switched_power_net_name} {
   set block [ord::get_db_block]
 
-  if {[set net [$block findNet $unswitched_power_net_name]] == "NULL"} {
-    set net [odb::dbNet_create $block $unswitched_power_net_name]
+  if {[set net [$block findNet $switched_power_net_name]] == "NULL"} {
+    set net [odb::dbNet_create $block $switched_power_net_name]
     $net setSpecial
     $net setSigType "POWER"
   } else {
     if {[$net getSigType] != "POWER"} {
-      utl::error PDN 177 "Net $unswitched_power_net_name already exists in the design, but is of signal type [$net getSigType]."
+      utl::error PDN 177 "Net $switched_power_net_name already exists in the design, but is of signal type [$net getSigType]."
     }
   }
-  return $unswitched_power_net_name
+  return $switched_power_net_name
 }
 
 proc check_power {power_net_name} {
@@ -725,7 +725,7 @@ proc set_voltage_domain {args} {
 
     switch $arg {
       -name             {dict set voltage_domain name $value}
-      -unswitched_power {dict set voltage_domain unswitched_power [check_unswitched_power $value]}
+      -switched_power {dict set voltage_domain switched_power [check_switched_power $value]}
       -power            {dict set voltage_domain primary_power [check_power $value]}
       -secondary_power  {dict set voltage_domain secondary_power [check_secondary_power $value]}
       -ground           {dict set voltage_domain primary_ground [check_ground $value]}
@@ -3458,10 +3458,10 @@ proc generate_lower_metal_followpin_rails {} {
       set vss_name [get_voltage_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
       # generate power_rails using first domain_power
       set first_power_name [lindex $vdd_name 0]
-      set unswitched_power_name [get_voltage_domain_unswitched_power [dict get $design_data core_domain]]
+      set switched_power_name [get_voltage_domain_switched_power [dict get $design_data core_domain]]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
-      if {$unswitched_power_name != ""} {
-        add_stripe $lay "POWER_$unswitched_power_name" $vdd_box
+      if {$switched_power_name != ""} {
+        add_stripe $lay "POWER_$switched_power_name" $vdd_box
       } elseif {$first_power_name == [get_voltage_domain_power [dict get $design_data core_domain]]} {
         add_stripe $lay "POWER" $vdd_box
       } else {
@@ -3500,12 +3500,12 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area net_name} {
   variable design_data
   set width [dict get $layer_info width]
   set start_with [starts_with $layer]
-  set unswitched_power_name [get_voltage_domain_unswitched_power [dict get $design_data core_domain]]
+  set switched_power_name [get_voltage_domain_switched_power [dict get $design_data core_domain]]
   # debug "Starts with: $start_with"
 
   if {[get_dir $layer] == "hor"} {
     set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
-    if {$net_name == $unswitched_power_name} { #VDD_SW
+    if {$net_name == $switched_power_name} { #VDD_SW
       set tag "$tag\_$net_name"
       set offset1 [expr {$offset + ([dict get $layer_info pitch] / 4)}]
       set offset2 [expr {$offset - ([dict get $layer_info pitch] / 4)}]
@@ -3532,7 +3532,7 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area net_name} {
     }
   } elseif {[get_dir $layer] == "ver"} {
     set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
-    if {$net_name == $unswitched_power_name} { #VDD_SW
+    if {$net_name == $switched_power_name} { #VDD_SW
       set tag "$tag\_$net_name"
       set offset1 [expr {$offset + ([dict get $layer_info pitch] / 4)}]
       set offset2 [expr {$offset - ([dict get $layer_info pitch] / 4)}]
@@ -3635,7 +3635,7 @@ proc generate_stripes {tag net_name} {
 
       if {$net_name == [get_voltage_domain_power [dict get $design_data core_domain]] ||
           $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]] || 
-          $net_name == [get_voltage_domain_unswitched_power [dict get $design_data core_domain]]} {
+          $net_name == [get_voltage_domain_switched_power [dict get $design_data core_domain]]} {
         generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area $net_name
         # Split core domains pwr/gnd nets when they cross other voltage domains that have different pwr/gnd nets
         update_mesh_stripes_with_volatge_domains $tag $lay $net_name
@@ -3693,6 +3693,7 @@ proc insert_power_switches {} {
   # The selected power switch is double height, and has a central VSS pin, so align with VSS rails
   set vgnd [[$psw findMTerm VGND] getMPins]
   set vddg [[$psw findMTerm VDDG] getMPins]
+  set vddg_layer [[[lindex [$vddg getGeometry] 0] getTechLayer] getName]
 
   set rail_lay [lindex [get_rails_layers] 0]
   set rail_width [dict get $grid_data rails $rail_lay width]
@@ -3744,7 +3745,7 @@ proc insert_power_switches {} {
 
   foreach inst $psw_instance {
     set vddg [$inst findITerm VDDG]
-    add_stripe "met1" "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
+    add_stripe $vddg_layer "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
   }
   merge_stripes
 }
@@ -5545,7 +5546,7 @@ proc add_grid {} {
 
   merge_stripes
 
-  if {[get_voltage_domain_unswitched_power [dict get $design_data core_domain]] != ""} {
+  if {[get_voltage_domain_switched_power [dict get $design_data core_domain]] != ""} {
     insert_power_switches
   }
 
@@ -5926,10 +5927,10 @@ proc identify_channels {lower_layer_name upper_layer_name tag} {
   # debug "stripes $lower_layer_name, tag: $tag, $stripe_locs($lower_layer_name,$tag)"
   # debug "Direction (lower-$lower_layer_name): [get_dir $lower_layer_name] (upper-$upper_layer_name): [get_dir $upper_layer_name]"
   # debug "Pitch check (lower): [ord::dbu_to_microns $lower_pitch_check], (upper): [ord::dbu_to_microns $upper_pitch_check]"
-  set unswitched_power [get_voltage_domain_unswitched_power [dict get $design_data core_domain]]
+  set switched_power [get_voltage_domain_switched_power [dict get $design_data core_domain]]
   if {[array names stripe_locs "$lower_layer_name,$tag"] == ""} {
-    if {[array names stripe_locs "$lower_layer_name,${tag}_${unswitched_power}"] != ""} {
-      set tag ${tag}_${unswitched_power}
+    if {[array names stripe_locs "$lower_layer_name,${tag}_${switched_power}"] != ""} {
+      set tag ${tag}_${switched_power}
     } else {
       return $channels
     }
@@ -6208,11 +6209,11 @@ proc get_voltage_domain {llx lly urx ury} {
   return $name
 }
 
-proc get_voltage_domain_unswitched_power {domain} {
+proc get_voltage_domain_switched_power {domain} {
   variable voltage_domains
 
-  if {[dict exists $voltage_domains $domain unswitched_power]} {
-    return [dict get $voltage_domains $domain unswitched_power]
+  if {[dict exists $voltage_domains $domain switched_power]} {
+    return [dict get $voltage_domains $domain switched_power]
   } else {
     return []
   }
