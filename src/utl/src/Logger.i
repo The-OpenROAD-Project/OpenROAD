@@ -151,7 +151,7 @@ void push_metrics_stage(const char *fmt){
   logger->pushMetricsStage(fmt);
 }
 
-char* pop_metrics_stage(){
+const char* pop_metrics_stage(){
   Logger* logger = getLogger();
   return logger->popMetricsStage().c_str();
 }
