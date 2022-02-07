@@ -55,6 +55,7 @@
 #include "options.h"
 
 #include "gui/gui.h"
+#include "db_sta/dbNetwork.hh"
 
 namespace odb {
 class dbDatabase;
@@ -155,7 +156,7 @@ class DisplayControlModel : public QStandardItemModel
 //
 // It also implements the Options interface so that other clients can
 // access the data.
-class DisplayControls : public QDockWidget, public Options
+class DisplayControls : public QDockWidget, public Options, public sta::dbNetworkObserver
 {
   Q_OBJECT
 
@@ -196,6 +197,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
+  bool areInstancePinsVisible() override;
+  bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
@@ -219,6 +222,9 @@ class DisplayControls : public QDockWidget, public Options
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+
+  // API from dbNetworkObserver
+  virtual void postReadLiberty() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -322,13 +328,20 @@ class DisplayControls : public QDockWidget, public Options
 
   struct MiscModels
   {
-    ModelRow instance_names;
+    ModelRow instances;
     ModelRow scale_bar;
     ModelRow fills;
     ModelRow access_points;
     ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
+  };
+
+  struct InstanceShapeModels
+  {
+    ModelRow names;
+    ModelRow pins;
+    ModelRow blockages;
   };
 
   void techInit();
@@ -386,6 +399,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isRowVisible(const ModelRow* row) const;
   bool isRowSelectable(const ModelRow* row) const;
 
+  void checkLiberty(bool assume_loaded = false);
+
   QTreeView* view_;
   DisplayControlModel* model_;
   QMenu* layers_menu_;
@@ -407,6 +422,8 @@ class DisplayControls : public QDockWidget, public Options
   BufferInverterModels bufinv_instances_;
   ClockTreeModels clock_tree_instances_;
   PhysicalModels physical_instances_;
+
+  InstanceShapeModels instance_shapes_;
 
   // Object controls
   NetModels nets_;

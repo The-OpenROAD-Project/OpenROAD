@@ -123,6 +123,8 @@ class Replace
 
     void setTimingDrivenMode(bool mode);
 
+    void setSkipIoMode(bool mode);
+
     void setRoutabilityDrivenMode(bool mode);
     void setRoutabilityCheckOverflow(float overflow);
     void setRoutabilityMaxDensity(float density);
@@ -191,6 +193,7 @@ class Replace
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
     bool uniformTargetDensityMode_;
+    bool skipIoMode_;
 
     std::vector<int> timingNetWeightOverflows_;
    

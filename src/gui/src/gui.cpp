@@ -568,7 +568,7 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
   heat_maps_.erase(heatmap);
 }
 
-void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
   HeatMapDataSource* source = nullptr;
 
@@ -586,6 +586,13 @@ void Gui::setHeatMapSetting(const std::string& name, const std::string& option, 
     }
     logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
   }
+
+  return source;
+}
+
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+{
+  HeatMapDataSource* source = getHeatMap(name);
 
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
@@ -644,6 +651,12 @@ void Gui::setHeatMapSetting(const std::string& name, const std::string& option, 
   }
 
   source->getRenderer()->redraw();
+}
+
+void Gui::dumpHeatMap(const std::string& name, const std::string& file)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+  source->dumpToFile(file);
 }
 
 Renderer::~Renderer()

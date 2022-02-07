@@ -34,13 +34,9 @@
 #include "gui/heatMap.h"
 #include "heatMapSetup.h"
 
-#include <QComboBox>
-#include <QHBoxLayout>
-#include <QListWidget>
-#include <QPushButton>
-#include <QVBoxLayout>
-
-#include <QDebug>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
 
 namespace gui {
 
@@ -86,6 +82,41 @@ HeatMapDataSource::~HeatMapDataSource()
 void HeatMapDataSource::registerHeatMap()
 {
   Gui::get()->registerHeatMap(this);
+}
+
+void HeatMapDataSource::dumpToFile(const std::string& file)
+{
+  ensureMap();
+
+  if (!isPopulated()) {
+    logger_->error(utl::GUI, 72, "\"{}\" is not populated with data.", name_);
+  }
+
+  std::ofstream csv(file);
+  if (!csv.is_open()) {
+    logger_->error(utl::GUI, 73, "Unable to open {}", file);
+  }
+
+  const double dbu_to_micron = block_->getDbUnitsPerMicron();
+
+  csv << "x0,y0,x1,y1,value" << std::endl;
+  for (const auto& [box, box_value] : map_) {
+    if (!box_value->has_value) {
+      continue;
+    }
+    const odb::Rect& box_rect = box_value->rect;
+    const double scaled_value = convertPercentToValue(box_value->value);
+
+    csv << std::defaultfloat << std::setprecision(4);
+    csv << box_rect.xMin() / dbu_to_micron << ",";
+    csv << box_rect.yMin() / dbu_to_micron << ",";
+    csv << box_rect.xMax() / dbu_to_micron << ",";
+    csv << box_rect.yMax() / dbu_to_micron << ",";
+    csv << std::scientific << std::setprecision(6);
+    csv << scaled_value << std::endl;
+  }
+
+  csv.close();
 }
 
 void HeatMapDataSource::redraw()

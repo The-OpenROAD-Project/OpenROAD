@@ -1655,12 +1655,12 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
           master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
       // Draw an orientation tag in corner if useful in size
-      int master_h = master->getHeight();
+      qreal master_h = master->getHeight();
       if (master_h >= minimum_height_for_tag) {
         qreal master_w = master->getWidth();
-        qreal tag_size = 0.1 * master_h;
-        qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-        qreal tag_y = master_box.yMin() + tag_size;
+        qreal tag_width = std::min(0.25 * master_w, 0.125 * master_h);
+        qreal tag_x = master_box.xMin() + tag_width;
+        qreal tag_y = master_box.yMin() + tag_width * 2;
         painter->drawLine(QPointF(tag_x, master_box.yMin()),
                           QPointF(master_box.xMin(), tag_y));
       }
@@ -1674,6 +1674,12 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
+  const bool show_blockages = options_->areInstanceBlockagesVisible();
+  const bool show_pins = options_->areInstancePinsVisible();
+  if (!show_blockages && !show_pins) {
+    return;
+  }
+
   const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
@@ -1701,16 +1707,18 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
 
-    if (options_->areObstructionsVisible()) {
+    if (show_blockages) {
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
     }
 
-    painter->setBrush(QBrush(color, brush_pattern));
-    for (auto& box : boxes->mterms) {
-      painter->drawRect(box);
+    if (show_pins) {
+      painter->setBrush(QBrush(color, brush_pattern));
+      for (auto& box : boxes->mterms) {
+        painter->drawRect(box);
+      }
     }
   }
 
@@ -2045,14 +2053,16 @@ void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbI
     painter.drawX(pt.x(), pt.y(), shape_size);
   };
 
-  for (auto* inst : insts) {
-    int x, y;
-    inst->getLocation(x, y);
-    odb::dbTransform xform({x, y});
+  if (options_->areInstancePinsVisible()) {
+    for (auto* inst : insts) {
+      int x, y;
+      inst->getLocation(x, y);
+      odb::dbTransform xform({x, y});
 
-    for (auto term : inst->getITerms()) {
-      for (auto ap : term->getPrefAccessPoints()) {
-        draw(ap, xform);
+      for (auto term : inst->getITerms()) {
+        for (auto ap : term->getPrefAccessPoints()) {
+          draw(ap, xform);
+        }
       }
     }
   }
