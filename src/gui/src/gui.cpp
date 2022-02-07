@@ -943,7 +943,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   }
 
   // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  main_window->getScriptWidget()->setupTcl(interp, init_openroad, [&]() {
+  main_window->getScriptWidget()->setupTcl(interp, interactive, init_openroad, [&]() {
     // init remainder of GUI, to be called immediately after OpenRoad is guaranteed to be initialized.
     main_window->init(open_road->getSta());
   });
@@ -985,14 +985,21 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
       }
     }
   }
-  gui->clearRestoreStateCommands();
 
+  // temporary storage for any exceptions thrown by scripts
+  std::runtime_error exception("");
+  bool had_exception = false;
   // Execute script
   if (!script.empty()) {
-    main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+    try {
+      main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+    } catch (const std::runtime_error& e) {
+      had_exception = true;
+      exception = e;
+    }
   }
 
-  bool do_exec = interactive;
+  bool do_exec = interactive && !had_exception;
   // check if hide was called by script
   if (gui->isContinueAfterClose()) {
     do_exec = false;
@@ -1006,21 +1013,29 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   // cleanup
   open_road->removeObserver(main_window);
 
-  // save restore state commands
-  for (const auto& cmd : main_window->getRestoreTclCommands()) {
-    gui->addRestoreStateCommand(cmd);
+  if (!had_exception) {
+    gui->clearRestoreStateCommands();
+    // save restore state commands
+    for (const auto& cmd : main_window->getRestoreTclCommands()) {
+      gui->addRestoreStateCommand(cmd);
+    }
   }
 
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
 
+  resetConversions();
+
+  if (had_exception) {
+    // rethow exception after cleanup of main_window
+    throw exception;
+  }
+
   if (!gui->isContinueAfterClose()) {
     // if exiting, go ahead and exit with gui return code.
     exit(ret);
   }
-
-  resetConversions();
 
   return ret;
 }

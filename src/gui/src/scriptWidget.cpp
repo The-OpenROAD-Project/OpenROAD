@@ -63,6 +63,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
+      is_interactive_(true),
       sink_(nullptr)
 {
   setObjectName("scripting");  // for settings
@@ -123,8 +124,12 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
   return TCL_OK;
 }
 
-void ScriptWidget::setupTcl(Tcl_Interp* interp, bool do_init_openroad, const std::function<void(void)>& post_or_init)
+void ScriptWidget::setupTcl(Tcl_Interp* interp,
+                            bool interactive,
+                            bool do_init_openroad,
+                            const std::function<void(void)>& post_or_init)
 {
+  is_interactive_ = interactive;
   interp_ = interp;
 
   // Overwrite exit to allow Qt to handle exit
@@ -228,8 +233,11 @@ void ScriptWidget::addTclResultToOutput(int return_code)
     } else {
       try {
         logger_->error(utl::GUI, 70, result);
-      } catch (const std::runtime_error& /* e */) {
-        // do nothing
+      } catch (const std::runtime_error& e) {
+        if (!is_interactive_) {
+          // rethrow error
+          throw e;
+        }
       }
     }
   }
