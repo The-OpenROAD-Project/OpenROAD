@@ -109,8 +109,8 @@ Resizer::rebuffer(const Pin *drvr_pin)
                                        p->cap(), req_path.dcalcAnalysisPt(sta_));
           Slack slack = p->required(sta_) - drvr_delay;
           int buffer_count = p->bufferCount();
-          double buffer_penalty = (1.0 - buffer_count * rebuffer_buffer_penalty);
-          double slack_penalized = slack * buffer_penalty;
+          double buffer_penalty = buffer_count * rebuffer_buffer_penalty;
+          double slack_penalized = slack * (1.0 - (slack > 0 ? buffer_penalty : -buffer_penalty));
           debugPrint(logger_, RSZ, "rebuffer", 2,
                      "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
                      i,
