@@ -134,19 +134,13 @@ class frTechObject
                              bool isCurrDown,
                              bool isCurrDirX,
                              frCoord len,
-                             frNonDefaultRule* ndr = nullptr,
-                             bool isOverlap = false)
+                             frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    if (isOverlap) {
-      return isIncluded(
-          via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
-    } else {
-      return isIncluded(
-          (ndr ? ndr->via2ViaForbiddenLen
-               : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-          len);
-    }
+    return isIncluded(
+        (ndr ? ndr->via2ViaForbiddenLen
+             : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
+        len);
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
@@ -307,24 +301,6 @@ class frTechObject
   // dist range (for non-shape-based rule)
   ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
 
-  // via2ViaForbiddenOverlapLen[z][0], prev via is down, curr via is down,
-  // forbidden x dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][1], prev via is down, curr via is down,
-  // forbidden y dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][2], prev via is down, curr via is up,
-  // forbidden x dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][3], prev via is down, curr via is up,
-  // forbidden y dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][4], prev via is up,   curr via is down,
-  // forbidden x dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][5], prev via is up,   curr via is down,
-  // forbidden y dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][6], prev via is up,   curr via is up,
-  // forbidden x dist range (for shape-based rule)
-  // via2ViaForbiddenOverlapLen[z][7], prev via is up,   curr via is up,
-  // forbidden y dist range (for shape-based rule)
-  ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenOverlapLen;
-
   // viaForbiddenTurnLen[z][0], last via is down, forbidden x dist range before
   // turn
   // viaForbiddenTurnLen[z][1], last via is down, forbidden y dist range before
@@ -418,7 +394,6 @@ class frTechObject
     (ar) & uConstraints;
     (ar) & nonDefaultRules;
     (ar) & via2ViaForbiddenLen;
-    (ar) & via2ViaForbiddenOverlapLen;
     (ar) & viaForbiddenTurnLen;
     (ar) & viaForbiddenPlanarLen;
     (ar) & line2LineForbiddenLen;
