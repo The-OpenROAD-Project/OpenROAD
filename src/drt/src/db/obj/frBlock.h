@@ -364,6 +364,7 @@ class frBlock : public frBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return frcBlock; }
+  ~frBlock() {}
 
  private:
   frString name_;

@@ -83,6 +83,7 @@ class frDesign
   }
   bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
 
+  ~frDesign() {}
  private:
   std::unique_ptr<frBlock> topBlock_;
   std::map<frString, frMaster*> name2master_;

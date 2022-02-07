@@ -55,7 +55,7 @@ class RoutingCallBack : public dst::JobCallBack
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    time_.print(logger_);
+    
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
     dst::JobMessage result(dst::JobMessage::ROUTING);
@@ -66,6 +66,7 @@ class RoutingCallBack : public dst::JobCallBack
       if (design_path_ != desc->getDesignPath()) {
         router_->updateDesign(desc->getDesignPath().c_str());
         design_path_ = desc->getDesignPath();
+        time_.print(logger_);
       }
     }
     if (desc->getGlobalsPath() != "") {
@@ -82,10 +83,8 @@ class RoutingCallBack : public dst::JobCallBack
             utl::DRT, 605, "Worker file {} not found", desc->getWorkerPath());
         return;
       }
-      logger_->info(utl::DRT, 600, "running worker {}", desc->getWorkerPath());
       std::string resultPath
           = router_->runDRWorker(desc->getWorkerPath().c_str());
-      logger_->info(utl::DRT, 603, "worker {} is done", resultPath);
       auto uResultDesc = std::make_unique<RoutingJobDescription>();
       auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
       resultDesc->setWorkerPath(resultPath);
