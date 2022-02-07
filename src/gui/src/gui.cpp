@@ -877,7 +877,7 @@ void Gui::setLogger(utl::Logger* logger)
 void Gui::hideGui()
 {
   // ensure continue after close is true, since we want to return to tcl
-  continue_after_close_ = true;
+  setContinueAfterClose();
   main_window->exit();
 }
 
@@ -929,6 +929,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
 
   open_road->addObserver(main_window);
   if (!interactive) {
+    gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
   }
   main_window->show();

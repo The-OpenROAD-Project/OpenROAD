@@ -118,6 +118,10 @@ int ScriptWidget::tclExitHandler(ClientData instance_data,
                                  int argc,
                                  const char **argv) {
   ScriptWidget* widget = (ScriptWidget*) instance_data;
+
+  // exit was called, so ensure continue after close is cleared
+  Gui::get()->clearContinueAfterClose();
+
   // announces exit to Qt
   emit widget->tclExiting();
 
