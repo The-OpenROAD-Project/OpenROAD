@@ -41,10 +41,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
 #include <iostream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "architecture.h"
 #include "orientation.h"
+#include "rectangle.h"
 #include "symmetry.h"
 
 namespace dpo {
@@ -86,25 +87,26 @@ class Node {
   int getId() const { return m_id; }
   void setId(int id) { m_id = id; }
 
-  void setHeight(double h) { m_h = h; }
-  double getHeight() const { return m_h; }
+  void setHeight(int h) { m_h = h; }
+  int getHeight() const { return m_h; }
 
-  void setWidth(double w) { m_w = w; }
-  double getWidth() const { return m_w; }
+  void setWidth(int w) { m_w = w; }
+  int getWidth() const { return m_w; }
 
-  double getArea() const { return m_w * m_h; }
+  int getArea() const { return m_w * m_h; }
 
-  void setX(double x) { m_x = x; }
-  double getX() const { return m_x; }
+  void setLeft(int left) { m_left = left; }
+  int getLeft() const { return m_left; }
+  int getRight() const { return m_left + m_w; }
 
-  void setY(double y) { m_y = y; }
-  double getY() const { return m_y; }
+  void setBottom(int bottom) { m_bottom = bottom; }
+  int getBottom() const { return m_bottom; }
+  int getTop() const { return m_bottom + m_h; }
 
-  void setOrigX(double x) { m_origX = x; }
-  double getOrigX() const { return m_origX; }
-
-  void setOrigY(double y) { m_origY = y; }
-  double getOrigY() const { return m_origY; }
+  void setOrigLeft(double left) { m_origLeft = left; }
+  double getOrigLeft() const { return m_origLeft; }
+  void setOrigBottom(double bottom) { m_origBottom = bottom; }
+  double getOrigBottom() const { return m_origBottom; }
 
   void setFixed(unsigned fixed) { m_fixed = fixed; }
   unsigned getFixed() const { return m_fixed; }
@@ -118,28 +120,19 @@ class Node {
   void setCurrOrient(unsigned orient) { m_currentOrient = orient; }
   unsigned getCurrOrient() const { return m_currentOrient; }
   void setAvailOrient(unsigned avail) { m_availOrient = avail; }
-  unsigned getAvailOrient( void ) const { return m_availOrient; }
+  unsigned getAvailOrient() const { return m_availOrient; }
+  bool adjustCurrOrient(unsigned newOrient);
 
   void setAttributes(unsigned attributes) { m_attributes = attributes; }
   unsigned getAttributes() const { return m_attributes; }
   void addAttribute(unsigned attribute) { m_attributes |= attribute; }
   void remAttribute(unsigned attribute) { m_attributes &= ~attribute; }
 
-  bool isTerminal() const {
-    return (m_type == NodeType_TERMINAL);
-  }
-  bool isTerminalNI() const {
-    return (m_type == NodeType_TERMINAL_NI);
-  }
-  bool isFiller() const { 
-    return (m_type == NodeType_FILLER);
-  }
-  bool isShape() const {
-    return (m_type == NodeType_SHAPE);
-  }
-  bool isFixed() const {
-    return (m_fixed != NodeFixed_NOT_FIXED);
-  }
+  bool isTerminal() const { return (m_type == NodeType_TERMINAL); }
+  bool isTerminalNI() const { return (m_type == NodeType_TERMINAL_NI); }
+  bool isFiller() const { return (m_type == NodeType_FILLER); }
+  bool isShape() const { return (m_type == NodeType_SHAPE); }
+  bool isFixed() const { return (m_fixed != NodeFixed_NOT_FIXED); }
 
   void setLeftEdgeType(int etl) { m_etl = etl; }
   int getLeftEdgeType() const { return m_etl; }
@@ -155,20 +148,24 @@ class Node {
   void setTopPower(int top) { m_powerTop = top; }
   int getTopPower() const { return m_powerTop; }
 
+  int getNumPins() const { return (int)m_pins.size(); }
   const std::vector<Pin*>& getPins() { return m_pins; }
+
+  void setIsDefinedByShapes(bool val = false) { m_isDefinedByShapes = val; }
+  bool isDefinedByShapes() const { return m_isDefinedByShapes; }
 
  protected:
   // Id.
   int m_id;
-  // Current position.
-  double m_x;
-  double m_y;
-  // Original position.
-  double m_origX;
-  double m_origY;
+  // Current position; bottom corner.
+  int m_left;
+  int m_bottom;
+  // Original position.  Stored as double still.
+  double m_origLeft;
+  double m_origBottom;
   // Width and height.
-  double m_w;
-  double m_h;
+  int m_w;
+  int m_h;
   // Type.
   unsigned m_type;
   // Fixed or not fixed.
@@ -182,12 +179,16 @@ class Node {
   int m_powerTop;
   int m_powerBot;
   // Regions.
-  int m_regionId; 
+  int m_regionId;
   // Orientations.
   unsigned m_currentOrient;
   unsigned m_availOrient;
   // Pins.
   std::vector<Pin*> m_pins;
+  // Shapes.  Legacy from bookshelf in which
+  // some fixed macros are not rectangles
+  // and are defined by sub-rectanges (shapes).
+  bool m_isDefinedByShapes;
 
   friend class Network;
 };
@@ -200,16 +201,17 @@ class Edge {
   int getId() const { return m_id; }
   void setId(int id) { m_id = id; }
 
-  void setNdr( int ndr ) { m_ndr = ndr; }
-  int getNdr( void ) const { return m_ndr; }
+  void setNdr(int ndr) { m_ndr = ndr; }
+  int getNdr() const { return m_ndr; }
 
+  int getNumPins() const { return (int)m_pins.size(); }
   const std::vector<Pin*>& getPins() { return m_pins; }
 
  protected:
   // Id.
   int m_id;
   // Refer to routing rule stored elsewhere.
-  int m_ndr;  
+  int m_ndr;
   // Pins.
   std::vector<Pin*> m_pins;
 
@@ -239,20 +241,20 @@ class Pin {
   void setPinLayer(int layer) { m_pinLayer = layer; }
   int getPinLayer() const { return m_pinLayer; }
 
-  void setPinWidth(double width) { m_pinW = width; }
-  double getPinWidth() const { return m_pinW; }
+  void setPinWidth(double width) { m_pinWidth = width; }
+  double getPinWidth() const { return m_pinWidth; }
 
-  void setPinHeight(double height) { m_pinH = height; }
-  double getPinHeight() const { return m_pinH; }
+  void setPinHeight(double height) { m_pinHeight = height; }
+  double getPinHeight() const { return m_pinHeight; }
 
  protected:
   // Pin width and height.
-  double m_pinW; 
-  double m_pinH;   
+  double m_pinWidth;
+  double m_pinHeight;
   // Direction.
   int m_dir;
   // Layer.
-  int m_pinLayer;  
+  int m_pinLayer;
   // Node and edge for pin.
   Node* m_node;
   Edge* m_edge;
@@ -265,15 +267,6 @@ class Pin {
 
 class Network {
  public:
-  struct compareNodesByW {
-    bool operator()(Node* ndi, Node* ndj) {
-      if (ndi->getWidth() == ndj->getWidth()) {
-        return ndi->getId() < ndj->getId();
-      }
-      return ndi->getWidth() < ndj->getWidth();
-    }
-  };
-
   struct comparePinsByNodeId {
     bool operator()(const Pin* a, const Pin* b) {
       return a->getNode()->getId() < b->getNode()->getId();
@@ -304,86 +297,48 @@ class Network {
   };
 
  public:
-  class Shape {
-   public:
-    Shape() : m_llx(0.0), m_lly(0.0), m_w(0.0), m_h(0.0) { ; }
-    Shape(double llx, double lly, double w, double h)
-        : m_llx(llx), m_lly(lly), m_w(w), m_h(h) {
-      ;
-    }
-
-   public:
-    double m_llx;
-    double m_lly;
-    double m_w;
-    double m_h;
-  };
-
  public:
   Network();
   virtual ~Network();
 
-  size_t getNumNodes() const { return m_nodes.size(); }
-  Node* getNode(int i) { return &(m_nodes[i]); }
+  int getNumNodes() const { return (int)m_nodes.size(); }
+  Node* getNode(int i) { return m_nodes[i]; }
   void setNodeName(int i, std::string& name) { m_nodeNames[i] = name; }
   void setNodeName(int i, const char* name) { m_nodeNames[i] = name; }
   std::string& getNodeName(int i) { return m_nodeNames[i]; }
 
-  size_t getNumEdges() const { return m_edges.size(); }
-  Edge* getEdge(int i) { return &(m_edges[i]); }
+  int getNumEdges() const { return (int)m_edges.size(); }
+  Edge* getEdge(int i) { return m_edges[i]; }
   void setEdgeName(int i, std::string& name) { m_edgeNames[i] = name; }
   void setEdgeName(int i, const char* name) { m_edgeNames[i] = name; }
   std::string& getEdgeName(int i) { return m_edgeNames[i]; }
 
-  // For building only.
-  void resizeNodes(int nNodes) {
-    m_nodes.resize(nNodes);
-    m_shapes.resize(nNodes);
-  }
-  void resizeEdges(int nEdges) {
-    m_edges.resize(nEdges);
-  }
+  int getNumPins() const { return (int)m_pins.size(); }
 
   // For creating and adding pins.
   Pin* createAndAddPin(Node* nd, Edge* ed);
-  int getNumPins() const { return m_pins.size(); }
 
-  size_t getNumFillerNodes() const { return m_filler.size(); }
-  Node* getFillerNode(int i) const { return m_filler[i]; }
-  void deleteFillerNodes();
-  Node* createAndAddFillerNode(double x, double y, double width, double height);
+  // For creating and adding cells.
+  Node* createAndAddNode();  // Network cells.
+  Node* createAndAddShapeNode(
+      int left, int bottom, int width,
+      int height);  // Extras for non-rectangular shapes.
+  Node* createAndAddFillerNode(
+      int left, int bottom, int width,
+      int height);  // Extras to block space.
 
-  bool hasShapes(Node* ndi) const {
-    if (ndi->getId() < m_shapes.size()) {
-      return (m_shapes[ndi->getId()].size() != 0);
-    }
-    return false;
-  }
-  int getNumShapes(Node* ndi) const { 
-    return (ndi->getId() < m_shapes.size())
-        ? m_shapes[ndi->getId()].size()
-        : 0;
-  }
-  Node* getShape(Node* ndi, int i) {
-    return m_shapes[ndi->getId()][i];
-  }
-  Node* createAndAddShapeNode(Node* ndi,
-    double x, double y, double width, double height);
+  // For creating and adding edges.
+  Edge* createAndAddEdge();
 
  protected:
-  // For creating and adding pins. 
   Pin* createAndAddPin();
 
-  std::vector<Edge> m_edges;  // The edges in the netlist...
-  std::unordered_map<int,std::string> m_edgeNames; // Names of edges...
-  std::vector<Node> m_nodes;  // The nodes in the netlist...
-  std::unordered_map<int,std::string> m_nodeNames; // Names of nodes...
-  std::vector<Pin*> m_pins; // The pins in the network...
-
-  std::vector<Node*> m_filler; // For filler...
-
-  // Shapes for non-rectangular nodes...
-  std::vector<std::vector<Node*> > m_shapes;
+ protected:
+  std::vector<Edge*> m_edges;  // The edges in the netlist...
+  std::unordered_map<int, std::string> m_edgeNames;  // Names of edges...
+  std::vector<Node*> m_nodes;  // The nodes in the netlist...
+  std::unordered_map<int, std::string> m_nodeNames;  // Names of nodes...
+  std::vector<Pin*> m_pins;  // The pins in the network...
 };
 
 }  // namespace dpo
