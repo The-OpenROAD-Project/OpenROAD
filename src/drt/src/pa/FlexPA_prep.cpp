@@ -1290,52 +1290,59 @@ void FlexPA::prepPoint()
   int cnt = 0;
 
   omp_set_num_threads(MAX_THREADS);
+  ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
-    auto& inst = uniqueInstances_[i];
-    // only do for core and block cells
-    dbMasterType masterType = inst->getMaster()->getMasterType();
-    if (masterType != dbMasterType::CORE
-        && masterType != dbMasterType::CORE_TIEHIGH
-        && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL && !masterType.isBlock()
-        && !masterType.isPad() && masterType != dbMasterType::RING) {
-      continue;
-    }
-    ProfileTask profile("PA:uniqueInstance");
-    for (auto& instTerm : inst->getInstTerms()) {
-      // only do for normal and clock terms
-      if (isSkipInstTerm(instTerm.get())) {
+    try {
+      auto& inst = uniqueInstances_[i];
+      // only do for core and block cells
+      dbMasterType masterType = inst->getMaster()->getMasterType();
+      if (masterType != dbMasterType::CORE
+          && masterType != dbMasterType::CORE_TIEHIGH
+          && masterType != dbMasterType::CORE_TIELOW
+          && masterType != dbMasterType::CORE_ANTENNACELL
+          && !masterType.isBlock() && !masterType.isPad()
+          && masterType != dbMasterType::RING) {
         continue;
       }
-      int nAps = 0;
-      for (auto& pin : instTerm->getTerm()->getPins()) {
-        nAps += prepPoint_pin(pin.get(), instTerm.get());
-      }
-      if (!nAps) {
-        logger_->error(DRT,
-                        73,
-                        "No ap for {}/{}.",
-                        instTerm->getInst()->getName(),
-                        instTerm->getTerm()->getName());
-      }
+      ProfileTask profile("PA:uniqueInstance");
+      for (auto& instTerm : inst->getInstTerms()) {
+        // only do for normal and clock terms
+        if (isSkipInstTerm(instTerm.get())) {
+          continue;
+        }
+        int nAps = 0;
+        for (auto& pin : instTerm->getTerm()->getPins()) {
+          nAps += prepPoint_pin(pin.get(), instTerm.get());
+        }
+        if (!nAps) {
+          logger_->error(DRT,
+                         73,
+                         "No access point for {}/{}.",
+                         instTerm->getInst()->getName(),
+                         instTerm->getTerm()->getName());
+        }
 #pragma omp critical
-      {
-        cnt++;
-        if (VERBOSE > 0) {
-          if (cnt < 1000) {
-            if (cnt % 100 == 0) {
-              logger_->info(DRT, 76, "  Complete {} pins.", cnt);
-            }
-          } else {
-            if (cnt % 1000 == 0) {
-              logger_->info(DRT, 77, "  Complete {} pins.", cnt);
+        {
+          cnt++;
+          if (VERBOSE > 0) {
+            if (cnt < 1000) {
+              if (cnt % 100 == 0) {
+                logger_->info(DRT, 76, "  Complete {} pins.", cnt);
+              }
+            } else {
+              if (cnt % 1000 == 0) {
+                logger_->info(DRT, 77, "  Complete {} pins.", cnt);
+              }
             }
           }
         }
       }
+    } catch (...) {
+      exception.capture();
     }
   }
+  exception.rethrow();
 
   // cout << "PA for IO terms\n" << flush;
 
@@ -1343,21 +1350,27 @@ void FlexPA::prepPoint()
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (unsigned i = 0; i < getDesign()->getTopBlock()->getTerms().size(); i++) {
-    auto& term = getDesign()->getTopBlock()->getTerms()[i];
-    if (term.get()->getType().isSupply()) {
-      continue;
-    }
-    if (term->getNet() == nullptr) {
-      continue;
-    }
-    int nAps = 0;
-    for (auto& pin : term->getPins()) {
-      nAps += prepPoint_pin(pin.get(), nullptr);
-    }
-    if (!nAps) {
-        logger_->error(DRT, 74, "No ap for PIN/{}.", term->getName());
+    try {
+      auto& term = getDesign()->getTopBlock()->getTerms()[i];
+      if (term.get()->getType().isSupply()) {
+        continue;
       }
+      if (term->getNet() == nullptr) {
+        continue;
+      }
+      int nAps = 0;
+      for (auto& pin : term->getPins()) {
+        nAps += prepPoint_pin(pin.get(), nullptr);
+      }
+      if (!nAps) {
+          logger_->error(DRT, 74, "No access point for PIN/{}.", term->getName());
+      }
+    } catch (...) {
+      exception.capture();
+    }
   }
+  exception.rethrow();
+
 
   if (VERBOSE > 0) {
     logger_->info(DRT, 78, "  Complete {} pins.", cnt);
@@ -1374,53 +1387,59 @@ void FlexPA::prepPattern()
   int cnt = 0;
 
   omp_set_num_threads(MAX_THREADS);
+  ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
   for (int currUniqueInstIdx = 0;
        currUniqueInstIdx < (int) uniqueInstances_.size();
        currUniqueInstIdx++) {
-    auto& inst = uniqueInstances_[currUniqueInstIdx];
-    // only do for core and block cells
-    // TODO the above comment says "block cells" but that's not what the code
-    // does?
-    dbMasterType masterType = inst->getMaster()->getMasterType();
-    if (masterType != dbMasterType::CORE
-        && masterType != dbMasterType::CORE_TIEHIGH
-        && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL) {
-      continue;
-    }
-
-    int numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 1.0);
-
-    if (numValidPattern == 0) {
-      // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
-      // and sorting in X works poorly.  So we try again sorting in Y.
-      numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 0.0);
-      if (numValidPattern == 0) {
-        logger_->warn(
-            DRT,
-            87,
-            "No valid pattern for unique instance {}, master is {}.",
-            inst->getName(),
-            inst->getMaster()->getName());
+    try {
+      auto& inst = uniqueInstances_[currUniqueInstIdx];
+      // only do for core and block cells
+      // TODO the above comment says "block cells" but that's not what the code
+      // does?
+      dbMasterType masterType = inst->getMaster()->getMasterType();
+      if (masterType != dbMasterType::CORE
+          && masterType != dbMasterType::CORE_TIEHIGH
+          && masterType != dbMasterType::CORE_TIELOW
+          && masterType != dbMasterType::CORE_ANTENNACELL) {
+        continue;
       }
-    }
+  
+      int numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 1.0);
+  
+      if (numValidPattern == 0) {
+        // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
+        // and sorting in X works poorly.  So we try again sorting in Y.
+        numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 0.0);
+        if (numValidPattern == 0) {
+          logger_->warn(
+              DRT,
+              87,
+              "No valid pattern for unique instance {}, master is {}.",
+              inst->getName(),
+              inst->getMaster()->getName());
+        }
+      }
 #pragma omp critical
-    {
-      cnt++;
-      if (VERBOSE > 0) {
-        if (cnt < 1000) {
-          if (cnt % 100 == 0) {
-            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
-          }
-        } else {
-          if (cnt % 1000 == 0) {
-            logger_->info(DRT, 80, "  Complete {} unique inst patterns.", cnt);
+      {
+        cnt++;
+        if (VERBOSE > 0) {
+          if (cnt < 1000) {
+            if (cnt % 100 == 0) {
+              logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
+            }
+          } else {
+            if (cnt % 1000 == 0) {
+              logger_->info(DRT, 80, "  Complete {} unique inst patterns.", cnt);
+            }
           }
         }
       }
+    } catch (...) {
+      exception.capture();
     }
   }
+  exception.rethrow();
   if (VERBOSE > 0) {
     logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
@@ -1476,25 +1495,30 @@ void FlexPA::prepPattern()
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int) instRows.size(); i++) {
-    auto& instRow = instRows[i];
-    genInstRowPattern(instRow);
+    try {
+      auto& instRow = instRows[i];
+      genInstRowPattern(instRow);
 #pragma omp critical
-    {
-      rowIdx++;
-      cnt++;
-      if (VERBOSE > 0) {
-        if (cnt < 10000) {
-          if (cnt % 1000 == 0) {
-            logger_->info(DRT, 82, "  Complete {} groups.", cnt);
-          }
-        } else {
-          if (cnt % 10000 == 0) {
-            logger_->info(DRT, 83, "  Complete {} groups.", cnt);
+      {
+        rowIdx++;
+        cnt++;
+        if (VERBOSE > 0) {
+          if (cnt < 10000) {
+            if (cnt % 1000 == 0) {
+              logger_->info(DRT, 82, "  Complete {} groups.", cnt);
+            }
+          } else {
+            if (cnt % 10000 == 0) {
+              logger_->info(DRT, 83, "  Complete {} groups.", cnt);
+            }
           }
         }
       }
+    } catch (...) {
+      exception.capture();
     }
   }
+  exception.rethrow();
   if (VERBOSE > 0) {
     logger_->info(DRT, 84, "  Complete {} groups.", cnt);
   }
