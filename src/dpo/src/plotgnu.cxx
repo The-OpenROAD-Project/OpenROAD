@@ -40,6 +40,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include "rectangle.h"
 #include "utility.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +83,6 @@ void PlotGnu::Draw(Network* network, Architecture* arch, char* msg) {
 // PlotGnu::drawNodes:
 ////////////////////////////////////////////////////////////////////////////////
 void PlotGnu::drawNodes(char* buf) {
-  bool drawPins = false;
 
   double rowHeight = m_arch->getRow(0)->getHeight();
   double siteWidth = m_arch->getRow(0)->getSiteWidth();
@@ -99,24 +99,6 @@ void PlotGnu::drawNodes(char* buf) {
   FILE* fpPeanut = 0;
   char counter[128];
   sprintf(&counter[0], "%05d", m_counter);
-
-  double xmin, xmax, ymin, ymax;
-  double x, y, h, w;
-
-  double avgW = 0.;
-  double avgH = 0.;
-  double smallW = std::numeric_limits<double>::max();
-  double smallH = std::numeric_limits<double>::max();
-  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
-    Node* nd = m_network->getNode(i);;
-    avgW += nd->getWidth();
-    avgH += nd->getHeight();
-    if (nd->getWidth() > 1.0e-3 && nd->getWidth() < smallW)
-      smallW = nd->getWidth();
-    if (nd->getHeight() > 1.0e-3 && nd->getHeight() < smallH)
-      smallH = nd->getHeight();
-  }
-  double minSize = 0.1 * std::min(smallW, smallH);
 
   // Open different files to put object info into different .dat files.  This
   // allows plotting with different colors.
@@ -177,55 +159,44 @@ void PlotGnu::drawNodes(char* buf) {
     return;
   }
 
-  // Determine dimensions to draw around the placed objects.  This should
-  // actually be taken from an architecture...
-  xmin = std::numeric_limits<double>::max();
-  xmax = -std::numeric_limits<double>::max();
-  ymin = std::numeric_limits<double>::max();
-  ymax = -std::numeric_limits<double>::max();
-  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
-    Node* nd = m_network->getNode(i);
-
-    x = nd->getX();
-    y = nd->getY();
-    w = nd->getWidth();
-    h = nd->getHeight();
-
-    xmin = ((x - w / 2.) < xmin) ? (x - w / 2.) : xmin;
-    xmax = ((x + w / 2.) > xmax) ? (x + w / 2.) : xmax;
-    ymin = ((y - h / 2.) < ymin) ? (y - h / 2.) : ymin;
-    ymax = ((y + h / 2.) > ymax) ? (y + h / 2.) : ymax;
+  // Find rectangle around everything we have to draw.
+  Rectangle range;
+  range.addPt(m_arch->getMinX(), m_arch->getMinY());
+  range.addPt(m_arch->getMaxX(), m_arch->getMaxY());
+  for (int i = 0; i < m_network->getNumNodes(); i++) {
+    Node* ndi = m_network->getNode(i);
+    range.addPt(ndi->getLeft(), ndi->getBottom());
+    range.addPt(ndi->getRight(), ndi->getTop());
   }
 
-  double xmin_range = std::min(m_arch->getMinX(), xmin);
-  double xmax_range = std::max(m_arch->getMaxX(), xmax);
-  double ymin_range = std::min(m_arch->getMinY(), ymin);
-  double ymax_range = std::max(m_arch->getMaxY(), ymax);
-
   // Output the architecture, which, at the moment is simply a box...
-  fprintf(fpArch,
+  {
+    int lx = m_arch->getMinX();
+    int rx = m_arch->getMaxX();
+    int yb = m_arch->getMinY();
+    int yt = m_arch->getMaxY();
+    fprintf(fpArch,
           "\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
-          "%lf %lf\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
+          "%d %d\n"
           "\n",
-          m_arch->getMinX(), m_arch->getMinY(), m_arch->getMinX(), m_arch->getMaxY(),
-          m_arch->getMaxX(), m_arch->getMaxY(), m_arch->getMaxX(), m_arch->getMinY(),
-          m_arch->getMinX(), m_arch->getMinY());
+          lx, yb, lx, yt, rx, yt, rx, yb, lx, yb);
+  }
 
   // Draw regions with the exception of the default region.
-  for (size_t r = 1; r < m_arch->getRegions().size(); r++) {
+  for (int r = 1; r < m_arch->getNumRegions(); r++) {
     Architecture::Region* regPtr = m_arch->getRegion(r);
-    for (const Rectangle& rect : regPtr->getRects()) {
+    for (const Rectangle_i& rect : regPtr->getRects()) {
       fprintf(fpArch,
               "\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
-              "%lf %lf\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
+              "%d %d\n"
               "\n",
               rect.xmin(), rect.ymin(), rect.xmin(), rect.ymax(), rect.xmax(),
               rect.ymax(), rect.xmax(), rect.ymin(), rect.xmin(), rect.ymin());
@@ -240,209 +211,71 @@ void PlotGnu::drawNodes(char* buf) {
   bool didPrintOutlines = false;
   bool didPrintShapes = false;
   bool didPrintPeanut = false;
-  for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
-    Node* nd = m_network->getNode(i);
-    x = nd->getX();
-    y = nd->getY();
-    w = nd->getWidth();
-    h = nd->getHeight();
+  for (int i = 0; i < m_network->getNumNodes(); i++) {
+    Node* ndi = m_network->getNode(i);
 
     FILE* fpCurr = fpCell;
-
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
+    bool draw = true;
+    if (ndi->isFiller()) {
+      draw = false; // Don't draw filler.
+    }
+    else if (ndi->isTerminal() || ndi->isTerminalNI()) {
+      didPrintIO = true;
       fpCurr = fpIO;
-
-      if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-        didPrintIO = true;
-
-        if (w == 0) w = 0.1 * minSize;
-        if (h == 0) h = 0.1 * minSize;
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y - 0.5 * h, x - 0.5 * w, y + 0.5 * h, x + 0.5 * w,
-                y + 0.5 * h, x + 0.5 * w, y - 0.5 * h, x - 0.5 * w,
-                y - 0.5 * h);
-
-        if (drawPins) {
-          for (int pi = 0; pi < nd->getPins().size(); pi++) {
-            Pin* pin = nd->getPins()[pi];
-
-            double xp = x + pin->getOffsetX();
-            double yp = y + pin->getOffsetY();
-            double ww = pin->getPinWidth();
-            double hh = pin->getPinHeight();
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp - 0.5 * ww, yp + 0.5 * hh,
-                    xp + 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh,
-                    xp - 0.5 * ww, yp - 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp + 0.5 * ww, yp + 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh);
-          }
-        }
-      }
-
-      continue;
     }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
+    else if (ndi->isFixed()) {
+      didPrintFixed = true;
       fpCurr = fpFixed;
-      if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-        didPrintFixed = true;
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y - 0.5 * h, x - 0.5 * w, y + 0.5 * h, x + 0.5 * w,
-                y + 0.5 * h, x + 0.5 * w, y - 0.5 * h, x - 0.5 * w,
-                y - 0.5 * h);
-
-        if (drawPins) {
-          for (int pi = 0; pi < nd->getPins().size(); pi++) {
-            Pin* pin = nd->getPins()[pi];
-
-            double xp = x + pin->getOffsetX();
-            double yp = y + pin->getOffsetY();
-            double ww = pin->getPinWidth();
-            double hh = pin->getPinHeight();
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp - 0.5 * ww, yp + 0.5 * hh,
-                    xp + 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh,
-                    xp - 0.5 * ww, yp - 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp + 0.5 * ww, yp + 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh);
-          }
-        }
-      }
-
-      continue;
+    }
+    else if (ndi->isShape()) {
+      didPrintShapes = true;
+      fpCurr = fpShapes;
+    }
+    else {
+      // Should be a cell.
+      ;
     }
 
-    // Determine if we should draw shreds or not.  Right now, this is determined
-    // by whether or not the overlay grid is present since we use to store
-    // shreds there.  Need to fix, but works fine as a test right now...
-
-    // Here, the node should be a moveable node.  Skip standard cells if told to
-    // do that...
-
-    fpCurr = fpCell;
-    x = nd->getX();
-    y = nd->getY();
-    w = nd->getWidth() - 0.040 * siteWidth;
-    h = nd->getHeight() - 0.040 * rowHeight;
-    if (x >= xmin && x <= xmax && y >= ymin && y <= ymax) {
-      double rowHeight = m_arch->getRow(0)->getHeight();
-      if (m_skipStandardCells && (nd->getHeight() - 1.0e-3 < rowHeight)) {
-        ;
-      } else {
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                x - 0.5 * w, y - 0.5 * h, x - 0.5 * w, y + 0.5 * h, x + 0.5 * w,
-                y + 0.5 * h, x + 0.5 * w, y - 0.5 * h, x - 0.5 * w,
-                y - 0.5 * h);
-
-        if (drawPins) {
-          for (int pi = 0; pi < nd->getPins().size(); pi++) {
-            Pin* pin = nd->getPins()[pi];
-
-            double xp = x + pin->getOffsetX();
-            double yp = y + pin->getOffsetY();
-            double ww = pin->getPinWidth();
-            double hh = pin->getPinHeight();
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp - 0.5 * ww, yp + 0.5 * hh,
-                    xp + 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh,
-                    xp - 0.5 * ww, yp - 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp - 0.5 * hh, xp + 0.5 * ww, yp + 0.5 * hh);
-            fprintf(fpCurr,
-                    "\n"
-                    "%lf %lf\n"
-                    "%lf %lf\n"
-                    "\n",
-                    xp - 0.5 * ww, yp + 0.5 * hh, xp + 0.5 * ww, yp - 0.5 * hh);
-          }
-        }
+    if (draw) {
+      double lx = ndi->getLeft();
+      double rx = ndi->getRight();
+      double yb = ndi->getBottom();
+      double yt = ndi->getTop();
+      if (rx-lx>=siteWidth) {
+        lx += 0.0250*siteWidth;
+        rx -= 0.0250*siteWidth;
       }
+      if (yt-yb>=rowHeight) {
+        yb += 0.0250*rowHeight;
+        yt -= 0.0250*rowHeight;
+      }
+
+      fprintf(fpCurr,
+        "\n"
+        "%lf %lf\n"
+        "%lf %lf\n"
+        "%lf %lf\n"
+        "%lf %lf\n"
+        "%lf %lf\n"
+        "\n",
+        lx, yb, lx, yt,
+        rx, yt, rx, yb,
+        lx, yb);
     }
   }
 
-  if (1 || m_drawDisp) {
-    // Draw a line from each node to a provided location.  Useful for
-    // visualization of displacement.  Right now, I will put this into the
-    // peanuts files.
+  if (m_drawDisp) {
+    // Draw displacement.
 
     didPrintPeanut = true;
     for (unsigned i = 0; i < m_network->getNumNodes(); i++) {
       Node* nd = m_network->getNode(i);
 
-      double x1 = nd->getX();
-      double y1 = nd->getY();
+      double x1 = nd->getLeft();
+      double y1 = nd->getBottom();
 
-      double x2 = nd->getOrigX();
-      double y2 = nd->getOrigY();
+      double x2 = nd->getOrigLeft();
+      double y2 = nd->getOrigBottom();
 
       FILE* fpCurr = fpPeanut;
 
@@ -452,32 +285,6 @@ void PlotGnu::drawNodes(char* buf) {
               "%lf %lf\n"
               "\n",
               x1, y1, x2, y2);
-    }
-  }
-
-  if (1) {
-    for (int k = 0; k < m_network->getNumNodes(); k++) {
-      Node* ndk = m_network->getNode(k);
-      for (int i = 0; i < m_network->getNumShapes(ndk); i++) {
-        Node* shape = m_network->getShape(ndk,i);
-        double l = shape->getX() - 0.5 * shape->getWidth();
-        double r = shape->getX() + 0.5 * shape->getWidth();
-        double b = shape->getY() - 0.5 * shape->getHeight();
-        double t = shape->getY() + 0.5 * shape->getHeight();
-
-        FILE* fpCurr = fpShapes;
-        didPrintShapes = true;
-
-        fprintf(fpCurr,
-                "\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "%lf %lf\n"
-                "\n",
-                l, b, l, t, r, t, r, b, l, b);
-      }
     }
   }
 
@@ -502,8 +309,8 @@ void PlotGnu::drawNodes(char* buf) {
           buf, m_filename);
 
   // Constrain the x and y ranges.
-  fprintf(fpMain, "set xrange[%lf:%lf]\n", xmin_range - 1.0, xmax_range + 1.0);
-  fprintf(fpMain, "set yrange[%lf:%lf]\n", ymin_range - 1.0, ymax_range + 1.0);
+  fprintf(fpMain, "set xrange[%lf:%lf]\n", range.xmin()-1.0, range.xmax()+1.0);
+  fprintf(fpMain, "set yrange[%lf:%lf]\n", range.ymin()-1.0, range.ymax()+1.0);
 
   // Setup some line types.
   fprintf(fpMain, "set style line 1 lt 1 lw 3 lc rgb \"purple\"\n");

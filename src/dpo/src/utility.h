@@ -79,13 +79,11 @@ class Utility {
     // uses our Boost-based random number generator to get much better
     // random permutations.
 
-    unsigned randnum;
-
     if (first == last) {
       return;
     }
     for (RandomAccessIter i = first + 1; i != last; ++i) {
-      randnum = ((unsigned)(*rng)()) % (i - first + 1);
+      long randnum = ((*rng)()) % (i - first + 1);
       std::iter_swap(i, first + randnum);
     }
   }
@@ -108,8 +106,6 @@ class Utility {
   static double hpwl(Network* nw, Edge* ed);
   static double hpwl(Network* nw, Edge*, double& hpwlx, double& hpwly);
 
-  static double area(Network* nw, bool print = true);
-
   static unsigned count_num_ones(unsigned x) {
     x -= ((x >> 1) & 0x55555555);
     x = (((x >> 2) & 0x33333333) + (x & 0x33333333));
@@ -119,13 +115,6 @@ class Utility {
     return (x & 0x0000003f);
   }
 
-  static void map_shredded_to_original(
-      Network* original, Network* shredded, std::vector<Node*>& reverseMap,
-      std::vector<std::vector<Node*> >& forwardMap);
-
-  static void get_row_blockages(
-      Network* network, Architecture* arch, std::vector<Node*>& fixed,
-      std::vector<std::vector<std::pair<double, double> > >& blockages);
   static void get_segments_from_blockages(
       Network* network, Architecture* arch,
       std::vector<std::vector<std::pair<double, double> > >& blockages,
@@ -134,8 +123,6 @@ class Utility {
   static double compute_overlap(double xmin1, double xmax1, double ymin1,
                                 double ymax1, double xmin2, double xmax2,
                                 double ymin2, double ymax2);
-
-  static bool setOrientation(Network* network, Node* node, unsigned newOri);
 };
 
 }  // namespace dpo

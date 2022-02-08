@@ -49,10 +49,12 @@ namespace dpo {
 namespace dpo {
 
 void
-improve_placement_cmd(int seed)
+improve_placement_cmd(int seed,
+                      int max_displacement_x,
+                      int max_displacement_y)
 {
   dpo::Optdp *optdp = ord::OpenRoad::openRoad()->getOptdp();
-  optdp->improvePlacement(seed);
+  optdp->improvePlacement(seed, max_displacement_x, max_displacement_y);
 }
 
 } // namespace
