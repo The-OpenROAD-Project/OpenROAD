@@ -83,7 +83,18 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   parasitic_
       = parasitics_->makeParasiticNetwork(sta_net_, false, analysis_point_);
   makePinRoutePts(pins);
-  makeRouteParasitics(net, routes);
+
+  int routes_cnt = 0;
+  makeWireParasitics(net, routes, routes_cnt);
+  makeViaParasitics(net, routes, routes_cnt);
+
+  if (routes_cnt != routes.size()) {
+    logger_->warn(GRT,
+                  25,
+                  "Non wire or via route found on net {}.",
+                  net->getConstName());
+  }
+  
   reduceParasiticNetwork();
 }
 
@@ -117,54 +128,155 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin)
     return network_->dbToSta(pin.getITerm());
 }
 
-void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
-                                             std::vector<GSegment>& routes)
+void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
+                        std::vector<GSegment>& routes,
+                        int& routes_cnt)
 {
+  sta::Units* units = sta_->units();
   for (GSegment& route : routes) {
-    sta::ParasiticNode* n1
-        = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
-    sta::ParasiticNode* n2
-        = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
     int wire_length_dbu = route.length();
-    sta::Units* units = sta_->units();
-    float res = 0.0;
-    float cap = 0.0;
-    if (wire_length_dbu == 0) {
-      // via
-      int lower_layer = min(route.init_layer, route.final_layer);
-      odb::dbTechLayer* cut_layer
-          = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
-      res = cut_layer->getResistance();  // assumes single cut
-      cap = 0.0;
-      debugPrint(logger_,
-                 GRT,
-                 "est_rc",
-                 1,
-                 "{} -> {} via r={}",
-                 parasitics_->name(n1),
-                 parasitics_->name(n2),
-                 units->resistanceUnit()->asString(res));
-    } else if (route.init_layer == route.final_layer) {
+    if (wire_length_dbu > 0 &&
+        route.init_layer == route.final_layer) {
+      sta::ParasiticNode* n1
+        = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
+      sta::ParasiticNode* n2
+          = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
+
+      RoutePt n1_pt(route.init_x, route.init_y, route.init_layer);
+      RoutePt n2_pt(route.final_x, route.final_y, route.final_layer);
+
+      float res = 0.0;
+      float cap = 0.0;
       layerRC(wire_length_dbu, route.init_layer, res, cap);
+
+      // create the wire resistor
+      parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
+      parasitics_->makeResistor(nullptr, n1, n2, res, analysis_point_);
+      parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
       debugPrint(logger_,
                  GRT,
                  "est_rc",
                  1,
-                 "{} -> {} {}u layer={} r={} c={}",
+                 "(wire) {} -> {} {}u layer={} r={} c={}",
                  parasitics_->name(n1),
                  parasitics_->name(n2),
                  dbuToMeters(wire_length_dbu) * 1e+6,
                  route.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
-    } else
-      logger_->warn(GRT,
-                    25,
-                    "Non wire or via route found on net {}.",
-                    net->getConstName());
-    parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
-    parasitics_->makeResistor(nullptr, n1, n2, res, analysis_point_);
-    parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
+
+      // create resistors for pins connected directly to wires
+      odb::dbTechLayer* cut_layer
+        = tech_->findRoutingLayer(route.init_layer)->getLowerLayer();
+      for (auto& node : on_grid_node_map_[n1_pt]) {
+        parasitics_->incrCap(node, 0, analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n1, cut_layer->getResistance(), analysis_point_);
+        parasitics_->incrCap(n1, 0, analysis_point_);
+        debugPrint(logger_,
+                   GRT,
+                   "est_rc",
+                   1,
+                   "(node-to-wire) {} -> {} via r={}",
+                   parasitics_->name(node),
+                   parasitics_->name(n1),
+                   units->resistanceUnit()->asString(cut_layer->getResistance()));
+      }
+      on_grid_node_map_.erase(n1_pt);
+
+      for (auto& node : on_grid_node_map_[n2_pt]) {
+        parasitics_->incrCap(node, 0, analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n2, cut_layer->getResistance(), analysis_point_);
+        parasitics_->incrCap(n2, 0, analysis_point_);
+        debugPrint(logger_,
+                   GRT,
+                   "est_rc",
+                   1,
+                   "(node-to-wire) {} -> {} via r={}",
+                   parasitics_->name(node),
+                   parasitics_->name(n2),
+                   units->resistanceUnit()->asString(cut_layer->getResistance()));
+      }
+      on_grid_node_map_.erase(n2_pt);
+
+      routes_cnt++;
+    }
+  }
+}
+
+void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
+                       std::vector<GSegment>& routes,
+                       int& routes_cnt)
+{
+  sta::Units* units = sta_->units();
+  for (GSegment& route : routes) {
+    int wire_length_dbu = route.length();
+    if (wire_length_dbu == 0) {
+      int lower_layer = min(route.init_layer, route.final_layer);
+      odb::dbTechLayer* cut_layer
+          = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
+      float res = cut_layer->getResistance();  // assumes single cut
+      float cap = 0.0;
+
+      sta::ParasiticNode* n1
+          = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
+      sta::ParasiticNode* n2
+          = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
+            
+      RoutePt n1_pt(route.init_x, route.init_y, route.init_layer);
+      RoutePt n2_pt(route.final_x, route.final_y, route.final_layer);
+      std::vector<sta::ParasiticNode*>& nodes1 = on_grid_node_map_[n1_pt];
+      std::vector<sta::ParasiticNode*>& nodes2 = on_grid_node_map_[n2_pt];
+      if (!nodes1.empty()) {
+        for (sta::ParasiticNode* node : nodes1) {
+          parasitics_->incrCap(node, cap / 2.0, analysis_point_);
+          parasitics_->makeResistor(nullptr, node, n2, res, analysis_point_);
+          parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
+          debugPrint(logger_,
+                     GRT,
+                     "est_rc",
+                     1,
+                     "(node-to-via) {} -> {} via r={}",
+                     parasitics_->name(node),
+                     parasitics_->name(n2),
+                     units->resistanceUnit()->asString(res));
+        }
+      } 
+      // connect the pin nodes located in n2 to n1
+      if (!nodes2.empty()) {
+        for (sta::ParasiticNode* node : nodes2) {
+          parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
+          parasitics_->makeResistor(nullptr, n1, node, res, analysis_point_);
+          parasitics_->incrCap(node, cap / 2.0, analysis_point_);
+          debugPrint(logger_,
+                     GRT,
+                     "est_rc",
+                     1,
+                     "(via-to-node) {} -> {} via r={}",
+                     parasitics_->name(n1),
+                     parasitics_->name(node),
+                     units->resistanceUnit()->asString(res));
+        }
+      }
+      if (nodes1.empty() && nodes2.empty()) {
+        // there is no pin node connected to these positions
+        // just create the via resistor between the layers
+        parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
+        parasitics_->makeResistor(nullptr, n1, n2, res, analysis_point_);
+        parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
+        debugPrint(logger_,
+                   GRT,
+                   "est_rc",
+                   1,
+                   "(via-to-via) {} -> {} via r={}",
+                   parasitics_->name(n1),
+                   parasitics_->name(n2),
+                   units->resistanceUnit()->asString(res));
+      }
+      on_grid_node_map_.erase(n1_pt);
+      on_grid_node_map_.erase(n2_pt);
+
+      routes_cnt++;
+    }
   }
 }
 
