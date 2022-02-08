@@ -65,6 +65,7 @@ class Logger;
 namespace grt {
 
 typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
+typedef std::map<RoutePt, std::vector<sta::ParasiticNode*>> NodesRoutePtMap;
 
 class MakeWireParasitics
 {
@@ -109,6 +110,8 @@ class MakeWireParasitics
   int node_id_;
   // x/y/layer -> parasitic node
   NodeRoutePtMap node_map_;
+  // on grid x/y/layer -> list of parasitc nodes
+  NodesRoutePtMap on_grid_node_map_;
 };
 
 }  // namespace grt

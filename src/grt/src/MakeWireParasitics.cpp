@@ -84,7 +84,6 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
       = parasitics_->makeParasiticNetwork(sta_net_, false, analysis_point_);
   makePinRoutePts(pins);
   makeRouteParasitics(net, routes);
-  makeParasiticsToGrid(pins);
   reduceParasiticNetwork();
 }
 
@@ -95,7 +94,11 @@ void MakeWireParasitics::makePinRoutePts(std::vector<Pin>& pins)
     sta::ParasiticNode* pin_node
         = parasitics_->ensureParasiticNode(parasitic_, sta_pin);
     RoutePt route_pt = routePt(pin);
+    RoutePt on_grid_route_pt(pin.getOnGridPosition().getX(),
+                             pin.getOnGridPosition().getY(),
+                             pin.getTopLayer());
     node_map_[route_pt] = pin_node;
+    on_grid_node_map_[on_grid_route_pt].push_back(pin_node);
   }
 }
 
