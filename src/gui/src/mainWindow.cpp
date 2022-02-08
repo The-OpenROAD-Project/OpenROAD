@@ -219,6 +219,12 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addHighlighted(const SelectionSet&)));
 
+  connect(timing_widget_,
+          &TimingWidget::inspect,
+          [this](const Selected& selected) {
+            inspector_->inspect(selected);
+            inspector_->raise();
+          });
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
           inspector_,
@@ -367,7 +373,7 @@ void MainWindow::init(sta::dbSta* sta)
   auto* gui = Gui::get();
   gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, viewer_->getFocusNets()));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -859,9 +865,15 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
     return;
   }
 
+  // Hold on to selected items as the pointers will be invalid
+  QList<Selected> items_storage;
   for (auto item : items) {
-    highlighted_[highlight_group].insert(*item);
+    items_storage.push_back(*item);
   }
+  // Remove any items that might already be selected
+  removeFromHighlighted(items);
+
+  highlighted_[highlight_group].insert(items_storage.begin(), items_storage.end());
   emit highlightChanged();
 }
 
@@ -885,8 +897,10 @@ void MainWindow::clearHighlighted(int highlight_group)
 
 void MainWindow::clearRulers()
 {
-  if (rulers_.empty())
+  if (rulers_.empty()) {
     return;
+  }
+  Gui::get()->removeSelected<Ruler*>();
   rulers_.clear();
   emit rulersChanged();
 }
@@ -1228,7 +1242,7 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   }
 }
 
-void MainWindow::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
 {
   auto* renderer = timing_widget_->getConeRenderer();
 
@@ -1237,6 +1251,22 @@ void MainWindow::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, boo
   } else {
     renderer->setBTerm(std::get<odb::dbBTerm*>(term), fanin, fanout);
   }
+}
+
+void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+{
+  auto* settings = timing_widget_->getSettings();
+  settings->setFromPin({});
+  std::set<sta::Pin*> pins;
+  for (const auto& term : terms) {
+    pins.insert(settings->convertTerm(term));
+  }
+  settings->setThruPin({pins});
+  settings->setToPin({});
+
+  timing_widget_->updatePaths();
+  timing_widget_->show();
+  timing_widget_->raise();
 }
 
 void MainWindow::registerHeatMap(HeatMapDataSource* heatmap)

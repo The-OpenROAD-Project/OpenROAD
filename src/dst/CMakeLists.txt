@@ -61,7 +61,7 @@ target_include_directories(dst
 target_link_libraries(dst
   PUBLIC
     utl
-    sta_swig
+    ${OPENSTA_LIBRARY}
     ${Boost_LIBRARIES}
 )
 

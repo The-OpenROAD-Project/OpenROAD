@@ -613,7 +613,9 @@ class Gui
   // request for user input
   const std::string requestUserInput(const std::string& title, const std::string& question);
 
-  void timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout);
+  using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
+  void timingCone(odbTerm term, bool fanin, bool fanout);
+  void timingPathsThrough(const std::set<odbTerm>& terms);
 
   // open DRC
   void loadDRC(const std::string& filename);
@@ -655,6 +657,7 @@ class Gui
   const Selected& getInspectorSelection();
 
   void setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value);
+  void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
@@ -682,6 +685,7 @@ class Gui
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
   const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+  HeatMapDataSource* getHeatMap(const std::string& name);
 
   // returns the Gui singleton
   static Gui* get();

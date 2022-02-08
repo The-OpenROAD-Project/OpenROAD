@@ -356,22 +356,8 @@ proc repair_tie_fanout { args } {
   }
 }
 
-sta::define_cmd_args "repair_hold_violations" {[-allow_setup_violations]}
-
-proc repair_hold_violations { args } {
-  sta::parse_key_args "repair_hold_violations" args \
-    keys {-buffer_cell} \
-    flags {-allow_setup_violations}
-  
-  set allow_setup_violations [info exists flags(-allow_setup_violations)]
-  sta::check_argc_eq0 "repair_hold_violations" $args
-  utl::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
-  
-  rsz::check_parasitics
-  rsz::resizer_preamble
-  rsz::repair_hold 0.0 $allow_setup_violations $max_buffer_percent
-}
-
+# -max_passes is for developer debugging so intentionally not documented
+# in define_cmd_args
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
                                         [-max_buffer_percent buffer_percent]\
@@ -380,7 +366,8 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-slack_margin -libraries -max_utilization -max_buffer_percent} \
+    keys {-slack_margin -libraries -max_utilization
+      -max_buffer_percent -max_passes} \
     flags {-setup -hold -allow_setup_violations}
   
   if { [info exists keys(-libraries)] } {
@@ -405,11 +392,15 @@ proc repair_timing { args } {
     set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
   
+  set max_passes 10000
+  if { [info exists keys(-max_passes)] } {
+    set max_passes $keys(-max_passes)
+  }
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   rsz::resizer_preamble
   if { $setup } {
-    rsz::repair_setup $slack_margin
+    rsz::repair_setup $slack_margin $max_passes
   }
   if { $hold } {
     rsz::repair_hold $slack_margin $allow_setup_violations $max_buffer_percent

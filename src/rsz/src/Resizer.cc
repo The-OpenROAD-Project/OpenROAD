@@ -507,9 +507,9 @@ Resizer::bufferInput(const Pin *top_pin,
   string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
   Net *buffer_out = makeUniqueNet();
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   if (buffer) {
     journalMakeBuffer(buffer);
     Point pin_loc = db_network_->location(top_pin);
@@ -615,9 +615,9 @@ Resizer::bufferOutput(Pin *top_pin,
   string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
   Net *buffer_in = makeUniqueNet();
-  Instance *buffer = network->makeInstance(buffer_cell,
-                                           buffer_name.c_str(),
-                                           parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   if (buffer) {
     journalMakeBuffer(buffer);
     setLocation(buffer, db_network_->location(top_pin));
@@ -1493,9 +1493,9 @@ Resizer::makeRepeater(const char *where,
     }
   }
 
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
   journalMakeBuffer(buffer);
   Point buf_loc(x, y);
   setLocation(buffer, buf_loc);
@@ -2224,8 +2224,8 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             Point tie_loc = tieLocation(load, separation_dbu);
             Instance *load_inst = network_->instance(load);
             string tie_name = makeUniqueInstName(inst_name, true);
-            Instance *tie = sta_->makeInstance(tie_name.c_str(),
-                                               tie_cell, top_inst);
+            Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
+                                         top_inst);
             setLocation(tie, tie_loc);
 
             // Make tie output net.
@@ -2322,7 +2322,8 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup(float slack_margin)
+Resizer::repairSetup(float slack_margin,
+                     int max_passes)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -2335,7 +2336,8 @@ Resizer::repairSetup(float slack_margin)
   int pass = 1;
   int decreasing_slack_passes = 0;
   incrementalParasiticsBegin();
-  while (fuzzyLess(worst_slack, slack_margin)) {
+  while (fuzzyLess(worst_slack, slack_margin)
+         && pass <= max_passes) {
     PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
     bool changed = repairSetup(worst_path, worst_slack);
     updateParasitics();
@@ -2448,152 +2450,89 @@ Resizer::repairSetup(PathRef &path,
       int drvr_index = index_delay.first;
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
-      Pin *drvr_pin = drvr_vertex->pin();
-      PathRef *load_path = expanded.path(drvr_index + 1);
-      Vertex *load_vertex = load_path->vertex(sta_);
-      Pin *load_pin = load_vertex->pin();
+      const Pin *drvr_pin = drvr_vertex->pin();
+      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+      LibertyCell *drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "repair_setup", 2, "{} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "{} {} fanout = {}",
                  network_->pathName(drvr_pin),
+                 drvr_cell ? drvr_cell->name() : "none",
                  fanout);
+
+      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+        changed = true;
+        break;
+      }
+
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = isTristateDriver(drvr_pin);
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
-          && !tristate_drvr) {
-        int count_before = inserted_buffer_count_;
-        rebuffer(drvr_pin);
-        int insert_count = inserted_buffer_count_ - count_before;
-        if (insert_count > 0) {
+          && !tristate_drvr) { 
+        int rebuffer_count = rebuffer(drvr_pin);
+        if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
-                     insert_count);
+                     rebuffer_count);
           changed = true;
           break;
         }
       }
+
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr) {
-        // Divide and conquer.
-        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
-                   network_->pathName(drvr_pin),
-                   network_->pathName(load_pin));
-        splitLoads(drvr_path, path_slack);
+        splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         changed = true;
         break;
-      }
-      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
-      int in_index = drvr_index - 1;
-      PathRef *in_path = expanded.path(in_index);
-      Pin *in_pin = in_path->pin(sta_);
-      LibertyPort *in_port = network_->libertyPort(in_pin);
-
-      float prev_drive;
-      if (drvr_index >= 2) {
-        int prev_drvr_index = drvr_index - 2;
-        PathRef *prev_drvr_path = expanded.path(prev_drvr_index);
-        Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
-        prev_drive = 0.0;
-        LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-        if (prev_drvr_port) {
-          prev_drive = prev_drvr_port->driveResistance();
-        }
-      }
-      else
-        prev_drive = 0.0;
-      LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                       prev_drive, dcalc_ap);
-      if (upsize) {
-        Instance *drvr = network_->instance(drvr_pin);
-        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
-                   network_->pathName(drvr_pin),
-                   drvr_port->libertyCell()->name(),
-                   upsize->name());
-        if (replaceCell(drvr, upsize, true)) {
-          resize_count_++;
-          changed = true;
-          break;
-        }
       }
     }
   }
   return changed;
 }
 
-void
-Resizer::splitLoads(PathRef *drvr_path,
-                    Slack drvr_slack)
+bool
+Resizer::upsizeDrvr(PathRef *drvr_path,
+                    int drvr_index,
+                    PathExpanded *expanded)
 {
-  Vertex *drvr_vertex = drvr_path->vertex(sta_);
-  const RiseFall *rf = drvr_path->transition(sta_);
-  // Sort fanouts of the drvr on the critical path by slack margin
-  // wrt the critical path slack.
-  vector<pair<Vertex*, Slack>> fanout_slacks;
-  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
-  while (edge_iter.hasNext()) {
-    Edge *edge = edge_iter.next();
-    Vertex *fanout_vertex = edge->to(graph_);
-    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
-    Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "repair_setup", 3, " fanin {} slack_margin = {}",
-               network_->pathName(fanout_vertex->pin()),
-               delayAsString(slack_margin, sta_, 3));
-    fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
-  }
+  Pin *drvr_pin = drvr_path->pin(this);
+  const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  int in_index = drvr_index - 1;
+  PathRef *in_path = expanded->path(in_index);
+  Pin *in_pin = in_path->pin(sta_);
+  LibertyPort *in_port = network_->libertyPort(in_pin);
 
-  sort(fanout_slacks.begin(), fanout_slacks.end(),
-       [](pair<Vertex*, Slack> pair1,
-          pair<Vertex*, Slack> pair2) {
-         return pair1.second > pair2.second;
-       });
-
-  Pin *drvr_pin = drvr_vertex->pin();
-  Net *net = network_->net(drvr_pin);
-
-  string buffer_name = makeUniqueInstName("split");
-  Instance *parent = db_network_->topInstance();
-  LibertyCell *buffer_cell = buffer_lowest_drive_;
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-                                               buffer_name.c_str(),
-                                               parent);
-  journalMakeBuffer(buffer);
-  inserted_buffer_count_++;
-  designAreaIncr(area(db_network_->cell(buffer_cell)));
-
-  Net *out_net = makeUniqueNet();
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  Point drvr_loc = db_network_->location(drvr_pin);
-  setLocation(buffer, drvr_loc);
-
-  // Split the loads with extra slack to an inserted buffer.
-  // before
-  // drvr_pin -> net -> load_pins
-  // after
-  // drvr_pin -> net -> load_pins with low slack
-  //                 -> buffer_in -> net -> rest of loads
-  sta_->connectPin(buffer, input, net);
-  parasiticsInvalid(net);
-  sta_->connectPin(buffer, output, out_net);
-  int split_index = fanout_slacks.size() / 2;
-  for (int i = 0; i < split_index; i++) {
-    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
-    Vertex *load_vertex = fanout_slack.first;
-    Pin *load_pin = load_vertex->pin();
-    // Leave ports connected to original net so verilog port names are preserved.
-    if (!network_->isTopLevelPort(load_pin)) {
-      LibertyPort *load_port = network_->libertyPort(load_pin);
-      Instance *load = network_->instance(load_pin);
-
-      sta_->disconnectPin(load_pin);
-      sta_->connectPin(load, load_port, out_net);
+  float prev_drive;
+  if (drvr_index >= 2) {
+    int prev_drvr_index = drvr_index - 2;
+    PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
+    Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+    prev_drive = 0.0;
+    LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+    if (prev_drvr_port) {
+      prev_drive = prev_drvr_port->driveResistance();
     }
   }
-  Pin *buffer_out_pin = network_->findPin(buffer, output);
-  resizeToTargetSlew(buffer_out_pin, false);
+  else
+    prev_drive = 0.0;
+  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+  LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
+                                   prev_drive, dcalc_ap);
+  if (upsize) {
+    Instance *drvr = network_->instance(drvr_pin);
+    debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
+               network_->pathName(drvr_pin),
+               drvr_port->libertyCell()->name(),
+               upsize->name());
+    if (replaceCell(drvr, upsize, true)) {
+      resize_count_++;
+      return true;
+    }
+  }
+  return false;
 }
 
 LibertyCell *
@@ -2634,6 +2573,89 @@ Resizer::upsizeCell(LibertyPort *in_port,
     }
   }
   return nullptr;
+}
+
+void
+Resizer::splitLoads(PathRef *drvr_path,
+                    int drvr_index,
+                    Slack drvr_slack,
+                    PathExpanded *expanded)
+{
+  Pin *drvr_pin = drvr_path->pin(this);
+  PathRef *load_path = expanded->path(drvr_index + 1);
+  Vertex *load_vertex = load_path->vertex(sta_);
+  Pin *load_pin = load_vertex->pin();
+  // Divide and conquer.
+  debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(load_pin));
+
+  Vertex *drvr_vertex = drvr_path->vertex(sta_);
+  const RiseFall *rf = drvr_path->transition(sta_);
+  // Sort fanouts of the drvr on the critical path by slack margin
+  // wrt the critical path slack.
+  vector<pair<Vertex*, Slack>> fanout_slacks;
+  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+  while (edge_iter.hasNext()) {
+    Edge *edge = edge_iter.next();
+    Vertex *fanout_vertex = edge->to(graph_);
+    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
+    Slack slack_margin = fanout_slack - drvr_slack;
+    debugPrint(logger_, RSZ, "repair_setup", 3, " fanin {} slack_margin = {}",
+               network_->pathName(fanout_vertex->pin()),
+               delayAsString(slack_margin, sta_, 3));
+    fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
+  }
+
+  sort(fanout_slacks.begin(), fanout_slacks.end(),
+       [](pair<Vertex*, Slack> pair1,
+          pair<Vertex*, Slack> pair2) {
+         return pair1.second > pair2.second;
+       });
+
+  Net *net = network_->net(drvr_pin);
+
+  string buffer_name = makeUniqueInstName("split");
+  Instance *parent = db_network_->topInstance();
+  LibertyCell *buffer_cell = buffer_lowest_drive_;
+  Instance *buffer = makeInstance(buffer_cell,
+                                  buffer_name.c_str(),
+                                  parent);
+  journalMakeBuffer(buffer);
+  inserted_buffer_count_++;
+  designAreaIncr(area(db_network_->cell(buffer_cell)));
+
+  Net *out_net = makeUniqueNet();
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  Point drvr_loc = db_network_->location(drvr_pin);
+  setLocation(buffer, drvr_loc);
+
+  // Split the loads with extra slack to an inserted buffer.
+  // before
+  // drvr_pin -> net -> load_pins
+  // after
+  // drvr_pin -> net -> load_pins with low slack
+  //                 -> buffer_in -> net -> rest of loads
+  sta_->connectPin(buffer, input, net);
+  parasiticsInvalid(net);
+  sta_->connectPin(buffer, output, out_net);
+  int split_index = fanout_slacks.size() / 2;
+  for (int i = 0; i < split_index; i++) {
+    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
+    Vertex *load_vertex = fanout_slack.first;
+    Pin *load_pin = load_vertex->pin();
+    // Leave ports connected to original net so verilog port names are preserved.
+    if (!network_->isTopLevelPort(load_pin)) {
+      LibertyPort *load_port = network_->libertyPort(load_pin);
+      Instance *load = network_->instance(load_pin);
+
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load, load_port, out_net);
+    }
+  }
+  Pin *buffer_out_pin = network_->findPin(buffer, output);
+  resizeToTargetSlew(buffer_out_pin, false);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3015,8 +3037,8 @@ Resizer::makeHoldDelay(Vertex *drvr,
     Net *buf_out_net = (i == buffer_count - 1) ? out_net : makeUniqueNet();
     // drvr_pin->drvr_net->hold_buffer->net2->load_pins
     string buffer_name = makeUniqueInstName("hold");
-    buffer = db_network_->makeInstance(buffer_cell, buffer_name.c_str(),
-                                       parent);
+    buffer = makeInstance(buffer_cell, buffer_name.c_str(),
+                          parent);
     journalMakeBuffer(buffer);
     inserted_buffer_count_++;
     designAreaIncr(area(db_network_->cell(buffer_cell)));
@@ -3824,8 +3846,8 @@ Resizer::cloneClkInverter(Instance *inv)
       Pin *load_pin = load_iter->next();
       if (load_pin != out_pin) {
         string clone_name = makeUniqueInstName(inv_name, true);
-        Instance *clone = sta_->makeInstance(clone_name.c_str(),
-                                             inv_cell, top_inst);
+        Instance *clone = makeInstance(inv_cell, clone_name.c_str(),
+                                       top_inst);
         Point clone_loc = db_network_->location(load_pin);
         journalMakeBuffer(clone);
         setLocation(clone, clone_loc);
@@ -4094,6 +4116,17 @@ Resizer::isRegister(Vertex *vertex)
     return cell && cell->hasSequentials();
   }
   return false;
+}
+
+Instance *Resizer::makeInstance(LibertyCell *cell,
+                                const char *name,
+                                Instance *parent)
+{
+  debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
+  Instance *inst = db_network_->makeInstance(cell, name, parent);
+  dbInst *db_inst = db_network_->staToDb(inst);
+  db_inst->setSourceType(odb::dbSourceType::TIMING);
+  return inst;
 }
 
 } // namespace

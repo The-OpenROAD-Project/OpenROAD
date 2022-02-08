@@ -568,7 +568,7 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
   heat_maps_.erase(heatmap);
 }
 
-void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
   HeatMapDataSource* source = nullptr;
 
@@ -586,6 +586,13 @@ void Gui::setHeatMapSetting(const std::string& name, const std::string& option, 
     }
     logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
   }
+
+  return source;
+}
+
+void Gui::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
+{
+  HeatMapDataSource* source = getHeatMap(name);
 
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
@@ -644,6 +651,12 @@ void Gui::setHeatMapSetting(const std::string& name, const std::string& option, 
   }
 
   source->getRenderer()->redraw();
+}
+
+void Gui::dumpHeatMap(const std::string& name, const std::string& file)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+  source->dumpToFile(file);
 }
 
 Renderer::~Renderer()
@@ -822,9 +835,14 @@ const Selected& Gui::getInspectorSelection()
   return main_window->getInspector()->getSelection();
 }
 
-void Gui::timingCone(std::variant<odb::dbITerm*, odb::dbBTerm*> term, bool fanin, bool fanout)
+void Gui::timingCone(odbTerm term, bool fanin, bool fanout)
 {
   main_window->timingCone(term, fanin, fanout);
+}
+
+void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
+{
+  main_window->timingPathsThrough(terms);
 }
 
 void Gui::addFocusNet(odb::dbNet* net)
@@ -925,10 +943,10 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   }
 
   // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  main_window->getScriptWidget()->setupTcl(interp, init_openroad);
-
-  // openroad is guaranteed to be initialized here
-  main_window->init(open_road->getSta());
+  main_window->getScriptWidget()->setupTcl(interp, init_openroad, [&]() {
+    // init remainder of GUI, to be called immediately after OpenRoad is guaranteed to be initialized.
+    main_window->init(open_road->getSta());
+  });
 
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));

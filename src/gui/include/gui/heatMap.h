@@ -34,6 +34,7 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
 
 #include <array>
 #include <functional>
@@ -104,6 +105,8 @@ class HeatMapDataSource
 
   const std::string& getName() const { return name_; }
   const std::string& getShortName() const { return short_name_; }
+
+  void dumpToFile(const std::string& file);
 
   // setup
   void showSetup();

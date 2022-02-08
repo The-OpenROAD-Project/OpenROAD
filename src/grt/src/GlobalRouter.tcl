@@ -275,6 +275,13 @@ proc repair_antennas { args } {
   }
 }
 
+sta::define_cmd_args "read_guides" { file_name }
+
+proc read_guides { args } {
+  set file_name $args
+  grt::read_guides $file_name
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
@@ -282,9 +289,15 @@ proc write_guides { args } {
   grt::write_guides $file_name
 }
 
-sta::define_cmd_args "draw_route_guides" { net_names }
+sta::define_cmd_args "draw_route_guides" { net_names \
+                                           [-show_pin_locations] }
 
-proc draw_route_guides { net_names } {
+proc draw_route_guides { args } {
+  sta::parse_key_args "draw_route_guides" args \
+                 keys {} \
+                 flags {-show_pin_locations}
+  sta::check_argc_eq1 "repair_antennas" $args
+  set net_names [lindex $args 0]
   set block [ord::get_db_block]
   if { $block == "NULL" } {
     utl::error GRT 223 "Missing dbBlock."
@@ -293,7 +306,7 @@ proc draw_route_guides { net_names } {
   if {[llength $net_names] > 0} {
     foreach net [get_nets $net_names] {
       if { $net != "NULL" } {
-        grt::highlight_net_route [sta::sta_to_db_net $net]
+        grt::highlight_net_route [sta::sta_to_db_net $net] [info exists flags(-show_pin_locations)]
       }
     }
   } else {
@@ -328,6 +341,52 @@ proc global_route_debug { args } {
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D
   } else {
     utl::error GRT 231 "Net name not found."
+  }
+}
+
+sta::define_cmd_args "report_wire_length" { [-net net_list] \
+                                            [-file file] \
+                                            [-global_route] \
+                                            [-detailed_route] \
+                                            [-verbose]
+}
+
+proc report_wire_length { args } {
+  sta::parse_key_args "report_wire_length" args \
+                 keys {-net -file} \
+                 flags {-global_route -detailed_route -verbose}
+  
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 224 "Missing dbBlock."
+  }
+
+  set global_route_wl [info exists flags(-global_route)]
+  set detailed_route_wl [info exists flags(-detailed_route)]
+  set verbose [info exists flags(-verbose)]
+
+  if {!$global_route_wl && !$detailed_route_wl} {
+    set global_route_wl [grt::have_routes]
+    set detailed_route_wl [grt::have_detailed_route $block]
+  }
+
+  set file ""
+  if { [info exists keys(-file)] } {
+    set file $keys(-file)
+    grt::create_wl_report_file $file $verbose
+  }
+
+  if { [info exists keys(-net)] } {
+    foreach net [get_nets $keys(-net)] {
+      set db_net [sta::sta_to_db_net $net]
+      if { [$db_net getSigType] != "POWER" && \
+           [$db_net getSigType] != "GROUND" && \
+           ![$db_net isSpecial]} {
+        grt::report_net_wire_length $db_net $global_route_wl $detailed_route_wl $verbose $file
+      }
+    }
+  } else {
+    utl::errpr GRT 237 "-net is required."
   }
 }
 
@@ -435,6 +494,17 @@ proc define_clock_layer_range { layers } {
   } else {
     utl::error GRT 56 "In argument -clock_layers, min routing layer is greater than max routing layer."
   }
+}
+
+proc have_detailed_route { block } {
+  set nets [$block getNets]
+  foreach net $nets {
+    if { [$net getWire] != "NULL" } {
+      return 1
+    }
+  }
+
+  return 0
 }
 
 # grt namespace end

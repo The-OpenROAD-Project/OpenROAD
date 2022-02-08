@@ -33,8 +33,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <QAbstractItemView>
+#include <QAction>
 #include <QApplication>
 #include <QDebug>
+#include <QLineEdit>
+#include <QKeyEvent>
+#include <QMenu>
+#include <QPushButton>
+#include <QStandardItemModel>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -65,6 +72,8 @@
 #include "sta/VertexVisitor.hh"
 #include "staGui.h"
 
+Q_DECLARE_METATYPE(sta::Corner*);
+
 namespace gui {
 
 const Painter::Color TimingPathRenderer::inst_highlight_color_
@@ -75,6 +84,21 @@ const Painter::Color TimingPathRenderer::term_color_ = Painter::Color(gui::Paint
 const Painter::Color TimingPathRenderer::signal_color_ = Painter::Color(gui::Painter::red, 100);
 const Painter::Color TimingPathRenderer::clock_color_ = Painter::Color(gui::Painter::cyan, 100);
 const Painter::Color TimingPathRenderer::capture_clock_color_ = Painter::Color(gui::Painter::green, 100);
+
+static QString convertDelay(float time, sta::Unit* convert)
+{
+  if (sta::delayInf(time)) {
+    const QString infinity = "\u221E";
+
+    if (time < 0) {
+      return "-" + infinity;
+    } else {
+      return infinity;
+    }
+  } else {
+    return convert->asString(time);
+  }
+}
 
 /////////
 
@@ -120,11 +144,11 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Clock:
         return QString::fromStdString(timing_path->getEndClock());
       case Required:
-        return QString(time_units->asString(timing_path->getPathRequiredTime()));
+        return convertDelay(timing_path->getPathRequiredTime(), time_units);
       case Arrival:
-        return QString(time_units->asString(timing_path->getPathArrivalTime()));
+        return convertDelay(timing_path->getPathArrivalTime(), time_units);
       case Slack:
-        return QString(time_units->asString(timing_path->getSlack()));
+        return convertDelay(timing_path->getSlack(), time_units);
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -206,27 +230,36 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   endResetModel();
 }
 
-void TimingPathsModel::populateModel(bool setup_hold, int path_count)
+void TimingPathsModel::populateModel(bool setup_hold,
+                                     int path_count,
+                                     const std::set<sta::Pin*>& from,
+                                     const std::vector<std::set<sta::Pin*>>& thru,
+                                     const std::set<sta::Pin*>& to,
+                                     bool unconstrainted)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(setup_hold, path_count);
+  populatePaths(setup_hold, path_count, from, thru, to, unconstrainted);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(bool get_max,
-                                     int path_count)
+                                     int path_count,
+                                     const std::set<sta::Pin*>& from,
+                                     const std::vector<std::set<sta::Pin*>>& thru,
+                                     const std::set<sta::Pin*>& to,
+                                     bool unconstrainted)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   TimingPath::buildPaths(sta_,
                          get_max,
-                         false, // unconstrained
+                         unconstrainted, // unconstrained
                          path_count,
-                         {}, // to
-                         {}, // through
-                         {}, // from
+                         from, // from
+                         thru, // through
+                         to, // to
                          true,
                          timing_paths_);
 
@@ -241,7 +274,7 @@ void TimingPath::buildPaths(sta::dbSta* sta,
                             bool include_unconstrained,
                             int path_count,
                             const std::set<sta::Pin*>& from,
-                            const std::set<sta::Pin*>& thrus,
+                            const std::vector<std::set<sta::Pin*>>& thrus,
                             const std::set<sta::Pin*>& to,
                             bool include_capture,
                             std::vector<std::unique_ptr<TimingPath>>& paths)
@@ -260,10 +293,15 @@ void TimingPath::buildPaths(sta::dbSta* sta,
   }
   sta::ExceptionThruSeq* e_thrus = nullptr;
   if (!thrus.empty()) {
-    e_thrus = new sta::ExceptionThruSeq;
-    for (sta::Pin* thru : thrus) {
+    for (const auto& thru_set : thrus) {
+      if (thru_set.empty()) {
+        continue;
+      }
+      if (e_thrus == nullptr) {
+        e_thrus = new sta::ExceptionThruSeq;
+      }
       sta::PinSet* pins = new sta::PinSet;
-      pins->insert(thru);
+      pins->insert(thru_set.begin(), thru_set.end());
       e_thrus->push_back(sta->makeExceptionThru(pins,
                                                 nullptr,
                                                 nullptr,
@@ -691,9 +729,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case Pin:
         return "clock network delay";
       case Time:
-        return time_units->asString(node->getArrival());
+        return convertDelay(node->getArrival(), time_units);
       case Delay:
-        return time_units->asString(node->getArrival() - nodes_->at(0)->getArrival());
+        return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(), time_units);
       default:
         return QVariant();
       }
@@ -705,11 +743,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case RiseFall:
           return node->isRisingEdge() ? up_arrow_ : down_arrow_;
         case Time:
-          return time_units->asString(node->getArrival());
+          return convertDelay(node->getArrival(), time_units);
         case Delay:
-          return time_units->asString(node->getDelay());
+          return convertDelay(node->getDelay(), time_units);
         case Slew:
-          return time_units->asString(node->getSlew());
+          return convertDelay(node->getSlew(), time_units);
         case Load: {
           if (node->getLoad() == 0)
             return "";
@@ -1341,7 +1379,7 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
       true, // unconstrained
       path_count, // paths
       {}, // from
-      {source_pin}, // thru
+      {{source_pin}}, // thru
       {}, // to
       false,
       paths);
@@ -1380,6 +1418,454 @@ void TimingConeRenderer::annotateTiming(sta::Pin* source_pin)
       return l->getPathSlack() > r->getPathSlack();
     });
   }
+}
+
+/////////
+
+PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent) :
+    QWidget(parent),
+    sta_(nullptr),
+    pins_({}),
+    box_(new QListWidget(this)),
+    find_pin_(new QLineEdit(this)),
+    clear_(new QPushButton(this)),
+    add_remove_(nullptr),
+    add_mode_(true)
+{
+  const int min_characters = 25;
+  const auto font_metrics = fontMetrics();
+  const int min_width = min_characters * font_metrics.averageCharWidth();
+  find_pin_->setMinimumWidth(min_width);
+
+  box_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  const int max_rows = 5;
+  const int row_height = font_metrics.height();
+  box_->setFixedHeight(max_rows * row_height);
+
+  clear_->setIcon(QIcon(":/delete.png"));
+  clear_->setToolTip(tr("Clear pins"));
+  clear_->setAutoDefault(false);
+  clear_->setDefault(false);
+  connect(clear_,
+          SIGNAL(pressed()),
+          this,
+          SLOT(clearPins()));
+
+  connect(find_pin_,
+          SIGNAL(returnPressed()),
+          this,
+          SLOT(findPin()));
+
+  QVBoxLayout* layout = new QVBoxLayout;
+  QHBoxLayout* row_layout = new QHBoxLayout;
+  row_layout->addWidget(find_pin_);
+  row_layout->addWidget(clear_);
+  if (add_remove_button) {
+    add_remove_ = new QPushButton(this);
+    add_remove_->setToolTip(tr("Add/Remove rows"));
+    row_layout->addWidget(add_remove_);
+
+    add_remove_->setAutoDefault(false);
+    add_remove_->setDefault(false);
+    connect(add_remove_,
+            &QPushButton::pressed,
+            [this]() {
+              emit addRemoveTriggered(this);
+            });
+    setAddMode();
+  }
+
+  layout->addLayout(row_layout);
+  layout->addWidget(box_);
+
+  setLayout(layout);
+
+  box_->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(box_,
+          SIGNAL(customContextMenuRequested(const QPoint&)),
+          this,
+          SLOT(showMenu(const QPoint)));
+}
+
+void PinSetWidget::setAddMode()
+{
+  if (add_remove_ == nullptr) {
+    return;
+  }
+
+  add_mode_ = true;
+  add_remove_->setIcon(QIcon(":/add.png"));
+}
+
+void PinSetWidget::setRemoveMode()
+{
+  if (add_remove_ == nullptr) {
+    return;
+  }
+
+  add_mode_ = false;
+  add_remove_->setIcon(QIcon(":/remove.png"));
+}
+
+void PinSetWidget::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Delete && box_->hasFocus()) {
+    removeSelectedPins();
+  } else {
+    QWidget::keyPressEvent(event);
+  }
+}
+
+void PinSetWidget::updatePins()
+{
+  box_->clear();
+  if (!pins_.empty()) {
+    auto* network = sta_->getDbNetwork();
+    for (const auto* pin : pins_) {
+      auto* item = new QListWidgetItem(network->name(pin));
+      item->setData(Qt::UserRole, QVariant::fromValue((void*)pin));
+      box_->addItem(item);
+    }
+  }
+}
+
+void PinSetWidget::setPins(const std::set<sta::Pin*>& pins)
+{
+  pins_.clear();
+  pins_.insert(pins_.end(), pins.begin(), pins.end());
+  updatePins();
+}
+
+const std::set<sta::Pin*> PinSetWidget::getPins() const
+{
+  std::set<sta::Pin*> pins(pins_.begin(), pins_.end());
+  return pins;
+}
+
+void PinSetWidget::addPin(sta::Pin* pin)
+{
+  if (pin == nullptr) {
+    return;
+  }
+
+  if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+    return;
+  }
+
+  pins_.push_back(pin);
+
+}
+
+void PinSetWidget::removePin(sta::Pin* pin)
+{
+  pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+}
+
+void PinSetWidget::removeSelectedPins()
+{
+  for (auto* selection : box_->selectedItems()) {
+    void* pin_data = selection->data(Qt::UserRole).value<void*>();
+    removePin((sta::Pin*)pin_data);
+  }
+  updatePins();
+}
+
+void PinSetWidget::findPin()
+{
+  const QString text = find_pin_->text();
+  if (text.isEmpty()) {
+    return;
+  }
+  auto* network = sta_->getDbNetwork();
+  auto* top_inst = network->topInstance();
+
+  for (QString pin_name : text.split(" ")) {
+    pin_name = pin_name.trimmed();
+
+    if (pin_name.isEmpty()) {
+      continue;
+    }
+
+    QByteArray name = pin_name.toLatin1();
+    sta::PatternMatch matcher(name.constData());
+
+    // search pins
+    sta::PinSeq found_pins;
+    network->findPinsHierMatching(top_inst, &matcher, &found_pins);
+
+    for (auto* pin : found_pins) {
+      addPin(pin);
+    }
+
+    // search ports
+    sta::PortSeq found_ports;
+    network->findPortsMatching(network->cell(top_inst), &matcher, &found_ports);
+
+    for (auto* port : found_ports) {
+      if (network->isBus(port) || network->isBundle(port)) {
+        sta::PortMemberIterator* member_iter = network->memberIterator(port);
+        while (member_iter->hasNext()) {
+          sta::Port* member = member_iter->next();
+          addPin(network->findPin(top_inst, member));
+        }
+        delete member_iter;
+      } else {
+        addPin(network->findPin(top_inst, port));
+      }
+    }
+  }
+
+  updatePins();
+}
+
+void PinSetWidget::showMenu(const QPoint& point)
+{
+  // Handle global position
+  const QPoint global = box_->mapToGlobal(point);
+
+  auto* pin_item = box_->itemAt(box_->viewport()->mapFromGlobal(global));
+  if (pin_item == nullptr) {
+    return;
+  }
+
+  sta::Pin* pin = (sta::Pin*)pin_item->data(Qt::UserRole).value<void*>();
+
+  // Create menu and insert some actions
+  QMenu pin_menu;
+  QAction* remove = pin_menu.addAction("Remove");
+  connect(remove,
+          &QAction::triggered,
+          [this, pin]() {
+            removePin(pin);
+            updatePins();
+          });
+  QAction* remove_sel = pin_menu.addAction("Remove selected");
+  connect(remove_sel,
+          &QAction::triggered,
+          [this]() {
+            removeSelectedPins();
+          });
+  QAction* clear_all = pin_menu.addAction("Clear all");
+  connect(clear_all,
+          SIGNAL(triggered()),
+          this,
+          SLOT(clearPins()));
+  QAction* inspect_action = pin_menu.addAction("Inspect");
+  connect(inspect_action,
+          &QAction::triggered,
+          [this, pin]() {
+            auto* gui = Gui::get();
+            odb::dbITerm* iterm;
+            odb::dbBTerm* bterm;
+            sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+            if (iterm != nullptr) {
+              emit inspect(gui->makeSelected(iterm));
+            } else {
+              emit inspect(gui->makeSelected(bterm));
+            }
+          });
+
+  // Show context menu at handling position
+  pin_menu.exec(global);
+}
+
+/////////
+
+TimingControlsDialog::TimingControlsDialog(QWidget* parent) :
+    QDialog(parent),
+    sta_(nullptr),
+    layout_(new QFormLayout),
+    path_count_spin_box_(new QSpinBox(this)),
+    corner_box_(new QComboBox(this)),
+    uncontrained_(new QCheckBox(this)),
+    expand_clk_(new QCheckBox(this)),
+    from_(new PinSetWidget(false, this)),
+    thru_({}),
+    to_(new PinSetWidget(false, this))
+{
+  setWindowTitle("Timing Controls");
+
+  path_count_spin_box_->setRange(0, 10000);
+  path_count_spin_box_->setValue(100);
+
+  layout_->addRow("Paths:", path_count_spin_box_);
+  layout_->addRow("Expand clock:", expand_clk_);
+  layout_->addRow("Command corner:", corner_box_);
+
+  setupPinRow("From:", from_);
+  setThruPin({});
+  setupPinRow("To:", to_);
+
+  setUnconstrained(false);
+  layout_->addRow("Unconstrained:", uncontrained_);
+
+  setLayout(layout_);
+
+  connect(corner_box_,
+          QOverload<int>::of(&QComboBox::currentIndexChanged),
+          [this](int index) {
+            if (index < 0 || index >= corner_box_->count()) {
+              return;
+            }
+            auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
+            sta_->setCmdCorner(corner);
+          });
+
+  connect(expand_clk_,
+          SIGNAL(toggled(bool)),
+          this,
+          SIGNAL(expandClock(bool)));
+}
+
+void TimingControlsDialog::setupPinRow(const QString& label, PinSetWidget* row, int row_index)
+{
+  if (row_index < 0) {
+    layout_->addRow(label, row);
+  } else {
+    layout_->insertRow(row_index, label, row);
+  }
+
+  row->setSTA(sta_);
+
+  connect(row,
+          SIGNAL(inspect(const Selected&)),
+          this,
+          SIGNAL(inspect(const Selected&)));
+}
+
+void TimingControlsDialog::setSTA(sta::dbSta* sta)
+{
+  sta_ = sta;
+  from_->setSTA(sta_);
+  for (auto* row : thru_) {
+    row->setSTA(sta_);
+  }
+  to_->setSTA(sta_);
+}
+
+void TimingControlsDialog::setUnconstrained(bool unconstrained)
+{
+  uncontrained_->setCheckState(unconstrained ? Qt::Checked : Qt::Unchecked);
+}
+
+bool TimingControlsDialog::getUnconstrained() const
+{
+  return uncontrained_->checkState() == Qt::Checked;
+}
+
+void TimingControlsDialog::setExpandClock(bool expand)
+{
+  expand_clk_->setCheckState(expand ? Qt::Checked : Qt::Unchecked);
+}
+
+bool TimingControlsDialog::getExpandClock() const
+{
+  return expand_clk_->checkState() == Qt::Checked;
+}
+
+void TimingControlsDialog::populate()
+{
+  setPinSelections();
+
+  auto* current_corner = sta_->cmdCorner();
+  corner_box_->clear();
+  int selection = 0;
+  for (auto* corner : sta_->corners()->corners()) {
+    if (corner == current_corner) {
+      selection = corner_box_->count();
+    }
+    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+  }
+
+  if (corner_box_->count() > 1) {
+    selection += 1;
+    corner_box_->insertItem(0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
+    if (current_corner == nullptr) {
+      selection = 0;
+    }
+  }
+
+  corner_box_->setCurrentIndex(selection);
+}
+
+void TimingControlsDialog::setPinSelections()
+{
+  from_->updatePins();
+  for (auto* row : thru_) {
+    row->updatePins();
+  }
+  to_->updatePins();
+}
+
+sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
+{
+  auto* network = sta_->getDbNetwork();
+
+  if (std::holds_alternative<odb::dbITerm*>(term)) {
+    return network->dbToSta(std::get<odb::dbITerm*>(term));
+  } else {
+    return network->dbToSta(std::get<odb::dbBTerm*>(term));
+  }
+}
+
+void TimingControlsDialog::setThruPin(const std::vector<std::set<sta::Pin*>>& pins)
+{
+  for (size_t i = 0; i < thru_.size(); i++) {
+    layout_->removeRow(thru_start_row_);
+  }
+  thru_.clear();
+  adjustSize();
+
+  auto new_pins = pins;
+  if (pins.empty()) {
+    new_pins.push_back({}); // add one row
+  }
+
+  for (const auto& pin_set : new_pins) {
+    addThruRow(pin_set);
+  }
+}
+
+void TimingControlsDialog::addThruRow(const std::set<sta::Pin*>& pins)
+{
+  auto* row = new PinSetWidget(true, this);
+
+  setupPinRow("Through:", row, thru_start_row_ + thru_.size());
+  row->setPins(pins);
+
+  connect(row,
+          SIGNAL(addRemoveTriggered(PinSetWidget*)),
+          this,
+          SLOT(addRemoveThru(PinSetWidget*)));
+
+  for (const auto& lower_row : thru_) {
+    lower_row->setRemoveMode();
+  }
+  thru_.push_back(row);
+}
+
+void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
+{
+  if (row->isAddMode()) {
+    addThruRow({});
+  } else {
+    auto find_row = std::find(thru_.begin(), thru_.end(), row);
+    const int row_index = std::distance(thru_.begin(), find_row);
+
+    layout_->removeRow(thru_start_row_ + row_index);
+    thru_.erase(thru_.begin() + row_index);
+    thru_.back()->setAddMode();
+    adjustSize();
+  }
+}
+
+const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
+{
+  std::vector<std::set<sta::Pin*>> pins;
+  for (auto* row : thru_) {
+    pins.push_back(row->getPins());
+  }
+  return pins;
 }
 
 }  // namespace gui
