@@ -219,32 +219,29 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       RoutePt n2_pt(route.final_x, route.final_y, route.final_layer);
       std::vector<sta::ParasiticNode*>& nodes1 = on_grid_node_map_[n1_pt];
       std::vector<sta::ParasiticNode*>& nodes2 = on_grid_node_map_[n2_pt];
-      if (!nodes1.empty()) {
-        for (sta::ParasiticNode* node : nodes1) {
-          parasitics_->makeResistor(nullptr, node, n2, res, analysis_point_);
-          debugPrint(logger_,
-                     GRT,
-                     "est_rc",
-                     1,
-                     "(node-to-via) {} -> {} via r={}",
-                     parasitics_->name(node),
-                     parasitics_->name(n2),
-                     units->resistanceUnit()->asString(res));
-        }
+
+      for (sta::ParasiticNode* node : nodes1) {
+        parasitics_->makeResistor(nullptr, node, n2, res, analysis_point_);
+        debugPrint(logger_,
+                   GRT,
+                   "est_rc",
+                   1,
+                   "(node-to-via) {} -> {} via r={}",
+                   parasitics_->name(node),
+                   parasitics_->name(n2),
+                   units->resistanceUnit()->asString(res));
       } 
       // connect the pin nodes located in n2 to n1
-      if (!nodes2.empty()) {
-        for (sta::ParasiticNode* node : nodes2) {
-          parasitics_->makeResistor(nullptr, n1, node, res, analysis_point_);
-          debugPrint(logger_,
-                     GRT,
-                     "est_rc",
-                     1,
-                     "(via-to-node) {} -> {} via r={}",
-                     parasitics_->name(n1),
-                     parasitics_->name(node),
-                     units->resistanceUnit()->asString(res));
-        }
+      for (sta::ParasiticNode* node : nodes2) {
+        parasitics_->makeResistor(nullptr, n1, node, res, analysis_point_);
+        debugPrint(logger_,
+                   GRT,
+                   "est_rc",
+                   1,
+                   "(via-to-node) {} -> {} via r={}",
+                   parasitics_->name(n1),
+                   parasitics_->name(node),
+                   units->resistanceUnit()->asString(res));
       }
       if (nodes1.empty() && nodes2.empty()) {
         // there is no pin node connected to these positions
