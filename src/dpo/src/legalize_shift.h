@@ -79,7 +79,7 @@ class ShiftLegalizer {
   double shift(std::vector<Node*>& cells);
   double clump(std::vector<Node*>& order);
   void merge(Clump* r);
-  bool violated(Clump* r, Clump*& l, double& dist);
+  bool violated(Clump* r, Clump*& l, int& dist);
 
   ShiftLegalizerParams& m_params;
 
@@ -90,7 +90,7 @@ class ShiftLegalizer {
 
   // For clumping.
   std::vector<Clump> m_clumps;
-  std::vector<double> m_offset;
+  std::vector<int> m_offset;
   std::vector<Clump*> m_ptr;
   std::vector<std::vector<int> > m_outgoing;
   std::vector<std::vector<int> > m_incoming;

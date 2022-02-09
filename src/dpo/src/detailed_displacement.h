@@ -62,9 +62,10 @@ class DetailedDisplacement : public DetailedObjective {
 
   void init();
   double curr();
-  double delta(int n, std::vector<Node*>& nodes, std::vector<double>& curX,
-               std::vector<double>& curY, std::vector<unsigned>& curOri,
-               std::vector<double>& newX, std::vector<double>& newY,
+  double delta(int n, std::vector<Node*>& nodes, 
+               std::vector<int>& curLeft, std::vector<int>& curBottom, 
+               std::vector<unsigned>& curOri,
+               std::vector<int>& newLeft, std::vector<int>& newBottom,
                std::vector<unsigned>& newOri);
   void getCandidates(std::vector<Node*>& candidates);
 
