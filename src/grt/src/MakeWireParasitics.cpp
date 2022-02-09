@@ -84,11 +84,10 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
       = parasitics_->makeParasiticNetwork(sta_net_, false, analysis_point_);
   makePinRoutePts(pins);
 
-  int routes_cnt = 0;
-  makeWireParasitics(net, routes, routes_cnt);
-  makeViaParasitics(net, routes, routes_cnt);
+  int route_cnt = makeWireParasitics(net, routes);
+  route_cnt += makeViaParasitics(net, routes);
 
-  if (routes_cnt != routes.size()) {
+  if (route_cnt != routes.size()) {
     logger_->warn(GRT,
                   25,
                   "Non wire or via route found on net {}.",
@@ -128,10 +127,10 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin)
     return network_->dbToSta(pin.getITerm());
 }
 
-void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
-                        std::vector<GSegment>& routes,
-                        int& routes_cnt)
+int MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
+                        std::vector<GSegment>& routes)
 {
+  int route_cnt = 0;
   sta::Units* units = sta_->units();
   for (GSegment& route : routes) {
     int wire_length_dbu = route.length();
@@ -192,15 +191,17 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
       }
       on_grid_node_map_.erase(n2_pt);
 
-      routes_cnt++;
+      route_cnt++;
     }
   }
+
+  return route_cnt;
 }
 
-void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
-                       std::vector<GSegment>& routes,
-                       int& routes_cnt)
+int MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
+                       std::vector<GSegment>& routes)
 {
+  int route_cnt = 0;
   sta::Units* units = sta_->units();
   for (GSegment& route : routes) {
     int wire_length_dbu = route.length();
@@ -259,9 +260,11 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       on_grid_node_map_.erase(n1_pt);
       on_grid_node_map_.erase(n2_pt);
 
-      routes_cnt++;
+      route_cnt++;
     }
   }
+
+  return route_cnt;
 }
 
 void MakeWireParasitics::makeParasiticsToGrid(std::vector<Pin>& pins)

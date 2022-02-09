@@ -79,8 +79,8 @@ class MakeWireParasitics
   void makePinRoutePts(std::vector<Pin>& pins);
   RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);
-  void makeWireParasitics(odb::dbNet* net, std::vector<GSegment>& routes, int& routes_cnt);
-  void makeViaParasitics(odb::dbNet* net, std::vector<GSegment>& routes, int& routes_cnt);
+  int makeWireParasitics(odb::dbNet* net, std::vector<GSegment>& routes);
+  int makeViaParasitics(odb::dbNet* net, std::vector<GSegment>& routes);
   sta::ParasiticNode* ensureParasiticNode(int x, int y, int layer);
   void makeParasiticsToGrid(std::vector<Pin>& pins);
   void makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node);
