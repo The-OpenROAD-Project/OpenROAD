@@ -165,12 +165,10 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                  units->capacitanceUnit()->asString(cap));
 
       // create resistors for pins connected directly to wires
-      odb::dbTechLayer* cut_layer
-        = tech_->findRoutingLayer(route.init_layer)->getLowerLayer();
+      odb::dbTechLayer* layer
+        = tech_->findRoutingLayer(route.init_layer);
       for (auto& node : on_grid_node_map_[n1_pt]) {
-        parasitics_->incrCap(node, 0, analysis_point_);
-        parasitics_->makeResistor(nullptr, node, n1, cut_layer->getResistance(), analysis_point_);
-        parasitics_->incrCap(n1, 0, analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n1, layer->getResistance(), analysis_point_);
         debugPrint(logger_,
                    GRT,
                    "est_rc",
@@ -178,14 +176,12 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                    "(node-to-wire) {} -> {} via r={}",
                    parasitics_->name(node),
                    parasitics_->name(n1),
-                   units->resistanceUnit()->asString(cut_layer->getResistance()));
+                   units->resistanceUnit()->asString(layer->getResistance()));
       }
       on_grid_node_map_.erase(n1_pt);
 
       for (auto& node : on_grid_node_map_[n2_pt]) {
-        parasitics_->incrCap(node, 0, analysis_point_);
-        parasitics_->makeResistor(nullptr, node, n2, cut_layer->getResistance(), analysis_point_);
-        parasitics_->incrCap(n2, 0, analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n2, layer->getResistance(), analysis_point_);
         debugPrint(logger_,
                    GRT,
                    "est_rc",
@@ -193,7 +189,7 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                    "(node-to-wire) {} -> {} via r={}",
                    parasitics_->name(node),
                    parasitics_->name(n2),
-                   units->resistanceUnit()->asString(cut_layer->getResistance()));
+                   units->resistanceUnit()->asString(layer->getResistance()));
       }
       on_grid_node_map_.erase(n2_pt);
 
@@ -214,7 +210,6 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       odb::dbTechLayer* cut_layer
           = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
       float res = cut_layer->getResistance();  // assumes single cut
-      float cap = 0.0;
 
       sta::ParasiticNode* n1
           = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
@@ -227,9 +222,7 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       std::vector<sta::ParasiticNode*>& nodes2 = on_grid_node_map_[n2_pt];
       if (!nodes1.empty()) {
         for (sta::ParasiticNode* node : nodes1) {
-          parasitics_->incrCap(node, cap / 2.0, analysis_point_);
           parasitics_->makeResistor(nullptr, node, n2, res, analysis_point_);
-          parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
           debugPrint(logger_,
                      GRT,
                      "est_rc",
@@ -243,9 +236,7 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       // connect the pin nodes located in n2 to n1
       if (!nodes2.empty()) {
         for (sta::ParasiticNode* node : nodes2) {
-          parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
           parasitics_->makeResistor(nullptr, n1, node, res, analysis_point_);
-          parasitics_->incrCap(node, cap / 2.0, analysis_point_);
           debugPrint(logger_,
                      GRT,
                      "est_rc",
@@ -259,9 +250,7 @@ void MakeWireParasitics::makeViaParasitics(odb::dbNet* net,
       if (nodes1.empty() && nodes2.empty()) {
         // there is no pin node connected to these positions
         // just create the via resistor between the layers
-        parasitics_->incrCap(n1, cap / 2.0, analysis_point_);
         parasitics_->makeResistor(nullptr, n1, n2, res, analysis_point_);
-        parasitics_->incrCap(n2, cap / 2.0, analysis_point_);
         debugPrint(logger_,
                    GRT,
                    "est_rc",
