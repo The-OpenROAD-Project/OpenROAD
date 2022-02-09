@@ -28,7 +28,7 @@
 
 #pragma once
 #include <boost/asio.hpp>
-
+#include <boost/asio/thread_pool.hpp>
 #include "WorkerConnection.h"
 
 namespace utl {
@@ -45,15 +45,21 @@ class Worker
          Distributed* dist,
          utl::Logger* logger,
          const char* ip,
-         unsigned short port);
+         unsigned short port,
+         unsigned short threads_num);
 
  private:
   tcp::acceptor acceptor_;
   asio::io_service* service;
   Distributed* dist_;
   utl::Logger* logger_;
+  std::vector<boost::shared_ptr<WorkerConnection>> connections_;
+  std::unique_ptr<asio::thread_pool> pool_;
+  std::mutex pool_mutex_;
+  unsigned short threads_num_;
   void start_accept();
-  void handle_accept(WorkerConnection::pointer connection,
+  void handle_accept(boost::shared_ptr<WorkerConnection> connection,
                      const boost::system::error_code& err);
+  friend class WorkerConnection;
 };
 }  // namespace dst

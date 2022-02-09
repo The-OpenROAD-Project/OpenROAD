@@ -30,6 +30,8 @@
 
 #include <dst/JobMessage.h>
 
+#include <boost/asio/post.hpp>
+#include <boost/bind/bind.hpp>
 #include <thread>
 
 #include "LoadBalancer.h"
@@ -56,8 +58,10 @@ void BalancerConnection::start()
       JobMessage::EOP,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
-        std::thread t1(&BalancerConnection::handle_read, me, ec, bytes_xfer);
-        t1.detach();
+        std::unique_lock<std::mutex> lock(me->getOwner()->pool_mutex_);
+        asio::post(
+            *me->getOwner()->pool_.get(),
+            boost::bind(&BalancerConnection::handle_read, me, ec, bytes_xfer));
       });
 }
 
@@ -88,8 +92,6 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
           logger_->warn(utl::DST, 6, "No workers available");
           sock.close();
         } else {
-          logger_->info(
-              utl::DST, 7, "Sending to {}/{}", workerAddress.to_string(), port);
           asio::io_service io_service;
           tcp::socket socket(io_service);
           socket.connect(tcp::endpoint(workerAddress, port));
@@ -104,22 +106,22 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
       }
       case JobMessage::BROADCAST: {
         std::lock_guard<std::mutex> lock(owner_->workers_mutex_);
+        asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
         while (!workers_copy.empty()) {
           auto worker = workers_copy.top();
           workers_copy.pop();
-          logger_->info(utl::DST,
-                        43,
-                        "Sending to {}/{}",
-                        worker.ip.to_string(),
-                        worker.port);
-          asio::io_service io_service;
-          tcp::socket socket(io_service);
-          socket.connect(tcp::endpoint(worker.ip, worker.port));
-          asio::write(socket, asio::buffer(data), error);
-          asio::streambuf receive_buffer;
-          asio::read(socket, receive_buffer, asio::transfer_all(), error);
+          asio::post(pool, [worker, data]() {
+            boost::system::error_code error;
+            asio::io_service io_service;
+            tcp::socket socket(io_service);
+            socket.connect(tcp::endpoint(worker.ip, worker.port));
+            asio::write(socket, asio::buffer(data), error);
+            asio::streambuf receive_buffer;
+            asio::read(socket, receive_buffer, asio::transfer_all(), error);
+          });
         }
+        pool.join();
         JobMessage result(JobMessage::NONE);
         std::string msgStr;
         JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);

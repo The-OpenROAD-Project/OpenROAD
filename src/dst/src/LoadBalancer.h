@@ -28,6 +28,7 @@
 
 #pragma once
 #include <boost/asio.hpp>
+#include <boost/asio/thread_pool.hpp>
 #include <mutex>
 #include <queue>
 #include <vector>
@@ -75,6 +76,9 @@ class LoadBalancer
   utl::Logger* logger_;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;
+  std::unique_ptr<asio::thread_pool> pool_;
+  std::mutex pool_mutex_;
+  uint32_t jobs_;
 
   void start_accept();
   void handle_accept(BalancerConnection::pointer connection,

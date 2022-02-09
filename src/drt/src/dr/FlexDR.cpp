@@ -205,9 +205,7 @@ int FlexDRWorker::main(frDesign* design)
   return 0;
 }
 
-void FlexDRWorker::distributedMain(frDesign* design,
-                                   const char* globals_path,
-                                   const char* design_path)
+void FlexDRWorker::distributedMain(frDesign* design)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -231,10 +229,7 @@ void FlexDRWorker::distributedMain(frDesign* design,
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setDesignPath(design_path);
   rjd->setWorkerPath(name);
-  rjd->setGlobalsPath(globals_path);
-  rjd->setSharedDir(dist_dir_);
   msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (ok) {
@@ -1723,6 +1718,20 @@ void FlexDR::searchRepair(int iter,
           design_path_ = fmt::format(
               "{}iter{}_{}.design", dist_dir_, iter, design_version++);
           serialize_design(SerializationType::WRITE, design_, design_path_);
+          dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                              dst::JobMessage::BROADCAST),
+              result(dst::JobMessage::NONE);
+          std::unique_ptr<dst::JobDescription> desc
+              = std::make_unique<RoutingJobDescription>();
+          RoutingJobDescription* rjd
+              = static_cast<RoutingJobDescription*>(desc.get());
+          rjd->setDesignPath(design_path_);
+          rjd->setGlobalsPath(globals_path_);
+          rjd->setSharedDir(dist_dir_);
+          msg.setJobDescription(std::move(desc));
+          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+          if (!ok)
+            logger_->error(DRT, 304, "Updating design remotely failed");
         }
         if (design_updated) {
           design_->getRegionQuery()->dummyUpdate();
@@ -1732,8 +1741,7 @@ void FlexDR::searchRepair(int iter,
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           if (dist_on_)
-            workersInBatch[i]->distributedMain(
-                getDesign(), globals_path_.c_str(), design_path_.c_str());
+            workersInBatch[i]->distributedMain(getDesign());
           else
             workersInBatch[i]->main(getDesign());
 #pragma omp critical

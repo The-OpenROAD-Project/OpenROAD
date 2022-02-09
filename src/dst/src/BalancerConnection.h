@@ -59,6 +59,7 @@ class BalancerConnection
   void start();
   void handle_read(boost::system::error_code const& err,
                    size_t bytes_transferred);
+  LoadBalancer* getOwner() const { return owner_; }
 
  private:
   tcp::socket sock;

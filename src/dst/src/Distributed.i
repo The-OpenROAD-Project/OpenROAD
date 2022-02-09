@@ -27,34 +27,32 @@
  */
 
 %{
-
-#include "ord/OpenRoad.hh"
 #include "dst/Distributed.h"
+#include "ord/OpenRoad.hh"
 %}
 
 %include "../../Exception.i"
 
 %inline %{
 
-void
-run_worker_cmd(const char* host, unsigned short port)
+void run_worker_cmd(
+    const char* host, unsigned short port, unsigned short threads)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runWorker(host, port);
+  distributed->runWorker(host, port, threads);
 }
 
-void
-run_load_balancer(const char* host, unsigned short port)
+void run_load_balancer(const char* host, unsigned short port)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
   distributed->runLoadBalancer(host, port);
 }
 
-void
-add_worker_address(const char* address, unsigned short ip)
+void add_worker_address(
+    const char* address, unsigned short ip, unsigned short threads)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->addWorkerAddress(address, ip);
+  distributed->addWorkerAddress(address, ip, threads);
 }
 
 %} // inline

@@ -30,10 +30,15 @@
 
 #include <boost/bind/bind.hpp>
 
+#include "utl/Logger.h"
 namespace dst {
 
 void LoadBalancer::start_accept()
 {
+  if (jobs_ != 0 && jobs_ % 100 == 0) {
+    logger_->info(utl::DST, 7, "Processed {} jobs", jobs_);
+  }
+  jobs_++;
   BalancerConnection::pointer connection
       = BalancerConnection::create(*service, this, logger_);
   acceptor_.async_accept(connection->socket(),
@@ -48,8 +53,10 @@ LoadBalancer::LoadBalancer(asio::io_service& io_service,
                            const char* ip,
                            unsigned short port)
     : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
-      logger_(logger)
+      logger_(logger),
+      jobs_(0)
 {
+  pool_ = std::make_unique<asio::thread_pool>();
   service = &io_service;
   start_accept();
 }

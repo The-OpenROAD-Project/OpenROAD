@@ -72,11 +72,13 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
   sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
-void Distributed::runWorker(const char* ip, unsigned short port)
+void Distributed::runWorker(const char* ip,
+                            unsigned short port,
+                            unsigned short threads)
 {
   try {
     asio::io_service io_service;
-    Worker worker(io_service, this, logger_, ip, port);
+    Worker worker(io_service, this, logger_, ip, port, threads);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
@@ -89,18 +91,20 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
     asio::io_service io_service;
     LoadBalancer balancer(io_service, logger_, ip, port);
     for (auto worker : workers_)
-      balancer.addWorker(worker.ip, worker.port, 10);
+      balancer.addWorker(worker.ip, worker.port, worker.threads);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
   }
 }
 
-void Distributed::addWorkerAddress(const char* address, unsigned short port)
+void Distributed::addWorkerAddress(const char* address,
+                                   unsigned short port,
+                                   unsigned short threads)
 {
-  workers_.push_back(EndPoint(address, port));
+  workers_.push_back(EndPoint(address, port, threads));
 }
-//TODO: exponential backoff
+// TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
 {
   int tries = 0;

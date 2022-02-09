@@ -36,8 +36,15 @@ namespace dst {
 
 void Worker::start_accept()
 {
-  WorkerConnection::pointer connection
-      = WorkerConnection::create(*service, dist_, logger_);
+  for(auto itr = connections_.begin(); itr != connections_.end();)
+  {
+    if(!itr->get()->socket().is_open())
+      itr = connections_.erase(itr);
+    else
+      ++itr;
+  }
+  auto connection = boost::make_shared<WorkerConnection>(*service, dist_, logger_, this);
+  connections_.push_back(connection);
   acceptor_.async_accept(
       connection->socket(),
       boost::bind(
@@ -48,16 +55,19 @@ Worker::Worker(asio::io_service& io_service,
                Distributed* dist,
                utl::Logger* logger,
                const char* ip,
-               unsigned short port)
+               unsigned short port,
+               unsigned short threads_num)
     : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
       dist_(dist),
-      logger_(logger)
+      logger_(logger),
+      threads_num_(threads_num)
 {
+  pool_ = std::make_unique<asio::thread_pool>(threads_num_);
   service = &io_service;
   start_accept();
 }
 
-void Worker::handle_accept(WorkerConnection::pointer connection,
+void Worker::handle_accept(boost::shared_ptr<WorkerConnection> connection,
                            const boost::system::error_code& err)
 {
   if (!err) {

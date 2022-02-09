@@ -30,11 +30,10 @@
 
 #include <tcl.h>
 
+#include <boost/asio.hpp>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/asio.hpp>
 
 namespace utl {
 class Logger;
@@ -54,9 +53,11 @@ class Distributed
   Distributed();
   ~Distributed();
   void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runWorker(const char* ip, unsigned short port);
+  void runWorker(const char* ip, unsigned short port, unsigned short threads);
   void runLoadBalancer(const char* ip, unsigned short port);
-  void addWorkerAddress(const char* address, unsigned short port);
+  void addWorkerAddress(const char* address,
+                        unsigned short port,
+                        unsigned short threads);
   bool sendJob(JobMessage& msg,
                const char* ip,
                unsigned short port,
@@ -70,8 +71,11 @@ class Distributed
   {
     std::string ip;
     unsigned short port;
-    EndPoint(std::string ip_in, unsigned short port_in)
-        : ip(ip_in), port(port_in)
+    unsigned short threads;
+    EndPoint(std::string ip_in,
+             unsigned short port_in,
+             unsigned short threads_in)
+        : ip(ip_in), port(port_in), threads(threads_in)
     {
     }
   };

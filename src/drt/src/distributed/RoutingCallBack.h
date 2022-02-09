@@ -55,28 +55,11 @@ class RoutingCallBack : public dst::JobCallBack
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
     dst::JobMessage result(dst::JobMessage::ROUTING);
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getDesignPath() != "") {
-      std::lock_guard<std::mutex> lock(mx_);
-      if (design_path_ != desc->getDesignPath()) {
-        router_->updateDesign(desc->getDesignPath().c_str());
-        design_path_ = desc->getDesignPath();
-        time_.print(logger_);
-      }
-    }
-    if (desc->getGlobalsPath() != "") {
-      std::lock_guard<std::mutex> lock(mx_);
-      if (globals_path_ != desc->getGlobalsPath()) {
-        globals_path_ = desc->getGlobalsPath();
-        router_->setSharedVolume(desc->getSharedDir());
-        router_->updateGlobals(desc->getGlobalsPath().c_str());
-      }
-    }
     if (desc->getWorkerPath() != "") {
       if (access(desc->getWorkerPath().c_str(), F_OK) == -1) {
         logger_->warn(
@@ -91,16 +74,41 @@ class RoutingCallBack : public dst::JobCallBack
       result.setJobDescription(std::move(uResultDesc));
     }
     dist_->sendResult(result, sock);
+    sock.close();
+  }
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
+  {
+    if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN)
+      return;
+    dst::JobMessage result(dst::JobMessage::UPDATE_DESIGN);
+    RoutingJobDescription* desc
+        = static_cast<RoutingJobDescription*>(msg.getJobDescription());
+    if (desc->getDesignPath() != "") {
+      if (design_path_ != desc->getDesignPath()) {
+        frTime t;
+        logger_->report("Design: {}", design_path_, desc->getDesignPath());
+        router_->updateDesign(desc->getDesignPath().c_str());
+        design_path_ = desc->getDesignPath();
+        t.print(logger_);
+      }
+    }
+    if (desc->getGlobalsPath() != "") {
+      if (globals_path_ != desc->getGlobalsPath()) {
+        globals_path_ = desc->getGlobalsPath();
+        router_->setSharedVolume(desc->getSharedDir());
+        router_->updateGlobals(desc->getGlobalsPath().c_str());
+      }
+    }
+    dist_->sendResult(result, sock);
+    sock.close();
   }
 
  private:
   triton_route::TritonRoute* router_;
-  frTime time_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
   std::string design_path_;
   std::string globals_path_;
-  std::mutex mx_;
 };
 
 }  // namespace fr

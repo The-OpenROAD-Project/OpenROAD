@@ -57,6 +57,7 @@ class JobMessage
   enum JobType : int8_t
   {
     ROUTING,
+    UPDATE_DESIGN,
     NONE
   };
   enum MessageType : int8_t
