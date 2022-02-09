@@ -165,10 +165,9 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                  units->capacitanceUnit()->asString(cap));
 
       // create resistors for pins connected directly to wires
-      odb::dbTechLayer* layer
-        = tech_->findRoutingLayer(route.init_layer);
+      res = tech_->findRoutingLayer(route.init_layer)->getResistance();
       for (auto& node : on_grid_node_map_[n1_pt]) {
-        parasitics_->makeResistor(nullptr, node, n1, layer->getResistance(), analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n1, res, analysis_point_);
         debugPrint(logger_,
                    GRT,
                    "est_rc",
@@ -176,12 +175,12 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                    "(node-to-wire) {} -> {} via r={}",
                    parasitics_->name(node),
                    parasitics_->name(n1),
-                   units->resistanceUnit()->asString(layer->getResistance()));
+                   units->resistanceUnit()->asString(res));
       }
       on_grid_node_map_.erase(n1_pt);
 
       for (auto& node : on_grid_node_map_[n2_pt]) {
-        parasitics_->makeResistor(nullptr, node, n2, layer->getResistance(), analysis_point_);
+        parasitics_->makeResistor(nullptr, node, n2, res, analysis_point_);
         debugPrint(logger_,
                    GRT,
                    "est_rc",
@@ -189,7 +188,7 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
                    "(node-to-wire) {} -> {} via r={}",
                    parasitics_->name(node),
                    parasitics_->name(n2),
-                   units->resistanceUnit()->asString(layer->getResistance()));
+                   units->resistanceUnit()->asString(res));
       }
       on_grid_node_map_.erase(n2_pt);
 
