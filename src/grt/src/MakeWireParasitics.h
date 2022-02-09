@@ -111,7 +111,7 @@ class MakeWireParasitics
   int node_id_;
   // x/y/layer -> parasitic node
   NodeRoutePtMap node_map_;
-  // on grid x/y/layer -> list of parasitc nodes
+  // on grid x/y/layer -> list of parasitic nodes
   NodesRoutePtMap on_grid_node_map_;
 };
 

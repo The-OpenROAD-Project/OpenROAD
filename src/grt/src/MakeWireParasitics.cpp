@@ -135,8 +135,7 @@ void MakeWireParasitics::makeWireParasitics(odb::dbNet* net,
   sta::Units* units = sta_->units();
   for (GSegment& route : routes) {
     int wire_length_dbu = route.length();
-    if (wire_length_dbu > 0 &&
-        route.init_layer == route.final_layer) {
+    if (wire_length_dbu > 0) {
       sta::ParasiticNode* n1
         = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
       sta::ParasiticNode* n2
