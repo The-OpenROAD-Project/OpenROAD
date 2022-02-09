@@ -1833,6 +1833,182 @@ void FlexDRWorker::modEolCost(frCoord low,
   modEolSpacingCost_helper(testBox, z, modType, 1);
   modEolSpacingCost_helper(testBox, z, modType, 2);
 }
+void FlexDRWorker::addMinAreaPatches_poly(gcNet* drcNet, drNet* net)
+{
+  for (int lNum = getTech()->getBottomLayerNum();
+       lNum <= getTech()->getTopLayerNum();
+       lNum++) {
+    auto layer = getTech()->getLayer(lNum);
+//    if (!layer->getAreaConstraint())
+//        cout << "No min area at lNum " << lNum << "\n";
+    if (layer->getType() != dbTechLayerType::ROUTING || 
+        !layer->getAreaConstraint())
+      continue;
+//    cout << "lNum " << lNum << "\n";
+    for (auto& pin : drcNet->getPins(lNum)) {
+        frCoord area = gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon());
+        frCoord minArea = layer->getAreaConstraint()->getMinArea();
+        if (ENABLE_BOUNDARY_MAR_FIX) {
+            //if net has boundary pins
+            for (auto& drPin : net->getPins()) {
+                if (drPin->hasFrTerm())
+                    continue;
+                for (auto& ap : drPin->getAccessPatterns()) {
+                    gtl::point_data<frCoord> pt(ap->getPoint().x(), ap->getPoint().y());
+                    if (gtl::contains(*pin->getPolygon(), pt)) {
+                        area += ap->getBeginArea();
+                    }
+                }
+            }
+        }
+        if (area < minArea) {
+            //get a pathSeg touching the shape
+            drPathSeg* chosenPathSeg = nullptr;
+            for (auto& shape : net->getRouteConnFigs()) {
+                if (shape->typeId() != frBlockObjectEnum::drcPathSeg)
+                    continue;
+                drPathSeg* ps = static_cast<drPathSeg*>(shape.get());
+                if (ps->getLayerNum() == lNum) {
+                    gtl::point_data<frCoord> pt(ps->getBeginPoint().x(), ps->getBeginPoint().y());
+                    if (gtl::contains(*pin->getPolygon(), pt)) {
+                        //validation
+                        pt = gtl::point_data<frCoord>(ps->getEndPoint().x(), ps->getEndPoint().y());
+                        assert(gtl::contains(*pin->getPolygon(), pt));
+                        //end validation
+                        chosenPathSeg = ps;
+                        break;
+                    }
+                }
+            }
+            drVia* chosenVia = nullptr;
+            //get a via to represent to point which the patch metal will be placed
+            for (auto& shape : net->getRouteConnFigs()) {
+                if (shape->typeId() != frBlockObjectEnum::drcVia)
+                    continue;
+                drVia* via = static_cast<drVia*>(shape.get());
+                if (via->getViaDef()->getLayer1Num() == lNum ||
+                    via->getViaDef()->getLayer2Num() == lNum) {
+                    bool chooseVia = false;
+                    if (chosenPathSeg) {
+                        if (chosenPathSeg->getBeginPoint() == via->getOrigin() || 
+                            chosenPathSeg->getEndPoint() == via->getOrigin())
+                            chooseVia = true;
+                    } else {
+                        gtl::point_data<frCoord> pt(via->getOrigin().x(), via->getOrigin().y());
+                        if (gtl::contains(*pin->getPolygon(), pt))
+                            chooseVia = true;
+                    }
+                    if (chooseVia) {
+                        chosenVia = via;
+                        break;
+                    }
+                }
+            }
+            if (!chosenVia && !chosenPathSeg) {
+                cout << "area " << area << " NET " << *net->getFrNet() << "\n";
+//                for (auto& edges : pin->getPolygonEdges()) {
+//                    for (auto& edge : edges) {
+//                        edge->
+//                    }
+//                }
+                for (auto& shape : net->getRouteConnFigs()) {
+                    if (shape->typeId() == frBlockObjectEnum::drcVia) {
+                        drVia* via = static_cast<drVia*>(shape.get());
+                        if (via->getViaDef()->getLayer1Num() == lNum ||
+                            via->getViaDef()->getLayer2Num() == lNum)
+                            cout << "lNum " << lNum << *shape.get() << "\n";
+                    } else if (shape->typeId() == frBlockObjectEnum::drcPathSeg) {
+                        drPathSeg* ps = static_cast<drPathSeg*>(shape.get());
+                        if (ps->getLayerNum() == lNum) 
+                            cout << "lNum " << lNum << *shape.get() << "\n";
+                    }
+                }
+            }
+            assert(chosenVia != nullptr || chosenPathSeg != nullptr);
+            
+            frArea gapArea = minArea - area;
+            FlexMazeIdx bpIdx, epIdx;
+            Point bp, ep;
+            if (chosenPathSeg) {
+                bp = chosenPathSeg->getBeginPoint();
+                ep = chosenPathSeg->getEndPoint();
+            } else {
+                bp = chosenVia->getOrigin();
+                ep = chosenVia->getOrigin();
+            }
+            bpIdx.setX(gridGraph_.getMazeXIdx(bp.x()));
+            bpIdx.setY(gridGraph_.getMazeYIdx(bp.y()));
+            bpIdx.setZ(gridGraph_.getMazeZIdx(lNum));
+            epIdx.setX(gridGraph_.getMazeXIdx(ep.x()));
+            epIdx.setY(gridGraph_.getMazeYIdx(ep.y()));
+            epIdx.setZ(gridGraph_.getMazeZIdx(lNum));
+            auto patchWidth = layer->getWidth();
+            routeNet_postAstarAddPatchMetal(
+                net, bpIdx, epIdx, gapArea, patchWidth, true, false);
+        }
+    }
+  }
+}
+
+void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
+{
+    vector<vector<float>> areaMap(getTech()->getTopLayerNum()+1);
+    vector<drPatchWire*> patchesToRemove;
+    for (auto& shape : net->getRouteConnFigs()) {
+        if (shape->typeId() != frBlockObjectEnum::drcPatchWire)
+            continue;
+        drPatchWire* patch = static_cast<drPatchWire*>(shape.get());
+        gtl::point_data<frCoord> pt(patch->getOrigin().x(), patch->getOrigin().y());
+        frLayerNum lNum = patch->getLayerNum();
+        frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
+        if (areaMap[lNum].empty())
+            areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
+        bool intersects = false;
+        for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
+            auto& pin = drcNet->getPins(lNum)[i];
+            if (!gtl::contains(*pin->getPolygon(), pt))
+                continue;
+            intersects = true;
+            frCoord area;
+            if (areaMap[lNum][i] == -1)
+                areaMap[lNum][i] = gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon());
+            area = areaMap[lNum][i];
+            if (area - patch->getOffsetBox().area() >= minArea) {
+                patchesToRemove.push_back(patch);
+                areaMap[lNum][i] -= patch->getOffsetBox().area();
+            }
+        }
+        if (!intersects)
+            cout << "NOOOOOOOOOOOOOOOOOOOO\n";
+        assert(intersects == true);
+    }
+//    cout << patchesToRemove.size() << "\n";
+    for (auto patch : patchesToRemove) {
+//        cout << "Removing " << *patch << "\n";
+        getWorkerRegionQuery().remove(patch);
+        net->removeShape(patch);
+    }
+    bool validate = true;
+    if (validate) {
+        gcWorker_->setTargetNet(net->getFrNet());
+        gcWorker_->updateDRNet(net);
+        gcWorker_->setEnableSurgicalFix(true);
+        gcWorker_->updateGCWorker();
+        for (int lNum = getTech()->getBottomLayerNum();
+                lNum <= getTech()->getTopLayerNum();
+                lNum++) {
+             auto layer = getTech()->getLayer(lNum);
+             if (layer->getType() != dbTechLayerType::ROUTING || 
+                 !layer->getAreaConstraint())
+               continue;
+             frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
+             for (auto& pin : drcNet->getPins(lNum)) {
+                 if (gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon()) < minArea)
+                     assert(gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon()) >= minArea);
+             }
+        }
+    }
+}
 
 void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
 {
@@ -2720,8 +2896,12 @@ bool FlexDRWorker::routeNet(drNet* net)
       break;
     }
   }
-
   if (searchSuccess) {
+    gcWorker_->setTargetNet(net->getFrNet());
+    gcWorker_->updateDRNet(net);
+    gcWorker_->setEnableSurgicalFix(true);
+    gcWorker_->updateGCWorker();
+    cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
     routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;
@@ -3129,8 +3309,8 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                                                    const FlexMazeIdx& epIdx,
                                                    frCoord gapArea,
                                                    frCoord patchWidth,
-                                                   bool bpPatchStyle,
-                                                   bool epPatchStyle)
+                                                   bool bpPatchLeft,
+                                                   bool epPatchLeft)
 {
   bool isPatchHorz;
   // bool isLeftClean = true;
@@ -3147,14 +3327,14 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   }
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
-      bpIdx, isPatchHorz, bpPatchStyle, patchLength);
+      bpIdx, isPatchHorz, bpPatchLeft, patchLength);
   auto costR = routeNet_postAstarAddPathMetal_isClean(
-      epIdx, isPatchHorz, epPatchStyle, patchLength);
+      epIdx, isPatchHorz, epPatchLeft, patchLength);
   if (costL <= costR) {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, bpIdx, isPatchHorz, bpPatchStyle, patchLength, patchWidth);
+        net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
   } else {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, epIdx, isPatchHorz, epPatchStyle, patchLength, patchWidth);
+        net, epIdx, isPatchHorz, epPatchLeft, patchLength, patchWidth);
   }
 }
