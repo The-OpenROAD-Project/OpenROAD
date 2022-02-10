@@ -715,4 +715,22 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   return aps;
 }
 
+std::vector<Rect> dbITerm::getGeometries() const
+{
+  dbTransform transform;
+  getInst()->getTransform(transform);
+
+  std::vector<Rect> geometries;
+  for (dbMPin* mpin : getMTerm()->getMPins()) {
+    for (dbBox* box : mpin->getGeometry()) {
+      Rect rect;
+      box->getBox(rect);
+      transform.apply(rect);
+      geometries.push_back(rect);
+    }
+  }
+
+  return geometries;
+}
+
 }  // namespace odb
