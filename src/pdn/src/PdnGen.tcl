@@ -3692,8 +3692,7 @@ proc insert_power_switches {} {
   set psw [$db findMaster [dict get $grid_data switch_cell]]
   # The selected power switch is double height, and has a central VSS pin, so align with VSS rails
   set vgnd [[$psw findMTerm VGND] getMPins]
-  set vddg [[$psw findMTerm VDDG] getMPins]
-  set vddg_layer [[[lindex [$vddg getGeometry] 0] getTechLayer] getName]
+  set vddg [lindex [[$psw findMTerm VDDG] getMPins] 0]
 
   set rail_lay [lindex [get_rails_layers] 0]
   set rail_width [dict get $grid_data rails $rail_lay width]
@@ -3744,8 +3743,20 @@ proc insert_power_switches {} {
   }
 
   foreach inst $psw_instance {
-    set vddg [$inst findITerm VDDG]
-    add_stripe $vddg_layer "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
+    set orient [$inst getOrient]
+    set origin [$inst getOrigin]
+    foreach vddg [$inst findITerm VDDG] {
+      set mTerm [$vddg getMTerm]
+      foreach mPin [$mTerm getMPins] {
+        set shape [$mPin getGeometry]
+	set layer [[$shape getTechLayer] getName]
+	set rect [transform_box [$shape xMin] [$shape yMin] [$shape xMax] [$shape yMax] $origin $orient]
+	# debug "layer: $layer, rect: $rect"
+        add_stripe "${layer}_PIN_hor" "POWER" [odb::newSetFromRect {*}$rect]
+      }
+      # set vddg_layer [[[$vddg getGeometry] getTechLayer] getName]
+      # add_stripe $vddg_layer "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
+    }
   }
   merge_stripes
 }

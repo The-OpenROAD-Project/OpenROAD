@@ -30,6 +30,9 @@ MACRO POWER_SWITCH
     PORT
       LAYER met1 ;
         RECT 0.54 1.90 4.6 2.18 ;
+    END
+    PORT
+      LAYER met1 ;
         RECT 0.54 3.26 4.6 3.54 ;
     END
   END VDDG
