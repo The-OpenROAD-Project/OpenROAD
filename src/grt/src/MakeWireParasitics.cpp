@@ -181,9 +181,19 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
   sta::Pin* sta_pin = staPin(pin);
   sta::ParasiticNode* pin_node = parasitics_->ensureParasiticNode(parasitic_, sta_pin);
   const odb::Point& grid_pt = pin.getOnGridPosition();
-  int layer = pin.getTopLayer();
+  // Use the route layer above the pin layer if there is a via
+  // to the pin.
+  int layer = pin.getTopLayer() + 1;
   RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode* grid_node = node_map_[grid_route];
+  
+  // Use the pin layer for the connection.
+  if (grid_node == nullptr) {
+    layer--;
+    grid_route = RoutePt(grid_pt.getX(), grid_pt.getY(), layer);
+    grid_node = node_map_[grid_route];
+  }
+
   if (grid_node) {
     // Make wire from pin to gcell center on pin layer.
     const odb::Point& pt = pin.getPosition();
