@@ -71,6 +71,7 @@ Opendp::detailedPlacement()
     graphics_->startPlacement(block_);
   }
 
+  placement_failures_.clear();
   initGrid();
   // Paint fixed cells.
   setFixedGridCells();
@@ -611,16 +612,13 @@ Opendp::shiftMove(Cell *cell)
 
   // place target cell
   if (!mapMove(cell))
-    logger_->error(DPL, 18, "detailed placement failed on {}.",
-                   cell->name());
+    placement_failures_.push_back(cell->db_inst_);
 
   // re-place erased cells
   for (Cell *around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup()) {
-      if (!mapMove(around_cell))
-        logger_->error(DPL, 19, "detailed placement failed on {}",
-                       around_cell->name());
-    }
+    if (cell->inGroup() == around_cell->inGroup()
+        && !mapMove(around_cell))
+      placement_failures_.push_back(cell->db_inst_);
   }
 }
 
