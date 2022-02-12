@@ -722,9 +722,9 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const Point& bp,
     frLayerNum layerNum,
-    frDirEnum dir,
-    int stepSizeMultiplier)
+    frDirEnum dir)
 {
+  const int stepSizeMultiplier = 3;
   frCoord x = bp.x();
   frCoord y = bp.y();
   frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
