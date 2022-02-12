@@ -35,12 +35,17 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <map>
 #include <regex>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
+
+#include "domain.h"
+#include "grid.h"
+#include "renderer.h"
 
 namespace pdn {
 
@@ -74,6 +79,33 @@ public:
   void globalConnect(dbBlock* block, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet* net);
   void globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet* net);
 
+  void reset();
+  void report();
+
+  // Domains
+  std::vector<VoltageDomain*> getDomains();
+  std::vector<VoltageDomain*> getConstDomains() const;
+  VoltageDomain* findDomain(const std::string& name);
+  void setCoreDomain(odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary);
+  void makeRegionVoltageDomain(const std::string& name, odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region);
+
+  // Grids
+  void buildGrids(bool trim);
+  std::vector<Grid*> findGrid(const std::string& name) const;
+  void makeCoreGrid(VoltageDomain* domain, const std::string& name, bool starts_with_power, const std::vector<odb::dbTechLayer*>& pin_layers);
+  void makeInstanceGrid(VoltageDomain* domain, const std::string& name, bool starts_with_power, odb::dbInst* inst, const std::array<int, 4>& halo);
+
+  // Shapes
+  void makeRing(Grid* grid, const std::array<Ring::Layer, 2>& layers, const std::array<int, 4>& offset, const std::array<int, 4>& pad_offset, bool extend, const std::vector<odb::dbTechLayer*>& pad_pin_layers);
+  void makeFollowpin(Grid* grid, odb::dbTechLayer* layer, int width, Strap::Extend extend);
+  void makeStrap(Grid* grid, odb::dbTechLayer* layer, int width, int spacing, int pitch, int offset, int number_of_straps, bool snap, bool use_grid_power_order, bool power_first,  Strap::Extend extend);
+  void makeConnect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1, int cut_pitch_x, int cut_pitch_y, const std::vector<odb::dbTechViaGenerateRule*>& vias, const std::vector<odb::dbTechVia*>& techvias);
+
+  void writeToDb(bool add_pins) const;
+  void ripUp(odb::dbNet* net);
+
+  void toggleDebugRenderer(bool on);
+
 private:
   using regexPairs = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
   using netRegexPairs = std::map<dbNet*, std::shared_ptr<regexPairs>>;
@@ -84,10 +116,23 @@ private:
 
   void globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRegexPairs>);
 
+  void rendererRedraw();
+  void makeInitialObstructions(ShapeTreeMap& obs);
+  void makeInitialShapes(ShapeTreeMap& shapes);
+  void trimShapes();
+  void cleanupVias();
+
+  std::vector<Grid*> getGrids() const;
+
   odb::dbDatabase* db_;
   utl::Logger* logger_;
 
   std::unique_ptr<regionNetRegexPairs> global_connect_;
+
+  std::unique_ptr<PDNRenderer> debug_renderer_;
+
+  std::unique_ptr<CoreVoltageDomain> core_domain_;
+  std::vector<std::unique_ptr<VoltageDomain>> domains_;
 };
 
 } // namespace

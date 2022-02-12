@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,52 +29,51 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
+#pragma once
 
-#include "ord/OpenRoad.hh"
-#include "pdn/MakePdnGen.hh"
-#include "pdn/PdnGen.hh"
+#include <vector>
 
-namespace sta {
-
-extern const char *pdn_tcl_inits[];
-extern void evalTclInit(Tcl_Interp*, const char*[]);
-
-}
+#include "gui/gui.h"
+#include "shape.h"
 
 namespace pdn {
-extern "C" {
-extern int Pdn_Init(Tcl_Interp *interp);
-}
-}
 
+class PdnGen;
 
-namespace ord {
-
-void
-initPdnGen(OpenRoad *openroad)
+// renderer for debugging, not intended for general use.
+class PDNRenderer : public gui::Renderer
 {
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  pdn::Pdn_Init(interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pdn_tcl_inits);
+ public:
+  PDNRenderer(PdnGen* pdn);
 
-  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
-}
+  void update();
 
-pdn::PdnGen* makePdnGen()
-{
-  return new pdn::PdnGen();
-}
+  virtual void drawLayer(odb::dbTechLayer* layer,
+                         gui::Painter& painter) override;
+  virtual void drawObjects(gui::Painter& painter) override;
 
+  virtual const char* getDisplayControlGroupName() override
+  {
+    return "Power Grid";
+  }
 
-void deletePdnGen(pdn::PdnGen* pdngen)
-{
-  delete pdngen;
-}
+ private:
+  PdnGen* pdn_;
+  ShapeTreeMap shapes_;
+  ViaTree vias_;
 
-} // namespace ord
+  static const gui::Painter::Color ring_color_;
+  static const gui::Painter::Color strap_color_;
+  static const gui::Painter::Color followpin_color_;
+  static const gui::Painter::Color via_color_;
+  static const gui::Painter::Color obstruction_color_;
+
+  static constexpr const char* obs_text_ = "Obstructions";
+  static constexpr const char* rings_text_ = "Rings";
+  static constexpr const char* straps_text_ = "Straps";
+  static constexpr const char* followpins_text_ = "Followpin";
+  static constexpr const char* vias_text_ = "Vias";
+};
+
+}  // namespace pdn

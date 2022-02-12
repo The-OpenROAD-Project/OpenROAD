@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,52 +29,67 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
-
-#include "ord/OpenRoad.hh"
-#include "pdn/MakePdnGen.hh"
-#include "pdn/PdnGen.hh"
-
-namespace sta {
-
-extern const char *pdn_tcl_inits[];
-extern void evalTclInit(Tcl_Interp*, const char*[]);
-
-}
+#include "techlayer.h"
 
 namespace pdn {
-extern "C" {
-extern int Pdn_Init(Tcl_Interp *interp);
-}
-}
 
-
-namespace ord {
-
-void
-initPdnGen(OpenRoad *openroad)
+TechLayer::TechLayer(odb::dbTechLayer* layer) : layer_(layer)
 {
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  pdn::Pdn_Init(interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pdn_tcl_inits);
-
-  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
 }
 
-pdn::PdnGen* makePdnGen()
+int TechLayer::getSpacing(int width, int length) const
 {
-  return new pdn::PdnGen();
+  // get the spacing the DB would use
+  const int db_spacing = layer_->getSpacing(width, length);
+
+  // Check the two widths table for spacing assuming same width metal
+  const int two_widths_spacing = layer_->findTwSpacing(width, width, length);
+
+  return std::max(db_spacing, two_widths_spacing);
 }
 
-
-void deletePdnGen(pdn::PdnGen* pdngen)
+int TechLayer::micronToDbu(const std::string& value) const
 {
-  delete pdngen;
+  return micronToDbu(std::stof(value));
 }
 
-} // namespace ord
+int TechLayer::micronToDbu(double value) const
+{
+  return value * getLefUnits();
+}
+
+std::vector<std::string> TechLayer::tokenizeStringProperty(
+    const std::string& property_name) const
+{
+  auto* property = odb::dbStringProperty::find(layer_, property_name.c_str());
+  if (property == nullptr) {
+    return {};
+  }
+  std::vector<std::string> tokenized;
+  std::string token;
+  for (const char& c : property->getValue()) {
+    if (std::isspace(c)) {
+      if (!token.empty()) {
+        tokenized.push_back(token);
+        token.clear();
+      }
+      continue;
+    }
+
+    if (c == ';') {
+      // end
+      break;
+    }
+
+    token += c;
+  }
+
+  if (!token.empty()) {
+    tokenized.push_back(token);
+  }
+
+  return tokenized;
+}
+
+}  // namespace pdn

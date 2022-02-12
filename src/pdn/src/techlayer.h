@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,52 +29,41 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
+#pragma once
 
-#include "ord/OpenRoad.hh"
-#include "pdn/MakePdnGen.hh"
-#include "pdn/PdnGen.hh"
+#include "odb/db.h"
 
-namespace sta {
-
-extern const char *pdn_tcl_inits[];
-extern void evalTclInit(Tcl_Interp*, const char*[]);
-
-}
+#include <string>
+#include <vector>
 
 namespace pdn {
-extern "C" {
-extern int Pdn_Init(Tcl_Interp *interp);
-}
-}
 
-
-namespace ord {
-
-void
-initPdnGen(OpenRoad *openroad)
+class TechLayer
 {
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  pdn::Pdn_Init(interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pdn_tcl_inits);
+ public:
+  TechLayer(odb::dbTechLayer* layer);
 
-  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
-}
+  std::string getName() const { return layer_->getName(); }
 
-pdn::PdnGen* makePdnGen()
-{
-  return new pdn::PdnGen();
-}
+  odb::dbTechLayer* getLayer() const { return layer_; }
 
+  int getLefUnits() const { return layer_->getTech()->getLefUnits(); }
 
-void deletePdnGen(pdn::PdnGen* pdngen)
-{
-  delete pdngen;
-}
+  int getMinWidth() const { return layer_->getMinWidth(); }
+  int getMaxWidth() const { return layer_->getMaxWidth(); }
+  // get the spacing by also checking for spacing constraints not normally checked for
+  int getSpacing(int width, int length = 0) const;
 
-} // namespace ord
+  // create a vector of strings for from the given property
+  std::vector<std::string> tokenizeStringProperty(
+      const std::string& property_name) const;
+
+  int micronToDbu(const std::string& value) const;
+  int micronToDbu(double value) const;
+
+ private:
+  odb::dbTechLayer* layer_;
+};
+
+}  // namespace pdn

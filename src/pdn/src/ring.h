@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
 // Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
-//
-// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,52 +29,56 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
+#pragma once
 
-#include "ord/OpenRoad.hh"
-#include "pdn/MakePdnGen.hh"
-#include "pdn/PdnGen.hh"
+#include <array>
+#include <vector>
 
-namespace sta {
+#include "grid_shape.h"
 
-extern const char *pdn_tcl_inits[];
-extern void evalTclInit(Tcl_Interp*, const char*[]);
-
-}
+namespace odb {
+class dbTechLayer;
+}  // namespace odb
 
 namespace pdn {
-extern "C" {
-extern int Pdn_Init(Tcl_Interp *interp);
-}
-}
+class Grid;
 
-
-namespace ord {
-
-void
-initPdnGen(OpenRoad *openroad)
+class Ring : public GridShape
 {
-  Tcl_Interp *interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  pdn::Pdn_Init(interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pdn_tcl_inits);
+ public:
+  struct Layer
+  {
+    odb::dbTechLayer* layer = nullptr;
+    int width = 0;
+    int spacing = 0;
+  };
 
-  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
-}
+  Ring(Grid* grid, const std::array<Layer, 2>& layers);
 
-pdn::PdnGen* makePdnGen()
-{
-  return new pdn::PdnGen();
-}
+  void setOffset(const std::array<int, 4>& offset);
+  const std::array<int, 4>& getOffset() const { return offset_; }
+  void setPadOffset(const std::array<int, 4>& offset);
 
+  void setExtendToBoundary(bool value);
 
-void deletePdnGen(pdn::PdnGen* pdngen)
-{
-  delete pdngen;
-}
+  // generate the rings
+  virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
 
-} // namespace ord
+  const std::vector<odb::dbTechLayer*> getLayers() const;
+
+  // returns the horizontal and vertical widths of the rings, useful when estimating the ring size.
+  void getTotalWidth(int& hor, int& ver) const;
+
+  virtual void report() const override;
+  virtual Type type() const override { return GridShape::Ring; }
+
+  virtual void checkLayerSpecifications() const override;
+
+ private:
+  std::array<Layer, 2> layers_;
+  std::array<int, 4> offset_;
+  bool extend_to_boundary_;
+};
+
+}  // namespace pdn
