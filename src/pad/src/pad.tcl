@@ -141,6 +141,7 @@ sta::define_cmd_args "define_pad_cell" {[-name name] \
                                       [-orient orientation_per_side] \
                                       [-pad_pin_name pad_pin_name] \
                                       [-break_signals signal_list] \
+                                      [-offset cell_offset] \
                                       [-physical_only]}
 
 proc define_pad_cell {args} {
