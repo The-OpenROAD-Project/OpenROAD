@@ -722,9 +722,9 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const Point& bp,
     frLayerNum layerNum,
-    frDirEnum dir,
-    int stepSizeMultiplier)
+    frDirEnum dir)
 {
+  const int stepSizeMultiplier = 3;
   frCoord x = bp.x();
   frCoord y = bp.y();
   frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
@@ -772,21 +772,11 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (!ap->hasAccess(dir)) {
     return;
   }
-  bool isStdCellPin = false;
-  if (instTerm) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
-    isStdCellPin = masterType == dbMasterType::CORE
-                   || masterType == dbMasterType::CORE_TIEHIGH
-                   || masterType == dbMasterType::CORE_TIELOW
-                   || masterType == dbMasterType::CORE_ANTENNACELL;
-  }
+
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
       ep, layerPolys, bp, ap->getLayerNum(), dir);
   // skip if two width within shape for standard cell
-  if (isStdCellPin && !isOutSide) {
+  if (!isOutSide) {
     ap->setAccess(dir, false);
     return;
   }
