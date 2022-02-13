@@ -219,6 +219,12 @@ Opendp::detailedPlacement(int max_displacement_x,
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
   updateDbInstLocations();
+  if (!placement_failures_.empty()) {
+    logger_->info(DPL, 34, "Detailed placement failed on:");
+    for (auto inst : placement_failures_)
+      logger_->info(DPL, 35, " {}", inst->getName());
+    logger_->error(DPL, 36, "Detailed placement failed.");
+  }
 }
 
 void

@@ -73,30 +73,31 @@ MakeWireParasitics::MakeWireParasitics(ord::OpenRoad* openroad,
 
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
                                            std::vector<Pin>& pins,
-                                           std::vector<GSegment>& routes)
+                                           GRoute &route)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
+  if (logger_->debugCheck(GRT, "est_rc", 2)) {
+    for (GSegment& segment : route) {
+      logger_->report("({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
+                      grouter_->dbuToMicrons(segment.init_x),
+                      grouter_->dbuToMicrons(segment.init_y),
+                      segment.init_layer,
+                      grouter_->dbuToMicrons(segment.final_x),
+                      grouter_->dbuToMicrons(segment.final_y),
+                      segment.final_layer,
+                      grouter_->dbuToMicrons(segment.length()));
+    }
+  }
+
   sta_net_ = network_->dbToSta(net);
   node_id_ = 0;
   node_map_.clear();
 
-  parasitic_
-      = parasitics_->makeParasiticNetwork(sta_net_, false, analysis_point_);
-  makePinRoutePts(pins);
-  makeRouteParasitics(net, routes);
-  makeParasiticsToGrid(pins);
+  parasitic_ = parasitics_->makeParasiticNetwork(sta_net_, false,
+                                                 analysis_point_);
+  makeRouteParasitics(net, route);
+  makeParasiticsToPins(pins);
   reduceParasiticNetwork();
-}
-
-void MakeWireParasitics::makePinRoutePts(std::vector<Pin>& pins)
-{
-  for (Pin& pin : pins) {
-    sta::Pin* sta_pin = staPin(pin);
-    sta::ParasiticNode* pin_node
-        = parasitics_->ensureParasiticNode(parasitic_, sta_pin);
-    RoutePt route_pt = routePt(pin);
-    node_map_[route_pt] = pin_node;
-  }
 }
 
 RoutePt MakeWireParasitics::routePt(Pin& pin)
@@ -115,43 +116,45 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin)
 }
 
 void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
-                                             std::vector<GSegment>& routes)
+                                             GRoute &route)
 {
-  for (GSegment& route : routes) {
+  for (GSegment& segment : route) {
     sta::ParasiticNode* n1
-        = ensureParasiticNode(route.init_x, route.init_y, route.init_layer);
+      = ensureParasiticNode(segment.init_x, segment.init_y, segment.init_layer);
     sta::ParasiticNode* n2
-        = ensureParasiticNode(route.final_x, route.final_y, route.final_layer);
-    int wire_length_dbu = route.length();
+      = ensureParasiticNode(segment.final_x, segment.final_y, segment.final_layer);
+    int wire_length_dbu = segment.length();
     sta::Units* units = sta_->units();
     float res = 0.0;
     float cap = 0.0;
     if (wire_length_dbu == 0) {
       // via
-      int lower_layer = min(route.init_layer, route.final_layer);
+      int lower_layer = min(segment.init_layer, segment.final_layer);
       odb::dbTechLayer* cut_layer
-          = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
+        = tech_->findRoutingLayer(lower_layer)->getUpperLayer();
       res = cut_layer->getResistance();  // assumes single cut
       cap = 0.0;
       debugPrint(logger_,
                  GRT,
                  "est_rc",
                  1,
-                 "{} -> {} via r={}",
+                 "{} -> {} via {}-{} r={}",
                  parasitics_->name(n1),
                  parasitics_->name(n2),
+                 segment.init_layer,
+                 segment.final_layer,
                  units->resistanceUnit()->asString(res));
-    } else if (route.init_layer == route.final_layer) {
-      layerRC(wire_length_dbu, route.init_layer, res, cap);
+    } else if (segment.init_layer == segment.final_layer) {
+      layerRC(wire_length_dbu, segment.init_layer, res, cap);
       debugPrint(logger_,
                  GRT,
                  "est_rc",
                  1,
-                 "{} -> {} {}u layer={} r={} c={}",
+                 "{} -> {} {:.2f}u layer={} r={} c={}",
                  parasitics_->name(n1),
                  parasitics_->name(n2),
                  dbuToMeters(wire_length_dbu) * 1e+6,
-                 route.init_layer,
+                 segment.init_layer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
     } else
@@ -165,25 +168,34 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
   }
 }
 
-void MakeWireParasitics::makeParasiticsToGrid(std::vector<Pin>& pins)
+void MakeWireParasitics::makeParasiticsToPins(std::vector<Pin>& pins)
 {
   for (Pin& pin : pins) {
-    RoutePt route_pt = routePt(pin);
-    sta::ParasiticNode* pin_node = node_map_[route_pt];
-    makeParasiticsToGrid(pin, pin_node);
+    makeParasiticsToPin(pin);
   }
 }
 
 // Make parasitics for the wire from the pin to the grid location of the pin.
-void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
-                                              sta::ParasiticNode* pin_node)
+void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
 {
+  sta::Pin* sta_pin = staPin(pin);
+  sta::ParasiticNode* pin_node = parasitics_->ensureParasiticNode(parasitic_, sta_pin);
   const odb::Point& grid_pt = pin.getOnGridPosition();
-  int layer = pin.getTopLayer();
-  RoutePt route_pt(grid_pt.getX(), grid_pt.getY(), layer);
-  sta::ParasiticNode* grid_node = node_map_[route_pt];
+  // Use the route layer above the pin layer if there is a via
+  // to the pin.
+  int layer = pin.getTopLayer() + 1;
+  RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
+  sta::ParasiticNode* grid_node = node_map_[grid_route];
+  
+  // Use the pin layer for the connection.
+  if (grid_node == nullptr) {
+    layer--;
+    grid_route = RoutePt(grid_pt.getX(), grid_pt.getY(), layer);
+    grid_node = node_map_[grid_route];
+  }
 
   if (grid_node) {
+    // Make wire from pin to gcell center on pin layer.
     const odb::Point& pt = pin.getPosition();
     int wire_length_dbu
       = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
@@ -194,10 +206,12 @@ void MakeWireParasitics::makeParasiticsToGrid(Pin& pin,
                GRT,
                "est_rc",
                1,
-               "{} -> {} {}u layer={} r={} c={}",
+               "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} c={}",
                parasitics_->name(grid_node),
                parasitics_->name(pin_node),
-               dbuToMeters(wire_length_dbu) * 1e+6,
+               grouter_->dbuToMicrons(pt.getX()),
+               grouter_->dbuToMicrons(pt.getY()),
+               grouter_->dbuToMicrons(wire_length_dbu),
                layer,
                units->resistanceUnit()->asString(res),
                units->capacitanceUnit()->asString(cap));
@@ -228,7 +242,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
   float layer_width = grouter_->dbuToMicrons(layer->getWidth());
   float res_ohm_per_micron = layer->getResistance() / layer_width;
   float cap_pf_per_micron
-      = layer_width * layer->getCapacitance() + 2 * layer->getEdgeCapacitance();
+    = layer_width * layer->getCapacitance() + 2 * layer->getEdgeCapacitance();
 
   float r_per_meter = 1E+6 * res_ohm_per_micron;           // ohm/meter
   float cap_per_meter = 1E+6 * 1E-12 * cap_pf_per_micron;  // F/meter
@@ -261,7 +275,7 @@ void MakeWireParasitics::reduceParasiticNetwork()
   sta::Sdc* sdc = sta_->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(min_max_);
   sta::ReducedParasiticType reduce_to
-      = sta_->arcDelayCalc()->reducedParasiticType();
+    = sta_->arcDelayCalc()->reducedParasiticType();
   parasitics_->reduceTo(parasitic_,
                         sta_net_,
                         reduce_to,

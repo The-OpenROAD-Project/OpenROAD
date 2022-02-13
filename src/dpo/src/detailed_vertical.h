@@ -62,14 +62,6 @@ class DetailedVerticalSwap : public DetailedGenerator {
   virtual void init(DetailedMgr* mgr);
 
  protected:
-  struct compareNodesX {
-    bool operator()(Node* p, Node* q) const {
-      return p->getX() < q->getX();
-    }
-    bool operator()(Node*& s, double i) const { return s->getX() < i; }
-    bool operator()(double i, Node*& s) const { return i < s->getX(); }
-  };
-
   void verticalSwap();  // tries to avoid overlap.
   bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
   bool getRange(Node*, Rectangle&);

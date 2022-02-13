@@ -55,7 +55,7 @@ class DetailedReorderer {
  protected:
   void reorder();
   void reorder(std::vector<Node*>& nodes, int istrt, int istop,
-               double leftLimit, double rightLimit, int segId, int rowId);
+               int leftLimit, int rightLimit, int segId, int rowId);
   double cost(std::vector<Node*>& nodes, int istrt, int istop);
 
   // Standard stuff.

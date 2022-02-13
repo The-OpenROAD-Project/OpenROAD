@@ -333,6 +333,15 @@ void FlexDRWorker::initNetObjs(
   }
 }
 
+bool onBorder(Rect routeBox, Point begin, Point end)
+{
+  if (begin.x() == end.x()) {
+    return begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax();
+  } else {
+    return begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax();
+  }
+}
+
 // inits nets based on the pins
 void FlexDRWorker::initNets_initDR(
     const frDesign* design,
@@ -372,11 +381,15 @@ void FlexDRWorker::initNets_initDR(
       auto& obj = netRouteObjs[net][i];
       if (obj->typeId() == drcPathSeg) {
         auto ps = static_cast<drPathSeg*>(obj.get());
+        frSegStyle style;
+        ps->getStyle(style);
         Point bp, ep;
         ps->getPoints(bp, ep);
         auto& box = getRouteBox();
-        if (box.intersects(bp)
-            && box.intersects(ep)) {  // how can this be false?
+        if (box.intersects(bp) && box.intersects(ep)
+            && !(onBorder(box, bp, ep)
+                 && (style.getBeginStyle() != frcTruncateEndStyle
+                     || style.getEndStyle() != frcTruncateEndStyle))) {
           vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
         } else {
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
