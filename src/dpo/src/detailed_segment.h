@@ -61,10 +61,10 @@ class DetailedSeg {
       : m_segId(-1),
         m_rowId(-1),
         m_regId(0),
-        m_xmin(std::numeric_limits<double>::max()),
-        m_xmax(std::numeric_limits<double>::lowest()),
-        m_util(0.0),
-        m_gapu(0.0) {}
+        m_xmin(std::numeric_limits<int>::max()),
+        m_xmax(std::numeric_limits<int>::lowest()),
+        m_util(0.0) {}
+        //m_gapu(0.0)
   virtual ~DetailedSeg() {}
 
   void setSegId(int segId) { m_segId = segId; }
@@ -76,26 +76,29 @@ class DetailedSeg {
   void setRegId(int regId) { m_regId = regId; }
   int getRegId() const { return m_regId; }
 
-  void setMinX(double xmin) { m_xmin = xmin; }
-  double getMinX() const { return m_xmin; }
+  void setMinX(int xmin) { m_xmin = xmin; }
+  int getMinX() const { return m_xmin; }
 
-  void setMaxX(double xmax) { m_xmax = xmax; }
-  double getMaxX() const { return m_xmax; }
+  void setMaxX(int xmax) { m_xmax = xmax; }
+  int getMaxX() const { return m_xmax; }
 
-  void setUtil(double util) { m_util = util; }
-  double getUtil() const { return m_util; }
+  int getWidth() const { return m_xmax-m_xmin; }
 
-  double getWidth() const { return m_xmax-m_xmin; }
+  void setUtil(int util) { m_util = util; }
+  int getUtil() const { return m_util; }
+  void addUtil(int amt) { m_util += amt; }
+  void remUtil(int amt) { m_util -= amt; }
 
  protected:
+  // Some identifiers...
   int m_segId;
   int m_rowId;
   int m_regId; 
-  double m_xmin;
-  double m_xmax;
- public:
-  double m_util;
-  double m_gapu;
+  // Span of segment...
+  int m_xmin;
+  int m_xmax;
+  // Total width of cells in segment...
+  int m_util;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -130,7 +130,6 @@ proc set_padring_options {args} {
     ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
   }
 
-  ICeWall::set_filler_overlap_allowed 0
   if {[info exists flags(-allow_filler_overlap)]} {
     ICeWall::set_filler_overlap_allowed 1
   }

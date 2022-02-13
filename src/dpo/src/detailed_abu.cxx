@@ -158,8 +158,8 @@ void DetailedABU::init() {
       m_abuBins[binId].hx = m_abuBins[binId].lx + m_abuGridUnit;
       m_abuBins[binId].hy = m_abuBins[binId].ly + m_abuGridUnit;
 
-      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, m_arch->getMaxX());
-      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, m_arch->getMaxY());
+      m_abuBins[binId].hx = std::min(m_abuBins[binId].hx, (double)m_arch->getMaxX());
+      m_abuBins[binId].hy = std::min(m_abuBins[binId].hy, (double)m_arch->getMaxY());
 
       double w = m_abuBins[binId].hx - m_abuBins[binId].lx;
       double h = m_abuBins[binId].hy - m_abuBins[binId].ly;
@@ -172,152 +172,52 @@ void DetailedABU::init() {
     }
   }
 
-  // Insert fixed stuff, but skip shapes (done later).
+  // Insert fixed area.
   for (int i = 0; i < m_network->getNumNodes(); i++) {
     Node* nd = m_network->getNode(i);
 
-    if (!nd->isFixed() || (m_network->getNumShapes(nd) != 0)) {
-      continue;
-    }
-    // How to handle terminals?  Some we can place on top of
-    // while others we can't...
-    if (nd->isTerminal() || nd->isTerminalNI()) {
+    if (nd->isTerminalNI()) {
+      // These don't count.  We can place on top of them.
       continue;
     }
 
-    int lcol = std::max(
-        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->getMinX()) /
-                   m_abuGridUnit),
-        0);
-    int rcol = std::min(
-        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->getMinX()) /
-                   m_abuGridUnit),
-        m_abuGridNumX - 1);
-    int brow = std::max(
-        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->getMinY()) /
-                   m_abuGridUnit),
-        0);
-    int trow = std::min(
-        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->getMinY()) /
-                   m_abuGridUnit),
-        m_abuGridNumY - 1);
+    if (!nd->isFixed()) {
+      // Not fixed.
+      continue;
+    }
+
+    if (nd->isFixed() && nd->isDefinedByShapes()) {
+      // We can skip these.  We will get the shapes that
+      // define the used area from other dummy nodes we
+      // have added to the network.
+      continue;
+    }
+
+    double xmin = nd->getLeft();
+    double xmax = nd->getRight();
+    double ymin = nd->getBottom();
+    double ymax = nd->getTop();
+
+    int lcol = std::max( (int)floor(( xmin - m_arch->getMinX()) / m_abuGridUnit), 0);
+    int rcol = std::min( (int)floor(( xmax - m_arch->getMinX()) / m_abuGridUnit), m_abuGridNumX - 1);
+    int brow = std::max( (int)floor(( ymin - m_arch->getMinY()) / m_abuGridUnit), 0);
+    int trow = std::min( (int)floor(( ymax - m_arch->getMinY()) / m_abuGridUnit), m_abuGridNumY - 1);
 
     for (int j = brow; j <= trow; j++) {
       for (int k = lcol; k <= rcol; k++) {
         unsigned binId = j * m_abuGridNumX + k;
 
         // Get intersection
-        double lx =
-            std::max(m_abuBins[binId].lx, nd->getX() - 0.5 * nd->getWidth());
-        double hx =
-            std::min(m_abuBins[binId].hx, nd->getX() + 0.5 * nd->getWidth());
-        double ly =
-            std::max(m_abuBins[binId].ly, nd->getY() - 0.5 * nd->getHeight());
-        double hy =
-            std::min(m_abuBins[binId].hy, nd->getY() + 0.5 * nd->getHeight());
+        double lx = std::max(m_abuBins[binId].lx, xmin);
+        double hx = std::min(m_abuBins[binId].hx, xmax);
+        double ly = std::max(m_abuBins[binId].ly, ymin);
+        double hy = std::min(m_abuBins[binId].hy, ymax);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
           double common_area = (hx - lx) * (hy - ly);
           if (nd->getFixed() != NodeFixed_NOT_FIXED) {
             m_abuBins[binId].f_util += common_area;
           }
-        }
-      }
-    }
-  }
-
-  // Insert shapes (which are also fixed).
-  for (int i = 0; i < m_network->getNumNodes() ; i++) {
-    Node* nd = m_network->getNode(i);
-
-    if (m_network->getNumShapes(nd) == 0) {
-      continue;
-    }
-    for (int m = 0; m < m_network->getNumShapes(nd); m++) {
-      Node* shape = m_network->getShape(nd,m);
-
-      int lcol =
-          std::max((int)floor(((shape->getX() - 0.5 * shape->getWidth()) -
-                               m_arch->getMinX()) /
-                              m_abuGridUnit),
-                   0);
-      int rcol =
-          std::min((int)floor(((shape->getX() + 0.5 * shape->getWidth()) -
-                               m_arch->getMinX()) /
-                              m_abuGridUnit),
-                   m_abuGridNumX - 1);
-      int brow =
-          std::max((int)floor(((shape->getY() - 0.5 * shape->getHeight()) -
-                               m_arch->getMinY()) /
-                              m_abuGridUnit),
-                   0);
-      int trow =
-          std::min((int)floor(((shape->getY() + 0.5 * shape->getHeight()) -
-                               m_arch->getMinY()) /
-                              m_abuGridUnit),
-                   m_abuGridNumY - 1);
-
-      for (int j = brow; j <= trow; j++) {
-        for (int k = lcol; k <= rcol; k++) {
-          unsigned binId = j * m_abuGridNumX + k;
-
-          /* get intersection */
-          double lx = std::max(m_abuBins[binId].lx,
-                               shape->getX() - 0.5 * shape->getWidth());
-          double hx = std::min(m_abuBins[binId].hx,
-                               shape->getX() + 0.5 * shape->getWidth());
-          double ly = std::max(m_abuBins[binId].ly,
-                               shape->getY() - 0.5 * shape->getHeight());
-          double hy = std::min(m_abuBins[binId].hy,
-                               shape->getY() + 0.5 * shape->getHeight());
-
-          if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-            double common_area = (hx - lx) * (hy - ly);
-            m_abuBins[binId].f_util += common_area;
-          }
-        }
-      }
-    }
-  }
-
-  // Row blockages (filler nodes).
-  for (int i = 0; i < m_network->getNumFillerNodes(); i++) {
-    Node* nd = m_network->getFillerNode(i);
-
-    int lcol = std::max(
-        (int)floor(((nd->getX() - 0.5 * nd->getWidth()) - m_arch->getMinX()) /
-                   m_abuGridUnit),
-        0);
-    int rcol = std::min(
-        (int)floor(((nd->getX() + 0.5 * nd->getWidth()) - m_arch->getMinX()) /
-                   m_abuGridUnit),
-        m_abuGridNumX - 1);
-    int brow = std::max(
-        (int)floor(((nd->getY() - 0.5 * nd->getHeight()) - m_arch->getMinY()) /
-                   m_abuGridUnit),
-        0);
-    int trow = std::min(
-        (int)floor(((nd->getY() + 0.5 * nd->getHeight()) - m_arch->getMinY()) /
-                   m_abuGridUnit),
-        m_abuGridNumY - 1);
-
-    for (int j = brow; j <= trow; j++) {
-      for (int k = lcol; k <= rcol; k++) {
-        unsigned binId = j * m_abuGridNumX + k;
-
-        /* get intersection */
-        double lx =
-            std::max(m_abuBins[binId].lx, nd->getX() - 0.5 * nd->getWidth());
-        double hx =
-            std::min(m_abuBins[binId].hx, nd->getX() + 0.5 * nd->getWidth());
-        double ly =
-            std::max(m_abuBins[binId].ly, nd->getY() - 0.5 * nd->getHeight());
-        double hy =
-            std::min(m_abuBins[binId].hy, nd->getY() + 0.5 * nd->getHeight());
-
-        if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-          double common_area = (hx - lx) * (hy - ly);
-          m_abuBins[binId].f_util += common_area;
         }
       }
     }
@@ -353,21 +253,14 @@ void DetailedABU::computeUtils() {
   for (int i = 0; i < m_network->getNumNodes() ; i++) {
     Node* nd = m_network->getNode(i);
 
-    if (nd->getType() == NodeType_TERMINAL ||
-        nd->getType() == NodeType_TERMINAL_NI) {
-      continue;
-    }
-    if (nd->getFixed() != NodeFixed_NOT_FIXED) {
-      continue;
-    }
-    if (m_network->getNumShapes(nd) != 0) {
+    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
       continue;
     }
 
-    double nlx = nd->getX() - 0.5 * nd->getWidth();
-    double nrx = nd->getX() + 0.5 * nd->getWidth();
-    double nly = nd->getY() - 0.5 * nd->getHeight();
-    double nhy = nd->getY() + 0.5 * nd->getHeight();
+    double nlx = nd->getLeft();
+    double nrx = nd->getRight();
+    double nly = nd->getBottom();
+    double nhy = nd->getTop();
 
     int lcol = std::max((int)floor((nlx - m_arch->getMinX()) / m_abuGridUnit), 0);
     int rcol = std::min((int)floor((nrx - m_arch->getMinX()) / m_abuGridUnit),
@@ -492,31 +385,31 @@ double DetailedABU::calculateABU(bool print) {
 
   // Get different values.
   double abu1 = 0.0, abu2 = 0.0, abu5 = 0.0, abu10 = 0.0, abu20 = 0.0;
-  int clip_index = 0.01 * m_abuNumBins;
+  int clip_index = (int)(0.01 * m_abuNumBins);
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
     abu1 += util_array[j];
   }
   abu1 = (clip_index) ? abu1 / clip_index : util_array[m_abuNumBins - 1];
 
-  clip_index = 0.02 * m_abuNumBins;
+  clip_index = (int)(0.02 * m_abuNumBins);
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
     abu2 += util_array[j];
   }
   abu2 = (clip_index) ? abu2 / clip_index : util_array[m_abuNumBins - 1];
 
-  clip_index = 0.05 * m_abuNumBins;
+  clip_index = (int)(0.05 * m_abuNumBins);
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
     abu5 += util_array[j];
   }
   abu5 = (clip_index) ? abu5 / clip_index : util_array[m_abuNumBins - 1];
 
-  clip_index = 0.10 * m_abuNumBins;
+  clip_index = (int)(0.10 * m_abuNumBins);
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
     abu10 += util_array[j];
   }
   abu10 = (clip_index) ? abu10 / clip_index : util_array[m_abuNumBins - 1];
 
-  clip_index = 0.20 * m_abuNumBins;
+  clip_index = (int)(0.20 * m_abuNumBins);
   for (int j = m_abuNumBins - 1; j > m_abuNumBins - 1 - clip_index; j--) {
     abu20 += util_array[j];
   }
@@ -574,7 +467,7 @@ double DetailedABU::curr() {
   for (int i = n; (i * denom) > m_abuTargUt;) {
     --i;
     if (m_utilBuckets[i].size() != 0) {
-      fof += m_utilTotals[i] / m_utilBuckets[i].size();
+      fof += m_utilTotals[i] / (double)m_utilBuckets[i].size();
     }
   }
   return fof;
@@ -583,29 +476,37 @@ double DetailedABU::curr() {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedABU::delta(int n, std::vector<Node*>& nodes,
-                          std::vector<double>& curX, std::vector<double>& curY,
+                          std::vector<int>& curLeft, 
+                          std::vector<int>& curBottom,
                           std::vector<unsigned>& curOri,
-                          std::vector<double>& newX, std::vector<double>& newY,
+                          std::vector<int>& newLeft, 
+                          std::vector<int>& newBottom,
                           std::vector<unsigned>& newOri) {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
   double denom = 1.0 / (double)m_utilBuckets.size();
 
   double fofOld = 0.;
-  for (int i = m_utilBuckets.size(); (i * denom) > m_abuTargUt;) {
+  for (int i = (int)m_utilBuckets.size(); (i * denom) > m_abuTargUt;) {
     --i;
     if (m_utilBuckets[i].size() != 0) {
-      fofOld += m_utilTotals[i] / m_utilBuckets[i].size();
+      fofOld += m_utilTotals[i] / (double)m_utilBuckets[i].size();
     }
   }
 
   // Compute changed bins and changed occupancy.
   ++m_abuChangedBinsCounter;
   for (int i = 0; i < n; i++) {
-    updateBins(nodes[i], curX[i], curY[i], -1);
+    updateBins(nodes[i], 
+               curLeft[i]+0.5*nodes[i]->getWidth(), 
+               curBottom[i]+0.5*nodes[i]->getHeight(), 
+               -1);
   }
   for (int i = 0; i < n; i++) {
-    updateBins(nodes[i], newX[i], newY[i], +1);
+    updateBins(nodes[i], 
+               newLeft[i]+0.5*nodes[i]->getWidth(),
+               newBottom[i]+0.5*nodes[i]->getHeight(), 
+               +1);
   }
 
   double space = 0.;
@@ -634,10 +535,10 @@ double DetailedABU::delta(int n, std::vector<Node*>& nodes,
   }
 
   double fofNew = 0.;
-  for (int i = m_utilBuckets.size(); (i * denom) > m_abuTargUt;) {
+  for (int i = (int)m_utilBuckets.size(); (i * denom) > m_abuTargUt;) {
     --i;
     if (m_utilBuckets[i].size() != 0) {
-      fofNew += m_utilTotals[i] / m_utilBuckets[i].size();
+      fofNew += m_utilTotals[i] / (double)m_utilBuckets[i].size();
     }
   }
   double fofDelta = fofOld - fofNew;
@@ -695,9 +596,7 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub) {
   // contribution to the bin utilization.  Assumes the node is located at (x,y)
   // rather than the position stored in the node...
 
-  if (nd->isTerminal() || nd->isTerminalNI() ||
-      nd->getFixed() != NodeFixed_NOT_FIXED ||
-      m_network->getNumShapes(nd) != 0) {
+  if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
     m_mgrPtr->internalError("Problem updating bins for utilization objective");
   }
 

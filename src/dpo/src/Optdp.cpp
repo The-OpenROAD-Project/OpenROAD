@@ -94,7 +94,9 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp) 
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::improvePlacement(int seed) {
+void Optdp::improvePlacement(int seed,
+                             int max_displacement_x, 
+                             int max_displacement_y) {
   logger_->report("Detailed placement improvement.");
 
   opendp_->initBlock();
@@ -107,7 +109,9 @@ void Optdp::improvePlacement(int seed) {
     // A manager to track cells.
     dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
     mgr.setLogger(logger_);
+    // Various settings.
     mgr.setSeed(seed);
+    mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed
@@ -204,8 +208,8 @@ void Optdp::updateDbInstLocations() {
     if (instMap_.end() != it_n) {
       Node* nd = it_n->second;
 
-      int y = (int)(nd->getY() - 0.5 * nd->getHeight());
-      int x = (int)(nd->getX() - 0.5 * nd->getWidth());
+      int y = nd->getBottom();
+      int x = nd->getLeft();
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
@@ -369,8 +373,6 @@ void Optdp::createNetwork() {
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbBTerm> bterms = block->getBTerms();
 
-  int errors = 0;
-
   // Number of this and that.
   int nTerminals = bterms.size();
   int nNodes = 0;
@@ -408,16 +410,24 @@ void Optdp::createNetwork() {
 
   // Create and allocate the nodes.  I require nodes for
   // placeable instances as well as terminals.
-  network_->resizeNodes(nNodes + nTerminals);
-  network_->resizeEdges(nEdges);
+  for (int i = 0; i < nNodes+nTerminals; i++) {
+    network_->createAndAddNode();
+  }
+  for (int i = 0; i < nEdges; i++) {
+    network_->createAndAddEdge();
+  }
 
   // Return instances to a north orientation.  This makes
-  // importing easier.
+  // importing easier as I think it ensures all the pins,
+  // etc. will be where I expect them to be.  Record the
+  // original orientation to I can correct fixed objects.
+  std::unordered_map<dbInst*, dbOrientType> origOrient;
   for (dbInst* inst : insts) {
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
-    inst->setLocationOrient(dbOrientType::R0);
+    origOrient[inst] = inst->getOrient();
+    inst->setLocationOrient(dbOrientType::R0); // Preserve lower-left.
   }
 
   // Populate nodes.
@@ -429,9 +439,6 @@ void Optdp::createNetwork() {
 
     Node* ndi = network_->getNode(n);
     instMap_[inst] = ndi;
-
-    double xc = inst->getBBox()->xMin() + 0.5 * inst->getMaster()->getWidth();
-    double yc = inst->getBBox()->yMin() + 0.5 * inst->getMaster()->getHeight();
 
     // Name of inst.
     network_->setNodeName(n, inst->getName().c_str());
@@ -461,10 +468,10 @@ void Optdp::createNetwork() {
     ndi->setHeight(inst->getMaster()->getHeight());
     ndi->setWidth(inst->getMaster()->getWidth());
 
-    ndi->setOrigX(xc);
-    ndi->setOrigY(yc);
-    ndi->setX(xc);
-    ndi->setY(yc);
+    ndi->setOrigLeft(inst->getBBox()->xMin());
+    ndi->setOrigBottom(inst->getBBox()->yMin());
+    ndi->setLeft(inst->getBBox()->xMin());
+    ndi->setBottom(inst->getBBox()->yMin());
 
     // Won't use edge types.
     ndi->setRightEdgeType(EDGETYPE_DEFAULT);
@@ -500,18 +507,16 @@ void Optdp::createNetwork() {
     ndi->setAvailOrient(Orientation_N);
     ndi->setCurrOrient(Orientation_N);
 
-    double ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
-    double hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
-    double xx = (bterm->getBBox().xMax() + bterm->getBBox().xMin()) * 0.5;
-    double yy = (bterm->getBBox().yMax() + bterm->getBBox().yMax()) * 0.5;
+    int ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
+    int hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
 
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigX(xx);
-    ndi->setOrigY(yy);
-    ndi->setX(xx);
-    ndi->setY(yy);
+    ndi->setOrigLeft(bterm->getBBox().xMin());
+    ndi->setOrigBottom(bterm->getBBox().yMin());
+    ndi->setLeft(bterm->getBBox().xMin());
+    ndi->setBottom(bterm->getBBox().yMin());
 
     // Not relevant for terminal.
     ndi->setRightEdgeType(EDGETYPE_DEFAULT);
@@ -529,7 +534,6 @@ void Optdp::createNetwork() {
   if (n != nNodes + nTerminals) {
     logger_->error(DPO, 101, "Unexpected total node count.  Expected {:d}, but got {:d}",
         (nNodes+nTerminals), n);
-    ++errors;
   }
 
   // Populate edges and pins.
@@ -559,7 +563,6 @@ void Optdp::createNetwork() {
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
           logger_->error(DPO, 102, "Improper node indexing while connecting pins.");
-          ++errors;
         }
 
         Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
@@ -586,7 +589,6 @@ void Optdp::createNetwork() {
         ++p;  // next pin.
       } else {
         logger_->error(DPO, 103, "Could not find node for instance while connecting pins.");
-        ++errors;
       }
     }
     for (dbBTerm* bTerm : net->getBTerms()) {
@@ -596,7 +598,6 @@ void Optdp::createNetwork() {
 
         if (network_->getNode(n)->getId() != n || network_->getEdge(e)->getId() != e) {
           logger_->error(DPO, 104, "Improper terminal indexing while connecting pins.");
-          ++errors;
         }
 
         Pin* ptr = network_->createAndAddPin(network_->getNode(n),network_->getEdge(e));
@@ -611,7 +612,6 @@ void Optdp::createNetwork() {
         ++p;  // next pin.
       } else {
         logger_->error(DPO, 105, "Could not find node for terminal while connecting pins.");
-        ++errors;
       }
     }
 
@@ -620,20 +620,38 @@ void Optdp::createNetwork() {
   if (e != nEdges) {
     logger_->error(DPO, 106, "Unexpected total edge count.  Expected {:d}, but got {:d}",
         nEdges, e);
-    ++errors;
   }
   if (p != nPins) {
     logger_->error(DPO, 107, "Unexpected total pin count.  Expected {:d}, but got {:d}",
         nPins, p);
-    ++errors;
   }
 
-  if (errors != 0) {
-    logger_->error(DPO, 108, "Error creating network.");
-  } else {
-    logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
-                  network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
+  // Return the orientation of fixed objects to their proper
+  // values since I will never reorient a fixed object.
+  for (dbInst* inst : insts) {
+    if (!inst->getMaster()->isCoreAutoPlaceable()) {
+      continue;
+    }
+    if (inst->isFixed()) {
+      dbOrientType orient = origOrient[inst];
+      if (inst->getOrient() != orient) {
+        // I messed around with this, so I should restore it.
+        inst->setLocationOrient(orient);
+
+        // Reorient the cell in my network too.
+        it_n = instMap_.find(inst);
+        if (instMap_.end() != it_n) {
+          n = it_n->second->getId();  
+          if (network_->getNode(n)->getId() == n) {
+            network_->getNode(n)->adjustCurrOrient(dbToDpoOrient(orient));
+          }
+        }
+      }
+    }
   }
+
+  logger_->info(DPO, 109, "Network stats: inst {}, edges {}, pins {}",
+                network_->getNumNodes(), network_->getNumEdges(), network_->getNumPins());
 }
 ////////////////////////////////////////////////////////////////
 void Optdp::createArchitecture() {
@@ -660,16 +678,16 @@ void Optdp::createArchitecture() {
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setBottom((double)originY);
-    archRow->setHeight((double)site->getHeight());
-    archRow->setSiteWidth((double)site->getWidth());
-    archRow->setSiteSpacing((double)row->getSpacing());
-    archRow->setLeft(originX);
+    archRow->setSubRowOrigin(originX);
+    archRow->setBottom(originY);
+    archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
+    archRow->setSiteWidth(site->getWidth());
+    archRow->setHeight(site->getHeight());
 
     // Set defaults.  Top and bottom power is set below.
-    archRow->setPowerBottom(RowPower_UNK);
-    archRow->setPowerTop(RowPower_UNK);
+    archRow->setBottomPower(RowPower_UNK);
+    archRow->setTopPower(RowPower_UNK);
 
     // Symmetry.  From the site.
     unsigned symmetry = 0x00000000;
@@ -682,46 +700,29 @@ void Optdp::createArchitecture() {
     if (site->getSymmetryR90()) {
       symmetry |= dpo::Symmetry_ROT90;
     }
-    archRow->setSiteSymmetry(symmetry);
+    archRow->setSymmetry(symmetry);
 
     // Orientation.  From the row.
-    unsigned orient = Orientation_N;
-    switch (row->getOrient()) {
-    case dbOrientType::R0    : orient = dpo::Orientation_N  ; break;
-    case dbOrientType::MY    : orient = dpo::Orientation_FN ; break;
-    case dbOrientType::MX    : orient = dpo::Orientation_FS ; break;
-    case dbOrientType::R180  : orient = dpo::Orientation_S  ; break;
-    case dbOrientType::R90   : orient = dpo::Orientation_E  ; break;
-    case dbOrientType::MXR90 : orient = dpo::Orientation_FE ; break;
-    case dbOrientType::R270  : orient = dpo::Orientation_W  ; break;
-    case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
-    default: break;
-    }
-    archRow->setSiteOrient(orient);
+    unsigned orient = dbToDpoOrient(row->getOrient());
+    archRow->setOrient(orient);
   }
 
   // Get surrounding box.
   {
-    double xmin = std::numeric_limits<double>::max();
-    double xmax = std::numeric_limits<double>::lowest();
-    double ymin = std::numeric_limits<double>::max();
-    double ymax = std::numeric_limits<double>::lowest();
+    int xmin = std::numeric_limits<int>::max();
+    int xmax = std::numeric_limits<int>::lowest();
+    int ymin = std::numeric_limits<int>::max();
+    int ymax = std::numeric_limits<int>::lowest();
     for (int r = 0; r < arch_->getNumRows(); r++) {
       Architecture::Row* row = arch_->getRow(r);
 
-      double lx = row->getLeft();
-      double rx = row->getRight();
-
-      double yb = row->getBottom();
-      double yt = row->getTop();
-
-      xmin = std::min(xmin, lx);
-      xmax = std::max(xmax, rx);
-      ymin = std::min(ymin, yb);
-      ymax = std::max(ymax, yt);
+      xmin = std::min(xmin, row->getLeft());
+      xmax = std::max(xmax, row->getRight());
+      ymin = std::min(ymin, row->getBottom());
+      ymax = std::max(ymax, row->getTop());
     }
-    if (xmin != (double)dieRect.xMin() ||
-        xmax != (double)dieRect.xMax()) {
+    if (xmin != dieRect.xMin() ||
+        xmax != dieRect.xMax()) {
       xmin = dieRect.xMin();
       xmax = dieRect.xMax();
     }
@@ -733,23 +734,18 @@ void Optdp::createArchitecture() {
 
   for (int r = 0; r < arch_->getNumRows(); r++) {
     int numSites = arch_->getRow(r)->getNumSites();
-    double originX = arch_->getRow(r)->getLeft();
-    double siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    int originX = arch_->getRow(r)->getLeft();
+    int siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    int siteWidth = arch_->getRow(r)->getSiteWidth();
 
-    double lx = originX;
-    double rx = originX + numSites * siteSpacing;
-    if (lx < arch_->getMinX() || rx > arch_->getMaxX()) {
-      if (lx < arch_->getMinX()) {
-        originX = arch_->getMinX();
-      }
-      rx = originX + numSites * siteSpacing;
-      if (rx > arch_->getMaxX()) {
-        numSites = (int)((arch_->getMaxX() - originX) / siteSpacing);
-      }
-
+    if (originX < arch_->getMinX()) {
+      originX = (int)std::ceil(arch_->getMinX());
       if (arch_->getRow(r)->getLeft() != originX) {
-        arch_->getRow(r)->setLeft(originX);
+        arch_->getRow(r)->setSubRowOrigin(originX);
       }
+    }
+    if (originX+numSites*siteSpacing+siteWidth > arch_->getMaxX()) {
+      numSites = (arch_->getMaxX()-siteWidth-originX)/siteSpacing;
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }
@@ -797,14 +793,14 @@ void Optdp::createArchitecture() {
         Rect rect;
         sbox->getBox(rect);
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
-          double yb = arch_->getRow(r)->getBottom();
-          double yt = arch_->getRow(r)->getTop();
+          int yb = arch_->getRow(r)->getBottom();
+          int yt = arch_->getRow(r)->getTop();
 
           if (yb >= rect.yMin() && yb <= rect.yMax()) {
-            arch_->getRow(r)->setPowerBottom(pwr);
+            arch_->getRow(r)->setBottomPower(pwr);
           }
           if (yt >= rect.yMin() && yt <= rect.yMax()) {
-            arch_->getRow(r)->setPowerTop(pwr);
+            arch_->getRow(r)->setTopPower(pwr);
           }
         }
       }
@@ -814,22 +810,33 @@ void Optdp::createArchitecture() {
 }
 ////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementRegions() {
-  double xmin, xmax, ymin, ymax;
-  xmin = arch_->getMinX();
-  xmax = arch_->getMaxX();
-  ymin = arch_->getMinY();
-  ymax = arch_->getMaxY();
+  int xmin = arch_->getMinX();
+  int xmax = arch_->getMaxX();
+  int ymin = arch_->getMinY();
+  int ymax = arch_->getMaxY();
 
   dbBlock* block = db_->getChip()->getBlock();
 
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;
   int count = 0;
+  Rectangle_i tempRect;
 
   // Default region.
   rptr = arch_->createAndAddRegion();
-  rptr->setId(count++);
-  rptr->addRect({xmin, ymin, xmax, ymax});
+  rptr->setId(count);
+  ++count;
+
+  tempRect.set_xmin(xmin);
+  tempRect.set_xmax(xmax);
+  tempRect.set_ymin(ymin);
+  tempRect.set_ymax(ymax);
+  rptr->addRect(tempRect);
+
+  rptr->setMinX(xmin);
+  rptr->setMaxX(xmax);
+  rptr->setMinY(ymin);
+  rptr->setMaxY(ymax);
 
   // Hmm.  I noticed a comment in the OpenDP interface that
   // the OpenDB represents groups as regions.  I'll follow
@@ -841,7 +848,8 @@ void Optdp::setUpPlacementRegions() {
     dbRegion* parent = db_region->getParent();
     if (parent) {
       rptr = arch_->createAndAddRegion();
-      rptr->setId(count++);
+      rptr->setId(count);
+      ++count;
 
       // Assuming these are the rectangles making up the region...
       auto boundaries = db_region->getParent()->getBoundaries();
@@ -849,12 +857,21 @@ void Optdp::setUpPlacementRegions() {
         Rect box;
         boundary->getBox(box);
 
-        xmin = std::max(arch_->getMinX(), (double)box.xMin());
-        xmax = std::min(arch_->getMaxX(), (double)box.xMax());
-        ymin = std::max(arch_->getMinY(), (double)box.yMin());
-        ymax = std::min(arch_->getMaxY(), (double)box.yMax());
+        xmin = std::max(arch_->getMinX(), box.xMin());
+        xmax = std::min(arch_->getMaxX(), box.xMax());
+        ymin = std::max(arch_->getMinY(), box.yMin());
+        ymax = std::min(arch_->getMaxY(), box.yMax());
 
-        rptr->addRect({xmin, ymin, xmax, ymax});
+        tempRect.set_xmin(xmin);
+        tempRect.set_xmax(xmax);
+        tempRect.set_ymin(ymin);
+        tempRect.set_ymax(ymax);
+        rptr->addRect(tempRect);
+
+        rptr->setMinX(std::min(xmin, rptr->getMinX()));
+        rptr->setMaxX(std::max(xmax, rptr->getMaxX()));
+        rptr->setMinY(std::min(ymin, rptr->getMinY()));
+        rptr->setMaxY(std::max(ymax, rptr->getMaxY()));
       }
 
       // The instances within this region.
@@ -870,6 +887,22 @@ void Optdp::setUpPlacementRegions() {
     }
   }
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
+}
+////////////////////////////////////////////////////////////////
+unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient) {
+  unsigned orient = dpo::Orientation_N;
+  switch (dbOrient) {
+  case dbOrientType::R0    : orient = dpo::Orientation_N  ; break;
+  case dbOrientType::MY    : orient = dpo::Orientation_FN ; break;
+  case dbOrientType::MX    : orient = dpo::Orientation_FS ; break;
+  case dbOrientType::R180  : orient = dpo::Orientation_S  ; break;
+  case dbOrientType::R90   : orient = dpo::Orientation_E  ; break;
+  case dbOrientType::MXR90 : orient = dpo::Orientation_FE ; break;
+  case dbOrientType::R270  : orient = dpo::Orientation_W  ; break;
+  case dbOrientType::MYR90 : orient = dpo::Orientation_FW ; break;
+  default: break;
+  }
+  return orient;
 }
 
 }  // namespace dpo

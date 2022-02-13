@@ -14,7 +14,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8') {
               steps {
-                sh './etc/Build.sh';
+                sh './etc/Build.sh -no-warnings';
               }
             }
             stage('Test centos7 gcc8') {
@@ -48,7 +48,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8 without GUI') {
               steps {
-                sh './etc/Build.sh -no-gui -dir=build-without-gui';
+                sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
               }
             }
           }

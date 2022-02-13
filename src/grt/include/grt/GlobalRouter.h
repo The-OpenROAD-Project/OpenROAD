@@ -39,6 +39,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -173,6 +174,8 @@ class GlobalRouter
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
+  Net* getNet(odb::dbNet* db_net);
+  int getTileSize() const;
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diode_port, int iterations);
@@ -205,7 +208,7 @@ class GlobalRouter
   void setDebugTree3D(bool tree3D);
 
   // Highlight route in the gui.
-  void highlightRoute(const odb::dbNet* net);
+  void highlightRoute(odb::dbNet* net, bool show_pin_locations);
 
   // Clear routes in the gui
   void clearRouteGui();
@@ -323,10 +326,16 @@ class GlobalRouter
   void computeCapacities(int max_layer);
   void computeSpacingsAndMinWidth(int max_layer);
   std::vector<Net*> initNetlist();
-  Net* getNet(odb::dbNet* db_net);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
+  bool layerIsBlocked(int layer,
+                    odb::dbTechLayerDir& direction,
+                    const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+                    odb::Rect& extended_obs);
+  void extendObstructions(std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+                        int bottom_layer,
+                        int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
                                 const std::vector<int>& layer_extensions);
   void findNetsObstructions(odb::Rect& die_area);

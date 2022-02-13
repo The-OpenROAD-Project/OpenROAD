@@ -55,6 +55,7 @@
 #include "options.h"
 
 #include "gui/gui.h"
+#include "db_sta/dbNetwork.hh"
 
 namespace odb {
 class dbDatabase;
@@ -65,6 +66,7 @@ class dbInst;
 
 namespace sta {
 class dbSta;
+class LibertyCell;
 } // namespace sta
 
 namespace utl {
@@ -154,7 +156,7 @@ class DisplayControlModel : public QStandardItemModel
 //
 // It also implements the Options interface so that other clients can
 // access the data.
-class DisplayControls : public QDockWidget, public Options
+class DisplayControls : public QDockWidget, public Options, public sta::dbNetworkObserver
 {
   Q_OBJECT
 
@@ -195,6 +197,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
+  bool areInstancePinsVisible() override;
+  bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
@@ -218,6 +222,9 @@ class DisplayControls : public QDockWidget, public Options
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
+
+  // API from dbNetworkObserver
+  virtual void postReadLiberty() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -267,27 +274,44 @@ class DisplayControls : public QDockWidget, public Options
     ModelRow clock;
   };
 
-  struct PhysicalInstanceModels
+  struct InstanceModels
   {
-    ModelRow core;
+    ModelRow stdcells;
     ModelRow blocks;
-    ModelRow fill;
-    ModelRow endcap;
-    ModelRow welltap;
     ModelRow pads;
-    ModelRow cover;
+    ModelRow physical;
   };
 
-  struct FunctionalInstanceModels
+  struct StdCellModels
   {
+    ModelRow bufinv;
     ModelRow combinational;
     ModelRow sequential;
-    ModelRow buffer_inv;
-    ModelRow clock_gate;
-    ModelRow levelshifter;
-    ModelRow pad;
-    ModelRow macro;
-    ModelRow memory;
+    ModelRow clock_tree;
+    ModelRow level_shiters;
+  };
+
+  struct BufferInverterModels
+  {
+    ModelRow timing;
+    ModelRow other;
+  };
+
+  struct ClockTreeModels
+  {
+    ModelRow bufinv;
+    ModelRow clock_gates;
+  };
+
+  struct PhysicalModels
+  {
+    ModelRow fill;
+    ModelRow endcap;
+    ModelRow tap;
+    ModelRow antenna;
+    ModelRow tie;
+    ModelRow cover;
+    ModelRow bump;
   };
 
   struct BlockageModels
@@ -304,13 +328,20 @@ class DisplayControls : public QDockWidget, public Options
 
   struct MiscModels
   {
-    ModelRow instance_names;
+    ModelRow instances;
     ModelRow scale_bar;
     ModelRow fills;
     ModelRow access_points;
     ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
+  };
+
+  struct InstanceShapeModels
+  {
+    ModelRow names;
+    ModelRow pins;
+    ModelRow blockages;
   };
 
   void techInit();
@@ -345,7 +376,9 @@ class DisplayControls : public QDockWidget, public Options
   void toggleParent(ModelRow& row);
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible = nullptr, QStandardItem* selectable = nullptr);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+  void writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible = nullptr, const QStandardItem* selectable = nullptr);
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
@@ -359,18 +392,14 @@ class DisplayControls : public QDockWidget, public Options
   void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
   void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
 
-  bool isPhysicalInstanceVisible(odb::dbInst* inst);
-  bool isPhysicalInstanceSelectable(odb::dbInst* inst);
-  bool isFunctionalInstanceVisible(odb::dbInst* inst);
-  bool isFunctionalInstanceSelectable(odb::dbInst* inst);
-
   const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
-  const ModelRow* getPhysicalInstRow(odb::dbInst* inst) const;
-  const ModelRow* getFunctionalInstRow(odb::dbInst* inst) const;
+  const ModelRow* getInstRow(odb::dbInst* inst) const;
   const ModelRow* getNetRow(odb::dbNet* net) const;
 
   bool isRowVisible(const ModelRow* row) const;
   bool isRowSelectable(const ModelRow* row) const;
+
+  void checkLiberty(bool assume_loaded = false);
 
   QTreeView* view_;
   DisplayControlModel* model_;
@@ -381,22 +410,27 @@ class DisplayControls : public QDockWidget, public Options
 
   // Categories in the model
   ModelRow layers_group_;
-  ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
-  ModelRow physical_instance_group_;
-  ModelRow functional_instance_group_;
+  ModelRow instance_group_;
   ModelRow blockage_group_;
   ModelRow misc_group_;
 
+  // instances
+  InstanceModels instances_;
+  StdCellModels stdcell_instances_;
+  BufferInverterModels bufinv_instances_;
+  ClockTreeModels clock_tree_instances_;
+  PhysicalModels physical_instances_;
+
+  InstanceShapeModels instance_shapes_;
+
   // Object controls
   NetModels nets_;
-  PhysicalInstanceModels physical_instances_;
-  FunctionalInstanceModels functional_instances_;
-  BlockageModels blockages_;
   ModelRow rows_;
   ModelRow pin_markers_;
   ModelRow rulers_;
+  BlockageModels blockages_;
   TrackModels tracks_;
   MiscModels misc_;
 

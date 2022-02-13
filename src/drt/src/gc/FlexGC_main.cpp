@@ -623,11 +623,17 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     if (gtl::contains(rect, markerRect)) {
       return;
     }
-    pins.push_back(rect2polygon(rect));
+    if (gtl::intersects(rect, markerRect)) {
+      pins.push_back(rect2polygon(rect));
+    }
   }
   polygon_t markerPoly = rect2polygon(markerRect);
   std::vector<polygon_t> result;
-  bg::difference(markerPoly, pins, result);
+  if (pins.empty()) {
+    result.push_back(markerPoly);
+  } else {
+    bg::difference(markerPoly, pins, result);
+  }
   for (auto poly : result) {
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
@@ -812,6 +818,15 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
 
   // short, nsmetal
   if (distX == 0 && distY == 0) {
+    // Zero width markers are not well handled by boost polygon as they
+    // tend to disappear in boolean operations.  Give them a bit of extent
+    // to avoid this.
+    if (prlX == 0) {
+      gtl::bloat(markerRect, gtl::HORIZONTAL, 1);
+    }
+    if (prlY == 0) {
+      gtl::bloat(markerRect, gtl::VERTICAL, 1);
+    }
     if (isBlockage(ptr1->getNet()->getOwner())
         || isBlockage(ptr2->getNet()->getOwner()))
       checkMetalSpacing_short_obs(ptr1, ptr2, markerRect);
@@ -1283,7 +1298,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
     frMinStepConstraint* con,
     bool hasInsideCorner,
     bool hasOutsideCorner,
-    bool hasStep,
     int currEdges,
     frCoord currLength,
     bool hasRoute)
@@ -1307,11 +1321,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
         break;
       case frMinstepTypeEnum::OUTSIDECORNER:
         if (!hasOutsideCorner) {
-          return;
-        }
-        break;
-      case frMinstepTypeEnum::STEP:
-        if (!hasStep) {
           return;
         }
         break;
@@ -1527,7 +1536,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
   Rect markerBox;
   bool hasInsideCorner = false;
   bool hasOutsideCorner = false;
-  bool hasStep = false;
   auto minStepLength = con->getMinStepLength();
   for (auto& edges : pin->getPolygonEdges()) {
     // get the first edge that is >= minstep length
@@ -1550,7 +1558,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
     hasRoute = edge->isFixed() ? false : true;
     hasInsideCorner = false;
     hasOutsideCorner = false;
-    hasStep = false;
     llx = edge->high().x();
     lly = edge->high().y();
     urx = edge->high().x();
@@ -1579,7 +1586,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
                                        con,
                                        hasInsideCorner,
                                        hasOutsideCorner,
-                                       hasStep,
                                        currEdges,
                                        currLength,
                                        hasRoute);
@@ -1593,7 +1599,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
         hasRoute = edge->isFixed() ? false : true;
         hasInsideCorner = false;
         hasOutsideCorner = false;
-        hasStep = false;
         llx = edge->high().x();
         lly = edge->high().y();
         urx = edge->high().x();

@@ -307,7 +307,6 @@ class FlexGCWorker::Impl
                                       frMinStepConstraint* con,
                                       bool hasInsideCorner,
                                       bool hasOutsideCorner,
-                                      bool hasStep,
                                       int currEdges,
                                       frCoord currLength,
                                       bool hasRoute);

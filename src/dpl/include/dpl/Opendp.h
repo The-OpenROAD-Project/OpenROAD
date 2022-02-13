@@ -429,6 +429,7 @@ private:
   int have_multi_row_cells_;
   int max_displacement_x_;           // sites
   int max_displacement_y_;           // sites
+  vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
   Grid *grid_;

@@ -144,11 +144,12 @@ estimate_parasitics -global_routing
 ```
 
 ```
-draw_route_guides net_names
+draw_route_guides net_names [-show_pin_locations]
 ```
 The `draw_route_guides` command plots the route guides for a set of nets.
 To erase the route guides from the GUI, pass an empty list to this command:
 `draw_route_guides {}`.
+The `show_pin_locations` flag draw circles for the pin positions on the routing grid.
 
 ## Report wire length
 

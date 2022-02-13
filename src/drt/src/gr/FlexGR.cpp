@@ -375,10 +375,16 @@ void FlexGR::searchRepair(int iter,
           workersInBatch[i]->initBoundary();
         }
 // multi thread
+        ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main_mt();
+          try {
+            workersInBatch[i]->main_mt();
+          } catch (...) {
+            exception.capture();
+          }
         }
+        exception.rethrow();
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end();

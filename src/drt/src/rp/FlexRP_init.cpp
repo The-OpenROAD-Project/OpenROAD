@@ -49,7 +49,6 @@ void FlexRP::init()
       continue;
     }
     tech_->via2ViaForbiddenLen.push_back({});
-    tech_->via2ViaForbiddenOverlapLen.push_back({});
     tech_->viaForbiddenTurnLen.push_back({});
     tech_->viaForbiddenPlanarLen.push_back({});
     tech_->line2LineForbiddenLen.push_back({});

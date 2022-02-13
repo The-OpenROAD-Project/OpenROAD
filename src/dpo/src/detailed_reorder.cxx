@@ -30,12 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 #include "detailed_reorder.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,18 +50,10 @@
 
 using utl::DPO;
 
-////////////////////////////////////////////////////////////////////////////////
-// Defines.
-////////////////////////////////////////////////////////////////////////////////
-
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 DetailedReorderer::DetailedReorderer(Architecture* arch, Network* network,
                                      RoutingParams* rt)
     : m_arch(arch),
@@ -76,12 +64,12 @@ DetailedReorderer::DetailedReorderer(Architecture* arch, Network* network,
       m_traversal(0),
       m_windowSize(3) {}
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 DetailedReorderer::~DetailedReorderer() {}
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::run(DetailedMgr* mgrPtr, std::string command) {
   // A temporary interface to allow for a string which we will decode to create
   // the arguments.
@@ -98,8 +86,8 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, std::string command) {
   run(mgrPtr, args);
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::run(DetailedMgr* mgrPtr,
                             std::vector<std::string>& args) {
   // Given the arguments, figure out which routine to run to do the reordering.
@@ -152,20 +140,20 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
       curr_hpwl, curr_imp);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::reorder() {
   m_traversal = 0;
   m_edgeMask.resize(m_network->getNumEdges());
   std::fill(m_edgeMask.begin(), m_edgeMask.end(), m_traversal);
 
-  double rightLimit = 0.;
-  double leftLimit = 0.;
-  double rightPadding = 0.;
-  double leftPadding = 0.;
+  int rightLimit = 0.;
+  int leftLimit = 0.;
+  int rightPadding = 0.;
+  int leftPadding = 0.;
 
   // Loop over each segment; find single height cells and reorder.
-  for (size_t s = 0; s < m_mgrPtr->getNumSegments(); s++) {
+  for (int s = 0; s < m_mgrPtr->getNumSegments(); s++) {
     DetailedSeg* segPtr = m_mgrPtr->getSegment(s);
     int segId = segPtr->getSegId();
     int rowId = segPtr->getRowId();
@@ -177,7 +165,7 @@ void DetailedReorderer::reorder() {
     std::sort(nodes.begin(), nodes.end(), DetailedMgr::compareNodesX());
 
     int j = 0;
-    int n = nodes.size();
+    int n = (int)nodes.size();
     while (j < n) {
       while (j < n && m_arch->isMultiHeightCell(nodes[j])) {
         ++j;
@@ -201,7 +189,7 @@ void DetailedReorderer::reorder() {
         if (nextPtr != 0) {
           m_arch->getCellPadding(nextPtr, leftPadding, rightPadding);
           rightLimit = std::min(
-              nextPtr->getX() - 0.5 * nextPtr->getWidth() - leftPadding,
+              (int)std::floor(nextPtr->getLeft() - leftPadding),
               rightLimit);
         }
         Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : 0;
@@ -209,7 +197,7 @@ void DetailedReorderer::reorder() {
         if (prevPtr != 0) {
           m_arch->getCellPadding(prevPtr, leftPadding, rightPadding);
           leftLimit = std::max(
-              prevPtr->getX() + 0.5 * prevPtr->getWidth() + rightPadding,
+              (int)std::ceil(prevPtr->getRight() + rightPadding),
               leftLimit);
         }
 
@@ -219,252 +207,170 @@ void DetailedReorderer::reorder() {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::reorder(std::vector<Node*>& nodes, int jstrt, int jstop,
-                                double leftLimit, double rightLimit, int segId,
+                                int leftLimit, int rightLimit, int segId,
                                 int rowId) {
   int size = jstop - jstrt + 1;
 
-  double siteWidth = m_arch->getRow(0)->getSiteWidth();
-
-  std::vector<double> widths;
-  widths.resize(size);
-  std::fill(widths.begin(), widths.end(), 0.0);
-  std::map<Node*, double> origX;
+  // XXX: Node positions still doubles!
+  std::unordered_map<Node*, int> origLeft;
   for (int i = 0; i < size; i++) {
-    Node* ndi = nodes[jstrt + i];
-    origX[ndi] = ndi->getX();
+    Node* ndi = nodes[jstrt+i];
+    origLeft[ndi] = ndi->getLeft();
   }
 
-  // We want to space cells out evenly while also satisfying gaps.
-  // See if we need to adjust boundary limits.
-  double rightEdge = 0;
-  double leftEdge = 0;
-  {
-    double leftPadding, rightPadding, dummyPadding;
+  // Changed...  I want to work entirely with the left edge of
+  // the cells.  If there is not enough space to satisfy 
+  // the cell widths _and_ the padding, then don't do anything.
+  int totalPadding = 0;
+  int totalWidth = 0;
+  std::vector<int> right(size, 0);
+  std::vector<int> left(size, 0);
+  std::vector<int> width(size, 0);
+  for (int i = 0; i < size; i++) {
+    Node* ndi = nodes[jstrt+i];
+    m_arch->getCellPadding(ndi, left[i], right[i]);
+    width[i] = (int)std::ceil(ndi->getWidth());
+    totalPadding += (left[i]+right[i]);
+    totalWidth += width[i];
+  }
+  if (rightLimit-leftLimit < totalWidth+totalPadding) {
+    // We do not have enough space, so abort.
+    return;
+  }
 
-    Node* ndr = nodes[jstop];
-    Node* ndl = nodes[jstrt];
-
-    // Determine current left and right edge for the cells
-    // involved.
-    m_arch->getCellPadding(ndr, dummyPadding, rightPadding);
-    rightEdge = std::min(ndr->getX() + 0.5 * ndr->getWidth() + rightPadding,
-                         rightLimit);
-    m_arch->getCellPadding(ndl, leftPadding, dummyPadding);
-    leftEdge =
-        std::max(ndl->getX() - 0.5 * ndl->getWidth() - leftPadding, leftLimit);
-
-    // Determine width and padding requirements.
-    double totalPadding = 0.;
-    double totalWidth = 0.;
-    for (size_t i = jstrt; i <= jstop; i++) {
-      Node* ndi = nodes[i];
-      m_arch->getCellPadding(ndi, leftPadding, rightPadding);
-      totalPadding += (leftPadding + rightPadding);
-      totalWidth += ndi->getWidth();
+  // We might have more space than required.  Space cells out
+  // somewhat evenly by adding extra space to the padding.
+  int spacePerCell = ((rightLimit-leftLimit)-(totalWidth+totalPadding)) / size;
+  int siteWidth = m_arch->getRow(0)->getSiteWidth();
+  int sitePerCellTotal = spacePerCell/siteWidth;
+  int sitePerCellRight = (sitePerCellTotal>>1);
+  int sitePerCellLeft = sitePerCellTotal-sitePerCellRight;
+  for (int i = 0; i < size; i++) {
+    if (totalWidth+totalPadding+sitePerCellRight*siteWidth < rightLimit-leftLimit) {
+      totalPadding += sitePerCellRight*siteWidth;
+      right[i] += sitePerCellRight*siteWidth;
     }
-
-    // Enlarge if we do not have enough space.
-    bool changed = true;
-    while (changed &&
-           (rightEdge - leftEdge < totalWidth + totalPadding - 1.0e-3)) {
-      changed = false;
-      if (rightEdge + siteWidth <= rightLimit) {
-        rightEdge += siteWidth;
-        changed = true;
-      }
-      if (leftEdge - siteWidth >= leftLimit) {
-        leftEdge -= siteWidth;
-        changed = true;
-      }
-    }
-
-    if (rightEdge - leftEdge >= totalWidth + totalPadding) {
-      // Proceed with padding, and maybe a bit more space.
-      double amtPerCell =
-          ((rightEdge - leftEdge) - (totalWidth + totalPadding)) / (double)size;
-      int sitesPerCell = std::max(1, (int)std::floor(amtPerCell / siteWidth));
-
-      totalWidth = 0.;
-      for (size_t i = 0; i < size; i++) {
-        Node* ndi = nodes[jstrt + i];
-        m_arch->getCellPadding(ndi, leftPadding, rightPadding);
-        widths[i] = ndi->getWidth() + leftPadding + rightPadding;
-
-        totalWidth += widths[i];
-      }
-      for (size_t i = 0; i < size; i++) {
-        if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
-          totalWidth -= widths[i];
-          widths[i] += sitesPerCell * siteWidth;
-          totalWidth += widths[i];
-        }
-      }
-    } else if (rightEdge - leftEdge >= totalWidth) {
-      // Can proceed without padding, but maybe a bit of space.
-      double amtPerCell =
-          ((rightEdge - leftEdge) - (totalWidth)) / (double)size;
-      int sitesPerCell = std::max(1, (int)std::floor(amtPerCell / siteWidth));
-
-      totalWidth = 0.;
-      for (size_t i = 0; i < size; i++) {
-        Node* ndi = nodes[jstrt + i];
-        widths[i] = ndi->getWidth();
-        totalWidth += widths[i];
-      }
-      for (size_t i = 0; i < size; i++) {
-        if (totalWidth + sitesPerCell * siteWidth < rightEdge - leftEdge) {
-          totalWidth -= widths[i];
-          widths[i] += sitesPerCell * siteWidth;
-          totalWidth += widths[i];
-        }
-      }
-    } else {
-      // Not enough space so abort.
-      return;
+    if (totalWidth+totalPadding+sitePerCellLeft*siteWidth < rightLimit-leftLimit) {
+      totalPadding += sitePerCellLeft*siteWidth;
+      left[i] += sitePerCellLeft*siteWidth;
     }
   }
-  // std::cout << "left edge " << leftEdge << ", right edge " << rightEdge <<
-  // std::endl;
-  //
-  // std::cout << "Solving => [" << leftEdge << "," << rightEdge << "]" <<
-  // std::endl; std::cout << "Widths "; for( int i = 0; i < size; i++ )
-  //{
-  //   std::cout << " " << widths[i];
-  //}
-  // std::cout << std::endl;
+  if (rightLimit-leftLimit < totalWidth+totalPadding) {
+    // We do not have enough space, so abort.
+    return;
+  }
 
   // Generate the different permutations.  Evaluate each one and keep
-  // the best one.  Note that the first permutation, which is the
-  // original placement, might not generate the original placement
-  // since the spacing might be different.  Consequently, figure out
-  // the WL of the current placement and set it as the best.
+  // the best one.  
+  // 
+  // NOTE: The first permutation, which is the original placement, 
+  // might not generate the original placement since the spacing 
+  // might be different.  So, just consider the first permutation
+  // like all the others.
 
-  std::vector<double> position(size, 0.0);
-  for (int i = 0; i < size; i++) {
-    Node* ndi = nodes[jstrt + i];
-    position[i] = ndi->getX();
-  }
-  double best = cost(nodes, jstrt, jstop);
-  double orig = best;
-  // std::cout << "orig:";
-  // for( int i = 0; i < size; i++ )
-  //{
-  //    Node* ndi = nodes[jstrt+i];
-  //    std::cout << " " << ndi->getId() << " @ " << ndi->getX();
-  //}
-  // std::cout << ", cost is " << best << std::endl;
+  double bestCost = cost(nodes, jstrt, jstop);
+  double origCost = bestCost;
 
-  std::vector<int> order(size, 0);
+  std::vector<int> bestPosn(size, 0); // Current positions.
+  std::vector<int> currPosn(size, 0); // Current positions.
+  std::vector<int> order(size, 0); // For generating permutations.
   for (int i = 0; i < size; i++) {
     order[i] = i;
   }
   bool found = false;
-  int count = 0;
   do {
-    ++count;
-
-    // std::cout << boost::format( "perm %3d, order: " ) % count;
-    // for( int i = 0; i < size; i++ ) { std::cout << " " << order[i]; }
-
-    double x = leftEdge;
+    // Position the cells.
+    bool dispOkay = true;
+    int x = leftLimit;
     for (int i = 0; i < size; i++) {
       int ix = order[i];
+      Node* ndi = nodes[jstrt+ix];
+      x += left[ix];
+      currPosn[ix] = x;
+      ndi->setLeft(currPosn[ix]);
+      x += width[ix];
+      x += right[ix];
 
-      Node* ndi = nodes[jstrt + ix];
-
-      x += 0.5 * widths[ix];
-      ndi->setX(x);
-      x += 0.5 * widths[ix];
-
-      // std::cout << " " << ndi->getId() << " @ " << ndi->getX() << ", "
-      //    << ndi->getX()-0.5*ndi->getWidth() << "-" <<
-      //    ndi->getX()+0.5*ndi->getWidth()
-      //    << std::endl;
-    }
-    double curr = cost(nodes, jstrt, jstop);
-
-    // std::cout << ", cost is " << curr << std::endl;
-
-    if (curr < best) {
-      // std::cout << "New best, " << curr << std::endl;
-      for (int i = 0; i < size; i++) {
-        int ix = order[i];
-        position[ix] = nodes[jstrt + ix]->getX();
+      double dx = std::fabs(ndi->getLeft()-ndi->getOrigLeft());
+      if ((int)std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+        dispOkay = false;
       }
-      best = curr;
+    }
+    if (dispOkay) {
+      double currCost = cost(nodes, jstrt, jstop);
+      if (currCost < bestCost) {
+        bestPosn = currPosn;
+        bestCost = currCost;
 
-      found = true;
+        found = true;
+      }
     }
   } while (std::next_permutation(order.begin(), order.end()));
 
   if (!found) {
-    // Might as well just put cells back at their original positions
-    // and return.
+    // No improvement.  Restore positions and return.
     for (size_t i = 0; i < size; i++) {
-      Node* ndi = nodes[jstrt + i];
-      ndi->setX(origX[ndi]);
+      Node* ndi = nodes[jstrt+i];
+      ndi->setLeft(origLeft[ndi]);
     }
     return;
   }
 
-  // We have found an apprarent lower cost reordering.
-
   // Put cells at their best positions.
   for (int i = 0; i < size; i++) {
-    nodes[jstrt + i]->setX(position[i]);
+    Node* ndi = nodes[jstrt+i];
+    ndi->setLeft(bestPosn[i]);
   }
 
-  double last = cost(nodes, jstrt, jstop);
-
-  // NB: Need to resort.
+  // Need to resort.
   std::stable_sort(nodes.begin() + jstrt, nodes.begin() + jstop + 1,
                    DetailedMgr::compareNodesX());
 
-  // Possible things are not site aligned due to the edges or the
-  // widths.  Do a simply scan and align to sites.
+  // Check that cells are site aligned and fix if needed.
   {
     bool shifted = false;
     bool failed = false;
-    double left = leftEdge;
-    double x;
+    int left = leftLimit;
     for (int i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
 
-      x = ndi->getX() - 1.0e-3;
-      if (!m_mgrPtr->alignPos(ndi, x, left, rightEdge)) {
-        x = ndi->getX() + 1.0e-3;
-        if (!m_mgrPtr->alignPos(ndi, x, left, rightEdge)) {
-          failed = true;
-          break;
-        }
+      int x = ndi->getLeft();
+      if (!m_mgrPtr->alignPos(ndi, x, left, rightLimit)) {
+        failed = true;
+        break;
       }
-      if (std::fabs(x - ndi->getX()) > 1.0e-3) {
+      if (std::abs(x - ndi->getLeft()) != 0) {
         shifted = true;
       }
-      ndi->setX(x);
-      left = ndi->getX() + 0.5 * ndi->getWidth();
+      ndi->setLeft(x);
+      left = ndi->getRight();
+
+      double dx = std::fabs(ndi->getLeft()-ndi->getOrigLeft());
+      if ((int)std::ceil(dx) > m_mgrPtr->getMaxDisplacementX()) {
+        failed = true;
+        break;
+      }
     }
     if (!failed) {
       // This implies everything got site aligned within the specified
       // interval.  However, we might have shifted something.
       if (shifted) {
         // Recost.  The shifting might have changed the cost.
-        last = cost(nodes, jstrt, jstop);
-        if (last >= orig) {
+        double lastCost = cost(nodes, jstrt, jstop);
+        if (lastCost >= origCost) {
           failed = true;
         }
       }
     }
 
     if (failed) {
-      // std::cout << "Restoring original placement." << std::endl;
       // Restore original placement.
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
-        ndi->setX(origX[ndi]);
+        ndi->setLeft(origLeft[ndi]);
       }
       std::stable_sort(nodes.begin() + jstrt, nodes.begin() + jstop + 1,
                        DetailedMgr::compareNodesX());
@@ -484,12 +390,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
   for (int i = istrt; i <= istop; i++) {
     Node* ndi = nodes[i];
 
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -500,12 +406,12 @@ double DetailedReorderer::cost(std::vector<Node*>& nodes, int istrt,
 
       double xmin = std::numeric_limits<double>::max();
       double xmax = -std::numeric_limits<double>::max();
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* ndj = pinj->getNode();
 
-        double x = ndj->getX() + pinj->getOffsetX();
+        double x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);

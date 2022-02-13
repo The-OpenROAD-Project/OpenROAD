@@ -580,6 +580,9 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const;
 
+  void setExpandClock(bool expand);
+  bool getExpandClock() const;
+
   void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
   void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
   void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
@@ -592,6 +595,7 @@ class TimingControlsDialog : public QDialog
 
  signals:
   void inspect(const Selected& selected);
+  void expandClock(bool expand);
 
  public slots:
   void populate();
@@ -608,6 +612,7 @@ class TimingControlsDialog : public QDialog
   QComboBox* corner_box_;
 
   QCheckBox* uncontrained_;
+  QCheckBox* expand_clk_;
 
   PinSetWidget* from_;
   std::vector<PinSetWidget*> thru_;

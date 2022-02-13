@@ -865,9 +865,15 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
     return;
   }
 
+  // Hold on to selected items as the pointers will be invalid
+  QList<Selected> items_storage;
   for (auto item : items) {
-    highlighted_[highlight_group].insert(*item);
+    items_storage.push_back(*item);
   }
+  // Remove any items that might already be selected
+  removeFromHighlighted(items);
+
+  highlighted_[highlight_group].insert(items_storage.begin(), items_storage.end());
   emit highlightChanged();
 }
 
@@ -891,8 +897,10 @@ void MainWindow::clearHighlighted(int highlight_group)
 
 void MainWindow::clearRulers()
 {
-  if (rulers_.empty())
+  if (rulers_.empty()) {
     return;
+  }
+  Gui::get()->removeSelected<Ruler*>();
   rulers_.clear();
   emit rulersChanged();
 }
