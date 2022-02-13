@@ -71,6 +71,13 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
+  for (auto& master : design_->getMasters())
+    for (auto& term : master->getTerms())
+      for (auto& pin : term->getPins())
+        pin->clearPinAccess();
+  for (auto& term : design_->getTopBlock()->getTerms())
+    for (auto& pin : term->getPins())
+      pin->clearPinAccess();
   initViaRawPriority();
   initTrackCoords();
 

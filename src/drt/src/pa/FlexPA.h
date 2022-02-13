@@ -41,9 +41,8 @@ class dbDatabase;
 namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
-typedef std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
-        viaRawPriorityTuple;
+typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
+    viaRawPriorityTuple;
 class FlexPinAccessPattern;
 class FlexDPNode;
 class FlexPAGraphics;
@@ -66,6 +65,10 @@ class FlexPA
   // setters
   int main();
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setTargetInstances(frCollection<odb::dbInst*> insts)
+  {
+    target_insts_ = insts;
+  }
 
  private:
   frDesign* design_;
@@ -100,6 +103,7 @@ class FlexPA
       map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
       frBlockObjectComp>
       masterOT2Insts;  // master orient track-offset to instances
+  frCollection<odb::dbInst*> target_insts_;
 
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
@@ -111,8 +115,9 @@ class FlexPA
   void init();
   void initUniqueInstance();
   void initUniqueInstance_master2PinLayerRange(
-      std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-          master2PinLayerRange);
+      std::map<frMaster*,
+               std::tuple<frLayerNum, frLayerNum>,
+               frBlockObjectComp>& master2PinLayerRange);
   void initUniqueInstance_main(
       const std::map<frMaster*,
                      std::tuple<frLayerNum, frLayerNum>,
@@ -263,12 +268,13 @@ class FlexPA
                        const double xWeight);
   int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   int currUniqueInstIdx);
-  void genPatterns_init(std::vector<FlexDPNode>& nodes,
-                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                        std::set<std::vector<int>>& instAccessPatterns,
-                        std::set<std::pair<int, int>>& usedAccessPoints,
-                        std::set<std::pair<int, int>>& violAccessPoints,
-                        int maxAccessPointSize);
+  void genPatterns_init(
+      std::vector<FlexDPNode>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+      std::set<std::vector<int>>& instAccessPatterns,
+      std::set<std::pair<int, int>>& usedAccessPoints,
+      std::set<std::pair<int, int>>& violAccessPoints,
+      int maxAccessPointSize);
   void genPatterns_reset(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,

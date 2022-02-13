@@ -33,14 +33,17 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace fr {
 class frDesign;
+class DesignCallBack;
 struct frDebugSettings;
 }  // namespace fr
 
 namespace odb {
 class dbDatabase;
+class dbInst;
 }
 namespace utl {
 class Logger;
@@ -89,7 +92,7 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
-  void pinAccess();
+  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>(0));
 
   int getNumDRVs() const;
 
@@ -117,9 +120,10 @@ class TritonRoute
   std::string runDRWorker(const char* file_name);
   void updateGlobals(const char* file_name);
 
- protected:
+ private:
   std::unique_ptr<fr::frDesign> design_;
   std::unique_ptr<fr::frDebugSettings> debug_;
+  std::unique_ptr<fr::DesignCallBack> db_callback_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
@@ -130,9 +134,9 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
-  bool pin_access_valid_;
 
-  void init(bool pin_access = false);
+  void initDesign();
+  void initGuide();
   void prep();
   void gr();
   void ta();

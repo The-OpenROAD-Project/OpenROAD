@@ -59,9 +59,14 @@ void FlexPA::initUniqueInstance_master2PinLayerRange(
     map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         master2PinLayerRange)
 {
+  std::set<frString> masters;
+  for (auto inst : target_insts_)
+    masters.insert(inst->getMaster()->getName());
   int numLayers = design_->getTech()->getLayers().size();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
+    if (!masters.empty() && masters.find(master->getName()) == masters.end())
+      continue;
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
     for (auto& uTerm : master->getTerms()) {
@@ -108,8 +113,8 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
   frCoord high = low
-                 + (frCoord)(tp->getTrackSpacing())
-                       * ((frCoord)(tp->getNumTracks()) - 1);
+                 + (frCoord) (tp->getTrackSpacing())
+                       * ((frCoord) (tp->getNumTracks()) - 1);
   if (isVerticalTrack) {
     return !(low > box.xMax() || high < box.xMin());
   } else {
@@ -127,7 +132,13 @@ void FlexPA::initUniqueInstance_main(
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
+  std::set<frString> inst_names;
+  for (auto inst : target_insts_)
+    inst_names.insert(inst->getName());
   for (auto& inst : design_->getTopBlock()->getInsts()) {
+    if (!inst_names.empty()
+        && inst_names.find(inst->getName()) == inst_names.end())
+      continue;
     if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
       ndrInsts.push_back(inst.get());
       continue;
@@ -181,8 +192,8 @@ void FlexPA::initUniqueInstance_main(
         auto uniqueInst = *(insts.begin());
         uniqueInstances_.push_back(uniqueInst);
         for (auto i : insts) {
-            inst2unique_[i] = uniqueInst;
-            inst2Class_[i] = &insts;
+          inst2unique_[i] = uniqueInst;
+          inst2Class_[i] = &insts;
         }
       }
     }
@@ -251,12 +262,13 @@ void FlexPA::initPinAccess()
   }
 
   // IO terms
-  for (auto& term : getDesign()->getTopBlock()->getTerms()) {
-    for (auto& pin : term->getPins()) {
-      auto pa = make_unique<frPinAccess>();
-      pin->addPinAccess(std::move(pa));
+  if (target_insts_.empty())
+    for (auto& term : getDesign()->getTopBlock()->getTerms()) {
+      for (auto& pin : term->getPins()) {
+        auto pa = make_unique<frPinAccess>();
+        pin->addPinAccess(std::move(pa));
+      }
     }
-  }
 }
 
 void FlexPA::initViaRawPriority()

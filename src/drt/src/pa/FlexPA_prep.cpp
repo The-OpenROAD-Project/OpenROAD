@@ -629,8 +629,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
   bool allowPlanar = true;
   bool isMacroCellPin = false;
   if (instTerm) {
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
+    dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
     if (masterType == dbMasterType::CORE
         || masterType == dbMasterType::CORE_TIEHIGH
         || masterType == dbMasterType::CORE_TIELOW
@@ -704,14 +703,8 @@ void FlexPA::prepPoint_pin_genPoints(
         && getDesign()->getTech()->getLayer(layerNum)->getType()
                == dbTechLayerType::ROUTING) {
       // cout <<"via layernum = " <<layerNum <<endl;
-      prepPoint_pin_genPoints_layerShapes(aps,
-                                          apset,
-                                          instTerm,
-                                          *it,
-                                          layerNum,
-                                          allowVia,
-                                          lowerType,
-                                          upperType);
+      prepPoint_pin_genPoints_layerShapes(
+          aps, apset, instTerm, *it, layerNum, allowVia, lowerType, upperType);
     }
     layerNum--;
   }
@@ -776,8 +769,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
+    dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -977,7 +969,7 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
-  //gcWorker.setIgnoreLongSideEOL();
+  // gcWorker.setIgnoreLongSideEOL();
   Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
@@ -1063,8 +1055,7 @@ void FlexPA::prepPoint_pin_updateStat(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
+    dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1113,8 +1104,7 @@ bool FlexPA::prepPoint_pin_helper(
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
+    dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1157,7 +1147,8 @@ bool FlexPA::prepPoint_pin_helper(
   for (int i = 0; i < (int) aps.size();
        i++) {  // not perfect but will do the job
     int r = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    tbx.init(aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
+    tbx.init(
+        aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
     for (int j = i + 1; j < (int) aps.size(); j++) {
       if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
           && tbx.intersects(aps[j]->getPoint())) {
@@ -1215,8 +1206,7 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
   if (instTerm) {
     // TODO there should be a better way to get this info by getting the master
     // terms from OpenDB
-    dbMasterType masterType
-        = instTerm->getInst()->getMaster()->getMasterType();
+    dbMasterType masterType = instTerm->getInst()->getMaster()->getMasterType();
     isStdCellPin = masterType == dbMasterType::CORE
                    || masterType == dbMasterType::CORE_TIEHIGH
                    || masterType == dbMasterType::CORE_TIELOW
@@ -1347,30 +1337,33 @@ void FlexPA::prepPoint()
   // cout << "PA for IO terms\n" << flush;
 
   // PA for IO terms
-  omp_set_num_threads(MAX_THREADS);
+  if (target_insts_.empty()) {
+    omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
-  for (unsigned i = 0; i < getDesign()->getTopBlock()->getTerms().size(); i++) {
-    try {
-      auto& term = getDesign()->getTopBlock()->getTerms()[i];
-      if (term.get()->getType().isSupply()) {
-        continue;
+    for (unsigned i = 0; i < getDesign()->getTopBlock()->getTerms().size();
+         i++) {
+      try {
+        auto& term = getDesign()->getTopBlock()->getTerms()[i];
+        if (term.get()->getType().isSupply()) {
+          continue;
+        }
+        if (term->getNet() == nullptr) {
+          continue;
+        }
+        int nAps = 0;
+        for (auto& pin : term->getPins()) {
+          nAps += prepPoint_pin(pin.get(), nullptr);
+        }
+        if (!nAps) {
+          logger_->error(
+              DRT, 74, "No access point for PIN/{}.", term->getName());
+        }
+      } catch (...) {
+        exception.capture();
       }
-      if (term->getNet() == nullptr) {
-        continue;
-      }
-      int nAps = 0;
-      for (auto& pin : term->getPins()) {
-        nAps += prepPoint_pin(pin.get(), nullptr);
-      }
-      if (!nAps) {
-          logger_->error(DRT, 74, "No access point for PIN/{}.", term->getName());
-      }
-    } catch (...) {
-      exception.capture();
     }
+    exception.rethrow();
   }
-  exception.rethrow();
-
 
   if (VERBOSE > 0) {
     logger_->info(DRT, 78, "  Complete {} pins.", cnt);
@@ -1404,9 +1397,9 @@ void FlexPA::prepPattern()
           && masterType != dbMasterType::CORE_ANTENNACELL) {
         continue;
       }
-  
+
       int numValidPattern = prepPattern_inst(inst, currUniqueInstIdx, 1.0);
-  
+
       if (numValidPattern == 0) {
         // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
         // and sorting in X works poorly.  So we try again sorting in Y.
@@ -1426,11 +1419,13 @@ void FlexPA::prepPattern()
         if (VERBOSE > 0) {
           if (cnt < 1000) {
             if (cnt % 100 == 0) {
-              logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
+              logger_->info(
+                  DRT, 79, "  Complete {} unique inst patterns.", cnt);
             }
           } else {
             if (cnt % 1000 == 0) {
-              logger_->info(DRT, 80, "  Complete {} unique inst patterns.", cnt);
+              logger_->info(
+                  DRT, 80, "  Complete {} unique inst patterns.", cnt);
             }
           }
         }
@@ -1684,7 +1679,9 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
     for (frInst* inst : insts) {
       inst_names += '\n' + inst->getName();
     }
-    logger_->error(DRT, 85, "Valid access pattern combination not found for {}",
+    logger_->error(DRT,
+                   85,
+                   "Valid access pattern combination not found for {}",
                    inst_names);
   }
 
@@ -1858,7 +1855,15 @@ void FlexPA::addAccessPatternObj(
 
 void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
+  std::set<frString> inst_names;
+  for (auto inst : target_insts_)
+    inst_names.insert(inst->getName());
   for (auto& inst : design_->getTopBlock()->getInsts()) {
+    if (!inst_names.empty()
+        && inst_names.find(inst->getName()) == inst_names.end())
+      continue;
+    if (inst2unique_.find(inst.get()) == inst2unique_.end())
+      continue;
     dbMasterType masterType = inst->getMaster()->getMasterType();
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
@@ -1954,8 +1959,9 @@ int FlexPA::prepPattern_inst(frInst* inst,
   return genPatterns(pinInstTermPairs, currUniqueInstIdx);
 }
 
-int FlexPA::genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                        int currUniqueInstIdx)
+int FlexPA::genPatterns(
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+    int currUniqueInstIdx)
 {
   if (pins.empty()) {
     return -1;
@@ -2126,8 +2132,8 @@ bool FlexPA::genPatterns_gc(frBlockObject* targetObj,
 
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
-  //gcWorker.setIgnoreLongSideEOL();
-  
+  // gcWorker.setIgnoreLongSideEOL();
+
   frCoord llx = std::numeric_limits<frCoord>::max();
   frCoord lly = std::numeric_limits<frCoord>::max();
   frCoord urx = std::numeric_limits<frCoord>::min();
@@ -2216,15 +2222,16 @@ void FlexPA::genPatterns_perform(
   }
 }
 
-int FlexPA::getEdgeCost(int prevNodeIdx,
-                        int currNodeIdx,
-                        const std::vector<FlexDPNode>& nodes,
-                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                        std::vector<int>& vioEdges,
-                        const std::set<std::pair<int, int>>& usedAccessPoints,
-                        const std::set<std::pair<int, int>>& violAccessPoints,
-                        int currUniqueInstIdx,
-                        int maxAccessPointSize)
+int FlexPA::getEdgeCost(
+    int prevNodeIdx,
+    int currNodeIdx,
+    const std::vector<FlexDPNode>& nodes,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+    std::vector<int>& vioEdges,
+    const std::set<std::pair<int, int>>& usedAccessPoints,
+    const std::set<std::pair<int, int>>& violAccessPoints,
+    int currUniqueInstIdx,
+    int maxAccessPointSize)
 {
   int edgeCost = 0;
   int prevIdx1, prevIdx2, currIdx1, currIdx2;
