@@ -33,16 +33,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO:
-// - Flip multi-height cells to get power alignment correct.  I don't think
-//   this code flips properly for multi-height cells so I need to dig a bit
-//   deeper into multi-height cells.  Or, maybe for the time being, I will
-//   get the power alignment correct (e.g., Assume SYMMETRY_X) and just
-//   assume any flips are okay in the other direction.
-// - Add flipping to reduce edge spacing violations.
-
 ////////////////////////////////////////////////////////////////////////////////
-// Includes.
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_orient.h"
 #include <stdio.h>
@@ -61,11 +52,6 @@
 using utl::DPO;
 
 namespace dpo {
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,7 +251,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row) {
     return false;
   }
 
-  unsigned rowOri = m_arch->getRow(row)->getSiteOrient();
+  unsigned rowOri = m_arch->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {
@@ -321,7 +307,7 @@ int DetailedOrient::flipCells() {
   // wire length.  We only flip if the row supports SYMMETRY_Y.  We
   // assume the cells are already properly oriented for the row.
 
-  double leftPadding, rightPadding;
+  int leftPadding, rightPadding;
   double lx, rx;
 
   int nflips = 0;
@@ -330,7 +316,7 @@ int DetailedOrient::flipCells() {
 
     int row = segment->getRowId();
 
-    if ((m_arch->getRow(row)->getSiteSymmetry() & Symmetry_Y) == 0) {
+    if ((m_arch->getRow(row)->getSymmetry() & Symmetry_Y) == 0) {
       continue;
     }
 
@@ -352,7 +338,7 @@ int DetailedOrient::flipCells() {
 
         Edge* edi = pini->getEdge();
 
-        int npins = edi->getPins().size();
+        int npins = edi->getNumPins();
         if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
           continue;
         }
@@ -372,12 +358,12 @@ int DetailedOrient::flipCells() {
 
           Node* ndj = pinj->getNode();
 
-          double x = ndj->getX() + pinj->getOffsetX();
+          double x = ndj->getLeft()+0.5*ndj->getWidth() + pinj->getOffsetX();
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 
           if (ndj == ndi) {
-            x = ndj->getX() - pinj->getOffsetX(); // flipped.
+            x = ndj->getLeft()+0.5*ndj->getWidth() - pinj->getOffsetX(); // flipped.
           }
           newMinX = std::min(newMinX, x);
           newMaxX = std::max(newMaxX, x);
@@ -393,12 +379,12 @@ int DetailedOrient::flipCells() {
       // Check potential violation due to padding.
       Node* ndl = (i==0) ? nullptr : nodes[i-1];
       Node* ndr = (i==nodes.size()-1) ? nullptr : nodes[i+1];
-      lx = (ndl==nullptr) ? segment->getMinX() : (ndl->getX()+0.5*ndl->getWidth());
+      lx = (ndl==nullptr) ? segment->getMinX() : (ndl->getRight());
       if (ndl) {
         m_arch->getCellPadding(ndl,leftPadding,rightPadding);
         lx += rightPadding;
       }
-      rx = (ndr==nullptr) ? segment->getMaxX() : (ndr->getX()-0.5*ndr->getWidth());
+      rx = (ndr==nullptr) ? segment->getMaxX() : (ndr->getLeft());
       if (ndr) {
         m_arch->getCellPadding(ndr,leftPadding,rightPadding);
         rx -= leftPadding;
@@ -407,17 +393,17 @@ int DetailedOrient::flipCells() {
       // reside within [lx,rx] _after_ the flip.  So, 
       // reverse the paddings.
       m_arch->getCellPadding(ndi,leftPadding,rightPadding);
-      if (ndi->getX()-0.5*ndi->getWidth()-rightPadding < lx ||
-            ndi->getX()+0.5*ndi->getWidth()+leftPadding > rx) {
+      if (ndi->getLeft()-rightPadding < lx ||
+            ndi->getRight()+leftPadding > rx) {
         continue;
       }
 
       // Check potential violation due to edge spacing.
-      lx = (ndl==nullptr) ? segment->getMinX() : (ndl->getX()+0.5*ndl->getWidth());
+      lx = (ndl==nullptr) ? segment->getMinX() : (ndl->getRight());
       if (ndl) {
         lx += m_arch->getCellSpacingUsingTable(ndl->getRightEdgeType(), ndi->getRightEdgeType());
       }
-      rx = (ndr==nullptr) ? segment->getMaxX() : (ndr->getX()-0.5*ndr->getWidth());
+      rx = (ndr==nullptr) ? segment->getMaxX() : (ndr->getLeft());
       if (ndr) {
         rx -= m_arch->getCellSpacingUsingTable(ndi->getLeftEdgeType(), ndr->getLeftEdgeType());
       }
@@ -555,7 +541,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row) {
   // orientation, but this might be a little smarter if cells have been flipped
   // around the Y-axis previously to improve WL...
 
-  unsigned rowOri = m_arch->getRow(row)->getSiteOrient();
+  unsigned rowOri = m_arch->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
   if (rowOri == Orientation_N || rowOri == Orientation_FN) {

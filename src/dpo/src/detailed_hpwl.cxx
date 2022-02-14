@@ -47,6 +47,7 @@
 #include <utility>
 #include "detailed_manager.h"
 #include "detailed_orient.h"
+#include "rectangle.h"
 
 namespace dpo {
 
@@ -97,37 +98,30 @@ void DetailedHPWL::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedHPWL::curr() {
-  double xmin, xmax, ymin, ymax;
   double x, y;
   double hpwl = 0.;
+  Rectangle box;
   for (int i = 0; i < m_network->getNumEdges(); i++) {
     Edge* edi = m_network->getEdge(i);
 
-    int npins = edi->getPins().size();
+    int npins = edi->getNumPins();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
       continue;
     }
 
-    xmin = std::numeric_limits<double>::max();
-    xmax = -std::numeric_limits<double>::max();
-    ymin = std::numeric_limits<double>::max();
-    ymax = -std::numeric_limits<double>::max();
-
+    box.reset();
     for (int pj = 0; pj < edi->getPins().size(); pj++) {
       Pin* pinj = edi->getPins()[pj];
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getX() + pinj->getOffsetX();
-      y = ndj->getY() + pinj->getOffsetY();
+      x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+      y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-      xmin = std::min(xmin, x);
-      xmax = std::max(xmax, x);
-      ymin = std::min(ymin, y);
-      ymax = std::max(ymax, y);
+      box.addPt(x,y);
     }
 
-    hpwl += ((xmax - xmin) + (ymax - ymin));
+    hpwl += (box.getWidth()+box.getHeight());
   }
   return hpwl;
 }
@@ -135,9 +129,9 @@ double DetailedHPWL::curr() {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
-                           std::vector<double>& curX, std::vector<double>& curY,
+                           std::vector<int>& curLeft, std::vector<int>& curBottom,
                            std::vector<unsigned>& curOri,
-                           std::vector<double>& newX, std::vector<double>& newY,
+                           std::vector<int>& newLeft, std::vector<int>& newBottom,
                            std::vector<unsigned>& newOri) {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
@@ -145,14 +139,13 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
 
   double x, y;
   double old_wl = 0.;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
   double new_wl = 0.;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
 
   // Put cells into their "old positions and orientations".
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(curX[i]);
-    nodes[i]->setY(curY[i]);
+    nodes[i]->setLeft(curLeft[i]);
+    nodes[i]->setBottom(curBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], curOri[i]);
     }
@@ -166,7 +159,7 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -175,32 +168,26 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
       }
       m_edgeMask[edi->getId()] = m_traversal;
 
-      old_xmin = std::numeric_limits<double>::max();
-      old_xmax = -std::numeric_limits<double>::max();
-      old_ymin = std::numeric_limits<double>::max();
-      old_ymax = -std::numeric_limits<double>::max();
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      old_box.reset();
+      for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* curr = pinj->getNode();
 
-        x = curr->getX() + pinj->getOffsetX();
-        y = curr->getY() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
 
-        old_xmin = std::min(old_xmin, x);
-        old_xmax = std::max(old_xmax, x);
-        old_ymin = std::min(old_ymin, y);
-        old_ymax = std::max(old_ymax, y);
+        old_box.addPt(x,y);
       }
 
-      old_wl += ((old_xmax - old_xmin) + (old_ymax - old_ymin));
+      old_wl += (old_box.getWidth()+old_box.getHeight());
     }
   }
 
   // Put cells into their "new positions and orientations".
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(newX[i]);
-    nodes[i]->setY(newY[i]);
+    nodes[i]->setLeft(newLeft[i]);
+    nodes[i]->setBottom(newBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], newOri[i]);
     }
@@ -209,12 +196,12 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
   ++m_traversal;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -223,34 +210,27 @@ double DetailedHPWL::delta(int n, std::vector<Node*>& nodes,
       }
       m_edgeMask[edi->getId()] = m_traversal;
 
-      new_xmin = std::numeric_limits<double>::max();
-      new_xmax = -std::numeric_limits<double>::max();
-      new_ymin = std::numeric_limits<double>::max();
-      new_ymax = -std::numeric_limits<double>::max();
-
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      new_box.reset();
+      for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* curr = pinj->getNode();
 
-        x = curr->getX() + pinj->getOffsetX();
-        y = curr->getY() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
 
-        new_xmin = std::min(new_xmin, x);
-        new_xmax = std::max(new_xmax, x);
-        new_ymin = std::min(new_ymin, y);
-        new_ymax = std::max(new_ymax, y);
+        new_box.addPt(x,y);
       }
 
-      new_wl += ((new_xmax - new_xmin) + (new_ymax - new_ymin));
+      new_wl += (new_box.getWidth()+new_box.getHeight());
     }
   }
 
   // Put cells into their "old positions and orientations" before returning
   // (leave things as they were provided to us...).
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(curX[i]);
-    nodes[i]->setY(curY[i]);
+    nodes[i]->setLeft(curLeft[i]);
+    nodes[i]->setBottom(curBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], curOri[i]);
     }
@@ -268,16 +248,15 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
   double old_wl = 0.;
   double new_wl = 0.;
   double x, y;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
 
   ++m_traversal;
-  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+  for (int pi = 0; pi < ndi->getNumPins(); pi++) {
     Pin* pini = ndi->getPins()[pi];
 
     Edge* edi = pini->getEdge();
 
-    int npins = edi->getPins().size();
+    int npins = edi->getNumPins();
     if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
       continue;
     }
@@ -286,40 +265,27 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y) {
     }
     m_edgeMask[edi->getId()] = m_traversal;
 
-    old_xmin = std::numeric_limits<double>::max();
-    old_xmax = -std::numeric_limits<double>::max();
-    old_ymin = std::numeric_limits<double>::max();
-    old_ymax = -std::numeric_limits<double>::max();
-
-    new_xmin = std::numeric_limits<double>::max();
-    new_xmax = -std::numeric_limits<double>::max();
-    new_ymin = std::numeric_limits<double>::max();
-    new_ymax = -std::numeric_limits<double>::max();
-
-    for (int pj = 0; pj < edi->getPins().size(); pj++) {
+    old_box.reset();
+    new_box.reset();
+    for (int pj = 0; pj < edi->getNumPins(); pj++) {
       Pin* pinj = edi->getPins()[pj];
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getX() + pinj->getOffsetX();
-      y = ndj->getY() + pinj->getOffsetY();
+      x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+      y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-      old_xmin = std::min(old_xmin, x);
-      old_xmax = std::max(old_xmax, x);
-      old_ymin = std::min(old_ymin, y);
-      old_ymax = std::max(old_ymax, y);
+      old_box.addPt(x,y);
 
       if (ndj == ndi) {
         x = new_x + pinj->getOffsetX();
         y = new_y + pinj->getOffsetY();
       }
-      new_xmin = std::min(new_xmin, x);
-      new_xmax = std::max(new_xmax, x);
-      new_ymin = std::min(new_ymin, y);
-      new_ymax = std::max(new_ymax, y);
+
+      new_box.addPt(x,y);
     }
-    old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
-    new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+    old_wl += (old_box.getWidth()+old_box.getHeight());
+    new_wl += (new_box.getWidth()+new_box.getHeight());
   }
   return old_wl - new_wl;
 }
@@ -339,8 +305,7 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
   double old_wl = 0.;
   double new_wl = 0.;
   double x, y;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
   Node* nodes[2];
   nodes[0] = ndi;
   nodes[1] = ndj;
@@ -348,13 +313,13 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
   ++m_traversal;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
       Edge* edi = pini->getEdge();
 
       //int npins = edi->getNumPins();
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -363,28 +328,17 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
       }
       m_edgeMask[edi->getId()] = m_traversal;
 
-      old_xmin = std::numeric_limits<double>::max();
-      old_xmax = -std::numeric_limits<double>::max();
-      old_ymin = std::numeric_limits<double>::max();
-      old_ymax = -std::numeric_limits<double>::max();
-
-      new_xmin = std::numeric_limits<double>::max();
-      new_xmax = -std::numeric_limits<double>::max();
-      new_ymin = std::numeric_limits<double>::max();
-      new_ymax = -std::numeric_limits<double>::max();
-
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
+      old_box.reset();
+      new_box.reset();
+      for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getX() + pinj->getOffsetX();
-        y = ndj->getY() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-        old_xmin = std::min(old_xmin, x);
-        old_xmax = std::max(old_xmax, x);
-        old_ymin = std::min(old_ymin, y);
-        old_ymax = std::max(old_ymax, y);
+        old_box.addPt(x,y);
 
         if (ndj == nodes[0]) {
           ndj = nodes[1];
@@ -392,17 +346,14 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj) {
           ndj = nodes[0];
         }
 
-        x = ndj->getX() + pinj->getOffsetX();
-        y = ndj->getY() + pinj->getOffsetY();
+        x = ndj->getLeft() + 0.5*ndj->getWidth() + pinj->getOffsetX();
+        y = ndj->getBottom() + 0.5*ndj->getHeight() + pinj->getOffsetY();
 
-        new_xmin = std::min(new_xmin, x);
-        new_xmax = std::max(new_xmax, x);
-        new_ymin = std::min(new_ymin, y);
-        new_ymax = std::max(new_ymax, y);
+        new_box.addPt(x,y);
       }
 
-      old_wl += old_xmax - old_xmin + old_ymax - old_ymin;
-      new_wl += new_xmax - new_xmin + new_ymax - new_ymin;
+      old_wl += (old_box.getWidth()+old_box.getHeight());
+      new_wl += (new_box.getWidth()+new_box.getHeight());
     }
   }
   return old_wl - new_wl;
@@ -417,8 +368,7 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
   double old_wl = 0.;
   double new_wl = 0.;
   double x, y;
-  double old_xmin, old_xmax, old_ymin, old_ymax;
-  double new_xmin, new_xmax, new_ymin, new_ymax;
+  Rectangle old_box, new_box;
   Node* nodes[2];
   nodes[0] = ndi;
   nodes[1] = ndj;
@@ -426,12 +376,12 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
   ++m_traversal;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
+    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
       Edge* edi = pini->getEdge();
 
-      int npins = edi->getPins().size();
+      int npins = edi->getNumPins();
       if (npins <= 1 || npins >= m_skipNetsLargerThanThis) {
         continue;
       }
@@ -440,28 +390,17 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
       }
       m_edgeMask[edi->getId()] = m_traversal;
 
-      old_xmin = std::numeric_limits<double>::max();
-      old_xmax = -std::numeric_limits<double>::max();
-      old_ymin = std::numeric_limits<double>::max();
-      old_ymax = -std::numeric_limits<double>::max();
-
-      new_xmin = std::numeric_limits<double>::max();
-      new_xmax = -std::numeric_limits<double>::max();
-      new_ymin = std::numeric_limits<double>::max();
-      new_ymax = -std::numeric_limits<double>::max();
-
+      old_box.reset();
+      new_box.reset();
       for (int pj = 0; pj < edi->getPins().size(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
         Node* curr = pinj->getNode();
 
-        x = curr->getX() + pinj->getOffsetX();
-        y = curr->getY() + pinj->getOffsetY();
+        x = curr->getLeft() + 0.5*curr->getWidth() + pinj->getOffsetX();
+        y = curr->getBottom() + 0.5*curr->getHeight() + pinj->getOffsetY();
 
-        old_xmin = std::min(old_xmin, x);
-        old_xmax = std::max(old_xmax, x);
-        old_ymin = std::min(old_ymin, y);
-        old_ymax = std::max(old_ymax, y);
+        old_box.addPt(x,y);
 
         if (curr == nodes[0]) {
           x = target_xi + pinj->getOffsetX();
@@ -471,14 +410,11 @@ double DetailedHPWL::delta(Node* ndi, double target_xi, double target_yi,
           y = target_yj + pinj->getOffsetY();
         }
 
-        new_xmin = std::min(new_xmin, x);
-        new_xmax = std::max(new_xmax, x);
-        new_ymin = std::min(new_ymin, y);
-        new_ymax = std::max(new_ymax, y);
+        new_box.addPt(x,y);
       }
 
-      old_wl += ((old_xmax - old_xmin) + (old_ymax - old_ymin));
-      new_wl += ((new_xmax - new_xmin) + (new_ymax - new_ymin));
+      old_wl += (old_box.getWidth()+old_box.getHeight());
+      new_wl += (new_box.getWidth()+new_box.getHeight());
     }
   }
   return old_wl - new_wl;

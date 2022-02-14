@@ -9,7 +9,8 @@
 [ERROR PAD-0220] Unrecognized arguments (type) specified for define_pad_cell.
 define_pad_cell [-name name] [-type cell_type|-fill|-corner|-bondpad|-bump]
    [-cell_name cell_names_per_side] [-orient orientation_per_side]
-   [-pad_pin_name pad_pin_name] [-break_signals signal_list] [-physical_only]
+   [-pad_pin_name pad_pin_name] [-break_signals signal_list]
+   [-offset cell_offset] [-physical_only]
 set_bump_options [-pitch pitch] [-bump_pin_name pin_name]
    [-spacing_to_edge spacing] [-offset {x_offset y_offset}]
    [-array_size {rows columns}] [-cell_name bump_cell_table]

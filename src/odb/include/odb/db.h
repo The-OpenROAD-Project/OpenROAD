@@ -3371,6 +3371,11 @@ class dbITerm : public dbObject
   ///
   bool getAvgXY(int* x, int* y);
 
+  ///
+  /// Returns all geometries of all dbMPin associated with
+  /// the dbMTerm.
+  std::vector<Rect> getGeometries() const;
+
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
   ///

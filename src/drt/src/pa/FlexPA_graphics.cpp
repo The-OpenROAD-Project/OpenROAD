@@ -75,7 +75,11 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
     term_name_ = settings_->pinName.substr(pos + 1);
     auto inst_name = settings_->pinName.substr(0, pos);
-    inst_ = design->getTopBlock()->getInst(inst_name);
+    if (inst_name == "PIN") {  // top level bterm
+      inst_ = nullptr;
+    } else {
+      inst_ = design->getTopBlock()->getInst(inst_name);
+    }
   }
 
   gui_->registerRenderer(this);
@@ -163,35 +167,51 @@ void FlexPAGraphics::startPin(frMPin* pin,
   pin_ = nullptr;
 
   frMTerm* term = pin->getTerm();
-  std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
-                     + term->getName();
   if (!settings_->pinName.empty()) {
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_term == nullptr
-        || (inst_term && instClass->find(inst_) == instClass->end())) {
+    if (instClass->find(inst_) == instClass->end()) {
       return;
     }
   }
 
+  const std::string name
+      = inst_term->getInst()->getName() + ':' + term->getName();
   status("Start pin: " + name);
   pin_ = pin;
   inst_term_ = inst_term;
 
-  if (inst_term) {
-    Rect box;
-    inst_term->getInst()->getBBox(box);
-    gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
-    gui_->pause();
-  }
+  Rect box;
+  inst_term->getInst()->getBBox(box);
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+  gui_->pause();
 }
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
-  // TODO
+  pin_ = nullptr;
+
+  frBTerm* term = pin->getTerm();
+  if (!settings_->pinName.empty()) {
+    if (inst_ != nullptr) {
+      return;
+    }
+    if (term_name_ != "*" && term->getName() != term_name_) {
+      return;
+    }
+  }
+
+  const std::string name = "PIN:" + term->getName();
+  status("Start pin: " + name);
+  pin_ = pin;
+  inst_term_ = nullptr;
+
+  Rect box = term->getBBox();
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+  gui_->pause();
 }
 
 static const char* to_string(frAccessPointEnum e)
@@ -308,9 +328,9 @@ void FlexPAGraphics::setObjsAndMakers(
     const std::vector<std::unique_ptr<frMarker>>& markers,
     const FlexPA::PatternType type)
 {
-  if ((!settings_->paCommit && !settings_->paEdge) ||
-      (settings_->paCommit && type != FlexPA::Commit) ||
-      (settings_->paEdge && type != FlexPA::Edge)) {
+  if ((!settings_->paCommit && !settings_->paEdge)
+      || (settings_->paCommit && type != FlexPA::Commit)
+      || (settings_->paEdge && type != FlexPA::Edge)) {
     return;
   }
 

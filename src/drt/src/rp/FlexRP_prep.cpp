@@ -731,29 +731,6 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   else {
     tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
-
-    // shape-base rule
-    forbiddenRanges.clear();
-    forbiddenIntvSet = boost::icl::interval_set<frCoord>();
-    prep_via2viaForbiddenLen_minStepGF12(
-        lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
-
-    // merge forbidden ranges
-    for (auto& range : forbiddenRanges) {
-      forbiddenIntvSet.insert(
-          boost::icl::interval<frCoord>::closed(range.first, range.second));
-    }
-
-    forbiddenRanges.clear();
-    for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end();
-         it++) {
-      auto beginCoord = it->lower();
-      auto endCoord = it->upper();
-      forbiddenRanges.push_back(make_pair(beginCoord, endCoord - 1));
-    }
-
-    tech->via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx]
-        = forbiddenRanges;
   }
 }
 
