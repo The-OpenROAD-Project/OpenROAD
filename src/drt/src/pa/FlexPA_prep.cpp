@@ -38,8 +38,12 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 int gcCallCnt = 0;
 

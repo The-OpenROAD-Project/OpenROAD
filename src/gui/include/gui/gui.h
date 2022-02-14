@@ -651,6 +651,8 @@ class Gui
 
   // check if tcl should take over after closing gui
   bool isContinueAfterClose() { return continue_after_close_; }
+  // set continue after close, needs to be set when running in non-interactive mode
+  void setContinueAfterClose() { continue_after_close_ = true; }
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
 

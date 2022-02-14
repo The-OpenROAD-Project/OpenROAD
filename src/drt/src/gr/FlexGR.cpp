@@ -40,8 +40,12 @@
 #include "db/obj/frGuide.h"
 #include "odb/db.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 void FlexGR::main(odb::dbDatabase* db)
 {

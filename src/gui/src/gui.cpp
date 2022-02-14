@@ -51,6 +51,7 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
+#include "utl/exception.h"
 
 #include "drcWidget.h"
 #include "ruler.h"
@@ -877,7 +878,7 @@ void Gui::setLogger(utl::Logger* logger)
 void Gui::hideGui()
 {
   // ensure continue after close is true, since we want to return to tcl
-  continue_after_close_ = true;
+  setContinueAfterClose();
   main_window->exit();
 }
 
@@ -929,6 +930,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
 
   open_road->addObserver(main_window);
   if (!interactive) {
+    gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
   }
   main_window->show();
@@ -943,7 +945,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   }
 
   // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  main_window->getScriptWidget()->setupTcl(interp, init_openroad, [&]() {
+  main_window->getScriptWidget()->setupTcl(interp, interactive, init_openroad, [&]() {
     // init remainder of GUI, to be called immediately after OpenRoad is guaranteed to be initialized.
     main_window->init(open_road->getSta());
   });
@@ -985,14 +987,19 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
       }
     }
   }
-  gui->clearRestoreStateCommands();
 
+  // temporary storage for any exceptions thrown by scripts
+  utl::ThreadException exception;
   // Execute script
   if (!script.empty()) {
-    main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+    try {
+      main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
+    } catch (const std::runtime_error& /* e */) {
+      exception.capture();
+    }
   }
 
-  bool do_exec = interactive;
+  bool do_exec = interactive && !exception.hasException();
   // check if hide was called by script
   if (gui->isContinueAfterClose()) {
     do_exec = false;
@@ -1006,21 +1013,28 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   // cleanup
   open_road->removeObserver(main_window);
 
-  // save restore state commands
-  for (const auto& cmd : main_window->getRestoreTclCommands()) {
-    gui->addRestoreStateCommand(cmd);
+  if (!exception.hasException()) {
+    // don't save anything if exception occured
+    gui->clearRestoreStateCommands();
+    // save restore state commands
+    for (const auto& cmd : main_window->getRestoreTclCommands()) {
+      gui->addRestoreStateCommand(cmd);
+    }
   }
 
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
 
+  resetConversions();
+
+  // rethow exception, if one happened after cleanup of main_window
+  exception.rethrow();
+
   if (!gui->isContinueAfterClose()) {
     // if exiting, go ahead and exit with gui return code.
     exit(ret);
   }
-
-  resetConversions();
 
   return ret;
 }
