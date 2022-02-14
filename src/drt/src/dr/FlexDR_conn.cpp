@@ -33,8 +33,12 @@
 #include "frProfileTask.h"
 #include "io/io.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 // copied from FlexDRWorker::initNets_searchRepair_pin2epMap_helper
 void FlexDRConnectivityChecker::pin2epMap_helper(

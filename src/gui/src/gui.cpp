@@ -51,6 +51,7 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
+#include "utl/exception.h"
 
 #include "drcWidget.h"
 #include "ruler.h"
@@ -988,19 +989,17 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   }
 
   // temporary storage for any exceptions thrown by scripts
-  std::runtime_error exception("");
-  bool had_exception = false;
+  utl::ThreadException exception;
   // Execute script
   if (!script.empty()) {
     try {
       main_window->getScriptWidget()->executeCommand(QString::fromStdString(script));
-    } catch (const std::runtime_error& e) {
-      had_exception = true;
-      exception = e;
+    } catch (const std::runtime_error& /* e */) {
+      exception.capture();
     }
   }
 
-  bool do_exec = interactive && !had_exception;
+  bool do_exec = interactive && !exception.hasException();
   // check if hide was called by script
   if (gui->isContinueAfterClose()) {
     do_exec = false;
@@ -1014,7 +1013,8 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
   // cleanup
   open_road->removeObserver(main_window);
 
-  if (!had_exception) {
+  if (!exception.hasException()) {
+    // don't save anything if exception occured
     gui->clearRestoreStateCommands();
     // save restore state commands
     for (const auto& cmd : main_window->getRestoreTclCommands()) {
@@ -1028,10 +1028,8 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
 
   resetConversions();
 
-  if (had_exception) {
-    // rethow exception after cleanup of main_window
-    throw exception;
-  }
+  // rethow exception, if one happened after cleanup of main_window
+  exception.rethrow();
 
   if (!gui->isContinueAfterClose()) {
     // if exiting, go ahead and exit with gui return code.

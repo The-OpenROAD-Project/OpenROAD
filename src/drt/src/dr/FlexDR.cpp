@@ -49,8 +49,12 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 BOOST_CLASS_EXPORT(RoutingJobDescription)
 
