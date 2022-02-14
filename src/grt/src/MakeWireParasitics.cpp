@@ -216,9 +216,16 @@ void MakeWireParasitics::makeParasiticsToPin(Pin& pin)
                units->resistanceUnit()->asString(res),
                units->capacitanceUnit()->asString(cap));
 
+    debugPrint(logger_, GRT, "est_rc", 1,
+               "pin {} -> to grid {}u layer={} r={} c={}",
+               pin.getName(),
+               static_cast<int>(dbuToMeters(wire_length_dbu) * 1e+6),
+               layer,
+               units->resistanceUnit()->asString(res),
+               units->capacitanceUnit()->asString(cap));
+
     parasitics_->incrCap(pin_node, cap / 2.0, analysis_point_);
-    parasitics_->makeResistor(
-                              nullptr, pin_node, grid_node, res, analysis_point_);
+    parasitics_->makeResistor(nullptr, pin_node, grid_node, res, analysis_point_);
     parasitics_->incrCap(grid_node, cap / 2.0, analysis_point_);
   } else {
     logger_->warn(GRT, 26, "Missing route to pin {}.", pin.getName());
