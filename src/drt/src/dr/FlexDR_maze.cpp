@@ -1971,20 +1971,17 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
             intersects = true;
             frCoord area;
             if (areaMap[lNum][i] == -1)
-                areaMap[lNum][i] = gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon());
+                areaMap[lNum][i] = gtl::area(*pin->getPolygon());
             area = areaMap[lNum][i];
             if (area - patch->getOffsetBox().area() >= minArea) {
                 patchesToRemove.push_back(patch);
                 areaMap[lNum][i] -= patch->getOffsetBox().area();
             }
         }
-        if (!intersects)
-            cout << "NOOOOOOOOOOOOOOOOOOOO\n";
-        assert(intersects == true);
+        if (!intersects)    // I cant simply put assert because there is a compiler error saying taht intersects wasnt used
+            assert(intersects);
     }
-//    cout << patchesToRemove.size() << "\n";
     for (auto patch : patchesToRemove) {
-//        cout << "Removing " << *patch << "\n";
         getWorkerRegionQuery().remove(patch);
         net->removeShape(patch);
     }
@@ -2003,8 +2000,8 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
                continue;
              frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
              for (auto& pin : drcNet->getPins(lNum)) {
-                 if (gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon()) < minArea)
-                     assert(gtl::area<gtl::polygon_90_with_holes_data<frCoord>>(*pin->getPolygon()) >= minArea);
+                 if (gtl::area(*pin->getPolygon()) < minArea) //compiler complains about pin and minArea not used 
+                     assert(gtl::area(*pin->getPolygon()) >= minArea); 
              }
         }
     }
@@ -2897,11 +2894,13 @@ bool FlexDRWorker::routeNet(drNet* net)
     }
   }
   if (searchSuccess) {
-    gcWorker_->setTargetNet(net->getFrNet());
-    gcWorker_->updateDRNet(net);
-    gcWorker_->setEnableSurgicalFix(true);
-    gcWorker_->updateGCWorker();
-    cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
+    if (CLEAN_PATCHES) {
+      gcWorker_->setTargetNet(net->getFrNet());
+      gcWorker_->updateDRNet(net);
+      gcWorker_->setEnableSurgicalFix(true);
+      gcWorker_->updateGCWorker();
+      cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
+    }
     routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;

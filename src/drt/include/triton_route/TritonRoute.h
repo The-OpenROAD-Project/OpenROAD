@@ -73,6 +73,7 @@ struct ParamStruct
   std::string bottomRoutingLayer;
   std::string topRoutingLayer;
   int verbose = 1;
+  bool cleanPatches = false;
 };
 
 class TritonRoute
