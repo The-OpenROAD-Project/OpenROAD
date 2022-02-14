@@ -67,7 +67,7 @@ bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
-bool CLEAN_PATCHES = false;
+bool CLEAN_PATCHES = true;
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;
 std::string VIAINPIN_TOPLAYER_NAME;

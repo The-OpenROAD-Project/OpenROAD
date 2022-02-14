@@ -449,7 +449,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
-  CLEAN_PATCHES = params.cleanPatches;
+  CLEAN_PATCHES = true;//params.cleanPatches;
   if (!params.viaInPinBottomLayer.empty()) {
     VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
