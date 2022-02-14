@@ -1963,12 +1963,10 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
         frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
         if (areaMap[lNum].empty())
             areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
-        bool intersects = false;
         for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
             auto& pin = drcNet->getPins(lNum)[i];
             if (!gtl::contains(*pin->getPolygon(), pt))
                 continue;
-            intersects = true;
             frCoord area;
             if (areaMap[lNum][i] == -1)
                 areaMap[lNum][i] = gtl::area(*pin->getPolygon());
@@ -1978,32 +1976,10 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
                 areaMap[lNum][i] -= patch->getOffsetBox().area();
             }
         }
-        if (!intersects)    // I cant simply put assert because there is a compiler error saying taht intersects wasnt used
-            assert(intersects);
     }
     for (auto patch : patchesToRemove) {
         getWorkerRegionQuery().remove(patch);
         net->removeShape(patch);
-    }
-    bool validate = true;
-    if (validate) {
-        gcWorker_->setTargetNet(net->getFrNet());
-        gcWorker_->updateDRNet(net);
-        gcWorker_->setEnableSurgicalFix(true);
-        gcWorker_->updateGCWorker();
-        for (int lNum = getTech()->getBottomLayerNum();
-                lNum <= getTech()->getTopLayerNum();
-                lNum++) {
-             auto layer = getTech()->getLayer(lNum);
-             if (layer->getType() != dbTechLayerType::ROUTING || 
-                 !layer->getAreaConstraint())
-               continue;
-             frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
-             for (auto& pin : drcNet->getPins(lNum)) {
-                 if (gtl::area(*pin->getPolygon()) < minArea) //compiler complains about pin and minArea not used 
-                     assert(gtl::area(*pin->getPolygon()) >= minArea); 
-             }
-        }
     }
 }
 
