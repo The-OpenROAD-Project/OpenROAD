@@ -37,6 +37,10 @@
 #include "gui/gui.h"
 #include "shape.h"
 
+namespace odb {
+class Rect;
+}  // namespace odb
+
 namespace pdn {
 
 class PdnGen;
@@ -61,19 +65,31 @@ class PDNRenderer : public gui::Renderer
  private:
   PdnGen* pdn_;
   ShapeTreeMap shapes_;
+  ShapeTreeMap grid_obstructions_;
   ViaTree vias_;
+  struct RepairChannel
+  {
+    odb::dbTechLayer* source;
+    odb::dbTechLayer* target;
+    odb::Rect rect;
+    std::string text;
+  };
+  std::vector<RepairChannel> repair_;
 
   static const gui::Painter::Color ring_color_;
   static const gui::Painter::Color strap_color_;
   static const gui::Painter::Color followpin_color_;
   static const gui::Painter::Color via_color_;
   static const gui::Painter::Color obstruction_color_;
+  static const gui::Painter::Color repair_color_;
 
+  static constexpr const char* grid_obs_text_ = "Grid obstructions";
   static constexpr const char* obs_text_ = "Obstructions";
   static constexpr const char* rings_text_ = "Rings";
   static constexpr const char* straps_text_ = "Straps";
   static constexpr const char* followpins_text_ = "Followpin";
   static constexpr const char* vias_text_ = "Vias";
+  static constexpr const char* repair_text_ = "Repair channels";
 };
 
 }  // namespace pdn

@@ -3676,6 +3676,10 @@ PINS 269 ;
     - VSSIO_1 + NET VSSIO_1 + DIRECTION INPUT + USE GROUND + FIXED ( 2720000 5873414 ) N + LAYER metal10 ( -1800 -1800 ) ( 1800 1800 ) ;
     - VDDIO_1 + NET VDDIO_1 + DIRECTION INPUT + USE POWER + FIXED ( 2580000 5873414 ) N + LAYER metal10 ( -1800 -1800 ) ( 1800 1800 ) ;
 END PINS
+SPECIALNETS 2 ;
+    - DVDD ( * DVDD ) + USE POWER ;
+    - DVSS ( * DVSS ) + USE GROUND ;
+END SPECIALNETS
 NETS 350 ;
     - bsg_tag_clk_i ( PIN bsg_tag_clk_i ) ( u_bsg_tag_clk_i PAD ) + USE SIGNAL ;
     - bsg_tag_clk_o ( PIN bsg_tag_clk_o ) ( u_bsg_tag_clk_o PAD ) + USE SIGNAL ;

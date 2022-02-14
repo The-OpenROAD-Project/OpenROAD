@@ -35,7 +35,7 @@
 #include <array>
 #include <vector>
 
-#include "grid_shape.h"
+#include "grid_component.h"
 
 namespace odb {
 class dbTechLayer;
@@ -44,7 +44,7 @@ class dbTechLayer;
 namespace pdn {
 class Grid;
 
-class Ring : public GridShape
+class Rings : public GridComponent
 {
  public:
   struct Layer
@@ -54,7 +54,7 @@ class Ring : public GridShape
     int spacing = 0;
   };
 
-  Ring(Grid* grid, const std::array<Layer, 2>& layers);
+  Rings(Grid* grid, const std::array<Layer, 2>& layers);
 
   void setOffset(const std::array<int, 4>& offset);
   const std::array<int, 4>& getOffset() const { return offset_; }
@@ -67,11 +67,12 @@ class Ring : public GridShape
 
   const std::vector<odb::dbTechLayer*> getLayers() const;
 
-  // returns the horizontal and vertical widths of the rings, useful when estimating the ring size.
+  // returns the horizontal and vertical widths of the rings, useful when
+  // estimating the ring size.
   void getTotalWidth(int& hor, int& ver) const;
 
   virtual void report() const override;
-  virtual Type type() const override { return GridShape::Ring; }
+  virtual Type type() const override { return GridComponent::Ring; }
 
   virtual void checkLayerSpecifications() const override;
 

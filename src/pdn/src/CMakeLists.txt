@@ -52,9 +52,9 @@ target_sources(pdn
     techlayer.cpp
     domain.cpp
     grid.cpp
-    grid_shape.cpp
-    ring.cpp
-    strap.cpp
+    grid_component.cpp
+    rings.cpp
+    straps.cpp
     shape.cpp
     via.cpp
     connect.cpp
@@ -64,8 +64,6 @@ target_sources(pdn
 target_include_directories(pdn
   PUBLIC
     ../include
-  PRIVATE
-    ./
 )
 
 target_link_libraries(pdn

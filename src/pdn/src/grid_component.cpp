@@ -30,8 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "grid_shape.h"
+#include "grid_component.h"
 
+#include "connect.h"
 #include "grid.h"
 #include "odb/db.h"
 #include "techlayer.h"
@@ -39,26 +40,28 @@
 
 namespace pdn {
 
-GridShape::GridShape(Grid* grid) : grid_(grid)
+GridComponent::GridComponent(Grid* grid) :
+    grid_(grid),
+    starts_with_power_(grid_->startsWithPower())
 {
 }
 
-odb::dbBlock* GridShape::getBlock() const
+odb::dbBlock* GridComponent::getBlock() const
 {
   return grid_->getBlock();
 }
 
-utl::Logger* GridShape::getLogger() const
+utl::Logger* GridComponent::getLogger() const
 {
   return grid_->getLogger();
 }
 
-VoltageDomain* GridShape::getDomain() const
+VoltageDomain* GridComponent::getDomain() const
 {
   return grid_->getDomain();
 }
 
-const std::string GridShape::typeToString(Type type)
+const std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
     case Ring:
@@ -76,7 +79,7 @@ const std::string GridShape::typeToString(Type type)
   return "Unknown";
 }
 
-ShapePtr GridShape::addShape(Shape* shape)
+ShapePtr GridComponent::addShape(Shape* shape)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -90,7 +93,7 @@ ShapePtr GridShape::addShape(Shape* shape)
     return nullptr;
   }
 
-  shape_ptr->setGridShape(this);
+  shape_ptr->setGridComponent(this);
   const odb::Rect& shape_rect = shape_ptr->getRect();
 
   auto& shapes = shapes_[shape_ptr->getLayer()];
@@ -191,7 +194,7 @@ ShapePtr GridShape::addShape(Shape* shape)
   return shape_ptr;
 }
 
-void GridShape::removeShape(Shape* shape)
+void GridComponent::removeShape(Shape* shape)
 {
   for (const auto& via : shape->getVias()) {
     via->removeShape(shape);
@@ -206,8 +209,8 @@ void GridShape::removeShape(Shape* shape)
   }
 }
 
-void GridShape::replaceShape(Shape* shape,
-                             const std::vector<Shape*>& replacements)
+void GridComponent::replaceShape(Shape* shape,
+                                 const std::vector<Shape*>& replacements)
 {
   auto vias = shape->getVias();
 
@@ -233,7 +236,7 @@ void GridShape::replaceShape(Shape* shape,
   }
 }
 
-void GridShape::getObstructions(ShapeTreeMap& obstructions) const
+void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -249,7 +252,14 @@ void GridShape::getObstructions(ShapeTreeMap& obstructions) const
   }
 }
 
-void GridShape::cutShapes(const ShapeTreeMap& obstructions)
+void GridComponent::getShapes(ShapeTreeMap& shapes) const
+{
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    shapes[layer].insert(layer_shapes.begin(), layer_shapes.end());
+  }
+}
+
+void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -265,8 +275,8 @@ void GridShape::cutShapes(const ShapeTreeMap& obstructions)
     const auto& obs = obstructions.at(layer);
     std::map<Shape*, std::vector<Shape*>> replacement_shapes;
     for (const auto& [box, shape] : shapes) {
-      const auto replacements = shape->cut(obs);
-      if (replacements.empty()) {
+      std::vector<Shape*> replacements;
+      if (!shape->cut(obs, replacements)) {
         continue;
       }
 
@@ -279,7 +289,7 @@ void GridShape::cutShapes(const ShapeTreeMap& obstructions)
   }
 }
 
-void GridShape::writeToDb(
+void GridComponent::writeToDb(
     const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
     bool add_pins,
     const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
@@ -311,12 +321,11 @@ void GridShape::writeToDb(
   }
 }
 
-void GridShape::checkLayerWidth(odb::dbTechLayer* layer,
-                                int width,
-                                odb::dbTechLayerDir direction) const
+void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
+                                    int width,
+                                    odb::dbTechLayerDir direction) const
 {
   const TechLayer tech_layer(layer);
-  const double dbu_to_microns = tech_layer.getLefUnits();
 
   // check for min width violation
   const int min_width = tech_layer.getMinWidth();
@@ -325,9 +334,9 @@ void GridShape::checkLayerWidth(odb::dbTechLayer* layer,
                        106,
                        "Width ({:.4f} um) specified for layer {} is less than "
                        "minimum width ({:.4f} um).",
-                       width / dbu_to_microns,
+                       tech_layer.dbuToMicron(width),
                        layer->getName(),
-                       min_width / dbu_to_microns);
+                       tech_layer.dbuToMicron(min_width));
   }
 
   // check for max width violation
@@ -337,85 +346,65 @@ void GridShape::checkLayerWidth(odb::dbTechLayer* layer,
                        107,
                        "Width ({:.4f} um) specified for layer {} is greater "
                        "than maximum width ({:.4f} um).",
-                       width / dbu_to_microns,
+                       tech_layer.dbuToMicron(width),
                        layer->getName(),
-                       max_width / dbu_to_microns);
+                       tech_layer.dbuToMicron(max_width));
   }
 
-  // check if width table in use and chekc widths
-  bool check_table = false;
-  const auto width_table = getWidthTable(&tech_layer);
-  if (width_table.wrongdirection) {
-    if (direction != layer->getDirection()) {
-      check_table = true;
+  // check if width table in use and check widths
+  for (const auto& width_table : tech_layer.getWidthTable()) {
+    bool check_table = false;
+    if (width_table.wrongdirection) {
+      if (direction != layer->getDirection()) {
+        check_table = true;
+      }
+    } else {
+      if (direction == layer->getDirection()) {
+        check_table = true;
+      }
     }
-  } else {
-    check_table = true;
-  }
 
-  if (width_table.widths.empty()) {
-    check_table = false;
-  } else {
-    if (width > width_table.widths.back()) {
-      // width is outside of table
+    if (width_table.widths.empty()) {
       check_table = false;
+    } else {
+      if (width > width_table.widths.back()) {
+        // width is outside of table
+        check_table = false;
+      }
     }
-  }
 
-  bool found_width = false;
-  for (auto table_width : width_table.widths) {
-    if (table_width == width) {
-      found_width = true;
+    bool found_width = false;
+    for (auto table_width : width_table.widths) {
+      if (table_width == width) {
+        found_width = true;
+      }
     }
-  }
 
-  if (check_table && !found_width) {
-    getLogger()->error(
-        utl::PDN,
-        114,
-        "Width ({:.4f} um) specified for layer {} in not a valid width.",
-        width / dbu_to_microns,
-        layer->getName());
+    if (check_table && !found_width) {
+      std::string widths;
+      for (auto table_width : width_table.widths) {
+        if (!widths.empty()) {
+          widths += ", ";
+        }
+        widths += fmt::format("{:.4f}", tech_layer.dbuToMicron(table_width));
+      }
+      getLogger()->error(utl::PDN,
+                         114,
+                         "Width ({:.4f} um) specified for layer {} in not a "
+                         "valid width, must be {}.",
+                         tech_layer.dbuToMicron(width),
+                         layer->getName(),
+                         widths);
+    }
   }
 }
 
-GridShape::WidthTable GridShape::getWidthTable(const TechLayer* layer) const
-{
-  WidthTable table{false, false, {}};
-  auto width_table = layer->tokenizeStringProperty("LEF58_WIDTHTABLE");
-  if (width_table.empty()) {
-    return table;
-  }
-
-  width_table.erase(
-      std::find(width_table.begin(), width_table.end(), "WIDTHTABLE"));
-  auto find_wrongdirection
-      = std::find(width_table.begin(), width_table.end(), "WRONGDIRECTION");
-  if (find_wrongdirection != width_table.end()) {
-    table.wrongdirection = true;
-    width_table.erase(find_wrongdirection);
-  }
-  auto find_orthogonal
-      = std::find(width_table.begin(), width_table.end(), "ORTHOGONAL");
-  if (find_orthogonal != width_table.end()) {
-    table.orthogonal = true;
-    width_table.erase(find_orthogonal);
-  }
-
-  for (const auto& width : width_table) {
-    table.widths.push_back(layer->micronToDbu(width));
-  }
-
-  return table;
-}
-
-void GridShape::checkLayerSpacing(odb::dbTechLayer* layer,
-                                  int width,
-                                  int spacing,
-                                  odb::dbTechLayerDir /* direction */) const
+void GridComponent::checkLayerSpacing(odb::dbTechLayer* layer,
+                                      int width,
+                                      int spacing,
+                                      odb::dbTechLayerDir /* direction */) const
 {
   const TechLayer tech_layer(layer);
-  const double dbu_to_microns = tech_layer.getLefUnits();
 
   // check min spacing violation
   const int min_spacing = tech_layer.getSpacing(width);
@@ -424,10 +413,31 @@ void GridShape::checkLayerSpacing(odb::dbTechLayer* layer,
                        108,
                        "Spacing ({:.4f} um) specified for layer {} is less "
                        "than minimum spacing ({:.4f} um).",
-                       spacing / dbu_to_microns,
+                       tech_layer.dbuToMicron(spacing),
                        layer->getName(),
-                       min_spacing / dbu_to_microns);
+                       tech_layer.dbuToMicron(min_spacing));
   }
+}
+
+int GridComponent::getShapeCount() const
+{
+  int count = 0;
+
+  for (const auto& [layer, layer_shapes] : shapes_) {
+    count += layer_shapes.size();
+  }
+
+  return count;
+}
+
+std::vector<odb::dbNet*> GridComponent::getNets() const
+{
+  return grid_->getNets(starts_with_power_);
+}
+
+int GridComponent::getNetCount() const
+{
+  return getNets().size();
 }
 
 }  // namespace pdn

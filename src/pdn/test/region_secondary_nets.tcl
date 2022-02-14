@@ -11,12 +11,17 @@ read_lef sky130_secondary_nets/vref_gen_nmos_with_trim.lef
 
 read_def sky130_secondary_nets/floorplan.def
 
+add_global_connection -net VDD -inst_pattern {.*} -pin_pattern VPB -power
+add_global_connection -net VDD -inst_pattern {.*} -pin_pattern VPWR
+add_global_connection -net VDD -inst_pattern {.*} -pin_pattern vpwr
+add_global_connection -net VDD -inst_pattern {.*} -pin_pattern vnb
+add_global_connection -net VSS -inst_pattern {.*} -pin_pattern VGND -ground
+add_global_connection -net VSS -inst_pattern {.*} -pin_pattern VNB
+add_global_connection -net VSS -inst_pattern {.*} -pin_pattern vgnd
+add_global_connection -net VSS -inst_pattern {.*} -pin_pattern vpb
 add_global_connection -net VREG1 -inst_pattern {pt_array_unit.*} -pin_pattern VPWR -power
+add_global_connection -net VREG1 -inst_pattern {.*} -pin_pattern VREG
 add_global_connection -net VREG2 -inst_pattern {pt_array_unit.*} -pin_pattern VPWR -power
-add_global_connection -net VDD -inst_pattern {pt_array_unit.*} -pin_pattern VPB -power
-add_global_connection -net VDD -inst_pattern {pt_array_unit.*} -pin_pattern VPWR
-add_global_connection -net VSS -inst_pattern {pt_array_unit.*} -pin_pattern VGND -ground
-add_global_connection -net VSS -inst_pattern {pt_array_unit.*} -pin_pattern VNB
 
 set_voltage_domain -power VDD -ground VSS
 set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2"

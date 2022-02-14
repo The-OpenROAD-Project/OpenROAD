@@ -14,8 +14,8 @@ define_pdn_grid -name "Core"
 add_pdn_stripe -followpins -layer M1 -width 0.072
 add_pdn_stripe -followpins -layer M2 -width 0.090
 
-add_pdn_stripe -layer M3 -width 0.936 -spacing 1.512 -pitch 31.68 -offset 1.872
-add_pdn_stripe -layer M6 -width 1.152 -spacing 2.688 -pitch 56.32 -offset 6.408
+add_pdn_stripe -layer M3 -width 0.936 -spacing 1.512 -pitch 8.00 -offset 1.000
+add_pdn_stripe -layer M6 -width 1.152 -spacing 2.500 -pitch 8.00 -offset 1.000
 
 add_pdn_connect -layers {M1 M2} -cut_pitch 0.288 -fixed_vias "VIA12"
 add_pdn_connect -layers {M2 M3} -fixed_vias "VIA23"

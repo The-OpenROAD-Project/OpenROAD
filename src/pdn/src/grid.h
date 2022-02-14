@@ -39,10 +39,8 @@
 #include <string>
 #include <vector>
 
-#include "connect.h"
 #include "odb/dbTypes.h"
-#include "ring.h"
-#include "strap.h"
+#include "shape.h"
 
 namespace odb {
 class dbBlock;
@@ -52,6 +50,7 @@ class dbNet;
 class dbRegion;
 class dbRow;
 class dbSWire;
+class Rect;
 }  // namespace odb
 
 namespace utl {
@@ -60,6 +59,12 @@ class Logger;
 
 namespace pdn {
 class VoltageDomain;
+class Rings;
+class Straps;
+class Connect;
+class GridComponent;
+
+class PdnGen;
 
 class Grid
 {
@@ -67,16 +72,18 @@ class Grid
   enum Type
   {
     Core,
-    Instance
+    Instance,
+    Existing
   };
 
   Grid(VoltageDomain* domain, const std::string& name, bool start_with_power);
-  virtual ~Grid() {}
+  virtual ~Grid();
 
   const std::string getName() const { return name_; }
   // returns the long name of the grid.
   virtual const std::string getLongName() const { return getName(); }
 
+  void setDomain(VoltageDomain* domain) { domain_ = domain; }
   VoltageDomain* getDomain() const { return domain_; }
 
   void report() const;
@@ -86,20 +93,27 @@ class Grid
   odb::dbBlock* getBlock() const;
   utl::Logger* getLogger() const;
 
-  void addRing(std::unique_ptr<Ring> ring);
-  void addStrap(std::unique_ptr<Strap> strap);
-  void addConnect(std::unique_ptr<Connect> connect);
+  virtual void addRing(std::unique_ptr<Rings> ring);
+  virtual void addStrap(std::unique_ptr<Straps> strap);
+  virtual void addConnect(std::unique_ptr<Connect> connect);
+
+  std::set<odb::dbTechLayer*> connectableLayers(odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins
   void setPinLayers(const std::vector<odb::dbTechLayer*>& layers)
   {
-    pin_layers_ = layers;
+    pin_layers_.clear();
+    pin_layers_.insert(layers.begin(), layers.end());
+  }
+  const std::set<odb::dbTechLayer*>& getPinLayers() const
+  {
+    return pin_layers_;
   }
 
   // make the shapes for this grid
   void makeShapes(const ShapeTreeMap& global_shapes,
                   const ShapeTreeMap& obstructions);
-  const ShapeTreeMap getShapes() const;
+  virtual const ShapeTreeMap getShapes() const;
 
   // make the vias for the this grid
   void makeVias(const ShapeTreeMap& global_shapes,
@@ -113,6 +127,9 @@ class Grid
   bool startsWithPower() const { return starts_with_power_; }
   bool startsWithGround() const { return !startsWithPower(); }
 
+  void setAllowRepairChannels(bool allow) { allow_repair_channels_ = allow; }
+  bool allowsRepairChannels() const { return allow_repair_channels_; }
+
   // returns the ordered nets for this grid.
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const;
   std::vector<odb::dbNet*> getNets() const
@@ -121,20 +138,20 @@ class Grid
   };
 
   // returns the core area of the grid
-  virtual const odb::Rect getCoreArea() const;
+  virtual const odb::Rect getDomainArea() const;
   // returns the largest boundary for the grid
-  virtual const odb::Rect getDieArea() const;
+  virtual const odb::Rect getGridArea() const;
   // returns the outline of the rings
   virtual const odb::Rect getRingArea() const;
   // returns the core area to use for extending straps
-  virtual const odb::Rect getCoreBoundary() const;
+  virtual const odb::Rect getDomainBoundary() const;
   // returns the  largest boundary to use for extending straps
-  virtual const odb::Rect getDieBoundary() const;
+  virtual const odb::Rect getGridBoundary() const;
   // returns the ring area to use for extending straps
   virtual const odb::Rect getRingBoundary() const;
 
-  const std::vector<std::unique_ptr<Ring>>& getRings() const { return rings_; }
-  const std::vector<std::unique_ptr<Strap>>& getStraps() const
+  const std::vector<std::unique_ptr<Rings>>& getRings() const { return rings_; }
+  const std::vector<std::unique_ptr<Straps>>& getStraps() const
   {
     return straps_;
   }
@@ -153,6 +170,12 @@ class Grid
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                  bool do_pins) const;
 
+  static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs);
+  static void makeInitialShapes(const std::set<odb::dbNet*>& nets,
+                                ShapeTreeMap& shapes);
+
+  virtual bool isReplaceable() const { return false; }
+
  protected:
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
@@ -163,28 +186,19 @@ class Grid
   std::string name_;
   bool starts_with_power_;
 
-  std::vector<std::unique_ptr<Ring>> rings_;
-  std::vector<std::unique_ptr<Strap>> straps_;
+  bool allow_repair_channels_;
+
+  std::vector<std::unique_ptr<Rings>> rings_;
+  std::vector<std::unique_ptr<Straps>> straps_;
   std::vector<std::unique_ptr<Connect>> connect_;
 
-  std::vector<odb::dbTechLayer*> pin_layers_;
+  std::set<odb::dbTechLayer*> pin_layers_;
 
   ViaTree vias_;
 
-  // repair unconnected follow pins by adding repair channel straps
-  void repairChannels(const ShapeTreeMap& global_shapes,
-                      ShapeTreeMap& obstructions);
-  struct RepairChannelArea
-  {
-    odb::Rect area;
-    Strap* target;
-    odb::dbTechLayer* connect_to;
-    std::set<odb::dbNet*> nets;
-  };
-  // find all follow pins that are not connected for anything
-  std::vector<RepairChannelArea> findRepairChannels() const;
-  Strap* getTargetStrap(odb::dbTechLayer* layer) const;
-  const std::vector<GridShape*> getGridShapes() const;
+  const std::vector<GridComponent*> getGridComponents() const;
+  bool repairVias(const ShapeTreeMap& global_shapes,
+                  ShapeTreeMap& obstructions);
 };
 
 class CoreGrid : public Grid
@@ -196,7 +210,7 @@ class CoreGrid : public Grid
 
   virtual Type type() const override { return Grid::Core; }
 
-  virtual const odb::Rect getCoreBoundary() const override;
+  virtual const odb::Rect getDomainBoundary() const override;
 
   // finds all pad instances and adds connection straps to grid
   void setupDirectConnect(
@@ -218,19 +232,28 @@ class InstanceGrid : public Grid
 
   virtual Type type() const override { return Grid::Instance; }
 
+  odb::dbInst* getInstance() const { return inst_; }
+
   void addHalo(const std::array<int, 4>& halos);
   void setGridToBoundary(bool value);
 
-  virtual const odb::Rect getCoreArea() const override;
-  virtual const odb::Rect getDieArea() const override;
-  virtual const odb::Rect getCoreBoundary() const override;
-  virtual const odb::Rect getDieBoundary() const override;
+  virtual const odb::Rect getDomainArea() const override;
+  virtual const odb::Rect getGridArea() const override;
+  virtual const odb::Rect getDomainBoundary() const override;
+  virtual const odb::Rect getGridBoundary() const override;
 
   virtual void getGridLevelObstructions(
       ShapeTreeMap& obstructions) const override;
 
+  void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
+  virtual bool isReplaceable() const { return replaceable_; }
+
+  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst);
+  static ShapeTreeMap getInstancePins(odb::dbInst* inst);
+
  protected:
-  // find all intersections that also overlap with the power/ground pins based on connectivity
+  // find all intersections that also overlap with the power/ground pins based
+  // on connectivity
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
                                 const ShapeTreeMap& shapes) const override;
 
@@ -238,6 +261,33 @@ class InstanceGrid : public Grid
   odb::dbInst* inst_;
   std::array<int, 4> halos_;
   bool grid_to_boundary_;
+
+  bool replaceable_;
+};
+
+class ExistingGrid : public Grid
+{
+ public:
+  ExistingGrid(PdnGen* pdngen,
+               odb::dbBlock* block,
+               utl::Logger* logger,
+               const std::string& name);
+
+  virtual Type type() const override { return Grid::Existing; }
+
+  virtual const ShapeTreeMap getShapes() const override { return shapes_; };
+
+  virtual void addRing(std::unique_ptr<Rings> ring) override;
+  virtual void addStrap(std::unique_ptr<Straps> strap) override;
+
+ private:
+  ShapeTreeMap shapes_;
+
+  std::unique_ptr<VoltageDomain> domain_;
+
+  void populate();
+
+  void addGridComponent(GridComponent* component) const;
 };
 
 }  // namespace pdn

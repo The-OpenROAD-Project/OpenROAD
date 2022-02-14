@@ -35,50 +35,49 @@
 
 #include "pdn/PdnGen.hh"
 
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
-
-#include "connect.h"
-#include "renderer.h"
-
 #include <map>
 #include <set>
 
-#include <iostream>
+#include "connect.h"
+#include "domain.h"
+#include "grid.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "ord/OpenRoad.hh"
+#include "renderer.h"
+#include "rings.h"
+#include "straps.h"
+#include "utl/Logger.h"
 
 namespace pdn {
 
-using utl::Logger;
 using utl::IFP;
+using utl::Logger;
 
 using odb::dbBlock;
+using odb::dbBox;
 using odb::dbInst;
 using odb::dbITerm;
-using odb::dbMTerm;
 using odb::dbMaster;
+using odb::dbMTerm;
 using odb::dbNet;
-using odb::dbBox;
 
 using std::regex;
 
 using utl::PDN;
 
-PdnGen::PdnGen() : db_(nullptr),
-    logger_(nullptr),
-    global_connect_(nullptr)
+PdnGen::PdnGen() : db_(nullptr), logger_(nullptr), global_connect_(nullptr)
 {
 }
 
-void
-PdnGen::init(dbDatabase *db, Logger* logger) {
+void PdnGen::init(dbDatabase* db, Logger* logger)
+{
   db_ = db;
   logger_ = logger;
 }
 
-void
-PdnGen::setSpecialITerms() {
+void PdnGen::setSpecialITerms()
+{
   if (global_connect_ == nullptr) {
     logger_->warn(PDN, 49, "Global connections not set up.");
     return;
@@ -95,21 +94,24 @@ PdnGen::setSpecialITerms() {
     setSpecialITerms(net);
 }
 
-void
-PdnGen::setSpecialITerms(dbNet *net) {
+void PdnGen::setSpecialITerms(dbNet* net)
+{
   for (dbITerm* iterm : net->getITerms()) {
     iterm->setSpecial();
   }
 }
 
-void
-PdnGen::globalConnect(dbBlock* block, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet *net) {
+void PdnGen::globalConnect(dbBlock* block,
+                           std::shared_ptr<regex>& instPattern,
+                           std::shared_ptr<regex>& pinPattern,
+                           dbNet* net)
+{
   dbBox* bbox = nullptr;
   globalConnectRegion(block, bbox, instPattern, pinPattern, net);
 }
 
-void
-PdnGen::globalConnect(dbBlock* block) {
+void PdnGen::globalConnect(dbBlock* block)
+{
   if (global_connect_ == nullptr) {
     logger_->warn(PDN, 50, "Global connections not set up.");
     return;
@@ -122,15 +124,18 @@ PdnGen::globalConnect(dbBlock* block) {
 
   // Do regions
   for (auto& [region, net_regex_pairs] : *global_connect_) {
-    if (region == nullptr) continue;
+    if (region == nullptr)
+      continue;
     globalConnectRegion(block, region, net_regex_pairs);
   }
 
   setSpecialITerms();
 }
 
-void
-PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRegexPairs> global_connect) {
+void PdnGen::globalConnectRegion(dbBlock* block,
+                                 dbBox* region,
+                                 std::shared_ptr<netRegexPairs> global_connect)
+{
   for (auto& [net, regex_pairs] : *global_connect) {
     for (auto& [inst_regex, pin_regex] : *regex_pairs) {
       globalConnectRegion(block, region, inst_regex, pin_regex, net);
@@ -138,8 +143,12 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRe
   }
 }
 
-void
-PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet *net) {
+void PdnGen::globalConnectRegion(dbBlock* block,
+                                 dbBox* region,
+                                 std::shared_ptr<regex>& instPattern,
+                                 std::shared_ptr<regex>& pinPattern,
+                                 dbNet* net)
+{
   if (net == nullptr) {
     logger_->warn(PDN, 60, "Unable to add invalid net.");
     return;
@@ -169,8 +178,11 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex
   }
 }
 
-void
-PdnGen::findInstsInArea(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::vector<dbInst*>& insts) {
+void PdnGen::findInstsInArea(dbBlock* block,
+                             dbBox* region,
+                             std::shared_ptr<regex>& instPattern,
+                             std::vector<dbInst*>& insts)
+{
   for (dbInst* inst : block->getInsts()) {
     if (std::regex_match(inst->getName().c_str(), *instPattern)) {
       if (region == nullptr) {
@@ -178,10 +190,8 @@ PdnGen::findInstsInArea(dbBlock* block, dbBox* region, std::shared_ptr<regex>& i
       } else {
         dbBox* box = inst->getBBox();
 
-        if (region->yMin() <= box->yMin() &&
-            region->xMin() <= box->xMin() &&
-            region->xMax() >= box->xMax() &&
-            region->yMax() >= box->yMax()) {
+        if (region->yMin() <= box->yMin() && region->xMin() <= box->xMin()
+            && region->xMax() >= box->xMax() && region->yMax() >= box->yMax()) {
           insts.push_back(inst);
         }
       }
@@ -189,8 +199,11 @@ PdnGen::findInstsInArea(dbBlock* block, dbBox* region, std::shared_ptr<regex>& i
   }
 }
 
-void
-PdnGen::buildMasterPinMatchingMap(dbBlock* block, std::shared_ptr<regex>& pinPattern, std::map<dbMaster*, std::vector<dbMTerm*>>& masterpins) {
+void PdnGen::buildMasterPinMatchingMap(
+    dbBlock* block,
+    std::shared_ptr<regex>& pinPattern,
+    std::map<dbMaster*, std::vector<dbMTerm*>>& masterpins)
+{
   std::vector<dbMaster*> masters;
   block->getMasters(masters);
 
@@ -206,13 +219,18 @@ PdnGen::buildMasterPinMatchingMap(dbBlock* block, std::shared_ptr<regex>& pinPat
   }
 }
 
-void
-PdnGen::addGlobalConnect(const char* instPattern, const char* pinPattern, dbNet *net) {
+void PdnGen::addGlobalConnect(const char* instPattern,
+                              const char* pinPattern,
+                              dbNet* net)
+{
   addGlobalConnect(nullptr, instPattern, pinPattern, net);
 }
 
-void
-PdnGen::addGlobalConnect(dbBox* region, const char* instPattern, const char* pinPattern, dbNet *net) {
+void PdnGen::addGlobalConnect(dbBox* region,
+                              const char* instPattern,
+                              const char* pinPattern,
+                              dbNet* net)
+{
   if (net == nullptr) {
     logger_->warn(PDN, 61, "Unable to add invalid net.");
     return;
@@ -233,11 +251,13 @@ PdnGen::addGlobalConnect(dbBox* region, const char* instPattern, const char* pin
     netRegexes->emplace(net, std::make_shared<regexPairs>());
   }
 
-  netRegexes->at(net)->push_back(std::make_pair(std::make_shared<regex>(instPattern), std::make_shared<regex>(pinPattern)));
+  netRegexes->at(net)->push_back(
+      std::make_pair(std::make_shared<regex>(instPattern),
+                     std::make_shared<regex>(pinPattern)));
 }
 
-void
-PdnGen::clearGlobalConnect() {
+void PdnGen::clearGlobalConnect()
+{
   if (global_connect_ != nullptr) {
     global_connect_ = nullptr;
   }
@@ -250,18 +270,33 @@ void PdnGen::reset()
   rendererRedraw();
 }
 
-void PdnGen::buildGrids(bool trim)
+void PdnGen::resetShapes()
 {
-  const std::vector<Grid*> grids = getGrids();
-  for (auto* grid : grids) {
+  for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
+}
+
+void PdnGen::buildGrids(bool trim)
+{
+  auto* block = db_->getChip()->getBlock();
+
+  checkDesign(block);
+  resetShapes();
 
   ShapeTreeMap block_obs;
-  makeInitialObstructions(block_obs);
+  Grid::makeInitialObstructions(block, block_obs);
 
   ShapeTreeMap all_shapes;
-  makeInitialShapes(all_shapes);
+
+  // get special shapes
+  std::set<odb::dbNet*> nets;
+  for (auto* domain : getConstDomains()) {
+    for (auto* net : domain->getNets()) {
+      nets.insert(net);
+    }
+  }
+  Grid::makeInitialShapes(nets, all_shapes);
   for (const auto& [layer, layer_shapes] : all_shapes) {
     auto& layer_obs = block_obs[layer];
     for (const auto& [box, shape] : layer_shapes) {
@@ -269,6 +304,7 @@ void PdnGen::buildGrids(bool trim)
     }
   }
 
+  const std::vector<Grid*> grids = getGrids();
   for (auto* grid : grids) {
     ShapeTreeMap obs_local = block_obs;
     for (auto* grid_other : grids) {
@@ -326,15 +362,24 @@ void PdnGen::trimShapes()
   }
 
   for (auto* grid : grids) {
+    if (grid->type() == Grid::Existing) {
+      // fixed shapes, so nothing to do
+      continue;
+    }
+    const auto& pin_layers = grid->getPinLayers();
     for (const auto& [layer, shapes] : grid->getShapes()) {
       for (const auto& [box, shape] : shapes) {
         if (!shape->isModifiable()) {
           continue;
         }
+        // only trim shapes on non pin layers
+        if (pin_layers.find(shape->getLayer()) != pin_layers.end()) {
+          continue;
+        }
 
         Shape* new_shape = nullptr;
         const odb::Rect new_rect = shape->getMinimumRect();
-        if (new_rect == shape->getRect()) { // no change to shape
+        if (new_rect == shape->getRect()) {  // no change to shape
           continue;
         }
 
@@ -351,13 +396,13 @@ void PdnGen::trimShapes()
           new_shape->setRect(new_rect);
         }
 
-        auto* grid_shape = shape->getGridShape();
+        auto* component = shape->getGridComponent();
         if (new_shape == nullptr) {
           if (shape->isRemovable()) {
-            grid_shape->removeShape(shape.get());
+            component->removeShape(shape.get());
           }
         } else {
-          grid_shape->replaceShape(shape.get(), {new_shape});
+          component->replaceShape(shape.get(), {new_shape});
         }
       }
     }
@@ -365,13 +410,19 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - end");
 }
 
+VoltageDomain* PdnGen::getCoreDomain()
+{
+  if (core_domain_ == nullptr) {
+    setCoreDomain(nullptr, nullptr, {});
+  }
+
+  return core_domain_.get();
+}
+
 std::vector<VoltageDomain*> PdnGen::getDomains()
 {
   std::vector<VoltageDomain*> domains;
-  if (core_domain_ == nullptr) {
-    this->setCoreDomain(nullptr, nullptr, {});
-  }
-  domains.push_back(core_domain_.get());
+  domains.push_back(getCoreDomain());
 
   for (const auto& domain : domains_) {
     domains.push_back(domain.get());
@@ -412,16 +463,37 @@ VoltageDomain* PdnGen::findDomain(const std::string& name)
   return nullptr;
 }
 
-void PdnGen::setCoreDomain(odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary)
+void PdnGen::setCoreDomain(odb::dbNet* power,
+                           odb::dbNet* ground,
+                           const std::vector<odb::dbNet*>& secondary)
 {
   auto* block = db_->getChip()->getBlock();
-  core_domain_ = std::make_unique<CoreVoltageDomain>(block, power, ground, secondary, logger_);
+  if (core_domain_ != nullptr) {
+    logger_->warn(utl::PDN, 183, "Replacing existing core voltage domain.");
+  }
+  core_domain_ = std::make_unique<VoltageDomain>(
+      this, block, power, ground, secondary, logger_);
 }
 
-void PdnGen::makeRegionVoltageDomain(const std::string& name, odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
+void PdnGen::makeRegionVoltageDomain(
+    const std::string& name,
+    odb::dbNet* power,
+    odb::dbNet* ground,
+    const std::vector<odb::dbNet*>& secondary_nets,
+    odb::dbRegion* region)
 {
+  for (const auto& domain : domains_) {
+    if (domain->getName() == name) {
+      logger_->error(utl::PDN,
+                     184,
+                     "Cannot have region voltage domain with the same name "
+                     "already exists: {}",
+                     name);
+    }
+  }
   auto* block = db_->getChip()->getBlock();
-  domains_.push_back(std::make_unique<VoltageDomain>(name, block, power, ground, secondary_nets, region, logger_));
+  domains_.push_back(std::make_unique<VoltageDomain>(
+      this, name, block, power, ground, secondary_nets, region, logger_));
 }
 
 std::vector<Grid*> PdnGen::getGrids() const
@@ -441,7 +513,6 @@ std::vector<Grid*> PdnGen::getGrids() const
   return grids;
 }
 
-
 std::vector<Grid*> PdnGen::findGrid(const std::string& name) const
 {
   std::vector<Grid*> found_grids;
@@ -452,7 +523,7 @@ std::vector<Grid*> PdnGen::findGrid(const std::string& name) const
       return {};
     }
 
-    return {grids.back()};
+    return findGrid(grids.back()->getName());
   }
 
   for (auto* grid : grids) {
@@ -464,30 +535,111 @@ std::vector<Grid*> PdnGen::findGrid(const std::string& name) const
   return found_grids;
 }
 
-void PdnGen::makeCoreGrid(VoltageDomain* domain, const std::string& name, bool starts_with_power, const std::vector<odb::dbTechLayer*>& pin_layers)
+void PdnGen::makeCoreGrid(VoltageDomain* domain,
+                          const std::string& name,
+                          StartsWith starts_with,
+                          const std::vector<odb::dbTechLayer*>& pin_layers)
 {
-  auto grid = std::make_unique<CoreGrid>(domain, name, starts_with_power);
+  auto grid = std::make_unique<CoreGrid>(domain, name, starts_with == POWER);
   grid->setPinLayers(pin_layers);
   domain->addGrid(std::move(grid));
 }
 
-void PdnGen::makeInstanceGrid(VoltageDomain* domain, const std::string& name, bool starts_with_power, odb::dbInst* inst, const std::array<int, 4>& halo)
+Grid* PdnGen::instanceGrid(odb::dbInst* inst) const
 {
-  auto grid = std::make_unique<InstanceGrid>(domain, name, starts_with_power, inst);
+  for (auto* check_grid : getGrids()) {
+    if (check_grid->type() == Grid::Instance) {
+      auto* other_grid = dynamic_cast<InstanceGrid*>(check_grid);
+      if (other_grid->getInstance() == inst) {
+        return check_grid;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+void PdnGen::makeInstanceGrid(VoltageDomain* domain,
+                              const std::string& name,
+                              StartsWith starts_with,
+                              odb::dbInst* inst,
+                              const std::array<int, 4>& halo,
+                              bool pg_pins_to_boundary,
+                              bool default_grid)
+{
+  auto* check_grid = instanceGrid(inst);
+  if (check_grid != nullptr) {
+    if (check_grid->isReplaceable()) {
+      // remove the old grid and replace with this one
+      debugPrint(logger_,
+                 utl::PDN,
+                 "Setup",
+                 1,
+                 "Replacing {} with {} for instance: {}",
+                 check_grid->getName(),
+                 name,
+                 inst->getName());
+      auto* check_domain = check_grid->getDomain();
+      check_domain->removeGrid(check_grid);
+    } else if (default_grid) {
+      // this is a default grid so we can ignore this assignment
+      return;
+    } else {
+      logger_->warn(utl::PDN,
+                    182,
+                    "Instance {} already belongs to another grid \"{}\" and "
+                    "therefore cannot belong to \"{}\".",
+                    inst->getName(),
+                    check_grid->getName(),
+                    name);
+      return;
+    }
+  }
+
+  auto grid
+      = std::make_unique<InstanceGrid>(domain, name, starts_with == POWER, inst);
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
+  grid->setGridToBoundary(pg_pins_to_boundary);
+
+  grid->setReplaceable(default_grid);
+
   domain->addGrid(std::move(grid));
 }
 
-void PdnGen::makeRing(Grid* grid, const std::array<Ring::Layer, 2>& layers, const std::array<int, 4>& offset, const std::array<int, 4>& pad_offset, bool extend, const std::vector<odb::dbTechLayer*>& pad_pin_layers)
+void PdnGen::makeExistingGrid(const std::string& name)
 {
-  auto ring = std::make_unique<Ring>(grid, layers);
+  auto grid = std::make_unique<ExistingGrid>(this, db_->getChip()->getBlock(), logger_, name);
+
+  getCoreDomain()->addGrid(std::move(grid));
+}
+
+void PdnGen::makeRing(Grid* grid,
+                      odb::dbTechLayer* layer0,
+                      int width0,
+                      int spacing0,
+                      odb::dbTechLayer* layer1,
+                      int width1,
+                      int spacing1,
+                      StartsWith starts_with,
+                      const std::array<int, 4>& offset,
+                      const std::array<int, 4>& pad_offset,
+                      bool extend,
+                      const std::vector<odb::dbTechLayer*>& pad_pin_layers)
+{
+  std::array<Rings::Layer, 2> layers{Rings::Layer{layer0, width0, spacing0},
+                                     Rings::Layer{layer1, width1, spacing1}};
+  auto ring = std::make_unique<Rings>(grid, layers);
   ring->setOffset(offset);
-  if (std::any_of(pad_offset.begin(), pad_offset.end(), [](int o) { return o != 0; })) {
+  if (std::any_of(
+          pad_offset.begin(), pad_offset.end(), [](int o) { return o != 0; })) {
     ring->setPadOffset(pad_offset);
   }
   ring->setExtendToBoundary(extend);
+  if (starts_with != GRID) {
+    ring->setStartWithPower(starts_with == POWER);
+  }
   grid->addRing(std::move(ring));
   if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
@@ -496,31 +648,55 @@ void PdnGen::makeRing(Grid* grid, const std::array<Ring::Layer, 2>& layers, cons
   rendererRedraw();
 }
 
-void PdnGen::makeFollowpin(Grid* grid, odb::dbTechLayer* layer, int width, Strap::Extend extend)
+void PdnGen::makeFollowpin(Grid* grid,
+                           odb::dbTechLayer* layer,
+                           int width,
+                           ExtensionMode extend)
 {
-  auto strap = std::make_unique<FollowPin>(grid, layer, width);
+  auto strap = std::make_unique<FollowPins>(grid, layer, width);
   strap->setExtend(extend);
 
   grid->addStrap(std::move(strap));
   rendererRedraw();
 }
 
-void PdnGen::makeStrap(Grid* grid, odb::dbTechLayer* layer, int width, int spacing, int pitch, int offset, int number_of_straps, bool snap, bool use_grid_power_order, bool power_first, Strap::Extend extend)
+void PdnGen::makeStrap(Grid* grid,
+                       odb::dbTechLayer* layer,
+                       int width,
+                       int spacing,
+                       int pitch,
+                       int offset,
+                       int number_of_straps,
+                       bool snap,
+                       StartsWith starts_with,
+                       ExtensionMode extend)
 {
-  auto strap = std::make_unique<Strap>(grid, layer, width, pitch, spacing, number_of_straps);
+  auto strap = std::make_unique<Straps>(
+      grid, layer, width, pitch, spacing, number_of_straps);
   strap->setExtend(extend);
   strap->setOffset(offset);
   strap->setSnapToGrid(snap);
-  if (!use_grid_power_order) {
-    strap->setStartWithPower(power_first);
+  if (starts_with != GRID) {
+    strap->setStartWithPower(starts_with == POWER);
   }
   grid->addStrap(std::move(strap));
   rendererRedraw();
 }
 
-void PdnGen::makeConnect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1, int cut_pitch_x, int cut_pitch_y, const std::vector<odb::dbTechViaGenerateRule*>& vias, const std::vector<odb::dbTechVia*>& techvias)
+void PdnGen::makeConnect(Grid* grid,
+                         odb::dbTechLayer* layer0,
+                         odb::dbTechLayer* layer1,
+                         int cut_pitch_x,
+                         int cut_pitch_y,
+                         const std::vector<odb::dbTechViaGenerateRule*>& vias,
+                         const std::vector<odb::dbTechVia*>& techvias,
+                         int max_rows,
+                         int max_columns,
+                         const std::vector<odb::dbTechLayer*>& ongrid,
+                         const std::map<odb::dbTechLayer*, int>& split_cuts,
+                         const std::string& dont_use_vias)
 {
-  auto con = std::make_unique<Connect>(layer0, layer1);
+  auto con = std::make_unique<Connect>(grid, layer0, layer1);
   con->setCutPitch(cut_pitch_x, cut_pitch_y);
 
   for (auto* via : vias) {
@@ -529,6 +705,15 @@ void PdnGen::makeConnect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer*
 
   for (auto* via : techvias) {
     con->addFixedVia(via);
+  }
+
+  con->setMaxRows(max_rows);
+  con->setMaxColumns(max_columns);
+  con->setOnGrid(ongrid);
+  con->setSplitCuts(split_cuts);
+
+  if (!dont_use_vias.empty()) {
+    con->filterVias(dont_use_vias);
   }
 
   grid->addConnect(std::move(con));
@@ -550,75 +735,13 @@ void PdnGen::toggleDebugRenderer(bool on)
 void PdnGen::rendererRedraw()
 {
   if (debug_renderer_ != nullptr) {
-    buildGrids(false);
+    try {
+      buildGrids(false);
+    } catch (const std::runtime_error& /* e */) {
+      // do nothing, dont want grid error to prevent debug renderer
+    }
+
     debug_renderer_->update();
-  }
-}
-
-void PdnGen::makeInitialObstructions(ShapeTreeMap& obs)
-{
-  // routing obs
-  for (auto* ob : db_->getChip()->getBlock()->getObstructions()) {
-    if (ob->isSlotObstruction() || ob->isFillObstruction()) {
-      continue;
-    }
-
-    auto* box = ob->getBBox();
-    odb::Rect obs_rect;
-    box->getBox(obs_rect);
-    if (ob->hasMinSpacing()) {
-      obs_rect.bloat(ob->getMinSpacing(), obs_rect);
-    }
-
-    if (box->getTechLayer() == nullptr) {
-      for (auto* layer : db_->getTech()->getLayers()) {
-        auto shape = std::make_shared<Shape>(layer, nullptr, obs_rect);
-        obs[shape->getLayer()].insert({shape->getObstructionBox(), shape});
-      }
-    } else {
-      auto shape = std::make_shared<Shape>(box->getTechLayer(), nullptr, obs_rect);
-
-      obs[shape->getLayer()].insert({shape->getObstructionBox(), shape});
-    }
-  }
-
-  // placed block obs
-  for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
-    if (!inst->isBlock()) {
-      continue;
-    }
-
-    if (!inst->isPlaced()) {
-      continue;
-    }
-
-    odb::dbTransform transform;
-    inst->getTransform(transform);
-
-    for (auto* ob : inst->getMaster()->getObstructions()) {
-      odb::Rect obs_rect;
-      ob->getBox(obs_rect);
-
-      transform.apply(obs_rect);
-      auto shape = std::make_shared<Shape>(ob->getTechLayer(), nullptr, obs_rect);
-
-      obs[ob->getTechLayer()].insert({shape->getObstructionBox(), shape});
-    }
-  }
-}
-
-void PdnGen::makeInitialShapes(ShapeTreeMap& shapes)
-{
-  // get special shapes
-  std::set<odb::dbNet*> nets;
-  for (auto* domain : getConstDomains()) {
-    for (auto* net : domain->getNets()) {
-      nets.insert(net);
-    }
-  }
-
-  for (auto* net : nets) {
-    Shape::populateMapFromDb(net, shapes);
   }
 }
 
@@ -695,7 +818,8 @@ void PdnGen::ripUp(odb::dbNet* net)
         odb::Rect rect;
         box->getBox(rect);
         const auto& shapes = net_shapes[layer];
-        Box search_box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
+        Box search_box(Point(rect.xMin(), rect.yMin()),
+                       Point(rect.xMax(), rect.yMax()));
         if (shapes.qbegin(bgi::intersects(search_box)) != shapes.qend()) {
           remove = true;
           break;
@@ -721,4 +845,35 @@ void PdnGen::report()
   }
 }
 
-} // namespace
+void PdnGen::setAllowRepairChannels(bool allow)
+{
+  for (auto* grid : getGrids()) {
+    grid->setAllowRepairChannels(allow);
+  }
+}
+
+void PdnGen::filterVias(const std::string& filter)
+{
+  for (auto* grid : getGrids()) {
+    for (const auto& connect : grid->getConnect()) {
+      connect->filterVias(filter);
+    }
+  }
+}
+
+void PdnGen::checkDesign(odb::dbBlock* block) const
+{
+  for (auto* inst : block->getInsts()) {
+    for (auto* term : inst->getITerms()) {
+      if (term->getSigType().isSupply() && term->getNet() == nullptr) {
+        logger_->warn(utl::PDN,
+                      189,
+                      "Supply pin {} of instance {} is not connected to any net.",
+                      term->getMTerm()->getName(),
+                      inst->getName());
+      }
+    }
+  }
+}
+
+}  // namespace pdn

@@ -10,7 +10,7 @@
 [INFO ODB-0128] Design: soc_bsg_black_parrot
 [INFO ODB-0130]     Created 141 pins.
 [INFO ODB-0131]     Created 1489 components and 3295 component-terminals.
-[INFO ODB-0132]     Created 141 special nets and 1497 connections.
+[INFO ODB-0132]     Created 143 special nets and 2655 connections.
 [INFO ODB-0133]     Created 219 nets and 267 connections.
 [INFO ODB-0134] Finished DEF file: nangate_bsg_black_parrot/floorplan_flipchip.def
 [INFO PDN-0001] Inserting grid: Core

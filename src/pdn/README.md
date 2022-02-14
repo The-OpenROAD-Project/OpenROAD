@@ -111,7 +111,7 @@ define_pdn_grid [-name <name>] \
 | `-name` | Defines a name to use when referring to this grid definition. |
 | `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: POWER) |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
 
 ##### Examples
 
@@ -129,6 +129,7 @@ define_pdn_grid -macro \
                 [-orient <list_of_valid_orientations>] \
                 [-instances <list_of_instances] \
                 [-cells <list_of_cells>] \
+                [-default] \
                 [-halo <list_of_halo_values>] \
                 [-voltage_domain <list_of_domain_names>] \
                 [-starts_with (POWER|GROUND)]    
@@ -141,11 +142,12 @@ define_pdn_grid -macro \
 | `-macro` | Defines the type of grid being added as a macro. |
 | `-name` | Defines a name to use when referring to this grid definition. |
 | `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: POWER) |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
 | `-grid_over_boundary` | Place the power grid over the entire macro. |
 | `-grid_over_pg_pins` | Place the power grid over the power ground pins of the macro. (Default) |
 | `-instances` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
 | `-cells` | For a macro, defines a set of valid cells. Macros which are instances of one of these cells will use this grid specification. |
+| `-default` | For a macro, specifies this is a default grid that can be overwritten. |
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
 
@@ -155,6 +157,26 @@ define_pdn_grid -macro \
 define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_pins  -starts_with POWER -pin_direction vertical
 define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_boundary -starts_with POWER -pin_direction horizontal
 ```
+
+#### Define a grid for an existing routing
+
+```
+define_pdn_grid [-name <name>] \
+                -existing
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
+
+##### Examples
+
+```
+define_pdn_grid -name main_grid -existing
+```
+
 
 #### Add straps / stripes
 
@@ -185,7 +207,7 @@ add_pdn_stripe [-grid grid_name] \
 | `-pitch` | Value for the distance between each power/ground pair |
 | `-spacing` | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2) |
 | `-offset` | Value for the offset of the stripe from the lower left corner of the design core area. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: POWER) |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
 | `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, the `-width` is not needed if it can be determined from the cells |
 | `-extend_to_boundary` | Extend the stripes to the boundary of the grid |
 | `-snap_to_grid` | Snap the stripes to the defined routing grid |
@@ -212,7 +234,8 @@ add_pdn_ring [-grid grid_name] \
              [-add_connect] \
              [-extend_to_boundary] \
              [-connect_to_pads] \
-             [-connect_to_pad_layers layers]
+             [-connect_to_pad_layers layers] \
+             [-starts_with (POWER|GROUND)] 
 ```
 
 ##### Options
@@ -229,6 +252,7 @@ add_pdn_ring [-grid grid_name] \
 | `-extend_to_boundary` | Extend the rings to the grid boundary |
 | `-connect_to_pads` | The core side of the pad pins will be connected to the ring |
 | `-connect_to_pad_layers` | Restrict the pad pins layers to this list |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
 
 ##### Examples
 ```
@@ -243,7 +267,12 @@ The `add_pdn_connect` command is used to define which layers in the power grid a
 add_pdn_connect [-grid grid_name] \
                 [-layers list_of_two_layers] \
                 [-cut_pitch pitch_value] \
-                [-fixed_vias list_of_fixed_vias]
+                [-fixed_vias list_of_fixed_vias] \
+                [-dont_use_vias list_of_vias] \
+                [-max_rows rows] \
+                [-max_columns columns] \
+                [-ongrid ongrid_layers] \
+                [-split_cuts split_cuts_mapping]
 ```
 
 ##### Options
@@ -253,7 +282,12 @@ add_pdn_connect [-grid grid_name] \
 | `-grid` | Specifies the name of the grid definition to which this connection will be added. (Default: Last grid created by `define_pdn_grid`) |
 | `-layers` | Layers to be connected where there are overlapping power or overlapping ground nets |
 | `-cut_pitch` | When the two layers are parallel e.g. overlapping stdcell rails, specify the distance between via cuts |
-| `-fixed_vias` | list of fixed vias to be used to form the via stack |
+| `-fixed_vias` | List of fixed vias to be used to form the via stack |
+| `-dont_use_vias` | List or pattern of vias to not use to form the via stack |
+| `-max_rows` | Maximum number of rows when adding arrays of vias |
+| `-max_columns` | Maximum number of columns when adding arrays of vias |
+| `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
+| `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
 ##### Examples
 

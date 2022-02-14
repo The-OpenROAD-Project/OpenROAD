@@ -63,7 +63,7 @@ class Grid;
 class VoltageDomain;
 class TechLayer;
 
-class GridShape
+class GridComponent
 {
  public:
   enum Type
@@ -75,8 +75,8 @@ class GridShape
     RepairChannel
   };
 
-  GridShape(Grid* grid);
-  virtual ~GridShape() {}
+  GridComponent(Grid* grid);
+  virtual ~GridComponent() = default;
 
   odb::dbBlock* getBlock() const;
   utl::Logger* getLogger() const;
@@ -88,15 +88,18 @@ class GridShape
   virtual void makeShapes(const ShapeTreeMap& other_shapes) = 0;
 
   const ShapeTreeMap& getShapes() const { return shapes_; }
+  void getShapes(ShapeTreeMap& shapes) const;
   void removeShape(Shape* shape);
   void replaceShape(Shape* shape, const std::vector<Shape*>& replacements);
   void clearShapes() { shapes_.clear(); }
+  int getShapeCount() const;
 
   // returns all the obstructions in this grid shape
   void getObstructions(ShapeTreeMap& obstructions) const;
 
-  // cut the shapes according to the obstructions to avoid generating any DRC violations.
-  void cutShapes(const ShapeTreeMap& obstructions);
+  // cut the shapes according to the obstructions to avoid generating any DRC
+  // violations.
+  virtual void cutShapes(const ShapeTreeMap& obstructions);
 
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                  bool add_pins,
@@ -107,6 +110,14 @@ class GridShape
   static const std::string typeToString(Type type);
 
   virtual void checkLayerSpecifications() const = 0;
+
+  void setStartWithPower(bool value) { starts_with_power_ = value; }
+  bool getStartsWithPower() const { return starts_with_power_; }
+  bool getStartsWithGround() const { return !getStartsWithPower(); }
+
+  // returns the order in which to lay out the straps
+  virtual std::vector<odb::dbNet*> getNets() const;
+  int getNetCount() const;
 
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
@@ -120,16 +131,9 @@ class GridShape
 
  private:
   Grid* grid_;
+  bool starts_with_power_;
 
   ShapeTreeMap shapes_;
-
-  struct WidthTable
-  {
-    bool wrongdirection;
-    bool orthogonal;
-    std::vector<int> widths;
-  };
-  WidthTable getWidthTable(const TechLayer* layer) const;
 };
 
 }  // namespace pdn

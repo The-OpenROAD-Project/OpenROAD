@@ -35,6 +35,7 @@
 #include "domain.h"
 #include "grid.h"
 #include "pdn/PdnGen.hh"
+#include "straps.h"
 
 namespace pdn {
 
@@ -48,14 +49,18 @@ const gui::Painter::Color PDNRenderer::via_color_
     = gui::Painter::Color(gui::Painter::blue, 100);
 const gui::Painter::Color PDNRenderer::obstruction_color_
     = gui::Painter::Color(gui::Painter::gray, 100);
+const gui::Painter::Color PDNRenderer::repair_color_
+    = gui::Painter::Color(gui::Painter::light_gray, 100);
 
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
+  addDisplayControl(grid_obs_text_, false);
   addDisplayControl(obs_text_, false);
   addDisplayControl(vias_text_, true);
   addDisplayControl(followpins_text_, true);
   addDisplayControl(rings_text_, true);
   addDisplayControl(straps_text_, true);
+  addDisplayControl(repair_text_, true);
 
   update();
 
@@ -65,10 +70,14 @@ PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 void PDNRenderer::update()
 {
   shapes_.clear();
+  grid_obstructions_.clear();
   vias_.clear();
+  repair_.clear();
 
   for (const auto& domain : pdn_->getDomains()) {
     for (const auto& grid : domain->getGrids()) {
+      grid->getGridLevelObstructions(grid_obstructions_);
+
       for (const auto& [layer, shapes] : grid->getShapes()) {
         auto& save_shapes = shapes_[layer];
         for (const auto shape : shapes) {
@@ -80,6 +89,27 @@ void PDNRenderer::update()
       grid->getVias(vias);
       for (const auto& via : vias) {
         vias_.insert({via->getBox(), via});
+      }
+
+      for (const auto& repair :
+           RepairChannelStraps::findRepairChannels(grid.get())) {
+        RepairChannel channel;
+        channel.source = repair.connect_to;
+        channel.target = repair.target->getLayer();
+        channel.rect = repair.area;
+        std::string nets = "";
+        for (auto* net : repair.nets) {
+          if (!nets.empty()) {
+            nets += ",";
+          }
+          nets += net->getName();
+        }
+        channel.text = fmt::format("Repair:{}->{}:{}",
+                                   channel.source->getName(),
+                                   channel.target->getName(),
+                                   nets);
+
+        repair_.push_back(channel);
       }
     }
   }
@@ -97,6 +127,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const odb::Rect paint_rect = painter.getBounds();
   Box paint_box(Point(paint_rect.xMin(), paint_rect.yMin()),
                 Point(paint_rect.xMax(), paint_rect.yMax()));
+
+  if (checkDisplayControl(grid_obs_text_)) {
+    painter.setPen(gui::Painter::highlight, true);
+    painter.setBrush(gui::Painter::transparent);
+    auto& shapes = grid_obstructions_[layer];
+    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+         it != shapes.qend();
+         it++) {
+      const auto& shape = it->second;
+      painter.drawRect(shape->getObstruction());
+    }
+  }
 
   const bool show_rings = checkDisplayControl(rings_text_);
   const bool show_followpins = checkDisplayControl(followpins_text_);
@@ -209,6 +251,25 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         const int x = 0.5 * (area.xMin() + area.xMax());
         const int y = 0.5 * (area.yMin() + area.yMax());
         painter.drawString(x, y, gui::Painter::Anchor::CENTER, via_name);
+      }
+    }
+  }
+
+  if (checkDisplayControl(repair_text_)) {
+    for (const auto& repair : repair_) {
+      if (layer == repair.source || layer == repair.target) {
+        painter.setPenAndBrush(repair_color_, true);
+        painter.drawRect(repair.rect);
+
+        const odb::Rect name_box = painter.stringBoundaries(
+            0, 0, gui::Painter::Anchor::BOTTOM_LEFT, repair.text);
+        if (repair.rect.dx() * net_name_margin > name_box.dx()
+            && repair.rect.dy() * net_name_margin > name_box.dy()) {
+          painter.setPen(gui::Painter::white, true);
+          const int x = 0.5 * (repair.rect.xMin() + repair.rect.xMax());
+          const int y = 0.5 * (repair.rect.yMin() + repair.rect.yMax());
+          painter.drawString(x, y, gui::Painter::Anchor::CENTER, repair.text);
+        }
       }
     }
   }

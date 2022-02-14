@@ -35,7 +35,8 @@
 #include <array>
 #include <set>
 
-#include "grid_shape.h"
+#include "grid_component.h"
+#include "pdn/PdnGen.hh"
 
 namespace odb {
 class dbBox;
@@ -46,28 +47,24 @@ class dbTechLayer;
 namespace pdn {
 class Grid;
 
-class Strap : public GridShape
+class Straps : public GridComponent
 {
  public:
-  Strap(Grid* grid,
-        odb::dbTechLayer* layer,
-        int width,
-        int pitch,
-        int spacing = 0,
-        int number_of_straps = 0);
-  ~Strap() {}
+  Straps(Grid* grid,
+         odb::dbTechLayer* layer,
+         int width,
+         int pitch,
+         int spacing = 0,
+         int number_of_straps = 0);
 
   void setOffset(int offset);
   int getOffset() const { return offset_; }
   void setSnapToGrid(bool snap);
 
-  enum Extend
-  {
-    CORE,
-    RINGS,
-    BOUNDARY
-  };
-  void setExtend(Extend mode);
+  void setExtend(ExtensionMode mode);
+  void setStrapStartEnd(int start, int end);
+  int getStrapStart() const { return strap_start_; }
+  int getStrapEnd() const { return strap_end_; }
 
   virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
 
@@ -76,22 +73,23 @@ class Strap : public GridShape
   void setWidth(int width) { width_ = width; }
   int getSpacing() const { return spacing_; }
   void setSpacing(int spacing) { spacing_ = spacing; }
-  Extend getExtendMode() const { return extend_mode_; }
+  int getPitch() const { return pitch_; }
+  void setPitch(int pitch) { pitch_ = pitch; }
+  ExtensionMode getExtendMode() const { return extend_mode_; }
   void setDirection(odb::dbTechLayerDir direction) { direction_ = direction; }
   odb::dbTechLayerDir getDirection() const { return direction_; }
-  void setStartWithPower(bool value) { starts_with_power_ = value; }
-  bool getStartsWithPower() const { return starts_with_power_; }
-  bool getStartsWithGround() const { return !getStartsWithPower(); }
-
-  // returns the order in which to lay out the straps
-  virtual std::vector<odb::dbNet*> getNets() const;
+  bool isHorizontal() const
+  {
+    return direction_ == odb::dbTechLayerDir::HORIZONTAL;
+  }
 
   virtual void report() const override;
-  virtual Type type() const override { return GridShape::Strap; }
+  virtual Type type() const override { return GridComponent::Strap; }
 
   virtual void checkLayerSpecifications() const override;
 
-  // get the width of a set of straps, useful when estimating the shape of the straps.
+  // get the width of a set of straps, useful when estimating the shape of the
+  // straps.
   int getStrapGroupWidth() const;
 
  private:
@@ -103,43 +101,43 @@ class Strap : public GridShape
   int number_of_straps_;
   odb::dbTechLayerDir direction_;
   bool snap_;
-  bool starts_with_power_;
-  Extend extend_mode_;
+  ExtensionMode extend_mode_;
+  int strap_start_;
+  int strap_end_;
 
-  // returns the track to snap the strap too
-  int snapToGrid(int pos, const std::vector<int>& grid, int greater_than = 0) const;
   void makeStraps(int x_start,
                   int y_start,
                   int x_end,
                   int y_end,
                   bool is_delta_x,
-                  const std::vector<int>& snap_grid);
+                  const TechLayer& layer,
+                  const ShapeTree& avoid);
 };
 
-class FollowPin : public Strap
+class FollowPins : public Straps
 {
  public:
-  FollowPin(Grid* grid, odb::dbTechLayer* layer, int width);
-  ~FollowPin() {}
+  FollowPins(Grid* grid, odb::dbTechLayer* layer, int width);
 
   virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
 
-  virtual Type type() const override { return GridShape::Followpin; }
+  virtual Type type() const override { return GridComponent::Followpin; }
 
   virtual void checkLayerSpecifications() const override;
 
  private:
-  // search for the shape of the power pins in the standard cells to determine the width if possible
+  // search for the shape of the power pins in the standard cells to determine
+  // the width if possible
   void determineWidth();
 };
 
-class PadDirectConnect : public Strap
+class PadDirectConnectionStraps : public Straps
 {
  public:
-  PadDirectConnect(Grid* grid,
-                   odb::dbITerm* iterm,
-                   const std::vector<odb::dbTechLayer*>& connect_pad_layers);
-  ~PadDirectConnect() {}
+  PadDirectConnectionStraps(
+      Grid* grid,
+      odb::dbITerm* iterm,
+      const std::vector<odb::dbTechLayer*>& connect_pad_layers);
 
   // true if the iterm can be connected to a ring
   bool canConnect() const;
@@ -147,7 +145,7 @@ class PadDirectConnect : public Strap
   virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
 
   virtual void report() const override;
-  virtual Type type() const override { return GridShape::PadConnect; }
+  virtual Type type() const override { return GridComponent::PadConnect; }
 
  private:
   odb::dbITerm* iterm_;
@@ -164,36 +162,68 @@ class PadDirectConnect : public Strap
   bool isConnectHorizontal() const;
 };
 
-class RepairChannel : public Strap
+class RepairChannelStraps : public Straps
 {
  public:
-  RepairChannel(Grid* grid,
-                Strap* target,
-                odb::dbTechLayer* connect_to,
-                const ShapeTreeMap& other_shapes,
-                const std::set<odb::dbNet*>& nets,
-                const odb::Rect& area);
-  ~RepairChannel() {}
+  RepairChannelStraps(Grid* grid,
+                      Straps* target,
+                      odb::dbTechLayer* connect_to,
+                      const ShapeTreeMap& other_shapes,
+                      const std::set<odb::dbNet*>& nets,
+                      const odb::Rect& area,
+                      bool allow);
 
-  virtual Type type() const override { return GridShape::RepairChannel; }
+  virtual Type type() const override { return GridComponent::RepairChannel; }
+
+  virtual void report() const override;
 
   // returns only the nets that need to be repaired.
   virtual std::vector<odb::dbNet*> getNets() const override;
 
+  // cut shapes and remove any segments outside of the area
+  virtual void cutShapes(const ShapeTreeMap& obstructions) override;
+
+  bool isRepairValid() const { return !invalid_; }
+
+  // static functions to help build repair channels
+  // repair unconnected straps by adding repair channel straps
+  static void repairGridChannels(Grid* grid,
+                                 const ShapeTreeMap& global_shapes,
+                                 ShapeTreeMap& obstructions,
+                                 bool allow);
+
+  struct RepairChannelArea
+  {
+    odb::Rect area;
+    Straps* target;
+    odb::dbTechLayer* connect_to;
+    std::set<odb::dbNet*> nets;
+  };
+  // find all straps in grid that are not connected for anything
+  static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
+
  private:
   std::set<odb::dbNet*> nets_;
   odb::dbTechLayer* connect_to_;
+  odb::Rect area_;
+
+  bool invalid_;
 
   // search for the right width, spacing, and offset to connect to the channel
-  void determineParameters(const odb::Rect& area,
-                           const ShapeTreeMap& obstructions);
-  bool determineOffset(const odb::Rect& area,
-                       const ShapeTreeMap& obstructions,
+  void determineParameters(const ShapeTreeMap& obstructions);
+  bool determineOffset(const ShapeTreeMap& obstructions,
                        int extra_offset = 0,
                        int bisect_dist = 0,
                        int level = 0);
 
   std::string getNetString() const;
+
+  static std::vector<RepairChannelArea> findRepairChannels(
+      Grid* grid,
+      const ShapeTree& shapes,
+      odb::dbTechLayer* layer);
+  static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
+  static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
 };
 
 }  // namespace pdn

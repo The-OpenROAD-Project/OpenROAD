@@ -12,8 +12,8 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 
-add_pdn_stripe -layer M8 -width 1.7 -spacing 2.0 -pitch 20.0 -offset 10.0
-add_pdn_stripe -layer M9 -width 1.7 -spacing 2.0 -pitch 20.0 -offset 10.0
+add_pdn_stripe -layer M8 -width 1.7 -spacing 2.0 -pitch 20.0 -offset 1.0
+add_pdn_stripe -layer M9 -width 1.7 -spacing 2.0 -pitch 20.0 -offset 1.0
 
 add_pdn_connect -layers {M8 M9}
 

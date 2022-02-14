@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "odb/db.h"
-
 #include <string>
 #include <vector>
+
+#include "odb/db.h"
 
 namespace pdn {
 
@@ -52,18 +52,54 @@ class TechLayer
 
   int getMinWidth() const { return layer_->getMinWidth(); }
   int getMaxWidth() const { return layer_->getMaxWidth(); }
-  // get the spacing by also checking for spacing constraints not normally checked for
+  // get the spacing by also checking for spacing constraints not normally
+  // checked for
   int getSpacing(int width, int length = 0) const;
 
-  // create a vector of strings for from the given property
-  std::vector<std::string> tokenizeStringProperty(
-      const std::string& property_name) const;
+  void populateGrid(odb::dbBlock* block,
+                    odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
+  int snapToGrid(int pos, int greater_than = 0) const;
+  int snapToManufacturingGrid(int pos, bool round_up = false) const;
+  static int snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up = false);
 
   int micronToDbu(const std::string& value) const;
   int micronToDbu(double value) const;
+  double dbuToMicron(int value) const;
 
- private:
+  struct ArraySpacing
+  {
+    int width;
+    bool longarray;
+    int cut_spacing;
+    int cuts;
+    int array_spacing;
+  };
+  std::vector<ArraySpacing> getArraySpacing() const;
+
+  struct MinCutRule {
+    odb::dbTechLayerCutClassRule* cut_class;
+    bool above;
+    bool below;
+    int width;
+    int cuts;
+  };
+  std::vector<MinCutRule> getMinCutRules() const;
+
+  struct WidthTable
+  {
+    bool wrongdirection;
+    bool orthogonal;
+    std::vector<int> widths;
+  };
+  std::vector<WidthTable> getWidthTable() const;
+
+private:
   odb::dbTechLayer* layer_;
+  std::vector<int> grid_;
+
+  // create a vector of strings for from the given property
+  std::vector<std::vector<std::string>> tokenizeStringProperty(
+      const std::string& property_name) const;
 };
 
 }  // namespace pdn

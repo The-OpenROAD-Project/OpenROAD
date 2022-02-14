@@ -32,13 +32,35 @@
 
 #include "domain.h"
 
+#include <set>
+
 #include "grid.h"
 #include "odb/db.h"
+#include "pdn/PdnGen.hh"
 #include "utl/Logger.h"
 
 namespace pdn {
 
-VoltageDomain::VoltageDomain(const std::string& name,
+VoltageDomain::VoltageDomain(PdnGen* pdngen,
+                             odb::dbBlock* block,
+                             odb::dbNet* power,
+                             odb::dbNet* ground,
+                             const std::vector<odb::dbNet*>& secondary_nets,
+                             utl::Logger* logger)
+    : name_("Core"),
+      pdngen_(pdngen),
+      block_(block),
+      power_(power),
+      ground_(ground),
+      secondary_(secondary_nets),
+      region_(nullptr),
+      logger_(logger)
+{
+  determinePowerGroundNets();
+}
+
+VoltageDomain::VoltageDomain(PdnGen* pdngen,
+                             const std::string& name,
                              odb::dbBlock* block,
                              odb::dbNet* power,
                              odb::dbNet* ground,
@@ -46,6 +68,7 @@ VoltageDomain::VoltageDomain(const std::string& name,
                              odb::dbRegion* region,
                              utl::Logger* logger)
     : name_(name),
+      pdngen_(pdngen),
       block_(block),
       power_(power),
       ground_(ground),
@@ -66,20 +89,22 @@ VoltageDomain::VoltageDomain(const std::string& name,
                      rect_count);
     }
   }
-  determinePowerGroundNets();
 }
 
 std::vector<odb::dbNet*> VoltageDomain::getNets(bool start_with_power) const
 {
   std::vector<odb::dbNet*> nets;
+
   if (start_with_power) {
     nets.push_back(power_);
-  }
-  nets.push_back(ground_);
-  if (!start_with_power) {
+    nets.push_back(ground_);
+  } else {
+    nets.push_back(ground_);
     nets.push_back(power_);
   }
+
   nets.insert(nets.end(), secondary_.begin(), secondary_.end());
+
   return nets;
 }
 
@@ -100,11 +125,11 @@ const std::vector<odb::dbRow*> VoltageDomain::getRows() const
   if (hasRegion()) {
     return getRegionRows();
   } else {
-    return getCoreRows();
+    return getDomainRows();
   }
 }
 
-const odb::Rect VoltageDomain::getCoreArea() const
+const odb::Rect VoltageDomain::getDomainArea() const
 {
   if (hasRegion()) {
     return getRegionBoundary(region_);
@@ -164,8 +189,17 @@ const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
   return rows;
 }
 
-const std::vector<odb::dbRow*> VoltageDomain::getCoreRows() const
+const std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 {
+  std::set<odb::dbRow*> claimed_rows;
+  for (auto* domain : pdngen_->getDomains()) {
+    if (domain == this) {
+      continue;
+    }
+
+    auto rows = domain->getRows();
+    claimed_rows.insert(rows.begin(), rows.end());
+  }
   std::vector<odb::dbRow*> rows;
 
   std::set<odb::Rect> regions;
@@ -174,21 +208,8 @@ const std::vector<odb::dbRow*> VoltageDomain::getCoreRows() const
   }
 
   for (auto* row : block_->getRows()) {
-    if (regions.empty()) {
+    if (claimed_rows.find(row) == claimed_rows.end()) {
       rows.push_back(row);
-    } else {
-      odb::Rect row_bbox;
-      row->getBBox(row_bbox);
-      bool belongs_to_region = false;
-      for (const auto& region : regions) {
-        if (row_bbox.overlaps(region)) {
-          belongs_to_region = true;
-          break;
-        }
-      }
-      if (!belongs_to_region) {
-        rows.push_back(row);
-      }
     }
   }
 
@@ -219,25 +240,40 @@ void VoltageDomain::report() const
   }
 }
 
-void VoltageDomain::determinePowerGroundNets()
+odb::dbNet* VoltageDomain::findDomainNet(odb::dbSigType type) const
 {
-  auto find_net = [this](odb::dbSigType type) -> odb::dbNet* {
-    for (auto* net : block_->getNets()) {
-      if (net->getSigType() == type) {
-        return net;
-      }
+  std::set<odb::dbNet*> nets;
+
+  for (auto* net : block_->getNets()) {
+    if (net->getSigType() == type) {
+      nets.insert(net);
     }
+  }
+
+  if (nets.empty()) {
     logger_->error(utl::PDN,
                    100,
                    "Unable to find {} net for {} domain.",
                    type.getString(),
                    name_);
-  };
+  }
+  if (nets.size() > 1) {
+    logger_->error(utl::PDN,
+                   181,
+                   "Found multiple possible nets for {} net for {} domain.",
+                   type.getString(),
+                   name_);
+  }
 
+  return *nets.begin();
+}
+
+void VoltageDomain::determinePowerGroundNets()
+{
   // look for power
   if (power_ == nullptr) {
-    power_ = find_net(odb::dbSigType::POWER);
-    logger_->warn(utl::PDN,
+    power_ = findDomainNet(odb::dbSigType::POWER);
+    logger_->info(utl::PDN,
                   101,
                   "Using {} as power net for {} domain.",
                   power_->getName(),
@@ -245,8 +281,8 @@ void VoltageDomain::determinePowerGroundNets()
   }
   // look for ground
   if (ground_ == nullptr) {
-    ground_ = find_net(odb::dbSigType::GROUND);
-    logger_->warn(utl::PDN,
+    ground_ = findDomainNet(odb::dbSigType::GROUND);
+    logger_->info(utl::PDN,
                   102,
                   "Using {} as ground net for {} domain.",
                   ground_->getName(),
@@ -254,22 +290,12 @@ void VoltageDomain::determinePowerGroundNets()
   }
 }
 
-//////////
-
-CoreVoltageDomain::CoreVoltageDomain(
-    odb::dbBlock* block,
-    odb::dbNet* power,
-    odb::dbNet* ground,
-    const std::vector<odb::dbNet*>& secondary_nets,
-    utl::Logger* logger)
-    : VoltageDomain("Core",
-                    block,
-                    power,
-                    ground,
-                    secondary_nets,
-                    nullptr,
-                    logger)
+void VoltageDomain::removeGrid(Grid* grid)
 {
+  grids_.erase(
+      std::remove_if(grids_.begin(), grids_.end(), [grid](const auto& other) {
+        return other.get() == grid;
+      }));
 }
 
 }  // namespace pdn

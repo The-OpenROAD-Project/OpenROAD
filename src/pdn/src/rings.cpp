@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ring.h"
+#include "rings.h"
 
 #include "domain.h"
 #include "grid.h"
@@ -39,15 +39,15 @@
 
 namespace pdn {
 
-Ring::Ring(Grid* grid, const std::array<Layer, 2>& layers)
-    : GridShape(grid),
+Rings::Rings(Grid* grid, const std::array<Layer, 2>& layers)
+    : GridComponent(grid),
       layers_(layers),
       offset_({0, 0, 0, 0}),
       extend_to_boundary_(false)
 {
 }
 
-void Ring::checkLayerSpecifications() const
+void Rings::checkLayerSpecifications() const
 {
   for (const auto& layer : layers_) {
     checkLayerWidth(layer.layer, layer.width, layer.layer->getDirection());
@@ -56,19 +56,20 @@ void Ring::checkLayerSpecifications() const
   }
 
   if (layers_[0].layer->getDirection() == layers_[1].layer->getDirection()) {
-    getLogger()->error(utl::PDN,
-                       180,
-                       "Ring cannot be build with layers following the same direction: {}",
-                       layers_[0].layer->getDirection().getString());
+    getLogger()->error(
+        utl::PDN,
+        180,
+        "Ring cannot be build with layers following the same direction: {}",
+        layers_[0].layer->getDirection().getString());
   }
 }
 
-void Ring::setOffset(const std::array<int, 4>& offset)
+void Rings::setOffset(const std::array<int, 4>& offset)
 {
   offset_ = offset;
 }
 
-void Ring::setPadOffset(const std::array<int, 4>& offset)
+void Rings::setPadOffset(const std::array<int, 4>& offset)
 {
   odb::Rect die_area;
   getBlock()->getDieArea(die_area);
@@ -153,9 +154,9 @@ void Ring::setPadOffset(const std::array<int, 4>& offset)
   setOffset(core_offset);
 }
 
-void Ring::getTotalWidth(int& hor, int& ver) const
+void Rings::getTotalWidth(int& hor, int& ver) const
 {
-  const int rings = getGrid()->getNets().size();
+  const int rings = getNetCount();
   hor = layers_[0].width * rings + layers_[0].spacing * (rings - 1);
   ver = layers_[1].width * rings + layers_[1].spacing * (rings - 1);
   if (layers_[0].layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
@@ -163,12 +164,12 @@ void Ring::getTotalWidth(int& hor, int& ver) const
   }
 }
 
-void Ring::setExtendToBoundary(bool value)
+void Rings::setExtendToBoundary(bool value)
 {
   extend_to_boundary_ = value;
 }
 
-void Ring::makeShapes(const ShapeTreeMap& other_shapes)
+void Rings::makeShapes(const ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -181,14 +182,14 @@ void Ring::makeShapes(const ShapeTreeMap& other_shapes)
 
   auto* grid = getGrid();
 
-  const auto nets = getGrid()->getNets();
+  const auto nets = getNets();
 
   odb::Rect boundary;
   if (extend_to_boundary_) {
-    boundary = grid->getDieBoundary();
+    boundary = grid->getGridBoundary();
   }
 
-  odb::Rect core = grid->getCoreArea();
+  odb::Rect core = grid->getDomainArea();
   core.set_xlo(core.xMin() - offset_[0]);
   core.set_ylo(core.yMin() - offset_[1]);
   core.set_xhi(core.xMax() + offset_[2]);
@@ -284,7 +285,7 @@ void Ring::makeShapes(const ShapeTreeMap& other_shapes)
   }
 }
 
-const std::vector<odb::dbTechLayer*> Ring::getLayers() const
+const std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
   for (const auto& layer_def : layers_) {
@@ -293,11 +294,11 @@ const std::vector<odb::dbTechLayer*> Ring::getLayers() const
   return layers;
 }
 
-void Ring::report() const
+void Rings::report() const
 {
   auto* logger = getLogger();
 
-  double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
+  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
 
   logger->info(utl::PDN, 30, "  Core offset:");
   logger->info(utl::PDN, 31, "    Left: {:.4f}", offset_[0] / dbu_per_micron);

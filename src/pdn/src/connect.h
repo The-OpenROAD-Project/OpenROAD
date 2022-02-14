@@ -33,6 +33,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <vector>
 
 #include "shape.h"
@@ -48,10 +49,13 @@ class Rect;
 
 namespace pdn {
 
+class DbVia;
+class ViaGenerator;
+
 class Connect
 {
  public:
-  Connect(odb::dbTechLayer* layer0, odb::dbTechLayer* layer1);
+  Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1);
 
   void addFixedVia(odb::dbTechViaGenerateRule* via);
   void addFixedVia(odb::dbTechVia* via);
@@ -59,6 +63,17 @@ class Connect
   void setCutPitch(int x, int y);
   int getCutPitchX() const { return cut_pitch_x_; }
   int getCutPitchY() const { return cut_pitch_y_; }
+
+  void setMaxRows(int rows) { max_rows_ = rows; }
+  int getMaxRows() const { return max_rows_; }
+
+  void setMaxColumns(int cols) { max_columns_ = cols; }
+  int getMaxColumns() const { return max_columns_; }
+
+  void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
+
+  void setSplitCuts(const std::map<odb::dbTechLayer*, int>& splits);
+  int getSplitCutPitch(odb::dbTechLayer* layer) const;
 
   void report() const;
 
@@ -90,10 +105,15 @@ class Connect
   void makeVia(odb::dbSWire* wire,
                const odb::Rect& lower_rect,
                const odb::Rect& upper_rect,
-               odb::dbWireShapeType type);
+               odb::dbWireShapeType type,
+               DbVia::ViaLayerShape& via_shapes);
 
   void setGrid(Grid* grid) { grid_ = grid; }
   Grid* getGrid() const { return grid_; }
+
+  void clearShapes();
+
+  void filterVias(const std::string& filter);
 
  private:
   Grid* grid_;
@@ -104,13 +124,13 @@ class Connect
   int cut_pitch_x_;
   int cut_pitch_y_;
 
-  struct ViaDef
-  {
-    std::unique_ptr<DbVia> via;
-    odb::dbTechLayer* bottom;
-    odb::dbTechLayer* top;
-  };
-  std::map<std::pair<int, int>, std::vector<ViaDef>> vias_;
+  int max_rows_;
+  int max_columns_;
+
+  std::set<odb::dbTechLayer*> ongrid_;
+  std::map<odb::dbTechLayer*, int> split_cuts_;
+
+  std::map<std::pair<int, int>, std::unique_ptr<DbVia>> vias_;
   std::vector<odb::dbTechViaGenerateRule*> generate_via_rules_;
   std::vector<odb::dbTechVia*> tech_vias_;
 
@@ -122,10 +142,6 @@ class Connect
                             const odb::Rect& lower_rect,
                             odb::dbTechLayer* upper,
                             const odb::Rect& upper_rect) const;
-  odb::dbTechVia* findTechVia(odb::dbTechLayer* lower,
-                              const odb::Rect& lower_rect,
-                              odb::dbTechLayer* upper,
-                              const odb::Rect& upper_rect) const;
 
   void populateGenerateRules();
   void populateTechVias();
@@ -136,6 +152,12 @@ class Connect
   bool techViaContains(odb::dbTechVia* rule,
                        odb::dbTechLayer* lower,
                        odb::dbTechLayer* upper) const;
+
+  int getSplitCut(odb::dbTechLayer* layer) const;
+
+  DbVia* generateDbVia(
+      const std::vector<std::unique_ptr<ViaGenerator>>& generators,
+      odb::dbBlock* block) const;
 };
 
 }  // namespace pdn

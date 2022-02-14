@@ -36,6 +36,8 @@
 #include <string>
 #include <vector>
 
+#include "odb/dbTypes.h"
+
 namespace odb {
 class dbBlock;
 class dbNet;
@@ -50,17 +52,26 @@ class Logger;
 
 namespace pdn {
 class Grid;
+class PdnGen;
 
 class VoltageDomain
 {
  public:
-  VoltageDomain(const std::string& name,
+  VoltageDomain(PdnGen* pdngen,
+                const std::string& name,
                 odb::dbBlock* block,
                 odb::dbNet* power,
                 odb::dbNet* ground,
                 const std::vector<odb::dbNet*>& secondary_nets,
                 odb::dbRegion* region,
                 utl::Logger* logger);
+
+  VoltageDomain(PdnGen* pdngen,
+                odb::dbBlock* block,
+                odb::dbNet* power,
+                odb::dbNet* ground,
+                const std::vector<odb::dbNet*>& secondary_nets,
+                utl::Logger* logger);  // Core
 
   const std::string& getName() const { return name_; }
 
@@ -76,11 +87,12 @@ class VoltageDomain
   odb::dbRegion* getRegion() const { return region_; }
 
   // returns the area of the region or core
-  const odb::Rect getCoreArea() const;
+  const odb::Rect getDomainArea() const;
 
   void addGrid(std::unique_ptr<Grid> grid);
   void resetGrids();
   void clearGrids() { grids_.clear(); }
+  void removeGrid(Grid* grid);
   const std::vector<std::unique_ptr<Grid>>& getGrids() const { return grids_; }
 
   // get the rows associated with the core or region
@@ -90,6 +102,7 @@ class VoltageDomain
 
  private:
   std::string name_;
+  PdnGen* pdngen_;
   odb::dbBlock* block_;
   odb::dbNet* power_;
   odb::dbNet* ground_;
@@ -106,20 +119,12 @@ class VoltageDomain
   // returns just the rows associated with the region
   const std::vector<odb::dbRow*> getRegionRows() const;
   // returns only rows that are not associated with a region
-  const std::vector<odb::dbRow*> getCoreRows() const;
+  const std::vector<odb::dbRow*> getDomainRows() const;
 
   // find power and ground nets if they are not specified
   void determinePowerGroundNets();
-};
 
-class CoreVoltageDomain : public VoltageDomain
-{
- public:
-  CoreVoltageDomain(odb::dbBlock* block,
-                    odb::dbNet* power,
-                    odb::dbNet* ground,
-                    const std::vector<odb::dbNet*>& secondary_nets,
-                    utl::Logger* logger);
+  odb::dbNet* findDomainNet(odb::dbSigType type) const;
 };
 
 }  // namespace pdn

@@ -57,6 +57,10 @@ class dbVia;
 class dbViaParams;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace pdn {
 
 namespace bg = boost::geometry;
@@ -75,7 +79,7 @@ using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
 using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
 
 class Grid;
-class GridShape;
+class GridComponent;
 class VoltageDomain;
 
 // Basic class that contains a single shape for the power grid, keeping track of
@@ -83,10 +87,18 @@ class VoltageDomain;
 class Shape
 {
  public:
+  enum ShapeType
+  {
+    SHAPE,
+    GRID_OBS,
+    BLOCK_OBS,
+    OBS
+  };
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
         const odb::Rect& rect,
         odb::dbWireShapeType type = odb::dbWireShapeType::NONE);
+  Shape(odb::dbTechLayer* layer, const odb::Rect& rect, ShapeType shape_type);
   virtual ~Shape();
 
   odb::dbTechLayer* getLayer() const { return layer_; }
@@ -95,6 +107,11 @@ class Shape
   const odb::Rect& getRect() const { return rect_; }
   const Box getRectBox() const;
   odb::dbWireShapeType getType() const { return type_; }
+
+  utl::Logger* getLogger() const;
+
+  ShapeType shapeType() const { return shape_type_; }
+  void setShapeType(ShapeType type) { shape_type_ = type; }
 
   int getLength() const { return rect_.maxDXDY(); }
   int getWidth() const { return rect_.minDXDY(); }
@@ -106,7 +123,8 @@ class Shape
 
   const odb::Rect& getObstruction() const { return obs_; }
   const Box getObstructionBox() const;
-  // generates the obstruction box needed to avoid DRC violations with surrounding shapes
+  // generates the obstruction box needed to avoid DRC violations with
+  // surrounding shapes
   void generateObstruction();
 
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
@@ -147,22 +165,31 @@ class Shape
   {
     return bterm_connections_;
   }
-  // after shape is modified, remove any term connections that are no longer connected
+  // after shape is modified, remove any term connections that are no longer
+  // connected
   virtual void updateTermConnections();
 
   // returns the smallest shape possible when attempting to trim
   virtual const odb::Rect getMinimumRect() const;
   int getNumberOfConnections() const;
+  int getNumberOfConnectionsBelow() const;
+  int getNumberOfConnectionsAbove() const;
 
-  std::vector<Shape*> cut(const ShapeTree& obstructions) const;
+  Shape* extendTo(const odb::Rect& rect, const ShapeTree& obstructions) const;
+
+  virtual bool cut(const ShapeTree& obstructions,
+                   std::vector<Shape*>& replacements) const;
 
   // return a copy of the shape
   virtual Shape* copy() const;
   // merge this shape with another
   virtual void merge(Shape* shape);
 
-  void setGridShape(GridShape* grid_shape) { grid_shape_ = grid_shape; }
-  GridShape* getGridShape() const { return grid_shape_; }
+  void setGridComponent(GridComponent* component)
+  {
+    grid_component_ = component;
+  }
+  GridComponent* getGridComponent() const { return grid_component_; }
 
   // returns the text used by the renderer to identify the shape
   const std::string getDisplayText() const;
@@ -182,10 +209,11 @@ class Shape
   odb::dbNet* net_;
   odb::Rect rect_;
   odb::dbWireShapeType type_;
+  ShapeType shape_type_;
 
   odb::Rect obs_;
 
-  GridShape* grid_shape_;
+  GridComponent* grid_component_;
 
   std::vector<ViaPtr> vias_;
   std::set<odb::Rect> iterm_connections_;
@@ -212,6 +240,9 @@ class FollowPinShape : public Shape
 
   // followpins cannot be removed
   virtual bool isRemovable() const override { return false; }
+
+  virtual bool cut(const ShapeTree& obstructions,
+                   std::vector<Shape*>& replacements) const override;
 
  private:
   std::set<odb::dbRow*> rows_;

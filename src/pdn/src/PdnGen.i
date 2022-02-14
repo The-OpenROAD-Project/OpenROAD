@@ -59,16 +59,18 @@ using utl::PDN;
 
 %include <std_string.i>
 
-%typemap(in) pdn::Strap::Extend,  Strap::Extend {
+%template(split_cuts_pitch_map) std::vector<int>;
+
+%typemap(in) pdn::ExtensionMode {
   char *str = Tcl_GetStringFromObj($input, 0);
   if (strcasecmp(str, "Core") == 0) {
-    $1 = pdn::Strap::Extend::CORE;
+    $1 = pdn::ExtensionMode::CORE;
   } else if (strcasecmp(str, "Rings") == 0) {
-    $1 = pdn::Strap::Extend::RINGS;
+    $1 = pdn::ExtensionMode::RINGS;
   } else if (strcasecmp(str, "Boundary") == 0) {
-    $1 = pdn::Strap::Extend::BOUNDARY;
+    $1 = pdn::ExtensionMode::BOUNDARY;
   } else {
-    $1 = pdn::Strap::Extend::CORE;
+    $1 = pdn::ExtensionMode::CORE;
   }
 }
 
@@ -164,6 +166,12 @@ void reset()
   pdngen->reset();
 }
 
+void reset_shapes()
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->resetShapes();
+}
+
 void build_grids(bool trim = true)
 {
   PdnGen* pdngen = ord::getPdnGen();
@@ -173,23 +181,49 @@ void build_grids(bool trim = true)
 void make_core_grid(pdn::VoltageDomain* domain, const std::string& name, bool starts_with_power, const std::vector<odb::dbTechLayer*>& pin_layers)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->makeCoreGrid(domain, name, starts_with_power, pin_layers);
+  StartsWith starts_with = POWER;
+  if (!starts_with_power) {
+    starts_with = GROUND;
+  }
+  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers);
 }
 
-void make_instance_grid(pdn::VoltageDomain* domain, const std::string& name, bool starts_with_power, odb::dbInst* inst, int x0, int y0, int x1, int y1)
+void make_instance_grid(pdn::VoltageDomain* domain,
+                        const std::string& name,
+                        bool starts_with_power,
+                        odb::dbInst* inst,
+                        int x0,
+                        int y0,
+                        int x1,
+                        int y1,
+                        bool pg_pins_to_boundary,
+                        bool default_grid)
 {
   PdnGen* pdngen = ord::getPdnGen();
+  StartsWith starts_with = POWER;
+  if (!starts_with_power) {
+    starts_with = GROUND;
+  }
+  
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with_power, inst, halo);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid);
+}
+
+void make_existing_grid(const std::string& name)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->makeExistingGrid(name);
 }
 
 void make_ring(const std::string& grid_name, 
-               odb::dbTechLayer* l0, 
-               int width0, 
-               int spacing0, 
-               odb::dbTechLayer* l1, 
-               int width1, 
-               int spacing1, 
+               odb::dbTechLayer* l0,
+               int width0,
+               int spacing0,
+               odb::dbTechLayer* l1,
+               int width1,
+               int spacing1,
+               bool use_grid_power_order,
+               bool starts_with_power,
                int core_offset_x0,
                int core_offset_y0,
                int core_offset_x1,
@@ -202,10 +236,19 @@ void make_ring(const std::string& grid_name,
                const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   PdnGen* pdngen = ord::getPdnGen();
+  StartsWith starts_with = GRID;
+  if (!use_grid_power_order) {
+    if (starts_with_power) {
+      starts_with = POWER;
+    } else {
+      starts_with = GROUND;
+    }
+  }
   for (auto* grid : pdngen->findGrid(grid_name)) {
     pdngen->makeRing(grid,
-                     {Ring::Layer{l0, width0, spacing0},
-                      Ring::Layer{l1, width1, spacing1}},
+                     l0, width0, spacing0,
+                     l1, width1, spacing1,
+                     starts_with,
                      {core_offset_x0, core_offset_y0, core_offset_x1, core_offset_y1},
                      {pad_offset_x0, pad_offset_y0, pad_offset_x1, pad_offset_y1},
                      extend,
@@ -216,7 +259,7 @@ void make_ring(const std::string& grid_name,
 void make_followpin(const std::string& grid_name, 
                     odb::dbTechLayer* layer, 
                     int width, 
-                    pdn::Strap::Extend extend)
+                    pdn::ExtensionMode extend)
 {
   PdnGen* pdngen = ord::getPdnGen();
   for (auto* grid : pdngen->findGrid(grid_name)) {
@@ -234,11 +277,19 @@ void make_strap(const std::string& grid_name,
                 bool snap,
                 bool use_grid_power_order,
                 bool starts_with_power,
-                pdn::Strap::Extend extend)
+                pdn::ExtensionMode extend)
 {
   PdnGen* pdngen = ord::getPdnGen();
+  StartsWith starts_with = GRID;
+  if (!use_grid_power_order) {
+    if (starts_with_power) {
+      starts_with = POWER;
+    } else {
+      starts_with = GROUND;
+    }
+  }
   for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeStrap(grid, layer, width, spacing, pitch, offset, number_of_straps, snap, use_grid_power_order, starts_with_power, extend);
+    pdngen->makeStrap(grid, layer, width, spacing, pitch, offset, number_of_straps, snap, starts_with, extend);
   }
 }
 
@@ -248,11 +299,21 @@ void make_connect(const std::string& grid_name,
                   int cut_pitch_x, 
                   int cut_pitch_y, 
                   const std::vector<odb::dbTechViaGenerateRule*>& vias, 
-                  const std::vector<odb::dbTechVia*>& techvias)
+                  const std::vector<odb::dbTechVia*>& techvias,
+                  int max_rows,
+                  int max_columns,
+                  const std::vector<odb::dbTechLayer*>& ongrid,
+                  const std::vector<odb::dbTechLayer*>& split_cuts_layers,
+                  const std::vector<int>& split_cut_pitches,
+                  const std::string& dont_use_vias)
 {
   PdnGen* pdngen = ord::getPdnGen();
+  std::map<odb::dbTechLayer*, int> split_cuts;
+  for (size_t i = 0; i < split_cuts_layers.size(); i++) {
+    split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
+  }
   for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias);
+    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, split_cuts, dont_use_vias);
   }
 }
 
@@ -284,6 +345,24 @@ pdn::VoltageDomain* find_domain(const std::string& name)
 {
   PdnGen* pdngen = ord::getPdnGen();
   return pdngen->findDomain(name);
+}
+
+bool has_grid(const std::string& name)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  return !pdngen->findGrid(name).empty();
+}
+
+void allow_repair_channels(bool allow)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->setAllowRepairChannels(allow);
+}
+
+void filter_vias(const std::string& filter)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->filterVias(filter);
 }
 
 } // namespace
