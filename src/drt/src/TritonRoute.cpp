@@ -427,7 +427,8 @@ void TritonRoute::readParams(const string& fileName)
         } else if (field == "initRouteShapeCost") {
           ROUTESHAPECOST = atoi(value.c_str());
           ++readParamCnt;
-        }
+        } else if (field == "clean_patches")
+          CLEAN_PATCHES = true;
       }
     }
     fin.close();
@@ -448,6 +449,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   VERBOSE = params.verbose;
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
+  CLEAN_PATCHES = params.cleanPatches;
   if (!params.viaInPinBottomLayer.empty()) {
     VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
