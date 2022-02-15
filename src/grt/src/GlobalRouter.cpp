@@ -1348,10 +1348,19 @@ void GlobalRouter::perturbCapacities()
 void GlobalRouter::readGuides(const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
-  if (max_routing_layer_ == -1) {
+  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
+    int min_layer = min_layer_for_clock_ > 0
+                      ? std::min(min_routing_layer_, min_layer_for_clock_)
+                      : min_routing_layer_;
+    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+
     initRoutingLayers();
-    initCoreGrid(max_routing_layer_);
+    initRoutingTracks(max_layer);
+    initCoreGrid(max_layer);
+    initAdjustments();
+    setCapacities(min_layer, max_layer);
+    applyAdjustments(min_layer, max_layer);
   }
   odb::dbTech* tech = db_->getTech();
 
