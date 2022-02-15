@@ -675,6 +675,26 @@ void FastRouteCore::setEdgeUsage(int x1,
   }
 }
 
+void FastRouteCore::incrementEdge3DUsage(int x1,
+                                         int y1,
+                                         int l1,
+                                         int x2,
+                                         int y2,
+                                         int l2)
+{
+  const int k = l1 - 1;
+
+  if (y1 == y2) {  // horizontal edge
+    for (int x = x1; x < x2; x++) {
+      h_edges_3D_[k][y1][x].usage++;
+    }
+  } else if (x1 == x2) {  // vertical edge
+    for (int y = y1; y < y2; y++) {
+      v_edges_3D_[k][y][x1].usage++;
+    }
+  }
+}
+
 void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
