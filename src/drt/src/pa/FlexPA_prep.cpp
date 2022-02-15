@@ -1845,12 +1845,12 @@ void FlexPA::addAccessPatternObj(
 
 void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
-  std::set<frString> inst_names;
+  std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_)
-    inst_names.insert(inst->getName());
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!inst_names.empty()
-        && inst_names.find(inst->getName()) == inst_names.end())
+    if (!target_insts_.empty()
+        && target_frinsts.find(inst.get()) == target_frinsts.end())
       continue;
     if (inst2unique_.find(inst.get()) == inst2unique_.end())
       continue;

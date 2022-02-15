@@ -132,12 +132,12 @@ void FlexPA::initUniqueInstance_main(
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
-  std::set<frString> inst_names;
+  std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_)
-    inst_names.insert(inst->getName());
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!inst_names.empty()
-        && inst_names.find(inst->getName()) == inst_names.end())
+    if (!target_insts_.empty()
+        && target_frinsts.find(inst.get()) == target_frinsts.end())
       continue;
     if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
       ndrInsts.push_back(inst.get());
@@ -170,17 +170,6 @@ void FlexPA::initUniqueInstance_main(
     }
     masterOT2Insts[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
-    // if (VERBOSE > 0) {
-    //   if (cnt < 100000) {
-    //     if (cnt % 10000 == 0) {
-    //       cout <<"  complete " <<cnt <<" instances" <<endl;
-    //     }
-    //   } else {
-    //     if (cnt % 100000 == 0) {
-    //       cout <<"  complete " <<cnt <<" instances" <<endl;
-    //     }
-    //   }
-    // }
   }
 
   cnt = 0;

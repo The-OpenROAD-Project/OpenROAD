@@ -92,7 +92,7 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
-  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>(0));
+  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>());
 
   int getNumDRVs() const;
 
