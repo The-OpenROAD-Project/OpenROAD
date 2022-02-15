@@ -171,6 +171,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 void GlobalRouter::applyAdjustments(int min_routing_layer,
                                     int max_routing_layer)
 {
+  fastroute_->initEdges();
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
@@ -799,8 +800,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
-
-  fastroute_->initEdges();
 }
 
 int GlobalRouter::computeTrackConsumption(
