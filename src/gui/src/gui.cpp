@@ -952,9 +952,14 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
 
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+  // Track the exit in case it originated during a script
+  bool exit_requested = false;
+  QObject::connect(main_window, &MainWindow::exit, [&]() {
+    exit_requested = true;
+  });
 
   // Hide the Gui if someone chooses hide from the menu in the window
-  QObject::connect(main_window, &gui::MainWindow::hide, [gui]() {
+  QObject::connect(main_window, &MainWindow::hide, [gui]() {
     gui->hideGui();
   });
 
@@ -999,7 +1004,7 @@ int startGui(int& argc, char* argv[], Tcl_Interp* interp, const std::string& scr
     }
   }
 
-  bool do_exec = interactive && !exception.hasException();
+  bool do_exec = interactive && !exception.hasException() && !exit_requested;
   // check if hide was called by script
   if (gui->isContinueAfterClose()) {
     do_exec = false;
