@@ -105,7 +105,7 @@ def gen_files(work_dir, ispd_year, design, drv):
     print(f"Create run shell script for {design}")
     run_sh = os.path.join(design_dir, "run.sh")
     script = f"""
-            set -e
+            set -e -o pipefail
             echo Running {design}
             {args.program} -exit {design_dir}/run.tcl 2>&1 \\
                 | tee {design_dir}/run_{design}.log
