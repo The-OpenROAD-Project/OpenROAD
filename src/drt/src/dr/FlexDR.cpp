@@ -1710,7 +1710,7 @@ void FlexDR::searchRepair(int iter,
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
-  if (iter >= 5 && iter < 15)
+  if (iter >= 10 && iter < 30)
       clipSize += 20;
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
