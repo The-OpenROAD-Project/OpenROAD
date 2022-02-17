@@ -653,6 +653,13 @@ bool IRSolver::CreateGmat(bool connection_only) {
       }
     }
   }
+
+  if (m_Gmat->GetNumNodes() == 0) {
+    m_logger->warn(utl::PSM, 70, "Net {} has no nodes and will be skipped",
+                   m_power_net);
+    return true;
+  }
+
   // insert c4 bumps as nodes
   int num_C4 = 0;
   for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
@@ -1113,6 +1120,10 @@ bool IRSolver::Build() {
   ReadC4Data();
   if (res) {
     res = CreateGmat();
+    if (m_Gmat->GetNumNodes() == 0) {
+      m_connection = true;
+      return true;
+    }
   }
   if (res) {
     res = CreateJ();
@@ -1137,6 +1148,10 @@ bool IRSolver::BuildConnection() {
   ReadC4Data();
   if (res) {
     res = CreateGmat(true);
+    if (m_Gmat->GetNumNodes() == 0) {
+      m_connection = true;
+      return true;
+    }
   }
   if (res) {
     res = AddC4Bump();
