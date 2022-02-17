@@ -1416,12 +1416,12 @@ void GlobalRouter::updateEdgesUsage()
 {
   for (const auto& [net, groute] : routes_) {
     for (const GSegment& seg : groute) {
-      int x0 = (seg.init_x - grid_->getXMin()) / grid_->getTileSize() - 0.5;
-      int y0 = (seg.init_y - grid_->getYMin()) / grid_->getTileSize() - 0.5;
+      int x0 = (seg.init_x - grid_->getXMin()) / grid_->getTileSize();
+      int y0 = (seg.init_y - grid_->getYMin()) / grid_->getTileSize();
       int l0 = seg.init_layer;
 
-      int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize() - 0.5;
-      int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize() - 0.5;
+      int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize();
+      int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize();
       int l1 = seg.final_layer;
 
       fastroute_->incrementEdge3DUsage(x0, y0, l0, x1, y1, l1);
