@@ -348,6 +348,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(physical_instances_.antenna, "Antenna", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.cover, "Cover", phys_parent, Qt::Checked, true);
   makeLeafItem(physical_instances_.bump, "Bump", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.other, "Other", phys_parent, Qt::Checked, true);
   toggleParent(instances_.physical);
   toggleParent(instance_group_);
 
@@ -1287,7 +1288,7 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) 
   } else if (master_type == dbMasterType::CORE_TIEHIGH || master_type == dbMasterType::CORE_TIELOW) {
     return &physical_instances_.tie;
   } else if (source_type == odb::dbSourceType::DIST) {
-    return &instances_.physical;
+    return &physical_instances_.other;
   }
 
   sta::dbNetwork* network = sta_->getDbNetwork();
