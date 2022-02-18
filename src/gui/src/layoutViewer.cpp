@@ -230,7 +230,7 @@ class GuiPainter : public Painter
     painter_->drawLine(x - o, y + o, x + o, y - o);
   }
 
-  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text)
+  const odb::Point determineStringOrigin(int x, int y, Anchor anchor, const QString& text, bool rotate_90 = false)
   {
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const QPoint text_bbox_center = text_bbox.center();
@@ -266,6 +266,10 @@ class GuiPainter : public Painter
     sx *= scale_adjust;
     sy *= scale_adjust;
     // add desired text location in DBU
+    if (rotate_90) {
+      sx *= -1;
+      std::swap(sx, sy);
+    }
     sx += x;
     sy += y;
 
@@ -276,16 +280,25 @@ class GuiPainter : public Painter
   //       the transformation is mapped to the base transformation and
   //       the world co-ordinates are mapped to the window co-ordinates
   //       before drawing.
-  void drawString(int x, int y, Anchor anchor, const std::string& s) override
+  void drawString(int x, int y, Anchor anchor, const std::string& s, bool rotate_90 = false) override
   {
     const QString text = QString::fromStdString(s);
     const qreal scale_adjust = 1.0 / getPixelsPerDBU();
 
-    const odb::Point origin = determineStringOrigin(x, y, anchor, text);
+    odb::Point origin;
+    if (rotate_90) {
+      // rotating text requires anchor to be Qt default
+      origin = determineStringOrigin(x, y, anchor, text, rotate_90);
+    } else {
+      origin = determineStringOrigin(x, y, anchor, text, rotate_90);
+    }
 
     const QTransform transform = painter_->transform();
     painter_->translate(origin.x(), origin.y());
     painter_->scale(scale_adjust, -scale_adjust); // undo original scaling
+    if (rotate_90) {
+      painter_->rotate(90);
+    }
     painter_->drawText(0, 0, text); // origin of painter is desired location, so paint at 0, 0
     painter_->setTransform(transform);
   }
@@ -1757,6 +1770,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   // limit non-core text to 1/2.0 (50%) of cell height or width
   static const float non_core_scale_limit = 2.0;
 
+  const qreal scale_adjust = 1.0 / pixels_per_dbu_;
+
   painter->setFont(text_font);
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
@@ -1804,7 +1819,7 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
     }
 
     painter->translate(instance_box.xMin(), instance_box.yMin());
-    painter->scale(1.0 / pixels_per_dbu_, -1.0 / pixels_per_dbu_);
+    painter->scale(scale_adjust, -scale_adjust);
     if (do_rotate) {
       text_bounding_box = font_metrics.boundingRect(name);
       painter->rotate(90);
@@ -2117,6 +2132,16 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     Point(0, 0)
   };
 
+  struct PinText {
+    odb::dbBox* box;
+    std::string text;
+    odb::Rect rect;
+    bool top_bottom;
+    odb::Point pt;
+    Painter::Anchor anchor;
+  };
+  std::vector<PinText> pin_text_spec;
+
   for (odb::dbBTerm* term : block_->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
@@ -2203,11 +2228,57 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
             text_anchor_pt.setY(text_anchor_pt.y() - max_dim - text_margin);
           }
 
-          painter.drawString(text_anchor_pt.x(), text_anchor_pt.y(), text_anchor, term->getName());
+          PinText pin_specs;
+          pin_specs.box = box;
+          pin_specs.text = term->getName();
+          pin_specs.pt = text_anchor_pt;
+          pin_specs.anchor = text_anchor;
+          pin_specs.top_bottom = arg_min == 2 || arg_min == 3;
+          // only need bounding box for top and bottom
+          if (pin_specs.top_bottom) {
+            const odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(), pin_specs.pt.y(), pin_specs.anchor, pin_specs.text);
+            text_rect.bloat(text_margin, pin_specs.rect);
+          }
+          pin_text_spec.push_back(pin_specs);
         }
       }
     }
   }
+
+  for (const auto& pin : pin_text_spec) {
+    bool do_rotate = false;
+    auto anchor = pin.anchor;
+    if (pin.top_bottom) {
+      // check if box will intersect anything any
+      for (const auto& other : pin_text_spec) {
+        if (pin.box == other.box) {
+          // ignore same box
+          continue;
+        }
+        if (pin.box->getTechLayer() != other.box->getTechLayer()) {
+          // ignore boxes on different layers
+          continue;
+        }
+        if (pin.rect.intersects(other.rect)) {
+          // adjust anchor
+          if (pin.anchor == Painter::BOTTOM_CENTER) {
+            anchor = Painter::RIGHT_CENTER;
+          } else if (pin.anchor == Painter::TOP_CENTER) {
+            anchor = Painter::LEFT_CENTER;
+          }
+          do_rotate = true;
+          break;
+        }
+      }
+    }
+
+    odb::dbTechLayer* layer = pin.box->getTechLayer();
+    painter.setPen(layer);
+    painter.setBrush(layer);
+
+    painter.drawString(pin.pt.x(),  pin.pt.y(), anchor, pin.text, do_rotate);
+  }
+
   qpainter->setFont(initial_font);
 }
 
