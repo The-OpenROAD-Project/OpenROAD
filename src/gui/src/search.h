@@ -36,7 +36,8 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#include "db.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/dbBlockCallBackObj.h"
 
 namespace gui {
@@ -95,6 +96,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using FillRange = Range<odb::dbFill*>;
   using ObstructionRange = Range<odb::dbObstruction*>;
   using BlockageRange = Range<odb::dbBlockage*>;
+  using RowRange = Range<odb::dbRow*>;
 
   Search();
   ~Search();
@@ -143,11 +145,19 @@ class Search : public QObject, public odb::dbBlockCallBackObj
                                       int y_hi,
                                       int min_size = 0);
 
+  // Find all rows in the given bounds with height of at least min_height.
+  RowRange searchRows(int x_lo,
+                      int y_lo,
+                      int x_hi,
+                      int y_hi,
+                      int min_height = 0);
+
   void clearShapes();
   void clearFills();
   void clearInsts();
   void clearBlockages();
   void clearObstructions();
+  void clearRows();
 
   // From dbBlockCallBackObj
   virtual void inDbNetDestroy(odb::dbNet* net) override;
@@ -168,6 +178,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
   virtual void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
   virtual void inDbRegionDestroy(odb::dbRegion* region) override;
+  virtual void inDbRowCreate(odb::dbRow* row) override;
+  virtual void inDbRowDestroy(odb::dbRow* row) override;
 
  signals:
   void modified();
@@ -180,12 +192,16 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void addInst(odb::dbInst* inst);
   void addBlockage(odb::dbBlockage* blockage);
   void addObstruction(odb::dbObstruction* obstruction);
+  void addRow(odb::dbRow* row);
 
   void updateShapes();
   void updateFills();
   void updateInsts();
   void updateBlockages();
   void updateObstructions();
+  void updateRows();
+
+  Box convertRect(const odb::Rect& box) const;
 
   void clear();
 
@@ -202,6 +218,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   bool blockages_init_;
   std::map<odb::dbTechLayer*, Rtree<odb::dbObstruction*>> obstructions_;
   bool obstructions_init_;
+  Rtree<odb::dbRow*> rows_;
+  bool rows_init_;
 };
 
 }  // namespace gui
