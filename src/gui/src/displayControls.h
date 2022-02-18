@@ -312,6 +312,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow tie;
     ModelRow cover;
     ModelRow bump;
+    ModelRow other;
   };
 
   struct BlockageModels
