@@ -272,6 +272,9 @@ tclAppInit(int& argc,
   // gui will call this function again as part of setup
   // ensuring the else {} will be utilized to initialize tcl and OR.
   if (findCmdLineFlag(argc, argv, "-gui")) {
+    // gobble up remaining -gui flags if present, since this could result in second invocation of the GUI
+    while (findCmdLineFlag(argc, argv, "-gui"));
+
     gui::startGui(argc, argv, interp);
   } else {
     // init tcl
