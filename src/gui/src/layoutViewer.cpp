@@ -2132,11 +2132,14 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     Point(0, 0)
   };
 
+  // RTree used to search for overlapping shapes and decide if rotation of text is needed.
+  using RTree = bgi::rtree<Search::Box, bgi::quadratic<16>>;
+  std::map<odb::dbTechLayer*, RTree> pin_text_spec_shapes;
   struct PinText {
-    odb::dbBox* box;
+    Search::Box rect;
+    bool can_rotate;
+    odb::dbTechLayer* layer;
     std::string text;
-    odb::Rect rect;
-    bool top_bottom;
     odb::Point pt;
     Painter::Anchor anchor;
   };
@@ -2229,15 +2232,18 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
           }
 
           PinText pin_specs;
-          pin_specs.box = box;
+          pin_specs.layer = layer;
           pin_specs.text = term->getName();
           pin_specs.pt = text_anchor_pt;
           pin_specs.anchor = text_anchor;
-          pin_specs.top_bottom = arg_min == 2 || arg_min == 3;
-          // only need bounding box for top and bottom
-          if (pin_specs.top_bottom) {
-            const odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(), pin_specs.pt.y(), pin_specs.anchor, pin_specs.text);
-            text_rect.bloat(text_margin, pin_specs.rect);
+          pin_specs.can_rotate = arg_min == 2 || arg_min == 3;
+          // only need bounding box when rotation is possible
+          if (pin_specs.can_rotate) {
+            odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(), pin_specs.pt.y(), pin_specs.anchor, pin_specs.text);
+            text_rect.bloat(text_margin, text_rect);
+            pin_specs.rect = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
+                                         Search::Point(text_rect.xMax(), text_rect.yMax()));
+            pin_text_spec_shapes[layer].insert(pin_specs.rect);
           }
           pin_text_spec.push_back(pin_specs);
         }
@@ -2246,33 +2252,25 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   }
 
   for (const auto& pin : pin_text_spec) {
+    odb::dbTechLayer* layer = pin.layer;
+
     bool do_rotate = false;
     auto anchor = pin.anchor;
-    if (pin.top_bottom) {
-      // check if box will intersect anything any
-      for (const auto& other : pin_text_spec) {
-        if (pin.box == other.box) {
-          // ignore same box
-          continue;
+    if (pin.can_rotate) {
+      const auto& layer_pin_text_spec_shapes = pin_text_spec_shapes[layer];
+      if (layer_pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect) && bgi::satisfies([&](const auto& other) {
+          return !bg::equals(other, pin.rect);
+        })) != layer_pin_text_spec_shapes.qend()) {
+        // adjust anchor
+        if (pin.anchor == Painter::BOTTOM_CENTER) {
+          anchor = Painter::RIGHT_CENTER;
+        } else if (pin.anchor == Painter::TOP_CENTER) {
+          anchor = Painter::LEFT_CENTER;
         }
-        if (pin.box->getTechLayer() != other.box->getTechLayer()) {
-          // ignore boxes on different layers
-          continue;
-        }
-        if (pin.rect.intersects(other.rect)) {
-          // adjust anchor
-          if (pin.anchor == Painter::BOTTOM_CENTER) {
-            anchor = Painter::RIGHT_CENTER;
-          } else if (pin.anchor == Painter::TOP_CENTER) {
-            anchor = Painter::LEFT_CENTER;
-          }
-          do_rotate = true;
-          break;
-        }
+        do_rotate = true;
       }
     }
 
-    odb::dbTechLayer* layer = pin.box->getTechLayer();
     painter.setPen(layer);
     painter.setBrush(layer);
 
