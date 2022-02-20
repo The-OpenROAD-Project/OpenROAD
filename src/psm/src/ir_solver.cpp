@@ -565,8 +565,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
           int l = via_bottom_layer->getRoutingLevel();
           int x_loc1, x_loc2, y_loc1, y_loc2;
-          if (m_bottom_layer != l &&
-              l != m_top_layer) {  // do not set for top and bottom layers
+          if (m_bottom_layer != l) {  // do not set for bottom layers
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               y_loc1 = y;
               y_loc2 = y;
@@ -587,8 +586,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           // TODO this may count the stripe conductance twice but is needed to
           // fix a staggered stacked via
           layer_dir = via_top_layer->getDirection();
-          if (m_bottom_layer != l &&
-              l != m_top_layer) {  // do not set for top and bottom layers
+          if (m_bottom_layer != l) {  // do not set for bottom layers
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               y_loc1 = y;
               y_loc2 = y;
@@ -623,8 +621,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
             y_loc1 = curWire->yMin();
             y_loc2 = curWire->yMax();
           }
-          if (l == m_bottom_layer ||
-              l == m_top_layer) {  // special case for bottom and top layers
+          if (l == m_bottom_layer) {  // special case for bottom layers
                                    // we design a dense grid
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               int x_i;
@@ -782,7 +779,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
                             "set it using the 'set_layer_rc' command.",
                             via_bottom_layer->getName());
           }
-          bool top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
+          bool top_or_bottom = ((l == m_bottom_layer));
           Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
           NodeLoc node_loc = node_bot->GetLoc();
           if (abs(node_loc.first - x) > m_node_density ||
@@ -793,7 +790,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
 
           l = via_top_layer->getRoutingLevel();
-          top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
+          top_or_bottom = ((l == m_bottom_layer));
           Node* node_top = m_Gmat->GetNode(x, y, l, top_or_bottom);
           node_loc = node_top->GetLoc();
           if (abs(node_loc.first - x) > m_node_density ||
@@ -844,32 +841,29 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
           layer_dir = via_top_layer->getDirection();
           l = via_top_layer->getRoutingLevel();
-          if (l != m_top_layer) {
-            double rho = via_top_layer->getResistance();
-            if (!CheckValidR(rho) && !connection_only) {
-              m_logger->error(utl::PSM, 37,
-                              "Layer {} per-unit resistance not found in DB. "
-                              "Check the LEF or set it using the command "
-                              "'set_layer_rc -layer'.",
-                              via_top_layer->getName());
-            }
-            int x_loc1, x_loc2, y_loc1, y_loc2;
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y - y_cut_size / 2;
-              y_loc2 = y + y_cut_size / 2;
-              x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-              x_loc1 = x - x_cut_size / 2;
-              x_loc2 = x + x_cut_size / 2;
-            }
-            m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
-                                              layer_dir, x_loc1, x_loc2, y_loc1,
-                                              y_loc2, rho);
+          double rho = via_top_layer->getResistance();
+          if (!CheckValidR(rho) && !connection_only) {
+            m_logger->error(utl::PSM, 37,
+                            "Layer {} per-unit resistance not found in DB. "
+                            "Check the LEF or set it using the command "
+                            "'set_layer_rc -layer'.",
+                            via_top_layer->getName());
           }
-
+          int x_loc1, x_loc2, y_loc1, y_loc2;
+          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+            y_loc1 = y - y_cut_size / 2;
+            y_loc2 = y + y_cut_size / 2;
+            x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
+            x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
+          } else {
+            y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
+            y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
+            x_loc1 = x - x_cut_size / 2;
+            x_loc2 = x + x_cut_size / 2;
+          }
+          m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
+                                            layer_dir, x_loc1, x_loc2, y_loc1,
+                                            y_loc2, rho);
         } else {
           dbTechLayer* wire_layer = curWire->getTechLayer();
           int l = wire_layer->getRoutingLevel();
@@ -890,8 +884,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           int x_loc2 = curWire->xMax();
           int y_loc1 = curWire->yMin();
           int y_loc2 = curWire->yMax();
-          if (l == m_bottom_layer ||
-              l == m_top_layer) {  // special case for bottom and top layers
+          if (l == m_bottom_layer) {  // special case for bottom layer
                                    // we design a dense grid
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               x_loc1 = (x_loc1 / m_node_density) *
