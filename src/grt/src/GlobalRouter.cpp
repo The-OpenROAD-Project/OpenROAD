@@ -171,6 +171,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 void GlobalRouter::applyAdjustments(int min_routing_layer,
                                     int max_routing_layer)
 {
+  fastroute_->initEdges();
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
@@ -799,8 +800,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
-
-  fastroute_->initEdges();
 }
 
 int GlobalRouter::computeTrackConsumption(
@@ -1349,10 +1348,19 @@ void GlobalRouter::perturbCapacities()
 void GlobalRouter::readGuides(const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
-  if (max_routing_layer_ == -1) {
+  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
+    int min_layer = min_layer_for_clock_ > 0
+                      ? std::min(min_routing_layer_, min_layer_for_clock_)
+                      : min_routing_layer_;
+    int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+
     initRoutingLayers();
-    initCoreGrid(max_routing_layer_);
+    initRoutingTracks(max_layer);
+    initCoreGrid(max_layer);
+    initAdjustments();
+    setCapacities(min_layer, max_layer);
+    applyAdjustments(min_layer, max_layer);
   }
   odb::dbTech* tech = db_->getTech();
 
@@ -1396,6 +1404,64 @@ void GlobalRouter::readGuides(const char* file_name)
       route.push_back(boxToGlobalRouting(rect, layer->getRoutingLevel()));
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
+    }
+  }
+
+  updateEdgesUsage();
+  updateDbCongestionFromGuides();
+  heatmap_->update();
+}
+
+void GlobalRouter::updateEdgesUsage()
+{
+  for (const auto& [net, groute] : routes_) {
+    for (const GSegment& seg : groute) {
+      int x0 = (seg.init_x - grid_->getXMin()) / grid_->getTileSize();
+      int y0 = (seg.init_y - grid_->getYMin()) / grid_->getTileSize();
+      int l0 = seg.init_layer;
+
+      int x1 = (seg.final_x - grid_->getXMin()) / grid_->getTileSize();
+      int y1 = (seg.final_y - grid_->getYMin()) / grid_->getTileSize();
+      int l1 = seg.final_layer;
+
+      fastroute_->incrementEdge3DUsage(x0, y0, l0, x1, y1, l1);
+    }
+  }
+}
+
+void GlobalRouter::updateDbCongestionFromGuides()
+{
+  auto block = db_->getChip()->getBlock();
+  auto db_gcell = block->getGCellGrid();
+  if (db_gcell)
+    db_gcell->resetGrid();
+  else
+    db_gcell = odb::dbGCellGrid::create(block);
+
+  db_gcell->addGridPatternX(grid_->getXMin(), grid_->getXGrids(), grid_->getTileSize());
+  db_gcell->addGridPatternY(grid_->getYMin(), grid_->getYGrids(), grid_->getTileSize());
+  auto db_tech = db_->getTech();
+  for (int k = 0; k < grid_->getNumLayers(); k++) {
+    auto layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+
+    const auto& h_edges_3D = fastroute_->getHorizontalEdges3D();
+    const auto& v_edges_3D = fastroute_->getVerticalEdges3D();
+
+    const unsigned short capH = fastroute_->getHorizontalCapacities()[k];
+    const unsigned short capV = fastroute_->getVerticalCapacities()[k];
+    for (int y = 0; y < grid_->getYGrids(); y++) {
+      for (int x = 0; x < grid_->getXGrids() - 1; x++) {
+        const unsigned short blockageH = capH - h_edges_3D[k][y][x].cap;
+        const unsigned short blockageV = capV - v_edges_3D[k][y][x].cap;
+        const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
+        const unsigned short usageV = v_edges_3D[k][y][x].usage + blockageV;
+        db_gcell->setCapacity(layer, x, y, capH, capV, 0);
+        db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
+        db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+      }
     }
   }
 }
