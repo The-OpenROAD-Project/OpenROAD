@@ -623,49 +623,38 @@ bool IRSolver::CreateGmat(bool connection_only) {
     int size = get<2>(m_C4Bumps[it]);
     double v = get<3>(m_C4Bumps[it]);
     vector<Node*> RDL_nodes;
-    RDL_nodes = m_Gmat->GetRDLNodes(m_top_layer, m_top_layer_dir, x - size / 2,
-                                    x + size / 2, y - size / 2, y + size / 2);
-    if (RDL_nodes.empty() == true) {
-      Node* node = m_Gmat->GetNode(x, y, m_top_layer, true);
-      NodeLoc node_loc = node->GetLoc();
-      double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
-      double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
+    Node* node = m_Gmat->GetNode(x, y, m_top_layer, true);
+    NodeLoc node_loc = node->GetLoc();
+    double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
+    double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
+    if( 2*abs(node_loc.first - x) > size ||
+        2*abs(node_loc.second - y)> size) {
       double old_loc1 = ((double)x) / ((double)unit_micron);
       double old_loc2 = ((double)y) / ((double)unit_micron);
       double old_size = ((double)size) / ((double)unit_micron);
       m_logger->warn(utl::PSM, 30,
-                     "VSRC location at ({:4.3f}um, {:4.3f}um) "
-                     "and size {:4.3f}um, is not located on a power stripe. "
-                     "Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
-                     old_loc1, old_loc2, old_size, new_loc1, new_loc2);
-      RDL_nodes = m_Gmat->GetRDLNodes(
-          m_top_layer, m_top_layer_dir, node_loc.first - size / 2,
-          node_loc.first + size / 2, node_loc.second - size / 2,
-          node_loc.second + size / 2);
+                     "VSRC location at ({:4.3f}um, {:4.3f}um) and "
+                     "size {:4.3f}um, is not located on an existing "
+                     "power stripe node. Moving to closest node at "
+                     "({:4.3f}um, {:4.3f}um).", old_loc1, old_loc2, old_size,
+                     new_loc1, new_loc2);
     }
-    vector<Node*>::iterator node_it;
-    for (node_it = RDL_nodes.begin(); node_it != RDL_nodes.end(); ++node_it) {
-      Node* node = *node_it;
-      NodeIdx k = node->GetGLoc();
-      std::pair<std::map<NodeIdx, double>::iterator, bool> ret;
-      ret = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
-      if (ret.second == false) {
-        // key already exists and voltage value is different occurs when a user
-        // specifies two different voltage supply values by mistatke in two
-        // nearby nodes
-        NodeLoc node_loc = node->GetLoc();
-        double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
-        double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
-        m_logger->warn(
-            utl::PSM, 67,
-            "Multiple voltage supply values mapped"
-            "at the same node ({:4.3f}um, {:4.3f}um)."
-            "If you provided a vsrc file. Check for duplicate entries."
-            "Choosing voltage value {:4.3f}.",
-            new_loc1, new_loc2, ret.first->second);
-      } else {
-        num_C4++;
-      }
+    NodeIdx k = node->GetGLoc();
+    std::pair<std::map<NodeIdx, double>::iterator, bool> ret;
+    ret = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
+    if (ret.second == false) {
+      // key already exists and voltage value is different occurs when a user
+      // specifies two different voltage supply values by mistatke in two
+      // nearby nodes
+      m_logger->warn(
+          utl::PSM, 67,
+          "Multiple voltage supply values mapped"
+          "at the same node ({:4.3f}um, {:4.3f}um)."
+          "If you provided a vsrc file. Check for duplicate entries."
+          "Choosing voltage value {:4.3f}.",
+          new_loc1, new_loc2, ret.first->second);
+    } else {
+      num_C4++;
     }
   }
   // All new nodes must be inserted by this point

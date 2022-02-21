@@ -17,8 +17,8 @@
 [WARNING PSM-0021] Using voltage 0.000V for ground network.
 [WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 80.180 or core height of 79.800. Changing bump location to the center of the die at (40.090, 39.900).
 [WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
-[WARNING PSM-0030] VSRC location at (40.090um, 39.900um) and size 10.000um, is not located on a power stripe. Moving to closest stripe at (40.500um, 33.115um).
-[INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
+[WARNING PSM-0030] VSRC location at (40.090um, 39.900um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (40.070um, 33.115um).
+[INFO PSM-0031] Number of PDN nodes on net VSS = 1000.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
@@ -26,27 +26,25 @@
 [INFO PSM-0004] EM calculation is enabled.
 [INFO PSM-0003] Output current file specified ./results/gcd_em_vss.rpt.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 1000.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 3.21e-04 V
-Average IR drop  : 1.92e-04 V
-Worstcase IR drop: 3.21e-04 V
+Worstcase voltage: 3.14e-04 V
+Average IR drop  : 1.91e-04 V
+Worstcase IR drop: 3.14e-04 V
 ######################################
 ########## EM analysis ###############
 Maximum current: 6.62e-05 A
-Average current: 1.87e-06 A
-Number of resistors: 1244
+Average current: 1.26e-06 A
+Number of resistors: 999
 ######################################
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
 [INFO PSM-0005] Output spice file is specified as: ./results/gcd_spice_vss.sp.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 1000.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0006] SPICE file is written at: ./results/gcd_spice_vss.sp.
 No differences found.
-Differences found at line 2.
-R1 VSS_80140_146230_5 VSS_79960_146230_5 0.033750
-R1 VSS_80140_146230_5 VSS_79960_146230_5 0.004725
+No differences found.
