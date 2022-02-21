@@ -95,10 +95,10 @@ void Fixture::setupTech(frTechObject* tech)
 }
 
 frMaster* Fixture::makeMacro(const char* name,
-                            frCoord originX,
-                            frCoord originY,
-                            frCoord sizeX,
-                            frCoord sizeY)
+                             frCoord originX,
+                             frCoord originY,
+                             frCoord sizeX,
+                             frCoord sizeY)
 {
   auto block = make_unique<frMaster>(name);
   vector<frBoundary> bounds;
@@ -416,27 +416,28 @@ void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
-std::shared_ptr<frLef58SpacingEndOfLineConstraint>
-Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
-                                       frCoord space,
-                                       frCoord width,
-                                       frCoord within)
+frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
+    frLayerNum layer_num,
+    frCoord space,
+    frCoord width,
+    frCoord within)
 {
-  auto con = std::make_unique<frLef58SpacingEndOfLineConstraint>();
+  auto uCon = std::make_unique<frLef58SpacingEndOfLineConstraint>();
+  auto con = uCon.get();
   con->setEol(space, width);
   auto withinCon = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
   con->setWithinConstraint(withinCon);
   withinCon->setEolWithin(within);
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  layer->addLef58SpacingEndOfLineConstraint(con.get());
-  tech->addUConstraint(std::move(con));
+  layer->addLef58SpacingEndOfLineConstraint(con);
+  tech->addUConstraint(std::move(uCon));
   return con;
 }
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord par_space,
     fr::frCoord par_within,
     bool two_edges)
@@ -451,7 +452,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     fr::frCoord min_max_length,
     bool max,
     bool two_sides)
@@ -465,7 +466,7 @@ Fixture::makeLef58SpacingEolMinMaxLenConstraint(
 
 std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
 Fixture::makeLef58SpacingEolCutEncloseConstraint(
-    std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+    frLef58SpacingEndOfLineConstraint* con,
     frCoord encloseDist,
     frCoord cutToMetalSpacing,
     bool above,

@@ -142,6 +142,7 @@ target_link_libraries(drt
     OpenSTA
     utl
     dst
+    dbSta
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}
@@ -171,6 +172,8 @@ enable_testing()
 add_executable(trTest
   ${FLEXROUTE_HOME}/test/gcTest.cpp
   ${FLEXROUTE_HOME}/test/fixture.cpp
+  ${FLEXROUTE_HOME}/test/stubs.cpp
+  ${OPENROAD_HOME}/src/gui/src/stub.cpp
 )
 
 target_include_directories(trTest
