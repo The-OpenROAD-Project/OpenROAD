@@ -82,8 +82,8 @@ class TritonCTS
   void init(ord::OpenRoad* openroad);
   void runTritonCts();
   void reportCtsMetrics();
-  CtsOptions* getParms() { return _options; }
-  TechChar* getCharacterization() { return _techChar; }
+  CtsOptions* getParms() { return options_; }
+  TechChar* getCharacterization() { return techChar_; }
   void addBuilder(TreeBuilder* builder);
   void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
   int setClockNets(const char* names);
@@ -101,9 +101,9 @@ class TritonCTS
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
   void writeClockNetsToDb(Clock& clockNet);
-  void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
-  void clearNumClocks() { _numberOfClocks = 0; }
-  unsigned getNumClocks() const { return _numberOfClocks; }
+  void incrementNumClocks() { ++numberOfClocks_; }
+  void clearNumClocks() { numberOfClocks_ = 0; }
+  unsigned getNumClocks() const { return numberOfClocks_; }
   void parseClockNames(std::vector<std::string>& clockNetNames) const;
   void initOneClockTree(odb::dbNet* driverNet,
                         std::string sdcClockName,
@@ -137,23 +137,23 @@ class TritonCTS
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
 
-  ord::OpenRoad* _openroad;
-  sta::dbSta* _openSta;
-  sta::dbNetwork* _network;
-  Logger* _logger;
-  CtsOptions* _options;
-  TechChar* _techChar;
-  std::vector<TreeBuilder*>* _builders;
-  std::set<odb::dbNet*> staClockNets;
-  std::set<odb::dbNet*> visitedClockNets;
-  std::map<odb::dbInst*, ClockInst*> inst2clkbuf;
+  ord::OpenRoad* openroad_;
+  sta::dbSta* openSta_;
+  sta::dbNetwork* network_;
+  Logger* logger_;
+  CtsOptions* options_;
+  TechChar* techChar_;
+  std::vector<TreeBuilder*>* builders_;
+  std::set<odb::dbNet*> staClockNets_;
+  std::set<odb::dbNet*> visitedClockNets_;
+  std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
 
   // db vars
-  odb::dbDatabase* _db;
-  odb::dbBlock* _block = nullptr;
-  unsigned _numberOfClocks = 0;
-  unsigned _numClkNets = 0;
-  unsigned _numFixedNets = 0;
+  odb::dbDatabase* db_;
+  odb::dbBlock* block_ = nullptr;
+  unsigned numberOfClocks_ = 0;
+  unsigned numClkNets_ = 0;
+  unsigned numFixedNets_ = 0;
 };
 
 }  // namespace cts
