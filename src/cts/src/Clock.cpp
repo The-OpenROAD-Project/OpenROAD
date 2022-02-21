@@ -46,19 +46,19 @@
 
 namespace cts {
 
-void Clock::report(utl::Logger* _logger) const
+void Clock::report(utl::Logger* logger) const
 {
-  _logger->report(" ************************************");
-  _logger->report(" *         Clock net report         *");
-  _logger->report(" ************************************");
-  _logger->report(" Net name: {}", _netName);
-  _logger->report(" Clock pin: {} ({}, {})", _clockPin, _clockPinX, _clockPinY);
-  _logger->report(" Number of sinks: ", _sinks.size());
-  _logger->report(" ***********************************");
+  logger->report(" ************************************");
+  logger->report(" *         Clock net report         *");
+  logger->report(" ************************************");
+  logger->report(" Net name: {}", netName_);
+  logger->report(" Clock pin: {} ({}, {})", clockPin_, clockPinX_, clockPinY_);
+  logger->report(" Number of sinks: ", sinks_.size());
+  logger->report(" ***********************************");
 
-  _logger->report("\tPin name \tPos");
+  logger->report("\tPin name \tPos");
   forEachSink([&](const ClockInst& sink) {
-    _logger->report(
+    logger->report(
         "\t {} \t ({}, {})", sink.getName(), sink.getX(), sink.getY());
   });
 }
@@ -116,14 +116,14 @@ Box<double> Clock::computeNormalizedSinkRegion(double factor)
 
 void Clock::forEachSink(const std::function<void(const ClockInst&)>& func) const
 {
-  for (const ClockInst& sink : _sinks) {
+  for (const ClockInst& sink : sinks_) {
     func(sink);
   }
 }
 
 void Clock::forEachSink(const std::function<void(ClockInst&)>& func)
 {
-  for (ClockInst& sink : _sinks) {
+  for (ClockInst& sink : sinks_) {
     func(sink);
   }
 }
@@ -131,14 +131,14 @@ void Clock::forEachSink(const std::function<void(ClockInst&)>& func)
 void Clock::forEachClockBuffer(
     const std::function<void(const ClockInst&)>& func) const
 {
-  for (const ClockInst& clockBuffer : _clockBuffers) {
+  for (const ClockInst& clockBuffer : clockBuffers_) {
     func(clockBuffer);
   }
 }
 
 void Clock::forEachClockBuffer(const std::function<void(ClockInst&)>& func)
 {
-  for (ClockInst& clockBuffer : _clockBuffers) {
+  for (ClockInst& clockBuffer : clockBuffers_) {
     func(clockBuffer);
   }
 }
