@@ -75,8 +75,8 @@ using namespace odb;
 %include "dbtypes_common.i"
 
 %include "odb/geom.h"
-%include "odb/db.h"
 %include "polygon.i"
+%include "odb/db.h"
 
 %include "dbhelpers.i"  
 %include "dbdiff.i"

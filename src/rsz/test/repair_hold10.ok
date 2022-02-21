@@ -11,10 +11,10 @@
 [INFO ODB-0131]     Created 15 components and 68 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 29 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold10.def
-worst slack -1.95
+worst slack -1.92
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 5 hold buffers.
-worst slack 0.16
+worst slack 0.18
 [WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
@@ -25,4 +25,4 @@ original HPWL            6773.1 u
 legalized HPWL           6797.6 u
 delta HPWL                    0 %
 
-worst slack 0.18
+worst slack 0.20

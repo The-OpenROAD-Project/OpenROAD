@@ -91,12 +91,13 @@ Resizer::rebuffer(const Pin *drvr_pin)
     SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
                                         stt_builder_, db_network_, logger_);
     if (tree) {
+      double wire_signal_cap = wireSignalCapacitance(drvr_pin, net, sta_->cmdCorner());
       SteinerPt drvr_pt = tree->drvrPt(network_);
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
-                                          drvr_pt, 1);
+                                          drvr_pt, 1, wire_signal_cap);
       Required best_slack_penalized = -INF;
       BufferedNet *best_option = nullptr;
       int best_index = 0;
@@ -109,8 +110,8 @@ Resizer::rebuffer(const Pin *drvr_pin)
                                        p->cap(), req_path.dcalcAnalysisPt(sta_));
           Slack slack = p->required(sta_) - drvr_delay;
           int buffer_count = p->bufferCount();
-          double buffer_penalty = (1.0 - buffer_count * rebuffer_buffer_penalty);
-          double slack_penalized = slack * buffer_penalty;
+          double buffer_penalty = buffer_count * rebuffer_buffer_penalty;
+          double slack_penalized = slack * (1.0 - (slack > 0 ? buffer_penalty : -buffer_penalty));
           debugPrint(logger_, RSZ, "rebuffer", 2,
                      "option {:3d}: {:2d} buffers req {} - {} = {} * {:3.2f} = {} cap {}",
                      i,
@@ -185,7 +186,8 @@ BufferedNetSeq
 Resizer::rebufferBottomUp(SteinerTree *tree,
                           SteinerPt k,
                           SteinerPt prev,
-                          int level)
+                          int level,
+                          double wire_signal_cap)
 {
   if (k != SteinerTree::null_pt) {
     const PinSeq *pins = tree->pins(k);
@@ -209,14 +211,16 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                      "", level, z->to_string(this));
           BufferedNetSeq Z;
           Z.push_back(z);
-          return addWireAndBuffer(Z, tree, k, prev, level);
+          return addWireAndBuffer(Z, tree, k, prev, level, wire_signal_cap);
         }
       }
     }
     else if (pins == nullptr) {
       // Steiner pt.
-      BufferedNetSeq Zl = rebufferBottomUp(tree, tree->left(k), k, level + 1);
-      BufferedNetSeq Zr = rebufferBottomUp(tree, tree->right(k), k, level + 1);
+      BufferedNetSeq Zl = rebufferBottomUp(tree, tree->left(k), k, level + 1,
+                                           wire_signal_cap);
+      BufferedNetSeq Zr = rebufferBottomUp(tree, tree->right(k), k, level + 1,
+                                           wire_signal_cap);
       BufferedNetSeq Z;
       // Combine the options from both branches.
       for (BufferedNet *p : Zl) {
@@ -259,7 +263,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
         }
         Z.resize(si);
       }
-      return addWireAndBuffer(Z, tree, k, prev, level);
+      return addWireAndBuffer(Z, tree, k, prev, level, wire_signal_cap);
     }
   }
   return BufferedNetSeq();
@@ -284,7 +288,8 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
                           SteinerTree *tree,
                           SteinerPt k,
                           SteinerPt prev,
-                          int level)
+                          int level,
+                          double wire_signal_cap)
 {
   BufferedNetSeq Z1;
   Point k_loc = tree->location(k);
@@ -297,7 +302,7 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
     const Corner *corner = req_path.isNull()
       ? sta_->cmdCorner()
       : req_path.dcalcAnalysisPt(sta_)->corner();
-    double wire_cap = wire_length * wireSignalCapacitance(corner);
+    double wire_cap = wire_length * wire_signal_cap;
     double wire_res = wire_length * wireSignalResistance(corner);
     double wire_delay = wire_res * wire_cap;
     BufferedNet *z = makeBufferedNet(BufferedNetType::wire,
@@ -431,6 +436,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     setLocation(buffer, choice->location());
     rebufferTopDown(choice->ref(), net2, level + 1);
     parasiticsInvalid(net);
+    parasiticsInvalid(net2);
     break;
   }
   case BufferedNetType::wire:

@@ -560,6 +560,12 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
+  double wireSignalCapacitance(const Pin *drvr_pin,
+                               const Net *net,
+                               const Corner *corner);
+  float pinCap(const Pin *drvr_pin,
+               const Corner *corner);
+  double grouteLength(const Net *net);
 
   bool repairSetup(PathRef &path,
                    Slack path_slack);
@@ -583,7 +589,8 @@ protected:
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                   SteinerPt k,
                                   SteinerPt prev,
-                                  int level);
+                                  int level,
+                                  double wire_signal_cap);
   void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);
@@ -592,7 +599,8 @@ protected:
                    SteinerTree *tree,
                    SteinerPt k,
                    SteinerPt prev,
-                   int level);
+                   int level,
+                   double wire_signal_cap);
   BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
   BufferedNet *makeBufferedNet(SteinerTree *tree,
                                SteinerPt k,

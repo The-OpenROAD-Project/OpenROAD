@@ -40,8 +40,12 @@
 #include "db/obj/frGuide.h"
 #include "odb/db.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 void FlexGR::main(odb::dbDatabase* db)
 {
@@ -375,10 +379,16 @@ void FlexGR::searchRepair(int iter,
           workersInBatch[i]->initBoundary();
         }
 // multi thread
+        ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main_mt();
+          try {
+            workersInBatch[i]->main_mt();
+          } catch (...) {
+            exception.capture();
+          }
         }
+        exception.rethrow();
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end();

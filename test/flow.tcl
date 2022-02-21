@@ -141,6 +141,8 @@ write_def $cts_def
 
 set_propagated_clock [all_clocks]
 
+# Global routing is fast enough for the flow regressions.
+# It is NOT FAST ENOUGH FOR PRODUCTION USE (this means you, openlane).
 set repair_timing_use_grt_parasitics 0
 if { $repair_timing_use_grt_parasitics } {
   # Global route for parasitics - no guide file requied
@@ -181,7 +183,7 @@ set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_
 utl::metric "ANT::errors" $antenna_errors
 
 if { $antenna_errors > 0 } {
-  fail "found $antenna_errors antenna violations"
+  utl::error FLW 1 "found $antenna_errors antenna violations"
 }
 
 set verilog_file [make_result_file ${design}_${platform}.v]

@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,36 +26,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
-
-#include "FlexRP.h"
-#include "db/infra/frTime.h"
-#include "frProfileTask.h"
-#include "gc/FlexGC.h"
-
-using namespace std;
-using namespace fr;
-
-void FlexRP::init()
-{
-  ProfileTask profile("RP:init");
-
-  const auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
-  const auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-
-  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
-      continue;
-    }
-    tech_->via2ViaForbiddenLen.push_back({});
-    tech_->viaForbiddenTurnLen.push_back({});
-    tech_->viaForbiddenPlanarLen.push_back({});
-    tech_->line2LineForbiddenLen.push_back({});
-    tech_->viaForbiddenThrough.push_back({});
-    for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen.push_back({});
-      ndr->viaForbiddenTurnLen.push_back({});
-    }
-  }
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+namespace triton_route {
+class TritonRoute;
 }
+namespace fr {
+class DesignCallBack : public odb::dbBlockCallBackObj
+{
+ public:
+  DesignCallBack(triton_route::TritonRoute* router) : router_(router) {}
+  void inDbPostMoveInst(odb::dbInst* inst) override;
+
+ private:
+  triton_route::TritonRoute* router_;
+};
+}  // namespace fr

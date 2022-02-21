@@ -350,9 +350,11 @@ class drPatchWire : public drShape
   }
 
   void getOffsetBox(Rect& boxIn) const { boxIn = offsetBox_; }
+  const Rect& getOffsetBox() const { return offsetBox_; }
   void setOffsetBox(const Rect& boxIn) { offsetBox_ = boxIn; }
 
   void getOrigin(Point& in) const { in = origin_; }
+  const Point& getOrigin() const { return origin_; }
   void setOrigin(const Point& in) { origin_ = in; }
 
  protected:

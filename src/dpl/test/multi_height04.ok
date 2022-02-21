@@ -12,26 +12,17 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
 [INFO ODB-0134] Finished DEF file: multi_height04.def
-[ERROR DPL-0018] detailed placement failed on _281_.
-DPL-0018
-[WARNING DPL-0005] Overlap check failed (7).
- _284_ overlaps _285_
- _283_ overlaps _285_
+[INFO DPL-0034] Detailed placement failed on:
+[INFO DPL-0035]  _281_
+[ERROR DPL-0036] Detailed placement failed.
+DPL-0036
+[WARNING DPL-0005] Overlap check failed (4).
+ _281_ overlaps _282_
  _280_ overlaps _281_
  _279_ overlaps _281_
  _278_ overlaps _281_
- _277_ overlaps _285_
- _276_ overlaps _282_
-[WARNING DPL-0006] Site aligned check failed (9).
- _285_
- _284_
- _283_
- _282_
+[WARNING DPL-0006] Site aligned check failed (1).
  _281_
- _280_
- _279_
- _278_
- _276_
 [WARNING DPL-0007] Power line check failed (1).
  _281_
 [ERROR DPL-0033] detailed placement checks failed.

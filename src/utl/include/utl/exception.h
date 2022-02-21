@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2021, Andrew Kennings
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,34 +30,45 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-%{
+#pragma once
 
-#include "ord/OpenRoad.hh"
-#include "dpo/Optdp.h"
-#include "utl/Logger.h"
+#include <mutex>
 
-namespace dpo {
-  
-}
+namespace utl {
 
-%}
-
-%include "../../Exception.i"
-
-%inline %{
-
-namespace dpo {
-
-void
-improve_placement_cmd(int seed,
-                      int max_displacement_x,
-                      int max_displacement_y)
+// For capturing an exception in an OpenMP worker thread and rethrowing
+// it after the pragma is over in the main thread.  Based on
+// https://stackoverflow.com/questions/11828539/elegant-exceptionhandling-in-openmp
+class ThreadException
 {
-  dpo::Optdp *optdp = ord::OpenRoad::openRoad()->getOptdp();
-  optdp->improvePlacement(seed, max_displacement_x, max_displacement_y);
+ public:
+  void capture()
+  {
+    std::unique_lock<std::mutex> guard(lock_);
+    ptr_ = std::current_exception();
+  }
+
+  void rethrow()
+  {
+    if (ptr_) {
+      std::rethrow_exception(ptr_);
+    }
+  }
+
+  bool hasException() const {
+    if (ptr_) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+ private:
+  std::exception_ptr ptr_;
+  std::mutex lock_;
+};
+
 }
-
-} // namespace
-
-%} // inline

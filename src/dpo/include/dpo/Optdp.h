@@ -60,6 +60,7 @@ class Node;
 class Edge;
 class Pin;
 
+using odb::dbOrientType;
 using odb::dbDatabase;
 using utl::Logger;
 using dpl::Opendp;
@@ -79,7 +80,9 @@ public:
   void clear();
   void init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp);
 
-  void improvePlacement(int seed);
+  void improvePlacement(int seed,
+                        int max_displacement_x,
+                        int max_displacement_y);
 
 protected:
   void import();
@@ -94,6 +97,7 @@ protected:
   void createRouteInformation();
   void setUpNdrRules();
   void setUpPlacementRegions();
+  unsigned dbToDpoOrient(dbOrientType orient);
 
 protected:
   odb::dbDatabase *db_;

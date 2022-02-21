@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(500, -50, 500, 50));
+             Rect(499, -50, 501, 50));
 }
 
 /*

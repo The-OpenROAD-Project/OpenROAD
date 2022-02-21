@@ -105,7 +105,7 @@ def gen_files(work_dir, ispd_year, design, drv):
     print(f"Create run shell script for {design}")
     run_sh = os.path.join(design_dir, "run.sh")
     script = f"""
-            set -e
+            set -e -o pipefail
             echo Running {design}
             {args.program} -exit {design_dir}/run.tcl 2>&1 \\
                 | tee {design_dir}/run_{design}.log
@@ -134,8 +134,8 @@ def test_enabled(design, patterns):
 design_list_ispd18 = [
     ("ispd18_test1", 0),
     ("ispd18_test2", 0),
-    ("ispd18_test3", 14),
-    ("ispd18_test4", 6),
+    ("ispd18_test3", 5),
+    ("ispd18_test4", 17),
     ("ispd18_test5", 0),
     ("ispd18_test6", 0),
     ("ispd18_test7", 0),
@@ -153,7 +153,7 @@ design_list_ispd19 = [
     ("ispd19_test7", 0),
     ("ispd19_test8", 0),
     ("ispd19_test9", 0),
-    ("ispd19_test10", 19),
+    ("ispd19_test10", 21),
 ]
 
 os.makedirs(args.workspace, exist_ok=True)

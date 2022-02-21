@@ -115,16 +115,16 @@ double DetailedDisplacement::curr() {
   for (size_t i = 0; i < m_mgrPtr->m_singleHeightCells.size(); i++) {
     Node* ndi = m_mgrPtr->m_singleHeightCells[i];
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
     m_tot[1] += dx + dy;
   }
   for (size_t s = 2; s < m_mgrPtr->m_multiHeightCells.size(); s++) {
     for (size_t i = 0; i < m_mgrPtr->m_multiHeightCells[s].size(); i++) {
       Node* ndi = m_mgrPtr->m_multiHeightCells[s][i];
 
-      dx = std::fabs(ndi->getX() - ndi->getOrigX());
-      dy = std::fabs(ndi->getY() - ndi->getOrigY());
+      dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+      dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
       m_tot[s] += dx + dy;
     }
   }
@@ -144,11 +144,11 @@ double DetailedDisplacement::curr() {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
-                                   std::vector<double>& curX,
-                                   std::vector<double>& curY,
+                                   std::vector<int>& curLeft,
+                                   std::vector<int>& curBottom,
                                    std::vector<unsigned>& curOri,
-                                   std::vector<double>& newX,
-                                   std::vector<double>& newY,
+                                   std::vector<int>& newLeft,
+                                   std::vector<int>& newBottom,
                                    std::vector<unsigned>& newOri) {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
@@ -159,8 +159,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
   // Put cells into their "old positions and orientations".
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(curX[i]);
-    nodes[i]->setY(curY[i]);
+    nodes[i]->setLeft(curLeft[i]);
+    nodes[i]->setBottom(curBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], curOri[i]);
     }
@@ -171,8 +171,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
     int spanned = (int)(ndi->getHeight() / m_singleRowHeight + 0.5);
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     m_del[spanned] += (dx + dy);
     // old_disp += dx + dy;
@@ -180,8 +180,8 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
 
   // Put cells into their "new positions and orientations".
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(newX[i]);
-    nodes[i]->setY(newY[i]);
+    nodes[i]->setLeft(newLeft[i]);
+    nodes[i]->setBottom(newBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], newOri[i]);
     }
@@ -190,19 +190,17 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
 
-    int spanned = (int)(ndi->getHeight() / m_singleRowHeight + 0.5);
+    dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+    dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
-    dx = std::fabs(ndi->getX() - ndi->getOrigX());
-    dy = std::fabs(ndi->getY() - ndi->getOrigY());
-
+    int spanned = m_arch->getCellHeightInRows(ndi);
     m_del[spanned] -= (dx + dy);
-    // new_disp += dx + dy;
   }
 
   // Put cells into their "old positions and orientations" before returning.
   for (int i = 0; i < n; i++) {
-    nodes[i]->setX(curX[i]);
-    nodes[i]->setY(curY[i]);
+    nodes[i]->setLeft(curLeft[i]);
+    nodes[i]->setBottom(curBottom[i]);
     if (m_orientPtr != 0) {
       m_orientPtr->orientAdjust(nodes[i], curOri[i]);
     }
@@ -217,10 +215,6 @@ double DetailedDisplacement::delta(int n, std::vector<Node*>& nodes,
   delta /= m_singleRowHeight;
   delta /= (double)m_nSets;
 
-  // double delta = old_disp - new_disp;
-  // delta /= m_singleRowHeight;
-  // delta /= (double)m_network->m_nodes.size();
-
   // +ve means improvement.
   return delta;
 }
@@ -234,12 +228,16 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y) {
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  // Targets are centers, but computation is with left and bottom...
+  new_x -= 0.5*ndi->getWidth();
+  new_y -= 0.5*ndi->getHeight();
+
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp = dx + dy;
 
-  dx = std::fabs(new_x - ndi->getOrigX());
-  dy = std::fabs(new_y - ndi->getOrigY());
+  dx = std::fabs(new_x - ndi->getOrigLeft());
+  dy = std::fabs(new_y - ndi->getOrigBottom());
   new_disp = dx + dy;
 
   // +ve means improvement.
@@ -262,18 +260,18 @@ double DetailedDisplacement::delta(Node* ndi, Node* ndj) {
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp += dx + dy;
-  dx = std::fabs(ndj->getX() - ndj->getOrigX());
-  dy = std::fabs(ndj->getY() - ndj->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndj->getOrigBottom());
   old_disp += dx + dy;
 
-  dx = std::fabs(ndj->getX() - ndi->getOrigX());
-  dy = std::fabs(ndj->getY() - ndi->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndi->getOrigBottom());
   new_disp += dx + dy;
-  dx = std::fabs(ndi->getX() - ndj->getOrigX());
-  dy = std::fabs(ndi->getY() - ndj->getOrigY());
+  dx = std::fabs(ndi->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndj->getOrigBottom());
   new_disp += dx + dy;
 
   // +ve means improvement.
@@ -292,18 +290,25 @@ double DetailedDisplacement::delta(Node* ndi, double target_xi,
   double new_disp = 0.;
   double dx, dy;
 
-  dx = std::fabs(ndi->getX() - ndi->getOrigX());
-  dy = std::fabs(ndi->getY() - ndi->getOrigY());
+  // Targets are centers, but computation is with left and bottom...
+  target_xi -= 0.5*ndi->getWidth();
+  target_yi -= 0.5*ndi->getHeight();
+
+  target_xj -= 0.5*ndj->getWidth();
+  target_yj -= 0.5*ndj->getHeight();
+
+  dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
+  dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
   old_disp += dx + dy;
-  dx = std::fabs(ndj->getX() - ndj->getOrigX());
-  dy = std::fabs(ndj->getY() - ndj->getOrigY());
+  dx = std::fabs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = std::fabs(ndj->getBottom() - ndj->getOrigBottom());
   old_disp += dx + dy;
 
-  dx = std::fabs(target_xi - ndi->getOrigX());
-  dy = std::fabs(target_yi - ndi->getOrigY());
+  dx = std::fabs(target_xi - ndi->getOrigLeft());
+  dy = std::fabs(target_yi - ndi->getOrigBottom());
   new_disp += dx + dy;
-  dx = std::fabs(target_xj - ndj->getOrigX());
-  dy = std::fabs(target_yj - ndj->getOrigY());
+  dx = std::fabs(target_xj - ndj->getOrigLeft());
+  dy = std::fabs(target_yj - ndj->getOrigBottom());
   new_disp += dx + dy;
 
   // +ve means improvement.

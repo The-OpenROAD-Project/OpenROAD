@@ -449,7 +449,7 @@ double DetailedRandom::go() {
   std::fill(gen_count.begin(), gen_count.end(), 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
-    int g = (*(m_mgrPtr->m_rng))() % (m_generators.size());
+    int g = (int)((*(m_mgrPtr->m_rng))() % (m_generators.size()));
     ++gen_count[g];
     // Generate a move list.
     if (m_generators[g]->generate(m_mgrPtr, m_candidates) == false) {
@@ -465,9 +465,11 @@ double DetailedRandom::go() {
     for (size_t i = 0; i < m_objectives.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
       double change = m_objectives[i]->delta(
-          m_mgrPtr->m_nMoved, m_mgrPtr->m_movedNodes, m_mgrPtr->m_curX,
-          m_mgrPtr->m_curY, m_mgrPtr->m_curOri, m_mgrPtr->m_newX,
-          m_mgrPtr->m_newY, m_mgrPtr->m_newOri);
+          m_mgrPtr->m_nMoved, m_mgrPtr->m_movedNodes,
+          m_mgrPtr->m_curLeft, m_mgrPtr->m_curBottom, 
+          m_mgrPtr->m_curOri, 
+          m_mgrPtr->m_newLeft, m_mgrPtr->m_newBottom, 
+          m_mgrPtr->m_newOri);
 
       m_deltaCost[i] = change;
       m_nextCost[i] = m_currCost[i] - m_deltaCost[i];  // -delta is +ve is less.
@@ -586,7 +588,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
   ywid = (m_arch->getMaxY() - m_arch->getMinY()) / (double)ydim;
 
   Node* ndi = candidates[(*(m_mgr->m_rng))() % (candidates.size())];
-  int spanned_i = (int)(ndi->getHeight() / m_mgr->getSingleRowHeight() + 0.5);
+  int spanned_i = m_arch->getCellHeightInRows(ndi);
   if (spanned_i != 1) {
     return false;
   }
@@ -608,13 +610,12 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
   int rly = 10;
   int rlx = 10;
   int rel_x, rel_y;
-  bool is_move_okay;
 
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
     // Position of the source.
-    xi = ndi->getX();
-    yi = ndi->getY();
+    yi = ndi->getBottom()+0.5*ndi->getHeight();
+    xi = ndi->getLeft()+0.5*ndi->getWidth();
 
     // Segment for the source.
     si = segs_i[0]->getSegId();
@@ -633,11 +634,12 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
 
     // Position of the destination.
     xj = m_arch->getMinX() + grid_xj * xwid;
-    yj = m_arch->getMinY() + grid_yj * ywid + 0.5 * ndi->getHeight();
+    yj = m_arch->getMinY() + grid_yj * ywid;
 
     // Row and segment for the destination.
     rj = (int)((yj - m_arch->getMinY()) / m_mgr->getSingleRowHeight());
     rj = std::min(m_mgr->getNumSingleHeightRows() - 1, std::max(0, rj));
+    yj = m_arch->getRow(rj)->getBottom();
     sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
@@ -653,23 +655,14 @@ bool RandomGenerator::generate(DetailedMgr* mgr,
       continue;
     }
 
-    // Try to generate a move or a swap.  The result is stored in the manager.
-    is_move_okay = false;
-
-    if (!is_move_okay) {
-      if (si != sj) {
-        if (m_mgr->tryMove1(ndi, xi, yi, si, xj, yj, sj) == true) {
-          is_move_okay = true;
-        }
-      } else {
-        if (m_mgr->tryMove2(ndi, xi, yi, si, xj, yj, sj) == true) {
-          is_move_okay = true;
-        }
-      }
-    }
-
-    if (is_move_okay) {
+    if (m_mgr->tryMove(ndi, ndi->getLeft(), ndi->getBottom(), si,
+                       (int)std::round(xj), (int)std::round(yj), sj)) {
       ++m_moves;
+      return true;
+    }
+    if (m_mgr->trySwap(ndi, ndi->getLeft(), ndi->getBottom(), si,
+                       (int)std::round(xj), (int)std::round(yj), sj)) {
+      ++m_swaps;
       return true;
     }
   }
@@ -722,12 +715,10 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   ywid = (m_arch->getMaxY() - m_arch->getMinY()) / (double)ydim;
 
   Node* ndi = candidates[(*(m_mgr->m_rng))() % (candidates.size())];
-  int spanned_i = (int)(ndi->getHeight() / m_mgr->getSingleRowHeight() + 0.5);
 
   // Segments for the source.
   std::vector<DetailedSeg*>& segs_i = m_mgr->m_reverseCellToSegs[ndi->getId()];
 
-  double xi, yi;
   double xj, yj;
   int si;      // Row and segment of source.
   int rj, sj;  // Row and segment of destination.
@@ -737,15 +728,13 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   int rly = 5;
   int rlx = 5;
   int rel_x, rel_y;
-  bool is_move_okay;
-  bool is_swap_okay;
   std::vector<Node*>::iterator it_j;
 
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
     // Position of the source.
-    xi = ndi->getX();
-    yi = ndi->getY();
+    //yi = ndi->getBottom()+0.5*ndi->getHeight();
+    //xi = ndi->getLeft()+0.5*ndi->getWidth();
 
     // Segment for the source.
     si = segs_i[0]->getSegId();
@@ -756,12 +745,15 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     // this also be a randomized choice??????????????????????????????????
     if (1) {
       // Centered at the original position within a box.
+      double orig_yc = ndi->getOrigBottom()+0.5*ndi->getHeight();
+      double orig_xc = ndi->getOrigLeft()+0.5*ndi->getWidth();
+
       grid_xi = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getOrigX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((orig_xc - m_arch->getMinX()) / xwid)));
       grid_yi = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getOrigY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((orig_yc - m_arch->getMinY()) / ywid)));
 
       rel_x = (*(m_mgr->m_rng))() % (2 * rlx + 1);
       rel_y = (*(m_mgr->m_rng))() % (2 * rly + 1);
@@ -770,28 +762,34 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       grid_yj = std::min(ydim - 1, std::max(0, (grid_yi - rly + rel_y)));
 
       xj = m_arch->getMinX() + grid_xj * xwid;
-      yj = m_arch->getMinY() + grid_yj * ywid + 0.5 * ndi->getHeight();
+      yj = m_arch->getMinY() + grid_yj * ywid;
     }
     if (0) {
       // The original position.
-      xj = ndi->getOrigX();
-      yj = ndi->getOrigY();
+      xj = ndi->getOrigLeft() + 0.5*ndi->getWidth();
+      yj = ndi->getOrigBottom() + 0.5*ndi->getHeight();
     }
     if (0) {
       // Somewhere between current position and original position.
+      double orig_yc = ndi->getOrigBottom()+0.5*ndi->getHeight();
+      double orig_xc = ndi->getOrigLeft()+0.5*ndi->getWidth();
+
+      double curr_yc = ndi->getBottom()+0.5*ndi->getHeight();
+      double curr_xc = ndi->getLeft()+0.5*ndi->getWidth();
+
       grid_xi = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((curr_xc - m_arch->getMinX()) / xwid)));
       grid_yi = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((curr_yc - m_arch->getMinY()) / ywid)));
 
       grid_xj = std::min(
           xdim - 1,
-          std::max(0, (int)((ndi->getOrigX() - m_arch->getMinX()) / xwid)));
+          std::max(0, (int)((orig_xc - m_arch->getMinX()) / xwid)));
       grid_yj = std::min(
           ydim - 1,
-          std::max(0, (int)((ndi->getOrigY() - m_arch->getMinY()) / ywid)));
+          std::max(0, (int)((orig_yc - m_arch->getMinY()) / ywid)));
 
       if (grid_xi > grid_xj) std::swap(grid_xi, grid_xj);
       if (grid_yi > grid_yj) std::swap(grid_yi, grid_yj);
@@ -806,12 +804,13 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       grid_yj = std::min(ydim - 1, std::max(0, (grid_yi + rel_y)));
 
       xj = m_arch->getMinX() + grid_xj * xwid;
-      yj = m_arch->getMinY() + grid_yj * ywid + 0.5 * ndi->getHeight();
+      yj = m_arch->getMinY() + grid_yj * ywid;
     }
 
     // Row and segment for the destination.
     rj = (int)((yj - m_arch->getMinY()) / m_mgr->getSingleRowHeight());
     rj = std::min(m_mgr->getNumSingleHeightRows() - 1, std::max(0, rj));
+    yj = m_arch->getRow(rj)->getBottom();
     sj = -1;
     for (int s = 0; s < m_mgr->m_segsInRow[rj].size(); s++) {
       DetailedSeg* segPtr = m_mgr->m_segsInRow[rj][s];
@@ -827,41 +826,15 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       continue;
     }
 
-    // Try to generate a move or a swap.  The result is stored in the manager.
-    is_move_okay = false;
-    is_swap_okay = false;
-
-    if (!is_move_okay) {
-      if (spanned_i != 1) {
-        if (m_mgr->tryMove3(ndi, xi, yi, si, xj, yj, sj) == true) {
-          is_move_okay = true;
-        }
-      } else {
-        if (si != sj) {
-          if (m_mgr->tryMove1(ndi, xi, yi, si, xj, yj, sj) == true) {
-            is_move_okay = true;
-          }
-        } else {
-          if (m_mgr->tryMove2(ndi, xi, yi, si, xj, yj, sj) == true) {
-            is_move_okay = true;
-          }
-        }
-      }
-    }
-    if (!is_move_okay) {
-      if (spanned_i != 1) {
-      } else {
-        if (m_mgr->trySwap1(ndi, xi, yi, si, xj, yj, sj) == true) {
-          is_swap_okay = true;
-        }
-      }
-    }
-
-    if (is_move_okay) {
+    if (m_mgr->tryMove(ndi, 
+                       ndi->getLeft(), ndi->getBottom(), si, 
+                       (int)std::round(xj), (int)std::round(yj), sj)) {
       ++m_moves;
       return true;
     }
-    if (is_swap_okay) {
+    if (m_mgr->trySwap(ndi, 
+                       ndi->getLeft(), ndi->getBottom(), si,
+                       (int)std::round(xj), (int)std::round(yj), sj)) {
       ++m_swaps;
       return true;
     }

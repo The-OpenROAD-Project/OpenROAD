@@ -73,6 +73,7 @@
 [INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
 Loading library IO cell meta-data
 Loaded library IO cell data
+[WARNING IFP-0028] Core area lower left (200.000, 200.000) snapped to (200.160, 203.130).
 [INFO IFP-0001] Added 1265 rows of 10416 sites.
 [WARNING PAD-0050] Multiple nets found on AMUXBUS_A in padring.
 [WARNING PAD-0050] Multiple nets found on AMUXBUS_B in padring.

@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,36 +26,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
+#include "DesignCallBack.h"
 
-#include "FlexRP.h"
-#include "db/infra/frTime.h"
-#include "frProfileTask.h"
-#include "gc/FlexGC.h"
-
-using namespace std;
+#include "frDesign.h"
+#include "triton_route/TritonRoute.h"
 using namespace fr;
 
-void FlexRP::init()
+static inline int defdist(odb::dbBlock* block, int x)
 {
-  ProfileTask profile("RP:init");
+  return x * (double) block->getDefUnits()
+         / (double) block->getDbUnitsPerMicron();
+}
 
-  const auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
-  const auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-
-  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
-      continue;
-    }
-    tech_->via2ViaForbiddenLen.push_back({});
-    tech_->viaForbiddenTurnLen.push_back({});
-    tech_->viaForbiddenPlanarLen.push_back({});
-    tech_->line2LineForbiddenLen.push_back({});
-    tech_->viaForbiddenThrough.push_back({});
-    for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen.push_back({});
-      ndr->viaForbiddenTurnLen.push_back({});
-    }
+void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
+{
+  auto design = router_->getDesign();
+  if (design != nullptr && design->getTopBlock() != nullptr) {
+    auto inst = design->getTopBlock()->getInst(db_inst->getName());
+    if (inst == nullptr)
+      return;
+    if (design->getRegionQuery() != nullptr)
+      design->getRegionQuery()->removeBlockObj(inst);
+    int x, y;
+    db_inst->getLocation(x, y);
+    auto block = db_inst->getBlock();
+    x = defdist(block, x);
+    y = defdist(block, y);
+    inst->setOrigin({x, y});
+    inst->setOrient(db_inst->getOrient());
+    if (design->getRegionQuery() != nullptr)
+      design->getRegionQuery()->addBlockObj(inst);
   }
 }

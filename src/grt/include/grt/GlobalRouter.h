@@ -296,6 +296,8 @@ class GlobalRouter
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportCongestion();
+  void updateEdgesUsage();
+  void updateDbCongestionFromGuides();
 
   // check functions
   void checkPinPlacement();
