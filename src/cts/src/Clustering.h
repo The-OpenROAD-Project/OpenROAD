@@ -45,9 +45,8 @@ namespace CKMeans {
 
 using utl::Logger;
 
-class flop
+struct Flop
 {
- public:
   // location
   float x, y;
   unsigned x_idx, y_idx;
@@ -56,29 +55,29 @@ class flop
   std::vector<std::pair<int, int>> match_idx;
   std::vector<float> silhs;
   unsigned sinkIdx;
-  flop(const float x, const float y, unsigned idx)
+  Flop(const float x, const float y, unsigned idx)
       : x(x), y(y), x_idx(0), y_idx(0), idx(0), sinkIdx(idx){};
 };
 
-class clustering
+class Clustering
 {
-  Logger* _logger;
-  std::vector<flop> flops;
-  std::vector<std::vector<flop*>> clusters;
+  Logger* logger_;
+  std::vector<Flop> flops_;
+  std::vector<std::vector<Flop*>> clusters_;
 
-  int TEST_LAYOUT = 1;
-  int TEST_ITER = 1;
-  std::string plotFile;
+  static const int test_layout_ = 1;
+  static const int test_iter_ = 1;
+  std::string plotFile_;
 
-  float segmentLength;
-  std::pair<float, float> branchingPoint;
+  float segmentLength_;
+  std::pair<float, float> branchingPoint_;
 
  public:
-  clustering(const std::vector<std::pair<float, float>>&,
+  Clustering(const std::vector<std::pair<float, float>>&,
              float,
              float,
              Logger*);
-  ~clustering();
+  ~Clustering();
   float Kmeans(unsigned,
                unsigned,
                unsigned,
@@ -100,14 +99,14 @@ class clustering
                    unsigned,
                    float,
                    unsigned);
-  void setPlotFileName(const std::string fileName) { plotFile = fileName; }
+  void setPlotFileName(const std::string fileName) { plotFile_ = fileName; }
   void getClusters(std::vector<std::vector<unsigned>>&);
   void fixSegmentLengths(std::vector<std::pair<float, float>>&);
   void fixSegment(const std::pair<float, float>& fixedPoint,
                   std::pair<float, float>& movablePoint,
                   float targetDist);
 
-  inline float calcDist(const std::pair<float, float>& loc, flop* f) const
+  inline float calcDist(const std::pair<float, float>& loc, Flop* f) const
   {
     return (fabs(loc.first - f->x) + fabs(loc.second - f->y));
   }
@@ -118,7 +117,7 @@ class clustering
     return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
   }
 
-  void plotClusters(const std::vector<std::vector<flop*>>&,
+  void plotClusters(const std::vector<std::vector<Flop*>>&,
                     const std::vector<std::pair<float, float>>&,
                     const std::vector<std::pair<float, float>>&,
                     int) const;

@@ -85,7 +85,7 @@ class LevelBalancer
 {
  public:
   LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger)
-      : _root(root), _options(options), _logger(logger), levelBufCount_(0)
+      : root_(root), options_(options), logger_(logger), levelBufCount_(0)
   {
   }
 
@@ -101,9 +101,9 @@ class LevelBalancer
   unsigned computeMaxTreeDepth(TreeBuilder* parent);
 
  private:
-  TreeBuilder* _root;
-  CtsOptions* _options;
-  Logger* _logger;
+  TreeBuilder* root_;
+  CtsOptions* options_;
+  Logger* logger_;
   CellLevelMap cgcLevelMap_;
   unsigned levelBufCount_;
 };

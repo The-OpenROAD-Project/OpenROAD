@@ -75,7 +75,8 @@ void detailed_route_cmd(const char* guideFile,
                         double orK,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
-                        int verbose)
+                        int verbose,
+                        bool cleanPatches)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -92,7 +93,8 @@ void detailed_route_cmd(const char* guideFile,
                     orK,
                     bottomRoutingLayer,
                     topRoutingLayer,
-                    verbose});
+                    verbose,
+                    cleanPatches});
   router->main();
 }
 

@@ -207,6 +207,156 @@ void frRegionQuery::removeDRObj(frShape* shape)
   }
 }
 
+void frRegionQuery::addBlockObj(frBlockObject* obj)
+{
+  switch (obj->typeId()) {
+    case frcInstTerm: {
+      auto instTerm = static_cast<frInstTerm*>(obj);
+      Rect frb;
+      dbTransform xform;
+      instTerm->getInst()->getUpdatedXform(xform);
+      for (auto& pin : instTerm->getTerm()->getPins()) {
+        for (auto& uFig : pin->getFigs()) {
+          auto shape = uFig.get();
+          shape->getBBox(frb);
+          xform.apply(frb);
+          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+              .insert(make_pair(frb, instTerm));
+        }
+      }
+      break;
+    }
+    case frcInstBlockage: {
+      auto instBlk = static_cast<frInstBlockage*>(obj);
+      Rect frb;
+      dbTransform xform;
+      instBlk->getInst()->getUpdatedXform(xform);
+      auto blk = instBlk->getBlockage();
+      auto pin = blk->getPin();
+      for (auto& uFig : pin->getFigs()) {
+        auto shape = uFig.get();
+        if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
+          shape->getBBox(frb);
+          xform.apply(frb);
+          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+              .insert(make_pair(frb, instBlk));
+        } else if (shape->typeId() == frcPolygon) {
+          // Decompose the polygon to rectangles and store those
+          // Convert the frPolygon to a Boost polygon
+          vector<gtl::point_data<frCoord>> points;
+          for (auto pt : ((frPolygon*) shape)->getPoints()) {
+            xform.apply(pt);
+            points.push_back({pt.x(), pt.y()});
+          }
+          gtl::polygon_90_data<frCoord> poly;
+          poly.set(points.begin(), points.end());
+          // Add the polygon to a polygon set
+          gtl::polygon_90_set_data<frCoord> polySet;
+          {
+            using namespace boost::polygon::operators;
+            polySet += poly;
+          }
+          // Decompose the polygon set to rectanges
+          vector<gtl::rectangle_data<frCoord>> rects;
+          polySet.get_rectangles(rects);
+          // Store the rectangles with this blockage
+          for (auto& rect : rects) {
+            Rect box(xl(rect), yl(rect), xh(rect), yh(rect));
+            impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+                .insert(make_pair(box, instBlk));
+          }
+        }
+      }
+      break;
+    }
+    case frcInst: {
+      auto inst = static_cast<frInst*>(obj);
+      for (auto& instTerm : inst->getInstTerms())
+        addBlockObj(instTerm.get());
+      for (auto& blkg : inst->getInstBlockages())
+        addBlockObj(blkg.get());
+      break;
+    }
+    default:
+      impl_->logger_->error(DRT, 513, "Unsupported region addBlockObj");
+  }
+}
+
+void frRegionQuery::removeBlockObj(frBlockObject* obj)
+{
+  switch (obj->typeId()) {
+    case frcInstTerm: {
+      auto instTerm = static_cast<frInstTerm*>(obj);
+      Rect frb;
+      dbTransform xform;
+      instTerm->getInst()->getUpdatedXform(xform);
+      for (auto& pin : instTerm->getTerm()->getPins()) {
+        for (auto& uFig : pin->getFigs()) {
+          auto shape = uFig.get();
+          shape->getBBox(frb);
+          xform.apply(frb);
+          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+              .remove(make_pair(frb, instTerm));
+        }
+      }
+      break;
+    }
+    case frcInstBlockage: {
+      auto instBlk = static_cast<frInstBlockage*>(obj);
+      Rect frb;
+      dbTransform xform;
+      instBlk->getInst()->getUpdatedXform(xform);
+      auto blk = instBlk->getBlockage();
+      auto pin = blk->getPin();
+      for (auto& uFig : pin->getFigs()) {
+        auto shape = uFig.get();
+        if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
+          shape->getBBox(frb);
+          xform.apply(frb);
+          impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+              .remove(make_pair(frb, instBlk));
+        } else if (shape->typeId() == frcPolygon) {
+          // Decompose the polygon to rectangles and store those
+          // Convert the frPolygon to a Boost polygon
+          vector<gtl::point_data<frCoord>> points;
+          for (auto pt : ((frPolygon*) shape)->getPoints()) {
+            xform.apply(pt);
+            points.push_back({pt.x(), pt.y()});
+          }
+          gtl::polygon_90_data<frCoord> poly;
+          poly.set(points.begin(), points.end());
+          // Add the polygon to a polygon set
+          gtl::polygon_90_set_data<frCoord> polySet;
+          {
+            using namespace boost::polygon::operators;
+            polySet += poly;
+          }
+          // Decompose the polygon set to rectanges
+          vector<gtl::rectangle_data<frCoord>> rects;
+          polySet.get_rectangles(rects);
+          // Store the rectangles with this blockage
+          for (auto& rect : rects) {
+            Rect box(xl(rect), yl(rect), xh(rect), yh(rect));
+            impl_->shapes_.at(static_cast<frShape*>(shape)->getLayerNum())
+                .remove(make_pair(box, instBlk));
+          }
+        }
+      }
+      break;
+    }
+    case frcInst: {
+      auto inst = static_cast<frInst*>(obj);
+      for (auto& instTerm : inst->getInstTerms())
+        removeBlockObj(instTerm.get());
+      for (auto& blkg : inst->getInstBlockages())
+        removeBlockObj(blkg.get());
+      break;
+    }
+    default:
+      impl_->logger_->error(DRT, 512, "Unsupported region removeBlockObj");
+  }
+}
+
 void frRegionQuery::addGRObj(grShape* shape)
 {
   impl_->addGRObj(shape);

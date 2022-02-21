@@ -296,7 +296,7 @@ proc draw_route_guides { args } {
   sta::parse_key_args "draw_route_guides" args \
                  keys {} \
                  flags {-show_pin_locations}
-  sta::check_argc_eq1 "repair_antennas" $args
+  sta::check_argc_eq1 "draw_route_guides" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
   if { $block == "NULL" } {

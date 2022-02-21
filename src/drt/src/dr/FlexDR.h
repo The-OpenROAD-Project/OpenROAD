@@ -736,6 +736,8 @@ class FlexDRWorker
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  void addMinAreaPatches_poly(gcNet* drcNet, drNet* net);
+  void cleanUnneededPatches_poly(gcNet* drcNet, drNet* net);
   void modEolCosts_poly(gcNet* net, ModCostType modType);
   void modEolCosts_poly(gcPin* shape, frLayer* layer, ModCostType modType);
   void modEolCost(frCoord low,

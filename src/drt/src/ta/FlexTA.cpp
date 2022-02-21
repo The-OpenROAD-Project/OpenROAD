@@ -39,8 +39,12 @@
 #include "frProfileTask.h"
 #include "global.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 int FlexTAWorker::main()
 {

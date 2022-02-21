@@ -53,7 +53,7 @@ class frPin : public frBlockObject
   int getNumPinAccess() const { return aps_.size(); }
   bool hasPinAccess() const { return !aps_.empty(); }
   frPinAccess* getPinAccess(int idx) const { return aps_[idx].get(); }
-
+  void clearPinAccess() { aps_.clear(); }
   // setters
   // cannot have setterm, must be available when creating
   void addPinFig(std::unique_ptr<frPinFig> in)

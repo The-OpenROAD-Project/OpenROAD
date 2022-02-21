@@ -61,6 +61,7 @@ extern bool USENONPREFTRACKS;
 extern bool USEMINSPACING_OBS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
 extern bool ENABLE_VIA_GEN;
+extern bool CLEAN_PATCHES;
 // extern int TEST;
 extern std::string VIAINPIN_BOTTOMLAYER_NAME;
 extern std::string VIAINPIN_TOPLAYER_NAME;

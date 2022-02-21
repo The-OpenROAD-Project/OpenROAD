@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,60 +35,40 @@
 
 #pragma once
 
-#include <unordered_map>
-
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "HTreeBuilder.h"
+#include <mutex>
 
 namespace utl {
-class Logger;
-}  // namespace utl
 
-namespace cts {
-
-using utl::Logger;
-
-class PostCtsOpt
+// For capturing an exception in an OpenMP worker thread and rethrowing
+// it after the pragma is over in the main thread.  Based on
+// https://stackoverflow.com/questions/11828539/elegant-exceptionhandling-in-openmp
+class ThreadException
 {
  public:
-  PostCtsOpt(TreeBuilder* builder,
-             CtsOptions* options,
-             TechChar* techChar,
-             Logger* logger)
-      : clock_(&(builder->getClock())),
-        options_(options),
-        techChar_(techChar),
-        logger_(logger),
-        builder_((HTreeBuilder*) builder)
+  void capture()
   {
-    bufDistRatio_ = options_->getBufDistRatio();
+    std::unique_lock<std::mutex> guard(lock_);
+    ptr_ = std::current_exception();
   }
 
-  void run();
+  void rethrow()
+  {
+    if (ptr_) {
+      std::rethrow_exception(ptr_);
+    }
+  }
 
- protected:
-  void initSourceSinkDists();
-  void computeNetSourceSinkDists(const Clock::SubNet& subNet);
-  void fixSourceSinkDists();
-  void fixNetSourceSinkDists(Clock::SubNet& subNet);
-  void fixLongWire(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
-  void createSubClockNet(Clock::SubNet& net,
-                         ClockInst* driver,
-                         ClockInst* sink);
-  Point<int> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
+  bool hasException() const {
+    if (ptr_) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-  Clock* clock_;
-  CtsOptions* options_;
-  TechChar* techChar_;
-  Logger* logger_;
-  HTreeBuilder* builder_;
-  unsigned numViolatingSinks_ = 0;
-  unsigned numInsertedBuffers_ = 0;
-  double avgSourceSinkDist_ = 0.0;
-  double bufDistRatio_ = 0.0;
-  int bufIndex = 1;
-  std::unordered_map<std::string, int> sinkDistMap_;
+ private:
+  std::exception_ptr ptr_;
+  std::mutex lock_;
 };
 
-}  // namespace cts
+}
