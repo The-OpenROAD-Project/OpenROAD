@@ -544,62 +544,20 @@ bool IRSolver::CreateGmat(bool connection_only) {
             via_top_layer = via->getTopLayer();
             via_bottom_layer = via->getBottomLayer();
           }
-          int x_cut_size = 0;
-          int y_cut_size = 0;
-          int x_bottom_enclosure = 0;
-          int y_bottom_enclosure = 0;
-          int x_top_enclosure = 0;
-          int y_top_enclosure = 0;
-          if (check_params) {
-            x_cut_size = params.getXCutSize();
-            y_cut_size = params.getYCutSize();
-            x_bottom_enclosure = params.getXBottomEnclosure();
-            y_bottom_enclosure = params.getYBottomEnclosure();
-            x_top_enclosure = params.getXTopEnclosure();
-            y_top_enclosure = params.getYTopEnclosure();
-          }
           BBox bBox =
               make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
           int x, y;
           curWire->getViaXY(x, y);
-          dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
+          // TODO: Using a single node for a via requires that the vias are
+          // stacked and not staggered, i.e., V1 via cut must overlap either V2
+          // via cut or enclosure and connections cannot be made through
+          // enclosures only.
           int l = via_bottom_layer->getRoutingLevel();
-          int x_loc1, x_loc2, y_loc1, y_loc2;
           if (m_bottom_layer != l) {  // do not set for bottom layers
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y;
-              y_loc2 = y;
-              x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
-              x_loc1 = x;
-              x_loc2 = x;
-            }
-            m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
-            m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
             m_Gmat->SetNode(x, y, l, bBox);
           }
           l = via_top_layer->getRoutingLevel();
-
-          // TODO this may count the stripe conductance twice but is needed to
-          // fix a staggered stacked via
-          layer_dir = via_top_layer->getDirection();
           if (m_bottom_layer != l) {  // do not set for bottom layers
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y;
-              y_loc2 = y;
-              x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-              x_loc1 = x;
-              x_loc2 = x;
-            }
-            m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
-            m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
             m_Gmat->SetNode(x, y, l, bBox);
           }
         } else {
