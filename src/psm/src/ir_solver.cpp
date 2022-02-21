@@ -644,7 +644,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
     ret = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
     if (ret.second == false) {
       // key already exists and voltage value is different occurs when a user
-      // specifies two different voltage supply values by mistatke in two
+      // specifies two different voltage supply values by mistake in two
       // nearby nodes
       m_logger->warn(
           utl::PSM, 67,
