@@ -1,0 +1,52 @@
+VERSION 5.3 ;
+   NAMESCASESENSITIVE ON ;
+   NOWIREEXTENSIONATPIN ON ;
+   DIVIDERCHAR "/" ;
+   BUSBITCHARS "[]" ;
+UNITS
+   DATABASE MICRONS 1000 ;
+END UNITS
+
+MACRO s8iom0s8_com_bus_slice_1um
+   CLASS BLOCK ;
+   FOREIGN s8iom0s8_com_bus_slice_1um ;
+   ORIGIN 0.0000 0.0000 ;
+   SIZE 1.0000 BY 197.9650 ;
+   OBS
+     LAYER li1 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met1 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met2 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met3 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met4 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met5 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+   END
+END s8iom0s8_com_bus_slice_1um
+MACRO s8iom0s8_com_bus_slice_tied_1um
+   CLASS BLOCK ;
+   FOREIGN s8iom0s8_com_bus_slice_1um ;
+   ORIGIN 0.0000 0.0000 ;
+   SIZE 1.0000 BY 197.9650 ;
+   OBS
+     LAYER li1 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met1 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met2 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met3 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met4 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+     LAYER met5 ;
+       RECT 0.000 0.0 1.000 197.965 ;
+   END
+END s8iom0s8_com_bus_slice_tied_1um
+
+END LIBRARY
+
