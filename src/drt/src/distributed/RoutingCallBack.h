@@ -86,7 +86,7 @@ class RoutingCallBack : public dst::JobCallBack
     if (desc->getDesignPath() != "") {
       if (design_path_ != desc->getDesignPath()) {
         frTime t;
-        logger_->report("Design: {}", design_path_, desc->getDesignPath());
+        logger_->report("Design: {}", desc->getDesignPath());
         router_->updateDesign(desc->getDesignPath().c_str());
         design_path_ = desc->getDesignPath();
         t.print(logger_);

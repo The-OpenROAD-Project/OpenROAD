@@ -156,7 +156,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 // from the serialization.
 std::string FlexDRWorker::reloadedMain()
 {
-  init1(design_);
+  init(design_);
   route_queue();
   setGCWorker(nullptr);
   cleanup();
@@ -182,10 +182,13 @@ int FlexDRWorker::main(frDesign* design)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-  init0(design);
-  getWorkerRegionQuery().dummyUpdate();
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
+  }
   if (!skipRouting_) {
-    init1(design);
+    getWorkerRegionQuery().dummyUpdate();
+    init(design);
   }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
@@ -219,9 +222,11 @@ void FlexDRWorker::distributedMain(frDesign* design)
                     routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
   }
-  init0(design);
-  if (skipRouting_)
+  initMarkers(design);
+  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
+    skipRouting_ = true;
     return;
+  }
   // Save the worker in its fully initialized state
   std::string name = fmt::format("{}iter{}_x{}_y{}.worker.in",
                                  dist_dir_,

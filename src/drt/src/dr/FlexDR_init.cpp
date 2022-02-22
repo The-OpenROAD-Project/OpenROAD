@@ -3461,25 +3461,7 @@ void FlexDRWorker::initMarkers(const frDesign* design)
   }
 }
 
-void FlexDRWorker::init0(const frDesign* design)
-{
-  // if initDR
-  //   get all instterm/term for each net
-  // else
-  //   1. get all insterm/term based on begin/end of pathseg, via
-  //   2. union and find
-  //
-  // using namespace std::chrono;
-  initMarkers(design);
-  if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
-    skipRouting_ = true;
-  }
-  if (skipRouting_) {
-    return;
-  }
-}
-
-void FlexDRWorker::init1(const frDesign* design)
+void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
   initGridGraph(design);

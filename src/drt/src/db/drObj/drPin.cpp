@@ -29,7 +29,6 @@
 #include "db/drObj/drPin.h"
 
 #include "distributed/frArchive.h"
-#include "serialization.h"
 
 using namespace fr;
 

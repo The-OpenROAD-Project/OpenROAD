@@ -36,7 +36,6 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
-#include "db/infra/frTime.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
@@ -152,7 +151,6 @@ class FlexDR
   std::string dist_dir_;
   std::string globals_path_;
   std::string design_path_;
-  frTime time_;
   // others
   void init();
   void initFromTA();
@@ -540,8 +538,7 @@ class FlexDRWorker
   std::string dist_dir_;
 
   // init
-  void init0(const frDesign* design);
-  void init1(const frDesign* design);
+  void init(const frDesign* design);
   void initNets(const frDesign* design);
   void initNetObjs(
       const frDesign* design,

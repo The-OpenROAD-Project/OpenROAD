@@ -29,7 +29,6 @@
 #include "db/drObj/drAccessPattern.h"
 
 #include "distributed/frArchive.h"
-#include "serialization.h"
 using namespace fr;
 template <class Archive>
 void drAccessPattern::serialize(Archive& ar, const unsigned int version)
