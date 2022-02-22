@@ -206,6 +206,7 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond) {
   double node11_cond = GetConductance(node1_r, node1_r);
   double node22_cond = GetConductance(node2_r, node2_r);
   double node12_cond = GetConductance(node1_r, node2_r);
+  double node21_cond = GetConductance(node2_r, node1_r);
   // Only perform an update if the conductance is higher in case of overlaps.
   // Higher conductance implies larger width.
   // node12_cond is only set for 1 pair of nodes and is negative. 
@@ -216,6 +217,11 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond) {
     UpdateConductance(node2_r, node2_r, node22_cond + t_cond + node12_cond);
     UpdateConductance(node1_r, node2_r, - t_cond);
     UpdateConductance(node2_r, node1_r, - t_cond);
+  } else { //to add connection even if there is not change in conductance
+    UpdateConductance(node1_r, node1_r, node11_cond);
+    UpdateConductance(node2_r, node2_r, node22_cond);
+    UpdateConductance(node1_r, node2_r, node12_cond);
+    UpdateConductance(node2_r, node1_r, node21_cond);
   }
 }
 
