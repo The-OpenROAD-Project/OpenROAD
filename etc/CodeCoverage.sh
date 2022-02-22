@@ -35,6 +35,9 @@ _lcov() {
 
 _coverity() {
     cmake -B build .
+    # compile abc before calling cov-build to exclude from analysis.
+    # Coverity fails to process abc code due to -fpermissive flag.
+    cmake --build build -j $(nproc) --target abc
     cov-build --dir cov-int cmake --build build -j $(nproc)
     tar czvf openroad.tgz cov-int
     commitSha="$(git rev-parse HEAD)"
