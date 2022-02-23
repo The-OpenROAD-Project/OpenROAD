@@ -88,6 +88,7 @@ GlobalRouter::GlobalRouter()
       min_routing_layer_(1),
       max_routing_layer_(-1),
       layer_for_guide_dimension_(3),
+      gcells_offset_(2),
       overflow_iterations_(50),
       allow_congestion_(false),
       macro_extension_(0),
@@ -1292,6 +1293,11 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
+}
+
+void GlobalRouter::setPinOffset(int pin_offset)
+{
+  gcells_offset_ = pin_offset;
 }
 
 void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
