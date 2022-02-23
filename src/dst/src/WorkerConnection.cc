@@ -42,7 +42,7 @@ WorkerConnection::WorkerConnection(asio::io_service& io_service,
                                    Distributed* dist,
                                    utl::Logger* logger,
                                    Worker* worker)
-    : sock(io_service),
+    : sock_(io_service),
       dist_(dist),
       logger_(logger),
       msg_(JobMessage::NONE),
@@ -52,13 +52,13 @@ WorkerConnection::WorkerConnection(asio::io_service& io_service,
 // socket creation
 tcp::socket& WorkerConnection::socket()
 {
-  return sock;
+  return sock_;
 }
 
 void WorkerConnection::start()
 {
   async_read_until(
-      sock,
+      sock_,
       in_packet_,
       JobMessage::EOP,
       [me = shared_from_this()](boost::system::error_code const& ec,
@@ -79,9 +79,9 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
                     41,
                     "Received malformed msg {} from port {}",
                     data,
-                    sock.remote_endpoint().port());
-      asio::write(sock, asio::buffer("0"), error);
-      sock.close();
+                    sock_.remote_endpoint().port());
+      asio::write(sock_, asio::buffer("0"), error);
+      sock_.close();
       return;
     }
     switch (msg_.getJobType()) {
@@ -93,14 +93,14 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
                      boost::bind(&JobCallBack::onRoutingJobReceived,
                                  cb,
                                  boost::ref(msg_),
-                                 boost::ref(sock)));
+                                 boost::ref(sock_)));
         }
         break;
       case JobMessage::UPDATE_DESIGN: {
         std::unique_lock<std::mutex> lock(getWorker()->pool_mutex_);
         getWorker()->pool_->join();
         for (auto& cb : dist_->getCallBacks()) {
-          cb->onFrDesignUpdated(msg_, sock);
+          cb->onFrDesignUpdated(msg_, sock_);
         }
         getWorker()->pool_
             = std::make_unique<asio::thread_pool>(getWorker()->threads_num_);
@@ -111,9 +111,9 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
                       5,
                       "Unsupported job type {} from port {}",
                       msg_.getJobType(),
-                      sock.remote_endpoint().port());
-        asio::write(sock, asio::buffer("0"), error);
-        sock.close();
+                      sock_.remote_endpoint().port());
+        asio::write(sock_, asio::buffer("0"), error);
+        sock_.close();
         return;
     }
   } else {
@@ -121,7 +121,7 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
                   4,
                   "Worker conhandler failed with message: \"{}\"",
                   err.message());
-    sock.close();
+    sock_.close();
   }
 }
 }  // namespace dst

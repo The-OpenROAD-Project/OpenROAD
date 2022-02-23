@@ -34,7 +34,7 @@
 namespace odb {
 class Point;
 class Rect;
-}
+}  // namespace odb
 
 namespace fr {
 using odb::Rect;
@@ -144,7 +144,7 @@ class frRegionQuery
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
-  
+
   friend class boost::serialization::access;
 };
 }  // namespace fr

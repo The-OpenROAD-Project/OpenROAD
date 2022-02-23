@@ -50,7 +50,7 @@ class Worker
 
  private:
   tcp::acceptor acceptor_;
-  asio::io_service* service;
+  asio::io_service* service_;
   Distributed* dist_;
   utl::Logger* logger_;
   std::vector<boost::shared_ptr<WorkerConnection>> connections_;

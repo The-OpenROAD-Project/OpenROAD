@@ -36,14 +36,14 @@ namespace dst {
 
 void Worker::start_accept()
 {
-  for(auto itr = connections_.begin(); itr != connections_.end();)
-  {
-    if(!itr->get()->socket().is_open())
+  for (auto itr = connections_.begin(); itr != connections_.end();) {
+    if (!itr->get()->socket().is_open())
       itr = connections_.erase(itr);
     else
       ++itr;
   }
-  auto connection = boost::make_shared<WorkerConnection>(*service, dist_, logger_, this);
+  auto connection
+      = boost::make_shared<WorkerConnection>(*service_, dist_, logger_, this);
   connections_.push_back(connection);
   acceptor_.async_accept(
       connection->socket(),
@@ -63,7 +63,7 @@ Worker::Worker(asio::io_service& io_service,
       threads_num_(threads_num)
 {
   pool_ = std::make_unique<asio::thread_pool>(threads_num_);
-  service = &io_service;
+  service_ = &io_service;
   start_accept();
 }
 

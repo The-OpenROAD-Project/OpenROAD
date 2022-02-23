@@ -65,12 +65,15 @@ FlexDRWorkerRegionQuery::FlexDRWorkerRegionQuery(FlexDRWorker* in)
   impl_->drWorker = in;
 }
 
+// Flatten the rtree into a vector and load it back into the rtree to match
+// the process of serialization of rtrees. This is to match the results from
+// distributed routing with non-distributed routing.
 void FlexDRWorkerRegionQuery::dummyUpdate()
 {
-  for (auto& small : impl_->shapes_) {
-    std::vector<std::pair<Rect, drConnFig*>> objects(small.begin(),
-                                                     small.end());
-    small = boost::move(RTree<drConnFig*, Rect>(objects));
+  for (auto& tree : impl_->shapes_) {
+    std::vector<std::pair<Rect, drConnFig*>> objects(tree.begin(),
+                                                     tree.end());
+    tree = boost::move(RTree<drConnFig*, Rect>(objects));
   }
 }
 

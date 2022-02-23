@@ -82,21 +82,6 @@ struct frIArchive : InputArchive
   bool deep_serialize;
 };
 }  // namespace fr
-// explicit instantiation of class templates involved
-namespace boost {
-namespace archive {
-template class basic_binary_oarchive<fr::frOArchive>;
-template class basic_binary_iarchive<fr::frIArchive>;
-template class binary_oarchive_impl<fr::frOArchive,
-                                    std::ostream::char_type,
-                                    std::ostream::traits_type>;
-template class binary_iarchive_impl<fr::frIArchive,
-                                    std::istream::char_type,
-                                    std::istream::traits_type>;
-template class detail::archive_serializer_map<fr::frOArchive>;
-template class detail::archive_serializer_map<fr::frIArchive>;
-}  // namespace archive
-}  // namespace boost
 
 // template implementations
 #include <boost/archive/impl/archive_serializer_map.ipp>

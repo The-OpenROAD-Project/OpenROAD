@@ -96,11 +96,14 @@ struct frRegionQuery::Impl
     tree = boost::move(RTree<T, Rect>(objects));
   }
   template <class T>
-  static inline void updateRTreeByLayer(RTreesByLayer<T>& tr)
+  static inline void updateRTreeByLayer(RTreesByLayer<T>& trees)
   {
-    for (auto& small : tr)
-      updateRTree(small);
+    for (auto& tree : trees)
+      updateRTree(tree);
   }
+  // Flatten the rtree into a vector and load it back into the rtree to match
+  // the process of serialization of rtrees. This is to match the results from
+  // distributed routing with non-distributed routing.
   void dummyUpdate()
   {
     updateRTreeByLayer(shapes_);

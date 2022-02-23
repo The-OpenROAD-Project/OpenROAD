@@ -41,19 +41,19 @@ namespace dst {
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
                                        LoadBalancer* owner,
                                        utl::Logger* logger)
-    : sock(io_service), logger_(logger), owner_(owner)
+    : sock_(io_service), logger_(logger), owner_(owner)
 {
 }
 // socket creation
 tcp::socket& BalancerConnection::socket()
 {
-  return sock;
+  return sock_;
 }
 
 void BalancerConnection::start()
 {
   async_read_until(
-      sock,
+      sock_,
       in_packet_,
       JobMessage::EOP,
       [me = shared_from_this()](boost::system::error_code const& ec,
@@ -78,9 +78,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                     42,
                     "Received malformed msg {} from port {}",
                     data,
-                    sock.remote_endpoint().port());
-      asio::write(sock, asio::buffer("0"), error);
-      sock.close();
+                    sock_.remote_endpoint().port());
+      asio::write(sock_, asio::buffer("0"), error);
+      sock_.close();
       return;
     }
     switch (msg.getMessageType()) {
@@ -90,7 +90,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         owner_->getNextWorker(workerAddress, port);
         if (workerAddress.is_unspecified()) {
           logger_->warn(utl::DST, 6, "No workers available");
-          sock.close();
+          sock_.close();
         } else {
           asio::io_service io_service;
           tcp::socket socket(io_service);
@@ -98,9 +98,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
           asio::write(socket, in_packet_, error);
           asio::streambuf receive_buffer;
           asio::read(socket, receive_buffer, asio::transfer_all(), error);
-          asio::write(sock, receive_buffer, error);
+          asio::write(sock_, receive_buffer, error);
           owner_->updateWorker(workerAddress, port);
-          sock.close();
+          sock_.close();
         }
         break;
       }
@@ -125,8 +125,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         JobMessage result(JobMessage::NONE);
         std::string msgStr;
         JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);
-        asio::write(sock, asio::buffer(msgStr), error);
-        sock.close();
+        asio::write(sock_, asio::buffer(msgStr), error);
+        sock_.close();
         break;
       }
     }
@@ -136,7 +136,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                   8,
                   "Balancer conhandler failed with message: {}",
                   err.message());
-    sock.close();
+    sock_.close();
   }
 }
 }  // namespace dst
