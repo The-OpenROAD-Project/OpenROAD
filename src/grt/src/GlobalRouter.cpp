@@ -675,7 +675,10 @@ void GlobalRouter::findPins(Net* net,
     odb::dbTechLayer* layer = routing_layers_[top_layer];
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstructions
-    if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
+    if ((pin.isConnectedToPad() ||
+         pin.isPort()) &&
+         !net->isLocal() &&
+         gcells_offset_ != 0) {
       GSegment pin_connection = createFakePin(pin, pin_position, layer);
       pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
     }
@@ -2169,7 +2172,10 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
 {
   odb::Point fake_position = pin.getOnGridPosition();
   Net* net = db_net_map_[db_net];
-  if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
+  if ((pin.isConnectedToPad() ||
+       pin.isPort()) &&
+       !net->isLocal() &&
+       gcells_offset_ != 0) {
     odb::dbTechLayer* layer = routing_layers_[pin.getTopLayer()];
     createFakePin(pin, fake_position, layer);
   }
