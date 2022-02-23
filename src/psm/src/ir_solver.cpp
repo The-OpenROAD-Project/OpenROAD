@@ -544,64 +544,20 @@ bool IRSolver::CreateGmat(bool connection_only) {
             via_top_layer = via->getTopLayer();
             via_bottom_layer = via->getBottomLayer();
           }
-          int x_cut_size = 0;
-          int y_cut_size = 0;
-          int x_bottom_enclosure = 0;
-          int y_bottom_enclosure = 0;
-          int x_top_enclosure = 0;
-          int y_top_enclosure = 0;
-          if (check_params) {
-            x_cut_size = params.getXCutSize();
-            y_cut_size = params.getYCutSize();
-            x_bottom_enclosure = params.getXBottomEnclosure();
-            y_bottom_enclosure = params.getYBottomEnclosure();
-            x_top_enclosure = params.getXTopEnclosure();
-            y_top_enclosure = params.getYTopEnclosure();
-          }
           BBox bBox =
               make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
           int x, y;
           curWire->getViaXY(x, y);
-          dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
+          // TODO: Using a single node for a via requires that the vias are
+          // stacked and not staggered, i.e., V1 via cut must overlap either V2
+          // via cut or enclosure and connections cannot be made through
+          // enclosures only.
           int l = via_bottom_layer->getRoutingLevel();
-          int x_loc1, x_loc2, y_loc1, y_loc2;
-          if (m_bottom_layer != l &&
-              l != m_top_layer) {  // do not set for top and bottom layers
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y;
-              y_loc2 = y;
-              x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
-              x_loc1 = x;
-              x_loc2 = x;
-            }
-            m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
-            m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
+          if (m_bottom_layer != l) {  // do not set for bottom layers
             m_Gmat->SetNode(x, y, l, bBox);
           }
           l = via_top_layer->getRoutingLevel();
-
-          // TODO this may count the stripe conductance twice but is needed to
-          // fix a staggered stacked via
-          layer_dir = via_top_layer->getDirection();
-          if (m_bottom_layer != l &&
-              l != m_top_layer) {  // do not set for top and bottom layers
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y;
-              y_loc2 = y;
-              x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-              x_loc1 = x;
-              x_loc2 = x;
-            }
-            m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
-            m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
+          if (m_bottom_layer != l) {  // do not set for bottom layers
             m_Gmat->SetNode(x, y, l, bBox);
           }
         } else {
@@ -623,8 +579,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
             y_loc1 = curWire->yMin();
             y_loc2 = curWire->yMax();
           }
-          if (l == m_bottom_layer ||
-              l == m_top_layer) {  // special case for bottom and top layers
+          if (l == m_bottom_layer) {  // special case for bottom layers
                                    // we design a dense grid
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               int x_i;
@@ -653,6 +608,13 @@ bool IRSolver::CreateGmat(bool connection_only) {
       }
     }
   }
+
+  if (m_Gmat->GetNumNodes() == 0) {
+    m_logger->warn(utl::PSM, 70, "Net {} has no nodes and will be skipped",
+                   m_power_net);
+    return true;
+  }
+
   // insert c4 bumps as nodes
   int num_C4 = 0;
   for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
@@ -661,49 +623,38 @@ bool IRSolver::CreateGmat(bool connection_only) {
     int size = get<2>(m_C4Bumps[it]);
     double v = get<3>(m_C4Bumps[it]);
     vector<Node*> RDL_nodes;
-    RDL_nodes = m_Gmat->GetRDLNodes(m_top_layer, m_top_layer_dir, x - size / 2,
-                                    x + size / 2, y - size / 2, y + size / 2);
-    if (RDL_nodes.empty() == true) {
-      Node* node = m_Gmat->GetNode(x, y, m_top_layer, true);
-      NodeLoc node_loc = node->GetLoc();
-      double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
-      double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
+    Node* node = m_Gmat->GetNode(x, y, m_top_layer, true);
+    NodeLoc node_loc = node->GetLoc();
+    double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
+    double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
+    if( 2*abs(node_loc.first - x) > size ||
+        2*abs(node_loc.second - y)> size) {
       double old_loc1 = ((double)x) / ((double)unit_micron);
       double old_loc2 = ((double)y) / ((double)unit_micron);
       double old_size = ((double)size) / ((double)unit_micron);
       m_logger->warn(utl::PSM, 30,
-                     "VSRC location at ({:4.3f}um, {:4.3f}um) "
-                     "and size {:4.3f}um, is not located on a power stripe. "
-                     "Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
-                     old_loc1, old_loc2, old_size, new_loc1, new_loc2);
-      RDL_nodes = m_Gmat->GetRDLNodes(
-          m_top_layer, m_top_layer_dir, node_loc.first - size / 2,
-          node_loc.first + size / 2, node_loc.second - size / 2,
-          node_loc.second + size / 2);
+                     "VSRC location at ({:4.3f}um, {:4.3f}um) and "
+                     "size {:4.3f}um, is not located on an existing "
+                     "power stripe node. Moving to closest node at "
+                     "({:4.3f}um, {:4.3f}um).", old_loc1, old_loc2, old_size,
+                     new_loc1, new_loc2);
     }
-    vector<Node*>::iterator node_it;
-    for (node_it = RDL_nodes.begin(); node_it != RDL_nodes.end(); ++node_it) {
-      Node* node = *node_it;
-      NodeIdx k = node->GetGLoc();
-      std::pair<std::map<NodeIdx, double>::iterator, bool> ret;
-      ret = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
-      if (ret.second == false) {
-        // key already exists and voltage value is different occurs when a user
-        // specifies two different voltage supply values by mistatke in two
-        // nearby nodes
-        NodeLoc node_loc = node->GetLoc();
-        double new_loc1 = ((double)node_loc.first) / ((double)unit_micron);
-        double new_loc2 = ((double)node_loc.second) / ((double)unit_micron);
-        m_logger->warn(
-            utl::PSM, 67,
-            "Multiple voltage supply values mapped"
-            "at the same node ({:4.3f}um, {:4.3f}um)."
-            "If you provided a vsrc file. Check for duplicate entries."
-            "Choosing voltage value {:4.3f}.",
-            new_loc1, new_loc2, ret.first->second);
-      } else {
-        num_C4++;
-      }
+    NodeIdx k = node->GetGLoc();
+    std::pair<std::map<NodeIdx, double>::iterator, bool> ret;
+    ret = m_C4Nodes.insert(std::map<NodeIdx, double>::value_type(k, v));
+    if (ret.second == false) {
+      // key already exists and voltage value is different occurs when a user
+      // specifies two different voltage supply values by mistake in two
+      // nearby nodes
+      m_logger->warn(
+          utl::PSM, 67,
+          "Multiple voltage supply values mapped"
+          "at the same node ({:4.3f}um, {:4.3f}um)."
+          "If you provided a vsrc file. Check for duplicate entries."
+          "Choosing voltage value {:4.3f}.",
+          new_loc1, new_loc2, ret.first->second);
+    } else {
+      num_C4++;
     }
   }
   // All new nodes must be inserted by this point
@@ -775,7 +726,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
                             "set it using the 'set_layer_rc' command.",
                             via_bottom_layer->getName());
           }
-          bool top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
+          bool top_or_bottom = ((l == m_bottom_layer));
           Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
           NodeLoc node_loc = node_bot->GetLoc();
           if (abs(node_loc.first - x) > m_node_density ||
@@ -786,7 +737,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
 
           l = via_top_layer->getRoutingLevel();
-          top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
+          top_or_bottom = ((l == m_bottom_layer));
           Node* node_top = m_Gmat->GetNode(x, y, l, top_or_bottom);
           node_loc = node_top->GetLoc();
           if (abs(node_loc.first - x) > m_node_density ||
@@ -837,32 +788,29 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
           layer_dir = via_top_layer->getDirection();
           l = via_top_layer->getRoutingLevel();
-          if (l != m_top_layer) {
-            double rho = via_top_layer->getResistance();
-            if (!CheckValidR(rho) && !connection_only) {
-              m_logger->error(utl::PSM, 37,
-                              "Layer {} per-unit resistance not found in DB. "
-                              "Check the LEF or set it using the command "
-                              "'set_layer_rc -layer'.",
-                              via_top_layer->getName());
-            }
-            int x_loc1, x_loc2, y_loc1, y_loc2;
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y - y_cut_size / 2;
-              y_loc2 = y + y_cut_size / 2;
-              x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-              x_loc1 = x - x_cut_size / 2;
-              x_loc2 = x + x_cut_size / 2;
-            }
-            m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
-                                              layer_dir, x_loc1, x_loc2, y_loc1,
-                                              y_loc2, rho);
+          double rho = via_top_layer->getResistance();
+          if (!CheckValidR(rho) && !connection_only) {
+            m_logger->error(utl::PSM, 37,
+                            "Layer {} per-unit resistance not found in DB. "
+                            "Check the LEF or set it using the command "
+                            "'set_layer_rc -layer'.",
+                            via_top_layer->getName());
           }
-
+          int x_loc1, x_loc2, y_loc1, y_loc2;
+          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+            y_loc1 = y - y_cut_size / 2;
+            y_loc2 = y + y_cut_size / 2;
+            x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
+            x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
+          } else {
+            y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
+            y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
+            x_loc1 = x - x_cut_size / 2;
+            x_loc2 = x + x_cut_size / 2;
+          }
+          m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
+                                            layer_dir, x_loc1, x_loc2, y_loc1,
+                                            y_loc2, rho);
         } else {
           dbTechLayer* wire_layer = curWire->getTechLayer();
           int l = wire_layer->getRoutingLevel();
@@ -883,8 +831,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
           int x_loc2 = curWire->xMax();
           int y_loc1 = curWire->yMin();
           int y_loc2 = curWire->yMax();
-          if (l == m_bottom_layer ||
-              l == m_top_layer) {  // special case for bottom and top layers
+          if (l == m_bottom_layer) {  // special case for bottom layer
                                    // we design a dense grid
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
               x_loc1 = (x_loc1 / m_node_density) *
@@ -1113,6 +1060,10 @@ bool IRSolver::Build() {
   ReadC4Data();
   if (res) {
     res = CreateGmat();
+    if (m_Gmat->GetNumNodes() == 0) {
+      m_connection = true;
+      return true;
+    }
   }
   if (res) {
     res = CreateJ();
@@ -1137,6 +1088,10 @@ bool IRSolver::BuildConnection() {
   ReadC4Data();
   if (res) {
     res = CreateGmat(true);
+    if (m_Gmat->GetNumNodes() == 0) {
+      m_connection = true;
+      return true;
+    }
   }
   if (res) {
     res = AddC4Bump();

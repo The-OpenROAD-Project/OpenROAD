@@ -534,9 +534,9 @@ Pin::~Pin() {
 // Net 
 
 Net::Net() : net_(nullptr), lx_(0), ly_(0), ux_(0), uy_(0) {}
-Net::Net(odb::dbNet* net) : Net() {
+Net::Net(odb::dbNet* net, bool skipIoMode) : Net() {
   net_ = net;
-  updateBox();
+  updateBox(skipIoMode);
 }
 
 Net::~Net() {
@@ -572,7 +572,7 @@ int64_t Net::hpwl() const {
   return static_cast<int64_t>((ux_-lx_) + (uy_-ly_));
 }
 
-void Net::updateBox() {
+void Net::updateBox(bool skipIoMode) {
   lx_ = INT_MAX;
   ly_ = INT_MAX;
   ux_ = INT_MIN;
@@ -584,13 +584,16 @@ void Net::updateBox() {
     ux_ = std::max(box->xMax(), ux_);
     uy_ = std::max(box->yMax(), uy_);
   }
-  for(dbBTerm* bTerm : net_->getBTerms()) {
-    for(dbBPin* bPin : bTerm->getBPins()) {
-      Rect bbox = bPin->getBBox();
-      lx_ = std::min(bbox.xMin(), lx_);
-      ly_ = std::min(bbox.yMin(), ly_);
-      ux_ = std::max(bbox.xMax(), ux_);
-      uy_ = std::max(bbox.yMax(), uy_);
+
+  if( skipIoMode == false ) {
+    for(dbBTerm* bTerm : net_->getBTerms()) {
+      for(dbBPin* bPin : bTerm->getBPins()) {
+        Rect bbox = bPin->getBBox();
+        lx_ = std::min(bbox.xMin(), lx_);
+        ly_ = std::min(bbox.yMin(), ly_);
+        ux_ = std::max(bbox.xMax(), ux_);
+        uy_ = std::max(bbox.yMax(), uy_);
+      }
     }
   }
 }
@@ -695,6 +698,7 @@ PlacerBaseVars::PlacerBaseVars()
 void 
 PlacerBaseVars::reset() {
   padLeft = padRight = 0;
+  skipIoMode = false;
 }
 
 ////////////////////////////////////////////////////////
@@ -828,7 +832,7 @@ PlacerBase::init() {
     if( netType == dbSigType::SIGNAL ||
         netType == dbSigType::CLOCK ) {
 
-      Net myNet(net);
+      Net myNet(net, pbVars_.skipIoMode);
       netStor_.push_back( myNet );
       
       // this is safe because of "reserve"
@@ -842,10 +846,12 @@ PlacerBase::init() {
         pinStor_.push_back( myPin );
       }
 
-      for(dbBTerm* bTerm : net->getBTerms()) {
-        Pin myPin(bTerm);
-        myPin.setNet(myNetPtr);
-        pinStor_.push_back( myPin );
+      if( pbVars_.skipIoMode == false ) {
+        for(dbBTerm* bTerm : net->getBTerms()) {
+          Pin myPin(bTerm);
+          myPin.setNet(myNetPtr);
+          pinStor_.push_back( myPin );
+        }
       }
     }
   }
@@ -885,8 +891,10 @@ PlacerBase::init() {
     for(dbITerm* iTerm : net.dbNet()->getITerms()) {
       net.addPin( dbToPb( iTerm ) );
     }
-    for(dbBTerm* bTerm : net.dbNet()->getBTerms()) {
-      net.addPin( dbToPb( bTerm ) );
+    if( pbVars_.skipIoMode == false ) {
+      for(dbBTerm* bTerm : net.dbNet()->getBTerms()) {
+        net.addPin( dbToPb( bTerm ) );
+      }
     }
     nets_.push_back(&net);
   }
@@ -1040,7 +1048,7 @@ int64_t
 PlacerBase::hpwl() const {
   int64_t hpwl = 0;
   for(auto& net : nets_) {
-    net->updateBox();
+    net->updateBox(pbVars_.skipIoMode);
     hpwl += net->hpwl();
   }
   return hpwl;

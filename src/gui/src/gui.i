@@ -573,6 +573,12 @@ void set_heatmap(const std::string& name, const std::string& option, const std::
   gui->setHeatMapSetting(name, option, value);
 }
 
+void dump_heatmap(const std::string& name, const std::string& file)
+{
+  auto gui = gui::Gui::get();
+  gui->dumpHeatMap(name, file);
+}
+
 void timing_cone(odb::dbITerm* iterm, bool fanin, bool fanout)
 {
   if (!check_gui("timing_cone")) {

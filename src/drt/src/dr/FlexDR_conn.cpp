@@ -33,8 +33,12 @@
 #include "frProfileTask.h"
 #include "io/io.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 // copied from FlexDRWorker::initNets_searchRepair_pin2epMap_helper
 void FlexDRConnectivityChecker::pin2epMap_helper(
@@ -935,28 +939,34 @@ void FlexDRConnectivityChecker::check(int iter)
 
     ProfileTask init_parallel("init-parallel");
 // parallel
+    ThreadException exception;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
-      const auto net = batch[i];
-      auto& initNetRouteObjs = aNetRouteObjs[i];
-      auto& horzPathSegs = aHorzPathSegs[i];
-      auto& vertPathSegs = aVertPathSegs[i];
-      auto& horzVictims = aHorzVictims[i];
-      auto& vertVictims = aVertVictims[i];
-      auto& horzNewSegSpans = aHorzNewSegSpans[i];
-      auto& vertNewSegSpans = aVertNewSegSpans[i];
-
-      initRouteObjs(net, initNetRouteObjs);
-      organizePathSegsByLayerAndTrack(
-          net, initNetRouteObjs, horzPathSegs, vertPathSegs);
-      findSegmentOverlaps(initNetRouteObjs,
-                          horzPathSegs,
-                          vertPathSegs,
-                          horzVictims,
-                          vertVictims,
-                          horzNewSegSpans,
-                          vertNewSegSpans);
+      try {
+        const auto net = batch[i];
+        auto& initNetRouteObjs = aNetRouteObjs[i];
+        auto& horzPathSegs = aHorzPathSegs[i];
+        auto& vertPathSegs = aVertPathSegs[i];
+        auto& horzVictims = aHorzVictims[i];
+        auto& vertVictims = aVertVictims[i];
+        auto& horzNewSegSpans = aHorzNewSegSpans[i];
+        auto& vertNewSegSpans = aVertNewSegSpans[i];
+  
+        initRouteObjs(net, initNetRouteObjs);
+        organizePathSegsByLayerAndTrack(
+            net, initNetRouteObjs, horzPathSegs, vertPathSegs);
+        findSegmentOverlaps(initNetRouteObjs,
+                            horzPathSegs,
+                            vertPathSegs,
+                            horzVictims,
+                            vertVictims,
+                            horzNewSegSpans,
+                            vertNewSegSpans);
+      } catch (...) {
+        exception.capture();
+      }
     }
+    exception.rethrow();
     init_parallel.done();
     ProfileTask merge_serial("merge-serial");
 
@@ -995,28 +1005,33 @@ void FlexDRConnectivityChecker::check(int iter)
 // parallel
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
-      const auto net = batch[i];
-      auto& netRouteObjs = aNetRouteObjs[i];
-      auto& pin2epMap = aPin2epMap[i];
-      auto& netPins = aNetPins[i];
-      auto& nodeMap = aNodeMap[i];
-      auto& adjVisited = aAdjVisited[i];
-      auto& adjPrevIdx = aAdjPrevIdx[i];
-      netRouteObjs.clear();
-      initRouteObjs(net, netRouteObjs);
-      buildPin2epMap(net, netRouteObjs, pin2epMap);
-      buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
-
-      const int nNetRouteObjs = (int) netRouteObjs.size();
-      const int nNetObjs = (int) netRouteObjs.size() + (int) netPins.size();
-      status[i] = astar(net,
-                        adjVisited,
-                        adjPrevIdx,
-                        nodeMap,
-                        netRouteObjs,
-                        nNetRouteObjs,
-                        nNetObjs);
+      try {
+        const auto net = batch[i];
+        auto& netRouteObjs = aNetRouteObjs[i];
+        auto& pin2epMap = aPin2epMap[i];
+        auto& netPins = aNetPins[i];
+        auto& nodeMap = aNodeMap[i];
+        auto& adjVisited = aAdjVisited[i];
+        auto& adjPrevIdx = aAdjPrevIdx[i];
+        netRouteObjs.clear();
+        initRouteObjs(net, netRouteObjs);
+        buildPin2epMap(net, netRouteObjs, pin2epMap);
+        buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
+  
+        const int nNetRouteObjs = (int) netRouteObjs.size();
+        const int nNetObjs = (int) netRouteObjs.size() + (int) netPins.size();
+        status[i] = astar(net,
+                          adjVisited,
+                          adjPrevIdx,
+                          nodeMap,
+                          netRouteObjs,
+                          nNetRouteObjs,
+                          nNetObjs);
+      } catch (...) {
+        exception.capture();
+      }
     }
+    exception.rethrow();
     astar_parallel.done();
     ProfileTask finish_serial("finish-serial");
 

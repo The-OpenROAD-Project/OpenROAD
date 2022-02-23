@@ -130,7 +130,6 @@ proc set_padring_options {args} {
     ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
   }
 
-  ICeWall::set_filler_overlap_allowed 0
   if {[info exists flags(-allow_filler_overlap)]} {
     ICeWall::set_filler_overlap_allowed 1
   }
@@ -142,11 +141,12 @@ sta::define_cmd_args "define_pad_cell" {[-name name] \
                                       [-orient orientation_per_side] \
                                       [-pad_pin_name pad_pin_name] \
                                       [-break_signals signal_list] \
+                                      [-offset cell_offset] \
                                       [-physical_only]}
 
 proc define_pad_cell {args} {
   sta::parse_key_args "define_pad_cell" args \
-    keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
+    keys {-name -type -cell_name -orient -pad_pin_name -break_signals -offset} \
     flags {-fill -corner -bondpad -bump -physical_only}
 
   if {![ord::db_has_tech]} {
@@ -4839,14 +4839,19 @@ namespace eval ICeWall {
   }
 
   proc check_coordinate {xy} {
-    if {[llength $xy] != 2} {
-      utl::error PAD 239 "expecting a 2 element list in the form \"number number\"."
-    }
+    set xy [check_xy_coordinate $xy]
     set coord [list x [lindex $xy 0] y [lindex $xy 1]]
     if {[catch {check_xy $coord} msg]} {
       utl::error PAD 240 "Invalid coordinate specified $msg."
     }
     return $coord
+  }
+
+  proc check_xy_coordinate {xy} {
+    if {[llength $xy] != 2} {
+      utl::error PAD 239 "expecting a 2 element list in the form \"number number\"."
+    }
+    return $xy
   }
 
   proc check_rows_columns {rc} {
@@ -5851,6 +5856,7 @@ namespace eval ICeWall {
         -pad_pin_name  {dict set cell_ref pad_pin_name $value}
         -physical_only {dict set cell_ref physical_only [check_boolean $value]}
         -break_signals {dict set cell_ref breaks $value}
+        -offset        {dict set cell_ref offset [check_xy_coordinate $value]}
         default {utl::error PAD 201 "Unrecognized argument $arg, should be one of -name, -type, -cell_name, -orient, -pad_pin_name, -break_signals, -physical_only."}
       }
 

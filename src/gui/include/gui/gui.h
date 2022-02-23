@@ -651,12 +651,15 @@ class Gui
 
   // check if tcl should take over after closing gui
   bool isContinueAfterClose() { return continue_after_close_; }
+  // set continue after close, needs to be set when running in non-interactive mode
+  void setContinueAfterClose() { continue_after_close_ = true; }
   // clear continue after close, needed to reset before GUI starts
   void clearContinueAfterClose() { continue_after_close_ = false; }
 
   const Selected& getInspectorSelection();
 
   void setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value);
+  void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the gui
   const std::vector<std::string>& getRestoreStateCommands() { return tcl_state_commands_; }
@@ -684,6 +687,7 @@ class Gui
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
   const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+  HeatMapDataSource* getHeatMap(const std::string& name);
 
   // returns the Gui singleton
   static Gui* get();

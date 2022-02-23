@@ -2322,7 +2322,8 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup(float slack_margin)
+Resizer::repairSetup(float slack_margin,
+                     int max_passes)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -2335,7 +2336,8 @@ Resizer::repairSetup(float slack_margin)
   int pass = 1;
   int decreasing_slack_passes = 0;
   incrementalParasiticsBegin();
-  while (fuzzyLess(worst_slack, slack_margin)) {
+  while (fuzzyLess(worst_slack, slack_margin)
+         && pass <= max_passes) {
     PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
     bool changed = repairSetup(worst_path, worst_slack);
     updateParasitics();
@@ -2448,85 +2450,146 @@ Resizer::repairSetup(PathRef &path,
       int drvr_index = index_delay.first;
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
-      Pin *drvr_pin = drvr_vertex->pin();
-      PathRef *load_path = expanded.path(drvr_index + 1);
-      Vertex *load_vertex = load_path->vertex(sta_);
-      Pin *load_pin = load_vertex->pin();
+      const Pin *drvr_pin = drvr_vertex->pin();
+      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+      LibertyCell *drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "repair_setup", 2, "{} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 2, "{} {} fanout = {}",
                  network_->pathName(drvr_pin),
+                 drvr_cell ? drvr_cell->name() : "none",
                  fanout);
+
+      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+        changed = true;
+        break;
+      }
+
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = isTristateDriver(drvr_pin);
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
-          && !tristate_drvr) {
-        int count_before = inserted_buffer_count_;
-        rebuffer(drvr_pin);
-        int insert_count = inserted_buffer_count_ - count_before;
-        if (insert_count > 0) {
+          && !tristate_drvr) { 
+        int rebuffer_count = rebuffer(drvr_pin);
+        if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
-                     insert_count);
+                     rebuffer_count);
           changed = true;
           break;
         }
       }
+
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr) {
-        // Divide and conquer.
-        debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
-                   network_->pathName(drvr_pin),
-                   network_->pathName(load_pin));
-        splitLoads(drvr_path, path_slack);
+        splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         changed = true;
         break;
-      }
-      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
-      int in_index = drvr_index - 1;
-      PathRef *in_path = expanded.path(in_index);
-      Pin *in_pin = in_path->pin(sta_);
-      LibertyPort *in_port = network_->libertyPort(in_pin);
-
-      float prev_drive;
-      if (drvr_index >= 2) {
-        int prev_drvr_index = drvr_index - 2;
-        PathRef *prev_drvr_path = expanded.path(prev_drvr_index);
-        Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
-        prev_drive = 0.0;
-        LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-        if (prev_drvr_port) {
-          prev_drive = prev_drvr_port->driveResistance();
-        }
-      }
-      else
-        prev_drive = 0.0;
-      LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                       prev_drive, dcalc_ap);
-      if (upsize) {
-        Instance *drvr = network_->instance(drvr_pin);
-        debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
-                   network_->pathName(drvr_pin),
-                   drvr_port->libertyCell()->name(),
-                   upsize->name());
-        if (replaceCell(drvr, upsize, true)) {
-          resize_count_++;
-          changed = true;
-          break;
-        }
       }
     }
   }
   return changed;
 }
 
+bool
+Resizer::upsizeDrvr(PathRef *drvr_path,
+                    int drvr_index,
+                    PathExpanded *expanded)
+{
+  Pin *drvr_pin = drvr_path->pin(this);
+  const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  int in_index = drvr_index - 1;
+  PathRef *in_path = expanded->path(in_index);
+  Pin *in_pin = in_path->pin(sta_);
+  LibertyPort *in_port = network_->libertyPort(in_pin);
+
+  float prev_drive;
+  if (drvr_index >= 2) {
+    int prev_drvr_index = drvr_index - 2;
+    PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
+    Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+    prev_drive = 0.0;
+    LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+    if (prev_drvr_port) {
+      prev_drive = prev_drvr_port->driveResistance();
+    }
+  }
+  else
+    prev_drive = 0.0;
+  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+  LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
+                                   prev_drive, dcalc_ap);
+  if (upsize) {
+    Instance *drvr = network_->instance(drvr_pin);
+    debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
+               network_->pathName(drvr_pin),
+               drvr_port->libertyCell()->name(),
+               upsize->name());
+    if (replaceCell(drvr, upsize, true)) {
+      resize_count_++;
+      return true;
+    }
+  }
+  return false;
+}
+
+LibertyCell *
+Resizer::upsizeCell(LibertyPort *in_port,
+                    LibertyPort *drvr_port,
+                    float load_cap,
+                    float prev_drive,
+                    const DcalcAnalysisPt *dcalc_ap)
+{
+  int lib_ap = dcalc_ap->libertyIndex();
+  LibertyCell *cell = drvr_port->libertyCell();
+  LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+  if (equiv_cells) {
+    const char *in_port_name = in_port->name();
+    const char *drvr_port_name = drvr_port->name();
+    sort(equiv_cells,
+         [=] (const LibertyCell *cell1,
+              const LibertyCell *cell2) {
+           LibertyPort *port1=cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           LibertyPort *port2=cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           return port1->driveResistance() > port2->driveResistance();
+         });
+    float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
+    float delay = gateDelay(drvr_port, load_cap, tgt_slew_dcalc_ap_)
+      + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+    for (LibertyCell *equiv : *equiv_cells) {
+      LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
+      LibertyPort *equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
+      LibertyPort *equiv_input = equiv_corner->findLibertyPort(in_port_name);
+      float equiv_drive = equiv_drvr->driveResistance();
+      // Include delay of previous driver into equiv gate.
+      float equiv_delay = gateDelay(equiv_drvr, load_cap, dcalc_ap)
+        + prev_drive * equiv_input->capacitance();
+      if (!dontUse(equiv)
+          && equiv_drive < drive
+          && equiv_delay < delay)
+        return equiv;
+    }
+  }
+  return nullptr;
+}
+
 void
 Resizer::splitLoads(PathRef *drvr_path,
-                    Slack drvr_slack)
+                    int drvr_index,
+                    Slack drvr_slack,
+                    PathExpanded *expanded)
 {
+  Pin *drvr_pin = drvr_path->pin(this);
+  PathRef *load_path = expanded->path(drvr_index + 1);
+  Vertex *load_vertex = load_path->vertex(sta_);
+  Pin *load_pin = load_vertex->pin();
+  // Divide and conquer.
+  debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(load_pin));
+
   Vertex *drvr_vertex = drvr_path->vertex(sta_);
   const RiseFall *rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
@@ -2550,7 +2613,6 @@ Resizer::splitLoads(PathRef *drvr_path,
          return pair1.second > pair2.second;
        });
 
-  Pin *drvr_pin = drvr_vertex->pin();
   Net *net = network_->net(drvr_pin);
 
   string buffer_name = makeUniqueInstName("split");
@@ -2594,46 +2656,6 @@ Resizer::splitLoads(PathRef *drvr_path,
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
   resizeToTargetSlew(buffer_out_pin, false);
-}
-
-LibertyCell *
-Resizer::upsizeCell(LibertyPort *in_port,
-                    LibertyPort *drvr_port,
-                    float load_cap,
-                    float prev_drive,
-                    const DcalcAnalysisPt *dcalc_ap)
-{
-  int lib_ap = dcalc_ap->libertyIndex();
-  LibertyCell *cell = drvr_port->libertyCell();
-  LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-  if (equiv_cells) {
-    const char *in_port_name = in_port->name();
-    const char *drvr_port_name = drvr_port->name();
-    sort(equiv_cells,
-         [=] (const LibertyCell *cell1,
-              const LibertyCell *cell2) {
-           LibertyPort *port1=cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           LibertyPort *port2=cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           return port1->driveResistance() > port2->driveResistance();
-         });
-    float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
-    float delay = gateDelay(drvr_port, load_cap, tgt_slew_dcalc_ap_)
-      + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
-    for (LibertyCell *equiv : *equiv_cells) {
-      LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
-      LibertyPort *equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
-      LibertyPort *equiv_input = equiv_corner->findLibertyPort(in_port_name);
-      float equiv_drive = equiv_drvr->driveResistance();
-      // Include delay of previous driver into equiv gate.
-      float equiv_delay = gateDelay(equiv_drvr, load_cap, dcalc_ap)
-        + prev_drive * equiv_input->capacitance();
-      if (!dontUse(equiv)
-          && equiv_drive < drive
-          && equiv_delay < delay)
-        return equiv;
-    }
-  }
-  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4100,6 +4122,7 @@ Instance *Resizer::makeInstance(LibertyCell *cell,
                                 const char *name,
                                 Instance *parent)
 {
+  debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
   Instance *inst = db_network_->makeInstance(cell, name, parent);
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);

@@ -25,6 +25,7 @@ make_tracks
 source ../../../test/Nangate45/Nangate45.tracks
 
 set_padring_options -allow_filler_overlap
+set_padring_options 
 if {[catch {ICeWall init_footprint flipchip_test/flipchip_test.sigmap} msg]} {
   puts $errorInfo
   puts $msg

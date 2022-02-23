@@ -98,8 +98,10 @@ void FlexRP::prep_minStepViasCheck()
       continue;
 
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-    gcNet* testNet = new gcNet(0);
-    gcPin* testPin = new gcPin(poly, lNum, testNet);
+    unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
+    gcNet* testNet = uTestNet.get();
+    unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
+    gcPin* testPin = uTestPin.get();
     testPin->setNet(testNet);
 
     bool first = true;
@@ -693,22 +695,24 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
                                              const int& tableEntryIdx,
                                              frViaDef* viaDef1,
                                              frViaDef* viaDef2,
-                                             bool isCurrDirX,
+                                             bool isHorizontal,
                                              frNonDefaultRule* ndr)
 {
   auto tech = getDesign()->getTech();
   // non-shape-based rule
   ForbiddenRanges forbiddenRanges;
   prep_via2viaForbiddenLen_minSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges, ndr);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges, ndr);
   prep_via2viaForbiddenLen_minimumCut(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_cutSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpc(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpcTbl(
-      lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+      lNum, viaDef1, viaDef2, isHorizontal, forbiddenRanges);
+  prep_via2viaForbiddenLen_minStep(
+      lNum, viaDef1, viaDef2, !isHorizontal, forbiddenRanges);
 
   // merge forbidden ranges
   boost::icl::interval_set<frCoord> forbiddenIntvSet;
@@ -727,31 +731,221 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   else {
     tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
-
-    // shape-base rule
-    forbiddenRanges.clear();
-    forbiddenIntvSet = boost::icl::interval_set<frCoord>();
-    prep_via2viaForbiddenLen_minStep(
-        lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
-
-    // merge forbidden ranges
-    for (auto& range : forbiddenRanges) {
-      forbiddenIntvSet.insert(
-          boost::icl::interval<frCoord>::closed(range.first, range.second));
-    }
-
-    forbiddenRanges.clear();
-    for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end();
-         it++) {
-      auto beginCoord = it->lower();
-      auto endCoord = it->upper();
-      forbiddenRanges.push_back(make_pair(beginCoord, endCoord - 1));
-    }
-
-    tech->via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx]
-        = forbiddenRanges;
   }
 }
+
+bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum) {
+    gtl::rectangle_data<frCoord> rect1(
+        r1.xMin(), r1.yMin(), r1.xMax(), r1.yMax());
+    gtl::rectangle_data<frCoord> rect2(r2.xMin(),
+                                             r2.yMin(),
+                                             r2.xMax(),
+                                             r2.yMax());
+
+    // joining the two via rects in one polygon
+    gtl::polygon_90_set_data<frCoord> set;
+    using namespace boost::polygon::operators;
+    set += rect1;
+    set += rect2;
+    std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+    set.get_polygons(polys);
+    if (polys.size() != 1)
+      return false;
+
+    gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
+    unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
+    gcNet* testNet = uTestNet.get();
+    unique_ptr<gcPin> uTestPin = make_unique<gcPin>(poly, lNum, testNet);
+    gcPin* testPin = uTestPin.get();
+    testPin->setNet(testNet);
+
+    bool first = true;
+    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+    gtl::point_data<frCoord> prev;
+    for (gtl::point_data<frCoord> cur : poly) {
+      if (first) {
+        prev = cur;
+        first = false;
+      } else {
+        auto edge = make_unique<gcSegment>();
+        edge->setLayerNum(lNum);
+        edge->addToPin(testPin);
+        edge->addToNet(testNet);
+        edge->setSegment(prev, cur);
+        if (!tmpEdges.empty()) {
+          edge->setPrevEdge(tmpEdges.back().get());
+          tmpEdges.back()->setNextEdge(edge.get());
+        }
+        tmpEdges.push_back(std::move(edge));
+        prev = cur;
+      }
+    }
+    // last edge
+    auto edge = make_unique<gcSegment>();
+    edge->setLayerNum(lNum);
+    edge->addToPin(testPin);
+    edge->addToNet(testNet);
+    edge->setSegment(prev, *poly.begin());
+    edge->setPrevEdge(tmpEdges.back().get());
+    tmpEdges.back()->setNextEdge(edge.get());
+    // set first edge
+    tmpEdges.front()->setPrevEdge(edge.get());
+    edge->setNextEdge(tmpEdges.front().get());
+    tmpEdges.push_back(std::move(edge));
+    // add to polygon edges
+    testPin->addPolygonEdges(tmpEdges);
+    // check gc minstep violations
+    FlexGCWorker worker(tech_, logger_);
+    worker.checkMinStep(testPin);
+    return !worker.getMarkers().empty();
+}
+
+void FlexRP::prep_via2viaForbiddenLen_minStep(
+    const frLayerNum& lNum,
+    frViaDef* viaDef1,
+    frViaDef* viaDef2,
+    bool isVertical,
+    ForbiddenRanges& forbiddenRanges)
+{
+  if (!viaDef1 || !viaDef2) {
+    return;
+  }
+  frMinStepConstraint* con = tech_->getLayer(lNum)->getMinStepConstraint();
+  if (!con)
+      return;
+  if (viaDef1->getLayer1Num() == viaDef2->getLayer1Num()) {
+    return;
+  }
+  Rect enclosureBox1, enclosureBox2;
+  frVia via1(viaDef1);
+  frVia via2(viaDef2);
+  if (viaDef1->getLayer1Num() == lNum) {
+    via1.getLayer1BBox(enclosureBox1);
+    via2.getLayer2BBox(enclosureBox2);
+  } else {
+    via1.getLayer2BBox(enclosureBox1);
+    via2.getLayer1BBox(enclosureBox2);
+  }
+  Rect* shifting, *other;
+  //get the rect with lesser width (the shifting one)
+  if (isVertical) {
+      if (enclosureBox1.dx() < enclosureBox2.dx()) {
+          shifting = &enclosureBox1;
+          other = &enclosureBox2;
+      } else if (enclosureBox2.dx() < enclosureBox1.dx()) {
+          shifting = &enclosureBox2;
+          other = &enclosureBox1;
+      } else return;
+  } else {
+      if (enclosureBox1.dy() < enclosureBox2.dy()) {
+          shifting = &enclosureBox1;
+          other = &enclosureBox2;
+      } else if (enclosureBox2.dy() < enclosureBox1.dy()) {
+          shifting = &enclosureBox2;
+          other = &enclosureBox1;
+      } else return;
+  }
+  //example where shifting is vertical and other is horizontal
+  //     shiftingHigh
+  //     _____
+  //    |     | <-shiftingEdge (the vertical one)
+  //  __|     |__ otherEdge (the horizontal one)
+  // |           |  
+  // |__       __|  
+  //    |     |
+  //    |_____|
+  //    shiftingLow
+  int shiftingEdge, otherEdge, shiftingLow, otherLow, otherHigh, minRange = 0;
+  if (other->contains(*shifting)) {
+      if (isVertical) {
+        minRange = other->yMax() - shifting->yMax() + 1;
+        shifting->moveDelta(0, minRange);
+      } else {
+        minRange = other->xMax() - shifting->xMax() + 1;
+        shifting->moveDelta(minRange, 0);
+      }
+  }
+  if (isVertical) {
+      shiftingEdge = shifting->yMax() - other->yMax();
+      otherEdge = other->xMax() - shifting->xMax();
+      shiftingLow = shifting->yMin();
+      otherLow = other->yMin();
+      otherHigh = other->yMax();
+  } else {
+      shiftingEdge = shifting->xMax() - other->xMax();
+      otherEdge = other->yMax() - shifting->yMax();
+      shiftingLow = shifting->xMin();
+      otherLow = other->xMin();
+      otherHigh = other->xMax();
+  }
+  int shift;
+  if (hasMinStepViol(*shifting, *other, lNum)) {
+      if (shiftingEdge < con->getMinStepLength()) {
+          shift = con->getMinStepLength() - shiftingEdge - 1;
+          if (shiftingLow < otherLow)
+              shift = std::max(shift, otherLow - shiftingLow - 1);
+          if (isVertical)
+              shifting->moveDelta(0, shift+1);
+          else shifting->moveDelta(shift+1, 0);
+          if (hasMinStepViol(*shifting, *other, lNum))
+              shift = otherHigh - shiftingLow;
+      } else {
+          assert(otherEdge < con->getMinStepLength());
+          shift = otherHigh - shiftingLow;
+      }
+  } else {
+      if (shiftingEdge < con->getMinStepLength()) {
+          if (con->getMaxLength() > 0) {
+              int div = 2; 
+              int length = shiftingEdge;
+              int topEdge_shifting = isVertical ? shifting->dx() : shifting->dy();
+              int topEdge_other = isVertical ? other->dy() : other->dx();
+              if (topEdge_shifting < con->getMinStepLength()) {
+                  length += topEdge_shifting + shiftingEdge;
+                  if (otherEdge < con->getMinStepLength()) {
+                    length += 2*otherEdge;
+                    if (topEdge_other < con->getMinStepLength())
+                        return;
+                  }
+              } else if (otherEdge < con->getMinStepLength()) {
+                  length += otherEdge;
+                  div = 1;
+                  if (topEdge_other < con->getMinStepLength())
+                      length += topEdge_other +otherEdge + shiftingEdge;
+              }
+              shift = (con->getMaxLength() - length)/div + 1;
+              if (shift < 0)
+                  return;
+              if (isVertical)
+                  shifting->moveDelta(0, shift);
+              else
+                  shifting->moveDelta(shift, 0);
+              if (hasMinStepViol(*shifting, *other, lNum)) {
+                  minRange = shift;
+                  shift = otherHigh - shiftingLow;
+              } else return;
+          } else return;
+      } else {
+            minRange = otherLow - shiftingLow - con->getMinStepLength() + 1;
+            if (isVertical)
+                  shifting->moveDelta(0, minRange);
+            else
+                shifting->moveDelta(minRange, 0);
+            if (hasMinStepViol(*shifting, *other, lNum)) {
+                shift = con->getMinStepLength()-2;
+                if (isVertical)
+                  shifting->moveDelta(0, shift+1);
+                else
+                  shifting->moveDelta(shift+1, 0);
+              if (hasMinStepViol(*shifting, *other, lNum))
+                  shift = otherHigh - shiftingLow;
+            } else return;
+      }
+  }
+  forbiddenRanges.push_back(make_pair(minRange-1, minRange+shift+1));
+}
+
+
 
 // only partial support of GF14
 void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
@@ -994,7 +1188,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc_helper(
 }
 
 // only partial support of GF14
-void FlexRP::prep_via2viaForbiddenLen_minStep(
+void FlexRP::prep_via2viaForbiddenLen_minStepGF12(
     const frLayerNum& lNum,
     frViaDef* viaDef1,
     frViaDef* viaDef2,

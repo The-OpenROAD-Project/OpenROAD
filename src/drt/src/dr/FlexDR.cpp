@@ -49,8 +49,12 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 BOOST_CLASS_EXPORT(RoutingJobDescription)
 
@@ -1789,33 +1793,39 @@ void FlexDR::searchRepair(int iter,
                                        + ">";
         ProfileTask profile(batch_name.c_str());
 // multi thread
+        ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if (dist_on_)
-            workersInBatch[i]->distributedMain(getDesign(),
-                                               globals_path_.c_str());
-          else
-            workersInBatch[i]->main(getDesign());
+          try {
+            if (dist_on_)
+              workersInBatch[i]->distributedMain(getDesign(),
+                                                 globals_path_.c_str());
+            else
+              workersInBatch[i]->main(getDesign());
 #pragma omp critical
-          {
-            cnt++;
-            if (VERBOSE > 0) {
-              if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                  && prev_perc < 90) {
-                if (prev_perc == 0 && t.isExceed(0)) {
-                  isExceed = true;
-                }
-                prev_perc += 10;
-                if (isExceed) {
-                  logger_->report("    Completing {}% with {} violations.",
-                                  prev_perc,
-                                  getDesign()->getTopBlock()->getNumMarkers());
-                  logger_->report("    {}.", t);
+            {
+              cnt++;
+              if (VERBOSE > 0) {
+                if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                    && prev_perc < 90) {
+                  if (prev_perc == 0 && t.isExceed(0)) {
+                    isExceed = true;
+                  }
+                  prev_perc += 10;
+                  if (isExceed) {
+                    logger_->report("    Completing {}% with {} violations.",
+                                    prev_perc,
+                                    getDesign()->getTopBlock()->getNumMarkers());
+                    logger_->report("    {}.", t);
+                  }
                 }
               }
             }
+          } catch (...) {
+            exception.capture();
           }
         }
+        exception.rethrow();
       }
       {
         ProfileTask profile("DR:end_batch");

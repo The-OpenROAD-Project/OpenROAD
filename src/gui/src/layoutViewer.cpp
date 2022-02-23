@@ -840,6 +840,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::findEdge(const odb::Point& pt,
     }
   }
 
+  if (options_->areRowsVisible()) {
+    for (const auto& row_site : getRowRects(search_line)) {
+      boxes.push_back({{row_site.xMin(), row_site.yMin()},
+                       {row_site.xMax(), row_site.yMax()}});
+    }
+  }
+
   const auto& [shape_edges, ok] = searchNearestEdge(boxes, pt);
   if (!ok) {
     return {Edge(), false};
@@ -1431,20 +1438,29 @@ void LayoutViewer::drawRows(QPainter* painter,
   if (!options_->areRowsVisible()) {
     return;
   }
-  int min_resolution = nominalViewableResolution();
-  if (options_->isDetailedVisibility()) {
-    min_resolution = 0;
-  }
-  // three possible draw cases:
-  // 1) resolution allows for individual sites -> draw all
-  // 2) individual sites too small -> just draw row outlines
-  // 3) row is too small -> dont draw anything
 
   QPen pen(options_->rowColor());
   pen.setCosmetic(true);
   painter->setPen(pen);
   painter->setBrush(Qt::NoBrush);
-  for (dbRow* row : block_->getRows()) {
+
+  for (const auto& row_site : getRowRects(bounds)) {
+    painter->drawRect(row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+  }
+}
+
+std::vector<odb::Rect> LayoutViewer::getRowRects(const odb::Rect& bounds)
+{
+  int min_resolution = nominalViewableResolution();
+  if (options_->isDetailedVisibility()) {
+    min_resolution = 0;
+  }
+
+  auto rows = search_.searchRows(
+      bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), min_resolution);
+
+  std::vector<odb::Rect> rects;
+  for (auto& [box, poly, row] : rows) {
     int x;
     int y;
     row->getOrigin(x, y);
@@ -1458,18 +1474,18 @@ void LayoutViewer::drawRows(QPainter* painter,
     bool h_visible = h >= min_resolution;
 
     switch (row->getOrient()) {
-      case dbOrientType::R0:
-      case dbOrientType::R180:
-      case dbOrientType::MY:
-      case dbOrientType::MX:
-        /* do nothing */
-        break;
+    case dbOrientType::R0:
+    case dbOrientType::R180:
+    case dbOrientType::MY:
+    case dbOrientType::MX:
+      /* do nothing */
+      break;
 
-      case dbOrientType::R90:
-      case dbOrientType::R270:
-      case dbOrientType::MYR90:
-      case dbOrientType::MXR90:
-        std::swap(w, h);
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+    case dbOrientType::MYR90:
+    case dbOrientType::MXR90:
+      std::swap(w, h);
     }
 
     dbRowDir dir = row->getDirection();
@@ -1490,7 +1506,7 @@ void LayoutViewer::drawRows(QPainter* painter,
         const Rect row(x, y, x + w, y + h);
         if (row.intersects(bounds)) {
           // only paint rows that can be seen
-          painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+          rects.push_back({x, y, x + w, y + h});
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
@@ -1501,6 +1517,8 @@ void LayoutViewer::drawRows(QPainter* painter,
       }
     }
   }
+
+  return rects;
 }
 
 void LayoutViewer::selection(const Selected& selection)
@@ -1655,12 +1673,12 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
           master_box.xMin(), master_box.yMin(), master_box.dx(), master_box.dy());
 
       // Draw an orientation tag in corner if useful in size
-      int master_h = master->getHeight();
+      qreal master_h = master->getHeight();
       if (master_h >= minimum_height_for_tag) {
         qreal master_w = master->getWidth();
-        qreal tag_size = 0.1 * master_h;
-        qreal tag_x = master_box.xMin() + std::min(tag_size / 2, master_w);
-        qreal tag_y = master_box.yMin() + tag_size;
+        qreal tag_width = std::min(0.25 * master_w, 0.125 * master_h);
+        qreal tag_x = master_box.xMin() + tag_width;
+        qreal tag_y = master_box.yMin() + tag_width * 2;
         painter->drawLine(QPointF(tag_x, master_box.yMin()),
                           QPointF(master_box.xMin(), tag_y));
       }
@@ -1674,6 +1692,12 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
                                       const std::vector<odb::dbInst*>& insts)
 {
+  const bool show_blockages = options_->areInstanceBlockagesVisible();
+  const bool show_pins = options_->areInstancePinsVisible();
+  if (!show_blockages && !show_pins) {
+    return;
+  }
+
   const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
   // Draw the instances' shapes
@@ -1701,16 +1725,18 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
     QColor color = getColor(layer);
     Qt::BrushStyle brush_pattern = getPattern(layer);
 
-    if (options_->areObstructionsVisible()) {
+    if (show_blockages) {
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
     }
 
-    painter->setBrush(QBrush(color, brush_pattern));
-    for (auto& box : boxes->mterms) {
-      painter->drawRect(box);
+    if (show_pins) {
+      painter->setBrush(QBrush(color, brush_pattern));
+      for (auto& box : boxes->mterms) {
+        painter->drawRect(box);
+      }
     }
   }
 
@@ -2045,14 +2071,16 @@ void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbI
     painter.drawX(pt.x(), pt.y(), shape_size);
   };
 
-  for (auto* inst : insts) {
-    int x, y;
-    inst->getLocation(x, y);
-    odb::dbTransform xform({x, y});
+  if (options_->areInstancePinsVisible()) {
+    for (auto* inst : insts) {
+      int x, y;
+      inst->getLocation(x, y);
+      odb::dbTransform xform({x, y});
 
-    for (auto term : inst->getITerms()) {
-      for (auto ap : term->getPrefAccessPoints()) {
-        draw(ap, xform);
+      for (auto term : inst->getITerms()) {
+        for (auto ap : term->getPrefAccessPoints()) {
+          draw(ap, xform);
+        }
       }
     }
   }

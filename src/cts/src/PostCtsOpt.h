@@ -56,13 +56,13 @@ class PostCtsOpt
              CtsOptions* options,
              TechChar* techChar,
              Logger* logger)
-      : _clock(&(builder->getClock())),
-        _options(options),
-        _techChar(techChar),
-        _logger(logger),
-        _builder((HTreeBuilder*) builder)
+      : clock_(&(builder->getClock())),
+        options_(options),
+        techChar_(techChar),
+        logger_(logger),
+        builder_((HTreeBuilder*) builder)
   {
-    _bufDistRatio = _options->getBufDistRatio();
+    bufDistRatio_ = options_->getBufDistRatio();
   }
 
   void run();
@@ -78,17 +78,17 @@ class PostCtsOpt
                          ClockInst* sink);
   Point<int> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
 
-  Clock* _clock;
-  CtsOptions* _options;
-  TechChar* _techChar;
-  Logger* _logger;
-  HTreeBuilder* _builder;
-  unsigned _numViolatingSinks = 0;
-  unsigned _numInsertedBuffers = 0;
-  double _avgSourceSinkDist = 0.0;
-  double _bufDistRatio = 0.0;
+  Clock* clock_;
+  CtsOptions* options_;
+  TechChar* techChar_;
+  Logger* logger_;
+  HTreeBuilder* builder_;
+  unsigned numViolatingSinks_ = 0;
+  unsigned numInsertedBuffers_ = 0;
+  double avgSourceSinkDist_ = 0.0;
+  double bufDistRatio_ = 0.0;
   int bufIndex = 1;
-  std::unordered_map<std::string, int> _sinkDistMap;
+  std::unordered_map<std::string, int> sinkDistMap_;
 };
 
 }  // namespace cts

@@ -71,8 +71,8 @@ Total           117668          3386            2.88%             0 /  0 /  0
 [INFO GRT-0018] Total wirelength: 10336 um
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.959-17.959
- Total capacitance: 47.935-51.197
+ Wire capacitance: 17.722-17.722
+ Total capacitance: 47.697-50.959
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

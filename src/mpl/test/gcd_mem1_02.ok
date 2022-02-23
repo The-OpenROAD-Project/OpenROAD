@@ -6,6 +6,7 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[WARNING IFP-0028] Core area lower left (5.000, 5.000) snapped to (5.130, 5.600).
 [INFO IFP-0001] Added 49 rows of 578 sites.
 [WARNING PPL-0015] Macro mem0 is not placed.
 Found 0 macro blocks.
