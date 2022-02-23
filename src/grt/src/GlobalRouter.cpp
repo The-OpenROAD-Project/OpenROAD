@@ -2003,16 +2003,9 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
 
-      bool segment_overlaps_pin = false;
-      for (const odb::Rect& box : pin_boxes) {
-        if ((segment_overlaps_pin = box.overlaps(pin_position))) {
-          break;
-        }
-      }
-
       // create the local connection only when the global segment
       // doesn't overlap the pin, avoiding loops in the routing
-      if (!segment_overlaps_pin) {
+      if (!pinOverlapsGSegment(pin_position, top_layer, pin_boxes, route)) {
         int minimum_distance = std::numeric_limits<int>::max();
         for (const odb::Rect& pin_box : pin_boxes) {
           odb::Point pos = getRectMiddle(pin_box);
