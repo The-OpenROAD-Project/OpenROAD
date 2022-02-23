@@ -2056,6 +2056,10 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
     }
   }
 
+  if (segment_overlaps_pin) {
+    return segment_overlaps_pin;
+  }
+
   // check if pin position on grid overlaps with at least one GSegment
   for (const odb::Rect& box : pin_boxes) {
     for (const GSegment& seg : route) {
@@ -2065,21 +2069,10 @@ bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
         int y0 = std::min(seg.init_y, seg.final_y);
         int x1 = std::max(seg.init_x, seg.final_x);
         int y1 = std::max(seg.init_y, seg.final_y);
+        odb::Rect seg_rect(x0, y0, x1, y1);
 
-        if (x0 == x1) { // vertical segment
-          if ((segment_overlaps_pin = box.xMin() <= x0 && box.xMax() >= x0 &&
-                                 ((box.yMin() <= y0 && box.yMax() >= y0) || 
-                                  (box.yMin() <= y1 && box.yMax() >= y1) ||
-                                  (box.yMax() >= y0 && box.yMin() <= y1)))) {
-            break;
-          }
-        } else {
-          if ((segment_overlaps_pin = box.yMin() <= y0 && box.yMax() >= y0 &&
-                                 ((box.xMin() <= x0 && box.xMax() >= x0) ||
-                                  (box.xMin() <= x1 && box.xMax() >= x1) ||
-                                  (box.xMax() >= x0 && box.xMin() <= x1)))) {
-            break;
-          }
+        if ((segment_overlaps_pin = box.intersects(seg_rect))) {
+          break;
         }
       }
     }
