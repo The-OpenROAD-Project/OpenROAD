@@ -5976,6 +5976,7 @@ proc repair_channel {channel layer_name net min_size} {
     if {$net == $net_name} {continue}
     lappend other_straps $stripe_locs($layer_name,$net_name)
   }
+  set channel_spacing [get_grid_channel_spacing $layer_name [expr $xMax - $xMin]]
   set shapes [odb::andSet [odb::newSetFromRect $xMin $yMin $xMax $yMax] [odb::orSets $other_straps]]
   set shapes [odb::shrinkSet [odb::bloatSet $shapes $channel_spacing] $channel_spacing]
   # debug "Number of rects = [llength [odb::getRectangles $shapes]]"
