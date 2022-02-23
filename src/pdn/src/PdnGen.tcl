@@ -870,7 +870,16 @@ proc get_all_pg_nets {} {
       }
     }
   }
- 
+
+  variable power_nets
+  variable ground_nets
+
+  foreach net [concat $power_nets $ground_nets] {
+    if {[lsearch $pg_nets $net] == -1} {
+      lappend pg_nets $net
+    }
+  }
+
   # debug $pg_nets
   return $pg_nets
 }
@@ -4512,9 +4521,10 @@ proc export_opendb_specialnets {} {
   variable stripe_locs
 
   foreach net_name [get_all_pg_nets] {
-    # debug "Write out $net_name"
-    # debug "layers: [array names stripe_locs]"
-    export_opendb_specialnet $net_name
+    if {[lsearch -regexp [array names stripe_locs] ",$net_name\$"] > -1} {
+      # debug "net: $net_name, layers: [array names stripe_locs]"
+      export_opendb_specialnet $net_name
+    }
   }
 
   export_opendb_global_connection
