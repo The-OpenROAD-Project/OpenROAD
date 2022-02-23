@@ -2582,8 +2582,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      //&& db_net->getSWires().empty() && db_net->getWire() == nullptr
-      ) {
+      && db_net->getSWires().empty() && db_net->getWire() == nullptr) {
     Net* net = new Net(db_net);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());
