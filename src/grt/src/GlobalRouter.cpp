@@ -2043,6 +2043,52 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
   }
 }
 
+bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
+                                       const int pin_layer,
+                                       const std::vector<odb::Rect>& pin_boxes,
+                                       const GRoute& route)
+{
+  bool segment_overlaps_pin = false;
+
+  // check if pin position on grid overlaps with the pin shape
+  for (const odb::Rect& box : pin_boxes) {
+    if ((segment_overlaps_pin = box.overlaps(pin_position))) {
+      break;
+    }
+  }
+
+  // check if pin position on grid overlaps with at least one GSegment
+  for (const odb::Rect& box : pin_boxes) {
+    for (const GSegment& seg : route) {
+      if (seg.init_layer == seg.final_layer &&  // ignore vias
+          seg.init_layer == pin_layer) {
+        int x0 = std::min(seg.init_x, seg.final_x);
+        int y0 = std::min(seg.init_y, seg.final_y);
+        int x1 = std::max(seg.init_x, seg.final_x);
+        int y1 = std::max(seg.init_y, seg.final_y);
+
+        if (x0 == x1) { // vertical segment
+          if ((segment_overlaps_pin = box.xMin() <= x0 && box.xMax() >= x0 &&
+                                 ((box.yMin() <= y0 && box.yMax() >= y0) || 
+                                  (box.yMin() <= y1 && box.yMax() >= y1) ||
+                                  (box.yMax() >= y0 && box.yMin() <= y1)))) {
+            break;
+          }
+        } else {
+          if ((segment_overlaps_pin = box.yMin() <= y0 && box.yMax() >= y0 &&
+                                 ((box.xMin() <= x0 && box.xMax() >= x0) ||
+                                  (box.xMin() <= x1 && box.xMax() >= x1) ||
+                                  (box.xMax() >= x0 && box.xMin() <= x1)))) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return segment_overlaps_pin;
+}
+
 void GlobalRouter::mergeResults(NetRouteMap& routes)
 {
   for (auto& net_route : routes) {

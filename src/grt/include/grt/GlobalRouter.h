@@ -304,6 +304,10 @@ class GlobalRouter
 
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
+  bool pinOverlapsGSegment(const odb::Point& pin_position,
+                           const int pin_layer,
+                           const std::vector<odb::Rect>& pin_boxes,
+                           const GRoute& route);
 
   // incremental funcions
   void updateDirtyRoutes();
