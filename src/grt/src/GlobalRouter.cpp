@@ -3037,7 +3037,7 @@ bool GlobalRouter::layerIsBlocked(int layer,
                       layer_obs.yMax() < lower_obs.yMax(); // north edge blocked
     }
 
-    if (blocked_above) {
+    if (blocked_below) {
       extended_obs.set_xlo(std::min(extended_obs.xMin(), lower_obs.xMin()));
       extended_obs.set_ylo(std::min(extended_obs.yMin(), lower_obs.yMin()));
       extended_obs.set_xhi(std::max(extended_obs.xMax(), lower_obs.xMax()));
