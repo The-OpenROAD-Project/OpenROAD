@@ -2211,6 +2211,15 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     }
   }
 
+  // keep init_x/y <= final_x/y
+  int x_tmp = pin_connection.init_x;
+  int y_tmp = pin_connection.init_y;
+  pin_connection.init_x = std::min(x_tmp, pin_connection.final_x);
+  pin_connection.init_y = std::min(y_tmp, pin_connection.final_y);
+
+  pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
+  pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
+
   return pin_connection;
 }
 
