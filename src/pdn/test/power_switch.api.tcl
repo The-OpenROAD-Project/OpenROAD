@@ -27,6 +27,8 @@ add_global_connection -net VDD_SW -pin_pattern VPWR -power
 add_global_connection -net VSS -pin_pattern VGND -ground
 add_global_connection -net VSS -pin_pattern VNB
 
+define_power_switch_cell -name POWER_SWITCH -control SLEEP -acknowledge SLEEP_OUT -power_switchable VDD -power VDDG -ground VGND
+
 define_pdn_grid -name grid -switch_cell POWER_SWITCH
 add_pdn_stripe -layer met1 -width 0.48 -offset 0 -followpins
 add_pdn_stripe -layer met4 -width 1.600 -pitch 27.140 -offset 13.570

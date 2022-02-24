@@ -174,6 +174,53 @@ proc define_pdn_grid {args} {
   pdngen::define_pdn_grid {*}[array get keys]
 }
 
+sta::define_cmd_args "define_power_switch_cell" {[-name <name>] \
+                                                 [-control <control_name>] \
+                                                 [-acknowledge <acknowledge_name>] \
+                                                 [-power_switchable <power_switchable_net_name>] \
+                                                 [-power <power_net_name> ] \
+                                                 [-ground <ground_net_name>] }
+
+proc define_power_switch_cell {args} {
+  pdngen::check_design_state
+
+  sta::parse_key_args "define_power_switch_cell" args \
+    keys {-name -control -acknowledge -power_switchable -power -ground} 
+
+  if {[llength $args] > 0} {
+    utl::error PDN 179 "Unexpected argument [lindex $args 0] for define_power_switch_cell command."
+  }
+
+  if {![info exists keys(-name)]} {
+    utl::error PDN 180 "The -name argument is required."
+  }
+
+  if {![info exists keys(-control)]} {
+    utl::error PDN 181 "The -control argument is required."
+  }
+
+  if {![info exists keys(-acknowledge)]} {
+    utl::error PDN 182 "The -acknowledge argument is required."
+  }
+
+  if {![info exists keys(-power_switchable)]} {
+    utl::error PDN 183 "The -power_switchable argument is required."
+  }
+
+  if {![info exists keys(-power)]} {
+    utl::error PDN 184 "The -power argument is required."
+  }
+
+  if {![info exists keys(-ground)]} {
+    utl::error PDN 185 "The -ground argument is required."
+  }
+
+  if {[llength $args] > 0} {
+    utl::error PDN 186 "Unrecognized argument [lindex $args 0] for define_power_switch_cell."
+  }
+
+  pdngen::define_power_switch_cell {*}[array get keys]
+}
 # set_voltage_domain -name CORE -power_net VDD  -ground_net VSS
 # set_voltage_domain -name VIN  -region_name TEMP_ANALOG -power_net VPWR -ground_net VSS
 
@@ -397,6 +444,7 @@ variable default_global_connections {
     {inst_name .* pin_name ^VSSE$}
   }
 }
+variable power_switch_cells {}
 variable voltage_domains {
   CORE {
     primary_power VDD primary_ground VSS
@@ -712,6 +760,30 @@ proc check_ground {ground_net_name} {
     }
   }
   return $ground_net_name
+}
+
+proc define_power_switch_cell {args} {
+  variable power_switch_cells
+
+  set power_switch_cell {}
+  set process_args $args
+  while {[llength $process_args] > 0} {
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
+      -name             {dict set power_switch_cell name $value}
+      -control          {dict set power_switch_cell control $value}
+      -acknowledge      {dict set power_switch_cell acknowledge $value}
+      -power_switchable {dict set power_switch_cell power_switchable $value}
+      -power            {dict set power_switch_cell power $value}
+      -ground           {dict set power_switch_cell ground $value}
+      default           {utl::error PDN 187 "Unrecognized argument $arg, should be one of -name, -control, -acknowledge, -power, -ground."}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+  dict set power_switch_cells [dict get $power_switch_cell name] $power_switch_cell
 }
 
 proc set_voltage_domain {args} {
@@ -3685,14 +3757,18 @@ proc generate_stripes {tag net_name} {
 
 proc insert_power_switches {} {
   variable grid_data
+  variable power_switch_cells
 
   set db [ord::get_db]
   set block [ord::get_db_block]
 
-  set psw [$db findMaster [dict get $grid_data switch_cell]]
+  set name [dict get $grid_data switch_cell]
+  set psw [$db findMaster $name]
   # The selected power switch is double height, and has a central VSS pin, so align with VSS rails
-  set vgnd [[$psw findMTerm VGND] getMPins]
-  set vddg [lindex [[$psw findMTerm VDDG] getMPins] 0]
+  set power [dict get $power_switch_cells $name power]
+  set ground [dict get $power_switch_cells $name ground]
+  set vgnd [[$psw findMTerm $ground] getMPins]
+  set vddg [lindex [[$psw findMTerm $power] getMPins] 0]
 
   set rail_lay [lindex [get_rails_layers] 0]
   set rail_width [dict get $grid_data rails $rail_lay width]
@@ -3706,12 +3782,14 @@ proc insert_power_switches {} {
 
   set row_idx 0
   set psw_instance {}
+  set num_crossing [expr ([llength [$block getRows]] - 1) / 2]
 
   foreach row [$block getRows] {
     set orient [$row getOrient]
     set box [$row getBBox]
     if {$orient == "R0"} {
-      if { [expr $row_idx % 2] == 0 } {
+      if { [expr $row_idx % 2] == 1 || $row_idx == $num_crossing} {
+        if { [expr $num_crossing % 2] == 1 && $row_idx == $num_crossing} {continue}
         set vss_y [$box yMin]
         set overlap_y [expr $vss_y - $rail_width / 2]
         
@@ -3745,13 +3823,13 @@ proc insert_power_switches {} {
   foreach inst $psw_instance {
     set orient [$inst getOrient]
     set origin [$inst getOrigin]
-    foreach vddg [$inst findITerm VDDG] {
+    foreach vddg [$inst findITerm $power] {
       set mTerm [$vddg getMTerm]
       foreach mPin [$mTerm getMPins] {
         set shape [$mPin getGeometry]
-	set layer [[$shape getTechLayer] getName]
-	set rect [transform_box [$shape xMin] [$shape yMin] [$shape xMax] [$shape yMax] $origin $orient]
-	# debug "layer: $layer, rect: $rect"
+        set layer [[$shape getTechLayer] getName]
+        set rect [transform_box [$shape xMin] [$shape yMin] [$shape xMax] [$shape yMax] $origin $orient]
+        # debug "layer: $layer, rect: $rect"
         add_stripe "${layer}_PIN_hor" "POWER" [odb::newSetFromRect {*}$rect]
       }
       # set vddg_layer [[[$vddg getGeometry] getTechLayer] getName]
