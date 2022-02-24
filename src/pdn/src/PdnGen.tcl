@@ -327,7 +327,11 @@ proc add_pdn_ring {args} {
 sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         -layers list_of_2_layers \
                                         [-cut_pitch pitch_value] \
-                                        [-fixed_vias list_of_vias]}
+                                        [-fixed_vias list_of_vias] \
+				        [-max_rows integer] \
+				        [-max_columns integer] \
+				        [-ongrid list_of_layers] \
+				        [-split_cuts list_of_layers]}
 
 # add_pdn_connect -grid main_grid -layers {metal1 metal2} -cut_pitch 0.16
 # add_pdn_connect -grid main_grid -layers {metal2 metal4}
@@ -337,7 +341,7 @@ proc add_pdn_connect {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-grid -layers -cut_pitch -fixed_vias} \
+    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts} \
 
   if {[llength $args] > 0} {
     utl::error PDN 136 "Unexpected argument [lindex $args 0] for add_pdn_connect command."
@@ -725,6 +729,34 @@ proc check_number {value} {
   return $value
 }
 
+proc check_integer {value} {
+  if {![string is integer $value]} {
+    error "value ($value) not recognized as a number."
+  }
+
+  return $value
+}
+
+proc check_max_rows {value} {
+  foreach item $value {
+    if {[catch {check_integer $item} msg]} {
+      utl::error PDN 177 "Problem with max_rows specification, $msg."
+    }
+  }
+
+  return $value
+}
+
+proc check_max_columns {value} {
+  foreach item $value {
+    if {[catch {check_number $item} msg]} {
+      utl::error PDN 178 "Problem with max_columns specification, $msg."
+    }
+  }
+
+  return $value
+}
+
 proc check_halo {value} {
   foreach item $value {
     if {[catch {check_number $item} msg]} {
@@ -1073,6 +1105,10 @@ proc add_pdn_connect {args} {
       -layers          {;}
       -cut_pitch       {dict set layers constraints cut_pitch $value}
       -fixed_vias      {dict set layers fixed_vias [check_fixed_vias $value]}
+      -max_rows        {dict set layers constraints max_rows [check_max_rows $value]}
+      -max_columns     {dict set layers constraints max_columns [check_max_columns $value]}
+      -ongrid          {dict set layers constraints ongrid [check_layer_names $value]}
+      -split_cuts      {dict set layers constraints split_cuts [check_layer_names $value]}
       default          {utl::error PDN 126 "Unrecognized argument $arg, should be one of -grid, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
     }
 

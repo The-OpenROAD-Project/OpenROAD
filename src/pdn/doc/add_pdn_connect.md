@@ -6,7 +6,11 @@
     [-grid grid_name] \
     [-layers list_of_two_layers] \
     [-cut_pitch pitch_value] \
-    [-fixed_vias list_of_fixed_vias]
+    [-fixed_vias list_of_fixed_vias] \
+    [-max_rows integer] \
+    [-max_columns integer] \
+    [-ongrid list_of_layers] \
+    [-split_cuts list_of_layers]
 ```
 
 ## Description
@@ -18,6 +22,9 @@ The `-grid` argument defines the name of the grid to which this stripe specifica
 The `-layers` argument defines which two layers are to be connected together. Where power stripes on these two layers overlap one or more vias are added in a vertical stack to connect the layers together - this is repeated for ground nets.If the area of the overlap does not cover the width of both layers, then a via stack will not be added.
 Usually, the two layers are orthogonal to each other, but in the case of dual layer stdcell rails, the two layers overlap and a the `-cut_pitch` argument is used to specify the pitch of via placements along the conincident wires.
 The `-fixed_vias` argument is used to specify a list of fixed vias defined in the technology file to build the vias stack between the specified layers.
+The -max_rows and -max_columns options can be used to restrict the size of the via to be inserted at any given crossing, limiting the number of rows and columns in the array of cuts.
+Connections made between non-adjacent layers in the metal stack will necessarily result in metal being added around the via cuts on each layer inbetween. The -ongrid option can be used to specify that metal added on the specified intermediate layer(s) should be on the routing grid.
+The -split_cuts option specifies that single cut vias should be used on the crossing
 
 ## Options
 
@@ -27,6 +34,11 @@ The `-fixed_vias` argument is used to specify a list of fixed vias defined in th
 | `-layers` | Layers to be connected where there are overlapping power or overlapping ground nets |
 | `-cut_pitch` | When the two layers are parallel e.g. overlapping stdcell rails, specify the distance between via cuts |
 | `-fixed_vias` | list of fixed vias to be used to form the via stack |
+| `-max_rows` | Specify a limit to the maximum number of rows in the via connection between the two layers |
+| `-max_columns` | Specify a limit to the maximum number of columns in the via connection between the two layers |
+| `-ongrid` | Force intermediate metal layers in a via stack to be on the routing grid |
+| `-split_cuts` | A number of single cut vias will be used instead of a single multi-cut via |
+
 
 
 ## Examples
