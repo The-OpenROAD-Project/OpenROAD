@@ -87,10 +87,7 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
         x_itr = prev(x_itr);
       } else {  // do nothing as x_itr has the correct value
       }
-      // cout <<"Added current source" <<endl;
       return NearestYNode(x_itr, t_y);
-      // cout <<"Added current source" <<endl;
-
     } else {
       NodeMap::iterator x_prev;
       x_prev = prev(x_itr);
@@ -287,25 +284,52 @@ void GMat::GenerateStripeConductance(int t_l,
     NodeMap::iterator x_prev;
     // int               y_loc = (t_y_min + t_y_max) / 2;
     int i = 0;
-    for (x_itr = layer_map.lower_bound(t_x_min);
-         x_itr != layer_map.upper_bound(t_x_max); ++x_itr) {
-      map<int, Node*>::iterator y_itr = (x_itr->second).lower_bound(t_y_min);
+    NodeMap::iterator x_start = layer_map.lower_bound(t_x_min);
+    NodeMap::iterator x_end = layer_map.upper_bound(t_x_max);
+    map<int, Node*>::iterator y_itr;
+    //code to find the first node along x that is before the stripe within the
+    //y bounds of the stripe
+    if(x_start != layer_map.begin()) 
+      x_start = prev(x_start);
+    while(x_start != layer_map.begin() ){
+      y_itr = (x_start->second).lower_bound(t_y_min);
+      if (y_itr == (x_start->second).end())
+        x_start = prev(x_start);
+      else if (y_itr->first < t_y_min || y_itr->first > t_y_max)
+        x_start = prev(x_start);
+      else 
+        break;
+    }
+    while(x_end != layer_map.end() ){
+      y_itr = (x_end->second).lower_bound(t_y_min);
+      if (y_itr == (x_end->second).end())
+        x_end = next(x_end);
+      else if (y_itr->first < t_y_min || y_itr->first > t_y_max)
+        x_end = next(x_end);
+      else 
+        break;
+    }
+    //point to one after the end 
+    if(x_end != layer_map.end()) 
+      x_end = next(x_end);
+    for (x_itr = x_start;
+         x_itr != x_end; ++x_itr) {
+      y_itr = (x_itr->second).lower_bound(t_y_min);
+      //check first if the node is within y bounds
       if (y_itr == (x_itr->second).end())
         continue;
       else if (y_itr->first < t_y_min || y_itr->first > t_y_max)
         continue;
-      // if ((x_itr->second).find(y_loc) == (x_itr->second).end()) {
-      //  continue;
-      //}
+      Node* node1 = y_itr->second;
+      if(x_itr->first + (node1->GetBbox()).first  < t_x_min)
+        continue; 
+      else if(x_itr->first - (node1->GetBbox()).first  > t_x_max)
+        continue;
       if (i == 0) {
         i = 1;
       } else {
-        y_itr = (x_itr->second).lower_bound(t_y_min);
-        Node* node1 = y_itr->second;
         y_itr = (x_prev->second).lower_bound(t_y_min);
         Node* node2 = y_itr->second;
-        // Node* node1 = (x_itr->second).at(y_loc);
-        // Node*  node2  = (x_prev->second).at(y_loc);
         int width = t_y_max - t_y_min;
         int length = x_itr->first - x_prev->first;
         double cond = GetConductivity(width, length, t_rho);
@@ -314,22 +338,31 @@ void GMat::GenerateStripeConductance(int t_l,
       x_prev = x_itr;
     }
   } else {
-    // int                       x_loc = (t_x_min + t_x_max) / 2;
-
     map<pair<int, int>, Node*> y_map;
     for (auto x_itr = layer_map.lower_bound(t_x_min);
          x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
       map<int, Node*> y_itr_map = x_itr->second;
-      map<int, Node*>::iterator y_map_itr;
-      for (y_map_itr = y_itr_map.lower_bound(t_y_min);
-           y_map_itr != y_itr_map.end() && y_map_itr->first <= t_y_max;
-           ++y_map_itr)
+      map<int, Node*>::iterator y_map_start, y_map_end;
+      //check one extra node awy to see if it fits when including the 
+      //bounding box
+      y_map_start = y_itr_map.lower_bound(t_y_min);
+      y_map_end = y_itr_map.upper_bound(t_y_max);
+      if(y_map_start != y_itr_map.begin())
+        y_map_start = prev(y_map_start);
+      if(y_map_end != y_itr_map.end())
+        y_map_end = next(y_map_end);
+
+      for (auto y_map_itr = y_map_start; y_map_itr != y_map_end; ++y_map_itr){
+        Node* node1 = y_map_itr->second;
+        if(y_map_itr->first + (node1->GetBbox()).second  < t_y_min)
+          continue;
+        else if(y_map_itr->first - (node1->GetBbox()).second  > t_y_max)
+          continue;
         y_map.insert(make_pair(make_pair(y_map_itr->first, x_itr->first),
-                               y_map_itr->second));
+                               node1));
+      }
     }
 
-    // map<int, Node*>           y_map = layer_map.at(x_loc);
-    // map<pair<int,int>, Node*>::iterator y_prev;
     pair<pair<int, int>, Node*> y_prev;
     int i = 0;
     for (auto& y_itr : y_map) {
