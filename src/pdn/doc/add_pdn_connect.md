@@ -24,7 +24,7 @@ Usually, the two layers are orthogonal to each other, but in the case of dual la
 The `-fixed_vias` argument is used to specify a list of fixed vias defined in the technology file to build the vias stack between the specified layers.
 The -max_rows and -max_columns options can be used to restrict the size of the via to be inserted at any given crossing, limiting the number of rows and columns in the array of cuts.
 Connections made between non-adjacent layers in the metal stack will necessarily result in metal being added around the via cuts on each layer inbetween. The -ongrid option can be used to specify that metal added on the specified intermediate layer(s) should be on the routing grid.
-The -split_cuts option specifies that single cut vias should be used on the crossing
+The -split_cuts option specifies that single cut vias should be used on the crossing. Specify a list of layers, vias connecting to the specified layers will be split into single cut vias, rather than a single multi-cut via.
 
 ## Options
 
