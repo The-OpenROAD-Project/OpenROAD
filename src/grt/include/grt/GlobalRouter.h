@@ -162,6 +162,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
+  void setPinOffset(int pin_offset);
   void printGrid();
 
   // flow functions
@@ -304,6 +305,10 @@ class GlobalRouter
 
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
+  bool pinOverlapsGSegment(const odb::Point& pin_position,
+                           const int pin_layer,
+                           const std::vector<odb::Rect>& pin_boxes,
+                           const GRoute& route);
 
   // incremental funcions
   void updateDirtyRoutes();
@@ -370,7 +375,7 @@ class GlobalRouter
   int min_routing_layer_;
   int max_routing_layer_;
   int layer_for_guide_dimension_;
-  const int gcells_offset_ = 2;
+  int gcells_offset_;
   int overflow_iterations_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;
