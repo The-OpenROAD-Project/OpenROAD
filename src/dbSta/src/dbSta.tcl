@@ -85,5 +85,22 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
+rename report_units report_units_raw
+
+proc report_units { args } {
+
+  report_units_raw $args
+
+  utl::push_metrics_stage "run__flow__platform__{}_units"
+
+  foreach unit {{"time" "timing"} {"power" "power"} {"distance" "distance"}} {
+    set utype [lindex $unit 0]
+    set umetric [lindex $unit 1]
+    utl::metric "$umetric" "[unit_suffix $utype]"
+  }
+
+  utl::pop_metrics_stage
+}
+
 # namespace
 }
