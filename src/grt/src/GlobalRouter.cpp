@@ -88,6 +88,7 @@ GlobalRouter::GlobalRouter()
       min_routing_layer_(1),
       max_routing_layer_(-1),
       layer_for_guide_dimension_(3),
+      gcells_offset_(2),
       overflow_iterations_(50),
       allow_congestion_(false),
       macro_extension_(0),
@@ -675,7 +676,10 @@ void GlobalRouter::findPins(Net* net,
     odb::dbTechLayer* layer = routing_layers_[top_layer];
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstructions
-    if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
+    if ((pin.isConnectedToPad() ||
+         pin.isPort()) &&
+         !net->isLocal() &&
+         gcells_offset_ != 0) {
       GSegment pin_connection = createFakePin(pin, pin_position, layer);
       pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
     }
@@ -1289,6 +1293,11 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
+}
+
+void GlobalRouter::setPinOffset(int pin_offset)
+{
+  gcells_offset_ = pin_offset;
 }
 
 void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
@@ -2000,16 +2009,9 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       pin_boxes = pin.getBoxes().at(top_layer);
       pin_position = pin.getOnGridPosition();
 
-      bool segment_overlaps_pin = false;
-      for (const odb::Rect& box : pin_boxes) {
-        if ((segment_overlaps_pin = box.overlaps(pin_position))) {
-          break;
-        }
-      }
-
       // create the local connection only when the global segment
       // doesn't overlap the pin, avoiding loops in the routing
-      if (!segment_overlaps_pin) {
+      if (!pinOverlapsGSegment(pin_position, top_layer, pin_boxes, route)) {
         int minimum_distance = std::numeric_limits<int>::max();
         for (const odb::Rect& pin_box : pin_boxes) {
           odb::Point pos = getRectMiddle(pin_box);
@@ -2038,6 +2040,45 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       }
     }
   }
+}
+
+bool GlobalRouter::pinOverlapsGSegment(const odb::Point& pin_position,
+                                       const int pin_layer,
+                                       const std::vector<odb::Rect>& pin_boxes,
+                                       const GRoute& route)
+{
+  bool segment_overlaps_pin = false;
+
+  // check if pin position on grid overlaps with the pin shape
+  for (const odb::Rect& box : pin_boxes) {
+    if ((segment_overlaps_pin = box.overlaps(pin_position))) {
+      break;
+    }
+  }
+
+  if (segment_overlaps_pin) {
+    return segment_overlaps_pin;
+  }
+
+  // check if pin position on grid overlaps with at least one GSegment
+  for (const odb::Rect& box : pin_boxes) {
+    for (const GSegment& seg : route) {
+      if (seg.init_layer == seg.final_layer &&  // ignore vias
+          seg.init_layer == pin_layer) {
+        int x0 = std::min(seg.init_x, seg.final_x);
+        int y0 = std::min(seg.init_y, seg.final_y);
+        int x1 = std::max(seg.init_x, seg.final_x);
+        int y1 = std::max(seg.init_y, seg.final_y);
+        odb::Rect seg_rect(x0, y0, x1, y1);
+
+        if ((segment_overlaps_pin = box.intersects(seg_rect))) {
+          break;
+        }
+      }
+    }
+  }
+
+  return segment_overlaps_pin;
 }
 
 void GlobalRouter::mergeResults(NetRouteMap& routes)
@@ -2162,6 +2203,15 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     }
   }
 
+  // keep init_x/y <= final_x/y
+  int x_tmp = pin_connection.init_x;
+  int y_tmp = pin_connection.init_y;
+  pin_connection.init_x = std::min(x_tmp, pin_connection.final_x);
+  pin_connection.init_y = std::min(y_tmp, pin_connection.final_y);
+
+  pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
+  pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
+
   return pin_connection;
 }
 
@@ -2169,7 +2219,10 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
 {
   odb::Point fake_position = pin.getOnGridPosition();
   Net* net = db_net_map_[db_net];
-  if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
+  if ((pin.isConnectedToPad() ||
+       pin.isPort()) &&
+       !net->isLocal() &&
+       gcells_offset_ != 0) {
     odb::dbTechLayer* layer = routing_layers_[pin.getTopLayer()];
     createFakePin(pin, fake_position, layer);
   }
