@@ -2133,8 +2133,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   };
 
   // RTree used to search for overlapping shapes and decide if rotation of text is needed.
-  using RTree = bgi::rtree<Search::Box, bgi::quadratic<16>>;
-  std::map<odb::dbTechLayer*, RTree> pin_text_spec_shapes;
+  bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText {
     Search::Box rect;
     bool can_rotate;
@@ -2243,7 +2242,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
             text_rect.bloat(text_margin, text_rect);
             pin_specs.rect = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
                                          Search::Point(text_rect.xMax(), text_rect.yMax()));
-            pin_text_spec_shapes[layer].insert(pin_specs.rect);
+            pin_text_spec_shapes.insert(pin_specs.rect);
           }
           pin_text_spec.push_back(pin_specs);
         }
@@ -2257,10 +2256,9 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
     bool do_rotate = false;
     auto anchor = pin.anchor;
     if (pin.can_rotate) {
-      const auto& layer_pin_text_spec_shapes = pin_text_spec_shapes[layer];
-      if (layer_pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect) && bgi::satisfies([&](const auto& other) {
+      if (pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect) && bgi::satisfies([&](const auto& other) {
           return !bg::equals(other, pin.rect);
-        })) != layer_pin_text_spec_shapes.qend()) {
+        })) != pin_text_spec_shapes.qend()) {
         // adjust anchor
         if (pin.anchor == Painter::BOTTOM_CENTER) {
           anchor = Painter::RIGHT_CENTER;
