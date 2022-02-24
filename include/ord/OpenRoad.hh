@@ -87,6 +87,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace dpo {
+class Optdp;
+}
+
 namespace fin {
 class Finale;
 }
@@ -163,6 +167,7 @@ public:
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
+  dpo::Optdp *getOptdp() { return optdp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
@@ -255,6 +260,7 @@ private:
   rsz::Resizer *resizer_;
   ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
+  dpo::Optdp *optdp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
   mpl::MacroPlacer2 *macro_placer2_;
@@ -276,19 +282,6 @@ private:
 
   int threads_;
 };
-
-// Return the bounding box of the db rows.
-odb::Rect
-getCore(odb::dbBlock *block);
-
-// Return the point inside rect that is closest to pt.
-odb::Point
-closestPtInRect(odb::Rect rect,
-		odb::Point pt);
-odb::Point
-closestPtInRect(odb::Rect rect,
-		int x,
-		int y);
 
 int
 tclAppInit(Tcl_Interp *interp);

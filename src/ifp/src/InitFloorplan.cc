@@ -46,7 +46,6 @@
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
 
-#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 namespace ifp {
@@ -307,6 +306,13 @@ InitFloorplan::initFloorplan(double die_lx,
       // core lower left corner to multiple of site dx/dy.
       int clx = divCeil(metersToDbu(core_lx), site_dx) * site_dx;
       int cly = divCeil(metersToDbu(core_ly), site_dy) * site_dy;
+      if (clx != core_lx || cly != core_ly) {
+        dbTech *tech = db_->getTech();
+        const double dbu = tech->getDbUnitsPerMicron();
+        logger_->warn(IFP, 28,
+                      "Core area lower left ({:.3f}, {:.3f}) snapped to ({:.3f}, {:.3f}).",
+                      1e6 * core_lx, 1e6 * core_ly, clx / dbu, cly / dbu);
+      }
       int cux = metersToDbu(core_ux);
       int cuy = metersToDbu(core_uy);
       makeRows(site, clx, cly, cux, cuy);
@@ -477,7 +483,8 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTech *tech = db_->getTech();
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
-	Rect core = ord::getCore(block_);
+        odb::Rect core;
+        block_->getCoreArea(core);
 	autoPlacePins(pin_layer, core);
       }
       else

@@ -143,8 +143,16 @@ entries:
     title: Build Locally
   - file: user/UserGuide
     title: User Guide
+  - file: user/FlowVariables
+    title: Flow Variables
   - file: contrib/Metrics
     title: Metrics
+  - file: user/InstructionsForAutoTuner
+    title: AutoTuner
+
 
 - file: user/FAQS
   title: FAQs
+
+- file: tutorials/FlowTutorial
+  title: Flow Tutorial

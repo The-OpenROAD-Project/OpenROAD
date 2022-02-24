@@ -41,6 +41,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                Logger* logger)
     : logger_(logger),
       settings_(settings),
+      inst_(nullptr),
       gui_(gui::Gui::get()),
       pin_(nullptr),
       inst_term_(nullptr),
@@ -65,15 +66,21 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     MAX_THREADS = 1;
   }
 
-  // Break pinName into inst_name_ and term_name_ at ':'
-  size_t pos = settings_->pinName.rfind(':');
-  if (pos == std::string::npos) {
-    logger_->error(
-        DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+  if (!settings_->pinName.empty()) {
+    // Break pinName into inst_name_ and term_name_ at ':'
+    size_t pos = settings_->pinName.rfind(':');
+    if (pos == std::string::npos) {
+      logger_->error(
+          DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+    }
+    term_name_ = settings_->pinName.substr(pos + 1);
+    auto inst_name = settings_->pinName.substr(0, pos);
+    if (inst_name == "PIN") {  // top level bterm
+      inst_ = nullptr;
+    } else {
+      inst_ = design->getTopBlock()->getInst(inst_name);
+    }
   }
-  term_name_ = settings_->pinName.substr(pos + 1);
-  auto inst_name = settings_->pinName.substr(0, pos);
-  inst_ = design->getTopBlock()->getInst(inst_name);
 
   gui_->registerRenderer(this);
 }
@@ -149,36 +156,60 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(color, /* cosmetic */ true);
 
     Point pt = ap.getPoint();
-    painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
-    painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
+    painter.drawX(pt.x(), pt.y(), 50);
   }
 }
 
-void FlexPAGraphics::startPin(frPin* pin,
+void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
                               set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
-  aps_.clear();
 
-  frTerm* term = pin->getTerm();
-  std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
-                     + term->getName();
+  frMTerm* term = pin->getTerm();
   if (!settings_->pinName.empty()) {
-    if (term->getName() != term_name_) {
+    if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (inst_term && instClass->find(inst_) == instClass->end()) {
+    if (instClass->find(inst_) == instClass->end()) {
       return;
     }
   }
 
+  const std::string name
+      = inst_term->getInst()->getName() + ':' + term->getName();
   status("Start pin: " + name);
   pin_ = pin;
   inst_term_ = inst_term;
 
   Rect box;
   inst_term->getInst()->getBBox(box);
+  gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
+  gui_->pause();
+}
+
+void FlexPAGraphics::startPin(frBPin* pin,
+                              frInstTerm* inst_term,
+                              set<frInst*, frBlockObjectComp>* instClass)
+{
+  pin_ = nullptr;
+
+  frBTerm* term = pin->getTerm();
+  if (!settings_->pinName.empty()) {
+    if (inst_ != nullptr) {
+      return;
+    }
+    if (term_name_ != "*" && term->getName() != term_name_) {
+      return;
+    }
+  }
+
+  const std::string name = "PIN:" + term->getName();
+  status("Start pin: " + name);
+  pin_ = pin;
+  inst_term_ = nullptr;
+
+  Rect box = term->getBBox();
   gui_->zoomTo({box.xMin(), box.yMin(), box.xMax(), box.yMax()});
   gui_->pause();
 }
@@ -218,6 +249,7 @@ void FlexPAGraphics::setAPs(
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
+  aps_.clear();
 }
 
 void FlexPAGraphics::setViaAP(
@@ -293,9 +325,12 @@ void FlexPAGraphics::setPlanarAP(
 
 void FlexPAGraphics::setObjsAndMakers(
     const vector<pair<frConnFig*, frBlockObject*>>& objs,
-    const std::vector<std::unique_ptr<frMarker>>& markers)
+    const std::vector<std::unique_ptr<frMarker>>& markers,
+    const FlexPA::PatternType type)
 {
-  if (!settings_->paCombining) {
+  if ((!settings_->paCommit && !settings_->paEdge)
+      || (settings_->paCommit && type != FlexPA::Commit)
+      || (settings_->paEdge && type != FlexPA::Edge)) {
     return;
   }
 

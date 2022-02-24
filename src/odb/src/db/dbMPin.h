@@ -34,6 +34,7 @@
 
 #include "dbCore.h"
 #include "dbId.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -44,6 +45,7 @@ class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbAccessPoint;
 
 class _dbMPin : public _dbObject
 {
@@ -52,6 +54,10 @@ class _dbMPin : public _dbObject
   dbId<_dbMTerm> _mterm;
   dbId<_dbBox> _geoms;
   dbId<_dbMPin> _next_mpin;
+  dbVector<dbVector<dbId<_dbAccessPoint>>>
+      aps_;  // A vector of access points for each unique instance(master,
+             // orient, origin relevant to track). The outer index is the
+             // pin-access/unique-instance idx.
 
   _dbMPin(_dbDatabase*, const _dbMPin& p);
   _dbMPin(_dbDatabase*);
@@ -61,6 +67,7 @@ class _dbMPin : public _dbObject
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbMPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void addAccessPoint(uint idx, _dbAccessPoint* ap);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin);

@@ -214,71 +214,6 @@ bool HighlightModel::setData(const QModelIndex& index,
   return false;
 }
 
-HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
-    : QStyledItemDelegate(parent),
-      items_(),
-      table_model_(nullptr)
-{
-  items_.push_back("Group 1");
-  items_.push_back("Group 2");
-  items_.push_back("Group 3");
-  items_.push_back("Group 4");
-  items_.push_back("Group 5");
-  items_.push_back("Group 6");
-  items_.push_back("Group 7");
-  items_.push_back("Group 8");
-}
-
-QWidget* HighlightGroupDelegate::createEditor(
-    QWidget* parent,
-    const QStyleOptionViewItem& /* option */,
-    const QModelIndex& index) const
-{
-  QComboBox* editor = new QComboBox(parent);
-  for (unsigned int i = 0; i < items_.size(); ++i) {
-    editor->addItem(items_[i].c_str());
-  }
-  editor->setFrame(true);
-  editor->setEditable(true);
-  return editor;
-}
-
-void HighlightGroupDelegate::setEditorData(QWidget* editor,
-                                           const QModelIndex& index) const
-{
-  QString value = index.model()->data(index, Qt::EditRole).toString();
-  QComboBox* combo_box = static_cast<QComboBox*>(editor);
-  combo_box->setCurrentText(value);
-}
-
-void HighlightGroupDelegate::setModelData(QWidget* editor,
-                                          QAbstractItemModel* model,
-                                          const QModelIndex& index) const
-{
-  QComboBox* combo_box = static_cast<QComboBox*>(editor);
-  model->setData(index, combo_box->currentIndex(), Qt::EditRole);
-}
-
-void HighlightGroupDelegate::updateEditorGeometry(
-    QWidget* editor,
-    const QStyleOptionViewItem& option,
-    const QModelIndex& /* index */) const
-{
-  editor->setGeometry(option.rect);
-}
-
-void HighlightGroupDelegate::paint(QPainter* painter,
-                                   const QStyleOptionViewItem& option,
-                                   const QModelIndex& index) const
-{
-  QStyleOptionViewItem my_option = option;
-
-  QString text = index.model()->data(index, Qt::EditRole).toString();
-  my_option.text = text;
-  QApplication::style()->drawControl(
-      QStyle::CE_ItemViewItem, &my_option, painter);
-}
-
 SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
                                              const HighlightSet& hlt_set,
                                              QWidget* parent)
@@ -319,11 +254,13 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
     sel_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
   }
   sel_header->setSectionResizeMode(sel_header->count()-1, QHeaderView::Stretch);
+  ui_.selTableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   auto hlt_header = ui_.hltTableView->horizontalHeader();
   for (int i = 0; i < hlt_header->count()-1; i++) {
     hlt_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
   }
   hlt_header->setSectionResizeMode(hlt_header->count()-1, QHeaderView::Stretch);
+  ui_.hltTableView->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
   QAction* remove_all_sel_items = select_context_menu_->addAction("Clear All");
@@ -354,6 +291,9 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   highlight_context_menu_->addSeparator();
   QAction* show_hlt_item_act
       = highlight_context_menu_->addAction("Zoom In Layout");
+  highlight_context_menu_->addSeparator();
+  QAction* change_group_act
+      = highlight_context_menu_->addAction("Change group");
 
   connect(
       remove_hlt_item_act, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
@@ -364,6 +304,10 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
           SIGNAL(triggered()),
           this,
           SLOT(zoomInHighlightedItems()));
+  connect(change_group_act,
+          SIGNAL(triggered()),
+          this,
+          SLOT(changeHighlight()));
 
   connect(ui_.selTableView->selectionModel(),
           &QItemSelectionModel::selectionChanged,
@@ -470,6 +414,16 @@ void SelectHighlightWindow::zoomInHighlightedItems()
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
+}
+
+void SelectHighlightWindow::changeHighlight()
+{
+  auto sel_indices = ui_.hltTableView->selectionModel()->selectedRows();
+  QList<const Selected*> items;
+  for (auto& sel_item : sel_indices) {
+    items << highlight_model_.getItemAt(sel_item.row());
+  }
+  emit highlightSelectedItemsSig(items);
 }
 
 }  // namespace gui

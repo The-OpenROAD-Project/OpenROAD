@@ -46,6 +46,9 @@
 #include "db.h"
 #include "displayControls.h"
 
+#include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
@@ -247,6 +250,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       ignore_callback_(false),
       db_(nullptr),
       logger_(nullptr),
+      sta_(nullptr),
       tech_inited_(false)
 {
   setObjectName("layers");  // for settings
@@ -263,10 +267,12 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   createLayerMenu();
 
+  auto* root = model_->invisibleRootItem();
+
   auto layers = makeParentItem(
       layers_group_,
       "Layers",
-      model_,
+      root,
       Qt::Checked,
       true);
   view_->expand(layers->index());
@@ -275,7 +281,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto nets_parent = makeParentItem(
       nets_group_,
       "Nets",
-      model_,
+      root,
       Qt::Checked,
       true);
 
@@ -290,23 +296,65 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto instances_parent = makeParentItem(
       instance_group_,
       "Instances",
-      model_,
+      root,
       Qt::Checked,
       true);
 
   // make instance items, non-null last argument to create checkbox
-  makeLeafItem(instances_.core, "StdCells", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.blocks, "Macros", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.fill, "Fill", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.endcap, "Endcap", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.welltap, "Welltap", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.pads, "Pads", instances_parent, Qt::Checked, true);
-  makeLeafItem(instances_.cover, "Cover", instances_parent, Qt::Checked, true);
+  // stdcell instances
+  auto stdcell_parent = makeParentItem(
+      instances_.stdcells,
+      "StdCells",
+      instance_group_.name,
+      Qt::Checked,
+      true);
+
+  auto bufinv_parent = makeParentItem(
+      stdcell_instances_.bufinv,
+      "Buffers/Inverters",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(bufinv_instances_.timing, "Timing opt.", bufinv_parent, Qt::Checked, true);
+  makeLeafItem(bufinv_instances_.other, "Netlist", bufinv_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.bufinv);
+
+  makeLeafItem(stdcell_instances_.combinational, "Combinational", stdcell_parent, Qt::Checked, true);
+  makeLeafItem(stdcell_instances_.sequential, "Sequential", stdcell_parent, Qt::Checked, true);
+  auto clock_tree_parent = makeParentItem(
+      stdcell_instances_.clock_tree,
+      "Clock tree",
+      stdcell_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(clock_tree_instances_.bufinv, "Buffer/Inverter", clock_tree_parent, Qt::Checked, true);
+  makeLeafItem(clock_tree_instances_.clock_gates, "Clock gate", clock_tree_parent, Qt::Checked, true);
+  toggleParent(stdcell_instances_.clock_tree);
+  makeLeafItem(stdcell_instances_.level_shiters, "Level shifter", stdcell_parent, Qt::Checked, true);
+  toggleParent(instances_.stdcells);
+
+  makeLeafItem(instances_.blocks, "Macro", instances_parent, Qt::Checked, true);
+  makeLeafItem(instances_.pads, "Pad", instances_parent, Qt::Checked, true);
+  auto phys_parent = makeParentItem(
+      instances_.physical,
+      "Physical",
+      instances_parent,
+      Qt::Checked,
+      true);
+  makeLeafItem(physical_instances_.fill, "Fill cell", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.endcap, "Endcap", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tap, "Welltap", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.tie, "Tie high/low", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.antenna, "Antenna", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.cover, "Cover", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.bump, "Bump", phys_parent, Qt::Checked, true);
+  makeLeafItem(physical_instances_.other, "Other", phys_parent, Qt::Checked, true);
+  toggleParent(instances_.physical);
   toggleParent(instance_group_);
 
   // Blockages group
   auto blockages = makeParentItem(
-      blockage_group_, "Blockages", model_, Qt::Checked, true);
+      blockage_group_, "Blockages", root, Qt::Checked, true);
   placement_blockage_color_ = Qt::darkGray;
   placement_blockage_pattern_ = Qt::BDiagPattern;
 
@@ -317,25 +365,26 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Rulers
   ruler_font_ = QApplication::font(); // use default font
   ruler_color_ = Qt::cyan;
-  makeParentItem(rulers_, "Rulers", model_, Qt::Checked, true, row_color_);
+  makeParentItem(rulers_, "Rulers", root, Qt::Checked, true, row_color_);
   setNameItemDoubleClickAction(rulers_, [this]() {
     ruler_font_ = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
   });
 
   // Rows
   row_color_ = QColor(0, 0xff, 0, 0x70);
-  makeParentItem(rows_, "Rows", model_, Qt::Unchecked, false, row_color_);
+  makeParentItem(rows_, "Rows", root, Qt::Unchecked, false, row_color_);
 
   // Rows
-  makeParentItem(pin_markers_, "Pin Markers", model_, Qt::Checked);
+  makeParentItem(pin_markers_, "Pin Markers", root, Qt::Checked);
   pin_markers_font_ = QApplication::font(); // use default font
   setNameItemDoubleClickAction(pin_markers_, [this]() {
     pin_markers_font_ = QFontDialog::getFont(nullptr, pin_markers_font_, this, "Pin marker font");
   });
 
+
   // Track patterns group
   auto tracks = makeParentItem(
-      tracks_group_, "Tracks", model_, Qt::Unchecked);
+      tracks_group_, "Tracks", root, Qt::Unchecked);
 
   makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
   makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
@@ -343,20 +392,30 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   // Misc group
   auto misc = makeParentItem(
-      misc_group_, "Misc", model_, Qt::Unchecked);
+      misc_group_, "Misc", root, Qt::Unchecked);
 
   instance_name_font_ = QApplication::font(); // use default font
   instance_name_color_ = Qt::yellow;
 
-  makeLeafItem(misc_.instance_names, "Instance names", misc, Qt::Checked, false, instance_name_color_);
+  auto instance_shape = makeParentItem(
+      misc_.instances, "Instances", misc, Qt::Checked);
+  makeLeafItem(instance_shapes_.names, "Names", instance_shape, Qt::Checked, false, instance_name_color_);
+  makeLeafItem(instance_shapes_.pins, "Pins", instance_shape, Qt::Checked);
+  makeLeafItem(instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
+  toggleParent(misc_.instances);
+  setNameItemDoubleClickAction(instance_shapes_.names, [this]() {
+    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
+  });
+
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
+  makeLeafItem(misc_.access_points, "Access Points", misc, Qt::Unchecked);
+  makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
   toggleParent(misc_group_);
-  setNameItemDoubleClickAction(misc_.instance_names, [this]() {
-    instance_name_font_ = QFontDialog::getFont(nullptr, instance_name_font_, this, "Instance name font");
-  });
+
+  checkLiberty();
 
   setWidget(view_);
   connect(model_,
@@ -435,95 +494,93 @@ void DisplayControls::createLayerMenu()
 
 void DisplayControls::writeSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto asBool
-      = [](QStandardItem* item) { return item->checkState() == Qt::Checked; };
+  writeSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
 
-  settings->beginGroup(row.name->text());
-  settings->setValue("visible", asBool(row.visible));
-  if (row.selectable != nullptr) {
-    settings->setValue("selectable", asBool(row.selectable));
+void DisplayControls::writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible, const QStandardItem* selectable)
+{
+  auto asBool
+      = [](const QStandardItem* item) { return item->checkState() == Qt::Checked; };
+
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      writeSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    settings->setValue("visible", asBool(visible));
+    if (selectable != nullptr) {
+      settings->setValue("selectable", asBool(selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettingsForRow(QSettings* settings, const ModelRow& row)
 {
-  auto getChecked = [](QSettings* settings, QString name, bool default_value) {
-    return settings->value(name, default_value).toBool() ? Qt::Checked : Qt::Unchecked;
+  readSettingsForRow(settings, row.name, row.visible, row.selectable);
+}
+
+void DisplayControls::readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible, QStandardItem* selectable)
+{
+  auto getChecked = [](QSettings* settings, QString name, const QStandardItem* item) {
+    return settings->value(name, item->checkState() == Qt::Checked).toBool() ? Qt::Checked : Qt::Unchecked;
   };
 
-  settings->beginGroup(row.name->text());
-  row.visible->setCheckState(getChecked(settings, "visible", row.visible->checkState() == Qt::Checked));
-  if (row.selectable != nullptr) {
-    row.selectable->setCheckState(getChecked(settings, "selectable", row.selectable->checkState() == Qt::Checked));
+  settings->beginGroup(name->text());
+  if (name->hasChildren()) {
+    for (int r = 0; r < name->rowCount(); r++) {
+      readSettingsForRow(settings, name->child(r, Name), name->child(r, Visible), name->child(r, Selectable));
+    }
+  } else {
+    visible->setCheckState(getChecked(settings, "visible", visible));
+    if (selectable != nullptr) {
+      selectable->setCheckState(getChecked(settings, "selectable", selectable));
+    }
   }
   settings->endGroup();
 }
 
 void DisplayControls::readSettings(QSettings* settings)
 {
-  auto getColor = [this, settings](QStandardItem* item, QColor& color, const char* key) {
+  auto getColor = [this, settings](const ModelRow& row, QColor& color, const char* key) {
     color = settings->value(key, color).value<QColor>();
-    item->setIcon(makeSwatchIcon(color));
+    row.swatch->setIcon(makeSwatchIcon(color));
   };
+  auto getPattern = [settings](Qt::BrushStyle& style, const char* key) {
+    style = static_cast<Qt::BrushStyle>(settings->value(key,
+                                        static_cast<int>(style)).toInt());
+  };
+  auto getFont = [settings](QFont& font, const char* key) {
+    font = settings->value(key, font).value<QFont>();
+  };
+
   settings->beginGroup("display_controls");
 
-  settings->beginGroup("nets");
-  readSettingsForRow(settings, nets_.signal);
-  readSettingsForRow(settings, nets_.power);
-  readSettingsForRow(settings, nets_.ground);
-  readSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // instances
-  settings->beginGroup("instances");
-  readSettingsForRow(settings, instances_.core);
-  readSettingsForRow(settings, instances_.blocks);
-  readSettingsForRow(settings, instances_.fill);
-  readSettingsForRow(settings, instances_.endcap);
-  readSettingsForRow(settings, instances_.welltap);
-  readSettingsForRow(settings, instances_.pads);
-  readSettingsForRow(settings, instances_.cover);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  readSettingsForRow(settings, blockages_.blockages);
-  readSettingsForRow(settings, blockages_.obstructions);
-  getColor(blockages_.blockages.swatch, placement_blockage_color_, "placement_color");
-  // pattern saved as int
-  placement_blockage_pattern_ =
-      static_cast<Qt::BrushStyle>(settings->value("placement_pattern",
-                                  static_cast<int>(placement_blockage_pattern_)).toInt());
-  settings->endGroup();
-
-  // rows
+  readSettingsForRow(settings, nets_group_);
+  readSettingsForRow(settings, instance_group_);
+  readSettingsForRow(settings, blockage_group_);
   readSettingsForRow(settings, rows_);
-  getColor(rows_.swatch, row_color_, "row_color");
-  // pin markers
   readSettingsForRow(settings, pin_markers_);
-  pin_markers_font_ = settings->value("pin_markers_font", pin_markers_font_).value<QFont>();
-
-  // rulers
   readSettingsForRow(settings, rulers_);
-  getColor(rulers_.swatch, ruler_color_, "ruler_color");
-  ruler_font_ = settings->value("ruler_font", ruler_font_).value<QFont>();
+  readSettingsForRow(settings, tracks_group_);
+  readSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  readSettingsForRow(settings, tracks_.pref);
-  readSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  getColor(blockages_.blockages, placement_blockage_color_, "blockages_placement");
+  getColor(rows_, row_color_, "row");
+  getColor(rulers_, ruler_color_, "ruler");
+  getColor(instance_shapes_.names, instance_name_color_, "instance_name");
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  readSettingsForRow(settings, misc_.instance_names);
-  readSettingsForRow(settings, misc_.scale_bar);
-  readSettingsForRow(settings, misc_.fills);
-  readSettingsForRow(settings, misc_.detailed);
-  readSettingsForRow(settings, misc_.selected);
-  getColor(misc_.instance_names.swatch, instance_name_color_, "instance_name_color");
-  instance_name_font_ = settings->value("instance_name_font", instance_name_font_).value<QFont>();
+  settings->beginGroup("pattern");
+  getPattern(placement_blockage_pattern_, "blockages_placement");
+  settings->endGroup();
+  settings->beginGroup("font");
+  getFont(pin_markers_font_, "pin_markers");
+  getFont(ruler_font_, "ruler");
+  getFont(instance_name_font_, "instance_name");
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers
@@ -564,61 +621,31 @@ void DisplayControls::writeSettings(QSettings* settings)
 {
   settings->beginGroup("display_controls");
 
-  // nets
-  settings->beginGroup("nets");
-  writeSettingsForRow(settings, nets_.signal);
-  writeSettingsForRow(settings, nets_.power);
-  writeSettingsForRow(settings, nets_.ground);
-  writeSettingsForRow(settings, nets_.clock);
-  settings->endGroup();
-
-  // instances
-  settings->beginGroup("instances");
-  writeSettingsForRow(settings, instances_.core);
-  writeSettingsForRow(settings, instances_.blocks);
-  writeSettingsForRow(settings, instances_.fill);
-  writeSettingsForRow(settings, instances_.endcap);
-  writeSettingsForRow(settings, instances_.welltap);
-  writeSettingsForRow(settings, instances_.pads);
-  writeSettingsForRow(settings, instances_.cover);
-  settings->endGroup();
-
-  // blockages
-  settings->beginGroup("blockages");
-  writeSettingsForRow(settings, blockages_.blockages);
-  writeSettingsForRow(settings, blockages_.obstructions);
-  settings->setValue("placement_color", placement_blockage_color_);
-  // save pattern as int
-  settings->setValue("placement_pattern", static_cast<int>(placement_blockage_pattern_));
-  settings->endGroup();
-
-  // rows
+  writeSettingsForRow(settings, nets_group_);
+  writeSettingsForRow(settings, instance_group_);
+  writeSettingsForRow(settings, blockage_group_);
   writeSettingsForRow(settings, rows_);
-  settings->setValue("row_color", row_color_);
-  // pin markers
   writeSettingsForRow(settings, pin_markers_);
-  settings->setValue("pin_markers_font", pin_markers_font_);
-
-  // rulers
   writeSettingsForRow(settings, rulers_);
-  settings->setValue("ruler_color", ruler_color_);
-  settings->setValue("ruler_font", ruler_font_);
+  writeSettingsForRow(settings, tracks_group_);
+  writeSettingsForRow(settings, misc_group_);
 
-  // tracks
-  settings->beginGroup("tracks");
-  writeSettingsForRow(settings, tracks_.pref);
-  writeSettingsForRow(settings, tracks_.non_pref);
+  settings->beginGroup("other");
+  settings->beginGroup("color");
+  settings->setValue("blockages_placement", placement_blockage_color_);
+  settings->setValue("row", row_color_);
+  settings->setValue("ruler", ruler_color_);
+  settings->setValue("instance_name", instance_name_color_);
   settings->endGroup();
-
-  // misc
-  settings->beginGroup("misc");
-  writeSettingsForRow(settings, misc_.instance_names);
-  writeSettingsForRow(settings, misc_.scale_bar);
-  writeSettingsForRow(settings, misc_.fills);
-  writeSettingsForRow(settings, misc_.detailed);
-  writeSettingsForRow(settings, misc_.selected);
-  settings->setValue("instance_name_color", instance_name_color_);
-  settings->setValue("instance_name_font", instance_name_font_);
+  settings->beginGroup("pattern");
+  // save pattern as int
+  settings->setValue("blockages_placement", static_cast<int>(placement_blockage_pattern_));
+  settings->endGroup();
+  settings->beginGroup("font");
+  settings->setValue("pin_markers", pin_markers_font_);
+  settings->setValue("ruler", ruler_font_);
+  settings->setValue("instance_name", instance_name_font_);
+  settings->endGroup();
   settings->endGroup();
 
   // custom renderers
@@ -738,9 +765,11 @@ void DisplayControls::itemChanged(QStandardItem* item)
   QModelIndex item_index = item->index();
   QModelIndex parent_index = item_index.parent();
   if (parent_index.isValid()) {
-    toggleParent(model_->item(parent_index.row(), 0), // parent row
-        model_->item(parent_index.row(), item_index.column()), // selected column
-        item_index.column());
+    const QModelIndex toggle_parent_index = model_->index(parent_index.row(), Name, parent_index.parent());
+    const QModelIndex toggle_index = model_->index(parent_index.row(), item_index.column(), parent_index.parent());
+    toggleParent(model_->itemFromIndex(toggle_parent_index), // parent row
+                 model_->itemFromIndex(toggle_index), // selected column
+                 item_index.column());
   }
   // disable selectable column if visible is unchecked
   if (item_index.column() == Visible) {
@@ -837,7 +866,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
-    } else if (color_item == misc_.instance_names.swatch) {
+    } else if (color_item == instance_shapes_.names.swatch) {
       item_color = &instance_name_color_;
     } else if (color_item == rows_.swatch) {
       item_color = &row_color_;
@@ -1056,15 +1085,23 @@ void DisplayControls::setLogger(utl::Logger* logger)
   logger_ = logger;
 }
 
+void DisplayControls::setSTA(sta::dbSta* sta)
+{
+  sta_ = sta;
+  sta_->getDbNetwork()->addObserver(this);
+
+  checkLiberty();
+}
+
 QStandardItem* DisplayControls::makeParentItem(
     ModelRow& row,
     const QString& text,
-    QStandardItemModel* parent,
+    QStandardItem* parent,
     Qt::CheckState checked,
     bool add_selectable,
     const QColor& color)
 {
-  makeLeafItem(row, text, parent->invisibleRootItem(), checked, add_selectable, color);
+  makeLeafItem(row, text, parent, checked, add_selectable, color);
 
   row.visible->setData(QVariant::fromValue(Callback({
     [this, row](bool visible) {
@@ -1175,122 +1212,185 @@ QFont DisplayControls::instanceNameFont()
   return instance_name_font_;
 }
 
-bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
+bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
+{
+  if (row == nullptr) {
+    return true;
+  }
+  return row->visible->checkState() != Qt::Unchecked;
+}
+
+bool DisplayControls::isRowSelectable(const DisplayControls::ModelRow* row) const
+{
+  if (row == nullptr) {
+    return true;
+  }
+  return row->selectable->checkState() != Qt::Unchecked;
+}
+
+const DisplayControls::ModelRow* DisplayControls::getLayerRow(const odb::dbTechLayer* layer) const
 {
   auto it = layer_controls_.find(layer);
   if (it != layer_controls_.end()) {
-    return it->second.visible->checkState() == Qt::Checked;
+    return &it->second;
   }
-  return false;
+  return nullptr;
+}
+
+bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
+{
+  auto* row = getLayerRow(layer);
+  if (row == nullptr) {
+    return false;
+  }
+
+  return isRowVisible(row);
+}
+
+bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
+{
+  auto* row = getLayerRow(layer);
+  if (row == nullptr) {
+    return false;
+  }
+
+  return isRowSelectable(row);
 }
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 {
+  return isRowVisible(getInstRow(inst));
+}
+
+const DisplayControls::ModelRow* DisplayControls::getInstRow(odb::dbInst* inst) const
+{
   dbMaster* master = inst->getMaster();
-  if (master->isEndCap()) {
-    return instances_.endcap.visible->checkState() == Qt::Checked;
-  } else if (master->isFiller()) {
-    return instances_.fill.visible->checkState() == Qt::Checked;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return instances_.welltap.visible->checkState() == Qt::Checked;
-    } else {
-      return instances_.core.visible->checkState() == Qt::Checked;
-    }
-  } else if (master->isBlock()) {
-    return instances_.blocks.visible->checkState() == Qt::Checked;
+  const dbMasterType master_type = master->getType();
+  const dbSourceType source_type = inst->getSourceType();
+  if (master->isBlock()) {
+    return &instances_.blocks;
   } else if (master->isPad()) {
-    return instances_.pads.visible->checkState() == Qt::Checked;
+    return &instances_.pads;
+  } else if (master->isEndCap()) {
+    return &physical_instances_.endcap;
+  } else if (master->isFiller()) {
+    return &physical_instances_.fill;
+  } else if (master_type == dbMasterType::CORE_WELLTAP) {
+    return &physical_instances_.tap;
   } else if (master->isCover()) {
-    return instances_.cover.visible->checkState() == Qt::Checked;
+    if (master_type == dbMasterType::COVER_BUMP) {
+      return &physical_instances_.bump;
+    } else {
+      return &physical_instances_.cover;
+    }
+  } else if (master_type == dbMasterType::CORE_ANTENNACELL) {
+    return &physical_instances_.antenna;
+  } else if (master_type == dbMasterType::CORE_TIEHIGH || master_type == dbMasterType::CORE_TIELOW) {
+    return &physical_instances_.tie;
+  } else if (source_type == odb::dbSourceType::DIST) {
+    return &physical_instances_.other;
+  }
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    if (master->isCore()) {
+      return &instances_.stdcells;
+    }
+    // default to use overall instance setting if there is no liberty cell and it's not a core cell.
+    return &instance_group_;
+  }
+
+  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+    if (source_type == odb::dbSourceType::TIMING) {
+      for (auto* iterm : inst->getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return &clock_tree_instances_.bufinv;
+        }
+      }
+      return &bufinv_instances_.timing;
+    } else {
+      return &bufinv_instances_.other;
+    }
+  } else if (lib_cell->isClockGate()) {
+    return &clock_tree_instances_.clock_gates;
+  } if (lib_cell->isLevelShifter()) {
+    return &stdcell_instances_.level_shiters;
+  } else if (lib_cell->hasSequentials()) {
+    return &stdcell_instances_.sequential;
+  } else if (lib_cell->portCount() == 0) {
+    return &instances_.physical; // generic physical
   } else {
-    return true;
+    // not anything else, so combinational
+    return &stdcell_instances_.combinational;
   }
 }
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 {
-  dbMaster* master = inst->getMaster();
-  if (master->isEndCap()) {
-    return instances_.endcap.selectable->checkState() == Qt::Checked;
-  } else if (master->isFiller()) {
-    return instances_.fill.selectable->checkState() == Qt::Checked;
-  } else if (master->isCore()) {
-    if (master->getType() == dbMasterType::CORE_WELLTAP) {
-      return instances_.welltap.selectable->checkState() == Qt::Checked;
-    } else {
-      return instances_.core.selectable->checkState() == Qt::Checked;
-    }
-  } else if (master->isBlock()) {
-    return instances_.blocks.selectable->checkState() == Qt::Checked;
-  } else if (master->isPad()) {
-    return instances_.pads.selectable->checkState() == Qt::Checked;
-  } else if (master->isCover()) {
-    return instances_.cover.selectable->checkState() == Qt::Checked;
-  } else {
-    return true;
+  return isRowSelectable(getInstRow(inst));
+}
+
+const DisplayControls::ModelRow* DisplayControls::getNetRow(odb::dbNet* net) const
+{
+  switch (net->getSigType()) {
+    case dbSigType::SIGNAL:
+      return &nets_.signal;
+    case dbSigType::POWER:
+      return &nets_.power;
+    case dbSigType::GROUND:
+      return &nets_.ground;
+    case dbSigType::CLOCK:
+      return &nets_.clock;
+    default:
+      return nullptr;
   }
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
-  switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
-      return nets_.signal.visible->checkState() == Qt::Checked;
-    case dbSigType::POWER:
-      return nets_.power.visible->checkState() == Qt::Checked;
-    case dbSigType::GROUND:
-      return nets_.ground.visible->checkState() == Qt::Checked;
-    case dbSigType::CLOCK:
-      return nets_.clock.visible->checkState() == Qt::Checked;
-    default:
-      return true;
-  }
+  return isRowVisible(getNetRow(net));
 }
 
 bool DisplayControls::isNetSelectable(odb::dbNet* net)
 {
-  switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
-      return nets_.signal.selectable->checkState() == Qt::Checked;
-    case dbSigType::POWER:
-      return nets_.power.selectable->checkState() == Qt::Checked;
-    case dbSigType::GROUND:
-      return nets_.ground.selectable->checkState() == Qt::Checked;
-    case dbSigType::CLOCK:
-      return nets_.clock.selectable->checkState() == Qt::Checked;
-    default:
-      return true;
-  }
-}
-
-bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
-{
-  auto it = layer_controls_.find(layer);
-  if (it != layer_controls_.end()) {
-    return it->second.selectable->checkState() == Qt::Checked;
-  }
-  return false;
+  return isRowSelectable(getNetRow(net));
 }
 
 bool DisplayControls::areInstanceNamesVisible()
 {
-  return misc_.instance_names.visible->checkState() == Qt::Checked;
+  return isRowVisible(&instance_shapes_.names);
+}
+
+bool DisplayControls::areInstancePinsVisible()
+{
+  return isRowVisible(&instance_shapes_.pins);
+}
+
+bool DisplayControls::areInstanceBlockagesVisible()
+{
+  return isRowVisible(&instance_shapes_.blockages);
 }
 
 bool DisplayControls::areFillsVisible()
 {
-  return misc_.fills.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.fills);
 }
 
 bool DisplayControls::areRulersVisible()
 {
-  return rulers_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&rulers_);
 }
 
 bool DisplayControls::areRulersSelectable()
 {
-  return rulers_.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&rulers_);
 }
 
 QColor DisplayControls::rulerColor()
@@ -1305,27 +1405,27 @@ QFont DisplayControls::rulerFont()
 
 bool DisplayControls::areBlockagesVisible()
 {
-  return blockages_.blockages.visible->checkState() == Qt::Checked;
+  return isRowVisible(&blockages_.blockages);
 }
 
 bool DisplayControls::areBlockagesSelectable()
 {
-  return blockages_.blockages.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&blockages_.blockages);
 }
 
 bool DisplayControls::areObstructionsVisible()
 {
-  return blockages_.obstructions.visible->checkState() == Qt::Checked;
+  return isRowVisible(&blockages_.obstructions);
 }
 
 bool DisplayControls::areObstructionsSelectable()
 {
-  return blockages_.obstructions.selectable->checkState() == Qt::Checked;
+  return isRowSelectable(&blockages_.obstructions);
 }
 
 bool DisplayControls::areRowsVisible()
 {
-  return rows_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&rows_);
 }
 
 QColor DisplayControls::rowColor()
@@ -1335,37 +1435,47 @@ QColor DisplayControls::rowColor()
 
 bool DisplayControls::areSelectedVisible()
 {
-  return misc_.selected.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.selected);
 }
 
 bool DisplayControls::isDetailedVisibility()
 {
-  return misc_.detailed.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.detailed);
 }
 
 bool DisplayControls::arePrefTracksVisible()
 {
-  return tracks_.pref.visible->checkState() == Qt::Checked;
+  return isRowVisible(&tracks_.pref);
 }
 
 bool DisplayControls::areNonPrefTracksVisible()
 {
-  return tracks_.non_pref.visible->checkState() == Qt::Checked;
+  return isRowVisible(&tracks_.non_pref);
 }
 
 bool DisplayControls::isScaleBarVisible() const
 {
-  return misc_.scale_bar.visible->checkState() == Qt::Checked;
+  return isRowVisible(&misc_.scale_bar);
 }
 
 bool DisplayControls::arePinMarkersVisible() const
 {
-  return pin_markers_.visible->checkState() == Qt::Checked;
+  return isRowVisible(&pin_markers_);
 }
 
 QFont DisplayControls::pinMarkersFont()
 {
   return pin_markers_font_;
+}
+
+bool DisplayControls::areAccessPointsVisible() const
+{
+  return isRowVisible(&misc_.access_points);
+}
+
+bool DisplayControls::areRegionsVisible() const
+{
+  return isRowVisible(&misc_.regions);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)
@@ -1386,7 +1496,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
         ModelRow row;
         makeParentItem(row,
                        QString::fromStdString(name),
-                       model_,
+                       model_->invisibleRootItem(),
                        control.visibility ? Qt::Checked : Qt::Unchecked);
         if (control.interactive_setup) {
           setNameItemDoubleClickAction(row, control.interactive_setup);
@@ -1416,7 +1526,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
       if (parent_row.name == nullptr) {
         makeParentItem(parent_row,
                        parent_item_name,
-                       model_,
+                       model_->invisibleRootItem(),
                        Qt::Checked);
       }
       for (const auto& [name, control] : items) {
@@ -1643,6 +1753,51 @@ void DisplayControls::setOnlyVisibleLayers(const std::set<const odb::dbTechLayer
   for (auto* layer : layers) {
     if (layer_controls_.count(layer) != 0) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
+    }
+  }
+}
+
+void DisplayControls::postReadLiberty()
+{
+  checkLiberty(true);
+}
+
+void DisplayControls::checkLiberty(bool assume_loaded)
+{
+  bool enable = true;
+
+  if (sta_ == nullptr) {
+    enable = false;
+  } else {
+    if (!assume_loaded) {
+      auto* network = sta_->getDbNetwork();
+      if (network->defaultLibertyLibrary() == nullptr) {
+        enable = false;
+      }
+    }
+  }
+
+  std::vector<ModelRow*> liberty_dependent_rows{
+    &stdcell_instances_.bufinv,
+    &stdcell_instances_.clock_tree,
+    &stdcell_instances_.combinational,
+    &stdcell_instances_.level_shiters,
+    &stdcell_instances_.sequential,
+    &bufinv_instances_.timing,
+    &bufinv_instances_.other,
+    &clock_tree_instances_.bufinv,
+    &clock_tree_instances_.clock_gates
+  };
+
+  for (auto* row : liberty_dependent_rows) {
+    auto* name = row->name;
+    auto* visible = row->visible;
+    auto* selectable = row->selectable;
+
+    name->setEnabled(enable);
+    visible->setEnabled(enable);
+    if (selectable != nullptr) {
+      selectable->setEnabled(enable);
     }
   }
 }

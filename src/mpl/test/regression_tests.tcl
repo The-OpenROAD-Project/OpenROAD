@@ -12,5 +12,3 @@ record_tests {
   east_west2
   snap_layer1
 }
-
-

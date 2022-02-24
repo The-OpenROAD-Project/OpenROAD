@@ -45,10 +45,15 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
+#include "sta/Path.hh"
 
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
+}
+
+namespace sta {
+class PathExpanded;
 }
 
 namespace rsz {
@@ -114,6 +119,7 @@ using sta::Parasitics;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
+using sta::PathExpanded;
 
 class SteinerRenderer;
 
@@ -213,7 +219,8 @@ public:
                   float slack_margin,
                   bool allow_setup_violations,
                   float max_buffer_percent);
-  void repairSetup(float slack_margin);
+  void repairSetup(float slack_margin,
+                   int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
   // Area of the design in meter^2.
@@ -553,11 +560,22 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
+  double wireSignalCapacitance(const Pin *drvr_pin,
+                               const Net *net,
+                               const Corner *corner);
+  float pinCap(const Pin *drvr_pin,
+               const Corner *corner);
+  double grouteLength(const Net *net);
 
   bool repairSetup(PathRef &path,
                    Slack path_slack);
+  bool upsizeDrvr(PathRef *drvr_path,
+                  int drvr_index,
+                  PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
-                  Slack drvr_slack);
+                  int drvr_index,
+                  Slack drvr_slack,
+                  PathExpanded *expanded);
   LibertyCell *upsizeCell(LibertyPort *in_port,
                           LibertyPort *drvr_port,
                           float load_cap,
@@ -567,11 +585,12 @@ protected:
                    LibertyCell *cell,
                    bool journal);
 
-  void rebuffer(const Pin *drvr_pin);
+  int rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                   SteinerPt k,
                                   SteinerPt prev,
-                                  int level);
+                                  int level,
+                                  double wire_signal_cap);
   void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);
@@ -580,7 +599,8 @@ protected:
                    SteinerTree *tree,
                    SteinerPt k,
                    SteinerPt prev,
-                   int level);
+                   int level,
+                   double wire_signal_cap);
   BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
   BufferedNet *makeBufferedNet(SteinerTree *tree,
                                SteinerPt k,
@@ -603,6 +623,9 @@ protected:
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
+  Instance *makeInstance(LibertyCell *cell,
+                         const char *name,
+                         Instance *parent);
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
@@ -692,6 +715,7 @@ protected:
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
+  static constexpr double rebuffer_buffer_penalty = .005;
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;

@@ -44,6 +44,7 @@ class frDesign;
 class frPin;
 class frInstTerm;
 class frBlock;
+class frMaster;
 class frAccessPoint;
 class frVia;
 class frMarker;
@@ -58,7 +59,11 @@ class FlexPAGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startPin(frPin* pin,
+  void startPin(frBPin* pin,
+                frInstTerm* inst_term,
+                set<frInst*, frBlockObjectComp>* instClass);
+                
+  void startPin(frMPin* pin,
                 frInstTerm* inst_term,
                 set<frInst*, frBlockObjectComp>* instClass);
 
@@ -75,7 +80,8 @@ class FlexPAGraphics : public gui::Renderer
                    const std::vector<std::unique_ptr<frMarker>>& markers);
 
   void setObjsAndMakers(const vector<pair<frConnFig*, frBlockObject*>>& objs,
-                        const std::vector<std::unique_ptr<frMarker>>& markers);
+                        const std::vector<std::unique_ptr<frMarker>>& markers,
+                        const FlexPA::PatternType type);
 
   // Show a message in the status bar
   void status(const std::string& message);

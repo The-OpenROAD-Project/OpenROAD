@@ -43,6 +43,8 @@ proc configure_cts_characterization { args } {
   sta::parse_key_args "configure_cts_characterization" args \
     keys {-max_cap -max_slew -slew_inter -cap_inter} flags {}
 
+  sta::check_argc_eq0 "configure_cts_characterization" $args
+
   if { [info exists keys(-max_cap)] } {
     set max_cap_value $keys(-max_cap)
     cts::set_max_char_cap $max_cap_value
@@ -90,6 +92,8 @@ proc clock_tree_synthesis { args } {
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
     flags {-post_cts_disable -sink_clustering_enable -balance_levels}
+
+  sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   cts::set_disable_post_cts [info exists flags(-post_cts_disable)]
 
@@ -205,6 +209,8 @@ sta::define_cmd_args "report_cts" {[-out_file file] \
 proc report_cts { args } {
   sta::parse_key_args "report_cts" args \
     keys {-out_file} flags {}
+
+  sta::check_argc_eq0 "report_cts" $args
 
   if { [info exists keys(-out_file)] } {
     set outFile $keys(-out_file)

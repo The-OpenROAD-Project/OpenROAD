@@ -1089,7 +1089,9 @@ class dbDirection
     NORTH,
     EAST,
     SOUTH,
-    WEST
+    WEST,
+    UP,
+    DOWN
   };
 
   ///
@@ -1240,6 +1242,63 @@ class dbMTermShapeType
   Value _value;
 };
 
+///
+/// The orientation define the rotation and axis mirroring for the
+/// placement of various database objects. The values conform the orient
+/// definitions defined in the LEF/DEF formats.
+///
+class dbAccessType
+{
+ public:
+  enum Value : int8_t
+  {
+    OnGrid,
+    HalfGrid,
+    Center,
+    EncOpt,
+    NearbyGrid
+  };
+
+  ///
+  /// Create a dbAccessType instance with an explicit type.
+  /// The explicit type must be a string of one of the
+  ///  following values: "OnGrid", "HalfGrid", "Center", "EncOpt",
+  ///  "NearbyGrid"
+  dbAccessType(const char* type);
+
+  ///
+  /// Create a dbAccessType instance with an explicit type.
+  ///
+  dbAccessType(Value type);
+
+  ///
+  /// Create a dbAccessType instance with type "OnGrid".
+  ///
+  dbAccessType();
+
+  ///
+  /// Copy constructor.
+  ///
+  dbAccessType(const dbAccessType& orient) = default;
+
+  ///
+  /// Returns the type
+  ///
+  Value getValue() const { return _value; }
+
+  ///
+  /// Returns the type as a string
+  ///
+  const char* getString() const;
+
+  ///
+  /// Cast operator
+  ///
+  operator Value() const { return _value; }
+
+ private:
+  Value _value;
+};
 
 
 

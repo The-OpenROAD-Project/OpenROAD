@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
+#include <boost/stacktrace.hpp>
+#include <iostream>
 #include <string>
 #include <libgen.h>
 // We have had too many problems with this std::filesytem on various platforms
@@ -152,6 +154,12 @@ initPython()
 }
 #endif
 
+static void handler(int) {
+  std::cerr << "Stack trace:\n";
+  std::cerr << boost::stacktrace::stacktrace();
+  exit(1);
+}
+
 int
 main(int argc,
      char *argv[])
@@ -160,6 +168,13 @@ main(int argc,
   // C functions like strtod (e.g. 0.5 vs 0,5).
   setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
   setenv("LANG", "en_US.UTF-8", /* override */ 1);
+
+  // Generate a stacktrace on crash
+  signal(SIGABRT, handler);
+  signal(SIGBUS, handler);
+  signal(SIGFPE, handler);
+  signal(SIGILL, handler);
+  signal(SIGSEGV, handler);
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
@@ -190,6 +205,14 @@ main(int argc,
   initPython();
 
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    // Setup the app with tcl
+    auto* interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    ord::initOpenRoad(interp);
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+      showSplash();
+    }
+
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
       size_t sz = strlen(cmd_argv[i]);
@@ -198,14 +221,6 @@ main(int argc,
       for(size_t j = 0;j < sz; j++) {
         args[i][j] = (wchar_t) cmd_argv[i][j];
       }
-    }
-
-    // Setup the app with tcl
-    auto* interp = Tcl_CreateInterp();
-    Tcl_Init(interp);
-    ord::initOpenRoad(interp);
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
-      showSplash();
     }
 
     return Py_Main(cmd_argc, args.data());
@@ -257,6 +272,9 @@ tclAppInit(int& argc,
   // gui will call this function again as part of setup
   // ensuring the else {} will be utilized to initialize tcl and OR.
   if (findCmdLineFlag(argc, argv, "-gui")) {
+    // gobble up remaining -gui flags if present, since this could result in second invocation of the GUI
+    while (findCmdLineFlag(argc, argv, "-gui"));
+
     gui::startGui(argc, argv, interp);
   } else {
     // init tcl

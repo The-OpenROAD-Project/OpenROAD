@@ -55,6 +55,7 @@ namespace utl {
     X(ANT) \
     X(CTS) \
     X(DPL) \
+    X(DPO) \
     X(DRT) \
     X(DST) \
     X(FIN) \

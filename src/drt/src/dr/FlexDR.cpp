@@ -49,8 +49,12 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 BOOST_CLASS_EXPORT(RoutingJobDescription)
 
@@ -198,9 +202,9 @@ inline frBlockObject* getEquivalentObject(frBlockObject* obj, frDesign* design)
           return term.get();
       return nullptr;
     }
-    case frcTerm: {
-      frTerm* srTerm = (static_cast<frTerm*>(obj));
-      return design->getTopBlock()->getTerm(srTerm->getName());
+    case frcBTerm: {
+      auto bTerm = static_cast<frBTerm*>(obj);
+      return design->getTopBlock()->getTerm(bTerm->getName());
     }
     case frcInstBlockage: {
       frInstBlockage* srBlkg = (static_cast<frInstBlockage*>(obj));
@@ -1789,13 +1793,15 @@ void FlexDR::searchRepair(int iter,
                                        + ">";
         ProfileTask profile(batch_name.c_str());
 // multi thread
+        ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if (dist_on_)
-            workersInBatch[i]->distributedMain(getDesign(),
-                                               globals_path_.c_str());
-          else
-            workersInBatch[i]->main(getDesign());
+          try {
+            if (dist_on_)
+              workersInBatch[i]->distributedMain(getDesign(),
+                                                 globals_path_.c_str());
+            else
+              workersInBatch[i]->main(getDesign());
 #pragma omp critical
           {
             cnt++;
@@ -1817,8 +1823,11 @@ void FlexDR::searchRepair(int iter,
                 }
               }
             }
+          } catch (...) {
+            exception.capture();
           }
         }
+        exception.rethrow();
       }
       {
         ProfileTask profile("DR:end_batch");
@@ -2189,9 +2198,9 @@ void FlexDR::reportDRC(const string& file_name)
                      << instTerm->getTerm()->getName() << " ";
               break;
             }
-            case frcTerm: {
-              frTerm* term = (static_cast<frTerm*>(src));
-              drcRpt << "bterm:" << term->getName() << " ";
+            case frcBTerm: {
+              frBTerm* bterm = (static_cast<frBTerm*>(src));
+              drcRpt << "bterm:" << bterm->getName() << " ";
               break;
             }
             case frcInstBlockage: {

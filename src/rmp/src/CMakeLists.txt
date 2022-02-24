@@ -70,4 +70,5 @@ target_link_libraries(rmp
     OpenSTA
     rsz
     utl
+    ${ABC_LIBRARY}
  )

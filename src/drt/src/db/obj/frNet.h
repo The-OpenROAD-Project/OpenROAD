@@ -43,6 +43,7 @@
 namespace fr {
 class frInstTerm;
 class frTerm;
+class frBTerm;
 class frNonDefaultRule;
 
 class frNet : public frBlockObject
@@ -53,7 +54,7 @@ class frNet : public frBlockObject
       : frBlockObject(),
         name_(in),
         instTerms_(),
-        terms_(),
+        bterms_(),
         shapes_(),
         vias_(),
         pwires_(),
@@ -77,7 +78,7 @@ class frNet : public frBlockObject
   // getters
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
-  const std::vector<frTerm*>& getTerms() const { return terms_; }
+  const std::vector<frBTerm*>& getBTerms() const { return bterms_; }
   const std::list<std::unique_ptr<frShape>>& getShapes() const
   {
     return shapes_;
@@ -114,7 +115,7 @@ class frNet : public frBlockObject
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
-  void addTerm(frTerm* in) { terms_.push_back(in); }
+  void addBTerm(frBTerm* in) { bterms_.push_back(in); }
   void setName(const frString& stringIn) { name_ = stringIn; }
   void addShape(std::unique_ptr<frShape> in)
   {
@@ -221,7 +222,7 @@ class frNet : public frBlockObject
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
-  std::vector<frTerm*> terms_;  // terms is IO
+  std::vector<frBTerm*> bterms_;
   // dr
   std::list<std::unique_ptr<frShape>> shapes_;
   std::list<std::unique_ptr<frVia>> vias_;

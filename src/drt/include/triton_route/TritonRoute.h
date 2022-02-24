@@ -33,14 +33,17 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace fr {
 class frDesign;
+class DesignCallBack;
 struct frDebugSettings;
 }  // namespace fr
 
 namespace odb {
 class dbDatabase;
+class dbInst;
 }
 namespace utl {
 class Logger;
@@ -58,21 +61,22 @@ namespace triton_route {
 
 struct ParamStruct
 {
-  const std::string& guideFile;
-  const std::string& outputGuideFile;
-  const std::string& outputMazeFile;
-  const std::string& outputDrcFile;
-  const std::string& outputCmapFile;
-  const std::string& dbProcessNode;
-  bool enableViaGen;
-  int drouteEndIter;
-  int drouteViaInPinBottomLayerNum;
-  int drouteViaInPinTopLayerNum;
-  int orSeed;
-  double orK;
-  const std::string& bottomRoutingLayer;
-  const std::string& topRoutingLayer;
-  int verbose;
+  std::string guideFile;
+  std::string outputGuideFile;
+  std::string outputMazeFile;
+  std::string outputDrcFile;
+  std::string outputCmapFile;
+  std::string dbProcessNode;
+  bool enableViaGen = false;
+  int drouteEndIter = -1;
+  std::string viaInPinBottomLayer;
+  std::string viaInPinTopLayer;
+  int orSeed = 0;
+  double orK = 0;
+  std::string bottomRoutingLayer;
+  std::string topRoutingLayer;
+  int verbose = 1;
+  bool cleanPatches = false;
 };
 
 class TritonRoute
@@ -89,6 +93,7 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
+  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>());
 
   int getNumDRVs() const;
 
@@ -104,7 +109,8 @@ class TritonRoute
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
-  void setDebugPaCombining(bool on = true);
+  void setDebugPaEdge(bool on = true);
+  void setDebugPaCommit(bool on = true);
   void reportConstraints();
 
   void readParams(const std::string& fileName);
@@ -115,9 +121,10 @@ class TritonRoute
   std::string runDRWorker(const char* file_name);
   void updateGlobals(const char* file_name);
 
- protected:
+ private:
   std::unique_ptr<fr::frDesign> design_;
   std::unique_ptr<fr::frDebugSettings> debug_;
+  std::unique_ptr<fr::DesignCallBack> db_callback_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
@@ -129,7 +136,8 @@ class TritonRoute
   unsigned short dist_port_;
   std::string shared_volume_;
 
-  void init();
+  void initDesign();
+  void initGuide();
   void prep();
   void gr();
   void ta();

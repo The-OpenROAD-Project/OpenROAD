@@ -40,6 +40,7 @@
 
 #include "ZComponents.h"
 #include "db.h"
+#include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbArrayTable.hpp"
 #include "dbBPin.h"
@@ -195,6 +196,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
   ZALLOCATED(_group_tbl);
+
+  ap_tbl_ = new dbTable<_dbAccessPoint>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbAccessPointObj);
+  ZALLOCATED(ap_tbl_);
 
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBoxObj, 1024, 10);
@@ -456,6 +461,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
   ZALLOCATED(_group_tbl);
 
+  ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
+  ZALLOCATED(ap_tbl_);
+
   _box_tbl = new dbTable<_dbBox>(db, this, *block._box_tbl);
   ZALLOCATED(_box_tbl);
 
@@ -627,6 +635,7 @@ _dbBlock::~_dbBlock()
   delete _module_tbl;
   delete _modinst_tbl;
   delete _group_tbl;
+  delete ap_tbl_;
   delete _box_tbl;
   delete _via_tbl;
   delete _gcell_grid_tbl;
@@ -783,6 +792,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbGroupObj:
       return _group_tbl;
 
+    case dbAccessPointObj:
+      return ap_tbl_;
+
     case dbNetObj:
       return _net_tbl;
 
@@ -917,6 +929,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
   stream << *block._group_tbl;
+  stream << *block.ap_tbl_;
   stream << *block._box_tbl;
   stream << *block._via_tbl;
   stream << *block._gcell_grid_tbl;
@@ -1001,6 +1014,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
   stream >> *block._group_tbl;
+  stream >> *block.ap_tbl_;
   stream >> *block._box_tbl;
   stream >> *block._via_tbl;
   stream >> *block._gcell_grid_tbl;
@@ -1198,6 +1212,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (*_group_tbl != *rhs._group_tbl)
     return false;
 
+  if (*ap_tbl_ != *rhs.ap_tbl_)
+    return false;
+
   if (*_box_tbl != *rhs._box_tbl)
     return false;
 
@@ -1323,6 +1340,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_module_tbl);
   DIFF_TABLE(_modinst_tbl);
   DIFF_TABLE(_group_tbl);
+  DIFF_TABLE(ap_tbl_);
   DIFF_TABLE_NO_DEEP(_box_tbl);
   DIFF_TABLE(_via_tbl);
   DIFF_TABLE_NO_DEEP(_gcell_grid_tbl);
@@ -1405,6 +1423,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_module_tbl);
   DIFF_OUT_TABLE(_modinst_tbl);
   DIFF_OUT_TABLE(_group_tbl);
+  DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
   DIFF_OUT_TABLE(_via_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_gcell_grid_tbl);
@@ -1639,6 +1658,12 @@ dbSet<dbGroup> dbBlock::getGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbGroup>(block, block->_group_tbl);
+}
+
+dbSet<dbAccessPoint> dbBlock::getAccessPoints()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbAccessPoint>(block, block->ap_tbl_);
 }
 
 dbInst* dbBlock::findInst(const char* name)
@@ -3728,53 +3753,6 @@ int dbBlock::markBackwardsUser2(dbNet* net,
   return instsToMark.size();
 }
 
-void dbBlock::markClockIterms()
-{
-  std::vector<dbMaster*> masters;
-  getMasters(masters);
-  std::vector<dbMaster*>::iterator mtr;
-  for (mtr = masters.begin(); mtr != masters.end(); ++mtr) {
-    dbMaster* master = *mtr;
-    if (master->getType() != dbMasterType::CORE)
-      continue;
-
-    bool clocked = false;
-    int order_id = -1;
-    master->setClockedIndex(-1);
-    dbSet<dbMTerm> mterms = master->getMTerms();
-    dbSet<dbMTerm>::iterator mitr;
-    for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-      dbMTerm* mterm = *mitr;
-      if (mterm->getSigType() == dbSigType::CLOCK) {
-        clocked = true;
-        order_id = mterm->getIndex();
-        break;
-      }
-    }
-    if (clocked) {
-      master->setSequential(1);
-      master->setClockedIndex(order_id);
-    }
-  }
-  dbSet<dbInst> insts = getInsts();
-  dbSet<dbInst>::iterator itr;
-  for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst* inst = *itr;
-    if (!inst->getMaster()->isSequential())
-      continue;
-
-    dbSet<dbITerm> iterms = inst->getITerms();
-    dbSet<dbITerm>::iterator iitr;
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* iterm = *iitr;
-
-      if (iterm->getMTerm()->getSigType() == dbSigType::CLOCK) {
-        iterm->setClocked(1);
-        continue;
-      }
-    }
-  }
-}
 void dbBlock::clearUserInstFlags()
 {
   dbSet<dbInst> insts = getInsts();

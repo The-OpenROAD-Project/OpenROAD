@@ -29,11 +29,12 @@
 #include "db/obj/frInst.h"
 
 #include "frBlock.h"
+#include "frMaster.h"
 using namespace fr;
 
 void frInst::getBBox(Rect& boxIn) const
 {
-  getRefBlock()->getBBox(boxIn);
+  getMaster()->getBBox(boxIn);
   dbTransform xform;
   getTransform(xform);
   Point s(boxIn.xMax(), boxIn.yMax());
@@ -43,7 +44,7 @@ void frInst::getBBox(Rect& boxIn) const
 
 void frInst::getBoundaryBBox(Rect& boxIn) const
 {
-  getRefBlock()->getDieBox(boxIn);
+  getMaster()->getDieBox(boxIn);
   dbTransform xform;
   getTransform(xform);
   Point s(boxIn.xMax(), boxIn.yMax());
@@ -55,7 +56,7 @@ void frInst::getUpdatedXform(dbTransform& in, bool noOrient) const
 {
   getTransform(in);
   Rect mbox;
-  getRefBlock()->getDieBox(mbox);
+  getMaster()->getDieBox(mbox);
   Point origin(mbox.xMin(), mbox.yMin());
   dbTransform(in.getOrient(), Point(0, 0)).apply(origin);
   Point offset(in.getOffset());

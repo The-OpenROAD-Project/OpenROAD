@@ -247,10 +247,10 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
           auto gap = abs(nextPoint.y() - dstPoint1.y());
           if (gap
               && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, false, gap, ndr_, false)
+                      gridZ, false, false, false, gap, ndr_)
                   || layerNum - 2 < BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, false, gap, ndr_, false)
+                      gridZ, true, true, false, gap, ndr_)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
             forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
@@ -258,10 +258,10 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
           auto gap = abs(nextPoint.x() - dstPoint1.x());
           if (gap
               && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, true, gap, ndr_, false)
+                      gridZ, false, false, true, gap, ndr_)
                   || layerNum - 2 < BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, true, gap, ndr_, false)
+                      gridZ, true, true, true, gap, ndr_)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
             forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
@@ -371,8 +371,7 @@ frCost FlexGridGraph::getNextPathCost(
                                             !isCurrViaUp,
                                             false,
                                             currVLengthY,
-                                            ndr_,
-                                            false)) {
+                                            ndr_)) {
       isForbiddenVia2Via = true;
       // check only x
     } else if (currVLengthX > 0 && currVLengthY == 0
@@ -381,8 +380,7 @@ frCost FlexGridGraph::getNextPathCost(
                                                    !isCurrViaUp,
                                                    true,
                                                    currVLengthX,
-                                                   ndr_,
-                                                   false)) {
+                                                   ndr_)) {
       isForbiddenVia2Via = true;
       // check both x and y
     } else if (currVLengthX > 0 && currVLengthY > 0

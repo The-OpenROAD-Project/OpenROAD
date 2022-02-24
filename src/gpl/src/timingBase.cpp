@@ -51,7 +51,7 @@ TimingBase::TimingBase()
   : rs_(nullptr),
     log_(nullptr),
     nb_(nullptr),
-    net_weight_max_(4.0)
+    net_weight_max_(1.9)
 {
 }
 
@@ -63,77 +63,28 @@ TimingBase::TimingBase(
     rs_ = rs;
     nb_ = nb;
     log_ = log;
-
-    addTimingUpdateIter(79);
-    addTimingUpdateIter(64);
-    addTimingUpdateIter(49);
-    addTimingUpdateIter(29);
-    addTimingUpdateIter(21);
-    addTimingUpdateIter(15);
-
-    initTimingIterChk();
   }
 
 void
-TimingBase::initTimingIterChk() {
-  timingIterChk_.clear();
-  timingIterChk_.resize(timingUpdateIter_.size(), false);
-}
-
-void
-TimingBase::addTimingUpdateIter(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingUpdateIter_.begin(), 
-        timingUpdateIter_.end(), 
-        overflow);
-
-  // only push overflow when the overflow is not in vector.
-  if( it == timingUpdateIter_.end() ) {
-    timingUpdateIter_.push_back(overflow);
-  }
-
-  // do sort in reverse order
-  std::sort(timingUpdateIter_.begin(), 
-      timingUpdateIter_.end(),
-      std::greater <int> ());
-}
-
-void
-TimingBase::deleteTimingUpdateIter(int overflow) {
-  std::vector<int>::iterator it 
-    = std::find(timingUpdateIter_.begin(), 
-        timingUpdateIter_.end(), 
-        overflow);
-  // only erase overflow when the overflow is in vector.
-  if( it != timingUpdateIter_.end() ) {
-    timingUpdateIter_.erase(it);
-  }
-}
-
-void
-TimingBase::clearTimingUpdateIter() {
-  timingUpdateIter_.clear();
-}
-
-size_t
-TimingBase::getTimingUpdateIterSize() const {
-  return timingUpdateIter_.size();
+TimingBase::initTimingOverflowChk() {
+  timingOverflowChk_.clear();
+  timingOverflowChk_.resize(timingNetWeightOverflow_.size(), false);
 }
 
 bool
-TimingBase::isTimingUpdateIter(float overflow) {
+TimingBase::isTimingNetWeightOverflow(float overflow) {
   int intOverflow = std::round(overflow * 100);
   // exception case handling
-  if ( timingUpdateIter_.empty()
-       || intOverflow > timingUpdateIter_[0] ) { 
+  if ( timingNetWeightOverflow_.empty()
+       || intOverflow > timingNetWeightOverflow_[0] ) { 
     return false;
   } 
 
   bool needTdRun = false;
-  for(int i=0; i<timingUpdateIter_.size(); i++) {
-    if( timingUpdateIter_[i] > intOverflow ) {
-      if( !timingIterChk_[i] ) {
-        timingIterChk_[i] = true;
+  for(int i=0; i<timingNetWeightOverflow_.size(); i++) {
+    if( timingNetWeightOverflow_[i] > intOverflow ) {
+      if( !timingOverflowChk_[i] ) {
+        timingOverflowChk_[i] = true;
         needTdRun = true; 
       }
       continue;
@@ -142,6 +93,57 @@ TimingBase::isTimingUpdateIter(float overflow) {
   }
   return needTdRun;
 }
+
+void
+TimingBase::addTimingNetWeightOverflow(int overflow) {
+  std::vector<int>::iterator it 
+    = std::find(timingNetWeightOverflow_.begin(), 
+        timingNetWeightOverflow_.end(), 
+        overflow);
+
+  // only push overflow when the overflow is not in vector.
+  if( it == timingNetWeightOverflow_.end() ) {
+    timingNetWeightOverflow_.push_back(overflow);
+  }
+
+  // do sort in reverse order
+  std::sort(timingNetWeightOverflow_.begin(), 
+      timingNetWeightOverflow_.end(),
+      std::greater <int> ());
+}
+
+void
+TimingBase::setTimingNetWeightOverflows(std::vector<int>& overflows) {
+  // sort by decreasing order
+  std::sort(overflows.begin(), overflows.end(), std::greater<int>());
+  for(auto& overflow : overflows) {
+    addTimingNetWeightOverflow(overflow);
+  }
+  initTimingOverflowChk();
+}
+
+void
+TimingBase::deleteTimingNetWeightOverflow(int overflow) {
+  std::vector<int>::iterator it 
+    = std::find(timingNetWeightOverflow_.begin(), 
+        timingNetWeightOverflow_.end(), 
+        overflow);
+  // only erase overflow when the overflow is in vector.
+  if( it != timingNetWeightOverflow_.end() ) {
+    timingNetWeightOverflow_.erase(it);
+  }
+}
+
+void
+TimingBase::clearTimingNetWeightOverflow() {
+  timingNetWeightOverflow_.clear();
+}
+
+size_t
+TimingBase::getTimingNetWeightOverflowSize() const {
+  return timingNetWeightOverflow_.size();
+}
+
 
 bool
 TimingBase::updateGNetWeights(float overflow) {
@@ -180,11 +182,15 @@ TimingBase::updateGNetWeights(float overflow) {
         gNet->setTimingWeight(weight);
         weighted_net_count++;
       }
+      debugPrint(log_, GPL, "replace", 3, "timing: net:{} slack:{} weight:{}", 
+          gNet->net()->dbNet()->getConstName(), 
+          net_slack, gNet->totalWeight());
     }
   }
 
   log_->info(GPL, 103, "Weighted {} nets.", weighted_net_count);
   return true;
 }
+
 
 }

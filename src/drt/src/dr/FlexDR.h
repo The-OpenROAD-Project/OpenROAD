@@ -267,7 +267,7 @@ class FlexDRMinAreaVio
   }
   frCoord getGapArea() const { return gapArea_; }
 
- protected:
+ private:
   drNet* net_;
   FlexMazeIdx bp_, ep_;
   frCoord gapArea_;
@@ -656,6 +656,14 @@ class FlexDRWorker
   void initNet_term_new(const frDesign* design,
                         drNet* dNet,
                         std::vector<frBlockObject*>& terms);
+  template <typename T>
+  void initNet_term_new_helper(const frDesign* design,
+                               T* trueTerm,
+                               frBlockObject* term,
+                               frInst* inst,
+                               drNet* dNet,
+                               const string& name,
+                               const dbTransform& shiftXform);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
@@ -698,6 +706,7 @@ class FlexDRWorker
   void initMazeCost_terms(const std::set<frBlockObject*>& objs,
                           bool isAddPathCost,
                           bool isSkipVia = false);
+  void modBlockedEdgesForMacroPin(frInstTerm* instTerm, dbTransform& xForm, bool isAddCost);
   void initMazeCost_ap();  // disable maze edge
   void initMazeCost_marker_route_queue(const frMarker& marker);
   void initMazeCost_marker_route_queue_addHistoryCost(const frMarker& marker);
@@ -720,6 +729,8 @@ class FlexDRWorker
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  void addMinAreaPatches_poly(gcNet* drcNet, drNet* net);
+  void cleanUnneededPatches_poly(gcNet* drcNet, drNet* net);
   void modEolCosts_poly(gcNet* net, ModCostType modType);
   void modEolCosts_poly(gcPin* shape, frLayer* layer, ModCostType modType);
   void modEolCost(frCoord low,

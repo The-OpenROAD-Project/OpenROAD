@@ -73,7 +73,7 @@ class FlexGR
   // others
   void main(odb::dbDatabase* db = nullptr);
 
- protected:
+ private:
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;
@@ -265,7 +265,7 @@ class FlexGRWorkerRegionQuery
     }
   }
 
- protected:
+ private:
   FlexGRWorker* grWorker_;
   // only for routeConnFigs in gr worker
   std::vector<RTree<grConnFig*>> shapes_;
@@ -349,7 +349,7 @@ class FlexGRWorker
   void end();
   void cleanup();
 
- protected:
+ private:
   frDesign* design_;
   FlexGR* gr_;
   Point routeGCellIdxLL_;

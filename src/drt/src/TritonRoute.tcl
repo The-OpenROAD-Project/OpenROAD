@@ -42,8 +42,8 @@ sta::define_cmd_args "detailed_route" {
     [-db_process_node name]
     [-disable_via_gen]
     [-droute_end_iter iter]
-    [-droute_via_in_pin_bottom_layer_num num]
-    [-droute_via_in_pin_top_layer_num num]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
     [-or_seed seed]
     [-or_k_ k]
     [-bottom_routing_layer layer]
@@ -54,19 +54,20 @@ sta::define_cmd_args "detailed_route" {
     [-remote_host host]
     [-remote_port port]
     [-shared_volume vol]
+    [-clean_patches]
 }
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
-      -db_process_node -droute_end_iter -droute_via_in_pin_bottom_layer_num \
-      -droute_via_in_pin_top_layer_num -or_seed -or_k -bottom_routing_layer \
+      -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
+      -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
-    flags {-disable_via_gen -distributed}
+    flags {-disable_via_gen -distributed -clean_patches}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
-
+  set clean_patches [expr [info exists flags(-clean_patches)]]
   if { [info exists keys(-param)] } {
     if { [array size keys] > 1 } {
       utl::error DRT 251 "-param cannot be used with other arguments"
@@ -115,17 +116,15 @@ proc detailed_route { args } {
     } else {
       set droute_end_iter -1
     }
-    if { [info exists keys(-droute_via_in_pin_bottom_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_bottom_layer_num" $keys(-droute_via_in_pin_bottom_layer_num)
-      set droute_via_in_pin_bottom_layer_num $keys(-droute_via_in_pin_bottom_layer_num)
+    if { [info exists keys(-via_in_pin_bottom_layer)] } {
+      set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
     } else {
-      set droute_via_in_pin_bottom_layer_num -1
+      set via_in_pin_bottom_layer ""
     }
-    if { [info exists keys(-droute_via_in_pin_top_layer_num)] } {
-      sta::check_positive_integer "-droute_via_in_pin_top_layer_num" $keys(-droute_via_in_pin_top_layer_num)
-      set droute_via_in_pin_top_layer_num $keys(-droute_via_in_pin_top_layer_num)
+    if { [info exists keys(-via_in_pin_top_layer)] } {
+      set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
     } else {
-      set droute_via_in_pin_top_layer_num -1
+      set via_in_pin_top_layer ""
     }
     if { [info exists keys(-or_seed)] } {
       set or_seed $keys(-or_seed)
@@ -173,8 +172,9 @@ proc detailed_route { args } {
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
-      $droute_via_in_pin_bottom_layer_num $droute_via_in_pin_top_layer_num \
-      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose
+      $via_in_pin_bottom_layer $via_in_pin_top_layer \
+      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
+      $clean_patches
   }
 }
 
@@ -193,13 +193,14 @@ sta::define_cmd_args "detailed_route_debug" {
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
-    [-pa_combining]
+    [-pa_edge]
+    [-pa_commit]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -worker -iter -pin} \
-      flags {-dr -maze -pa -pa_markers -pa_combining -dump_dr}
+      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -208,7 +209,8 @@ proc detailed_route_debug { args } {
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
   set pa_markers [info exists flags(-pa_markers)]
-  set pa_combining [info exists flags(-pa_combining)]
+  set pa_edge [info exists flags(-pa_edge)]
+  set pa_commit [info exists flags(-pa_commit)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -241,9 +243,42 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_combining
+      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit
 }
-
+sta::define_cmd_args "pin_access" {
+    [-db_process_node name]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-verbose level]
+}
+proc pin_access { args } {
+  sta::parse_key_args "pin_access" args \
+      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose} \
+      flags {}
+  sta::check_argc_eq0 "detailed_route_debug" $args
+  if [info exists keys(-db_process_node)] {
+    set db_process_node $keys(-db_process_node)
+  } else {
+    set db_process_node ""
+  }
+  if { [info exists keys(-bottom_routing_layer)] } {
+    set bottom_routing_layer $keys(-bottom_routing_layer)
+  } else {
+    set bottom_routing_layer ""
+  }
+  if { [info exists keys(-top_routing_layer)] } {
+    set top_routing_layer $keys(-top_routing_layer)
+  } else {
+    set top_routing_layer ""
+  }
+  if { [info exists keys(-verbose)] } {
+    sta::check_positive_integer "-verbose" $keys(-verbose)
+    set verbose $keys(-verbose)
+  } else {
+    set verbose 1
+  }
+  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
+}
 proc detailed_route_run_worker { args } {
   sta::check_argc_eq1 "detailed_route_run_worker" $args
   drt::run_worker_cmd $args

@@ -73,5 +73,6 @@
 [INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
 Loading library IO cell meta-data
 Loaded library IO cell data
+[WARNING IFP-0028] Core area lower left (200.000, 200.000) snapped to (200.160, 203.130).
 [INFO IFP-0001] Added 1265 rows of 10416 sites.
 [ERROR PAD-0247] Cannot fit IO pads between the following anchor cells : sig17, sig25.

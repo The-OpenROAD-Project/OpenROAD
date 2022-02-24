@@ -327,7 +327,11 @@ proc add_pdn_ring {args} {
 sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         -layers list_of_2_layers \
                                         [-cut_pitch pitch_value] \
-                                        [-fixed_vias list_of_vias]}
+                                        [-fixed_vias list_of_vias] \
+				        [-max_rows integer] \
+				        [-max_columns integer] \
+				        [-ongrid list_of_layers] \
+				        [-split_cuts list_of_layers]}
 
 # add_pdn_connect -grid main_grid -layers {metal1 metal2} -cut_pitch 0.16
 # add_pdn_connect -grid main_grid -layers {metal2 metal4}
@@ -337,7 +341,7 @@ proc add_pdn_connect {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-grid -layers -cut_pitch -fixed_vias} \
+    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts} \
 
   if {[llength $args] > 0} {
     utl::error PDN 136 "Unexpected argument [lindex $args 0] for add_pdn_connect command."
@@ -725,6 +729,34 @@ proc check_number {value} {
   return $value
 }
 
+proc check_integer {value} {
+  if {![string is integer $value]} {
+    error "value ($value) not recognized as a number."
+  }
+
+  return $value
+}
+
+proc check_max_rows {value} {
+  foreach item $value {
+    if {[catch {check_integer $item} msg]} {
+      utl::error PDN 177 "Problem with max_rows specification, $msg."
+    }
+  }
+
+  return $value
+}
+
+proc check_max_columns {value} {
+  foreach item $value {
+    if {[catch {check_number $item} msg]} {
+      utl::error PDN 178 "Problem with max_columns specification, $msg."
+    }
+  }
+
+  return $value
+}
+
 proc check_halo {value} {
   foreach item $value {
     if {[catch {check_number $item} msg]} {
@@ -1073,6 +1105,10 @@ proc add_pdn_connect {args} {
       -layers          {;}
       -cut_pitch       {dict set layers constraints cut_pitch $value}
       -fixed_vias      {dict set layers fixed_vias [check_fixed_vias $value]}
+      -max_rows        {dict set layers constraints max_rows [check_max_rows $value]}
+      -max_columns     {dict set layers constraints max_columns [check_max_columns $value]}
+      -ongrid          {dict set layers constraints ongrid [check_layer_names $value]}
+      -split_cuts      {dict set layers constraints split_cuts [check_layer_names $value]}
       default          {utl::error PDN 126 "Unrecognized argument $arg, should be one of -grid, -type, -orient, -power_pins, -ground_pins, -blockages, -rails, -straps, -connect."}
     }
 
@@ -3062,7 +3098,7 @@ proc get_grid_channel_layers {} {
   return $channel_layers
 }
 
-proc get_grid_channel_spacing {layer_name channel_height} {
+proc get_grid_channel_spacing {layer_name parallel_length} {
   variable grid_data
   variable def_units
 
@@ -3093,7 +3129,7 @@ proc get_grid_channel_spacing {layer_name channel_height} {
             set non_prl_rule $rule
             set prl_rule -1
           } else {
-            if {$channel_height > [$layer getTwoWidthsSpacingTablePRL $rule]} {
+            if {$parallel_length > [$layer getTwoWidthsSpacingTablePRL $rule]} {
               set prl_rule $rule
             }
           }
@@ -3111,8 +3147,8 @@ proc get_grid_channel_spacing {layer_name channel_height} {
       set spacing [$layer getTwoWidthsSpacingTableEntry $use_rule $use_rule]
       # debug "Two widths spacing: layer: $layer_name, rule: $use_rule, spacing: $spacing"
     } elseif {[$layer hasV55SpacingRules]} {
-      utl::warn PDN 173 "V55 spacing rule for layer $layer_name detected, using normal spacing rule instead"
-      set spacing [$layer getSpacing]
+      set layer_width [get_grid_wire_width $layer_name]
+      set spacing [$layer findV55Spacing $layer_width $parallel_length]
     } else {
       set spacing [$layer getSpacing]
     }
@@ -5843,7 +5879,6 @@ proc repair_channel {channel layer_name tag min_size} {
   } else {
     set channel_height [$channel dy]
   }
-  set channel_spacing [get_grid_channel_spacing $layer_name $channel_height]
   set width [get_grid_wire_width $layer_name]
 
   set xMin [$channel xMin]
@@ -5861,15 +5896,19 @@ proc repair_channel {channel layer_name tag min_size} {
     set other_strap [lindex [odb::getRectangles [odb::andSet [odb::newSetFromRect $xMin $yMin $xMax $yMax] $stripe_locs($layer_name,$other_tag)]] 0]
 
     if {[get_dir $layer_name] == "hor"} {
+      set center [expr ($xMax + $xMin) / 2]
+      set mid_channel [expr ($yMax + $yMin) / 2]
       if {$xMax - $xMin < $min_size} {
-        set center [expr ($xMax + $xMin) / 2]
         set xMin [expr $center - $min_size / 2]
         set xMax [expr $center + $min_size / 2]
       }
-      if {[$other_strap yMin] - $channel_spacing - $width > $yMin} {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $xMax - $xMin]]
+
+      set other_strap_mid [expr ([$other_strap yMin] + [$other_strap yMax]) / 2]
+      if {($mid_channel <= $other_strap_mid) && ([$other_strap yMin] - $channel_spacing - $width > $yMin)} {
         # debug "Stripe below $other_strap"
         set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMin] - $channel_spacing - $width] $xMax [expr [$other_strap yMin] - $channel_spacing]]
-      } elseif {[$other_strap yMax] + $channel_spacing + $width < $yMax} {
+      } elseif {($mid_channel > $other_strap_mid) && ([$other_strap yMax] + $channel_spacing + $width < $yMax)} {
         # debug "Stripe above $other_strap"
         set stripe [odb::newSetFromRect $xMin [expr [$other_strap yMax] + $channel_spacing] $xMax [expr [$other_strap yMax] + $channel_spacing + $width]]
       } else {
@@ -5877,15 +5916,19 @@ proc repair_channel {channel layer_name tag min_size} {
         utl::warn PDN 169 "Cannot fit additional $tag horizontal strap in channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin]) - ([ord::dbu_to_microns $xMax], [ord::dbu_to_microns $yMax])"
       }
     } else {
+      set center [expr ($yMax + $yMin) / 2]
+      set mid_channel [expr ($xMax + $xMin) / 2]
       if {$yMax - $yMin < $min_size} {
-        set center [expr ($yMax + $yMin) / 2]
         set yMin [expr $center - $min_size / 2]
         set yMax [expr $center + $min_size / 2]
       }
-      if {[$other_strap xMin] - $channel_spacing - $width > $xMin} {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $yMax - $yMin]]
+
+      set other_strap_mid [expr ([$other_strap xMin] + [$other_strap xMax]) / 2]
+      if {($mid_channel <= $other_strap_mid) && ([$other_strap xMin] - $channel_spacing - $width > $xMin)} {
         # debug "Stripe left of $other_strap on layer $layer_name, spacing: $channel_spacing, width $width, strap_edge: [$other_strap xMin]"
         set stripe [odb::newSetFromRect [expr [$other_strap xMin] - $channel_spacing - $width] $yMin [expr [$other_strap xMin] - $channel_spacing] $yMax]
-      } elseif {[$other_strap xMax] + $channel_spacing + $width < $xMax} {
+      } elseif {($mid_channel > $other_strap_mid) && ([$other_strap xMax] + $channel_spacing + $width < $xMax)} {
         # debug "Stripe right of $other_strap"
         set stripe [odb::newSetFromRect [expr [$other_strap xMax] + $channel_spacing] $yMin [expr [$other_strap xMax] + $channel_spacing + $width] $yMax]
       } else {
@@ -5895,6 +5938,7 @@ proc repair_channel {channel layer_name tag min_size} {
     }
   } else {
     if {[get_dir $layer_name] == "hor"} {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $xMax - $xMin]]
       set routing_grid [round_to_routing_grid $layer_name [expr ($yMax + $yMin - $channel_spacing) / 2]]
       if {([expr $routing_grid - $width / 2] < $yMin) || ([expr $routing_grid + $width / 2] > $yMax)} {
         utl::warn "PDN" 171 "Channel ([ord::dbu_to_microns $xMin] [ord::dbu_to_microns $yMin] [ord::dbu_to_microns $xMax] [ord::dbu_to_microns $yMax]) too narrow. Channel on layer $layer_name must be at least [ord::dbu_to_microns [expr round(2.0 * $width + $channel_spacing)]] wide."
@@ -5902,6 +5946,7 @@ proc repair_channel {channel layer_name tag min_size} {
 
       set stripe [odb::newSetFromRect $xMin [expr $routing_grid - $width / 2] $xMax [expr $routing_grid + $width / 2]]
     } else {
+      set channel_spacing [get_grid_channel_spacing $layer_name [expr $yMax - $yMin]]
       set routing_grid [round_to_routing_grid $layer_name [expr ($xMax + $xMin - $channel_spacing) / 2]]
 
       if {([expr $routing_grid - $width / 2] < $xMin) || ([expr $routing_grid + $width / 2] > $xMax)} {

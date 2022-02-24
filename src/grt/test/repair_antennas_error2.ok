@@ -17,25 +17,17 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 9129
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
-[INFO GRT-0017] Processing 13509 blockages on layer li1.
-[INFO GRT-0017] Processing 3926 blockages on layer met1.
-[INFO GRT-0017] Processing 10 blockages on layer met4.
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 9129
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
@@ -49,22 +41,25 @@ met4       Vertical        10086          9768          3.15%
 met5       Horizontal       3362          3280          2.44%
 ---------------------------------------------------------------
 
-[INFO GRT-0111] Final number of vias: 937
-[INFO GRT-0112] Final usage 3D: 5790
+[INFO GRT-0197] Via related to pin nodes: 599
+[INFO GRT-0198] Via related Steiner nodes: 92
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 924
+[INFO GRT-0112] Final usage 3D: 5743
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-li1              24714          1547            6.26%             0 /  0 /  0
-met1             28047          1432            5.11%             0 /  0 /  0
+li1              24714          1525            6.17%             0 /  0 /  0
+met1             28047          1446            5.16%             0 /  0 /  0
 met2             24920             0            0.00%             0 /  0 /  0
 met3             15040             0            0.00%             0 /  0 /  0
 met4              9768             0            0.00%             0 /  0 /  0
 met5              3280             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           105769          2979            2.82%             0 /  0 /  0
+Total           105769          2971            2.81%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30492 um
+[INFO GRT-0018] Total wirelength: 30427 um
 [WARNING STA-0328] port 'DIOD' not found.
 [ERROR GRT-0069] Diode not found.
 GRT-0069

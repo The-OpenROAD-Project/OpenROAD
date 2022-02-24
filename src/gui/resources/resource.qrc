@@ -8,5 +8,9 @@
   <file alias="visible.png">google_icons/baseline_visibility_black_36dp.png</file>
   <file alias="select.png">google_icons/baseline_touch_app_black_36dp.png</file>
   <file alias="palette.png">google_icons/baseline_palette_black_36dp.png</file>
+  <file alias="remove.png">google_icons/round_remove_black_36dp.png</file>
+  <file alias="add.png">google_icons/round_add_black_36dp.png</file>
+  <file alias="focus.png">google_icons/round_loupe_black_36dp.png</file>
+  <file alias="defocus.png">google_icons/round_minusloupe_black_36dp.png</file>
 </qresource>
 </RCC>

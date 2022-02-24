@@ -33,6 +33,7 @@
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QInputDialog>
+#include <QFontDialog>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -61,6 +62,7 @@
 #include "utl/Logger.h"
 #include "timingWidget.h"
 #include "drcWidget.h"
+#include "gui/heatMap.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -204,6 +206,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           inspector_,
           SLOT(highlightChanged()));
+  connect(viewer_,
+          SIGNAL(focusNetsChanged()),
+          inspector_,
+          SLOT(focusNetsChanged()));
   connect(inspector_,
           SIGNAL(removeHighlight(const QList<const Selected*>&)),
           this,
@@ -213,6 +219,12 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addHighlighted(const SelectionSet&)));
 
+  connect(timing_widget_,
+          &TimingWidget::inspect,
+          [this](const Selected& selected) {
+            inspector_->inspect(selected);
+            inspector_->raise();
+          });
   connect(selection_browser_,
           SIGNAL(selected(const Selected&)),
           inspector_,
@@ -303,6 +315,7 @@ MainWindow::MainWindow(QWidget* parent)
   settings.beginGroup("main");
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
+  QApplication::setFont(settings.value("font", QApplication::font()).value<QFont>());
   hide_option_->setChecked(settings.value("check_exit", hide_option_->isChecked()).toBool());
   show_dbu_->setChecked(settings.value("use_dbu", show_dbu_->isChecked()).toBool());
   script_->readSettings(&settings);
@@ -325,8 +338,10 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-  // unregister descriptors
-  Gui::get()->unregisterDescriptor<Ruler*>();
+  auto* gui = Gui::get();
+  // unregister descriptors with GUI dependencies
+  gui->unregisterDescriptor<Ruler*>();
+  gui->unregisterDescriptor<odb::dbNet*>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -343,33 +358,29 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
 void MainWindow::setBlock(odb::dbBlock* block)
 {
-  for (auto* heat_map : getHeatMaps()) {
+  for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
   }
 }
 
 void MainWindow::init(sta::dbSta* sta)
 {
-  // Setup timing widget
+  // Setup widgets
   timing_widget_->init(sta);
+  controls_->setSTA(sta);
 
   // register descriptors
   auto* gui = Gui::get();
   gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
+  gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
-
-  // renderers
-  power_density_data_.setSTA(sta);
-  for (auto* heat_map : getHeatMaps()) {
-    gui->registerRenderer(heat_map->getRenderer());
-  }
 }
 
 void MainWindow::createStatusBar()
@@ -428,6 +439,8 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  font_ = new QAction("Application font", this);
+
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -445,12 +458,25 @@ void MainWindow::createActions()
   connect(show_dbu_, SIGNAL(toggled(bool)), selection_browser_, SLOT(updateModels()));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
   connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
+
+  connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
 {
-  for (auto* heat_map : getHeatMaps()) {
+  for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
+  }
+}
+
+void MainWindow::showApplicationFont()
+{
+  bool okay = false;
+  QFont font = QFontDialog::getFont(&okay, QApplication::font(), this, "Application font");
+
+  if (okay) {
+    QApplication::setFont(font);
+    update();
   }
 }
 
@@ -469,10 +495,9 @@ void MainWindow::createMenus()
   tools_menu_ = menuBar()->addMenu("&Tools");
   tools_menu_->addAction(build_ruler_);
   auto heat_maps = tools_menu_->addMenu("&Heat maps");
-  for (auto* heat_map : getHeatMaps()) {
-    connect(heat_maps->addAction(QString::fromStdString(heat_map->getName())),
-            &QAction::triggered,
-            [heat_map]() { heat_map->showSetup(); });
+  heat_maps->setObjectName("HeatMaps");
+  for (auto* heat_map : Gui::get()->getHeatMaps()) {
+    registerHeatMap(heat_map);
   }
 
   windows_menu_ = menuBar()->addMenu("&Windows");
@@ -487,6 +512,7 @@ void MainWindow::createMenus()
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
+  option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
 }
@@ -839,9 +865,15 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
     return;
   }
 
+  // Hold on to selected items as the pointers will be invalid
+  QList<Selected> items_storage;
   for (auto item : items) {
-    highlighted_[highlight_group].insert(*item);
+    items_storage.push_back(*item);
   }
+  // Remove any items that might already be selected
+  removeFromHighlighted(items);
+
+  highlighted_[highlight_group].insert(items_storage.begin(), items_storage.end());
   emit highlightChanged();
 }
 
@@ -865,8 +897,10 @@ void MainWindow::clearHighlighted(int highlight_group)
 
 void MainWindow::clearRulers()
 {
-  if (rulers_.empty())
+  if (rulers_.empty()) {
     return;
+  }
+  Gui::get()->removeSelected<Ruler*>();
   rulers_.clear();
   emit rulersChanged();
 }
@@ -1030,6 +1064,7 @@ void MainWindow::saveSettings()
   settings.beginGroup("main");
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
+  settings.setValue("font", QApplication::font());
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
   script_->writeSettings(&settings);
@@ -1069,11 +1104,6 @@ void MainWindow::setLogger(utl::Logger* logger)
   script_->setLogger(logger);
   viewer_->setLogger(logger);
   drc_viewer_->setLogger(logger);
-
-  // heat maps
-  for (auto* heat_map : getHeatMaps()) {
-    heat_map->setLogger(logger);
-  }
 }
 
 void MainWindow::fit()
@@ -1160,89 +1190,6 @@ const std::vector<std::string> MainWindow::getRestoreTclCommands()
   return cmds;
 }
 
-const std::vector<HeatMapDataSource*> MainWindow::getHeatMaps()
-{
-  return {
-    &routing_congestion_data_,
-    &placement_density_data_,
-    &power_density_data_
-  };
-}
-
-void MainWindow::setHeatMapSetting(const std::string& name, const std::string& option, const Renderer::Setting& value)
-{
-  HeatMapDataSource* source = nullptr;
-
-  for (auto* heat_map : getHeatMaps()) {
-    if (heat_map->getShortName() == name) {
-      source = heat_map;
-      break;
-    }
-  }
-
-  if (source == nullptr) {
-    QStringList options;
-    for (const auto* heat_map : getHeatMaps()) {
-      options.append(QString::fromStdString(heat_map->getShortName()));
-    }
-    logger_->error(utl::GUI, 28, "{} is not a known map. Valid options are: {}", name, options.join(", ").toStdString());
-  }
-
-  const std::string rebuild_map_option = "rebuild";
-  if (option == rebuild_map_option) {
-    source->destroyMap();
-  } else {
-    auto settings = source->getSettings();
-
-    if (settings.count(option) == 0) {
-      QStringList options;
-      options.append(QString::fromStdString(rebuild_map_option));
-      for (const auto& [key, kv] : settings) {
-        options.append(QString::fromStdString(key));
-      }
-      logger_->error(utl::GUI, 29, "{} is not a valid option. Valid options are: {}", option, options.join(", ").toStdString());
-    }
-
-    auto current_value = settings[option];
-    if (std::holds_alternative<bool>(current_value)) {
-      // is bool
-      if (auto* s = std::get_if<bool>(&value)) {
-        settings[option] = *s;
-      } else {
-        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
-      }
-    } else if (std::holds_alternative<int>(current_value)) {
-      // is int
-      if (auto* s = std::get_if<int>(&value)) {
-        settings[option] = *s;
-      } else if (auto* s = std::get_if<double>(&value)) {
-        settings[option] = static_cast<int>(*s);
-      } else {
-        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
-      }
-    } else if (std::holds_alternative<double>(current_value)) {
-      // is double
-      if (auto* s = std::get_if<int>(&value)) {
-        settings[option] = static_cast<double>(*s);
-      } else if (auto* s = std::get_if<double>(&value)) {
-        settings[option] = *s;
-      } else {
-        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
-      }
-    } else {
-      // is string
-      if (auto* s = std::get_if<std::string>(&value)) {
-        settings[option] = *s;
-      } else {
-        logger_->error(utl::GUI, 63, "{} must be a string", option);
-      }
-    }
-    source->setSettings(settings);
-  }
-
-  source->getRenderer()->redraw();
-}
-
 std::string MainWindow::convertDBUToString(int value, bool add_units) const
 {
   if (show_dbu_->isChecked()) {
@@ -1293,6 +1240,50 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
       return new_value.toDouble(ok) * dbu_per_micron;
     }
   }
+}
+
+void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
+{
+  auto* renderer = timing_widget_->getConeRenderer();
+
+  if (std::holds_alternative<odb::dbITerm*>(term)) {
+    renderer->setITerm(std::get<odb::dbITerm*>(term), fanin, fanout);
+  } else {
+    renderer->setBTerm(std::get<odb::dbBTerm*>(term), fanin, fanout);
+  }
+}
+
+void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
+{
+  auto* settings = timing_widget_->getSettings();
+  settings->setFromPin({});
+  std::set<sta::Pin*> pins;
+  for (const auto& term : terms) {
+    pins.insert(settings->convertTerm(term));
+  }
+  settings->setThruPin({pins});
+  settings->setToPin({});
+
+  timing_widget_->updatePaths();
+  timing_widget_->show();
+  timing_widget_->raise();
+}
+
+void MainWindow::registerHeatMap(HeatMapDataSource* heatmap)
+{
+  auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
+  auto* action = heat_maps->addAction(QString::fromStdString(heatmap->getName()));
+  heatmap_actions_[heatmap] = action;
+  connect(action,
+          &QAction::triggered,
+          [heatmap]() { heatmap->showSetup(); });
+}
+
+void MainWindow::unregisterHeatMap(HeatMapDataSource* heatmap)
+{
+  auto* heat_maps = menuBar()->findChild<QMenu*>("HeatMaps");
+  heat_maps->removeAction(heatmap_actions_[heatmap]);
+  heatmap_actions_.erase(heatmap);
 }
 
 }  // namespace gui

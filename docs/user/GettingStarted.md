@@ -99,6 +99,8 @@ yourself.
 Once the platform is set up, you can create a new design configuration with
 information about the design. See sample configurations in the `design`
 directory.
+Refer to the [Flow variables](./FlowVariables.md) document for details on how to use 
+environment variables in OpenROAD-flow-scripts to configure platform and design specific parameters. 
 
 ### Adding a New Platform
 
@@ -127,3 +129,12 @@ Start with a very small submodule in your design that has only a few pins.
 ``` shell
 make DESIGN_NAME=TopLevelName DESIGN_CONFIG=$(pwd)/designs/harness.mk
 ```
+
+### AutoTuner: Automatic parameter tuning framework
+Automatic parameter tuning framework for commercial and academic RTL-to-GDS flows.
+AutoTuner provides two main functionalities as follows.
+
+- Automatic hyperparameter tuning framework for OpenROAD-flow-scripts 
+- Parametric sweeping experiments for OpenROAD-flow-scripts 
+
+Refer to the detailed [instructions here](./InstructionsForAutoTuner.md) for AutoTuner.

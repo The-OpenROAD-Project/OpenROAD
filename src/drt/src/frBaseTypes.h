@@ -86,10 +86,12 @@ enum frEndStyleEnum
 enum frBlockObjectEnum
 {
   frcNet,
-  frcTerm,
+  frcBTerm,
+  frcMTerm,
   frcInst,
   frcVia,
-  frcPin,
+  frcBPin,
+  frcMPin,
   frcInstTerm,
   frcRect,
   frcPolygon,
@@ -100,6 +102,7 @@ enum frBlockObjectEnum
   frcBlockage,
   frcLayerBlockage,
   frcBlock,
+  frcMaster,
   frcBoundary,
   frcInstBlockage,
   frcAccessPattern,
@@ -137,6 +140,9 @@ enum frBlockObjectEnum
   gccRect,
   gccPolygon
 };
+
+std::ostream& operator<<(std::ostream& os, frBlockObjectEnum type);
+
 enum class frGuideEnum
 {
   frcGuideX,
@@ -199,12 +205,16 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint
 };
 
+std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
+
 enum class frCornerTypeEnum
 {
   UNKNOWN,
   CONCAVE,
   CONVEX
 };
+
+std::ostream& operator<<(std::ostream& os, frCornerTypeEnum type);
 
 enum class frCornerDirEnum
 {
@@ -222,6 +232,8 @@ enum class frMinimumcutConnectionEnum
   FROMBELOW = 1
 };
 
+std::ostream& operator<<(std::ostream& os, frMinimumcutConnectionEnum conn);
+
 enum class frMinstepTypeEnum
 {
   UNKNOWN = -1,
@@ -229,6 +241,8 @@ enum class frMinstepTypeEnum
   OUTSIDECORNER = 1,
   STEP = 2
 };
+
+std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type);
 
 #define OPPOSITEDIR 7  // used in FlexGC_main.cpp
 enum class frDirEnum
@@ -282,7 +296,8 @@ struct frDebugSettings
         y(-1),
         iter(0),
         paMarkers(false),
-        paCombining(false)
+        paEdge(false),
+        paCommit(false)
   {
   }
 
@@ -300,7 +315,8 @@ struct frDebugSettings
   int y;
   int iter;
   bool paMarkers;
-  bool paCombining;
+  bool paEdge;
+  bool paCommit;
 };
 
 // Avoids the need to split the whole serializer like

@@ -410,8 +410,8 @@ void dbRegion::destroy(dbRegion* region_)
   dbSet<dbBox>::iterator bitr;
 
   for (bitr = boxes.begin(); bitr != boxes.end();) {
-    dbSet<dbBox>::iterator next = ++bitr;
     dbBox* box = *bitr;
+    dbSet<dbBox>::iterator next = ++bitr;
     dbProperty::destroyProperties(box);
     block->_box_tbl->destroy((_dbBox*) box);
     bitr = next;

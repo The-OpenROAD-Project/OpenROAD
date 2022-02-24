@@ -116,7 +116,9 @@ class DbMasterDescriptor : public Descriptor
 class DbNetDescriptor : public Descriptor
 {
  public:
-  DbNetDescriptor(odb::dbDatabase* db);
+  DbNetDescriptor(odb::dbDatabase* db,
+                  sta::dbSta* sta,
+                  const std::set<odb::dbNet*>& focus_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -125,11 +127,13 @@ class DbNetDescriptor : public Descriptor
   void highlight(std::any object,
                  Painter& painter,
                  void* additional_data) const override;
+  bool isSlowHighlight(std::any object) const override;
 
   bool isNet(std::any object) const override;
 
   Properties getProperties(std::any object) const override;
   Editors getEditors(std::any object) const override;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -137,6 +141,7 @@ class DbNetDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
 
   using Node = odb::dbWireGraph::Node;
   using NodeList = std::set<const Node*>;
@@ -160,6 +165,8 @@ class DbNetDescriptor : public Descriptor
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
+  const std::set<odb::dbNet*>& focus_nets_;
+
   static const int max_iterms_ = 10000;
 };
 
@@ -178,6 +185,7 @@ class DbITermDescriptor : public Descriptor
                  void* additional_data) const override;
 
   Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -202,6 +210,7 @@ class DbBTermDescriptor : public Descriptor
 
   Properties getProperties(std::any object) const override;
   Editors getEditors(std::any object) const override;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object, void* additional_data) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -263,6 +272,37 @@ class DbTechLayerDescriptor : public Descriptor
 {
  public:
   DbTechLayerDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object,
+                 Painter& painter,
+                 void* additional_data) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object, void* additional_data) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+// The ap doesn't know its location as it is associated the master and
+// needs the iterm to get a location
+struct DbItermAccessPoint
+{
+  odb::dbAccessPoint* ap;
+  odb::dbITerm* iterm;
+};
+
+class DbItermAccessPointDescriptor : public Descriptor
+{
+ public:
+  DbItermAccessPointDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;

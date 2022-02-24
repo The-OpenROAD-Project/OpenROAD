@@ -47,11 +47,11 @@ using utl::CTS;
 
 void LevelBalancer::run()
 {
-  debugPrint(_logger, CTS, "levelizer", 1, "Computing Max Tree Depth");
-  unsigned maxTreeDepth = computeMaxTreeDepth(_root);
-  _logger->info(CTS, 93, "Fixing tree levels for max depth {}", maxTreeDepth);
+  debugPrint(logger_, CTS, "levelizer", 1, "Computing Max Tree Depth");
+  unsigned maxTreeDepth = computeMaxTreeDepth(root_);
+  logger_->info(CTS, 93, "Fixing tree levels for max depth {}", maxTreeDepth);
   levelBufCount_ = 0;
-  fixTreeLevels(_root, 0, maxTreeDepth);
+  fixTreeLevels(root_, 0, maxTreeDepth);
 }
 
 unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
@@ -64,7 +64,7 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
     if (driverPin && driverPin->getObjectType() == odb::dbITermObj) {
       odb::dbInst* drivingInst
           = (static_cast<odb::dbITerm*>(driverPin))->getInst();
-      debugPrint(_logger,
+      debugPrint(logger_,
                  CTS,
                  "levelizer",
                  1,
@@ -103,7 +103,7 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
     ClockInst& levelBuffer = builder->getClock().addClockBuffer(
         "clkbuf_level_" + std::to_string(level) + "_" + nameSuffix
             + std::to_string(levelBufCount_),
-        _options->getSinkBuffer(),
+        options_->getSinkBuffer(),
         driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
         driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
     builder->addTreeLevelBuffer(&levelBuffer);
@@ -134,7 +134,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
   if (currLevel >= maxTreeDepth)
     return;
 
-  _logger->report(
+  logger_->report(
       "Fixing from level {} (parent={} + current={}) to max {} for driver {}",
       parentDepth + builder->getTreeBufLevels(),
       parentDepth,
@@ -170,7 +170,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
       subClusterCnt++;
       const std::string suffix
           = std::to_string(subClusterCnt) + "_" + std::to_string(clusterCnt);
-      debugPrint(_logger,
+      debugPrint(logger_,
                  CTS,
                  "levelizer",
                  1,

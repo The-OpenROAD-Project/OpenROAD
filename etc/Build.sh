@@ -24,6 +24,10 @@ OPTIONS:
                                                   e.g.: -cmake='-DFLAGS="-a -b"'
   -compiler=COMPILER_NAME                       Compiler name: gcc or clang
                                                   Default: gcc
+  -no-warnings
+                                                Compiler warnings are
+                                                considered errors, i.e.,
+                                                use -Werror flag during build.
   -dir=PATH                                     Path to store build files.
                                                   Default: ./build
   -coverage                                     Enable cmake coverage options
@@ -48,6 +52,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -compiler=*)
             compiler="${1#*=}"
+            ;;
+        -no-warnings )
+            cmakeOptions+=( -DALLOW_WARNINGS=OFF )
             ;;
         -coverage )
             cmakeOptions+=( -DCMAKE_BUILD_TYPE=Debug )

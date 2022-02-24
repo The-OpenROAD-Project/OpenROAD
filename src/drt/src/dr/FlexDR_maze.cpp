@@ -1440,6 +1440,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
+    if (modEol)
+        modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1830,6 +1832,39 @@ void FlexDRWorker::modEolCost(frCoord low,
   modEolSpacingCost_helper(testBox, z, modType, 0);
   modEolSpacingCost_helper(testBox, z, modType, 1);
   modEolSpacingCost_helper(testBox, z, modType, 2);
+}
+
+void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
+{
+    vector<vector<float>> areaMap(getTech()->getTopLayerNum()+1);
+    vector<drPatchWire*> patchesToRemove;
+    for (auto& shape : net->getRouteConnFigs()) {
+        if (shape->typeId() != frBlockObjectEnum::drcPatchWire)
+            continue;
+        drPatchWire* patch = static_cast<drPatchWire*>(shape.get());
+        gtl::point_data<frCoord> pt(patch->getOrigin().x(), patch->getOrigin().y());
+        frLayerNum lNum = patch->getLayerNum();
+        frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
+        if (areaMap[lNum].empty())
+            areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
+        for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
+            auto& pin = drcNet->getPins(lNum)[i];
+            if (!gtl::contains(*pin->getPolygon(), pt))
+                continue;
+            frCoord area;
+            if (areaMap[lNum][i] == -1)
+                areaMap[lNum][i] = gtl::area(*pin->getPolygon());
+            area = areaMap[lNum][i];
+            if (area - patch->getOffsetBox().area() >= minArea) {
+                patchesToRemove.push_back(patch);
+                areaMap[lNum][i] -= patch->getOffsetBox().area();
+            }
+        }
+    }
+    for (auto patch : patchesToRemove) {
+        getWorkerRegionQuery().remove(patch);
+        net->removeShape(patch);
+    }
 }
 
 void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
@@ -2476,16 +2511,23 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
   Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
   design_->getRegionQuery()->query(bx, lNum, result);
   for (auto& rqObj : result) {
-    if (rqObj.second->typeId() == frcInstTerm) {
-      auto instTerm = static_cast<frInstTerm*>(rqObj.second);
-      if (instTerm->getNet() == net
-          && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
-        return true;
-    } else if (rqObj.second->typeId() == frcTerm) {
-      auto term = static_cast<frTerm*>(rqObj.second);
-      if (term->getNet() == net
-          && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
-        return true;
+    switch (rqObj.second->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj.second);
+        if (instTerm->getNet() == net
+            && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+          return true;
+        break;
+      }
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj.second);
+        if (term->getNet() == net
+            && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
+          return true;
+        break;
+      }
+      default:
+        break;
     }
   }
   return false;
@@ -2711,8 +2753,14 @@ bool FlexDRWorker::routeNet(drNet* net)
       break;
     }
   }
-
   if (searchSuccess) {
+    if (CLEAN_PATCHES) {
+      gcWorker_->setTargetNet(net->getFrNet());
+      gcWorker_->updateDRNet(net);
+      gcWorker_->setEnableSurgicalFix(true);
+      gcWorker_->updateGCWorker();
+      cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
+    }
     routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;
@@ -3120,8 +3168,8 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                                                    const FlexMazeIdx& epIdx,
                                                    frCoord gapArea,
                                                    frCoord patchWidth,
-                                                   bool bpPatchStyle,
-                                                   bool epPatchStyle)
+                                                   bool bpPatchLeft,
+                                                   bool epPatchLeft)
 {
   bool isPatchHorz;
   // bool isLeftClean = true;
@@ -3138,14 +3186,14 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   }
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
-      bpIdx, isPatchHorz, bpPatchStyle, patchLength);
+      bpIdx, isPatchHorz, bpPatchLeft, patchLength);
   auto costR = routeNet_postAstarAddPathMetal_isClean(
-      epIdx, isPatchHorz, epPatchStyle, patchLength);
+      epIdx, isPatchHorz, epPatchLeft, patchLength);
   if (costL <= costR) {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, bpIdx, isPatchHorz, bpPatchStyle, patchLength, patchWidth);
+        net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
   } else {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, epIdx, isPatchHorz, epPatchStyle, patchLength, patchWidth);
+        net, epIdx, isPatchHorz, epPatchLeft, patchLength, patchWidth);
   }
 }

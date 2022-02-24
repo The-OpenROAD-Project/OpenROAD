@@ -138,7 +138,7 @@ class FlexGCWorker::Impl
   // update
   void updateGCWorker();
 
- protected:
+ private:
   frTechObject* tech_;
   Logger* logger_;
   FlexDRWorker* drWorker_;
@@ -306,7 +306,6 @@ class FlexGCWorker::Impl
                                       frMinStepConstraint* con,
                                       bool hasInsideCorner,
                                       bool hasOutsideCorner,
-                                      bool hasStep,
                                       int currEdges,
                                       frCoord currLength,
                                       bool hasRoute);

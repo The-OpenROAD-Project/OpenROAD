@@ -49,6 +49,8 @@ enum class RouteType
   MazeRoute
 };
 
+std::ostream& operator<<(std::ostream& os, RouteType type);
+
 enum class Direction
 {
   North,
@@ -78,16 +80,16 @@ struct Segment  // A Segment is a 2-pin connection
   int numEdges;          // number of H and V Edges to implement this Segment
 };
 
-struct FrNet    // A Net is a set of connected MazePoints
+struct FrNet  // A Net is a set of connected MazePoints
 {
   odb::dbNet* db_net;
   int numPins;  // number of pins in the net
   int deg;  // net degree (number of MazePoints connecting by the net, pins in
-              // same MazePoints count only 1)
+            // same MazePoints count only 1)
   std::vector<int> pinX;  // array of X coordinates of pins
   std::vector<int> pinY;  // array of Y coordinates of pins
   std::vector<int> pinL;  // array of L coordinates of pins
-  bool is_clock;             // flag that indicates if net is a clock net
+  bool is_clock;          // flag that indicates if net is a clock net
   int driver_idx;
   int edgeCost;
   int minLayer;
@@ -97,7 +99,8 @@ struct FrNet    // A Net is a set of connected MazePoints
 
 const char* netName(FrNet* net);
 
-struct Edge // An Edge is the routing track holder between two adjacent MazePoints
+struct Edge  // An Edge is the routing track holder between two adjacent
+             // MazePoints
 {
   short congCNT;
   unsigned short cap;    // the capacity of the edge
@@ -127,7 +130,7 @@ struct TreeNode
   short heights[max_connections];
   int eID[max_connections];
 
-  short x, y;     // position in the grid graph
+  short x, y;   // position in the grid graph
   int nbr[3];   // three neighbors
   int edge[3];  // three adjacent edges
   int hID;
@@ -151,10 +154,9 @@ struct Route
       gridsY;  // valid for MazeRoute, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
   std::vector<short> gridsL;  // n
-  int routelen;   // valid for MazeRoute, the number of edges in the route
-                  // Edge3D *edge;       // list of 3D edges the route go
-                  // through;
-
+  int routelen;  // valid for MazeRoute, the number of edges in the route
+                 // Edge3D *edge;       // list of 3D edges the route go
+                 // through;
 };
 
 struct TreeEdge
@@ -165,7 +167,6 @@ struct TreeEdge
   int n1, n1a;
   int n2, n2a;
   Route route;
-
 };
 
 struct StTree
