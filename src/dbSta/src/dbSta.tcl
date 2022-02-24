@@ -89,7 +89,7 @@ rename report_units report_units_raw
 
 proc report_units { args } {
 
-  report_units_raw $args
+  report_units_raw
 
   utl::push_metrics_stage "run__flow__platform__{}_units"
 
