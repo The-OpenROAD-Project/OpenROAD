@@ -102,5 +102,21 @@ proc report_units { args } {
   utl::pop_metrics_stage
 }
 
+rename report_tns report_tns_raw
+
+proc report_tns { args } {
+  eval [linsert $args 0 report_tns_raw]
+
+  utl::metric_float "timing__setup__tns" [total_negative_slack_cmd "max"]
+}
+
+rename report_worst_slack report_worst_slack_raw
+
+proc report_worst_slack { args } {
+  eval [linsert $args 0 report_worst_slack_raw]
+
+  utl::metric_float "timing__setup__ws" [worst_slack_cmd $min_max]
+}
+
 # namespace
 }
