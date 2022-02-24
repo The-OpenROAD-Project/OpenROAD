@@ -25,7 +25,7 @@ Type: stdcell, grid
     Straps
       Layer: met4  -  width: 1.600  pitch: 27.140  offset: 13.570 
       Layer: met5  -  width: 1.600  pitch: 27.200  offset: 13.600 
-    Connect: {met1 met4} {met1_PIN_hor met4} {met4 met5}
+    Connect: {met1 met4} {met4 met5}
     Switch cell: POWER_SWITCH
 Type: macro, CORE_macro_grid_1
     Macro orientation: R0 R180 MX MY

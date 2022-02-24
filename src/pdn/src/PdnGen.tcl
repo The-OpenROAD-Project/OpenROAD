@@ -3769,6 +3769,7 @@ proc insert_power_switches {} {
   set ground [dict get $power_switch_cells $name ground]
   set vgnd [[$psw findMTerm $ground] getMPins]
   set vddg [lindex [[$psw findMTerm $power] getMPins] 0]
+  set vddg_lay [[[$vddg getGeometry] getTechLayer] getName]
 
   set rail_lay [lindex [get_rails_layers] 0]
   set rail_width [dict get $grid_data rails $rail_lay width]
@@ -3819,6 +3820,20 @@ proc insert_power_switches {} {
       incr row_idx
     }
   }
+
+  # automatically add design connection rule for vddg pin layer
+  set connections {}
+  foreach connection [dict get $grid_data connect] {
+    set l1 [lindex $connection 0]
+    set l2 [lindex $connection 1]
+    lappend connections $connection
+    if {$l1 == $vddg_lay} {
+      lappend connections "${l1}_PIN_hor ${l2}"
+    } elseif {$l2 == $vddg_lay} {
+      lappend connections "${l1} ${l2}_PIN_hor"
+    }
+  }
+  dict set grid_data connect $connections
 
   foreach inst $psw_instance {
     set orient [$inst getOrient]
