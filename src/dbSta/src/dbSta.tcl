@@ -115,7 +115,7 @@ rename report_worst_slack report_worst_slack_raw
 proc report_worst_slack { args } {
   eval [linsert $args 0 report_worst_slack_raw]
 
-  utl::metric_float "timing__setup__ws" [worst_slack_cmd $min_max]
+  utl::metric_float "timing__setup__ws" [worst_slack_cmd "max"]
 }
 
 # namespace
