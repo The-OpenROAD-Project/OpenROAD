@@ -246,7 +246,7 @@ class Logger
     {
       std::string key;
       if (metrics_stages_.empty()) 
-        key = std::string(metric);
+        key = metric;
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 

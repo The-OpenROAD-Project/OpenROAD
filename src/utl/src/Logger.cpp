@@ -139,20 +139,22 @@ void Logger::removeSink(spdlog::sink_ptr sink)
 }
 
 void Logger::setMetricsStage(std::string_view format) {
-  popMetricsStage();
-  pushMetricsStage(format);
+
+  if(metrics_stages_.empty())
+    metrics_stages_.push(std::string(format));
+  else
+    metrics_stages_.top() = format;
 }
 void Logger::clearMetricsStage() {
-  while(!metrics_stages_.empty()) {
-    metrics_stages_.pop();
-  }
+  std::stack<std::string> new_stack;
+  metrics_stages_.swap(new_stack);
 }
 void Logger::pushMetricsStage(std::string_view format) {
   metrics_stages_.push(std::string(format));
 }
 std::string Logger::popMetricsStage() {
   if(!metrics_stages_.empty()) {
-    auto stage = metrics_stages_.top();
+    std::string stage = metrics_stages_.top();
     metrics_stages_.pop();
     return stage;
   }
