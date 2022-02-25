@@ -746,7 +746,7 @@ proc check_integer {value} {
 proc check_max_rows {value} {
   foreach item $value {
     if {[catch {check_integer $item} msg]} {
-      utl::error PDN 177 "Problem with max_rows specification, $msg."
+      utl::error PDN 179 "Problem with max_rows specification, $msg."
     }
   }
 
