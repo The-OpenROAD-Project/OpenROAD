@@ -46,7 +46,7 @@ Type: macro, CORE_macro_grid_2 -grid_over_pg_pins
     Connect: {met4 met5}
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid.
-[WARNING PDN-0002] No shapes on layer met1 for POWER_VREG1.
-[WARNING PDN-0002] No shapes on layer met1 for POWER_VREG2.
+[WARNING PDN-0002] No shapes on layer met1 for VREG1.
+[WARNING PDN-0002] No shapes on layer met1 for VREG2.
 [INFO PDN-0015] Writing to database.
 No differences found.
