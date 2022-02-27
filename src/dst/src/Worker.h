@@ -41,22 +41,18 @@ class Worker
 {
  public:
   // constructor for accepting connection from client
-  Worker(asio::io_service& io_service,
-         Distributed* dist,
+  Worker(Distributed* dist,
          utl::Logger* logger,
          const char* ip,
-         unsigned short port,
-         unsigned short threads_num);
+         unsigned short port);
+  void run();
+  ~Worker();
 
  private:
+  asio::io_service service_;
   tcp::acceptor acceptor_;
-  asio::io_service* service_;
   Distributed* dist_;
   utl::Logger* logger_;
-  std::vector<boost::shared_ptr<WorkerConnection>> connections_;
-  std::unique_ptr<asio::thread_pool> pool_;
-  std::mutex pool_mutex_;
-  unsigned short threads_num_;
   void start_accept();
   void handle_accept(boost::shared_ptr<WorkerConnection> connection,
                      const boost::system::error_code& err);

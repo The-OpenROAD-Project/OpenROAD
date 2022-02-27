@@ -57,7 +57,10 @@ class JobMessage
   enum JobType : int8_t
   {
     ROUTING,
+    ROUTING_RESULT,
     UPDATE_DESIGN,
+    SUCCESS,
+    ERROR,
     NONE
   };
   enum MessageType : int8_t
@@ -65,13 +68,17 @@ class JobMessage
     UNICAST,
     BROADCAST
   };
-  JobMessage(JobType job_type, MessageType msg_type = UNICAST)
+  JobMessage(JobType job_type = NONE, MessageType msg_type = UNICAST)
       : msg_type_(msg_type), job_type_(job_type)
   {
   }
   void setJobDescription(std::unique_ptr<JobDescription> in)
   {
     desc_ = std::move(in);
+  }
+  void setJobType(JobType in)
+  {
+    job_type_ = in;
   }
   JobDescription* getJobDescription() { return desc_.get(); }
   JobType getJobType() const { return job_type_; }
@@ -81,7 +88,6 @@ class JobMessage
   MessageType msg_type_;
   JobType job_type_;
   std::unique_ptr<JobDescription> desc_;
-  JobMessage() : JobMessage(NONE) {}
 
   static constexpr const char* EOP = "\r\n\r\n";  // ENDOFPACKET SEQUENCE
 

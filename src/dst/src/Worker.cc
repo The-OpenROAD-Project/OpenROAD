@@ -27,8 +27,9 @@
  */
 
 #include "Worker.h"
-
+#include "utl/Logger.h"
 #include <boost/bind/bind.hpp>
+#include <boost/thread/thread.hpp>
 
 namespace ip = asio::ip;
 
@@ -36,35 +37,33 @@ namespace dst {
 
 void Worker::start_accept()
 {
-  for (auto itr = connections_.begin(); itr != connections_.end();) {
-    if (!itr->get()->socket().is_open())
-      itr = connections_.erase(itr);
-    else
-      ++itr;
-  }
   auto connection
-      = boost::make_shared<WorkerConnection>(*service_, dist_, logger_, this);
-  connections_.push_back(connection);
+      = boost::make_shared<WorkerConnection>(service_, dist_, logger_, this);
   acceptor_.async_accept(
       connection->socket(),
       boost::bind(
           &Worker::handle_accept, this, connection, asio::placeholders::error));
 }
 
-Worker::Worker(asio::io_service& io_service,
-               Distributed* dist,
+Worker::Worker(Distributed* dist,
                utl::Logger* logger,
                const char* ip,
-               unsigned short port,
-               unsigned short threads_num)
-    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+               unsigned short port)
+    : acceptor_(service_, tcp::endpoint(ip::address::from_string(ip), port)),
       dist_(dist),
-      logger_(logger),
-      threads_num_(threads_num)
+      logger_(logger)
 {
-  pool_ = std::make_unique<asio::thread_pool>(threads_num_);
-  service_ = &io_service;
   start_accept();
+
+}
+
+Worker::~Worker()
+{
+  service_.stop();
+}
+void Worker::run()
+{
+  service_.run();
 }
 
 void Worker::handle_accept(boost::shared_ptr<WorkerConnection> connection,

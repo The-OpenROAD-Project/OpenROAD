@@ -42,6 +42,7 @@
 #include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
+#include <triton_route/TritonRoute.h>
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -101,7 +102,7 @@ class FlexDR
 {
  public:
   // constructors
-  FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
+  FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -128,8 +129,9 @@ class FlexDR
     dist_port_ = port;
     dist_dir_ = dir;
   }
-
+  void listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch);
  private:
+  triton_route::TritonRoute* router_;
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
@@ -151,6 +153,8 @@ class FlexDR
   std::string dist_dir_;
   std::string globals_path_;
   std::string design_path_;
+
+  int remaining_;
   // others
   void init();
   void initFromTA();
@@ -441,7 +445,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
-  void distributedMain(frDesign* design);
+  void distributedMain(int idx_in_batch, frDesign* design);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   bool end(frDesign* design);
@@ -470,6 +474,7 @@ class FlexDRWorker
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
+  bool isSkipRouting() const { return skipRouting_; }
 
   enum ModCostType
   {

@@ -311,7 +311,7 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  FlexDR dr(getDesign(), logger_, db_);
+  FlexDR dr(this, getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
   if (distributed_)
     dr.setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
@@ -485,4 +485,21 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (!params.topRoutingLayer.empty()) {
     TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
   }
+}
+
+void TritonRoute::addWorkerResult(int idx, const char* file_path)
+{
+  std::unique_lock<std::mutex> lock(results_mutex_);
+  workers_results_.push({idx, file_path});
+}
+
+bool TritonRoute::getWorkerResult(int& idx, std::string& file_path)
+{
+  std::unique_lock<std::mutex> lock(results_mutex_);
+  if(workers_results_.empty())
+    return false;
+  idx = workers_results_.front().first;
+  file_path = workers_results_.front().second;
+  workers_results_.pop();
+  return true;
 }

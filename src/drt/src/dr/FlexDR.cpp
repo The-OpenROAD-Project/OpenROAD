@@ -132,8 +132,8 @@ static bool writeGlobals(const std::string& name)
   return true;
 }
 
-FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
+FlexDR::FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
+    : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
 {
 }
 
@@ -212,7 +212,7 @@ int FlexDRWorker::main(frDesign* design)
   return 0;
 }
 
-void FlexDRWorker::distributedMain(frDesign* design)
+void FlexDRWorker::distributedMain(int idx_in_batch, frDesign* design)
 {
   ProfileTask profile("DR:main");
   if (VERBOSE > 1) {
@@ -239,17 +239,11 @@ void FlexDRWorker::distributedMain(frDesign* design)
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
   rjd->setWorkerPath(name);
+  rjd->setIdxInBatch(idx_in_batch);
+  rjd->setReplyPort(2222);
   msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (ok) {
-    auto desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-    ok = serialize_worker(
-        SerializationType::READ, this, design, desc->getWorkerPath());
-    if (!ok)
-      logger_->error(DRT, 511, "Deserialization failed");
-    std::remove(name.c_str());
-    std::remove(desc->getWorkerPath().c_str());
-  } else {
+  if (!ok) {
     logger_->error(utl::DRT, 500, "Sending worker {} failed", name);
   }
 }
@@ -1752,7 +1746,7 @@ void FlexDR::searchRepair(int iter,
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           try {
             if (dist_on_)
-              workersInBatch[i]->distributedMain(getDesign());
+              workersInBatch[i]->distributedMain(i, getDesign());
             else
               workersInBatch[i]->main(getDesign());
 #pragma omp critical
@@ -1779,6 +1773,14 @@ void FlexDR::searchRepair(int iter,
           }
         }
         exception.rethrow();
+        remaining_ = 0;
+        for(auto& worker : workersInBatch)
+          if(!worker->isSkipRouting())
+            remaining_++;
+        #pragma omp parallel
+        {
+          listenForDistResults(workersInBatch);
+        }
       }
       {
         ProfileTask profile("DR:end_batch");
@@ -2567,6 +2569,31 @@ int FlexDR::main()
   return 0;
 }
 
+void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+{
+  bool wait = true;
+  while(wait)
+  {
+    #pragma omp critical 
+    {
+      if(remaining_ == 0)
+        wait = false;
+    }
+    std::string path;
+    int idx;
+    if(router_->getWorkerResult(idx, path))
+    {
+      #pragma omp critical
+        --remaining_;
+      bool ok = serialize_worker(
+        SerializationType::READ, batch.at(idx).get(), design_, path);
+      if (!ok)
+        logger_->error(DRT, 511, "Deserialization failed");
+      // std::remove(name.c_str());
+      std::remove(path.c_str());
+    }
+  }
+}
 template <class Archive>
 void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
 {

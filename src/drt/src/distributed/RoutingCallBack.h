@@ -29,6 +29,8 @@
 #pragma once
 #include <stdio.h>
 
+#include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 #include <mutex>
 
 #include "db/infra/frTime.h"
@@ -37,8 +39,11 @@
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
+#include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
+
+namespace asio = boost::asio;
 namespace odb {
 class dbDatabase;
 }
@@ -52,26 +57,69 @@ class RoutingCallBack : public dst::JobCallBack
                   utl::Logger* logger)
       : router_(router), dist_(dist), logger_(logger)
   {
+    pool_ = std::make_unique<asio::thread_pool>(
+        ord::OpenRoad::openRoad()->getThreadCount());
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
-    dst::JobMessage result(dst::JobMessage::ROUTING);
+    dst::JobMessage result;
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (desc->getWorkerPath() != "") {
       if (access(desc->getWorkerPath().c_str(), F_OK) == -1) {
+        result.setJobType(dst::JobMessage::ERROR);
         logger_->warn(
             utl::DRT, 605, "Worker file {} not found", desc->getWorkerPath());
-        return;
+      } else {
+        result.setJobType(dst::JobMessage::SUCCESS);
+        asio::post(*pool_,
+                  [worker_path = desc->getWorkerPath(),
+                    router = router_,
+                    logger = logger_,
+                    idx = desc->getIdxInBatch(),
+                    dist = dist_,
+                    ip = sock.remote_endpoint().address().to_v4().to_string(),
+                    port = desc->getReplyPort()]() {
+                    dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), reply;
+                    std::string resultPath
+                        = router->runDRWorker(worker_path.c_str());
+                    auto uResultDesc = std::make_unique<RoutingJobDescription>();
+                    auto resultDesc
+                        = static_cast<RoutingJobDescription*>(uResultDesc.get());
+                    resultDesc->setWorkerPath(resultPath);
+                    resultDesc->setIdxInBatch(idx);
+                    result.setJobDescription(std::move(uResultDesc));
+                    dist->sendJob(result, ip.c_str(), port, reply);
+                  });
       }
-      std::string resultPath
-          = router_->runDRWorker(desc->getWorkerPath().c_str());
-      auto uResultDesc = std::make_unique<RoutingJobDescription>();
-      auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
-      resultDesc->setWorkerPath(resultPath);
-      result.setJobDescription(std::move(uResultDesc));
+    } else {
+      result.setJobType(dst::JobMessage::ERROR);
+    }
+    dist_->sendResult(result, sock);
+    sock.close();
+  }
+  void onRoutingResultReceived(dst::JobMessage& msg, dst::socket& sock)
+  {
+
+    if (msg.getJobType() != dst::JobMessage::ROUTING_RESULT)
+      return;
+    dst::JobMessage result;
+    RoutingJobDescription* desc
+        = static_cast<RoutingJobDescription*>(msg.getJobDescription());
+    if (desc->getWorkerPath() != "") {
+      if (access(desc->getWorkerPath().c_str(), F_OK) == -1) {
+        result.setJobType(dst::JobMessage::ERROR);
+        logger_->warn(
+            utl::DRT, 888, "Worker file {} not found", desc->getWorkerPath());
+      } else
+      {
+        router_->addWorkerResult(desc->getIdxInBatch(), desc->getWorkerPath().c_str());
+        result.setJobType(dst::JobMessage::SUCCESS);
+      }
+    } else {
+      result.setJobType(dst::JobMessage::ERROR);
     }
     dist_->sendResult(result, sock);
     sock.close();
@@ -109,6 +157,7 @@ class RoutingCallBack : public dst::JobCallBack
   utl::Logger* logger_;
   std::string design_path_;
   std::string globals_path_;
+  std::unique_ptr<asio::thread_pool> pool_;
 };
 
 }  // namespace fr

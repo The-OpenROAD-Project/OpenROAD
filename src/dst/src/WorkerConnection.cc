@@ -87,25 +87,21 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
     switch (msg_.getJobType()) {
       case JobMessage::ROUTING:
         for (auto& cb : dist_->getCallBacks()) {
-          // cb->onRoutingJobReceived(msg_, sock);
-          std::unique_lock<std::mutex> lock(getWorker()->pool_mutex_);
-          asio::post(*getWorker()->pool_.get(),
-                     boost::bind(&JobCallBack::onRoutingJobReceived,
-                                 cb,
-                                 boost::ref(msg_),
-                                 boost::ref(sock_)));
+          cb->onRoutingJobReceived(msg_, sock_);
         }
         break;
       case JobMessage::UPDATE_DESIGN: {
         std::unique_lock<std::mutex> lock(getWorker()->pool_mutex_);
-        getWorker()->pool_->join();
         for (auto& cb : dist_->getCallBacks()) {
           cb->onFrDesignUpdated(msg_, sock_);
         }
-        getWorker()->pool_
-            = std::make_unique<asio::thread_pool>(getWorker()->threads_num_);
         break;
       }
+      case JobMessage::ROUTING_RESULT:
+        for (auto& cb : dist_->getCallBacks()) {
+          cb->onRoutingResultReceived(msg_, sock_);
+        }
+        break;
       default:
         logger_->warn(utl::DST,
                       5,

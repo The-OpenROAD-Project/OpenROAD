@@ -31,6 +31,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "LoadBalancer.h"
 #include "Worker.h"
@@ -77,9 +78,11 @@ void Distributed::runWorker(const char* ip,
                             unsigned short threads)
 {
   try {
-    asio::io_service io_service;
-    Worker worker(io_service, this, logger_, ip, port, threads);
-    io_service.run();
+    auto uWorker = std::make_unique<Worker>(this, logger_, ip, port, threads);
+    auto worker = uWorker.get();
+    workers_.push_back(std::move(uWorker));
+    boost::thread t(boost::bind(&Worker::run, worker));
+    t.detach();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
@@ -90,7 +93,7 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
   try {
     asio::io_service io_service;
     LoadBalancer balancer(io_service, logger_, ip, port);
-    for (auto worker : workers_)
+    for (auto worker : end_points_)
       balancer.addWorker(worker.ip, worker.port, worker.threads);
     io_service.run();
   } catch (std::exception& e) {
@@ -102,7 +105,7 @@ void Distributed::addWorkerAddress(const char* address,
                                    unsigned short port,
                                    unsigned short threads)
 {
-  workers_.push_back(EndPoint(address, port, threads));
+  end_points_.push_back(EndPoint(address, port, threads));
 }
 // TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)

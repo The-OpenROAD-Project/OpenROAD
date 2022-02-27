@@ -34,7 +34,8 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include <queue>
+#include <mutex>
 namespace fr {
 class frDesign;
 class DesignCallBack;
@@ -121,6 +122,8 @@ class TritonRoute
   std::string runDRWorker(const char* file_name);
   void updateGlobals(const char* file_name);
   void updateDesign(const char* file_name);
+  void addWorkerResult(int idx, const char* file_path);
+  bool getWorkerResult(int& idx, std::string& file_path);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -136,6 +139,8 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
+  std::queue<std::pair<int, std::string>> workers_results_;
+  std::mutex results_mutex_;
 
   void initDesign();
   void initGuide();

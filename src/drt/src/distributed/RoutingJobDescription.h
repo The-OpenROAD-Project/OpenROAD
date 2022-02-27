@@ -44,16 +44,22 @@ class RoutingJobDescription : public dst::JobDescription
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
+  void setReplyPort(unsigned short port) { reply_port_ = port; }
+  void setIdxInBatch(int idx) { idx_in_batch_ = idx; }
   const std::string& getWorkerPath() const { return path_; }
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
   const std::string& getDesignPath() const { return design_path_; }
+  unsigned short getReplyPort() const { return reply_port_; }
+  int getIdxInBatch() const { return idx_in_batch_; }
 
  private:
   std::string path_;
   std::string globals_path_;
   std::string design_path_;
   std::string shared_dir_;
+  unsigned short reply_port_;
+  int idx_in_batch_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -62,6 +68,8 @@ class RoutingJobDescription : public dst::JobDescription
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
+    (ar) & reply_port_;
+    (ar) & idx_in_batch_;
   }
   friend class boost::serialization::access;
 };

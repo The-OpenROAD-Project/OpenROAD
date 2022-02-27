@@ -46,6 +46,7 @@ namespace dst {
 using socket = asio::basic_stream_socket<tcp>;
 class JobMessage;
 class JobCallBack;
+class Worker;
 
 class Distributed
 {
@@ -80,7 +81,8 @@ class Distributed
     }
   };
   utl::Logger* logger_;
-  std::vector<EndPoint> workers_;
+  std::vector<EndPoint> end_points_;
   std::vector<JobCallBack*> callbacks_;
+  std::vector<std::unique_ptr<Worker>> workers_;
 };
 }  // namespace dst
