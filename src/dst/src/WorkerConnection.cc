@@ -91,7 +91,6 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       case JobMessage::UPDATE_DESIGN: {
-        std::unique_lock<std::mutex> lock(getWorker()->pool_mutex_);
         for (auto& cb : dist_->getCallBacks()) {
           cb->onFrDesignUpdated(msg_, sock_);
         }

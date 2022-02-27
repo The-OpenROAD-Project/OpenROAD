@@ -74,11 +74,10 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
 }
 
 void Distributed::runWorker(const char* ip,
-                            unsigned short port,
-                            unsigned short threads)
+                            unsigned short port)
 {
   try {
-    auto uWorker = std::make_unique<Worker>(this, logger_, ip, port, threads);
+    auto uWorker = std::make_unique<Worker>(this, logger_, ip, port);
     auto worker = uWorker.get();
     workers_.push_back(std::move(uWorker));
     boost::thread t(boost::bind(&Worker::run, worker));

@@ -29,7 +29,6 @@
 sta::define_cmd_args "run_worker" {
     [-host host]
     [-port port]
-    [-threads threads]
 }
 proc run_worker { args } {
   sta::parse_key_args "run_worker" args \
@@ -46,12 +45,7 @@ proc run_worker { args } {
   } else {
     utl::error DST 3 "-port is required in run_worker cmd."
   }
-  if { [info exists keys(-threads)] } {
-    set threads $keys(-threads)
-  } else {
-    utl::error DST 15 "-threads is required in run_worker cmd."
-  }
-  dst::run_worker_cmd $host $port $threads
+  dst::run_worker_cmd $host $port
 }
 
 sta::define_cmd_args "run_load_balancer" {
