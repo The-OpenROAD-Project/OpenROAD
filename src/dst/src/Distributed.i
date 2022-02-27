@@ -36,10 +36,10 @@
 %inline %{
 
 void run_worker_cmd(
-    const char* host, unsigned short port)
+    const char* host, unsigned short port, bool interactive)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->runWorker(host, port);
+  distributed->runWorker(host, port, interactive);
 }
 
 void run_load_balancer(const char* host, unsigned short port)

@@ -29,11 +29,12 @@
 sta::define_cmd_args "run_worker" {
     [-host host]
     [-port port]
+    [-i]
 }
 proc run_worker { args } {
   sta::parse_key_args "run_worker" args \
     keys {-host -port -threads} \
-    flags {}
+    flags {-i}
   sta::check_argc_eq0 "run_worker" $args
   if { [info exists keys(-host)] } {
     set host $keys(-host)
@@ -45,7 +46,8 @@ proc run_worker { args } {
   } else {
     utl::error DST 3 "-port is required in run_worker cmd."
   }
-  dst::run_worker_cmd $host $port
+  set interactive [info exists flags(-i)]
+  dst::run_worker_cmd $host $port $interactive
 }
 
 sta::define_cmd_args "run_load_balancer" {

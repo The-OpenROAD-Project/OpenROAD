@@ -74,14 +74,19 @@ void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
 }
 
 void Distributed::runWorker(const char* ip,
-                            unsigned short port)
+                            unsigned short port,
+                            bool interactive)
 {
   try {
     auto uWorker = std::make_unique<Worker>(this, logger_, ip, port);
     auto worker = uWorker.get();
     workers_.push_back(std::move(uWorker));
-    boost::thread t(boost::bind(&Worker::run, worker));
-    t.detach();
+    if(interactive)
+    {
+      boost::thread t(boost::bind(&Worker::run, worker));
+      t.detach();
+    } else 
+      worker->run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
