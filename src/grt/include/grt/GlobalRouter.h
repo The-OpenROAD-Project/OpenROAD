@@ -147,6 +147,7 @@ class GlobalRouter
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
+  int getMaxRoutingLayer() const { return max_routing_layer_; }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
   unsigned getDbId();
@@ -172,6 +173,8 @@ class GlobalRouter
   void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
   void estimateRC(odb::dbNet* db_net);
+  // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
+  std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }

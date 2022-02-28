@@ -2261,6 +2261,8 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
             pin_specs.rect = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
                                          Search::Point(text_rect.xMax(), text_rect.yMax()));
             pin_text_spec_shapes.insert(pin_specs.rect);
+          } else {
+            pin_specs.rect = Search::Box();
           }
           pin_text_spec.push_back(pin_specs);
         }
