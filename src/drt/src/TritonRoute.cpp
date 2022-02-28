@@ -69,7 +69,8 @@ TritonRoute::TritonRoute()
       db_callback_(std::make_unique<DesignCallBack>(this)),
       num_drvs_(-1),
       gui_(gui::Gui::get()),
-      distributed_(false)
+      distributed_(false),
+      results_sz_(0)
 {
 }
 
@@ -106,6 +107,12 @@ void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
   dist_port_ = port;
+}
+
+void TritonRoute::setLocalIpPort(const char* ip, unsigned short port)
+{
+  local_ip_ = ip;
+  local_port_ = port;
 }
 
 void TritonRoute::setSharedVolume(const std::string& vol)
@@ -160,7 +167,7 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-std::string TritonRoute::runDRWorker(const char* file_name)
+std::string TritonRoute::runDRWorker(const std::string& workerStr)
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
@@ -168,7 +175,7 @@ std::string TritonRoute::runDRWorker(const char* file_name)
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
   auto worker
-      = FlexDRWorker::load(file_name, logger_, design_.get(), graphics_.get());
+      = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_)
@@ -314,7 +321,7 @@ void TritonRoute::dr()
   FlexDR dr(this, getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
   if (distributed_)
-    dr.setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
+    dr.setDistributed(dist_, dist_ip_, dist_port_, local_ip_, local_port_, shared_volume_);
   dr.main();
 }
 
@@ -487,10 +494,11 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
 }
 
-void TritonRoute::addWorkerResult(int idx, const char* file_path)
+void TritonRoute::addWorkerResult(int idx, std::string file_path)
 {
   std::unique_lock<std::mutex> lock(results_mutex_);
   workers_results_.push({idx, file_path});
+  ++results_sz_;
 }
 
 bool TritonRoute::getWorkerResult(int& idx, std::string& file_path)
@@ -501,5 +509,11 @@ bool TritonRoute::getWorkerResult(int& idx, std::string& file_path)
   idx = workers_results_.front().first;
   file_path = workers_results_.front().second;
   workers_results_.pop();
+  --results_sz_;
   return true;
+}
+
+int TritonRoute::getWorkerResultsSize()
+{
+  return results_sz_;
 }

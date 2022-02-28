@@ -38,6 +38,7 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
+#include "dst/Distributed.h"
  
 %}
 
@@ -51,13 +52,18 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
-void detailed_route_distributed(const char* ip,
-                                unsigned short port,
+void detailed_route_distributed(const char* remote_ip,
+                                unsigned short remote_port,
+                                const char* local_ip,
+                                unsigned short local_port,
                                 const char* sharedVolume)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  auto* dist = ord::OpenRoad::openRoad()->getDistributed();
+  dist->runWorker(local_ip, local_port, true);
   router->setDistributed(true);
-  router->setWorkerIpPort(ip, port);
+  router->setWorkerIpPort(remote_ip, remote_port);
+  router->setLocalIpPort(local_ip, local_port);
   router->setSharedVolume(sharedVolume);
 }
 

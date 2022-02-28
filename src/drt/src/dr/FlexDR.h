@@ -119,14 +119,18 @@ class FlexDR
   FlexDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
   void setDistributed(dst::Distributed* dist,
-                      const std::string& ip,
-                      unsigned short port,
+                      const std::string& remote_ip,
+                      unsigned short remote_port,
+                      const std::string& local_ip,
+                      unsigned short local_port,
                       const std::string& dir)
   {
     dist_on_ = true;
     dist_ = dist;
-    dist_ip_ = ip;
-    dist_port_ = port;
+    dist_ip_ = remote_ip;
+    dist_port_ = remote_port;
+    local_ip_ = local_ip;
+    local_port_ = local_port;
     dist_dir_ = dir;
   }
   void listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch);
@@ -150,6 +154,8 @@ class FlexDR
   bool dist_on_;
   std::string dist_ip_;
   unsigned short dist_port_;
+  std::string local_ip_;
+  unsigned short local_port_;
   std::string dist_dir_;
   std::string globals_path_;
   std::string design_path_;
@@ -460,13 +466,17 @@ class FlexDRWorker
 
   // distributed
   void setDistributed(dst::Distributed* dist,
-                      const std::string& ip,
-                      unsigned short port,
+                      const std::string& remote_ip,
+                      unsigned short remote_port,
+                      const std::string& local_ip,
+                      unsigned short local_port,
                       const std::string& dir)
   {
     dist_ = dist;
-    dist_ip_ = ip;
-    dist_port_ = port;
+    dist_ip_ = remote_ip;
+    dist_port_ = remote_port;
+    local_ip_ = local_ip;
+    local_port_ = local_port;
     dist_dir_ = dir;
   }
 
@@ -540,6 +550,8 @@ class FlexDRWorker
   dst::Distributed* dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
+  std::string local_ip_;
+  unsigned short local_port_;
   std::string dist_dir_;
 
   // init

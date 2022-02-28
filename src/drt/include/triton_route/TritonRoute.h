@@ -109,6 +109,7 @@ class TritonRoute
   void setDebugPaMarkers(bool on = true);
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
+  void setLocalIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
   void setDebugPaEdge(bool on = true);
   void setDebugPaCommit(bool on = true);
@@ -119,11 +120,12 @@ class TritonRoute
 
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
-  std::string runDRWorker(const char* file_name);
+  std::string runDRWorker(const std::string& workerStr);
   void updateGlobals(const char* file_name);
   void updateDesign(const char* file_name);
-  void addWorkerResult(int idx, const char* file_path);
-  bool getWorkerResult(int& idx, std::string& file_path);
+  void addWorkerResult(int idx, std::string workerStr);
+  bool getWorkerResult(int& idx, std::string& workerStr);
+  int getWorkerResultsSize();
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -138,9 +140,12 @@ class TritonRoute
   bool distributed_;
   std::string dist_ip_;
   unsigned short dist_port_;
+  std::string local_ip_;
+  unsigned short local_port_;
   std::string shared_volume_;
   std::queue<std::pair<int, std::string>> workers_results_;
   std::mutex results_mutex_;
+  int results_sz_;
 
   void initDesign();
   void initGuide();

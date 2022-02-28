@@ -51,8 +51,10 @@ sta::define_cmd_args "detailed_route" {
     [-verbose level]
     [-param filename]
     [-distributed]
-    [-remote_host host]
-    [-remote_port port]
+    [-remote_host rhost]
+    [-remote_port rport]
+    [-local_host lhost]
+    [-local_port lport]
     [-shared_volume vol]
     [-clean_patches]
 }
@@ -62,7 +64,7 @@ proc detailed_route { args } {
     keys {-param -guide -output_guide -output_maze -output_drc -output_cmap \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
-      -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
+      -top_routing_layer -verbose -remote_host -remote_port -local_host -local_port -shared_volume} \
     flags {-disable_via_gen -distributed -clean_patches}
   sta::check_argc_eq0 "detailed_route" $args
 
@@ -154,12 +156,12 @@ proc detailed_route { args } {
     }
     if { [info exists flags(-distributed)] } {
       if { [info exists keys(-remote_host)] } {
-        set host $keys(-remote_host)
+        set rhost $keys(-remote_host)
       } else {
         utl::error DRT 506 "-remote_host is required for distributed routing."
       }
       if { [info exists keys(-remote_port)] } {
-        set port $keys(-remote_port)
+        set rport $keys(-remote_port)
       } else {
         utl::error DRT 507 "-remote_port is required for distributed routing."
       }
@@ -168,7 +170,17 @@ proc detailed_route { args } {
       } else {
         utl::error DRT 508 "-shared_volume is required for distributed routing."
       }
-      drt::detailed_route_distributed $host $port $vol
+      if { [info exists keys(-local_host)] } {
+        set lhost $keys(-local_host)
+      } else {
+        utl::error DRT 514 "-local_host is required for distributed routing."
+      }
+      if { [info exists keys(-local_port)] } {
+        set lport $keys(-local_port)
+      } else {
+        utl::error DRT 515 "-local_port is required for distributed routing."
+      }
+      drt::detailed_route_distributed $rhost $rport $lhost $lport $vol
     }
     drt::detailed_route_cmd $guide $output_guide $output_maze $output_drc \
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
