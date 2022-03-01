@@ -265,9 +265,11 @@ void FlexDRWorker::modCornerToCornerSpacing(const Rect& box,
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord halfwidth2 = getTech()->getLayer(lNum)->getWidth() / 2;
   Rect const* viaRectDown = nullptr, *viaRectUp = nullptr;
-  if (lNum - 1 >= getTech()->getBottomLayerNum())
+  if (lNum - 1 >= getTech()->getBottomLayerNum() && 
+        getTech()->getLayer(lNum-1)->getDefaultViaDef())
       viaRectDown = &getTech()->getLayer(lNum-1)->getDefaultViaDef()->getShapeBox(lNum);
-  if (lNum + 1 <= getTech()->getTopLayerNum())
+  if (lNum + 1 <= getTech()->getTopLayerNum() &&
+        getTech()->getLayer(lNum+1)->getDefaultViaDef())
       viaRectUp = &getTech()->getLayer(lNum+1)->getDefaultViaDef()->getShapeBox(lNum);
   // spacing value needed
   frCoord bloatDist = 0;
