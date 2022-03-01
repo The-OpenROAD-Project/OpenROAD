@@ -1765,11 +1765,13 @@ void FlexDR::searchRepair(int iter,
           }
         }
         exception.rethrow();
-        remaining_ = 0;
-        for(auto& worker : workersInBatch)
-          if(!worker->isSkipRouting())
-            remaining_++;
-        listenForDistResults(workersInBatch);
+        if(dist_on_) {
+          remaining_ = 0;
+          for(auto& worker : workersInBatch)
+            if(!worker->isSkipRouting())
+              remaining_++;
+          listenForDistResults(workersInBatch);
+        }
       }
       {
         ProfileTask profile("DR:end_batch");
