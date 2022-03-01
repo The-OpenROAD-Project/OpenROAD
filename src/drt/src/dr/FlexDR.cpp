@@ -2593,7 +2593,10 @@ void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker
 {
   while(remaining_ != 0)
   {
-    while(router_->getWorkerResultsSize() == 0);
+    {
+      ProfileTask task("DIST: WAITING FOR RESULTS");
+      while(router_->getWorkerResultsSize() == 0);
+    }
     ProfileTask task("DIST: deserializing batch");
     std::vector<std::pair<int, std::string>> workers;
     router_->getWorkerResults(workers);
