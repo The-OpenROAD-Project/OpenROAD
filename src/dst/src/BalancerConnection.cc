@@ -36,6 +36,7 @@
 
 #include "LoadBalancer.h"
 #include "utl/Logger.h"
+#include <boost/thread/thread.hpp>
 
 namespace dst {
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
@@ -58,10 +59,12 @@ void BalancerConnection::start()
       JobMessage::EOP,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
-        std::unique_lock<std::mutex> lock(me->getOwner()->pool_mutex_);
-        asio::post(
-            *me->getOwner()->pool_.get(),
-            boost::bind(&BalancerConnection::handle_read, me, ec, bytes_xfer));
+        // std::unique_lock<std::mutex> lock(me->getOwner()->pool_mutex_);
+        boost::thread t(&BalancerConnection::handle_read, me, ec, bytes_xfer);
+        t.detach();
+        // asio::post(
+        //     *me->getOwner()->pool_.get(),
+        //     boost::bind(&BalancerConnection::handle_read, me, ec, bytes_xfer));
       });
 }
 

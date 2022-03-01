@@ -56,7 +56,7 @@ LoadBalancer::LoadBalancer(asio::io_service& io_service,
       logger_(logger),
       jobs_(0)
 {
-  pool_ = std::make_unique<asio::thread_pool>();
+  // pool_ = std::make_unique<asio::thread_pool>();
   service = &io_service;
   start_accept();
 }

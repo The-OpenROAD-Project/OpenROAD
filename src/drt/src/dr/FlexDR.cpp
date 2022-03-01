@@ -93,6 +93,7 @@ static bool serialize_design(SerializationType type,
                              frDesign* design,
                              const std::string& name)
 {
+  ProfileTask task("DIST: SERIALIZE_DESIGN");
   if (type == SerializationType::READ) {
     std::ifstream file(name);
     if (!file.good())
@@ -1698,26 +1699,26 @@ void FlexDR::searchRepair(int iter,
           design_path_ = fmt::format(
               "{}iter{}_{}.design", dist_dir_, iter, design_version++);
           serialize_design(SerializationType::WRITE, design_, design_path_);
-          // dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-          //                     dst::JobMessage::BROADCAST),
-          //     result(dst::JobMessage::NONE);
-          // std::unique_ptr<dst::JobDescription> desc
-          //     = std::make_unique<RoutingJobDescription>();
-          // RoutingJobDescription* rjd
-          //     = static_cast<RoutingJobDescription*>(desc.get());
-          // rjd->setDesignPath(design_path_);
-          // rjd->setGlobalsPath(globals_path_);
-          // rjd->setSharedDir(dist_dir_);
-          // msg.setJobDescription(std::move(desc));
-          // bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-          // if (!ok)
-          //   logger_->error(DRT, 304, "Updating design remotely failed");
+          dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                              dst::JobMessage::BROADCAST),
+              result(dst::JobMessage::NONE);
+          std::unique_ptr<dst::JobDescription> desc
+              = std::make_unique<RoutingJobDescription>();
+          RoutingJobDescription* rjd
+              = static_cast<RoutingJobDescription*>(desc.get());
+          rjd->setDesignPath(design_path_);
+          rjd->setGlobalsPath(globals_path_);
+          rjd->setSharedDir(dist_dir_);
+          msg.setJobDescription(std::move(desc));
+          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+          if (!ok)
+            logger_->error(DRT, 304, "Updating design remotely failed");
         }
         if (design_updated) {
           design_->getRegionQuery()->dummyUpdate();
           design_updated = false;
         }
-        ProfileTask task("DIST: DRWORK");
+        ProfileTask task("DIST: PROCESS_BATCH");
 // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
@@ -1768,11 +1769,12 @@ void FlexDR::searchRepair(int iter,
           if(distWorkerBatches.back().empty())
             distWorkerBatches.pop_back();
           {
-            ProfileTask task("DIST: SENDING WORKERS");
+            ProfileTask task("DIST: SERIALIZE+SEND");
             #pragma omp parallel for schedule(dynamic)
             for(int i = 0; i < distWorkerBatches.size(); i++)
               sendWorkers(distWorkerBatches.at(i));
           }
+          ProfileTask tsk("DIST: WAIT+DESERIALIZE");
           listenForDistResults(workersInBatch);
         }
       }
@@ -2566,11 +2568,14 @@ int FlexDR::main()
 void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch)
 {
   std::vector<std::pair<int, std::string>> workers;
-  for(auto& [idx, worker] : batch)
   {
-    std::string workerStr;
-    serialize_worker(worker, workerStr);
-    workers.push_back({idx, workerStr});
+    ProfileTask task("DIST: DESERIALIZING");
+    for(auto& [idx, worker] : batch)
+    {
+      std::string workerStr;
+      serialize_worker(worker, workerStr);
+      workers.push_back({idx, workerStr});
+    }
   }
   dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
@@ -2583,6 +2588,7 @@ void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch
   rjd->setReplyIp(local_ip_);
   rjd->setReplyPort(local_port_);
   msg.setJobDescription(std::move(desc));
+  ProfileTask task("DIST: SENDJOB");
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (!ok) {
     logger_->error(utl::DRT, 500, "Sending worker {} failed");
@@ -2594,16 +2600,18 @@ void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker
   while(remaining_ != 0)
   {
     {
-      ProfileTask task("DIST: WAITING FOR RESULTS");
+      ProfileTask task("DIST: WAITING_RESULTS");
       while(router_->getWorkerResultsSize() == 0);
     }
-    ProfileTask task("DIST: deserializing batch");
     std::vector<std::pair<int, std::string>> workers;
     router_->getWorkerResults(workers);
-    #pragma omp parallel for schedule(dynamic)
-    for(int i = 0; i < workers.size(); i++)
     {
-      deserialize_worker(batch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+      ProfileTask task("DIST: DESERIALIZING_BATCH");
+      #pragma omp parallel for schedule(dynamic)
+      for(int i = 0; i < workers.size(); i++)
+      {
+        deserialize_worker(batch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+      }
     }
     remaining_ -= workers.size();
   }

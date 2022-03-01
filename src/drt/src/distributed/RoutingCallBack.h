@@ -66,6 +66,9 @@ class RoutingCallBack : public dst::JobCallBack
   {
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
+    dst::JobMessage reply(dst::JobMessage::SUCCESS);
+    dist_->sendResult(reply, sock);
+    sock.close();
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (desc->getDesignPath() != "") {
@@ -84,9 +87,6 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
-    dst::JobMessage reply(dst::JobMessage::SUCCESS);
-    dist_->sendResult(reply, sock);
-    sock.close();
     std::vector<std::pair<int, std::string>> resultWorkers(desc->getWorkers().size());
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < desc->getWorkers().size(); i++)
