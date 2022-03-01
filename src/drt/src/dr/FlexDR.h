@@ -133,7 +133,8 @@ class FlexDR
     local_port_ = local_port;
     dist_dir_ = dir;
   }
-  void listenForDistResults(const std::vector<FlexDRWorker*>& batch);
+  void sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch);
+  void listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch);
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;

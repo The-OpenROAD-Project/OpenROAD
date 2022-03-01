@@ -123,8 +123,8 @@ class TritonRoute
   std::string runDRWorker(const std::string& workerStr);
   void updateGlobals(const char* file_name);
   void updateDesign(const char* file_name);
-  void addWorkerResult(int idx, std::string workerStr);
-  bool getWorkerResult(int& idx, std::string& workerStr);
+  void addWorkerResults(const std::vector<std::pair<int, std::string>>& results);
+  bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
 
  private:
@@ -143,7 +143,7 @@ class TritonRoute
   std::string local_ip_;
   unsigned short local_port_;
   std::string shared_volume_;
-  std::queue<std::pair<int, std::string>> workers_results_;
+  std::queue<std::vector<std::pair<int, std::string>>> workers_results_;
   std::mutex results_mutex_;
   int results_sz_;
 

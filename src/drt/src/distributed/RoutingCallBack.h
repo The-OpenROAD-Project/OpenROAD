@@ -84,20 +84,21 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
-    ;
-    std::vector<std::string> resultWorkers(desc->getWorkers().size());
+    dst::JobMessage reply(dst::JobMessage::SUCCESS);
+    dist_->sendResult(reply, sock);
+    sock.close();
+    std::vector<std::pair<int, std::string>> resultWorkers(desc->getWorkers().size());
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < desc->getWorkers().size(); i++)
     {
-      resultWorkers[i] = router_->runDRWorker(desc->getWorkers().at(i));
+      resultWorkers[i] = { desc->getWorkers().at(i).first, router_->runDRWorker(desc->getWorkers().at(i).second) };
     }
-    dst::JobMessage result(dst::JobMessage::ROUTING);
+    dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), tmp;
     auto uResultDesc = std::make_unique<RoutingJobDescription>();
     auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
     resultDesc->setWorkers(resultWorkers);
     result.setJobDescription(std::move(uResultDesc));
-    dist_->sendResult(result, sock);
-    sock.close();
+    dist_->sendJob(result, desc->getReplyIp().c_str(), desc->getReplyPort(), tmp);
   }
   void onRoutingResultReceived(dst::JobMessage& msg, dst::socket& sock)
   {
@@ -107,12 +108,8 @@ class RoutingCallBack : public dst::JobCallBack
     dst::JobMessage result;
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getWorkerStr() != "") {
-      router_->addWorkerResult(desc->getIdxInBatch(), desc->getWorkerStr());
-      result.setJobType(dst::JobMessage::SUCCESS);
-    } else {
-      result.setJobType(dst::JobMessage::ERROR);
-    }
+    router_->addWorkerResults(desc->getWorkers());
+    result.setJobType(dst::JobMessage::SUCCESS);
     dist_->sendResult(result, sock);
     sock.close();
   }

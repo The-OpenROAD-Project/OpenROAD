@@ -1751,23 +1751,25 @@ void FlexDR::searchRepair(int iter,
         }
         exception.rethrow();
         if(dist_on_) {
-          std::vector<std::vector<FlexDRWorker*>> distWorkerBatches(1);
+          std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(1);
           remaining_ = 0;
-          for(auto& worker : workersInBatch)
+          for(int i = 0; i < workersInBatch.size(); i++)
           {
+            auto worker = workersInBatch.at(i).get();
             if(!worker->isSkipRouting())
             {
               remaining_++;
               if(distWorkerBatches.back().size() == REMOTE_BATCH_SIZE)
-                distWorkerBatches.push_back(std::vector<FlexDRWorker*>());
-              distWorkerBatches.back().push_back(worker.get());
+                distWorkerBatches.push_back(std::vector<std::pair<int, FlexDRWorker*>>());
+              distWorkerBatches.back().push_back({i, worker});
             }
           }
           if(distWorkerBatches.back().empty())
             distWorkerBatches.pop_back();
           #pragma omp parallel for schedule(dynamic)
           for(int i = 0; i < distWorkerBatches.size(); i++)
-            listenForDistResults(distWorkerBatches.at(i));
+            sendWorkers(distWorkerBatches.at(i));
+          listenForDistResults(workersInBatch);
         }
       }
       {
@@ -2557,14 +2559,14 @@ int FlexDR::main()
   return 0;
 }
 
-void FlexDR::listenForDistResults(const std::vector<FlexDRWorker*>& batch)
+void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch)
 {
-  std::vector<std::string> workers;
-  for(auto worker : batch)
+  std::vector<std::pair<int, std::string>> workers;
+  for(auto& [idx, worker] : batch)
   {
     std::string workerStr;
     serialize_worker(worker, workerStr);
-    workers.push_back(workerStr);
+    workers.push_back({idx, workerStr});
   }
   dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
@@ -2574,17 +2576,29 @@ void FlexDR::listenForDistResults(const std::vector<FlexDRWorker*>& batch)
   rjd->setDesignPath(design_path_);
   rjd->setGlobalsPath(globals_path_);
   rjd->setSharedDir(dist_dir_);
+  rjd->setReplyIp(local_ip_);
+  rjd->setReplyPort(local_port_);
   msg.setJobDescription(std::move(desc));
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (!ok) {
     logger_->error(utl::DRT, 500, "Sending worker {} failed");
   }
-  auto resultDesc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-  for(int i = 0; i < resultDesc->getWorkers().size(); i++)
-  {
-    deserialize_worker(batch[i], design_, resultDesc->getWorkers().at(i));
-  }
+}
 
+void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+{
+  while(remaining_ != 0)
+  {
+    while(router_->getWorkerResultsSize() == 0);
+    std::vector<std::pair<int, std::string>> workers;
+    router_->getWorkerResults(workers);
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < workers.size(); i++)
+    {
+      deserialize_worker(batch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+    }
+    remaining_ -= workers.size();
+  }
 }
 template <class Archive>
 void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
