@@ -251,6 +251,9 @@ class FlexGridGraph
   {
     return layerRouteDirections_[in];
   }
+  int getLayerCount() {
+      return zCoords_.size();
+  }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     correct(x, y, z, dir);

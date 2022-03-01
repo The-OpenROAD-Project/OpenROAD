@@ -101,7 +101,8 @@ static bool writeGlobals(const std::string& name)
 }
 
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
+    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false), 
+        increaseClipsize_(false), clipSizeInc_(0)
 {
 }
 
@@ -1713,9 +1714,13 @@ void FlexDR::searchRepair(int iter,
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  int clipSize = size;
-  if (iter >= 8 && iter < 30)
-      clipSize += (iter - 7);
+  if (iter >= 20)
+      MARKERCOST = ROUTESHAPECOST/4;
+  if (increaseClipsize_) {
+      clipSizeInc_ += 5;
+  } else clipSizeInc_ = max(0, clipSizeInc_ - 1);
+  int clipSize = size + clipSizeInc_;
+  cout << "CLIPSIZE " << clipSize << "\n";
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
             * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
@@ -1785,6 +1790,7 @@ void FlexDR::searchRepair(int iter,
 
   omp_set_num_threads(MAX_THREADS);
 
+  increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1834,6 +1840,8 @@ void FlexDR::searchRepair(int iter,
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end(getDesign());
+          if (workersInBatch[i]->isCongested())
+              increaseClipsize_ = true;
         }
         workersInBatch.clear();
       }

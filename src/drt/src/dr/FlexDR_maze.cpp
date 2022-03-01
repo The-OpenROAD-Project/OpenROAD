@@ -1534,6 +1534,9 @@ void FlexDRWorker::mazeNetInit(drNet* net)
 
 void FlexDRWorker::mazeNetEnd(drNet* net)
 {
+  for (auto& uConnFig : net->getExtConnFigs()) {
+    modPathCost(uConnFig.get(), ModCostType::addFixedShape, false, false);
+  }
   // add term / instterm cost back when net is about to end
   initMazeCost_terms(net->getFrNetTerms(), true, true);
   if (isFollowGuide()) {
@@ -1655,6 +1658,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       for (auto& uConnFig : net->getRouteConnFigs()) {
         subPathCost(uConnFig.get());
         workerRegionQuery.remove(uConnFig.get());  // worker region query
+      }
+      for (auto& uConnFig : net->getExtConnFigs()) {
+        modPathCost(uConnFig.get(), ModCostType::subFixedShape, false, false);
       }
       modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
                        ModCostType::subRouteShape);
