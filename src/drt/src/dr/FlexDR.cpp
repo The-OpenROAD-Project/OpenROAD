@@ -1688,7 +1688,6 @@ void FlexDR::searchRepair(int iter,
     ProfileTask profile("DR:checkerboard");
     for (auto& workersInBatch : workerBatch) {
       {
-        ProfileTask task("DIST: DRWORK");
         const std::string batch_name = std::string("DR:batch<")
                                        + std::to_string(workersInBatch.size())
                                        + ">";
@@ -1718,6 +1717,7 @@ void FlexDR::searchRepair(int iter,
           design_->getRegionQuery()->dummyUpdate();
           design_updated = false;
         }
+        ProfileTask task("DIST: DRWORK");
 // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
