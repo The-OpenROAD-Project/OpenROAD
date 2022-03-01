@@ -794,7 +794,8 @@ class FlexDRWorker
 
   void modCornerToCornerSpacing_helper(const Rect& box,
                                        frMIdx z,
-                                       ModCostType type);
+                                       ModCostType type,
+                                       bool isPlanar);
 
   void modMinSpacingCostVia_eol(const Rect& box,
                                 const Rect& tmpBx,

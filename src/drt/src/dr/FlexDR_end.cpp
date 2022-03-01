@@ -548,7 +548,7 @@ void FlexDRWorker::end(frDesign* design)
   }
 
   set<frNet*, frBlockObjectComp> modNets;
-  if (getDRIter() >= 3)
+  if (getDRIter() >= 5)
     identifyCongestionLevelBoundary();
   endGetModNets(modNets);
   // get lock

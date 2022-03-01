@@ -1719,7 +1719,7 @@ void FlexDR::searchRepair(int iter,
   if (increaseClipsize_) {
       clipSizeInc_ += 5;
   } else clipSizeInc_ = max(0, clipSizeInc_ - 1);
-  int clipSize = size + clipSizeInc_;
+  int clipSize = size + min(MAX_CLIPSIZE_INCREASE, clipSizeInc_);
   cout << "CLIPSIZE " << clipSize << "\n";
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
