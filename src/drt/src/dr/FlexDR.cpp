@@ -1699,6 +1699,7 @@ void FlexDR::searchRepair(int iter,
           design_path_ = fmt::format(
               "{}iter{}_{}.design", dist_dir_, iter, design_version++);
           serialize_design(SerializationType::WRITE, design_, design_path_);
+          ProfileTask task("DIST: SENDING DESIGN");
           dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                               dst::JobMessage::BROADCAST),
               result(dst::JobMessage::NONE);
