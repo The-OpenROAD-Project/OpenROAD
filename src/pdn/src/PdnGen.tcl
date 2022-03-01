@@ -223,7 +223,7 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-pitch pitch_value] \
                                        [-spacing spacing_value] \
                                        [-offset offset_value] \
-                                       [-starts_width (POWER|GROUND)]}
+                                       [-starts_with (POWER|GROUND)]}
 
 proc add_pdn_stripe {args} {
   pdngen::check_design_state
@@ -3631,17 +3631,18 @@ proc generate_upper_metal_mesh_stripes {net layer layer_info area} {
   set width [dict get $layer_info width]
 
   # debug "Starts with: [starts_with $layer]"
-  # debug "net: $net, layer: $layer, area: $area"
+  # debug "net: $net, power: [is_power_net $net], ground: [is_ground_net $net], layer: $layer, area: $area"
 
   if {[get_dir $layer] == "hor"} {
     set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
-    if {!([starts_with $layer] == "POWER" && [is_power_net $net])} {
+    if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
       if {[dict exists $layer_info spacing]} {
         set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
       } else {
         set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
       }
     }
+
     for {set y $offset} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
       set box [::odb::newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
       # debug "  box: [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]"
@@ -3651,7 +3652,7 @@ proc generate_upper_metal_mesh_stripes {net layer layer_info area} {
     set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
     # debug "layer_offset: [dict get $layer_info offset]"
     # debug "base_offset: $offset"
-    if {!([starts_with $layer] == "POWER" && [is_power_net $net])} {
+    if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
       set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
       if {[dict exists $layer_info spacing]} {
         set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
