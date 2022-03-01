@@ -147,6 +147,7 @@ class GlobalRouter
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
+  int getMaxRoutingLayer() const { return max_routing_layer_; }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
   unsigned getDbId();
@@ -162,6 +163,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
+  void setPinOffset(int pin_offset);
   void printGrid();
 
   // flow functions
@@ -171,6 +173,8 @@ class GlobalRouter
   void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
   void estimateRC(odb::dbNet* db_net);
+  // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
+  std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes() const { return !routes_.empty(); }
@@ -304,6 +308,10 @@ class GlobalRouter
 
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
+  bool pinOverlapsGSegment(const odb::Point& pin_position,
+                           const int pin_layer,
+                           const std::vector<odb::Rect>& pin_boxes,
+                           const GRoute& route);
 
   // incremental funcions
   void updateDirtyRoutes();
@@ -370,7 +378,7 @@ class GlobalRouter
   int min_routing_layer_;
   int max_routing_layer_;
   int layer_for_guide_dimension_;
-  const int gcells_offset_ = 2;
+  int gcells_offset_;
   int overflow_iterations_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;

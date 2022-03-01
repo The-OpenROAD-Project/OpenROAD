@@ -42,7 +42,7 @@ _coverity() {
     log_file=cov-int/build-log.txt
     regex='Emitted.*compilation units.*\(\d+%\)'
     # get compilation coverage percentage
-    percent=$(grep -Poi ${regex} ${log_file} | grep -Po '\d+' | tail -n 1)
+    percent=$(grep -Poi "${regex}" ${log_file} | grep -Po '\d+' | tail -n 1)
     if [[ ${percent} -lt 85  ]]; then
         echo "Coverity requires more than 85% of compilation coverage. Only got ${percentage}%."
         exit 1

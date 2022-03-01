@@ -488,6 +488,14 @@ void io::Parser::setNets(odb::dbBlock* block)
 {
   for (auto net : block->getNets()) {
     bool is_special = net->isSpecial();
+    if (!is_special && net->getSigType().isSupply()) {
+      logger->error(DRT,
+                    305,
+                    "Net {} of signal type {} is not routable by TritonRoute. "
+                    "Move to special nets.",
+                    net->getName(),
+                    net->getSigType().getString());
+    }
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
     if (net->getNonDefaultRule())
@@ -500,6 +508,15 @@ void io::Parser::setNets(odb::dbBlock* block)
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
+      if (term->getSigType().isSupply() && !net->getSigType().isSupply())
+        logger->error(DRT,
+                      306,
+                      "Net {} of signal type {} cannot be connected to bterm "
+                      "{} with signal type {}",
+                      net->getName(),
+                      net->getSigType().getString(),
+                      term->getName(),
+                      term->getSigType().getString());
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
         logger->error(DRT, 104, "Terminal {} not found.", term->getName());
@@ -515,6 +532,16 @@ void io::Parser::setNets(odb::dbBlock* block)
       }
     }
     for (auto term : net->getITerms()) {
+      if (term->getSigType().isSupply() && !net->getSigType().isSupply())
+        logger->error(DRT,
+                      307,
+                      "Net {} of signal type {} cannot be connected to iterm "
+                      "{}/{} with signal type {}",
+                      net->getName(),
+                      net->getSigType().getString(),
+                      term->getInst()->getName(),
+                      term->getMTerm()->getName(),
+                      term->getSigType().getString());
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
