@@ -2029,8 +2029,8 @@ Resizer::findTargetLoad(LibertyCell *cell)
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
-        int in_rf_index = arc->fromTrans()->asRiseFall()->index();
-        int out_rf_index = arc->toTrans()->asRiseFall()->index();
+        int in_rf_index = arc->fromEdge()->asRiseFall()->index();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float arc_target_load = findTargetLoad(cell, arc, 
                                                tgt_slews_[in_rf_index],
                                                tgt_slews_[out_rf_index]);
@@ -2038,7 +2038,7 @@ Resizer::findTargetLoad(LibertyCell *cell)
                    cell->name(),
                    arc->from()->name(),
                    arc->to()->name(),
-                   arc->toTrans()->asString(),
+                   arc->toEdge()->asString(),
                    arc_target_load);
         target_load_sum += arc_target_load;
         arc_count++;
@@ -2176,8 +2176,8 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
         GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-        RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-        RiseFall *out_rf = arc->toTrans()->asRiseFall();
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+        RiseFall *out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
@@ -3442,8 +3442,8 @@ Resizer::gateDelays(LibertyPort *drvr_port,
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
-        RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-        int out_rf_index = arc->toTrans()->asRiseFall()->index();
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float in_slew = tgt_slews_[in_rf->index()];
         ArcDelay gate_delay;
         Slew drvr_slew;
@@ -3623,7 +3623,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
         TimingArcSetArcIterator arc_iter(arc_set);
         while (arc_iter.hasNext()) {
           TimingArc *arc = arc_iter.next();
-          RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+          RiseFall *in_rf = arc->fromEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
