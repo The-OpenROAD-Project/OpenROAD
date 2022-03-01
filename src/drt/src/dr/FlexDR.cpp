@@ -223,21 +223,6 @@ void FlexDRWorker::distributedMain(int idx_in_batch, frDesign* design)
     skipRouting_ = true;
     return;
   }
-  std::string workerStr;
-  serialize_worker(this, workerStr);
-  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
-  std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>();
-  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setWorkerStr(workerStr);
-  rjd->setIdxInBatch(idx_in_batch);
-  rjd->setReplyIp(local_ip_);
-  rjd->setReplyPort(local_port_);
-  msg.setJobDescription(std::move(desc));
-  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (!ok) {
-    logger_->error(utl::DRT, 500, "Sending worker {} failed");
-  }
 }
 
 void FlexDR::initFromTA()
@@ -1713,20 +1698,20 @@ void FlexDR::searchRepair(int iter,
           design_path_ = fmt::format(
               "{}iter{}_{}.design", dist_dir_, iter, design_version++);
           serialize_design(SerializationType::WRITE, design_, design_path_);
-          dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                              dst::JobMessage::BROADCAST),
-              result(dst::JobMessage::NONE);
-          std::unique_ptr<dst::JobDescription> desc
-              = std::make_unique<RoutingJobDescription>();
-          RoutingJobDescription* rjd
-              = static_cast<RoutingJobDescription*>(desc.get());
-          rjd->setDesignPath(design_path_);
-          rjd->setGlobalsPath(globals_path_);
-          rjd->setSharedDir(dist_dir_);
-          msg.setJobDescription(std::move(desc));
-          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-          if (!ok)
-            logger_->error(DRT, 304, "Updating design remotely failed");
+          // dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+          //                     dst::JobMessage::BROADCAST),
+          //     result(dst::JobMessage::NONE);
+          // std::unique_ptr<dst::JobDescription> desc
+          //     = std::make_unique<RoutingJobDescription>();
+          // RoutingJobDescription* rjd
+          //     = static_cast<RoutingJobDescription*>(desc.get());
+          // rjd->setDesignPath(design_path_);
+          // rjd->setGlobalsPath(globals_path_);
+          // rjd->setSharedDir(dist_dir_);
+          // msg.setJobDescription(std::move(desc));
+          // bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+          // if (!ok)
+          //   logger_->error(DRT, 304, "Updating design remotely failed");
         }
         if (design_updated) {
           design_->getRegionQuery()->dummyUpdate();
@@ -1766,11 +1751,23 @@ void FlexDR::searchRepair(int iter,
         }
         exception.rethrow();
         if(dist_on_) {
+          std::vector<std::vector<FlexDRWorker*>> distWorkerBatches(1);
           remaining_ = 0;
           for(auto& worker : workersInBatch)
+          {
             if(!worker->isSkipRouting())
+            {
               remaining_++;
-          listenForDistResults(workersInBatch);
+              if(distWorkerBatches.back().size() == REMOTE_BATCH_SIZE)
+                distWorkerBatches.push_back(std::vector<FlexDRWorker*>());
+              distWorkerBatches.back().push_back(worker.get());
+            }
+          }
+          if(distWorkerBatches.back().empty())
+            distWorkerBatches.pop_back();
+          #pragma omp parallel for schedule(dynamic)
+          for(int i = 0; i < distWorkerBatches.size(); i++)
+            listenForDistResults(distWorkerBatches.at(i));
         }
       }
       {
@@ -2560,26 +2557,34 @@ int FlexDR::main()
   return 0;
 }
 
-void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+void FlexDR::listenForDistResults(const std::vector<FlexDRWorker*>& batch)
 {
-  while(remaining_ != 0)
+  std::vector<std::string> workers;
+  for(auto worker : batch)
   {
-    std::vector<std::pair<int, std::string>> workers;
     std::string workerStr;
-    int idx;
-    int sz = std::min(remaining_, MAX_THREADS);
-    while(router_->getWorkerResultsSize() < sz);
-    while(router_->getWorkerResult(idx, workerStr))
-    {
-      workers.push_back({idx, workerStr});
-      remaining_--;
-    }
-    #pragma omp parallel for schedule(dynamic)
-    for(int i = 0; i < workers.size(); i++)
-    {
-      deserialize_worker(batch.at(workers[i].first).get(), design_, workers[i].second);
-    }
+    serialize_worker(worker, workerStr);
+    workers.push_back(workerStr);
   }
+  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
+  std::unique_ptr<dst::JobDescription> desc
+      = std::make_unique<RoutingJobDescription>();
+  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+  rjd->setWorkers(workers);
+  rjd->setDesignPath(design_path_);
+  rjd->setGlobalsPath(globals_path_);
+  rjd->setSharedDir(dist_dir_);
+  msg.setJobDescription(std::move(desc));
+  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+  if (!ok) {
+    logger_->error(utl::DRT, 500, "Sending worker {} failed");
+  }
+  auto resultDesc = static_cast<RoutingJobDescription*>(result.getJobDescription());
+  for(int i = 0; i < resultDesc->getWorkers().size(); i++)
+  {
+    deserialize_worker(batch[i], design_, resultDesc->getWorkers().at(i));
+  }
+
 }
 template <class Archive>
 void FlexDRWorker::serialize(Archive& ar, const unsigned int version)

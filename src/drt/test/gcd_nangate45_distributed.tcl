@@ -9,7 +9,7 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def gcd_nangate45_preroute.def
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
+set_thread_count 1
 detailed_route -guide gcd_nangate45.route_guide \
                -output_guide results/gcd_nangate45_distributed.output.guide.mod \
                -output_drc results/gcd_nangate45_distributed.output.drc.rpt \

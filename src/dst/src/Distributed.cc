@@ -136,8 +136,9 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
     dataStr = error.message();
     return false;
   } else {
-    const char* data = asio::buffer_cast<const char*>(receive_buffer.data());
-    dataStr = data;
+    auto bufs = receive_buffer.data();
+    std::string result(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + receive_buffer.size());
+    dataStr = result;
     if (dataStr == "")
       return false;
     return true;

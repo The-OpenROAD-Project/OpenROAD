@@ -59,8 +59,8 @@ void detailed_route_distributed(const char* remote_ip,
                                 const char* sharedVolume)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  auto* dist = ord::OpenRoad::openRoad()->getDistributed();
-  dist->runWorker(local_ip, local_port, true);
+  // auto* dist = ord::OpenRoad::openRoad()->getDistributed();
+  // dist->runWorker(local_ip, local_port, true);
   router->setDistributed(true);
   router->setWorkerIpPort(remote_ip, remote_port);
   router->setLocalIpPort(local_ip, local_port);

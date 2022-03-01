@@ -89,7 +89,7 @@ class JobMessage
   JobType job_type_;
   std::unique_ptr<JobDescription> desc_;
 
-  static constexpr const char* EOP = "\r\n\r\n";  // ENDOFPACKET SEQUENCE
+  static constexpr const char* EOP = "7ALAWA";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

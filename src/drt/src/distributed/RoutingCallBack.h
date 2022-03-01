@@ -28,7 +28,7 @@
 
 #pragma once
 #include <stdio.h>
-
+#include <omp.h>
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <mutex>
@@ -58,40 +58,44 @@ class RoutingCallBack : public dst::JobCallBack
                   utl::Logger* logger)
       : router_(router), dist_(dist), logger_(logger)
   {
-    pool_ = std::make_unique<asio::thread_pool>(
-        ord::OpenRoad::openRoad()->getThreadCount());
+    omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+    // pool_ = std::make_unique<asio::thread_pool>(
+    //     ord::OpenRoad::openRoad()->getThreadCount());
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
-    dst::JobMessage result;
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getWorkerStr() != "") {
-      result.setJobType(dst::JobMessage::SUCCESS);
-      asio::post(*pool_,
-                [worker_path = desc->getWorkerStr(),
-                  router = router_,
-                  logger = logger_,
-                  idx = desc->getIdxInBatch(),
-                  dist = dist_,
-                  ip = desc->getReplyIp(),
-                  port = desc->getReplyPort()]() {
-                  dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), reply;
-                  std::string resultPath
-                      = router->runDRWorker(worker_path);
-                  auto uResultDesc = std::make_unique<RoutingJobDescription>();
-                  auto resultDesc
-                      = static_cast<RoutingJobDescription*>(uResultDesc.get());
-                  resultDesc->setWorkerStr(resultPath);
-                  resultDesc->setIdxInBatch(idx);
-                  result.setJobDescription(std::move(uResultDesc));
-                  dist->sendJob(result, ip.c_str(), port, reply);
-                });
-    } else {
-      result.setJobType(dst::JobMessage::ERROR);
+    if (desc->getDesignPath() != "") {
+      if (design_path_ != desc->getDesignPath()) {
+        frTime t;
+        logger_->report("Design: {}", desc->getDesignPath());
+        router_->updateDesign(desc->getDesignPath().c_str());
+        design_path_ = desc->getDesignPath();
+        t.print(logger_);
+      }
     }
+    if (desc->getGlobalsPath() != "") {
+      if (globals_path_ != desc->getGlobalsPath()) {
+        globals_path_ = desc->getGlobalsPath();
+        router_->setSharedVolume(desc->getSharedDir());
+        router_->updateGlobals(desc->getGlobalsPath().c_str());
+      }
+    }
+    ;
+    std::vector<std::string> resultWorkers(desc->getWorkers().size());
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < desc->getWorkers().size(); i++)
+    {
+      resultWorkers[i] = router_->runDRWorker(desc->getWorkers().at(i));
+    }
+    dst::JobMessage result(dst::JobMessage::ROUTING);
+    auto uResultDesc = std::make_unique<RoutingJobDescription>();
+    auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
+    resultDesc->setWorkers(resultWorkers);
+    result.setJobDescription(std::move(uResultDesc));
     dist_->sendResult(result, sock);
     sock.close();
   }
