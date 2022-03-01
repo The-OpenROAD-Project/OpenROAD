@@ -1688,6 +1688,7 @@ void FlexDR::searchRepair(int iter,
     ProfileTask profile("DR:checkerboard");
     for (auto& workersInBatch : workerBatch) {
       {
+        ProfileTask task("DIST: DRWORK");
         const std::string batch_name = std::string("DR:batch<")
                                        + std::to_string(workersInBatch.size())
                                        + ">";
@@ -1766,9 +1767,12 @@ void FlexDR::searchRepair(int iter,
           }
           if(distWorkerBatches.back().empty())
             distWorkerBatches.pop_back();
-          #pragma omp parallel for schedule(dynamic)
-          for(int i = 0; i < distWorkerBatches.size(); i++)
-            sendWorkers(distWorkerBatches.at(i));
+          {
+            ProfileTask task("DIST: SENDING WORKERS");
+            #pragma omp parallel for schedule(dynamic)
+            for(int i = 0; i < distWorkerBatches.size(); i++)
+              sendWorkers(distWorkerBatches.at(i));
+          }
           listenForDistResults(workersInBatch);
         }
       }
@@ -2590,6 +2594,7 @@ void FlexDR::listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker
   while(remaining_ != 0)
   {
     while(router_->getWorkerResultsSize() == 0);
+    ProfileTask task("DIST: deserializing batch");
     std::vector<std::pair<int, std::string>> workers;
     router_->getWorkerResults(workers);
     #pragma omp parallel for schedule(dynamic)
