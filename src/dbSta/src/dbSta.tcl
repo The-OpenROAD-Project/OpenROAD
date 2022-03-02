@@ -118,9 +118,6 @@ proc report_worst_slack { args } {
   utl::metric_float "timing__setup__ws" [worst_slack_cmd "max"]
 }
 
-worst_clk_skew_cmd
-report_clk_skew
-
 rename report_clk_skew report_clk_skew_raw
 
 proc report_clk_skew { args } {
