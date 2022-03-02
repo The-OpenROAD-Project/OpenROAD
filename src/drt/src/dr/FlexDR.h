@@ -151,7 +151,7 @@ class FlexDR
   std::string dist_dir_;
   std::string globals_path_;
   bool increaseClipsize_;
-  int clipSizeInc_;
+  float clipSizeInc_;
 
   // others
   void init();

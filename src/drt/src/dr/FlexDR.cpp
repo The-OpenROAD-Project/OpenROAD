@@ -1714,12 +1714,15 @@ void FlexDR::searchRepair(int iter,
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  if (iter >= 20)
-      MARKERCOST = ROUTESHAPECOST/4;
-  if (increaseClipsize_) {
-      clipSizeInc_ += 5;
-  } else clipSizeInc_ = max(0, clipSizeInc_ - 1);
-  int clipSize = size + min(MAX_CLIPSIZE_INCREASE, clipSizeInc_);
+  int clipSize = size;
+  if (ripupMode != 1) {
+    if (iter >= 20)
+        MARKERCOST = ROUTESHAPECOST/4;
+    if (increaseClipsize_) {
+        clipSizeInc_ += 4;
+    } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
+    clipSize += min(MAX_CLIPSIZE_INCREASE, (int)round(clipSizeInc_));
+  }
   cout << "CLIPSIZE " << clipSize << "\n";
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
