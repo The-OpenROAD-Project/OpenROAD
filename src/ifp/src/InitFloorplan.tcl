@@ -243,16 +243,18 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
       set y_offset $y_pitch
     }
     if { $x_offset > [$die_area dx] } {
-      utl::error "IFP" 21 "-x_offset > die width."
+        utl::warn "IFP" 21 "Track pattern for [$layer getName] will be skipped due to x_offset > die width."
+        return
+    }
+    if { $y_offset > [$die_area dy] } {
+        utl::warn "IFP" 22 "Track pattern for [$layer getName] will be skipped due to y_offset > die height."
+        return
     }
     set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
     $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
 
     if { $x_offset == 0 } {
       set x_offset $x_pitch
-    }
-    if { $y_offset > [$die_area dy] } {
-      utl::error "IFP" 22 "-y_offset > die height."
     }
     set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
     $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
