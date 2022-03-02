@@ -1803,7 +1803,6 @@ void FlexDR::searchRepair(int iter,
             else
               workersInBatch[i]->main(getDesign());
 #pragma omp critical
-          {
             cnt++;
             if (VERBOSE > 0) {
               if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
