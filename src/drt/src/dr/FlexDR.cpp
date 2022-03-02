@@ -104,13 +104,18 @@ static bool serialize_design(SerializationType type,
     ar >> *design;
     file.close();
   } else {
-    std::ofstream file(name);
-    if (!file.good())
-      return false;
-    frOArchive ar(file);
+    ProfileTask t1("DIST: SERIALIZE_DESIGN");
+    std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+    frOArchive ar(stream);
     ar.setDeepSerialize(true);
     register_types(ar);
     ar << *design;
+    t1.done();
+    ProfileTask t2("DIST: WRITE_DESIGN");
+    std::ofstream file(name);
+    if (!file.good())
+      return false;
+    file << stream.rdbuf();
     file.close();
   }
   return true;
@@ -2570,7 +2575,7 @@ void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch
 {
   std::vector<std::pair<int, std::string>> workers;
   {
-    ProfileTask task("DIST: DESERIALIZING");
+    ProfileTask task("DIST: SERIALIZE_BATCH");
     for(auto& [idx, worker] : batch)
     {
       std::string workerStr;
