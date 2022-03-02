@@ -59,12 +59,8 @@ void BalancerConnection::start()
       JobMessage::EOP,
       [me = shared_from_this()](boost::system::error_code const& ec,
                                 std::size_t bytes_xfer) {
-        // std::unique_lock<std::mutex> lock(me->getOwner()->pool_mutex_);
         boost::thread t(&BalancerConnection::handle_read, me, ec, bytes_xfer);
         t.detach();
-        // asio::post(
-        //     *me->getOwner()->pool_.get(),
-        //     boost::bind(&BalancerConnection::handle_read, me, ec, bytes_xfer));
       });
 }
 
@@ -102,7 +98,6 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
           asio::streambuf receive_buffer;
           asio::read(socket, receive_buffer, asio::transfer_all(), error);
           asio::write(sock_, receive_buffer, error);
-          owner_->updateWorker(workerAddress, port);
           sock_.close();
         }
         break;

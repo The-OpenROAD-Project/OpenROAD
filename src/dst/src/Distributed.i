@@ -49,10 +49,10 @@ void run_load_balancer(const char* host, unsigned short port)
 }
 
 void add_worker_address(
-    const char* address, unsigned short ip, unsigned short threads)
+    const char* address, unsigned short ip)
 {
   auto* distributed = ord::OpenRoad::openRoad()->getDistributed();
-  distributed->addWorkerAddress(address, ip, threads);
+  distributed->addWorkerAddress(address, ip);
 }
 
 %} // inline

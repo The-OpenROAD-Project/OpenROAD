@@ -48,7 +48,7 @@ class LoadBalancer
                utl::Logger* logger,
                const char* ip,
                unsigned short port = 1234);
-  void addWorker(std::string ip, unsigned short port, unsigned short avail);
+  void addWorker(std::string ip, unsigned short port);
   void updateWorker(ip::address ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
 
@@ -67,7 +67,7 @@ class LoadBalancer
   {
     bool operator()(worker const& w1, worker const& w2)
     {
-      return w1.priority < w2.priority;
+      return w1.priority > w2.priority;
     }
   };
 

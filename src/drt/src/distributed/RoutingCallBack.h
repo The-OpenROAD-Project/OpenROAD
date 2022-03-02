@@ -59,8 +59,7 @@ class RoutingCallBack : public dst::JobCallBack
       : router_(router), dist_(dist), logger_(logger)
   {
     omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
-    // pool_ = std::make_unique<asio::thread_pool>(
-    //     ord::OpenRoad::openRoad()->getThreadCount());
+    pool_ = std::make_unique<asio::thread_pool>(1);
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
@@ -87,18 +86,25 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
-    std::vector<std::pair<int, std::string>> resultWorkers(desc->getWorkers().size());
-    #pragma omp parallel for schedule(dynamic)
-    for(int i = 0; i < desc->getWorkers().size(); i++)
+    asio::post(*pool_, [router = router_,
+                        dist = dist_,
+                        workers = desc->getWorkers(),
+                        reply_ip = desc->getReplyIp(),
+                        reply_port = desc->getReplyPort()]()
     {
-      resultWorkers[i] = { desc->getWorkers().at(i).first, router_->runDRWorker(desc->getWorkers().at(i).second) };
-    }
-    dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), tmp;
-    auto uResultDesc = std::make_unique<RoutingJobDescription>();
-    auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
-    resultDesc->setWorkers(resultWorkers);
-    result.setJobDescription(std::move(uResultDesc));
-    dist_->sendJob(result, desc->getReplyIp().c_str(), desc->getReplyPort(), tmp);
+      std::vector<std::pair<int, std::string>> resultWorkers(workers.size());
+      #pragma omp parallel for schedule(dynamic)
+      for(int i = 0; i < workers.size(); i++)
+      {
+        resultWorkers[i] = { workers.at(i).first, router->runDRWorker(workers.at(i).second) };
+      }
+      dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), tmp;
+      auto uResultDesc = std::make_unique<RoutingJobDescription>();
+      auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
+      resultDesc->setWorkers(resultWorkers);
+      result.setJobDescription(std::move(uResultDesc));
+      dist->sendJob(result, reply_ip.c_str(), reply_port, tmp);
+    });
   }
   void onRoutingResultReceived(dst::JobMessage& msg, dst::socket& sock)
   {

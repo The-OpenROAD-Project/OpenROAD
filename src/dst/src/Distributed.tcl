@@ -74,7 +74,6 @@ proc run_load_balancer { args } {
 sta::define_cmd_args "add_worker_address" {
     [-host host]
     [-port port]
-    [-threads threads]
 }
 proc add_worker_address { args } {
   sta::parse_key_args "add_worker_address" args \
@@ -90,10 +89,5 @@ proc add_worker_address { args } {
   } else {
     utl::error DST 17 "-port is required in add_worker_address cmd."
   }
-  if { [info exists keys(-threads)] } {
-    set threads $keys(-threads)
-  } else {
-    set threads 10
-  }
-  dst::add_worker_address $host $port $threads
+  dst::add_worker_address $host $port
 }

@@ -37,6 +37,14 @@ void LoadBalancer::start_accept()
 {
   if (jobs_ != 0 && jobs_ % 100 == 0) {
     logger_->info(utl::DST, 7, "Processed {} jobs", jobs_);
+    auto copy = workers_;
+    while(!copy.empty())
+    {
+      auto worker = copy.top();
+      logger_->report("Worker {}/{} handled {} jobs", worker.ip, worker.port, worker.priority);
+      copy.pop();
+    }
+
   }
   jobs_++;
   BalancerConnection::pointer connection
@@ -62,10 +70,9 @@ LoadBalancer::LoadBalancer(asio::io_service& io_service,
 }
 
 void LoadBalancer::addWorker(std::string ip,
-                             unsigned short port,
-                             unsigned short avail)
+                             unsigned short port)
 {
-  workers_.push(worker(ip::address::from_string(ip), port, avail));
+  workers_.push(worker(ip::address::from_string(ip), port, 0));
 }
 void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
 {
@@ -75,7 +82,7 @@ void LoadBalancer::updateWorker(ip::address ip, unsigned short port)
     auto worker = workers_.top();
     workers_.pop();
     if (worker.ip == ip && worker.port == port)
-      worker.priority++;
+      worker.priority--;
     newQueue.push(worker);
   }
   workers_.swap(newQueue);
@@ -88,7 +95,8 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
     workers_.pop();
     ip = w.ip;
     port = w.port;
-    w.priority--;
+    if(w.priority != std::numeric_limits<int>::max())
+      w.priority++;
     workers_.push(w);
   }
 }

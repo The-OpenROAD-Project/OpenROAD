@@ -98,7 +98,7 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
     asio::io_service io_service;
     LoadBalancer balancer(io_service, logger_, ip, port);
     for (auto worker : end_points_)
-      balancer.addWorker(worker.ip, worker.port, worker.threads);
+      balancer.addWorker(worker.ip, worker.port);
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
@@ -106,10 +106,9 @@ void Distributed::runLoadBalancer(const char* ip, unsigned short port)
 }
 
 void Distributed::addWorkerAddress(const char* address,
-                                   unsigned short port,
-                                   unsigned short threads)
+                                   unsigned short port)
 {
-  end_points_.push_back(EndPoint(address, port, threads));
+  end_points_.push_back(EndPoint(address, port));
 }
 // TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)

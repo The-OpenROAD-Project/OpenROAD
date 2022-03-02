@@ -57,8 +57,7 @@ class Distributed
   void runWorker(const char* ip, unsigned short port, bool interactive);
   void runLoadBalancer(const char* ip, unsigned short port);
   void addWorkerAddress(const char* address,
-                        unsigned short port,
-                        unsigned short threads);
+                        unsigned short port);
   bool sendJob(JobMessage& msg,
                const char* ip,
                unsigned short port,
@@ -72,11 +71,9 @@ class Distributed
   {
     std::string ip;
     unsigned short port;
-    unsigned short threads;
     EndPoint(std::string ip_in,
-             unsigned short port_in,
-             unsigned short threads_in)
-        : ip(ip_in), port(port_in), threads(threads_in)
+             unsigned short port_in)
+        : ip(ip_in), port(port_in)
     {
     }
   };
