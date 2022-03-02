@@ -163,7 +163,7 @@ proc make_tracks { args } {
   if { [llength $args] == 0 } {
     foreach layer [$tech getLayers] {
         if { [$layer getType] == "ROUTING"
-             && [$layer getLef58Type] != "MIMCAP"} {
+             && [$layer getRoutingLevel] != 0} {
         set x_pitch [$layer getPitchX]
         set x_offset [$layer getOffsetX]
         set y_pitch [$layer getPitchY]
