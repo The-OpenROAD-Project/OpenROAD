@@ -1719,8 +1719,8 @@ void FlexDR::searchRepair(int iter,
     if (iter >= 20)
         MARKERCOST = ROUTESHAPECOST/4;
     if (increaseClipsize_) {
-        clipSizeInc_ += 4;
-    } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
+        clipSizeInc_ += 2;
+    } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.05f);
     clipSize += min(MAX_CLIPSIZE_INCREASE, (int)round(clipSizeInc_));
   }
   cout << "CLIPSIZE " << clipSize << "\n";

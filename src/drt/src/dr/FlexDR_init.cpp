@@ -2431,6 +2431,8 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
   frCoord width;
   frSegStyle segStyle;
   FlexMazeIdx objMIdx1, objMIdx2;
+  if (drIter_ >= 11)
+      cout << "marker " << marker << "\nresults.size " << results.size() << "\n";
 
   for (auto& [objBox, connFig] : results) {
     if (connFig->typeId() == drcPathSeg) {
@@ -2545,13 +2547,24 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       auto obj = static_cast<drVia*>(connFig);
       obj->getOrigin(bp);
       // skip if unfixable obj
+//      if (drIter_ >= 11)
+//          cout << "via at " <<bp << "\n";
       if (!getRouteBox().intersects(bp)) {
         continue;
       }
+      
+//      if (drIter_ >= 11)
+//          cout << "via  intersects routebox\n";
       if (vioNets.find(obj->getNet()) == vioNets.end()) {
         // add history cost
         obj->getMazeIdx(objMIdx1, objMIdx2);
+        
+//        if (drIter_ >= 11)
+//            cout << "enter\n";
         if (viaHistoryMarkers_.find(objMIdx1) == viaHistoryMarkers_.end()) {
+            
+//        if (drIter_ >= 11)
+//            cout << "add\n";
           gridGraph_.addMarkerCostVia(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
           viaHistoryMarkers_.insert(objMIdx1);
 
