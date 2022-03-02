@@ -93,7 +93,6 @@ static bool serialize_design(SerializationType type,
                              frDesign* design,
                              const std::string& name)
 {
-  ProfileTask task("DIST: SERIALIZE_DESIGN");
   if (type == SerializationType::READ) {
     std::ifstream file(name);
     if (!file.good())
@@ -105,13 +104,16 @@ static bool serialize_design(SerializationType type,
     file.close();
   } else {
     ProfileTask t1("DIST: SERIALIZE_DESIGN");
+    ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
     std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
     frOArchive ar(stream);
     ar.setDeepSerialize(true);
     register_types(ar);
     ar << *design;
     t1.done();
+    t1_version.done();
     ProfileTask t2("DIST: WRITE_DESIGN");
+    ProfileTask t2_version(std::string("DIST: WRITE" + name).c_str());
     std::ofstream file(name);
     if (!file.good())
       return false;
