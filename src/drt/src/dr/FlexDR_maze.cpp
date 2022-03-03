@@ -1659,7 +1659,8 @@ void FlexDRWorker::route_queue()
 
   // route
   route_queue_main(rerouteQueue);
-
+  if (getDRIter() >= 11)
+      cout << "finish iteration\n";
   // end
   gcWorker_->resetTargetNet();
   gcWorker_->setEnableSurgicalFix(true);
@@ -1715,7 +1716,11 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
 
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
+      if (drIter_ >= 11)
+          cout << "route net " << *net->getFrNet() << "\n";
       if (numReroute != net->getNumReroutes()) {
+          if (drIter_ >= 11)
+          cout << "skip net\n";
         continue;
       }
       // init
@@ -1774,7 +1779,8 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
-
+      if (drIter_ >= 11)
+          cout << "route END\n";
       // gc
       if (gcWorker_->setTargetNet(net->getFrNet())) {
         gcWorker_->updateDRNet(net);
@@ -1816,18 +1822,23 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       gcWorker_->setEnableSurgicalFix(false);
       if (obj->typeId() == frcNet) {
         auto net = static_cast<frNet*>(obj);
+          if (drIter_ >= 11)
+            cout << "Check net " << *net << "\n";
         if (gcWorker_->setTargetNet(net)) {
           gcWorker_->main();
           didCheck = true;
         }
       } else {
+          if (drIter_ >= 11)
+            cout << "Check fixed obj \n";
         if (gcWorker_->setTargetNet(obj)) {
           gcWorker_->main();
           didCheck = true;
         }
       }
     }
-
+    if (getDRIter() >= 11)
+        cout << "n markers " << gcWorker_->getMarkers().size() << "\n";
     // end
     if (didCheck) {
       route_queue_update_queue(gcWorker_->getMarkers(), rerouteQueue);
