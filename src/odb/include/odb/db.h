@@ -6893,7 +6893,8 @@ class dbTechLayer : public dbObject
     BELOWDIEEDGE,
     DIFFUSION,
     TRIMPOLY,
-    MIMCAP
+    MIMCAP,
+    STACKEDMIMCAP
   };
   // User Code Begin dbTechLayerEnums
   // User Code End dbTechLayerEnums
@@ -7197,6 +7198,11 @@ class dbTechLayer : public dbObject
   /// Get routing-level of this routing layer. The routing level
   /// is from [1-num_layers]. This function returns 0, if this
   /// layer is not a routing layer.
+  ///
+  /// This layer is really intended for signal routing.  In LEF you
+  /// can have layers that have "TYPE ROUTING" but aren't really
+  /// for routing signal nets (e.g. MIMCAP, STACKEDMIMCAP).
+  /// These layers will return zero.
   ///
   int getRoutingLevel();
 

@@ -347,7 +347,7 @@ void GlobalRouter::initRoutingLayers()
     if (tech_layer == nullptr) {
       logger_->error(GRT, 85, "Routing layer {} not found.", l);
     }
-    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
+    if (tech_layer->getRoutingLevel() != 0) {
       if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
           && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
         logger_->error(GRT,
@@ -3354,7 +3354,7 @@ int GlobalRouter::computeMaxRoutingLayer()
   int valid_layers = 1;
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(valid_layers);
-    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
+    if (tech_layer->getRoutingLevel() != 0) {
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid == nullptr) {
         break;
