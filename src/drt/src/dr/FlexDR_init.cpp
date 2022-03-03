@@ -3342,7 +3342,8 @@ void FlexDRWorker::initMazeCost_connFig()
   int cnt = 0;
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
-      modPathCost(connFig.get(), ModCostType::addFixedShape, false, false);
+        addPathCost(connFig.get());
+//      modPathCost(connFig.get(), ModCostType::addFixedShape, false, false);
       cnt++;
     }
     for (auto& connFig : net->getRouteConnFigs()) {

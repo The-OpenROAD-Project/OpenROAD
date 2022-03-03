@@ -928,16 +928,16 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
 {
   // skip if corner type mismatch
   if (corner->getType() != con->getCornerType()) {
-      if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "-1\n";
+//      if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "-1\n";
     return;
   }
   // only trigger if the corner is not contained by the rect
   // TODO: check corner-touching case
   auto cornerPt = corner->getNextEdge()->low();
   if (gtl::contains(*rect, cornerPt)) {
-      if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "0\n";
+//      if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "0\n";
     return;
   }
   frCoord cornerX = gtl::x(cornerPt);
@@ -948,48 +948,48 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
     if (cornerX >= (candX = gtl::xh(*rect))) {
       if (cornerY >= (candY = gtl::yh(*rect))) {
         if (corner->getDir() != frCornerDirEnum::SW) {
-            if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "1\n";
+//            if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "1\n";
           return;
         }
       } else if (cornerY <= (candY = gtl::yl(*rect))) {
         if (corner->getDir() != frCornerDirEnum::NW) {
-            if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "2\n";
+//            if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "2\n";
           return;
         }
       } else {
-          if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "3\n";
+//          if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "3\n";
         return;
       }
     } else if (cornerX <= (candX = gtl::xl(*rect))) {
       if (cornerY >= (candY = gtl::yh(*rect))) {
         if (corner->getDir() != frCornerDirEnum::SE) {
-            if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "4\n";
+//            if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "4\n";
           return;
         }
       } else if (cornerY <= (candY = gtl::yl(*rect))) {
         if (corner->getDir() != frCornerDirEnum::NE) {
-            if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "5\n";
+//            if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "5\n";
           return;
         }
       } else {
-          if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "6\n";
+//          if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "6\n";
         return;
       }
     } else {
-        if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "7\n";
+//        if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "7\n";
       return;
     }
     if (rect->getNet()
         && !rect->getNet()->hasPolyCornerAt(candX, candY, rect->getLayerNum())) {
-        if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "8\n";
+//        if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "8\n";
       return;
     }
   }
@@ -998,14 +998,14 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
     if (corner->getType() == frCornerTypeEnum::CONVEX) {
       if (corner->getNextCorner()->getType() == frCornerTypeEnum::CONVEX
           && gtl::length(*(corner->getNextEdge())) < con->getEolWidth()) {
-          if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "9\n";
+//          if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "9\n";
         return;
       }
       if (corner->getPrevCorner()->getType() == frCornerTypeEnum::CONVEX
           && gtl::length(*(corner->getPrevEdge())) < con->getEolWidth()) {
-          if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "10\n";
+//          if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "10\n";
         return;
       }
     }
@@ -1109,8 +1109,8 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
                                             gtl::yh(*rect)),
                                       rect->isFixed()));
       addMarker(std::move(marker));
-      if (drWorker_ && drWorker_->getDRIter() >= 11)
-                cout << "add marker\n";
+//      if (drWorker_ && drWorker_->getDRIter() >= 11)
+//                cout << "add marker\n";
       return;
     } else {
       // TODO: implement others if necessary
@@ -1230,16 +1230,16 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(gcCorner* corner)
 
   auto& workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<gcRect*>> result;
-  if (drWorker_ && drWorker_->getDRIter() >= 11)
-          cout << "drc query box: max (" << queryBox.max_corner().x() << " " << queryBox.max_corner().y() << 
-                 ") min " << queryBox.min_corner().x() << " " << queryBox.min_corner().y() << ")\n";
+//  if (drWorker_ && drWorker_->getDRIter() >= 11)
+//          cout << "drc query box: max (" << queryBox.max_corner().x() << " " << queryBox.max_corner().y() << 
+//                 ") min " << queryBox.min_corner().x() << " " << queryBox.min_corner().y() << ")\n";
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
   // LEF58CornerSpacing
   auto& cons
       = getTech()->getLayer(layerNum)->getLef58CornerSpacingConstraints();
   for (auto& [objBox, ptr] : result) {
-      if (drWorker_ && drWorker_->getDRIter() >= 11) 
-          cout << "got obj " << (ptr->getNet()->getFrNet() ? ptr->getNet()->getFrNet()->getName() : " fixed") << " box " << objBox << "\n";
+//      if (drWorker_ && drWorker_->getDRIter() >= 11) 
+//          cout << "got obj " << (ptr->getNet()->getFrNet() ? ptr->getNet()->getFrNet()->getName() : " fixed") << " box " << objBox << "\n";
     for (auto& con : cons) {
       checkMetalCornerSpacing_main(corner, ptr, con);
     }
@@ -3137,8 +3137,8 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
 int FlexGCWorker::Impl::main()
 {
     
-    if (drWorker_ && drWorker_->getDRIter() >= 11)
-        cout << "start drc\n";
+//    if (drWorker_ && drWorker_->getDRIter() >= 11)
+//        cout << "start drc\n";
   // ProfileTask profile("GC:main");
   // printMarker = true;
   //  minStep patching for GF14
@@ -3149,8 +3149,8 @@ int FlexGCWorker::Impl::main()
   }
   // incremental updates
   if (!modifiedDRNets_.empty() || !pwires_.empty()) {
-      if (drWorker_ && drWorker_->getDRIter() >= 11)
-          cout << "update gcWorker\n";
+//      if (drWorker_ && drWorker_->getDRIter() >= 11)
+//          cout << "update gcWorker\n";
     updateGCWorker();
   }
   // clear existing markers
