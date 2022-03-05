@@ -120,7 +120,7 @@ proc report_worst_slack { args } {
 
 rename report_clock_skew report_clock_skew_raw
 
-proc report_clock_skew {
+proc report_clock_skew { args } {
   global sta_report_default_digits
 
   parse_key_args "report_clock_skew" args \
