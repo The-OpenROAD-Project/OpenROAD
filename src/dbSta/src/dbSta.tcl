@@ -118,13 +118,42 @@ proc report_worst_slack { args } {
   utl::metric_float "timing__setup__ws" [worst_slack_cmd "max"]
 }
 
-rename report_clk_skew report_clk_skew_raw
+rename report_clock_skew report_clock_skew_raw
 
-proc report_clk_skew { args } {
-  eval [linsert $args 0 report_clk_skew_raw]
-  utl::metric_float "clock__skew__worst" [worst_clk_skew_cmd [lindex $args 2]]
+proc report_clock_skew {
+  global sta_report_default_digits
+
+  parse_key_args "report_clock_skew" args \
+    keys {-clock -corner -digits} flags {-setup -hold}
+  check_argc_eq0 "report_clock_skew" $args
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    sta_error 419 "report_clock_skew -setup and -hold are mutually exclusive options."
+  } elseif { [info exists flags(-setup)] } {
+    set setup_hold "setup"
+  } elseif { [info exists flags(-hold)] } {
+    set setup_hold "hold"
+  } else {
+    set setup_hold "setup"
+  }
+
+  if [info exists keys(-clock)] {
+    set clks [get_clocks_warn "-clocks" $keys(-clock)]
+  } else {
+    set clks [all_clocks]
+  }
+  set corner [parse_corner_or_all keys]
+  if [info exists keys(-digits)] {
+    set digits $keys(-digits)
+    check_positive_integer "-digits" $digits
+  } else {
+    set digits $sta_report_default_digits
+  }
+  if { $clks != {} } {
+    report_clk_skew $clks $corner $setup_hold $digits
+    utl::metric_float "clock__skew__worst" [worst_clk_skew_cmd [lindex $args 2]]
+  }
 }
-
 
 # namespace
 }
