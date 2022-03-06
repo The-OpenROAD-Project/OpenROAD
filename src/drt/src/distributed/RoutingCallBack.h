@@ -68,28 +68,12 @@ class RoutingCallBack : public dst::JobCallBack
     if (msg.getJobType() != dst::JobMessage::ROUTING)
       return;
     dst::JobMessage reply(dst::JobMessage::SUCCESS);
-    dist_->sendResult(reply, sock);
-    sock.close();
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getDesignPath() != "") {
-      if (design_path_ != desc->getDesignPath()) {
-        frTime t;
-        logger_->report("Design: {}", desc->getDesignPath());
-        router_->updateDesign(desc->getDesignPath().c_str());
-        design_path_ = desc->getDesignPath();
-        t.print(logger_);
-      }
-    }
-    if (desc->getGlobalsPath() != "") {
-      if (globals_path_ != desc->getGlobalsPath()) {
-        globals_path_ = desc->getGlobalsPath();
-        router_->setSharedVolume(desc->getSharedDir());
-        router_->updateGlobals(desc->getGlobalsPath().c_str());
-      }
-    }
     remaining_ += desc->getWorkers().size();
     asio::post(*routing_pool_, boost::bind(&RoutingCallBack::runWorkers, this, desc->getWorkers()));
+    dist_->sendResult(reply, sock);
+    sock.close();
   }
   void onRoutingResultReceived(dst::JobMessage& msg, dst::socket& sock)
   {
