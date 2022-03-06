@@ -31,6 +31,7 @@
 #include <omp.h>
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
+#include <boost/bind/bind.hpp>
 #include <mutex>
 #include <iostream>
 
@@ -56,10 +57,11 @@ class RoutingCallBack : public dst::JobCallBack
   RoutingCallBack(triton_route::TritonRoute* router,
                   dst::Distributed* dist,
                   utl::Logger* logger)
-      : router_(router), dist_(dist), logger_(logger)
+      : router_(router), dist_(dist), logger_(logger), remaining_(0)
   {
     omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
-    pool_ = std::make_unique<asio::thread_pool>(1);
+    routing_pool_ = std::make_unique<asio::thread_pool>(1);
+    results_pool_ = std::make_unique<asio::thread_pool>(1);
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
@@ -86,25 +88,8 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
-    asio::post(*pool_, [router = router_,
-                        dist = dist_,
-                        workers = desc->getWorkers(),
-                        reply_ip = desc->getReplyIp(),
-                        reply_port = desc->getReplyPort()]()
-    {
-      std::vector<std::pair<int, std::string>> resultWorkers(workers.size());
-      #pragma omp parallel for schedule(dynamic)
-      for(int i = 0; i < workers.size(); i++)
-      {
-        resultWorkers[i] = { workers.at(i).first, router->runDRWorker(workers.at(i).second) };
-      }
-      dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), tmp;
-      auto uResultDesc = std::make_unique<RoutingJobDescription>();
-      auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
-      resultDesc->setWorkers(resultWorkers);
-      result.setJobDescription(std::move(uResultDesc));
-      dist->sendJob(result, reply_ip.c_str(), reply_port, tmp);
-    });
+    remaining_ += desc->getWorkers().size();
+    asio::post(*routing_pool_, boost::bind(&RoutingCallBack::runWorkers, this, desc->getWorkers()));
   }
   void onRoutingResultReceived(dst::JobMessage& msg, dst::socket& sock)
   {
@@ -142,8 +127,34 @@ class RoutingCallBack : public dst::JobCallBack
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
     }
+    leader_ip_ = desc->getReplyIp();
+    leader_port_ = desc->getReplyPort();
     dist_->sendResult(result, sock);
     sock.close();
+  }
+  void runWorkers(const std::vector<std::pair<int, std::string>>& workers)
+  {
+    #pragma omp parallel for schedule(dynamic)
+    for(int i = 0; i < workers.size(); i++)
+    {
+      std::pair<int, std::string> result = { workers.at(i).first, router_->runDRWorker(workers.at(i).second) };
+      asio::post(*results_pool_, boost::bind(&RoutingCallBack::addResult, this, result));
+    }
+  }
+  void addResult(std::pair<int, std::string> result)
+  {
+    results_.push_back(result);
+    remaining_--;
+    if(results_.size() == 32 || remaining_ == 0)
+    {
+      dst::JobMessage result(dst::JobMessage::ROUTING_RESULT), tmp;
+      auto uResultDesc = std::make_unique<RoutingJobDescription>();
+      auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
+      resultDesc->setWorkers(results_);
+      result.setJobDescription(std::move(uResultDesc));
+      dist_->sendJob(result, leader_ip_.c_str(), leader_port_, tmp);
+      results_.clear();
+    } 
   }
 
  private:
@@ -152,7 +163,12 @@ class RoutingCallBack : public dst::JobCallBack
   utl::Logger* logger_;
   std::string design_path_;
   std::string globals_path_;
-  std::unique_ptr<asio::thread_pool> pool_;
+  std::unique_ptr<asio::thread_pool> routing_pool_;
+  std::unique_ptr<asio::thread_pool> results_pool_;
+  std::string leader_ip_;
+  unsigned short leader_port_;
+  std::vector<std::pair<int, std::string>> results_;
+  unsigned int remaining_;
 };
 
 }  // namespace fr

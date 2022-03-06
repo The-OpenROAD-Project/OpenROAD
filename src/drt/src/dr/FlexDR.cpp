@@ -1717,6 +1717,8 @@ void FlexDR::searchRepair(int iter,
           rjd->setDesignPath(design_path_);
           rjd->setGlobalsPath(globals_path_);
           rjd->setSharedDir(dist_dir_);
+          rjd->setReplyIp(local_ip_);
+          rjd->setReplyPort(local_port_);
           msg.setJobDescription(std::move(desc));
           bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
           if (!ok)
@@ -1761,7 +1763,8 @@ void FlexDR::searchRepair(int iter,
         }
         exception.rethrow();
         if(dist_on_) {
-          std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(1);
+          int j = 0;
+          std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(router_->getCloudSize());
           remaining_ = 0;
           for(int i = 0; i < workersInBatch.size(); i++)
           {
@@ -1769,13 +1772,10 @@ void FlexDR::searchRepair(int iter,
             if(!worker->isSkipRouting())
             {
               remaining_++;
-              if(distWorkerBatches.back().size() == REMOTE_BATCH_SIZE)
-                distWorkerBatches.push_back(std::vector<std::pair<int, FlexDRWorker*>>());
-              distWorkerBatches.back().push_back({i, worker});
+              distWorkerBatches[j].push_back({i, worker});
+              j = (j+1) % router_->getCloudSize();
             }
           }
-          if(distWorkerBatches.back().empty())
-            distWorkerBatches.pop_back();
           {
             ProfileTask task("DIST: SERIALIZE+SEND");
             #pragma omp parallel for schedule(dynamic)

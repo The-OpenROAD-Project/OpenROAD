@@ -111,6 +111,8 @@ class TritonRoute
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setLocalIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);
+  void setCloudSize(unsigned int cloud_sz) { cloud_sz_ = cloud_sz; }
+  unsigned int getCloudSize() const { return cloud_sz_; }
   void setDebugPaEdge(bool on = true);
   void setDebugPaCommit(bool on = true);
   void reportConstraints();
@@ -146,6 +148,7 @@ class TritonRoute
   std::queue<std::vector<std::pair<int, std::string>>> workers_results_;
   std::mutex results_mutex_;
   int results_sz_;
+  unsigned int cloud_sz_;
 
   void initDesign();
   void initGuide();

@@ -20,6 +20,7 @@ detailed_route -guide gcd_nangate45.route_guide \
 	             -remote_port 1111 \
 	             -local_host 127.0.0.1 \
 	             -local_port 1112 \
+                 -cloud_size 1 \
                -shared_volume results
 # exec kill $server1
 # exec kill $server2
