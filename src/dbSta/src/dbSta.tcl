@@ -151,7 +151,7 @@ proc report_clock_skew { args } {
   }
   if { $clks != {} } {
     report_clk_skew $clks $corner $setup_hold $digits
-    utl::metric_float "clock__skew__worst" [worst_clk_skew_cmd [lindex $args 2]]
+    utl::metric_float "clock__skew__worst" [worst_clk_skew_cmd $setup_hold]
   }
 }
 
