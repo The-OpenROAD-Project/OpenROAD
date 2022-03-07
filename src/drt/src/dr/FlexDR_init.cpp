@@ -2431,8 +2431,6 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
   frCoord width;
   frSegStyle segStyle;
   FlexMazeIdx objMIdx1, objMIdx2;
-  if (drIter_ >= 11)
-      cout << "marker " << marker << "\nresults.size " << results.size() << "\n";
 
   for (auto& [objBox, connFig] : results) {
     if (connFig->typeId() == drcPathSeg) {
@@ -2547,24 +2545,16 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       auto obj = static_cast<drVia*>(connFig);
       obj->getOrigin(bp);
       // skip if unfixable obj
-//      if (drIter_ >= 11)
-//          cout << "via at " <<bp << "\n";
       if (!getRouteBox().intersects(bp)) {
         continue;
       }
       
-//      if (drIter_ >= 11)
-//          cout << "via  intersects routebox\n";
       if (vioNets.find(obj->getNet()) == vioNets.end()) {
         // add history cost
         obj->getMazeIdx(objMIdx1, objMIdx2);
         
-//        if (drIter_ >= 11)
-//            cout << "enter\n";
         if (viaHistoryMarkers_.find(objMIdx1) == viaHistoryMarkers_.end()) {
             
-//        if (drIter_ >= 11)
-//            cout << "add\n";
           gridGraph_.addMarkerCostVia(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
           viaHistoryMarkers_.insert(objMIdx1);
 
@@ -2720,8 +2710,6 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
-    if (getDRIter() >= 11)
-        cout << "Update from marker\n";
   // if shapes dont overlap routeBox, ignore violation
   if (!getRouteBox().intersects(marker->getBBox())) {
     bool overlaps = false;
@@ -2880,8 +2868,6 @@ void FlexDRWorker::route_queue_update_from_marker(
                 allowAvoidRipup = true;
               dNet->setNRipupAvoids(0);
             }
-            if (getDRIter() >= 11)
-                cout << "adding net for route " << *fNet << "\n";
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }
@@ -2894,14 +2880,10 @@ void FlexDRWorker::route_queue_update_from_marker(
       checks.push_back({dNet, -1, false});
     } else {
       dNet->setNRipupAvoids(0);
-      if (getDRIter() >= 11)
-        cout << "adding net for route " << *dNet->getFrNet() << "\n";
       routes.push_back({dNet, dNet->getNumReroutes(), true});
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-      if (getDRIter() >= 11)
-            cout << "adding obj for check " << victimOwner->typeId() << "\n";
     checks.push_back({victimOwner, -1, false});
   }
 }
