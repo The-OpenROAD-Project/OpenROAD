@@ -116,6 +116,8 @@ Example: `set_global_routing_random -seed 42 -capacities_perturbation_percentage
 
 ```
 repair_antennas diodeCellName/diodePinName [-iterations iterations]
+                                           [-macro_halo_x halo_x]
+                                           [-macro_halo_y halo_y]
 ```
 
 The repair_antenna command evaluates the global routing results to find
@@ -126,6 +128,12 @@ iterations. By default, the command runs only one iteration to repair
 antennas.  It uses the  `antennachecker` tool to identify any nets with antenna
 violations and, for each such net, the exact number of diodes necessary to fix the
 antenna violation.
+
+Options description:
+
+- `-macro_halo_x`. Specify the horizontal halo size (in microns) around macros.
+- `-macro_halo_y`. Specify the vertical halo size (in microns) around macros.
+Both options above should be the same defined during the floorplanning.
 
 Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`
 
