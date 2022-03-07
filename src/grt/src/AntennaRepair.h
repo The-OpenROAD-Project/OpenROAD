@@ -76,7 +76,9 @@ class AntennaRepair
                 ant::AntennaChecker* arc,
                 dpl::Opendp* opendp,
                 odb::dbDatabase* db,
-                utl::Logger* logger);
+                utl::Logger* logger,
+                int macro_halo_x,
+                int macro_halo_y);
 
   int checkAntennaViolations(NetRouteMap& routing,
                              int max_routing_layer,
@@ -119,6 +121,8 @@ class AntennaRepair
   odb::dbBlock* block_;
   std::vector<odb::dbInst*> diode_insts_;
   AntennaViolations antenna_violations_;
+  int macro_halo_x_;
+  int macro_halo_y_;
 };
 
 }  // namespace grt

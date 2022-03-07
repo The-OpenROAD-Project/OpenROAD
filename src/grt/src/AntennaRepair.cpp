@@ -59,8 +59,16 @@ AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
-                             utl::Logger* logger)
-    : grouter_(grouter), arc_(arc), opendp_(opendp), db_(db), logger_(logger)
+                             utl::Logger* logger,
+                             int macro_halo_x,
+                             int macro_halo_y)
+    : grouter_(grouter),
+      arc_(arc),
+      opendp_(opendp),
+      db_(db),
+      logger_(logger),
+      macro_halo_x_(macro_halo_x),
+      macro_halo_y_(macro_halo_y)
 {
   block_ = db_->getChip()->getBlock();
 }
@@ -317,8 +325,15 @@ void AntennaRepair::getFixedInstances(r_tree& fixed_insts)
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM) {
       odb::dbBox* instBox = inst->getBBox();
-      box b(point(instBox->xMin(), instBox->yMin()),
-            point(instBox->xMax(), instBox->yMax()));
+      int halo_x = 0;
+      int halo_y = 0;
+      if (inst->isBlock()) {
+        halo_x = macro_halo_x_;
+        halo_y = macro_halo_y_;
+      }
+      // add macro halo to the R-tree to avoid placing diodes out of row
+      box b(point(instBox->xMin() - halo_x, instBox->yMin() - halo_y),
+            point(instBox->xMax() + halo_x, instBox->yMax() + halo_y));
       value v(b, fixed_inst_id);
       fixed_insts.insert(v);
       fixed_inst_id++;
