@@ -230,13 +230,18 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
+void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port,
+                                  int iterations,
+                                  int macro_halo_x,
+                                  int macro_halo_y)
 {
   AntennaRepair antenna_repair = AntennaRepair(this,
                                                openroad_->getAntennaChecker(),
                                                openroad_->getOpendp(),
                                                db_,
-                                               logger_);
+                                               logger_,
+                                               macro_halo_x,
+                                               macro_halo_y);
 
   odb::dbMTerm* diode_mterm = sta_->getDbNetwork()->staToDb(diode_port);
 

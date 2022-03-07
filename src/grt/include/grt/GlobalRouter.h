@@ -182,7 +182,10 @@ class GlobalRouter
   int getTileSize() const;
 
   // repair antenna public functions
-  void repairAntennas(sta::LibertyPort* diode_port, int iterations);
+  void repairAntennas(sta::LibertyPort* diode_port,
+                      int iterations,
+                      int macro_halo_x,
+                      int macro_halo_y);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.

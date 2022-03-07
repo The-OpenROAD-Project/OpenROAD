@@ -258,11 +258,13 @@ proc global_route { args } {
 }
 
 sta::define_cmd_args "repair_antennas" { lib_port \
-                                         [-iterations iterations]}
+                                         [-iterations iterations] \
+                                         [-macro_halo_x halo_x] \
+                                         [-macro_halo_y halo_y]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-                 keys {-iterations}
+                 keys {-iterations -macro_halo_x -macro_halo_y}
   if { [grt::have_routes] } {
     sta::check_argc_eq1 "repair_antennas" $args
     set lib_port [lindex $args 0]
@@ -277,8 +279,25 @@ proc repair_antennas { args } {
       set iterations 1
     }
 
+    if { [info exists keys(-macro_halo_x)] } {
+      set macro_halo_x $keys(-macro_halo_x)
+      sta::check_positive_integer "-repair_antennas_macro_halo_x" $macro_halo_x
+    } else {
+      set macro_halo_x 0
+    }
+
+    if { [info exists keys(-macro_halo_y)] } {
+      set macro_halo_y $keys(-macro_halo_y)
+      sta::check_positive_integer "-repair_antennas_macro_halo_y" $macro_halo_y
+    } else {
+      set macro_halo_y 0
+    }
+
+    set macro_halo_x [ord::microns_to_dbu $macro_halo_x]
+    set macro_halo_y [ord::microns_to_dbu $macro_halo_y]
+
     if { $lib_port != "" } {
-      grt::repair_antennas $lib_port $iterations
+      grt::repair_antennas $lib_port $iterations $macro_halo_x $macro_halo_y
     } else {
       utl::error GRT 69 "Diode not found."
     }

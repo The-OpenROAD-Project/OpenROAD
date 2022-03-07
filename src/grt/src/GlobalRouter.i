@@ -180,9 +180,9 @@ route_layer_lengths(odb::dbNet* db_net)
 }
 
 void
-repair_antennas(LibertyPort* diodePort, int iterations)
+repair_antennas(LibertyPort* diodePort, int iterations, int macro_halo_x, int macro_halo_y)
 {
-  getGlobalRouter()->repairAntennas(diodePort, iterations);
+  getGlobalRouter()->repairAntennas(diodePort, iterations, macro_halo_x, macro_halo_y);
 }
 
 void
