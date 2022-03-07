@@ -640,28 +640,30 @@ void FlexDRWorker::identifyCongestionLevelBoundary() {
         frTrackPattern* tp = nullptr;
         int workerSize;
         if (design_->isHorizontalLayer(lNum)) { 
-            if (!trackPatterns[0]->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
-                tp = trackPatterns[0].get();
-            else 
-                tp = trackPatterns[1].get();
+            for (auto& utp : trackPatterns) {
+                if (!utp->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
+                    tp = utp.get();
+            }
             workerSize = getRouteBox().dy();
         } else {
-            if (trackPatterns[0]->isHorizontal())
-                tp = trackPatterns[0].get();
-            else 
-                tp = trackPatterns[1].get();
+            for (auto& utp : trackPatterns) {
+                if (utp->isHorizontal())
+                    tp = utp.get();
+            }
             workerSize = getRouteBox().dx();
         }
-        assert(tp != nullptr);
-        assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
+        if (tp == nullptr)
+            continue;
+//        assert(tp != nullptr);
+//        assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
         int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
         float congestionFactorLow = nLowBorderCross[z]/(float)nTracks;
         float congestionFactorHigh = nHighBorderCross[z]/(float)nTracks;
         float finalFactor = max(congestionFactorLow, congestionFactorHigh);
-        if (finalFactor > 0.6)
-            cout << "\nz " << z << " worker " << getRouteBox() << "\nLowBorderCros[" << z << "] " << nLowBorderCross[z] 
-                << "\nhighBorderCros[" << z << "] " << nHighBorderCross[z]
-                << "\nnTracks "  << nTracks   << "\nCONGESTION " << finalFactor;
+//        if (finalFactor > 0.6)
+//            cout << "\nz " << z << " worker " << getRouteBox() << "\nLowBorderCros[" << z << "] " << nLowBorderCross[z] 
+//                << "\nhighBorderCros[" << z << "] " << nHighBorderCross[z]
+//                << "\nnTracks "  << nTracks   << "\nCONGESTION " << finalFactor;
         if (finalFactor >= CONGESTION_THRESHOLD) {
             isCongested_ = true;
 //            cout << "REACHED THRESH!\n";
