@@ -221,8 +221,7 @@ void FlexDRWorker::modBlockedVia(const Rect& box, frMIdx z, bool setBlock)
 
 void FlexDRWorker::modCornerToCornerSpacing_helper(const Rect& box,
                                                    frMIdx z,
-                                                   ModCostType type,
-                                                   bool isPlanar)
+                                                   ModCostType type)
 {
   FlexMazeIdx p1, p2;
   gridGraph_.getIdxBox(p1, p2, box, FlexGridGraph::isEnclosed);
@@ -230,28 +229,16 @@ void FlexDRWorker::modCornerToCornerSpacing_helper(const Rect& box,
     for (int j = p1.y(); j <= p2.y(); j++) {
       switch (type) {
         case subRouteShape:
-            if (isPlanar)
                 gridGraph_.subRouteShapeCostPlanar(i, j, z);
-            else 
-                gridGraph_.subRouteShapeCostVia(i, j, z);
             break;
         case addRouteShape:
-            if (isPlanar)
                 gridGraph_.addRouteShapeCostPlanar(i, j, z);
-            else 
-                gridGraph_.addRouteShapeCostVia(i, j, z);
             break;
         case subFixedShape:
-            if (isPlanar)
                 gridGraph_.subFixedShapeCostPlanar(i, j, z);
-            else 
-                gridGraph_.subFixedShapeCostVia(i, j, z);
             break;
         case addFixedShape:
-            if (isPlanar)
                 gridGraph_.addFixedShapeCostPlanar(i, j, z);
-            else 
-                gridGraph_.addFixedShapeCostVia(i, j, z);
             break;
         default:;
       }
@@ -264,91 +251,33 @@ void FlexDRWorker::modCornerToCornerSpacing(const Rect& box,
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord halfwidth2 = getTech()->getLayer(lNum)->getWidth() / 2;
-  Rect const* viaRectDown = nullptr, *viaRectUp = nullptr;
-  if (lNum - 1 >= getTech()->getBottomLayerNum() && 
-        getTech()->getLayer(lNum-1)->getDefaultViaDef())
-      viaRectDown = &getTech()->getLayer(lNum-1)->getDefaultViaDef()->getShapeBox(lNum);
-  if (lNum + 1 <= getTech()->getTopLayerNum() &&
-        getTech()->getLayer(lNum+1)->getDefaultViaDef())
-      viaRectUp = &getTech()->getLayer(lNum+1)->getDefaultViaDef()->getShapeBox(lNum);
   // spacing value needed
   frCoord bloatDist = 0;
   auto& cons = getTech()->getLayer(lNum)->getLef58CornerSpacingConstraints();
   Rect bx;
   for (auto& c : cons) {
-      //path seg
     bloatDist = c->findMax() + halfwidth2 - 1;
     bx.init(box.xMin() - bloatDist,
             box.yMin() - bloatDist,
             box.xMin(),
             box.yMin());  // ll box corner
-    modCornerToCornerSpacing_helper(bx, z, type, true);
+    modCornerToCornerSpacing_helper(bx, z, type);
     bx.init(box.xMin() - bloatDist,
             box.yMax(),
             box.xMin(),
             box.yMax() + bloatDist);  // ul box corner
-    modCornerToCornerSpacing_helper(bx, z, type, true);
+    modCornerToCornerSpacing_helper(bx, z, type);
     bx.init(box.xMax(),
             box.yMax(),
             box.xMax() + bloatDist,
             box.yMax() + bloatDist);  // ur box corner
-    modCornerToCornerSpacing_helper(bx, z, type, true);
+    modCornerToCornerSpacing_helper(bx, z, type);
     bx.init(box.xMax(),
             box.yMin() - bloatDist,
             box.xMax() + bloatDist,
             box.yMin());  // lr box corner
-    modCornerToCornerSpacing_helper(bx, z, type, true);
-    //via down
-    if (viaRectDown) {
-        frCoord bloatX = c->findMax() + viaRectDown->dx()/2 - 1;
-        frCoord bloatY = c->findMax() + viaRectDown->dy()/2 - 1;
-        bx.init(box.xMin() - bloatX,
-                box.yMin() - bloatY,
-                box.xMin(),
-                box.yMin());  // ll box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMin() - bloatX,
-                box.yMax(),
-                box.xMin(),
-                box.yMax() + bloatY);  // ul box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMax(),
-                box.yMax(),
-                box.xMax() + bloatX,
-                box.yMax() + bloatY);  // ur box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMax(),
-                box.yMin() - bloatY,
-                box.xMax() + bloatX,
-                box.yMin());  // lr box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
+    modCornerToCornerSpacing_helper(bx, z, type);
     }
-    //via up
-    if (viaRectUp) {
-        frCoord bloatX = c->findMax() + viaRectUp->dx()/2 - 1;
-        frCoord bloatY = c->findMax() + viaRectUp->dy()/2 - 1;
-        bx.init(box.xMin() - bloatX,
-                box.yMin() - bloatY,
-                box.xMin(),
-                box.yMin());  // ll box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMin() - bloatX,
-                box.yMax(),
-                box.xMin(),
-                box.yMax() + bloatY);  // ul box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMax(),
-                box.yMax(),
-                box.xMax() + bloatX,
-                box.yMax() + bloatY);  // ur box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-        bx.init(box.xMax(),
-                box.yMin() - bloatY,
-                box.xMax() + bloatX,
-                box.yMin());  // lr box corner
-        modCornerToCornerSpacing_helper(bx, z, type, false);
-    }
-  }
 }
 
 void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
