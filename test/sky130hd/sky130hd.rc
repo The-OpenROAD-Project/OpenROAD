@@ -1,10 +1,12 @@
-# find_wire_rc -38% adjustment
-set_layer_rc -layer li1 -resistance 6.829e-02 -capacitance 1.265e-04
-set_layer_rc -layer met1 -resistance 1.207e-03 -capacitance 1.389e-04
-set_layer_rc -layer met2 -resistance 1.223e-03 -capacitance 1.388e-04
-set_layer_rc -layer met3 -resistance 1.668e-04 -capacitance 1.406e-04
-set_layer_rc -layer met4 -resistance 1.686e-04 -capacitance 1.364e-04
-set_layer_rc -layer met5 -resistance 1.865e-05 -capacitance 1.389e-04
+# correlateRC.py gcd,ibex,aes,jpeg,chameleon,riscv32i,chameleon_hier
+# cap units pf/um
+set_layer_rc -layer li1 -capacitance 1.499e-04 -resistance 7.176e-02
+set_layer_rc -layer met1 -capacitance 1.72375E-04 -resistance 8.929e-04
+set_layer_rc -layer met2 -capacitance 1.36233E-04 -resistance 8.929e-04
+set_layer_rc -layer met3 -capacitance 2.14962E-04 -resistance 1.567e-04
+set_layer_rc -layer met4 -capacitance 1.48128E-04 -resistance 1.567e-04
+set_layer_rc -layer met5 -capacitance 1.54087E-04 -resistance 1.781e-05
+# end correlate
 
 set_layer_rc -via mcon -resistance 9.249146E-3
 set_layer_rc -via via -resistance 4.5E-3
