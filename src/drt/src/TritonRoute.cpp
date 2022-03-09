@@ -109,12 +109,6 @@ void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
   dist_port_ = port;
 }
 
-void TritonRoute::setLocalIpPort(const char* ip, unsigned short port)
-{
-  local_ip_ = ip;
-  local_port_ = port;
-}
-
 void TritonRoute::setSharedVolume(const std::string& vol)
 {
   shared_volume_ = vol;
@@ -321,7 +315,7 @@ void TritonRoute::dr()
   FlexDR dr(this, getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
   if (distributed_)
-    dr.setDistributed(dist_, dist_ip_, dist_port_, local_ip_, local_port_, shared_volume_);
+    dr.setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
   dr.main();
 }
 

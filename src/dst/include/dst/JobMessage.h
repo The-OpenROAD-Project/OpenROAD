@@ -57,7 +57,6 @@ class JobMessage
   enum JobType : int8_t
   {
     ROUTING,
-    ROUTING_RESULT,
     UPDATE_DESIGN,
     SUCCESS,
     ERROR,

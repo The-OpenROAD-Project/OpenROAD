@@ -121,20 +121,15 @@ class FlexDR
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
                       unsigned short remote_port,
-                      const std::string& local_ip,
-                      unsigned short local_port,
                       const std::string& dir)
   {
     dist_on_ = true;
     dist_ = dist;
     dist_ip_ = remote_ip;
     dist_port_ = remote_port;
-    local_ip_ = local_ip;
-    local_port_ = local_port;
     dist_dir_ = dir;
   }
   void sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch);
-  void listenForDistResults(const std::vector<std::unique_ptr<FlexDRWorker>>& batch);
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;
@@ -155,13 +150,10 @@ class FlexDR
   bool dist_on_;
   std::string dist_ip_;
   unsigned short dist_port_;
-  std::string local_ip_;
-  unsigned short local_port_;
   std::string dist_dir_;
   std::string globals_path_;
   std::string design_path_;
 
-  int remaining_;
   // others
   void init();
   void initFromTA();
@@ -452,7 +444,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
-  void distributedMain(int idx_in_batch, frDesign* design);
+  void distributedMain(frDesign* design);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   bool end(frDesign* design);
@@ -469,15 +461,11 @@ class FlexDRWorker
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
                       unsigned short remote_port,
-                      const std::string& local_ip,
-                      unsigned short local_port,
                       const std::string& dir)
   {
     dist_ = dist;
     dist_ip_ = remote_ip;
     dist_port_ = remote_port;
-    local_ip_ = local_ip;
-    local_port_ = local_port;
     dist_dir_ = dir;
   }
 
@@ -551,8 +539,6 @@ class FlexDRWorker
   dst::Distributed* dist_;
   std::string dist_ip_;
   unsigned short dist_port_;
-  std::string local_ip_;
-  unsigned short local_port_;
   std::string dist_dir_;
 
   // init

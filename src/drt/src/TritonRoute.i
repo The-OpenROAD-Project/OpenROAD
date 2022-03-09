@@ -54,17 +54,12 @@ int detailed_route_num_drvs()
 
 void detailed_route_distributed(const char* remote_ip,
                                 unsigned short remote_port,
-                                const char* local_ip,
-                                unsigned short local_port,
                                 const char* sharedVolume,
                                 unsigned int cloud_sz)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  auto* dist = ord::OpenRoad::openRoad()->getDistributed();
-  dist->runWorker(local_ip, local_port, true);
   router->setDistributed(true);
   router->setWorkerIpPort(remote_ip, remote_port);
-  router->setLocalIpPort(local_ip, local_port);
   router->setSharedVolume(sharedVolume);
   router->setCloudSize(cloud_sz);
 }

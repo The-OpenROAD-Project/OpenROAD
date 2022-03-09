@@ -40,43 +40,27 @@ class RoutingJobDescription : public dst::JobDescription
 {
  public:
   RoutingJobDescription() {}
-  void setWorkerStr(const std::string& worker) { worker_str_ = worker; }
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
-  void setReplyIp(const std::string& ip) { reply_ip_ = ip; }
-  void setReplyPort(unsigned short port) { reply_port_ = port; }
-  void setIdxInBatch(int idx) { idx_in_batch_ = idx; }
   void setWorkers(const std::vector<std::pair<int, std::string>>& workers) { workers_ = workers; }
-  const std::string& getWorkerStr() const { return worker_str_; }
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
   const std::string& getDesignPath() const { return design_path_; }
-  unsigned short getReplyPort() const { return reply_port_; }
-  const std::string& getReplyIp() const { return reply_ip_; }
-  int getIdxInBatch() const { return idx_in_batch_; }
   const std::vector<std::pair<int, std::string>>& getWorkers() { return workers_; }  
 
  private:
-  std::string worker_str_;
   std::string globals_path_;
   std::string design_path_;
   std::string shared_dir_;
-  std::string reply_ip_;
-  unsigned short reply_port_;
-  int idx_in_batch_;
   std::vector<std::pair<int, std::string>> workers_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & worker_str_;
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
-    (ar) & reply_ip_;
-    (ar) & reply_port_;
-    (ar) & idx_in_batch_;
     (ar) & workers_;
   }
   friend class boost::serialization::access;
