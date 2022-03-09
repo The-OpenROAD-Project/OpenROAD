@@ -969,6 +969,7 @@ class FlexDRWorker
   void cleanup();
   void identifyCongestionLevel();
   void identifyCongestionLevelBoundary();
+  void identifyCongestionLevelBoundary2();
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,

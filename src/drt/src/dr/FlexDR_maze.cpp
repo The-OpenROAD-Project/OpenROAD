@@ -1626,6 +1626,211 @@ void FlexDRWorker::route_queue()
   if (graphics_) {
     graphics_->show(true);
   }
+  
+  if (getDRIter() >= 7)
+    identifyCongestionLevelBoundary2();
+}
+
+void FlexDRWorker::identifyCongestionLevel() {
+//    cout << "\nidentifyCongestionLevel worker " << getRouteBox() << "\n";
+    vector<int> pathLengthByLayer(gridGraph_.getLayerCount(), 0);
+    for (auto& uNet : nets_) {
+        drNet* net = uNet.get();
+        for (auto& shape : net->getBestRouteConnFigs()) {
+            if (shape->typeId() == drcPathSeg) {
+                drPathSeg* ps = static_cast<drPathSeg*>(shape.get());
+                frMIdx z = gridGraph_.getMazeZIdx(ps->getLayerNum());
+                pathLengthByLayer[z] += ps->length();
+            }
+        }
+    }
+    for (int z = 0; z < pathLengthByLayer.size(); z++) {
+        frLayerNum lNum = gridGraph_.getLayerNum(z);
+        auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
+        frTrackPattern* tp = nullptr;
+        int workerSize;
+        int trackLength;
+        if (design_->isHorizontalLayer(lNum)) { 
+            if (!trackPatterns[0]->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
+                tp = trackPatterns[0].get();
+            else 
+                tp = trackPatterns[1].get();
+            workerSize = getRouteBox().dy();
+            trackLength = getRouteBox().dx();
+        } else {
+            if (trackPatterns[0]->isHorizontal())
+                tp = trackPatterns[0].get();
+            else 
+                tp = trackPatterns[1].get();
+            workerSize = getRouteBox().dx();
+            trackLength = getRouteBox().dy();
+        }
+        assert(tp != nullptr);
+        assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
+        int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
+        float congestionFactor = pathLengthByLayer[z]/(float)(nTracks*trackLength);
+        if (getDRIter() >= 44)
+            cout << "\nz " << z << " worker " << getRouteBox() << "\npathLength[" << z << "] " << pathLengthByLayer[z] << "\nnTracks " 
+                << nTracks << "\ntrackLength " << trackLength  << "\nCONGESTION " << congestionFactor;
+        if (congestionFactor >= CONGESTION_THRESHOLD) {
+            isCongested_ = true;
+//            cout << "REACHED THRESH!\n";
+            return;
+        }
+    }
+}
+
+void FlexDRWorker::identifyCongestionLevelBoundary() {
+//    cout << "\nidentifyCongestionLevel worker " << getRouteBox() << "\n";
+    vector<int> nLowBorderCross(gridGraph_.getLayerCount(), 0);
+    vector<int> nHighBorderCross(gridGraph_.getLayerCount(), 0);
+    for (auto& uNet : nets_) {
+        drNet* net = uNet.get();
+        for (auto& shape : net->getBestRouteConnFigs()) {
+            if (shape->typeId() == drcPathSeg) {
+                drPathSeg* ps = static_cast<drPathSeg*>(shape.get());
+                frMIdx z = gridGraph_.getMazeZIdx(ps->getLayerNum());
+                if (design_->isVerticalLayer(ps->getLayerNum())) {
+                    if (ps->low() <= getRouteBox().yMin() && ps->high() >= getRouteBox().yMin())
+                        nLowBorderCross[z]++;
+                    if (ps->low() <= getRouteBox().yMax() && ps->high() >= getRouteBox().yMax())
+                        nHighBorderCross[z]++;
+                } else {
+                    if (ps->low() <= getRouteBox().xMin() && ps->high() >= getRouteBox().xMin())
+                        nLowBorderCross[z]++;
+                    if (ps->low() <= getRouteBox().xMax() && ps->high() >= getRouteBox().xMax())
+                        nHighBorderCross[z]++;
+                }
+            }
+        }
+    }
+    for (int z = 0; z < gridGraph_.getLayerCount(); z++) {
+        frLayerNum lNum = gridGraph_.getLayerNum(z);
+        auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
+        frTrackPattern* tp = nullptr;
+        int workerSize;
+        if (design_->isHorizontalLayer(lNum)) { 
+            for (auto& utp : trackPatterns) {
+                if (!utp->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dy();
+        } else {
+            for (auto& utp : trackPatterns) {
+                if (utp->isHorizontal())
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dx();
+        }
+        if (tp == nullptr)
+            continue;
+//        assert(tp != nullptr);
+//        assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
+        int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
+        float congestionFactorLow = nLowBorderCross[z]/(float)nTracks;
+        float congestionFactorHigh = nHighBorderCross[z]/(float)nTracks;
+        float finalFactor = max(congestionFactorLow, congestionFactorHigh);
+//        if (finalFactor > 0.6)
+//            cout << "\nz " << z << " worker " << getRouteBox() << "\nLowBorderCros[" << z << "] " << nLowBorderCross[z] 
+//                << "\nhighBorderCros[" << z << "] " << nHighBorderCross[z]
+//                << "\nnTracks "  << nTracks   << "\nCONGESTION " << finalFactor;
+        if (finalFactor >= CONGESTION_THRESHOLD) {
+            isCongested_ = true;
+//            cout << "REACHED THRESH!\n";
+            return;
+        }
+    }
+}
+
+void FlexDRWorker::identifyCongestionLevelBoundary2() {
+//    cout << "\nidentifyCongestionLevel worker " << getRouteBox() << "\n";
+    vector<drNet*> bpNets;
+    for (auto& uNet : nets_) {
+        drNet* net = uNet.get();
+        bool bpLow = false, bpHigh = false;
+        for (auto& uPin : net->getPins()) {
+            drPin* pin = uPin.get();
+            if (pin->hasFrTerm())
+                continue;
+            for (auto& uAP : pin->getAccessPatterns()) {
+                drAccessPattern* ap = uAP.get();
+                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+                    if (ap->getPoint().y() == getRouteBox().yMin())
+                        bpLow = true;
+                    else if (ap->getPoint().y() == getRouteBox().yMax())
+                        bpHigh = true;
+                } else {
+                    if (ap->getPoint().x() == getRouteBox().xMin())
+                        bpLow = true;
+                    else if (ap->getPoint().x() == getRouteBox().xMax())
+                        bpHigh = true;
+                }
+            }
+        }
+        if (bpLow && bpHigh)
+             bpNets.push_back(net);
+    }
+    vector<int> nLowBorderCross(gridGraph_.getLayerCount(), 0);
+    vector<int> nHighBorderCross(gridGraph_.getLayerCount(), 0);
+//    cout << "n bpNets: " << bpNets.size() << "\n";
+    for (drNet*net : bpNets) {
+        for (auto& uPin : net->getPins()) {
+            drPin* pin = uPin.get();
+            if (pin->hasFrTerm())
+                continue;
+            for (auto& uAP : pin->getAccessPatterns()) {
+                drAccessPattern* ap = uAP.get();
+                frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
+                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+                    if (ap->getPoint().y() == getRouteBox().yMin())
+                        nLowBorderCross[z]++;
+                    else if (ap->getPoint().y() == getRouteBox().yMax())
+                        nHighBorderCross[z]++;
+                } else {
+                    if (ap->getPoint().x() == getRouteBox().xMin())
+                        nLowBorderCross[z]++;
+                    else if (ap->getPoint().x() == getRouteBox().xMax())
+                        nHighBorderCross[z]++;
+                }
+            }
+        }
+    }
+    for (int z = 0; z < gridGraph_.getLayerCount(); z++) {
+        frLayerNum lNum = gridGraph_.getLayerNum(z);
+        auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
+        frTrackPattern* tp = nullptr;
+        int workerSize;
+        if (design_->isHorizontalLayer(lNum)) { 
+            for (auto& utp : trackPatterns) {
+                if (!utp->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dy();
+        } else {
+            for (auto& utp : trackPatterns) {
+                if (utp->isHorizontal())
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dx();
+        }
+        if (tp == nullptr)
+            continue;
+//        assert(tp != nullptr);
+//        assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
+        int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
+        float congestionFactorLow = nLowBorderCross[z]/(float)nTracks;
+        float congestionFactorHigh = nHighBorderCross[z]/(float)nTracks;
+        float finalFactor = max(congestionFactorLow, congestionFactorHigh);
+//        if (finalFactor > 0.1)
+//            cout << "\nz " << z << " worker " << getRouteBox() << "\nLowBorderCros[" << z << "] " << nLowBorderCross[z] 
+//                << "\nhighBorderCros[" << z << "] " << nHighBorderCross[z]
+//                << "\nnTracks "  << nTracks   << "\nCONGESTION " << finalFactor;
+        if (finalFactor >= CONGESTION_THRESHOLD) {
+            isCongested_ = true;
+//            cout << "REACHED THRESH!\n";
+            return;
+        }
+    }
 }
 
 void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
