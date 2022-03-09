@@ -1716,8 +1716,8 @@ void FlexDR::searchRepair(int iter,
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
   if (ripupMode != 1) {
-    if (iter >= 20)
-        MARKERCOST = ROUTESHAPECOST/4;
+//    if (iter >= 20)
+//        MARKERCOST = ROUTESHAPECOST/4;
     if (increaseClipsize_) {
         clipSizeInc_ += 4;
     } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
