@@ -1719,7 +1719,7 @@ void FlexDR::searchRepair(int iter,
 //    if (iter >= 20)
 //        MARKERCOST = ROUTESHAPECOST/4;
     if (increaseClipsize_) {
-        clipSizeInc_ += 4;
+        clipSizeInc_ += 2;
     } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
     clipSize += min(MAX_CLIPSIZE_INCREASE, (int)round(clipSizeInc_));
   }
