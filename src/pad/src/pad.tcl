@@ -74,7 +74,8 @@ sta::define_cmd_args "set_padring_options" {[-type (flipchip|wirebond)] \
                                             [-pad_inst_pattern pad_inst_pattern] \
                                             [-pad_pin_pattern pad_pin_pattern] \
                                             [-pin_layer pin_layer_name] \
-                                            [-connect_by_abutment signal_list]}
+                                            [-connect_by_abutment signal_list] \
+                                            [-allow_filler_overlap]}
 
 proc set_padring_options {args} {
   if {[ord::get_db_block] == "NULL"} {
@@ -82,7 +83,8 @@ proc set_padring_options {args} {
   }
 
   sta::parse_key_args "set_padring_options" args \
-    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pin_layer -connect_by_abutment}
+    keys {-type -power -ground -core_area -die_area -offsets -pad_inst_pattern -pad_pin_pattern -pin_layer -connect_by_abutment} \
+    flags {-allow_filler_overlap}
 
   if {[llength $args] > 0} {
     utl::error PAD 219 "Unrecognized arguments ([lindex $args 0]) specified for set_padring_options."
@@ -127,6 +129,10 @@ proc set_padring_options {args} {
   if {[info exists keys(-connect_by_abutment)]} {
     ICeWall::set_library_connect_by_abutment {*}$keys(-connect_by_abutment)
   }
+
+  if {[info exists flags(-allow_filler_overlap)]} {
+    ICeWall::set_filler_overlap_allowed 1
+  }
 }
 
 sta::define_cmd_args "define_pad_cell" {[-name name] \
@@ -135,11 +141,12 @@ sta::define_cmd_args "define_pad_cell" {[-name name] \
                                       [-orient orientation_per_side] \
                                       [-pad_pin_name pad_pin_name] \
                                       [-break_signals signal_list] \
+                                      [-offset cell_offset] \
                                       [-physical_only]}
 
 proc define_pad_cell {args} {
   sta::parse_key_args "define_pad_cell" args \
-    keys {-name -type -cell_name -orient -pad_pin_name -break_signals} \
+    keys {-name -type -cell_name -orient -pad_pin_name -break_signals -offset} \
     flags {-fill -corner -bondpad -bump -physical_only}
 
   if {![ord::db_has_tech]} {
@@ -213,19 +220,46 @@ namespace eval ICeWall {
   variable db {}
   variable default_orientation {bottom R0 right R90 top R180 left R270 ll R0 lr MY ur R180 ul MX}
   variable connect_pins_by_abutment
-  variable idx {fill 0}
+  variable cell_idx {fill 0}
   variable unassigned_idx 0
+
+  variable insts_created {}
+  variable nets_created {}
+  variable pins_created {}
 
   proc initialize {} {
     variable db
     variable tech
     variable block
+    variable insts_created
+    variable nets_created
+    variable pins_created
 
     set db [::ord::get_db]
     set tech [$db getTech]
     set block [[$db getChip] getBlock]
+
     init_process_footprint
-  }
+    init_index
+
+    # Remove any pins created in a previous pass
+    foreach pin $pins_created {
+      odb::dbBPin_destroy $pin
+    }
+    set pins_created {}
+
+    # Remove any nets created in a previous pass 
+    foreach net $nets_created {
+      odb::dbNet_destroy $net
+    }
+    set nets_created {}
+
+    # Remove any instances created in a previous pass
+    foreach inst $insts_created {
+      odb::dbInst_destroy $inst
+    }
+    set insts_created {}
+}
 
   proc set_message {level message} {
     return "\[$level\] $message"
@@ -256,6 +290,21 @@ namespace eval ICeWall {
     variable library
 
     set library $library_data
+  }
+
+  proc set_filler_overlap_allowed {allow} {
+    variable footprint
+
+    dict set footprint filler_overlap_allowed $allow
+  }
+
+  proc is_filler_overlap_allowed {} {
+    variable footprint
+    
+    if {![dict exists $footprint filler_overlap_allowed]} {
+      dict set footprint filler_overlap_allowed 0
+    }
+    return [dict get $footprint filler_overlap_allowed]
   }
 
   proc set_library_connect_by_abutment {args} {
@@ -1531,11 +1580,13 @@ namespace eval ICeWall {
 
   proc place_padcell_overlay {padcell} {
     variable block
+    variable insts_created
 
     set overlay [get_padcell_cell_overlay $padcell]
     set inst [get_padcell_inst $padcell]
     if {$inst != "NULL" && [llength $overlay] > 0} {
       set overlay_inst [odb::dbInst_create $block [get_cell_master $overlay] ${padcell}_overlay]
+      lappend insts_created $overlay_inst
 
       $overlay_inst setOrient [$inst getOrient]
       $overlay_inst setOrigin {*}[$inst getOrigin]
@@ -1547,6 +1598,7 @@ namespace eval ICeWall {
 
   proc place_padcells {} {
     variable block
+    variable insts_created
 
     foreach padcell [get_footprint_padcell_names] {
       # Ensure instance exists in the design
@@ -1559,17 +1611,17 @@ namespace eval ICeWall {
         # debug "No inst for $padcell"
         if {[is_padcell_physical_only $padcell]} {
           # debug "Create physical_only cell $cell with name $name for padcell $padcell"
-          set_padcell_inst $padcell [odb::dbInst_create $block [get_cell_master $cell] $name]
+          set_padcell_inst $padcell [set inst [odb::dbInst_create $block [get_cell_master $cell] $name]]
         } elseif {[is_padcell_control $padcell]} {
           # debug "Create control cell $cell with name $name for padcell $padcell"
-          set_padcell_inst $padcell [odb::dbInst_create $block [get_cell_master $cell] $name]
+          set_padcell_inst $padcell [set inst [odb::dbInst_create $block [get_cell_master $cell] $name]]
           # debug [get_padcell_inst $padcell]
         } elseif {[is_footprint_create_padcells]} {
           # debug "Create cell $cell with name $name for padcell $padcell"
-          set_padcell_inst $padcell [odb::dbInst_create $block [get_cell_master $cell] $name]
+          set_padcell_inst $padcell [set inst [odb::dbInst_create $block [get_cell_master $cell] $name]]
         } elseif {[is_padcell_power $padcell] || [is_padcell_ground $padcell]} {
           # debug "Create power/ground $cell with name $name for padcell $padcell"
-          set_padcell_inst $padcell [odb::dbInst_create $block [get_cell_master $cell] $name]
+          set_padcell_inst $padcell [set inst [odb::dbInst_create $block [get_cell_master $cell] $name]]
         } elseif {[is_padcell_unassigned $padcell]} {
           # debug "Unassigned pad added named $name"
           set_padcell_inst $padcell "NULL"
@@ -2373,6 +2425,7 @@ namespace eval ICeWall {
   proc add_physical_pin {padcell inst} {
     variable block
     variable tech
+    variable pins_created
 
     if {![has_padcell_signal_name $padcell]} {
       return
@@ -2388,6 +2441,7 @@ namespace eval ICeWall {
       $net setSpecial
 
       set pin [odb::dbBPin_create $term]
+      lappend pins_created $pin
       set layer [$tech findLayer [get_footprint_pad_pin_layer]]
 
       set pin_name [get_library_pad_pin_name [get_padcell_type $padcell]]
@@ -2405,6 +2459,8 @@ namespace eval ICeWall {
   proc connect_to_bondpad_or_bump {inst pin_shape padcell} {
     variable block
     variable tech
+    variable nets_created
+    variable pins_created
 
     set assigned_name [get_padcell_assigned_name $padcell]
     if {[is_power_net $assigned_name]} {
@@ -2428,6 +2484,7 @@ namespace eval ICeWall {
           if {$type == "POWER" || $type == "GROUND"} {
             utl::info "PAD" 51 "Creating padring net: $assigned_name."
             set net [odb::dbNet_create $block $assigned_name]
+            lappend nets_created $net
           }
           if {$net == "NULL"} {
             continue
@@ -2444,6 +2501,7 @@ namespace eval ICeWall {
         }
         utl::info "PAD" 52 "Creating padring net: _UNASSIGNED_$idx."
         set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
+        lappend nets_created $net
         set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
         utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_signal_name $padcell] for $padcell to associate with bondpad [$inst getName]."
@@ -2454,8 +2512,10 @@ namespace eval ICeWall {
     # debug "padcell: $padcell, net: $net"
     $net setSpecial
     $net setSigType $type
+    # debug "net: [$net getName], signalType: $type"
 
     set pin [odb::dbBPin_create $term]
+    lappend pins_created $pin
     set layer [$tech findLayer [get_footprint_pad_pin_layer]]
     if {$layer == "NULL"} {
       utl::error PAD 78 "Layer [get_footprint_pad_pin_layer] not defined in technology."
@@ -2497,6 +2557,7 @@ namespace eval ICeWall {
   proc place_bondpads {} {
     variable block
     variable tech
+    variable insts_created
 
     foreach side_name {bottom right top left} {
       foreach padcell [get_footprint_padcells_by_side $side_name] {
@@ -2509,6 +2570,10 @@ namespace eval ICeWall {
           # debug "padcell, $padcell, signal_name: $signal_name"
 
           set inst [odb::dbInst_create $block $cell "bp_${signal_name}"]
+          if {$inst == "NULL"} {
+            utl::error "PAD" 257 "Cannot create bondpad instance bp_${signal_name}"
+          }
+          lappend insts_created $inst
           # debug "inst $inst, block: $block, cell: $cell"
 
           # debug "Add bondpad to padcell: $padcell"
@@ -2529,7 +2594,8 @@ namespace eval ICeWall {
               if {$mterm == "NULL"} {
                 utl::error "PAD" 252 "Bondpad cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
               }
-              set pin [odb::dbITerm_connect $inst $net $mterm]
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
             }
           }
           if {[llength $pin_shape] != 4} {
@@ -3160,6 +3226,7 @@ namespace eval ICeWall {
 
     set rdl_layer [[ord::get_db_tech] findLayer $rdl_layer_name]
     dict for {net_name padcells} $traces {
+      # debug "net_name: $net_name"
       set net [[ord::get_db_block] findNet $net_name]
       set swire [odb::dbSWire_create $net ROUTED]
       foreach padcell $padcells {
@@ -3280,6 +3347,7 @@ namespace eval ICeWall {
     variable num_bumps_x
     variable num_bumps_y
     variable block
+    variable insts_created
 
     set corner_size [get_footprint_corner_size]
     set bump_master [get_cell bump]
@@ -3292,6 +3360,7 @@ namespace eval ICeWall {
         set bump_name [get_bump_name_at_row_col $row $col]
 
         set inst [odb::dbInst_create $block $bump_master $bump_name]
+        lappend insts_created $inst
 
         $inst setOrigin [expr [dict get $origin x] + $master_x] [expr [dict get $origin y] + $master_y]
         $inst setOrient "R0"
@@ -3310,7 +3379,8 @@ namespace eval ICeWall {
               if {$mterm == "NULL"} {
                 utl::error "PAD" 253 "Bump cell [[$inst getMaster] getName], does not have the specified pin name ($pin_name)"
               }
-              set pin [odb::dbITerm_connect $inst $net $mterm]
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
             }
           }
           if {[llength $pin_shape] != 4} {
@@ -3358,9 +3428,9 @@ namespace eval ICeWall {
     # debug "corner_size $corner_size"
     # debug "bump_pitch $bump_pitch"
 
-    set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
     set power_nets {}
     set ground_nets {}
+    set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
     # Add stripes for bumps in the central core area
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
@@ -3387,21 +3457,21 @@ namespace eval ICeWall {
           }
           set point [get_bump_center $row $col]
           set net_name [bump_get_net $row $col]
-          set tag [bump_get_tag $row $col]
           if {[bump_is_power $row $col]} {
-            lappend power_nets $net_name
-          } elseif {[bump_is_ground $row $col]} {
-            lappend ground_nets $net_name
-          }
-          # debug $net_name
+	    lappend power_nets $net_name
+	  } elseif {[bump_is_ground $row $col]} {
+	    lappend ground_nets $net_name
+	  }
+	  # debug $net_name
           if {$prev_tag == ""} {
             set minX [expr [dict get $point x] - $bump_pitch / 2]
-          } elseif {$prev_tag == $tag} {
+          } elseif {$prev_tag == $net_name} {
             set minX [expr [dict get $point x] - $bump_pitch / 2 - $rdl_min_spacing / 2]
           } else {
             set minX [expr [dict get $point x] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          set prev_tag $tag
+          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $net_name, minY: $minY, maxY, $maxY"
+          set prev_tag $net_name
           if {$col == $num_bumps_x - $corner_size} {
             set maxX [expr [dict get $point x] + $bump_pitch / 2]
           } else {
@@ -3410,10 +3480,10 @@ namespace eval ICeWall {
 
           set upper_stripe [odb::newSetFromRect $minX [expr $upperY - $rdl_stripe_width / 2] $maxX [expr $upperY + $rdl_stripe_width / 2]]
           set lower_stripe [odb::newSetFromRect $minX [expr $lowerY - $rdl_stripe_width / 2] $maxX [expr $lowerY + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect [expr [dict get $point x] - $rdl_stripe_width / 2] $lowerY [expr [dict get $point x] + $rdl_stripe_width / 2] $upperY]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     } elseif {[pdngen::get_dir $rdl_routing_layer] == "ver"} {
@@ -3442,17 +3512,15 @@ namespace eval ICeWall {
             continue
           }
           set net_name [bump_get_net $row $col]
-          set tag [bump_get_tag $row $col]
           if {[bump_is_power $row $col]} {
-            lappend power_nets $net_name
-          } elseif {[bump_is_ground $row $col]} {
-            lappend ground_nets $net_name
-          }
+	    lappend power_nets $net_name
+	  } elseif {[bump_is_ground $row $col]} {
+	    lappend ground_nets $net_name
+	  }
           set point [get_bump_center $row $col]
-          # debug $tag
           if {$prev_tag == ""} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2]
-          } elseif {$prev_tag == $tag} {
+          } elseif {$prev_tag == $net_name} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 + $rdl_min_spacing / 2]
           } else {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 - $rdl_min_spacing / 2]
@@ -3462,14 +3530,14 @@ namespace eval ICeWall {
           } else {
             set minY [expr [dict get $point y] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $tag, minY: $minY, maxY, $maxY"
-          set prev_tag $tag
+          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $net_name, minY: $minY, maxY, $maxY"
+          set prev_tag $net_name
           set upper_stripe [odb::newSetFromRect [expr $upperX - $rdl_stripe_width / 2] $minY [expr $upperX + $rdl_stripe_width / 2] $maxY]
           set lower_stripe [odb::newSetFromRect [expr $lowerX - $rdl_stripe_width / 2] $minY [expr $lowerX + $rdl_stripe_width / 2] $maxY]
-          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect $lowerX [expr [dict get $point y] - $rdl_stripe_width / 2] $upperX [expr [dict get $point y] + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     }
@@ -3477,8 +3545,10 @@ namespace eval ICeWall {
     # debug "$pdngen::metal_layers"
     # debug "[array get pdngen::stripe_locs]"
     pdngen::merge_stripes
-    dict set pdngen::design_data power_nets [lsort -unique $power_nets]
-    dict set pdngen::design_data ground_nets [lsort -unique $ground_nets]
+    set pdngen::power_nets $power_nets 
+    set pdngen::ground_nets $ground_nets
+    dict set pdngen::design_data power_nets {} ; # [get_power_nets]
+    dict set pdngen::design_data ground_nets {} ; # [get_ground_nets]
     dict set pdngen::design_data core_domain "CORE"
     pdngen::opendb_update_grid
   }
@@ -3779,7 +3849,7 @@ namespace eval ICeWall {
       #debug  " pad_cell has origin: [get_padcell_origin $padcell] ,  scaled_origin: [get_padcell_scaled_origin $padcell] , center: [get_padcell_center $padcell]] , scaled_center [get_padcell_scaled_center $padcell]]"
     }        
   } 
-   
+
   proc place_padring {} {
     variable block
     variable tech
@@ -3790,7 +3860,8 @@ namespace eval ICeWall {
     variable edge_top_offset
     variable edge_left_offset
     variable pad_ring
- 
+    variable cell_idx
+
     foreach side_name {bottom right top left} {
       switch $side_name \
         "bottom" {
@@ -3875,7 +3946,7 @@ namespace eval ICeWall {
 
 
         dict set pad_ring $name $inst
-        dict incr idx $type
+        dict incr cell_idx $type
       }
 
       # debug "$side_name: fill_start = $fill_start"
@@ -3926,8 +3997,13 @@ namespace eval ICeWall {
     variable edge_right_offset
     variable edge_top_offset
     variable edge_left_offset
-    
-    dict set pad_ring corner_ll [set inst [odb::dbInst_create $block [set corner [get_cell corner ll]] "CORNER_LL"]]
+    variable insts_created
+
+    set corner [get_cell corner ll]
+    set inst [odb::dbInst_create $block $corner "CORNER_LL"]
+    lappend insts_created $inst
+    # debug "Inst ll: $inst"
+    dict set pad_ring corner_ll $inst
     set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ll]
     set corner_origin [list $edge_left_offset $edge_bottom_offset]
@@ -3938,7 +4014,11 @@ namespace eval ICeWall {
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
 
-    dict set pad_ring corner_lr [set inst [odb::dbInst_create $block [set corner [get_cell corner lr]] "CORNER_LR"]]
+    set corner [get_cell corner lr]
+    set inst [odb::dbInst_create $block $corner "CORNER_LR"]
+    lappend insts_created $inst
+    # debug "Inst lr: $inst"
+    dict set pad_ring corner_lr $inst
     set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] lr]
     set corner_origin [list [expr ($chip_width - $edge_right_offset)] $edge_bottom_offset]
@@ -3949,7 +4029,11 @@ namespace eval ICeWall {
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
 
-    dict set pad_ring corner_ur [set inst [odb::dbInst_create $block [set corner [get_cell corner ur]] "CORNER_UR"]]
+    set corner [get_cell corner ur]
+    set inst [odb::dbInst_create $block $corner "CORNER_UR"]
+    lappend insts_created $inst
+    # debug "Inst ur: $inst"
+    dict set pad_ring corner_ur $inst
     set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ur]
     set corner_origin [list [expr ($chip_width - $edge_right_offset)] [expr ($chip_height - $edge_top_offset)]]
@@ -3960,7 +4044,11 @@ namespace eval ICeWall {
     $inst setOrient $corner_orient
     $inst setPlacementStatus "FIRM"
 
-    dict set pad_ring corner_ul [set inst [odb::dbInst_create $block [set corner [get_cell corner ul]] "CORNER_UL"]]
+    set corner [get_cell corner ul]
+    set inst [odb::dbInst_create $block $corner "CORNER_UL"]
+    lappend insts_created $inst
+    # debug "Inst ul: $inst"
+    dict set pad_ring corner_ul $inst
     set cell_offset [get_library_cell_type_offset corner]
     set corner_orient [get_library_cell_orientation [$corner getName] ul]
     set corner_origin [list $edge_left_offset [expr ($chip_height - $edge_top_offset)]]
@@ -3977,6 +4065,7 @@ namespace eval ICeWall {
   proc connect_by_abutment {} {
     variable library
     variable block
+    variable nets_created
 
     if {[dict exists $library connect_by_abutment]} {
       # Breaker cells affect the connectivity of signals connected by abutment.
@@ -4071,7 +4160,6 @@ namespace eval ICeWall {
 
       # Wire up the nets that connect by abutment
       # Need to set these nets as SPECIAL so the detail router does not try to route them.
-      set nets_created {}
       dict for {signal sections} [dict get $segment cells] {
         # debug "Signal: $signal"
         set section_keys [dict keys $sections]
@@ -4115,8 +4203,9 @@ namespace eval ICeWall {
             if {[set net [$block findNet $net_name]] != "NULL"} {
               utl::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the padring."
             } else {
-              lappend nets_created $net_name
+              lappend report_nets_created $net_name
               set net [odb::dbNet_create $block $net_name]
+              lappend nets_created $net
             }
           }
           # debug "Net: [$net getName]"
@@ -4133,8 +4222,8 @@ namespace eval ICeWall {
             # debug "inst_name: $inst_name, pin_name: $pin_name"
             set mterm [[$inst getMaster] findMTerm $pin_name]
             if {$mterm != "NULL"} {
-              set iterm [odb::dbITerm_connect $inst $net $mterm]
-              # debug "connect"
+              set iterm [$inst getITerm $mterm]
+              $iterm connect $net
               $iterm setSpecial
             } else {
               utl::warn "PAD" 18 "No terminal $signal found on $inst_name."
@@ -4142,8 +4231,8 @@ namespace eval ICeWall {
           }
         }
       }
-      if {[llength $nets_created] > 0} {
-        utl::info "PAD" 53 "Creating padring nets: [join $nets_created {, }]."
+      if {[llength $report_nets_created] > 0} {
+        utl::info "PAD" 53 "Creating padring nets: [join $report_nets_created {, }]."
       }
     }
   }
@@ -4271,6 +4360,7 @@ namespace eval ICeWall {
 
     initialize
     pdngen::init_tech
+    clear_unfilled_padring_segments
 
     # Perform signal assignment
     # debug "assign_signals"
@@ -4299,6 +4389,7 @@ namespace eval ICeWall {
       write_rdl_trace_def
     }
     global_assignments
+    report_unfilled_padring_segments
   }
 
   proc set_cell_orientation {name position orient} {
@@ -4494,15 +4585,43 @@ namespace eval ICeWall {
 
   proc init_index {} {
     variable cells
-    variable idx
+    variable cell_idx
 
+    set cell_idx {fill 0}
     foreach key [dict keys $cells] {
-      dict set idx $key 0
+      dict set cell_idx $key 0
+    }
+  }
+
+  variable unfilled_padring_segments {}
+  proc add_unfilled_padring_segment {side pos1 pos2} {
+    variable unfilled_padring_segments
+
+    dict lappend unfilled_padring_segments $side [list [expr min($pos1,$pos2)] [expr max($pos1,$pos2)]]
+  }
+
+  proc clear_unfilled_padring_segments {} {
+    variable unfilled_padring_segments
+
+    set unfilled_padring_segments {}
+  }
+
+  proc report_unfilled_padring_segments {} {
+    variable unfilled_padring_segments
+
+    if {[dict size $unfilled_padring_segments] > 0} {
+      dict for {side gaps} $unfilled_padring_segments {
+        utl::warn PAD 254 "Unfilled gaps in the padring on $side side"
+        foreach gap $gaps {
+          utl::warn PAD 255 "    [ord::dbu_to_microns [lindex $gap 0]] -> [ord::dbu_to_microns [lindex $gap 1]]"
+        }
+      }
+      utl::error "PAD" 256 "Padcell ring cannot be filled"
     }
   }
 
   proc fill_box {xmin ymin xmax ymax side} {
-    variable idx
+    variable cell_idx 
     variable edge_bottom_offset
     variable edge_right_offset
     variable edge_top_offset
@@ -4510,6 +4629,7 @@ namespace eval ICeWall {
     variable chip_width
     variable chip_height
     variable block
+    variable insts_created
 
     set type fill
 
@@ -4534,8 +4654,18 @@ namespace eval ICeWall {
 
     while {$fill_start < $fill_end} {
 
-      if {$fill_start + $smallest_width >= $fill_end} {
-        # Smallest spacer is larger than available fill space, assume we can use it with overlap
+      if {$fill_start + $smallest_width > $fill_end} {
+        # Smallest spacer is larger than available fill space,
+        if {[is_filler_overlap_allowed]} {
+          # We can use it with overlap
+          set spacer_type [dict get $spacers [lindex $spacer_widths end]]
+          set spacer_width [dict get $filler_cells $spacer_type width]
+          set spacer [dict get $filler_cells $spacer_type master]
+        } else {
+          add_unfilled_padring_segment $side $fill_start $fill_end
+          break
+        }
+      } elseif {$fill_start + $smallest_width == $fill_end} {
         set spacer_type [dict get $spacers [lindex $spacer_widths end]]
         set spacer_width [dict get $filler_cells $spacer_type width]
         set spacer [dict get $filler_cells $spacer_type master]
@@ -4551,9 +4681,11 @@ namespace eval ICeWall {
         }
       }
 
-      set name "${type}_[dict get $idx $type]"
+      set name "${type}_[dict get $cell_idx $type]"
       set orient [get_library_cell_orientation $spacer_type $side]
       set inst [odb::dbInst_create $block $spacer $name]
+      lappend insts_created $inst
+
       switch $side \
         "bottom" {
           set x      $fill_start
@@ -4585,7 +4717,7 @@ namespace eval ICeWall {
       $inst setOrient $orient
       $inst setPlacementStatus "FIRM"
 
-      dict incr idx $type
+      dict incr cell_idx $type
     }
   }
 
@@ -4709,14 +4841,19 @@ namespace eval ICeWall {
   }
 
   proc check_coordinate {xy} {
-    if {[llength $xy] != 2} {
-      utl::error PAD 239 "expecting a 2 element list in the form \"number number\"."
-    }
+    set xy [check_xy_coordinate $xy]
     set coord [list x [lindex $xy 0] y [lindex $xy 1]]
     if {[catch {check_xy $coord} msg]} {
       utl::error PAD 240 "Invalid coordinate specified $msg."
     }
     return $coord
+  }
+
+  proc check_xy_coordinate {xy} {
+    if {[llength $xy] != 2} {
+      utl::error PAD 239 "expecting a 2 element list in the form \"number number\"."
+    }
+    return $xy
   }
 
   proc check_rows_columns {rc} {
@@ -5721,6 +5858,7 @@ namespace eval ICeWall {
         -pad_pin_name  {dict set cell_ref pad_pin_name $value}
         -physical_only {dict set cell_ref physical_only [check_boolean $value]}
         -break_signals {dict set cell_ref breaks $value}
+        -offset        {dict set cell_ref offset [check_xy_coordinate $value]}
         default {utl::error PAD 201 "Unrecognized argument $arg, should be one of -name, -type, -cell_name, -orient, -pad_pin_name, -break_signals, -physical_only."}
       }
 
