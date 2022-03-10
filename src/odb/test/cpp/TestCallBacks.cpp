@@ -59,19 +59,19 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   cb->clearEvents();
   i1->setOrigin(100, 100);
   BOOST_TEST(cb->events.size() == 0);
-  dbITerm::connect(i1->findITerm("a"), n1);
+  i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreConnect iterm to net n1");
   BOOST_TEST(cb->events[1] == "PostConnect iterm to net n1");
   cb->clearEvents();
-  dbITerm::connect(i1->findITerm("a"), n1);
+  i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 0);
-  dbITerm::disconnect(i1->findITerm("a"));
+  i1->findITerm("a")->disconnect();
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreDisconnect iterm from net n1");
   BOOST_TEST(cb->events[1] == "PostDisconnect iterm from net n1");
   cb->clearEvents();
-  dbITerm::disconnect(i1->findITerm("a"));
+  i1->findITerm("a")->disconnect();
   BOOST_TEST(cb->events.size() == 0);
 
   i1->destroy(i1);
@@ -174,6 +174,10 @@ BOOST_AUTO_TEST_CASE(test_region)
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "Create region parent");
   BOOST_TEST(cb->events[1] == "Create region child");
+  cb->clearEvents();
+  dbBox::create(parent_region, 0, 0, 1, 1);
+  BOOST_TEST(cb->events.size() == 1);
+  BOOST_TEST(cb->events[0] == "Add box (0, 0) (1, 1) to region parent");
   cb->clearEvents();
   dbRegion::destroy(parent_region);
   BOOST_TEST(cb->events.size() == 2);

@@ -33,23 +33,25 @@
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
-#include "db/obj/frInstTerm.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 
 namespace fr {
 class frBlock;
+class frMaster;
+class frInstTerm;
+
 class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frBlock* refBlock)
-      : name_(name), refBlock_(refBlock), pinAccessIdx_(0)
+  frInst(const frString& name, frMaster* master)
+      : name_(name), master_(master), pinAccessIdx_(0)
   {
   }
   // getters
   const frString& getName() const { return name_; }
-  frBlock* getRefBlock() const { return refBlock_; }
+  frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
   {
     return instTerms_;
@@ -107,6 +109,7 @@ class frInst : public frRef
   bool hasPin() const override { return false; }
   frPin* getPin() const override { return nullptr; }
   void addToPin(frPin* in) override { ; }
+  void addToPin(frBPin* in) override { ; }
   void removeFromPin() override { ; }
 
   /* from frConnFig
@@ -124,13 +127,13 @@ class frInst : public frRef
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   void getBBox(Rect& boxIn) const override;
 
   void move(const dbTransform& xform) override { ; }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
   // others
   void getUpdatedXform(dbTransform& in, bool noOrient = false) const;
   static void updateXform(dbTransform& xform, Point& size);
@@ -138,14 +141,34 @@ class frInst : public frRef
   
   frInstTerm* getInstTerm(const std::string& name);
 
- protected:
+ private:
   frString name_;
-  fr::frBlock* refBlock_;
+  fr::frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
   int pinAccessIdx_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // instTerms_ are intentionally NOT serialized.  This cuts
+    // the serializer from recursing across the whole design.  Any
+    // instTerm must attach itself to a instance on deserialization.
+
+    (ar) & boost::serialization::base_object<frRef>(*this);
+    (ar) & name_;
+    (ar) & master_;
+    (ar) & instBlockages_;
+    (ar) & xform_;
+    (ar) & pinAccessIdx_;
+  }
+
+  frInst() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
+
 }  // namespace fr
 
 #endif

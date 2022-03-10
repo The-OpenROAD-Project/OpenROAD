@@ -168,11 +168,10 @@ Regression scripts should add output files or directories to
 "dirty".
 
 The Nangate45 open-source library data used by many tests is in
-`test/Nangate45`. Use the following command to add a link in the tool
-command
+`test/Nangate45`. Use the following command to add a link in the tool command:
 
 ``` shell
-cd tool/test
+cd src/<tool>/test
 ln -s ../../../test/Nangate45
 ```
 

@@ -17,10 +17,5 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via L1M1_PR as default.
-[INFO GRT-0224] Chose via M1M2_PR as default.
-[INFO GRT-0224] Chose via M2M3_PR as default.
-[INFO GRT-0224] Chose via M3M4_PR as default.
-[INFO GRT-0224] Chose via M4M5_PR as default.
-[ERROR GRT-0149] Vertical tracks for layer li1 not found.
-GRT-0149
+[ERROR GRT-0147] Vertical tracks for layer li1 not found.
+GRT-0147

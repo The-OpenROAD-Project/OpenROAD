@@ -143,7 +143,7 @@ void HungarianMatching::createMatrixForGroups()
   }
 
   if (group_size_ > 0) {
-    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
+    for (int i = begin_slot_; i < end_slot_; i += group_size_) {
       bool blocked = false;
       for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
@@ -157,10 +157,10 @@ void HungarianMatching::createMatrixForGroups()
 
     hungarian_matrix_.resize(group_slots_);
     int slot_index = 0;
-    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
+    for (int i = begin_slot_; i < end_slot_; i += group_size_) {
       int groupIndex = 0;
       Point newPos = slots_[i].pos;
-      
+
       bool blocked = false;
       for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
@@ -203,9 +203,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       while (slots_[slot_index].blocked && slot_index < slots_.size())
-        slot_index+=group_size_;
+        slot_index += group_size_;
       if (assignment_[row] != col) {
-        slot_index+=group_size_;
+        slot_index += group_size_;
         continue;
       }
       int pin_cnt = 0;

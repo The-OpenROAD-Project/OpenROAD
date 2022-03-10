@@ -39,6 +39,7 @@ sta::define_cmd_args "rtl_macro_placer" { -report_directory report_dir \
                                          [-macro_blockage_weight macro_blockage_wt] \
                                          [-location_weight location_wt] \
                                          [-notch_weight notch_wt] \
+                                         [-macro_halo macro_halo] \
                                          [-report_file report_file] \
                                          [-macro_blockage_file macro_blockage_file] \
                                          [-prefer_location_file prefer_location_file] \
@@ -47,7 +48,7 @@ proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { -config_file -report_directory
        -area_weight -wirelength_weight -outline_weight
        -boundary_weight -macro_blockage_weight -location_weight -notch_weight
-       -report_file -macro_blockage_file -prefer_location_file } flag {  }
+       -macro_halo -report_file -macro_blockage_file -prefer_location_file } flag {  }
 
     if { ![info exists keys(-report_directory)] } {
         utl::error MPL 2 "Missing mandatory -report_directory for RTLMP"
@@ -57,13 +58,14 @@ proc rtl_macro_placer { args } {
 #  Default values for the weights
 #
     set area_wt 0.01
-    set wirelength_wt 54.7
+    set wirelength_wt 88.7
     set outline_wt 74.71
-    set boundary_wt 100.0
+    set boundary_wt 225.0
     set macro_blockage_wt 50.0
     set location_wt 100.0
-    set notch_wt 100.0
+    set notch_wt 212.0
 
+    set macro_halo 10.0
     set report_directory "rtl_mp"
     set report_file "partition.txt"
     set config_file "" 
@@ -98,6 +100,10 @@ proc rtl_macro_placer { args } {
         set notch_wt $keys(-notch_weight)
     }
 
+    if { [info exists keys(-macro_halo)] } {
+        set macro_halo $keys(-macro_halo)
+    }
+
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
     }
@@ -115,7 +121,7 @@ proc rtl_macro_placer { args } {
     }
 
     if {![mpl2::rtl_macro_placer_cmd $config_file $report_directory $area_wt $wirelength_wt \
-                    $outline_wt $boundary_wt $macro_blockage_wt $location_wt $notch_wt \
+                    $outline_wt $boundary_wt $macro_blockage_wt $location_wt $notch_wt $macro_halo\
                     $report_file $macro_blockage_file $prefer_location_file]} {
         return false
     }

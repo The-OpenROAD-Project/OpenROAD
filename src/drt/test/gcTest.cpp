@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcShortConstraint,
-             Rect(500, -50, 500, 50));
+             Rect(499, -50, 501, 50));
 }
 
 /*
@@ -423,9 +423,8 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   }
 }
 
-// Check for a min step violation.  The checker seems broken
-// so this test is disabled.
-BOOST_AUTO_TEST_CASE(min_step, *boost::unit_test::disabled())
+// Check for a min step violation.
+BOOST_AUTO_TEST_CASE(min_step)
 {
   // Setup
   makeMinStepConstraint(2);

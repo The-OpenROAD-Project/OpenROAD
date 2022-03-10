@@ -90,6 +90,14 @@ makeSteinerTree(const Pin *drvr_pin,
   SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
   connectedPins(net, network, pins);
+  // Sort pins by location because connectedPins order is not deterministic.
+  sort(pins, [=](const Pin *pin1, const Pin *pin2) {
+      Point loc1 = network->location(pin1);
+      Point loc2 = network->location(pin2);
+      return loc1.getX() < loc2.getX()
+        || (loc1.getX() == loc2.getX()
+            && loc1.getY() < loc2.getY());
+  });
   int pin_count = pins.size();
   bool is_placed = true;
   if (pin_count > max_pin_count)

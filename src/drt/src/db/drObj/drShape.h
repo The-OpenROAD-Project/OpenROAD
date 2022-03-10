@@ -70,6 +70,14 @@ class drShape : public drPinFig
   // constructors
   drShape() : drPinFig() {}
   drShape(const drShape& in) : drPinFig(in) {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drPinFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class drPathSeg : public drShape
@@ -248,6 +256,23 @@ class drPathSeg : public drShape
   FlexMazeIdx endMazeIdx_;
   bool patchSeg_;
   bool isTapered_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drShape>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & layer_;
+    (ar) & style_;
+    (ar) & owner_;
+    (ar) & beginMazeIdx_;
+    (ar) & endMazeIdx_;
+    (ar) & patchSeg_;
+    (ar) & isTapered_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class drPatchWire : public drShape
@@ -325,9 +350,11 @@ class drPatchWire : public drShape
   }
 
   void getOffsetBox(Rect& boxIn) const { boxIn = offsetBox_; }
+  const Rect& getOffsetBox() const { return offsetBox_; }
   void setOffsetBox(const Rect& boxIn) { offsetBox_ = boxIn; }
 
   void getOrigin(Point& in) const { in = origin_; }
+  const Point& getOrigin() const { return origin_; }
   void setOrigin(const Point& in) { origin_ = in; }
 
  protected:
@@ -335,6 +362,18 @@ class drPatchWire : public drShape
   Point origin_;
   frLayerNum layer_;
   drBlockObject* owner_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drShape>(*this);
+    (ar) & offsetBox_;
+    (ar) & origin_;
+    (ar) & layer_;
+    (ar) & owner_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

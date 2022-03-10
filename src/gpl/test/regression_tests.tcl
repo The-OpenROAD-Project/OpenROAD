@@ -2,8 +2,10 @@ record_tests {
   simple01
   simple01-obs
   simple01-td
+  simple01-td-tune
   simple01-uniform
   simple01-ref
+  simple01-skip-io
   simple02
   simple03
   simple04

@@ -155,7 +155,7 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex
       std::vector<dbMTerm*>* mterms = &masterpin->second;
 
       for (dbMTerm* mterm : *mterms) {
-        dbITerm::connect(inst, net, mterm);
+        inst->getITerm(mterm)->connect(net);
       }
     }
   }
@@ -231,7 +231,6 @@ PdnGen::addGlobalConnect(dbBox* region, const char* instPattern, const char* pin
 void
 PdnGen::clearGlobalConnect() {
   if (global_connect_ != nullptr) {
-    global_connect_.release();
     global_connect_ = nullptr;
   }
 }

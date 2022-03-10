@@ -51,7 +51,7 @@ class dbBlock;
 
 namespace tap {
 
-enum LocationType 
+enum LocationType
 {
   AboveMacro,
   BelowMacro,
@@ -98,13 +98,10 @@ class Tapcell
                const std::vector<odb::dbBox*>& blockages,
                int halo_x,
                int halo_y);
-  bool overlaps(odb::dbBox* blockage,
-              odb::dbRow* row,
-              int halo_x,
-              int halo_y);
+  bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int halo_x, int halo_y);
   int removeCells(const std::string& prefix);
   std::vector<odb::dbBox*> findBlockages();
- 
+
  private:
   struct FilledSites
   {
@@ -112,12 +109,13 @@ class Tapcell
     int xMin;
     int xMax;
   };
-  //Cells placed at corners of macros & corners of core area
+  // Cells placed at corners of macros & corners of core area
   struct CornercapMasters
   {
     std::string nwin_master;
     std::string nwout_master;
   };
+  typedef std::map<int, std::vector<std::vector<int>>> RowFills;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   int phy_idx_;
@@ -130,7 +128,9 @@ class Tapcell
               int min_row_width,
               int halo_x,
               int halo_y);
-  const std::pair<int, int> getMinMaxX(const std::vector<std::vector<odb::dbRow*>>& rows);
+  const std::pair<int, int> getMinMaxX(
+      const std::vector<std::vector<odb::dbRow*>>& rows);
+  RowFills findRowFills();
   odb::dbMaster* pickCornerMaster(LocationType top_bottom,
                                   odb::dbOrientType ori,
                                   odb::dbMaster* cnrcap_nwin_master,
@@ -138,16 +138,16 @@ class Tapcell
                                   odb::dbMaster* endcap_master);
   bool checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori);
   LocationType getLocationType(const int x,
-                const std::vector<odb::dbRow*>& rows_above,
-                const std::vector<odb::dbRow*>& rows_below);
+                               const std::vector<odb::dbRow*>& rows_above,
+                               const std::vector<odb::dbRow*>& rows_below);
   void makeInstance(odb::dbBlock* block,
-                 odb::dbMaster* master,
-                 odb::dbOrientType orientation,
-                 int x,
-                 int y,
-                 const std::string& prefix);
+                    odb::dbMaster* master,
+                    odb::dbOrientType orientation,
+                    int x,
+                    int y,
+                    const std::string& prefix);
   bool isXInRow(const int x, const std::vector<odb::dbRow*>& subrow);
-  int checkIfFilled(int x,
+  bool checkIfFilled(int x,
                      int width,
                      odb::dbOrientType& orient,
                      const std::vector<std::vector<int>>& row_insts);
@@ -155,20 +155,22 @@ class Tapcell
                         const std::vector<std::string>& masters,
                         odb::dbMaster* endcap_master,
                         const std::string& prefix);
-  void insertAtTopBottomHelper(odb::dbBlock* block,
-                               int top_bottom,
-                               bool is_macro,
-                               odb::dbOrientType ori,
-                               int x_start,
-                               int x_end,
-                               int lly,
-                               odb::dbMaster* tap_nwintie_master,
-                               odb::dbMaster* tap_nwin2_master,
-                               odb::dbMaster* tap_nwin3_master,
-                               odb::dbMaster* tap_nwouttie_master,
-                               odb::dbMaster* tap_nwout2_master,
-                               odb::dbMaster* tap_nwout3_master,
-                               const std::string& prefix);
+  void insertAtTopBottomHelper(
+      odb::dbBlock* block,
+      int top_bottom,
+      bool is_macro,
+      odb::dbOrientType ori,
+      int x_start,
+      int x_end,
+      int lly,
+      odb::dbMaster* tap_nwintie_master,
+      odb::dbMaster* tap_nwin2_master,
+      odb::dbMaster* tap_nwin3_master,
+      odb::dbMaster* tap_nwouttie_master,
+      odb::dbMaster* tap_nwout2_master,
+      odb::dbMaster* tap_nwout3_master,
+      const std::vector<std::vector<int>>& row_fill_check,
+      const std::string& prefix);
   int insertAroundMacros(const std::vector<std::vector<odb::dbRow*>>& rows,
                          const std::vector<std::string>& masters,
                          odb::dbMaster* corner_master,

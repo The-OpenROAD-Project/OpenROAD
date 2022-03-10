@@ -30,6 +30,7 @@
 #define _FR_FLEXDR_H_
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/export.hpp>
 #include <deque>
 #include <memory>
 
@@ -38,11 +39,14 @@
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
+#include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
-
+namespace dst {
+class Distributed;
+}
 namespace odb {
 class dbDatabase;
 }
@@ -80,6 +84,17 @@ struct FlexDRViaData
   // via2turnMinLen[z][2], last via=up,   min required x dist
   // via2turnMinLen[z][3], last via=up,   min required y dist
   std::vector<std::vector<frCoord>> via2turnMinLen;
+
+ private:
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & halfViaEncArea;
+    (ar) & via2viaMinLen;
+    (ar) & via2viaMinLenNew;
+    (ar) & via2turnMinLen;
+  }
+  friend class boost::serialization::access;
 };
 
 class FlexDR
@@ -97,7 +112,24 @@ class FlexDR
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(frDebugSettings* settings);
 
- protected:
+  // For post-deserialization update
+  void setLogger(Logger* logger) { logger_ = logger; }
+  void setDB(odb::dbDatabase* db) { db_ = db; }
+  FlexDRGraphics* getGraphics() { return graphics_.get(); }
+  // distributed
+  void setDistributed(dst::Distributed* dist,
+                      const std::string& ip,
+                      unsigned short port,
+                      const std::string& dir)
+  {
+    dist_on_ = true;
+    dist_ = dist;
+    dist_ip_ = ip;
+    dist_port_ = port;
+    dist_dir_ = dir;
+  }
+
+ private:
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
@@ -110,6 +142,14 @@ class FlexDR
   std::vector<int> numViols_;
   std::unique_ptr<FlexDRGraphics> graphics_;
   std::string debugNetName_;
+
+  // distributed
+  dst::Distributed* dist_;
+  bool dist_on_;
+  std::string dist_ip_;
+  unsigned short dist_port_;
+  std::string dist_dir_;
+  std::string globals_path_;
 
   // others
   void init();
@@ -184,10 +224,17 @@ class FlexDRWorkerRegionQuery
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
   void cleanup();
+  bool isEmpty() const;
 
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
+  FlexDRWorkerRegionQuery() : FlexDRWorkerRegionQuery(nullptr) {}
+  // We will have to use explicit instantiation because the impl is private
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
 };
 
 class FlexDRMinAreaVio
@@ -220,7 +267,7 @@ class FlexDRMinAreaVio
   }
   frCoord getGapArea() const { return gapArea_; }
 
- protected:
+ private:
   drNet* net_;
   FlexMazeIdx bp_, ep_;
   frCoord gapArea_;
@@ -260,7 +307,17 @@ class FlexDRWorker
         gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
-        gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/
+        gcWorker_(nullptr)
+  {
+  }
+  FlexDRWorker()
+      :  // for serialization
+        logger_(nullptr),
+        graphics_(nullptr),
+        debugSettings_(nullptr),
+        via_data_(nullptr),
+        rq_(nullptr),
+        gcWorker_(nullptr)
   {
   }
   // setters
@@ -277,6 +334,12 @@ class FlexDRWorker
     drIter_ = in;
     boundaryPin_ = std::move(bp);
   }
+  void setBoundaryPins(std::map<frNet*,
+                                std::set<std::pair<Point, frLayerNum>>,
+                                frBlockObjectComp>& bp)
+  {
+    boundaryPin_ = std::move(bp);
+  }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
   void setRipupMode(int in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
@@ -291,7 +354,7 @@ class FlexDRWorker
     Rect box;
     for (auto& marker : in) {
       marker.getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(marker);
       }
     }
@@ -303,7 +366,7 @@ class FlexDRWorker
     for (auto& uMarker : in) {
       auto& marker = *uMarker;
       marker.getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(marker);
       }
     }
@@ -314,7 +377,7 @@ class FlexDRWorker
     Rect box;
     for (auto& marker : in) {
       marker->getBBox(box);
-      if (getDrcBox().overlaps(box)) {
+      if (getDrcBox().intersects(box)) {
         markers_.push_back(*marker);
       }
     }
@@ -322,7 +385,10 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(FlexGCWorker* in) { gcWorker_ = unique_ptr<FlexGCWorker>(in); }
+  void setGCWorker(FlexGCWorker* in)
+  {
+    gcWorker_ = unique_ptr<FlexGCWorker>(in);
+  }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -372,9 +438,31 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   // others
   int main(frDesign* design);
+  void distributedMain(frDesign* design, const char* globals_path);
+  void updateDesign(frDesign* design);
+  std::string reloadedMain();
   void end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
+  void setLogger(Logger* logger) { logger_ = logger; }
+
+  static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
+                                            utl::Logger* logger,
+                                            FlexDRGraphics* graphics);
+
+  // distributed
+  void setDistributed(dst::Distributed* dist,
+                      const std::string& ip,
+                      unsigned short port,
+                      const std::string& dir)
+  {
+    dist_ = dist;
+    dist_ip_ = ip;
+    dist_port_ = port;
+    dist_dir_ = dir;
+  }
+
+  void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
   const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
@@ -399,7 +487,6 @@ class FlexDRWorker
     bool doRoute;
   } RouteQueueEntry;
   frDesign* design_;
-  frTechObject* tech_;
   Logger* logger_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
   frDebugSettings* debugSettings_;
@@ -410,9 +497,9 @@ class FlexDRWorker
   Rect gcellBox_;
   int drIter_;
   int mazeEndIter_;
-  bool followGuide_ : 1;
-  bool needRecheck_ : 1;
-  bool skipRouting_ : 1;
+  bool followGuide_;
+  bool needRecheck_;
+  bool skipRouting_;
   int ripupMode_;
   // drNetOrderingEnum netOrderingMode;
   frUInt4 workerDRCCost_, workerMarkerCost_;
@@ -440,6 +527,12 @@ class FlexDRWorker
 
   // on-the-fly access points that require adding access edges in the grid graph
   vector<Point3D> specialAccessAPs;
+
+  // distributed
+  dst::Distributed* dist_;
+  std::string dist_ip_;
+  unsigned short dist_port_;
+  std::string dist_dir_;
 
   // init
   void init(const frDesign* design);
@@ -563,6 +656,14 @@ class FlexDRWorker
   void initNet_term_new(const frDesign* design,
                         drNet* dNet,
                         std::vector<frBlockObject*>& terms);
+  template <typename T>
+  void initNet_term_new_helper(const frDesign* design,
+                               T* trueTerm,
+                               frBlockObject* term,
+                               frInst* inst,
+                               drNet* dNet,
+                               const string& name,
+                               const dbTransform& shiftXform);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
@@ -605,6 +706,7 @@ class FlexDRWorker
   void initMazeCost_terms(const std::set<frBlockObject*>& objs,
                           bool isAddPathCost,
                           bool isSkipVia = false);
+  void modBlockedEdgesForMacroPin(frInstTerm* instTerm, dbTransform& xForm, bool isAddCost);
   void initMazeCost_ap();  // disable maze edge
   void initMazeCost_marker_route_queue(const frMarker& marker);
   void initMazeCost_marker_route_queue_addHistoryCost(const frMarker& marker);
@@ -627,6 +729,8 @@ class FlexDRWorker
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  void addMinAreaPatches_poly(gcNet* drcNet, drNet* net);
+  void cleanUnneededPatches_poly(gcNet* drcNet, drNet* net);
   void modEolCosts_poly(gcNet* net, ModCostType modType);
   void modEolCosts_poly(gcPin* shape, frLayer* layer, ModCostType modType);
   void modEolCost(frCoord low,
@@ -656,8 +760,12 @@ class FlexDRWorker
       std::queue<RouteQueueEntry>& rerouteQueue);
   bool canRipup(drNet* n);
   // route
-  void addPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
-  void subPathCost(drConnFig* connFig, bool modEol = false, bool modCutSpc = false);
+  void addPathCost(drConnFig* connFig,
+                   bool modEol = false,
+                   bool modCutSpc = false);
+  void subPathCost(drConnFig* connFig,
+                   bool modEol = false,
+                   bool modCutSpc = false);
   void modPathCost(drConnFig* connFig,
                    ModCostType type,
                    bool modEol = false,
@@ -814,8 +922,17 @@ class FlexDRWorker
                       int i,
                       vector<FlexMazeIdx>& points,
                       const set<FlexMazeIdx>& apMazeIdx);
-  void checkPathSegStyle(drPathSeg* ps, bool isBegin, frSegStyle& style);
-  void checkViaConnectivityToAP(drVia* ps, bool isBottom, frNet* net);
+  bool isInWorkerBorder(frCoord x, frCoord y) const;
+  void checkPathSegStyle(drPathSeg* ps,
+                         bool isBegin,
+                         frSegStyle& style,
+                         const set<FlexMazeIdx>& apMazeIdx,
+                         const FlexMazeIdx& idx);
+  void checkViaConnectivityToAP(drVia* ps,
+                                bool isBottom,
+                                frNet* net,
+                                const set<FlexMazeIdx>& apMazeIdx,
+                                const FlexMazeIdx& idx);
   bool hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
       drNet* net,
@@ -850,10 +967,9 @@ class FlexDRWorker
                      std::map<frNet*,
                               std::set<std::pair<Point, frLayerNum>>,
                               frBlockObjectComp>& boundPts);
-  void endRemoveNets_pathSeg(
-      frDesign* design,
-      frPathSeg* pathSeg,
-      std::set<std::pair<Point, frLayerNum>>& boundPts);
+  void endRemoveNets_pathSeg(frDesign* design,
+                             frPathSeg* pathSeg,
+                             std::set<std::pair<Point, frLayerNum>>& boundPts);
   void endRemoveNets_via(frDesign* design, frVia* via);
   void endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire);
   void endAddNets(frDesign* design,
@@ -869,8 +985,84 @@ class FlexDRWorker
 
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // // We always serialize before calling main on the work unit so various
+    // // fields are empty and don't need to be serialized.  I skip these to
+    // // save having to write lots of serializers that will never be called.
+    // if (!apSVia_.empty() || !nets_.empty() || !owner2nets_.empty()
+    //     || !rq_.isEmpty() || gcWorker_) {
+    //   logger_->error(DRT, 999, "Can't serialize used worker");
+    // }
+
+    // The logger_, graphics_ and debugSettings_ are handled by the caller to
+    // use the current ones.
+    (ar) & design_;
+    (ar) & via_data_;
+    (ar) & routeBox_;
+    (ar) & extBox_;
+    (ar) & drcBox_;
+    (ar) & gcellBox_;
+    (ar) & drIter_;
+    (ar) & mazeEndIter_;
+    (ar) & followGuide_;
+    (ar) & needRecheck_;
+    (ar) & skipRouting_;
+    (ar) & ripupMode_;
+    (ar) & workerDRCCost_;
+    (ar) & workerMarkerCost_;
+    (ar) & boundaryPin_;
+    (ar) & pinCnt_;
+    (ar) & initNumMarkers_;
+    (ar) & apSVia_;
+    (ar) & fixedObjs_;
+    (ar) & planarHistoryMarkers_;
+    (ar) & viaHistoryMarkers_;
+    (ar) & historyMarkers_;
+    (ar) & nets_;
+    (ar) & owner2nets_;
+    (ar) & gridGraph_;
+    (ar) & markers_;
+    (ar) & bestMarkers_;
+    (ar) & rq_;
+    (ar) & gcWorker_;
+  }
+  friend class boost::serialization::access;
 };
 
+class RoutingJobDescription : public dst::JobDescription
+{
+ public:
+  RoutingJobDescription(std::string pathIn,
+                        std::string globals = "",
+                        std::string dirIn = "")
+      : path_(pathIn), globals_path_(globals), shared_dir_(dirIn)
+  {
+  }
+  void setWorkerPath(const std::string& path) { path_ = path; }
+  void setGlobalsPath(const std::string& path) { globals_path_ = path; }
+  void setSharedDir(const std::string& path) { shared_dir_ = path; }
+  const std::string& getWorkerPath() const { return path_; }
+  const std::string& getGlobalsPath() const { return globals_path_; }
+  const std::string& getSharedDir() const { return shared_dir_; }
+
+ private:
+  std::string path_;
+  std::string globals_path_;
+  std::string shared_dir_;
+  RoutingJobDescription() {}
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & path_;
+    (ar) & globals_path_;
+    (ar) & shared_dir_;
+  }
+  friend class boost::serialization::access;
+};
 }  // namespace fr
 
 #endif

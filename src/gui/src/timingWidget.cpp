@@ -35,7 +35,6 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QGridLayout>
 #include <QFrame>
 #include <QLabel>
 #include <QClipboard>
@@ -54,86 +53,53 @@ TimingWidget::TimingWidget(QWidget* parent)
       hold_timing_table_view_(new QTableView(this)),
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
-      find_object_edit_(new QLineEdit(this)),
-      path_index_spin_box_(new QSpinBox(this)),
-      path_count_spin_box_(new QSpinBox(this)),
       update_button_(new QPushButton("Update", this)),
-      expand_clk_(new QCheckBox("Expand clock", this)),
+      settings_button_(new QPushButton("Settings", this)),
+      settings_(new TimingControlsDialog(this)),
       setup_timing_paths_model_(nullptr),
       hold_timing_paths_model_(nullptr),
       path_details_model_(nullptr),
       capture_details_model_(nullptr),
       path_renderer_(std::make_unique<TimingPathRenderer>()),
+      cone_renderer_(std::make_unique<TimingConeRenderer>()),
       dbchange_listener_(new GuiDBChangeListener(this)),
+      delay_detail_splitter_(new QSplitter(Qt::Vertical, this)),
       delay_widget_(new QTabWidget(this)),
       detail_widget_(new QTabWidget(this)),
       focus_view_(nullptr)
 {
   setObjectName("timing_report"); // for settings
 
-  path_count_spin_box_->setRange(0, 10000);
-  path_count_spin_box_->setValue(100);
-
   QWidget* container = new QWidget(this);
-  QGridLayout* layout = new QGridLayout;
+  QVBoxLayout* layout = new QVBoxLayout;
 
   QFrame* control_frame = new QFrame(this);
   control_frame->setFrameShape(QFrame::StyledPanel);
   control_frame->setFrameShadow(QFrame::Raised);
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
-  controls_layout->addWidget(new QLabel("Paths:", this));
-  controls_layout->addWidget(path_count_spin_box_);
+  controls_layout->addWidget(settings_button_);
   controls_layout->addWidget(update_button_);
-  controls_layout->insertStretch(0);
+  controls_layout->insertStretch(1);
   control_frame->setLayout(controls_layout);
-  layout->addWidget(control_frame, 0, 0);
+  layout->addWidget(control_frame);
 
   // top half
   delay_widget_->addTab(setup_timing_table_view_, "Setup");
   delay_widget_->addTab(hold_timing_table_view_, "Hold");
-  layout->addWidget(delay_widget_, 1, 0);
+  delay_detail_splitter_->addWidget(delay_widget_);
 
   // bottom half
-  QTabWidget* path_widget = new QTabWidget(this);
-  QWidget* bottom_widget = new QWidget(this);
-  path_widget->addTab(bottom_widget, "Path Details");
-  QGridLayout* bottom_widg_layout = new QGridLayout;
-  bottom_widget->setLayout(bottom_widg_layout);
-  QFrame* frame = new QFrame(this);
-  frame->setFrameShape(QFrame::StyledPanel);
-  frame->setFrameShadow(QFrame::Raised);
-  bottom_widg_layout->addWidget(frame);
+  detail_widget_->addTab(path_details_table_view_, "Data Path Details");
+  detail_widget_->addTab(capture_details_table_view_, "Capture Path Details");
+  delay_detail_splitter_->addWidget(detail_widget_);
 
-  QHBoxLayout* frame_layout = new QHBoxLayout;
-  frame->setLayout(frame_layout);
-  frame_layout->addWidget(new QLabel("Find", this));
-  frame_layout->addWidget(find_object_edit_);
-  find_object_edit_->setFocusPolicy(Qt::ClickFocus);
-  find_object_edit_->setPlaceholderText("Pin or Net");
-
-  frame_layout->addWidget(new QLabel("Path:", this));
-  frame_layout->addWidget(path_index_spin_box_);
-  frame_layout->addWidget(expand_clk_);
-  expand_clk_->setCheckState(Qt::Checked);
-  expand_clk_->setTristate(false);
-
-  detail_widget_->addTab(path_details_table_view_, "Data");
-  detail_widget_->addTab(capture_details_table_view_, "Capture");
-  bottom_widg_layout->addWidget(detail_widget_);
-
-  layout->addWidget(path_widget, 2, 0);
+  layout->addWidget(delay_detail_splitter_);
+  delay_detail_splitter_->setCollapsible(0, false);
+  delay_detail_splitter_->setCollapsible(1, false);
 
   container->setLayout(layout);
   setWidget(container);
-
-  connect(find_object_edit_,
-          SIGNAL(returnPressed()),
-          this,
-          SLOT(findNodeInPathDetails()));
-
-  connect(
-      path_index_spin_box_, SIGNAL(valueChanged(int)), this, SLOT(showPathIndex(int)));
 
   connect(dbchange_listener_,
           SIGNAL(dbUpdated()),
@@ -144,9 +110,17 @@ TimingWidget::TimingWidget(QWidget* parent)
   connect(
       update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
 
-  connect(expand_clk_, SIGNAL(stateChanged(int)), this, SLOT(updateClockRows()));
+  connect(settings_button_,
+          SIGNAL(clicked()),
+          this,
+          SLOT(showSettings()));
 
-  path_index_spin_box_->setRange(0, 0);
+  connect(settings_,
+          SIGNAL(inspect(const Selected&)),
+          this,
+          SIGNAL(inspect(const Selected&)));
+
+  connect(settings_, SIGNAL(expandClock(bool)), this, SLOT(updateClockRows()));
 }
 
 TimingWidget::~TimingWidget()
@@ -156,6 +130,9 @@ TimingWidget::~TimingWidget()
 
 void TimingWidget::init(sta::dbSta* sta)
 {
+  cone_renderer_->setSTA(sta);
+  settings_->setSTA(sta);
+
   setup_timing_paths_model_ = new TimingPathsModel(sta, this);
   hold_timing_paths_model_ = new TimingPathsModel(sta, this);
   path_details_model_ = new TimingPathDetailModel(false, sta, this);
@@ -167,6 +144,7 @@ void TimingWidget::init(sta::dbSta* sta)
     view->setSelectionMode(QAbstractItemView::SingleSelection);
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
     view->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   };
 
   setupTableView(setup_timing_table_view_, setup_timing_paths_model_);
@@ -220,12 +198,18 @@ void TimingWidget::init(sta::dbSta* sta)
   clearPathDetails();
 }
 
+void TimingWidget::updatePaths()
+{
+  update_button_->click();
+}
+
 void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  path_count_spin_box_->setValue(settings->value("path_count", path_count_spin_box_->value()).toInt());
-  expand_clk_->setCheckState(settings->value("expand_clk", expand_clk_->checkState()).value<Qt::CheckState>());
+  settings_->setPathCount(settings->value("path_count", settings_->getPathCount()).toInt());
+  settings_->setExpandClock(settings->value("expand_clk", settings_->getExpandClock()).toBool());
+  delay_detail_splitter_->restoreState(settings->value("splitter", delay_detail_splitter_->saveState()).toByteArray());
 
   settings->endGroup();
 }
@@ -234,8 +218,9 @@ void TimingWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings->setValue("path_count", path_count_spin_box_->value());
-  settings->setValue("expand_clk", expand_clk_->checkState());
+  settings->setValue("path_count", settings_->getPathCount());
+  settings->setValue("expand_clk", settings_->getExpandClock());
+  settings->setValue("splitter", delay_detail_splitter_->saveState());
 
   settings->endGroup();
 }
@@ -291,9 +276,6 @@ void TimingWidget::showPathDetails(const QModelIndex& index)
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
 
-  path_index_spin_box_->setRange(0, focus_model->rowCount()-1);
-  path_index_spin_box_->setValue(index.row());
-
   updateClockRows();
 
   path_details_table_view_->setEnabled(path_details_model_->hasNodes());
@@ -310,7 +292,7 @@ void TimingWidget::updateClockRows()
     return;
   }
 
-  const bool show = expand_clk_->checkState() == Qt::Checked;
+  const bool show = settings_->getExpandClock();
 
   auto toggleModelView = [show](TimingPathDetailModel* model, QTableView* view) {
     model->setExpandClock(show);
@@ -352,61 +334,18 @@ void TimingWidget::highlightPathStage(TimingPathDetailModel* model, const QModel
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
-void TimingWidget::findNodeInPathDetails()
-{
-  auto search_node = find_object_edit_->text();
-  QSortFilterProxyModel proxy;
-
-  TimingPathDetailModel* model = path_details_model_;
-  QTableView* view = path_details_table_view_;
-  if (detail_widget_->currentWidget() == capture_details_table_view_) {
-    model = capture_details_model_;
-    view = capture_details_table_view_;
-  }
-
-  proxy.setSourceModel(model);
-  proxy.setFilterKeyColumn(0);
-  proxy.setFilterFixedString(search_node);
-  QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
-  if (match_index.isValid()) {
-    const int row = match_index.row();
-    const bool show_clock = expand_clk_->checkState() == Qt::Checked;
-    if (view->isRowHidden(row) && !show_clock) {
-      // turn on expand clock so we can select that row
-      expand_clk_->setCheckState(Qt::Checked);
-    }
-
-    if (!view->isRowHidden(row)) {
-      // double check if row is hidden, since if th clock summary row matched, that is not a node.
-      view->selectRow(row);
-      return;
-    }
-  }
-
-  QMessageBox::information(
-      this, "Node Search: ", search_node + " Match not found!");
-}
-
-void TimingWidget::showPathIndex(int path_idx)
-{
-  if (focus_view_ == nullptr) {
-    return;
-  }
-
-  QModelIndex new_index = focus_view_->model()->index(path_idx, 0);
-  focus_view_->selectRow(new_index.row());
-
-  showPathDetails(new_index);
-}
-
 void TimingWidget::populatePaths()
 {
   clearPathDetails();
 
-  int count = path_count_spin_box_->value();
+  const int count = settings_->getPathCount();
+  const auto from = settings_->getFromPins();
+  const auto thru = settings_->getThruPins();
+  const auto to = settings_->getToPins();
+  const bool unconstrained = settings_->getUnconstrained();
 
-  setup_timing_paths_model_->populateModel(true, count);
-  hold_timing_paths_model_->populateModel(false, count);
+  setup_timing_paths_model_->populateModel(true, count, from, thru, to, unconstrained);
+  hold_timing_paths_model_->populateModel(false, count, from, thru, to, unconstrained);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
@@ -528,6 +467,12 @@ void TimingWidget::toggleRenderer(bool visible)
 void TimingWidget::setBlock(odb::dbBlock* block)
 {
   dbchange_listener_->addOwner(block);
+}
+
+void TimingWidget::showSettings()
+{
+  settings_->populate();
+  settings_->show();
 }
 
 }  // namespace gui

@@ -72,16 +72,16 @@ class MakeWireParasitics
   MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
-                         std::vector<GSegment>& routes);
+                         GRoute &route);
+  // Return GRT layer lengths in dbu's for db_net's route indexed by routing layer.
+  std::vector<int> routeLayerLengths(odb::dbNet* db_net);
 
- protected:
-  void makePinRoutePts(std::vector<Pin>& pins);
-  RoutePt routePt(Pin& pin);
+ private:
   sta::Pin* staPin(Pin& pin);
-  void makeRouteParasitics(odb::dbNet* net, std::vector<GSegment>& routes);
+  void makeRouteParasitics(odb::dbNet* net, GRoute &route);
   sta::ParasiticNode* ensureParasiticNode(int x, int y, int layer);
-  void makeParasiticsToGrid(std::vector<Pin>& pins);
-  void makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node);
+  void makeParasiticsToPins(std::vector<Pin>& pins);
+  void makeParasiticsToPin(Pin& pin);
   void reduceParasiticNetwork();
   void layerRC(int wire_length_dbu,
                int layer,

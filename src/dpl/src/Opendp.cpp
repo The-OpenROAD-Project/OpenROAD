@@ -46,7 +46,6 @@
 
 #include "Graphics.h"
 #include "utl/Logger.h"
-#include "ord/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
 
@@ -148,6 +147,13 @@ Opendp::init(dbDatabase *db,
 }
 
 void
+Opendp::initBlock()
+{
+  block_ = db_->getChip()->getBlock();
+  block_->getCoreArea(core_);
+}
+
+void
 Opendp::setPaddingGlobal(int left,
                          int right)
 {
@@ -213,6 +219,12 @@ Opendp::detailedPlacement(int max_displacement_x,
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
   updateDbInstLocations();
+  if (!placement_failures_.empty()) {
+    logger_->info(DPL, 34, "Detailed placement failed on:");
+    for (auto inst : placement_failures_)
+      logger_->info(DPL, 35, " {}", inst->getName());
+    logger_->error(DPL, 36, "Detailed placement failed.");
+  }
 }
 
 void
@@ -290,7 +302,7 @@ Opendp::hpwl(dbNet *net) const
   if (isSupply(net))
     return 0;
   else {
-    Rect bbox = getBox(net);
+    Rect bbox = net->getTermBBox();
     return bbox.dx() + bbox.dy();
   }
 }
@@ -300,45 +312,6 @@ Opendp::isSupply(dbNet *net) const
 {
   dbSigType sig_type = net->getSigType();
   return sig_type == dbSigType::POWER || sig_type == dbSigType::GROUND;
-}
-
-Rect
-Opendp::getBox(dbNet *net) const
-{
-  Rect net_box;
-  net_box.mergeInit();
-
-  for (dbITerm *iterm : net->getITerms()) {
-    int x, y;
-    if (iterm->getAvgXY(&x, &y)) {
-      Rect iterm_rect(x, y, x, y);
-      net_box.merge(iterm_rect);
-    }
-    else {
-      // This clause is sort of worthless because getAvgXY prints
-      // a warning when it fails.
-      dbInst *inst = iterm->getInst();
-      dbBox *inst_box = inst->getBBox();
-      int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
-      int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
-      Rect inst_center(center_x, center_y, center_x, center_y);
-      net_box.merge(inst_center);
-    }
-  }
-
-  for (dbBTerm *bterm : net->getBTerms()) {
-    for (dbBPin *bpin : bterm->getBPins()) {
-      dbPlacementStatus status = bpin->getPlacementStatus();
-      if (status.isPlaced()) {
-        Rect pin_bbox = bpin->getBBox();
-        int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
-        int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
-        Rect pin_center(center_x, center_y, center_x, center_y);
-        net_box.merge(pin_center);
-      }
-    }
-  }
-  return net_box;
 }
 
 ////////////////////////////////////////////////////////////////

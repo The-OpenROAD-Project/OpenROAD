@@ -26,6 +26,7 @@
 [INFO ODB-0131]     Created 454 components and 2681 component-terminals.
 [INFO ODB-0133]     Created 260 nets and 856 connections.
 [INFO ODB-0134] Finished DEF file: ldo/2_5_floorplan_tapcell.def
+[WARNING PDN-0167] Net created for VDD, if intended as power or ground net add the -power/-ground switch as appropriate.
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
   config: ldo/pdn.cfg
 [INFO PDN-0008] Design name is ldoInst.

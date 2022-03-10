@@ -417,6 +417,7 @@ void DRCWidget::loadReport(const QString& filename)
   }  // catch errors
 
   updateModel();
+  show();
   raise();
 }
 
@@ -669,10 +670,7 @@ void DRCRenderer::drawObjects(Painter& painter)
     if (std::max(box.dx(), box.dy()) < min_box) {
       // box is too small to be useful, so draw X instead
       odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
-      painter.drawLine({center.x() - min_box / 2, center.y() - min_box / 2},
-                       {center.x() + min_box / 2, center.y() + min_box / 2});
-      painter.drawLine({center.x() - min_box / 2, center.y() + min_box / 2},
-                       {center.x() + min_box / 2, center.y() - min_box / 2});
+      painter.drawX(center.x(), center.y(), min_box);
     } else {
       violation->paint(painter);
     }

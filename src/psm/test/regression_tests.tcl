@@ -7,4 +7,5 @@ record_tests {
   gcd_em_test_vdd
   gcd_all_vss
   gcd_vss_no_vsrc
+  gcd_sky130_vdd
 }

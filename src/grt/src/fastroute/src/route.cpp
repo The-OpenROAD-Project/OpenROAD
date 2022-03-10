@@ -121,12 +121,12 @@ void FastRouteCore::routeSegL(Segment* seg)
         costL2 += tmp2;
     }
     for (int i = seg->x1; i < seg->x2; i++) {
-      const float tmp1 = h_edges_[seg->y2][i].red + h_edges_[seg->y2][i].est_usage
-                         - h_capacity_lb_;
+      const float tmp1 = h_edges_[seg->y2][i].red
+                         + h_edges_[seg->y2][i].est_usage - h_capacity_lb_;
       if (tmp1 > 0)
         costL1 += tmp1;
-      const float tmp2 = h_edges_[seg->y1][i].red + h_edges_[seg->y1][i].est_usage
-                         - h_capacity_lb_;
+      const float tmp2 = h_edges_[seg->y1][i].red
+                         + h_edges_[seg->y1][i].est_usage - h_capacity_lb_;
       if (tmp2 > 0)
         costL2 += tmp2;
     }
@@ -164,27 +164,27 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
   float costL2 = 0;
 
   for (int i = ymin; i < ymax; i++) {
-    const float tmp
-        = v_edges_[i][seg->x1].red + v_edges_[i][seg->x1].est_usage - v_capacity_lb_;
+    const float tmp = v_edges_[i][seg->x1].red + v_edges_[i][seg->x1].est_usage
+                      - v_capacity_lb_;
     if (tmp > 0)
       costL1 += tmp;
   }
   for (int i = ymin; i < ymax; i++) {
-    const float tmp
-        = v_edges_[i][seg->x2].red + v_edges_[i][seg->x2].est_usage - v_capacity_lb_;
+    const float tmp = v_edges_[i][seg->x2].red + v_edges_[i][seg->x2].est_usage
+                      - v_capacity_lb_;
     if (tmp > 0)
       costL2 += tmp;
   }
 
   for (int i = seg->x1; i < seg->x2; i++) {
-    const float tmp
-        = h_edges_[seg->y2][i].red + h_edges_[seg->y2][i].est_usage - h_capacity_lb_;
+    const float tmp = h_edges_[seg->y2][i].red + h_edges_[seg->y2][i].est_usage
+                      - h_capacity_lb_;
     if (tmp > 0)
       costL1 += tmp;
   }
   for (int i = seg->x1; i < seg->x2; i++) {
-    const float tmp
-        = h_edges_[seg->y1][i].red + h_edges_[seg->y1][i].est_usage - h_capacity_lb_;
+    const float tmp = h_edges_[seg->y1][i].red + h_edges_[seg->y1][i].est_usage
+                      - h_capacity_lb_;
     if (tmp > 0)
       costL2 += tmp;
   }
@@ -319,7 +319,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
           } else if (treenodes[n1].status == 1) {
             costL1 = 0;
             costL2 = via_cost_;
-          } else {
+          } else if (verbose_) {
             logger_->warn(
                 GRT, 179, "Wrong node status {}.", treenodes[n1].status);
           }
@@ -412,8 +412,7 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 
 void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
 {
-  int i, j, n1, n2, x1, y1, x2, y2, segWidth, bestZ, ymin,
-      ymax;
+  int i, j, n1, n2, x1, y1, x2, y2, segWidth, bestZ, ymin, ymax;
   float tmp, bestcost, btTEST;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
@@ -466,8 +465,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
       // cost for V-segs
       for (i = x1; i <= x2; i++) {
         for (j = ymin; j < ymax; j++) {
-          tmp = v_edges_[j][i].est_usage - v_capacity_lb_
-                + v_edges_[j][i].red;
+          tmp = v_edges_[j][i].est_usage - v_capacity_lb_ + v_edges_[j][i].red;
           if (tmp > 0) {
             cost_v_[i - x1] += tmp;
             cost_v_test_[i - x1] += HCOST;
@@ -478,8 +476,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
       }
       // cost for Top&Bot boundary segs (form Z with V-seg)
       for (j = x1; j < x2; j++) {
-        tmp = h_edges_[y2][j].est_usage - h_capacity_lb_
-              + h_edges_[y2][j].red;
+        tmp = h_edges_[y2][j].est_usage - h_capacity_lb_ + h_edges_[y2][j].red;
         if (tmp > 0) {
           cost_tb_[0] += tmp;
           cost_tb_test_[0] += HCOST;
@@ -544,7 +541,8 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
 // Z-route, rip-up the previous route according to the ripuptype
 void FastRouteCore::newrouteZ(int netID, int threshold)
 {
-  int ind, i, j, d, n1, n2, x1, y1, x2, y2, segWidth, segHeight, bestZ, ymin, ymax, n1a, n2a, status1, status2;
+  int ind, i, j, d, n1, n2, x1, y1, x2, y2, segWidth, segHeight, bestZ, ymin,
+      ymax, n1a, n2a, status1, status2;
   float tmp, bestcost, btTEST;
   bool HVH;        // the shape of Z routing (true - HVH, false - VHV)
   bool y1Smaller;  // true - y1<y2, false y1>y2
@@ -832,11 +830,11 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
       }
 
     } else
-        /* TODO:  <19-07-19, add parentesis in the if below > */
-        if (d == 2 && sttrees_[netID].edges[ind].len > threshold
-            && threshold > 4) {
-      newrouteZ_edge(netID, ind);
-    }
+      /* TODO:  <19-07-19, add parentesis in the if below > */
+      if (d == 2 && sttrees_[netID].edges[ind].len > threshold
+          && threshold > 4) {
+        newrouteZ_edge(netID, ind);
+      }
   }
 }
 
@@ -854,8 +852,8 @@ void FastRouteCore::newrouteZAll(int threshold)
 // Ripup the original route and do Monotonic routing within bounding box
 void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 {
-  int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2,
-      ind_i, ind_j, ind_x, k;
+  int i, j, cnt, x, xl, yl, xr, yr, n1, n2, x1, y1, x2, y2, ind_i, ind_j, ind_x,
+      k;
   int segWidth, segHeight, curX, curY;
   std::vector<int> gridsX(x_range_ + y_range_);
   std::vector<int> gridsY(x_range_ + y_range_);
@@ -925,7 +923,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
           // update the cost of a column of grids by h-edges
           for (j = 0; j <= segHeight; j++) {
             tmp = std::max(0.0f,
-                           h_edges_[yl + j][x].red + h_edges_[yl + j][x].est_usage
+                           h_edges_[yl + j][x].red
+                               + h_edges_[yl + j][x].est_usage
                                - h_capacity_lb_);
             cost[j][i + 1] = cost[j][i] + tmp;
             parent[j][i + 1] = same_y;
@@ -990,7 +989,8 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
           ind_i = i + 1;
           for (j = segHeight, k = 0; j >= 0; j--, k++) {
             tmp = std::max(0.0f,
-                           h_edges_[yl - k][x].red + h_edges_[yl - k][x].est_usage
+                           h_edges_[yl - k][x].red
+                               + h_edges_[yl - k][x].est_usage
                                - h_capacity_lb_);
             cost[j][ind_i] = cost[j][i] + tmp;
             parent[j][ind_i] = same_y;
@@ -1158,7 +1158,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
       } else if (treenodes[n1].status == 1) {
         costL1 = 0;
         costL2 = via_cost_;
-      } else {
+      } else if (verbose_) {
         logger_->warn(GRT, 181, "Wrong node status {}.", treenodes[n1].status);
       }
       if (treenodes[n2].status == 2) {
@@ -1168,22 +1168,18 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
       }
 
       for (j = ymin; j < ymax; j++) {
-        tmp = v_edges_[j][x1].est_usage - v_capacity_lb_
-              + v_edges_[j][x1].red;
+        tmp = v_edges_[j][x1].est_usage - v_capacity_lb_ + v_edges_[j][x1].red;
         if (tmp > 0)
           costL1 += tmp;
-        tmp = v_edges_[j][x2].est_usage - v_capacity_lb_
-              + v_edges_[j][x2].red;
+        tmp = v_edges_[j][x2].est_usage - v_capacity_lb_ + v_edges_[j][x2].red;
         if (tmp > 0)
           costL2 += tmp;
       }
       for (j = x1; j < x2; j++) {
-        tmp = h_edges_[y2][j].est_usage - h_capacity_lb_
-              + h_edges_[y2][j].red;
+        tmp = h_edges_[y2][j].est_usage - h_capacity_lb_ + h_edges_[y2][j].red;
         if (tmp > 0)
           costL1 += tmp;
-        tmp = h_edges_[y1][j].est_usage - h_capacity_lb_
-              + h_edges_[y1][j].red;
+        tmp = h_edges_[y1][j].est_usage - h_capacity_lb_ + h_edges_[y1][j].red;
         if (tmp > 0)
           costL2 += tmp;
       }
@@ -1401,8 +1397,8 @@ void FastRouteCore::routeLVEnew(int netID,
                                 int threshold,
                                 int enlarge)
 {
-  int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2,
-      deg, yminorig, ymaxorig;
+  int i, j, cnt, xmin, xmax, ymin, ymax, n1, n2, x1, y1, x2, y2, deg, yminorig,
+      ymaxorig;
   int bestp1x = 0;
   int bestp1y = 0;
   std::vector<int> gridsX(x_range_ + y_range_);
@@ -1685,9 +1681,13 @@ void FastRouteCore::routeLVEnew(int netID,
 void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 {
   int netID, edgeID, numEdges, i, forange;
-
-  if (verbose_ > 1)
-    logger_->info(GRT, 182, "{} threshold, {} expand.", threshold, expand);
+  debugPrint(logger_,
+             GRT,
+             "patternRouting",
+             1,
+             "{} threshold, {} expand.",
+             threshold,
+             expand);
 
   h_cost_table_.resize(10 * h_capacity_);
 
@@ -1699,7 +1699,7 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 
   multi_array<float, 2> d1(boost::extents[y_range_][x_range_]);
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
-  
+
   for (netID = 0; netID < num_valid_nets_; netID++) {
     numEdges = 2 * sttrees_[netID].deg - 3;
     for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1768,22 +1768,18 @@ void FastRouteCore::newrouteLInMaze(int netID)
         costL1 = costL2 = 0;
 
         for (j = ymin; j < ymax; j++) {
-          tmp = v_edges_[j][x1].usage - v_capacity_lb_
-                + v_edges_[j][x1].red;
+          tmp = v_edges_[j][x1].usage - v_capacity_lb_ + v_edges_[j][x1].red;
           if (tmp > 0)
             costL1 += tmp;
-          tmp = v_edges_[j][x2].usage - v_capacity_lb_
-                + v_edges_[j][x2].red;
+          tmp = v_edges_[j][x2].usage - v_capacity_lb_ + v_edges_[j][x2].red;
           if (tmp > 0)
             costL2 += tmp;
         }
         for (j = x1; j < x2; j++) {
-          tmp = h_edges_[y2][j].usage - h_capacity_lb_
-                + h_edges_[y2][j].red;
+          tmp = h_edges_[y2][j].usage - h_capacity_lb_ + h_edges_[y2][j].red;
           if (tmp > 0)
             costL1 += tmp;
-          tmp = h_edges_[y1][j].usage - h_capacity_lb_
-                + h_edges_[1][j].red;
+          tmp = h_edges_[y1][j].usage - h_capacity_lb_ + h_edges_[1][j].red;
           if (tmp > 0)
             costL2 += tmp;
         }

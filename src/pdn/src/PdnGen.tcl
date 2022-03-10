@@ -6244,6 +6244,7 @@ proc lowest_rect {rects} {
   return [lindex [lsort -command sort_by_min_y $rects] 0]
 }
 
+
 proc repair_channel {channel layer_name net min_size} {
   variable stripe_locs
 

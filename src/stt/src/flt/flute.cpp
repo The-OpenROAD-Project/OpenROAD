@@ -208,7 +208,6 @@ static void
 initLUT(int to_d,
         LUT_TYPE LUT,
 	NUMSOLN_TYPE numsoln);
-static void readLUT();
 static void
 ensureLUT(int d);
 static std::string

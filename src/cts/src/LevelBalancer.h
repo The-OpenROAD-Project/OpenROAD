@@ -35,18 +35,18 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "TreeBuilder.h"
-#include "Clock.h"
-#include "Util.h"
-
 #include <cmath>
 #include <limits>
 #include <map>
 
+#include "Clock.h"
+#include "CtsOptions.h"
+#include "TreeBuilder.h"
+#include "Util.h"
+
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -68,7 +68,7 @@ using utl::Logger;
 //   [root]-------|                   |---|>----[]   Level = 3
 //                |----|>----D--------|
 //                          (CGC)     |---|>-----[]
-//                            
+//
 // OUTPUT of Level Balancer
 //
 //                |----|>-|>|>---[]  Level = 3
@@ -80,25 +80,31 @@ using utl::Logger;
 //
 //
 
-
 typedef std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>> CellLevelMap;
 class LevelBalancer
 {
  public:
-  LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger):
-                _root(root), _options(options), _logger(logger), levelBufCount_(0) { }
+  LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger)
+      : root_(root), options_(options), logger_(logger), levelBufCount_(0)
+  {
+  }
 
   void run();
-  void addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*> cluster,
-          Clock::SubNet* driverNet, unsigned bufLevels, const std::string nameSuffix);
-  void fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, unsigned maxTreeDepth);
+  void addBufferLevels(TreeBuilder* builder,
+                       std::vector<ClockInst*> cluster,
+                       Clock::SubNet* driverNet,
+                       unsigned bufLevels,
+                       const std::string nameSuffix);
+  void fixTreeLevels(TreeBuilder* builder,
+                     unsigned parentDepth,
+                     unsigned maxTreeDepth);
   unsigned computeMaxTreeDepth(TreeBuilder* parent);
 
  private:
-  TreeBuilder* _root;
-  CtsOptions* _options;
-  Logger* _logger;
+  TreeBuilder* root_;
+  CtsOptions* options_;
+  Logger* logger_;
   CellLevelMap cgcLevelMap_;
   unsigned levelBufCount_;
 };
-}
+}  // namespace cts

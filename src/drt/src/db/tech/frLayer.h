@@ -730,6 +730,53 @@ class frLayer
   std::vector<frLef58CornerSpacingConstraint*> lef58CornerSpacingConstraints;
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
   drEolSpacingConstraint drEolCon;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & type;
+    (ar) & layerNum;
+    (ar) & name;
+    (ar) & pitch;
+    (ar) & width;
+    (ar) & minWidth;
+    (ar) & numMasks;
+    (ar) & dir;
+    (ar) & defaultViaDef;
+    (ar) & hasMinStepViol;
+    (ar) & viaDefs;
+    (ar) & cutClasses;
+    (ar) & name2CutClassIdxMap;
+    (ar) & constraints;
+    (ar) & lef58SpacingEndOfLineConstraints;
+    (ar) & minSpc;
+    (ar) & spacingSamenet;
+    (ar) & spacingInfluence;
+    (ar) & eols;
+    (ar) & cutConstraints;
+    (ar) & cutSpacingSamenetConstraints;
+    (ar) & interLayerCutSpacingConstraints;
+    (ar) & interLayerCutSpacingSamenetConstraints;
+    (ar) & interLayerCutSpacingConstraintsMap;
+    (ar) & interLayerCutSpacingSamenetConstraintsMap;
+    (ar) & lef58CutSpacingConstraints;
+    (ar) & lef58CutSpacingSamenetConstraints;
+    (ar) & recheckConstraint;
+    (ar) & shortConstraint;
+    (ar) & offGridConstraint;
+    (ar) & minEnclosedAreaConstraints;
+    (ar) & nonSufficientMetalConstraint;
+    (ar) & areaConstraint;
+    (ar) & minStepConstraint;
+    (ar) & lef58MinStepConstraints;
+    (ar) & minWidthConstraint;
+    (ar) & minimumcutConstraints;
+    (ar) & lef58RectOnlyConstraint;
+    (ar) & lef58RightWayOnGridOnlyConstraint;
+    (ar) & lef58CornerSpacingConstraints;
+    (ar) & drEolCon;
+  }
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

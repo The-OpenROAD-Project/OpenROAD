@@ -17,14 +17,13 @@ Options description:
 
 -   `guide_file`: Set the output guides file name (e.g., -guide_file
     `route.guide`)
--   `verbose`: Set verbosity of reporting: 0 for less verbosity, 1 for medium
-    verbosity, 2 for full verbosity (e.g., -verbose `1`)
 -   `congestion_iterations`: Set the number of iterations made to remove the
     overflow of the routing (e.g., `-congestion_iterations 50`)
 -   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
     example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
     x-, y- direction.
 -   `allow_congestion`: Allow global routing results to be generated with remaining congestion
+-   `verbose`: This flag enables the full reporting of the global routing.
 
 ```
 set_routing_layers [-signal min-max]
@@ -143,6 +142,41 @@ option of the `estimate_parasitics` command.
 ```
 estimate_parasitics -global_routing
 ```
+
+```
+draw_route_guides net_names [-show_pin_locations]
+```
+The `draw_route_guides` command plots the route guides for a set of nets.
+To erase the route guides from the GUI, pass an empty list to this command:
+`draw_route_guides {}`.
+The `show_pin_locations` flag draw circles for the pin positions on the routing grid.
+
+## Report wire length
+
+```
+report_wire_length [-net net_list]
+                   [-file file]
+                   [-global_route]
+                   [-detailed_route]
+                   [-verbose]
+```
+
+Options description:
+
+-   `net`: A list of nets. Use `*` to report the wire length for all nets of the design.
+-   `file`: The name of the file for the wire length report.
+-   `global_route`: This flag is used to report the wire length of the global routing.
+-   `detailed_route`: This flag is used to report the wire length of the detailed routing.
+-   `verbose`: This flag enables the full reporting of the wire length information.
+
+The `report_wire_length` command reports the wire length of the nets. Use the `-global_route`
+and the `-detailed_route` flags to report the wire length from global and detailed routing,
+respectively. If none of these flags are used, the tool will identify the state of the design
+and report the wire length accordingly.
+
+
+Example: `report_wire_length -net {clk net60} -global_route -detailed_route -verbose -file out.csv`
+
 ## Debug Mode
 
 ```

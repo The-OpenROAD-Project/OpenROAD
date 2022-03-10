@@ -8,7 +8,7 @@ _installCommonDev() {
     cmakeVersionBig=3.14
     cmakeVersionSmall=${cmakeVersionBig}.0
     swigVersion=4.0.1
-    boostVersionBig=1.72
+    boostVersionBig=1.76
     boostVersionSmall=${boostVersionBig}.0
     eigenVersion=3.3
     lemonVersion=1.3.1
@@ -49,11 +49,11 @@ _installCommonDev() {
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
-        md5sum -c <(echo "e2b0b1eac302880461bcbef097171758  boost_${boostVersionUnderscore}.tar.gz") || exit 1
+        md5sum -c <(echo "e425bf1f1d8c36a3cd464884e74f007a  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh
-        ./b2 install -j $(nproc)
+        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
     else
         echo "Boost already installed."
     fi

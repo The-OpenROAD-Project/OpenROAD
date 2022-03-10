@@ -49,7 +49,7 @@ class FlexTA
   // others
   int main();
 
- protected:
+ private:
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
@@ -176,7 +176,7 @@ class FlexTAWorker
   int main();
   int main_mt();
 
- protected:
+ private:
   frTechObject* tech_;  // not set
   frDesign* design_;
   Rect routeBox_;

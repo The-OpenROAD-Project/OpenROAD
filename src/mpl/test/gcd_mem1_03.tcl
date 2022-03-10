@@ -1,15 +1,6 @@
 # gcd 1 macro -style corner_min_wl
 source helpers.tcl
-
-read_liberty Nangate45/Nangate45_typ.lib
-read_liberty Nangate45/fakeram45_64x7.lib
-
-read_lef Nangate45/Nangate45.lef
-read_lef Nangate45/fakeram45_64x7.lef
-
-read_def gcd_mem1.def
-read_sdc gcd.sdc
-
+source gcd_mem1.tcl
 macro_placement -style corner_min_wl -channel {2.0 2.0}
 
 set def_file [make_result_file gcd_mem1_03.def]

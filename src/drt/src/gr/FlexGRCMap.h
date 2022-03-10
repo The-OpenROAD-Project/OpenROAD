@@ -516,7 +516,7 @@ class FlexGRCMap
     bits_.shrink_to_fit();
   }
 
- protected:
+ private:
   frDesign* design_;
   const frGCellPattern* xgp_;
   const frGCellPattern* ygp_;

@@ -16,7 +16,7 @@ entries:
   - file: contrib/Logger
     title: Logger
   - file: contrib/PlatformBringUp
-    title: PlatformBringUp
+    title: Guide to Integrate a New Platform into the OpenROAD Flow
 
 
 - file: main/README
@@ -46,27 +46,27 @@ entries:
     title: ioPlacer
   - file: main/src/gui/README
     title: GUI
-  - file: main/src/ICeWall/README
+  - file: main/src/pad/README
     title: ICeWall
     entries:
-    - file: main/src/ICeWall/doc/README
+    - file: main/src/pad/doc/README
       title: ICeWall Documentation
       entries:
-      - file: main/src/ICeWall/doc/add_pad
+      - file: main/src/pad/doc/add_pad
         title: Add Pad
-      - file: main/src/ICeWall/doc/define_pad_cell
+      - file: main/src/pad/doc/define_pad_cell
         title: Define Pad Cell
-      - file: main/src/ICeWall/doc/initialize_padring
+      - file: main/src/pad/doc/initialize_padring
         title: Initialize Padring
-      - file: main/src/ICeWall/doc/place_cell
+      - file: main/src/pad/doc/place_cell
         title: Place Cell
-      - file: main/src/ICeWall/doc/set_bump
+      - file: main/src/pad/doc/set_bump
         title: Set Bump
-      - file: main/src/ICeWall/doc/set_bump_options
+      - file: main/src/pad/doc/set_bump_options
         title: Set Bump Options
-      - file: main/src/ICeWall/doc/set_padring_options
+      - file: main/src/pad/doc/set_padring_options
         title: Set Padring Options
-      - file: main/src/ICeWall/doc/TCL_Interface
+      - file: main/src/pad/doc/TCL_Interface
         title: TCL Interface
   - file: main/src/mpl/README
     title: TritonMacroPlacer
@@ -143,8 +143,16 @@ entries:
     title: Build Locally
   - file: user/UserGuide
     title: User Guide
+  - file: user/FlowVariables
+    title: Flow Variables
   - file: contrib/Metrics
     title: Metrics
+  - file: user/InstructionsForAutoTuner
+    title: AutoTuner
+
 
 - file: user/FAQS
   title: FAQs
+
+- file: tutorials/FlowTutorial
+  title: Flow Tutorial

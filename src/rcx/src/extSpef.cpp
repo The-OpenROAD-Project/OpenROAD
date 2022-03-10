@@ -334,7 +334,7 @@ void extSpef::initCapTable(Ath__array1D<double*>* table) {
 void extSpef::deleteTableCap(Ath__array1D<double*>* table) {
   for (uint ii = 0; ii < table->getSize(); ii++) {
     double* a = table->geti(ii);
-    delete a;
+    delete[] a;
   }
 }
 void extSpef::reinitCapTable(Ath__array1D<double*>* table, uint n) {

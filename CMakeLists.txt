@@ -45,6 +45,22 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
 cmake_policy(SET CMP0071 NEW)
 endif()
 
+# Interfers with Qt so off by default.
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
+
+if (LINK_TIME_OPTIMIZATION)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+# Allow to use external shared boost libraries
+option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
+
+# Allow to use external shared opensta libraries
+option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
+
+# Allow to use external shared abc libraries
+option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
@@ -61,13 +77,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Get version string in OPENROAD_VERSION
-include(GetGitRevisionDescription)
-git_describe(OPENROAD_VERSION)
-string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
-if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
-  message(WARNING "OpenROAD git describe failed, using sha1 instead")
-  get_git_head_revision(GIT_REFSPEC OPENROAD_VERSION)
+if(NOT OPENROAD_VERSION)
+  include(GetGitRevisionDescription)
+  git_describe(OPENROAD_VERSION)
+  string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
+  if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
+    message(WARNING "OpenROAD git describe failed, using sha1 instead")
+    get_git_head_revision(GIT_REFSPEC OPENROAD_VERSION)
+  endif()
 endif()
+
 message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 # Default to bulding optimnized/release executable.
@@ -107,4 +126,5 @@ configure_file(
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+add_subdirectory(third-party)
 add_subdirectory(src)

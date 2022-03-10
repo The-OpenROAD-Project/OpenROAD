@@ -6,7 +6,7 @@ read_def "gcd.def"
 
 set_routing_layers -signal metal2-metal10
 
-global_route
+global_route -verbose
 estimate_parasitics -global_routing
 
 report_net -connections -verbose -digits 3 clk

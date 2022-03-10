@@ -42,8 +42,8 @@ class frLef58CutClass
 {
  public:
   // constructors
-  frLef58CutClass(utl::Logger* loggerIn = nullptr)
-      : name(""), viaWidth(0), viaLength(0), numCut(1), logger(loggerIn)
+  frLef58CutClass()
+      : name(""), viaWidth(0), viaLength(0), numCut(1)
   {
   }
   // getters
@@ -58,10 +58,8 @@ class frLef58CutClass
   void setViaWidth(frCoord in) { viaWidth = in; }
   void setViaLength(frCoord in) { viaLength = in; }
   void setNumCut(frUInt4 in) { numCut = in; }
-  void report()
+  void report(utl::Logger* logger)
   {
-    if (logger == nullptr)
-      return;
     logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}",
                    name,
                    viaWidth,
@@ -69,14 +67,24 @@ class frLef58CutClass
                    numCut);
   }
 
- protected:
+ private:
   std::string name;
   frCoord viaWidth;
   frCoord viaLength;
   frUInt4 numCut;  // this value is not equal to #multi cuts, only used for
                    // calculating resistance, currently ignored in rule checking
                    // process
-  utl::Logger* logger;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & name;
+    (ar) & viaWidth;
+    (ar) & viaLength;
+    (ar) & numCut;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frViaDef
@@ -197,7 +205,7 @@ class frViaDef
     throw std::invalid_argument("Error: via does not have shape on layer " + std::to_string(lNum));
   }
 
- protected:
+ private:
   std::string name;
   bool isDefault;
   std::vector<std::unique_ptr<frShape>> layer1Figs;
@@ -210,6 +218,24 @@ class frViaDef
   Rect layer1ShapeBox;
   Rect layer2ShapeBox;
   Rect cutShapeBox;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & name;
+    (ar) & isDefault;
+    (ar) & layer1Figs;
+    (ar) & layer2Figs;
+    (ar) & cutFigs;
+    (ar) & cutClass;
+    (ar) & cutClassIdx;
+    (ar) & addedByRouter;
+    (ar) & layer1ShapeBox;
+    (ar) & layer2ShapeBox;
+    (ar) & cutShapeBox;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 #endif

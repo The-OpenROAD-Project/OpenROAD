@@ -45,6 +45,7 @@ initialize_floorplan \
   -site      unit
 make_tracks
 
+set_padring_options -allow_filler_overlap
 if {[catch {ICeWall init_footprint coyote_tc/coyote_tc.sigmap} msg]} {
   puts $errorInfo
   puts $msg

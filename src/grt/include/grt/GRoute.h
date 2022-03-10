@@ -65,14 +65,24 @@ struct GSegment
     final_layer = l1;
   }
   bool isVia() { return (init_x == final_x && init_y == final_y); }
+  int length() { return std::abs(init_x - final_x) + std::abs(init_y - final_y); }
   bool operator==(const GSegment& segment) const
   {
-    return (init_layer == segment.init_layer &&
-            final_layer == segment.final_layer &&
-            init_x == segment.init_x &&
-            init_y == segment.init_y &&
-            final_x == segment.final_x &&
-            final_y == segment.final_y);
+    return (init_layer == segment.init_layer
+            && final_layer == segment.final_layer && init_x == segment.init_x
+            && init_y == segment.init_y && final_x == segment.final_x
+            && final_y == segment.final_y);
+  }
+};
+
+struct GSegmentHash
+{
+  std::size_t operator() (const GSegment& seg) const
+  {
+    std::size_t h1 = std::hash<int>()(seg.init_x*seg.init_y*seg.init_layer);
+    std::size_t h2 = std::hash<int>()(seg.final_x*seg.final_y*seg.final_layer);
+
+    return h1 ^ h2;
   }
 };
 

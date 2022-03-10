@@ -35,6 +35,7 @@
 
 %{
 
+#include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
  
@@ -50,6 +51,16 @@ int detailed_route_num_drvs()
   return router->getNumDRVs();
 }
 
+void detailed_route_distributed(const char* ip,
+                                unsigned short port,
+                                const char* sharedVolume)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setDistributed(true);
+  router->setWorkerIpPort(ip, port);
+  router->setSharedVolume(sharedVolume);
+}
+
 void detailed_route_cmd(const char* guideFile,
                         const char* outputGuideFile,
                         const char* outputMazeFile,
@@ -58,13 +69,14 @@ void detailed_route_cmd(const char* guideFile,
                         const char* dbProcessNode,
                         bool enableViaGen,
                         int drouteEndIter,
-                        int drouteViaInPinBottomLayerNum,
-                        int drouteViaInPinTopLayerNum,
+                        const char* viaInPinBottomLayer,
+                        const char* viaInPinTopLayer,
                         int orSeed,
                         double orK,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
-                        int verbose)
+                        int verbose,
+                        bool cleanPatches)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -75,14 +87,30 @@ void detailed_route_cmd(const char* guideFile,
                     dbProcessNode,
                     enableViaGen,
                     drouteEndIter,
-                    drouteViaInPinBottomLayerNum,
-                    drouteViaInPinTopLayerNum,
+                    viaInPinBottomLayer,
+                    viaInPinTopLayer,
                     orSeed,
                     orK,
                     bottomRoutingLayer,
                     topRoutingLayer,
-                    verbose});
+                    verbose,
+                    cleanPatches});
   router->main();
+}
+
+void pin_access_cmd(const char* dbProcessNode,
+                    const char* bottomRoutingLayer,
+                    const char* topRoutingLayer,
+                    int verbose)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  triton_route::ParamStruct params;
+  params.dbProcessNode = dbProcessNode;
+  params.bottomRoutingLayer = bottomRoutingLayer;
+  params.topRoutingLayer = topRoutingLayer;
+  params.verbose = verbose;
+  router->setParams(params);
+  router->pinAccess();
 }
 
 void detailed_route_cmd(const char* param_file)
@@ -102,25 +130,29 @@ void
 set_detailed_route_debug_cmd(const char* net_name,
                              const char* pin_name,
                              bool dr,
+                             bool dump_dr,
                              bool pa,
                              bool maze,
-                             int gcell_x, int gcell_y,
+                             int x, int y,
                              int iter,
                              bool pa_markers,
-                             bool pa_combining)
+                             bool pa_edge,
+                             bool pa_commit)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
+  router->setDebugDumpDR(dump_dr);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
-  if (gcell_x >= 0) {
-    router->setDebugGCell(gcell_x, gcell_y);
+  if (x >= 0) {
+    router->setDebugWorker(x, y);
   }
   router->setDebugIter(iter);
   router->setDebugPaMarkers(pa_markers);
-  router->setDebugPaCombining(pa_combining);
+  router->setDebugPaEdge(pa_edge);
+  router->setDebugPaCommit(pa_commit);
 }
 
 %} // inline

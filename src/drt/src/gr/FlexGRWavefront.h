@@ -135,7 +135,7 @@ class FlexGRWavefrontGrid
     return retBS;
   }
 
- protected:
+ private:
   frMIdx xIdx_, yIdx_, zIdx_;
   frCost pathCost_;  // path cost
   frCost cost_;      // path + est cost
@@ -153,7 +153,7 @@ class FlexGRWavefront
   unsigned int size() const { return wavefrontPQ_.size(); }
   void cleanup() { wavefrontPQ_ = std::priority_queue<FlexGRWavefrontGrid>(); }
 
- protected:
+ private:
   std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ_;
 };
 }  // namespace fr

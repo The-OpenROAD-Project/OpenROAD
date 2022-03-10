@@ -274,7 +274,7 @@ void FastRouteCore::fillVIA()
     }
   }
 
-  if (verbose_ > 1) {
+  if (verbose_) {
     logger_->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
     logger_->info(GRT, 198, "Via related Steiner nodes: {}", numVIAT2);
     logger_->info(GRT, 199, "Via filling finished.");
@@ -476,7 +476,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         gridD[l][0] = 0;
       }
     } else {
-      logger_->warn(GRT, 200, "Start point not assigned.");
+      if (verbose_)
+        logger_->warn(GRT, 200, "Start point not assigned.");
       fflush(stdout);
     }
 
@@ -951,7 +952,7 @@ void FastRouteCore::printEdge3D(int netID, int edgeID)
   edge = sttrees_[netID].edges[edgeID];
   nodes = sttrees_[netID].nodes;
 
-  logger_->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {})",
+  logger_->report("\tedge {}: n1 {} ({}, {})-> n2 {}({}, {})",
                   edgeID,
                   edge.n1,
                   nodes[edge.n1].x,
@@ -962,11 +963,13 @@ void FastRouteCore::printEdge3D(int netID, int edgeID)
   if (edge.len > 0) {
     std::string edge_rpt;
     for (i = 0; i <= edge.route.routelen; i++) {
-      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
-                 + std::to_string(edge.route.gridsY[i]) + ", "
+      int x = tile_size_ * (edge.route.gridsX[i] + 0.5) + x_corner_;
+      int y = tile_size_ * (edge.route.gridsY[i] + 0.5) + y_corner_;
+      edge_rpt = edge_rpt + "(" + std::to_string(x) + " "
+                 + std::to_string(y) + " "
                  + std::to_string(edge.route.gridsL[i]) + ") ";
     }
-    logger_->report("{}", edge_rpt);
+    logger_->report("\t\t{}", edge_rpt);
   }
 }
 
@@ -974,10 +977,13 @@ void FastRouteCore::printTree3D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees_[netID].deg - 2; nodeID++) {
-    logger_->report("nodeID {},  [{}, {}]",
+    int x = tile_size_ * (sttrees_[netID].nodes[nodeID].x + 0.5) + x_corner_;
+    int y = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
+    logger_->report("nodeID {},  [{}, {}], status: {}",
                     nodeID,
-                    sttrees_[netID].nodes[nodeID].y,
-                    sttrees_[netID].nodes[nodeID].x);
+                    x,
+                    y,
+                    sttrees_[netID].nodes[nodeID].status);
   }
 
   for (edgeID = 0; edgeID < 2 * sttrees_[netID].deg - 3; edgeID++) {
@@ -1276,9 +1282,6 @@ void FastRouteCore::checkUsage()
       }
     }
   }
-  if (verbose_ > 1) {
-    logger_->report("Usage checked");
-  }
 }
 
 void FastRouteCore::check2DEdgesUsage()
@@ -1400,65 +1403,72 @@ bool FastRouteCore::checkRoute2DTree(int netID)
     const std::vector<short>& gridsY = treeedge->route.gridsY;
 
     if (treeedge->len < 0) {
-      logger_->warn(
-          GRT, 207, "Ripped up edge without edge length reassignment.");
+      if (verbose_)
+        logger_->warn(
+            GRT, 207, "Ripped up edge without edge length reassignment.");
       STHwrong = true;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger_->warn(GRT,
-                      208,
-                      "Route length {}, tree length {}.",
-                      treeedge->route.routelen,
-                      treeedge->len);
+        if (verbose_)
+          logger_->warn(GRT,
+                        208,
+                        "Route length {}, tree length {}.",
+                        treeedge->route.routelen,
+                        treeedge->len);
         STHwrong = true;
         return true;
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        logger_->warn(
-            GRT,
-            164,
-            "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
-            "{}.",
-            y1,
-            x1,
-            gridsY[0],
-            gridsX[0],
-            treeedge->route.routelen);
+        if (verbose_)
+          logger_->warn(
+              GRT,
+              164,
+              "Initial grid wrong y1 x1 [{} {}], net start [{} {}] routelen "
+              "{}.",
+              y1,
+              x1,
+              gridsY[0],
+              gridsX[0],
+              treeedge->route.routelen);
         STHwrong = true;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger_->warn(
-            GRT,
-            165,
-            "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
-            y1,
-            x1,
-            gridsY[edgelength],
-            gridsX[edgelength],
-            treeedge->route.routelen);
+        if (verbose_)
+          logger_->warn(
+              GRT,
+              165,
+              "End grid wrong y2 x2 [{} {}], net start [{} {}] routelen {}.",
+              y1,
+              x1,
+              gridsY[edgelength],
+              gridsX[edgelength],
+              treeedge->route.routelen);
         STHwrong = true;
       }
       for (i = 0; i < treeedge->route.routelen; i++) {
         distance
             = abs(gridsX[i + 1] - gridsX[i]) + abs(gridsY[i + 1] - gridsY[i]);
         if (distance != 1) {
-          logger_->warn(GRT,
-                        166,
-                        "Net {} edge[{}] maze route wrong, distance {}, i {}.",
-                        netName(nets_[netID]),
-                        edgeID,
-                        distance,
-                        i);
+          if (verbose_)
+            logger_->warn(
+                GRT,
+                166,
+                "Net {} edge[{}] maze route wrong, distance {}, i {}.",
+                netName(nets_[netID]),
+                edgeID,
+                distance,
+                i);
           STHwrong = true;
         }
       }
 
       if (STHwrong) {
-        logger_->warn(
-            GRT, 167, "Invalid 2D tree for net {}.", netName(nets_[netID]));
+        if (verbose_)
+          logger_->warn(
+              GRT, 167, "Invalid 2D tree for net {}.", netName(nets_[netID]));
         return true;
       }
     }
@@ -2102,6 +2112,21 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
   }  // while
 
   return (numShift);
+}
+
+std::ostream& operator<<(std::ostream& os, RouteType type)
+{
+  switch(type) {
+  case RouteType::NoRoute:
+    return os << "NoRoute";
+  case RouteType::LRoute:
+    return os << "LRoute";
+  case RouteType::ZRoute:
+    return os << "ZRoute";
+  case RouteType::MazeRoute:
+    return os << "MazeRoute";
+  };
+  return os << "Bad RouteType";
 }
 
 }  // namespace grt

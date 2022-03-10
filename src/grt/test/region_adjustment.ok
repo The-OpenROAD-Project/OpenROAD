@@ -14,15 +14,6 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0224] Chose via via1_4 as default.
-[INFO GRT-0224] Chose via via2_8 as default.
-[INFO GRT-0224] Chose via via3_2 as default.
-[INFO GRT-0224] Chose via via4_0 as default.
-[INFO GRT-0224] Chose via via5_0 as default.
-[INFO GRT-0224] Chose via via6_0 as default.
-[INFO GRT-0224] Chose via via7_0 as default.
-[INFO GRT-0224] Chose via via8_0 as default.
-[INFO GRT-0224] Chose via via9_0 as default.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
 [INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
@@ -33,12 +24,11 @@
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 95
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0017] Processing 177 blockages on layer metal1.
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 95
 Adjusting region on layer metal2
 
 [INFO GRT-0053] Routing resources analysis:
@@ -57,15 +47,18 @@ metal9     Horizontal        196           169          13.78%
 metal10    Vertical          196           169          13.78%
 ---------------------------------------------------------------
 
+[INFO GRT-0197] Via related to pin nodes: 31
+[INFO GRT-0198] Via related Steiner nodes: 0
+[INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 44
 [INFO GRT-0112] Final usage 3D: 178
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1            2739            16            0.58%             0 /  0 /  0
+metal1            2739            15            0.55%             0 /  0 /  0
 metal2            1343             4            0.30%             0 /  0 /  0
-metal3            2756            11            0.40%             0 /  0 /  0
+metal3            2756            12            0.44%             0 /  0 /  0
 metal4            1287            15            1.17%             0 /  0 /  0
 metal5            1287             0            0.00%             0 /  0 /  0
 metal6            1287             0            0.00%             0 /  0 /  0

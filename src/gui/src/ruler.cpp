@@ -118,12 +118,11 @@ void RulerDescriptor::highlight(std::any object,
 Descriptor::Properties RulerDescriptor::getProperties(std::any object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
-  const double dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   return {{"Label", ruler->getLabel()},
-          {"Point 0 - x", ruler->getPt0().x() / dbu_per_uu_},
-          {"Point 0 - y", ruler->getPt0().y() / dbu_per_uu_},
-          {"Point 1 - x", ruler->getPt1().x() / dbu_per_uu_},
-          {"Point 1 - y", ruler->getPt1().y() / dbu_per_uu_}};
+          {"Point 0 - x", Property::convert_dbu(ruler->getPt0().x(), true)},
+          {"Point 0 - y", Property::convert_dbu(ruler->getPt0().y(), true)},
+          {"Point 1 - x", Property::convert_dbu(ruler->getPt1().x(), true)},
+          {"Point 1 - y", Property::convert_dbu(ruler->getPt1().y(), true)}};
 }
 
 Descriptor::Editors RulerDescriptor::getEditors(std::any object) const

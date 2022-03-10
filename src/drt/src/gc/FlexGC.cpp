@@ -29,6 +29,7 @@
 #include <iostream>
 
 #include "gc/FlexGC_impl.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
@@ -40,7 +41,16 @@ FlexGCWorker::FlexGCWorker(frTechObject* techIn,
 {
 }
 
+FlexGCWorker::FlexGCWorker()
+    : impl_(std::make_unique<Impl>(nullptr, nullptr, nullptr, this))
+{
+}
+
 FlexGCWorker::~FlexGCWorker() = default;
+
+FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr)
+{
+}
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
                          Logger* logger,
@@ -65,6 +75,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       targetObj_(nullptr),
       ignoreDB_(false),
       ignoreMinArea_(false),
+      ignoreLongSideEOL_(false),
       surgicalFixEnabled_(false)
 {
 }
@@ -191,6 +202,11 @@ void FlexGCWorker::setIgnoreMinArea()
   impl_->ignoreMinArea_ = true;
 }
 
+void FlexGCWorker::setIgnoreLongSideEOL()
+{
+  impl_->ignoreLongSideEOL_ = true;
+}
+
 std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
 {
   return impl_->getNets();
@@ -199,3 +215,41 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
 gcNet* FlexGCWorker::getNet(frNet* net) {
   return impl_->getNet(net);
 }
+template <class Archive>
+void FlexGCWorker::Impl::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & tech_;
+  (ar) & drWorker_;
+  (ar) & extBox_;
+  (ar) & drcBox_;
+  (ar) & owner2nets_;
+  (ar) & nets_;
+  (ar) & markers_;
+  (ar) & mapMarkers_;
+  (ar) & pwires_;
+  (ar) & rq_;
+  (ar) & printMarker_;
+  (ar) & modifiedDRNets_;
+  (ar) & targetNet_;
+  (ar) & minLayerNum_;
+  (ar) & maxLayerNum_;
+  (ar) & targetObj_;
+  (ar) & ignoreDB_;
+  (ar) & ignoreMinArea_;
+  (ar) & surgicalFixEnabled_;
+}
+
+template <class Archive>
+void FlexGCWorker::serialize(Archive& ar, const unsigned int version)
+{
+  (ar) & impl_;
+}
+
+// Explicit instantiations
+template void FlexGCWorker::serialize<InputArchive>(
+    InputArchive& ar,
+    const unsigned int file_version);
+
+template void FlexGCWorker::serialize<OutputArchive>(
+    OutputArchive& ar,
+    const unsigned int file_version);

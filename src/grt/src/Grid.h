@@ -47,45 +47,17 @@ namespace grt {
 
 class Grid
 {
- private:
-  odb::Rect die_area_;
-  int tile_width_;
-  int tile_height_;
-  int x_grids_;
-  int y_grids_;
-  bool perfect_regular_x_;
-  bool perfect_regular_y_;
-  int num_layers_;
-  int pitches_in_tile_ = 15;
-  std::vector<int> spacings_;
-  std::vector<int> min_widths_;
-  std::vector<int> horizontal_edges_capacities_;
-  std::vector<int> vertical_edges_capacities_;
-  std::map<int, std::vector<odb::Rect>> obstructions_;
-
  public:
   Grid() = default;
   ~Grid() = default;
 
   void init(const odb::Rect& die_area,
-            const int tile_width,
-            const int tile_height,
+            const int tile_size,
             const int x_grids,
             const int y_grids,
             const bool perfect_regular_x,
             const bool perfectR_rgular_y,
-            const int num_layers,
-            const std::vector<int>& spacings,
-            const std::vector<int>& min_widths,
-            const std::vector<int>& horizontalCapacities,
-            const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstructions);
-
-  typedef struct
-  {
-    int _x;
-    int _y;
-  } TILE;
+            const int num_layers);
 
   void clear();
 
@@ -98,8 +70,7 @@ class Grid
   int getXMax() const { return die_area_.xMax(); }
   int getYMax() const { return die_area_.yMax(); }
 
-  int getTileWidth() const { return tile_width_; }
-  int getTileHeight() const { return tile_height_; }
+  int getTileSize() const { return tile_size_; }
 
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
@@ -148,18 +119,13 @@ class Grid
     vertical_edges_capacities_[layer] = reduction;
   };
 
-  const std::map<int, std::vector<odb::Rect>>& getAllObstructions() const
-  {
-    return obstructions_;
-  }
-
-  void addObstruction(int layer, const odb::Rect& obstruction);
-
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstruction,
-                                        odb::Rect& first_tile_bds,
-                                        odb::Rect& last_tile_bds);
+  void getBlockedTiles(const odb::Rect& obstruction,
+                       odb::Rect& first_tile_bds,
+                       odb::Rect& last_tile_bds,
+                       odb::Point& first_tile,
+                       odb::Point& last_tile);
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
@@ -169,6 +135,20 @@ class Grid
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
+
+ private:
+  odb::Rect die_area_;
+  int tile_size_;
+  int x_grids_;
+  int y_grids_;
+  bool perfect_regular_x_;
+  bool perfect_regular_y_;
+  int num_layers_;
+  int pitches_in_tile_ = 15;
+  std::vector<int> spacings_;
+  std::vector<int> min_widths_;
+  std::vector<int> horizontal_edges_capacities_;
+  std::vector<int> vertical_edges_capacities_;
 };
 
 }  // namespace grt
