@@ -414,9 +414,9 @@ proc report_design_area { } {
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 
-  utl::metric_float "design__instance__area" $util
-  utl::metric_float "design__instance__area__stdcell" $util
-  utl::metric_float "design__instance__utilization" $area
+  utl::metric_float "design__instance__area" $area
+  utl::metric_float "design__instance__area__stdcell" $area
+  utl::metric_float "design__instance__utilization" $util
 }
 
 sta::define_cmd_args "report_floating_nets" {[-verbose]}
