@@ -1627,7 +1627,7 @@ void FlexDRWorker::route_queue()
     graphics_->show(true);
   }
   
-  if (getDRIter() >= 7)
+  if (getDRIter() >= 7 && getDRIter() <= 30)
     identifyCongestionLevelBoundary2();
 }
 
@@ -1669,9 +1669,9 @@ void FlexDRWorker::identifyCongestionLevel() {
         assert(tp->isHorizontal() != design_->isHorizontalLayer(lNum)); 
         int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
         float congestionFactor = pathLengthByLayer[z]/(float)(nTracks*trackLength);
-        if (getDRIter() >= 44)
-            cout << "\nz " << z << " worker " << getRouteBox() << "\npathLength[" << z << "] " << pathLengthByLayer[z] << "\nnTracks " 
-                << nTracks << "\ntrackLength " << trackLength  << "\nCONGESTION " << congestionFactor;
+//        if (getDRIter() >= 44)
+//            cout << "\nz " << z << " worker " << getRouteBox() << "\npathLength[" << z << "] " << pathLengthByLayer[z] << "\nnTracks " 
+//                << nTracks << "\ntrackLength " << trackLength  << "\nCONGESTION " << congestionFactor;
         if (congestionFactor >= CONGESTION_THRESHOLD) {
             isCongested_ = true;
 //            cout << "REACHED THRESH!\n";
@@ -1781,8 +1781,6 @@ void FlexDRWorker::identifyCongestionLevelBoundary2() {
             for (auto& uAP : pin->getAccessPatterns()) {
                 drAccessPattern* ap = uAP.get();
                 frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
-                if (z < 4)
-                    continue;
                 if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
                     if (ap->getPoint().y() == getRouteBox().yMin())
                         nLowBorderCross[z]++;
