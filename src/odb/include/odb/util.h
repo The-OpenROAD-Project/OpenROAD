@@ -37,8 +37,8 @@
 
 #pragma once
 
+#include <string.h>
 #include "array1.h"
-#include "atypes.h"
 
 unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);
