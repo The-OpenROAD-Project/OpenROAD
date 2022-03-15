@@ -38,7 +38,7 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
- 
+
 %}
 
 %include "../../Exception.i"
@@ -59,6 +59,12 @@ void detailed_route_distributed(const char* ip,
   router->setDistributed(true);
   router->setWorkerIpPort(ip, port);
   router->setSharedVolume(sharedVolume);
+}
+
+void detailed_route_set_default_via(const char* viaName)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->addUserDefinedVia(viaName);
 }
 
 void detailed_route_cmd(const char* guideFile,

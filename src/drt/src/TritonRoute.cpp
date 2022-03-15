@@ -439,6 +439,22 @@ void TritonRoute::readParams(const string& fileName)
   }
 }
 
+void TritonRoute::addUserDefinedVia(const std::string& viaName)
+{
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(DRT, 610, "Load desing before setting default vias");
+  }
+  auto block = db_->getChip()->getBlock();
+  auto tech = db_->getTech();
+  if (tech->findVia(viaName.c_str()) == nullptr
+      && block->findVia(viaName.c_str()) == nullptr) {
+    logger_->error(utl::DRT, 611, "Via {} not found", viaName);
+  } else {
+    design_->addUserDefinedVia(viaName);
+  }
+}
+
 void TritonRoute::setParams(const ParamStruct& params)
 {
   GUIDE_FILE = params.guideFile;
