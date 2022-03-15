@@ -2548,13 +2548,10 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       if (!getRouteBox().intersects(bp)) {
         continue;
       }
-      
       if (vioNets.find(obj->getNet()) == vioNets.end()) {
         // add history cost
         obj->getMazeIdx(objMIdx1, objMIdx2);
-        
         if (viaHistoryMarkers_.find(objMIdx1) == viaHistoryMarkers_.end()) {
-            
           gridGraph_.addMarkerCostVia(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
           viaHistoryMarkers_.insert(objMIdx1);
 
@@ -3325,7 +3322,6 @@ void FlexDRWorker::initMazeCost_connFig()
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
         addPathCost(connFig.get());
-//      modPathCost(connFig.get(), ModCostType::addFixedShape, false, false);
       cnt++;
     }
     for (auto& connFig : net->getRouteConnFigs()) {

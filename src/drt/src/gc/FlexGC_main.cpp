@@ -3097,9 +3097,6 @@ void FlexGCWorker::Impl::patchMetalShape_helper()
 
 int FlexGCWorker::Impl::main()
 {
-    
-//    if (drWorker_ && drWorker_->getDRIter() >= 11)
-//        cout << "start drc\n";
   // ProfileTask profile("GC:main");
   // printMarker = true;
   //  minStep patching for GF14
@@ -3110,8 +3107,6 @@ int FlexGCWorker::Impl::main()
   }
   // incremental updates
   if (!modifiedDRNets_.empty() || !pwires_.empty()) {
-//      if (drWorker_ && drWorker_->getDRIter() >= 11)
-//          cout << "update gcWorker\n";
     updateGCWorker();
   }
   // clear existing markers

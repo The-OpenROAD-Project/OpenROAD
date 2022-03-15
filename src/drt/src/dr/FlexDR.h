@@ -968,8 +968,6 @@ class FlexDRWorker
   // end
   void cleanup();
   void identifyCongestionLevel();
-  void identifyCongestionLevelBoundary();
-  void identifyCongestionLevelBoundary2();
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,
@@ -1037,6 +1035,7 @@ class FlexDRWorker
     (ar) & bestMarkers_;
     (ar) & rq_;
     (ar) & gcWorker_;
+    (ar) & isCongested_;
   }
   friend class boost::serialization::access;
 };
