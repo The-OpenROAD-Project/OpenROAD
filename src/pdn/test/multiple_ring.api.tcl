@@ -17,16 +17,13 @@ set ::stripes_start_with "POWER" ;
 
 set ::rails_start_with "POWER" ;
 
-set ::power_nets "VDD VREG1 VREG2"
-set ::ground_nets "VSS"
-
 set ::core_domain "CORE"
 # Voltage domain
 set_voltage_domain -name CORE -power VDD -ground VSS
 set_voltage_domain -name test_domain -power VDD -ground VSS -secondary_power "VREG1 VREG2"
 
-add_global_connection -net VREG1 -inst_pattern {pt_array_unit.*} -pin_pattern VPWR -power
-add_global_connection -net VREG2 -inst_pattern {pt_array_unit.*} -pin_pattern VPWR -power
+add_global_connection -net VREG1 -inst_pattern {pt_array_unit.*} -pin_pattern VREG1 -power
+add_global_connection -net VREG2 -inst_pattern {pt_array_unit.*} -pin_pattern VREG2 -power
 add_global_connection -net VDD -inst_pattern {pt_array_unit.*} -pin_pattern VPB
 add_global_connection -net VDD -inst_pattern {pt_array_unit.*} -pin_pattern VPWR -power
 add_global_connection -net VSS -inst_pattern {pt_array_unit.*} -pin_pattern VGND -ground
@@ -34,7 +31,7 @@ add_global_connection -net VSS -inst_pattern {pt_array_unit.*} -pin_pattern VNB
 
 define_pdn_grid -name grid
 add_pdn_stripe -layer met1 -width 0.49 -pitch 6.66 -offset 0 -extend_to_core_ring -followpins
-add_pdn_stripe -layer met4 -width 1.600 -pitch 126.000 -offset 2
+add_pdn_stripe -layer met4 -width 1.60 -pitch 126.000 -offset 2
 #add_pdn_stripe -layer met5 -width 1.600 -pitch 27.200 -offset 13.600
 
 add_pdn_ring -layers {met4 met5} -widths 5.0 -spacings 2.0 -core_offsets 4.5

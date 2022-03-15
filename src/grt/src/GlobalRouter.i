@@ -42,13 +42,17 @@
 namespace ord {
 // Defined in OpenRoad.i
 grt::GlobalRouter* getGlobalRouter();
-}  // namespace ord
+}
 
 using ord::getGlobalRouter;
 using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
+
+%import <stl.i>
+%import <std_vector.i>
+%template(vector_int) std::vector<int>;
 
 %inline %{
 
@@ -134,6 +138,12 @@ set_macro_extension(int macroExtension)
 }
 
 void
+set_pin_offset(int pin_offset)
+{
+  getGlobalRouter()->setPinOffset(pin_offset);
+}
+
+void
 set_seed(int seed)
 {
   getGlobalRouter()->setSeed(seed);
@@ -161,6 +171,12 @@ void
 estimate_rc()
 {
   getGlobalRouter()->estimateRC();
+}
+
+std::vector<int>
+route_layer_lengths(odb::dbNet* db_net)
+{
+  return getGlobalRouter()->routeLayerLengths(db_net);
 }
 
 void

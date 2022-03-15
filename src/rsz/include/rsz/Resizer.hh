@@ -499,22 +499,22 @@ protected:
   void bufferHoldDelays(LibertyCell *buffer,
                         // Return values.
                         Delay delays[RiseFall::index_count]);
-  void repairHold(VertexSet *ends,
+  void repairHold(VertexSeq &ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
                   int max_buffer_count);
-  int repairHoldPass(VertexSet &ends,
+  int repairHoldPass(VertexSeq &ends,
                      LibertyCell *buffer_cell,
                      float slack_margin,
                      bool allow_setup_violations,
                      int max_buffer_count);
-  void findHoldViolations(VertexSet *ends,
+  void findHoldViolations(VertexSeq &ends,
                           float slack_margin,
                           // Return values.
                           Slack &worst_slack,
-                          VertexSet &hold_violations);
-  VertexSet findHoldFanins(VertexSet &ends);
+                          VertexSeq &hold_violations);
+  VertexSet findHoldFanins(VertexSeq &ends);
   VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Vertex *drvr,
                      int buffer_count,

@@ -590,8 +590,11 @@
 	 	case odb::dbTechLayer::TRIMPOLY:
 			obj = Tcl_NewStringObj("TRIMPOLY", -1);
 			break;
-	 	case odb::dbTechLayer::MIMCAP:
+		case odb::dbTechLayer::MIMCAP:
 			obj = Tcl_NewStringObj("MIMCAP", -1);
+			break;
+		case odb::dbTechLayer::STACKEDMIMCAP:
+			obj = Tcl_NewStringObj("STACKEDMIMCAP", -1);
 			break;
 	 	case odb::dbTechLayer::NONE:
 			obj = Tcl_NewStringObj("NONE", -1);
@@ -632,6 +635,8 @@
 		$1 = odb::dbTechLayer::LEF58_TYPE::TRIMPOLY;
 	} else if (strcasecmp(str, "MIMCAP") == 0) {
 		$1 = odb::dbTechLayer::LEF58_TYPE::MIMCAP;
+	} else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::STACKEDMIMCAP;
 	}
 }
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
@@ -675,6 +680,8 @@
 		} 	else if (strcasecmp(str, "TRIMPOLY") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "MIMCAP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "NONE") == 0) {
 			found = true;

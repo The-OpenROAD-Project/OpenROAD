@@ -231,7 +231,6 @@ PdnGen::addGlobalConnect(dbBox* region, const char* instPattern, const char* pin
 void
 PdnGen::clearGlobalConnect() {
   if (global_connect_ != nullptr) {
-    global_connect_.release();
     global_connect_ = nullptr;
   }
 }
