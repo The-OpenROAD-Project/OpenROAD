@@ -2114,10 +2114,10 @@ void LayoutViewer::drawPinMarkers(Painter& painter,
   auto block_bbox = block_->getBBox();
   auto block_width = block_bbox->getWidth();
   auto block_height = block_bbox->getLength();
-  double mult_factor = (2.0 * fit_pixels_per_dbu_) / (100 * pixels_per_dbu_);
-  auto max_dim
-      = std::max(block_width, block_height)
-        * mult_factor;  // 4 Percent of bounds is used to draw pin-markers
+  const double scale_factor = 0.02; // 4 Percent of bounds is used to draw pin-markers
+  const int block_max_dim = std::min(std::max(block_width, block_height), bounds.maxDXDY());
+  const double abs_min_dim = 8.0; // prevent markers from falling apart
+  const double max_dim = std::max(scale_factor * block_max_dim, abs_min_dim);
 
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
