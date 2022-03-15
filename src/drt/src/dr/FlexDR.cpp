@@ -101,7 +101,8 @@ static bool writeGlobals(const std::string& name)
 }
 
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
+    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false), 
+        increaseClipsize_(false), clipSizeInc_(0)
 {
 }
 
@@ -1714,6 +1715,12 @@ void FlexDR::searchRepair(int iter,
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
+  if (ripupMode != 1) {
+    if (increaseClipsize_) {
+        clipSizeInc_ += 2;
+    } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
+    clipSize += min(MAX_CLIPSIZE_INCREASE, (int)round(clipSizeInc_));
+  }
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
             * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
@@ -1783,6 +1790,7 @@ void FlexDR::searchRepair(int iter,
 
   omp_set_num_threads(MAX_THREADS);
 
+  increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1832,6 +1840,8 @@ void FlexDR::searchRepair(int iter,
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end(getDesign());
+          if (workersInBatch[i]->isCongested())
+              increaseClipsize_ = true;
         }
         workersInBatch.clear();
       }
