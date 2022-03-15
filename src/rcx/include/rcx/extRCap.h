@@ -2255,7 +2255,6 @@ class extMain
 
   // void extCompute(void *a, void *b, int c);
 
-  uint makeGuiBoxes(uint extGuiBoxType);
   uint setupSearchDb(const char* bbox, uint debug, odb::ZInterface* Interface);
   odb::ZPtr<odb::ISdb> getCcSdb();
   odb::ZPtr<odb::ISdb> getNetSdb();

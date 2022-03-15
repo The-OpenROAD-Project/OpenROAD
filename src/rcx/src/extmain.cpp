@@ -843,10 +843,6 @@ void extMain::setBlock(dbBlock* block) {
   _newSpefFilePrefix = NULL;
   _excludeCells = NULL;
 }
-uint extMain::makeGuiBoxes(uint extGuiBoxType) {
-  uint cnt = 0;
-  return cnt;
-}
 
 uint extMain::computeXcaps(uint boxType) {
   ZPtr<ISdb> ccCapSdb = _reExtract ? _reExtCcapSDB : _extCcapSDB;
