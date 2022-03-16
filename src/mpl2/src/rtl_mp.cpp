@@ -133,7 +133,7 @@ bool rtl_macro_placer(const char* config_file,
   float macro_blockage_weight = macro_blockage_wt;  // weight for macro blockage
   float location_weight = location_wt;  // weight for preferred location
   float notch_weight = notch_wt;        // weight for notch
-  float halo_width = macro_halo;  // halo width around macros
+  float halo_width = macro_halo;        // halo width around macros
 
   float learning_rate
       = 0.00;  // learning rate for dynamic weight in cost function
