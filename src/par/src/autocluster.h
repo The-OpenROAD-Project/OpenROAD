@@ -2,9 +2,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <queue>
 #include <string>
-#include <map>
 #include <vector>
 
 #include "db_sta/dbReadVerilog.hh"
@@ -41,10 +41,7 @@ class Cluster
 {
  public:
   Cluster() {}
-  Cluster(int id, const std::string& name)
-      : id_(id), name_(name)
-  {
-  }
+  Cluster(int id, const std::string& name) : id_(id), name_(name) {}
 
   // Accessor
   int getId() const { return id_; }
@@ -252,10 +249,8 @@ class AutoClusterMgr
 
   std::vector<sta::Instance*> macros_;
   std::vector<sta::Instance*> seeds_;
-  std::map<sta::Vertex*, std::map<sta::Pin*, int>>
-      vertex_fanins_;
-  std::map<int, std::map<sta::Pin*, int>>
-      virtual_vertex_map_;
+  std::map<sta::Vertex*, std::map<sta::Pin*, int>> vertex_fanins_;
+  std::map<int, std::map<sta::Pin*, int>> virtual_vertex_map_;
   std::map<int, std::map<int, int>> virtual_timing_map_;
   std::map<sta::Pin*, sta::Instance*> pin_inst_map_;
 
@@ -288,8 +283,10 @@ class AutoClusterMgr
   void calculateConnection(const sta::Instance* inst);
   void calculateBufferNetConnection();
   bool hasTerminals(const sta::Net* net);
-  unsigned int calculateClusterNumInst(const std::vector<Cluster*>& cluster_vec);
-  unsigned int calculateClusterNumMacro(const std::vector<Cluster*>& cluster_vec);
+  unsigned int calculateClusterNumInst(
+      const std::vector<Cluster*>& cluster_vec);
+  unsigned int calculateClusterNumMacro(
+      const std::vector<Cluster*>& cluster_vec);
   void mergeCluster(Cluster* src, const Cluster* target);
   void merge(const std::string& parent_name);
   void mergeMacro(const std::string& parent_name, int std_cell_id);
@@ -311,15 +308,14 @@ class AutoClusterMgr
                      std::map<Cluster*, int>& node_map,
                      std::map<int, const sta::Instance*>& idx_to_inst,
                      std::map<const sta::Instance*, int>& inst_to_idx);
-  void MLPartBufferNetUtil(
-      const int src_id,
-      int& count,
-      std::vector<int>& col_idx,
-      std::vector<int>& row_idx,
-      std::vector<double>& edge_weight,
-      std::map<Cluster*, int>& node_map,
-      std::map<int, const sta::Instance*>& idx_to_inst,
-      std::map<const sta::Instance*, int>& inst_to_idx);
+  void MLPartBufferNetUtil(const int src_id,
+                           int& count,
+                           std::vector<int>& col_idx,
+                           std::vector<int>& row_idx,
+                           std::vector<double>& edge_weight,
+                           std::map<Cluster*, int>& node_map,
+                           std::map<int, const sta::Instance*>& idx_to_inst,
+                           std::map<const sta::Instance*, int>& inst_to_idx);
 };
 
 }  // namespace par
