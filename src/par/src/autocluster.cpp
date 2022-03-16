@@ -7,10 +7,10 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <queue>
 #include <string>
 #include <tuple>
-#include <map>
 #include <vector>
 
 #include "MLPart.h"
@@ -58,7 +58,6 @@ using std::sort;
 using std::string;
 using std::to_string;
 using std::tuple;
-using std::map;
 using std::vector;
 
 using odb::dbBlock;
@@ -232,8 +231,9 @@ void AutoClusterMgr::getBufferNet()
   }
 }
 
-void AutoClusterMgr::getBufferNetUtil(const Instance* inst,
-                                      vector<pair<const Net*, const Net*>>& buffer_net)
+void AutoClusterMgr::getBufferNetUtil(
+    const Instance* inst,
+    vector<pair<const Net*, const Net*>>& buffer_net)
 {
   const bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
@@ -1046,15 +1046,14 @@ void AutoClusterMgr::MLPartNetUtil(const Instance* inst,
   delete child_iter;
 }
 
-void AutoClusterMgr::MLPartBufferNetUtil(
-    const int src_id,
-    int& count,
-    vector<int>& col_idx,
-    vector<int>& row_ptr,
-    vector<double>& edge_weight,
-    map<Cluster*, int>& node_map,
-    map<int, const Instance*>& idx_to_inst,
-    map<const Instance*, int>& inst_to_idx)
+void AutoClusterMgr::MLPartBufferNetUtil(const int src_id,
+                                         int& count,
+                                         vector<int>& col_idx,
+                                         vector<int>& row_ptr,
+                                         vector<double>& edge_weight,
+                                         map<Cluster*, int>& node_map,
+                                         map<int, const Instance*>& idx_to_inst,
+                                         map<const Instance*, int>& inst_to_idx)
 {
   for (int i = 0; i < buffer_net_vec_.size(); i++) {
     int driver_id = -1;
@@ -1211,8 +1210,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
   output_file.open(net_file_name.c_str());
   int net_id = 0;
   for (auto [src_id, cluster] : cluster_map_) {
-    map<int, unsigned int> connection_map
-        = cluster->getOutputConnections();
+    map<int, unsigned int> connection_map = cluster->getOutputConnections();
     map<int, unsigned int>::iterator iter = connection_map.begin();
     bool flag = true;
     while (iter != connection_map.end()) {
@@ -1616,8 +1614,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
     }
   }
 
-  map<int, map<int, int>>::iterator map_iter
-      = virtual_timing_map_.begin();
+  map<int, map<int, int>>::iterator map_iter = virtual_timing_map_.begin();
   for (; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
     map<int, int> sinks = map_iter->second;
@@ -1951,9 +1948,9 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
       if (map_iter->second->getNumMacro() > 0) {
         vector<const Instance*> macro_vec = map_iter->second->getMacros();
         for (int i = 0; i < macro_vec.size(); i++) {
-	      const char* inst_name = network_->pathName(macro_vec[i]);
-	      dbInst* inst = block_->findInst(inst_name);
-	      dbMaster* master = inst->getMaster();
+          const char* inst_name = network_->pathName(macro_vec[i]);
+          dbInst* inst = block_->findInst(inst_name);
+          dbMaster* master = inst->getMaster();
           const float width = master->getWidth() / dbu;
           const float height = master->getHeight() / dbu;
           output_file << network_->pathName(macro_vec[i]) << "  ";
