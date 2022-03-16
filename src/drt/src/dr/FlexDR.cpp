@@ -1877,7 +1877,7 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "drc", 1)) {
+  if (logger_->debugCheck(DRT, "autotuner", 1)) {
     reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }
