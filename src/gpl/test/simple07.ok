@@ -34,11 +34,11 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0019] Util(%): 0.58
 [INFO GPL-0020] StdInstsArea: 3753600
 [INFO GPL-0021] MacroInstsArea: 0
-[InitialPlace]  Iter: 1 CG Error: 0.00000008 HPWL: 93755
-[InitialPlace]  Iter: 2 CG Error: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 3 CG Error: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 4 CG Error: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 5 CG Error: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 93755
+[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 92385
 [INFO GPL-0031] FillerInit: NumGCells: 130
 [INFO GPL-0032] FillerInit: NumGNets: 2
 [INFO GPL-0033] FillerInit: NumGPins: 4
