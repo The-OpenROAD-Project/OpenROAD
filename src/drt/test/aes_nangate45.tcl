@@ -6,6 +6,7 @@ detailed_route -guide aes_nangate45.route_guide \
                -output_guide results/aes_nangate45.output.guide.mod \
                -output_drc results/aes_nangate45.output.drc.rpt \
                -output_maze results/aes_nangate45.output.maze.log \
-               -verbose 1
+               -verbose 1 \
+               -droute_end_iter 0
 set def_file results/aes_nangate45.defok
 write_def $def_file

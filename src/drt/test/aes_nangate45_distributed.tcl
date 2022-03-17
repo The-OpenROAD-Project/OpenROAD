@@ -1,10 +1,10 @@
 source "helpers.tcl"
 
-# set OR $argv0
-# set server1 [$OR server1.tcl > results/server1.log &]
-# set server2 [$OR server2.tcl > results/server2.log &]
-# set balancer [$OR balancer.tcl > results/balancer.log &]
-# set base [$OR aes_nangate45.tcl > results/base.log &]
+set OR $argv0
+set server1 [$OR server1.tcl > results/server1.log &]
+set server2 [$OR server2.tcl > results/server2.log &]
+set balancer [$OR balancer.tcl > results/balancer.log &]
+set base [$OR aes_nangate45.tcl > results/base.log &]
 
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
@@ -17,13 +17,13 @@ detailed_route -guide aes_nangate45.route_guide \
                -verbose 1 \
 	             -distributed \
 	             -remote_host 127.0.0.1 \
-	             -remote_port 1111 \
-	             -local_host 127.0.0.1 \
-	             -local_port 2222 \
-               -shared_volume results
-# exec kill $server1
-# exec kill $server2
-# exec kill $balancer
+	             -remote_port 1234 \
+                 -cloud_size 2 \
+               -shared_volume results \
+               -droute_end_iter 0
+exec kill $server1
+exec kill $server2
+exec kill $balancer
 set def_file results/aes_nangate45.def
 write_def $def_file
 diff_files results/aes_nangate45.defok $def_file

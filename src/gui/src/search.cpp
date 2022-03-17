@@ -50,7 +50,9 @@ Search::Search() :
     blockages_(),
     blockages_init_(false),
     obstructions_(),
-    obstructions_init_(false)
+    obstructions_init_(false),
+    rows_(),
+    rows_init_(false)
 {
 }
 
