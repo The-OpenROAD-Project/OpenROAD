@@ -56,11 +56,13 @@ void LoadBalancer::start_accept()
                                      asio::placeholders::error));
 }
 
-LoadBalancer::LoadBalancer(asio::io_service& io_service,
+LoadBalancer::LoadBalancer(Distributed* dist,
+                           asio::io_service& io_service,
                            utl::Logger* logger,
                            const char* ip,
                            unsigned short port)
-    : acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
+    : dist_(dist), 
+      acceptor_(io_service, tcp::endpoint(ip::address::from_string(ip), port)),
       logger_(logger),
       jobs_(0)
 {

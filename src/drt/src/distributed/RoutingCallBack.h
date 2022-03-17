@@ -34,6 +34,7 @@
 #include <boost/bind/bind.hpp>
 #include <mutex>
 #include <iostream>
+#include <stdlib.h>
 
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
@@ -71,20 +72,49 @@ class RoutingCallBack : public dst::JobCallBack
       omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
     }
     auto workers = desc->getWorkers();
-    std::vector<std::pair<int, std::string>> results(workers.size());
+    int size = workers.size();
+    std::vector<std::pair<int, std::string>> results;
+    asio::thread_pool reply_pool(1);
+    int prev_perc = 0;
+    int cnt = 0;
     #pragma omp parallel for schedule(dynamic)
     for(int i = 0; i < workers.size(); i++)
     {
       std::pair<int, std::string> result = { workers.at(i).first, router_->runDRWorker(workers.at(i).second) };
-      results[i] = result;
+      #pragma omp critical
+      {
+        if(desc->reply_serialized_)
+          results.push_back(result);
+        else
+          results.push_back({result.first, ""});
+        ++cnt;
+        if (cnt * 1.0 / size >= prev_perc / 100.0 + 0.1 && prev_perc < 90) {
+          prev_perc += 10;
+          if(prev_perc % desc->send_every_ == 0) 
+          {
+            asio::post(reply_pool, boost::bind(&RoutingCallBack::sendResult, this, results, boost::ref(sock), false, cnt));
+            results.clear();
+          }
+        }
+      }
     }
-    dst::JobMessage result(dst::JobMessage::SUCCESS);
+    reply_pool.join();
+    sendResult(results, sock, true, cnt);
+  }
+  void sendResult(std::vector<std::pair<int, std::string>> results ,dst::socket& sock, bool finish, int cnt)
+  {
+    dst::JobMessage result;
+    if(finish)
+      result.setJobType(dst::JobMessage::SUCCESS);
+    else
+      result.setJobType(dst::JobMessage::NONE);
     auto uResultDesc = std::make_unique<RoutingJobDescription>();
     auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
     resultDesc->setWorkers(results);
     result.setJobDescription(std::move(uResultDesc));
     dist_->sendResult(result, sock);
-    sock.close();
+    if(finish)
+      sock.close();
   }
   void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
   {

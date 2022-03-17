@@ -129,7 +129,7 @@ class FlexDR
     dist_port_ = remote_port;
     dist_dir_ = dir;
   }
-  void sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch);
+  void sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch, std::vector<std::unique_ptr<FlexDRWorker>>& batch);
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;
@@ -153,6 +153,7 @@ class FlexDR
   std::string dist_dir_;
   std::string globals_path_;
   std::string design_path_;
+  bool design_updated_;
 
   // others
   void init();

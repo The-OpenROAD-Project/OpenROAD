@@ -27,63 +27,35 @@
  */
 
 #pragma once
-
-#include <tcl.h>
-
-#include <boost/asio.hpp>
-#include <memory>
+#include <boost/serialization/base_object.hpp>
 #include <string>
-#include <vector>
 
-namespace utl {
-class Logger;
+#include "dst/JobMessage.h"
+namespace boost::serialization {
+class access;
 }
-
-namespace asio = boost::asio;
-using asio::ip::tcp;
-
 namespace dst {
-using socket = asio::basic_stream_socket<tcp>;
-class JobMessage;
-class JobCallBack;
-class Worker;
 
-class Distributed
+class BalancerJobDescription : public JobDescription
 {
  public:
-  Distributed();
-  ~Distributed();
-  void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
-  void runWorker(const char* ip, unsigned short port, bool interactive);
-  void runLoadBalancer(const char* ip, unsigned short port);
-  void addWorkerAddress(const char* address,
-                        unsigned short port);
-  bool sendJob(JobMessage& msg,
-               const char* ip,
-               unsigned short port,
-               JobMessage& result);
-  bool sendJobMultiResult(JobMessage& msg,
-                          const char* ip,
-                          unsigned short port,
-                          JobMessage& result);
-  bool sendResult(JobMessage& result, socket& sock);
-  void addCallBack(JobCallBack* cb);
-  const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
+  BalancerJobDescription() {}
+  void setWorkerIP(const std::string& ip) {worker_ip_ = ip;}
+  void setWorkerPort(unsigned short port) {worker_port_ = port;}
+  std::string getWorkerIP() const { return worker_ip_; }
+  unsigned short getWorkerPort() const { return worker_port_; }
 
  private:
-  struct EndPoint
+  std::string worker_ip_;
+  unsigned short worker_port_;
+  
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
   {
-    std::string ip;
-    unsigned short port;
-    EndPoint(std::string ip_in,
-             unsigned short port_in)
-        : ip(ip_in), port(port_in)
-    {
-    }
-  };
-  utl::Logger* logger_;
-  std::vector<EndPoint> end_points_;
-  std::vector<JobCallBack*> callbacks_;
-  std::vector<std::unique_ptr<Worker>> workers_;
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & worker_ip_;
+    (ar) & worker_port_;
+  }
+  friend class boost::serialization::access;
 };
-}  // namespace dst
+}  // namespace fr

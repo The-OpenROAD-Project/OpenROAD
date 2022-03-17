@@ -37,6 +37,8 @@
 #include "LoadBalancer.h"
 #include "utl/Logger.h"
 #include <boost/thread/thread.hpp>
+#include "dst/BalancerJobDescription.h"
+#include "dst/Distributed.h"
 
 namespace dst {
 BalancerConnection::BalancerConnection(asio::io_service& io_service,
@@ -90,15 +92,28 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         if (workerAddress.is_unspecified()) {
           logger_->warn(utl::DST, 6, "No workers available");
           sock_.close();
-        } else {
-          asio::io_service io_service;
-          tcp::socket socket(io_service);
-          socket.connect(tcp::endpoint(workerAddress, port));
-          asio::write(socket, in_packet_, error);
-          asio::streambuf receive_buffer;
-          asio::read(socket, receive_buffer, asio::transfer_all(), error);
-          asio::write(sock_, receive_buffer, error);
-          sock_.close();
+        }
+        else {
+          if(msg.getJobType() == JobMessage::BALANCER)
+          {
+            JobMessage reply(JobMessage::SUCCESS);
+            auto uDesc = std::make_unique<BalancerJobDescription>();
+            auto desc = uDesc.get();
+            desc->setWorkerIP(workerAddress.to_string());
+            desc->setWorkerPort(port);
+            reply.setJobDescription(std::move(uDesc));
+            owner_->dist_->sendResult(reply, sock_);
+            sock_.close();
+          } else {
+            asio::io_service io_service;
+            tcp::socket socket(io_service);
+            socket.connect(tcp::endpoint(workerAddress, port));
+            asio::write(socket, in_packet_, error);
+            asio::streambuf receive_buffer;
+            asio::read(socket, receive_buffer, asio::transfer_all(), error);
+            asio::write(sock_, receive_buffer, error);
+            sock_.close();
+          }
         }
         break;
       }

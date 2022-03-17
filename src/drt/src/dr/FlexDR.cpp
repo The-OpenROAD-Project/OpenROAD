@@ -50,7 +50,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
-
+#include "dst/BalancerJobDescription.h"
 #include "utl/exception.h"
 
 using namespace std;
@@ -59,6 +59,8 @@ using namespace fr;
 using utl::ThreadException;
 
 BOOST_CLASS_EXPORT(RoutingJobDescription)
+BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
+
 
 enum class SerializationType
 {
@@ -1723,75 +1725,77 @@ void FlexDR::searchRepair(int iter,
             logger_->error(DRT, 304, "Updating design remotely failed");
         }
         if (design_updated) {
+          ProfileTask task("DIST: dummyUpdate");
           design_->getRegionQuery()->dummyUpdate();
           design_updated = false;
         }
-        ProfileTask task("DIST: PROCESS_BATCH");
-// multi thread
-        ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          try {
-            if (dist_on_)
-              workersInBatch[i]->distributedMain(getDesign());
-            else
-              workersInBatch[i]->main(getDesign());
-#pragma omp critical
-            {
-              cnt++;
-              if (VERBOSE > 0) {
-                if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                    && prev_perc < 90) {
-                  if (prev_perc == 0 && t.isExceed(0)) {
-                    isExceed = true;
-                  }
-                  prev_perc += 10;
-                  if (isExceed) {
-                    logger_->report("    Completing {}% with {} violations.",
-                                    prev_perc,
-                                    getDesign()->getTopBlock()->getNumMarkers());
-                    logger_->report("    {}.", t);
+        {
+          ProfileTask task("DIST: PROCESS_BATCH");
+          // multi thread
+          ThreadException exception;
+          #pragma omp parallel for schedule(dynamic)
+          for (int i = 0; i < (int) workersInBatch.size(); i++) {
+            try {
+              if (dist_on_)
+                workersInBatch[i]->distributedMain(getDesign());
+              else
+                workersInBatch[i]->main(getDesign());
+              #pragma omp critical
+              {
+                cnt++;
+                if (VERBOSE > 0) {
+                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                      && prev_perc < 90) {
+                    if (prev_perc == 0 && t.isExceed(0)) {
+                      isExceed = true;
+                    }
+                    prev_perc += 10;
+                    if (isExceed) {
+                      logger_->report("    Completing {}% with {} violations.",
+                                      prev_perc,
+                                      getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report("    {}.", t);
+                    }
                   }
                 }
               }
+            } catch (...) {
+              exception.capture();
             }
-          } catch (...) {
-            exception.capture();
           }
-        }
-        exception.rethrow();
-        if(dist_on_) {
-          int j = 0;
-          std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(router_->getCloudSize());
-          for(int i = 0; i < workersInBatch.size(); i++)
-          {
-            auto worker = workersInBatch.at(i).get();
-            if(!worker->isSkipRouting())
+          exception.rethrow();
+          if(dist_on_) {
+            int j = 0;
+            std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(router_->getCloudSize());
+            for(int i = 0; i < workersInBatch.size(); i++)
             {
-              distWorkerBatches[j].push_back({i, worker});
-              j = (j+1) % router_->getCloudSize();
+              auto worker = workersInBatch.at(i).get();
+              if(!worker->isSkipRouting())
+              {
+                distWorkerBatches[j].push_back({i, worker});
+                j = (j+1) % router_->getCloudSize();
+              }
             }
-          }
-          {
-            ProfileTask task("DIST: SERIALIZE+SEND");
-            #pragma omp parallel for schedule(dynamic)
-            for(int i = 0; i < distWorkerBatches.size(); i++)
-              sendWorkers(distWorkerBatches.at(i));
-          }
-          std::vector<std::pair<int, std::string>> workers,tmp;
-          while(router_->getWorkerResults(tmp))
-          {
-            workers.insert(workers.end(), tmp.begin(), tmp.end());
-          }
-          {
-            ProfileTask task("DIST: DESERIALIZING_BATCH");
-            #pragma omp parallel for schedule(dynamic)
-            for(int i = 0; i < workers.size(); i++)
             {
-              deserialize_worker(workersInBatch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+              ProfileTask task("DIST: SERIALIZE+SEND");
+              #pragma omp parallel for schedule(dynamic)
+              for(int i = 0; i < distWorkerBatches.size(); i++)
+                sendWorkers(distWorkerBatches.at(i), workersInBatch);
             }
-          }
+            logger_->report("    Received Batches:{}.", t);
+            std::vector<std::pair<int, std::string>> workers;
+            router_->getWorkerResults(workers);
+            {
+              ProfileTask task("DIST: DESERIALIZING_BATCH");
+              #pragma omp parallel for schedule(dynamic)
+              for(int i = 0; i < workers.size(); i++)
+              {
+                deserialize_worker(workersInBatch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+              }
+            }
+            logger_->report("    Deserialized Batches:{}.", t);
 
+          }
         }
       }
       {
@@ -2581,34 +2585,57 @@ int FlexDR::main()
   return 0;
 }
 
-void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& batch)
+void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch, std::vector<std::unique_ptr<FlexDRWorker>>& batch)
 {
+  if(remote_batch.empty())
+    return;
   std::vector<std::pair<int, std::string>> workers;
   {
     ProfileTask task("DIST: SERIALIZE_BATCH");
-    for(auto& [idx, worker] : batch)
+    for(auto& [idx, worker] : remote_batch)
     {
       std::string workerStr;
       serialize_worker(worker, workerStr);
       workers.push_back({idx, workerStr});
     }
   }
-  dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
-  std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>();
-  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setWorkers(workers);
-  rjd->setDesignPath(design_path_);
-  rjd->setGlobalsPath(globals_path_);
-  rjd->setSharedDir(dist_dir_);
-  msg.setJobDescription(std::move(desc));
-  ProfileTask task("DIST: SENDJOB");
-  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (!ok) {
-    logger_->error(utl::DRT, 500, "Sending worker {} failed");
+  std::string remote_ip = dist_ip_;
+  unsigned short remote_port = dist_port_;
+  if(router_->getCloudSize() > 1)
+  {
+    dst::JobMessage msg(dst::JobMessage::BALANCER), result(dst::JobMessage::NONE);
+    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    if(!ok) {
+      logger_->error(utl::DRT, 7461, "Balancer failed");
+    } else {
+      dst::BalancerJobDescription* desc = static_cast<dst::BalancerJobDescription*>(result.getJobDescription());
+      remote_ip = desc->getWorkerIP();
+      remote_port = desc->getWorkerPort();
+    }
   }
-  RoutingJobDescription* result_desc = static_cast<RoutingJobDescription*>(result.getJobDescription());
-  router_->addWorkerResults(result_desc->getWorkers());
+  {
+    dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
+    std::unique_ptr<dst::JobDescription> desc
+        = std::make_unique<RoutingJobDescription>();
+    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    rjd->setWorkers(workers);
+    rjd->setDesignPath(design_path_);
+    rjd->setGlobalsPath(globals_path_);
+    rjd->setSharedDir(dist_dir_);
+    rjd->reply_serialized_ = true;
+    rjd->send_every_ = 20;
+    msg.setJobDescription(std::move(desc));
+    ProfileTask task("DIST: SENDJOB");
+    bool ok = dist_->sendJobMultiResult(msg, remote_ip.c_str(), remote_port, result);
+    if (!ok) {
+      logger_->error(utl::DRT, 500, "Sending worker {} failed");
+    }
+    for(const auto& one_desc : result.getAccumelatedDescriptions())
+    {
+      RoutingJobDescription* result_desc = static_cast<RoutingJobDescription*>(one_desc.get());
+      router_->addWorkerResults(result_desc->getWorkers());
+    }
+  }
 }
 
 template <class Archive>

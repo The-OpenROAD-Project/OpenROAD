@@ -39,7 +39,7 @@ namespace fr {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription() {}
+  RoutingJobDescription() : reply_serialized_(false), send_every_(10) {}
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
@@ -47,13 +47,16 @@ class RoutingJobDescription : public dst::JobDescription
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
   const std::string& getDesignPath() const { return design_path_; }
-  const std::vector<std::pair<int, std::string>>& getWorkers() { return workers_; }  
+  const std::vector<std::pair<int, std::string>>& getWorkers() { return workers_; }
+  bool reply_serialized_;
+  int send_every_;
 
  private:
   std::string globals_path_;
   std::string design_path_;
   std::string shared_dir_;
   std::vector<std::pair<int, std::string>> workers_;
+  
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -61,6 +64,8 @@ class RoutingJobDescription : public dst::JobDescription
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
+    (ar) & reply_serialized_;
+    (ar) & send_every_;
     (ar) & workers_;
   }
   friend class boost::serialization::access;

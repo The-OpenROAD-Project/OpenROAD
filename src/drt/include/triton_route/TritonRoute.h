@@ -142,7 +142,7 @@ class TritonRoute
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string shared_volume_;
-  std::queue<std::vector<std::pair<int, std::string>>> workers_results_;
+  std::vector<std::pair<int, std::string>> workers_results_;
   std::mutex results_mutex_;
   int results_sz_;
   unsigned int cloud_sz_;

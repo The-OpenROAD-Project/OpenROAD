@@ -40,11 +40,13 @@ class Logger;
 }
 
 namespace dst {
+class Distributed;
 class LoadBalancer
 {
  public:
   // constructor for accepting connection from client
-  LoadBalancer(asio::io_service& io_service,
+  LoadBalancer(Distributed* dist,
+               asio::io_service& io_service,
                utl::Logger* logger,
                const char* ip,
                unsigned short port = 1234);
@@ -70,7 +72,8 @@ class LoadBalancer
       return w1.priority > w2.priority;
     }
   };
-
+  
+  Distributed* dist_;
   tcp::acceptor acceptor_;
   asio::io_service* service;
   utl::Logger* logger_;

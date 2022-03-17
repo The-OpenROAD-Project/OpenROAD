@@ -29,6 +29,8 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <vector>
+
 namespace boost::serialization {
 class access;
 }
@@ -58,6 +60,7 @@ class JobMessage
   {
     ROUTING,
     UPDATE_DESIGN,
+    BALANCER,
     SUCCESS,
     ERROR,
     NONE
@@ -75,6 +78,19 @@ class JobMessage
   {
     desc_ = std::move(in);
   }
+  std::unique_ptr<JobDescription>& getJobDescriptionRef()
+  {
+    return desc_;
+  }
+  void addJobDescription(std::unique_ptr<JobDescription> in)
+  {
+    descs_.push_back(std::move(in));
+    // desc_ = std::move(in);
+  }
+  const std::vector<std::unique_ptr<JobDescription>>& getAccumelatedDescriptions()
+  {
+    return descs_;
+  }
   void setJobType(JobType in)
   {
     job_type_ = in;
@@ -87,8 +103,9 @@ class JobMessage
   MessageType msg_type_;
   JobType job_type_;
   std::unique_ptr<JobDescription> desc_;
+  std::vector<std::unique_ptr<JobDescription>> descs_;
 
-  static constexpr const char* EOP = "7ALAWA";  // ENDOFPACKET SEQUENCE
+  static constexpr const char* EOP = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

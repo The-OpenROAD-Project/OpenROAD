@@ -491,8 +491,8 @@ void TritonRoute::setParams(const ParamStruct& params)
 void TritonRoute::addWorkerResults(const std::vector<std::pair<int, std::string>>& results)
 {
   std::unique_lock<std::mutex> lock(results_mutex_);
-  workers_results_.push(results);
-  ++results_sz_;
+  workers_results_.insert(workers_results_.end(), results.begin(), results.end());
+  results_sz_ = workers_results_.size();
 }
 
 bool TritonRoute::getWorkerResults(std::vector<std::pair<int, std::string>>& results)
@@ -500,9 +500,9 @@ bool TritonRoute::getWorkerResults(std::vector<std::pair<int, std::string>>& res
   std::unique_lock<std::mutex> lock(results_mutex_);
   if(workers_results_.empty())
     return false;
-  results = workers_results_.front();
-  workers_results_.pop();
-  --results_sz_;
+  results = workers_results_;
+  workers_results_.clear();
+  results_sz_ = 0;
   return true;
 }
 
