@@ -64,7 +64,7 @@ void detailed_route_distributed(const char* ip,
 void detailed_route_set_default_via(const char* viaName)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->addUserDefinedVia(viaName);
+  router->addUserSelectedVia(viaName);
 }
 
 void detailed_route_cmd(const char* guideFile,

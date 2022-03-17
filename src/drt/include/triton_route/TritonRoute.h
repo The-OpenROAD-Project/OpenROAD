@@ -116,7 +116,7 @@ class TritonRoute
 
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
-  void addUserDefinedVia(const std::string& viaName);
+  void addUserSelectedVia(const std::string& viaName);
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const char* file_name);

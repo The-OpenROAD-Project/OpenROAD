@@ -63,9 +63,9 @@ class frDesign
   {
     return masters_;
   }
-  const std::vector<std::string>& getUserDefinedVias() const
+  const std::vector<std::string>& getUserSelectedVias() const
   {
-    return user_defined_vias_;
+    return user_selected_vias_;
   }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
@@ -75,9 +75,9 @@ class frDesign
     name2master_[in->getName()] = in.get();
     masters_.push_back(std::move(in));
   }
-  void addUserDefinedVia(const std::string& viaName)
+  void addUserSelectedVia(const std::string& viaName)
   {
-    user_defined_vias_.push_back(viaName);
+    user_selected_vias_.push_back(viaName);
   }
   // others
   friend class io::Parser;
@@ -93,7 +93,7 @@ class frDesign
   std::vector<std::unique_ptr<frMaster>> masters_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
-  std::vector<std::string> user_defined_vias_;
+  std::vector<std::string> user_selected_vias_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

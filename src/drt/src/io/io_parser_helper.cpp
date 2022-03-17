@@ -50,7 +50,7 @@ void io::Parser::initDefaultVias()
     auto viaDef = uViaDef.get();
     tech->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
-  for (auto& userDefinedVia : design->getUserDefinedVias()) {
+  for (auto& userDefinedVia : design->getUserSelectedVias()) {
     if (tech->name2via.find(userDefinedVia) == tech->name2via.end()) {
       logger->error(
           DRT, 608, "Could not find user defined via {}", userDefinedVia);
@@ -67,108 +67,109 @@ void io::Parser::initDefaultVias()
     if (layer->getType() != dbTechLayerType::CUT) {
       continue;
     }
-    if (layer->getDefaultViaDef() == nullptr) {
-      for (auto& viaDef : layer->getViaDefs()) {
-        int cutNum = int(viaDef->getCutFigs().size());
-        viaRawPriorityTuple priority;
-        getViaRawPriority(viaDef, priority);
-        layerNum2ViaDefs[layerNum][cutNum][priority] = viaDef;
+    if (layer->getDefaultViaDef() != nullptr) {
+      continue;
+    }
+    for (auto& viaDef : layer->getViaDefs()) {
+      int cutNum = int(viaDef->getCutFigs().size());
+      viaRawPriorityTuple priority;
+      getViaRawPriority(viaDef, priority);
+      layerNum2ViaDefs[layerNum][cutNum][priority] = viaDef;
+    }
+    if (!layerNum2ViaDefs[layerNum][1].empty()) {
+      auto defaultSingleCutVia
+          = (layerNum2ViaDefs[layerNum][1].begin())->second;
+      tech->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
+    } else {
+      if (layerNum >= BOTTOM_ROUTING_LAYER) {
+        logger->error(DRT,
+                      234,
+                      "{} does not have single-cut via.",
+                      tech->getLayer(layerNum)->getName());
       }
-      if (!layerNum2ViaDefs[layerNum][1].empty()) {
-        auto defaultSingleCutVia
-            = (layerNum2ViaDefs[layerNum][1].begin())->second;
-        tech->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
-      } else {
-        if (layerNum >= BOTTOM_ROUTING_LAYER) {
-          logger->error(DRT,
-                        234,
-                        "{} does not have single-cut via.",
-                        tech->getLayer(layerNum)->getName());
-        }
+    }
+    // generate via if default via enclosure is not along pref dir
+    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
+      auto techDefautlViaDef = tech->getLayer(layerNum)->getDefaultViaDef();
+      frVia via(techDefautlViaDef);
+      Rect layer1Box;
+      Rect layer2Box;
+      frLayerNum layer1Num;
+      frLayerNum layer2Num;
+      via.getLayer1BBox(layer1Box);
+      via.getLayer2BBox(layer2Box);
+      layer1Num = techDefautlViaDef->getLayer1Num();
+      layer2Num = techDefautlViaDef->getLayer2Num();
+      bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
+                            == (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
+                            == (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
+                             > (layer1Box.yMax() - layer1Box.yMin());
+      bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
+                             > (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1Horz
+          = (tech->getLayer(layer1Num)->getDir() == dbTechLayerDir::HORIZONTAL);
+      bool isLayer2Horz
+          = (tech->getLayer(layer2Num)->getDir() == dbTechLayerDir::HORIZONTAL);
+      bool needViaGen = false;
+      if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
+          || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
+        needViaGen = true;
       }
-      // generate via if default via enclosure is not along pref dir
-      if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
-        auto techDefautlViaDef = tech->getLayer(layerNum)->getDefaultViaDef();
-        frVia via(techDefautlViaDef);
-        Rect layer1Box;
-        Rect layer2Box;
-        frLayerNum layer1Num;
-        frLayerNum layer2Num;
-        via.getLayer1BBox(layer1Box);
-        via.getLayer2BBox(layer2Box);
-        layer1Num = techDefautlViaDef->getLayer1Num();
-        layer2Num = techDefautlViaDef->getLayer2Num();
-        bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
-                              == (layer1Box.yMax() - layer1Box.yMin());
-        bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
-                              == (layer2Box.yMax() - layer2Box.yMin());
-        bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
-                               > (layer1Box.yMax() - layer1Box.yMin());
-        bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
-                               > (layer2Box.yMax() - layer2Box.yMin());
-        bool isLayer1Horz = (tech->getLayer(layer1Num)->getDir()
-                             == dbTechLayerDir::HORIZONTAL);
-        bool isLayer2Horz = (tech->getLayer(layer2Num)->getDir()
-                             == dbTechLayerDir::HORIZONTAL);
-        bool needViaGen = false;
-        if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
-            || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
-          needViaGen = true;
+
+      // generate new via def if needed
+      if (needViaGen) {
+        string viaDefName
+            = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
+        viaDefName += string("_FR");
+        logger->warn(DRT,
+                     160,
+                     "Warning: {} does not have viaDef aligned with layer "
+                     "direction, generating new viaDef {}.",
+                     tech->getLayer(layer1Num)->getName(),
+                     viaDefName);
+        // routing layer shape
+        // rotate if needed
+        if (isLayer1EncHorz != isLayer1Horz) {
+          layer1Box.init(layer1Box.yMin(),
+                         layer1Box.xMin(),
+                         layer1Box.yMax(),
+                         layer1Box.xMax());
+        }
+        if (isLayer2EncHorz != isLayer2Horz) {
+          layer2Box.init(layer2Box.yMin(),
+                         layer2Box.xMin(),
+                         layer2Box.yMax(),
+                         layer2Box.xMax());
         }
 
-        // generate new via def if needed
-        if (needViaGen) {
-          string viaDefName
-              = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
-          viaDefName += string("_FR");
-          logger->warn(DRT,
-                       160,
-                       "Warning: {} does not have viaDef aligned with layer "
-                       "direction, generating new viaDef {}.",
-                       tech->getLayer(layer1Num)->getName(),
-                       viaDefName);
-          // routing layer shape
-          // rotate if needed
-          if (isLayer1EncHorz != isLayer1Horz) {
-            layer1Box.init(layer1Box.yMin(),
-                           layer1Box.xMin(),
-                           layer1Box.yMax(),
-                           layer1Box.xMax());
-          }
-          if (isLayer2EncHorz != isLayer2Horz) {
-            layer2Box.init(layer2Box.yMin(),
-                           layer2Box.xMin(),
-                           layer2Box.yMax(),
-                           layer2Box.xMax());
-          }
+        unique_ptr<frShape> uBotFig = make_unique<frRect>();
+        auto botFig = static_cast<frRect*>(uBotFig.get());
+        unique_ptr<frShape> uTopFig = make_unique<frRect>();
+        auto topFig = static_cast<frRect*>(uTopFig.get());
 
-          unique_ptr<frShape> uBotFig = make_unique<frRect>();
-          auto botFig = static_cast<frRect*>(uBotFig.get());
-          unique_ptr<frShape> uTopFig = make_unique<frRect>();
-          auto topFig = static_cast<frRect*>(uTopFig.get());
+        botFig->setBBox(layer1Box);
+        topFig->setBBox(layer2Box);
+        botFig->setLayerNum(layer1Num);
+        topFig->setLayerNum(layer2Num);
 
-          botFig->setBBox(layer1Box);
-          topFig->setBBox(layer2Box);
-          botFig->setLayerNum(layer1Num);
-          topFig->setLayerNum(layer2Num);
+        // cut layer shape
+        unique_ptr<frShape> uCutFig = make_unique<frRect>();
+        auto cutFig = static_cast<frRect*>(uCutFig.get());
+        Rect cutBox;
+        via.getCutBBox(cutBox);
+        cutFig->setBBox(cutBox);
+        cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
 
-          // cut layer shape
-          unique_ptr<frShape> uCutFig = make_unique<frRect>();
-          auto cutFig = static_cast<frRect*>(uCutFig.get());
-          Rect cutBox;
-          via.getCutBBox(cutBox);
-          cutFig->setBBox(cutBox);
-          cutFig->setLayerNum(techDefautlViaDef->getCutLayerNum());
-
-          // create via
-          auto viaDef = make_unique<frViaDef>(viaDefName);
-          viaDef->addLayer1Fig(std::move(uBotFig));
-          viaDef->addLayer2Fig(std::move(uTopFig));
-          viaDef->addCutFig(std::move(uCutFig));
-          viaDef->setAddedByRouter(true);
-          tech->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
-          tech->addVia(std::move(viaDef));
-        }
+        // create via
+        auto viaDef = make_unique<frViaDef>(viaDefName);
+        viaDef->addLayer1Fig(std::move(uBotFig));
+        viaDef->addLayer2Fig(std::move(uTopFig));
+        viaDef->addCutFig(std::move(uCutFig));
+        viaDef->setAddedByRouter(true);
+        tech->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
+        tech->addVia(std::move(viaDef));
       }
     }
   }

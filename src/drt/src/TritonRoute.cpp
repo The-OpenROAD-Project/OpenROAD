@@ -439,7 +439,7 @@ void TritonRoute::readParams(const string& fileName)
   }
 }
 
-void TritonRoute::addUserDefinedVia(const std::string& viaName)
+void TritonRoute::addUserSelectedVia(const std::string& viaName)
 {
   if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
       || db_->getTech() == nullptr) {
@@ -451,7 +451,7 @@ void TritonRoute::addUserDefinedVia(const std::string& viaName)
       && block->findVia(viaName.c_str()) == nullptr) {
     logger_->error(utl::DRT, 611, "Via {} not found", viaName);
   } else {
-    design_->addUserDefinedVia(viaName);
+    design_->addUserSelectedVia(viaName);
   }
 }
 
