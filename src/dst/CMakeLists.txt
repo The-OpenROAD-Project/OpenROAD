@@ -56,6 +56,7 @@ target_sources(dst
 target_include_directories(dst
   PUBLIC
     include
+    ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(dst

@@ -67,6 +67,7 @@ using utl::Logger;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
+using odb::dbITerm;
 using odb::dbNet;
 using odb::dbLib;
 using odb::dbMaster;
@@ -398,7 +399,14 @@ private:
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
                             vector<dbInst*> &mirror_candidates);
-  int mirrorCandidates(vector<dbInst*> &mirror_candidates);
+  int mirrorCandidates(vector<dbInst*> &mirror_candidates,
+                        map<dbNet*, Rect> &net2box);
+  int64_t hpwlIncrement(dbInst *inst, int pt_x, bool mirror,
+                        map<dbNet*, Rect> &net2box,
+                        vector<pair<dbNet*, Rect*>> &updated_box);
+  int64_t hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
+                              dbNet *net, int pt_x, bool mirror,
+                              Rect *new_net_box, Rect netBox);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
   bool isSupply(dbNet *net) const;
