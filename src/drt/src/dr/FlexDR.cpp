@@ -143,12 +143,13 @@ int FlexDRWorker::main(frDesign* design)
   ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
+  auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
-                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
+                    routeBox_.xMin() * micronPerDBU,
+                    routeBox_.yMin() * micronPerDBU,
+                    routeBox_.xMax() * micronPerDBU,
+                    routeBox_.yMax() * micronPerDBU);
   }
 
   init(design);
@@ -170,6 +171,14 @@ int FlexDRWorker::main(frDesign* design)
        << time_span1.count() << " " << time_span2.count() << " " << endl;
     cout << ss.str() << flush;
   }
+
+  debugPrint(logger_, DRT, "autotuner", 1,
+             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {}",
+             routeBox_.xMin() * micronPerDBU,
+             routeBox_.yMin() * micronPerDBU,
+             routeBox_.xMax() * micronPerDBU,
+             routeBox_.yMax() * micronPerDBU,
+             duration_cast<duration<double>>(t3 - t0).count());
 
   return 0;
 }
@@ -1877,7 +1886,7 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "drc", 1)) {
+  if (logger_->debugCheck(DRT, "autotuner", 1)) {
     reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }

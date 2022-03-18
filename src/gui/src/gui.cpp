@@ -314,8 +314,13 @@ int Gui::select(const std::string& type, const std::string& name_filter, bool fi
                              filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
                              QRegExp::WildcardUnix);
           auto remove_if = std::remove_if(selected_vector.begin(), selected_vector.end(),
-              [&reg_filter](auto sel) -> bool {
-                return !reg_filter.exactMatch(QString::fromStdString(sel.getName()));
+              [&name_filter, &reg_filter](auto sel) -> bool {
+                const std::string name = sel.getName();
+                if (name == name_filter) {
+                  // direct match, so don't remove
+                  return false;
+                }
+                return !reg_filter.exactMatch(QString::fromStdString(name));
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset

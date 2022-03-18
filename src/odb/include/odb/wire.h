@@ -38,7 +38,6 @@
 
 #include "ZInterface.h"
 #include "array1.h"
-#include "atypes.h"
 #include "box.h"
 #include "db.h"
 #include "geom.h"

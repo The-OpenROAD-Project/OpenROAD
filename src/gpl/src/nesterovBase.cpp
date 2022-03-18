@@ -1181,6 +1181,7 @@ NesterovBase::initFillerGCells() {
   uniformTargetDensity_ 
     = static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_);
   if( totalFillerArea_ < 0 ) {
+    uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL, 302, 
         "Use a higher -density or "
         "re-floorplan with a larger core area.\n"
