@@ -1665,7 +1665,7 @@ void FlexDRWorker::identifyCongestionLevel() {
             for (auto& uAP : pin->getAccessPatterns()) {
                 drAccessPattern* ap = uAP.get();
                 frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
-                if (z < 4)
+                if (z < 4) 
                 	continue;
                 if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
                     if (ap->getPoint().y() == getRouteBox().yMin())
