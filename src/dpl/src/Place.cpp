@@ -61,9 +61,6 @@ using std::vector;
 
 using utl::DPL;
 
-static bool
-cellAreaGreater(const Cell *cell1, const Cell *cell2);
-
 void
 Opendp::detailedPlacement()
 {
@@ -272,6 +269,48 @@ Opendp::distToRect(const Cell *cell, const Rect *rect) const
   return dist_y + dist_x;
 }
 
+class CellPlaceOrderLess
+{
+public:
+  CellPlaceOrderLess(Opendp *opendp);
+  bool operator()(const Cell *cell1,
+                  const Cell *cell2) const;
+private:
+  int centerDist(const Cell *cell) const;
+
+  int center_x_;
+  int center_y_;
+};
+
+CellPlaceOrderLess::CellPlaceOrderLess(Opendp *opendp)
+{
+  Rect core = opendp->getCore();
+  center_x_ = (core.xMin() + core.xMax()) / 2;
+  center_y_ = (core.yMin() + core.yMax()) / 2;
+}
+
+int
+CellPlaceOrderLess::centerDist(const Cell *cell) const
+{
+  return abs(cell->x_ - center_x_) + abs(cell->y_ - center_y_);
+}
+
+bool
+CellPlaceOrderLess::operator()(const Cell *cell1,
+                               const Cell *cell2) const
+{
+  int area1 = cell1->area();
+  int area2 = cell2->area();
+  int dist1 = centerDist(cell1);
+  int dist2 = centerDist(cell2);
+  return area1 > area2
+    || (area1 == area2
+        && (dist1 < dist2
+            || (dist1 == dist2
+                && strcmp(cell1->db_inst_->getConstName(),
+                          cell2->db_inst_->getConstName()) < 0)));
+}
+
 void
 Opendp::place()
 {
@@ -287,7 +326,7 @@ Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), cellAreaGreater);
+  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(this));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -317,16 +356,6 @@ Opendp::cellFitsInCore(Cell *cell)
   return gridPaddedWidth(cell) <= row_site_count_ && gridHeight(cell) <= row_count_;
 }
 
-static bool
-cellAreaGreater(const Cell *cell1, const Cell *cell2)
-{
-  int area1 = cell1->area();
-  int area2 = cell2->area();
-  return (area1 > area2)
-    || (area1 == area2
-        && cell1->db_inst_->getId() < cell2->db_inst_->getId());
-}
-
 void
 Opendp::placeGroups2()
 {
@@ -338,7 +367,7 @@ Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), cellAreaGreater);
+    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(this));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
