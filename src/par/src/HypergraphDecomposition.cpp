@@ -42,13 +42,11 @@
 namespace par {
 
 HypergraphDecomposition::HypergraphDecomposition()
-    : block_(nullptr),
-      logger_(nullptr),
-      weightingOption_(0)
+    : block_(nullptr), logger_(nullptr), weightingOption_(0)
 {
 }
 
-void HypergraphDecomposition::init(odb::dbBlock* block, Logger * logger)
+void HypergraphDecomposition::init(odb::dbBlock* block, Logger* logger)
 {
   block_ = block;
   logger_ = logger;
@@ -112,7 +110,7 @@ void HypergraphDecomposition::createHypergraph(
       hypergraph.addEdgeWeightNormalized(1);
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         for (odb::dbBPin* pin : bterm->getBPins()) {
-          (void) pin; // unused?
+          (void) pin;  // unused?
           const int mapping = hypergraph.getMapping(bterm->getName());
           if (clusters[mapping] == currentCluster) {
             if (driveIdx == -1 && bterm->getIoType() == odb::dbIoType::INPUT)

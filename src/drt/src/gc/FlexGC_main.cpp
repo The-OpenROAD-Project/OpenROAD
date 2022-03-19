@@ -964,7 +964,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
     if (rect->getNet()
         && !rect->getNet()->hasPolyCornerAt(candX, candY, rect->getLayerNum()))
       return;
-  }
+    }
   // skip for EXCEPTEOL eolWidth
   if (con->hasExceptEol()) {
     if (corner->getType() == frCornerTypeEnum::CONVEX) {

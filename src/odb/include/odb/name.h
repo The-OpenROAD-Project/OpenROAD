@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "atypes.h"
 #include "misc_global.h"
 #include "util.h"
 

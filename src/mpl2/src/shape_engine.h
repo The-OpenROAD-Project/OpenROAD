@@ -248,15 +248,16 @@ class SimulatedAnnealingCore
 void Run(SimulatedAnnealingCore* sa);
 
 // Macro Tile Engine
-std::vector<std::pair<float, float>> TileMacro(const std::string& report_directory,
-                                               const std::vector<Macro>& macros,
-                                               const std::string& cluster_name,
-                                               float& final_area,
-                                               float outline_width,
-                                               float outline_height,
-                                               int num_thread = 10,
-                                               int num_run = 20,
-                                               unsigned seed = 0);
+std::vector<std::pair<float, float>> TileMacro(
+    const std::string& report_directory,
+    const std::vector<Macro>& macros,
+    const std::string& cluster_name,
+    float& final_area,
+    float outline_width,
+    float outline_height,
+    int num_thread = 10,
+    int num_run = 20,
+    unsigned seed = 0);
 
 // Parse Block File
 void ParseBlockFile(std::vector<Cluster*>& clusters,
