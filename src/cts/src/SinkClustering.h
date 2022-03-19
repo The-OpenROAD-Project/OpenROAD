@@ -121,6 +121,7 @@ class SinkClustering
   float capPerUnit_;
   bool useMaxCapLimit_;
   int scaleFactor_;
+  static constexpr double max_cap__factor_ = 10;
 };
 
 }  // namespace cts
