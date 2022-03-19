@@ -443,7 +443,6 @@ bool IRSolver::CreateGmat(bool connection_only) {
   debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Creating G matrix");
   vector<Node*> node_vector;
   dbTech* tech = m_db->getTech();
-  // dbSet<dbTechLayer>           layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator litr;
   int unit_micron = tech->getDbUnitsPerMicron();
   int num_routing_layers = tech->getRoutingLayerCount();
@@ -520,78 +519,30 @@ bool IRSolver::CreateGmat(bool connection_only) {
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
-          bool check_params;
-          dbViaParams params;
+          dbBox* via_bBox;
           dbTechLayer* via_bottom_layer;
           dbTechLayer* via_top_layer;
           if (curWire->getBlockVia()) {
             dbVia* via = curWire->getBlockVia();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
+            via_bBox = via->getBBox();
             via_top_layer = via->getTopLayer();
             via_bottom_layer = via->getBottomLayer();
           } else {
             dbTechVia* via = curWire->getTechVia();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
+            via_bBox = via->getBBox();
             via_top_layer = via->getTopLayer();
             via_bottom_layer = via->getBottomLayer();
-          }
-          int x_cut_size = 0;
-          int y_cut_size = 0;
-          int x_bottom_enclosure = 0;
-          int y_bottom_enclosure = 0;
-          int x_top_enclosure = 0;
-          int y_top_enclosure = 0;
-          if (check_params) {
-            x_cut_size = params.getXCutSize();
-            y_cut_size = params.getYCutSize();
-            x_bottom_enclosure = params.getXBottomEnclosure();
-            y_bottom_enclosure = params.getYBottomEnclosure();
-            x_top_enclosure = params.getXTopEnclosure();
-            y_top_enclosure = params.getYTopEnclosure();
           }
           int x, y;
           curWire->getViaXY(x, y);
           BBox  bBox;
-          int x_loc1, x_loc2, y_loc1, y_loc2;
-          dbTechLayerDir::Value layer_dir;
           int l = via_bottom_layer->getRoutingLevel();
+          bBox = make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
 
           if (m_bottom_layer != l) {  // do not set for bottom layers
-            layer_dir = via_bottom_layer->getDirection();
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y;
-              y_loc2 = y;
-              x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
-              x_loc1 = x;
-              x_loc2 = x;
-            }
-            bBox = make_pair((x_loc2 - x_loc1)/2,(y_loc2 - y_loc1)/2);
             m_Gmat->SetNode(x, y, l, bBox);
           }
           l = via_top_layer->getRoutingLevel();
-          layer_dir = via_top_layer->getDirection();
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            y_loc1 = y;
-            y_loc2 = y;
-            x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-            x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-          } else {
-            y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-            y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-            x_loc1 = x;
-            x_loc2 = x;
-          }
-          bBox = make_pair((x_loc2 - x_loc1)/2,(y_loc2 - y_loc1)/2);
           m_Gmat->SetNode(x, y, l, bBox);
         } else {
           int x_loc1, x_loc2, y_loc1, y_loc2;
@@ -709,11 +660,13 @@ bool IRSolver::CreateGmat(bool connection_only) {
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
           bool check_params;
+          dbBox* via_bBox;
           dbViaParams params;
           dbTechLayer* via_top_layer;
           dbTechLayer* via_bottom_layer;
           if (curWire->getBlockVia()) {
             dbVia* via = curWire->getBlockVia();
+            via_bBox = via->getBBox();
             check_params = via->hasParams();
             if (check_params) {
               via->getViaParams(params);
@@ -722,6 +675,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
             via_bottom_layer = via->getBottomLayer();
           } else {
             dbTechVia* via = curWire->getTechVia();
+            via_bBox = via->getBBox();
             check_params = via->hasParams();
             if (check_params) {
               via->getViaParams(params);
@@ -733,19 +687,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
           int num_via_cols = 1;
           int x_cut_size = 0;
           int y_cut_size = 0;
-          int x_bottom_enclosure = 0;
-          int y_bottom_enclosure = 0;
-          int x_top_enclosure = 0;
-          int y_top_enclosure = 0;
+          int x_cut_spacing = 0;
+          int y_cut_spacing = 0;
           if (check_params) {
             num_via_rows = params.getNumCutRows();
             num_via_cols = params.getNumCutCols();
             x_cut_size = params.getXCutSize();
             y_cut_size = params.getYCutSize();
-            x_bottom_enclosure = params.getXBottomEnclosure();
-            y_bottom_enclosure = params.getYBottomEnclosure();
-            x_top_enclosure = params.getXTopEnclosure();
-            y_top_enclosure = params.getYTopEnclosure();
+            x_cut_spacing = params.getXCutSpacing();
+            y_cut_spacing = params.getYCutSpacing();
           }
           int x, y;
           curWire->getViaXY(x, y);
@@ -805,15 +755,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y - y_cut_size / 2;
-              y_loc2 = y + y_cut_size / 2;
-              x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
+              y_loc1 = y - ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+              y_loc2 = y + ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+              x_loc1 = x - via_bBox->getDX() / 2;
+              x_loc2 = x + via_bBox->getDX() / 2;
             } else {
-              y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
-              x_loc1 = x - x_cut_size / 2;
-              x_loc2 = x + x_cut_size / 2;
+              y_loc1 = y - via_bBox->getDY() / 2;
+              y_loc2 = y + via_bBox->getDY() / 2;
+              x_loc1 = x - ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
+              x_loc2 = x + ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
             }
             m_Gmat->GenerateStripeConductance(l, layer_dir, x_loc1, x_loc2,
                                               y_loc1, y_loc2, rho);
@@ -830,15 +780,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
           int x_loc1, x_loc2, y_loc1, y_loc2;
           if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            y_loc1 = y - y_cut_size / 2;
-            y_loc2 = y + y_cut_size / 2;
-            x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-            x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
+            y_loc1 = y - ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+            y_loc2 = y + ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+            x_loc1 = x - via_bBox->getDX() / 2;
+            x_loc2 = x + via_bBox->getDX() / 2;
           } else {
-            y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-            y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-            x_loc1 = x - x_cut_size / 2;
-            x_loc2 = x + x_cut_size / 2;
+            y_loc1 = y - via_bBox->getDY() / 2;
+            y_loc2 = y + via_bBox->getDY() / 2;
+            x_loc1 = x - ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
+            x_loc2 = x + ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
           }
           m_Gmat->GenerateStripeConductance(l, layer_dir, x_loc1, x_loc2,
                                             y_loc1, y_loc2, rho);
