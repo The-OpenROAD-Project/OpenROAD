@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "shape_engine.h"
+
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -40,7 +42,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
 
@@ -432,19 +433,19 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     return aspect_ratio;
   }
 
-  if(macros.size() >= 2) {
+  if (macros.size() >= 2) {
     // If all the macros are the same,  we enumerate all the possible shapes
     bool same_macro_flag = true;
     const float width = macros[0].GetWidth();
     const float height = macros[0].GetHeight();
-    for(int i = 1; i < macros.size(); i++) 
-      if(width != macros[i].GetWidth() || height != macros[i].GetHeight()) {
+    for (int i = 1; i < macros.size(); i++)
+      if (width != macros[i].GetWidth() || height != macros[i].GetHeight()) {
         same_macro_flag = false;
         break;
       }
-    if(same_macro_flag == true) {
+    if (same_macro_flag == true) {
       final_area = macros.size() * width * height;
-      for(int i = macros.size(); i >= 1; i--) {
+      for (int i = macros.size(); i >= 1; i--) {
         const int num_col = i;
         const int num_row = ceil(macros.size() * 1.0 / i);
         const float temp_width = num_col * width;
@@ -452,7 +453,7 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
         bool valid_area = (num_col * num_row) <= (macros.size());
         valid_area = valid_area && (temp_width <= outline_width);
         valid_area = valid_area && (temp_height <= outline_height);
-        if(valid_area == true) {
+        if (valid_area == true) {
           aspect_ratio.push_back(pair<float, float>(temp_width, temp_height));
           final_area = max(final_area, temp_width * temp_height);
         }
@@ -461,8 +462,8 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
     }
   }
 
-  // If the macros have different sizes, we try to find the tilings with minimum area
-  // parameterse related to fastSA
+  // If the macros have different sizes, we try to find the tilings with minimum
+  // area parameterse related to fastSA
   float init_prob = 0.6;
   float rej_ratio = 1.0;
   int max_num_step = 3000;
@@ -546,7 +547,9 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   }
 
   for (int i = 0; i < sa_vector.size(); i++) {
-    string file_name = string(report_directory) + string("/") + cluster_file_name + string("_") + to_string(i) + string(".txt");
+    string file_name = string(report_directory) + string("/")
+                       + cluster_file_name + string("_") + to_string(i)
+                       + string(".txt");
     sa_vector[i]->WriteFloorplan(file_name);
   }
 
@@ -575,7 +578,7 @@ vector<pair<float, float>> TileMacro(const string& report_directory,
   for (int i = 0; i < footprints.size(); i++) {
     if (footprints[i].first * footprints[i].second <= base_area * 1.01) {
       aspect_ratio.push_back(
-        pair<float, float>(footprints[i].first, footprints[i].second));
+          pair<float, float>(footprints[i].first, footprints[i].second));
     }
   }
 
@@ -692,16 +695,16 @@ vector<Cluster*> ShapeEngine(float& outline_width,
   for (int i = 0; i < clusters.size(); i++)
     class_list[i] = -1;
 
-  for (int i = 0; i < clusters.size(); i++) 
+  for (int i = 0; i < clusters.size(); i++)
     if (class_list[i] == -1) {
       class_list[i] = i;
-      for (int j = i + 1; j < clusters.size(); j++) 
-        if ((*clusters[i]) == (*clusters[j])) 
+      for (int j = i + 1; j < clusters.size(); j++)
+        if ((*clusters[i]) == (*clusters[j]))
           class_list[j] = i;
     }
 
   // Generate Aspect Ratio based on cluster types
-  for (int i = 0; i < clusters.size(); i++) 
+  for (int i = 0; i < clusters.size(); i++)
     if (clusters[i]->GetNumMacro() != 0 && class_list[i] == i) {
       float final_area = 0.0;
       vector<pair<float, float>> aspect_ratio
@@ -718,8 +721,8 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       clusters[i]->SetArea(final_area);
     }
 
-  for (int i = 0; i < clusters.size(); i++) 
-    if (clusters[i]->GetNumMacro() == 0) 
+  for (int i = 0; i < clusters.size(); i++)
+    if (clusters[i]->GetNumMacro() == 0)
       clusters[i]->AddAspectRatio(
           pair<float, float>(min_aspect_ratio, max_aspect_ratio));
     else if (class_list[i] != i) {
@@ -735,28 +738,28 @@ vector<Cluster*> ShapeEngine(float& outline_width,
   float std_cell_area = 0.0;
   for (int j = 0; j < clusters.size(); j++) {
     float area = clusters[j]->GetArea();
-    if (clusters[j]->GetNumMacro() > 0) 
+    if (clusters[j]->GetNumMacro() > 0)
       macro_area += area;
-    else 
+    else
       std_cell_area += area;
   }
- 
+
   float std_cell_util
-     = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
- 
+      = std_cell_area / ((chip_area - macro_area) * (1 - dead_space));
+
   logger->info(MPL, 1001, "Shape engine outline width: {}", outline_width);
   logger->info(MPL, 1002, "Shape engine outline height: {}", outline_height);
   logger->info(MPL, 1003, "Shape engine chip area: {}", chip_area);
   logger->info(MPL, 1004, "Shape engine macro area: {}", macro_area);
   logger->info(MPL, 1005, "Shape engine stdcell area: {}", std_cell_area);
   logger->info(MPL, 1006, "Shape engine stdcell util: {}", std_cell_util);
- 
-  for (int j = 0; j < clusters.size(); j++) 
+
+  for (int j = 0; j < clusters.size(); j++)
     if (clusters[j]->GetNumMacro() == 0) {
       float area = clusters[j]->GetArea() / std_cell_util;
       clusters[j]->SetArea(area);
     }
-  
+
   // Verify the results
   for (int i = 0; i < clusters.size(); i++) {
     string output_info = "Cluster: ";
@@ -773,7 +776,7 @@ vector<Cluster*> ShapeEngine(float& outline_width,
       output_info += ") ";
     }
 
-    logger->info(MPL,  1007, "Shape Engine {}.", output_info);
+    logger->info(MPL, 1007, "Shape Engine {}.", output_info);
   }
 
   return clusters;

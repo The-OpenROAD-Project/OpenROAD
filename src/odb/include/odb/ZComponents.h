@@ -50,13 +50,8 @@ namespace odb {
 
 enum ZComponentID
 {
-  ZCOMPONENT(ZguiTmg),
   ZCOMPONENT(Sdb),
   ZCOMPONENT(Zdcr),
-  ZCOMPONENT(Dui),
-  ZCOMPONENT(Ui),
-  ZCOMPONENT(oaWriter),
-  ZCOMPONENT(oaReader)
 };
 
 enum ZInterfaceID
@@ -66,10 +61,6 @@ enum ZInterfaceID
   // Place all entries after this line
   ZINTERFACE(ISdb),
   ZINTERFACE(IZdcr),
-  ZINTERFACE(IDui),
-  ZINTERFACE(IUi),
-  ZINTERFACE(IoaWriter),
-  ZINTERFACE(IoaReader)
 };
 
 }  // namespace odb

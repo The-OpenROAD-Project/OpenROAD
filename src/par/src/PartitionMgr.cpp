@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "par/PartitionMgr.h"
+
 #include "MLPart.h"
 #ifdef PARTITIONERS
 extern "C" {
@@ -51,9 +52,9 @@ extern "C" {
 
 #include "HypergraphDecomposition.h"
 #include "autocluster.h"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "db_sta/dbSta.hh"
 
 using utl::PAR;
 
@@ -1365,7 +1366,8 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    const char* report_directory,
                                    const char* file_name)
 {
-  auto clusterer = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
+  auto clusterer
+      = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,

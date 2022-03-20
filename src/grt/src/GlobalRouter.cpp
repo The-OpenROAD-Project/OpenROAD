@@ -316,6 +316,14 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
   }
 }
 
+std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
+{
+  MakeWireParasitics builder(openroad_, this);
+  return builder.routeLayerLengths(db_net);
+}
+
+////////////////////////////////////////////////////////////////
+
 void GlobalRouter::initCoreGrid(int max_routing_layer)
 {
   initGrid(max_routing_layer);
@@ -339,7 +347,7 @@ void GlobalRouter::initRoutingLayers()
     if (tech_layer == nullptr) {
       logger_->error(GRT, 85, "Routing layer {} not found.", l);
     }
-    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
+    if (tech_layer->getRoutingLevel() != 0) {
       if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
           && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL) {
         logger_->error(GRT,
@@ -3346,7 +3354,7 @@ int GlobalRouter::computeMaxRoutingLayer()
   int valid_layers = 1;
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(valid_layers);
-    if (tech_layer->getLef58Type() != odb::dbTechLayer::MIMCAP) {
+    if (tech_layer->getRoutingLevel() != 0) {
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid == nullptr) {
         break;
@@ -3613,8 +3621,7 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& 
 
 void GlobalRouter::reportLayerWireLengths()
 {
-  std::vector<int64_t> lengths;
-  lengths.resize(db_->getTech()->getRoutingLayerCount() + 1);
+  std::vector<int64_t> lengths(db_->getTech()->getRoutingLayerCount() + 1);
   int64_t total_length = 0;
   for (auto& net_route : routes_) {
     GRoute& route = net_route.second;
@@ -3622,8 +3629,7 @@ void GlobalRouter::reportLayerWireLengths()
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;
       if (layer1 == layer2) {
-        int seg_length
-            = abs(seg.init_x - seg.final_x) + abs(seg.init_y - seg.final_y);
+        int seg_length = seg.length();
         lengths[layer1] += seg_length;
         total_length += seg_length;
       }

@@ -754,8 +754,6 @@ void dbBlockSearch::getInstBoxes(bool /* unused: ignoreFlag */)
   _dcr->getBbox(&x1, &y1, &x2, &y2);
 
   _instSdb->searchBoxIds(x1, y1, x2, y2);
-  _instSdb->makeGuiBoxes(
-      _dcr, _instMenuId, _inst_bb_id, false);  // use coords from Sdb
 
   /* Can get box ids and use DB box coords
 
@@ -1358,8 +1356,7 @@ uint dbBlockSearch::getTracks(bool /* unused: ignoreLayers */)
   bool* exludeTable = _dcr->getExcludeLayerTable();
   _trackSdb->searchWireIds(x1, y1, x2, y2, false, exludeTable);
 
-  return _trackSdb->makeGuiBoxes(
-      _dcr, _blockMenuId, _block_track_id, false, 0);  // use coords from Sdb
+  return 0;
 }
 #endif
 uint dbBlockSearch::getPowerWireVias(ZPtr<ISdb> sdb,
@@ -1459,10 +1456,6 @@ uint dbBlockSearch::getWiresAndVias_all(dbNet* targetNet, bool ignoreFlag)
 
     return 0;
 
-  uint excludeNetId = 0;
-  if (targetNet != NULL)
-    excludeNetId = targetNet->getId();
-
   uint cnt = 0;
 
   int x1, y1, x2, y2;
@@ -1475,33 +1468,15 @@ uint dbBlockSearch::getWiresAndVias_all(dbNet* targetNet, bool ignoreFlag)
   // _netSdb->searchWireIds(x1, y1, x2, y2, true, exludeTable);
   _netSdb->searchWireIds(x1, y1, x2, y2, false, exludeTable);
 
-  if (power_wires)
-    _netSdb->makeGuiBoxes(_dcr,
-                          _powerMenuId,
-                          _power_wire_id,
-                          false,
-                          excludeNetId);  // use coords from Sdb
-
   if (power_vias) {
     _netViaSdb->searchWireIds(x1, y1, x2, y2, true, exludeTable);
     getViasFromWires(
         _netViaSdb, _powerMenuId, _power_via_id, _power_via_id, NULL, false);
-    //_netViaSdb->makeGuiBoxes(_dcr, _powerMenuId, _power_via_id, false,
-    // excludeNetId); // use coords from Sdb
   }
-
-  if (signal_wires)
-    _netSdb->makeGuiBoxes(_dcr,
-                          _signalMenuId,
-                          _signal_wire_id,
-                          false,
-                          excludeNetId);  // use coords from Sdb
 
   if (signal_vias)
     getViasFromWires(
         _netSdb, _signalMenuId, _signal_via_id, _signal_wire_id, NULL, false);
-  //_netViaSdb->makeGuiBoxes(_dcr, _signalMenuId, _signal_via_id, false,
-  // excludeNetId); // use coords from Sdb
 
   return cnt;
 }
@@ -1517,10 +1492,6 @@ uint dbBlockSearch::getWiresClipped(dbNet* targetNet,
 
   if ((!ignoreFlag) && (!(signal_wires || power_wires)))
     return 0;
-
-  uint excludeNetId = 0;
-  if (targetNet != NULL)
-    excludeNetId = targetNet->getId();
 
   int x1, y1, x2, y2;
   _dcr->getBbox(&x1, &y1, &x2, &y2);
@@ -1552,19 +1523,6 @@ uint dbBlockSearch::getWiresClipped(dbNet* targetNet,
       _netSdb->searchWireIds(sx1, sy1, sx2, sy2, true, exludeTable);
 
       _dcr->setSearchBox(sx1, sy1, sx2, sy2);
-
-      if (power_wires)
-        _netSdb->makeGuiBoxes(_dcr,
-                              _powerMenuId,
-                              _power_wire_id,
-                              false,
-                              excludeNetId);  // use coords from Sdb
-      if (signal_wires)
-        _netSdb->makeGuiBoxes(_dcr,
-                              _signalMenuId,
-                              _signal_wire_id,
-                              false,
-                              excludeNetId);  // use coords from Sdb
     }
     _dcr->setSearchBox(x1, y1, x2, y2);
   }
@@ -2037,7 +1995,7 @@ uint dbBlockSearch::getNetFromDb(dbNet* net,
 
   if (ignoreBB || !_dcr->validSearchBbox()) {
     Rect maxBB;
-    maxBB.reset(ath__maxInt, ath__maxInt, -ath__maxInt, -ath__maxInt);
+    maxBB.mergeInit();
     getNetBbox(net, maxBB);
 
     uint dd = 1000;
@@ -2057,44 +2015,7 @@ uint dbBlockSearch::getNetFromDb(dbNet* net,
 
   return cnt;
 }
-/*
-uint dbBlockSearch::getNetFromSearch(dbNet *net, bool ignoreZuiFlags, bool
-ignoreBB)
-{
-        uint cnt= 0;
 
-        int x1, y1,	x2,	y2;
-        _dcr->getBbox(&x1, &y1, &x2, &y2);
-
-        Ath__array1D<uint> wireIdTable(16000);
-
-        if (!ignoreBB && !_dcr->validSearchBbox())
-        {
-                Rect maxBB;
-                maxBB.reset(ath__maxInt, ath__maxInt, -ath__maxInt,
--ath__maxInt); getNetBbox(net, maxBB);
-
-                x1= maxBB.xMin();
-                y1= maxBB.yMin();
-                x2= maxBB.xMax();
-                y2= maxBB.yMax();
-
-                uint dd= 1000;
-                _dcr->setSearchBox(x1-dd, y1-dd, x2+dd, y2+dd);
-        }
-        else {
-                _dcr->getBbox(&x1, &y1, &x2, &y2);
-        }
-
-        bool *exludeTable= _dcr->getExcludeLayerTable();
-        _netSdb->searchWireIds(x1, y1, x2, y2, true, exludeTable);
-
-        cnt += getWireVias(_signalMenuId, _signal_wire_id, true, net, false);
-        cnt += getWireVias(_signalMenuId, _signal_via_id, false, net, false);
-
-        return cnt;
-}
-*/
 uint dbBlockSearch::getNetWires(dbNet* net,
                                 bool contextFlag,
                                 uint clipMargin,

@@ -229,17 +229,17 @@ void FlexDRWorker::modCornerToCornerSpacing_helper(const Rect& box,
     for (int j = p1.y(); j <= p2.y(); j++) {
       switch (type) {
         case subRouteShape:
-          gridGraph_.subRouteShapeCostPlanar(i, j, z);
-          break;
+            gridGraph_.subRouteShapeCostPlanar(i, j, z);
+            break;
         case addRouteShape:
-          gridGraph_.addRouteShapeCostPlanar(i, j, z);
-          break;
+            gridGraph_.addRouteShapeCostPlanar(i, j, z);
+            break;
         case subFixedShape:
-          gridGraph_.subFixedShapeCostPlanar(i, j, z);
-          break;
+            gridGraph_.subFixedShapeCostPlanar(i, j, z);
+            break;
         case addFixedShape:
-          gridGraph_.addFixedShapeCostPlanar(i, j, z);
-          break;
+            gridGraph_.addFixedShapeCostPlanar(i, j, z);
+            break;
         default:;
       }
     }
@@ -277,7 +277,7 @@ void FlexDRWorker::modCornerToCornerSpacing(const Rect& box,
             box.xMax() + bloatDist,
             box.yMin());  // lr box corner
     modCornerToCornerSpacing_helper(bx, z, type);
-  }
+    }
 }
 
 void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
@@ -1585,7 +1585,6 @@ void FlexDRWorker::route_queue()
 
   // route
   route_queue_main(rerouteQueue);
-
   // end
   gcWorker_->resetTargetNet();
   gcWorker_->setEnableSurgicalFix(true);
@@ -1624,6 +1623,91 @@ void FlexDRWorker::route_queue()
   if (graphics_) {
     graphics_->show(true);
   }
+  
+  if (getDRIter() >= 7 && getDRIter() <= 30)
+    identifyCongestionLevel();
+}
+
+void FlexDRWorker::identifyCongestionLevel() {
+    vector<drNet*> bpNets;
+    for (auto& uNet : nets_) {
+        drNet* net = uNet.get();
+        bool bpLow = false, bpHigh = false;
+        for (auto& uPin : net->getPins()) {
+            drPin* pin = uPin.get();
+            if (pin->hasFrTerm())
+                continue;
+            for (auto& uAP : pin->getAccessPatterns()) {
+                drAccessPattern* ap = uAP.get();
+                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+                    if (ap->getPoint().y() == getRouteBox().yMin())
+                        bpLow = true;
+                    else if (ap->getPoint().y() == getRouteBox().yMax())
+                        bpHigh = true;
+                } else {
+                    if (ap->getPoint().x() == getRouteBox().xMin())
+                        bpLow = true;
+                    else if (ap->getPoint().x() == getRouteBox().xMax())
+                        bpHigh = true;
+                }
+            }
+        }
+        if (bpLow && bpHigh)
+             bpNets.push_back(net);
+    }
+    vector<int> nLowBorderCross(gridGraph_.getLayerCount(), 0);
+    vector<int> nHighBorderCross(gridGraph_.getLayerCount(), 0);
+    for (drNet*net : bpNets) {
+        for (auto& uPin : net->getPins()) {
+            drPin* pin = uPin.get();
+            if (pin->hasFrTerm())
+                continue;
+            for (auto& uAP : pin->getAccessPatterns()) {
+                drAccessPattern* ap = uAP.get();
+                frMIdx z = gridGraph_.getMazeZIdx(ap->getBeginLayerNum());
+                if (design_->isVerticalLayer(ap->getBeginLayerNum())) {
+                    if (ap->getPoint().y() == getRouteBox().yMin())
+                        nLowBorderCross[z]++;
+                    else if (ap->getPoint().y() == getRouteBox().yMax())
+                        nHighBorderCross[z]++;
+                } else {
+                    if (ap->getPoint().x() == getRouteBox().xMin())
+                        nLowBorderCross[z]++;
+                    else if (ap->getPoint().x() == getRouteBox().xMax())
+                        nHighBorderCross[z]++;
+                }
+            }
+        }
+    }
+    for (int z = 0; z < gridGraph_.getLayerCount(); z++) {
+        frLayerNum lNum = gridGraph_.getLayerNum(z);
+        auto& trackPatterns = design_->getTopBlock()->getTrackPatterns(lNum);
+        frTrackPattern* tp = nullptr;
+        int workerSize;
+        if (design_->isHorizontalLayer(lNum)) { 
+            for (auto& utp : trackPatterns) {
+                if (!utp->isHorizontal()) //reminder: trackPattern isHorizontal means vertical tracks
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dy();
+        } else {
+            for (auto& utp : trackPatterns) {
+                if (utp->isHorizontal())
+                    tp = utp.get();
+            }
+            workerSize = getRouteBox().dx();
+        }
+        if (tp == nullptr)
+            continue;
+        int nTracks = workerSize/tp->getTrackSpacing(); //1 track error margin
+        float congestionFactorLow = nLowBorderCross[z]/(float)nTracks;
+        float congestionFactorHigh = nHighBorderCross[z]/(float)nTracks;
+        float finalFactor = max(congestionFactorLow, congestionFactorHigh);
+        if (finalFactor >= CONGESTION_THRESHOLD) {
+            isCongested_ = true;
+            return;
+        }
+    }
 }
 
 void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
@@ -1697,7 +1781,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
-
       // gc
       if (gcWorker_->setTargetNet(net->getFrNet())) {
         gcWorker_->updateDRNet(net);
@@ -1750,7 +1833,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         }
       }
     }
-
     // end
     if (didCheck) {
       route_queue_update_queue(gcWorker_->getMarkers(), rerouteQueue);

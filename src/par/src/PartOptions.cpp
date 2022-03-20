@@ -37,13 +37,13 @@
 
 namespace par {
 
-void
-PartOptions::setRandomSeed(int seed) {
+void PartOptions::setRandomSeed(int seed)
+{
   seedGenerator_.seed(seed);
 }
 
-void
-PartOptions::generateSeeds(int seeds) {
+void PartOptions::generateSeeds(int seeds)
+{
   seeds_.clear();
 
   while (seeds_.size() < seeds)

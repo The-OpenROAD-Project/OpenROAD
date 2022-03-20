@@ -7,10 +7,10 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <queue>
 #include <string>
 #include <tuple>
-#include <map>
 #include <vector>
 
 #include "MLPart.h"
@@ -58,7 +58,6 @@ using std::sort;
 using std::string;
 using std::to_string;
 using std::tuple;
-using std::map;
 using std::vector;
 
 using odb::dbBlock;
@@ -100,12 +99,12 @@ float Cluster::calculateArea(ord::dbVerilogNetwork* network) const
 {
   float area = 0.0;
   for (auto* inst : inst_vec_) {
-    LibertyCell* liberty_cell = network->libertyCell(inst);
+    const LibertyCell* liberty_cell = network->libertyCell(inst);
     area += liberty_cell->area();
   }
 
   for (auto* macro : macro_vec_) {
-    LibertyCell* liberty_cell = network->libertyCell(macro);
+    const LibertyCell* liberty_cell = network->libertyCell(macro);
     area += liberty_cell->area();
   }
 
@@ -115,7 +114,7 @@ float Cluster::calculateArea(ord::dbVerilogNetwork* network) const
 void Cluster::calculateNumSeq(ord::dbVerilogNetwork* network)
 {
   for (auto* inst : inst_vec_) {
-    LibertyCell* lib_cell = network->libertyCell(inst);
+    const LibertyCell* lib_cell = network->libertyCell(inst);
     if (lib_cell->hasSequentials())
       num_seq_ += 1;
   }
@@ -139,12 +138,12 @@ Metric AutoClusterMgr::computeMetrics(sta::Instance* inst)
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
-      Metric metric = computeMetrics(child);
+      const Metric metric = computeMetrics(child);
       area += metric.area;
       num_inst += metric.num_inst;
       num_macro += metric.num_macro;
     } else {
-      LibertyCell* liberty_cell = network_->libertyCell(child);
+      const LibertyCell* liberty_cell = network_->libertyCell(child);
       area += liberty_cell->area();
       if (liberty_cell->isBuffer()) {
         num_buffer_ += 1;
@@ -152,9 +151,9 @@ Metric AutoClusterMgr::computeMetrics(sta::Instance* inst)
         buffer_map_[child] = ++buffer_id_;
       }
 
-      Cell* cell = network_->cell(child);
+      const Cell* cell = network_->cell(child);
       const char* cell_name = network_->name(cell);
-      dbMaster* master = db_->findMaster(cell_name);
+      const dbMaster* master = db_->findMaster(cell_name);
       if (master->isBlock()) {
         num_macro += 1;
         macros_.push_back(child);
@@ -163,13 +162,13 @@ Metric AutoClusterMgr::computeMetrics(sta::Instance* inst)
       }
     }
   }
-  Metric metric = Metric(area, num_macro, num_inst);
+  const Metric metric = Metric(area, num_macro, num_inst);
   logical_cluster_map_[inst] = metric;
   return metric;
 }
 
-static bool isConnectedNet(const pair<Net*, Net*>& p1,
-                           const pair<Net*, Net*>& p2)
+static bool isConnectedNet(const pair<const Net*, const Net*>& p1,
+                           const pair<const Net*, const Net*>& p2)
 {
   if (p1.first != nullptr) {
     if (p1.first == p2.first || p1.first == p2.second)
@@ -184,7 +183,8 @@ static bool isConnectedNet(const pair<Net*, Net*>& p1,
   return false;
 }
 
-static void appendNet(vector<Net*>& vec, pair<Net*, Net*>& p)
+static void appendNet(vector<const Net*>& vec,
+                      const pair<const Net*, const Net*>& p)
 {
   if (p.first != nullptr) {
     if (find(vec.begin(), vec.end(), p.first) == vec.end())
@@ -202,7 +202,7 @@ static void appendNet(vector<Net*>& vec, pair<Net*, Net*>& p)
 //
 void AutoClusterMgr::getBufferNet()
 {
-  vector<pair<Net*, Net*>> buffer_net;
+  vector<pair<const Net*, const Net*>> buffer_net;
   for (int i = 0; i <= buffer_id_; i++) {
     buffer_net.push_back({nullptr, nullptr});
   }
@@ -224,31 +224,29 @@ void AutoClusterMgr::getBufferNet()
     }
   }
 
-  for (int i = 0; i < unique_id; i++) {
-    vector<Net*> vec_net;
-    buffer_net_vec_.push_back(vec_net);
-  }
+  buffer_net_vec_.resize(unique_id);
 
   for (int i = 0; i <= buffer_id_; i++) {
     appendNet(buffer_net_vec_[class_array[i]], buffer_net[i]);
   }
 }
 
-void AutoClusterMgr::getBufferNetUtil(Instance* inst,
-                                      vector<pair<Net*, Net*>>& buffer_net)
+void AutoClusterMgr::getBufferNetUtil(
+    const Instance* inst,
+    vector<pair<const Net*, const Net*>>& buffer_net)
 {
   const bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
   while (net_iter->hasNext()) {
-    Net* net = net_iter->next();
+    const Net* net = net_iter->next();
     bool with_buffer = false;
     if (is_top || !hasTerminals(net)) {
       NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
       while (pin_iter->hasNext()) {
-        Pin* pin = pin_iter->next();
+        const Pin* pin = pin_iter->next();
         if (network_->isLeaf(pin)) {
-          Instance* child_inst = network_->instance(pin);
-          LibertyCell* liberty_cell = network_->libertyCell(child_inst);
+          const Instance* child_inst = network_->instance(pin);
+          const LibertyCell* liberty_cell = network_->libertyCell(child_inst);
           if (liberty_cell->isBuffer()) {
             with_buffer = true;
             const int buffer_id = buffer_map_[child_inst];
@@ -274,7 +272,7 @@ void AutoClusterMgr::getBufferNetUtil(Instance* inst,
 
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
+    const Instance* child = child_iter->next();
     getBufferNetUtil(child, buffer_net);
   }
 
@@ -303,13 +301,13 @@ void AutoClusterMgr::createBundledIO()
 
   // Map all the BTerms to IORegions
   for (auto term : block_->getBTerms()) {
-    std::string bterm_name = term->getName();
+    const std::string bterm_name = term->getName();
     int lx = INT_MAX;
     int ly = INT_MAX;
     int ux = 0;
     int uy = 0;
-    for (auto pin : term->getBPins()) {
-      for (auto box : pin->getBoxes()) {
+    for (const auto pin : term->getBPins()) {
+      for (const auto box : pin->getBoxes()) {
         lx = min(lx, box->xMin());
         ly = min(ly, box->yMin());
         ux = max(ux, box->xMax());
@@ -317,8 +315,8 @@ void AutoClusterMgr::createBundledIO()
       }
     }
 
-    int x_third = floorplan_ux_ / 3;
-    int y_third = floorplan_uy_ / 3;
+    const int x_third = floorplan_ux_ / 3;
+    const int y_third = floorplan_uy_ / 3;
 
     if (lx == floorplan_lx_) {  // Left
       if (uy <= y_third)
@@ -362,14 +360,14 @@ void AutoClusterMgr::createBundledIO()
 void AutoClusterMgr::createCluster(int& cluster_id)
 {
   // This function will only be called by top instance
-  Instance* inst = network_->topInstance();
+  const Instance* inst = network_->topInstance();
   const Metric metric = logical_cluster_map_[inst];
   bool is_hier = false;
   if (metric.num_macro > max_num_macro_ || metric.num_inst > max_num_inst_) {
     InstanceChildIterator* child_iter = network_->childIterator(inst);
-    vector<Instance*> glue_inst_vec;
+    vector<const Instance*> glue_inst_vec;
     while (child_iter->hasNext()) {
-      Instance* child = child_iter->next();
+      const Instance* child = child_iter->next();
       if (network_->isHierarchical(child)) {
         createClusterUtil(child, cluster_id);
         is_hier = true;
@@ -382,15 +380,15 @@ void AutoClusterMgr::createCluster(int& cluster_id)
       string name = "top";
       if (!is_hier)
         name += "_glue_logic";
-      Cluster* cluster = new Cluster(++cluster_id, !is_hier, name);
-      for (Instance* inst : glue_inst_vec) {
-        LibertyCell* liberty_cell = network_->libertyCell(inst);
+      Cluster* cluster = new Cluster(++cluster_id, name);
+      for (const Instance* inst : glue_inst_vec) {
+        const LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell->isBuffer() == true)
           continue;
 
-        Cell* cell = network_->cell(inst);
+        const Cell* cell = network_->cell(inst);
         const char* cell_name = network_->name(cell);
-        dbMaster* master = db_->findMaster(cell_name);
+        const dbMaster* master = db_->findMaster(cell_name);
         if (master->isBlock())
           cluster->addMacro(inst);
         else
@@ -408,18 +406,18 @@ void AutoClusterMgr::createCluster(int& cluster_id)
     }
   } else {
     // This no need to do any clustering
-    Cluster* cluster = new Cluster(++cluster_id, true, string("top_instance"));
+    Cluster* cluster = new Cluster(++cluster_id, string("top_instance"));
     cluster_map_[cluster_id] = cluster;
     cluster->setTopInst(inst);
     cluster->addLogicalModule(string("top_instance"));
     LeafInstanceIterator* leaf_iter = network_->leafInstanceIterator(inst);
     while (leaf_iter->hasNext()) {
-      Instance* leaf_inst = leaf_iter->next();
-      LibertyCell* liberty_cell = network_->libertyCell(leaf_inst);
+      const Instance* leaf_inst = leaf_iter->next();
+      const LibertyCell* liberty_cell = network_->libertyCell(leaf_inst);
       if (liberty_cell->isBuffer() == false) {
-        Cell* cell = network_->cell(leaf_inst);
+        const Cell* cell = network_->cell(leaf_inst);
         const char* cell_name = network_->name(cell);
-        dbMaster* master = db_->findMaster(cell_name);
+        const dbMaster* master = db_->findMaster(cell_name);
         if (master->isBlock())
           cluster->addMacro(leaf_inst);
         else
@@ -432,21 +430,21 @@ void AutoClusterMgr::createCluster(int& cluster_id)
   }
 }
 
-void AutoClusterMgr::createClusterUtil(Instance* inst, int& cluster_id)
+void AutoClusterMgr::createClusterUtil(const Instance* inst, int& cluster_id)
 {
   Cluster* cluster
-      = new Cluster(++cluster_id, true, string(network_->pathName(inst)));
+      = new Cluster(++cluster_id, string(network_->pathName(inst)));
   cluster->setTopInst(inst);
   cluster->addLogicalModule(string(network_->pathName(inst)));
   cluster_map_[cluster_id] = cluster;
   LeafInstanceIterator* leaf_iter = network_->leafInstanceIterator(inst);
   while (leaf_iter->hasNext()) {
-    Instance* leaf_inst = leaf_iter->next();
-    LibertyCell* liberty_cell = network_->libertyCell(leaf_inst);
+    const Instance* leaf_inst = leaf_iter->next();
+    const LibertyCell* liberty_cell = network_->libertyCell(leaf_inst);
     if (liberty_cell->isBuffer() == false) {
-      Cell* cell = network_->cell(leaf_inst);
+      const Cell* cell = network_->cell(leaf_inst);
       const char* cell_name = network_->name(cell);
-      dbMaster* master = db_->findMaster(cell_name);
+      const dbMaster* master = db_->findMaster(cell_name);
       if (master->isBlock())
         cluster->addMacro(leaf_inst);
       else
@@ -477,7 +475,7 @@ void AutoClusterMgr::updateConnection()
   calculateBufferNetConnection();
 }
 
-bool AutoClusterMgr::hasTerminals(Net* net)
+bool AutoClusterMgr::hasTerminals(const Net* net)
 {
   NetTermIterator* term_iter = network_->termIterator(net);
   const bool has_terms = term_iter->hasNext();
@@ -491,12 +489,12 @@ void AutoClusterMgr::calculateBufferNetConnection()
     int driver_id = 0;
     vector<int> loads_id;
     for (int j = 0; j < buffer_net_vec_[i].size(); j++) {
-      Net* net = buffer_net_vec_[i][j];
+      const Net* net = buffer_net_vec_[i][j];
       const bool is_top = network_->instance(net) == network_->topInstance();
       if (is_top || !hasTerminals(net)) {
         NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
         while (pin_iter->hasNext()) {
-          Pin* pin = pin_iter->next();
+          const Pin* pin = pin_iter->next();
           if (network_->isTopLevelPort(pin)) {
             const char* port_name = network_->portName(pin);
             const int id = bundled_io_map_[bterm_map_[string(port_name)]];
@@ -507,8 +505,8 @@ void AutoClusterMgr::calculateBufferNetConnection()
               loads_id.push_back(id);
             }
           } else if (network_->isLeaf(pin)) {
-            Instance* inst = network_->instance(pin);
-            LibertyCell* liberty_cell = network_->libertyCell(inst);
+            const Instance* inst = network_->instance(pin);
+            const LibertyCell* liberty_cell = network_->libertyCell(inst);
             if (liberty_cell->isBuffer() == false) {
               const PortDirection* port_dir = network_->direction(pin);
               const int id = inst_map_[inst];
@@ -534,12 +532,12 @@ void AutoClusterMgr::calculateBufferNetConnection()
   }
 }
 
-void AutoClusterMgr::calculateConnection(Instance* inst)
+void AutoClusterMgr::calculateConnection(const Instance* inst)
 {
   const bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
   while (net_iter->hasNext()) {
-    Net* net = net_iter->next();
+    const Net* net = net_iter->next();
     int driver_id = 0;
     vector<int> loads_id;
     bool buffer_flag = false;
@@ -561,7 +559,7 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
             loads_id.push_back(id);
           }
         } else if (network_->isLeaf(pin)) {
-          Instance* inst = network_->instance(pin);
+          const Instance* inst = network_->instance(pin);
           const PortDirection* port_dir = network_->direction(pin);
           const int id = inst_map_[inst];
           if (port_dir == PortDirection::output()) {
@@ -587,14 +585,14 @@ void AutoClusterMgr::calculateConnection(Instance* inst)
 
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
+    const Instance* child = child_iter->next();
     calculateConnection(child);
   }
 
   delete child_iter;
 }
 
-void AutoClusterMgr::merge(string parent_name)
+void AutoClusterMgr::merge(const string& parent_name)
 {
   if (merge_cluster_list_.size() == 0)
     return;
@@ -610,7 +608,7 @@ void AutoClusterMgr::merge(string parent_name)
   unsigned int num_macro = calculateClusterNumMacro(merge_cluster_list_);
   int merge_index = 0;
   while (num_inst > max_num_inst_ || num_macro > max_num_macro_) {
-    int num_merge_cluster = merge_cluster_list_.size();
+    const int num_merge_cluster = merge_cluster_list_.size();
     mergeUtil(parent_name, merge_index);
     if (num_merge_cluster == merge_cluster_list_.size())
       break;
@@ -635,20 +633,20 @@ void AutoClusterMgr::merge(string parent_name)
 }
 
 unsigned int AutoClusterMgr::calculateClusterNumMacro(
-    vector<Cluster*>& cluster_vec)
+    const vector<Cluster*>& cluster_vec)
 {
   unsigned int num_macro = 0;
-  for (auto cluster : cluster_vec)
+  for (const auto cluster : cluster_vec)
     num_macro += cluster->getNumMacro();
 
   return num_macro;
 }
 
 unsigned int AutoClusterMgr::calculateClusterNumInst(
-    vector<Cluster*>& cluster_vec)
+    const vector<Cluster*>& cluster_vec)
 {
   unsigned int num_inst = 0;
-  for (auto cluster : cluster_vec)
+  for (const auto cluster : cluster_vec)
     num_inst += cluster->getNumInst();
 
   return num_inst;
@@ -658,14 +656,14 @@ unsigned int AutoClusterMgr::calculateClusterNumInst(
 // Merge target cluster into src
 // Target cluster will be deleted outside the function
 //
-void AutoClusterMgr::mergeCluster(Cluster* src, Cluster* target)
+void AutoClusterMgr::mergeCluster(Cluster* src, const Cluster* target)
 {
   const int src_id = src->getId();
   const int target_id = target->getId();
   cluster_map_.erase(target_id);
   src->addLogicalModuleVec(target->getLogicalModuleVec());
 
-  for (auto inst : target->getInsts()) {
+  for (const auto inst : target->getInsts()) {
     src->addInst(inst);
     inst_map_[inst] = src_id;
   }
@@ -676,15 +674,15 @@ void AutoClusterMgr::mergeCluster(Cluster* src, Cluster* target)
   }
 }
 
-void AutoClusterMgr::mergeUtil(string parent_name, int& merge_index)
+void AutoClusterMgr::mergeUtil(const string& parent_name, int& merge_index)
 {
   vector<int> outside_vec;
   vector<int> merge_vec;
 
-  for (auto cluster : cluster_list_)
+  for (const auto cluster : cluster_list_)
     outside_vec.push_back(cluster->getId());
 
-  for (auto cluster : merge_cluster_list_)
+  for (const auto cluster : merge_cluster_list_)
     merge_vec.push_back(cluster->getId());
 
   const int M = merge_vec.size();
@@ -767,12 +765,12 @@ void AutoClusterMgr::mergeUtil(string parent_name, int& merge_index)
 //
 void AutoClusterMgr::breakCluster(Cluster* cluster_old, int& cluster_id)
 {
-  Instance* inst = cluster_old->getTopInstance();
+  const Instance* inst = cluster_old->getTopInstance();
   InstanceChildIterator* child_iter = network_->childIterator(inst);
-  vector<Instance*> glue_inst_vec;
+  vector<const Instance*> glue_inst_vec;
   bool is_hier = false;
   while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
+    const Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
       is_hier = true;
       createClusterUtil(child, cluster_id);
@@ -787,11 +785,11 @@ void AutoClusterMgr::breakCluster(Cluster* cluster_old, int& cluster_id)
   // Create cluster for glue logic
   if (glue_inst_vec.size() >= 1) {
     const string name = network_->pathName(inst) + string("_glue_logic");
-    Cluster* cluster = new Cluster(++cluster_id, false, name);
+    Cluster* cluster = new Cluster(++cluster_id, name);
     for (auto inst : glue_inst_vec) {
-      LibertyCell* liberty_cell = network_->libertyCell(inst);
+      const LibertyCell* liberty_cell = network_->libertyCell(inst);
       if (liberty_cell->isBuffer() == false) {
-        Cell* cell = network_->cell(inst);
+        const Cell* cell = network_->cell(inst);
         const char* cell_name = network_->name(cell);
         const dbMaster* master = db_->findMaster(cell_name);
         if (master->isBlock())
@@ -839,8 +837,8 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   cluster_list_.erase(vec_it);
 
   const int src_id = cluster->getId();
-  map<int, Instance*> idx_to_inst;
-  map<Instance*, int> inst_to_idx;
+  map<int, const Instance*> idx_to_inst;
+  map<const Instance*, int> inst_to_idx;
   vector<double> vertex_weight;
   vector<double> edge_weight;
   vector<int> col_idx;  // edges represented by vertex indices
@@ -853,7 +851,7 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
     node_map[cluster_list_[i]] = inst_id++;
   }
 
-  vector<Instance*> inst_vec = cluster->getInsts();
+  vector<const Instance*> inst_vec = cluster->getInsts();
   for (int i = 0; i < inst_vec.size(); i++) {
     idx_to_inst[inst_id] = inst_vec[i];
     inst_to_idx[inst_vec[i]] = inst_id++;
@@ -931,11 +929,11 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
 
   const string name_part0 = cluster->getName() + string("_cluster_0");
   const string name_part1 = cluster->getName() + string("_cluster_1");
-  Cluster* cluster_part0 = new Cluster(++cluster_id, true, name_part0);
+  Cluster* cluster_part0 = new Cluster(++cluster_id, name_part0);
   const int id_part0 = cluster_id;
   cluster_map_[id_part0] = cluster_part0;
   cluster_list_.push_back(cluster_part0);
-  Cluster* cluster_part1 = new Cluster(++cluster_id, true, name_part1);
+  Cluster* cluster_part1 = new Cluster(++cluster_id, name_part1);
   const int id_part1 = cluster_id;
   cluster_map_[id_part1] = cluster_part1;
   cluster_list_.push_back(cluster_part1);
@@ -961,20 +959,20 @@ void AutoClusterMgr::MLPart(Cluster* cluster, int& cluster_id)
   delete cluster;
 }
 
-void AutoClusterMgr::MLPartNetUtil(Instance* inst,
+void AutoClusterMgr::MLPartNetUtil(const Instance* inst,
                                    const int src_id,
                                    int& count,
                                    vector<int>& col_idx,
                                    vector<int>& row_ptr,
                                    vector<double>& edge_weight,
                                    map<Cluster*, int>& node_map,
-                                   map<int, Instance*>& idx_to_inst,
-                                   map<Instance*, int>& inst_to_idx)
+                                   map<int, const Instance*>& idx_to_inst,
+                                   map<const Instance*, int>& inst_to_idx)
 {
   const bool is_top = (inst == network_->topInstance());
   NetIterator* net_iter = network_->netIterator(inst);
   while (net_iter->hasNext()) {
-    Net* net = net_iter->next();
+    const Net* net = net_iter->next();
     int driver_id = -1;
     vector<int> loads_id;
     bool buffer_flag = false;
@@ -985,12 +983,12 @@ void AutoClusterMgr::MLPartNetUtil(Instance* inst,
     if ((buffer_flag == false) && (is_top || !hasTerminals(net))) {
       NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
       while (pin_iter->hasNext()) {
-        Pin* pin = pin_iter->next();
+        const Pin* pin = pin_iter->next();
         if (network_->isTopLevelPort(pin)) {
           const char* port_name = network_->portName(pin);
           int id = bundled_io_map_[bterm_map_[string(port_name)]];
           id = node_map[cluster_map_[id]];
-          PortDirection* port_dir = network_->direction(pin);
+          const PortDirection* port_dir = network_->direction(pin);
           if (port_dir == PortDirection::input()) {
             driver_id = id;
           } else {
@@ -999,8 +997,8 @@ void AutoClusterMgr::MLPartNetUtil(Instance* inst,
               loads_id.push_back(id);
           }
         } else if (network_->isLeaf(pin)) {
-          Instance* inst = network_->instance(pin);
-          PortDirection* port_dir = network_->direction(pin);
+          const Instance* inst = network_->instance(pin);
+          const PortDirection* port_dir = network_->direction(pin);
           int id = inst_map_[inst];
           if (id == src_id)
             id = inst_to_idx[inst];
@@ -1033,7 +1031,7 @@ void AutoClusterMgr::MLPartNetUtil(Instance* inst,
 
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
+    const Instance* child = child_iter->next();
     MLPartNetUtil(child,
                   src_id,
                   count,
@@ -1048,26 +1046,25 @@ void AutoClusterMgr::MLPartNetUtil(Instance* inst,
   delete child_iter;
 }
 
-void AutoClusterMgr::MLPartBufferNetUtil(
-    const int src_id,
-    int& count,
-    vector<int>& col_idx,
-    vector<int>& row_ptr,
-    vector<double>& edge_weight,
-    map<Cluster*, int>& node_map,
-    map<int, Instance*>& idx_to_inst,
-    map<Instance*, int>& inst_to_idx)
+void AutoClusterMgr::MLPartBufferNetUtil(const int src_id,
+                                         int& count,
+                                         vector<int>& col_idx,
+                                         vector<int>& row_ptr,
+                                         vector<double>& edge_weight,
+                                         map<Cluster*, int>& node_map,
+                                         map<int, const Instance*>& idx_to_inst,
+                                         map<const Instance*, int>& inst_to_idx)
 {
   for (int i = 0; i < buffer_net_vec_.size(); i++) {
     int driver_id = -1;
     vector<int> loads_id;
     for (int j = 0; j < buffer_net_vec_[i].size(); j++) {
-      Net* net = buffer_net_vec_[i][j];
+      const Net* net = buffer_net_vec_[i][j];
       const bool is_top = network_->instance(net) == network_->topInstance();
       if (is_top || !hasTerminals(net)) {
         NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
         while (pin_iter->hasNext()) {
-          Pin* pin = pin_iter->next();
+          const Pin* pin = pin_iter->next();
           if (network_->isTopLevelPort(pin)) {
             const char* port_name = network_->portName(pin);
             int id = bundled_io_map_[bterm_map_[string(port_name)]];
@@ -1081,8 +1078,8 @@ void AutoClusterMgr::MLPartBufferNetUtil(
                 loads_id.push_back(id);
             }
           } else if (network_->isLeaf(pin)) {
-            Instance* inst = network_->instance(pin);
-            LibertyCell* liberty_cell = network_->libertyCell(inst);
+            const Instance* inst = network_->instance(pin);
+            const LibertyCell* liberty_cell = network_->libertyCell(inst);
             if (liberty_cell->isBuffer() == false) {
               const PortDirection* port_dir = network_->direction(pin);
               int id = inst_map_[inst];
@@ -1123,17 +1120,17 @@ void AutoClusterMgr::MLPartBufferNetUtil(
 //
 void AutoClusterMgr::MacroPart(Cluster* cluster_old, int& cluster_id)
 {
-  vector<Instance*> macro_vec = cluster_old->getMacros();
-  map<int, vector<Instance*>> macro_map;
+  vector<const Instance*> macro_vec = cluster_old->getMacros();
+  map<int, vector<const Instance*>> macro_map;
   for (auto macro : macro_vec) {
-    Cell* cell = network_->cell(macro);
+    const Cell* cell = network_->cell(macro);
     const char* cell_name = network_->name(cell);
     const dbMaster* master = db_->findMaster(cell_name);
     const int area = master->getWidth() * master->getHeight();
     if (macro_map.find(area) != macro_map.end()) {
       macro_map[area].push_back(macro);
     } else {
-      vector<Instance*> temp_vec;
+      vector<const Instance*> temp_vec;
       temp_vec.push_back(macro);
       macro_map[area] = temp_vec;
     }
@@ -1144,9 +1141,9 @@ void AutoClusterMgr::MacroPart(Cluster* cluster_old, int& cluster_id)
 
   vector<int> cluster_id_list;
   for (auto& [area, macros] : macro_map) {
-    vector<Instance*> temp_vec = macros;
-    string name = parent_name + "_part_" + to_string(part_id++);
-    Cluster* cluster = new Cluster(++cluster_id, true, name);
+    vector<const Instance*> temp_vec = macros;
+    const string name = parent_name + "_part_" + to_string(part_id++);
+    Cluster* cluster = new Cluster(++cluster_id, name);
     cluster_id_list.push_back(cluster->getId());
     cluster->addLogicalModule(parent_name);
     cluster_list_.push_back(cluster);
@@ -1173,7 +1170,7 @@ void AutoClusterMgr::MacroPart(Cluster* cluster_old, int& cluster_id)
 void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
 {
   queue<Cluster*> temp_cluster_queue;
-  vector<Instance*> macro_vec = cluster_old->getMacros();
+  vector<const Instance*> macro_vec = cluster_old->getMacros();
   string module_name = cluster_old->getName();
   for (int i = 0; i < module_name.size(); i++) {
     if (module_name[i] == '/')
@@ -1199,7 +1196,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
     output_file << pin_pos.first << "   " << pin_pos.second << "  ";
     output_file << endl;
     Cluster* cluster
-        = new Cluster(++cluster_id, true, network_->pathName(macro_vec[i]));
+        = new Cluster(++cluster_id, network_->pathName(macro_vec[i]));
     cluster_map_[cluster_id] = cluster;
     inst_map_[macro_vec[i]] = cluster_id;
     cluster->addMacro(macro_vec[i]);
@@ -1213,8 +1210,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
   output_file.open(net_file_name.c_str());
   int net_id = 0;
   for (auto [src_id, cluster] : cluster_map_) {
-    map<int, unsigned int> connection_map
-        = cluster->getOutputConnections();
+    map<int, unsigned int> connection_map = cluster->getOutputConnections();
     map<int, unsigned int>::iterator iter = connection_map.begin();
     bool flag = true;
     while (iter != connection_map.end()) {
@@ -1249,7 +1245,7 @@ void AutoClusterMgr::printMacroCluster(Cluster* cluster_old, int& cluster_id)
   }
 }
 
-pair<float, float> AutoClusterMgr::printPinPos(Instance* macro_inst)
+pair<float, float> AutoClusterMgr::printPinPos(const Instance* macro_inst)
 {
   const float dbu = db_->getTech()->getDbUnitsPerMicron();
   Rect bbox;
@@ -1273,7 +1269,7 @@ pair<float, float> AutoClusterMgr::printPinPos(Instance* macro_inst)
   return std::pair<float, float>(x_center, y_center);
 }
 
-void AutoClusterMgr::mergeMacro(string parent_name, int std_cell_id)
+void AutoClusterMgr::mergeMacro(const string& parent_name, int std_cell_id)
 {
   if (merge_cluster_list_.size() == 0)
     return;
@@ -1289,7 +1285,7 @@ void AutoClusterMgr::mergeMacro(string parent_name, int std_cell_id)
   mergeMacroUtil(parent_name, merge_index, std_cell_id);
 }
 
-void AutoClusterMgr::mergeMacroUtil(string parent_name,
+void AutoClusterMgr::mergeMacroUtil(const string& parent_name,
                                     int& merge_index,
                                     int std_cell_id)
 {
@@ -1618,8 +1614,7 @@ void AutoClusterMgr::addTimingWeight(float weight)
     }
   }
 
-  map<int, map<int, int>>::iterator map_iter
-      = virtual_timing_map_.begin();
+  map<int, map<int, int>>::iterator map_iter = virtual_timing_map_.begin();
   for (; map_iter != virtual_timing_map_.end(); map_iter++) {
     int src_id = map_iter->first;
     map<int, int> sinks = map_iter->second;
@@ -1703,7 +1698,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
                           pair(RightUpper, "RU"),
                           pair(TopUpper, "TU"),
                           pair(BottomUpper, "BU")}) {
-    Cluster* cluster = new Cluster(++cluster_id, true, name);
+    Cluster* cluster = new Cluster(++cluster_id, name);
     bundled_io_map_[io] = cluster_id;
     cluster_map_[cluster_id] = cluster;
     cluster_list_.push_back(cluster);
@@ -1773,10 +1768,10 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
     int id = (-1) * cluster_old->getId();
     virtual_map_[id] = cluster_old->getId();
     string name = cluster_old->getName() + string("_macro");
-    Cluster* cluster = new Cluster(id, true, name);
+    Cluster* cluster = new Cluster(id, name);
     cluster->addLogicalModule(name);
     cluster_map_[id] = cluster;
-    vector<Instance*> macro_vec = cluster_old->getMacros();
+    vector<const Instance*> macro_vec = cluster_old->getMacros();
     for (int j = 0; j < macro_vec.size(); j++) {
       inst_map_[macro_vec[j]] = id;
       cluster->addMacro(macro_vec[j]);
@@ -1801,11 +1796,11 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   while (!par_cluster_queue.empty()) {
     Cluster* cluster_old = par_cluster_queue.front();
     par_cluster_queue.pop();
-    vector<Instance*> macro_vec = cluster_old->getMacros();
+    vector<const Instance*> macro_vec = cluster_old->getMacros();
     string name = cluster_old->getName();
     for (int i = 0; i < macro_vec.size(); i++) {
       Cluster* cluster
-          = new Cluster(++cluster_id, true, network_->pathName(macro_vec[i]));
+          = new Cluster(++cluster_id, network_->pathName(macro_vec[i]));
       cluster->addLogicalModule(network_->pathName(macro_vec[i]));
       cluster_map_[cluster_id] = cluster;
       inst_map_[macro_vec[i]] = cluster_id;
@@ -1843,8 +1838,8 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   // add virtual weights between hard macros
   map<int, int>::iterator weight_it = virtual_map_.begin();
   while (weight_it != virtual_map_.end()) {
-    int id = weight_it->second;
-    int target_id = weight_it->first;
+    const int id = weight_it->second;
+    const int target_id = weight_it->first;
     cluster_map_[id]->addOutputConnection(target_id, virtual_weight_);
     cluster_map_[target_id]->addInputConnection(id, virtual_weight_);
     weight_it++;
@@ -1944,20 +1939,20 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   logger_->info(
       PAR, 403, "Number of Clusters created: {}", cluster_list_.size());
   map_iter = cluster_map_.begin();
-  float dbu = db_->getTech()->getDbUnitsPerMicron();
+  const float dbu = db_->getTech()->getDbUnitsPerMicron();
   while (map_iter != cluster_map_.end()) {
-    float area = map_iter->second->calculateArea(network_);
+    const float area = map_iter->second->calculateArea(network_);
     if (area != 0.0) {
       output_file << "cluster: " << map_iter->second->getName() << endl;
       output_file << "area:  " << area << endl;
       if (map_iter->second->getNumMacro() > 0) {
-        vector<Instance*> macro_vec = map_iter->second->getMacros();
+        vector<const Instance*> macro_vec = map_iter->second->getMacros();
         for (int i = 0; i < macro_vec.size(); i++) {
-	      const char* inst_name = network_->pathName(macro_vec[i]);
-	      dbInst* inst = block_->findInst(inst_name);
-	      dbMaster* master = inst->getMaster();
-          float width = master->getWidth() / dbu;
-          float height = master->getHeight() / dbu;
+          const char* inst_name = network_->pathName(macro_vec[i]);
+          dbInst* inst = block_->findInst(inst_name);
+          dbMaster* master = inst->getMaster();
+          const float width = master->getWidth() / dbu;
+          const float height = master->getHeight() / dbu;
           output_file << network_->pathName(macro_vec[i]) << "  ";
           output_file << width << "   " << height << endl;
         }
@@ -1975,7 +1970,7 @@ void AutoClusterMgr::partitionDesign(unsigned int max_num_macro,
   int net_id = 0;
   map_iter = cluster_map_.begin();
   while (map_iter != cluster_map_.end()) {
-    int src_id = map_iter->first;
+    const int src_id = map_iter->first;
     map<int, unsigned int> connection_map
         = map_iter->second->getOutputConnections();
     map<int, unsigned int>::iterator iter = connection_map.begin();

@@ -2029,8 +2029,8 @@ Resizer::findTargetLoad(LibertyCell *cell)
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
-        int in_rf_index = arc->fromTrans()->asRiseFall()->index();
-        int out_rf_index = arc->toTrans()->asRiseFall()->index();
+        int in_rf_index = arc->fromEdge()->asRiseFall()->index();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float arc_target_load = findTargetLoad(cell, arc, 
                                                tgt_slews_[in_rf_index],
                                                tgt_slews_[out_rf_index]);
@@ -2038,7 +2038,7 @@ Resizer::findTargetLoad(LibertyCell *cell)
                    cell->name(),
                    arc->from()->name(),
                    arc->to()->name(),
-                   arc->toTrans()->asString(),
+                   arc->toEdge()->asString(),
                    arc_target_load);
         target_load_sum += arc_target_load;
         arc_count++;
@@ -2176,8 +2176,8 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
         GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-        RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-        RiseFall *out_rf = arc->toTrans()->asRiseFall();
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+        RiseFall *out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
@@ -2670,9 +2670,14 @@ Resizer::repairHold(float slack_margin,
   LibertyCell *buffer_cell = findHoldBuffer();
   sta_->findRequireds();
   VertexSet *ends = sta_->search()->endpoints();
+  VertexSeq ends1;
+  for (Vertex *end : *ends)
+    ends1.push_back(end);
+  sort(ends1, sta::VertexIdLess(graph_));
+
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   incrementalParasiticsBegin();
-  repairHold(ends, buffer_cell, slack_margin,
+  repairHold(ends1, buffer_cell, slack_margin,
              allow_setup_violations, max_buffer_count);
 
   // Leave the parasitices up to date.
@@ -2689,14 +2694,14 @@ Resizer::repairHold(Pin *end_pin,
                     float max_buffer_percent)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
-  VertexSet ends;
-  ends.insert(end);
+  VertexSeq ends;
+  ends.push_back(end);
 
   init();
   sta_->findRequireds();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   incrementalParasiticsBegin();
-  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations,
+  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations,
              max_buffer_count);
   // Leave the parasitices up to date.
   updateParasitics();
@@ -2753,14 +2758,14 @@ Resizer::bufferHoldDelays(LibertyCell *buffer,
 }
 
 void
-Resizer::repairHold(VertexSet *ends,
+Resizer::repairHold(VertexSeq &ends,
                     LibertyCell *buffer_cell,
                     float slack_margin,
                     bool allow_setup_violations,
                     int max_buffer_count)
 {
   // Find endpoints with hold violation.
-  VertexSet hold_failures;
+  VertexSeq hold_failures;
   Slack worst_slack;
   findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
   if (!hold_failures.empty()) {
@@ -2805,16 +2810,16 @@ Resizer::repairHold(VertexSet *ends,
 }
 
 void
-Resizer::findHoldViolations(VertexSet *ends,
+Resizer::findHoldViolations(VertexSeq &ends,
                             float slack_margin,
                             // Return values.
                             Slack &worst_slack,
-                            VertexSet &hold_violations)
+                            VertexSeq &hold_violations)
 {
   worst_slack = INF;
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
-  for (Vertex *end : *ends) {
+  for (Vertex *end : ends) {
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!sta_->isClock(end->pin())
         && fuzzyLess(slack, slack_margin)) {
@@ -2822,13 +2827,13 @@ Resizer::findHoldViolations(VertexSet *ends,
                  end->name(sdc_network_));
       if (slack < worst_slack)
         worst_slack = slack;
-      hold_violations.insert(end);
+      hold_violations.push_back(end);
     }
   }
 }
 
 int
-Resizer::repairHoldPass(VertexSet &hold_failures,
+Resizer::repairHoldPass(VertexSeq &hold_failures,
                         LibertyCell *buffer_cell,
                         float slack_margin,
                         bool allow_setup_violations,
@@ -2939,14 +2944,14 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 }
 
 VertexSet
-Resizer::findHoldFanins(VertexSet &ends)
+Resizer::findHoldFanins(VertexSeq &ends)
 {
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
     iter.enqueueAdjacentVertices(vertex);
 
-  VertexSet fanins;
+  VertexSet fanins(graph_);
   while (iter.hasNext()) {
     Vertex *fanin = iter.next();
     if (!sta_->isClock(fanin->pin())) {
@@ -2965,25 +2970,33 @@ Resizer::sortHoldFanins(VertexSet &fanins)
   for(Vertex *vertex : fanins)
     sorted_fanins.push_back(vertex);
 
-  sort(sorted_fanins, [&](Vertex *v1, Vertex *v2)
-                      { float s1 = sta_->vertexSlack(v1, MinMax::min());
-                        float s2 = sta_->vertexSlack(v2, MinMax::min());
-                        if (fuzzyEqual(s1, s2)) {
-                          float gap1 = slackGap(v1);
-                          float gap2 = slackGap(v2);
-                          // Break ties based on the hold/setup gap.
-                          if (fuzzyEqual(gap1, gap2))
-                            return v1->level() > v2->level();
-                          else
-                            return gap1 > gap2;
-                        }
-                        else
-                          return s1 < s2;});
+  sort(sorted_fanins, [&](Vertex *v1, Vertex *v2) {
+    float s1 = sta_->vertexSlack(v1, MinMax::min());
+    float s2 = sta_->vertexSlack(v2, MinMax::min());
+    if (fuzzyEqual(s1, s2)) {
+      float gap1 = slackGap(v1);
+      float gap2 = slackGap(v2);
+      // Break ties based on the hold/setup gap.
+      if (fuzzyEqual(gap1, gap2)) {
+        Level level1 = v1->level();
+        Level level2 = v2->level();
+        // Break ties based level.
+        if (level1 == level2)
+          // Break ties based Id.
+          return graph_->id(v1) < graph_->id(v2);
+        else
+          return v1->level() > v2->level();
+      }
+      else
+        return gap1 > gap2;
+    }
+    else
+      return s1 < s2;});
   if (logger_->debugCheck(RSZ, "repair_hold", 4)) {
-    printf("Sorted fanins");
-    printf("     hold_slack  slack_gap  level");
+    printf("Sorted fanins\n");
+    printf("     hold_slack  slack_gap  level\n");
     for(Vertex *vertex : sorted_fanins)
-      printf("%s %s %s %d",
+      printf("%s %s %s %d\n",
              vertex->name(network_),
              delayAsString(sta_->vertexSlack(vertex, MinMax::min()), sta_, 3),
              delayAsString(slackGap(vertex), sta_, 3),
@@ -3442,8 +3455,8 @@ Resizer::gateDelays(LibertyPort *drvr_port,
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();
-        RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-        int out_rf_index = arc->toTrans()->asRiseFall()->index();
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float in_slew = tgt_slews_[in_rf->index()];
         ArcDelay gate_delay;
         Slew drvr_slew;
@@ -3623,7 +3636,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
         TimingArcSetArcIterator arc_iter(arc_set);
         while (arc_iter.hasNext()) {
           TimingArc *arc = arc_iter.next();
-          RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+          RiseFall *in_rf = arc->fromEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
@@ -3995,7 +4008,7 @@ Resizer::findFaninFanouts(PinSet *end_pins)
   sta_->ensureLevelized();
   graph_ = sta_->graph();
 
-  VertexSet ends;
+  VertexSet ends(graph_);
   for (Pin *pin : *end_pins) {
     Vertex *end = graph_->pinLoadVertex(pin);
     ends.insert(end);
@@ -4026,7 +4039,7 @@ Resizer::findFanins(PinSet *end_pins)
   sta_->ensureLevelized();
   graph_ = sta_->graph();
 
-  VertexSet ends;
+  VertexSet ends(graph_);
   for (Pin *pin : *end_pins) {
     Vertex *end = graph_->pinLoadVertex(pin);
     ends.insert(end);
@@ -4060,7 +4073,7 @@ Resizer::findFaninRoots(VertexSet &ends)
   for (Vertex *vertex : ends)
     iter.enqueueAdjacentVertices(vertex);
 
-  VertexSet roots;
+  VertexSet roots(graph_);
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
     if (isRegOutput(vertex)
@@ -4091,7 +4104,7 @@ Resizer::isRegOutput(Vertex *vertex)
 VertexSet
 Resizer::findFanouts(VertexSet &reg_outs)
 {
-  VertexSet fanouts;
+  VertexSet fanouts(graph_);
   sta::SearchPredNonLatch2 pred(sta_);
   BfsFwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *reg_out : reg_outs)

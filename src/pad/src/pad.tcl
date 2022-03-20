@@ -1,3 +1,33 @@
+#BSD 3-Clause License
+#
+#Copyright (c) 2019, The Regents of the University of California
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without
+#modification, are permitted provided that the following conditions are met:
+#
+#1. Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+#2. Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+#3. Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+#FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+#SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+#CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
@@ -2512,6 +2542,7 @@ namespace eval ICeWall {
     # debug "padcell: $padcell, net: $net"
     $net setSpecial
     $net setSigType $type
+    # debug "net: [$net getName], signalType: $type"
 
     set pin [odb::dbBPin_create $term]
     lappend pins_created $pin
@@ -3225,6 +3256,7 @@ namespace eval ICeWall {
 
     set rdl_layer [[ord::get_db_tech] findLayer $rdl_layer_name]
     dict for {net_name padcells} $traces {
+      # debug "net_name: $net_name"
       set net [[ord::get_db_block] findNet $net_name]
       set swire [odb::dbSWire_create $net ROUTED]
       foreach padcell $padcells {
@@ -3426,9 +3458,9 @@ namespace eval ICeWall {
     # debug "corner_size $corner_size"
     # debug "bump_pitch $bump_pitch"
 
-    set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
     set power_nets {}
     set ground_nets {}
+    set rdl_min_spacing [[$tech findLayer $rdl_routing_layer] getSpacing]
     # Add stripes for bumps in the central core area
     if {[pdngen::get_dir $rdl_routing_layer] == "hor"} {
       for {set row [expr $corner_size + 1]} {$row <= $num_bumps_y - $corner_size} {incr row} {
@@ -3455,21 +3487,21 @@ namespace eval ICeWall {
           }
           set point [get_bump_center $row $col]
           set net_name [bump_get_net $row $col]
-          set tag [bump_get_tag $row $col]
           if {[bump_is_power $row $col]} {
-            lappend power_nets $net_name
-          } elseif {[bump_is_ground $row $col]} {
-            lappend ground_nets $net_name
-          }
-          # debug $net_name
+	    lappend power_nets $net_name
+	  } elseif {[bump_is_ground $row $col]} {
+	    lappend ground_nets $net_name
+	  }
+	  # debug $net_name
           if {$prev_tag == ""} {
             set minX [expr [dict get $point x] - $bump_pitch / 2]
-          } elseif {$prev_tag == $tag} {
+          } elseif {$prev_tag == $net_name} {
             set minX [expr [dict get $point x] - $bump_pitch / 2 - $rdl_min_spacing / 2]
           } else {
             set minX [expr [dict get $point x] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          set prev_tag $tag
+          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $net_name, minY: $minY, maxY, $maxY"
+          set prev_tag $net_name
           if {$col == $num_bumps_x - $corner_size} {
             set maxX [expr [dict get $point x] + $bump_pitch / 2]
           } else {
@@ -3478,10 +3510,10 @@ namespace eval ICeWall {
 
           set upper_stripe [odb::newSetFromRect $minX [expr $upperY - $rdl_stripe_width / 2] $maxX [expr $upperY + $rdl_stripe_width / 2]]
           set lower_stripe [odb::newSetFromRect $minX [expr $lowerY - $rdl_stripe_width / 2] $maxX [expr $lowerY + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect [expr [dict get $point x] - $rdl_stripe_width / 2] $lowerY [expr [dict get $point x] + $rdl_stripe_width / 2] $upperY]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     } elseif {[pdngen::get_dir $rdl_routing_layer] == "ver"} {
@@ -3510,17 +3542,15 @@ namespace eval ICeWall {
             continue
           }
           set net_name [bump_get_net $row $col]
-          set tag [bump_get_tag $row $col]
           if {[bump_is_power $row $col]} {
-            lappend power_nets $net_name
-          } elseif {[bump_is_ground $row $col]} {
-            lappend ground_nets $net_name
-          }
+	    lappend power_nets $net_name
+	  } elseif {[bump_is_ground $row $col]} {
+	    lappend ground_nets $net_name
+	  }
           set point [get_bump_center $row $col]
-          # debug $tag
           if {$prev_tag == ""} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2]
-          } elseif {$prev_tag == $tag} {
+          } elseif {$prev_tag == $net_name} {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 + $rdl_min_spacing / 2]
           } else {
             set maxY [expr [dict get $point y] + $bump_pitch / 2 - $rdl_min_spacing / 2]
@@ -3530,14 +3560,14 @@ namespace eval ICeWall {
           } else {
             set minY [expr [dict get $point y] - $bump_pitch / 2 + $rdl_min_spacing / 2]
           }
-          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $tag, minY: $minY, maxY, $maxY"
-          set prev_tag $tag
+          # debug "row: $row, col: $col, x: $x, y: [dict get $point y], prev: $prev_tag, tag: $net_name, minY: $minY, maxY, $maxY"
+          set prev_tag $net_name
           set upper_stripe [odb::newSetFromRect [expr $upperX - $rdl_stripe_width / 2] $minY [expr $upperX + $rdl_stripe_width / 2] $maxY]
           set lower_stripe [odb::newSetFromRect [expr $lowerX - $rdl_stripe_width / 2] $minY [expr $lowerX + $rdl_stripe_width / 2] $maxY]
-          pdngen::add_stripe $rdl_routing_layer $tag $upper_stripe
-          pdngen::add_stripe $rdl_routing_layer $tag $lower_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $upper_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $lower_stripe
           set link_stripe [odb::newSetFromRect $lowerX [expr [dict get $point y] - $rdl_stripe_width / 2] $upperX [expr [dict get $point y] + $rdl_stripe_width / 2]]
-          pdngen::add_stripe $rdl_routing_layer $tag $link_stripe
+          pdngen::add_stripe $rdl_routing_layer $net_name $link_stripe
         }
       }
     }
@@ -3545,8 +3575,10 @@ namespace eval ICeWall {
     # debug "$pdngen::metal_layers"
     # debug "[array get pdngen::stripe_locs]"
     pdngen::merge_stripes
-    dict set pdngen::design_data power_nets [lsort -unique $power_nets]
-    dict set pdngen::design_data ground_nets [lsort -unique $ground_nets]
+    set pdngen::power_nets $power_nets 
+    set pdngen::ground_nets $ground_nets
+    dict set pdngen::design_data power_nets {} ; # [get_power_nets]
+    dict set pdngen::design_data ground_nets {} ; # [get_ground_nets]
     dict set pdngen::design_data core_domain "CORE"
     pdngen::opendb_update_grid
   }
