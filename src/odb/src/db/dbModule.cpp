@@ -175,6 +175,16 @@ const char* dbModule::getName() const
   return obj->_name;
 }
 
+std::string dbModule::getHierarchicalName() const
+{
+  dbModInst* inst = getModInst();
+  if (inst) {
+    return inst->getHierarchicalName();
+  } else {
+    return "<top>";
+  }
+}
+
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -291,6 +301,24 @@ dbModInst* dbModule::findModInst(const char* name)
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   std::string h_name = std::string(obj->_name) + "/" + std::string(name);
   return (dbModInst*) par->_modinst_hash.find(h_name.c_str());
+}
+
+static void getLeafInsts(dbModule* module, std::vector<dbInst*>& insts)
+{
+  for (dbInst* inst : module->getInsts()) {
+    insts.push_back(inst);
+  }
+
+  for (dbModInst* inst : module->getChildren()) {
+    getLeafInsts(inst->getMaster(), insts);
+  }
+}
+
+std::vector<dbInst*> dbModule::getLeafInsts()
+{
+  std::vector<dbInst*> insts;
+  odb::getLeafInsts(this, insts);
+  return insts;
 }
 
 // User Code End dbModulePublicMethods
