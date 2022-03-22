@@ -755,15 +755,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y - ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
-              y_loc2 = y + ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+              y_loc1 = y - (num_via_rows-1)*(y_cut_spacing + y_cut_size) / 2;
+              y_loc2 = y + (num_via_rows-1)*(y_cut_spacing + y_cut_size) / 2;
               x_loc1 = x - via_bBox->getDX() / 2;
               x_loc2 = x + via_bBox->getDX() / 2;
             } else {
               y_loc1 = y - via_bBox->getDY() / 2;
               y_loc2 = y + via_bBox->getDY() / 2;
-              x_loc1 = x - ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
-              x_loc2 = x + ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
+              x_loc1 = x - (num_via_cols-1)*(x_cut_spacing + x_cut_size) / 2;
+              x_loc2 = x + (num_via_cols-1)*(x_cut_spacing + x_cut_size) / 2;
             }
             m_Gmat->GenerateStripeConductance(l, layer_dir, x_loc1, x_loc2,
                                               y_loc1, y_loc2, rho);
@@ -780,15 +780,15 @@ bool IRSolver::CreateGmat(bool connection_only) {
           }
           int x_loc1, x_loc2, y_loc1, y_loc2;
           if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            y_loc1 = y - ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
-            y_loc2 = y + ((num_via_rows-1)*y_cut_spacing + y_cut_size) / 2;
+            y_loc1 = y - (num_via_rows-1)*(y_cut_spacing + y_cut_size) / 2;
+            y_loc2 = y + (num_via_rows-1)*(y_cut_spacing + y_cut_size) / 2;
             x_loc1 = x - via_bBox->getDX() / 2;
             x_loc2 = x + via_bBox->getDX() / 2;
           } else {
             y_loc1 = y - via_bBox->getDY() / 2;
             y_loc2 = y + via_bBox->getDY() / 2;
-            x_loc1 = x - ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
-            x_loc2 = x + ((num_via_cols-1)*x_cut_spacing + x_cut_size) / 2;
+            x_loc1 = x - (num_via_cols-1)*(x_cut_spacing + x_cut_size) / 2;
+            x_loc2 = x + (num_via_cols-1)*(x_cut_spacing + x_cut_size) / 2;
           }
           m_Gmat->GenerateStripeConductance(l, layer_dir, x_loc1, x_loc2,
                                             y_loc1, y_loc2, rho);
