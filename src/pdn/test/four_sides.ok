@@ -36,4 +36,6 @@ Type: stdcell, grid
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid.
 [INFO PDN-0015] Writing to database.
-No differences found.
+Differences found at line 374.
+VIAS 3 ;
+VIAS 15 ;

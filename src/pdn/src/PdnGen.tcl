@@ -6883,6 +6883,7 @@ proc core_area_boundary {} {
   set boundary [odb::orSet $boundary [odb::newSetFromRect $urx [expr $lly - $height] [expr $urx + $width] [expr $ury + $height]]]
   set boundary [odb::subtractSet $boundary [get_stdcell_plus_area]]
 
+  set blockages {}
   foreach layer $metal_layers {
     if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $layer]} {continue}
     dict set blockages $layer $boundary
