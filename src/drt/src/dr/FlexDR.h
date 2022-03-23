@@ -891,6 +891,7 @@ class FlexDRWorker
       const std::set<FlexMazeIdx>& realPinApMazeIdx,
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
       const set<FlexMazeIdx>& apMazeIdx);
+  bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,

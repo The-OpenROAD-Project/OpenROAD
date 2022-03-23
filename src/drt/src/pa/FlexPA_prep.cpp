@@ -239,6 +239,43 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   }
   ap->setType((frAccessPointEnum) lowCost, true);
   ap->setType((frAccessPointEnum) highCost, false);
+  if ((lowCost == frAccessPointEnum::NearbyGrid || 
+        highCost == frAccessPointEnum::NearbyGrid)) {
+      Point end;
+      if (fpt.x() < gtl::xl(maxrect))
+          end.setX(gtl::xl(maxrect));
+      else if (fpt.x() > gtl::xh(maxrect))
+          end.setX(gtl::xh(maxrect));
+      else 
+          end.setX(fpt.x());
+      if (fpt.y() < gtl::yl(maxrect))
+          end.setY(gtl::yl(maxrect));
+      else if (fpt.y() > gtl::yh(maxrect))
+          end.setY(gtl::yh(maxrect));
+      else 
+          end.setY(fpt.y());
+      if (fpt.x() == end.x() || fpt.y() == end.y()) {
+          Point* min, *max;
+          if (fpt < end) {
+              min = &fpt;
+              max = &end;
+          } else {
+              max = &fpt;
+              min = &end;
+          }
+          bool isMinConnecting = *min == end;
+          frPathSeg ps;
+          ps.setPoints(*min, *max);
+          if (isMinConnecting)
+              ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+          else 
+              ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+          ap->addPathSeg(std::move(ps));
+          cout << "ap " << fpt << " ps.begin " << *min << " ps.end " << *max << "\n";
+          cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
+      } else 
+          logger_->warn(DRT, 10000, "Nearby grid ap on corner");
+  }
   aps.push_back(std::move(ap));
   apset.insert(make_pair(fpt, layerNum));
 }
