@@ -158,6 +158,7 @@ int FlexDRWorker::main(frDesign* design)
     route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  const int num_markers = getNumMarkers();
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
@@ -173,12 +174,13 @@ int FlexDRWorker::main(frDesign* design)
   }
 
   debugPrint(logger_, DRT, "autotuner", 1,
-             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {}",
+             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {} prev_#DRVs {} curr_#DRVs {}",
              routeBox_.xMin() * micronPerDBU,
              routeBox_.yMin() * micronPerDBU,
              routeBox_.xMax() * micronPerDBU,
              routeBox_.yMax() * micronPerDBU,
-             duration_cast<duration<double>>(t3 - t0).count());
+             duration_cast<duration<double>>(t3 - t0).count(),
+             getInitNumMarkers(), num_markers);
 
   return 0;
 }
