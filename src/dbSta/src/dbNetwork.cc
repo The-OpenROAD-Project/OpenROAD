@@ -173,6 +173,7 @@ private:
   bool top_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
+  Net* next_;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
@@ -192,15 +193,22 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
 bool
 DbInstanceNetIterator::hasNext()
 {
-  return top_ && iter_ != end_;
+  while (iter_ != end_) {
+    dbNet *net = *iter_;
+    if (!net->getSigType().isSupply() || !net->isSpecial()) {
+      next_ = network_->dbToSta(*iter_);
+      ++iter_;
+      return true;
+    }
+    iter_++;
+  }
+  return false;
 }
 
 Net *
 DbInstanceNetIterator::next()
 {
-  dbNet *net = *iter_;
-  iter_++;
-  return network_->dbToSta(net);
+  return next_;
 }
 
 ////////////////////////////////////////////////////////////////
