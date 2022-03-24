@@ -133,7 +133,7 @@ class frMTerm : public frTerm
 template <class Archive>
 void frMTerm::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & boost::serialization::base_object<frTerm>(*this);
   (ar) & master_;
   (ar) & pins_;
 }
