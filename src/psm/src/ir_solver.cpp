@@ -411,6 +411,13 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
       continue;
     }
     int x, y;
+    if (!inst-> getPlacementStatus().isPlaced()) {
+      m_logger->warn(utl::PSM, 71, "Instance {} is not placed. The location "
+                     "of its current source is being moved to (0,0). The IR " 
+                     "drop values will be incorrect. Please run "
+                     "analyze_power_grid after all instances are placed. ",
+                     it->first);
+    }
     inst->getLocation(x, y);
     int l = m_bottom_layer;  // atach to the bottom most routing layer
     Node* node_J = m_Gmat->GetNode(x, y, l, true);
