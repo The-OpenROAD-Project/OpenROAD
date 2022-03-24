@@ -2800,6 +2800,7 @@ Resizer::repairHold(VertexSeq &ends,
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_vertices_valid_ = false;
     }
+    logger_->metric("design__instance__count__hold_buffer", inserted_buffer_count_);
     if (inserted_buffer_count_ > max_buffer_count)
       logger_->error(RSZ, 60, "Max buffer count reached.");
     if (overMaxArea())
