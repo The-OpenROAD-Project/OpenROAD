@@ -169,16 +169,14 @@ Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates,
     dbOrientType orient_my = orientMirrorY(orient);
     int pt_x, pt_y;
     inst->getLocation(pt_x, pt_y);
-    vector<pair<dbNet*, Rect*>> updated_box;
-    int64_t delta = hpwlIncrement(inst, pt_x, true, net2box, updated_box);
+    vector<pair<dbNet*, Rect>> updated_box;
+    int64_t delta = hpwlIncrement(inst, net2box, updated_box);
 
     if (delta <= 0) {
       mirror_count++;
       inst->setLocationOrient(orient_my);
-      for (auto item : updated_box) {
-        net2box[item.first].reset(item.second->xMin(), item.second->yMin(),
-                                  item.second->xMax(), item.second->yMax());
-      }
+      for (auto item : updated_box)
+        net2box[item.first] = item.second;
     }
   }
   return mirror_count;
@@ -197,42 +195,35 @@ Opendp::hpwl(dbInst *inst)
 }
 
 int64_t
-Opendp::hpwlIncrement(dbInst *inst, int pt_x, bool mirror,
+Opendp::hpwlIncrement(dbInst *inst,
                       map<dbNet*, Rect> &net2box,
-                      vector<pair<dbNet*, Rect*>> &updated_box) {
+                      vector<pair<dbNet*, Rect>> &updated_box) {
   int64_t delta = 0;
 
   // Net to insterm mapping
-  map<dbNet*, vector<dbITerm *>> net2iterm;
+  map<dbNet*, set<dbITerm *>> net2iterm;
 
   for (dbITerm *iterm : inst->getITerms()) {
     if (iterm->getNet() != NULL) {
       dbNet *net = iterm->getNet();
-
-      if (net2iterm.find(net) == net2iterm.end()) {
-        net2iterm[net] = vector<dbITerm *>();
-        net2iterm[net].push_back(iterm);
-      } else {
-        net2iterm[net].push_back(iterm);
-      }
+      if (!isSupply(net))
+        net2iterm[net].insert(iterm);
     }
   }
 
   for ( auto &item : net2iterm ) {
     dbNet *net = item.first;
-    if (!isSupply(net)) {
-      Rect *new_net_box = new Rect();
-      delta += hpwlIncrementHelper(inst, item.second, net, pt_x, mirror,
-                                  new_net_box, net2box[net]);
-      updated_box.push_back({net, new_net_box});
-    }
+    Rect new_net_box = Rect();
+    delta += hpwlIncrementHelper(inst, item.second, net,
+                                new_net_box, net2box[net]);
+    updated_box.push_back({net, new_net_box});
   }
   return delta;
 }
 
 int64_t
-Opendp::hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
-                      dbNet *net, int pt_x, bool mirror, Rect *new_net_box,
+Opendp::hpwlIncrementHelper(dbInst *inst, set<dbITerm *> &iterms,
+                      dbNet *net, Rect &new_net_box,
                       Rect netBox) {
   int64_t net_hpwl = netBox.dx() + netBox.dy();
   Rect iterm_box;
@@ -241,34 +232,18 @@ Opendp::hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
   inst->getLocation(cellPtX, cellPtY);
   int cellWidth = inst->getMaster()->getWidth();
 
-  for (int i = 0; i < iterms.size(); i++) {
-    dbITerm *iterm = iterms[i];
+  for (dbITerm *iterm : iterms) {
     int x, y;
-    if (iterm->getAvgXY(&x, &y)) {
-      Rect iterm_rect(x, y, x, y);
-      iterm_box.merge(iterm_rect);
-    } else {
-      // This clause is sort of worthless because getAvgXY prints
-      // a warning when it fails.
-      dbInst *inst = iterm->getInst();
-      odb::dbBox *inst_box = inst->getBBox();
-      int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
-      int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
-      Rect iterm_rect(center_x, center_y, center_x, center_y);
-      iterm_box.merge(iterm_rect);
-    }
+    iterm->getAvgXY(&x, &y);
+    Rect iterm_rect(x, y, x, y);
+    iterm_box.merge(iterm_rect);
   }
 
   // Based on current location check the pin location in the netbox
   bool isInside = netBox.inside(iterm_box);
 
   // Calculate the new pin delta displacement
-  int mirror_x = 0;
-  if (mirror) {
-    mirror_x = 2 * cellPtX + cellWidth - iterm_box.xMin() - iterm_box.xMax();
-  }
-
-  int delta_x = pt_x - cellPtX + mirror_x;
+  int delta_x = 2 * cellPtX + cellWidth - iterm_box.xMin() - iterm_box.xMax();
 
   // Considering there wont be any movement along the y axis
   iterm_box.moveDelta(delta_x, 0);
@@ -276,7 +251,7 @@ Opendp::hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
 
   // Pin term is inside the net box before and after movement.
   if (isInside && isContain) {
-    new_net_box->reset(netBox.xMin(), netBox.yMin(), netBox.xMax(),
+    new_net_box.reset(netBox.xMin(), netBox.yMin(), netBox.xMax(),
                         netBox.yMax());
     return 0;
   }
@@ -286,34 +261,42 @@ Opendp::hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
   if (isInside) {
     netBox.merge(iterm_box);
     int64_t new_hpwl = netBox.dx() + netBox.dy();
-    new_net_box->reset(netBox.xMin(), netBox.yMin(), netBox.xMax(),
+    new_net_box.reset(netBox.xMin(), netBox.yMin(), netBox.xMax(),
                         netBox.yMax());
     return new_hpwl - net_hpwl;
   }
 
   // Re calculate the Net box with the updated iterm location
-  new_net_box->mergeInit();
+  new_net_box.mergeInit();
+  new_net_box.merge(iterm_box);
+  hpwlIncrementHelper(net, iterms, new_net_box);
 
-  for (dbITerm *iterm_ : net->getITerms()) {
-    int i = std::find(iterms.begin(), iterms.end(), iterm_) - iterms.begin();
-    if (i >= iterms.size()) {
+  int64_t new_hpwl = new_net_box.dx() + new_net_box.dy();
+  return new_hpwl - net_hpwl;
+}
+
+void
+Opendp::hpwlIncrementHelper(dbNet *net, set<dbITerm *> &iterms,
+                            Rect &new_net_box) {
+  for (dbITerm *iterm : net->getITerms()) {
+    if (iterms.find(iterm) == iterms.end()) {
       int x, y;
-      if (iterm_->getAvgXY(&x, &y)) {
+      if (iterm->getAvgXY(&x, &y)) {
         Rect iterm_rect_(x, y, x, y);
-        new_net_box->merge(iterm_rect_);
+        new_net_box.merge(iterm_rect_);
       } else {
         // This clause is sort of worthless because getAvgXY prints
         // a warning when it fails.
-        dbInst *inst = iterm_->getInst();
+        dbInst *inst = iterm->getInst();
         odb::dbBox *inst_box = inst->getBBox();
         int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
         int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
         Rect inst_center(center_x, center_y, center_x, center_y);
-        new_net_box->merge(inst_center);
+        new_net_box.merge(inst_center);
       }
     }
   }
-  new_net_box->merge(iterm_box);
+
   for (odb::dbBTerm *bterm : net->getBTerms()) {
     for (odb::dbBPin *bpin : bterm->getBPins()) {
       odb::dbPlacementStatus status = bpin->getPlacementStatus();
@@ -322,12 +305,10 @@ Opendp::hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
         int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
         int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
         Rect pin_center(center_x, center_y, center_x, center_y);
-        new_net_box->merge(pin_center);
+        new_net_box.merge(pin_center);
       }
     }
   }
-  int64_t new_hpwl = new_net_box->dx() + new_net_box->dy();
-  return new_hpwl - net_hpwl;
 }
 
 // apply mirror about Y axis to orient

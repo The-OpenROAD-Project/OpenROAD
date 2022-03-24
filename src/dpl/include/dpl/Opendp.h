@@ -401,12 +401,14 @@ private:
                             vector<dbInst*> &mirror_candidates);
   int mirrorCandidates(vector<dbInst*> &mirror_candidates,
                         map<dbNet*, Rect> &net2box);
-  int64_t hpwlIncrement(dbInst *inst, int pt_x, bool mirror,
+  int64_t hpwlIncrement(dbInst *inst,
                         map<dbNet*, Rect> &net2box,
-                        vector<pair<dbNet*, Rect*>> &updated_box);
-  int64_t hpwlIncrementHelper(dbInst *inst, vector<dbITerm *> &iterms,
-                              dbNet *net, int pt_x, bool mirror,
-                              Rect *new_net_box, Rect netBox);
+                        vector<pair<dbNet*, Rect>> &updated_box);
+  int64_t hpwlIncrementHelper(dbInst *inst, set<dbITerm *> &iterms,
+                              dbNet *net,
+                              Rect &new_net_box, Rect netBox);
+  void hpwlIncrementHelper(dbNet *net, set<dbITerm *> &iterms,
+                            Rect &new_net_box);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
   bool isSupply(dbNet *net) const;
