@@ -195,8 +195,7 @@ Opendp::hpwl(dbInst *inst)
 }
 
 int64_t
-Opendp::hpwlIncrement(dbInst *inst,
-                      map<dbNet*, Rect> &net2box,
+Opendp::hpwlIncrement(dbInst *inst, map<dbNet*, Rect> &net2box,
                       vector<pair<dbNet*, Rect>> &updated_box) {
   int64_t delta = 0;
 
@@ -222,9 +221,8 @@ Opendp::hpwlIncrement(dbInst *inst,
 }
 
 int64_t
-Opendp::hpwlIncrementHelper(dbInst *inst, set<dbITerm *> &iterms,
-                      dbNet *net, Rect &new_net_box,
-                      Rect netBox) {
+Opendp::hpwlIncrementHelper(dbInst *inst, set<dbITerm *> &iterms, dbNet *net,
+                            Rect &new_net_box, Rect netBox) {
   int64_t net_hpwl = netBox.dx() + netBox.dy();
   Rect iterm_box;
   iterm_box.mergeInit();
