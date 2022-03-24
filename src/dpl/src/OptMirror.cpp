@@ -226,6 +226,7 @@ Opendp::hpwlIncrementHelper(dbInst *inst, set<dbITerm *> &iterms, dbNet *net,
   int64_t net_hpwl = netBox.dx() + netBox.dy();
   Rect iterm_box;
   iterm_box.mergeInit();
+  
   int cellPtX, cellPtY;
   inst->getLocation(cellPtX, cellPtY);
   int cellWidth = inst->getMaster()->getWidth();
