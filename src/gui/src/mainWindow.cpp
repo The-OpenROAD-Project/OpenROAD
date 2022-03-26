@@ -382,6 +382,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
+  gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 }
 

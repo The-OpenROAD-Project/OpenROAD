@@ -221,9 +221,14 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
   auto inst = std::any_cast<odb::dbInst*>(object);
   auto placed = inst->getPlacementStatus();
-  Properties props({{"Master", gui->makeSelected(inst->getMaster())},
-                    {"Placement status", placed.getString()},
-                    {"Source type", inst->getSourceType().getString()}});
+  auto* module = inst->getModule();
+  Properties props;
+  if (module != nullptr) {
+    props.push_back({"Module", gui->makeSelected(module)});
+  }
+  props.push_back({"Master", gui->makeSelected(inst->getMaster())});
+  props.push_back({"Placement status", placed.getString()});
+  props.push_back({"Source type", inst->getSourceType().getString()});
   if (placed.isPlaced()) {
     int x, y;
     inst->getLocation(x, y);
@@ -2045,6 +2050,141 @@ bool DbRegionDescriptor::getAllObjects(SelectionSet& objects) const
     objects.insert(makeSelected(region, nullptr));
   }
   return true;
+}
+
+//////////////////////////////////////////////////
+
+DbModuleDescriptor::DbModuleDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
+
+std::string DbModuleDescriptor::getShortName(std::any object) const
+{
+  auto* module = std::any_cast<odb::dbModule*>(object);
+  return module->getName();
+}
+
+std::string DbModuleDescriptor::getName(std::any object) const
+{
+  auto* module = std::any_cast<odb::dbModule*>(object);
+  return module->getHierarchicalName();
+}
+
+std::string DbModuleDescriptor::getTypeName() const
+{
+  return "Module";
+}
+
+bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* module = std::any_cast<odb::dbModule*>(object);
+  auto insts = module->getInsts();
+  if (insts.empty()) {
+    return false;
+  }
+  bbox.mergeInit();
+  for (auto* inst : insts) {
+    auto* box = inst->getBBox();
+    odb::Rect box_rect;
+    box->getBox(box_rect);
+    bbox.merge(box_rect);
+  }
+  return true;
+}
+
+void DbModuleDescriptor::highlight(std::any object,
+                                  Painter& painter,
+                                  void* additional_data) const
+{
+  auto* module = std::any_cast<odb::dbModule*>(object);
+
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : module->getInsts()) {
+    inst_descriptor->highlight(inst, painter, nullptr);
+  }
+
+  for (auto* children : module->getChildren()) {
+    highlight(children->getMaster(), painter, nullptr);
+  }
+}
+
+Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
+{
+  auto* module = std::any_cast<odb::dbModule*>(object);
+  auto* mod_inst = module->getModInst();
+
+  auto* gui = Gui::get();
+
+  Properties props;
+  if (mod_inst != nullptr) {
+    auto* parent = mod_inst->getParent();
+    if (parent != nullptr) {
+      props.push_back({"Parent", gui->makeSelected(parent)});
+    }
+
+    auto* group = mod_inst->getGroup();
+    if (group != nullptr) {
+      props.push_back({"Group", gui->makeSelected(group)});
+    }
+  }
+
+  SelectionSet children;
+  for (auto* child : module->getChildren()) {
+    children.insert(gui->makeSelected(child->getMaster()));
+  }
+  if (!children.empty()) {
+    props.push_back({"Children", children});
+  }
+
+  SelectionSet insts;
+  for (auto* inst : module->getLeafInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  return props;
+}
+
+Selected DbModuleDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto module = std::any_cast<odb::dbModule*>(&object)) {
+    return Selected(*module, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbModuleDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_layer = std::any_cast<odb::dbModule*>(l);
+  auto r_layer = std::any_cast<odb::dbModule*>(r);
+  return l_layer->getId() < r_layer->getId();
+}
+
+bool DbModuleDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  getModules(block->getTopModule(), objects);
+
+  return true;
+}
+
+void DbModuleDescriptor::getModules(odb::dbModule* module, SelectionSet& objects) const
+{
+  objects.insert(makeSelected(module, nullptr));
+
+  for (auto* mod_inst : module->getChildren()) {
+    getModules(mod_inst->getMaster(), objects);
+  }
 }
 
 }  // namespace gui
