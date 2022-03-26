@@ -724,7 +724,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
             m_logger->error(utl::PSM, 35,
                             "{} resistance not found in DB. Check the LEF or "
                             "set it using the 'set_layer_rc' command.",
-                            via_bottom_layer->getName());
+                            via_bottom_layer->getUpperLayer()->getName());
           }
           bool top_or_bottom = ((l == m_bottom_layer));
           Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
