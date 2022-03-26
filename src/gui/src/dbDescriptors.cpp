@@ -244,6 +244,16 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     iterms.push_back({gui->makeSelected(iterm), net_value});
   }
   props.push_back({"ITerms", iterms});
+
+  auto* group = inst->getGroup();
+  if (group != nullptr) {
+    props.push_back({"Group", gui->makeSelected(group)});
+  }
+
+  auto* region = inst->getRegion();
+  if (region != nullptr) {
+    props.push_back({"Region", gui->makeSelected(region)});
+  }
   return props;
 }
 
@@ -1817,6 +1827,222 @@ bool DbItermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
         objects.insert(makeSelected(DbItermAccessPoint{ap, iterm}, nullptr));
       }
     }
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbGroupDescriptor::DbGroupDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
+
+std::string DbGroupDescriptor::getName(std::any object) const
+{
+  auto* group = std::any_cast<odb::dbGroup*>(object);
+  return group->getName();
+}
+
+std::string DbGroupDescriptor::getTypeName() const
+{
+  return "Group";
+}
+
+bool DbGroupDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* group = std::any_cast<odb::dbGroup*>(object);
+  if (group->hasBox()) {
+    bbox = group->getBox();
+    return true;
+  }
+
+  return false;
+}
+
+void DbGroupDescriptor::highlight(std::any object,
+                                  Painter& painter,
+                                  void* additional_data) const
+{
+  auto* group = std::any_cast<odb::dbGroup*>(object);
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : group->getInsts()) {
+    inst_descriptor->highlight(inst, painter, nullptr);
+  }
+  for (auto* subgroup : group->getGroups()) {
+    highlight(subgroup, painter, nullptr);
+  }
+}
+
+Descriptor::Properties DbGroupDescriptor::getProperties(std::any object) const
+{
+  auto* group = std::any_cast<odb::dbGroup*>(object);
+
+  auto* gui = Gui::get();
+
+  Properties props;
+  auto* parent = group->getParentGroup();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  SelectionSet groups;
+  for (auto* subgroup : group->getGroups()) {
+    groups.insert(gui->makeSelected(subgroup));
+  }
+  if (!groups.empty()) {
+    props.push_back({"Groups", groups});
+  }
+
+  SelectionSet insts;
+  for (auto* inst : group->getInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  return props;
+}
+
+Selected DbGroupDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto group = std::any_cast<odb::dbGroup*>(&object)) {
+    return Selected(*group, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbGroupDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_layer = std::any_cast<odb::dbGroup*>(l);
+  auto r_layer = std::any_cast<odb::dbGroup*>(r);
+  return l_layer->getId() < r_layer->getId();
+}
+
+bool DbGroupDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* group : block->getGroups()) {
+    objects.insert(makeSelected(group, nullptr));
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbRegionDescriptor::DbRegionDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
+
+std::string DbRegionDescriptor::getName(std::any object) const
+{
+  auto* region = std::any_cast<odb::dbRegion*>(object);
+  return region->getName();
+}
+
+std::string DbRegionDescriptor::getTypeName() const
+{
+  return "Region";
+}
+
+bool DbRegionDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* region = std::any_cast<odb::dbRegion*>(object);
+  auto boxes = region->getBoundaries();
+  if (boxes.empty()) {
+    return false;
+  }
+  bbox.mergeInit();
+  for (auto* box : boxes) {
+    odb::Rect box_rect;
+    box->getBox(box_rect);
+    bbox.merge(box_rect);
+  }
+  return true;
+}
+
+void DbRegionDescriptor::highlight(std::any object,
+                                  Painter& painter,
+                                  void* additional_data) const
+{
+  auto* region = std::any_cast<odb::dbRegion*>(object);
+  for (auto* child : region->getChildren()) {
+    highlight(child, painter, nullptr);
+  }
+
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : region->getRegionInsts()) {
+    inst_descriptor->highlight(inst, painter, nullptr);
+  }
+}
+
+Descriptor::Properties DbRegionDescriptor::getProperties(std::any object) const
+{
+  auto* region = std::any_cast<odb::dbRegion*>(object);
+
+  auto* gui = Gui::get();
+
+  Properties props({{"Region Type", region->getRegionType().getString()}});
+  auto* parent = region->getParent();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  SelectionSet children;
+  for (auto* child : region->getChildren()) {
+    children.insert(gui->makeSelected(child));
+  }
+  if (!children.empty()) {
+    props.push_back({"Children", children});
+  }
+
+  SelectionSet insts;
+  for (auto* inst : region->getRegionInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  return props;
+}
+
+Selected DbRegionDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (auto region = std::any_cast<odb::dbRegion*>(&object)) {
+    return Selected(*region, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbRegionDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_layer = std::any_cast<odb::dbRegion*>(l);
+  auto r_layer = std::any_cast<odb::dbRegion*>(r);
+  return l_layer->getId() < r_layer->getId();
+}
+
+bool DbRegionDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* region : block->getRegions()) {
+    objects.insert(makeSelected(region, nullptr));
   }
   return true;
 }

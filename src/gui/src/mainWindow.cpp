@@ -380,6 +380,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbObstruction*>(new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
   gui->registerDescriptor<DbItermAccessPoint>(new DbItermAccessPointDescriptor(db_));
+  gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
+  gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 }
 
