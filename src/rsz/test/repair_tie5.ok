@@ -14,7 +14,7 @@
 [INFO RSZ-0042] Inserted 4 tie LOGIC1_X1 instances.
 2.1 0.8
 4.1 0.8
-15.0 4.2
-45.0 4.2
-pad1 outside of core
-pad2 outside of core
+15.0 2.8
+45.0 2.8
+pad1 (0 12000) outside of core (0 0 199880 8400)
+pad2 (60000 12000) outside of core (0 0 199880 8400)
