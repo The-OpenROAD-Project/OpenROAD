@@ -128,7 +128,7 @@ Opendp::findNetBoxes()
   net_box_map_.clear();
   auto nets = block_->getNets();
   for (dbNet *net : nets) {
-    bool ignore = isSupply(net)
+    bool ignore = net->getSigType().isSupply()
       || net->isSpecial()
       // Reducing HPWL on large nets (like clocks) is irrelevant 
       // to mirroring criterra.

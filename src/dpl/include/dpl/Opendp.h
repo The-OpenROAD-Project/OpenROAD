@@ -410,7 +410,6 @@ private:
   int mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
-  bool isSupply(dbNet *net) const;
   void updateNetBoxes(dbInst *inst);
   void saveNetBoxes(dbInst *inst);
   void restoreNetBoxes(dbInst *inst);
