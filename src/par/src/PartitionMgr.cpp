@@ -73,13 +73,11 @@ PartitionMgr::~PartitionMgr()
 
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
-                        ord::dbVerilogNetwork* network,
                         sta::dbSta* sta,
                         Logger* logger)
 {
   db_ = db;
   db_network_ = db_network;
-  network_ = network;
   _sta = sta;
   logger_ = logger;
 }
@@ -1367,7 +1365,7 @@ void PartitionMgr::partitionDesign(unsigned int max_num_macro,
                                    const char* file_name)
 {
   auto clusterer
-      = std::make_unique<AutoClusterMgr>(network_, db_, _sta, logger_);
+      = std::make_unique<AutoClusterMgr>(db_network_, db_, _sta, logger_);
   clusterer->partitionDesign(max_num_macro,
                              min_num_macro,
                              max_num_inst,

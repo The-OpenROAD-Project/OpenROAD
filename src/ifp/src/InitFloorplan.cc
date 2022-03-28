@@ -45,6 +45,10 @@
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Liberty.hh"
+#include "sta/FuncExpr.hh"
+
+#include "db_sta/dbNetwork.hh"
 
 #include "utl/Logger.h"
 
@@ -59,6 +63,7 @@ using sta::Vector;
 using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
+using sta::dbNetwork;
 
 using utl::Logger;
 using utl::IFP;
@@ -576,6 +581,61 @@ InitFloorplan::metersToDbu(double dist) const
   dbTech *tech = db_->getTech();
   int dbu = tech->getDbUnitsPerMicron();
   return round(dist * 1e+6 * dbu);
+}
+
+void
+insertTiecells(
+    odb::dbMTerm* tie_term,
+    const char* prefix,
+    dbDatabase* db,
+    sta::dbNetwork* network,
+    Logger* logger)
+{
+  dbChip *chip = db->getChip();
+
+  auto* master = tie_term->getMaster();
+
+  auto* port = network->dbToSta(tie_term);
+  auto* lib_port = network->libertyPort(port);
+  auto func_operation = lib_port->function()->op();
+  const bool is_zero = func_operation == sta::FuncExpr::op_zero;
+  const bool is_one = func_operation == sta::FuncExpr::op_one;
+
+  odb::dbSigType look_for;
+  if (is_zero) {
+    look_for = odb::dbSigType::GROUND;
+  } else if (is_one) {
+    look_for = odb::dbSigType::POWER;
+  } else {
+    logger->error(utl::IFP, 29, "Unable to determine tiecell ({}) function.", master->getName());
+  }
+
+  int count = 0;
+
+  if (chip != nullptr) {
+    auto* block = chip->getBlock();
+    if (block != nullptr) {
+      for (auto* net : block->getNets()) {
+        if (net->isSpecial()) {
+          continue;
+        }
+        if (look_for != net->getSigType()) {
+          continue;
+        }
+
+        std::string inst_name = prefix;
+        inst_name += net->getName();
+
+        auto* inst = odb::dbInst::create(block, master, inst_name.c_str());
+        auto* iterm = inst->findITerm(tie_term->getConstName());
+        iterm->connect(net);
+        net->setSigType(odb::dbSigType::SIGNAL);
+        count++;
+      }
+    }
+  }
+
+  logger->info(utl::IFP, 30, "Inserted {} tiecells using {}/{}.", count, master->getName(), tie_term->getName());
 }
 
 } // namespace
