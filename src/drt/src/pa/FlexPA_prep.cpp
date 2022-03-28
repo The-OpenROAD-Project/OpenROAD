@@ -254,27 +254,36 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
           end.setY(gtl::yh(maxrect));
       else 
           end.setY(fpt.y());
-      if (fpt.x() == end.x() || fpt.y() == end.y()) {
-          Point* min, *max;
-          if (fpt < end) {
-              min = &fpt;
-              max = &end;
-          } else {
-              max = &fpt;
-              min = &end;
-          }
-          bool isMinConnecting = *min == end;
-          frPathSeg ps;
-          ps.setPoints(*min, *max);
-          if (isMinConnecting)
-              ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-          else 
-              ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
-          ap->addPathSeg(std::move(ps));
-          cout << "ap " << fpt << " ps.begin " << *min << " ps.end " << *max << "\n";
-          cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
-      } else 
-          logger_->warn(DRT, 10000, "Nearby grid ap on corner");
+      
+      Point e = fpt;
+      if (fpt.x() != end.x())
+          e.x() = end.x();
+      else if (fpt.y() != end.y())
+          e.y() = end.y();
+      if (!(e == fpt)) {
+        frPathSeg ps;
+        ps.setPoints_safe(fpt, e);
+        if (ps.getBeginPoint() == end)
+            ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+        else if (ps.getEndPoint() == end)
+            ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+        ap->addPathSeg(std::move(ps));
+        cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
+        cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
+        
+        if (!(e == end)) {
+            fpt = e;
+            ps.setPoints_safe(fpt, end);
+            if (ps.getBeginPoint() == end)
+                ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+            else
+                ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+            ap->addPathSeg(std::move(ps));
+            cout << "ADDING 2nd pathseg\n";
+            cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
+            cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
+        }
+      }
   }
   aps.push_back(std::move(ap));
   apset.insert(make_pair(fpt, layerNum));

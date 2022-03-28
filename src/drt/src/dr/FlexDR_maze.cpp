@@ -2455,7 +2455,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
             connecting = &begin;
         else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
             connecting = &end;
-        assert(connecting != nullptr); //TEMPORARY!
         
 //        cout << "Origin ap shape " << begin << " " << end << "\n";
         if (inst) {
