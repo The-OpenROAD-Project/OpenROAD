@@ -525,7 +525,7 @@ class frPathSeg : public frShape
     end_ = endIn;
   }
   void setPoints_safe(const Point& beginIn, const Point& endIn) {
-      if (beginIn < endIn)
+      if (endIn < beginIn)
             setPoints(endIn, beginIn);
       else 
           setPoints(beginIn, endIn);

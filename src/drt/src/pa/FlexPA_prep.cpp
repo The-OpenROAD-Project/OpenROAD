@@ -268,8 +268,8 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
         else if (ps.getEndPoint() == end)
             ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         ap->addPathSeg(std::move(ps));
-        cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
-        cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
+//        cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
+//        cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
         
         if (!(e == end)) {
             fpt = e;
