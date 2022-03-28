@@ -759,12 +759,12 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        cout << "Error: bp >= ep\n";
+        cout << "Error1: bp.x() >= ep.x()" << bp << " " << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        cout << "Error: bp >= ep\n";
+        cout << "Error2: bp.y() >= ep.y()" << bp << " " << " " << ep << "\n";
       }
     }
   }

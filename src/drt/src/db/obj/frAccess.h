@@ -179,7 +179,7 @@ class frAccessPoint : public frBlockObject
   void addPathSeg(frPathSeg ps) {
       shapes_.push_back(std::move(ps));
   }
-  const std::vector<frPathSeg>& getPathSegs() { return shapes_;}
+  std::vector<frPathSeg>& getPathSegs() { return shapes_;}
  private:
   Point point_;
   frLayerNum layerNum_;

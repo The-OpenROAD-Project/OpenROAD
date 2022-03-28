@@ -1571,6 +1571,18 @@ void FlexPA::revertAccessPoints()
           Point uniqueAPPoint(accessPoint->getPoint());
           revertXform.apply(uniqueAPPoint);
           accessPoint->setPoint(uniqueAPPoint);
+          for (auto& ps : accessPoint->getPathSegs()) {
+              Point begin = ps.getBeginPoint();
+              Point end = ps.getEndPoint();
+              revertXform.apply(begin);
+              revertXform.apply(end);
+              if (end < begin ) {
+                  Point tmp = begin;
+                  begin = end;
+                  end = tmp;
+              }
+              ps.setPoints(begin, end);
+          }
         }
       }
     }

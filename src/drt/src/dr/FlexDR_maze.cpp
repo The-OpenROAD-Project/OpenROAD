@@ -2456,19 +2456,24 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
         else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
             connecting = &end;
         assert(connecting != nullptr); //TEMPORARY!
-        dbTransform trans;
-        inst->getTransform(trans);
-        trans.apply(begin);
-        trans.apply(end);
-        if (end < begin) { //if rotation swaped order, correct it
-            if (connecting == &begin)
-                connecting = &end;
-            else 
-                connecting = &begin;
-            Point tmp = begin;
-            begin = end;
-            end = tmp;
+        
+//        cout << "Origin ap shape " << begin << " " << end << "\n";
+        if (inst) {
+            dbTransform trans;
+            inst->getTransform(trans);
+            trans.apply(begin);
+            trans.apply(end);
+            if (end < begin) { //if rotation swaped order, correct it
+                if (connecting == &begin)
+                    connecting = &end;
+                else 
+                    connecting = &begin;
+                Point tmp = begin;
+                begin = end;
+                end = tmp;
+            }
         }
+//        cout << "Adding ap shape " << begin << " " << end << "\n";
         drPs->setPoints(begin, end);
         drPs->setLayerNum(lNum);
         drPs->addToNet(net);
@@ -2482,7 +2487,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
             drPs->setTapered(true); //these tiny access pathsegs should all be tapered
         drPs->setStyle(currStyle);
         FlexMazeIdx startIdx, endIdx;
-        cout << "add drPathSeg " << *drPs << "\n";
         gridGraph_.getMazeIdx(startIdx, begin, lNum);
         gridGraph_.getMazeIdx(endIdx, end, lNum);
         drPs->setMazeIdx(startIdx, endIdx);
