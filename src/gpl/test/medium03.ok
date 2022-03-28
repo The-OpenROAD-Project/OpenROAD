@@ -30,26 +30,26 @@
 [INFO GPL-0019] Util(%): 9.22
 [INFO GPL-0020] StdInstsArea: 513012920000
 [INFO GPL-0021] MacroInstsArea: 0
-[InitialPlace]  Iter: 1 CG Error: 0.00049662 HPWL: 668310670
-[InitialPlace]  Iter: 2 CG Error: 0.00035069 HPWL: 675483871
-[InitialPlace]  Iter: 3 CG Error: 0.00035308 HPWL: 672901876
-[InitialPlace]  Iter: 4 CG Error: 0.00042334 HPWL: 673962048
-[InitialPlace]  Iter: 5 CG Error: 0.00033383 HPWL: 673293188
-[InitialPlace]  Iter: 6 CG Error: 0.00038804 HPWL: 674344175
-[InitialPlace]  Iter: 7 CG Error: 0.00032906 HPWL: 673646677
-[InitialPlace]  Iter: 8 CG Error: 0.00030306 HPWL: 674604860
-[InitialPlace]  Iter: 9 CG Error: 0.00032999 HPWL: 673891380
-[InitialPlace]  Iter: 10 CG Error: 0.00034412 HPWL: 674796203
-[InitialPlace]  Iter: 11 CG Error: 0.00034056 HPWL: 674086274
-[InitialPlace]  Iter: 12 CG Error: 0.00039247 HPWL: 674941592
-[InitialPlace]  Iter: 13 CG Error: 0.00038014 HPWL: 674182249
-[InitialPlace]  Iter: 14 CG Error: 0.00033174 HPWL: 675049122
-[InitialPlace]  Iter: 15 CG Error: 0.00119681 HPWL: 674271949
-[InitialPlace]  Iter: 16 CG Error: 0.00030268 HPWL: 675139472
-[InitialPlace]  Iter: 17 CG Error: 0.00036920 HPWL: 674334738
-[InitialPlace]  Iter: 18 CG Error: 0.00033767 HPWL: 675136489
-[InitialPlace]  Iter: 19 CG Error: 0.00035014 HPWL: 674364231
-[InitialPlace]  Iter: 20 CG Error: 0.00032577 HPWL: 675187995
+[InitialPlace]  Iter: 1 CG residual: 0.00049662 HPWL: 668310670
+[InitialPlace]  Iter: 2 CG residual: 0.00035069 HPWL: 675483871
+[InitialPlace]  Iter: 3 CG residual: 0.00035308 HPWL: 672901876
+[InitialPlace]  Iter: 4 CG residual: 0.00042334 HPWL: 673962048
+[InitialPlace]  Iter: 5 CG residual: 0.00033383 HPWL: 673293188
+[InitialPlace]  Iter: 6 CG residual: 0.00038804 HPWL: 674344175
+[InitialPlace]  Iter: 7 CG residual: 0.00032906 HPWL: 673646677
+[InitialPlace]  Iter: 8 CG residual: 0.00030306 HPWL: 674604860
+[InitialPlace]  Iter: 9 CG residual: 0.00032999 HPWL: 673891380
+[InitialPlace]  Iter: 10 CG residual: 0.00034412 HPWL: 674796203
+[InitialPlace]  Iter: 11 CG residual: 0.00034056 HPWL: 674086274
+[InitialPlace]  Iter: 12 CG residual: 0.00039247 HPWL: 674941592
+[InitialPlace]  Iter: 13 CG residual: 0.00038014 HPWL: 674182249
+[InitialPlace]  Iter: 14 CG residual: 0.00033174 HPWL: 675049122
+[InitialPlace]  Iter: 15 CG residual: 0.00119681 HPWL: 674271949
+[InitialPlace]  Iter: 16 CG residual: 0.00030268 HPWL: 675139472
+[InitialPlace]  Iter: 17 CG residual: 0.00036920 HPWL: 674334738
+[InitialPlace]  Iter: 18 CG residual: 0.00033767 HPWL: 675136489
+[InitialPlace]  Iter: 19 CG residual: 0.00035014 HPWL: 674364231
+[InitialPlace]  Iter: 20 CG residual: 0.00032577 HPWL: 675187995
 [INFO GPL-0031] FillerInit: NumGCells: 776304
 [INFO GPL-0032] FillerInit: NumGNets: 98214
 [INFO GPL-0033] FillerInit: NumGPins: 283188

@@ -60,6 +60,16 @@ This command only allow for pins to be on the same layer. For a more
 complex pin placement strategy please see the pin placement documentation
 [here](../ppl/README.md).
 
+### Inserting tieoff cells
+
+```
+insert_tiecells tie_pin
+                [-prefix inst_prefix]
+```
+
+The `tie_pin` indicates the master and port to use to tie off nets. For example, `LOGIC0_X1/Z` for the Nangate45 library, where `LOGIC0_X1` is the master and `Z` is the output port on the master.
+The `inst_prefix` can be used to control the prefix of the new tiecell names. This will default to `TIEOFF_`.
+
 ## Example scripts
 
 ## Regression tests

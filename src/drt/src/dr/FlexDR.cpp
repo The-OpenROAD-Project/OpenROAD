@@ -143,12 +143,13 @@ int FlexDRWorker::main(frDesign* design)
   ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
+  auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
-                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
+                    routeBox_.xMin() * micronPerDBU,
+                    routeBox_.yMin() * micronPerDBU,
+                    routeBox_.xMax() * micronPerDBU,
+                    routeBox_.yMax() * micronPerDBU);
   }
 
   init(design);
@@ -157,6 +158,7 @@ int FlexDRWorker::main(frDesign* design)
     route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  const int num_markers = getNumMarkers();
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
@@ -170,6 +172,15 @@ int FlexDRWorker::main(frDesign* design)
        << time_span1.count() << " " << time_span2.count() << " " << endl;
     cout << ss.str() << flush;
   }
+
+  debugPrint(logger_, DRT, "autotuner", 1,
+             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {} prev_#DRVs {} curr_#DRVs {}",
+             routeBox_.xMin() * micronPerDBU,
+             routeBox_.yMin() * micronPerDBU,
+             routeBox_.xMax() * micronPerDBU,
+             routeBox_.yMax() * micronPerDBU,
+             duration_cast<duration<double>>(t3 - t0).count(),
+             getInitNumMarkers(), num_markers);
 
   return 0;
 }

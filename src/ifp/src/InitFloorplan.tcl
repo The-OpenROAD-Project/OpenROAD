@@ -226,6 +226,45 @@ proc auto_place_pins { pin_layer } {
   }
 }
 
+sta::define_cmd_args "insert_tiecells" {tie_pin \
+                                        [-prefix prefix]
+}
+
+proc insert_tiecells { args } {
+  sta::parse_key_args "insert_tiecells" args \
+    keys {-prefix} \
+    flags {}
+
+  sta::check_argc_eq1 "insert_tiecells" $args
+
+  set prefix "TIEOFF_"
+  if {[info exists keys(-prefix)] } {
+    set prefix $keys(-prefix)
+  }
+
+  set tie_pin_split [split $args {/}]
+  set port [lindex $tie_pin_split end]
+  set tie_cell [join [lrange $tie_pin_split 0 end-1] {/}]
+  
+  set master NULL
+  foreach lib [[ord::get_db] getLibs] {
+    set master [$lib findMaster $tie_cell]
+    if { $master != "NULL" } {
+      break
+    }
+  }
+  if { $master == "NULL" } {
+    utl::logger "IFP" 31 "Unable to find master: $tie_cell"
+  }
+
+  set mterm [$master findMTerm $port]
+  if { $master == "NULL" } {
+    utl::logger "IFP" 32 "Unable to find master pin: $args"
+  }
+
+  ifp::insert_tiecells_cmd $mterm $prefix
+}
+
 namespace eval ifp {
 
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {

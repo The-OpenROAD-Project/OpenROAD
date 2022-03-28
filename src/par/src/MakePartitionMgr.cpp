@@ -66,7 +66,6 @@ void initPartitionMgr(OpenRoad* openroad)
 
   kernel->init(openroad->getDb(),
                openroad->getDbNetwork(),
-               openroad->getVerilogNetwork(),
                openroad->getSta(),
                openroad->getLogger());
 };

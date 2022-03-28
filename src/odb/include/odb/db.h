@@ -8588,6 +8588,8 @@ class dbModule : public dbObject
   // User Code End dbModuleEnums
   const char* getName() const;
 
+  std::string getHierarchicalName() const;
+
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
@@ -8600,6 +8602,8 @@ class dbModule : public dbObject
   dbSet<dbModInst> getChildren();
 
   dbModInst* findModInst(const char* name);
+
+  std::vector<dbInst*> getLeafInsts();
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -8635,7 +8639,7 @@ class dbModInst : public dbObject
 
   std::string getName() const;
 
-  std::string getHierarchalName() const;
+  std::string getHierarchicalName() const;
   // User Code End dbModInst
 };
 

@@ -264,7 +264,6 @@ class PartitionMgr
   PartOptions options_;
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
-  ord::dbVerilogNetwork* network_ = nullptr;
   sta::dbSta* _sta = nullptr;
   unsigned bestId_ = 0;
   Logger* logger_;
@@ -278,7 +277,6 @@ class PartitionMgr
   ~PartitionMgr();
   void init(odb::dbDatabase* db,
             sta::dbNetwork* db_network,
-            ord::dbVerilogNetwork* network,
             sta::dbSta* sta,
             Logger* logger);
   void runPartitioning();
