@@ -2118,9 +2118,15 @@ void DbModuleDescriptor::highlight(std::any object,
     inst_descriptor->highlight(inst, painter, nullptr);
   }
 
+  const int level_alpha_scale = 2;
+  painter.saveState();
+  auto pen_color = painter.getPenColor();
+  pen_color.a /= level_alpha_scale;
+  painter.setPen(pen_color, true);
   for (auto* children : module->getChildren()) {
     highlight(children->getMaster(), painter, nullptr);
   }
+  painter.restoreState();
 }
 
 Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
