@@ -512,9 +512,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
 
   auto marker = make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
-            gtl::yl(markerRect),
-            gtl::xh(markerRect),
-            gtl::yh(markerRect));
+           gtl::yl(markerRect),
+           gtl::xh(markerRect),
+           gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(constraint);
@@ -829,9 +829,9 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
 
   auto marker = make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
-            gtl::yl(markerRect),
-            gtl::xh(markerRect),
-            gtl::yh(markerRect));
+           gtl::yl(markerRect),
+           gtl::xh(markerRect),
+           gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(edge->getLayerNum());
   marker->setConstraint(constraint);
@@ -1019,9 +1019,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   gtl::generalized_intersect(markerRect, edgeRect);
   auto marker = make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
-            gtl::yl(markerRect),
-            gtl::xh(markerRect),
-            gtl::yh(markerRect));
+           gtl::yl(markerRect),
+           gtl::xh(markerRect),
+           gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(edge1->getLayerNum());
   marker->setConstraint(constraint);
@@ -1097,23 +1097,23 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-
-      if (ignoreLongSideEOL_) {
+      if (ignoreLongSideEOL_
+          && layer->getLayerNum() > 2 /* above the 1st metal layer */) {
         switch (edge->getDir()) {
-        case frDirEnum::N:
-        case frDirEnum::S:
-          if (isVertical) {
-            continue;
-          }
-          break;
-        case frDirEnum::E:
-        case frDirEnum::W:
-          if (!isVertical) {
-            continue;
-          }
-          break;
-        default:
-          break;
+          case frDirEnum::N:
+          case frDirEnum::S:
+            if (isVertical) {
+              continue;
+            }
+            break;
+          case frDirEnum::E:
+          case frDirEnum::W:
+            if (!isVertical) {
+              continue;
+            }
+            break;
+          default:
+            break;
         }
       }
 
@@ -1137,9 +1137,10 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
-         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -1151,9 +1152,10 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
     }
   } else {
     // layer --> net --> polygon
-    for (int i
-         = std::max((frLayerNum)(getTech()->getBottomLayerNum()), minLayerNum_);
-         i <= std::min((frLayerNum)(getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
+                          minLayerNum_);
+         i
+         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
