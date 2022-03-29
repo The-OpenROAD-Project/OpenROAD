@@ -324,6 +324,8 @@ void dumpAPs(odb::dbBlock* block, const std::string file_name)
           os << "      ap ";
           os << "(" << pt.x() << ", " << pt.y() << ") ";
           os << "layer=" << ap->getLayer()->getName() << " ";
+          os << "type=" << ap->getLowType().getString() << "/"
+             << ap->getHighType().getString() << " ";
           for (auto dir : dirs) {
             os << dir.getString() << " ";
           }
