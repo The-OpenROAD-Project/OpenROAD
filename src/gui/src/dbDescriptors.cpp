@@ -1905,6 +1905,20 @@ Descriptor::Properties DbGroupDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Instances", insts});
 
+  props.push_back({"Group Type", group->getType().getString()});
+
+  SelectionSet pwr;
+  for (auto* net : group->getPowerNets()) {
+    pwr.insert(gui->makeSelected(net));
+  }
+  props.push_back({"Power Nets", pwr});
+
+  SelectionSet gnd;
+  for (auto* net : group->getGroundNets()) {
+    gnd.insert(gui->makeSelected(net));
+  }
+  props.push_back({"Ground Nets", gnd});
+
   return props;
 }
 
