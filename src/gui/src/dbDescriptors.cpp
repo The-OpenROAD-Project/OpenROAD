@@ -2152,7 +2152,7 @@ Descriptor::Properties DbModuleDescriptor::getProperties(std::any object) const
   }
 
   SelectionSet insts;
-  for (auto* inst : module->getLeafInsts()) {
+  for (auto* inst : module->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", insts});
