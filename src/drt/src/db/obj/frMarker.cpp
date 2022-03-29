@@ -43,6 +43,7 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
   // iter is handled by the owner
   (ar) & vioHasDir_;
   (ar) & vioIsH_;
+  (ar) & index_in_owner_;
   if (ar.isDeepSerialize()) {
     (ar) & constraint_;
     (ar) & srcs_;

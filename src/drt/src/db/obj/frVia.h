@@ -47,7 +47,8 @@ class frVia : public frRef
         owner_(nullptr),
         tapered_(false),
         bottomConnected_(false),
-        topConnected_(false)
+        topConnected_(false),
+        order_in_owner_(0)
   {
   }
   frVia(frViaDef* in)
@@ -57,7 +58,8 @@ class frVia : public frRef
         owner_(nullptr),
         tapered_(false),
         bottomConnected_(false),
-        topConnected_(false)
+        topConnected_(false),
+        order_in_owner_(0)
   {
   }
   frVia(const frVia& in)
@@ -67,7 +69,8 @@ class frVia : public frRef
         owner_(in.owner_),
         tapered_(in.tapered_),
         bottomConnected_(in.bottomConnected_),
-        topConnected_(in.topConnected_)
+        topConnected_(in.topConnected_),
+        order_in_owner_(0)
   {
   }
   frVia(const drVia& in);
@@ -304,6 +307,8 @@ class frVia : public frRef
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
+  void setOrderInOwner(int idx) { order_in_owner_ = idx; }
+  int getOrderInOwner() const { return order_in_owner_; }
 
  private:
   Point origin_;
@@ -313,32 +318,10 @@ class frVia : public frRef
   bool bottomConnected_ : 1;
   bool topConnected_ : 1;
   frListIter<std::unique_ptr<frVia>> iter_;
+  int order_in_owner_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    (ar) & boost::serialization::base_object<frRef>(*this);
-    (ar) & origin_;
-    (ar) & viaDef_;
-    (ar) & owner_;
-    bool tmp = false;
-    if (is_loading(ar)) {
-      (ar) & tmp;
-      tapered_ = tmp;
-      (ar) & tmp;
-      bottomConnected_ = tmp;
-      (ar) & tmp;
-      topConnected_ = tmp;
-    } else {
-      tmp = tapered_;
-      (ar) & tmp;
-      tmp = bottomConnected_;
-      (ar) & tmp;
-      tmp = topConnected_;
-      (ar) & tmp;
-    }
-    // iter is handled by the owner
-  }
+  void serialize(Archive& ar, const unsigned int version);
 
   friend class boost::serialization::access;
 };

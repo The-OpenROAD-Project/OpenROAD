@@ -125,6 +125,26 @@ static bool serialize_design(SerializationType type,
   return true;
 }
 
+static bool serializeDesignUpdates(frDesign* design,
+                                  const std::string& name)
+{
+  ProfileTask task("DIST: SERIALIZE_UPDATES");
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(false);
+  register_types(ar);
+  auto updates = design->getUpdates();
+  ar << updates;
+  task.done();
+  ProfileTask task2("DIST: WRITE_UPDATES");
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  file << stream.rdbuf();
+  file.close();
+  return true;
+}
+
 static bool writeGlobals(const std::string& name)
 {
   std::ofstream file(name);
@@ -1706,9 +1726,15 @@ void FlexDR::searchRepair(int iter,
           if (iter != 0 || design_version != 0)
             std::remove(design_path_.c_str());
           design_path_ = fmt::format(
-              "{}iter{}_{}.design", dist_dir_, iter, design_version++);
-          serialize_design(SerializationType::WRITE, design_, design_path_);
-          ProfileTask task("DIST: SENDING DESIGN");
+              "{}iter{}_{}.design", dist_dir_, iter, design_version);
+          std::unique_ptr<ProfileTask> task;
+          if(design_version == 0) {
+            serialize_design(SerializationType::WRITE, design_, design_path_);
+            task = std::make_unique<ProfileTask>("DIST: SENDING DESIGN");
+          } else {
+            serializeDesignUpdates(design_, design_path_);
+            task = std::make_unique<ProfileTask>("DIST: SENDING UPDATES");
+          }
           dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                               dst::JobMessage::BROADCAST),
               result(dst::JobMessage::NONE);
@@ -1719,16 +1745,22 @@ void FlexDR::searchRepair(int iter,
           rjd->setDesignPath(design_path_);
           rjd->setGlobalsPath(globals_path_);
           rjd->setSharedDir(dist_dir_);
+          if(design_version == 0)
+            rjd->setDesignUpdate(false);
+          else
+            rjd->setDesignUpdate(true);
           msg.setJobDescription(std::move(desc));
           bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
           if (!ok)
             logger_->error(DRT, 304, "Updating design remotely failed");
+          design_->clearUpdates();
         }
-        if (design_updated) {
+        if (design_version == 0) {
           ProfileTask task("DIST: dummyUpdate");
           design_->getRegionQuery()->dummyUpdate();
-          design_updated = false;
         }
+        ++design_version;
+        design_updated = false;
         {
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
@@ -2692,6 +2724,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
     for (auto& net : nets_) {
       owner2nets_[net->getFrNet()].push_back(net.get());
     }
+    dist_on_ = true;
   } else {
     // boundaryPin_
     int sz = boundaryPin_.size();

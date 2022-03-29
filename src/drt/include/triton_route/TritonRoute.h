@@ -123,6 +123,7 @@ class TritonRoute
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr);
   void updateGlobals(const char* file_name);
+  void resetDesign(const char* file_name);
   void updateDesign(const char* file_name);
   void addWorkerResults(const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);

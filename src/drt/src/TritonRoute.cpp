@@ -51,6 +51,7 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
+#include "distributed/drUpdate.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -188,8 +189,7 @@ void TritonRoute::updateGlobals(const char* file_name)
   serialize_globals(ar);
   file.close();
 }
-
-void TritonRoute::updateDesign(const char* file_name)
+void TritonRoute::resetDesign(const char* file_name)
 {
   std::ifstream file(file_name);
   if (!file.good())
@@ -200,6 +200,115 @@ void TritonRoute::updateDesign(const char* file_name)
   register_types(ar);
   ar >> *(design_.get());
   file.close();
+}
+void TritonRoute::updateDesign(const char* file_name)
+{
+  std::ifstream file(file_name);
+  if (!file.good())
+    return;
+  std::vector<drUpdate> updates;
+  frIArchive ar(file);
+  ar.setDeepSerialize(false);
+  ar.setDesign(design_.get());
+  register_types(ar);
+  ar >> updates;
+  auto topBlock = design_->getTopBlock();
+  auto regionQuery = design_->getRegionQuery();
+  for(auto& update : updates)
+  {
+    switch (update.getType())
+    {
+    case drUpdate::REMOVE_FROM_BLOCK:
+    {
+      auto id = update.getOrderInOwner();
+      auto marker = design_->getTopBlock()->getMarker(id);
+      regionQuery->removeMarker(marker);
+      topBlock->removeMarker(marker);
+      break;
+    }
+    case drUpdate::REMOVE_FROM_NET:
+    {
+      auto net = update.getNet();
+      auto id = update.getOrderInOwner();
+      auto pinfig = net->getPinFig(id);
+      switch (pinfig->typeId())
+      {
+      case frcPathSeg:
+      {
+        auto seg = static_cast<frPathSeg*>(pinfig);
+        regionQuery->removeDRObj(seg);
+        net->removeShape(seg);
+        break;
+      }
+      case frcPatchWire:
+      {
+        auto pwire = static_cast<frPatchWire*>(pinfig);
+        regionQuery->removeDRObj(pwire);
+        net->removePatchWire(pwire);
+        break;
+      }
+      case frcVia:
+      {
+        auto via = static_cast<frVia*>(pinfig);
+        regionQuery->removeDRObj(via);
+        net->removeVia(via);
+        break;
+      }
+      default:
+        logger_->error(DRT, 9999, "unknown update type {}", pinfig->typeId());
+        break;
+      }
+      break;
+    }
+    case drUpdate::ADD:
+    {
+      auto obj = update.getObj();
+      switch (obj.which())
+      {
+      case 0:
+      {
+        auto net = update.getNet();
+        frPathSeg seg = boost::get<frPathSeg>(obj);
+        std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
+        auto sptr = uShape.get();
+        net->addShape(std::move(uShape));
+        regionQuery->addDRObj(sptr);
+        break;
+      }
+      case 1:
+      {
+        auto net = update.getNet();
+        frPatchWire pwire = boost::get<frPatchWire>(obj);
+        std::unique_ptr<frShape> uShape = std::make_unique<frPatchWire>(pwire);
+        auto sptr = uShape.get();
+        net->addPatchWire(std::move(uShape));
+        regionQuery->addDRObj(sptr);
+        break;
+      }
+      case 2:
+      {
+        auto net = update.getNet();
+        frVia via = boost::get<frVia>(obj);
+        auto uVia = std::make_unique<frVia>(via);
+        auto sptr = uVia.get();
+        net->addVia(std::move(uVia));
+        regionQuery->addDRObj(sptr);
+        break;
+      }
+      default:
+      {
+        frMarker marker = boost::get<frMarker>(obj);
+        auto uMarker = std::make_unique<frMarker>(marker);
+        auto sptr = uMarker.get();
+        topBlock->addMarker(std::move(uMarker));
+        regionQuery->addMarker(sptr);
+        break;
+      }
+      }
+      break;
+    }
+    }
+  }
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp,

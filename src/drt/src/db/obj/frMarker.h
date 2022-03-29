@@ -128,7 +128,8 @@ class frMarker : public frFig
 
   void setIter(frListIter<std::unique_ptr<frMarker>>& in) { iter_ = in; }
   frListIter<std::unique_ptr<frMarker>> getIter() const { return iter_; }
-
+  void setIndexInOwner(const int& idx) { index_in_owner_ = idx; }
+  int getIndexInOwner() const { return index_in_owner_; }
  private:
   frConstraint* constraint_;
   Rect bbox_;
@@ -141,6 +142,7 @@ class frMarker : public frFig
   frListIter<std::unique_ptr<frMarker>> iter_;
   bool vioHasDir_;
   bool vioIsH_;
+  int index_in_owner_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

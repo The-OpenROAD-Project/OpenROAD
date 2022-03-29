@@ -67,6 +67,7 @@
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "distributed/drUpdate.h"
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -441,6 +442,7 @@ void register_types(Archive& ar)
   // More details here
   // https://www.boost.org/doc/libs/1_76_0/libs/serialization/doc/serialization.html#derivedpointers
 
+  ar.template register_type<drUpdate>();
   ar.template register_type<frRect>();
   ar.template register_type<frPathSeg>();
   ar.template register_type<frPatchWire>();

@@ -311,7 +311,8 @@ class FlexDRWorker
         gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
-        gcWorker_(nullptr)
+        gcWorker_(nullptr),
+        dist_on_(false)
   {
   }
   FlexDRWorker()
@@ -322,7 +323,8 @@ class FlexDRWorker
         via_data_(nullptr),
         boundaryPin_(),
         rq_(nullptr),
-        gcWorker_(nullptr)
+        gcWorker_(nullptr),
+        dist_on_(false)
   {
   }
   // setters
@@ -464,6 +466,7 @@ class FlexDRWorker
                       unsigned short remote_port,
                       const std::string& dir)
   {
+    dist_on_ = true;
     dist_ = dist;
     dist_ip_ = remote_ip;
     dist_port_ = remote_port;
@@ -541,6 +544,7 @@ class FlexDRWorker
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
+  bool dist_on_;
 
   // init
   void init(const frDesign* design);

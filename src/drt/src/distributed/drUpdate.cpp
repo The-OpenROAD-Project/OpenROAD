@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,61 +26,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "db/obj/frShape.h"
-
-#include "db/drObj/drShape.h"
-#include "db/taObj/taShape.h"
+#include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
-
-using namespace std;
+#include "db/obj/frNet.h"
 using namespace fr;
 
-frPathSeg::frPathSeg(const drPathSeg& in)
-{
-  in.getPoints(begin_, end_);
-  layer_ = in.getLayerNum();
-  in.getStyle(style_);
-  owner_ = nullptr;
-  setTapered(in.isTapered());
-}
-
-frPathSeg::frPathSeg(const taPathSeg& in)
-{
-  in.getPoints(begin_, end_);
-  layer_ = in.getLayerNum();
-  in.getStyle(style_);
-  owner_ = nullptr;
-  setTapered(false);
-}
-
-frPatchWire::frPatchWire(const drPatchWire& in)
-{
-  in.getOrigin(origin_);
-  in.getOffsetBox(offsetBox_);
-  layer_ = in.getLayerNum();
-  owner_ = nullptr;
-}
-
 template <class Archive>
-void frShape::serialize(Archive& ar, const unsigned int version)
+void drUpdate::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & boost::serialization::base_object<frPinFig>(*this);
-  (ar) & order_in_owner_;
-  if(ar.isDeepSerialize())
-  {
-    (ar) & owner_;
-  } else 
-  {
-    serializeBlockObject(ar, owner_);
-  }
+    (ar) & type_;
+    (ar) & order_in_owner_;
+    (ar) & obj_;
+    if(is_loading(ar))
+    {
+        frBlockObject* obj;
+        serializeBlockObject(ar, obj);
+        net_ = (frNet*) obj;
+    } else {
+        frBlockObject* obj = (frBlockObject*) net_;
+        serializeBlockObject(ar, obj);
+    }
 }
 
-
-template void frShape::serialize<frIArchive>(
+template void drUpdate::serialize<frIArchive>(
     frIArchive& ar,
     const unsigned int file_version);
 
-template void frShape::serialize<frOArchive>(
+template void drUpdate::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);

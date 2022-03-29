@@ -284,6 +284,7 @@ class frBlock : public frBlockObject
   {
     return markers_;
   }
+  frMarker* getMarker(const int& id) { return all_markers_[id]; }
   int getNumMarkers() const { return markers_.size(); }
   frNet* getFakeVSSNet() { return fakeSNets_[0].get(); }
   frNet* getFakeVDDNet() { return fakeSNets_[1].get(); }
@@ -356,6 +357,8 @@ class frBlock : public frBlockObject
     auto rptr = in.get();
     markers_.push_back(std::move(in));
     rptr->setIter(--(markers_.end()));
+    rptr->setIndexInOwner(all_markers_.size());
+    all_markers_.push_back(rptr);
   }
   void removeMarker(frMarker* in) { markers_.erase(in->getIter()); }
   void addFakeSNet(std::unique_ptr<frNet> in)
@@ -389,6 +392,7 @@ class frBlock : public frBlockObject
   std::vector<frGCellPattern> gCellPatterns_;
 
   frList<std::unique_ptr<frMarker>> markers_;
+  std::vector<frMarker*> all_markers_;
 
   std::vector<std::unique_ptr<frNet>>
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD

@@ -120,23 +120,29 @@ class frNet : public frBlockObject
   void addShape(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
+    in->setOrderInOwner(all_.size());
     auto rptr = in.get();
     shapes_.push_back(std::move(in));
     rptr->setIter(--shapes_.end());
+    all_.push_back(rptr);
   }
   void addVia(std::unique_ptr<frVia> in)
   {
     in->addToNet(this);
+    in->setOrderInOwner(all_.size());
     auto rptr = in.get();
     vias_.push_back(std::move(in));
     rptr->setIter(--vias_.end());
+    all_.push_back(rptr);
   }
   void addPatchWire(std::unique_ptr<frShape> in)
   {
     in->addToNet(this);
+    in->setOrderInOwner(all_.size());
     auto rptr = in.get();
     pwires_.push_back(std::move(in));
     rptr->setIter(--pwires_.end());
+    all_.push_back(rptr);
   }
   void addGRShape(std::unique_ptr<grShape>& in)
   {
@@ -218,7 +224,7 @@ class frNet : public frBlockObject
   }
   bool isSpecial() const { return isSpecial_; }
   void setIsSpecial(bool s) { isSpecial_ = s; }
-  
+  frPinFig* getPinFig(const int& id) { return all_[id]; }
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
@@ -247,6 +253,8 @@ class frNet : public frBlockObject
                        // ordering before other criteria
   bool isClock_;
   bool isSpecial_;
+
+  std::vector<frPinFig*> all_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);

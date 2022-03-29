@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Authors: Osama */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2022, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,61 +26,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma once
 #include "db/obj/frShape.h"
-
-#include "db/drObj/drShape.h"
-#include "db/taObj/taShape.h"
-#include "distributed/frArchive.h"
-#include "serialization.h"
-
-using namespace std;
-using namespace fr;
-
-frPathSeg::frPathSeg(const drPathSeg& in)
+#include "db/obj/frVia.h"
+#include "db/obj/frMarker.h"
+#include <boost/serialization/variant.hpp>
+namespace fr {
+class frNet;
+class drUpdate
 {
-  in.getPoints(begin_, end_);
-  layer_ = in.getLayerNum();
-  in.getStyle(style_);
-  owner_ = nullptr;
-  setTapered(in.isTapered());
-}
-
-frPathSeg::frPathSeg(const taPathSeg& in)
-{
-  in.getPoints(begin_, end_);
-  layer_ = in.getLayerNum();
-  in.getStyle(style_);
-  owner_ = nullptr;
-  setTapered(false);
-}
-
-frPatchWire::frPatchWire(const drPatchWire& in)
-{
-  in.getOrigin(origin_);
-  in.getOffsetBox(offsetBox_);
-  layer_ = in.getLayerNum();
-  owner_ = nullptr;
-}
-
-template <class Archive>
-void frShape::serialize(Archive& ar, const unsigned int version)
-{
-  (ar) & boost::serialization::base_object<frPinFig>(*this);
-  (ar) & order_in_owner_;
-  if(ar.isDeepSerialize())
+  public:
+  enum UpdateType
   {
-    (ar) & owner_;
-  } else 
-  {
-    serializeBlockObject(ar, owner_);
-  }
+    ADD,
+    REMOVE_FROM_NET,
+    REMOVE_FROM_BLOCK
+  };
+  drUpdate(UpdateType type = ADD) : net_(nullptr), order_in_owner_(0), type_(type) {}
+  void setNet(frNet* net) { net_ = net; }
+  void setPathSeg(const frPathSeg& seg) { obj_ = seg; }
+  void setPatchWire(const frPatchWire& pwire) { obj_ = pwire; }
+  void setVia(const frVia& via) { obj_ = via; }
+  void setMarker(const frMarker& marker) { obj_ = marker; }
+  void setOrderInOwner(int value) { order_in_owner_ = value; }
+  void setUpdateType(UpdateType value) { type_ = value; }
+  boost::variant<frPathSeg, frPatchWire, frVia, frMarker>& getObj() { return obj_; }
+  UpdateType getType() const { return type_; }
+  int getOrderInOwner() const { return order_in_owner_; }
+  frNet* getNet() const { return net_; }
+  private:
+  frNet* net_;
+  int order_in_owner_;
+  UpdateType type_;
+  boost::variant<frPathSeg, frPatchWire, frVia, frMarker> obj_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  friend class boost::serialization::access;
+};
 }
-
-
-template void frShape::serialize<frIArchive>(
-    frIArchive& ar,
-    const unsigned int file_version);
-
-template void frShape::serialize<frOArchive>(
-    frOArchive& ar,
-    const unsigned int file_version);

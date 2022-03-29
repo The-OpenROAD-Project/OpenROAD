@@ -53,7 +53,7 @@ double OR_K = 0;
 
 string DBPROCESSNODE = "";
 int MAX_THREADS = 1;
-int BATCHSIZE = 1024;
+int BATCHSIZE = 1000024;
 int BATCHSIZETA = 8;
 int MTSAFEDIST = 2000;
 int DRCSAFEDIST = 500;

@@ -37,6 +37,7 @@
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
+#include "distributed/drUpdate.h"
 
 namespace fr {
 namespace io {
@@ -83,6 +84,10 @@ class frDesign
   }
   bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
 
+  void addUpdate(const drUpdate& update) { updates_.push_back(update); }
+  const std::vector<drUpdate>& getUpdates() const { return updates_; }
+  void clearUpdates() { updates_.clear(); }
+  
   ~frDesign() {}
  private:
   std::unique_ptr<frBlock> topBlock_;
@@ -90,6 +95,7 @@ class frDesign
   std::vector<std::unique_ptr<frMaster>> masters_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
+  std::vector<drUpdate> updates_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

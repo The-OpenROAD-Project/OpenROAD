@@ -162,7 +162,7 @@ void
 run_worker_cmd(const char* design_path, const char* globals_path, const char* worker_path)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->updateDesign(design_path);
+  router->resetDesign(design_path);
   router->updateGlobals(globals_path);
   router->runDRWorker(worker_path);
 }
