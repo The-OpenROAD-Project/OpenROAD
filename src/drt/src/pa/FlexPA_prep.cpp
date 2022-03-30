@@ -242,16 +242,17 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   if ((lowCost == frAccessPointEnum::NearbyGrid || 
         highCost == frAccessPointEnum::NearbyGrid)) {
       Point end;
-      if (fpt.x() < gtl::xl(maxrect))
-          end.setX(gtl::xl(maxrect));
-      else if (fpt.x() > gtl::xh(maxrect))
-          end.setX(gtl::xh(maxrect));
+      int halfWidth = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth()/2;
+      if (fpt.x() < gtl::xl(maxrect)+halfWidth) {
+          end.setX(gtl::xl(maxrect)+halfWidth);
+      } else if (fpt.x() > gtl::xh(maxrect)-halfWidth)
+          end.setX(gtl::xh(maxrect)-halfWidth);
       else 
           end.setX(fpt.x());
-      if (fpt.y() < gtl::yl(maxrect))
-          end.setY(gtl::yl(maxrect));
-      else if (fpt.y() > gtl::yh(maxrect))
-          end.setY(gtl::yh(maxrect));
+      if (fpt.y() < gtl::yl(maxrect)+halfWidth)
+          end.setY(gtl::yl(maxrect)+halfWidth);
+      else if (fpt.y() > gtl::yh(maxrect)-halfWidth)
+          end.setY(gtl::yh(maxrect)-halfWidth);
       else 
           end.setY(fpt.y());
       
@@ -268,9 +269,6 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
         else if (ps.getEndPoint() == end)
             ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         ap->addPathSeg(std::move(ps));
-//        cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
-//        cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
-        
         if (!(e == end)) {
             fpt = e;
             ps.setPoints_safe(fpt, end);
@@ -279,9 +277,6 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
             else
                 ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
             ap->addPathSeg(std::move(ps));
-            cout << "ADDING 2nd pathseg\n";
-            cout << "ap " << fpt << " ps.begin " << ps.getBeginPoint() << " ps.end " << ps.getEndPoint() << "\n";
-            cout << "rect " << gtl::xl(maxrect) << " " << gtl::yl(maxrect) << " " << gtl::xh(maxrect) << " " << gtl::yh(maxrect) << "\n"; 
         }
       }
   }

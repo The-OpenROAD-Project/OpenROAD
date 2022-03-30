@@ -2445,8 +2445,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
     frAccessPoint* ap = net->getFrAccessPoint(x, y, lNum, &owner);
     if (!ap)    //on-the-fly ap
         return false;
-    if (ap->getType(true) == frAccessPointEnum::NearbyGrid || ap->getType(false) == frAccessPointEnum::NearbyGrid)
-        cout << "NEARBY GRID!\n";
     assert(owner != nullptr);
     frInst* inst = nullptr;
     if (owner->typeId() == frBlockObjectEnum::frcInstTerm)
@@ -2463,8 +2461,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
             connecting = &begin;
         else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
             connecting = &end;
-        
-//        cout << "Origin ap shape " << begin << " " << end << "\n";
         if (inst) {
             dbTransform trans;
             inst->getTransform(trans);
@@ -2480,7 +2476,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
                 end = tmp;
             }
         }
-//        cout << "Adding ap shape " << begin << " " << end << "\n";
         drPs->setPoints(begin, end);
         drPs->setLayerNum(lNum);
         drPs->addToNet(net);
