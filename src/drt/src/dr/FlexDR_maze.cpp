@@ -2295,6 +2295,12 @@ void FlexDRWorker::routeNet_postAstarWritePath(
   it = mazeIdx2TaperBox.find(points.back());
   if (it != mazeIdx2TaperBox.end())
     srcBox = it->second;
+  if (points.size() == 1) {
+      if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()), 
+                                gridGraph_.yCoord(points[0].y()),
+                                gridGraph_.getLayerNum(points[0].z())))
+          addApPathSegs(points[0], net);
+  }
   for (int i = 0; i < (int) points.size() - 1; ++i) {
     FlexMazeIdx start, end;
     if (points[i + 1] < points[i]) {

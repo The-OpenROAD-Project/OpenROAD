@@ -75,10 +75,13 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
     term_name_ = settings_->pinName.substr(pos + 1);
     auto inst_name = settings_->pinName.substr(0, pos);
+    cout << "DEBUGGING inst " << inst_name << " term " << term_name_ << "\n";
     if (inst_name == "PIN") {  // top level bterm
       inst_ = nullptr;
     } else {
       inst_ = design->getTopBlock()->getInst(inst_name);
+      if (!inst_)
+          cout << "INST NOT FOUND!\n";
     }
   }
 

@@ -855,19 +855,23 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     gcWorker.setTargetObj(pin->getTerm());
   }
   gcWorker.initPA0(getDesign());
+  frBlockObject* owner;
   if (instTerm) {
     if (instTerm->hasNet()) {
-      gcWorker.addPAObj(ps.get(), instTerm->getNet());
+      owner = instTerm->getNet();
     } else {
-      gcWorker.addPAObj(ps.get(), instTerm);
+      owner = instTerm;
     }
   } else {
     if (pin->getTerm()->hasNet()) {
-      gcWorker.addPAObj(ps.get(), pin->getTerm()->getNet());
+      owner = pin->getTerm()->getNet();
     } else {
-      gcWorker.addPAObj(ps.get(), pin->getTerm());
+      owner = pin->getTerm();
     }
   }
+  gcWorker.addPAObj(ps.get(), owner);
+  for (auto& apPs : ap->getPathSegs())
+      gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -1025,15 +1029,19 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   }
 
   gcWorker.initPA0(getDesign());
+  frBlockObject* owner;
   if (instTerm) {
     if (instTerm->hasNet()) {
-      gcWorker.addPAObj(via, instTerm->getNet());
+      owner = instTerm->getNet();
     } else {
-      gcWorker.addPAObj(via, instTerm);
+      owner = instTerm;
     }
   } else {
-    gcWorker.addPAObj(via, pin->getTerm());
+    owner = pin->getTerm();
   }
+  gcWorker.addPAObj(via, owner);
+  for (auto& apPs : ap->getPathSegs())
+      gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
