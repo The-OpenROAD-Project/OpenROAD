@@ -81,6 +81,7 @@ class FlexPAGraphics : public gui::Renderer
 
   void setObjsAndMakers(const vector<pair<frConnFig*, frBlockObject*>>& objs,
                         const std::vector<std::unique_ptr<frMarker>>& markers,
+                        const std::vector<frInst*>& insts,
                         const FlexPA::PatternType type);
 
   // Show a message in the status bar
@@ -102,6 +103,7 @@ class FlexPAGraphics : public gui::Renderer
   frPin* pin_;
   frInstTerm* inst_term_;
   frBlock* top_block_;
+  bool inst_in_set_;
   std::vector<frAccessPoint> aps_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;

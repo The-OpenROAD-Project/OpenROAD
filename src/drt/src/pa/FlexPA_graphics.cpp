@@ -46,6 +46,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
       pin_(nullptr),
       inst_term_(nullptr),
       top_block_(design->getTopBlock()),
+      inst_in_set_(false),
       pa_ap_(nullptr),
       pa_markers_(nullptr)
 {
@@ -99,7 +100,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (!pin_) {
+  if (!pin_ && !inst_in_set_) {
     return;
   }
 
@@ -326,11 +327,22 @@ void FlexPAGraphics::setPlanarAP(
 void FlexPAGraphics::setObjsAndMakers(
     const vector<pair<frConnFig*, frBlockObject*>>& objs,
     const std::vector<std::unique_ptr<frMarker>>& markers,
+    const std::vector<frInst*>& insts,
     const FlexPA::PatternType type)
 {
   if ((!settings_->paCommit && !settings_->paEdge)
       || (settings_->paCommit && type != FlexPA::Commit)
       || (settings_->paEdge && type != FlexPA::Edge)) {
+    return;
+  }
+
+  if (inst_) {
+    inst_in_set_ = find(insts.begin(), insts.end(), inst_) != insts.end();
+  } else {
+    inst_in_set_ = true;
+  }
+
+  if (!inst_in_set_) {
     return;
   }
 
