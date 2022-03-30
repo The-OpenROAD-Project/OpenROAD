@@ -121,7 +121,7 @@ void InitialPlace::doBicgstabPlace() {
     instLocVecY_ = solver.solveWithGuess(fixedInstForceVecY_, instLocVecY_);
     errorY = solver.error();
 
-    log_->report("[InitialPlace]  Iter: {} CG Error: {:0.8f} HPWL: {}",
+    log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
        i, max(errorX, errorY), pb_->hpwl());
     updateCoordi();
 

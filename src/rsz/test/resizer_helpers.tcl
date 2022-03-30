@@ -4,7 +4,7 @@ proc check_in_core {} {
   foreach inst [get_cells *] {
     lassign [[sta::sta_to_db_inst $inst] getLocation] x y
     if { ![$core intersects [odb::new_Point $x $y]] } {
-      puts "[get_full_name $inst] outside of core"
+      puts "[get_full_name $inst] ($x $y) outside of core ([$core xMin] [$core yMin] [$core xMax] [$core yMax])"
     }
   }
 }

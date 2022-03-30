@@ -29,11 +29,11 @@
 [INFO GPL-0019] Util(%): 59.73
 [INFO GPL-0020] StdInstsArea: 2279088000
 [INFO GPL-0021] MacroInstsArea: 0
-[InitialPlace]  Iter: 1 CG Error: 0.00000009 HPWL: 5668660
-[InitialPlace]  Iter: 2 CG Error: 0.00000004 HPWL: 5048725
-[InitialPlace]  Iter: 3 CG Error: 0.00000002 HPWL: 5034377
-[InitialPlace]  Iter: 4 CG Error: 0.00000007 HPWL: 5036666
-[InitialPlace]  Iter: 5 CG Error: 0.00000008 HPWL: 5036282
+[InitialPlace]  Iter: 1 CG residual: 0.00000009 HPWL: 5668660
+[InitialPlace]  Iter: 2 CG residual: 0.00000004 HPWL: 5048725
+[InitialPlace]  Iter: 3 CG residual: 0.00000002 HPWL: 5034377
+[InitialPlace]  Iter: 4 CG residual: 0.00000007 HPWL: 5036666
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 5036282
 [INFO GPL-0031] FillerInit: NumGCells: 348
 [INFO GPL-0032] FillerInit: NumGNets: 364
 [INFO GPL-0033] FillerInit: NumGPins: 1122

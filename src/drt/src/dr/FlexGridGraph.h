@@ -243,7 +243,13 @@ class FlexGridGraph
     }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
-  dbTechLayerDir getZDir(frMIdx in) const { return layerRouteDirections_[in]; }
+  dbTechLayerDir getZDir(frMIdx in) const
+  {
+    return layerRouteDirections_[in];
+  }
+  int getLayerCount() {
+      return zCoords_.size();
+  }
   bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     correct(x, y, z, dir);

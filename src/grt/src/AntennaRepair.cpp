@@ -282,6 +282,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   odb::Rect inst_rect;
   antenna_inst->getBBox()->getBox(inst_rect);
 
+  legally_placed = legally_placed && diodeInRow(inst_rect);
+
   if (!legally_placed) {
     logger_->warn(
         GRT,
@@ -375,6 +377,20 @@ odb::Rect AntennaRepair::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
   }
 
   return inst_rect;
+}
+
+bool AntennaRepair::diodeInRow(odb::Rect diode_rect)
+{
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::Rect row_rect;
+    row->getBBox(row_rect);
+
+    if (row_rect.contains(diode_rect)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }  // namespace grt

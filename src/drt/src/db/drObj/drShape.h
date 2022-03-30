@@ -118,10 +118,26 @@ class drPathSeg : public drShape
     endIn = end_;
   }
 
+  frCoord length() const {
+      //assuming it is always orthogonal
+      return end_.x() - begin_.x() + end_.y() - begin_.y();
+  }
   const Point& getBeginPoint() const { return begin_; }
 
   const Point& getEndPoint() const { return end_; }
-
+  
+  bool isVertical() const { return begin_.x() == end_.x(); } 
+  
+  frCoord low() const {
+      if (isVertical())
+          return begin_.y();
+      return begin_.x();
+  }
+  frCoord high() const {
+      if (isVertical())
+          return end_.y();
+      return end_.x();
+  }
   void getStyle(frSegStyle& styleIn) const
   {
     styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());

@@ -158,7 +158,8 @@ static bool writeGlobals(const std::string& name)
 }
 
 FlexDR::FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
+    : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false),
+      increaseClipsize_(false), clipSizeInc_(0)
 {
 }
 
@@ -201,12 +202,13 @@ int FlexDRWorker::main(frDesign* design)
   ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
+  auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
-                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
+                    routeBox_.xMin() * micronPerDBU,
+                    routeBox_.yMin() * micronPerDBU,
+                    routeBox_.xMax() * micronPerDBU,
+                    routeBox_.yMax() * micronPerDBU);
   }
   initMarkers(design);
   if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
@@ -221,6 +223,7 @@ int FlexDRWorker::main(frDesign* design)
     route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  const int num_markers = getNumMarkers();
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
@@ -234,6 +237,15 @@ int FlexDRWorker::main(frDesign* design)
        << time_span1.count() << " " << time_span2.count() << " " << endl;
     cout << ss.str() << flush;
   }
+
+  debugPrint(logger_, DRT, "autotuner", 1,
+             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {} prev_#DRVs {} curr_#DRVs {}",
+             routeBox_.xMin() * micronPerDBU,
+             routeBox_.yMin() * micronPerDBU,
+             routeBox_.xMax() * micronPerDBU,
+             routeBox_.yMax() * micronPerDBU,
+             duration_cast<duration<double>>(t3 - t0).count(),
+             getInitNumMarkers(), num_markers);
 
   return 0;
 }
@@ -1643,6 +1655,12 @@ void FlexDR::searchRepair(int iter,
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   int clipSize = size;
+  if (ripupMode != 1) {
+    if (increaseClipsize_) {
+        clipSizeInc_ += 2;
+    } else clipSizeInc_ = max((float)0, clipSizeInc_ - 0.2f);
+    clipSize += min(MAX_CLIPSIZE_INCREASE, (int)round(clipSizeInc_));
+  }
   int cnt = 0;
   int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
             * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
@@ -1713,6 +1731,8 @@ void FlexDR::searchRepair(int iter,
   omp_set_num_threads(MAX_THREADS);
   int design_version = 0;
   bool design_updated = true;
+
+  increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1835,6 +1855,8 @@ void FlexDR::searchRepair(int iter,
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           design_updated |= workersInBatch[i]->end(getDesign());
+          if (workersInBatch[i]->isCongested())
+            increaseClipsize_ = true;
         }
         workersInBatch.clear();
       }
@@ -1870,7 +1892,7 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "drc", 1)) {
+  if (logger_->debugCheck(DRT, "autotuner", 1)) {
     reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }
@@ -2709,6 +2731,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & rq_;
+  (ar) & isCongested_;
   if (is_loading(ar)) {
     // boundaryPin_
     int sz;

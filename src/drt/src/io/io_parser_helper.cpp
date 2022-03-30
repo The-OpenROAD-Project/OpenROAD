@@ -979,19 +979,19 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
     ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
   }
 
-  if (VERBOSE > 0) {
+  if (VERBOSE > 0 || logger->debugCheck(DRT, "autotuner", 1)) {
     logger->info(DRT,
                  176,
                  "GCELLGRID X {} DO {} STEP {} ;",
-                 ygp.getStartCoord(),
-                 ygp.getCount(),
-                 ygp.getSpacing());
-    logger->info(DRT,
-                 177,
-                 "GCELLGRID Y {} DO {} STEP {} ;",
                  xgp.getStartCoord(),
                  xgp.getCount(),
                  xgp.getSpacing());
+    logger->info(DRT,
+                 177,
+                 "GCELLGRID Y {} DO {} STEP {} ;",
+                 ygp.getStartCoord(),
+                 ygp.getCount(),
+                 ygp.getSpacing());
   }
 
   design->getTopBlock()->setGCellPatterns({xgp, ygp});

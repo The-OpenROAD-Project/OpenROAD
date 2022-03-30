@@ -15,5 +15,6 @@ record_tests {
   auto_place_pins1
   placement_blockage1
   placement_blockage2
+  tiecells
 }
 

@@ -37,11 +37,11 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Util(%): 78.55
 [INFO GPL-0020] StdInstsArea: 2234400000
 [INFO GPL-0021] MacroInstsArea: 60222400000
-[InitialPlace]  Iter: 1 CG Error: 0.00000011 HPWL: 55625730
-[InitialPlace]  Iter: 2 CG Error: 0.00000010 HPWL: 47263160
-[InitialPlace]  Iter: 3 CG Error: 0.00000007 HPWL: 47358542
-[InitialPlace]  Iter: 4 CG Error: 0.00000012 HPWL: 47431259
-[InitialPlace]  Iter: 5 CG Error: 0.00000011 HPWL: 47497790
+[InitialPlace]  Iter: 1 CG residual: 0.00000011 HPWL: 55625730
+[InitialPlace]  Iter: 2 CG residual: 0.00000010 HPWL: 47263160
+[InitialPlace]  Iter: 3 CG residual: 0.00000007 HPWL: 47358542
+[InitialPlace]  Iter: 4 CG residual: 0.00000012 HPWL: 47431259
+[InitialPlace]  Iter: 5 CG residual: 0.00000011 HPWL: 47497790
 [INFO GPL-0031] FillerInit: NumGCells: 1885
 [INFO GPL-0032] FillerInit: NumGNets: 412
 [INFO GPL-0033] FillerInit: NumGPins: 1333

@@ -25,15 +25,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "swig_common.h"
-
 #include <libgen.h>
 
 #include <array>
+#include <fstream>
+#include <vector>
 
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
+#include "swig_common.h"
 #include "utl/Logger.h"
 
 using namespace boost::polygon::operators;
@@ -291,6 +292,46 @@ void createSBoxes(odb::dbSWire* swire,
                   odb::dbWireShapeType type)
 {
   for (odb::Point point : points)
-    odb::dbSBox::create(
-        swire, via, point.getX(), point.getY(), type);
+    odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
+}
+
+void dumpAPs(odb::dbBlock* block, const std::string file_name)
+{
+  std::ofstream os(file_name);
+  for (auto inst : block->getInsts()) {
+    os << "Inst: " << inst->getName() << "\n";
+    for (auto iterm : inst->getITerms()) {
+      if (iterm->getSigType().isSupply()) {
+        continue;
+      }
+
+      auto mterm = iterm->getMTerm();
+      auto aps = iterm->getAccessPoints();
+      os << "  iterm: " << mterm->getName() << "\n";
+
+      for (auto mpin : mterm->getMPins()) {
+        auto bbox = mpin->getBBox();
+        os << "    pin (" << bbox.xMin() << ", " << bbox.yMin() << "):\n";
+
+        auto pin_aps_it = aps.find(mpin);
+        if (pin_aps_it == aps.end()) {
+          continue;
+        }
+        for (auto ap : pin_aps_it->second) {
+          std::vector<odb::dbDirection> dirs;
+          ap->getAccesses(dirs);
+          auto pt = ap->getPoint();
+          os << "      ap ";
+          os << "(" << pt.x() << ", " << pt.y() << ") ";
+          os << "layer=" << ap->getLayer()->getName() << " ";
+          os << "type=" << ap->getLowType().getString() << "/"
+             << ap->getHighType().getString() << " ";
+          for (auto dir : dirs) {
+            os << dir.getString() << " ";
+          }
+          os << "\n";
+        }
+      }
+    }
+  }
 }

@@ -154,6 +154,8 @@ class FlexDR
   std::string globals_path_;
   std::string design_path_;
   bool design_updated_;
+  bool increaseClipsize_;
+  float clipSizeInc_;
 
   // others
   void init();
@@ -312,7 +314,8 @@ class FlexDRWorker
         markers_(),
         rq_(this),
         gcWorker_(nullptr),
-        dist_on_(false)
+        dist_on_(false),
+        isCongested_(false)
   {
   }
   FlexDRWorker()
@@ -324,7 +327,8 @@ class FlexDRWorker
         boundaryPin_(),
         rq_(nullptr),
         gcWorker_(nullptr),
-        dist_on_(false)
+        dist_on_(false),
+        isCongested_(false)
   {
   }
   // setters
@@ -345,6 +349,7 @@ class FlexDRWorker
     drIter_ = in;
     boundaryPin_ = std::move(bp);
   }
+  bool isCongested() const { return isCongested_; }
   void setBoundaryPins(std::map<frNet*,
                                 std::set<std::pair<Point, frLayerNum>>,
                                 frBlockObjectComp>& bp)
@@ -545,6 +550,7 @@ class FlexDRWorker
   unsigned short dist_port_;
   std::string dist_dir_;
   bool dist_on_;
+  bool isCongested_;
 
   // init
   void init(const frDesign* design);
@@ -977,6 +983,7 @@ class FlexDRWorker
 
   // end
   void cleanup();
+  void identifyCongestionLevel();
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,

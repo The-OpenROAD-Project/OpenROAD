@@ -41,16 +41,18 @@ class Logger;
 
 namespace odb {
 class dbDatabase;
+class dbMTerm;
 }
 
 namespace sta {
-class OpenDbNetwork;
+class dbNetwork;
 class Report;
 }
 
 namespace ifp {
 
 using odb::dbDatabase;
+using sta::dbNetwork;
 using utl::Logger;
 
 void
@@ -81,5 +83,12 @@ void
 autoPlacePins(const char *pin_layer_name,
 	      dbDatabase *db,
 	      Logger *logger);
+
+void
+insertTiecells(odb::dbMTerm* tie_term,
+        const char* prefix,
+        dbDatabase *db,
+        dbNetwork* network,
+        Logger *logger);
 
 } // namespace

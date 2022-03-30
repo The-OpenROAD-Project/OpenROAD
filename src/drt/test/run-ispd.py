@@ -134,8 +134,8 @@ def test_enabled(design, patterns):
 design_list_ispd18 = [
     ("ispd18_test1", 0),
     ("ispd18_test2", 0),
-    ("ispd18_test3", 5),
-    ("ispd18_test4", 11),
+    ("ispd18_test3", 0),
+    ("ispd18_test4", 0),
     ("ispd18_test5", 0),
     ("ispd18_test6", 0),
     ("ispd18_test7", 0),

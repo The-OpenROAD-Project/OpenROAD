@@ -163,7 +163,7 @@ proc make_tracks { args } {
   if { [llength $args] == 0 } {
     foreach layer [$tech getLayers] {
         if { [$layer getType] == "ROUTING"
-             && [$layer getLef58Type] != "MIMCAP"} {
+             && [$layer getRoutingLevel] != 0} {
         set x_pitch [$layer getPitchX]
         set x_offset [$layer getOffsetX]
         set y_pitch [$layer getPitchY]
@@ -226,6 +226,45 @@ proc auto_place_pins { pin_layer } {
   }
 }
 
+sta::define_cmd_args "insert_tiecells" {tie_pin \
+                                        [-prefix prefix]
+}
+
+proc insert_tiecells { args } {
+  sta::parse_key_args "insert_tiecells" args \
+    keys {-prefix} \
+    flags {}
+
+  sta::check_argc_eq1 "insert_tiecells" $args
+
+  set prefix "TIEOFF_"
+  if {[info exists keys(-prefix)] } {
+    set prefix $keys(-prefix)
+  }
+
+  set tie_pin_split [split $args {/}]
+  set port [lindex $tie_pin_split end]
+  set tie_cell [join [lrange $tie_pin_split 0 end-1] {/}]
+  
+  set master NULL
+  foreach lib [[ord::get_db] getLibs] {
+    set master [$lib findMaster $tie_cell]
+    if { $master != "NULL" } {
+      break
+    }
+  }
+  if { $master == "NULL" } {
+    utl::logger "IFP" 31 "Unable to find master: $tie_cell"
+  }
+
+  set mterm [$master findMTerm $port]
+  if { $master == "NULL" } {
+    utl::logger "IFP" 32 "Unable to find master pin: $args"
+  }
+
+  ifp::insert_tiecells_cmd $mterm $prefix
+}
+
 namespace eval ifp {
 
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
@@ -243,16 +282,18 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
       set y_offset $y_pitch
     }
     if { $x_offset > [$die_area dx] } {
-      utl::error "IFP" 21 "-x_offset > die width."
+        utl::warn "IFP" 21 "Track pattern for [$layer getName] will be skipped due to x_offset > die width."
+        return
+    }
+    if { $y_offset > [$die_area dy] } {
+        utl::warn "IFP" 22 "Track pattern for [$layer getName] will be skipped due to y_offset > die height."
+        return
     }
     set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
     $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
 
     if { $x_offset == 0 } {
       set x_offset $x_pitch
-    }
-    if { $y_offset > [$die_area dy] } {
-      utl::error "IFP" 22 "-y_offset > die height."
     }
     set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
     $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch

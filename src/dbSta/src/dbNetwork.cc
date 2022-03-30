@@ -170,37 +170,42 @@ public:
 
 private:
   const dbNetwork *network_;
-  bool top_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
+  Net* next_;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
 					     const dbNetwork *network) :
-  network_(network)
+  network_(network),
+  next_(nullptr)
 {
-  if (instance == network->topInstance()) {
-    top_ = true;
-    dbSet<dbNet> nets = network->block()->getNets();
-    iter_ = nets.begin();
-    end_ = nets.end();
-  }
-  else
-    top_ = false;
+  dbSet<dbNet> nets; // empty
+  if (instance == network->topInstance())
+    nets = network->block()->getNets();
+  iter_ = nets.begin();
+  end_ = nets.end();
 }
 
 bool
 DbInstanceNetIterator::hasNext()
 {
-  return top_ && iter_ != end_;
+  while (iter_ != end_) {
+    dbNet *net = *iter_;
+    if (!net->getSigType().isSupply() || !net->isSpecial()) {
+      next_ = network_->dbToSta(*iter_);
+      ++iter_;
+      return true;
+    }
+    iter_++;
+  }
+  return false;
 }
 
 Net *
 DbInstanceNetIterator::next()
 {
-  dbNet *net = *iter_;
-  iter_++;
-  return network_->dbToSta(net);
+  return next_;
 }
 
 ////////////////////////////////////////////////////////////////
