@@ -299,8 +299,8 @@ bool
 CellPlaceOrderLess::operator()(const Cell *cell1,
                                const Cell *cell2) const
 {
-  int area1 = cell1->area();
-  int area2 = cell2->area();
+  int64_t area1 = cell1->area();
+  int64_t area2 = cell2->area();
   int dist1 = centerDist(cell1);
   int dist2 = centerDist(cell2);
   return area1 > area2
