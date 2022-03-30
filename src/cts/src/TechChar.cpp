@@ -556,6 +556,13 @@ void TechChar::initCharacterization()
                      "Buffer {} not found. Check your -buf_list input.",
                      masterString);
     }
+    auto* libertyCell = db_network_->findLibertyCell(masterString.c_str());
+    if (libertyCell == nullptr) {
+      logger_->error(CTS,
+                     106,
+                     "No Liberty found for buffer {}.",
+                     masterString);
+    }
     masterNames_.insert(masterString);
   }
 
