@@ -1668,7 +1668,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the block of this block-terminal.
   ///
-  dbBlock* getBlock();
+  dbBlock* getBlock() const;
 
   ///
   /// Get the hierarchical parent iterm of this bterm.
@@ -1747,6 +1747,7 @@ class dbBTerm : public dbObject
   ///
   void setSupplyPin(dbBTerm* pin);
 
+  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Create a new block-terminal.
   /// Returns NULL if a bterm with this name already exists
@@ -1837,7 +1838,6 @@ class dbBPin : public dbObject
   ///
   int getMinSpacing();
 
-  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Create a new block-terminal-pin
   ///
@@ -3506,6 +3506,10 @@ class dbVia : public dbObject
   /// Returns NULL if this via does not represent a block via
   //
   dbVia* getBlockVia();
+
+  void setAddedByRouter(bool);
+
+  bool isAddedByRouter();
 
   ///
   /// Create a block specific via.
@@ -5640,6 +5644,8 @@ class dbMPin : public dbObject
   /// Get bbox of this pin (ie the bbox of getGeometry())
   ///
   Rect getBBox();
+
+  std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
 
   ///
   /// Create a new physical pin.
@@ -8588,11 +8594,11 @@ class dbModule : public dbObject
   // User Code End dbModuleEnums
   const char* getName() const;
 
-  std::string getHierarchicalName() const;
-
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
+  std::string getHierarchicalName() const;
+
   void addInst(dbInst* inst);
 
   void removeInst(dbInst* inst);
@@ -8924,13 +8930,19 @@ class dbAccessPoint : public dbObject
 
   dbMPin* getMPin() const;
 
-  dbBPin* getBPin() const;
+  dbBTerm* getBTerm() const;
+
+  std::vector<std::vector<dbObject*>> getVias() const;
+
+  void addTechVia(int num_cuts, dbTechVia* via);
+
+  void addBlockVia(int num_cuts, dbVia* via);
 
   static dbAccessPoint* create(dbBlock* block,
                                dbMPin* pin,
                                uint pin_access_idx);
 
-  static dbAccessPoint* create(dbBPin* pin);
+  static dbAccessPoint* create(dbBTerm*);
 
   static dbAccessPoint* getAccessPoint(dbBlock* block, uint dbid);
 

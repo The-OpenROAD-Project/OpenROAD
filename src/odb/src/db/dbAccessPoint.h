@@ -50,8 +50,9 @@ class _dbTechLayer;
 class _dbLib;
 class _dbMaster;
 class _dbMPin;
-class _dbBPin;
+class _dbBTerm;
 class _dbITerm;
+class _dbObject;
 // User Code Begin Classes
 // User Code End Classes
 
@@ -69,12 +70,14 @@ class _dbAccessPoint : public _dbObject
   dbId<_dbLib> lib_;
   dbId<_dbMaster> master_;
   dbId<_dbMPin> mpin_;
-  dbId<_dbBPin> bpin_;
+  dbId<_dbBTerm> bterm_;
   std::array<bool, 6> accesses_;
   dbAccessType::Value low_type_;
   dbAccessType::Value high_type_;
   dbVector<dbId<_dbITerm>>
       iterms_;  // list of iterms that prefer this access point
+  dbVector<dbVector<std::pair<dbObjectType, dbId<_dbObject>>>>
+      vias_;  // list of vias by num of cuts
 
   // User Code Begin Fields
   // User Code End Fields
