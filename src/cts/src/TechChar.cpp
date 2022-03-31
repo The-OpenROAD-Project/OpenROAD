@@ -563,14 +563,14 @@ void TechChar::initCharacterization()
       if (!maxSlewExist)
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       if (!maxSlewExist)
-        logger_->error(CTS, 106, "No max slew found for cell {}.", bufMasterName);
+        logger_->error(CTS, 107, "No max slew found for cell {}.", bufMasterName);
       charMaxSlew_ = maxSlew;
 
       output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
       if (!maxCapExist)
         lib->defaultMaxCapacitance(maxCap, maxCapExist);
       if (!maxCapExist)
-        logger_->error(CTS, 107, "No max capacitance found for cell {}.", bufMasterName);
+        logger_->error(CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
       charMaxCap_ = maxCap;
     }
     if (!libertySinkCell) {
