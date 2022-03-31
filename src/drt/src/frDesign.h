@@ -30,6 +30,7 @@
 #define _FR_DESIGN_H_
 
 #include <memory>
+#include <string>
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
@@ -53,12 +54,7 @@ class frDesign
         rq_(std::make_unique<frRegionQuery>(this, logger))
   {
   }
-  frDesign()
-      : topBlock_(nullptr),
-        tech_(nullptr),
-        rq_(nullptr)
-  {
-  }
+  frDesign() : topBlock_(nullptr), tech_(nullptr), rq_(nullptr) {}
   // getters
   frBlock* getTopBlock() const { return topBlock_.get(); }
   frTechObject* getTech() const { return tech_.get(); }
@@ -68,6 +64,10 @@ class frDesign
   {
     return masters_;
   }
+  const std::vector<std::string>& getUserSelectedVias() const
+  {
+    return user_selected_vias_;
+  }
   // setters
   void setTopBlock(std::unique_ptr<frBlock> in) { topBlock_ = std::move(in); }
   void setTech(std::unique_ptr<frTechObject> in) { tech_ = std::move(in); }
@@ -75,6 +75,10 @@ class frDesign
   {
     name2master_[in->getName()] = in.get();
     masters_.push_back(std::move(in));
+  }
+  void addUserSelectedVia(const std::string& viaName)
+  {
+    user_selected_vias_.push_back(viaName);
   }
   // others
   friend class io::Parser;
@@ -96,6 +100,7 @@ class frDesign
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
   std::vector<drUpdate> updates_;
+  std::vector<std::string> user_selected_vias_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

@@ -180,11 +180,11 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
   network_(network),
   next_(nullptr)
 {
-  dbSet<dbNet> nets; // empty
-  if (instance == network->topInstance())
-    nets = network->block()->getNets();
-  iter_ = nets.begin();
-  end_ = nets.end();
+  if (instance == network->topInstance()) {
+    dbSet<dbNet> nets = network->block()->getNets();
+    iter_ = nets.begin();
+    end_ = nets.end();
+  }
 }
 
 bool

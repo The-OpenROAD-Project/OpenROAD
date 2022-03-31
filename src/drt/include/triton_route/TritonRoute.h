@@ -45,7 +45,7 @@ struct frDebugSettings;
 namespace odb {
 class dbDatabase;
 class dbInst;
-}
+}  // namespace odb
 namespace utl {
 class Logger;
 }
@@ -94,7 +94,8 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
-  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>());
+  void pinAccess(std::vector<odb::dbInst*> target_insts
+                 = std::vector<odb::dbInst*>());
 
   int getNumDRVs() const;
 
@@ -118,7 +119,7 @@ class TritonRoute
 
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
-
+  void addUserSelectedVia(const std::string& viaName);
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr);
