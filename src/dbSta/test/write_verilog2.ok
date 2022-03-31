@@ -16,8 +16,6 @@ module reg1 (out,
  input [2:0] clk;
  input [1:0] in;
 
- wire VSS;
- wire VDD;
  wire r1q;
  wire r2q;
  wire u1z;

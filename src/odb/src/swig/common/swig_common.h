@@ -92,3 +92,6 @@ void createSBoxes(odb::dbSWire* swire,
                   odb::dbVia* via,
                   std::vector<odb::Point> points,
                   odb::dbWireShapeType type);
+
+void dumpAPs(odb::dbBlock* block,
+             const std::string file_name);
