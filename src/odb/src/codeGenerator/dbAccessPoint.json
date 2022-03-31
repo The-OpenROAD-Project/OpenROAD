@@ -32,10 +32,10 @@
         "parent": "dbMPin"
       },
       {
-        "type": "dbId<_dbBPin>",
-        "name": "bpin_",
+        "type": "dbId<_dbBTerm>",
+        "name": "bterm_",
         "flags":["private","cmpgt"],
-        "parent": "dbBPin"
+        "parent": "dbBTerm"
       },
       {
         "name": "accesses_",
@@ -56,6 +56,12 @@
         "name": "iterms_",
         "type": "dbVector<dbId<_dbITerm>>",
         "comment" : "//list of iterms that prefer this access point",
+        "flags" : ["private"]
+      },
+      {
+        "name": "vias_",
+        "type": "dbVector<dbVector<std::pair<dbObjectType,dbId<_dbObject>>>>",
+        "comment" : "//list of vias by num of cuts",
         "flags" : ["private"]
       }
     ],

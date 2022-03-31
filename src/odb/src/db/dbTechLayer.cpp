@@ -1059,8 +1059,8 @@ void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.lef58_type_ = (uint) type;
-  if ((type == odb::dbTechLayer::MIMCAP ||
-       type == odb::dbTechLayer::STACKEDMIMCAP)
+  if ((type == odb::dbTechLayer::MIMCAP
+       || type == odb::dbTechLayer::STACKEDMIMCAP)
       && getType() == dbTechLayerType::ROUTING) {
     _dbTech* tech = (_dbTech*) layer->getOwner();
     layer->_rlevel = 0;

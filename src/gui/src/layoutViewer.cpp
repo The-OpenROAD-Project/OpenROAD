@@ -2100,10 +2100,8 @@ void LayoutViewer::drawAccessPoints(Painter& painter, const std::vector<odb::dbI
     }
   }
   for (auto term : block_->getBTerms()) {
-    for (auto pin : term->getBPins()) {
-      for (auto ap : pin->getAccessPoints()) {
-        draw(ap, {});
-      }
+    for (auto ap : term->getAccessPoints()) {
+      draw(ap, {});
     }
   }
 }

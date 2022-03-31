@@ -175,16 +175,6 @@ const char* dbModule::getName() const
   return obj->_name;
 }
 
-std::string dbModule::getHierarchicalName() const
-{
-  dbModInst* inst = getModInst();
-  if (inst) {
-    return inst->getHierarchicalName();
-  } else {
-    return "<top>";
-  }
-}
-
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -195,6 +185,16 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
+
+std::string dbModule::getHierarchicalName() const
+{
+  dbModInst* inst = getModInst();
+  if (inst) {
+    return inst->getHierarchicalName();
+  } else {
+    return "<top>";
+  }
+}
 
 void dbModule::addInst(dbInst* inst)
 {

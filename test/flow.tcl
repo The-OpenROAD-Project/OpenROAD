@@ -197,6 +197,7 @@ detailed_route -guide $route_guide \
                -output_guide [make_result_file "${design}_${platform}_output_guide.mod"] \
                -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
+               -no_pin_access \
                -verbose 0
 
 set drv_count [detailed_route_num_drvs]

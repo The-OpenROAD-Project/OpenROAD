@@ -38,6 +38,7 @@
 #include "dbDatabase.h"
 #include "dbId.h"
 #include "dbTypes.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -48,6 +49,7 @@ class _dbBlock;
 class _dbBPin;
 class _dbITerm;
 class _dbDatabase;
+class _dbAccessPoint;
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -88,6 +90,7 @@ class _dbBTerm : public _dbObject
   dbId<_dbBTerm> _ground_pin;
   dbId<_dbBTerm> _supply_pin;
   std::uint32_t _sta_vertex_id;  // not saved
+  dbVector<dbId<_dbAccessPoint>> aps_;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
