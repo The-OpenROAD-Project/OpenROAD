@@ -7,7 +7,7 @@
  ,"tns_max" : "-168.16189827320002"
  ,"clock_skew" : "0.05513018531066095"
  ,"max_slew_violations" : "0"
- ,"max_capacitance_violations" : "0"
+ ,"max_capacitance_violations" : "1"
  ,"max_fanout_violations" : "0"
  ,"ANT::errors" : "0"
  ,"DRT::drv" : "0"
