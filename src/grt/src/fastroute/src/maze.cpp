@@ -1007,7 +1007,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
     int x_pos = tile_size_ * (E1x + 0.5) + x_corner_;
     int y_pos = tile_size_ * (E1y + 0.5) + y_corner_;
     if (verbose_)
-      logger_->warn(
+      logger_->error(
           GRT,
           169,
           "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
@@ -1769,10 +1769,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A2);
           if (!route_ok) {
             if (verbose_)
-              logger_->warn(GRT,
-                            150,
-                            "Net {} has errors during updateRouteType1.",
-                            netName(nets_[netID]));
+              logger_->error(GRT,
+                             150,
+                             "Net {} has errors during updateRouteType1.",
+                             netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
