@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/Exception.i
+
+/home/kevinchen/OpenROAD/src/OpenRoad.i
+odb/db.h
+/home/kevinchen/OpenROAD/src/odb/db.h
+odb/lefin.h
+/home/kevinchen/OpenROAD/src/odb/lefin.h
+odb/defin.h
+/home/kevinchen/OpenROAD/src/odb/defin.h
+odb/defout.h
+/home/kevinchen/OpenROAD/src/odb/defout.h
+sta/Report.hh
+/home/kevinchen/OpenROAD/src/sta/Report.hh
+sta/Network.hh
+/home/kevinchen/OpenROAD/src/sta/Network.hh
+db_sta/dbSta.hh
+/home/kevinchen/OpenROAD/src/db_sta/dbSta.hh
+db_sta/dbNetwork.hh
+/home/kevinchen/OpenROAD/src/db_sta/dbNetwork.hh
+db_sta/dbReadVerilog.hh
+/home/kevinchen/OpenROAD/src/db_sta/dbReadVerilog.hh
+ord/Version.hh
+/home/kevinchen/OpenROAD/src/ord/Version.hh
+utl/Logger.h
+/home/kevinchen/OpenROAD/src/utl/Logger.h
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/ord/OpenRoad.hh
+Exception.i
+/home/kevinchen/OpenROAD/src/Exception.i
+

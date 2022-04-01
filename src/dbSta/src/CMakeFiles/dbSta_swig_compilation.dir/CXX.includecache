@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/dbSta/src/dbSta.i
+odb/db.h
+/home/kevinchen/OpenROAD/src/dbSta/src/odb/db.h
+db_sta/dbSta.hh
+/home/kevinchen/OpenROAD/src/dbSta/src/db_sta/dbSta.hh
+db_sta/dbNetwork.hh
+/home/kevinchen/OpenROAD/src/dbSta/src/db_sta/dbNetwork.hh
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/dbSta/src/ord/OpenRoad.hh
+odb.i
+/home/kevinchen/OpenROAD/src/dbSta/src/odb.i
+../../src/Exception.i
+/home/kevinchen/OpenROAD/src/src/Exception.i
+tcl/StaTcl.i
+/home/kevinchen/OpenROAD/src/dbSta/src/tcl/StaTcl.i
+tcl/NetworkEdit.i
+/home/kevinchen/OpenROAD/src/dbSta/src/tcl/NetworkEdit.i
+sdf/Sdf.i
+/home/kevinchen/OpenROAD/src/dbSta/src/sdf/Sdf.i
+dcalc/DelayCalc.i
+/home/kevinchen/OpenROAD/src/dbSta/src/dcalc/DelayCalc.i
+parasitics/Parasitics.i
+/home/kevinchen/OpenROAD/src/dbSta/src/parasitics/Parasitics.i
+

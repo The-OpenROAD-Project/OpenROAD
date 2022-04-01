@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/Exception.i
+
+/home/kevinchen/OpenROAD/src/dpl/src/Opendp.i
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/dpl/src/ord/OpenRoad.hh
+dpl/Opendp.h
+/home/kevinchen/OpenROAD/src/dpl/src/dpl/Opendp.h
+utl/Logger.h
+/home/kevinchen/OpenROAD/src/dpl/src/utl/Logger.h
+../../Exception.i
+/home/kevinchen/OpenROAD/src/Exception.i
+

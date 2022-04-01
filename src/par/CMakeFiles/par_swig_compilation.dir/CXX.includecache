@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/Exception.i
+
+/home/kevinchen/OpenROAD/src/par/src/partitionmgr.i
+par/PartitionMgr.h
+/home/kevinchen/OpenROAD/src/par/src/par/PartitionMgr.h
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/par/src/ord/OpenRoad.hh
+set
+-
+../../Exception.i
+/home/kevinchen/OpenROAD/src/Exception.i
+std_vector.i
+-
+

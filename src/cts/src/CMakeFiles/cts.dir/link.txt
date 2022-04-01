@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc cts.a  CMakeFiles/cts.dir/CMakeFiles/cts.dir/TritonCTSTCL_wrap.cxx.o CMakeFiles/cts.dir/cts-tclInitVar.cc.o CMakeFiles/cts.dir/Clock.cpp.o CMakeFiles/cts.dir/HTreeBuilder.cpp.o CMakeFiles/cts.dir/MakeTritoncts.cpp.o CMakeFiles/cts.dir/PostCtsOpt.cpp.o CMakeFiles/cts.dir/SinkClustering.cpp.o CMakeFiles/cts.dir/TechChar.cpp.o CMakeFiles/cts.dir/TritonCTS.cpp.o CMakeFiles/cts.dir/Clustering.cpp.o CMakeFiles/cts.dir/LevelBalancer.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib cts.a
