@@ -449,6 +449,7 @@ variable default_global_connections {
   }
 }
 variable power_switch_cells {}
+variable psw_instance {}
 variable voltage_domains {
   CORE {
     primary_power VDD primary_ground VSS
@@ -3937,6 +3938,7 @@ proc generate_stripes {net_name} {
 proc insert_power_switches {} {
   variable grid_data
   variable power_switch_cells
+  variable psw_instance
 
   set db [ord::get_db]
   set block [ord::get_db_block]
@@ -4031,6 +4033,74 @@ proc insert_power_switches {} {
     }
   }
   merge_stripes
+}
+
+proc get_power_switch_shape {} {
+  variable psw_instance
+  set psw {}
+
+  foreach psw_inst $psw_instance {
+    set bbox [$psw_inst getBBox]
+    set box [odb::newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+    lappend psw $box
+  }
+  return [odb::orSets $psw]
+}
+ 
+proc move_tapcell {tapcell_inst switch_inst print_num} {
+
+  set tapcell_bbox [$tapcell_inst getBBox]
+  set switch_bbox [odb::getRectangles $switch_inst]
+
+  set avg_tapcell [expr ([$tapcell_bbox xMin] + [$tapcell_bbox xMax]) / 2]
+  set avg_switch [expr ([$switch_bbox xMin] + [$switch_bbox xMax]) / 2]
+
+  if {$avg_tapcell > $avg_switch} { 
+    # move to rhs
+    set location [list \
+            [expr [lindex [$tapcell_inst getOrigin] 0] + [$switch_bbox xMax] - [$tapcell_bbox xMin]] \
+            [lindex [$tapcell_inst getOrigin] 1] \
+          ]
+  } else {
+    # move to lhs
+    set location [list \
+            [expr [lindex [$tapcell_inst getOrigin] 0] - [$tapcell_bbox xMax] + [$switch_bbox xMin]] \
+            [lindex [$tapcell_inst getOrigin] 1] \
+          ]
+  }
+  $tapcell_inst setOrigin {*}$location
+}
+
+proc detect_and_fix_tapcell_overlaps {} {
+  variable grid_data
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  set name [dict get $grid_data switch_cell]
+  set psw_width [[$db findMaster $name] getWidth]
+  set psw_height [[$db findMaster $name] getHeight]
+
+  set power_switches [get_power_switch_shape]
+  set tapcell_idx 0
+
+  foreach Inst [$block getInsts] {
+    set tapcell_inst [$block findInst "TAP_${tapcell_idx}"]
+    if {$tapcell_inst != "NULL"} {
+      set bbox [$tapcell_inst getBBox]
+      set box [odb::newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+      set overlap [odb::andSet $power_switches $box]
+
+      if {[llength [odb::getRectangles $overlap]] > 0} {
+        set switch_overlap [odb::bloatSet $overlap $psw_height $psw_width]
+        set switch_inst  [odb::andSet $power_switches $switch_overlap]
+        move_tapcell $tapcell_inst $switch_inst $tapcell_idx
+      } 
+      incr tapcell_idx
+    } else {
+      break
+    }
+  }
 }
 
 proc cut_blocked_areas {net} {
@@ -5805,6 +5875,7 @@ proc add_grid {} {
 
   if {[get_voltage_domain_switched_power [dict get $design_data core_domain]] != ""} {
     insert_power_switches
+    detect_and_fix_tapcell_overlaps
   }
   
   ## Cut blocked areas on power and ground nets
