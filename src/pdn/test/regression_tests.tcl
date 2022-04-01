@@ -1,5 +1,6 @@
 # Record tests in /test
 record_tests {
+  power_switch.api
   test_gcd.api
   test_gcd_dual_rails.api
   test_gcd.invert_viarule.api
