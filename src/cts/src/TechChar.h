@@ -35,11 +35,6 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
-#include "sta/Corner.hh"
-
 #include <algorithm>
 #include <bitset>
 #include <cassert>
@@ -52,9 +47,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CtsOptions.h"
+#include "db_sta/dbNetwork.hh"
+#include "ord/OpenRoad.hh"
+#include "sta/Corner.hh"
+
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace cts {
 
@@ -62,17 +62,17 @@ using utl::Logger;
 
 class WireSegment
 {
-  uint8_t _length;
-  uint8_t _load;
-  uint8_t _outputSlew;
+  uint8_t length_;
+  uint8_t load_;
+  uint8_t outputSlew_;
 
-  double _power;
-  unsigned _delay;
-  uint8_t _inputCap;
-  uint8_t _inputSlew;
+  double power_;
+  unsigned delay_;
+  uint8_t inputCap_;
+  uint8_t inputSlew_;
 
-  std::vector<double> _bufferLocations;
-  std::vector<std::string> _bufferMasters;
+  std::vector<double> bufferLocations_;
+  std::vector<std::string> bufferMasters_;
 
  public:
   WireSegment(uint8_t length,
@@ -82,44 +82,44 @@ class WireSegment
               unsigned delay,
               uint8_t inputCap,
               uint8_t inputSlew)
-      : _length(length),
-        _load(load),
-        _outputSlew(outputSlew),
-        _power(power),
-        _delay(delay),
-        _inputCap(inputCap),
-        _inputSlew(inputSlew)
+      : length_(length),
+        load_(load),
+        outputSlew_(outputSlew),
+        power_(power),
+        delay_(delay),
+        inputCap_(inputCap),
+        inputSlew_(inputSlew)
   {
   }
 
-  void addBuffer(double location) { _bufferLocations.push_back(location); }
+  void addBuffer(double location) { bufferLocations_.push_back(location); }
 
-  void addBufferMaster(std::string name) { _bufferMasters.push_back(name); }
+  void addBufferMaster(std::string name) { bufferMasters_.push_back(name); }
 
-  double getPower() const { return _power; }
-  unsigned getDelay() const { return _delay; }
-  uint8_t getInputCap() const { return _inputCap; }
-  uint8_t getInputSlew() const { return _inputSlew; }
-  uint8_t getLength() const { return _length; }
-  uint8_t getLoad() const { return _load; }
-  uint8_t getOutputSlew() const { return _outputSlew; }
-  bool isBuffered() const { return _bufferLocations.size() > 0; }
-  unsigned getNumBuffers() const { return _bufferLocations.size(); }
-  std::vector<double>& getBufferLocations() { return _bufferLocations; }
-  std::vector<std::string>& getBufferMasters() { return _bufferMasters; }
+  double getPower() const { return power_; }
+  unsigned getDelay() const { return delay_; }
+  uint8_t getInputCap() const { return inputCap_; }
+  uint8_t getInputSlew() const { return inputSlew_; }
+  uint8_t getLength() const { return length_; }
+  uint8_t getLoad() const { return load_; }
+  uint8_t getOutputSlew() const { return outputSlew_; }
+  bool isBuffered() const { return bufferLocations_.size() > 0; }
+  unsigned getNumBuffers() const { return bufferLocations_.size(); }
+  std::vector<double>& getBufferLocations() { return bufferLocations_; }
+  std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
 
   double getBufferLocation(unsigned idx) const
   {
-    if (idx >= _bufferLocations.size()) {
+    if (idx >= bufferLocations_.size()) {
       return -1.0;
     }
-    return _bufferLocations[idx];
+    return bufferLocations_[idx];
   }
 
   std::string getBufferMaster(unsigned idx) const
   {
-    assert(idx >= 0 || idx < _bufferMasters.size());
-    return _bufferMasters[idx];
+    assert(idx >= 0 || idx < bufferMasters_.size());
+    return bufferMasters_[idx];
   }
 };
 
@@ -190,8 +190,8 @@ class TechChar
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
-  void write(const std::string& file) const;
-  void writeSol(const std::string& file) const;
+  void printCharacterization() const;
+  void printSolution() const;
 
   void report() const;
   void reportSegment(unsigned key) const;
@@ -216,17 +216,17 @@ class TechChar
 
   const WireSegment& getWireSegment(unsigned idx) const
   {
-    return _wireSegments[idx];
+    return wireSegments_[idx];
   }
 
-  unsigned getMinSegmentLength() const { return _minSegmentLength; }
-  unsigned getMaxSegmentLength() const { return _maxSegmentLength; }
-  unsigned getMaxCapacitance() const { return _maxCapacitance; }
-  unsigned getMaxSlew() const { return _maxSlew; }
-  void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
-  unsigned getActualMinInputCap() const { return _actualMinInputCap; }
+  unsigned getMinSegmentLength() const { return minSegmentLength_; }
+  unsigned getMaxSegmentLength() const { return maxSegmentLength_; }
+  unsigned getMaxCapacitance() const { return maxCapacitance_; }
+  unsigned getMaxSlew() const { return maxSlew_; }
+  void setActualMinInputCap(unsigned cap) { actualMinInputCap_ = cap; }
+  unsigned getActualMinInputCap() const { return actualMinInputCap_; }
   void setLenghthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
-  unsigned getLengthUnit() const { return _lengthUnit; }
+  unsigned getLengthUnit() const { return lengthUnit_; }
 
   void createFakeEntries(unsigned length, unsigned fakeLength);
 
@@ -236,10 +236,10 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
-  float getCharMaxCap() const { return _charMaxCap; }
-  double getCapPerDBU() const { return _capPerDBU; }
-  float getCharMaxSlew() const { return _charMaxSlew; }
-  utl::Logger* getLogger() { return _options->getLogger(); }
+  float getCharMaxCap() const { return charMaxCap_; }
+  double getCapPerDBU() const { return capPerDBU_; }
+  float getCharMaxSlew() const { return charMaxSlew_; }
+  utl::Logger* getLogger() { return options_->getLogger(); }
 
  protected:
   void initLengthUnits();
@@ -248,25 +248,25 @@ class TechChar
 
   unsigned toInternalLengthUnit(unsigned length)
   {
-    return length * _lengthUnitRatio;
+    return length * lengthUnitRatio_;
   }
 
-  unsigned _lengthUnit = 0;
-  unsigned _charLengthUnit = 0;
-  unsigned _lengthUnitRatio = 0;
+  unsigned lengthUnit_ = 0;
+  unsigned charLengthUnit_ = 0;
+  unsigned lengthUnitRatio_ = 0;
 
-  unsigned _minSegmentLength = 0;
-  unsigned _maxSegmentLength = 0;
-  unsigned _minCapacitance = 0;
-  unsigned _maxCapacitance = 0;
-  unsigned _minSlew = 0;
-  unsigned _maxSlew = 0;
+  unsigned minSegmentLength_ = 0;
+  unsigned maxSegmentLength_ = 0;
+  unsigned minCapacitance_ = 0;
+  unsigned maxCapacitance_ = 0;
+  unsigned minSlew_ = 0;
+  unsigned maxSlew_ = 0;
 
-  unsigned _actualMinInputCap = 0;
-  unsigned _actualMinInputSlew = 0;
+  unsigned actualMinInputCap_ = 0;
+  unsigned actualMinInputSlew_ = 0;
 
-  std::deque<WireSegment> _wireSegments;
-  std::unordered_map<Key, std::deque<unsigned>> _keyToWireSegments;
+  std::deque<WireSegment> wireSegments_;
+  std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   // Characterization attributes
 
@@ -287,37 +287,44 @@ class TechChar
                                 unsigned* max);
   void getClockLayerResCap(float dbUnitsPerMicron);
   void getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
-                              float &maxSlew, bool &maxSlewExist,
-                              float &maxCap, bool &maxCapExist, bool midValue = false);
-  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                float& maxCap, bool& maxCapExist, bool midValue = false);
+                              float& maxSlew,
+                              bool& maxSlewExist,
+                              float& maxCap,
+                              bool& maxCapExist,
+                              bool midValue = false);
+  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
+                                float& maxSlew,
+                                bool& maxSlewExist,
+                                float& maxCap,
+                                bool& maxCapExist,
+                                bool midValue = false);
 
-  CtsOptions* _options;
-  ord::OpenRoad* _openroad;
-  odb::dbDatabase* _db;
-  rsz::Resizer* _resizer;
-  sta::dbSta* _openSta;
-  sta::dbSta* _openStaChar;
-  sta::dbNetwork* _db_network;
-  Logger* _logger;
-  sta::PathAnalysisPt* _charPathAnalysis = nullptr;
-  sta::Corner* _charCorner = nullptr;
-  odb::dbBlock* _charBlock = nullptr;
-  odb::dbMaster* _charBuf = nullptr;
-  std::string _charBufIn = "";
-  std::string _charBufOut = "";
-  double _resPerDBU; // ohms/dbu
-  double _capPerDBU; // farads/dbu
-  float _charMaxSlew = 0.0;
-  float _charMaxCap = 0.0;
-  float _charSlewInter = 5.0e-12;  // Hard-coded interval
-  float _charCapInter = 5.0e-15;
-  std::set<std::string> _masterNames;
-  std::vector<float> _wirelengthsToTest;
-  std::vector<float> _loadsToTest;
-  std::vector<float> _slewsToTest;
+  CtsOptions* options_;
+  ord::OpenRoad* openroad_;
+  odb::dbDatabase* db_;
+  rsz::Resizer* resizer_;
+  sta::dbSta* openSta_;
+  sta::dbSta* openStaChar_;
+  sta::dbNetwork* db_network_;
+  Logger* logger_;
+  sta::PathAnalysisPt* charPathAnalysis_ = nullptr;
+  sta::Corner* charCorner_ = nullptr;
+  odb::dbBlock* charBlock_ = nullptr;
+  odb::dbMaster* charBuf_ = nullptr;
+  std::string charBufIn_ = "";
+  std::string charBufOut_ = "";
+  double resPerDBU_;  // ohms/dbu
+  double capPerDBU_;  // farads/dbu
+  float charMaxSlew_ = 0.0;
+  float charMaxCap_ = 0.0;
+  float charSlewInter_ = 5.0e-12;  // Hard-coded interval
+  float charCapInter_ = 5.0e-15;
+  std::set<std::string> masterNames_;
+  std::vector<float> wirelengthsToTest_;
+  std::vector<float> loadsToTest_;
+  std::vector<float> slewsToTest_;
 
-  std::map<CharKey, std::vector<ResultData>> _solutionMap;
+  std::map<CharKey, std::vector<ResultData>> solutionMap_;
 };
 
 }  // namespace cts

@@ -1004,16 +1004,17 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   }
 
   if (E1_pos == -1) {
-    int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
-    int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->warn(
-        GRT,
-        169,
-        "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-        netName(nets_[net_id]),
-        x_pos,
-        y_pos,
-        nets_[net_id]->numPins);
+    int x_pos = tile_size_ * (E1x + 0.5) + x_corner_;
+    int y_pos = tile_size_ * (E1y + 0.5) + y_corner_;
+    if (verbose_)
+      logger_->warn(
+          GRT,
+          169,
+          "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+          netName(nets_[net_id]),
+          x_pos,
+          y_pos,
+          nets_[net_id]->numPins);
     return false;
   }
 
@@ -1181,16 +1182,17 @@ bool FastRouteCore::updateRouteType2(const int net_id,
   }
 
   if (E1_pos == -1) {
-    int x_pos = w_tile_ * (E1x + 0.5) + x_corner_;
-    int y_pos = h_tile_ * (E1y + 0.5) + y_corner_;
-    logger_->warn(
-        GRT,
-        170,
-        "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-        netName(nets_[net_id]),
-        x_pos,
-        y_pos,
-        nets_[net_id]->numPins);
+    int x_pos = tile_size_ * (E1x + 0.5) + x_corner_;
+    int y_pos = tile_size_ * (E1y + 0.5) + y_corner_;
+    if (verbose_)
+      logger_->warn(
+          GRT,
+          170,
+          "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+          netName(nets_[net_id]),
+          x_pos,
+          y_pos,
+          nets_[net_id]->numPins);
     return false;
   }
 
@@ -1766,10 +1768,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A1,
                                            edge_n1A2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          150,
-                          "Net {} has errors during updateRouteType1.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            150,
+                            "Net {} has errors during updateRouteType1.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1799,10 +1802,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A2,
                                            edge_C1C2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          151,
-                          "Net {} has errors during updateRouteType2.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            151,
+                            "Net {} has errors during updateRouteType2.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1915,10 +1919,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B1,
                                            edge_n2B2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          152,
-                          "Net {} has errors during updateRouteType1.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            152,
+                            "Net {} has errors during updateRouteType1.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1949,10 +1954,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B2,
                                            edge_D1D2);
           if (!route_ok) {
-            logger_->warn(GRT,
-                          153,
-                          "Net {} has errors during updateRouteType2.",
-                          netName(nets_[netID]));
+            if (verbose_)
+              logger_->warn(GRT,
+                            153,
+                            "Net {} has errors during updateRouteType2.",
+                            netName(nets_[netID]));
             reInitTree(netID);
             nidRPC--;
             break;
@@ -2095,16 +2101,16 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   total_overflow_ = H_overflow + V_overflow;
   *maxOverflow = max_overflow;
 
-  if (verbose_ > 1) {
-    logger_->info(GRT, 126, "Overflow report:");
-    logger_->info(GRT, 127, "Total usage          : {}", total_usage);
-    logger_->info(GRT, 128, "Max H overflow       : {}", max_H_overflow);
-    logger_->info(GRT, 129, "Max V overflow       : {}", max_V_overflow);
-    logger_->info(GRT, 130, "Max overflow         : {}", max_overflow);
-    logger_->info(GRT, 131, "Number overflow edges: {}", numedges);
-    logger_->info(GRT, 132, "H   overflow         : {}", H_overflow);
-    logger_->info(GRT, 133, "V   overflow         : {}", V_overflow);
-    logger_->info(GRT, 134, "Final overflow       : {}\n", total_overflow_);
+  if (logger_->debugCheck(GRT, "congestion", 1)) {
+    logger_->report("Overflow report:");
+    logger_->report("Total usage          : {}", total_usage);
+    logger_->report("Max H overflow       : {}", max_H_overflow);
+    logger_->report("Max V overflow       : {}", max_V_overflow);
+    logger_->report("Max overflow         : {}", max_overflow);
+    logger_->report("Number overflow edges: {}", numedges);
+    logger_->report("H   overflow         : {}", H_overflow);
+    logger_->report("V   overflow         : {}", V_overflow);
+    logger_->report("Final overflow       : {}\n", total_overflow_);
   }
 
   *tUsage = total_usage;
@@ -2173,18 +2179,18 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     ahth_ = 20;
   }
 
-  if (verbose_ > 1) {
-    logger_->info(GRT, 135, "Overflow report.");
-    logger_->info(GRT, 136, "Total hCap               : {}", hCap);
-    logger_->info(GRT, 137, "Total vCap               : {}", vCap);
-    logger_->info(GRT, 138, "Total usage              : {}", total_usage);
-    logger_->info(GRT, 139, "Max H overflow           : {}", max_H_overflow);
-    logger_->info(GRT, 140, "Max V overflow           : {}", max_V_overflow);
-    logger_->info(GRT, 141, "Max overflow             : {}", max_overflow);
-    logger_->info(GRT, 142, "Number of overflow edges : {}", numedges);
-    logger_->info(GRT, 143, "H   overflow             : {}", H_overflow);
-    logger_->info(GRT, 144, "V   overflow             : {}", V_overflow);
-    logger_->info(GRT, 145, "Final overflow           : {}\n", total_overflow_);
+  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+    logger_->report("Overflow report.");
+    logger_->report("Total hCap               : {}", hCap);
+    logger_->report("Total vCap               : {}", vCap);
+    logger_->report("Total usage              : {}", total_usage);
+    logger_->report("Max H overflow           : {}", max_H_overflow);
+    logger_->report("Max V overflow           : {}", max_V_overflow);
+    logger_->report("Max overflow             : {}", max_overflow);
+    logger_->report("Number of overflow edges : {}", numedges);
+    logger_->report("H   overflow             : {}", H_overflow);
+    logger_->report("V   overflow             : {}", V_overflow);
+    logger_->report("Final overflow           : {}\n", total_overflow_);
   }
 
   return total_overflow_;

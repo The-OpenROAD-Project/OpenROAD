@@ -31,6 +31,7 @@
 
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/serialization/base_object.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
 #include <cstdint>
@@ -45,6 +46,9 @@
 
 namespace odb {
   class Rect;
+}
+namespace boost::serialization{
+  class access;
 }
 
 namespace fr {
@@ -82,10 +86,12 @@ enum frEndStyleEnum
 enum frBlockObjectEnum
 {
   frcNet,
-  frcTerm,
+  frcBTerm,
+  frcMTerm,
   frcInst,
   frcVia,
-  frcPin,
+  frcBPin,
+  frcMPin,
   frcInstTerm,
   frcRect,
   frcPolygon,
@@ -96,6 +102,7 @@ enum frBlockObjectEnum
   frcBlockage,
   frcLayerBlockage,
   frcBlock,
+  frcMaster,
   frcBoundary,
   frcInstBlockage,
   frcAccessPattern,
@@ -133,6 +140,9 @@ enum frBlockObjectEnum
   gccRect,
   gccPolygon
 };
+
+std::ostream& operator<<(std::ostream& os, frBlockObjectEnum type);
+
 enum class frGuideEnum
 {
   frcGuideX,
@@ -195,12 +205,16 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint
 };
 
+std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
+
 enum class frCornerTypeEnum
 {
   UNKNOWN,
   CONCAVE,
   CONVEX
 };
+
+std::ostream& operator<<(std::ostream& os, frCornerTypeEnum type);
 
 enum class frCornerDirEnum
 {
@@ -218,6 +232,8 @@ enum class frMinimumcutConnectionEnum
   FROMBELOW = 1
 };
 
+std::ostream& operator<<(std::ostream& os, frMinimumcutConnectionEnum conn);
+
 enum class frMinstepTypeEnum
 {
   UNKNOWN = -1,
@@ -225,6 +241,8 @@ enum class frMinstepTypeEnum
   OUTSIDECORNER = 1,
   STEP = 2
 };
+
+std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type);
 
 #define OPPOSITEDIR 7  // used in FlexGC_main.cpp
 enum class frDirEnum
@@ -269,46 +287,47 @@ struct frDebugSettings
 {
   frDebugSettings()
       : debugDR(false),
+        debugDumpDR(false),
         debugMaze(false),
         debugPA(false),
         draw(true),
         allowPause(true),
-        gcellX(-1),
-        gcellY(-1),
+        x(-1),
+        y(-1),
         iter(0),
         paMarkers(false),
-        paCombining(false)
+        paEdge(false),
+        paCommit(false)
   {
   }
 
   bool is_on() const { return debugDR || debugPA; }
 
   bool debugDR;
+  bool debugDumpDR;
   bool debugMaze;
   bool debugPA;
   bool draw;
   bool allowPause;
   std::string netName;
   std::string pinName;
-  int gcellX;
-  int gcellY;
+  int x;
+  int y;
   int iter;
   bool paMarkers;
-  bool paCombining;
+  bool paEdge;
+  bool paCommit;
 };
 
-struct drEolSpacingConstraint
+// Avoids the need to split the whole serializer like
+// BOOST_SERIALIZATION_SPLIT_MEMBER while still allowing for read/write
+// specific code.
+template <class Archive>
+inline bool is_loading(const Archive& ar)
 {
-  drEolSpacingConstraint(frCoord width = 0,
-                         frCoord space = 0,
-                         frCoord within = 0)
-      : eolWidth(width), eolSpace(space), eolWithin(within)
-  {
-  }
-  frCoord eolWidth;
-  frCoord eolSpace;
-  frCoord eolWithin;
-};
+  return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
+}
+
 }  // namespace fr
 
 #endif

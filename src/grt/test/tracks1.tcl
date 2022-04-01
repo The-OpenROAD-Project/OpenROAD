@@ -8,7 +8,7 @@ read_def "tracks1.def"
 
 set guide_file [make_result_file tracks1.guide]
 
-global_route
+global_route -verbose
 
 write_guides $guide_file
 

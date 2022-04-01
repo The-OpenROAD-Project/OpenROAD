@@ -43,11 +43,19 @@ class frFig : public frBlockObject
   // setters
   // others
   virtual void move(const dbTransform& xform) = 0;
-  virtual bool overlaps(const Rect& box) const = 0;
+  virtual bool intersects(const Rect& box) const = 0;
 
  protected:
   // constructors
   frFig() : frBlockObject() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frNet;
@@ -70,9 +78,18 @@ class frConnFig : public frFig
  protected:
   // constructors
   frConnFig() : frFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPin;
+class frBPin;
 class frPinFig : public frConnFig
 {
  public:
@@ -81,6 +98,7 @@ class frPinFig : public frConnFig
   virtual frPin* getPin() const = 0;
   // setters
   virtual void addToPin(frPin* in) = 0;
+  virtual void addToPin(frBPin* in) = 0;
   virtual void removeFromPin() = 0;
   // others
 
@@ -98,6 +116,14 @@ class frPinFig : public frConnFig
    */
  protected:
   frPinFig() : frConnFig() {}
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frConnFig>(*this);
+  }
+
+  friend class boost::serialization::access;
 };
 
 }  // namespace fr

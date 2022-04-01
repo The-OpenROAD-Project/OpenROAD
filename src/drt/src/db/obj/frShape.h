@@ -64,28 +64,45 @@ class frShape : public frPinFig
   /* from frFig
    * getBBox
    * move
-   * overlaps
+   * intersects
    */
 
   virtual void setIter(frListIter<std::unique_ptr<frShape>>& in) = 0;
   virtual frListIter<std::unique_ptr<frShape>> getIter() const = 0;
+  bool hasPin() const override
+  {
+    return (owner_) && ((owner_->typeId() == frcBPin) ||
+                         owner_->typeId() == frcMPin);
+  }
 
  protected:
   // constructors
-  frShape() : frPinFig() {}
+  frShape() : frPinFig(), owner_(nullptr) {}
+  frShape(frBlockObject* owner) : frPinFig(), owner_(owner) {}
+
+  frBlockObject* owner_; // general back pointer 0
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frPinFig>(*this);
+    (ar) & owner_;
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frRect : public frShape
 {
  public:
   // constructors
-  frRect() : frShape(), box_(), layer_(0), owner_(nullptr) {}
+  frRect() : frShape(), box_(), layer_(0) {}
   frRect(const frRect& in)
-      : frShape(in), box_(in.box_), layer_(in.layer_), owner_(in.owner_)
+      : frShape(in), box_(in.box_), layer_(in.layer_)
   {
   }
   frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
-      : frShape(), box_(xl, yl, xh, yh), layer_(lNum), owner_(owner)
+      : frShape(owner), box_(xl, yl, xh, yh), layer_(lNum)
   {
   }
 
@@ -121,19 +138,18 @@ class frRect : public frShape
   frLayerNum getLayerNum() const override { return layer_; }
 
   /* from frPinFig
-   * hasPin
    * getPin
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner_) && (owner_->typeId() == frcPin);
-  }
-
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
@@ -163,16 +179,16 @@ class frRect : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps in .cpp
+   * intersects in .cpp
    */
   void getBBox(Rect& boxIn) const override { boxIn = box_; }
   const Rect& getBBox() const { return box_; }
   void move(const dbTransform& xform) override { xform.apply(box_); }
-  bool overlaps(const Rect& box) const override
+  bool intersects(const Rect& box) const override
   {
     Rect rectBox;
     getBBox(rectBox);
-    return rectBox.overlaps(box);
+    return rectBox.intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -199,23 +215,32 @@ class frRect : public frShape
  protected:
   Rect box_;
   frLayerNum layer_;
-  frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & box_;
+    (ar) & layer_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPatchWire : public frShape
 {
  public:
   // constructors
-  frPatchWire() : frShape(), offsetBox_(), origin_(), layer_(0), owner_(nullptr)
+  frPatchWire() : frShape(), offsetBox_(), origin_(), layer_(0)
   {
   }
   frPatchWire(const frPatchWire& in)
-      : frShape(),
+      : frShape(in),
         offsetBox_(in.offsetBox_),
         origin_(in.origin_),
-        layer_(in.layer_),
-        owner_(in.owner_)
+        layer_(in.layer_)
   {
   }
   frPatchWire(const drPatchWire& in);
@@ -234,19 +259,18 @@ class frPatchWire : public frShape
   frLayerNum getLayerNum() const override { return layer_; }
 
   /* from frPinFig
-   * hasPin
    * getPin
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner_) && (owner_->typeId() == frcPin);
-  }
-
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
@@ -276,7 +300,7 @@ class frPatchWire : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps in .cpp
+   * intersects in .cpp
    */
   void getBBox(Rect& boxIn) const override
   {
@@ -288,11 +312,11 @@ class frPatchWire : public frShape
   void getOrigin(Point& in) const { in = origin_; }
   Point getOrigin() const { return origin_; }
   void move(const dbTransform& xform) override {}
-  bool overlaps(const Rect& box) const override
+  bool intersects(const Rect& box) const override
   {
     Rect rectBox;
     getBBox(rectBox);
-    return rectBox.overlaps(box);
+    return rectBox.intersects(box);
   }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
@@ -309,17 +333,28 @@ class frPatchWire : public frShape
   Rect offsetBox_;
   Point origin_;
   frLayerNum layer_;
-  frBlockObject* owner_;  // general back pointer 0
   frListIter<std::unique_ptr<frShape>> iter_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & offsetBox_;
+    (ar) & origin_;
+    (ar) & layer_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPolygon : public frShape
 {
  public:
   // constructors
-  frPolygon() : frShape(), points_(), layer_(0), owner_(nullptr) {}
+  frPolygon() : frShape(), points_(), layer_(0) {}
   frPolygon(const frPolygon& in)
-      : frShape(), points_(in.points_), layer_(in.layer_), owner_(in.owner_)
+      : frShape(in), points_(in.points_), layer_(in.layer_)
   {
   }
   // setters
@@ -337,19 +372,18 @@ class frPolygon : public frShape
   frLayerNum getLayerNum() const override { return layer_; }
 
   /* from frPinFig
-   * hasPin
    * getPin
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner_) && (owner_->typeId() == frcPin);
-  }
-
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
@@ -379,7 +413,7 @@ class frPolygon : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, in .cpp
+   * intersects, in .cpp
    */
   void getBBox(Rect& boxIn) const override
   {
@@ -407,7 +441,7 @@ class frPolygon : public frShape
       xform.apply(point);
     }
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -421,8 +455,18 @@ class frPolygon : public frShape
  protected:
   std::vector<Point> points_;
   frLayerNum layer_;
-  frBlockObject* owner_;
   frListIter<std::unique_ptr<frShape>> iter_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & points_;
+    (ar) & layer_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 
 class frPathSeg : public frShape
@@ -435,16 +479,15 @@ class frPathSeg : public frShape
         end_(),
         layer_(0),
         style_(),
-        owner_(nullptr),
         tapered_(false)
   {
   }
   frPathSeg(const frPathSeg& in)
-      : begin_(in.begin_),
+      : frShape(in),
+        begin_(in.begin_),
         end_(in.end_),
         layer_(in.layer_),
         style_(in.style_),
-        owner_(in.owner_),
         tapered_(in.tapered_)
   {
   }
@@ -506,19 +549,18 @@ class frPathSeg : public frShape
   frLayerNum getLayerNum() const override { return layer_; }
 
   /* from frPinFig
-   * hasPin
    * getPin
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner_) && (owner_->typeId() == frcPin);
-  }
-
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
+  {
+    owner_ = reinterpret_cast<frBlockObject*>(in);
+  }
+
+  void addToPin(frBPin* in) override
   {
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
@@ -548,7 +590,7 @@ class frPathSeg : public frShape
   /* from frFig
    * getBBox
    * move, in .cpp
-   * overlaps, in .cpp
+   * intersects, in .cpp
    */
   // needs to be updated
   void getBBox(Rect& boxIn) const override
@@ -577,7 +619,7 @@ class frPathSeg : public frShape
     xform.apply(begin_);
     xform.apply(end_);
   }
-  bool overlaps(const Rect& box) const override { return false; }
+  bool intersects(const Rect& box) const override { return false; }
 
   void setIter(frListIter<std::unique_ptr<frShape>>& in) override
   {
@@ -601,9 +643,22 @@ class frPathSeg : public frShape
   Point end_;
   frLayerNum layer_;
   frSegStyle style_;
-  frBlockObject* owner_;
   bool tapered_;
   frListIter<std::unique_ptr<frShape>> iter_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<frShape>(*this);
+    (ar) & begin_;
+    (ar) & end_;
+    (ar) & layer_;
+    (ar) & style_;
+    (ar) & tapered_;
+    // iter is handled by the owner
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

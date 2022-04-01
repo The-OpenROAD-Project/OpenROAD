@@ -584,6 +584,11 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   gtl::polygon_90_set_data<frCoord> tmpPoly;
   for (auto& [boostSeg, ptr] : results) {
+    if (ptr->getPin() == edge->getPin())
+      continue;
+    if (edge->isFixed() && ptr->isFixed())
+      continue;
+
     // skip if non oppo-dir edge
     if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
       continue;
@@ -1078,7 +1083,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 {
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
-  // auto net = poly->getNet();
   auto layer = getTech()->getLayer(layerNum);
   auto& cons = layer->getEolSpacing();
   auto lef58Cons = layer->getLef58SpacingEndOfLineConstraints();
@@ -1089,8 +1093,30 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
     return;
   }
 
+  bool isVertical = layer->isVertical();
+
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
+
+      if (ignoreLongSideEOL_) {
+        switch (edge->getDir()) {
+        case frDirEnum::N:
+        case frDirEnum::S:
+          if (isVertical) {
+            continue;
+          }
+          break;
+        case frDirEnum::E:
+        case frDirEnum::W:
+          if (!isVertical) {
+            continue;
+          }
+          break;
+        default:
+          break;
+        }
+      }
+
       for (auto con : cons) {
         checkMetalEndOfLine_eol(edge.get(), con);
       }

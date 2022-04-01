@@ -104,6 +104,7 @@ class LayoutViewer : public QWidget
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
     CLEAR_RULERS_ACT,
+    CLEAR_FOCUS_ACT,
     CLEAR_ALL_ACT
   };
   // makeSelected is so that we don't have to pass in the whole
@@ -115,6 +116,7 @@ class LayoutViewer : public QWidget
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                std::function<Selected(const std::any&)> makeSelected,
+               std::function<bool(void)> usingDBU,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -122,6 +124,11 @@ class LayoutViewer : public QWidget
   void setScroller(LayoutScroll* scroller);
 
   void restoreTclCommands(std::vector<std::string>& cmds);
+
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+  void clearFocusNets();
+  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -141,7 +148,7 @@ class LayoutViewer : public QWidget
 
  signals:
   // indicates the current location of the mouse
-  void location(qreal x, qreal y);
+  void location(int x, int y);
 
   // indicates a new object has been selected
   void selected(const Selected& selected, bool showConnectivity = false);
@@ -152,6 +159,8 @@ class LayoutViewer : public QWidget
 
   // add new ruler
   void addRuler(int x0, int y0, int x1, int y1);
+
+  void focusNetsChanged();
 
  public slots:
   // zoom in the layout, keeping the current center_
@@ -205,7 +214,7 @@ class LayoutViewer : public QWidget
   void startRulerBuild();
   void cancelRulerBuild();
 
-  void selectArea(const odb::Rect& area, bool append);
+  int selectArea(const odb::Rect& area, bool append);
 
   void selection(const Selected& selection);
   void selectionFocus(const Selected& focus);
@@ -246,6 +255,7 @@ class LayoutViewer : public QWidget
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  int depth);
+  void drawRegionOutlines(QPainter* painter);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -269,9 +279,10 @@ class LayoutViewer : public QWidget
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
-  void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   void drawPinMarkers(Painter& painter,
                       const odb::Rect& bounds);
+  void drawAccessPoints(Painter& painter,
+                        const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
@@ -293,6 +304,8 @@ class LayoutViewer : public QWidget
   int coarseViewableResolution();
   int instanceSizeLimit();
   int shapeSizeLimit();
+
+  std::vector<odb::Rect> getRowRects(const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();
 
@@ -317,6 +330,8 @@ class LayoutViewer : public QWidget
 
   void updateScaleAndCentering(const QSize& new_size);
 
+  bool isNetVisible(odb::dbNet* net);
+
   odb::dbBlock* block_;
   Options* options_;
   ScriptWidget* output_widget_;
@@ -340,6 +355,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
+  std::function<bool(void)> usingDBU_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;
@@ -362,6 +378,7 @@ class LayoutViewer : public QWidget
 
   // Hold the last painted drawing of the layout
   std::unique_ptr<QPixmap> block_drawing_;
+  bool repaint_requested_;
 
   utl::Logger* logger_;
 
@@ -379,6 +396,9 @@ class LayoutViewer : public QWidget
   // Cache of the maximum cut size per layer (units: dbu).
   // Used to determine when cuts are too small to be seen and should not be drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
+
+  // Set of nets to focus drawing on, if empty draw everything
+  std::set<odb::dbNet*> focus_nets_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

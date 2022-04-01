@@ -179,6 +179,7 @@ public:
   void clear();
   void init(dbDatabase *db,
             Logger *logger);
+  void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
@@ -394,7 +395,6 @@ private:
                            int col);
 
   // Optimizing mirroring
-  Rect getBox(dbNet *net) const;
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
                             vector<dbInst*> &mirror_candidates);
@@ -429,6 +429,7 @@ private:
   int have_multi_row_cells_;
   int max_displacement_x_;           // sites
   int max_displacement_y_;           // sites
+  vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
   Grid *grid_;

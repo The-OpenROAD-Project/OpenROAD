@@ -131,16 +131,6 @@ proc save_image { args } {
     if {[llength $area] != 4} {
       utl::error GUI 18 "Area must contain 4 elements."
     }
-  } elseif {![gui::enabled]} {
-    # gui is not enabled, so default to whole block + 5%
-    set die_area [ord::get_die_area]
-    set die_width_margin [expr 0.05 * ([lindex $die_area 2] - [lindex $die_area 0])]
-    set die_height_margin [expr 0.05 * ([lindex $die_area 3] - [lindex $die_area 1])]
-    set area [list \
-               [expr [lindex $die_area 0] - $die_width_margin] \
-               [expr [lindex $die_area 1] - $die_height_margin] \
-               [expr [lindex $die_area 2] + $die_width_margin] \
-               [expr [lindex $die_area 3] + $die_height_margin]]
   }
 
   sta::check_argc_eq1 "save_image" $args
@@ -188,7 +178,93 @@ proc select { args } {
     set case_sense 0
   }
   
-  gui::select $type $name $case_sense $highlight
+  return [gui::select $type $name $case_sense $highlight]
+}
+
+sta::define_cmd_args "display_timing_cone" {pin \
+                                            [-fanin] \
+                                            [-fanout] \
+                                            [-off]
+}
+
+proc display_timing_cone { args } {
+  sta::parse_key_args "display_timing_cone" args \
+    keys {} flags {-fanin -fanout -off}
+  if { [info exists flags(-off)] } {
+    sta::check_argc_eq0 "timing_cone" $args
+
+    gui::timing_cone NULL 0 0
+    return
+  }
+
+  sta::check_argc_eq1 "select" $args
+
+  set fanin [info exists flags(-fanin)]
+  set fanout [info exists flags(-fanout)]
+
+  # clear old one
+  gui::timing_cone NULL 0 0
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GUI 67 "Design not loaded."
+  }
+
+  sta::parse_port_pin_net_arg $args pins nets
+
+  foreach net $nets {
+    lappend pins [sta::net_load_pins $net]
+  }
+  if {[llength $pins] == 0} {
+    utl::error GUI 68 "Pin not found."
+  }
+  if {[llength $pins] != 1} {
+    utl::error GUI 69 "Multiple pin timing cones are not supported."
+  }
+
+  set term [sta::sta_to_db_pin $pins]
+  if { $term == "NULL" } {
+    set term [sta::sta_to_db_port $pins]
+  }
+
+  # select new one
+  gui::timing_cone $term $fanin $fanout
+}
+
+sta::define_cmd_args "focus_net" {net \
+                                  [-remove] \
+                                  [-clear]
+}
+
+proc focus_net { args } {
+  sta::parse_key_args "focus_net" args \
+    keys {} flags {-remove -clear}
+  if { [info exists flags(-clear)] } {
+    sta::check_argc_eq0 "focus_net" $args
+
+    gui::clear_focus_nets
+    return
+  }
+
+  sta::check_argc_eq1 "focus_net" $args
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GUI 70 "Design not loaded."
+  }
+
+  set net_name [lindex $args 0]
+  set net [$block findNet $net_name]
+
+  if { $net == "NULL" } {
+    utl::error GUI 71 "Unable to find net \"$net_name\"."
+  }
+  
+  if { [info exists flags(-remove)] } {
+    gui::remove_focus_net $net
+  } else {
+    gui::focus_net $net
+  }
 }
 
 namespace eval gui {

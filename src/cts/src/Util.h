@@ -43,10 +43,10 @@ template <class T>
 class Point
 {
  public:
-  Point(T x, T y) : _x(x), _y(y) {}
+  Point(T x, T y) : x_(x), y_(y) {}
 
-  T getX() const { return _x; }
-  T getY() const { return _y; }
+  T getX() const { return x_; }
+  T getY() const { return y_; }
 
   T computeDist(const Point<T>& other) const
   {
@@ -88,24 +88,24 @@ class Point
   }
 
  private:
-  T _x;
-  T _y;
+  T x_;
+  T y_;
 };
 
 template <class T>
 class Box
 {
  public:
-  T getMinX() const { return _xMin; }
-  T getMinY() const { return _yMin; }
-  T getMaxX() const { return _xMin + _width; }
-  T getMaxY() const { return _yMin + _height; }
-  T getWidth() const { return _width; }
-  T getHeight() const { return _height; }
+  T getMinX() const { return xMin_; }
+  T getMinY() const { return yMin_; }
+  T getMaxX() const { return xMin_ + width_; }
+  T getMaxY() const { return yMin_ + height_; }
+  T getWidth() const { return width_; }
+  T getHeight() const { return height_; }
 
   Point<T> computeCenter() const
   {
-    return Point<T>(_xMin + _width / 2, _yMin + _height / 2);
+    return Point<T>(xMin_ + width_ / 2, yMin_ + height_ / 2);
   }
 
   Box<double> normalize(double factor)
@@ -116,9 +116,9 @@ class Box
                        getMaxY() * factor);
   }
 
-  Box() : _xMin(0), _yMin(0), _width(0), _height(0) {}
+  Box() : xMin_(0), yMin_(0), width_(0), height_(0) {}
   Box(T xMin, T yMin, T xMax, T yMax)
-      : _xMin(xMin), _yMin(yMin), _width(xMax - xMin), _height(yMax - yMin)
+      : xMin_(xMin), yMin_(yMin), width_(xMax - xMin), height_(yMax - yMin)
   {
   }
 
@@ -130,10 +130,10 @@ class Box
   }
 
  protected:
-  T _xMin;
-  T _yMin;
-  T _width;
-  T _height;
+  T xMin_;
+  T yMin_;
+  T width_;
+  T height_;
 };
 
 }  // namespace cts

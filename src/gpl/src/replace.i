@@ -239,11 +239,25 @@ set_pad_right_cmd(int pad)
   replace->setPadRight(pad);
 }
 
+void
+set_skip_io_mode_cmd(bool mode) 
+{
+  Replace* replace = getReplace();
+  replace->setSkipIoMode(mode);
+}
+
 float
 get_global_placement_uniform_density_cmd() 
 {
   Replace* replace = getReplace();
   return replace->getUniformTargetDensity();
+}
+
+void 
+add_timing_net_reweight_overflow_cmd(int overflow)
+{
+  Replace* replace = getReplace();
+  return replace->addTimingNetWeightOverflow(overflow);
 }
 
 void

@@ -1705,6 +1705,12 @@ const char* dbDirection::getString() const
     case WEST:
       value = "WEST";
       break;
+    case UP:
+      value = "UP";
+      break;
+    case DOWN:
+      value = "DOWN";
+      break;
   }
 
   return value;
@@ -1768,5 +1774,64 @@ const char* dbMTermShapeType::getString() const
   return value;
 }
 
+dbAccessType::dbAccessType(const char* orient)
+{
+  if (strcasecmp(orient, "OnGrid") == 0)
+    _value = OnGrid;
+
+  else if (strcasecmp(orient, "HalfGrid") == 0)
+    _value = HalfGrid;
+
+  else if (strcasecmp(orient, "Center") == 0)
+    _value = Center;
+
+  else if (strcasecmp(orient, "EncOpt") == 0)
+    _value = EncOpt;
+
+  else if (strcasecmp(orient, "NearbyGrid") == 0)
+    _value = NearbyGrid;
+
+  else
+    _value = OnGrid;
+}
+
+dbAccessType::dbAccessType(Value orient)
+{
+  _value = orient;
+}
+
+dbAccessType::dbAccessType()
+{
+  _value = OnGrid;
+}
+
+const char* dbAccessType::getString() const
+{
+  const char* value = "";
+
+  switch (_value) {
+    case OnGrid:
+      value = "OnGrid";
+      break;
+
+    case HalfGrid:
+      value = "HalfGrid";
+      break;
+
+    case Center:
+      value = "Center";
+      break;
+
+    case EncOpt:
+      value = "EncOpt";
+      break;
+
+    case NearbyGrid:
+      value = "NearbyGrid";
+      break;
+  }
+
+  return value;
+}
 
 }  // namespace odb

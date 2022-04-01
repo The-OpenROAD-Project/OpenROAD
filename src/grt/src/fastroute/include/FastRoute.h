@@ -38,9 +38,9 @@
 
 #include <boost/functional/hash.hpp>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
@@ -102,6 +102,7 @@ class FastRouteCore
 
   void deleteComponents();
   void clear();
+  void clearNets();
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
@@ -110,7 +111,7 @@ class FastRouteCore
   void addViaSpacing(int spacing, int layer);
   void setNumberNets(int nNets);
   void setLowerLeft(int x, int y);
-  void setTileSize(int width, int height);
+  void setTileSize(int size);
   void setLayerOrientation(int x);
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
@@ -121,48 +122,48 @@ class FastRouteCore
              int min_layer,
              int max_layer,
              std::vector<int> edge_cost_per_layer);
-  void resetNewNetID();
   void initEdges();
   void setNumAdjustments(int nAdjustements);
-  void addAdjustment(long x1,
-                     long y1,
+  void addAdjustment(int x1,
+                     int y1,
                      int l1,
-                     long x2,
-                     long y2,
+                     int x2,
+                     int y2,
                      int l2,
                      int reducedCap,
                      bool isReduce);
+  void applyVerticalAdjustments(const odb::Point& first_tile,
+                                const odb::Point& last_tile,
+                                int layer,
+                                int first_tile_reduce,
+                                int last_tile_reduce);
+  void applyHorizontalAdjustments(const odb::Point& first_tile,
+                                  const odb::Point& last_tile,
+                                  int layer,
+                                  int first_tile_reduce,
+                                  int last_tile_reduce);
   void initAuxVar();
   NetRouteMap run();
+  int totalOverflow() const { return total_overflow_; }
+  bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
 
-  int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
+  const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
+  const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
+  int getEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  int getEdgeCurrentResource(long x1,
-                             long y1,
-                             int l1,
-                             long x2,
-                             long y2,
-                             int l2);
-  int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  void setEdgeUsage(long x1,
-                    long y1,
-                    int l1,
-                    long x2,
-                    long y2,
-                    int l2,
-                    int newUsage);
-  void setEdgeCapacity(long x1,
-                       long y1,
-                       int l1,
-                       long x2,
-                       long y2,
-                       int l2,
-                       int newCap);
+  int getEdgeCurrentResource(int x1, int y1, int l1, int x2, int y2, int l2);
+  int getEdgeCurrentUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
+  const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
+  void
+  setEdgeUsage(int x1, int y1, int l1, int x2, int y2, int l2, int newUsage);
+  void incrementEdge3DUsage(int x1, int y1, int l1, int x2, int y2, int l2);
+  void
+  setEdgeCapacity(int x1, int y1, int l1, int x2, int y2, int l2, int newCap);
   void setMaxNetDegree(int);
-  void setVerbose(int v);
+  void setVerbose(bool v);
   void setOverflowIterations(int iterations);
-  void setAllowOverflow(bool allow);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -457,7 +458,6 @@ class FastRouteCore
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
   gui::Gui* gui_;
-  bool allow_overflow_;
   int overflow_iterations_;
   int num_nets_;
   int layer_orientation_;
@@ -474,8 +474,7 @@ class FastRouteCore
   int y_grid_;
   int x_corner_;
   int y_corner_;
-  int w_tile_;
-  int h_tile_;
+  int tile_size_;
   int enlarge_;
   int costheight_;
   int ahth_;
@@ -483,8 +482,9 @@ class FastRouteCore
                         // grids)
   int num_layers_;
   int total_overflow_;  // total # overflow
+  bool has_2D_overflow_;
   int grid_hv_;
-  int verbose_;
+  bool verbose_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

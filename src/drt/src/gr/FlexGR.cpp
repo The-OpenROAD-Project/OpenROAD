@@ -40,8 +40,12 @@
 #include "db/obj/frGuide.h"
 #include "odb/db.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 void FlexGR::main(odb::dbDatabase* db)
 {
@@ -174,7 +178,7 @@ void FlexGR::searchRepairMacro(int iter,
   vector<frInst*> macros;
 
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
-    if (inst->getRefBlock()->getMasterType() == dbMasterType::BLOCK) {
+    if (inst->getMaster()->getMasterType() == dbMasterType::BLOCK) {
       Rect macroBBox;
       inst->getBBox(macroBBox);
       Point macroCenter((macroBBox.xMin() + macroBBox.xMax()) / 2,
@@ -375,10 +379,16 @@ void FlexGR::searchRepair(int iter,
           workersInBatch[i]->initBoundary();
         }
 // multi thread
+        ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main_mt();
+          try {
+            workersInBatch[i]->main_mt();
+          } catch (...) {
+            exception.capture();
+          }
         }
+        exception.rethrow();
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end();
@@ -1563,7 +1573,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
           sinkIdx++;
         }
         pin2Nodes[node->getPin()].push_back(node.get());
-      } else if (node->getPin()->typeId() == frcTerm) {
+      } else if (node->getPin()->typeId() == frcBTerm ||
+                 node->getPin()->typeId() == frcMTerm) {
         auto ioType = static_cast<frTerm*>(node->getPin())->getDirection();
         // for IO term, direction INPUT is driver
         if (ioType == dbIoType::INPUT && nodes[0] == nullptr) {

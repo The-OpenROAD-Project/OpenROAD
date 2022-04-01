@@ -38,6 +38,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QMenu>
 #include <QModelIndex>
 #include <QRadioButton>
 #include <QSettings>
@@ -48,12 +49,13 @@
 #include <QVBoxLayout>
 #include <functional>
 #include <map>
+#include <set>
 #include <vector>
 
-#include "congestionSetupDialog.h"
 #include "options.h"
 
 #include "gui/gui.h"
+#include "db_sta/dbNetwork.hh"
 
 namespace odb {
 class dbDatabase;
@@ -61,6 +63,11 @@ class dbBlock;
 class dbNet;
 class dbInst;
 }  // namespace odb
+
+namespace sta {
+class dbSta;
+class LibertyCell;
+} // namespace sta
 
 namespace utl {
 class Logger;
@@ -133,10 +140,13 @@ class DisplayControlModel : public QStandardItemModel
   Q_OBJECT
 
  public:
-  DisplayControlModel(QWidget* parent = nullptr);
+  DisplayControlModel(int user_data_item_idx, QWidget* parent = nullptr);
 
   QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+ private:
+  const int user_data_item_idx_;
 };
 
 // This class shows the user the set of layers & objects that
@@ -146,7 +156,7 @@ class DisplayControlModel : public QStandardItemModel
 //
 // It also implements the Options interface so that other clients can
 // access the data.
-class DisplayControls : public QDockWidget, public Options
+class DisplayControls : public QDockWidget, public Options, public sta::dbNetworkObserver
 {
   Q_OBJECT
 
@@ -156,6 +166,7 @@ class DisplayControls : public QDockWidget, public Options
 
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
+  void setSTA(sta::dbSta* sta);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -186,6 +197,8 @@ class DisplayControls : public QDockWidget, public Options
   bool isInstanceVisible(odb::dbInst* inst) override;
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
+  bool areInstancePinsVisible() override;
+  bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
@@ -205,14 +218,13 @@ class DisplayControls : public QDockWidget, public Options
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool isCongestionVisible() const override;
   bool arePinMarkersVisible() const override;
   QFont pinMarkersFont() override;
-  bool showHorizontalCongestion() const override;
-  bool showVerticalCongestion() const override;
-  float getMinCongestionToShow() const override;
-  float getMaxCongestionToShow() const override;
-  QColor getCongestionColor(float congestion) const override;
+  bool areAccessPointsVisible() const override;
+  bool areRegionsVisible() const override;
+
+  // API from dbNetworkObserver
+  virtual void postReadLiberty() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -228,10 +240,11 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
-  void displayItemClicked(const QModelIndex& index);
+  void displayItemSelected(const QItemSelection& selected);
   void displayItemDblClicked(const QModelIndex& index);
 
-  void showCongestionSetup();
+ private slots:
+  void itemContextMenu(const QPoint &point);
 
  private:
   // The columns in the tree view
@@ -263,13 +276,43 @@ class DisplayControls : public QDockWidget, public Options
 
   struct InstanceModels
   {
-    ModelRow core;
+    ModelRow stdcells;
     ModelRow blocks;
+    ModelRow pads;
+    ModelRow physical;
+  };
+
+  struct StdCellModels
+  {
+    ModelRow bufinv;
+    ModelRow combinational;
+    ModelRow sequential;
+    ModelRow clock_tree;
+    ModelRow level_shiters;
+  };
+
+  struct BufferInverterModels
+  {
+    ModelRow timing;
+    ModelRow other;
+  };
+
+  struct ClockTreeModels
+  {
+    ModelRow bufinv;
+    ModelRow clock_gates;
+  };
+
+  struct PhysicalModels
+  {
     ModelRow fill;
     ModelRow endcap;
-    ModelRow welltap;
-    ModelRow pads;
+    ModelRow tap;
+    ModelRow antenna;
+    ModelRow tie;
     ModelRow cover;
+    ModelRow bump;
+    ModelRow other;
   };
 
   struct BlockageModels
@@ -286,11 +329,20 @@ class DisplayControls : public QDockWidget, public Options
 
   struct MiscModels
   {
-    ModelRow instance_names;
+    ModelRow instances;
     ModelRow scale_bar;
     ModelRow fills;
+    ModelRow access_points;
+    ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
+  };
+
+  struct InstanceShapeModels
+  {
+    ModelRow names;
+    ModelRow pins;
+    ModelRow blockages;
   };
 
   void techInit();
@@ -305,7 +357,7 @@ class DisplayControls : public QDockWidget, public Options
 
   QStandardItem* makeParentItem(ModelRow& row,
                                 const QString& text,
-                                QStandardItemModel* parent,
+                                QStandardItem* parent,
                                 Qt::CheckState checked,
                                 bool add_selectable = false,
                                 const QColor& color = Qt::transparent);
@@ -325,41 +377,72 @@ class DisplayControls : public QDockWidget, public Options
   void toggleParent(ModelRow& row);
 
   void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void readSettingsForRow(QSettings* settings, const QStandardItem* name, QStandardItem* visible = nullptr, QStandardItem* selectable = nullptr);
   void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+  void writeSettingsForRow(QSettings* settings, const QStandardItem* name, const QStandardItem* visible = nullptr, const QStandardItem* selectable = nullptr);
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds, const QStandardItem* parent, const std::string& prefix = "");
 
+  void saveRendererState(Renderer* renderer);
+
+  void setNameItemDoubleClickAction(ModelRow& row, const std::function<void(void)>& callback);
+  void setItemExclusivity(ModelRow& row, const std::set<std::string>& exclusivity);
+
+  void createLayerMenu();
+  void layerShowOnlySelectedNeighbors(int lower, int upper);
+  void collectNeighboringLayers(odb::dbTechLayer* layer, int lower, int upper, std::set<const odb::dbTechLayer*>& layers);
+  void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
+
+  const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
+  const ModelRow* getInstRow(odb::dbInst* inst) const;
+  const ModelRow* getNetRow(odb::dbNet* net) const;
+
+  bool isRowVisible(const ModelRow* row) const;
+  bool isRowSelectable(const ModelRow* row) const;
+
+  void checkLiberty(bool assume_loaded = false);
+
   QTreeView* view_;
   DisplayControlModel* model_;
+  QMenu* layers_menu_;
+  odb::dbTechLayer* layers_menu_layer_;
 
   bool ignore_callback_;
 
   // Categories in the model
   ModelRow layers_group_;
-  ModelRow routing_group_;
   ModelRow tracks_group_;
   ModelRow nets_group_;
   ModelRow instance_group_;
   ModelRow blockage_group_;
   ModelRow misc_group_;
 
+  // instances
+  InstanceModels instances_;
+  StdCellModels stdcell_instances_;
+  BufferInverterModels bufinv_instances_;
+  ClockTreeModels clock_tree_instances_;
+  PhysicalModels physical_instances_;
+
+  InstanceShapeModels instance_shapes_;
+
   // Object controls
   NetModels nets_;
-  InstanceModels instances_;
-  BlockageModels blockages_;
   ModelRow rows_;
-  ModelRow congestion_map_;
   ModelRow pin_markers_;
   ModelRow rulers_;
+  BlockageModels blockages_;
   TrackModels tracks_;
   MiscModels misc_;
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
+  std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  sta::dbSta* sta_;
   bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
@@ -378,7 +461,10 @@ class DisplayControls : public QDockWidget, public Options
 
   QFont pin_markers_font_;
 
-  CongestionSetupDialog* congestion_dialog_;
+  static constexpr int user_data_item_idx_ = Qt::UserRole;
+  static constexpr int callback_item_idx_ = Qt::UserRole + 1;
+  static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
+  static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
 };
 
 }  // namespace gui

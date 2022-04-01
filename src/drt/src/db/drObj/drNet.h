@@ -88,6 +88,7 @@ class drNet : public drBlockObject
     return bestRouteConnFigs_;
   }
   frNet* getFrNet() const { return fNet_; }
+  void setFrNet(frNet* net) { fNet_ = net; }
   const std::set<frBlockObject*>& getFrNetTerms() const { return fNetTerms_; }
   bool isModified() const { return modified_; }
   int getNumMarkers() const { return numMarkers_; }
@@ -134,6 +135,16 @@ class drNet : public drBlockObject
             *static_cast<drPatchWire*>(uConnFig.get()));
         bestRouteConnFigs_.push_back(std::move(uPtr));
       }
+    }
+  }
+  void removeShape(drConnFig* shape, bool isExt = false) {
+    vector<unique_ptr<drConnFig>>* v = isExt ? &extConnFigs_ : &routeConnFigs_;
+    for (int i = 0; i < v->size(); i++) {
+        auto& s = (*v)[i];
+        if (s.get() == shape) {
+            v->erase(v->begin()+i);
+            return;
+        }
     }
   }
   void clear()
@@ -204,7 +215,7 @@ class drNet : public drBlockObject
   unsigned short getMaxRipupAvoids() const { return maxRipupAvoids_; }
   void setMaxRipupAvoids(unsigned short n) { maxRipupAvoids_ = n; }
 
- protected:
+ private:
   std::vector<std::unique_ptr<drPin>> pins_;
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;
   std::vector<std::unique_ptr<drConnFig>> routeConnFigs_;
@@ -228,6 +239,34 @@ class drNet : public drBlockObject
   bool routed_;
 
   std::vector<frRect> origGuides_;
+
+  drNet() {} // for serialization
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drBlockObject>(*this);
+    (ar) & pins_;
+    (ar) & extConnFigs_;
+    (ar) & routeConnFigs_;
+    (ar) & bestRouteConnFigs_;
+    (ar) & fNetTerms_;
+    (ar) & fNet_;
+    (ar) & modified_;
+    (ar) & numMarkers_;
+    (ar) & numPinsIn_;
+    (ar) & markerDist_;
+    (ar) & allowRipup_;
+    (ar) & pinBox_;
+    (ar) & ripup_;
+    (ar) & numReroutes_;
+    (ar) & nRipupAvoids_;
+    (ar) & maxRipupAvoids_;
+    (ar) & inQueue_;
+    (ar) & routed_;
+    (ar) & origGuides_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

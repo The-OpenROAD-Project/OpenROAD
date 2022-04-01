@@ -39,8 +39,12 @@
 #include "frProfileTask.h"
 #include "global.h"
 
+#include "utl/exception.h"
+
 using namespace std;
 using namespace fr;
+
+using utl::ThreadException;
 
 int FlexTAWorker::main()
 {
@@ -267,15 +271,21 @@ int FlexTA::initTA_helper(int iter,
     // multi thread
     for (auto& workerBatch : workers) {
       ProfileTask profile("TA:batch");
+      ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int) workerBatch.size(); i++) {
-        workerBatch[i]->main_mt();
+        try {
+          workerBatch[i]->main_mt();
 #pragma omp critical
-        {
-          sol += workerBatch[i]->getNumAssigned();
-          numPanels++;
+          {
+            sol += workerBatch[i]->getNumAssigned();
+            numPanels++;
+          }
+        } catch (...) {
+          exception.capture();
         }
       }
+      exception.rethrow();
       for (int i = 0; i < (int) workerBatch.size(); i++) {
         workerBatch[i]->end();
       }

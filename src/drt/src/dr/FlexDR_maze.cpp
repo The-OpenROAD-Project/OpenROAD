@@ -1440,6 +1440,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
+    if (modEol)
+        modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1787,12 +1789,12 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape,
         low = min(edge->low().y(), edge->high().y());
         high = max(edge->low().y(), edge->high().y());
         line = edge->low().x();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
       } else {
         low = min(edge->low().x(), edge->high().x());
         high = max(edge->low().x(), edge->high().x());
         line = edge->low().y();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
+        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
       }
       modEolCost(low,
                  high,
@@ -1830,6 +1832,39 @@ void FlexDRWorker::modEolCost(frCoord low,
   modEolSpacingCost_helper(testBox, z, modType, 0);
   modEolSpacingCost_helper(testBox, z, modType, 1);
   modEolSpacingCost_helper(testBox, z, modType, 2);
+}
+
+void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
+{
+    vector<vector<float>> areaMap(getTech()->getTopLayerNum()+1);
+    vector<drPatchWire*> patchesToRemove;
+    for (auto& shape : net->getRouteConnFigs()) {
+        if (shape->typeId() != frBlockObjectEnum::drcPatchWire)
+            continue;
+        drPatchWire* patch = static_cast<drPatchWire*>(shape.get());
+        gtl::point_data<frCoord> pt(patch->getOrigin().x(), patch->getOrigin().y());
+        frLayerNum lNum = patch->getLayerNum();
+        frCoord minArea = getTech()->getLayer(lNum)->getAreaConstraint()->getMinArea();
+        if (areaMap[lNum].empty())
+            areaMap[lNum].assign(drcNet->getPins(lNum).size(), -1);
+        for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
+            auto& pin = drcNet->getPins(lNum)[i];
+            if (!gtl::contains(*pin->getPolygon(), pt))
+                continue;
+            frCoord area;
+            if (areaMap[lNum][i] == -1)
+                areaMap[lNum][i] = gtl::area(*pin->getPolygon());
+            area = areaMap[lNum][i];
+            if (area - patch->getOffsetBox().area() >= minArea) {
+                patchesToRemove.push_back(patch);
+                areaMap[lNum][i] -= patch->getOffsetBox().area();
+            }
+        }
+    }
+    for (auto patch : patchesToRemove) {
+        getWorkerRegionQuery().remove(patch);
+        net->removeShape(patch);
+    }
 }
 
 void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
@@ -2285,13 +2320,15 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         checkViaConnectivity) */
         if (realPinApMazeIdx.find(mzIdxBot) != realPinApMazeIdx.end()) {
           currVia->setBottomConnected(true);
-        } else if (apMazeIdx.find(mzIdxBot) != apMazeIdx.end()) {
-          checkViaConnectivityToAP(currVia.get(), true, net->getFrNet());
+        } else {
+          checkViaConnectivityToAP(
+              currVia.get(), true, net->getFrNet(), apMazeIdx, mzIdxBot);
         }
         if (realPinApMazeIdx.find(mzIdxTop) != realPinApMazeIdx.end()) {
           currVia->setTopConnected(true);
-        } else if (apMazeIdx.find(mzIdxTop) != apMazeIdx.end()) {
-          checkViaConnectivityToAP(currVia.get(), false, net->getFrNet());
+        } else {
+          checkViaConnectivityToAP(
+              currVia.get(), false, net->getFrNet(), apMazeIdx, mzIdxTop);
         }
         unique_ptr<drConnFig> tmp(std::move(currVia));
         workerRegionQuery.add(tmp.get());
@@ -2393,13 +2430,13 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   auto currStyle = getTech()->getLayer(currLayerNum)->getDefaultSegStyle();
   if (realApMazeIdx.find(start) != realApMazeIdx.end()) {
     currStyle.setBeginStyle(frcTruncateEndStyle, 0);
-  } else if (apMazeIdx.find(start) != apMazeIdx.end()) {
-    checkPathSegStyle(currPathSeg.get(), true, currStyle);
+  } else {
+    checkPathSegStyle(currPathSeg.get(), true, currStyle, apMazeIdx, start);
   }
   if (realApMazeIdx.find(end) != realApMazeIdx.end()) {
     currStyle.setEndStyle(frcTruncateEndStyle, 0);
-  } else if (apMazeIdx.find(end) != apMazeIdx.end()) {
-    checkPathSegStyle(currPathSeg.get(), false, currStyle);
+  } else {
+    checkPathSegStyle(currPathSeg.get(), false, currStyle, apMazeIdx, end);
   }
   if (net->getFrNet()->getNondefaultRule()) {
     if (taper)
@@ -2437,13 +2474,29 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
     }
   }
 }
+bool FlexDRWorker::isInWorkerBorder(frCoord x, frCoord y) const
+{
+  return (x == getRouteBox().xMin() &&  // left
+          y <= getRouteBox().yMax() && y >= getRouteBox().yMin())
+         || (x == getRouteBox().xMax() &&  // right
+             y <= getRouteBox().yMax() && y >= getRouteBox().yMin())
+         || (y == getRouteBox().yMin() &&  // bottom
+             x <= getRouteBox().xMax() && x >= getRouteBox().xMin())
+         || (y == getRouteBox().yMax() &&  // top
+             x <= getRouteBox().xMax() && x >= getRouteBox().xMin());
+}
 // checks whether the path segment is connected to an access point and update
 // connectivity info (stored in frSegStyle)
 void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
                                      bool isBegin,
-                                     frSegStyle& style)
+                                     frSegStyle& style,
+                                     const set<FlexMazeIdx>& apMazeIdx,
+                                     const FlexMazeIdx& idx)
 {
   const Point& pt = (isBegin ? ps->getBeginPoint() : ps->getEndPoint());
+  if (apMazeIdx.find(idx) == apMazeIdx.end()
+      && !isInWorkerBorder(pt.x(), pt.y()))
+    return;
   if (hasAccessPoint(pt, ps->getLayerNum(), ps->getNet()->getFrNet())) {
     if (isBegin)
       style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
@@ -2458,16 +2511,23 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
   Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
   design_->getRegionQuery()->query(bx, lNum, result);
   for (auto& rqObj : result) {
-    if (rqObj.second->typeId() == frcInstTerm) {
-      auto instTerm = static_cast<frInstTerm*>(rqObj.second);
-      if (instTerm->getNet() == net
-          && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
-        return true;
-    } else if (rqObj.second->typeId() == frcTerm) {
-      auto term = static_cast<frTerm*>(rqObj.second);
-      if (term->getNet() == net
-          && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
-        return true;
+    switch (rqObj.second->typeId()) {
+      case frcInstTerm: {
+        auto instTerm = static_cast<frInstTerm*>(rqObj.second);
+        if (instTerm->getNet() == net
+            && instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
+          return true;
+        break;
+      }
+      case frcBTerm: {
+        auto term = static_cast<frBTerm*>(rqObj.second);
+        if (term->getNet() == net
+            && term->hasAccessPoint(pt.x(), pt.y(), lNum, 0))
+          return true;
+        break;
+      }
+      default:
+        break;
     }
   }
   return false;
@@ -2476,8 +2536,13 @@ bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
 // connectivity info
 void FlexDRWorker::checkViaConnectivityToAP(drVia* via,
                                             bool isBottom,
-                                            frNet* net)
+                                            frNet* net,
+                                            const set<FlexMazeIdx>& apMazeIdx,
+                                            const FlexMazeIdx& idx)
 {
+  if (apMazeIdx.find(idx) == apMazeIdx.end()
+      && !isInWorkerBorder(via->getOrigin().x(), via->getOrigin().y()))
+    return;
   if (isBottom) {
     if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer1Num(), net))
       via->setBottomConnected(true);
@@ -2575,11 +2640,9 @@ void FlexDRWorker::routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path)
     if (path[i].z() != path[i-1].z()) {
       frMIdx z = min (path[i].z(), path[i-1].z());
       frViaDef* viaDef = design_->getTech()->getLayer(gridGraph_.getLayerNum(z)+1)->getDefaultViaDef();
-      dbTransform xform;
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
-      Point pt(x, y);
-      xform.apply(pt);
+      dbTransform xform(Point(x, y));
       Rect box;
       for (auto& uFig : viaDef->getCutFigs()) {
         auto rect = static_cast<frRect*>(uFig.get());
@@ -2690,8 +2753,14 @@ bool FlexDRWorker::routeNet(drNet* net)
       break;
     }
   }
-
   if (searchSuccess) {
+    if (CLEAN_PATCHES) {
+      gcWorker_->setTargetNet(net->getFrNet());
+      gcWorker_->updateDRNet(net);
+      gcWorker_->setEnableSurgicalFix(true);
+      gcWorker_->updateGCWorker();
+      cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
+    }
     routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;
@@ -3099,8 +3168,8 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                                                    const FlexMazeIdx& epIdx,
                                                    frCoord gapArea,
                                                    frCoord patchWidth,
-                                                   bool bpPatchStyle,
-                                                   bool epPatchStyle)
+                                                   bool bpPatchLeft,
+                                                   bool epPatchLeft)
 {
   bool isPatchHorz;
   // bool isLeftClean = true;
@@ -3117,14 +3186,14 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   }
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
-      bpIdx, isPatchHorz, bpPatchStyle, patchLength);
+      bpIdx, isPatchHorz, bpPatchLeft, patchLength);
   auto costR = routeNet_postAstarAddPathMetal_isClean(
-      epIdx, isPatchHorz, epPatchStyle, patchLength);
+      epIdx, isPatchHorz, epPatchLeft, patchLength);
   if (costL <= costR) {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, bpIdx, isPatchHorz, bpPatchStyle, patchLength, patchWidth);
+        net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
   } else {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, epIdx, isPatchHorz, epPatchStyle, patchLength, patchWidth);
+        net, epIdx, isPatchHorz, epPatchLeft, patchLength, patchWidth);
   }
 }

@@ -47,7 +47,7 @@ class FlexRP
 
   void main();
 
- protected:
+ private:
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
@@ -67,6 +67,7 @@ class FlexRP
   bool hasMinStepViolation(frMinStepConstraint* minStepCons,
                            int edge1,
                            int edge2);
+  bool hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
@@ -91,7 +92,7 @@ class FlexRP
       const frLayerNum& lNum,
       const bool isZShape,
       const bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
   void prep_viaForbiddenPlanarLen();
   void prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
                                          const int& tableLayerIdx,
@@ -102,7 +103,7 @@ class FlexRP
       const frLayerNum& lNum,
       frViaDef* viaDef,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
   void prep_viaForbiddenTurnLen(frNonDefaultRule* ndr = nullptr);
   void prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
@@ -114,7 +115,7 @@ class FlexRP
       const frLayerNum& lNum,
       frViaDef* viaDef,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges,
+      ForbiddenRanges& forbiddenRanges,
       frNonDefaultRule* ndr = nullptr);
   void prep_via2viaForbiddenLen(frNonDefaultRule* ndr = nullptr);
   void prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
@@ -124,44 +125,50 @@ class FlexRP
                                        frViaDef* viaDef2,
                                        bool isCurrDirX,
                                        frNonDefaultRule* ndr = nullptr);
+  void prep_via2viaForbiddenLen_minStepGF12(
+      const frLayerNum& lNum,
+      frViaDef* viaDef1,
+      frViaDef* viaDef2,
+      bool isCurrDirX,
+      ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minStep(
       const frLayerNum& lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minimumCut(
       const frLayerNum& lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_cutSpc(
       const frLayerNum& lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minSpc(
       frLayerNum lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges,
+      ForbiddenRanges& forbiddenRanges,
       frNonDefaultRule* ndr = nullptr);
   void prep_via2viaForbiddenLen_lef58CutSpc(
       const frLayerNum& lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
 
   void prep_via2viaForbiddenLen_lef58CutSpcTbl(
       const frLayerNum& lNum,
       frViaDef* viaDef1,
       frViaDef* viaDef2,
       bool isCurrDirX,
-      std::vector<std::pair<frCoord, frCoord>>& forbiddenRanges);
+      ForbiddenRanges& forbiddenRanges);
 
   void prep_via2viaForbiddenLen_lef58CutSpc_helper(
       const Rect& enclosureBox1,

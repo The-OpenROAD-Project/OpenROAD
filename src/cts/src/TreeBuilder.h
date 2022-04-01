@@ -52,39 +52,62 @@ class TreeBuilder
 {
  public:
   TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
-      : _options(options), _clock(clk), _parent(parent)
+      : options_(options), clock_(clk), parent_(parent)
   {
     if (parent)
-      parent->_children.emplace_back(this);
+      parent->children_.emplace_back(this);
   }
 
   virtual void run() = 0;
-  void setTechChar(TechChar& techChar) { _techChar = &techChar; }
-  const Clock& getClock() const { return _clock; }
-  Clock& getClock() { return _clock; }
-  void addChild(TreeBuilder* child) { _children.emplace_back(child); }
-  std::vector<TreeBuilder*> getChildren() const { return _children; }
-  TreeBuilder* getParent() const { return _parent; }
-  unsigned getTreeBufLevels() const { return _treeBufLevels; }
-  void addFirstLevelSinkDriver(ClockInst* inst) { first_level_sink_drivers_.insert(inst); }
-  void addSecondLevelSinkDriver(ClockInst* inst) { second_level_sink_drivers_.insert(inst); }
+  void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
+  const Clock& getClock() const { return clock_; }
+  Clock& getClock() { return clock_; }
+  void addChild(TreeBuilder* child) { children_.emplace_back(child); }
+  std::vector<TreeBuilder*> getChildren() const { return children_; }
+  TreeBuilder* getParent() const { return parent_; }
+  unsigned getTreeBufLevels() const { return treeBufLevels_; }
+  void addFirstLevelSinkDriver(ClockInst* inst)
+  {
+    first_level_sink_drivers_.insert(inst);
+  }
+  void addSecondLevelSinkDriver(ClockInst* inst)
+  {
+    second_level_sink_drivers_.insert(inst);
+  }
   void addTreeLevelBuffer(ClockInst* inst) { tree_level_buffers_.insert(inst); }
-  bool isAnyTreeBuffer(ClockInst* inst) {return isLeafBuffer(inst) || isLevelBuffer(inst); }
-  bool isLeafBuffer(ClockInst* inst) {return isFirstLevelSinkDriver(inst) || isSecondLevelSinkDriver(inst); }
-  bool isFirstLevelSinkDriver(ClockInst* inst) { return first_level_sink_drivers_.find(inst) != first_level_sink_drivers_.end(); }
-  bool isSecondLevelSinkDriver(ClockInst* inst) { return second_level_sink_drivers_.find(inst) != second_level_sink_drivers_.end(); }
-  bool isLevelBuffer(ClockInst* inst) { return tree_level_buffers_.find(inst) != tree_level_buffers_.end(); }
+  bool isAnyTreeBuffer(ClockInst* inst)
+  {
+    return isLeafBuffer(inst) || isLevelBuffer(inst);
+  }
+  bool isLeafBuffer(ClockInst* inst)
+  {
+    return isFirstLevelSinkDriver(inst) || isSecondLevelSinkDriver(inst);
+  }
+  bool isFirstLevelSinkDriver(ClockInst* inst)
+  {
+    return first_level_sink_drivers_.find(inst)
+           != first_level_sink_drivers_.end();
+  }
+  bool isSecondLevelSinkDriver(ClockInst* inst)
+  {
+    return second_level_sink_drivers_.find(inst)
+           != second_level_sink_drivers_.end();
+  }
+  bool isLevelBuffer(ClockInst* inst)
+  {
+    return tree_level_buffers_.find(inst) != tree_level_buffers_.end();
+  }
 
  protected:
-  CtsOptions* _options = nullptr;
-  Clock _clock;
-  TechChar* _techChar = nullptr;
-  TreeBuilder* _parent;
-  std::vector <TreeBuilder *> _children;
+  CtsOptions* options_ = nullptr;
+  Clock clock_;
+  TechChar* techChar_ = nullptr;
+  TreeBuilder* parent_;
+  std::vector<TreeBuilder*> children_;
   // Tree buffer levels. Number of buffers inserted in first leg of the HTree
   // is buffer levels (depth) of tree in all legs.
   // This becomes buffer level for whole tree thus
-  unsigned _treeBufLevels = 0;
+  unsigned treeBufLevels_ = 0;
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
   std::set<ClockInst*> tree_level_buffers_;

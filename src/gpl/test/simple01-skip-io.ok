@@ -1,0 +1,81 @@
+[INFO ODB-0222] Reading LEF file: ./nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ./nangate45.lef
+[INFO ODB-0127] Reading DEF file: ./simple01-skip-io.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO ODB-0134] Finished DEF file: ./simple01-skip-io.def
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 61940 61600
+[INFO GPL-0006] NumInstances: 294
+[INFO GPL-0007] NumPlaceInstances: 294
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 364
+[INFO GPL-0011] NumPins: 1068
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 61940 61600
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 61940 61600
+[INFO GPL-0016] CoreArea: 3815504000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 2279088000
+[INFO GPL-0019] Util(%): 59.73
+[INFO GPL-0020] StdInstsArea: 2279088000
+[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0031] FillerInit: NumGCells: 348
+[INFO GPL-0032] FillerInit: NumGNets: 364
+[INFO GPL-0033] FillerInit: NumGPins: 1068
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 7752000
+[INFO GPL-0025] IdealBinArea: 11074286
+[INFO GPL-0026] IdealBinCnt: 344
+[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0028] BinCnt: 16 16
+[INFO GPL-0029] BinSize: 3872 3850
+[INFO GPL-0030] NumBins: 256
+[NesterovSolve] Iter: 1 overflow: 0.96303 HPWL: 449963
+[NesterovSolve] Iter: 10 overflow: 0.96303 HPWL: 429217
+[NesterovSolve] Iter: 20 overflow: 0.96303 HPWL: 429027
+[NesterovSolve] Iter: 30 overflow: 0.96303 HPWL: 428953
+[NesterovSolve] Iter: 40 overflow: 0.96303 HPWL: 428899
+[NesterovSolve] Iter: 50 overflow: 0.96303 HPWL: 428917
+[NesterovSolve] Iter: 60 overflow: 0.96303 HPWL: 429102
+[NesterovSolve] Iter: 70 overflow: 0.96303 HPWL: 429271
+[NesterovSolve] Iter: 80 overflow: 0.96303 HPWL: 429916
+[NesterovSolve] Iter: 90 overflow: 0.96303 HPWL: 431161
+[NesterovSolve] Iter: 100 overflow: 0.96303 HPWL: 433340
+[NesterovSolve] Iter: 110 overflow: 0.96303 HPWL: 436187
+[NesterovSolve] Iter: 120 overflow: 0.962964 HPWL: 439670
+[NesterovSolve] Iter: 130 overflow: 0.962072 HPWL: 443587
+[NesterovSolve] Iter: 140 overflow: 0.955041 HPWL: 489576
+[NesterovSolve] Iter: 150 overflow: 0.929106 HPWL: 659302
+[NesterovSolve] Iter: 160 overflow: 0.899875 HPWL: 757809
+[NesterovSolve] Iter: 170 overflow: 0.855672 HPWL: 967592
+[NesterovSolve] Iter: 180 overflow: 0.840314 HPWL: 1078165
+[NesterovSolve] Iter: 190 overflow: 0.800343 HPWL: 1243976
+[NesterovSolve] Iter: 200 overflow: 0.767987 HPWL: 1390755
+[NesterovSolve] Iter: 210 overflow: 0.725043 HPWL: 1550308
+[NesterovSolve] Iter: 220 overflow: 0.681011 HPWL: 1717736
+[NesterovSolve] Iter: 230 overflow: 0.635947 HPWL: 1876371
+[NesterovSolve] Iter: 240 overflow: 0.584379 HPWL: 2026619
+[NesterovSolve] Iter: 250 overflow: 0.536795 HPWL: 2183898
+[NesterovSolve] Iter: 260 overflow: 0.482784 HPWL: 2336302
+[NesterovSolve] Iter: 270 overflow: 0.425581 HPWL: 2458718
+[NesterovSolve] Iter: 280 overflow: 0.374481 HPWL: 2586892
+[NesterovSolve] Iter: 290 overflow: 0.326094 HPWL: 2665317
+[NesterovSolve] Iter: 300 overflow: 0.287375 HPWL: 2737236
+[NesterovSolve] Iter: 310 overflow: 0.249749 HPWL: 2798263
+[NesterovSolve] Iter: 320 overflow: 0.216375 HPWL: 2852373
+[NesterovSolve] Iter: 330 overflow: 0.182009 HPWL: 2892521
+[NesterovSolve] Iter: 340 overflow: 0.152551 HPWL: 2935614
+[NesterovSolve] Iter: 350 overflow: 0.131708 HPWL: 2972557
+[NesterovSolve] Iter: 360 overflow: 0.115354 HPWL: 3000498
+[NesterovSolve] Finished with Overflow: 0.099462
+No differences found.

@@ -31,13 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
+#include "dbTechLayer.h"
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTechLayer.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"
@@ -1058,7 +1059,8 @@ void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.lef58_type_ = (uint) type;
-  if (type == odb::dbTechLayer::MIMCAP
+  if ((type == odb::dbTechLayer::MIMCAP ||
+       type == odb::dbTechLayer::STACKEDMIMCAP)
       && getType() == dbTechLayerType::ROUTING) {
     _dbTech* tech = (_dbTech*) layer->getOwner();
     layer->_rlevel = 0;

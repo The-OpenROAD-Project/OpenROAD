@@ -33,6 +33,7 @@
 #include "db/drObj/drBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frTerm.h"
+#include "db/obj/frBTerm.h"
 
 namespace fr {
 class drNet;
@@ -86,10 +87,21 @@ class drPin : public drBlockObject
     return "";
   }
 
- protected:
+ private:
   frBlockObject* term_;  // either frTerm or frInstTerm
   std::vector<std::unique_ptr<drAccessPattern>> accessPatterns_;
   drNet* net_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<drBlockObject>(*this);
+    (ar) & term_;
+    (ar) & accessPatterns_;
+    (ar) & net_;
+  }
+
+  friend class boost::serialization::access;
 };
 }  // namespace fr
 

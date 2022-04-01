@@ -87,6 +87,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace dpo {
+class Optdp;
+}
+
 namespace fin {
 class Finale;
 }
@@ -129,6 +133,9 @@ namespace utl {
 class Logger;
 }
 
+namespace dst {
+class Distributed;
+}
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -160,6 +167,7 @@ public:
   cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
+  dpo::Optdp *getOptdp() { return optdp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
@@ -173,6 +181,7 @@ public:
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen *getPdnGen() { return pdngen_; }
+  dst::Distributed *getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder *getSteinerTreeBuilder() { return stt_builder_; }
 
   // Return the bounding box of the db rows.
@@ -251,6 +260,7 @@ private:
   rsz::Resizer *resizer_;
   ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
+  dpo::Optdp *optdp_;
   fin::Finale *finale_;
   mpl::MacroPlacer *macro_placer_;
   mpl::MacroPlacer2 *macro_placer2_;
@@ -265,25 +275,13 @@ private:
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
   pdn::PdnGen *pdngen_;
+  dst::Distributed *distributer_;
   stt::SteinerTreeBuilder *stt_builder_;
 
   std::set<Observer *> observers_;
 
   int threads_;
 };
-
-// Return the bounding box of the db rows.
-odb::Rect
-getCore(odb::dbBlock *block);
-
-// Return the point inside rect that is closest to pt.
-odb::Point
-closestPtInRect(odb::Rect rect,
-		odb::Point pt);
-odb::Point
-closestPtInRect(odb::Rect rect,
-		int x,
-		int y);
 
 int
 tclAppInit(Tcl_Interp *interp);

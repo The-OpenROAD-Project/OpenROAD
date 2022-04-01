@@ -83,6 +83,7 @@ Replace::Replace()
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
   uniformTargetDensityMode_(false),
+  skipIoMode_(false),
   padLeft_(0), padRight_(0),
   verbose_(0),
   gui_debug_(false),
@@ -129,23 +130,28 @@ void Replace::reset() {
   minPhiCoef_ = 0.95;
   maxPhiCoef_ = 1.05;
   referenceHpwl_= 446000000;
+
   routabilityCheckOverflow_ = 0.20;
   routabilityMaxDensity_ = 0.99;
-  routabilityMaxBloatIter_ = 1;
-  routabilityMaxInflationIter_ = 4;
-  routabilityTargetRcMetric_ = 1.03;
+  routabilityTargetRcMetric_ = 1.25;
   routabilityInflationRatioCoef_ = 2.5;
   routabilityMaxInflationRatio_ = 2.5;
+  routabilityRcK1_ = routabilityRcK2_ = 1.0;
+  routabilityRcK3_ = routabilityRcK4_ = 0.0;
+  routabilityMaxBloatIter_ = 1;
+  routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true; 
   uniformTargetDensityMode_ = false;
-  
-  routabilityRcK1_ = routabilityRcK2_ = 1.0;
-  routabilityRcK3_ = routabilityRcK4_ = 0.0;
+  skipIoMode_ = false;
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
+
+  timingNetWeightOverflows_.clear();
+  timingNetWeightOverflows_.shrink_to_fit();
+
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
   gui_debug_update_iterations_ = 10;
@@ -171,6 +177,8 @@ void Replace::doIncrementalPlace()
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
   pbVars.padRight = padRight_;
+  pbVars.skipIoMode = skipIoMode_;
+
   pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
 
   // Lock down already placed objects
@@ -230,6 +238,7 @@ void Replace::doInitialPlace()
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
@@ -254,6 +263,7 @@ void Replace::initNesterovPlace() {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
@@ -295,6 +305,7 @@ void Replace::initNesterovPlace() {
 
   if( !tb_ ) {
     tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
+    tb_->setTimingNetWeightOverflows(timingNetWeightOverflows_);
   }
 
   if( !np_ ) {
@@ -437,6 +448,11 @@ Replace::setDebug(int pause_iterations,
 }
 
 void
+Replace::setSkipIoMode(bool mode) {
+  skipIoMode_ = mode;
+}
+
+void
 Replace::setTimingDrivenMode(bool mode) {
   timingDrivenMode_ = mode;
 }
@@ -497,6 +513,11 @@ Replace::setPadLeft(int pad) {
 void
 Replace::setPadRight(int pad) {
   padRight_ = pad;
+}
+
+void
+Replace::addTimingNetWeightOverflow(int overflow) {
+  timingNetWeightOverflows_.push_back(overflow);
 }
 
 void

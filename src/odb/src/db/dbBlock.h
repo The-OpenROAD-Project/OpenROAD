@@ -90,6 +90,7 @@ class _dbTechNonDefaultRule;
 class _dbModule;
 class _dbModInst;
 class _dbGroup;
+class _dbAccessPoint;
 class dbJournal;
 
 class dbNetBTermItr;
@@ -210,6 +211,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbModule>* _module_tbl;
   dbTable<_dbModInst>* _modinst_tbl;
   dbTable<_dbGroup>* _group_tbl;
+  dbTable<_dbAccessPoint>* ap_tbl_;
   _dbNameCache* _name_cache;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;

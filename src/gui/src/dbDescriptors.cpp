@@ -102,6 +102,35 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
   })});
 }
 
+// timing cone actions
+template<typename T>
+static void addTimingActions(T obj, const Descriptor* desc, Descriptor::Actions& actions)
+{
+  if (obj->getSigType().isSupply()) {
+    // no timing actions needed
+    return;
+  }
+
+  auto* gui = Gui::get();
+
+  actions.push_back({std::string(Descriptor::deselect_action_), [obj, desc, gui]() {
+    gui->timingCone(static_cast<T>(nullptr), false, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanin Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, true, false);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Fanout Cone", [obj, desc, gui]() {
+    gui->timingCone(obj, false, true);
+    return desc->makeSelected(obj, nullptr);
+  }});
+  actions.push_back({"Timing", [obj, desc, gui]() {
+    gui->timingPathsThrough({obj});
+    return desc->makeSelected(obj, nullptr);
+  }});
+}
+
 // get list of tech layers as EditorOption list
 static void addLayersToOptions(odb::dbTech* tech, std::vector<Descriptor::EditorOption>& options)
 {
@@ -198,11 +227,10 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   if (placed.isPlaced()) {
     int x, y;
     inst->getLocation(x, y);
-    double dbuPerUU = inst->getBlock()->getDbUnitsPerMicron();
     props.insert(props.end(),
                  {{"Orientation", inst->getOrient().getString()},
-                  {"X", x / dbuPerUU},
-                  {"Y", y / dbuPerUU}});
+                  {"X", Property::convert_dbu(x, true)},
+                  {"Y", Property::convert_dbu(y, true)}});
   }
   Descriptor::PropertyList iterms;
   for (auto iterm : inst->getITerms()) {
@@ -311,7 +339,11 @@ void DbInstDescriptor::makePlacementStatusOptions(std::vector<EditorOption>& opt
 // change location of instance
 bool DbInstDescriptor::setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const
 {
-  int new_value = std::any_cast<double>(value) * inst->getBlock()->getDbUnitsPerMicron();
+  bool accept = false;
+  int new_value = Descriptor::Property::convert_string(std::any_cast<std::string>(value), &accept);
+  if (!accept) {
+    return false;
+  }
   int x_dbu, y_dbu;
   inst->getLocation(x_dbu, y_dbu);
   if (is_x) {
@@ -511,8 +543,12 @@ bool DbMasterDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db) :
-    db_(db)
+DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
+                                 sta::dbSta* sta,
+                                 const std::set<odb::dbNet*>& focus_nets) :
+    db_(db),
+    sta_(sta),
+    focus_nets_(focus_nets)
 {
 }
 
@@ -530,10 +566,32 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto net = std::any_cast<odb::dbNet*>(object);
   auto wire = net->getWire();
-  if (wire && wire->getBBox(bbox)) {
-    return true;
+  bool has_box = false;
+  bbox.mergeInit();
+  if (wire) {
+    odb::Rect wire_box;
+    if (wire->getBBox(wire_box)) {
+      bbox.merge(wire_box);
+      has_box = true;
+    }
   }
-  return false;
+
+  for (auto inst_term : net->getITerms()) {
+    if (!inst_term->getInst()->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    bbox.merge(inst_term->getBBox());
+    has_box = true;
+  }
+
+  for (auto blk_term : net->getBTerms()) {
+    for (auto pin : blk_term->getBPins()) {
+      bbox.merge(pin->getBBox());
+      has_box = true;
+    }
+  }
+
+  return has_box;
 }
 
 void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
@@ -843,13 +901,13 @@ void DbNetDescriptor::highlight(std::any object,
 
   auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT ||
+    return iotype == odb::dbIoType::INPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
   auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::INPUT ||
+    return iotype == odb::dbIoType::OUTPUT ||
            iotype == odb::dbIoType::INOUT ||
            iotype == odb::dbIoType::FEEDTHRU;
   };
@@ -963,6 +1021,12 @@ void DbNetDescriptor::highlight(std::any object,
   }
 }
 
+bool DbNetDescriptor::isSlowHighlight(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+  return net->getSigType().isSupply();
+}
+
 bool DbNetDescriptor::isNet(std::any object) const
 {
   return true;
@@ -1018,6 +1082,53 @@ Descriptor::Editors DbNetDescriptor::getEditors(std::any object) const
     return true;
   })});
   return editors;
+}
+
+Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
+{
+  auto net = std::any_cast<odb::dbNet*>(object);
+
+  auto* gui = Gui::get();
+  Descriptor::Actions actions;
+  if (focus_nets_.count(net) == 0) {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
+      gui->addFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  } else {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, net]() {
+      gui->removeFocusNet(net);
+      return makeSelected(net, nullptr);
+    }});
+  }
+
+  if (!net->getSigType().isSupply()) {
+    actions.push_back({"Timing", [this, gui, net]() {
+      auto* network = sta_->getDbNetwork();
+      auto* drivers = network->drivers(network->dbToSta(net));
+
+      if (drivers->size() > 0) {
+        std::set<Gui::odbTerm> terms;
+
+        for (auto* driver : *drivers) {
+          odb::dbITerm* iterm = nullptr;
+          odb::dbBTerm* bterm = nullptr;
+
+          network->staToDb(driver, iterm, bterm);
+          if (iterm != nullptr) {
+            terms.insert(iterm);
+          } else {
+            terms.insert(bterm);
+          }
+        }
+
+        gui->timingPathsThrough(terms);
+      }
+      return makeSelected(net, nullptr);
+    }});
+  }
+
+  return actions;
 }
 
 Selected DbNetDescriptor::makeSelected(std::any object,
@@ -1122,11 +1233,30 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
   } else {
     net_value = "<none>";
   }
+  SelectionSet aps;
+  for (auto& [mpin, ap_vec] : iterm->getAccessPoints()) {
+    for (auto ap :ap_vec) {
+      DbItermAccessPoint iap{ap, iterm};
+      aps.insert(gui->makeSelected(iap));
+    }
+  }
+
   return Properties({{"Instance", gui->makeSelected(iterm->getInst())},
                      {"IO type", iterm->getIoType().getString()},
                      {"Net", net_value},
                      {"Special", iterm->isSpecial()},
-                     {"MTerm", iterm->getMTerm()->getConstName()}});
+                     {"MTerm", iterm->getMTerm()->getConstName()},
+                     {"Access Points", aps}});
+}
+
+Descriptor::Actions DbITermDescriptor::getActions(std::any object) const
+{
+  auto iterm = std::any_cast<odb::dbITerm*>(object);
+
+  Descriptor::Actions actions;
+  addTimingActions<odb::dbITerm*>(iterm, this, actions);
+
+  return actions;
 }
 
 Selected DbITermDescriptor::makeSelected(std::any object,
@@ -1217,6 +1347,16 @@ Descriptor::Editors DbBTermDescriptor::getEditors(std::any object) const
   return editors;
 }
 
+Descriptor::Actions DbBTermDescriptor::getActions(std::any object) const
+{
+  auto bterm = std::any_cast<odb::dbBTerm*>(object);
+
+  Descriptor::Actions actions;
+  addTimingActions<odb::dbBTerm*>(bterm, this, actions);
+
+  return actions;
+}
+
 Selected DbBTermDescriptor::makeSelected(std::any object,
                                          void* additional_data) const
 {
@@ -1297,12 +1437,11 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(std::any object) cons
   }
   odb::Rect rect;
   blockage->getBBox()->getBox(rect);
-  double dbuPerUU = blockage->getBlock()->getDbUnitsPerMicron();
   return Properties({{"Instance", inst_value},
-                     {"X", rect.xMin() / dbuPerUU},
-                     {"Y", rect.yMin() / dbuPerUU},
-                     {"Width", rect.dx() / dbuPerUU},
-                     {"Height", rect.dy() / dbuPerUU},
+                     {"X", Property::convert_dbu(rect.xMin(), true)},
+                     {"Y", Property::convert_dbu(rect.yMin(), true)},
+                     {"Width", Property::convert_dbu(rect.dx(), true)},
+                     {"Height", Property::convert_dbu(rect.dy(), true)},
                      {"Soft", blockage->isSoft()},
                      {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}});
 }
@@ -1415,21 +1554,20 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(std::any object) c
   }
   odb::Rect rect;
   obs->getBBox()->getBox(rect);
-  double dbuPerUU = obs->getBlock()->getDbUnitsPerMicron();
   Properties props({{"Instance", inst_value},
                     {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
-                    {"X", rect.xMin() / dbuPerUU},
-                    {"Y", rect.yMin() / dbuPerUU},
-                    {"Width", rect.dx() / dbuPerUU},
-                    {"Height", rect.dy() / dbuPerUU},
+                    {"X", Property::convert_dbu(rect.xMin(), true)},
+                    {"Y", Property::convert_dbu(rect.yMin(), true)},
+                    {"Width", Property::convert_dbu(rect.dx(), true)},
+                    {"Height", Property::convert_dbu(rect.dy(), true)},
                     {"Slot", obs->isSlotObstruction()},
                     {"Fill", obs->isFillObstruction()}});
   if (obs->hasEffectiveWidth()) {
-    props.push_back({"Effective width", obs->getEffectiveWidth() / dbuPerUU});
+    props.push_back({"Effective width", Property::convert_dbu(obs->getEffectiveWidth(), true)});
   }
 
   if (obs->hasMinSpacing()) {
-    props.push_back({"Min spacing", obs->getMinSpacing() / dbuPerUU});
+    props.push_back({"Min spacing", Property::convert_dbu(obs->getMinSpacing(), true)});
   }
   return props;
 }
@@ -1528,10 +1666,9 @@ void DbTechLayerDescriptor::highlight(std::any object,
 Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) const
 {
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
-  double dbuPerUU = layer->getTech()->getDbUnitsPerMicron();
   Properties props({{"Direction", layer->getDirection().getString()},
-                    {"Minimum width", layer->getWidth() / dbuPerUU},
-                    {"Minimum spacing", layer->getSpacing() / dbuPerUU}});
+                    {"Minimum width", Property::convert_dbu(layer->getWidth(), true)},
+                    {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)}});
   const char* micron = "\u03BC";
   if (layer->getResistance() != 0.0) {
     props.push_back({"Resistance", convertUnits(layer->getResistance()) + "\u03A9/sq"}); // ohm/sq
@@ -1567,6 +1704,119 @@ bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
 
   for (auto* layer : tech->getLayers()) {
     objects.insert(makeSelected(layer, nullptr));
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbItermAccessPointDescriptor::DbItermAccessPointDescriptor(odb::dbDatabase* db) :
+    db_(db)
+{
+}
+
+std::string DbItermAccessPointDescriptor::getName(std::any object) const
+{
+  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto ap = iterm_ap.ap;
+  std::string name(ap->getLowType().getString());
+  name += std::string("/") + ap->getHighType().getString();
+  return name;
+}
+
+std::string DbItermAccessPointDescriptor::getTypeName() const
+{
+  return "Access Point";
+}
+
+bool DbItermAccessPointDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  odb::Point pt = iterm_ap.ap->getPoint();
+  int x, y;
+  iterm_ap.iterm->getInst()->getLocation(x, y);
+  odb::dbTransform xform({x, y});
+  xform.apply(pt);
+  bbox = {pt, pt};
+  return true;
+}
+
+void DbItermAccessPointDescriptor::highlight(std::any object,
+                                        Painter& painter,
+                                        void* additional_data) const
+{
+  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  odb::Point pt = iterm_ap.ap->getPoint();
+  int x, y;
+  iterm_ap.iterm->getInst()->getLocation(x, y);
+  odb::dbTransform xform({x, y});
+  xform.apply(pt);
+  const int shape_size = 100;
+  painter.drawX(pt.x(), pt.y(), shape_size);
+}
+
+Descriptor::Properties DbItermAccessPointDescriptor::getProperties(std::any object) const
+{
+  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto ap = iterm_ap.ap;
+
+  std::vector<odb::dbDirection> accesses;
+  ap->getAccesses(accesses);
+
+  std::string directions;
+  for (auto dir : accesses) {
+    if (!directions.empty()) {
+      directions += ", ";
+    }
+    directions += dir.getString();
+  }
+
+  auto gui = Gui::get();
+  Properties props({{"Low Type", ap->getLowType().getString()},
+                    {"High Type", ap->getHighType().getString()},
+                    {"Directions", directions},
+                    {"Layer", gui->makeSelected(ap->getLayer())}
+                    });
+  return props;
+}
+
+Selected DbItermAccessPointDescriptor::makeSelected(std::any object,
+                                         void* additional_data) const
+{
+  if (object.type() == typeid(DbItermAccessPoint)) {
+    auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+    return Selected(iterm_ap, this, additional_data);
+  }
+  return Selected();
+}
+
+bool DbItermAccessPointDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_iterm_ap = std::any_cast<DbItermAccessPoint>(l);
+  auto r_iterm_ap = std::any_cast<DbItermAccessPoint>(r);
+  if (l_iterm_ap.iterm != r_iterm_ap.iterm) {
+    return l_iterm_ap.iterm->getId() < r_iterm_ap.iterm->getId();
+  }
+  return l_iterm_ap.ap->getId() < r_iterm_ap.ap->getId();
+}
+
+bool DbItermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* iterm : block->getITerms()) {
+    for (auto [mpin, aps] : iterm->getAccessPoints()) {
+      for (auto* ap : aps) {
+        objects.insert(makeSelected(DbItermAccessPoint{ap, iterm}, nullptr));
+      }
+    }
   }
   return true;
 }

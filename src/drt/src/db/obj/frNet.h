@@ -43,6 +43,7 @@
 namespace fr {
 class frInstTerm;
 class frTerm;
+class frBTerm;
 class frNonDefaultRule;
 
 class frNet : public frBlockObject
@@ -53,7 +54,7 @@ class frNet : public frBlockObject
       : frBlockObject(),
         name_(in),
         instTerms_(),
-        terms_(),
+        bterms_(),
         shapes_(),
         vias_(),
         pwires_(),
@@ -77,7 +78,7 @@ class frNet : public frBlockObject
   // getters
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
-  const std::vector<frTerm*>& getTerms() const { return terms_; }
+  const std::vector<frBTerm*>& getBTerms() const { return bterms_; }
   const std::list<std::unique_ptr<frShape>>& getShapes() const
   {
     return shapes_;
@@ -114,7 +115,7 @@ class frNet : public frBlockObject
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
-  void addTerm(frTerm* in) { terms_.push_back(in); }
+  void addBTerm(frBTerm* in) { bterms_.push_back(in); }
   void setName(const frString& stringIn) { name_ = stringIn; }
   void addShape(std::unique_ptr<frShape> in)
   {
@@ -221,7 +222,7 @@ class frNet : public frBlockObject
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;
-  std::vector<frTerm*> terms_;  // terms is IO
+  std::vector<frBTerm*> bterms_;
   // dr
   std::list<std::unique_ptr<frShape>> shapes_;
   std::list<std::unique_ptr<frVia>> vias_;
@@ -246,7 +247,68 @@ class frNet : public frBlockObject
                        // ordering before other criteria
   bool isClock_;
   bool isSpecial_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+
+  frNet() = default;  // for serialization
+
+  friend class boost::serialization::access;
 };
+
+template <class Archive>
+void frNet::serialize(Archive& ar, const unsigned int version)
+{
+  // instTerms_ and terms_ are intentionally NOT serialized.  This cuts
+  // the serializer from recursing across the whole design.  Any
+  // instTerm/term must attach itself to a net on deserialization.
+
+  (ar) & boost::serialization::base_object<frBlockObject>(*this);
+  (ar) & name_;
+  (ar) & shapes_;
+  (ar) & vias_;
+  (ar) & pwires_;
+  // TODO for gr support
+  // (ar) & grShapes_;
+  // (ar) & grVias_;
+  (ar) & nodes_;
+  (ar) & root_;
+  (ar) & rootGCellNode_;
+  (ar) & firstNonRPinNode_;
+  (ar) & rpins_;
+  (ar) & guides_;
+  (ar) & type_;
+  (ar) & modified_;
+  (ar) & isFakeNet_;
+  (ar) & ndr_;
+  (ar) & absPriorityLvl;
+  (ar) & isClock_;
+  (ar) & isSpecial_;
+
+  // The list members can container an iterator representing their position
+  // in the list for fast removal.  It is tricky to serialize the iterator
+  // so just reset them from the list after loading.
+  if (is_loading(ar)) {
+    for (auto it = shapes_.begin(); it != shapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = vias_.begin(); it != vias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = pwires_.begin(); it != pwires_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grShapes_.begin(); it != grShapes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = grVias_.begin(); it != grVias_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+    for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
+      (*it)->setIter(it);
+    }
+  }
+}
 }  // namespace fr
 
 #endif

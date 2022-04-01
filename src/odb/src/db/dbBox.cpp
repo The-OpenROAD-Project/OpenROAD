@@ -33,6 +33,7 @@
 #include "dbBox.h"
 
 #include "db.h"
+#include "dbBlockCallBackObj.h"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -920,6 +921,9 @@ dbBox* dbBox::create(dbRegion* region_, int x1, int y1, int x2, int y2)
   // link box to region
   box->_next_box = region->_boxes;
   region->_boxes = box->getOID();
+  for (auto callback : block->_callbacks) {
+    callback->inDbRegionAddBox(region_, (dbBox*) box);
+  }
   return (dbBox*) box;
 }
 

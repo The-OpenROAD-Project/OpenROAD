@@ -63,6 +63,8 @@ class Options
   virtual bool isInstanceVisible(odb::dbInst* inst) = 0;
   virtual bool isInstanceSelectable(odb::dbInst* inst) = 0;
   virtual bool areInstanceNamesVisible() = 0;
+  virtual bool areInstancePinsVisible() = 0;
+  virtual bool areInstanceBlockagesVisible() = 0;
   virtual bool areFillsVisible() = 0;
   virtual bool areBlockagesVisible() = 0;
   virtual bool areBlockagesSelectable() = 0;
@@ -82,14 +84,10 @@ class Options
   virtual bool areSelectedVisible() = 0;
 
   virtual bool isScaleBarVisible() const = 0;
-  virtual bool isCongestionVisible() const = 0;
   virtual bool arePinMarkersVisible() const = 0;
   virtual QFont pinMarkersFont() = 0;
-  virtual bool showHorizontalCongestion() const = 0;
-  virtual bool showVerticalCongestion() const = 0;
-  virtual float getMinCongestionToShow() const = 0;
-  virtual float getMaxCongestionToShow() const = 0;
-  virtual QColor getCongestionColor(float congestion) const = 0;
+  virtual bool areAccessPointsVisible() const = 0;
+  virtual bool areRegionsVisible() const = 0;
 };
 
 }  // namespace gui

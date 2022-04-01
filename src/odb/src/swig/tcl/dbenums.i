@@ -569,6 +569,39 @@
 	}
 	Tcl_SetObjResult(interp, obj);
 }
+%typemap(out) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
+	Tcl_Obj *obj = nullptr;
+	switch ($1) {
+		case odb::dbTechLayer::NWELL:
+			obj = Tcl_NewStringObj("NWELL", -1);
+			break;
+	 	case odb::dbTechLayer::PWELL:
+			obj = Tcl_NewStringObj("PWELL", -1);
+			break;
+	 	case odb::dbTechLayer::ABOVEDIEEDGE:
+			obj = Tcl_NewStringObj("ABOVEDIEEDGE", -1);
+			break;
+	 	case odb::dbTechLayer::BELOWDIEEDGE:
+			obj = Tcl_NewStringObj("BELOWDIEEDGE", -1);
+			break;
+	 	case odb::dbTechLayer::DIFFUSION:
+			obj = Tcl_NewStringObj("DIFFUSION", -1);
+			break;
+	 	case odb::dbTechLayer::TRIMPOLY:
+			obj = Tcl_NewStringObj("TRIMPOLY", -1);
+			break;
+		case odb::dbTechLayer::MIMCAP:
+			obj = Tcl_NewStringObj("MIMCAP", -1);
+			break;
+		case odb::dbTechLayer::STACKEDMIMCAP:
+			obj = Tcl_NewStringObj("STACKEDMIMCAP", -1);
+			break;
+	 	case odb::dbTechLayer::NONE:
+			obj = Tcl_NewStringObj("NONE", -1);
+			break;
+	}
+	Tcl_SetObjResult(interp, obj);
+}
 %typemap(in) odb::dbTechLayerType, dbTechLayerType {
 	char *str = Tcl_GetStringFromObj($input, 0);
 	if (strcasecmp(str, "ROUTING") == 0) {
@@ -585,6 +618,27 @@
 		$1 = odb::dbTechLayerType::Value::NONE;
 	}
 }
+%typemap(in) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
+	char *str = Tcl_GetStringFromObj($input, 0);
+        $1 = odb::dbTechLayer::LEF58_TYPE::NONE;
+	if (strcasecmp(str, "NWELL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::NWELL;
+	} else if (strcasecmp(str, "PWELL") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::PWELL;
+	} else if (strcasecmp(str, "ABOVEDIEEDGE") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::ABOVEDIEEDGE;
+	} else if (strcasecmp(str, "BELOWDIEEDGE") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::BELOWDIEEDGE;
+	} else if (strcasecmp(str, "DIFFUSION") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::DIFFUSION;
+	} else if (strcasecmp(str, "TRIMPOLY") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::TRIMPOLY;
+	} else if (strcasecmp(str, "MIMCAP") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::MIMCAP;
+	} else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
+		$1 = odb::dbTechLayer::LEF58_TYPE::STACKEDMIMCAP;
+	}
+}
 %typemap(typecheck) odb::dbTechLayerType, dbTechLayerType {
 	char *str = Tcl_GetStringFromObj($input, 0);
 	bool found = false;
@@ -598,6 +652,36 @@
 		} 	else if (strcasecmp(str, "OVERLAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "IMPLANT") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "NONE") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
+%typemap(typecheck) odb::dbTechLayer::LEF58_TYPE, dbTechLayer::LEF58_TYPE {
+	char *str = Tcl_GetStringFromObj($input, 0);
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "NWELL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PWELL") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "ABOVEDIEEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "BELOWDIEEDGE") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "DIFFUSION") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "TRIMPOLY") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "MIMCAP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "STACKEDMIMCAP") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "NONE") == 0) {
 			found = true;
@@ -1204,6 +1288,12 @@
 	 	case odb::dbDirection::Value::WEST:
 			obj = Tcl_NewStringObj("WEST", -1);
 			break;
+	 	case odb::dbDirection::Value::UP:
+			obj = Tcl_NewStringObj("UP", -1);
+			break;
+	 	case odb::dbDirection::Value::DOWN:
+			obj = Tcl_NewStringObj("DOWN", -1);
+			break;
 	}
 	Tcl_SetObjResult(interp, obj);
 }
@@ -1219,6 +1309,10 @@
 		$1 = odb::dbDirection::Value::SOUTH;
 	} else if (strcasecmp(str, "WEST") == 0) {
 		$1 = odb::dbDirection::Value::WEST;
+	} else if (strcasecmp(str, "UP") == 0) {
+		$1 = odb::dbDirection::Value::UP;
+	} else if (strcasecmp(str, "DOWN") == 0) {
+		$1 = odb::dbDirection::Value::DOWN;
 	}
 }
 %typemap(typecheck) odb::dbDirection, dbDirection {
@@ -1234,6 +1328,10 @@
 		} 	else if (strcasecmp(str, "SOUTH") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "WEST") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "UP") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "DOWN") == 0) {
 			found = true;
 		}
 	}

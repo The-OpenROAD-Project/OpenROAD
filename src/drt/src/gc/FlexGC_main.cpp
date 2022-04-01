@@ -37,12 +37,13 @@ using namespace fr;
 typedef bg::model::polygon<point_t> polygon_t;
 typedef bg::model::multi_polygon<polygon_t> mpolygon_t;
 
-inline bool isBlockage(frBlockObject* owner)
+static bool isBlockage(frBlockObject* owner)
 {
   return owner
          && (owner->typeId() == frcInstBlockage
              || owner->typeId() == frcBlockage);
 }
+
 void updateBlockageWidth(frBlockObject* owner, frCoord& width)
 {
   if (isBlockage(owner)) {
@@ -243,7 +244,7 @@ bool isPG(frBlockObject* obj)
       auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
       return type.isSupply();
     }
-    case frcTerm: {
+    case frcBTerm: {
       auto type = static_cast<frTerm*>(obj)->getType();
       return type.isSupply();
     }
@@ -622,11 +623,17 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     if (gtl::contains(rect, markerRect)) {
       return;
     }
-    pins.push_back(rect2polygon(rect));
+    if (gtl::intersects(rect, markerRect)) {
+      pins.push_back(rect2polygon(rect));
+    }
   }
   polygon_t markerPoly = rect2polygon(markerRect);
   std::vector<polygon_t> result;
-  bg::difference(markerPoly, pins, result);
+  if (pins.empty()) {
+    result.push_back(markerPoly);
+  } else {
+    bg::difference(markerPoly, pins, result);
+  }
   for (auto poly : result) {
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
@@ -811,6 +818,15 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
 
   // short, nsmetal
   if (distX == 0 && distY == 0) {
+    // Zero width markers are not well handled by boost polygon as they
+    // tend to disappear in boolean operations.  Give them a bit of extent
+    // to avoid this.
+    if (prlX == 0) {
+      gtl::bloat(markerRect, gtl::HORIZONTAL, 1);
+    }
+    if (prlY == 0) {
+      gtl::bloat(markerRect, gtl::VERTICAL, 1);
+    }
     if (isBlockage(ptr1->getNet()->getOwner())
         || isBlockage(ptr2->getNet()->getOwner()))
       checkMetalSpacing_short_obs(ptr1, ptr2, markerRect);
@@ -1282,7 +1298,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
     frMinStepConstraint* con,
     bool hasInsideCorner,
     bool hasOutsideCorner,
-    bool hasStep,
     int currEdges,
     frCoord currLength,
     bool hasRoute)
@@ -1306,11 +1321,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
         break;
       case frMinstepTypeEnum::OUTSIDECORNER:
         if (!hasOutsideCorner) {
-          return;
-        }
-        break;
-      case frMinstepTypeEnum::STEP:
-        if (!hasStep) {
           return;
         }
         break;
@@ -1526,7 +1536,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
   Rect markerBox;
   bool hasInsideCorner = false;
   bool hasOutsideCorner = false;
-  bool hasStep = false;
   auto minStepLength = con->getMinStepLength();
   for (auto& edges : pin->getPolygonEdges()) {
     // get the first edge that is >= minstep length
@@ -1549,7 +1558,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
     hasRoute = edge->isFixed() ? false : true;
     hasInsideCorner = false;
     hasOutsideCorner = false;
-    hasStep = false;
     llx = edge->high().x();
     lly = edge->high().y();
     urx = edge->high().x();
@@ -1578,7 +1586,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
                                        con,
                                        hasInsideCorner,
                                        hasOutsideCorner,
-                                       hasStep,
                                        currEdges,
                                        currLength,
                                        hasRoute);
@@ -1592,7 +1599,6 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
         hasRoute = edge->isFixed() ? false : true;
         hasInsideCorner = false;
         hasOutsideCorner = false;
-        hasStep = false;
         llx = edge->high().x();
         lly = edge->high().y();
         urx = edge->high().x();
@@ -1949,19 +1955,27 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   if (con->isAdjacentCuts() && con->hasExceptSamePGNet() && net1 == net2
       && net1->getOwner()) {
     auto owner = net1->getOwner();
-    auto typeId = owner->typeId();
-    if (typeId == frcNet) {
-      if (static_cast<frNet*>(owner)->getType().isSupply()) {
-        return;
+    switch (owner->typeId()) {
+      case frcNet: {
+        if (static_cast<frNet*>(owner)->getType().isSupply()) {
+          return;
+        }
+        break;
       }
-    } else if (typeId == frcTerm) {
-      if (static_cast<frTerm*>(owner)->getType().isSupply()) {
-        return;
+      case frcBTerm: {
+        if (static_cast<frBTerm*>(owner)->getType().isSupply()) {
+          return;
+        }
+        break;
       }
-    } else if (typeId == frcInstTerm) {
-      if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
-        return;
+      case frcInstTerm: {
+        if (static_cast<frInstTerm*>(owner)->getTerm()->getType().isSupply()) {
+          return;
+        }
+        break;
       }
+      default:
+        break;
     }
   }
   if (con->isParallelOverlap()) {

@@ -32,6 +32,7 @@
 
 #include "frDesign.h"
 #include "db/obj/frBlock.h"
+#include "db/obj/frMaster.h"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
 #include "db/drObj/drShape.h"
@@ -66,7 +67,10 @@ bool USENONPREFTRACKS = true;
 bool USEMINSPACING_OBS = true;
 bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
+bool CLEAN_PATCHES = false;
 
+std::string VIAINPIN_BOTTOMLAYER_NAME;
+std::string VIAINPIN_TOPLAYER_NAME;
 frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
 frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 int MINNUMACCESSPOINT_MACROCELLPIN = 3;
@@ -142,7 +146,7 @@ ostream& operator<<(ostream& os, const frPolygon& pinFigIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frPin& pinIn)
+ostream& operator<<(ostream& os, const frMPin& pinIn)
 {
   os << "PIN (NAME) " << pinIn.getTerm()->getName();
   for (auto& m : pinIn.getFigs()) {
@@ -157,7 +161,7 @@ ostream& operator<<(ostream& os, const frPin& pinIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frTerm& termIn)
+ostream& operator<<(ostream& os, const frBTerm& termIn)
 {
   frString name;
   frString netName;
@@ -179,7 +183,7 @@ ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
   frString termName;
   frString netName;
   name = instTermIn.getInst()->getName();
-  cellName = instTermIn.getInst()->getRefBlock()->getName();
+  cellName = instTermIn.getInst()->getMaster()->getName();
   termName = instTermIn.getTerm()->getName();
   if (instTermIn.getNet()) {
     netName = instTermIn.getNet()->getName();
@@ -249,7 +253,7 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   instIn.getOrigin(tmpPoint);
   auto tmpOrient = instIn.getOrient();
   tmpName = instIn.getName();
-  tmpString = instIn.getRefBlock()->getName();
+  tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
      << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
   for (auto& m : instIn.getInstTerms()) {
@@ -364,7 +368,8 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
       os << *static_cast<const frInstTerm*>(&fig);
       break;
     }
-    case frcTerm: {
+    case frcMTerm:
+    case frcBTerm: {
       os << *static_cast<const frTerm*>(&fig);
       break;
     }

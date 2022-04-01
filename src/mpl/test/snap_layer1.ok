@@ -12,50 +12,17 @@
 [INFO ODB-0131]     Created 2 components and 64 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 16 connections.
 [INFO ODB-0134] Finished DEF file: east_west1.def
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: 380 2800
-[INFO GPL-0004] CoreAreaLxLy: 0 0
-[INFO GPL-0005] CoreAreaUxUy: 116280 112000
-[INFO GPL-0006] NumInstances: 2
-[INFO GPL-0007] NumPlaceInstances: 2
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 15
-[INFO GPL-0011] NumPins: 31
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 116280 112000
-[INFO GPL-0014] CoreAreaLxLy: 0 0
-[INFO GPL-0015] CoreAreaUxUy: 116280 112000
-[INFO GPL-0016] CoreArea: 13023360000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 3298400000
-[INFO GPL-0019] Util(%): 25.33
-[INFO GPL-0020] StdInstsArea: 0
-[INFO GPL-0021] MacroInstsArea: 3298400000
-[INFO GPL-0031] FillerInit: NumGCells: 6
-[INFO GPL-0032] FillerInit: NumGNets: 15
-[INFO GPL-0033] FillerInit: NumGPins: 31
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 1649200000
-[INFO GPL-0025] IdealBinArea: 2356000000
-[INFO GPL-0026] IdealBinCnt: 5
-[INFO GPL-0027] TotalBinArea: 13023360000
-[INFO GPL-0028] BinCnt: 2 2
-[INFO GPL-0029] BinSize: 58140 56000
-[INFO GPL-0030] NumBins: 4
-[NesterovSolve] Iter: 1 overflow: 0 HPWL: 894728
-[NesterovSolve] Finished with Overflow: 0.000000
 [INFO MPL-0005] Found 2 macros.
-[INFO MPL-0009] West pins 8.
-[INFO MPL-0009] East pins 7.
-[INFO MPL-0009] North pins 0.
-[INFO MPL-0009] South pins 0.
-[INFO MPL-0069] Initial weighted wire length 309.838.
+[INFO MPL-0009] West pins 7.
+[INFO MPL-0009] East pins 5.
+[INFO MPL-0009] North pins 1.
+[INFO MPL-0009] South pins 2.
+[INFO MPL-0069] Initial weighted wire length 1023.28.
 Begin one level partition.
 [INFO MPL-0076] Partition 2 macros.
 [INFO MPL-0077] Using 2 cut lines.
-[INFO MPL-0079] Cut line 14.63.
-[INFO MPL-0079] Cut line 31.73.
+[INFO MPL-0079] Cut line 50.35.
+[INFO MPL-0079] Cut line 105.83.
 End one level partition.
 Begin horizontal partition.
 Begin east partition.
@@ -65,23 +32,23 @@ End east partition.
 Begin west partition.
 [INFO MPL-0076] Partition 2 macros.
 [INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0079] Cut line 32.20.
 End west partition.
 End horizontal partition.
 Begin horizontal partition.
 Begin east partition.
 [INFO MPL-0076] Partition 1 macros.
 [INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0079] Cut line 32.20.
 End east partition.
 Begin west partition.
 [INFO MPL-0076] Partition 1 macros.
 [INFO MPL-0077] Using 1 cut lines.
-[INFO MPL-0079] Cut line 2.80.
+[INFO MPL-0079] Cut line 32.20.
 End west partition.
 End horizontal partition.
 [INFO MPL-0070] Using 2 partition sets.
-[INFO MPL-0071] Solution 1 weighted wire length 523.804.
-[INFO MPL-0071] Solution 2 weighted wire length 164.442.
-[INFO MPL-0073] Best weighted wire length 523.804.
+[INFO MPL-0071] Solution 1 weighted wire length 1805.16.
+[INFO MPL-0071] Solution 2 weighted wire length 721.777.
+[INFO MPL-0073] Best weighted wire length 1805.16.
 No differences found.

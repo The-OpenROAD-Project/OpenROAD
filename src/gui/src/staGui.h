@@ -35,8 +35,19 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <set>
+#include <vector>
 #include <QAbstractTableModel>
+#include <QCheckBox>
+#include <QColor>
+#include <QComboBox>
+#include <QDialog>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QListWidget>
+#include <QSpinBox>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -96,13 +107,23 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(bool get_max, int path_count);
+  void populateModel(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::vector<std::set<sta::Pin*>>& thru,
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(bool get_max, int path_count, bool clockExpanded = false);
+  bool populatePaths(bool get_max,
+                     int path_count,
+                     const std::set<sta::Pin*>& from,
+                     const std::vector<std::set<sta::Pin*>>& thru,
+                     const std::set<sta::Pin*>& to,
+                     bool unconstrainted);
 
   sta::dbSta* sta_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
@@ -121,26 +142,25 @@ class TimingPathNode
 {
  public:
   TimingPathNode(odb::dbObject* pin,
-                 bool is_clock,
-                 bool is_rising,
-                 bool is_sink,
-                 float arrival,
-                 float required,
-                 float delay,
-                 float slack,
-                 float slew,
-                 float load)
+                 bool is_clock = false,
+                 bool is_rising = false,
+                 bool is_sink = false,
+                 bool has_values = false,
+                 float arrival = 0.0,
+                 float delay = 0.0,
+                 float slew = 0.0,
+                 float load = 0.0)
       : pin_(pin),
         is_clock_(is_clock),
         is_rising_(is_rising),
         is_sink_(is_sink),
+        has_values_(has_values),
         arrival_(arrival),
-        required_(required),
         delay_(delay),
-        slack_(slack),
         slew_(slew),
         load_(load),
-        sink_node_(nullptr),
+        path_slack_(0.0),
+        paired_nodes_({}),
         instance_node_(nullptr)
   {
   }
@@ -158,6 +178,8 @@ class TimingPathNode
   odb::dbObject* getPin() const { return pin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
+  const odb::Rect getPinBBox() const;
+  const odb::Rect getPinLargestBox() const;
 
   bool isClock() const { return is_clock_; }
   bool isRisingEdge() const { return is_rising_; }
@@ -165,30 +187,36 @@ class TimingPathNode
   bool isSource() const { return !is_sink_; }
 
   float getArrival() const { return arrival_; }
-  float getRequired() const { return required_; }
   float getDelay() const { return delay_; }
-  float getSlack() const { return slack_; }
   float getSlew() const { return slew_; }
   float getLoad() const { return load_; }
 
-  void setSinkNode(const TimingPathNode* node) { sink_node_ = node; }
-  const TimingPathNode* getSinkNode() const { return sink_node_; }
+  void setPathSlack(float value) { path_slack_ = value; }
+  float getPathSlack() const { return path_slack_; }
+
+  bool hasValues() const { return has_values_; }
+
+  void addPairedNode(const TimingPathNode* node) { paired_nodes_.insert(node); }
+  void clearPairedNodes() { paired_nodes_.clear(); }
+  const std::set<const TimingPathNode*>& getPairedNodes() const { return paired_nodes_; }
   void setInstanceNode(const TimingPathNode* node) { instance_node_ = node; }
   const TimingPathNode* getInstanceNode() const { return instance_node_; }
+
+  void copyData(TimingPathNode* other) const;
 
  private:
   odb::dbObject* pin_;
   bool is_clock_;
   bool is_rising_;
   bool is_sink_;
+  bool has_values_;
   float arrival_;
-  float required_;
   float delay_;
-  float slack_;
   float slew_;
   float load_;
+  float path_slack_;
 
-  const TimingPathNode* sink_node_;
+  std::set<const TimingPathNode*> paired_nodes_;
   const TimingPathNode* instance_node_;
 };
 
@@ -209,6 +237,16 @@ class TimingPath
   {
   }
 
+  static void buildPaths(sta::dbSta* sta,
+                         bool get_max,
+                         bool include_unconstrained,
+                         int path_count,
+                         const std::set<sta::Pin*>& from,
+                         const std::vector<std::set<sta::Pin*>>& thrus,
+                         const std::set<sta::Pin*>& to,
+                         bool include_capture,
+                         std::vector<std::unique_ptr<TimingPath>>& paths);
+
   using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 
   void appendNode(TimingPathNode* node) { path_nodes_.push_back(std::unique_ptr<TimingPathNode>(node)); }
@@ -228,6 +266,7 @@ class TimingPath
   void setPathDelay(float del) { path_delay_ = del; }
 
   void computeClkEndIndex();
+  void setSlackOnPathNodes();
 
   int getClkPathEndIndex() const { return clk_path_end_index_; }
   int getClkCaptureEndIndex() const { return clk_capture_end_index_; }
@@ -238,8 +277,8 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
-  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded, bool first_path);
-  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path);
+  void populatePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, bool clock_expanded);
+  void populateCapturePath(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded);
 
  private:
   TimingNodeList path_nodes_;
@@ -253,7 +292,7 @@ class TimingPath
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
-  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, bool first_path, TimingNodeList& list);
+  void populateNodeList(sta::Path* path, sta::dbSta* sta, sta::DcalcAnalysisPt* dcalc_ap, float offset, bool clock_expanded, TimingNodeList& list);
 
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
@@ -353,6 +392,41 @@ class TimingPathRenderer : public gui::Renderer
   static const gui::Painter::Color capture_clock_color_;
 };
 
+class TimingConeRenderer : public gui::Renderer
+{
+ public:
+  TimingConeRenderer();
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  void setITerm(odb::dbITerm* term, bool fanin, bool fanout);
+  void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
+  void setPin(sta::Pin* pin, bool fanin, bool fanout);
+
+  virtual void drawObjects(gui::Painter& painter) override;
+
+ private:
+  using PinList = std::vector<std::unique_ptr<TimingPathNode>>;
+  using DepthMap = std::map<int, PinList>;
+
+  sta::dbSta* sta_;
+  sta::Pin* term_;
+  bool fanin_;
+  bool fanout_;
+  DepthMap map_;
+  int min_map_index_;
+  int max_map_index_;
+  float min_timing_;
+  float max_timing_;
+  SpectrumGenerator color_generator_;
+
+  using DepthMapSet = std::map<int, std::set<odb::dbObject*>>;
+  void getFaninCone(sta::Pin* pin, DepthMapSet& depth_map);
+  void getFanoutCone(sta::Pin* pin, DepthMapSet& depth_map);
+  void getCone(sta::Pin* pin, sta::PinSet* pin_set, DepthMapSet& depth_map, bool is_fanin);
+  void buildConnectivity();
+  void annotateTiming(sta::Pin* pin);
+  bool isSupplyPin(sta::Pin* pin) const;
+};
+
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
@@ -441,6 +515,115 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   }
 
   bool is_modified_;
+};
+
+class PinSetWidget : public QWidget
+{
+ Q_OBJECT
+ public:
+  PinSetWidget(bool add_remove_button, QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+
+  void updatePins();
+
+  void setPins(const std::set<sta::Pin*>& pins);
+
+  const std::set<sta::Pin*> getPins() const;
+
+  bool isAddMode() const { return add_mode_; }
+  bool isRemoveMode() const { return !isAddMode(); }
+  void setAddMode();
+  void setRemoveMode();
+
+ signals:
+  void addRemoveTriggered(PinSetWidget*);
+  void inspect(const Selected& selected);
+
+ public slots:
+  void clearPins() { setPins({}); }
+
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
+ private slots:
+  void findPin();
+  void showMenu(const QPoint& point);
+
+ private:
+  sta::dbSta* sta_;
+  std::vector<sta::Pin*> pins_;
+
+  QListWidget* box_;
+  QLineEdit* find_pin_;
+  QPushButton* clear_;
+  QPushButton* add_remove_;
+
+  bool add_mode_;
+
+  void addPin(sta::Pin* pin);
+  void removePin(sta::Pin* pin);
+  void removeSelectedPins();
+};
+
+class TimingControlsDialog : public QDialog
+{
+ Q_OBJECT
+ public:
+  TimingControlsDialog(QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta);
+
+  void setPathCount(int path_count) { path_count_spin_box_->setValue(path_count); }
+  int getPathCount() const { return path_count_spin_box_->value(); }
+
+  void setUnconstrained(bool uncontrained);
+  bool getUnconstrained() const;
+
+  void setExpandClock(bool expand);
+  bool getExpandClock() const;
+
+  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
+  void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
+  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
+
+  const std::set<sta::Pin*> getFromPins() const { return from_->getPins(); }
+  const std::vector<std::set<sta::Pin*>> getThruPins() const;
+  const std::set<sta::Pin*> getToPins() const { return to_->getPins(); }
+
+  sta::Pin* convertTerm(Gui::odbTerm term) const;
+
+ signals:
+  void inspect(const Selected& selected);
+  void expandClock(bool expand);
+
+ public slots:
+  void populate();
+
+ private slots:
+  void addRemoveThru(PinSetWidget* row);
+
+ private:
+  sta::dbSta* sta_;
+
+  QFormLayout* layout_;
+
+  QSpinBox* path_count_spin_box_;
+  QComboBox* corner_box_;
+
+  QCheckBox* uncontrained_;
+  QCheckBox* expand_clk_;
+
+  PinSetWidget* from_;
+  std::vector<PinSetWidget*> thru_;
+  PinSetWidget* to_;
+
+  static constexpr int thru_start_row_ = 3;
+
+  void setPinSelections();
+
+  void addThruRow(const std::set<sta::Pin*>& pins);
+  void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 
 }  // namespace gui

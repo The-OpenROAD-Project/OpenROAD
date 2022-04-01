@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "mpl2/rtl_mp.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -42,18 +44,18 @@
 #include <vector>
 
 #include "block_placement.h"
-#include "mpl2/rtl_mp.h"
+#include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "pin_alignment.h"
 #include "shape_engine.h"
 #include "util.h"
 #include "utl/Logger.h"
-#include "odb/db.h"
-#include "ord/OpenRoad.hh"
 
 using utl::PAR;
 
 namespace mpl {
 using block_placement::Block;
+using odb::dbDatabase;
 using shape_engine::Cluster;
 using shape_engine::Macro;
 using std::cout;
@@ -65,8 +67,6 @@ using std::unordered_map;
 using std::vector;
 using utl::Logger;
 using utl::MPL;
-using odb::dbDatabase;
-
 
 template <class T>
 static void get_param(const unordered_map<string, string>& params,
@@ -86,15 +86,16 @@ bool rtl_macro_placer(const char* config_file,
                       Logger* logger,
                       dbDatabase* db,
                       const char* report_directory,
-                      const float area_wt, 
-                      const float wirelength_wt, 
+                      const float area_wt,
+                      const float wirelength_wt,
                       const float outline_wt,
-                      const float boundary_wt, 
-                      const float macro_blockage_wt, 
-                      const float location_wt, 
+                      const float boundary_wt,
+                      const float macro_blockage_wt,
+                      const float location_wt,
                       const float notch_wt,
+                      const float macro_halo,
                       const char* report_file,
-                      const char* macro_blockage_file, 
+                      const char* macro_blockage_file,
                       const char* prefer_location_file)
 {
   logger->report("Start RTL-MP");
@@ -104,34 +105,35 @@ bool rtl_macro_placer(const char* config_file,
 
   //
   //  Default for Parameters
-  //  
+  //
   // These parameters are related to shape engine
-  float min_aspect_ratio = 0.40;
+  float min_aspect_ratio = 0.39;
   float dead_space = 0.05;
-  float halo_width = 10.0;
 
   string region_file = string(macro_blockage_file);
   string location_file = string(prefer_location_file);
 
   // These parameters are related to multi-start in shape engine
-  int num_thread = ord::OpenRoad::openRoad()->getThreadCount();  // set to max threads in OpenROAD
+  int num_thread = ord::OpenRoad::openRoad()
+                       ->getThreadCount();  // set to max threads in OpenROAD
   int num_run = 10;
 
   unsigned seed = 0;
 
   // These parameters are related to "Go with the winner"
   float heat_rate = 0.5;
-  int num_level = 2;
+  int num_level = 1;
   int num_worker = 10;
 
   // These parameters are related to cost function
-  float alpha = area_wt;                             // weight for area
-  float beta = wirelength_wt;                        // weight for wirelength auto tuned value
-  float gamma = outline_wt;                          // weight for outline penalty - auto tuned value
-  float boundary_weight = boundary_wt;               // weight for pushing macros to boundary
-  float macro_blockage_weight = macro_blockage_wt;   // weight for macro blockage
-  float location_weight = location_wt;               // weight for preferred location
-  float notch_weight = notch_wt;                     // weight for notch
+  float alpha = area_wt;       // weight for area
+  float beta = wirelength_wt;  // weight for wirelength auto tuned value
+  float gamma = outline_wt;    // weight for outline penalty - auto tuned value
+  float boundary_weight = boundary_wt;  // weight for pushing macros to boundary
+  float macro_blockage_weight = macro_blockage_wt;  // weight for macro blockage
+  float location_weight = location_wt;  // weight for preferred location
+  float notch_weight = notch_wt;        // weight for notch
+  float halo_width = macro_halo;  // halo width around macros
 
   float learning_rate
       = 0.00;  // learning rate for dynamic weight in cost function
@@ -152,12 +154,12 @@ bool rtl_macro_placer(const char* config_file,
   int k = 5000000;
   float c = 1000.0;
   int max_num_step = 4000;
-  int perturb_per_step = 1000;
+  int perturb_per_step = 300;
 
   int snap_layer = 4;
 
   //
-  // config_file is not required in the default flow. 
+  // config_file is not required in the default flow.
   // It is still supported for developer tuning of the parameters
   //
   if (strcmp(config_file, "") != 0) {
@@ -201,6 +203,29 @@ bool rtl_macro_placer(const char* config_file,
   float outline_height = 0.0;
   float outline_lx = 0.0;
   float outline_ly = 0.0;
+
+  if (num_thread <= 0)
+    logger->error(MPL,
+                  10,
+                  "num_thread shoule be large than 0. (num_thread : {}).",
+                  num_thread);
+
+  if (num_run <= 0)
+    logger->error(
+        MPL, 11, "num_run shoule be large than 0. (num_run : {}).", num_run);
+
+  if (num_level <= 0)
+    logger->error(MPL,
+                  12,
+                  "num_level shoule be large than 0. (num_level : {}).",
+                  num_level);
+
+  if (perturb_per_step <= 0)
+    logger->error(
+        MPL,
+        13,
+        "perturb_per_step shoule be large than 0. (perturb_per_step : {}).",
+        perturb_per_step);
 
   vector<Cluster*> clusters = shape_engine::ShapeEngine(outline_width,
                                                         outline_height,
@@ -262,25 +287,34 @@ bool rtl_macro_placer(const char* config_file,
     clusters[i]->SetFootprint(width, height);
   }
 
-  bool success_flag = pin_alignment::PinAlignment(
-      clusters, logger, report_directory, halo_width, num_thread, num_run, seed);
+  bool success_flag = pin_alignment::PinAlignment(clusters,
+                                                  logger,
+                                                  report_directory,
+                                                  halo_width,
+                                                  num_thread,
+                                                  num_run,
+                                                  seed);
 
   if (success_flag == false) {
     logger->report("RTL-MP failed");
     return false;
   }
 
-    
   // Get Block Placement Grid
-  // The Block Placement Grid is based on the pitch of the bottom horizontal and 
-  // vertical routing layers. The Block Placement Grid is one pitch wide and one pitch tall.
-  // TR requires the macro pins to be on grid.
+  // The Block Placement Grid is based on the pitch of the bottom horizontal and
+  // vertical routing layers. The Block Placement Grid is one pitch wide and one
+  // pitch tall. TR requires the macro pins to be on grid.
   odb::dbTech* tech = db->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
-  float pitch_x = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX()) / dbu;
-  float pitch_y = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY()) / dbu;
+  float pitch_x
+      = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchX())
+        / dbu;
+  float pitch_y
+      = static_cast<float>(tech->findRoutingLayer(snap_layer)->getPitchY())
+        / dbu;
 
-  string openroad_filename = string("./") + string(report_directory) + "/macro_placement.cfg";
+  string openroad_filename
+      = string("./") + string(report_directory) + "/macro_placement.cfg";
   ofstream file;
   file.open(openroad_filename);
   for (int i = 0; i < clusters.size(); i++) {
@@ -322,7 +356,8 @@ bool rtl_macro_placer(const char* config_file,
 
   file.close();
 
-  string invs_filename =  string("./") + string(report_directory) + "/macro_placement.txt";
+  string invs_filename
+      = string("./") + string(report_directory) + "/macro_placement.txt";
   file.open(invs_filename);
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
@@ -341,7 +376,7 @@ bool rtl_macro_placer(const char* config_file,
         ux = round(ux / pitch_x) * pitch_x;
         ly = round(ly / pitch_y) * pitch_y;
         uy = round(uy / pitch_y) * pitch_y;
-   
+
         line += to_string(lx) + string("   ") + to_string(ly) + string("  ");
         line += to_string(ux) + string("  ") + to_string(uy);
         line += string("   ") + macros[j].GetOrientation();
@@ -353,7 +388,8 @@ bool rtl_macro_placer(const char* config_file,
   file.close();
 
   // just for quick verification
-  string floorplan_filename = string("./") + string(report_directory) + "/final_floorplan.txt";
+  string floorplan_filename
+      = string("./") + string(report_directory) + "/final_floorplan.txt";
   file.open(floorplan_filename);
   file << "outline_width:  " << outline_width << endl;
   file << "outline_height:  " << outline_height << endl;
@@ -415,14 +451,26 @@ bool MacroPlacer2::place(const char* config_file,
                          const float macro_blockage_wt,
                          const float location_wt,
                          const float notch_wt,
+                         const float macro_halo,
                          const char* report_file,
                          const char* macro_blockage_file,
                          const char* prefer_location_file)
 {
-  return rtl_macro_placer(config_file, logger_, db_,  report_directory, 
-                area_wt, wirelength_wt, outline_wt,
-                boundary_wt, macro_blockage_wt, location_wt, notch_wt,
-                report_file, macro_blockage_file, prefer_location_file);
+  return rtl_macro_placer(config_file,
+                          logger_,
+                          db_,
+                          report_directory,
+                          area_wt,
+                          wirelength_wt,
+                          outline_wt,
+                          boundary_wt,
+                          macro_blockage_wt,
+                          location_wt,
+                          notch_wt,
+                          macro_halo,
+                          report_file,
+                          macro_blockage_file,
+                          prefer_location_file);
 }
 
 }  // namespace mpl

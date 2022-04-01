@@ -35,15 +35,15 @@
 
 #pragma once
 
-#include "Util.h"
-#include "db.h"
-#include "utl/Logger.h"
-#include "stt/SteinerTreeBuilder.h"
-
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "Util.h"
+#include "db.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace cts {
 
@@ -51,192 +51,208 @@ class CtsOptions
 {
  public:
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
-      : _logger(logger), _sttBuilder(sttBuildder) {}
+      : logger_(logger), sttBuilder_(sttBuildder)
+  {
+  }
 
-  void setBlockName(const std::string& blockName) { _blockName = blockName; }
-  std::string getBlockName() const { return _blockName; }
+  void setBlockName(const std::string& blockName) { blockName_ = blockName; }
+  std::string getBlockName() const { return blockName_; }
 
-  void setClockNets(const std::string& clockNets) { _clockNets = clockNets; }
-  std::string getClockNets() const { return _clockNets; }
-  void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
-  std::string getRootBuffer() const { return _rootBuffer; }
+  void setClockNets(const std::string& clockNets) { clockNets_ = clockNets; }
+  std::string getClockNets() const { return clockNets_; }
+  void setRootBuffer(const std::string& buffer) { rootBuffer_ = buffer; }
+  std::string getRootBuffer() const { return rootBuffer_; }
   void setBufferList(std::vector<std::string> buffers)
   {
-    _bufferList = buffers;
+    bufferList_ = buffers;
   }
-  std::vector<std::string> getBufferList() const { return _bufferList; }
-  void setDbUnits(int units) { _dbUnits = units; }
-  int getDbUnits() const { return _dbUnits; }
+  std::vector<std::string> getBufferList() const { return bufferList_; }
+  void setDbUnits(int units) { dbUnits_ = units; }
+  int getDbUnits() const { return dbUnits_; }
   void setWireSegmentUnit(unsigned wireSegmentUnit)
   {
-    _wireSegmentUnit = wireSegmentUnit;
+    wireSegmentUnit_ = wireSegmentUnit;
   }
-  unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
-  void setPlotSolution(bool plot) { _plotSolution = plot; }
-  bool getPlotSolution() const { return _plotSolution; }
-  void setSimpleCts(bool enable) { _simpleCts = enable; }
-  bool getSimpleCts() const { return _simpleCts; }
-  void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
-  bool getSinkClustering() const { return _sinkClusteringEnable; }
-  void setSinkClusteringUseMaxCap(bool useMaxCap) { _sinkClusteringUseMaxCap = useMaxCap; }
-  bool getSinkClusteringUseMaxCap() const { return _sinkClusteringUseMaxCap; }
-  void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
-  unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }
-  void setMaxSlew(unsigned slew) { _maxSlew = slew; }
-  unsigned getMaxSlew() const { return _maxSlew; }
-  void setMaxCharSlew(double slew) { _maxCharSlew = slew; }
-  double getMaxCharSlew() const { return _maxCharSlew; }
-  void setMaxCharCap(double cap) { _maxCharCap = cap; }
-  double getMaxCharCap() const { return _maxCharCap; }
+  unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
+  void setPlotSolution(bool plot) { plotSolution_ = plot; }
+  bool getPlotSolution() const { return plotSolution_; }
+  void setSimpleCts(bool enable) { simpleCts_ = enable; }
+  bool getSimpleCts() const { return simpleCts_; }
+  void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
+  bool getSinkClustering() const { return sinkClusteringEnable_; }
+  void setSinkClusteringUseMaxCap(bool useMaxCap)
+  {
+    sinkClusteringUseMaxCap_ = useMaxCap;
+  }
+  bool getSinkClusteringUseMaxCap() const { return sinkClusteringUseMaxCap_; }
+  void setNumMaxLeafSinks(unsigned numSinks) { numMaxLeafSinks_ = numSinks; }
+  unsigned getNumMaxLeafSinks() const { return numMaxLeafSinks_; }
+  void setMaxSlew(unsigned slew) { maxSlew_ = slew; }
+  unsigned getMaxSlew() const { return maxSlew_; }
+  void setMaxCharSlew(double slew) { maxCharSlew_ = slew; }
+  double getMaxCharSlew() const { return maxCharSlew_; }
+  void setMaxCharCap(double cap) { maxCharCap_ = cap; }
+  double getMaxCharCap() const { return maxCharCap_; }
   void setCharLoadIterations(unsigned loadIterations)
   {
-    _charLoadIterations = loadIterations;
+    charLoadIterations_ = loadIterations;
   }
-  unsigned getCharLoadIterations() const { return _charLoadIterations; }
+  unsigned getCharLoadIterations() const { return charLoadIterations_; }
   void setCharSlewIterations(unsigned slewIterations)
   {
-    _charSlewIterations = slewIterations;
+    charSlewIterations_ = slewIterations;
   }
-  unsigned getCharSlewIterations() const { return _charSlewIterations; }
+  unsigned getCharSlewIterations() const { return charSlewIterations_; }
   void setCharWirelengthIterations(unsigned wirelengthIterations)
   {
-    _charWirelengthIterations = wirelengthIterations;
+    charWirelengthIterations_ = wirelengthIterations;
   }
   unsigned getCharWirelengthIterations() const
   {
-    return _charWirelengthIterations;
+    return charWirelengthIterations_;
   }
-  void setOutputPath(const std::string& path) { _outputPath = path; }
-  std::string getOutputPath() const { return _outputPath; }
-  void setCapInter(double cap) { _capInter = cap; }
-  double getCapInter() const { return _capInter; }
-  void setSlewInter(double slew) { _slewInter = slew; }
-  double getSlewInter() const { return _slewInter; }
-  void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
-  unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
-  void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
-  unsigned isFakeLutEntriesEnabled() const { return _enableFakeLutEntries; }
+  void setOutputPath(const std::string& path) { outputPath_ = path; }
+  std::string getOutputPath() const { return outputPath_; }
+  void setCapInter(double cap) { capInter_ = cap; }
+  double getCapInter() const { return capInter_; }
+  void setSlewInter(double slew) { slewInter_ = slew; }
+  double getSlewInter() const { return slewInter_; }
+  void setClockTreeMaxDepth(unsigned depth) { clockTreeMaxDepth_ = depth; }
+  unsigned getClockTreeMaxDepth() const { return clockTreeMaxDepth_; }
+  void setEnableFakeLutEntries(bool enable) { enableFakeLutEntries_ = enable; }
+  unsigned isFakeLutEntriesEnabled() const { return enableFakeLutEntries_; }
   void setForceBuffersOnLeafLevel(bool force)
   {
-    _forceBuffersOnLeafLevel = force;
+    forceBuffersOnLeafLevel_ = force;
   }
-  bool forceBuffersOnLeafLevel() const { return _forceBuffersOnLeafLevel; }
+  bool forceBuffersOnLeafLevel() const { return forceBuffersOnLeafLevel_; }
   void setWriteOnlyClockNets(bool writeOnlyClk)
   {
-    _writeOnlyClockNets = writeOnlyClk;
+    writeOnlyClockNets_ = writeOnlyClk;
   }
-  bool writeOnlyClockNets() const { return _writeOnlyClockNets; }
-  void setRunPostCtsOpt(bool run) { _runPostCtsOpt = run; }
-  bool runPostCtsOpt() { return _runPostCtsOpt; }
-  void setBufDistRatio(double ratio) { _bufDistRatio = ratio; }
-  double getBufDistRatio() { return _bufDistRatio; }
+  bool writeOnlyClockNets() const { return writeOnlyClockNets_; }
+  void setRunPostCtsOpt(bool run) { runPostCtsOpt_ = run; }
+  bool runPostCtsOpt() { return runPostCtsOpt_; }
+  void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
+  double getBufDistRatio() { return bufDistRatio_; }
   void setClockNetsObjs(std::vector<odb::dbNet*> nets)
   {
-    _clockNetsObjs = nets;
+    clockNetsObjs_ = nets;
   }
-  std::vector<odb::dbNet*> getClockNetsObjs() const { return _clockNetsObjs; }
+  std::vector<odb::dbNet*> getClockNetsObjs() const { return clockNetsObjs_; }
   void setMetricsFile(const std::string& metricFile)
   {
-    _metricFile = metricFile;
+    metricFile_ = metricFile;
   }
-  std::string getMetricsFile() const { return _metricFile; }
-  void setNumClockRoots(unsigned roots) { _clockRoots = roots; }
-  long int getNumClockRoots() const { return _clockRoots; }
-  void setNumClockSubnets(long int nets) { _clockSubnets = nets; }
-  long int getNumClockSubnets() const { return _clockSubnets; }
-  void setNumBuffersInserted(long int buffers) { _buffersInserted = buffers; }
-  long int getNumBuffersInserted() const { return _buffersInserted; }
-  void setNumSinks(long int sinks) { _sinks = sinks; }
-  long int getNumSinks() const { return _sinks; }
-  void setTreeBuffer(const std::string& buffer) { _treeBuffer = buffer; }
-  std::string getTreeBuffer() const { return _treeBuffer; }
-  unsigned getClusteringPower() const { return _clusteringPower; }
-  void setClusteringPower(unsigned power) { _clusteringPower = power; }
-  double getClusteringCapacity() const { return _clusteringCapacity; }
+  std::string getMetricsFile() const { return metricFile_; }
+  void setNumClockRoots(unsigned roots) { clockRoots_ = roots; }
+  long int getNumClockRoots() const { return clockRoots_; }
+  void setNumClockSubnets(long int nets) { clockSubnets_ = nets; }
+  long int getNumClockSubnets() const { return clockSubnets_; }
+  void setNumBuffersInserted(long int buffers) { buffersInserted_ = buffers; }
+  long int getNumBuffersInserted() const { return buffersInserted_; }
+  void setNumSinks(long int sinks) { sinks_ = sinks; }
+  long int getNumSinks() const { return sinks_; }
+  void setTreeBuffer(const std::string& buffer) { treeBuffer_ = buffer; }
+  std::string getTreeBuffer() const { return treeBuffer_; }
+  unsigned getClusteringPower() const { return clusteringPower_; }
+  void setClusteringPower(unsigned power) { clusteringPower_ = power; }
+  double getClusteringCapacity() const { return clusteringCapacity_; }
   void setClusteringCapacity(double capacity)
   {
-    _clusteringCapacity = capacity;
+    clusteringCapacity_ = capacity;
   }
-  double getBufferDistance() const { return _bufDistance; }
-  void setBufferDistance(double distance) { _bufDistance = distance; }
-  double getVertexBufferDistance() const { return _vertexBufDistance; }
+  double getBufferDistance() const { return bufDistance_; }
+  void setBufferDistance(double distance) { bufDistance_ = distance; }
+  double getVertexBufferDistance() const { return vertexBufDistance_; }
   void setVertexBufferDistance(double distance)
   {
-    _vertexBufDistance = distance;
+    vertexBufDistance_ = distance;
   }
-  bool isVertexBuffersEnabled() const { return _vertexBuffersEnable; }
-  void setVertexBuffersEnabled(bool enable) { _vertexBuffersEnable = enable; }
-  bool isSimpleSegmentEnabled() const { return _simpleSegmentsEnable; }
-  void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
-  double getMaxDiameter() const { return _maxDiameter; }
-  void setMaxDiameter(double distance) { _maxDiameter = distance; _sinkClusteringUseMaxCap = false; }
-  unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
-  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
-  unsigned getSinkClusteringLevels() const { return _sinkClusteringLevels; }
-  void setSinkClusteringLevels(unsigned levels) { _sinkClusteringLevels = levels; }
-  unsigned getNumStaticLayers() const { return _numStaticLayers; }
-  void setBalanceLevels(bool balance) { _balanceLevels = balance; }
-  bool getBalanceLevels() const { return _balanceLevels; }
-  void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
-  void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
-  void setSinkBufferMaxCap(double cap) { _sinkBufferMaxCap = cap; }
-  double getSinkBufferMaxCap() const { return _sinkBufferMaxCap; }
-  void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
-  double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
-  std::string getSinkBuffer() const { return _sinkBuffer; }
-  utl::Logger *getLogger() { return _logger;}
-  stt::SteinerTreeBuilder *getSttBuilder() { return _sttBuilder;}
+  bool isVertexBuffersEnabled() const { return vertexBuffersEnable_; }
+  void setVertexBuffersEnabled(bool enable) { vertexBuffersEnable_ = enable; }
+  bool isSimpleSegmentEnabled() const { return simpleSegmentsEnable_; }
+  void setSimpleSegmentsEnabled(bool enable) { simpleSegmentsEnable_ = enable; }
+  double getMaxDiameter() const { return maxDiameter_; }
+  void setMaxDiameter(double distance)
+  {
+    maxDiameter_ = distance;
+    sinkClusteringUseMaxCap_ = false;
+  }
+  unsigned getSizeSinkClustering() const { return sinkClustersSize_; }
+  void setSizeSinkClustering(unsigned size)
+  {
+    sinkClustersSize_ = size;
+    sinkClusteringUseMaxCap_ = false;
+  }
+  unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
+  void setSinkClusteringLevels(unsigned levels)
+  {
+    sinkClusteringLevels_ = levels;
+  }
+  unsigned getNumStaticLayers() const { return numStaticLayers_; }
+  void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
+  bool getBalanceLevels() const { return balanceLevels_; }
+  void setNumStaticLayers(unsigned num) { numStaticLayers_ = num; }
+  void setSinkBuffer(const std::string& buffer) { sinkBuffer_ = buffer; }
+  void setSinkBufferMaxCap(double cap) { sinkBufferMaxCap_ = cap; }
+  double getSinkBufferMaxCap() const { return sinkBufferMaxCap_; }
+  void setSinkBufferInputCap(double cap) { sinkBufferInputCap_ = cap; }
+  double getSinkBufferInputCap() const { return sinkBufferInputCap_; }
+  std::string getSinkBuffer() const { return sinkBuffer_; }
+  utl::Logger* getLogger() { return logger_; }
+  stt::SteinerTreeBuilder* getSttBuilder() { return sttBuilder_; }
 
  private:
-  std::string _blockName = "";
-  std::string _outputPath = "";
-  std::string _clockNets = "";
-  std::string _rootBuffer = "";
-  std::string _sinkBuffer = "";
-  std::string _treeBuffer = "";
-  std::string _metricFile = "";
-  int _dbUnits = -1;
-  unsigned _wireSegmentUnit = 0;
-  bool _plotSolution = false;
-  bool _simpleCts = false;
-  bool _sinkClusteringEnable = true;
-  bool _sinkClusteringUseMaxCap = true;
-  bool _simpleSegmentsEnable = false;
-  bool _vertexBuffersEnable = false;
-  double _vertexBufDistance = 240;
-  double _bufDistance = 100;
-  double _clusteringCapacity = 0.6;
-  unsigned _clusteringPower = 4;
-  unsigned _numMaxLeafSinks = 15;
-  unsigned _maxSlew = 4;
-  double _maxCharSlew = 0;
-  double _maxCharCap = 0;
-  double _sinkBufferMaxCap = 0;
-  double _sinkBufferInputCap = 0;
-  double _capInter = 0;
-  double _slewInter = 0;
-  unsigned _charWirelengthIterations = 4;
-  unsigned _charLoadIterations = 34;
-  unsigned _charSlewIterations = 12;
-  unsigned _clockTreeMaxDepth = 100;
-  bool _enableFakeLutEntries = true;
-  bool _forceBuffersOnLeafLevel = true;
-  bool _writeOnlyClockNets = false;
-  bool _runPostCtsOpt = true;
-  double _bufDistRatio = 0.1;
-  long int _clockRoots = 0;
-  long int _clockSubnets = 0;
-  long int _buffersInserted = 0;
-  long int _sinks = 0;
-  double _maxDiameter = 50;
-  unsigned _sinkClustersSize = 20;
-  bool _balanceLevels = false;
-  unsigned _sinkClusteringLevels = 0;
-  unsigned _numStaticLayers = 0;
-  std::vector<std::string> _bufferList;
-  std::vector<odb::dbNet*> _clockNetsObjs;
-  utl::Logger* _logger;
-  stt::SteinerTreeBuilder* _sttBuilder;
+  std::string blockName_ = "";
+  std::string outputPath_ = "";
+  std::string clockNets_ = "";
+  std::string rootBuffer_ = "";
+  std::string sinkBuffer_ = "";
+  std::string treeBuffer_ = "";
+  std::string metricFile_ = "";
+  int dbUnits_ = -1;
+  unsigned wireSegmentUnit_ = 0;
+  bool plotSolution_ = false;
+  bool simpleCts_ = false;
+  bool sinkClusteringEnable_ = true;
+  bool sinkClusteringUseMaxCap_ = true;
+  bool simpleSegmentsEnable_ = false;
+  bool vertexBuffersEnable_ = false;
+  double vertexBufDistance_ = 240;
+  double bufDistance_ = 100;
+  double clusteringCapacity_ = 0.6;
+  unsigned clusteringPower_ = 4;
+  unsigned numMaxLeafSinks_ = 15;
+  unsigned maxSlew_ = 4;
+  double maxCharSlew_ = 0;
+  double maxCharCap_ = 0;
+  double sinkBufferMaxCap_ = 0;
+  double sinkBufferInputCap_ = 0;
+  double capInter_ = 0;
+  double slewInter_ = 0;
+  unsigned charWirelengthIterations_ = 4;
+  unsigned charLoadIterations_ = 34;
+  unsigned charSlewIterations_ = 12;
+  unsigned clockTreeMaxDepth_ = 100;
+  bool enableFakeLutEntries_ = true;
+  bool forceBuffersOnLeafLevel_ = true;
+  bool writeOnlyClockNets_ = false;
+  bool runPostCtsOpt_ = true;
+  double bufDistRatio_ = 0.1;
+  long int clockRoots_ = 0;
+  long int clockSubnets_ = 0;
+  long int buffersInserted_ = 0;
+  long int sinks_ = 0;
+  double maxDiameter_ = 50;
+  unsigned sinkClustersSize_ = 20;
+  bool balanceLevels_ = false;
+  unsigned sinkClusteringLevels_ = 0;
+  unsigned numStaticLayers_ = 0;
+  std::vector<std::string> bufferList_;
+  std::vector<odb::dbNet*> clockNetsObjs_;
+  utl::Logger* logger_;
+  stt::SteinerTreeBuilder* sttBuilder_;
 };
 
 }  // namespace cts

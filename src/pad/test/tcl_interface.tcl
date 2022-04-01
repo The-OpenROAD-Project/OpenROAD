@@ -492,6 +492,9 @@ initialize_floorplan \
   -site      FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
 
+catch {initialize_padring}
+set_padring_options -allow_filler_overlap
+
 if {[catch {initialize_padring} msg]} {
   puts $errorInfo
   puts $msg

@@ -35,10 +35,10 @@
 
 #include "Netlist.h"
 
+#include <algorithm>
+
 #include "Slots.h"
 #include "ppl/IOPlacer.h"
-
-#include <algorithm>
 
 namespace ppl {
 

@@ -438,11 +438,12 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_setup(float slack_margin)
+repair_setup(float slack_margin,
+             int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(slack_margin);
+  resizer->repairSetup(slack_margin, max_passes);
 }
 
 void

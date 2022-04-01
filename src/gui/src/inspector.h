@@ -210,6 +210,7 @@ class Inspector : public QDockWidget
   void clicked(const QModelIndex& index);
   void update(const Selected& object = Selected());
   void highlightChanged();
+  void focusNetsChanged();
 
   int selectNext();
   int selectPrevious();
@@ -261,6 +262,7 @@ class Inspector : public QDockWidget
   const HighlightSet& highlighted_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
+  Descriptor::ActionCallback deselect_action_;
 
   // used to finetune the double click interval
   static constexpr double mouse_double_click_scale_ = 0.75;

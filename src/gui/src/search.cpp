@@ -50,7 +50,9 @@ Search::Search() :
     blockages_(),
     blockages_init_(false),
     obstructions_(),
-    obstructions_init_(false)
+    obstructions_init_(false),
+    rows_(),
+    rows_init_(false)
 {
 }
 
@@ -145,6 +147,26 @@ void Search::inDbBlockSetDieArea(odb::dbBlock* block)
   setBlock(block);
 }
 
+void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
+{
+  emit modified();
+}
+
+void Search::inDbRegionDestroy(odb::dbRegion* region)
+{
+  emit modified();
+}
+
+void Search::inDbRowCreate(odb::dbRow* row)
+{
+  emit modified();
+}
+
+void Search::inDbRowDestroy(odb::dbRow* row)
+{
+  emit modified();
+}
+
 void Search::setBlock(odb::dbBlock* block)
 {
   if (block_ != block) {
@@ -169,6 +191,7 @@ void Search::clear()
   clearInsts();
   clearBlockages();
   clearObstructions();
+  clearRows();
 }
 
 void Search::clearShapes()
@@ -207,6 +230,14 @@ void Search::clearObstructions()
 {
   obstructions_.clear();
   obstructions_init_ = false;
+
+  emit modified();
+}
+
+void Search::clearRows()
+{
+  rows_.clear();
+  rows_init_ = false;
 
   emit modified();
 }
@@ -283,6 +314,15 @@ void Search::updateObstructions()
   }
 
   obstructions_init_ = true;
+}
+
+void Search::updateRows()
+{
+  for (odb::dbRow* row : block_->getRows()) {
+    addRow(row);
+  }
+
+  rows_init_ = true;
 }
 
 void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
@@ -391,6 +431,24 @@ void Search::addObstruction(odb::dbObstruction* obs)
   Polygon poly;
   bg::convert(box, poly);
   obstructions_[bbox->getTechLayer()].insert({box, poly, obs});
+}
+
+void Search::addRow(odb::dbRow* row)
+{
+  odb::Rect bbox;
+  row->getBBox(bbox);
+  Box box = convertRect(bbox);
+  Polygon poly;
+  bg::convert(box, poly);
+  rows_.insert({box, poly, row});
+}
+
+Search::Box Search::convertRect(const odb::Rect& box) const
+{
+  Point ll(box.xMin(), box.yMin());
+  Point ur(box.xMax(), box.yMax());
+  return Box(ll, ur);
+
 }
 
 template <typename T>
@@ -560,6 +618,28 @@ Search::ObstructionRange Search::searchObstructions(odb::dbTechLayer* layer,
   }
 
   return ObstructionRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+}
+
+Search::RowRange Search::searchRows(int x_lo,
+                                    int y_lo,
+                                    int x_hi,
+                                    int y_hi,
+                                    int min_height)
+{
+  if (!rows_init_) {
+    updateRows();
+  }
+
+  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  if (min_height > 0) {
+    return RowRange(
+        rows_.qbegin(
+            bgi::intersects(query)
+            && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height))),
+            rows_.qend());
+  }
+
+  return RowRange(rows_.qbegin(bgi::intersects(query)), rows_.qend());
 }
 
 }  // namespace gui

@@ -195,7 +195,8 @@ void definSNet::connection(const char* iname,
     return;
   }
 
-  dbITerm* iterm = dbITerm::connect(inst, _cur_net, mterm);
+  dbITerm* iterm = inst->getITerm(mterm);
+  iterm->connect(_cur_net);
   _snet_iterm_cnt++;
   iterm->setSpecial();
 }
@@ -630,7 +631,7 @@ void definSNet::connect_all(dbNet* net, const char* term)
     dbMTerm* mterm = iterm->getMTerm();
 
     if (matched_mterms.find(mterm) != matched_mterms.end()) {
-      dbITerm::connect(iterm, net);
+      iterm->connect(net);
       iterm->setSpecial();
       _snet_iterm_cnt++;
     }

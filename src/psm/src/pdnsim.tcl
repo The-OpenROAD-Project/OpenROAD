@@ -68,6 +68,9 @@ proc check_power_grid { args } {
   }
   if { [ord::db_has_rows] } {
     set res [psm::check_connectivity_cmd]
+    if {$res == 0} {
+        utl::error PSM 69 "Check connectivity failed."
+    }
     return $res
   } else {
     utl::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows."
