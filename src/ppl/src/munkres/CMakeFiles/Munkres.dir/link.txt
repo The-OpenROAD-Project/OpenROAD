@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc libMunkres.a  CMakeFiles/Munkres.dir/src/Hungarian.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib libMunkres.a

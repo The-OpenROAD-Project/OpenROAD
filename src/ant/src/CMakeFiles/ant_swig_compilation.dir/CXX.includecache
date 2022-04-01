@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/Exception.i
+
+/home/kevinchen/OpenROAD/src/ant/src/AntennaChecker.i
+ant/AntennaChecker.hh
+/home/kevinchen/OpenROAD/src/ant/src/ant/AntennaChecker.hh
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/ant/src/ord/OpenRoad.hh
+../../Exception.i
+/home/kevinchen/OpenROAD/src/Exception.i
+

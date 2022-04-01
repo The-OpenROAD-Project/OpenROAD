@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc _openroad_swig_py.a  CMakeFiles/openroad_swig_py.dir/CMakeFiles/openroad_swig_py.dir/OpenRoad-pyPYTHON_wrap.cxx.o CMakeFiles/openroad_swig_py.dir/openroad_swig_py-pythonInitVar.cc.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib _openroad_swig_py.a

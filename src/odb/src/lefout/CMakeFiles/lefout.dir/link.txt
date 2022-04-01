@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc liblefout.a  CMakeFiles/lefout.dir/lefout.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib liblefout.a

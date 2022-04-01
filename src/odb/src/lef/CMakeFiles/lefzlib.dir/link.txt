@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc liblefzlib.a  CMakeFiles/lefzlib.dir/lefzlib/lefzlib.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib liblefzlib.a

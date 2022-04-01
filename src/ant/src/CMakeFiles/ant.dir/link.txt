@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc ant.a  CMakeFiles/ant.dir/CMakeFiles/ant.dir/AntennaCheckerTCL_wrap.cxx.o CMakeFiles/ant.dir/ant-tclInitVar.cc.o CMakeFiles/ant.dir/MakeAntennaChecker.cc.o CMakeFiles/ant.dir/AntennaChecker.cc.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib ant.a

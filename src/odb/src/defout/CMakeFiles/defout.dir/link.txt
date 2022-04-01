@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc libdefout.a  CMakeFiles/defout.dir/defout.cpp.o CMakeFiles/defout.dir/defout_impl.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib libdefout.a

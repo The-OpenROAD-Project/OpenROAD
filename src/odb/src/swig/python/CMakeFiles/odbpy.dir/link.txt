@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc _odbpy.a  CMakeFiles/odbpy.dir/CMakeFiles/odbpy.dir/odbPYTHON_wrap.cxx.o CMakeFiles/odbpy.dir/odbpy-pythonInitVar.cc.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib _odbpy.a

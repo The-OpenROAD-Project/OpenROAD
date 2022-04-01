@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc dst.a  CMakeFiles/dst.dir/CMakeFiles/dst.dir/DistributedTCL_wrap.cxx.o CMakeFiles/dst.dir/dst-tclInitVar.cc.o CMakeFiles/dst.dir/src/JobMessage.cc.o CMakeFiles/dst.dir/src/Worker.cc.o CMakeFiles/dst.dir/src/LoadBalancer.cc.o CMakeFiles/dst.dir/src/WorkerConnection.cc.o CMakeFiles/dst.dir/src/BalancerConnection.cc.o CMakeFiles/dst.dir/src/MakeDistributed.cc.o CMakeFiles/dst.dir/src/Distributed.cc.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib dst.a

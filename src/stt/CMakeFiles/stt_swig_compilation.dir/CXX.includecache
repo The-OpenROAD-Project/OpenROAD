@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/Exception.i
+
+/home/kevinchen/OpenROAD/src/stt/src/SteinerTreeBuilder.i
+stt/SteinerTreeBuilder.h
+/home/kevinchen/OpenROAD/src/stt/src/stt/SteinerTreeBuilder.h
+stt/pdrev.h
+/home/kevinchen/OpenROAD/src/stt/src/stt/pdrev.h
+stt/flute.h
+/home/kevinchen/OpenROAD/src/stt/src/stt/flute.h
+gui/gui.h
+/home/kevinchen/OpenROAD/src/stt/src/gui/gui.h
+ord/OpenRoad.hh
+/home/kevinchen/OpenROAD/src/stt/src/ord/OpenRoad.hh
+odb/db.h
+/home/kevinchen/OpenROAD/src/stt/src/odb/db.h
+vector
+-
+../../Exception.i
+/home/kevinchen/OpenROAD/src/Exception.i
+std_vector.i
+-
+

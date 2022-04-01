@@ -1,0 +1,35 @@
+# Meta
+set(AM_MULTI_CONFIG "FALSE")
+set(AM_PARALLEL "30")
+set(AM_VERBOSITY "")
+# Directories
+set(AM_CMAKE_SOURCE_DIR "/home/kevinchen/OpenROAD")
+set(AM_CMAKE_BINARY_DIR "/home/kevinchen/OpenROAD")
+set(AM_CMAKE_CURRENT_SOURCE_DIR "/home/kevinchen/OpenROAD/src/gui")
+set(AM_CMAKE_CURRENT_BINARY_DIR "/home/kevinchen/OpenROAD/src/gui")
+set(AM_CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE "")
+set(AM_BUILD_DIR "/home/kevinchen/OpenROAD/src/gui/gui_autogen")
+set(AM_INCLUDE_DIR "/home/kevinchen/OpenROAD/src/gui/gui_autogen/include")
+# Files
+set(AM_SOURCES "/home/kevinchen/OpenROAD/src/gui/CMakeFiles/gui.dir/guiTCL_wrap.cxx;/home/kevinchen/OpenROAD/src/gui/gui-tclInitVar.cc;/home/kevinchen/OpenROAD/src/gui/src/dbDescriptors.cpp;/home/kevinchen/OpenROAD/src/gui/src/displayControls.cpp;/home/kevinchen/OpenROAD/src/gui/src/drcWidget.cpp;/home/kevinchen/OpenROAD/src/gui/src/findDialog.cpp;/home/kevinchen/OpenROAD/src/gui/src/gui.cpp;/home/kevinchen/OpenROAD/src/gui/src/heatMap.cpp;/home/kevinchen/OpenROAD/src/gui/src/heatMapPlacementDensity.cpp;/home/kevinchen/OpenROAD/src/gui/src/heatMapSetup.cpp;/home/kevinchen/OpenROAD/src/gui/src/highlightGroupDialog.cpp;/home/kevinchen/OpenROAD/src/gui/src/inspector.cpp;/home/kevinchen/OpenROAD/src/gui/src/layoutViewer.cpp;/home/kevinchen/OpenROAD/src/gui/src/mainWindow.cpp;/home/kevinchen/OpenROAD/src/gui/src/ruler.cpp;/home/kevinchen/OpenROAD/src/gui/src/scriptWidget.cpp;/home/kevinchen/OpenROAD/src/gui/src/search.cpp;/home/kevinchen/OpenROAD/src/gui/src/selectHighlightWindow.cpp;/home/kevinchen/OpenROAD/src/gui/src/staGui.cpp;/home/kevinchen/OpenROAD/src/gui/src/tclCmdHighlighter.cpp;/home/kevinchen/OpenROAD/src/gui/src/tclCmdInputWidget.cpp;/home/kevinchen/OpenROAD/src/gui/src/timingWidget.cpp")
+set(AM_HEADERS "")
+set(AM_SETTINGS_FILE "/home/kevinchen/OpenROAD/src/gui/CMakeFiles/gui_autogen.dir/AutogenOldSettings.txt")
+# Qt
+set(AM_QT_VERSION_MAJOR 5)
+set(AM_QT_MOC_EXECUTABLE "/usr/lib64/qt5/bin/moc")
+set(AM_QT_UIC_EXECUTABLE "/usr/lib64/qt5/bin/uic")
+# MOC settings
+set(AM_MOC_SKIP "")
+set(AM_MOC_DEFINITIONS "BOOST_ALL_NO_LIB;QT_CORE_LIB;QT_GUI_LIB;QT_NO_DEBUG;QT_WIDGETS_LIB;SPDLOG_COMPILED_LIB")
+set(AM_MOC_INCLUDES "/home/kevinchen/OpenROAD/src/gui;/home/kevinchen/OpenROAD/include;/home/kevinchen/OpenROAD/src/gui/include;/home/kevinchen/OpenROAD/src/sta/include;/home/kevinchen/OpenROAD/src/dbSta/include;/home/kevinchen/OpenROAD/src/odb/include;/home/kevinchen/OpenROAD/src/utl/include;/home/kevinchen/OpenROAD/src/odb/include/odb;/home/kevinchen/OpenROAD/src/odb/src/def/def;/home/kevinchen/OpenROAD/src/odb/src/def/defzlib;/home/kevinchen/OpenROAD/src/odb/src/lef/lef;/home/kevinchen/OpenROAD/src/odb/src/lef/lefzlib;/usr/include/qt5;/usr/include/qt5/QtCore;/usr/lib64/qt5/./mkspecs/linux-g++;/usr/include/qt5/QtWidgets;/usr/include/qt5/QtGui;/usr/include;/usr/local/include;/opt/rh/devtoolset-8/root/usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8;/opt/rh/devtoolset-8/root/usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/x86_64-redhat-linux;/opt/rh/devtoolset-8/root/usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/backward;/opt/rh/devtoolset-8/root/usr/lib/gcc/x86_64-redhat-linux/8/include;/opt/rh/devtoolset-8/root/usr/include")
+set(AM_MOC_OPTIONS "")
+set(AM_MOC_RELAXED_MODE "")
+set(AM_MOC_MACRO_NAMES "Q_OBJECT;Q_GADGET;Q_NAMESPACE")
+set(AM_MOC_DEPEND_FILTERS "")
+set(AM_MOC_PREDEFS_CMD "/opt/rh/devtoolset-8/root/usr/bin/c++;-dM;-E;-c;/usr/local/share/cmake-3.14/Modules/CMakeCXXCompilerABI.cpp")
+# UIC settings
+set(AM_UIC_SKIP "")
+set(AM_UIC_TARGET_OPTIONS "")
+set(AM_UIC_OPTIONS_FILES "")
+set(AM_UIC_OPTIONS_OPTIONS "")
+set(AM_UIC_SEARCH_PATHS "/home/kevinchen/OpenROAD/src/gui/ui")

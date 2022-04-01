@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevinchen/OpenROAD/src/odb/src/zlib/ZException.cpp
+odb/ZException.h
+/home/kevinchen/OpenROAD/src/odb/src/zlib/odb/ZException.h
+stdarg.h
+-
+stdlib.h
+-
+string.h
+-
+
+src/odb/include/odb/ZException.h
+odb.h
+src/odb/include/odb/odb.h
+
+src/odb/include/odb/odb.h
+assert.h
+-
+float.h
+-
+limits.h
+-
+math.h
+-
+stdarg.h
+-
+stdio.h
+-
+stdlib.h
+-
+

@@ -1,0 +1,153 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_87d0a/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_87d0a.dir/build.make CMakeFiles/cmTC_87d0a.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_87d0a.dir/CheckSymbolExists.cxx.o
+/opt/rh/devtoolset-8/root/usr/bin/c++    -std=c++17 -o CMakeFiles/cmTC_87d0a.dir/CheckSymbolExists.cxx.o -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx
+Linking CXX executable cmTC_87d0a
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87d0a.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/c++       CMakeFiles/cmTC_87d0a.dir/CheckSymbolExists.cxx.o  -o cmTC_87d0a 
+CMakeFiles/cmTC_87d0a.dir/CheckSymbolExists.cxx.o: 於函式 main:
+CheckSymbolExists.cxx:(.text+0x16): 未定義參考到 pthread_create
+collect2: error: ld returned 1 exit status
+gmake[1]: *** [CMakeFiles/cmTC_87d0a.dir/build.make:87: cmTC_87d0a] Error 1
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+gmake: *** [Makefile:121: cmTC_87d0a/fast] Error 2
+
+File /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/CheckSymbolExists.cxx:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_e8025/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_e8025.dir/build.make CMakeFiles/cmTC_e8025.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_e8025.dir/CheckFunctionExists.cxx.o
+/opt/rh/devtoolset-8/root/usr/bin/c++    -DCHECK_FUNCTION_EXISTS=pthread_create   -std=c++17 -o CMakeFiles/cmTC_e8025.dir/CheckFunctionExists.cxx.o -c /home/kevinchen/OpenROAD/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_e8025
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e8025.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/c++   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_e8025.dir/CheckFunctionExists.cxx.o  -o cmTC_e8025 -lpthreads 
+/opt/rh/devtoolset-8/root/usr/libexec/gcc/x86_64-redhat-linux/8/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+gmake[1]: *** [CMakeFiles/cmTC_e8025.dir/build.make:87: cmTC_e8025] Error 1
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+gmake: *** [Makefile:121: cmTC_e8025/fast] Error 2
+
+
+Performing C SOURCE FILE Test C_COMPILER_SUPPORTS__-Wno-c++11-narrowing failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_b40ff/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_b40ff.dir/build.make CMakeFiles/cmTC_b40ff.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_b40ff.dir/src.c.o
+/opt/rh/devtoolset-8/root/usr/bin/cc   -DC_COMPILER_SUPPORTS__-Wno-c++11-narrowing   -Wno-c++11-narrowing -o CMakeFiles/cmTC_b40ff.dir/src.c.o   -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.c
+<command-line>: warning: ISO C99 requires whitespace after the macro name
+cc1: warning: unrecognized command line option '-Wno-c++11-narrowing'
+Linking C executable cmTC_b40ff
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b40ff.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/cc  -DC_COMPILER_SUPPORTS__-Wno-c++11-narrowing    -rdynamic CMakeFiles/cmTC_b40ff.dir/src.c.o  -o cmTC_b40ff 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main(void) { return 0; }
+Performing C++ SOURCE FILE Test CXX_COMPILER_SUPPORTS__-Wno-c++11-narrowing failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_145df/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_145df.dir/build.make CMakeFiles/cmTC_145df.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_145df.dir/src.cxx.o
+/opt/rh/devtoolset-8/root/usr/bin/c++    -DCXX_COMPILER_SUPPORTS__-Wno-c++11-narrowing   -Wno-c++11-narrowing -o CMakeFiles/cmTC_145df.dir/src.cxx.o -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.cxx
+<command-line>: warning: ISO C++11 requires whitespace after the macro name
+cc1plus: warning: unrecognized command line option '-Wno-c++11-narrowing'
+Linking CXX executable cmTC_145df
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_145df.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/c++   -DCXX_COMPILER_SUPPORTS__-Wno-c++11-narrowing    -rdynamic CMakeFiles/cmTC_145df.dir/src.cxx.o  -o cmTC_145df 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main() { return 0; }
+Performing C SOURCE FILE Test C_COMPILER_SUPPORTS__-Wno-register failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_ca708/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_ca708.dir/build.make CMakeFiles/cmTC_ca708.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_ca708.dir/src.c.o
+/opt/rh/devtoolset-8/root/usr/bin/cc   -DC_COMPILER_SUPPORTS__-Wno-register   -Wno-register -o CMakeFiles/cmTC_ca708.dir/src.c.o   -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.c
+cc1: warning: command line option '-Wno-register' is valid for C++/ObjC++ but not for C
+<command-line>: warning: ISO C99 requires whitespace after the macro name
+Linking C executable cmTC_ca708
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ca708.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/cc  -DC_COMPILER_SUPPORTS__-Wno-register    -rdynamic CMakeFiles/cmTC_ca708.dir/src.c.o  -o cmTC_ca708 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main(void) { return 0; }
+Performing C SOURCE FILE Test C_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_26c90/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_26c90.dir/build.make CMakeFiles/cmTC_26c90.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_26c90.dir/src.c.o
+/opt/rh/devtoolset-8/root/usr/bin/cc   -DC_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal   -Wno-reserved-user-defined-literal -o CMakeFiles/cmTC_26c90.dir/src.c.o   -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.c
+<command-line>: warning: ISO C99 requires whitespace after the macro name
+cc1: warning: unrecognized command line option '-Wno-reserved-user-defined-literal'
+Linking C executable cmTC_26c90
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_26c90.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/cc  -DC_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal    -rdynamic CMakeFiles/cmTC_26c90.dir/src.c.o  -o cmTC_26c90 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main(void) { return 0; }
+Performing C++ SOURCE FILE Test CXX_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_eb0f2/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_eb0f2.dir/build.make CMakeFiles/cmTC_eb0f2.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_eb0f2.dir/src.cxx.o
+/opt/rh/devtoolset-8/root/usr/bin/c++    -DCXX_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal   -Wno-reserved-user-defined-literal -o CMakeFiles/cmTC_eb0f2.dir/src.cxx.o -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.cxx
+<command-line>: warning: ISO C++11 requires whitespace after the macro name
+cc1plus: warning: unrecognized command line option '-Wno-reserved-user-defined-literal'
+Linking CXX executable cmTC_eb0f2
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eb0f2.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/c++   -DCXX_COMPILER_SUPPORTS__-Wno-reserved-user-defined-literal    -rdynamic CMakeFiles/cmTC_eb0f2.dir/src.cxx.o  -o cmTC_eb0f2 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main() { return 0; }
+Performing C SOURCE FILE Test C_COMPILER_SUPPORTS__-fpermissive failed with the following output:
+Change Dir: /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/opt/rh/devtoolset-8/root/usr/bin/gmake cmTC_a0db9/fast 
+/opt/rh/devtoolset-8/root/usr/bin/gmake -f CMakeFiles/cmTC_a0db9.dir/build.make CMakeFiles/cmTC_a0db9.dir/build
+gmake[1]: Entering directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a0db9.dir/src.c.o
+/opt/rh/devtoolset-8/root/usr/bin/cc   -DC_COMPILER_SUPPORTS__-fpermissive   -fpermissive -o CMakeFiles/cmTC_a0db9.dir/src.c.o   -c /home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp/src.c
+cc1: warning: command line option '-fpermissive' is valid for C++/ObjC++ but not for C
+<command-line>: warning: ISO C99 requires whitespace after the macro name
+Linking C executable cmTC_a0db9
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a0db9.dir/link.txt --verbose=1
+/opt/rh/devtoolset-8/root/usr/bin/cc  -DC_COMPILER_SUPPORTS__-fpermissive    -rdynamic CMakeFiles/cmTC_a0db9.dir/src.c.o  -o cmTC_a0db9 
+gmake[1]: Leaving directory '/home/kevinchen/OpenROAD/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main(void) { return 0; }

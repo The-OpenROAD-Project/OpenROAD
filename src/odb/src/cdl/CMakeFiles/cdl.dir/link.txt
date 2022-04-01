@@ -1,0 +1,2 @@
+/opt/rh/devtoolset-8/root/usr/bin/ar qc libcdl.a  CMakeFiles/cdl.dir/cdl.cpp.o
+/opt/rh/devtoolset-8/root/usr/bin/ranlib libcdl.a
