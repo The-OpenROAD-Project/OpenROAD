@@ -62,6 +62,7 @@
 #include "utl/Logger.h"
 #include "timingWidget.h"
 #include "drcWidget.h"
+#include "browserWidget.h"
 #include "gui/heatMap.h"
 
 // must be loaded in global namespace
@@ -93,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
+      hierarchy_widget_(new BrowserWidget(this)),
       find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
@@ -109,12 +111,14 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
+  addDockWidget(Qt::RightDockWidgetArea, hierarchy_widget_);
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 
+  tabifyDockWidget(inspector_, hierarchy_widget_);
   tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
   drc_viewer_->hide();
@@ -218,6 +222,11 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addHighlight(const SelectionSet&)),
           this,
           SLOT(addHighlighted(const SelectionSet&)));
+
+  connect(hierarchy_widget_,
+          SIGNAL(select(const Selected&)),
+          this,
+          SLOT(setSelected(const Selected&)));
 
   connect(timing_widget_,
           &TimingWidget::inspect,
@@ -361,6 +370,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
   }
+  hierarchy_widget_->setBlock(block);
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -511,6 +521,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
+  windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);

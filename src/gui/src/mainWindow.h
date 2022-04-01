@@ -62,6 +62,7 @@ class DisplayControls;
 class Inspector;
 class TimingWidget;
 class DRCWidget;
+class BrowserWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -268,6 +269,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   LayoutScroll* scroll_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
+  BrowserWidget* hierarchy_widget_;
 
   FindObjectDialog* find_dialog_;
 
