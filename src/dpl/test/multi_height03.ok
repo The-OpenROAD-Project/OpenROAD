@@ -17,7 +17,7 @@
 [ERROR DPL-0036] Detailed placement failed.
 DPL-0036
 [WARNING DPL-0005] Overlap check failed (4).
- _281_ overlaps _282_
+ _281_ overlaps _285_
  _280_ overlaps _281_
  _279_ overlaps _281_
  _278_ overlaps _281_
@@ -27,4 +27,6 @@ DPL-0036
  _281_
 [ERROR DPL-0033] detailed placement checks failed.
 DPL-0033
-No differences found.
+Differences found at line 16.
+    - _282_ no02f01 + PLACED ( 34400 28000 ) N ;
+    - _282_ no02f01 + PLACED ( 33200 28000 ) N ;

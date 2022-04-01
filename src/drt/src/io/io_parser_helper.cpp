@@ -50,17 +50,27 @@ void io::Parser::initDefaultVias()
     auto viaDef = uViaDef.get();
     tech->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
-
+  for (auto& userDefinedVia : design->getUserSelectedVias()) {
+    if (tech->name2via.find(userDefinedVia) == tech->name2via.end()) {
+      logger->error(
+          DRT, 608, "Could not find user defined via {}", userDefinedVia);
+    }
+    auto viaDef = tech->getVia(userDefinedVia);
+    tech->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
+  }
   std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs;
   for (auto layerNum = design->getTech()->getBottomLayerNum();
        layerNum <= design->getTech()->getTopLayerNum();
        ++layerNum) {
-    if (design->getTech()->getLayer(layerNum)->getType()
-        != dbTechLayerType::CUT) {
+    auto layer = design->getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::CUT) {
       continue;
     }
-    for (auto& viaDef : design->getTech()->getLayer(layerNum)->getViaDefs()) {
+    if (layer->getDefaultViaDef() != nullptr) {
+      continue;
+    }
+    for (auto& viaDef : layer->getViaDefs()) {
       int cutNum = int(viaDef->getCutFigs().size());
       viaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);
@@ -979,19 +989,19 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
     ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
   }
 
-  if (VERBOSE > 0) {
+  if (VERBOSE > 0 || logger->debugCheck(DRT, "autotuner", 1)) {
     logger->info(DRT,
                  176,
                  "GCELLGRID X {} DO {} STEP {} ;",
-                 ygp.getStartCoord(),
-                 ygp.getCount(),
-                 ygp.getSpacing());
-    logger->info(DRT,
-                 177,
-                 "GCELLGRID Y {} DO {} STEP {} ;",
                  xgp.getStartCoord(),
                  xgp.getCount(),
                  xgp.getSpacing());
+    logger->info(DRT,
+                 177,
+                 "GCELLGRID Y {} DO {} STEP {} ;",
+                 ygp.getStartCoord(),
+                 ygp.getCount(),
+                 ygp.getSpacing());
   }
 
   design->getTopBlock()->setGCellPatterns({xgp, ygp});

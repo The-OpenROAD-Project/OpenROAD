@@ -57,6 +57,7 @@ class Logger;
 namespace fr {
 
 class frConstraint;
+struct SearchRepairArgs;
 
 struct FlexDRViaData
 {
@@ -150,6 +151,8 @@ class FlexDR
   unsigned short dist_port_;
   std::string dist_dir_;
   std::string globals_path_;
+  bool increaseClipsize_;
+  float clipSizeInc_;
 
   // others
   void init();
@@ -194,14 +197,7 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-  void searchRepair(int iter,
-                    int size,
-                    int offset,
-                    int mazeEndIter,
-                    frUInt4 workerDRCCost,
-                    frUInt4 workerMarkerCost,
-                    int ripupMode,
-                    bool followGuide);
+  void searchRepair(int iter, const SearchRepairArgs& args);
   void end(bool writeMetrics = false);
 
   // utility
@@ -307,7 +303,8 @@ class FlexDRWorker
         gridGraph_(design->getTech(), this),
         markers_(),
         rq_(this),
-        gcWorker_(nullptr)
+        gcWorker_(nullptr),
+        isCongested_(false)
   {
   }
   FlexDRWorker()
@@ -317,7 +314,8 @@ class FlexDRWorker
         debugSettings_(nullptr),
         via_data_(nullptr),
         rq_(nullptr),
-        gcWorker_(nullptr)
+        gcWorker_(nullptr),
+        isCongested_(false)
   {
   }
   // setters
@@ -334,6 +332,7 @@ class FlexDRWorker
     drIter_ = in;
     boundaryPin_ = std::move(bp);
   }
+  bool isCongested() const { return isCongested_; }
   void setBoundaryPins(std::map<frNet*,
                                 std::set<std::pair<Point, frLayerNum>>,
                                 frBlockObjectComp>& bp)
@@ -533,6 +532,7 @@ class FlexDRWorker
   std::string dist_ip_;
   unsigned short dist_port_;
   std::string dist_dir_;
+  bool isCongested_;
 
   // init
   void init(const frDesign* design);
@@ -961,6 +961,7 @@ class FlexDRWorker
 
   // end
   void cleanup();
+  void identifyCongestionLevel();
   void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
   void endRemoveNets(frDesign* design,
                      std::set<frNet*, frBlockObjectComp>& modNets,
@@ -1028,6 +1029,7 @@ class FlexDRWorker
     (ar) & bestMarkers_;
     (ar) & rq_;
     (ar) & gcWorker_;
+    (ar) & isCongested_;
   }
   friend class boost::serialization::access;
 };

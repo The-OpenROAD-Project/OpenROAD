@@ -22,8 +22,6 @@ module top (in1,
  input clk3;
  output out;
 
- wire VSS;
- wire VDD;
  wire r1q;
  wire r2q;
  wire u1z;

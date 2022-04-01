@@ -28,34 +28,28 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0019]  Total number of sinks after clustering: 30.
-[INFO CTS-0024]  Normalized sink region: [(0.892048, 0.749191), (13.6432, 12.3893)].
-[INFO CTS-0025]     Width:  12.7512.
-[INFO CTS-0026]     Height: 11.6401.
+[INFO CTS-0019]  Total number of sinks after clustering: 24.
+[INFO CTS-0024]  Normalized sink region: [(1.42114, 0.881464), (13.3258, 12.5114)].
+[INFO CTS-0025]     Width:  11.9046.
+[INFO CTS-0026]     Height: 11.6299.
  Level 1
     Direction: Horizontal
-    Sinks per sub-region: 15
-    Sub-region size: 6.3756 X 11.6401
-[INFO CTS-0034]     Segment length (rounded): 4.
-    Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
- Level 2
-    Direction: Vertical
-    Sinks per sub-region: 8
-    Sub-region size: 6.3756 X 5.8200
+    Sinks per sub-region: 12
+    Sub-region size: 5.9523 X 11.6299
 [INFO CTS-0034]     Segment length (rounded): 2.
     Key: 0 outSlew: 2 load: 1 length: 2 isBuffered: false
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 30.
-[INFO CTS-0036]  Average source sink dist: 23762.90 dbu.
+[INFO CTS-0035]  Number of sinks covered: 24.
+[INFO CTS-0036]  Average source sink dist: 26934.86 dbu.
 [INFO CTS-0037]  Number of outlier sinks: 0.
-[INFO CTS-0018]     Created 35 clock buffers.
+[INFO CTS-0018]     Created 27 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
-[INFO CTS-0015]     Created 35 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 3:1, 7:2, 8:2, 10:22, 11:7..
-[INFO CTS-0017]     Max level of the clock tree: 2.
+[INFO CTS-0015]     Created 27 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 4:1, 12:5, 13:20..
+[INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 300
-[INFO CTS-0100]  Leaf buffers 30
-[INFO CTS-0101]  Average sink wire length 129.91 um
+[INFO CTS-0100]  Leaf buffers 24
+[INFO CTS-0101]  Average sink wire length 120.60 um
 [INFO CTS-0102]  Path depth 3 - 3

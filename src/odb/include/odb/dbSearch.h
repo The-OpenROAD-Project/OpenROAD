@@ -37,7 +37,6 @@
 
 #include "ISdb.h"
 #include "IZdcr.h"
-#include "atypes.h"
 #include "dbId.h"
 #include "dbObject.h"
 #include "dbTypes.h"

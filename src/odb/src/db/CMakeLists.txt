@@ -49,8 +49,6 @@ add_library(odb
     dbWirePathItr.cpp 
     dbTarget.cpp 
     dbTargetItr.cpp 
-    test_wire.cpp 
-    test_wire2.cpp 
     dbTechNonDefaultRule.cpp 
     dbTechLayerRule.cpp 
     dbCapNode.cpp 

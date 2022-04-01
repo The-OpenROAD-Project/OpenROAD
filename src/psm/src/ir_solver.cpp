@@ -411,6 +411,13 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
       continue;
     }
     int x, y;
+    if (!inst-> getPlacementStatus().isPlaced()) {
+      m_logger->warn(utl::PSM, 71, "Instance {} is not placed. Therefore, the" 
+                     " power drawn by this instance is not considered for IR " 
+                     " drop estimation. Please run analyze_power_grid after "
+                     "instances are placed.", it->first);
+      continue;
+    }
     inst->getLocation(x, y);
     int l = m_bottom_layer;  // atach to the bottom most routing layer
     Node* node_J = m_Gmat->GetNode(x, y, l, true);
@@ -724,7 +731,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
             m_logger->error(utl::PSM, 35,
                             "{} resistance not found in DB. Check the LEF or "
                             "set it using the 'set_layer_rc' command.",
-                            via_bottom_layer->getName());
+                            via_bottom_layer->getUpperLayer()->getName());
           }
           bool top_or_bottom = ((l == m_bottom_layer));
           Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);

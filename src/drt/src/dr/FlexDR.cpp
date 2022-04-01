@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
-
 #include <dst/JobMessage.h>
 #include <omp.h>
 #include <stdio.h>
@@ -42,13 +40,13 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
-
 #include "utl/exception.h"
 
 using namespace std;
@@ -101,7 +99,12 @@ static bool writeGlobals(const std::string& name)
 }
 
 FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false)
+    : design_(designIn),
+      logger_(loggerIn),
+      db_(dbIn),
+      dist_on_(false),
+      increaseClipsize_(false),
+      clipSizeInc_(0)
 {
 }
 
@@ -142,12 +145,13 @@ int FlexDRWorker::main(frDesign* design)
   ProfileTask profile("DRW:main");
   using namespace std::chrono;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
+  auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
-                    routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.xMax() * 1.0 / getTech()->getDBUPerUU(),
-                    routeBox_.yMax() * 1.0 / getTech()->getDBUPerUU());
+                    routeBox_.xMin() * micronPerDBU,
+                    routeBox_.yMin() * micronPerDBU,
+                    routeBox_.xMax() * micronPerDBU,
+                    routeBox_.yMax() * micronPerDBU);
   }
 
   init(design);
@@ -156,6 +160,7 @@ int FlexDRWorker::main(frDesign* design)
     route_queue();
   }
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  const int num_markers = getNumMarkers();
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
@@ -169,6 +174,20 @@ int FlexDRWorker::main(frDesign* design)
        << time_span1.count() << " " << time_span2.count() << " " << endl;
     cout << ss.str() << flush;
   }
+
+  debugPrint(logger_,
+             DRT,
+             "autotuner",
+             1,
+             "worker ({:.3f} {:.3f}) ({:.3f} {:.3f}) time {} prev_#DRVs {} "
+             "curr_#DRVs {}",
+             routeBox_.xMin() * micronPerDBU,
+             routeBox_.yMin() * micronPerDBU,
+             routeBox_.xMax() * micronPerDBU,
+             routeBox_.yMax() * micronPerDBU,
+             duration_cast<duration<double>>(t3 - t0).count(),
+             getInitNumMarkers(),
+             num_markers);
 
   return 0;
 }
@@ -1646,15 +1665,30 @@ void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
   batchStepY = 2;
 }
 
-void FlexDR::searchRepair(int iter,
-                          int size,
-                          int offset,
-                          int mazeEndIter,
-                          frUInt4 workerDRCCost,
-                          frUInt4 workerMarkerCost,
-                          int ripupMode,
-                          bool followGuide)
+namespace fr {
+
+struct SearchRepairArgs
 {
+  int size;
+  int offset;
+  int mazeEndIter;
+  frUInt4 workerDRCCost;
+  frUInt4 workerMarkerCost;
+  int ripupMode;
+  bool followGuide;
+};
+}  // namespace fr
+
+void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
+{
+  const int size = args.size;
+  const int offset = args.offset;
+  const int mazeEndIter = args.mazeEndIter;
+  const frUInt4 workerDRCCost = args.workerDRCCost;
+  const frUInt4 workerMarkerCost = args.workerMarkerCost;
+  const int ripupMode = args.ripupMode;
+  const bool followGuide = args.followGuide;
+
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
@@ -1664,25 +1698,6 @@ void FlexDR::searchRepair(int iter,
   if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
     return;
   }
-  if (iter < 3)
-    FIXEDSHAPECOST = ROUTESHAPECOST;
-  else if (iter < 10)
-    FIXEDSHAPECOST = 2 * ROUTESHAPECOST;
-  else if (iter < 15)
-    FIXEDSHAPECOST = 3 * ROUTESHAPECOST;
-  else if (iter < 20)
-    FIXEDSHAPECOST = 4 * ROUTESHAPECOST;
-  else if (iter < 30)
-    FIXEDSHAPECOST = 10 * ROUTESHAPECOST;
-  else if (iter < 40)
-    FIXEDSHAPECOST = 50 * ROUTESHAPECOST;
-  else
-    FIXEDSHAPECOST = 100 * ROUTESHAPECOST;
-
-  if (iter == 40)
-    MARKERDECAY = 0.99;
-  if (iter == 50)
-    MARKERDECAY = 0.999;
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
       if (iter != 0)
@@ -1713,10 +1728,9 @@ void FlexDR::searchRepair(int iter,
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  int clipSize = size;
   int cnt = 0;
-  int tot = (((int) xgp.getCount() - 1 - offset) / clipSize + 1)
-            * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
+  int tot = (((int) xgp.getCount() - 1 - offset) / size + 1)
+            * (((int) ygp.getCount() - 1 - offset) / size + 1);
   int prev_perc = 0;
   bool isExceed = false;
 
@@ -1729,14 +1743,14 @@ void FlexDR::searchRepair(int iter,
                                                            * batchStepY);
 
   int xIdx = 0, yIdx = 0;
-  for (int i = offset; i < (int) xgp.getCount(); i += clipSize) {
-    for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
+  for (int i = offset; i < (int) xgp.getCount(); i += size) {
+    for (int j = offset; j < (int) ygp.getCount(); j += size) {
       auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
       Rect routeBox1;
       getDesign()->getTopBlock()->getGCellBox(Point(i, j), routeBox1);
       Rect routeBox2;
-      const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
-      const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
+      const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
+      const int max_j = min((int) ygp.getCount(), j + size - 1);
       getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j), routeBox2);
       Rect routeBox(routeBox1.xMin(),
                     routeBox1.yMin(),
@@ -1783,6 +1797,7 @@ void FlexDR::searchRepair(int iter,
 
   omp_set_num_threads(MAX_THREADS);
 
+  increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
     ProfileTask profile("DR:checkerboard");
@@ -1792,7 +1807,7 @@ void FlexDR::searchRepair(int iter,
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-// multi thread
+        // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
@@ -1813,9 +1828,10 @@ void FlexDR::searchRepair(int iter,
                   }
                   prev_perc += 10;
                   if (isExceed) {
-                    logger_->report("    Completing {}% with {} violations.",
-                                    prev_perc,
-                                    getDesign()->getTopBlock()->getNumMarkers());
+                    logger_->report(
+                        "    Completing {}% with {} violations.",
+                        prev_perc,
+                        getDesign()->getTopBlock()->getNumMarkers());
                     logger_->report("    {}.", t);
                   }
                 }
@@ -1832,6 +1848,8 @@ void FlexDR::searchRepair(int iter,
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
           workersInBatch[i]->end(getDesign());
+          if (workersInBatch[i]->isCongested())
+            increaseClipsize_ = true;
         }
         workersInBatch.clear();
       }
@@ -1867,7 +1885,7 @@ void FlexDR::searchRepair(int iter,
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "drc", 1)) {
+  if (logger_->debugCheck(DRT, "autotuner", 1)) {
     reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt");
   }
 }
@@ -2237,6 +2255,77 @@ void FlexDR::reportDRC(const string& file_name)
   }
 }
 
+std::vector<SearchRepairArgs> strategy()
+{
+  const fr::frUInt4 shapeCost = ROUTESHAPECOST;
+
+  return {/*  0 */ {7, 0, 3, shapeCost, 0 /*MARKERCOST*/, 1, true},
+          /*  1 */ {7, -2, 3, shapeCost, shapeCost /*MARKERCOST*/, 1, true},
+          /*  2 */ {7, -5, 3, shapeCost, shapeCost /*MAARKERCOST*/, 1, true},
+          /*  3 */ {7, 0, 8, shapeCost, MARKERCOST, 0, false},
+          /*  4 */ {7, -1, 8, shapeCost, MARKERCOST, 0, false},
+          /*  5 */ {7, -2, 8, shapeCost, MARKERCOST, 0, false},
+          /*  6 */ {7, -3, 8, shapeCost, MARKERCOST, 0, false},
+          /*  7 */ {7, -4, 8, shapeCost, MARKERCOST, 0, false},
+          /*  8 */ {7, -5, 8, shapeCost, MARKERCOST, 0, false},
+          /*  9 */ {7, -6, 8, shapeCost, MARKERCOST, 0, false},
+          /* 10 */ {7, 0, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 11 */ {7, -1, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 12 */ {7, -2, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 13 */ {7, -3, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 14 */ {7, -4, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 15 */ {7, -5, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 16 */ {7, -6, 8, shapeCost * 2, MARKERCOST, 0, false},
+          /* 17 */ {7, -3, 8, shapeCost, MARKERCOST, 1, false},
+          /* 18 */ {7, 0, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 19 */ {7, -1, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 20 */ {7, -2, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 21 */ {7, -3, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 22 */ {7, -4, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 23 */ {7, -5, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 24 */ {7, -6, 8, shapeCost * 4, MARKERCOST, 0, false},
+          /* 25 */ {5, -2, 8, shapeCost, MARKERCOST, 1, false},
+          /* 26 */ {7, 0, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 27 */ {7, -1, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 28 */ {7, -2, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 29 */ {7, -3, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 30 */ {7, -4, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 31 */ {7, -5, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 32 */ {7, -6, 8, shapeCost * 8, MARKERCOST * 2, 0, false},
+          /* 33 */ {3, -1, 8, shapeCost, MARKERCOST, 1, false},
+          /* 34 */ {7, 0, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 35 */ {7, -1, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 36 */ {7, -2, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 37 */ {7, -3, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 38 */ {7, -4, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 39 */ {7, -5, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 40 */ {7, -6, 8, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 41 */ {3, -2, 8, shapeCost, MARKERCOST, 1, false},
+          /* 42 */ {7, 0, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 43 */ {7, -1, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 44 */ {7, -2, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 45 */ {7, -3, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 46 */ {7, -4, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 47 */ {7, -5, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 48 */ {7, -6, 16, shapeCost * 16, MARKERCOST * 4, 0, false},
+          /* 49 */ {3, -0, 8, shapeCost, MARKERCOST, 1, false},
+          /* 50 */ {7, 0, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 51 */ {7, -1, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 52 */ {7, -2, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 53 */ {7, -3, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 54 */ {7, -4, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 55 */ {7, -5, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 56 */ {7, -6, 32, shapeCost * 32, MARKERCOST * 8, 0, false},
+          /* 57 */ {3, -1, 8, shapeCost, MARKERCOST, 1, false},
+          /* 58 */ {7, 0, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 59 */ {7, -1, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 60 */ {7, -2, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 61 */ {7, -3, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 56 */ {7, -4, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 62 */ {7, -5, 64, shapeCost * 64, MARKERCOST * 16, 0, false},
+          /* 63 */ {7, -6, 64, shapeCost * 64, MARKERCOST * 16, 0, false}};
+}
+
 int FlexDR::main()
 {
   ProfileTask profile("DR:main");
@@ -2246,359 +2335,40 @@ int FlexDR::main()
     logger_->info(DRT, 194, "Start detail routing.");
   }
 
-  int iterNum = 0;
-  searchRepair(
-      iterNum++ /*  0 */, 7, 0, 3, ROUTESHAPECOST, 0 /*MAARKERCOST*/, 1, true);
-  searchRepair(iterNum++ /*  1 */,
-               7,
-               -2,
-               3,
-               ROUTESHAPECOST,
-               ROUTESHAPECOST /*MAARKERCOST*/,
-               1,
-               true);
-  searchRepair(iterNum++ /*  2 */,
-               7,
-               -5,
-               3,
-               ROUTESHAPECOST,
-               ROUTESHAPECOST /*MAARKERCOST*/,
-               1,
-               true);
-  searchRepair(
-      iterNum++ /*  3 */, 7, 0, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  4 */, 7, -1, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  5 */, 7, -2, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  6 */, 7, -3, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  7 */, 7, -4, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  8 */, 7, -5, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /*  9 */, 7, -6, 8, ROUTESHAPECOST, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 10 */, 7, 0, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 11 */, 7, -1, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 12 */, 7, -2, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 13 */, 7, -3, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 14 */, 7, -4, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 15 */, 7, -5, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 16 */, 7, -6, 8, ROUTESHAPECOST * 2, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 17 - ra'*/, 7, -3, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(
-      iterNum++ /* 18 */, 7, 0, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 19 */, 7, -1, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 20 */, 7, -2, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 21 */, 7, -3, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 22 */, 7, -4, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 23 */, 7, -5, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 24 */, 7, -6, 8, ROUTESHAPECOST * 4, MARKERCOST, 0, false);
-  searchRepair(
-      iterNum++ /* 25 - ra'*/, 5, -2, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(iterNum++ /* 26 */,
-               7,
-               0,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 27 */,
-               7,
-               -1,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 28 */,
-               7,
-               -2,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 29 */,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 30 */,
-               7,
-               -4,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 31 */,
-               7,
-               -5,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(iterNum++ /* 32 */,
-               7,
-               -6,
-               8,
-               ROUTESHAPECOST * 8,
-               MARKERCOST * 2,
-               0,
-               false);
-  searchRepair(
-      iterNum++ /* 33 - ra'*/, 3, -1, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(iterNum++ /* 34 */,
-               7,
-               0,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 35 */,
-               7,
-               -1,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 36 */,
-               7,
-               -2,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 37 */,
-               7,
-               -3,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 38 */,
-               7,
-               -4,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 39 */,
-               7,
-               -5,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 40 */,
-               7,
-               -6,
-               8,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(
-      iterNum++ /* 41 - ra'*/, 3, -2, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(iterNum++ /* 42 */,
-               7,
-               0,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 43 */,
-               7,
-               -1,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 44 */,
-               7,
-               -2,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 45 */,
-               7,
-               -3,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 46 */,
-               7,
-               -4,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 47 */,
-               7,
-               -5,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(iterNum++ /* 48 */,
-               7,
-               -6,
-               16,
-               ROUTESHAPECOST * 16,
-               MARKERCOST * 4,
-               0,
-               false);
-  searchRepair(
-      iterNum++ /* 49 - ra'*/, 3, -0, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(iterNum++ /* 50 */,
-               7,
-               0,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 51 */,
-               7,
-               -1,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 52 */,
-               7,
-               -2,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 53 */,
-               7,
-               -3,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 54 */,
-               7,
-               -4,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 55 */,
-               7,
-               -5,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(iterNum++ /* 56 */,
-               7,
-               -6,
-               32,
-               ROUTESHAPECOST * 32,
-               MARKERCOST * 8,
-               0,
-               false);
-  searchRepair(
-      iterNum++ /* 57 - ra'*/, 3, -1, 8, ROUTESHAPECOST, MARKERCOST, 1, false);
-  searchRepair(iterNum++ /* 58 */,
-               7,
-               0,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 59 */,
-               7,
-               -1,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 60 */,
-               7,
-               -2,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 61 */,
-               7,
-               -3,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 56 */,
-               7,
-               -4,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 62 */,
-               7,
-               -5,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
-  searchRepair(iterNum++ /* 63 */,
-               7,
-               -6,
-               64,
-               ROUTESHAPECOST * 64,
-               MARKERCOST * 16,
-               0,
-               false);
+  int iter = 0;
+  for (auto args : strategy()) {
+    if (iter < 3)
+      FIXEDSHAPECOST = ROUTESHAPECOST;
+    else if (iter < 10)
+      FIXEDSHAPECOST = 2 * ROUTESHAPECOST;
+    else if (iter < 15)
+      FIXEDSHAPECOST = 3 * ROUTESHAPECOST;
+    else if (iter < 20)
+      FIXEDSHAPECOST = 4 * ROUTESHAPECOST;
+    else if (iter < 30)
+      FIXEDSHAPECOST = 10 * ROUTESHAPECOST;
+    else if (iter < 40)
+      FIXEDSHAPECOST = 50 * ROUTESHAPECOST;
+    else
+      FIXEDSHAPECOST = 100 * ROUTESHAPECOST;
+
+    if (iter == 40)
+      MARKERDECAY = 0.99;
+    if (iter == 50)
+      MARKERDECAY = 0.999;
+
+    int clipSize = args.size;
+    if (args.ripupMode != 1) {
+      if (increaseClipsize_) {
+        clipSizeInc_ += 2;
+      } else
+        clipSizeInc_ = max((float) 0, clipSizeInc_ - 0.2f);
+      clipSize += min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
+    }
+    args.size = clipSize;
+
+    searchRepair(iter++, args);
+  }
 
   if (DRC_RPT_FILE != string("")) {
     reportDRC(DRC_RPT_FILE);

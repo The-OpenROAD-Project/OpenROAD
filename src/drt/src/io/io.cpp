@@ -988,11 +988,31 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addConstraint(spacingTableConstraint);
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
-    if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
-        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
+    if (rule->isExceptExactWidthValid()) {
       logger->warn(utl::DRT,
-                   265,
-                   "Unsupported LEF58_SPACING rule for layer {}.",
+                   400,
+                   "Unsupported LEF58_SPACING rule with option EXCEPTEXACTWIDTH for layer {}.",
+                   layer->getName());
+      continue;
+    }
+    if (rule->isFillConcaveCornerValid()) {
+      logger->warn(utl::DRT,
+                   401,
+                   "Unsupported LEF58_SPACING rule with option FILLCONCAVECORNER for layer {}.",
+                   layer->getName());
+      continue;
+    }
+    if (rule->isEndPrlSpacingValid()) {
+      logger->warn(utl::DRT,
+                   402,
+                   "Unsupported LEF58_SPACING rule with option ENDPRLSPACING for layer {}.",
+                   layer->getName());
+      continue;
+    }
+    if (rule->isEqualRectWidthValid()) {
+      logger->warn(utl::DRT,
+                   403,
+                   "Unsupported LEF58_SPACING rule with option EQUALRECTWIDTH for layer {}.",
                    layer->getName());
       continue;
     }
