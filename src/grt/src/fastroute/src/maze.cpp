@@ -1277,11 +1277,18 @@ float getCost(const int i,
 {
   float cost;
   if (cost_type == 2) {
-    cost = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1
-           + cost_height / slope * (i - capacity);
+    if (i < capacity - 1)
+      cost
+          = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1;
+    else
+      cost = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1
+             + cost_height / slope * (i - capacity);
   } else {
-    cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1
-           + cost_height / slope * (i - capacity);
+    if (i < capacity)
+      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1;
+    else
+      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1
+             + cost_height / slope * (i - capacity);
   }
   return cost;
 }
@@ -1307,48 +1314,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   h_cost_table_.resize(max_usage_multiplier * h_capacity_);
   v_cost_table_.resize(max_usage_multiplier * v_capacity_);
 
-  if (cost_type == 2) {
-    for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
-      if (i < h_capacity_ - 1)
-        h_cost_table_[i]
-            = cost_height / (exp((float) (h_capacity_ - i - 1) * logis_cof) + 1)
-              + 1;
-      else
-        h_cost_table_[i]
-            = cost_height / (exp((float) (h_capacity_ - i - 1) * logis_cof) + 1)
-              + 1 + cost_height / slope * (i - h_capacity_);
-    }
-    for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
-      if (i < v_capacity_ - 1)
-        v_cost_table_[i]
-            = cost_height / (exp((float) (v_capacity_ - i - 1) * logis_cof) + 1)
-              + 1;
-      else
-        v_cost_table_[i]
-            = cost_height / (exp((float) (v_capacity_ - i - 1) * logis_cof) + 1)
-              + 1 + cost_height / slope * (i - v_capacity_);
-    }
-  } else {
-    for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
-      if (i < h_capacity_)
-        h_cost_table_[i]
-            = cost_height / (exp((float) (h_capacity_ - i) * logis_cof) + 1)
-              + 1;
-      else
-        h_cost_table_[i]
-            = cost_height / (exp((float) (h_capacity_ - i) * logis_cof) + 1) + 1
-              + cost_height / slope * (i - h_capacity_);
-    }
-    for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
-      if (i < v_capacity_)
-        v_cost_table_[i]
-            = cost_height / (exp((float) (v_capacity_ - i) * logis_cof) + 1)
-              + 1;
-      else
-        v_cost_table_[i]
-            = cost_height / (exp((float) (v_capacity_ - i) * logis_cof) + 1) + 1
-              + cost_height / slope * (i - v_capacity_);
-    }
+  for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
+    h_cost_table_[i]
+        = getCost(i, logis_cof, cost_height, slope, h_capacity_, cost_type);
+  }
+  for (int i = 0; i < max_usage_multiplier * v_capacity_; i++){
+    v_cost_table_[i]
+        = getCost(i, logis_cof, cost_height, slope, v_capacity_, cost_type);
   }
 
   for (int i = 0; i < y_grid_; i++) {
