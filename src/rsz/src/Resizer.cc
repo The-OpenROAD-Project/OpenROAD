@@ -1392,7 +1392,11 @@ Resizer::repairNet(SteinerTree *tree,
       }
       if (split_wire) {
         // Distance from pt to repeater backward toward prev_pt.
-        double buf_dist = length - (wire_length - split_length * (1.0 - length_margin));
+        // Note that split_length can be longer than the wire length
+        // because it is the maximum value that satisfies max slew/cap.
+        double buf_dist = (split_length >= wire_length)
+          ? length
+          : length - (wire_length - split_length * (1.0 - length_margin));
         double dx = prev_x - pt_x;
         double dy = prev_y - pt_y;
         double d = (length == 0) ? 0.0 : buf_dist / length;
