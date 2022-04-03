@@ -339,7 +339,7 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
 
 void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
 {
-  std::vector<std::vector<int>> gridD;
+  std::vector<std::vector<long>> gridD;
   int i, k, l, min_x, min_y, routelen, n1a, n2a, last_layer;
   int min_result, endLayer = 0;
   TreeEdge *treeedges, *treeedge;

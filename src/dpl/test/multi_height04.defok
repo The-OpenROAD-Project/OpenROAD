@@ -13,10 +13,10 @@ COMPONENTS 10 ;
     - _279_ no02f01 + PLACED ( 36000 32000 ) N ;
     - _280_ in01f01 + PLACED ( 38400 32000 ) N ;
     - _281_ in01f01X2HE + PLACED ( 35220 28000 ) N ;
-    - _282_ no02f01 + PLACED ( 34400 28000 ) FS ;
+    - _282_ no02f01 + PLACED ( 33200 28000 ) FS ;
     - _283_ in01f01 + PLACED ( 31200 32000 ) N ;
-    - _284_ no02f01 + PLACED ( 32800 28000 ) FS ;
-    - _285_ no02f01 + PLACED ( 31200 28000 ) FS ;
+    - _284_ no02f01 + PLACED ( 31200 28000 ) FS ;
+    - _285_ no02f01 + PLACED ( 34800 28000 ) FS ;
 END COMPONENTS
 PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL

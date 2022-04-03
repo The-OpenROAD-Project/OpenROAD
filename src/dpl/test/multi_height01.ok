@@ -14,11 +14,13 @@
 [INFO ODB-0134] Finished DEF file: multi_height01.def
 Placement Analysis
 ---------------------------------
-total displacement         13.1 u
-average displacement        1.3 u
-max displacement            3.0 u
+total displacement         11.4 u
+average displacement        1.1 u
+max displacement            2.7 u
 original HPWL              81.8 u
-legalized HPWL             94.0 u
-delta HPWL                   15 %
+legalized HPWL             93.4 u
+delta HPWL                   14 %
 
-No differences found.
+Differences found at line 10.
+    - _276_ no02f01 + PLACED ( 31600 32000 ) N ;
+    - _276_ no02f01 + PLACED ( 32000 32000 ) N ;
