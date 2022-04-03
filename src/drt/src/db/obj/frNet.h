@@ -105,7 +105,6 @@ class frNet : public frBlockObject
   {
     return rpins_;
   }
-  std::vector<std::unique_ptr<frGuide>>& getGuides() { return guides_; }
   const std::vector<std::unique_ptr<frGuide>>& getGuides() const
   {
     return guides_;
@@ -182,6 +181,7 @@ class frNet : public frBlockObject
   {
     auto rptr = in.get();
     rptr->addToNet(this);
+    in->setOrderInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
   void clearGuides() { guides_.clear(); }
@@ -225,6 +225,7 @@ class frNet : public frBlockObject
   bool isSpecial() const { return isSpecial_; }
   void setIsSpecial(bool s) { isSpecial_ = s; }
   frPinFig* getPinFig(const int& id) { return all_[id]; }
+
  protected:
   frString name_;
   std::vector<frInstTerm*> instTerms_;

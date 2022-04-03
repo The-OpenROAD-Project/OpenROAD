@@ -46,10 +46,9 @@ void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
-void FlexDRWorker::endRemoveNets_pathSeg(
-    frDesign* design,
-    frPathSeg* pathSeg,
-    set<pair<Point, frLayerNum>>& boundPts)
+void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
+                                         frPathSeg* pathSeg,
+                                         set<pair<Point, frLayerNum>>& boundPts)
 {
   Point begin, end;
   pathSeg->getPoints(begin, end);
@@ -89,8 +88,8 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
-        if(dist_on_) {
-          drUpdate update(drUpdate::ADD);
+        if (dist_on_) {
+          drUpdate update(drUpdate::ADD_SHAPE);
           update.setNet(net);
           update.setPathSeg(*ps);
           design_->addUpdate(update);
@@ -121,8 +120,8 @@ void FlexDRWorker::endRemoveNets_pathSeg(
               .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
-        if(dist_on_) {
-          drUpdate update(drUpdate::ADD);
+        if (dist_on_) {
+          drUpdate update(drUpdate::ADD_SHAPE);
           update.setNet(net);
           update.setPathSeg(*ps);
           design_->addUpdate(update);
@@ -139,7 +138,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           boundPts.insert(make_pair(boundPt, lNum));
         }
       }
-      if(dist_on_) {
+      if (dist_on_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(net);
         update.setOrderInOwner(pathSeg->getOrderInOwner());
@@ -175,8 +174,8 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
-        if(dist_on_) {
-          drUpdate update(drUpdate::ADD);
+        if (dist_on_) {
+          drUpdate update(drUpdate::ADD_SHAPE);
           update.setNet(net);
           update.setPathSeg(*ps);
           design_->addUpdate(update);
@@ -207,8 +206,8 @@ void FlexDRWorker::endRemoveNets_pathSeg(
               .setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
-        if(dist_on_) {
-          drUpdate update(drUpdate::ADD);
+        if (dist_on_) {
+          drUpdate update(drUpdate::ADD_SHAPE);
           update.setNet(net);
           update.setPathSeg(*ps);
           design_->addUpdate(update);
@@ -225,7 +224,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
           boundPts.insert(make_pair(boundPt, lNum));
         }
       }
-      if(dist_on_) {
+      if (dist_on_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(net);
         update.setOrderInOwner(pathSeg->getOrderInOwner());
@@ -252,7 +251,7 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
   }
   if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
       && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
-    if(dist_on_) {
+    if (dist_on_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setOrderInOwner(via->getOrderInOwner());
@@ -277,7 +276,7 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
   }
   if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
       && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
-    if(dist_on_) {
+    if (dist_on_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setOrderInOwner(pwire->getOrderInOwner());
@@ -336,8 +335,8 @@ void FlexDRWorker::endAddNets_pathSeg(frDesign* design, drPathSeg* pathSeg)
   auto rptr = uShape.get();
   net->addShape(std::move(uShape));
   design->getRegionQuery()->addDRObj(rptr);
-  if(dist_on_) {
-    drUpdate update(drUpdate::ADD);
+  if (dist_on_) {
+    drUpdate update(drUpdate::ADD_SHAPE);
     update.setNet(net);
     update.setPathSeg(*pathSeg);
     design_->addUpdate(update);
@@ -351,8 +350,8 @@ void FlexDRWorker::endAddNets_via(frDesign* design, drVia* via)
   auto rptr = uVia.get();
   net->addVia(std::move(uVia));
   design->getRegionQuery()->addDRObj(rptr);
-  if(dist_on_) {
-    drUpdate update(drUpdate::ADD);
+  if (dist_on_) {
+    drUpdate update(drUpdate::ADD_SHAPE);
     update.setNet(net);
     update.setVia(*via);
     design_->addUpdate(update);
@@ -366,8 +365,8 @@ void FlexDRWorker::endAddNets_patchWire(frDesign* design, drPatchWire* pwire)
   auto rptr = uShape.get();
   net->addPatchWire(std::move(uShape));
   design->getRegionQuery()->addDRObj(rptr);
-  if(dist_on_) {
-    drUpdate update(drUpdate::ADD);
+  if (dist_on_) {
+    drUpdate update(drUpdate::ADD_SHAPE);
     update.setNet(net);
     update.setPatchWire(*pwire);
     design_->addUpdate(update);
@@ -470,8 +469,9 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
         style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
       }
       rptr->setStyle(style);
-      if(dist_on_) {
-        drUpdate update1(drUpdate::REMOVE_FROM_NET), update2(drUpdate::REMOVE_FROM_NET);
+      if (dist_on_) {
+        drUpdate update1(drUpdate::REMOVE_FROM_NET),
+            update2(drUpdate::REMOVE_FROM_NET);
         update1.setNet(net);
         update2.setNet(net);
         update1.setOrderInOwner(horzPathSegs[0]->getOrderInOwner());
@@ -483,8 +483,8 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
       regionQuery->removeDRObj(horzPathSegs[1]);
       net->removeShape(horzPathSegs[0]);
       net->removeShape(horzPathSegs[1]);
-      if(dist_on_) {
-        drUpdate update3(drUpdate::ADD);
+      if (dist_on_) {
+        drUpdate update3(drUpdate::ADD_SHAPE);
         update3.setNet(net);
         update3.setPathSeg(*rptr);
         design_->addUpdate(update3);
@@ -512,8 +512,9 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
         style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
       }
       rptr->setStyle(style);
-      if(dist_on_) {
-        drUpdate update1(drUpdate::REMOVE_FROM_NET), update2(drUpdate::REMOVE_FROM_NET);
+      if (dist_on_) {
+        drUpdate update1(drUpdate::REMOVE_FROM_NET),
+            update2(drUpdate::REMOVE_FROM_NET);
         update1.setNet(net);
         update2.setNet(net);
         update1.setOrderInOwner(vertPathSegs[0]->getOrderInOwner());
@@ -525,8 +526,8 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
       regionQuery->removeDRObj(vertPathSegs[1]);
       net->removeShape(vertPathSegs[0]);
       net->removeShape(vertPathSegs[1]);
-      if(dist_on_) {
-        drUpdate update3(drUpdate::ADD);
+      if (dist_on_) {
+        drUpdate update3(drUpdate::ADD_SHAPE);
         update3.setNet(net);
         update3.setPathSeg(*rptr);
         design_->addUpdate(update3);
@@ -570,7 +571,7 @@ void FlexDRWorker::endRemoveMarkers(frDesign* design)
   vector<frMarker*> result;
   regionQuery->queryMarker(getDrcBox(), result);
   for (auto mptr : result) {
-    if(dist_on_) {
+    if (dist_on_) {
       drUpdate update(drUpdate::REMOVE_FROM_BLOCK);
       update.setOrderInOwner(mptr->getIndexInOwner());
       design_->addUpdate(update);
@@ -593,8 +594,8 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
       auto ptr = uptr.get();
       regionQuery->addMarker(ptr);
       topBlock->addMarker(std::move(uptr));
-      if(dist_on_) {
-        drUpdate update(drUpdate::ADD);
+      if (dist_on_) {
+        drUpdate update(drUpdate::ADD_SHAPE);
         update.setMarker(*ptr);
         design_->addUpdate(update);
       }

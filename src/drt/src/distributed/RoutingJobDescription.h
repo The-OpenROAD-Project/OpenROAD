@@ -39,16 +39,27 @@ namespace fr {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription() : reply_serialized_(false), send_every_(10), design_update_(false) {}
+  RoutingJobDescription()
+      : reply_serialized_(false), send_every_(10), design_update_(false)
+  {
+  }
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
-  void setWorkers(const std::vector<std::pair<int, std::string>>& workers) { workers_ = workers; }
+  void setGuidePath(const std::string& path) { guide_path_ = path; }
+  void setWorkers(const std::vector<std::pair<int, std::string>>& workers)
+  {
+    workers_ = workers;
+  }
   void setDesignUpdate(const bool& value) { design_update_ = value; }
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
   const std::string& getDesignPath() const { return design_path_; }
-  const std::vector<std::pair<int, std::string>>& getWorkers() { return workers_; }
+  const std::string& getGuidePath() const { return guide_path_; }
+  const std::vector<std::pair<int, std::string>>& getWorkers()
+  {
+    return workers_;
+  }
   bool isDesignUpdate() const { return design_update_; }
   bool reply_serialized_;
   int send_every_;
@@ -57,9 +68,10 @@ class RoutingJobDescription : public dst::JobDescription
   std::string globals_path_;
   std::string design_path_;
   std::string shared_dir_;
+  std::string guide_path_;
   std::vector<std::pair<int, std::string>> workers_;
   bool design_update_;
-  
+
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -67,6 +79,7 @@ class RoutingJobDescription : public dst::JobDescription
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
+    (ar) & guide_path_;
     (ar) & reply_serialized_;
     (ar) & send_every_;
     (ar) & workers_;

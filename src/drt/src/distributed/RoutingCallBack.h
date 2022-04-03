@@ -27,14 +27,15 @@
  */
 
 #pragma once
-#include <stdio.h>
 #include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/bind/bind.hpp>
-#include <mutex>
 #include <iostream>
-#include <stdlib.h>
+#include <mutex>
 
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
@@ -42,6 +43,7 @@
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
+#include "global.h"
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
@@ -67,7 +69,7 @@ class RoutingCallBack : public dst::JobCallBack
       return;
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if(init_) {
+    if (init_) {
       init_ = false;
       omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
     }
@@ -77,22 +79,27 @@ class RoutingCallBack : public dst::JobCallBack
     asio::thread_pool reply_pool(1);
     int prev_perc = 0;
     int cnt = 0;
-    #pragma omp parallel for schedule(dynamic)
-    for(int i = 0; i < workers.size(); i++)
-    {
-      std::pair<int, std::string> result = { workers.at(i).first, router_->runDRWorker(workers.at(i).second) };
-      #pragma omp critical
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < workers.size(); i++) {
+      std::pair<int, std::string> result
+          = {workers.at(i).first, router_->runDRWorker(workers.at(i).second)};
+#pragma omp critical
       {
-        if(desc->reply_serialized_)
+        if (desc->reply_serialized_)
           results.push_back(result);
         else
           results.push_back({result.first, ""});
         ++cnt;
         if (cnt * 1.0 / size >= prev_perc / 100.0 + 0.1 && prev_perc < 90) {
           prev_perc += 10;
-          if(prev_perc % desc->send_every_ == 0) 
-          {
-            asio::post(reply_pool, boost::bind(&RoutingCallBack::sendResult, this, results, boost::ref(sock), false, cnt));
+          if (prev_perc % desc->send_every_ == 0) {
+            asio::post(reply_pool,
+                       boost::bind(&RoutingCallBack::sendResult,
+                                   this,
+                                   results,
+                                   boost::ref(sock),
+                                   false,
+                                   cnt));
             results.clear();
           }
         }
@@ -101,10 +108,13 @@ class RoutingCallBack : public dst::JobCallBack
     reply_pool.join();
     sendResult(results, sock, true, cnt);
   }
-  void sendResult(std::vector<std::pair<int, std::string>> results ,dst::socket& sock, bool finish, int cnt)
+  void sendResult(std::vector<std::pair<int, std::string>> results,
+                  dst::socket& sock,
+                  bool finish,
+                  int cnt)
   {
     dst::JobMessage result;
-    if(finish)
+    if (finish)
       result.setJobType(dst::JobMessage::SUCCESS);
     else
       result.setJobType(dst::JobMessage::NONE);
@@ -113,7 +123,7 @@ class RoutingCallBack : public dst::JobCallBack
     resultDesc->setWorkers(results);
     result.setJobDescription(std::move(uResultDesc));
     dist_->sendResult(result, sock);
-    if(finish)
+    if (finish)
       sock.close();
   }
   void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
@@ -123,23 +133,26 @@ class RoutingCallBack : public dst::JobCallBack
     dst::JobMessage result(dst::JobMessage::UPDATE_DESIGN);
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getDesignPath() != "") {
-      if (design_path_ != desc->getDesignPath()) {
-        frTime t;
-        logger_->report("Design: {}", desc->getDesignPath());
-        if(desc->isDesignUpdate())
-          router_->updateDesign(desc->getDesignPath().c_str());
-        else
-          router_->resetDesign(desc->getDesignPath().c_str());
-        design_path_ = desc->getDesignPath();
-        t.print(logger_);
-      }
-    }
     if (desc->getGlobalsPath() != "") {
       if (globals_path_ != desc->getGlobalsPath()) {
         globals_path_ = desc->getGlobalsPath();
         router_->setSharedVolume(desc->getSharedDir());
         router_->updateGlobals(desc->getGlobalsPath().c_str());
+      }
+    }
+    if (desc->getGuidePath() != "") {
+      GUIDE_FILE = desc->getGuidePath();
+    }
+    if (desc->getDesignPath() != "") {
+      if (design_path_ != desc->getDesignPath()) {
+        frTime t;
+        logger_->report("Design: {}", desc->getDesignPath());
+        if (desc->isDesignUpdate())
+          router_->updateDesign(desc->getDesignPath().c_str());
+        else
+          router_->resetDb(desc->getDesignPath().c_str());
+        design_path_ = desc->getDesignPath();
+        t.print(logger_);
       }
     }
     dist_->sendResult(result, sock);

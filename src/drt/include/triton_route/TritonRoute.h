@@ -31,11 +31,13 @@
 
 #include <tcl.h>
 
+#include <boost/asio/thread_pool.hpp>
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <vector>
-#include <queue>
-#include <mutex>
+
 namespace fr {
 class frDesign;
 class DesignCallBack;
@@ -125,11 +127,15 @@ class TritonRoute
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr);
   void updateGlobals(const char* file_name);
+  void resetDb(const char* file_name);
   void resetDesign(const char* file_name);
   void updateDesign(const char* file_name);
-  void addWorkerResults(const std::vector<std::pair<int, std::string>>& results);
+  void addWorkerResults(
+      const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
+  void sendDesignDist();
+  bool writeGlobals(const std::string& name);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -149,6 +155,7 @@ class TritonRoute
   std::mutex results_mutex_;
   int results_sz_;
   unsigned int cloud_sz_;
+  std::unique_ptr<boost::asio::thread_pool> dist_pool_;
 
   void initDesign();
   void initGuide();

@@ -27,22 +27,27 @@
  */
 
 #pragma once
+#include <boost/serialization/variant.hpp>
+
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
-#include "db/obj/frMarker.h"
-#include <boost/serialization/variant.hpp>
 namespace fr {
 class frNet;
 class drUpdate
 {
-  public:
+ public:
   enum UpdateType
   {
-    ADD,
+    ADD_SHAPE,
+    ADD_GUIDE,
     REMOVE_FROM_NET,
     REMOVE_FROM_BLOCK
   };
-  drUpdate(UpdateType type = ADD) : net_(nullptr), order_in_owner_(0), type_(type) {}
+  drUpdate(UpdateType type = ADD_SHAPE)
+      : net_(nullptr), order_in_owner_(0), type_(type)
+  {
+  }
   void setNet(frNet* net) { net_ = net; }
   void setPathSeg(const frPathSeg& seg) { obj_ = seg; }
   void setPatchWire(const frPatchWire& pwire) { obj_ = pwire; }
@@ -50,11 +55,15 @@ class drUpdate
   void setMarker(const frMarker& marker) { obj_ = marker; }
   void setOrderInOwner(int value) { order_in_owner_ = value; }
   void setUpdateType(UpdateType value) { type_ = value; }
-  boost::variant<frPathSeg, frPatchWire, frVia, frMarker>& getObj() { return obj_; }
+  boost::variant<frPathSeg, frPatchWire, frVia, frMarker>& getObj()
+  {
+    return obj_;
+  }
   UpdateType getType() const { return type_; }
   int getOrderInOwner() const { return order_in_owner_; }
   frNet* getNet() const { return net_; }
-  private:
+
+ private:
   frNet* net_;
   int order_in_owner_;
   UpdateType type_;
@@ -65,4 +74,4 @@ class drUpdate
 
   friend class boost::serialization::access;
 };
-}
+}  // namespace fr

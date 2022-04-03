@@ -28,12 +28,15 @@
 
 #include "triton_route/TritonRoute.h"
 
+#include <boost/asio/post.hpp>
+#include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
 
 #include "DesignCallBack.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/RoutingCallBack.h"
+#include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
@@ -51,7 +54,6 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-#include "distributed/drUpdate.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -189,18 +191,29 @@ void TritonRoute::updateGlobals(const char* file_name)
   serialize_globals(ar);
   file.close();
 }
+
+void TritonRoute::resetDb(const char* file_name)
+{
+  design_ = std::make_unique<frDesign>(logger_);
+  ord::OpenRoad::openRoad()->readDb(file_name);
+  initDesign();
+  initGuide();
+  prep();
+}
+
 void TritonRoute::resetDesign(const char* file_name)
 {
   std::ifstream file(file_name);
   if (!file.good())
     return;
-  design_ = std::make_unique<frDesign>();
+  design_ = std::make_unique<frDesign>(logger_);
   frIArchive ar(file);
   ar.setDeepSerialize(true);
   register_types(ar);
   ar >> *(design_.get());
   file.close();
 }
+
 void TritonRoute::updateDesign(const char* file_name)
 {
   std::ifstream file(file_name);
@@ -214,100 +227,111 @@ void TritonRoute::updateDesign(const char* file_name)
   ar >> updates;
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
-  for(auto& update : updates)
-  {
-    switch (update.getType())
-    {
-    case drUpdate::REMOVE_FROM_BLOCK:
-    {
-      auto id = update.getOrderInOwner();
-      auto marker = design_->getTopBlock()->getMarker(id);
-      regionQuery->removeMarker(marker);
-      topBlock->removeMarker(marker);
-      break;
-    }
-    case drUpdate::REMOVE_FROM_NET:
-    {
-      auto net = update.getNet();
-      auto id = update.getOrderInOwner();
-      auto pinfig = net->getPinFig(id);
-      switch (pinfig->typeId())
-      {
-      case frcPathSeg:
-      {
-        auto seg = static_cast<frPathSeg*>(pinfig);
-        regionQuery->removeDRObj(seg);
-        net->removeShape(seg);
+  bool hasTAUpdates = false;
+  for (auto& update : updates) {
+    switch (update.getType()) {
+      case drUpdate::REMOVE_FROM_BLOCK: {
+        auto id = update.getOrderInOwner();
+        auto marker = design_->getTopBlock()->getMarker(id);
+        regionQuery->removeMarker(marker);
+        topBlock->removeMarker(marker);
         break;
       }
-      case frcPatchWire:
-      {
-        auto pwire = static_cast<frPatchWire*>(pinfig);
-        regionQuery->removeDRObj(pwire);
-        net->removePatchWire(pwire);
-        break;
-      }
-      case frcVia:
-      {
-        auto via = static_cast<frVia*>(pinfig);
-        regionQuery->removeDRObj(via);
-        net->removeVia(via);
-        break;
-      }
-      default:
-        logger_->error(DRT, 9999, "unknown update type {}", pinfig->typeId());
-        break;
-      }
-      break;
-    }
-    case drUpdate::ADD:
-    {
-      auto obj = update.getObj();
-      switch (obj.which())
-      {
-      case 0:
-      {
+      case drUpdate::REMOVE_FROM_NET: {
         auto net = update.getNet();
+        auto id = update.getOrderInOwner();
+        auto pinfig = net->getPinFig(id);
+        switch (pinfig->typeId()) {
+          case frcPathSeg: {
+            auto seg = static_cast<frPathSeg*>(pinfig);
+            regionQuery->removeDRObj(seg);
+            net->removeShape(seg);
+            break;
+          }
+          case frcPatchWire: {
+            auto pwire = static_cast<frPatchWire*>(pinfig);
+            regionQuery->removeDRObj(pwire);
+            net->removePatchWire(pwire);
+            break;
+          }
+          case frcVia: {
+            auto via = static_cast<frVia*>(pinfig);
+            regionQuery->removeDRObj(via);
+            net->removeVia(via);
+            break;
+          }
+          default:
+            logger_->error(
+                DRT, 9999, "unknown update type {}", pinfig->typeId());
+            break;
+        }
+        break;
+      }
+      case drUpdate::ADD_SHAPE: {
+        auto obj = update.getObj();
+        switch (obj.which()) {
+          case 0: {
+            auto net = update.getNet();
+            frPathSeg seg = boost::get<frPathSeg>(obj);
+            std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
+            auto sptr = uShape.get();
+            net->addShape(std::move(uShape));
+            regionQuery->addDRObj(sptr);
+            break;
+          }
+          case 1: {
+            auto net = update.getNet();
+            frPatchWire pwire = boost::get<frPatchWire>(obj);
+            std::unique_ptr<frShape> uShape
+                = std::make_unique<frPatchWire>(pwire);
+            auto sptr = uShape.get();
+            net->addPatchWire(std::move(uShape));
+            regionQuery->addDRObj(sptr);
+            break;
+          }
+          case 2: {
+            auto net = update.getNet();
+            frVia via = boost::get<frVia>(obj);
+            auto uVia = std::make_unique<frVia>(via);
+            auto sptr = uVia.get();
+            net->addVia(std::move(uVia));
+            regionQuery->addDRObj(sptr);
+            break;
+          }
+          default: {
+            frMarker marker = boost::get<frMarker>(obj);
+            auto uMarker = std::make_unique<frMarker>(marker);
+            auto sptr = uMarker.get();
+            topBlock->addMarker(std::move(uMarker));
+            regionQuery->addMarker(sptr);
+            break;
+          }
+        }
+        break;
+      }
+      case drUpdate::ADD_GUIDE: {
+        hasTAUpdates = true;
+        auto obj = update.getObj();
         frPathSeg seg = boost::get<frPathSeg>(obj);
-        std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
-        auto sptr = uShape.get();
-        net->addShape(std::move(uShape));
-        regionQuery->addDRObj(sptr);
-        break;
-      }
-      case 1:
-      {
+        std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
         auto net = update.getNet();
-        frPatchWire pwire = boost::get<frPatchWire>(obj);
-        std::unique_ptr<frShape> uShape = std::make_unique<frPatchWire>(pwire);
-        auto sptr = uShape.get();
-        net->addPatchWire(std::move(uShape));
-        regionQuery->addDRObj(sptr);
-        break;
+        uSeg->addToNet(net);
+        vector<unique_ptr<frConnFig>> tmp;
+        tmp.push_back(std::move(uSeg));
+        auto idx = update.getOrderInOwner();
+        if (idx < 0 || idx >= net->getGuides().size())
+          logger_->error(DRT,
+                         9199,
+                         "Guide {} out of range {}",
+                         idx,
+                         net->getGuides().size());
+        const auto& guide = net->getGuides().at(idx);
+        guide->setRoutes(tmp);
       }
-      case 2:
-      {
-        auto net = update.getNet();
-        frVia via = boost::get<frVia>(obj);
-        auto uVia = std::make_unique<frVia>(via);
-        auto sptr = uVia.get();
-        net->addVia(std::move(uVia));
-        regionQuery->addDRObj(sptr);
-        break;
-      }
-      default:
-      {
-        frMarker marker = boost::get<frMarker>(obj);
-        auto uMarker = std::make_unique<frMarker>(marker);
-        auto sptr = uMarker.get();
-        topBlock->addMarker(std::move(uMarker));
-        regionQuery->addMarker(sptr);
-        break;
-      }
-      }
-      break;
     }
-    }
+  }
+  if (hasTAUpdates) {
+    design_->getRegionQuery()->initDRObj();
   }
 }
 
@@ -420,6 +444,10 @@ void TritonRoute::ta()
 
 void TritonRoute::dr()
 {
+  if (dist_pool_ != nullptr) {
+    dist_pool_->join();
+    dist_pool_.reset();
+  }
   num_drvs_ = -1;
   FlexDR dr(this, getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
@@ -439,14 +467,70 @@ void TritonRoute::reportConstraints()
   getDesign()->getTech()->printAllConstraints(logger_);
 }
 
+bool TritonRoute::writeGlobals(const std::string& name)
+{
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  frOArchive ar(file);
+  register_types(ar);
+  serialize_globals(ar);
+  file.close();
+  return true;
+}
+
+void TritonRoute::sendDesignDist()
+{
+  std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
+  std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
+  std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
+  ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
+  std::ifstream src(GUIDE_FILE, std::ios::binary);
+  std::ofstream dst(guide_path.c_str(), std::ios::binary);
+  dst << src.rdbuf();
+  dst.close();
+  writeGlobals(globals_path.c_str());
+  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                      dst::JobMessage::BROADCAST),
+      result(dst::JobMessage::NONE);
+  std::unique_ptr<dst::JobDescription> desc
+      = std::make_unique<RoutingJobDescription>();
+  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+  rjd->setDesignPath(design_path);
+  rjd->setSharedDir(shared_volume_);
+  rjd->setGuidePath(guide_path);
+  rjd->setGlobalsPath(globals_path);
+  rjd->setDesignUpdate(false);
+  msg.setJobDescription(std::move(desc));
+  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+  if (!ok)
+    logger_->error(DRT, 12304, "Updating design remotely failed");
+}
+
 int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  if (distributed_ && NO_PA) {
+    if (dist_pool_ == nullptr) {
+      dist_pool_ = std::make_unique<asio::thread_pool>(1);
+    }
+    asio::post(*dist_pool_.get(),
+               boost::bind(&TritonRoute::sendDesignDist, this));
+  }
   initDesign();
   if (!NO_PA) {
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
+  }
+  if (distributed_ && !NO_PA) {
+    io::Writer writer(getDesign(), logger_);
+    writer.updateDb(db_, true);
+    if (dist_pool_ == nullptr) {
+      dist_pool_ = std::make_unique<asio::thread_pool>(1);
+    }
+    asio::post(*dist_pool_.get(),
+               boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initGuide();
   if (GUIDE_FILE == string("")) {
@@ -616,17 +700,20 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
 }
 
-void TritonRoute::addWorkerResults(const std::vector<std::pair<int, std::string>>& results)
+void TritonRoute::addWorkerResults(
+    const std::vector<std::pair<int, std::string>>& results)
 {
   std::unique_lock<std::mutex> lock(results_mutex_);
-  workers_results_.insert(workers_results_.end(), results.begin(), results.end());
+  workers_results_.insert(
+      workers_results_.end(), results.begin(), results.end());
   results_sz_ = workers_results_.size();
 }
 
-bool TritonRoute::getWorkerResults(std::vector<std::pair<int, std::string>>& results)
+bool TritonRoute::getWorkerResults(
+    std::vector<std::pair<int, std::string>>& results)
 {
   std::unique_lock<std::mutex> lock(results_mutex_);
-  if(workers_results_.empty())
+  if (workers_results_.empty())
     return false;
   results = workers_results_;
   workers_results_.clear();

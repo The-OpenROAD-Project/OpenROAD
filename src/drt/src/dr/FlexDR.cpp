@@ -145,18 +145,6 @@ static bool serializeDesignUpdates(frDesign* design,
   return true;
 }
 
-static bool writeGlobals(const std::string& name)
-{
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  frOArchive ar(file);
-  register_types(ar);
-  serialize_globals(ar);
-  file.close();
-  return true;
-}
-
 FlexDR::FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
     : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false),
       increaseClipsize_(false), clipSizeInc_(0)
@@ -1629,7 +1617,7 @@ void FlexDR::searchRepair(int iter,
       if (iter != 0)
         std::remove(globals_path_.c_str());
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      writeGlobals(globals_path_);
+      router_->writeGlobals(globals_path_.c_str());
     }
   }
   frTime t;
@@ -1730,7 +1718,6 @@ void FlexDR::searchRepair(int iter,
 
   omp_set_num_threads(MAX_THREADS);
   int design_version = 0;
-  bool design_updated = true;
 
   increaseClipsize_ = false;
   // parallel execution
@@ -1742,19 +1729,13 @@ void FlexDR::searchRepair(int iter,
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        if (dist_on_ && design_updated) {
+        if (dist_on_ && !design_->getUpdates().empty()) {
           if (iter != 0 || design_version != 0)
             std::remove(design_path_.c_str());
           design_path_ = fmt::format(
               "{}iter{}_{}.design", dist_dir_, iter, design_version);
-          std::unique_ptr<ProfileTask> task;
-          if(design_version == 0) {
-            serialize_design(SerializationType::WRITE, design_, design_path_);
-            task = std::make_unique<ProfileTask>("DIST: SENDING DESIGN");
-          } else {
-            serializeDesignUpdates(design_, design_path_);
-            task = std::make_unique<ProfileTask>("DIST: SENDING UPDATES");
-          }
+          ProfileTask task("DIST: SENDING UPDATES");
+          serializeDesignUpdates(design_, design_path_);
           dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                               dst::JobMessage::BROADCAST),
               result(dst::JobMessage::NONE);
@@ -1765,22 +1746,18 @@ void FlexDR::searchRepair(int iter,
           rjd->setDesignPath(design_path_);
           rjd->setGlobalsPath(globals_path_);
           rjd->setSharedDir(dist_dir_);
-          if(design_version == 0)
-            rjd->setDesignUpdate(false);
-          else
-            rjd->setDesignUpdate(true);
+          rjd->setDesignUpdate(true);
           msg.setJobDescription(std::move(desc));
           bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
           if (!ok)
             logger_->error(DRT, 304, "Updating design remotely failed");
           design_->clearUpdates();
         }
-        if (design_version == 0) {
-          ProfileTask task("DIST: dummyUpdate");
-          design_->getRegionQuery()->dummyUpdate();
-        }
+        // if (design_version == 0) {
+          // ProfileTask task("DIST: dummyUpdate");
+          // design_->getRegionQuery()->dummyUpdate();
+        // }
         ++design_version;
-        design_updated = false;
         {
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
@@ -1854,7 +1831,7 @@ void FlexDR::searchRepair(int iter,
         ProfileTask profile("DR:end_batch");
         // single thread
         for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          design_updated |= workersInBatch[i]->end(getDesign());
+          workersInBatch[i]->end(getDesign());
           if (workersInBatch[i]->isCongested())
             increaseClipsize_ = true;
         }
