@@ -133,7 +133,7 @@ void BrowserWidget::updateModel()
   auto* root = model_->invisibleRootItem();
   populateModule(block_->getTopModule(), root);
 
-  QStandardItem* orphans = new QStandardItem("Orphans");
+  QStandardItem* orphans = new QStandardItem("Physical only");
   orphans->setEditable(false);
   orphans->setSelectable(false);
   double area = 0;
