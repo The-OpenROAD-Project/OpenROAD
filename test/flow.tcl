@@ -242,9 +242,9 @@ utl::metric "worst_slack_min" [sta::worst_slack -min]
 utl::metric "worst_slack_max" [sta::worst_slack -max]
 utl::metric "tns_max" [sta::total_negative_slack -max]
 utl::metric "clock_skew" [sta::worst_clock_skew -setup]
-utl::metric "max_slew_violations" [sta::max_slew_violation_count]
-utl::metric "max_fanout_violations" [sta::max_fanout_violation_count]
-utl::metric "max_capacitance_violations" [sta::max_capacitance_violation_count]
+utl::metric "max_slew_slack" [sta::max_slew_check_slack]
+utl::metric "max_fanout_slack" [sta::max_fanout_check_slack]
+utl::metric "max_capacitance_slack" [sta::max_capacitance_check_slack]
 # report clock period as a metric for updating limits
 utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
 
