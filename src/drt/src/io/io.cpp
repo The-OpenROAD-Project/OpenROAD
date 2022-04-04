@@ -2960,8 +2960,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
    if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
     if (db_term->getSigType() == odb::dbSigType::POWER
-        || db_term->getSigType() == odb::dbSigType::GROUND
-        || db_term->getSigType() == odb::dbSigType::TIEOFF)
+        || db_term->getSigType() == odb::dbSigType::GROUND)
       continue;
     auto db_pins = db_term->getBPins();
     auto& pins = term->getPins();
