@@ -362,11 +362,9 @@ void FastRouteCore::initEdges()
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
   // 2D edge initialization
-  int TC = 0;
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       h_edges_[i][j].cap = h_capacity_;
-      TC += h_capacity_;
       h_edges_[i][j].usage = 0;
       h_edges_[i][j].est_usage = 0;
       h_edges_[i][j].red = 0;
@@ -376,7 +374,6 @@ void FastRouteCore::initEdges()
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
       v_edges_[i][j].cap = v_capacity_;
-      TC += v_capacity_;
       v_edges_[i][j].usage = 0;
       v_edges_[i][j].est_usage = 0;
       v_edges_[i][j].red = 0;
@@ -1184,7 +1181,7 @@ NetRouteMap FastRouteCore::run()
           GRT,
           230,
           "Congestion iterations cannot increase overflow, reached the "
-          "maximum number of times the total overflow can bee increased.");
+          "maximum number of times the total overflow can be increased.");
   }
 
   freeRR();
