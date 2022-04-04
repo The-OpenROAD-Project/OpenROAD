@@ -211,8 +211,10 @@ void dbModule::addInst(dbInst* inst)
         getName());
   }
 
-  dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
-  ((_dbModule*) mod)->removeInst(inst);
+  if (_inst->_module != 0) {
+    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
+    ((_dbModule*) mod)->removeInst(inst);
+  }
 
   _inst->_module = module->getOID();
   _inst->_module_next = module->_insts;
@@ -221,20 +223,19 @@ void dbModule::addInst(dbInst* inst)
 
 void _dbModule::removeInst(dbInst* inst)
 {
-  _dbModule* module = this;
   _dbInst* _inst = (_dbInst*) inst;
-  if (_inst->_module != module->getOID())
+  if (_inst->_module != getOID())
     return;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
+  _dbBlock* block = (_dbBlock*) getOwner();
   uint id = _inst->getOID();
 
   _dbInst* prev = NULL;
-  uint cur = module->_insts;
+  uint cur = _insts;
   while (cur) {
     _dbInst* c = block->_inst_tbl->getPtr(cur);
     if (cur == id) {
       if (prev == NULL)
-        module->_insts = _inst->_module_next;
+        _insts = _inst->_module_next;
       else
         prev->_module_next = _inst->_module_next;
       break;
@@ -282,18 +283,23 @@ void dbModule::destroy(dbModule* module)
         utl::ODB, 298, "The top module can't be destroyed.");
   }
 
+  if (_module->_mod_inst != 0) {
+    // Destroying the modInst will destroy this module too.
+    dbModInst::destroy(module->getModInst());
+    return;
+  }
+
   dbSet<dbModInst> modinsts = module->getChildren();
   dbSet<dbModInst>::iterator itr;
   for (itr = modinsts.begin(); itr != modinsts.end();) {
     itr = dbModInst::destroy(itr);
   }
 
-  dbModule* parent = module->getModInst()->getParent();
-  for (auto inst : module->getInsts()) {
-    parent->addInst(inst);
+  dbSet<dbInst> insts = module->getInsts();
+  dbSet<dbInst>::iterator inst_itr;
+  for (inst_itr = insts.begin(); inst_itr != insts.end();) {
+    inst_itr = dbInst::destroy(inst_itr);
   }
-
-  dbModInst::destroy(module->getModInst());
 
   dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
