@@ -111,8 +111,7 @@ class PdnGen
   void report();
 
   // Domains
-  std::vector<VoltageDomain*> getDomains();
-  std::vector<VoltageDomain*> getConstDomains() const;
+  std::vector<VoltageDomain*> getDomains() const;
   VoltageDomain* findDomain(const std::string& name);
   void setCoreDomain(odb::dbNet* power,
                      odb::dbNet* ground,
@@ -182,7 +181,7 @@ class PdnGen
   void writeToDb(bool add_pins) const;
   void ripUp(odb::dbNet* net);
 
-  void toggleDebugRenderer(bool on);
+  void setDebugRenderer(bool on);
   void setAllowRepairChannels(bool allow);
   void filterVias(const std::string& filter);
 
@@ -214,7 +213,8 @@ class PdnGen
   std::vector<Grid*> getGrids() const;
   Grid* instanceGrid(odb::dbInst* inst) const;
 
-  VoltageDomain* getCoreDomain();
+  VoltageDomain* getCoreDomain() const;
+  void ensureCoreDomain();
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

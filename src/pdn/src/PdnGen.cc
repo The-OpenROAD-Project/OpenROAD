@@ -291,7 +291,7 @@ void PdnGen::buildGrids(bool trim)
 
   // get special shapes
   std::set<odb::dbNet*> nets;
-  for (auto* domain : getConstDomains()) {
+  for (auto* domain : getDomains()) {
     for (auto* net : domain->getNets()) {
       nets.insert(net);
     }
@@ -326,6 +326,10 @@ void PdnGen::buildGrids(bool trim)
     trimShapes();
 
     cleanupVias();
+  }
+
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->update();
   }
 }
 
@@ -410,27 +414,19 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - end");
 }
 
-VoltageDomain* PdnGen::getCoreDomain()
+VoltageDomain* PdnGen::getCoreDomain() const
+{
+  return core_domain_.get();
+}
+
+void PdnGen::ensureCoreDomain()
 {
   if (core_domain_ == nullptr) {
     setCoreDomain(nullptr, nullptr, {});
   }
-
-  return core_domain_.get();
 }
 
-std::vector<VoltageDomain*> PdnGen::getDomains()
-{
-  std::vector<VoltageDomain*> domains;
-  domains.push_back(getCoreDomain());
-
-  for (const auto& domain : domains_) {
-    domains.push_back(domain.get());
-  }
-  return domains;
-}
-
-std::vector<VoltageDomain*> PdnGen::getConstDomains() const
+std::vector<VoltageDomain*> PdnGen::getDomains() const
 {
   std::vector<VoltageDomain*> domains;
   if (core_domain_ != nullptr) {
@@ -445,6 +441,7 @@ std::vector<VoltageDomain*> PdnGen::getConstDomains() const
 
 VoltageDomain* PdnGen::findDomain(const std::string& name)
 {
+  ensureCoreDomain();
   auto domains = getDomains();
   if (name.empty()) {
     if (domains.empty()) {
@@ -612,6 +609,7 @@ void PdnGen::makeExistingGrid(const std::string& name)
 {
   auto grid = std::make_unique<ExistingGrid>(this, db_->getChip()->getBlock(), logger_, name);
 
+  ensureCoreDomain();
   getCoreDomain()->addGrid(std::move(grid));
 }
 
@@ -720,7 +718,7 @@ void PdnGen::makeConnect(Grid* grid,
   rendererRedraw();
 }
 
-void PdnGen::toggleDebugRenderer(bool on)
+void PdnGen::setDebugRenderer(bool on)
 {
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
@@ -740,8 +738,6 @@ void PdnGen::rendererRedraw()
     } catch (const std::runtime_error& /* e */) {
       // do nothing, dont want grid error to prevent debug renderer
     }
-
-    debug_renderer_->update();
   }
 }
 
@@ -749,7 +745,7 @@ void PdnGen::writeToDb(bool add_pins) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
 
-  auto domains = getConstDomains();
+  auto domains = getDomains();
   for (auto* domain : domains) {
     for (auto* net : domain->getNets()) {
       net_map[net] = nullptr;
@@ -787,6 +783,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 {
   if (net == nullptr) {
     std::set<odb::dbNet*> nets;
+    ensureCoreDomain();
     for (auto* domain : getDomains()) {
       for (auto* net : domain->getNets()) {
         nets.insert(net);
@@ -840,6 +837,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 
 void PdnGen::report()
 {
+  ensureCoreDomain();
   for (auto* domain : getDomains()) {
     domain->report();
   }

@@ -320,7 +320,7 @@ void make_connect(const std::string& grid_name,
 void debug_renderer(bool on)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->toggleDebugRenderer(on);
+  pdngen->setDebugRenderer(on);
 }
 
 void write_to_db(bool add_pins)
