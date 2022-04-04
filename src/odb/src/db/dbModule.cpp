@@ -31,13 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbModule.h"
-
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
@@ -47,6 +46,7 @@
 #include "dbModInst.h"
 #include "dbModuleInstItr.h"
 #include "dbModuleModInstItr.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 
@@ -202,19 +202,26 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (_inst->_module != 0) {
-    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
-    mod->removeInst(inst);
+  if (_inst->_flags._physical_only) {
+    _inst->getLogger()->error(
+        utl::ODB,
+        297,
+        "Physical only instance {} can't be added to module {}",
+        inst->getName(),
+        getName());
   }
+
+  dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
+  ((_dbModule*) mod)->removeInst(inst);
 
   _inst->_module = module->getOID();
   _inst->_module_next = module->_insts;
   module->_insts = _inst->getOID();
 }
 
-void dbModule::removeInst(dbInst* inst)
+void _dbModule::removeInst(dbInst* inst)
 {
-  _dbModule* module = (_dbModule*) this;
+  _dbModule* module = this;
   _dbInst* _inst = (_dbInst*) inst;
   if (_inst->_module != module->getOID())
     return;
@@ -270,19 +277,23 @@ void dbModule::destroy(dbModule* module)
   _dbModule* _module = (_dbModule*) module;
   _dbBlock* block = (_dbBlock*) _module->getOwner();
 
+  if (block->_top_module == module->getId()) {
+    _module->getLogger()->error(
+        utl::ODB, 298, "The top module can't be destroyed.");
+  }
+
   dbSet<dbModInst> modinsts = module->getChildren();
   dbSet<dbModInst>::iterator itr;
   for (itr = modinsts.begin(); itr != modinsts.end();) {
     itr = dbModInst::destroy(itr);
   }
-  if (_module->_mod_inst != 0)
-    dbModInst::destroy(module->getModInst());
 
+  dbModule* parent = module->getModInst()->getParent();
   for (auto inst : module->getInsts()) {
-    _dbInst* _inst = (_dbInst*) inst;
-    _inst->_module = 0;
-    _inst->_module_next = 0;
+    parent->addInst(inst);
   }
+
+  dbModInst::destroy(module->getModInst());
 
   dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
