@@ -1747,7 +1747,6 @@ class dbBTerm : public dbObject
   ///
   void setSupplyPin(dbBTerm* pin);
 
-  std::vector<dbAccessPoint*> getAccessPoints() const;
   ///
   /// Create a new block-terminal.
   /// Returns NULL if a bterm with this name already exists
@@ -1837,6 +1836,8 @@ class dbBPin : public dbObject
   /// Return the min spacing rule.
   ///
   int getMinSpacing();
+
+  std::vector<dbAccessPoint*> getAccessPoints() const;
 
   ///
   /// Create a new block-terminal-pin
@@ -8930,7 +8931,7 @@ class dbAccessPoint : public dbObject
 
   dbMPin* getMPin() const;
 
-  dbBTerm* getBTerm() const;
+  dbBPin* getBPin() const;
 
   std::vector<std::vector<dbObject*>> getVias() const;
 
@@ -8942,7 +8943,7 @@ class dbAccessPoint : public dbObject
                                dbMPin* pin,
                                uint pin_access_idx);
 
-  static dbAccessPoint* create(dbBTerm*);
+  static dbAccessPoint* create(dbBPin*);
 
   static dbAccessPoint* getAccessPoint(dbBlock* block, uint dbid);
 

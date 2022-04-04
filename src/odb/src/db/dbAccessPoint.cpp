@@ -43,6 +43,7 @@
 #include <algorithm>
 
 #include "dbBTerm.h"
+#include "dbBPin.h"
 #include "dbBlock.h"
 #include "dbITerm.h"
 #include "dbLib.h"
@@ -75,7 +76,7 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (mpin_ != rhs.mpin_)
     return false;
 
-  if (bterm_ != rhs.bterm_)
+  if (bpin_ != rhs.bpin_)
     return false;
 
   // User Code Begin ==
@@ -99,7 +100,7 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   if (mpin_ >= rhs.mpin_)
     return false;
 
-  if (bterm_ >= rhs.bterm_)
+  if (bpin_ >= rhs.bpin_)
     return false;
 
   // User Code Begin <
@@ -117,7 +118,7 @@ void _dbAccessPoint::differences(dbDiff& diff,
   DIFF_FIELD(lib_);
   DIFF_FIELD(master_);
   DIFF_FIELD(mpin_);
-  DIFF_FIELD(bterm_);
+  DIFF_FIELD(bpin_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -130,7 +131,7 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(lib_);
   DIFF_OUT_FIELD(master_);
   DIFF_OUT_FIELD(mpin_);
-  DIFF_OUT_FIELD(bterm_);
+  DIFF_OUT_FIELD(bpin_);
 
   // User Code Begin Out
   // User Code End Out
@@ -149,7 +150,7 @@ _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
   lib_ = r.lib_;
   master_ = r.master_;
   mpin_ = r.mpin_;
-  bterm_ = r.bterm_;
+  bpin_ = r.bpin_;
   // User Code Begin CopyConstructor
   iterms_ = r.iterms_;
   low_type_ = r.low_type_;
@@ -164,7 +165,7 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.lib_;
   stream >> obj.master_;
   stream >> obj.mpin_;
-  stream >> obj.bterm_;
+  stream >> obj.bpin_;
   stream >> obj.accesses_;
   stream >> obj.iterms_;
   stream >> obj.vias_;
@@ -184,7 +185,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.lib_;
   stream << obj.master_;
   stream << obj.mpin_;
-  stream << obj.bterm_;
+  stream << obj.bpin_;
   stream << obj.accesses_;
   stream << obj.iterms_;
   stream << obj.vias_;
@@ -343,13 +344,13 @@ dbMPin* dbAccessPoint::getMPin() const
   return (dbMPin*) master->_mpin_tbl->getPtr(obj->mpin_);
 }
 
-dbBTerm* dbAccessPoint::getBTerm() const
+dbBPin* dbAccessPoint::getBPin() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (!obj->bterm_.isValid())
+  if (!obj->bpin_.isValid())
     return nullptr;
   _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbBTerm*) block->_bterm_tbl->getPtr(obj->bterm_);
+  return (dbBPin*) block->_bpin_tbl->getPtr(obj->bpin_);
 }
 std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 {
@@ -401,13 +402,13 @@ dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint idx)
   return ((dbAccessPoint*) ap);
 }
 
-dbAccessPoint* dbAccessPoint::create(dbBTerm* term)
+dbAccessPoint* dbAccessPoint::create(dbBPin* pin)
 {
-  _dbBlock* block = (_dbBlock*) term->getBlock();
+  _dbBlock* block = (_dbBlock*) pin->getBTerm()->getBlock();
   _dbAccessPoint* ap = block->ap_tbl_->create();
-  _dbBTerm* bterm = (_dbBTerm*) term;
-  ap->bterm_ = bterm->getOID();
-  bterm->aps_.push_back(ap->getOID());
+  _dbBPin* bpin = (_dbBPin*) pin;
+  ap->bpin_ = bpin->getOID();
+  bpin->aps_.push_back(ap->getOID());
   return ((dbAccessPoint*) ap);
 }
 
@@ -421,12 +422,12 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
 {
   _dbBlock* block = (_dbBlock*) ap->getImpl()->getOwner();
   _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-  if (ap->getBTerm() != nullptr) {
-    _dbBTerm* term = (_dbBTerm*) ap->getBTerm();
-    auto ap_itr = term->aps_.begin();
-    while (ap_itr != term->aps_.end()) {
+  if (ap->getBPin() != nullptr) {
+    _dbBPin* pin = (_dbBPin*) ap->getBPin();
+    auto ap_itr = pin->aps_.begin();
+    while (ap_itr != pin->aps_.end()) {
       if (*ap_itr == ap->getImpl()->getOID()) {
-        term->aps_.erase(ap_itr);
+        pin->aps_.erase(ap_itr);
         break;
       } else {
         ++ap_itr;

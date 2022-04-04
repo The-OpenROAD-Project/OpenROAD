@@ -863,9 +863,9 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
-      case odb::dbSigType::TIEOFF:
         // We allow for multuple pins
         break;
+      case odb::dbSigType::TIEOFF:
       case odb::dbSigType::SIGNAL:
       case odb::dbSigType::CLOCK:
       case odb::dbSigType::ANALOG:
@@ -909,10 +909,14 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
     auto pa = make_unique<frPinAccess>();
-    for (auto& db_ap : term->getAccessPoints()) {
-      auto ap = make_unique<frAccessPoint>();
-      updatefrAccessPoint(db_ap, ap.get(), tech);
-      pa->addAccessPoint(std::move(ap));
+    if(!term->getSigType().isSupply() && term->getBPins().size() == 1)
+    {
+      auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
+      for (auto& db_ap : db_pin->getAccessPoints()) {
+        auto ap = make_unique<frAccessPoint>();
+        updatefrAccessPoint(db_ap, ap.get(), tech);
+        pa->addAccessPoint(std::move(ap));
+      }
     }
     pinIn->addPinAccess(std::move(pa));
     termIn->addPin(std::move(pinIn));
@@ -2953,19 +2957,30 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
   }
   for (auto& term : design->getTopBlock()->getTerms()) {
     auto db_term = block->findBTerm(term->getName().c_str());
-    if (db_term == nullptr)
+   if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
-    for (const auto& pin : term->getPins()) {
-      int sz = pin->getNumPinAccess();
-      int j = 0;
-      while (j < sz) {
-        auto pa = pin->getPinAccess(j);
-        for (auto& ap : pa->getAccessPoints()) {
-          auto db_ap = odb::dbAccessPoint::create(db_term);
-          updateDbAccessPoint(db_ap, ap.get(), tech, getTech(), block);
-        }
-        j++;
+    if (db_term->getSigType() == odb::dbSigType::POWER
+        || db_term->getSigType() == odb::dbSigType::GROUND
+        || db_term->getSigType() == odb::dbSigType::TIEOFF)
+      continue;
+    auto db_pins = db_term->getBPins();
+    auto& pins = term->getPins();
+    if (db_pins.size() != pins.size())
+      logger->error(
+          DRT, 303, "Mismatch in number of pins for bterm {}", term->getName());
+    if(pins.size() != 1)
+      continue;
+    auto db_pin = (odb::dbBPin*) *db_pins.begin();
+    auto& pin = pins[0];
+    int j = 0;
+    int sz = pin->getNumPinAccess();
+    while (j < sz) {
+      auto pa = pin->getPinAccess(j);
+      for (auto& ap : pa->getAccessPoints()) {
+        auto db_ap = odb::dbAccessPoint::create(db_pin);
+        updateDbAccessPoint(db_ap, ap.get(), tech, getTech(), block);
       }
+      j++;
     }
   }
 }

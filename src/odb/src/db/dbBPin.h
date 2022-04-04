@@ -35,6 +35,7 @@
 #include "dbCore.h"
 #include "dbId.h"
 #include "dbTypes.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -65,6 +66,7 @@ class _dbBPin : public _dbObject
   dbId<_dbBPin> _next_bpin;
   uint _min_spacing;      // 5.6 DEF
   uint _effective_width;  // 5.6 DEF
+  dbVector<dbId<_dbAccessPoint>> aps_;
 
   _dbBPin(_dbDatabase*, const _dbBPin& p);
   _dbBPin(_dbDatabase*);

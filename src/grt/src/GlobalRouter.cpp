@@ -584,7 +584,12 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
   if (pin.isPort()) {
-    access_points = pin.getBTerm()->getAccessPoints();
+    for (const odb::dbBPin* bpin : pin.getBTerm()->getBPins()) {
+      const std::vector<odb::dbAccessPoint*>& bpin_pas
+          = bpin->getAccessPoints();
+      access_points.insert(
+          access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+    }
   } else {
     access_points = pin.getITerm()->getPrefAccessPoints();
     if (access_points.empty()) {
