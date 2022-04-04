@@ -195,8 +195,6 @@ class CtsOptions
   bool getBalanceLevels() const { return balanceLevels_; }
   void setNumStaticLayers(unsigned num) { numStaticLayers_ = num; }
   void setSinkBuffer(const std::string& buffer) { sinkBuffer_ = buffer; }
-  void setSinkBufferMaxCap(double cap) { sinkBufferMaxCap_ = cap; }
-  double getSinkBufferMaxCap() const { return sinkBufferMaxCap_; }
   void setSinkBufferInputCap(double cap) { sinkBufferInputCap_ = cap; }
   double getSinkBufferInputCap() const { return sinkBufferInputCap_; }
   std::string getSinkBuffer() const { return sinkBuffer_; }
@@ -227,7 +225,6 @@ class CtsOptions
   unsigned maxSlew_ = 4;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
-  double sinkBufferMaxCap_ = 0;
   double sinkBufferInputCap_ = 0;
   double capInter_ = 0;
   double slewInter_ = 0;

@@ -447,7 +447,7 @@ class FastRouteCore
                            bool is3DVisualization);
 
   static const int MAXLEN = 20000;
-  static const int BIG_INT = 1e7;  // big integer used as infinity
+  static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
 
   int max_degree_;
