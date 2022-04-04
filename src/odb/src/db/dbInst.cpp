@@ -112,7 +112,7 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._user_flag_1 = 0;
   _flags._user_flag_2 = 0;
   _flags._user_flag_3 = 0;
-  _flags._size_only = 0;
+  _flags._physical_only = 0;
   _flags._dont_touch = 0;
   _flags._dont_size = 0;
   _flags._eco_create = 0;
@@ -236,7 +236,7 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   if (_flags._user_flag_3 != rhs._flags._user_flag_3)
     return false;
 
-  if (_flags._size_only != rhs._flags._size_only)
+  if (_flags._physical_only != rhs._flags._physical_only)
     return false;
 
   if (_flags._dont_size != rhs._flags._dont_size)
@@ -322,7 +322,7 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_flags._user_flag_1);
   DIFF_FIELD(_flags._user_flag_2);
   DIFF_FIELD(_flags._user_flag_3);
-  DIFF_FIELD(_flags._size_only);
+  DIFF_FIELD(_flags._physical_only);
   DIFF_FIELD(_flags._dont_touch);
   DIFF_FIELD(_flags._dont_size);
   DIFF_FIELD(_flags._source);
@@ -378,7 +378,7 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._user_flag_1);
   DIFF_OUT_FIELD(_flags._user_flag_2);
   DIFF_OUT_FIELD(_flags._user_flag_3);
-  DIFF_OUT_FIELD(_flags._size_only);
+  DIFF_OUT_FIELD(_flags._physical_only);
   DIFF_OUT_FIELD(_flags._dont_touch);
   DIFF_OUT_FIELD(_flags._dont_size);
   DIFF_OUT_FIELD(_flags._source);
@@ -809,18 +809,6 @@ void dbInst::clearUserFlag3()
   if (block->_journal)
     block->_journal->updateField(
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
-}
-
-void dbInst::setSizeOnly(bool v)
-{
-  _dbInst* inst = (_dbInst*) this;
-  inst->_flags._size_only = v;
-}
-
-bool dbInst::isSizeOnly()
-{
-  _dbInst* inst = (_dbInst*) this;
-  return inst->_flags._size_only == 1;
 }
 
 void dbInst::setDoNotTouch(bool v)
@@ -1310,15 +1298,17 @@ uint dbInst::getPinAccessIdx() const
 }
 
 
-dbInst* dbInst::create(dbBlock* block_, dbMaster* master_, const char* name_)
+dbInst* dbInst::create(dbBlock* block_, dbMaster* master_, const char* name_,
+                       bool physical_only)
 {
-  return create(block_, master_, name_, NULL);
+  return create(block_, master_, name_, NULL, physical_only);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
-                       dbRegion* region)
+                       dbRegion* region,
+                       bool physical_only)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
@@ -1374,6 +1364,11 @@ dbInst* dbInst::create(dbBlock* block_,
 
   block->add_rect(box->_shape._rect);
 
+  inst->_flags._physical_only = physical_only;
+  if (!physical_only) {
+    block_->getTopModule()->addInst((dbInst*) inst);
+  }
+
   if (region) {
     region->addInst((dbInst*) inst);
     std::list<dbBlockCallBackObj*>::iterator cbitr;
@@ -1413,7 +1408,7 @@ void dbInst::destroy(dbInst* inst_)
 
   dbModule* module = inst_->getModule();
   if (module)
-    module->removeInst(inst_);
+    ((_dbModule*) module)->removeInst(inst_);
 
   if (inst->_group)
     inst_->getGroup()->removeInst(inst_);
