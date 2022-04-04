@@ -425,88 +425,6 @@ void TechChar::reportSegment(unsigned key) const
                   seg.isBuffered());
 }
 
-void TechChar::getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
-                                      float& maxSlew,
-                                      bool& maxSlewExist,
-                                      float& maxCap,
-                                      bool& maxCapExist,
-                                      bool midValue)
-{
-  sta::LibertyPort *input, *output;
-  buffer->bufferPorts(input, output);
-  sta::TimingArcSetSeq* arc_sets = buffer->timingArcSets(input, output);
-  if (arc_sets) {
-    for (sta::TimingArcSet* arc_set : *arc_sets) {
-      sta::TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-        sta::TimingArc* arc = arc_iter.next();
-        sta::GateTableModel* model
-            = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if (model && model->delayModel()) {
-          auto delayModel = model->delayModel();
-          sta::TableAxis* axis1 = delayModel->axis1();
-          sta::TableAxis* axis2 = delayModel->axis2();
-          sta::TableAxis* axis3 = delayModel->axis3();
-          if (axis1)
-            getMaxSlewMaxCapFromAxis(
-                axis1, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-          if (axis2)
-            getMaxSlewMaxCapFromAxis(
-                axis2, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-          if (axis3)
-            getMaxSlewMaxCapFromAxis(
-                axis3, maxSlew, maxSlewExist, maxCap, maxCapExist, midValue);
-        }
-      }
-    }
-  }
-
-  float slew_limit, cap_limit;
-  bool exists;
-  output->slewLimit(sta::MinMax::max(), slew_limit, exists);
-  if (exists) {
-    maxSlew = std::min(maxSlew, slew_limit);
-  }
-  output->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
-  if (exists) {
-    maxCap = std::min(maxCap, cap_limit);
-  }
-}
-
-void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
-                                        float& maxSlew,
-                                        bool& maxSlewExist,
-                                        float& maxCap,
-                                        bool& maxCapExist,
-                                        bool midValue)
-{
-  if (axis) {
-    switch (axis->variable()) {
-      case sta::TableAxisVariable::total_output_net_capacitance: {
-        unsigned idx = axis->size() - 1;
-        if (midValue && idx > 1) {
-          idx = axis->size() / 2 - 1;
-        }
-        maxCap = axis->axisValue(idx);
-        maxCapExist = true;
-        break;
-      }
-      case sta::TableAxisVariable::input_net_transition:
-      case sta::TableAxisVariable::input_transition_time: {
-        unsigned idx = axis->size() - 1;
-        if (midValue && idx > 1) {
-          idx = axis->size() / 2 - 1;
-        }
-        maxSlew = axis->axisValue(idx);
-        maxSlewExist = true;
-        break;
-      }
-      default:
-        break;
-    }
-  }
-}
-
 void TechChar::getClockLayerResCap(float dbUnitsPerMicron)
 {
   // Clock RC should be set with set_wire_rc -clock
@@ -554,6 +472,13 @@ void TechChar::initCharacterization()
       logger_->error(CTS,
                      74,
                      "Buffer {} not found. Check your -buf_list input.",
+                     masterString);
+    }
+    auto* libertyCell = db_network_->findLibertyCell(masterString.c_str());
+    if (libertyCell == nullptr) {
+      logger_->error(CTS,
+                     106,
+                     "No Liberty found for buffer {}.",
                      masterString);
     }
     masterNames_.insert(masterString);
@@ -630,25 +555,22 @@ void TechChar::initCharacterization()
     if (!libertyCell) {
       logger_->error(CTS, 96, "No Liberty cell found for {}.", bufMasterName);
     } else {
-      getBufferMaxSlewMaxCap(
-          libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
-      if (!maxSlewExist
-          || !maxCapExist) {  // In case buffer does not have tables
-        logger_->warn(CTS,
-                      67,
-                      "Could not find max slew/max cap values for buffer {}. "
-                      "Using library values.",
-                      bufMasterName);
-        sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
-        staLib->defaultMaxSlew(maxSlew, maxSlewExist);
-        staLib->defaultMaxCapacitance(maxCap, maxCapExist);
-      }
-    }
-    if (!maxSlewExist || !maxCapExist) {
-      logger_->error(
-          CTS, 77, "Liberty library does not have max slew or max cap values.");
-    } else {
+      sta::LibertyPort *input, *output;
+      libertyCell->bufferPorts(input, output);
+      sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
+
+      input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      if (!maxSlewExist)
+        lib->defaultMaxSlew(maxSlew, maxSlewExist);
+      if (!maxSlewExist)
+        logger_->error(CTS, 107, "No max slew found for cell {}.", bufMasterName);
       charMaxSlew_ = maxSlew;
+
+      output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
+      if (!maxCapExist)
+        lib->defaultMaxCapacitance(maxCap, maxCapExist);
+      if (!maxCapExist)
+        logger_->error(CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
       charMaxCap_ = maxCap;
     }
     if (!libertySinkCell) {
@@ -658,21 +580,7 @@ void TechChar::initCharacterization()
       sta::LibertyPort *input, *output;
       libertySinkCell->bufferPorts(input, output);
       options_->setSinkBufferInputCap(input->capacitance());
-      maxCapExist = false;
-      maxSlewExist = false;
-      getBufferMaxSlewMaxCap(
-          libertySinkCell, maxSlew, maxSlewExist, maxCap, maxCapExist, true);
-      if (!maxCapExist) {  // In case buffer does not have tables
-        logger_->warn(CTS,
-                      66,
-                      "Could not get maxSlew/maxCap values from buffer {}.",
-                      options_->getSinkBuffer());
-        options_->setSinkBufferMaxCap(charMaxCap_);
-      } else {
-        options_->setSinkBufferMaxCap(maxCap);
-      }
     }
-
   } else {
     charMaxSlew_ = options_->getMaxCharSlew();
     charMaxCap_ = options_->getMaxCharCap();

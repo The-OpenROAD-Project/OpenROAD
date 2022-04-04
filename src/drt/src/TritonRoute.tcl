@@ -285,3 +285,8 @@ proc detailed_route_run_worker { args } {
   sta::check_argc_eq1 "detailed_route_run_worker" $args
   drt::run_worker_cmd $args
 }
+
+proc detailed_route_set_default_via { args } {
+  sta::check_argc_eq1 "detailed_route_set_default_via" $args
+  drt::detailed_route_set_default_via $args
+}

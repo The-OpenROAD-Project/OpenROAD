@@ -17,11 +17,11 @@
 [WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
-total displacement     301910.3 u
+total displacement     301889.2 u
 average displacement       25.4 u
 max displacement         1568.3 u
 original HPWL         1353118.6 u
-legalized HPWL        1397297.0 u
+legalized HPWL        1397400.5 u
 delta HPWL                    3 %
 
 No differences found.
