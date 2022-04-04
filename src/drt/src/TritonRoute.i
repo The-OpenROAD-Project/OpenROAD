@@ -38,6 +38,8 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
+#include <fstream>
+#include <streambuf>
 %}
 
 %include "../../Exception.i"
@@ -170,7 +172,10 @@ run_worker_cmd(const char* design_path, const char* globals_path, const char* wo
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->resetDesign(design_path);
   router->updateGlobals(globals_path);
-  router->runDRWorker(worker_path);
+  std::ifstream workerFile(worker_path, std::ios::binary);
+  std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
+  workerFile.close();
+  router->runDRWorker(workerStr);
 }
 
 %} // inline
