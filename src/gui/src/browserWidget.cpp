@@ -36,7 +36,8 @@
 #include "browserWidget.h"
 
 #include <QHeaderView>
-#include <QDebug>
+#include <QEvent>
+#include <QMouseEvent>
 
 #include "utl/Logger.h"
 
@@ -45,6 +46,49 @@ Q_DECLARE_METATYPE(odb::dbModule*);
 Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
+
+BrowserSelectionModel::BrowserSelectionModel(QAbstractItemModel* model, QObject* parent)
+    : QItemSelectionModel(model, parent),
+      is_right_click(false)
+{
+}
+
+bool BrowserSelectionModel::eventFilter(QObject* obj, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+    if (mouse_event->button() == Qt::RightButton) {
+      is_right_click = true;
+    } else {
+      is_right_click = false;
+    }
+  } else if (event->type() == QEvent::MouseButtonRelease) {
+    is_right_click = false;
+  } else if (event->type() == QEvent::ContextMenu) {
+    // reset because the context menu has poped up.
+    is_right_click = false;
+  }
+
+  return QItemSelectionModel::eventFilter(obj, event);
+}
+
+void BrowserSelectionModel::select(const QItemSelection& selection, QItemSelectionModel::SelectionFlags command)
+{
+  if (is_right_click) {
+    return;
+  }
+
+  QItemSelectionModel::select(selection, command);
+}
+
+void BrowserSelectionModel::select(const QModelIndex& selection, QItemSelectionModel::SelectionFlags command)
+{
+  if (is_right_click) {
+    return;
+  }
+
+  QItemSelectionModel::select(selection, command);
+}
 
 ///////
 
@@ -60,6 +104,9 @@ BrowserWidget::BrowserWidget(QWidget* parent)
   model_->setHorizontalHeaderLabels({"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  view_->setSelectionModel(new BrowserSelectionModel(model_, view_));
+  view_->viewport()->installEventFilter(view_->selectionModel());
 
   makeMenu();
 
@@ -84,6 +131,11 @@ BrowserWidget::BrowserWidget(QWidget* parent)
           SIGNAL(customContextMenuRequested(const QPoint&)),
           this,
           SLOT(itemContextMenu(const QPoint&)));
+
+  connect(view_->selectionModel(),
+          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+          this,
+          SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
 }
 
 void BrowserWidget::makeMenu()
@@ -164,6 +216,16 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
   }
 
   return Selected();
+}
+
+void BrowserWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+{
+  auto indexes = selected.indexes();
+  if (indexes.isEmpty()) {
+    return;
+  }
+
+  emit clicked(indexes.first());
 }
 
 void BrowserWidget::clicked(const QModelIndex& index)

@@ -50,6 +50,23 @@
 
 namespace gui {
 
+class BrowserSelectionModel : public QItemSelectionModel
+{
+  Q_OBJECT
+
+  public:
+    BrowserSelectionModel(QAbstractItemModel* model = nullptr, QObject* parent = nullptr);
+
+    bool eventFilter(QObject* obj, QEvent* event) override;
+
+  public slots:
+    void select(const QItemSelection& selection, QItemSelectionModel::SelectionFlags command) override;
+    void select(const QModelIndex& selection, QItemSelectionModel::SelectionFlags command) override;
+
+  private:
+    bool is_right_click;
+};
+
 class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
@@ -73,6 +90,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
   public slots:
     void setBlock(odb::dbBlock* block);
     void clicked(const QModelIndex& index);
+    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
   protected:
     void showEvent(QShowEvent* event) override;
