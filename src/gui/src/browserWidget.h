@@ -167,7 +167,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
     ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
-    ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent);
+    ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand);
 
     void makeRowItems(QStandardItem* item,
                       const std::string& master,
@@ -175,6 +175,14 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
                       QStandardItem* parent,
                       bool is_leaf) const;
 
+    enum Columns {
+      Instance,
+      Master,
+      Instances,
+      Macros,
+      Modules,
+      Area
+    };
 };
 
 }  // namespace gui

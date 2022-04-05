@@ -60,9 +60,12 @@ BrowserWidget::BrowserWidget(QWidget* parent)
   QHeaderView* header = view_->header();
   header->setSectionsMovable(true);
   header->setStretchLastSection(false);
-  header->setSectionResizeMode(0, QHeaderView::Stretch);
-  header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  header->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+  header->setSectionResizeMode(Instance, QHeaderView::Interactive);
+  header->setSectionResizeMode(Master, QHeaderView::Interactive);
+  header->setSectionResizeMode(Instances, QHeaderView::Interactive);
+  header->setSectionResizeMode(Macros, QHeaderView::Interactive);
+  header->setSectionResizeMode(Modules, QHeaderView::Interactive);
+  header->setSectionResizeMode(Area, QHeaderView::Interactive);
 
   setWidget(view_);
 
@@ -146,7 +149,7 @@ void BrowserWidget::updateModel()
   }
 
   auto* root = model_->invisibleRootItem();
-  addModuleItem(block_->getTopModule(), root);
+  addModuleItem(block_->getTopModule(), root, true);
 
   QStandardItem* physical = new QStandardItem("Physical only");
   physical->setEditable(false);
@@ -160,6 +163,8 @@ void BrowserWidget::updateModel()
     stats += addInstanceItem(inst, physical);
   }
   makeRowItems(physical, "", stats, root, true);
+
+  view_->header()->resizeSections(QHeaderView::ResizeToContents);
 }
 
 void BrowserWidget::clearModel()
@@ -180,7 +185,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, 
 
   ModuleStats stats;
   for (auto* child : module->getChildren()) {
-    stats += addModuleItem(child->getMaster(), parent);
+    stats += addModuleItem(child->getMaster(), parent, false);
   }
   stats.resetMacros();
   stats.resetInstances();
@@ -215,7 +220,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst, QSt
   return stats;
 }
 
-BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand)
 {
   QStandardItem* item = new QStandardItem(QString::fromStdString(module->getHierarchicalName()));
   item->setEditable(false);
@@ -228,6 +233,10 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, Q
   stats.resetModules();
 
   stats.incrementModules();
+
+  if (expand) {
+    view_->expand(item->index());
+  }
 
   return stats;
 }
