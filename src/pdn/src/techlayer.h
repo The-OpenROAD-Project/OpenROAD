@@ -62,8 +62,6 @@ class TechLayer
   int snapToManufacturingGrid(int pos, bool round_up = false) const;
   static int snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up = false);
 
-  int micronToDbu(const std::string& value) const;
-  int micronToDbu(double value) const;
   double dbuToMicron(int value) const;
 
   struct ArraySpacing
@@ -100,6 +98,9 @@ private:
   // create a vector of strings for from the given property
   std::vector<std::vector<std::string>> tokenizeStringProperty(
       const std::string& property_name) const;
+
+  int micronToDbu(const std::string& value) const;
+  int micronToDbu(double value) const;
 };
 
 }  // namespace pdn

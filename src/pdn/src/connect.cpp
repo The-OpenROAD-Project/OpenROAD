@@ -63,7 +63,7 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
     auto* layer = tech->findLayer(l);
 
     if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
-      // ignore none normal layers
+      // ignore non-cut and routing layers
       continue;
     }
 
