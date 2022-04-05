@@ -72,6 +72,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
   public slots:
     void setBlock(odb::dbBlock* block);
+    void clicked(const QModelIndex& index);
 
   protected:
     void showEvent(QShowEvent* event) override;

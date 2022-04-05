@@ -76,6 +76,11 @@ BrowserWidget::BrowserWidget(QWidget* parent)
   setWidget(view_);
 
   connect(view_,
+          SIGNAL(clicked(const QModelIndex&)),
+          this,
+          SLOT(clicked(const QModelIndex&)));
+
+  connect(view_,
           SIGNAL(customContextMenuRequested(const QPoint&)),
           this,
           SLOT(itemContextMenu(const QPoint&)));
@@ -93,6 +98,13 @@ void BrowserWidget::makeMenu()
           [&](bool) {
             emit select(getMenuItemChildren());
           });
+  connect(menu_->addAction("Select all"),
+          &QAction::triggered,
+          [&](bool) {
+            auto children = getMenuItemChildren();
+            children.insert(menu_item_);
+            emit select(children);
+          });
 
   menu_->addSeparator();
 
@@ -105,6 +117,13 @@ void BrowserWidget::makeMenu()
           &QAction::triggered,
           [&](bool) {
             emit highlight(getMenuItemChildren());
+          });
+  connect(menu_->addAction("Highlight all"),
+          &QAction::triggered,
+          [&](bool) {
+            auto children = getMenuItemChildren();
+            children.insert(menu_item_);
+            emit highlight(children);
           });
 }
 
@@ -145,6 +164,15 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
   }
 
   return Selected();
+}
+
+void BrowserWidget::clicked(const QModelIndex& index)
+{
+  Selected sel = getSelectedFromIndex(index);
+
+  if (sel) {
+    emit select({sel});
+  }
 }
 
 void BrowserWidget::setBlock(odb::dbBlock* block)
