@@ -258,9 +258,7 @@ void PdnGen::addGlobalConnect(dbBox* region,
 
 void PdnGen::clearGlobalConnect()
 {
-  if (global_connect_ != nullptr) {
-    global_connect_ = nullptr;
-  }
+  global_connect_ = nullptr;
 }
 
 void PdnGen::reset()
@@ -444,10 +442,6 @@ VoltageDomain* PdnGen::findDomain(const std::string& name)
   ensureCoreDomain();
   auto domains = getDomains();
   if (name.empty()) {
-    if (domains.empty()) {
-      return nullptr;
-    }
-
     return domains.back();
   }
 
