@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
-      hierarchy_widget_(new BrowserWidget(this)),
+      hierarchy_widget_(new BrowserWidget(viewer_->getModuleSettings(), this)),
       find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
@@ -239,6 +239,14 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(removeHighlight(const Selected&)),
           this,
           SLOT(removeHighlighted(const Selected&)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleVisibility(odb::dbModule*, bool)),
+          viewer_,
+          SLOT(updateModuleVisibility(odb::dbModule*, bool)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&)),
+          viewer_,
+          SLOT(updateModuleColor(odb::dbModule*, const QColor&)));
 
   connect(timing_widget_,
           &TimingWidget::inspect,
