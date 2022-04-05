@@ -211,6 +211,10 @@ void dbModule::addInst(dbInst* inst)
         getName());
   }
 
+  if (_inst->_module == module->getOID()) {
+    return; // already in this module
+  }
+
   if (_inst->_module != 0) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
     ((_dbModule*) mod)->removeInst(inst);
