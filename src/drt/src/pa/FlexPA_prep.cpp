@@ -773,7 +773,11 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
       ep, layerPolys, bp, ap->getLayerNum(), dir);
   // skip if two width within shape for standard cell
   if (!isOutSide) {
-    ap->setAccess(dir, false);
+        if (!instTerm || 
+                instTerm->getInst()->getMaster()->getMasterType().isBlock())
+            ap->setAccess(dir, true);
+        else
+            ap->setAccess(dir, false);
     return;
   }
 
