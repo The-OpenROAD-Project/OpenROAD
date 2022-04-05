@@ -330,6 +330,7 @@ MainWindow::MainWindow(QWidget* parent)
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
+  hierarchy_widget_->readSettings(&settings);
   settings.endGroup();
 
   // load resources and set window icon and title
@@ -1084,6 +1085,7 @@ void MainWindow::saveSettings()
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
+  hierarchy_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 

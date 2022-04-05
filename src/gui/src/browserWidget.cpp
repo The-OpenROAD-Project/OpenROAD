@@ -76,6 +76,20 @@ BrowserWidget::BrowserWidget(QWidget* parent)
           SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
 }
 
+void BrowserWidget::readSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+  view_->header()->restoreState(settings->value("headers", view_->header()->saveState()).toByteArray());
+  settings->endGroup();
+}
+
+void BrowserWidget::writeSettings(QSettings* settings)
+{
+  settings->beginGroup(objectName());
+  settings->setValue("headers", view_->header()->saveState());
+  settings->endGroup();
+}
+
 void BrowserWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
 {
   auto indexes = selected.indexes();

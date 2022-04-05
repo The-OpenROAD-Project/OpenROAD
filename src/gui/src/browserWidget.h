@@ -38,6 +38,7 @@
 #include "gui/gui.h"
 #include <QDockWidget>
 #include <QTreeView>
+#include <QSettings>
 #include <QStandardItemModel>
 
 #include <array>
@@ -54,6 +55,9 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
   public:
     BrowserWidget(QWidget* parent = nullptr);
+
+    void readSettings(QSettings* settings);
+    void writeSettings(QSettings* settings);
 
     // dbBlockCallBackObj
     virtual void inDbInstCreate(odb::dbInst*);
