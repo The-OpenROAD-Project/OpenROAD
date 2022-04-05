@@ -594,7 +594,7 @@ void dbFlatten::copyAttrs(dbInst* dst_, dbInst* src_)
   dst->_flags._user_flag_1 = src->_flags._user_flag_1;
   dst->_flags._user_flag_2 = src->_flags._user_flag_2;
   dst->_flags._user_flag_3 = src->_flags._user_flag_3;
-  dst->_flags._size_only = src->_flags._size_only;
+  dst->_flags._physical_only = src->_flags._physical_only;
   dst->_flags._dont_touch = src->_flags._dont_touch;
   dst->_flags._dont_size = src->_flags._dont_size;
   dst->_flags._source = src->_flags._source;

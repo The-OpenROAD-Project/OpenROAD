@@ -369,7 +369,14 @@ void Optdp::createNetwork() {
 
   // I allocate things statically, so I need to do some counting.
 
-  dbSet<dbInst> insts = block->getInsts();
+  std::vector<dbInst*> insts;
+  for (dbInst* inst : block->getInsts()) {
+    insts.push_back(inst);
+  }
+  std::stable_sort(insts.begin(), insts.end(),
+                   [](dbInst* a, dbInst* b) {
+                     return a->getName() < b->getName();
+                   });
   dbSet<dbNet> nets = block->getNets();
   dbSet<dbBTerm> bterms = block->getBTerms();
 
