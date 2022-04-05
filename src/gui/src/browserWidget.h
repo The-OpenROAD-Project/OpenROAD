@@ -83,13 +83,94 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     QTreeView* view_;
     QStandardItemModel* model_;
 
-    int64_t populateModule(odb::dbModule* module, QStandardItem* parent);
+    struct ModuleStats {
+      int64_t area;
+      int macros;
+      int insts;
+      int modules;
 
-    int64_t addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
-    int64_t addModuleItem(odb::dbModule* module, QStandardItem* parent);
+      int hier_macros;
+      int hier_insts;
+      int hier_modules;
 
-    QStandardItem* makeSizeItem(int64_t area) const;
-    QStandardItem* makeMasterItem(const std::string& name) const;
+      ModuleStats()
+      {
+        area = 0;
+        macros = 0;
+        insts = 0;
+        modules = 0;
+
+        resetInstances();
+        resetMacros();
+        resetModules();
+      }
+
+      void incrementInstances()
+      {
+        insts++;
+        hier_insts++;
+      }
+
+      void resetInstances()
+      {
+        hier_insts = 0;
+      }
+
+      void incrementMacros()
+      {
+        macros++;
+        hier_macros++;
+      }
+
+      void resetMacros()
+      {
+        hier_macros = 0;
+      }
+
+      void incrementModules()
+      {
+        modules++;
+        hier_modules++;
+      }
+
+      void resetModules()
+      {
+        hier_modules = 0;
+      }
+
+      ModuleStats& operator+=(const ModuleStats& other)
+      {
+        area += other.area;
+        macros += other.macros;
+        insts += other.insts;
+        modules += other.modules;
+
+        hier_macros += other.hier_macros;
+        hier_insts += other.hier_insts;
+        hier_modules += other.hier_modules;
+
+        return *this;
+      }
+
+      friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
+      {
+        lhs += other;
+
+        return lhs;
+      }
+    };
+
+    ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
+
+    ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
+    ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent);
+
+    void makeRowItems(QStandardItem* item,
+                      const std::string& master,
+                      const ModuleStats& stats,
+                      QStandardItem* parent,
+                      bool is_leaf) const;
+
 };
 
 }  // namespace gui

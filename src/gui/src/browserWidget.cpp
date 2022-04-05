@@ -54,10 +54,11 @@ BrowserWidget::BrowserWidget(QWidget* parent)
 {
   setObjectName("hierarchy_viewer");  // for settings
 
-  model_->setHorizontalHeaderLabels({"Instance", "Master", "Area"});
+  model_->setHorizontalHeaderLabels({"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
+  header->setSectionsMovable(true);
   header->setStretchLastSection(false);
   header->setSectionResizeMode(0, QHeaderView::Stretch);
   header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
@@ -136,15 +137,15 @@ void BrowserWidget::updateModel()
   QStandardItem* physical = new QStandardItem("Physical only");
   physical->setEditable(false);
   physical->setSelectable(false);
-  double area = 0;
+  ModuleStats stats;
   for (auto* inst : block_->getInsts()) {
     if (inst->getModule() != nullptr) {
       continue;
     }
 
-    area += addInstanceItem(inst, physical);
+    stats += addInstanceItem(inst, physical);
   }
-  root->appendRow({physical, new QStandardItem, makeSizeItem(area)});
+  makeRowItems(physical, "", stats, root, true);
 }
 
 void BrowserWidget::clearModel()
@@ -152,28 +153,32 @@ void BrowserWidget::clearModel()
   model_->removeRows(0, model_->rowCount());
 }
 
-int64_t BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
 {
-  int64_t leaf_area = 0;
+  ModuleStats leaf_stats;
 
   auto* leafs = new QStandardItem("Leaf instances");
   leafs->setEditable(false);
   leafs->setSelectable(false);
   for (auto* inst : module->getInsts()) {
-    leaf_area += addInstanceItem(inst, leafs);
+    leaf_stats += addInstanceItem(inst, leafs);
   }
 
-  int64_t area = 0;
+  ModuleStats stats;
   for (auto* child : module->getChildren()) {
-    area += addModuleItem(child->getMaster(), parent);
+    stats += addModuleItem(child->getMaster(), parent);
   }
+  stats.resetMacros();
+  stats.resetInstances();
 
-  parent->appendRow({leafs, new QStandardItem, makeSizeItem(leaf_area)});
+  makeRowItems(leafs, "", leaf_stats, parent, true);
 
-  return leaf_area + area;
+  ModuleStats total = leaf_stats + stats;
+
+  return total;
 }
 
-int64_t BrowserWidget::addInstanceItem(odb::dbInst* inst, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst, QStandardItem* parent)
 {
   QStandardItem* item = new QStandardItem(inst->getConstName());
   item->setEditable(false);
@@ -181,53 +186,82 @@ int64_t BrowserWidget::addInstanceItem(odb::dbInst* inst, QStandardItem* parent)
   item->setData(QVariant::fromValue(inst));
 
   auto* box = inst->getBBox();
-  int64_t area = box->getDX() * box->getDY();
 
-  parent->appendRow({item, makeMasterItem(inst->getMaster()->getConstName()), makeSizeItem(area)});
+  ModuleStats stats;
+  stats.area = box->getDX() * box->getDY();
 
-  return area;
+  if (inst->isBlock()) {
+    stats.incrementMacros();
+  } else {
+    stats.incrementInstances();
+  }
+
+  makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
+
+  return stats;
 }
 
-int64_t BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent)
+BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent)
 {
   QStandardItem* item = new QStandardItem(QString::fromStdString(module->getHierarchicalName()));
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
 
-  int64_t area = populateModule(module, item);
+  ModuleStats stats = populateModule(module, item);
 
-  parent->appendRow({item, makeMasterItem(module->getName()), makeSizeItem(area)});
+  makeRowItems(item, module->getName(), stats, parent, false);
+  stats.resetModules();
 
-  return area;
+  stats.incrementModules();
+
+  return stats;
 }
 
-QStandardItem* BrowserWidget::makeSizeItem(int64_t area) const
+void BrowserWidget::makeRowItems(QStandardItem* item,
+                                 const std::string& master,
+                                 const BrowserWidget::ModuleStats& stats,
+                                 QStandardItem* parent,
+                                 bool is_leaf) const
 {
+  QStandardItem* master_item = new QStandardItem(QString::fromStdString(master));
+  master_item->setEditable(false);
+
   double scale_to_um = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
   std::string units = "\u03BC"; // mu
-  double disp_area = area / scale_to_um;
-  if (disp_area > 10e6) {
+  double disp_area = stats.area / scale_to_um;
+  if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
   auto text = fmt::format("{:.3f}", disp_area) + " " + units + "m\u00B2"; // m2
 
-  QStandardItem* size = new QStandardItem(QString::fromStdString(text));
-  size->setEditable(false);
-  size->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+  auto makeDataItem = [](const QString& text) -> QStandardItem* {
+    QStandardItem* item = new QStandardItem(text);
+    item->setEditable(false);
+    item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+    return item;
+  };
 
-  return size;
-}
+  auto makeHierText = [](int current, int total, bool is_leaf) -> QString {
+    if (!is_leaf) {
+      return QString::number(current) + "/" + QString::number(total);
+    } else {
+      return QString::number(total);
+    }
+  };
 
-QStandardItem* BrowserWidget::makeMasterItem(const std::string& name) const
-{
-  QStandardItem* master = new QStandardItem(QString::fromStdString(name));
-  master->setEditable(false);
+  QStandardItem* area = makeDataItem(QString::fromStdString(text));
 
-  return master;
+  QStandardItem* insts = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
+
+  QStandardItem* macros = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
+
+  QStandardItem* modules = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
+
+  parent->appendRow({item, master_item, insts, macros, modules, area});
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)
