@@ -157,6 +157,11 @@ void BrowserWidget::makeMenu()
             children.insert(menu_item_);
             emit select(children);
           });
+  connect(menu_->addAction("Remove from selected"),
+          &QAction::triggered,
+          [&](bool) {
+            emit removeSelect(menu_item_);
+          });
 
   menu_->addSeparator();
 
@@ -176,6 +181,11 @@ void BrowserWidget::makeMenu()
             auto children = getMenuItemChildren();
             children.insert(menu_item_);
             emit highlight(children);
+          });
+  connect(menu_->addAction("Remove from highlight"),
+          &QAction::triggered,
+          [&](bool) {
+            emit removeHighlight(menu_item_);
           });
 }
 

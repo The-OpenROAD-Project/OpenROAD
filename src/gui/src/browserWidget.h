@@ -85,7 +85,9 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
   signals:
     void select(const SelectionSet& selected);
+    void removeSelect(const Selected& selected);
     void highlight(const SelectionSet& selected);
+    void removeHighlight(const Selected& selected);
 
   public slots:
     void setBlock(odb::dbBlock* block);
