@@ -131,20 +131,20 @@ void BrowserWidget::updateModel()
   }
 
   auto* root = model_->invisibleRootItem();
-  populateModule(block_->getTopModule(), root);
+  addModuleItem(block_->getTopModule(), root);
 
-  QStandardItem* orphans = new QStandardItem("Physical only");
-  orphans->setEditable(false);
-  orphans->setSelectable(false);
+  QStandardItem* physical = new QStandardItem("Physical only");
+  physical->setEditable(false);
+  physical->setSelectable(false);
   double area = 0;
   for (auto* inst : block_->getInsts()) {
     if (inst->getModule() != nullptr) {
       continue;
     }
 
-    area += addInstanceItem(inst, orphans);
+    area += addInstanceItem(inst, physical);
   }
-  root->appendRow({orphans, new QStandardItem, makeSizeItem(area)});
+  root->appendRow({physical, new QStandardItem, makeSizeItem(area)});
 }
 
 void BrowserWidget::clearModel()
