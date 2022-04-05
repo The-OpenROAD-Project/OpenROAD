@@ -37,6 +37,7 @@
 
 #include "gui/gui.h"
 #include <QDockWidget>
+#include <QMenu>
 #include <QTreeView>
 #include <QSettings>
 #include <QStandardItemModel>
@@ -66,26 +67,35 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     virtual void inDbInstSwapMasterAfter(odb::dbInst*);
 
   signals:
-    void select(const Selected& selected);
+    void select(const SelectionSet& selected);
+    void highlight(const SelectionSet& selected);
 
   public slots:
     void setBlock(odb::dbBlock* block);
-    void clicked(const QModelIndex& index);
-
-    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
   protected:
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
 
+  private slots:
+    void itemContextMenu(const QPoint &point);
+
   private:
     void updateModel();
     void clearModel();
+
+    void makeMenu();
+
+    Selected getSelectedFromIndex(const QModelIndex& index);
 
     odb::dbBlock* block_;
 
     QTreeView* view_;
     QStandardItemModel* model_;
+
+    QMenu* menu_;
+    Selected menu_item_;
+    SelectionSet getMenuItemChildren();
 
     struct ModuleStats {
       int64_t area;

@@ -141,6 +141,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add the selections to the current selections
   void addSelected(const SelectionSet& selections);
 
+  // Sets and replaces the current selections
+  void setSelected(const SelectionSet& selections);
+
   // Remove a selection from the set of selections
   void removeSelected(const Selected& selection);
 

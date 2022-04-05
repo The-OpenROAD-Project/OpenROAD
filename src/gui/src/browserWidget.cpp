@@ -36,11 +36,13 @@
 #include "browserWidget.h"
 
 #include <QHeaderView>
+#include <QDebug>
 
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
 Q_DECLARE_METATYPE(odb::dbModule*);
+Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
@@ -50,12 +52,16 @@ BrowserWidget::BrowserWidget(QWidget* parent)
     : QDockWidget("Hierarchy Browser", parent),
       block_(nullptr),
       view_(new QTreeView(this)),
-      model_(new QStandardItemModel(this))
+      model_(new QStandardItemModel(this)),
+      menu_(new QMenu(this))
 {
   setObjectName("hierarchy_viewer");  // for settings
 
   model_->setHorizontalHeaderLabels({"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
   view_->setModel(model_);
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  makeMenu();
 
   QHeaderView* header = view_->header();
   header->setSectionsMovable(true);
@@ -70,13 +76,36 @@ BrowserWidget::BrowserWidget(QWidget* parent)
   setWidget(view_);
 
   connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
+          SIGNAL(customContextMenuRequested(const QPoint&)),
           this,
-          SLOT(clicked(const QModelIndex&)));
-  connect(view_->selectionModel(),
-          SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-          this,
-          SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+          SLOT(itemContextMenu(const QPoint&)));
+}
+
+void BrowserWidget::makeMenu()
+{
+  connect(menu_->addAction("Select"),
+          &QAction::triggered,
+          [&](bool) {
+            emit select({menu_item_});
+          });
+  connect(menu_->addAction("Select children"),
+          &QAction::triggered,
+          [&](bool) {
+            emit select(getMenuItemChildren());
+          });
+
+  menu_->addSeparator();
+
+  connect(menu_->addAction("Highlight"),
+          &QAction::triggered,
+          [&](bool) {
+            emit highlight({menu_item_});
+          });
+  connect(menu_->addAction("Highlight children"),
+          &QAction::triggered,
+          [&](bool) {
+            emit highlight(getMenuItemChildren());
+          });
 }
 
 void BrowserWidget::readSettings(QSettings* settings)
@@ -93,32 +122,29 @@ void BrowserWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void BrowserWidget::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
-{
-  auto indexes = selected.indexes();
-  if (indexes.isEmpty()) {
-    return;
-  }
-
-  emit clicked(indexes.first());
-}
-
-void BrowserWidget::clicked(const QModelIndex& index)
+Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
   if (data.isValid()) {
+    auto* ref = data.value<QStandardItem*>();
+    if (ref != nullptr) {
+      data = ref->data();
+    }
+
     auto* gui = Gui::get();
     auto* inst = data.value<odb::dbInst*>();
     if (inst != nullptr) {
-      emit select(gui->makeSelected(inst));
+      return gui->makeSelected(inst);
     } else {
       auto* module = data.value<odb::dbModule*>();
       if (module != nullptr) {
-        emit select(gui->makeSelected(module));
+        return gui->makeSelected(module);
       }
     }
   }
+
+  return Selected();
 }
 
 void BrowserWidget::setBlock(odb::dbBlock* block)
@@ -247,9 +273,6 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
-  QStandardItem* master_item = new QStandardItem(QString::fromStdString(master));
-  master_item->setEditable(false);
-
   double scale_to_um = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
   std::string units = "\u03BC"; // mu
@@ -261,11 +284,14 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
 
   auto text = fmt::format("{:.3f}", disp_area) + " " + units + "m\u00B2"; // m2
 
-  auto makeDataItem = [](const QString& text) -> QStandardItem* {
-    QStandardItem* item = new QStandardItem(text);
-    item->setEditable(false);
-    item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
-    return item;
+  auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
+    QStandardItem* data_item = new QStandardItem(text);
+    data_item->setEditable(false);
+    if (right_align) {
+      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+    }
+    data_item->setData(QVariant::fromValue(item));
+    return data_item;
   };
 
   auto makeHierText = [](int current, int total, bool is_leaf) -> QString {
@@ -275,6 +301,8 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
       return QString::number(total);
     }
   };
+
+  QStandardItem* master_item = makeDataItem(QString::fromStdString(master), false);
 
   QStandardItem* area = makeDataItem(QString::fromStdString(text));
 
@@ -305,6 +333,42 @@ void BrowserWidget::inDbInstDestroy(odb::dbInst*)
 void BrowserWidget::inDbInstSwapMasterAfter(odb::dbInst*)
 {
   updateModel();
+}
+
+void BrowserWidget::itemContextMenu(const QPoint &point)
+{
+  const QModelIndex index = view_->indexAt(point);
+
+  if (!index.isValid()) {
+    return;
+  }
+
+  menu_item_ = getSelectedFromIndex(index);
+
+  if (!menu_item_) {
+    return;
+  }
+
+  menu_->popup(view_->viewport()->mapToGlobal(point));
+}
+
+SelectionSet BrowserWidget::getMenuItemChildren()
+{
+  if (!menu_item_) {
+    return {};
+  }
+
+  auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
+  if (module == nullptr) {
+    return {};
+  }
+
+  auto* gui = Gui::get();
+  SelectionSet children;
+  for (auto* child : module->getChildren()) {
+    children.insert(gui->makeSelected(child->getMaster()));
+  }
+  return children;
 }
 
 }  // namespace gui

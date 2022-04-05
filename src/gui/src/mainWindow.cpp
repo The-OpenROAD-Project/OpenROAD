@@ -224,9 +224,13 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(addHighlighted(const SelectionSet&)));
 
   connect(hierarchy_widget_,
-          SIGNAL(select(const Selected&)),
+          SIGNAL(select(const SelectionSet&)),
           this,
-          SLOT(setSelected(const Selected&)));
+          SLOT(setSelected(const SelectionSet&)));
+  connect(hierarchy_widget_,
+          SIGNAL(highlight(const SelectionSet&)),
+          this,
+          SLOT(addHighlighted(const SelectionSet&)));
 
   connect(timing_widget_,
           &TimingWidget::inspect,
@@ -795,6 +799,12 @@ void MainWindow::addSelected(const SelectionSet& selections)
   }
   status(std::string("Added ") + std::to_string(selected_.size() - prev_selected_size));
   emit selectionChanged();
+}
+
+void MainWindow::setSelected(const SelectionSet& selections)
+{
+  selected_.clear();
+  addSelected(selections);
 }
 
 void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
