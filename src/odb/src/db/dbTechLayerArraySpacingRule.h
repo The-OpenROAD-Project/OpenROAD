@@ -37,7 +37,6 @@
 #include "odb.h"
 
 // User Code Begin Includes
-#include "dbHashTable.h"
 // User Code End Includes
 
 namespace odb {
@@ -46,45 +45,57 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbInst;
-class _dbModInst;
+class _dbTechLayerCutClassRule;
 // User Code Begin Classes
 // User Code End Classes
 
+struct dbTechLayerArraySpacingRuleFlags
+{
+  bool parallel_overlap_ : 1;
+  bool long_array_ : 1;
+  bool via_width_valid_ : 1;
+  bool within_valid_ : 1;
+  uint spare_bits_ : 28;
+};
 // User Code Begin Structs
 // User Code End Structs
 
-class _dbModule : public _dbObject
+class _dbTechLayerArraySpacingRule : public _dbObject
 {
  public:
   // User Code Begin Enums
   // User Code End Enums
 
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModInst> _mod_inst;
+  dbTechLayerArraySpacingRuleFlags flags_;
+  int via_width_;
+  int cut_spacing_;
+  int within_;
+  int array_width_;
+  std::map<int, int> array_spacing_map_;
+  dbId<_dbTechLayerCutClassRule> cut_class_;
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
-  ~_dbModule();
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
+  _dbTechLayerArraySpacingRule(_dbDatabase*,
+                               const _dbTechLayerArraySpacingRule& r);
+  _dbTechLayerArraySpacingRule(_dbDatabase*);
+  ~_dbTechLayerArraySpacingRule();
+  bool operator==(const _dbTechLayerArraySpacingRule& rhs) const;
+  bool operator!=(const _dbTechLayerArraySpacingRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerArraySpacingRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerArraySpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
-
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
-
   // User Code End Methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj);
+dbOStream& operator<<(dbOStream& stream,
+                      const _dbTechLayerArraySpacingRule& obj);
 // User Code Begin General
 // User Code End General
 }  // namespace odb

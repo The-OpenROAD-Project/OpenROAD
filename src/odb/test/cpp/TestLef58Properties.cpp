@@ -155,6 +155,31 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(keepoutRule->isClassValid());
   BOOST_TEST(keepoutRule->getClassName() == "EOL_WIDE");
 
+  auto widthTableRules = layer->getTechLayerWidthTableRules();
+  BOOST_TEST(widthTableRules.size() == 1);
+  auto widthTableRule = (odb::dbTechLayerWidthTableRule*) *(widthTableRules.begin());
+  BOOST_TEST(widthTableRule->isOrthogonal());
+  BOOST_TEST(!widthTableRule->isWrongDirection());
+  BOOST_TEST(widthTableRule->getWidthTable().size() == 5);
+  BOOST_TEST(widthTableRule->getWidthTable().at(1) == 0.2 * distFactor);
+
+  auto minCutRules = layer->getTechLayerMinCutRules();
+  BOOST_TEST(minCutRules.size() == 1);
+  auto minCutRule = (odb::dbTechLayerMinCutRule*) *(minCutRules.begin());
+  BOOST_TEST(!minCutRule->isPerCutClass());
+  BOOST_TEST(minCutRule->isFromAbove());
+  BOOST_TEST(!minCutRule->isFromBelow());
+  BOOST_TEST(!minCutRule->isLengthValid());
+  BOOST_TEST(!minCutRule->isFullyEnclosed());
+  BOOST_TEST(!minCutRule->isSameMetalOverlap());
+  BOOST_TEST(minCutRule->isAreaValid());
+  BOOST_TEST(!minCutRule->isAreaWithinDistValid());
+  BOOST_TEST(minCutRule->isWithinCutDistValid());
+  BOOST_TEST(minCutRule->getNumCuts() == 2);
+  BOOST_TEST(minCutRule->getWithinCutDist() == 0.05 * distFactor);
+  BOOST_TEST(minCutRule->getWidth() == 0.09 * distFactor);
+  BOOST_TEST(minCutRule->getArea() == 2.0 * distFactor);
+
   auto cutLayer = dbTech->findLayer("via1");
 
   auto cutRules = cutLayer->getTechLayerCutClassRules();
@@ -228,6 +253,18 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(encRule->getCutClass()->getName() == "cls1");
   BOOST_TEST(!encRule->isBelow());
   BOOST_TEST(encRule->getMinWidth() == 0.2 * distFactor);
+
+  auto aspRules = cutLayer->getTechLayerArraySpacingRules();
+  BOOST_TEST(aspRules.size() == 1);
+  odb::dbTechLayerArraySpacingRule* aspRule = *aspRules.begin();
+  BOOST_TEST(!aspRule->isLongArray());
+  BOOST_TEST(aspRule->isParallelOverlap());
+  BOOST_TEST(aspRule->isViaWidthValid());
+  BOOST_TEST(!aspRule->isWithinValid());
+  BOOST_TEST(aspRule->getCutClass()->getName() == "VA");
+  auto array_spacing_map = aspRule->getCutsArraySpacing();
+  BOOST_TEST(array_spacing_map.size() == 1);
+  BOOST_TEST(array_spacing_map[3] == 0.30 * distFactor);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
