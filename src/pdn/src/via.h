@@ -84,7 +84,7 @@ using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
 class Grid;
 class TechLayer;
 
-// Wrapper class to handle building actual DB Vias
+// Wrapper class to handle building actual ODB DB Vias
 class DbVia
 {
  public:
@@ -111,12 +111,14 @@ class DbVia
                           ViaLayerShape& shapes) const;
 };
 
+// Used as the base class for actual vias like TechVias and GenerateVias
 class DbBaseVia : public DbVia
 {
  public:
   virtual const odb::Rect getViaRect(bool include_enclosure = true) const = 0;
 };
 
+// Wrapper to handle building dbTechVia as a single via or an array
 class DbTechVia : public DbBaseVia
 {
  public:
@@ -149,6 +151,8 @@ class DbTechVia : public DbBaseVia
   odb::Rect enc_rect_;
 };
 
+// Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
+// a single via or an array.
 class DbGenerateVia : public DbBaseVia
 {
  public:
@@ -199,6 +203,7 @@ class DbGenerateVia : public DbBaseVia
   const std::string getName() const;
 };
 
+// Wrapper class to build split cut array vias (-split_cut)
 class DbSplitCutVia : public DbVia
 {
  public:
@@ -231,6 +236,7 @@ class DbSplitCutVia : public DbVia
   int col_pitch_;
 };
 
+// Wrapper to build via arrays according to ARRAYSPACING rules
 class DbArrayVia : public DbVia
 {
  public:
@@ -267,6 +273,7 @@ class DbArrayVia : public DbVia
   int array_start_y_;
 };
 
+// Wrapper to build multiple level vias as a stack.
 class DbGenerateStackedVia : public DbVia
 {
  public:
@@ -287,6 +294,8 @@ class DbGenerateStackedVia : public DbVia
   std::vector<std::unique_ptr<TechLayer>> layers_;
 };
 
+// Dummy via doesn't build anything but instead generates a warning that a via
+// cannot be inserted at the given location.
 class DbGenerateDummyVia : public DbVia
 {
  public:
