@@ -845,6 +845,10 @@ Resizer::repairNet(Net *net,
                    int &fanout_violations,
                    int &length_violations)
 {
+  const char *name = "_098511_";
+  if (sta::stringEq(network_->pathName(net), name)) {
+    logger_->setDebugLevel(RSZ, "repair_net", 3);
+  }
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
     SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
@@ -928,8 +932,8 @@ Resizer::repairNet(Net *net,
           // Check slew at the loads.
           // Note that many liberty libraries do not have max_transition attributes on
           // input pins.
-          // Max slew violations at the load pins are repaired by reducing the
-          // wire length to the load.
+          // Max slew violations at the load pins are repaired by inserting buffers
+          // and reducing the wire length to the load.
           checkLoadSlews(drvr_pin, slew_margin, slew1, max_slew1, slew_slack1, corner1);
           if (slew_slack1 < 0.0) {
             debugPrint(logger_, RSZ, "repair_net", 2, "load_slew={} max_slew={}",
@@ -969,6 +973,9 @@ Resizer::repairNet(Net *net,
       }
       delete tree;
     }
+  }
+  if (sta::stringEq(network_->pathName(net), name)) {
+    logger_->setDebugLevel(RSZ, "repair_net", 0);
   }
 }
 
@@ -1278,6 +1285,7 @@ Resizer::repairNet(SteinerTree *tree,
   wire_length = wire_length_left + wire_length_right;
   pin_cap = pin_cap_left + pin_cap_right;
   fanout = fanout_left + fanout_right;
+  max_load_slew = min(max_load_slew_left, max_load_slew_right);
 
   // Union left/right load pins.
   for (Pin *load_pin : loads_left)
@@ -1289,7 +1297,6 @@ Resizer::repairNet(SteinerTree *tree,
   if (prev_pt != SteinerTree::null_pt) {
     const PinSeq *pt_pins = tree->pins(pt);
     if (pt_pins) {
-      max_load_slew = INF;
       for (Pin *load_pin : *pt_pins) {
         Point load_loc = db_network_->location(load_pin);
         int load_dist = Point::manhattanDistance(load_loc, pt_loc);
