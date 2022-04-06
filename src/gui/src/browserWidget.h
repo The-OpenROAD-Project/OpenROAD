@@ -78,7 +78,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     void removeHighlight(const Selected& selected);
 
     void updateModuleVisibility(odb::dbModule* module, bool visible);
-    void updateModuleColor(odb::dbModule* module, const QColor& color);
+    void updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected);
 
   public slots:
     void setBlock(odb::dbBlock* block);
@@ -92,6 +92,10 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
   private slots:
     void itemContextMenu(const QPoint &point);
     void itemChanged(QStandardItem* item);
+
+    void itemCollapsed(const QModelIndex& index);
+    void itemExpanded(const QModelIndex& index);
+    void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
 
   private:
     void updateModel();
@@ -114,7 +118,12 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
     QMenu* menu_;
     Selected menu_item_;
+    std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
+    std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
     SelectionSet getMenuItemChildren();
+
+    void updateChildren(odb::dbModule* module, const QColor& color);
+    void resetChildren(odb::dbModule* module);
 
     std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 

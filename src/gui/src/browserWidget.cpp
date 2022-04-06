@@ -38,6 +38,7 @@
 #include <QColorDialog>
 #include <QHeaderView>
 #include <QEvent>
+#include <QLocale>
 #include <QMouseEvent>
 
 #include "utl/Logger.h"
@@ -92,6 +93,15 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
           this,
           SLOT(itemContextMenu(const QPoint&)));
 
+  connect(view_,
+          SIGNAL(collapsed(const QModelIndex&)),
+          this,
+          SLOT(itemCollapsed(const QModelIndex&)));
+  connect(view_,
+          SIGNAL(expanded(const QModelIndex&)),
+          this,
+          SLOT(itemExpanded(const QModelIndex&)));
+
   connect(view_->selectionModel(),
           SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
           this,
@@ -101,6 +111,11 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
           SIGNAL(itemChanged(QStandardItem*)),
           this,
           SLOT(itemChanged(QStandardItem*)));
+
+  connect(this,
+          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
+          this,
+          SLOT(updateModuleColorIcon(odb::dbModule*, const QColor&)));
 }
 
 void BrowserWidget::makeMenu()
@@ -168,9 +183,21 @@ void BrowserWidget::makeMenu()
 
             color = QColorDialog::getColor(color, this, "Module color", QColorDialog::ShowAlphaChannel);
             if (color.isValid()) {
-              emit updateModuleColor(module, color);
-              modulesmap_[module]->setIcon(makeModuleIcon(color));
+              emit updateModuleColor(module, color, true);
             }
+          });
+  connect(menu_->addAction("Reset color"),
+          &QAction::triggered,
+          [&](bool) {
+            auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
+            if (module == nullptr) {
+              return;
+            }
+
+            auto& setting = modulesettings_.at(module);
+            QColor color = setting.orig_color;
+
+            emit updateModuleColor(module, color, true);
           });
 }
 
@@ -338,7 +365,14 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst, QSt
 
 BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand)
 {
-  QStandardItem* item = new QStandardItem(QString::fromStdString(module->getHierarchicalName()));
+  auto* inst = module->getModInst();
+  QString item_name;
+  if (inst == nullptr) {
+    item_name = QString::fromStdString(module->getHierarchicalName());
+  } else {
+    item_name = QString::fromStdString(inst->getName());
+  }
+  QStandardItem* item = new QStandardItem(item_name);
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
@@ -370,16 +404,18 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
+  QLocale locale(QLocale::English); // for number formatting
+
   double scale_to_um = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
-  std::string units = "\u03BC"; // mu
+  QString units = "\u03BC"; // mu
   double disp_area = stats.area / scale_to_um;
   if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
-  auto text = fmt::format("{:.3f}", disp_area) + " " + units + "m\u00B2"; // m2
+  auto text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
 
   auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
@@ -391,17 +427,17 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     return data_item;
   };
 
-  auto makeHierText = [](int current, int total, bool is_leaf) -> QString {
+  auto makeHierText = [&locale](int current, int total, bool is_leaf) -> QString {
     if (!is_leaf) {
-      return QString::number(current) + "/" + QString::number(total);
+      return locale.toString(current) + "/" + locale.toString(total);
     } else {
-      return QString::number(total);
+      return locale.toString(total);
     }
   };
 
   QStandardItem* master_item = makeDataItem(QString::fromStdString(master), false);
 
-  QStandardItem* area = makeDataItem(QString::fromStdString(text));
+  QStandardItem* area = makeDataItem(text);
 
   QStandardItem* insts = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
 
@@ -462,8 +498,8 @@ SelectionSet BrowserWidget::getMenuItemChildren()
 
   auto* gui = Gui::get();
   SelectionSet children;
-  for (auto* child : module->getChildren()) {
-    children.insert(gui->makeSelected(child->getMaster()));
+  for (auto* child : getChildren(module)) {
+    children.insert(gui->makeSelected(child));
   }
   return children;
 }
@@ -553,6 +589,79 @@ const QIcon BrowserWidget::makeModuleIcon(const QColor& color)
   swatch.fill(color);
 
   return QIcon(swatch);
+}
+
+void BrowserWidget::itemCollapsed(const QModelIndex& index)
+{
+  auto* item = model_->itemFromIndex(index);
+  auto* module = item->data().value<odb::dbModule*>();
+
+  if (module == nullptr) {
+    return;
+  }
+
+  updateChildren(module, modulesettings_.at(module).color);
+}
+
+void BrowserWidget::updateChildren(odb::dbModule* module, const QColor& color)
+{
+  for (auto* child : getAllChildren(module)) {
+    emit updateModuleColor(child, color, false);
+  }
+}
+
+void BrowserWidget::itemExpanded(const QModelIndex& index)
+{
+  auto* item = model_->itemFromIndex(index);
+  auto* module = item->data().value<odb::dbModule*>();
+
+  if (module == nullptr) {
+    return;
+  }
+
+  resetChildren(module);
+}
+
+void BrowserWidget::resetChildren(odb::dbModule* module)
+{
+  for (auto* child : getChildren(module)) {
+    const QColor& base_color = modulesettings_.at(child).user_color;
+    emit updateModuleColor(child, base_color, false);
+
+    for (auto* subchild : getAllChildren(child)) {
+      emit updateModuleColor(subchild, base_color, false);
+    }
+  }
+}
+
+void BrowserWidget::updateModuleColorIcon(odb::dbModule* module, const QColor& color)
+{
+  auto* item = modulesmap_[module];
+  item->setIcon(makeModuleIcon(color));
+
+  if (!view_->isExpanded(item->index())) {
+    updateChildren(module, color);
+  }
+}
+
+std::set<odb::dbModule*> BrowserWidget::getChildren(odb::dbModule* parent)
+{
+  std::set<odb::dbModule*> children;
+  for (auto* child : parent->getChildren()) {
+    children.insert(child->getMaster());
+  }
+  return children;
+}
+
+std::set<odb::dbModule*> BrowserWidget::getAllChildren(odb::dbModule* parent)
+{
+  std::set<odb::dbModule*> children;
+  for (auto* child : getChildren(parent)) {
+    children.insert(child);
+    const auto next_children = getAllChildren(child);
+    children.insert(next_children.begin(), next_children.end());
+  }
+  return children;
 }
 
 }  // namespace gui

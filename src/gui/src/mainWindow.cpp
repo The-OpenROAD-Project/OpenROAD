@@ -244,9 +244,9 @@ MainWindow::MainWindow(QWidget* parent)
           viewer_,
           SLOT(updateModuleVisibility(odb::dbModule*, bool)));
   connect(hierarchy_widget_,
-          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&)),
+          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
           viewer_,
-          SLOT(updateModuleColor(odb::dbModule*, const QColor&)));
+          SLOT(updateModuleColor(odb::dbModule*, const QColor&, bool)));
 
   connect(timing_widget_,
           &TimingWidget::inspect,

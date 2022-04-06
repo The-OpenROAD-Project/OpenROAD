@@ -110,6 +110,8 @@ class LayoutViewer : public QWidget
 
   struct ModuleSettings {
     QColor color;
+    QColor user_color;
+    QColor orig_color;
     bool visible;
   };
 
@@ -230,7 +232,7 @@ class LayoutViewer : public QWidget
   void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
   void updateModuleVisibility(odb::dbModule* module, bool visible);
-  void updateModuleColor(odb::dbModule* module, const QColor& color);
+  void updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected);
 
  private slots:
   void setBlock(odb::dbBlock* block);
