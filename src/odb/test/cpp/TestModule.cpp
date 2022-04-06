@@ -62,10 +62,10 @@ BOOST_FIXTURE_TEST_CASE(test_default,F_DEFAULT)
   BOOST_TEST(parent_mod->getInsts().size()==2);
   //dbInst::getModule()
   BOOST_TEST(std::string(inst1->getModule()->getName())=="parent_mod");
-  //dbModule::removeInst()
-  parent_mod->removeInst(inst2);
+  //dbModule::addInst() new parent
+  block->getTopModule()->addInst(inst2);
   BOOST_TEST(parent_mod->getInsts().size()==1);
-  BOOST_TEST(inst2->getModule()==nullptr);
+  BOOST_TEST(inst2->getModule()==block->getTopModule());
   //dbInst::destroy -> dbModule insts
   dbInst::destroy(inst1);
   BOOST_TEST(parent_mod->getInsts().size()==0);

@@ -293,17 +293,40 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  FlexDR dr(getDesign(), logger_, db_);
-  dr.setDebug(debug_.get());
+  dr_ = std::make_unique<FlexDR>(getDesign(), logger_, db_);
+  dr_->setDebug(debug_.get());
   if (distributed_)
-    dr.setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
-  dr.main();
+    dr_->setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
+  if (SINGLE_STEP_DR) {
+    dr_->init();
+  } else {
+    dr_->main();
+  }
+}
+
+void TritonRoute::stepDR(int size,
+                         int offset,
+                         int mazeEndIter,
+                         frUInt4 workerDRCCost,
+                         frUInt4 workerMarkerCost,
+                         int ripupMode,
+                         bool followGuide)
+{
+  dr_->searchRepair({size, offset, mazeEndIter, workerDRCCost,
+      workerMarkerCost, ripupMode, followGuide});
+  num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
 void TritonRoute::endFR()
 {
+  if (SINGLE_STEP_DR) {
+    dr_->end(/* done */ true);
+  }
+  dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
+
+  num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
 void TritonRoute::reportConstraints()
@@ -331,10 +354,9 @@ int TritonRoute::main()
   prep();
   ta();
   dr();
-  endFR();
-
-  num_drvs_ = design_->getTopBlock()->getNumMarkers();
-
+  if (!SINGLE_STEP_DR) {
+    endFR();
+  }
   return 0;
 }
 
@@ -466,6 +488,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   ENABLE_VIA_GEN = params.enableViaGen;
   DBPROCESSNODE = params.dbProcessNode;
   CLEAN_PATCHES = params.cleanPatches;
+  SINGLE_STEP_DR = params.singleStepDR;
   if (!params.viaInPinBottomLayer.empty()) {
     VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
