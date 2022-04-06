@@ -489,9 +489,12 @@ void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
   fullRepaint();
 }
 
-void LayoutViewer::updateModuleColor(odb::dbModule* module, const QColor& color)
+void LayoutViewer::updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected)
 {
   modules_[module].color = color;
+  if (user_selected) {
+    modules_[module].user_color = color;
+  }
   fullRepaint();
 }
 
@@ -540,7 +543,8 @@ void LayoutViewer::populateModuleColors()
 
   int color_idx = 0;
   for (auto* module : block_->getModules()) {
-    modules_[module] = {colors[color_idx++], true};
+    auto color = colors[color_idx++];
+    modules_[module] = {color, color, color, true};
 
     if (color_idx == colors.size()) {
       color_idx = 0;
