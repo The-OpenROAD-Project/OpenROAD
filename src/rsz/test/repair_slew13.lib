@@ -20,7 +20,7 @@ library ("sky130_fd_sc_hd__tt_025C_1v80_") {
     capacitive_load_unit(1.0000000000, "pf");
     revision : 1.0000000000;
     default_cell_leakage_power : 0.0000000000;
-    default_fanout_load : 0.0000000000;
+    default_fanout_load : 1.0;
     default_inout_pin_cap : 0.0000000000;
     default_input_pin_cap : 0.0000000000;
     default_max_transition : 1.5000000000;
