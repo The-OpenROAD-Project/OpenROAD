@@ -628,8 +628,10 @@ void BrowserWidget::resetChildren(odb::dbModule* module)
     const QColor& base_color = modulesettings_.at(child).user_color;
     emit updateModuleColor(child, base_color, false);
 
-    for (auto* subchild : getAllChildren(child)) {
-      emit updateModuleColor(subchild, base_color, false);
+    if (view_->isExpanded(modulesmap_[child]->index())) {
+      resetChildren(child);
+    } else {
+      updateChildren(child, base_color);
     }
   }
 }
