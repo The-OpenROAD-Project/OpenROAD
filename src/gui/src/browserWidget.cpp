@@ -38,6 +38,7 @@
 #include <QColorDialog>
 #include <QHeaderView>
 #include <QEvent>
+#include <QLocale>
 #include <QMouseEvent>
 
 #include "utl/Logger.h"
@@ -403,16 +404,18 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
+  QLocale locale(QLocale::English); // for number formatting
+
   double scale_to_um = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
-  std::string units = "\u03BC"; // mu
+  QString units = "\u03BC"; // mu
   double disp_area = stats.area / scale_to_um;
   if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
-  auto text = fmt::format("{:.3f}", disp_area) + " " + units + "m\u00B2"; // m2
+  auto text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
 
   auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
@@ -424,17 +427,17 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     return data_item;
   };
 
-  auto makeHierText = [](int current, int total, bool is_leaf) -> QString {
+  auto makeHierText = [&locale](int current, int total, bool is_leaf) -> QString {
     if (!is_leaf) {
-      return QString::number(current) + "/" + QString::number(total);
+      return locale.toString(current) + "/" + locale.toString(total);
     } else {
-      return QString::number(total);
+      return locale.toString(total);
     }
   };
 
   QStandardItem* master_item = makeDataItem(QString::fromStdString(master), false);
 
-  QStandardItem* area = makeDataItem(QString::fromStdString(text));
+  QStandardItem* area = makeDataItem(text);
 
   QStandardItem* insts = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
 
