@@ -364,12 +364,13 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
 
     // loop over lower layer shapes
     for (const auto& [lower_box, lower_shape] : lower_shapes) {
+      auto* lower_net = lower_shape->getNet();
       // check for intersections in higher layer shapes
       for (auto it = upper_shapes.qbegin(
                bgi::intersects(lower_box)
-               && bgi::satisfies([&lower_shape](const auto& other) {
+               && bgi::satisfies([lower_net](const auto& other) {
                     // not the same net, so ignore
-                    return lower_shape->getNet() == other.second->getNet();
+                    return lower_net == other.second->getNet();
                   }));
            it != upper_shapes.qend();
            it++) {
