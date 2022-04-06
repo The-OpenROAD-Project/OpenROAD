@@ -507,7 +507,7 @@ void LayoutViewer::populateModuleColors()
   }
 
   // https://mokole.com/palette.html
-  const std::array<QColor, 32> colors{
+  const std::array<QColor, 31> colors{
     QColor{105, 105, 105},
     QColor{85, 107, 47},
     QColor{34, 139, 34},
@@ -522,7 +522,7 @@ void LayoutViewer::populateModuleColors()
     QColor{176, 48, 96},
     QColor{255, 0, 0},
     QColor{255, 140, 0},
-    QColor{255, 255, 0},
+//    QColor{255, 255, 0}, // removed because it is the same as OpenROAD highlight yellow.
     QColor{0, 255, 0},
     QColor{138, 43, 226},
     QColor{0, 255, 127},
