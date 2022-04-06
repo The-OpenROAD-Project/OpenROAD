@@ -1202,7 +1202,8 @@ void Tapcell::makeInstance(odb::dbBlock* block,
     return;
   }
   string name = prefix + std::to_string(phy_idx_);
-  odb::dbInst* inst = odb::dbInst::create(block, master, name.c_str());
+  odb::dbInst* inst = odb::dbInst::create(block, master, name.c_str(),
+                                          /* physical_only */ true);
   if (inst == nullptr) {
     logger_->error(utl::TAP,
                    33,
