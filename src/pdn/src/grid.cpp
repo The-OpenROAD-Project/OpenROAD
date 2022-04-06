@@ -793,11 +793,12 @@ void CoreGrid::setupDirectConnect(
     // sort by name to keep stable
     std::stable_sort(
         iterms.begin(), iterms.end(), [](odb::dbITerm* l, odb::dbITerm* r) {
-          const std::string r_name
-              = l->getInst()->getName() + "/" + l->getMTerm()->getName();
-          const std::string l_name
-              = l->getInst()->getName() + "/" + l->getMTerm()->getName();
-          return r_name < l_name;
+          const int name_compare = r->getInst()->getName().compare(l->getInst()->getName());
+          if (name_compare != 0) {
+            return name_compare < 0;
+          }
+
+          return r->getMTerm()->getName() < l->getMTerm()->getName();
         });
 
     for (auto* iterm : iterms) {
