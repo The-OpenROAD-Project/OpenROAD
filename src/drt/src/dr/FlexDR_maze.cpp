@@ -2405,6 +2405,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         FlexMazeIdx mzIdxBot(startX, startY, currZ);
         FlexMazeIdx mzIdxTop(startX, startY, currZ + 1);
         currVia->setMazeIdx(mzIdxBot, mzIdxTop);
+        currVia->addToNet(net);
         /*update access point (AP) connectivity info. If it is over a boundary
         pin may still be over an unseen AP (this is checked by
         checkViaConnectivity) */
