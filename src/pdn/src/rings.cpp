@@ -90,7 +90,6 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
       continue;
     }
 
-    // area io type
     if (type == odb::dbMasterType::PAD_AREAIO) {
       continue;
     }
