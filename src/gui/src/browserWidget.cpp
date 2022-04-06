@@ -35,6 +35,7 @@
 
 #include "browserWidget.h"
 
+#include <QColorDialog>
 #include <QHeaderView>
 #include <QEvent>
 #include <QMouseEvent>
@@ -47,56 +48,16 @@ Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
-BrowserSelectionModel::BrowserSelectionModel(QAbstractItemModel* model, QObject* parent)
-    : QItemSelectionModel(model, parent),
-      is_right_click(false)
-{
-}
-
-bool BrowserSelectionModel::eventFilter(QObject* obj, QEvent* event)
-{
-  if (event->type() == QEvent::MouseButtonPress) {
-    QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-    if (mouse_event->button() == Qt::RightButton) {
-      is_right_click = true;
-    } else {
-      is_right_click = false;
-    }
-  } else if (event->type() == QEvent::MouseButtonRelease) {
-    is_right_click = false;
-  } else if (event->type() == QEvent::ContextMenu) {
-    // reset because the context menu has poped up.
-    is_right_click = false;
-  }
-
-  return QItemSelectionModel::eventFilter(obj, event);
-}
-
-void BrowserSelectionModel::select(const QItemSelection& selection, QItemSelectionModel::SelectionFlags command)
-{
-  if (is_right_click) {
-    return;
-  }
-
-  QItemSelectionModel::select(selection, command);
-}
-
-void BrowserSelectionModel::select(const QModelIndex& selection, QItemSelectionModel::SelectionFlags command)
-{
-  if (is_right_click) {
-    return;
-  }
-
-  QItemSelectionModel::select(selection, command);
-}
-
 ///////
 
-BrowserWidget::BrowserWidget(QWidget* parent)
+BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings,
+                             QWidget* parent)
     : QDockWidget("Hierarchy Browser", parent),
       block_(nullptr),
+      modulesettings_(modulesettings),
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
+      ignore_selection_(false),
       menu_(new QMenu(this))
 {
   setObjectName("hierarchy_viewer");  // for settings
@@ -105,8 +66,7 @@ BrowserWidget::BrowserWidget(QWidget* parent)
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
-  view_->setSelectionModel(new BrowserSelectionModel(model_, view_));
-  view_->viewport()->installEventFilter(view_->selectionModel());
+  view_->viewport()->installEventFilter(this);
 
   makeMenu();
 
@@ -136,6 +96,11 @@ BrowserWidget::BrowserWidget(QWidget* parent)
           SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
           this,
           SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+
+  connect(model_,
+          SIGNAL(itemChanged(QStandardItem*)),
+          this,
+          SLOT(itemChanged(QStandardItem*)));
 }
 
 void BrowserWidget::makeMenu()
@@ -157,6 +122,11 @@ void BrowserWidget::makeMenu()
             children.insert(menu_item_);
             emit select(children);
           });
+  connect(menu_->addAction("Remove from selected"),
+          &QAction::triggered,
+          [&](bool) {
+            emit removeSelect(menu_item_);
+          });
 
   menu_->addSeparator();
 
@@ -176,6 +146,31 @@ void BrowserWidget::makeMenu()
             auto children = getMenuItemChildren();
             children.insert(menu_item_);
             emit highlight(children);
+          });
+  connect(menu_->addAction("Remove from highlight"),
+          &QAction::triggered,
+          [&](bool) {
+            emit removeHighlight(menu_item_);
+          });
+
+  menu_->addSeparator();
+
+  connect(menu_->addAction("Change color"),
+          &QAction::triggered,
+          [&](bool) {
+            auto* module = std::any_cast<odb::dbModule*>(menu_item_.getObject());
+            if (module == nullptr) {
+              return;
+            }
+
+            auto& setting = modulesettings_.at(module);
+            QColor color = setting.color;
+
+            color = QColorDialog::getColor(color, this, "Module color", QColorDialog::ShowAlphaChannel);
+            if (color.isValid()) {
+              emit updateModuleColor(module, color);
+              modulesmap_[module]->setIcon(makeModuleIcon(color));
+            }
           });
 }
 
@@ -225,11 +220,15 @@ void BrowserWidget::selectionChanged(const QItemSelection& selected, const QItem
     return;
   }
 
-  emit clicked(indexes.first());
+  clicked(indexes.first());
 }
 
 void BrowserWidget::clicked(const QModelIndex& index)
 {
+  if (ignore_selection_) {
+    return;
+  }
+
   Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
@@ -286,6 +285,7 @@ void BrowserWidget::updateModel()
 void BrowserWidget::clearModel()
 {
   model_->removeRows(0, model_->rowCount());
+  modulesmap_.clear();
 }
 
 BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
@@ -342,6 +342,13 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module, Q
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
+
+  item->setCheckable(true);
+  auto& settings = modulesettings_.at(module);
+  item->setCheckState(settings.visible ? Qt::Checked : Qt::Unchecked);
+  item->setIcon(makeModuleIcon(settings.color));
+
+  modulesmap_[module] = item;
 
   ModuleStats stats = populateModule(module, item);
 
@@ -459,6 +466,93 @@ SelectionSet BrowserWidget::getMenuItemChildren()
     children.insert(gui->makeSelected(child->getMaster()));
   }
   return children;
+}
+
+void BrowserWidget::itemChanged(QStandardItem* item)
+{
+  ignore_selection_ = true;
+  const auto state = item->checkState();
+
+  auto* module = item->data().value<odb::dbModule*>();
+
+  if (module == nullptr) {
+    return;
+  }
+
+  emit updateModuleVisibility(module, state == Qt::Checked);
+
+  // toggle children
+  if (state != Qt::PartiallyChecked) {
+    for (int r = 0; r < item->rowCount(); r++) {
+      QStandardItem* child = item->child(r, Instance);
+      if (child->isCheckable()) {
+        child->setCheckState(state);
+      }
+    }
+  }
+
+  toggleParent(item);
+}
+
+void BrowserWidget::toggleParent(QStandardItem* item)
+{
+  auto* parent = item->parent();
+
+  if (parent == nullptr) {
+    return;
+  }
+
+  std::vector<Qt::CheckState> childstates;
+  for (int r = 0; r < parent->rowCount(); r++) {
+    QStandardItem* child = parent->child(r, Instance);
+    if (child->isCheckable()) {
+      childstates.push_back(child->checkState());
+    }
+  }
+
+  const bool all_on = std::all_of(childstates.begin(), childstates.end(), [](Qt::CheckState state) {
+    return state == Qt::Checked;
+  });
+  const bool all_off = std::all_of(childstates.begin(), childstates.end(), [](Qt::CheckState state) {
+    return state == Qt::Unchecked;
+  });
+
+  if (all_on) {
+    parent->setCheckState(Qt::Checked);
+  } else if (all_off) {
+    parent->setCheckState(Qt::Unchecked);
+  } else {
+    parent->setCheckState(Qt::PartiallyChecked);
+  }
+}
+
+bool BrowserWidget::eventFilter(QObject* obj, QEvent* event)
+{
+  if (obj == view_->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+      if (mouse_event->button() == Qt::RightButton) {
+        ignore_selection_ = true;
+      } else {
+        ignore_selection_ = false;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      ignore_selection_ = false;
+    } else if (event->type() == QEvent::ContextMenu) {
+      // reset because the context menu has popped up.
+      ignore_selection_ = false;
+    }
+  }
+
+  return QDockWidget::eventFilter(obj, event);
+}
+
+const QIcon BrowserWidget::makeModuleIcon(const QColor& color)
+{
+  QPixmap swatch(20, 20);
+  swatch.fill(color);
+
+  return QIcon(swatch);
 }
 
 }  // namespace gui

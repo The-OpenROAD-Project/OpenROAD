@@ -156,6 +156,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add the selections to highlight set
   void addHighlighted(const SelectionSet& selection, int highlight_group = -1);
 
+  // Remove a selection from the set of highlights
+  void removeHighlighted(const Selected& selection);
+
   // Add Ruler to Layout View
   std::string addRuler(int x0, int y0, int x1, int y1, const std::string& label = "", const std::string& name = "");
 

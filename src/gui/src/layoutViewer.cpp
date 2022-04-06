@@ -483,9 +483,76 @@ LayoutViewer::LayoutViewer(
           SLOT(setBlock(odb::dbBlock*)));
 }
 
+void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
+{
+  modules_[module].visible = visible;
+  fullRepaint();
+}
+
+void LayoutViewer::updateModuleColor(odb::dbModule* module, const QColor& color)
+{
+  modules_[module].color = color;
+  fullRepaint();
+}
+
+void LayoutViewer::populateModuleColors()
+{
+  modules_.clear();
+
+  if (block_ == nullptr) {
+    return;
+  }
+
+  // https://mokole.com/palette.html
+  const std::array<QColor, 32> colors{
+    QColor{105, 105, 105},
+    QColor{85, 107, 47},
+    QColor{34, 139, 34},
+    QColor{139, 0, 0},
+    QColor{72, 61, 139},
+    QColor{184, 134, 11},
+    QColor{0, 139, 139},
+    QColor{70, 130, 180},
+    QColor{0, 0, 139},
+    QColor{143, 188, 143},
+    QColor{128, 0, 128},
+    QColor{176, 48, 96},
+    QColor{255, 0, 0},
+    QColor{255, 140, 0},
+    QColor{255, 255, 0},
+    QColor{0, 255, 0},
+    QColor{138, 43, 226},
+    QColor{0, 255, 127},
+    QColor{0, 255, 255},
+    QColor{0, 0, 255},
+    QColor{173, 255, 47},
+    QColor{255, 99, 71},
+    QColor{255, 0, 255},
+    QColor{30, 144, 255},
+    QColor{144, 238, 144},
+    QColor{173, 216, 230},
+    QColor{255, 20, 147},
+    QColor{123, 104, 238},
+    QColor{255, 160, 122},
+    QColor{245, 222, 179},
+    QColor{238, 130, 238},
+    QColor{255, 192, 203}};
+
+  int color_idx = 0;
+  for (auto* module : block_->getModules()) {
+    modules_[module] = {colors[color_idx++], true};
+
+    if (color_idx == colors.size()) {
+      color_idx = 0;
+    }
+  }
+}
+
 void LayoutViewer::setBlock(odb::dbBlock* block)
 {
   block_ = block;
+
+  populateModuleColors();
 
   updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
@@ -2117,51 +2184,6 @@ void LayoutViewer::drawModuleView(QPainter* painter,
     return;
   }
 
-  // https://mokole.com/palette.html
-  const std::array<QColor, 32> colors{
-    QColor{105, 105, 105},
-    QColor{85, 107, 47},
-    QColor{34, 139, 34},
-    QColor{139, 0, 0},
-    QColor{72, 61, 139},
-    QColor{184, 134, 11},
-    QColor{0, 139, 139},
-    QColor{70, 130, 180},
-    QColor{0, 0, 139},
-    QColor{143, 188, 143},
-    QColor{128, 0, 128},
-    QColor{176, 48, 96},
-    QColor{255, 0, 0},
-    QColor{255, 140, 0},
-    QColor{255, 255, 0},
-    QColor{0, 255, 0},
-    QColor{138, 43, 226},
-    QColor{0, 255, 127},
-    QColor{0, 255, 255},
-    QColor{0, 0, 255},
-    QColor{173, 255, 47},
-    QColor{255, 99, 71},
-    QColor{255, 0, 255},
-    QColor{30, 144, 255},
-    QColor{144, 238, 144},
-    QColor{173, 216, 230},
-    QColor{255, 20, 147},
-    QColor{123, 104, 238},
-    QColor{255, 160, 122},
-    QColor{245, 222, 179},
-    QColor{238, 130, 238},
-    QColor{255, 192, 203}};
-
-  int color_idx = 0;
-  std::map<odb::dbModule*, QColor> hierarchy_colors;
-  for (auto* module : block_->getModules()) {
-    hierarchy_colors[module] = colors[color_idx++];
-
-    if (color_idx == colors.size()) {
-      color_idx = 0;
-    }
-  }
-
   for (auto* inst : insts) {
     auto* module = inst->getModule();
 
@@ -2169,10 +2191,16 @@ void LayoutViewer::drawModuleView(QPainter* painter,
       continue;
     }
 
+    const auto setting = modules_[module];
+
+    if (!setting.visible) {
+      continue;
+    }
+
     odb::Rect inst_outline;
     inst->getBBox()->getBox(inst_outline);
 
-    auto color = hierarchy_colors[module];
+    auto color = setting.color;
     painter->setPen(QPen(color, 0));
     color.setAlpha(100);
     painter->setBrush(QBrush(color));

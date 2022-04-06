@@ -36,6 +36,8 @@
 #pragma once
 
 #include "gui/gui.h"
+#include "layoutViewer.h"
+
 #include <QDockWidget>
 #include <QMenu>
 #include <QTreeView>
@@ -50,32 +52,18 @@
 
 namespace gui {
 
-class BrowserSelectionModel : public QItemSelectionModel
-{
-  Q_OBJECT
-
-  public:
-    BrowserSelectionModel(QAbstractItemModel* model = nullptr, QObject* parent = nullptr);
-
-    bool eventFilter(QObject* obj, QEvent* event) override;
-
-  public slots:
-    void select(const QItemSelection& selection, QItemSelectionModel::SelectionFlags command) override;
-    void select(const QModelIndex& selection, QItemSelectionModel::SelectionFlags command) override;
-
-  private:
-    bool is_right_click;
-};
-
 class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
 
   public:
-    BrowserWidget(QWidget* parent = nullptr);
+    BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings,
+                  QWidget* parent = nullptr);
 
     void readSettings(QSettings* settings);
     void writeSettings(QSettings* settings);
+
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
     // dbBlockCallBackObj
     virtual void inDbInstCreate(odb::dbInst*);
@@ -85,7 +73,12 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
   signals:
     void select(const SelectionSet& selected);
+    void removeSelect(const Selected& selected);
     void highlight(const SelectionSet& selected);
+    void removeHighlight(const Selected& selected);
+
+    void updateModuleVisibility(odb::dbModule* module, bool visible);
+    void updateModuleColor(odb::dbModule* module, const QColor& color);
 
   public slots:
     void setBlock(odb::dbBlock* block);
@@ -98,6 +91,7 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
   private slots:
     void itemContextMenu(const QPoint &point);
+    void itemChanged(QStandardItem* item);
 
   private:
     void updateModel();
@@ -107,14 +101,22 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
     Selected getSelectedFromIndex(const QModelIndex& index);
 
+    void toggleParent(QStandardItem* item);
+
     odb::dbBlock* block_;
+
+    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
 
     QTreeView* view_;
     QStandardItemModel* model_;
 
+    bool ignore_selection_;
+
     QMenu* menu_;
     Selected menu_item_;
     SelectionSet getMenuItemChildren();
+
+    std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 
     struct ModuleStats {
       int64_t area;
@@ -197,6 +199,8 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
     ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
     ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand);
+
+    const QIcon makeModuleIcon(const QColor& color);
 
     void makeRowItems(QStandardItem* item,
                       const std::string& master,

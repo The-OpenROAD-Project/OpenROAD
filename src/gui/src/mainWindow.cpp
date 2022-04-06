@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
-      hierarchy_widget_(new BrowserWidget(this)),
+      hierarchy_widget_(new BrowserWidget(viewer_->getModuleSettings(), this)),
       find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
@@ -228,9 +228,25 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(setSelected(const SelectionSet&)));
   connect(hierarchy_widget_,
+          SIGNAL(removeSelect(const Selected&)),
+          this,
+          SLOT(removeSelected(const Selected&)));
+  connect(hierarchy_widget_,
           SIGNAL(highlight(const SelectionSet&)),
           this,
           SLOT(addHighlighted(const SelectionSet&)));
+  connect(hierarchy_widget_,
+          SIGNAL(removeHighlight(const Selected&)),
+          this,
+          SLOT(removeHighlighted(const Selected&)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleVisibility(odb::dbModule*, bool)),
+          viewer_,
+          SLOT(updateModuleVisibility(odb::dbModule*, bool)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&)),
+          viewer_,
+          SLOT(updateModuleColor(odb::dbModule*, const QColor&)));
 
   connect(timing_widget_,
           &TimingWidget::inspect,
@@ -767,6 +783,17 @@ void MainWindow::removeSelected(const Selected& selection)
   if (itr != selected_.end()) {
     selected_.erase(itr);
     emit selectionChanged();
+  }
+}
+
+void MainWindow::removeHighlighted(const Selected& selection)
+{
+  for (auto& group : highlighted_) {
+    auto itr = std::find(group.begin(), group.end(), selection);
+    if (itr != group.end()) {
+      group.erase(itr);
+      emit highlightChanged();
+    }
   }
 }
 
