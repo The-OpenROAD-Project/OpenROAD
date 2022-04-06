@@ -170,7 +170,6 @@ public:
 
 private:
   const dbNetwork *network_;
-  bool top_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
   Net* next_;
@@ -178,16 +177,14 @@ private:
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
 					     const dbNetwork *network) :
-  network_(network)
+  network_(network),
+  next_(nullptr)
 {
   if (instance == network->topInstance()) {
-    top_ = true;
     dbSet<dbNet> nets = network->block()->getNets();
     iter_ = nets.begin();
     end_ = nets.end();
   }
-  else
-    top_ = false;
 }
 
 bool
