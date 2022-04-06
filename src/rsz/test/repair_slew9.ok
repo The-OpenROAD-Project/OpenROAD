@@ -22,7 +22,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-rdrv/Y                                  1.49    0.25    1.25 (MET)
+rdrv/Y                                  1.49    0.28    1.22 (MET)
 
 max capacitance
 
