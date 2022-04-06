@@ -147,8 +147,6 @@ class Grid
   virtual const odb::Rect getDomainBoundary() const;
   // returns the  largest boundary to use for extending straps
   virtual const odb::Rect getGridBoundary() const;
-  // returns the ring area to use for extending straps
-  virtual const odb::Rect getRingBoundary() const;
 
   const std::vector<std::unique_ptr<Rings>>& getRings() const { return rings_; }
   const std::vector<std::unique_ptr<Straps>>& getStraps() const

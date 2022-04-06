@@ -299,11 +299,6 @@ const odb::Rect Grid::getRingArea() const
   return rect;
 }
 
-const odb::Rect Grid::getRingBoundary() const
-{
-  return getRingArea();
-}
-
 void Grid::report() const
 {
   auto* logger = getLogger();

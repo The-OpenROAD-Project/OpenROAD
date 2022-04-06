@@ -164,7 +164,7 @@ void Straps::makeShapes(const ShapeTreeMap& other_shapes)
       boundary = grid->getDomainBoundary();
       break;
     case RINGS:
-      boundary = grid->getRingBoundary();
+      boundary = grid->getRingArea();
       break;
     case BOUNDARY:
       boundary = grid->getGridBoundary();
@@ -340,7 +340,7 @@ void FollowPins::makeShapes(const ShapeTreeMap& other_shapes)
       boundary = grid->getDomainArea();
       break;
     case RINGS:
-      boundary = grid->getRingBoundary();
+      boundary = grid->getRingArea();
       break;
     case BOUNDARY:
       boundary = grid->getGridBoundary();
