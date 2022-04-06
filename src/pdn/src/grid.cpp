@@ -363,11 +363,11 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
                upper_shapes.size());
 
     // loop over lower layer shapes
-    for (auto& [lower_box, lower_shape] : lower_shapes) {
+    for (const auto& [lower_box, lower_shape] : lower_shapes) {
       // check for intersections in higher layer shapes
       for (auto it = upper_shapes.qbegin(
                bgi::intersects(lower_box)
-               && bgi::satisfies([&](const auto& other) {
+               && bgi::satisfies([&lower_shape](const auto& other) {
                     // not the same net, so ignore
                     return lower_shape->getNet() == other.second->getNet();
                   }));
@@ -458,7 +458,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   std::vector<ViaPtr> vias;
   getIntersections(vias, search_shapes);
 
-  auto remove_set_of_vias = [this, &vias](std::set<ViaPtr>& remove_vias) {
+  auto remove_set_of_vias = [&vias](std::set<ViaPtr>& remove_vias) {
     auto remove
         = std::remove_if(vias.begin(), vias.end(), [&](const ViaPtr& via) {
             return remove_vias.count(via) != 0;

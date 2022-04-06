@@ -236,7 +236,7 @@ class FollowPinShape : public Shape
   virtual const odb::Rect getMinimumRect() const override;
   virtual Shape* copy() const override;
   virtual void merge(Shape* shape) override;
-  virtual void updateTermConnections();
+  virtual void updateTermConnections() override;
 
   // followpins cannot be removed
   virtual bool isRemovable() const override { return false; }

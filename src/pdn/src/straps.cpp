@@ -612,7 +612,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 
   std::set<odb::dbTechLayer*> connectable_layers;
   for (const auto& [layer, shapes] : search_shapes) {
-    for (const auto [box, shape] : shapes) {
+    for (const auto& [box, shape] : shapes) {
       if (shape->getType() == target_shapes_) {
         const auto layers = getGrid()->connectableLayers(layer);
         connectable_layers.insert(layers.begin(), layers.end());

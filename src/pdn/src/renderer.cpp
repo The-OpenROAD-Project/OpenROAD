@@ -80,7 +80,7 @@ void PDNRenderer::update()
 
       for (const auto& [layer, shapes] : grid->getShapes()) {
         auto& save_shapes = shapes_[layer];
-        for (const auto shape : shapes) {
+        for (const auto& shape : shapes) {
           save_shapes.insert(shape);
         }
       }

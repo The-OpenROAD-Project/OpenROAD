@@ -244,7 +244,7 @@ class InstanceGrid : public Grid
       ShapeTreeMap& obstructions) const override;
 
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
-  virtual bool isReplaceable() const { return replaceable_; }
+  virtual bool isReplaceable() const override { return replaceable_; }
 
   static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst);
   static ShapeTreeMap getInstancePins(odb::dbInst* inst);
