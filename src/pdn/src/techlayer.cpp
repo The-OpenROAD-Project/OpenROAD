@@ -32,6 +32,7 @@
 
 #include "techlayer.h"
 
+#include <cmath>
 #include <limits>
 
 namespace pdn {
