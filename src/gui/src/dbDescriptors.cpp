@@ -2093,18 +2093,22 @@ std::string DbModuleDescriptor::getTypeName() const
 bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
-  auto insts = module->getInsts();
-  if (insts.empty()) {
-    return false;
-  }
   bbox.mergeInit();
-  for (auto* inst : insts) {
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
     auto* box = inst->getBBox();
     odb::Rect box_rect;
     box->getBox(box_rect);
     bbox.merge(box_rect);
   }
-  return true;
+
+  return !bbox.isInverted();
 }
 
 void DbModuleDescriptor::highlight(std::any object,
