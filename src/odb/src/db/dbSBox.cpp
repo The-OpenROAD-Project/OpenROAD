@@ -228,7 +228,6 @@ dbSBox* dbSBox::create(dbSWire* wire_,
 
   box->_flags._layer_id = layer_->getImpl()->getOID();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner = wire->getOID();
   GeomShape* _geomshape;
   if (dir == OCTILINEAR) {
     Point p1(x1, y1);
@@ -246,9 +245,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   box->_sflags._wire_type = type.getValue();
   box->_sflags._direction = dir;
 
-  // link box to wire
-  box->_next_box = (uint) wire->_wires;
-  wire->_wires = box->getOID();
+  wire->addSBox(box);
 
   block->add_geom_shape(_geomshape);
 
@@ -275,15 +272,13 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   int ymax = vbbox->_shape._rect.yMax() + y;
   _dbSBox* box = block->_sbox_tbl->create();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner = wire->getOID();
   box->_shape._rect.init(xmin, ymin, xmax, ymax);
   box->_flags._is_block_via = 1;
   box->_flags._via_id = via->getOID();
   box->_sflags._wire_type = type.getValue();
   box->_octilinear = false;
-  // link box to wire
-  box->_next_box = (uint) wire->_wires;
-  wire->_wires = box->getOID();
+
+  wire->addSBox(box);
 
   block->add_rect(box->_shape._rect);
   return (dbSBox*) box;
@@ -310,15 +305,13 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   int ymax = vbbox->_shape._rect.yMax() + y;
   _dbSBox* box = block->_sbox_tbl->create();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner = wire->getOID();
   box->_shape._rect.init(xmin, ymin, xmax, ymax);
   box->_flags._is_tech_via = 1;
   box->_flags._via_id = via->getOID();
   box->_sflags._wire_type = type.getValue();
   box->_octilinear = false;
-  // link box to wire
-  box->_next_box = (uint) wire->_wires;
-  wire->_wires = box->getOID();
+
+  wire->addSBox(box);
 
   block->add_rect(box->_shape._rect);
   return (dbSBox*) box;

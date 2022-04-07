@@ -69,7 +69,8 @@ eval tapcell $tapcell_args
 
 ################################################################
 # Power distribution network insertion
-pdngen -verbose $pdn_cfg
+source $pdn_cfg
+pdngen
 
 ################################################################
 # Global placement
