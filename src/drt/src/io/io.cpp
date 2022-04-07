@@ -909,8 +909,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
     auto pa = make_unique<frPinAccess>();
-    if(!term->getSigType().isSupply() && term->getBPins().size() == 1)
-    {
+    if (!term->getSigType().isSupply() && term->getBPins().size() == 1) {
       auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
       for (auto& db_ap : db_pin->getAccessPoints()) {
         auto ap = make_unique<frAccessPoint>();
@@ -926,6 +925,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
 
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
 {
+  std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
   for (auto& master : design->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
     for (auto& term : master->getTerms()) {
@@ -949,10 +949,41 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();
             updatefrAccessPoint(db_ap, ap.get(), tech);
+            ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
           }
           pin->addPinAccess(std::move(pa));
         }
+      }
+    }
+  }
+  for (auto db_inst : db->getChip()->getBlock()->getInsts()) {
+    auto inst = tmpBlock->findInst(db_inst->getName());
+    if (inst == nullptr)
+      continue;
+    for (auto db_term : db_inst->getITerms()) {
+      auto term = inst->getInstTerm(db_term->getMTerm()->getName());
+      if (term == nullptr)
+        continue;
+
+      auto db_aps = db_term->getPrefAccessPoints();
+      std::map<odb::dbMPin*, odb::dbAccessPoint*> db_aps_map;
+      for (auto db_ap : db_aps) {
+        if (ap_map.find(db_ap) == ap_map.end())
+          logger->error(DRT,
+                        1011,
+                        "Access Point not found for iterm {}/{}",
+                        db_inst->getName(),
+                        db_term->getMTerm()->getName());
+        db_aps_map[db_ap->getMPin()] = db_ap;
+      }
+      int idx = 0;
+      for (auto mpin : db_term->getMTerm()->getMPins()) {
+        if (db_aps_map.find(mpin) == db_aps_map.end())
+          term->setAccessPoint(idx, nullptr);
+        else
+          term->setAccessPoint(idx, ap_map[db_aps_map[mpin]]);
+        ++idx;
       }
     }
   }
@@ -2957,7 +2988,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
   }
   for (auto& term : design->getTopBlock()->getTerms()) {
     auto db_term = block->findBTerm(term->getName().c_str());
-   if (db_term == nullptr)
+    if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
     if (db_term->getSigType() == odb::dbSigType::POWER
         || db_term->getSigType() == odb::dbSigType::GROUND)
@@ -2967,7 +2998,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     if (db_pins.size() != pins.size())
       logger->error(
           DRT, 303, "Mismatch in number of pins for bterm {}", term->getName());
-    if(pins.size() != 1)
+    if (pins.size() != 1)
       continue;
     auto db_pin = (odb::dbBPin*) *db_pins.begin();
     auto& pin = pins[0];
