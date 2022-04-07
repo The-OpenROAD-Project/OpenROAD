@@ -41,6 +41,7 @@
 namespace fr {
 class frDesign;
 class DesignCallBack;
+class FlexDR;
 struct frDebugSettings;
 }  // namespace fr
 
@@ -136,6 +137,7 @@ class TritonRoute
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
+  void sendDesignUpdates(const std::string& globals_path);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -164,6 +166,7 @@ class TritonRoute
   void ta();
   void dr();
   void endFR();
+  friend class fr::FlexDR;
 };
 }  // namespace triton_route
 #endif

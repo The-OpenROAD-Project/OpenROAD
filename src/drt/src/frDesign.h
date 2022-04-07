@@ -51,7 +51,8 @@ class frDesign
   frDesign(Logger* logger)
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
-        rq_(std::make_unique<frRegionQuery>(this, logger))
+        rq_(std::make_unique<frRegionQuery>(this, logger)),
+        version_(0)
   {
   }
   frDesign() : topBlock_(nullptr), tech_(nullptr), rq_(nullptr) {}
@@ -91,6 +92,8 @@ class frDesign
   void addUpdate(const drUpdate& update) { updates_.push_back(update); }
   const std::vector<drUpdate>& getUpdates() const { return updates_; }
   void clearUpdates() { updates_.clear(); }
+  void incrementVersion() { ++version_; }
+  int getVersion() const { return version_; }
   
   ~frDesign() {}
  private:
@@ -101,6 +104,7 @@ class frDesign
   std::unique_ptr<frRegionQuery> rq_;
   std::vector<drUpdate> updates_;
   std::vector<std::string> user_selected_vias_;
+  int version_;
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

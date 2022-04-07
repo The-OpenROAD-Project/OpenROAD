@@ -54,6 +54,7 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
+#include "frProfileTask.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -444,10 +445,6 @@ void TritonRoute::ta()
 
 void TritonRoute::dr()
 {
-  if (dist_pool_ != nullptr) {
-    dist_pool_->join();
-    dist_pool_.reset();
-  }
   num_drvs_ = -1;
   FlexDR dr(this, getDesign(), logger_, db_);
   dr.setDebug(debug_.get());
@@ -507,6 +504,52 @@ void TritonRoute::sendDesignDist()
     logger_->error(DRT, 12304, "Updating design remotely failed");
 }
 
+static bool serializeDesignUpdates(frDesign* design,
+                                  const std::string& name)
+{
+  ProfileTask task("DIST: SERIALIZE_UPDATES");
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(false);
+  register_types(ar);
+  auto updates = design->getUpdates();
+  ar << updates;
+  task.done();
+  ProfileTask task2("DIST: WRITE_UPDATES");
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  file << stream.rdbuf();
+  file.close();
+  return true;
+}
+
+void TritonRoute::sendDesignUpdates(const std::string& globals_path)
+{
+  if(design_->getUpdates().size())
+    return;
+  std::string updates_path = fmt::format( "{}design_{}.bin", shared_volume_, design_->getVersion());
+  ProfileTask task("DIST: SENDING UPDATES");
+  serializeDesignUpdates(design_.get(), updates_path);
+  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                      dst::JobMessage::BROADCAST),
+      result(dst::JobMessage::NONE);
+  std::unique_ptr<dst::JobDescription> desc
+      = std::make_unique<RoutingJobDescription>();
+  RoutingJobDescription* rjd
+      = static_cast<RoutingJobDescription*>(desc.get());
+  rjd->setDesignPath(updates_path);
+  rjd->setGlobalsPath(globals_path);
+  rjd->setSharedDir(shared_volume_);
+  rjd->setDesignUpdate(true);
+  msg.setJobDescription(std::move(desc));
+  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+  if (!ok)
+    logger_->error(DRT, 304, "Updating design remotely failed");
+  design_->clearUpdates();
+  design_->incrementVersion();
+}
+
 int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
@@ -544,6 +587,10 @@ int TritonRoute::main()
   }
   prep();
   ta();
+  if(distributed_)
+  {
+    asio::post(*dist_pool_.get(), boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
+  }
   dr();
   endFR();
 

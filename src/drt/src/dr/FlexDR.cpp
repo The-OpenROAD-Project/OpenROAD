@@ -125,26 +125,6 @@ static bool serialize_design(SerializationType type,
   return true;
 }
 
-static bool serializeDesignUpdates(frDesign* design,
-                                  const std::string& name)
-{
-  ProfileTask task("DIST: SERIALIZE_UPDATES");
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-  frOArchive ar(stream);
-  ar.setDeepSerialize(false);
-  register_types(ar);
-  auto updates = design->getUpdates();
-  ar << updates;
-  task.done();
-  ProfileTask task2("DIST: WRITE_UPDATES");
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  file << stream.rdbuf();
-  file.close();
-  return true;
-}
-
 FlexDR::FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
     : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false),
       increaseClipsize_(false), clipSizeInc_(0)
@@ -1717,7 +1697,6 @@ void FlexDR::searchRepair(int iter,
   }
 
   omp_set_num_threads(MAX_THREADS);
-  int design_version = 0;
 
   increaseClipsize_ = false;
   // parallel execution
@@ -1729,35 +1708,13 @@ void FlexDR::searchRepair(int iter,
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        if (dist_on_ && !design_->getUpdates().empty()) {
-          if (iter != 0 || design_version != 0)
-            std::remove(design_path_.c_str());
-          design_path_ = fmt::format(
-              "{}iter{}_{}.design", dist_dir_, iter, design_version);
-          ProfileTask task("DIST: SENDING UPDATES");
-          serializeDesignUpdates(design_, design_path_);
-          dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                              dst::JobMessage::BROADCAST),
-              result(dst::JobMessage::NONE);
-          std::unique_ptr<dst::JobDescription> desc
-              = std::make_unique<RoutingJobDescription>();
-          RoutingJobDescription* rjd
-              = static_cast<RoutingJobDescription*>(desc.get());
-          rjd->setDesignPath(design_path_);
-          rjd->setGlobalsPath(globals_path_);
-          rjd->setSharedDir(dist_dir_);
-          rjd->setDesignUpdate(true);
-          msg.setJobDescription(std::move(desc));
-          bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-          if (!ok)
-            logger_->error(DRT, 304, "Updating design remotely failed");
-          design_->clearUpdates();
+        if (dist_on_) {
+          if (router_->dist_pool_ != nullptr) {
+            router_->dist_pool_->join();
+            router_->dist_pool_.reset();
+          }
+          router_->sendDesignUpdates(globals_path_);
         }
-        // if (design_version == 0) {
-          // ProfileTask task("DIST: dummyUpdate");
-          // design_->getRegionQuery()->dummyUpdate();
-        // }
-        ++design_version;
         {
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
