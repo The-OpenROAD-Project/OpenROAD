@@ -87,9 +87,10 @@ void TritonRoute::setDebugDR(bool on)
   debug_->debugDR = on;
 }
 
-void TritonRoute::setDebugDumpDR(bool on)
+void TritonRoute::setDebugDumpDR(bool on, const std::string& dumpDir)
 {
   debug_->debugDumpDR = on;
+  debug_->dumpDir = dumpDir;
 }
 
 void TritonRoute::setDebugMaze(bool on)

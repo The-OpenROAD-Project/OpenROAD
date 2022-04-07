@@ -38,6 +38,8 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
+#include <fstream>
+#include <streambuf>
 %}
 
 %include "../../Exception.i"
@@ -146,13 +148,14 @@ set_detailed_route_debug_cmd(const char* net_name,
                              int iter,
                              bool pa_markers,
                              bool pa_edge,
-                             bool pa_commit)
+                             bool pa_commit,
+                             const char* dumpDir)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
-  router->setDebugDumpDR(dump_dr);
+  router->setDebugDumpDR(dump_dr, dumpDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (x >= 0) {
@@ -170,7 +173,10 @@ run_worker_cmd(const char* design_path, const char* globals_path, const char* wo
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->resetDesign(design_path);
   router->updateGlobals(globals_path);
-  router->runDRWorker(worker_path);
+  std::ifstream workerFile(worker_path, std::ios::binary);
+  std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
+  workerFile.close();
+  router->runDRWorker(workerStr);
 }
 
 %} // inline

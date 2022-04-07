@@ -104,7 +104,7 @@ class TritonRoute
   int getNumDRVs() const;
 
   void setDebugDR(bool on = true);
-  void setDebugDumpDR(bool on = true);
+  void setDebugDumpDR(bool on, const std::string& dumpDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR
@@ -124,6 +124,7 @@ class TritonRoute
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
+  fr::frDebugSettings* getDebugSettings() const { return debug_.get(); }
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr);

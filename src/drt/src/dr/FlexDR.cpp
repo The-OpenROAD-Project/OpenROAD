@@ -186,6 +186,21 @@ int FlexDRWorker::main(frDesign* design)
     getWorkerRegionQuery().dummyUpdate();
     init(design);
   }
+  if (debugSettings_->debugDumpDR
+      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})) {
+    std::string prefix = fmt::format("{}/iter{}_x{}_y{}", debugSettings_->dumpDir,getDRIter(), routeBox_.xMin(), routeBox_.yMin());
+    std::string workerStr;
+    serialize_worker(this, workerStr);
+    ofstream workerFile(fmt::format("{}.worker",prefix).c_str());
+    workerFile << workerStr;
+    workerFile.close();
+    serialize_design(SerializationType::WRITE, design, fmt::format("{}.design",prefix));
+    std::ofstream file(fmt::format("{}.globals",prefix).c_str());
+    frOArchive ar(file);
+    register_types(ar);
+    serialize_globals(ar);
+    file.close();
+  }
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (!skipRouting_) {
     route_queue();
@@ -1667,6 +1682,7 @@ void FlexDR::searchRepair(int iter,
       worker->setGCellBox(Rect(i, j, max_i, max_j));
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
+      worker->setDebugSettings(router_->getDebugSettings());
       if (dist_on_)
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
@@ -2639,8 +2655,11 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
 
   // The logger_, graphics_ and debugSettings_ are handled by the caller to
   // use the current ones.
-  frDesign* design = ar.getDesign();
-  design_ = design;
+  if(is_loading(ar))
+  {
+    frDesign* design = ar.getDesign();
+    design_ = design;
+  }
   (ar) & via_data_;
   (ar) & routeBox_;
   (ar) & extBox_;
