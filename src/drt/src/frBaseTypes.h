@@ -317,6 +317,7 @@ struct frDebugSettings
   bool paMarkers;
   bool paEdge;
   bool paCommit;
+  std::string dumpDir;
 };
 
 // Avoids the need to split the whole serializer like

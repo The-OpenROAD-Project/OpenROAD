@@ -103,7 +103,7 @@ class TritonRoute
   int getNumDRVs() const;
 
   void setDebugDR(bool on = true);
-  void setDebugDumpDR(bool on = true);
+  void setDebugDumpDR(bool on, const std::string& dumpDir);
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugNetName(const char* name);  // for DR

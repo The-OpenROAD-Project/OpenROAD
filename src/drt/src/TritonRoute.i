@@ -148,13 +148,14 @@ set_detailed_route_debug_cmd(const char* net_name,
                              int iter,
                              bool pa_markers,
                              bool pa_edge,
-                             bool pa_commit)
+                             bool pa_commit,
+                             const char* dumpDir)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
   router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
-  router->setDebugDumpDR(dump_dr);
+  router->setDebugDumpDR(dump_dr, dumpDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (x >= 0) {

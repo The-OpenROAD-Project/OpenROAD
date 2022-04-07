@@ -207,14 +207,15 @@ int FlexDRWorker::main(frDesign* design)
     init(design);
   }
   if (debugSettings_->debugDumpDR
-      && gcellBox_.intersects({debugSettings_->x, debugSettings_->y})) {
+      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})) {
+    std::string prefix = fmt::format("{}/iter{}_x{}_y{}", debugSettings_->dumpDir,getDRIter(), routeBox_.xMin(), routeBox_.yMin());
     std::string workerStr;
     serialize_worker(this, workerStr);
-    ofstream workerFile("debug.worker");
+    ofstream workerFile(fmt::format("{}.worker",prefix).c_str());
     workerFile << workerStr;
     workerFile.close();
-    serialize_design(SerializationType::WRITE, design, "debug.design");
-    std::ofstream file("debug.globals");
+    serialize_design(SerializationType::WRITE, design, fmt::format("{}.design",prefix));
+    std::ofstream file(fmt::format("{}.globals",prefix).c_str());
     frOArchive ar(file);
     register_types(ar);
     serialize_globals(ar);
