@@ -118,5 +118,20 @@ proc report_worst_slack { args } {
   utl::metric_float "timing__setup__ws" [worst_slack_cmd "max"]
 }
 
+rename report_power_design report_power_design_raw
+
+proc report_power_design { corner digits } {
+  set power_result [design_power $corner]
+  set totals        [lrange $power_result  0  3]
+  lassign $totals design_internal design_switching design_leakage design_total
+
+  utl::metric_float "power__internal__total" $design_internal
+  utl::metric_float "power__switchng__total" $design_switching
+  utl::metric_float "power__leakage__total" $design_leakage
+  utl::metric_float "power__total" $design_total
+
+  [report_power_design_raw $corner $digits]
+}
+
 # namespace
 }
