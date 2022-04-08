@@ -2922,16 +2922,6 @@ class dbInst : public dbObject
   void clearUserFlag3();
 
   ///
-  /// Set/Reset the size-only flag
-  ///
-  void setSizeOnly(bool v);
-
-  ///
-  /// Returns true if the size-only flag is set.
-  ///
-  bool isSizeOnly();
-
-  ///
   /// Set/Reset the don't-touch flag
   ///
   void setDoNotTouch(bool v);
@@ -3158,20 +3148,26 @@ class dbInst : public dbObject
 
   ///
   /// Create a new instance.
+  /// If physical_only is true the instance can't bee added to a dbModule.
+  /// If false, it will be added to the top module.
   /// Returns NULL if an instance with this name already exists.
   /// Returns NULL if the master is not FROZEN.
   ///
-  static dbInst* create(dbBlock* block, dbMaster* master, const char* name);
+  static dbInst* create(dbBlock* block, dbMaster* master, const char* name,
+                        bool physical_only = false);
 
   ///
   /// Create a new instance within the specified region.
+  /// If physicalOnly is true the instance can't bee added to a dbModule.
+  /// If false, it will be added to the top module.
   /// Returns NULL if an instance with this name already exists.
   /// Returns NULL if the master is not FROZEN.
   ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
-                        dbRegion* region);
+                        dbRegion* region,
+                        bool physical_only = false);
 
   ///
   /// Delete the instance from the block.
@@ -8588,18 +8584,23 @@ class dbModule : public dbObject
   // User Code End dbModuleEnums
   const char* getName() const;
 
+  std::string getHierarchicalName() const;
+
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
-  void addInst(dbInst* inst);
 
-  void removeInst(dbInst* inst);
+  // Adding an inst to a new module will remove it from its previous
+  // module.
+  void addInst(dbInst* inst);
 
   dbSet<dbInst> getInsts();
 
   dbSet<dbModInst> getChildren();
 
   dbModInst* findModInst(const char* name);
+
+  std::vector<dbInst*> getLeafInsts();
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -8635,7 +8636,7 @@ class dbModInst : public dbObject
 
   std::string getName() const;
 
-  std::string getHierarchalName() const;
+  std::string getHierarchicalName() const;
   // User Code End dbModInst
 };
 

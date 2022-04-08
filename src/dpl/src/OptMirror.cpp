@@ -54,15 +54,37 @@ using odb::dbOrientType;
 static dbOrientType
 orientMirrorY(dbOrientType orient);
 
-NetBox::NetBox(dbNet *n) :
-  net(n)
+NetBox::NetBox() :
+  net_(nullptr),
+  ignore_(false)
+{
+}
+
+NetBox::NetBox(dbNet *net,
+               Rect box,
+               bool ignore) :
+  net_(net),
+  box_(box),
+  ignore_(ignore)
 {
 }
 
 int64_t
 NetBox::hpwl()
 {
-  return box.dy() + box.dx();
+  return box_.dy() + box_.dx();
+}
+
+void
+NetBox::saveBox()
+{
+  box_saved_ = box_;
+}
+
+void
+NetBox::restoreBox()
+{
+  box_ = box_saved_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -71,17 +93,20 @@ void
 Opendp::optimizeMirroring()
 {
   block_ = db_->getChip()->getBlock();
-  NetBoxes net_boxes;
-  findNetBoxes(net_boxes);
+  findNetBoxes();
+
+  NetBoxes sorted_boxes;
+  for (auto &net_box : net_box_map_) {
+    sorted_boxes.push_back(&net_box.second);
+  }
+
   // Sort net boxes by net hpwl.
-  sort(net_boxes.begin(), net_boxes.end(),
-       [] (NetBox &net_box1, NetBox &net_box2) -> bool {
-         return net_box1.hpwl() > net_box2.hpwl();
+  sort(sorted_boxes.begin(), sorted_boxes.end(),
+       [] (NetBox *net_box1, NetBox *net_box2) -> bool {
+         return net_box1->hpwl() > net_box2->hpwl();
        });
 
-  vector<dbInst*> mirror_candidates;
-  findMirrorCandidates(net_boxes, mirror_candidates);
-
+  vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
   int64_t hpwl_before = hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
 
@@ -98,48 +123,56 @@ Opendp::optimizeMirroring()
 }
 
 void
-Opendp::findNetBoxes(NetBoxes &net_boxes)
+Opendp::findNetBoxes()
 {
+  net_box_map_.clear();
   auto nets = block_->getNets();
-  net_boxes.reserve(nets.size());
   for (dbNet *net : nets) {
-    if (!isSupply(net)
-        && !net->isSpecial()) {
-      NetBox net_box(net);
-      net_box.box = net->getTermBBox();
-      net_boxes.push_back(net_box);
-    }
+    bool ignore = net->getSigType().isSupply()
+      || net->isSpecial()
+      // Reducing HPWL on large nets (like clocks) is irrelevant 
+      // to mirroring criterra.
+      // Note that getITerms().size() iteractes through the iterms
+      // so it has to be checked once here instead of where it is
+      // needed.
+      || net->getITerms().size() > mirror_max_iterm_count_;
+    if (ignore)
+      debugPrint(logger_, DPL, "opt_mirror", 2, "ignore {}",
+                 net->getConstName());
+    net_box_map_[net] = NetBox(net, net->getTermBBox(), ignore);
   }
 }
 
-void
-Opendp::findMirrorCandidates(NetBoxes &net_boxes,
-                             vector<dbInst*> &mirror_candidates)
+vector<dbInst*>
+Opendp::findMirrorCandidates(NetBoxes &net_boxes)
 {
+  vector<dbInst*> mirror_candidates;
   unordered_set<dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
-  for (NetBox &net_box : net_boxes) {
-    dbNet *net = net_box.net;
-    Rect &box = net_box.box;
-    for (dbITerm *iterm : net->getITerms()) {
-      dbInst *inst = iterm->getInst();
-      if (inst->isCore()
-          && !inst->isFixed()) {
+  for (NetBox *net_box : net_boxes) {
+    if (!net_box->ignore_) {
+      dbNet *net = net_box->net_;
+      Rect &box = net_box->box_;
+      for (dbITerm *iterm : net->getITerms()) {
+        dbInst *inst = iterm->getInst();
         int x, y;
-        if (iterm->getAvgXY(&x, &y)) {
-          if (x == box.xMin() || x == box.xMax()
-              || y == box.yMin() || y == box.yMax()) {
-            dbInst *inst = iterm->getInst();
-            if (existing.find(inst) == existing.end()) {
-              mirror_candidates.push_back(inst);
-              existing.insert(inst);
-              //printf("candidate %s\n", inst->getConstName());
-            }
+        if (inst->isCore()
+            && !inst->isFixed()
+            && iterm->getAvgXY(&x, &y)
+            && (x == box.xMin() || x == box.xMax()
+                || y == box.yMin() || y == box.yMax())) {
+          dbInst *inst = iterm->getInst();
+          if (existing.find(inst) == existing.end()) {
+            mirror_candidates.push_back(inst);
+            existing.insert(inst);
+            debugPrint(logger_, DPL, "opt_mirror", 1, "candidate {}",
+                       inst->getConstName());
           }
         }
       }
     }
   }
+  return mirror_candidates;
 }
 
 int
@@ -150,15 +183,20 @@ Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates)
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
+    saveNetBoxes(inst);
     dbOrientType orient = inst->getOrient();
     dbOrientType orient_my = orientMirrorY(orient);
     inst->setLocationOrient(orient_my);
+    updateNetBoxes(inst);
     int64_t hpwl_after = hpwl(inst);
-    if (hpwl_after > hpwl_before)
+    if (hpwl_after > hpwl_before) {
       // Undo mirroring if hpwl is worse.
       inst->setLocationOrient(orient);
+      restoreNetBoxes(inst);
+    }
     else {
-      //printf("mirror %s\n", inst->getConstName());
+      debugPrint(logger_, DPL, "opt_mirror", 1, "mirror {}",
+                 inst->getConstName());
       mirror_count++;
     }
   }
@@ -198,10 +236,46 @@ Opendp::hpwl(dbInst *inst)
   int64_t inst_hpwl = 0;
   for (dbITerm *iterm : inst->getITerms()) {
     dbNet *net = iterm->getNet();
-    if (net)
-      inst_hpwl += hpwl(net);
+    if (net) {
+      NetBox &net_box = net_box_map_[net];
+      if (!net_box.ignore_)
+        inst_hpwl += net_box.hpwl();
+    }
   }
   return inst_hpwl;
+}
+
+void
+Opendp::updateNetBoxes(dbInst *inst)
+{
+  for (dbITerm *iterm : inst->getITerms()) {
+    dbNet *net = iterm->getNet();
+    if (net) {
+      NetBox &net_box = net_box_map_[net];
+      if (!net_box.ignore_)
+        net_box_map_[net].box_ = net->getTermBBox();
+    }
+  }
+}
+
+void
+Opendp::saveNetBoxes(dbInst *inst)
+{
+  for (dbITerm *iterm : inst->getITerms()) {
+    dbNet *net = iterm->getNet();
+    if (net)
+      net_box_map_[net].saveBox();
+  }
+}
+
+void
+Opendp::restoreNetBoxes(dbInst *inst)
+{
+  for (dbITerm *iterm : inst->getITerms()) {
+    dbNet *net = iterm->getNet();
+    if (net)
+      net_box_map_[net].restoreBox();
+  }
 }
 
 }  // namespace

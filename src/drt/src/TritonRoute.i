@@ -38,7 +38,7 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
- 
+
 %}
 
 %include "../../Exception.i"
@@ -61,6 +61,12 @@ void detailed_route_distributed(const char* ip,
   router->setSharedVolume(sharedVolume);
 }
 
+void detailed_route_set_default_via(const char* viaName)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->addUserSelectedVia(viaName);
+}
+
 void detailed_route_cmd(const char* guideFile,
                         const char* outputGuideFile,
                         const char* outputMazeFile,
@@ -76,7 +82,8 @@ void detailed_route_cmd(const char* guideFile,
                         const char* bottomRoutingLayer,
                         const char* topRoutingLayer,
                         int verbose,
-                        bool cleanPatches)
+                        bool cleanPatches,
+                        bool singleStepDR)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -94,7 +101,8 @@ void detailed_route_cmd(const char* guideFile,
                     bottomRoutingLayer,
                     topRoutingLayer,
                     verbose,
-                    cleanPatches});
+                    cleanPatches,
+                    singleStepDR});
   router->main();
 }
 
@@ -153,6 +161,25 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaMarkers(pa_markers);
   router->setDebugPaEdge(pa_edge);
   router->setDebugPaCommit(pa_commit);
+}
+
+void detailed_route_step_drt(int size,
+                             int offset,
+                             int mazeEndIter,
+                             int workerDRCCost,
+                             int workerMarkerCost,
+                             int ripupMode,
+                             bool followGuide)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->stepDR(size, offset, mazeEndIter, workerDRCCost,
+                 workerMarkerCost, ripupMode, followGuide);
+}
+
+void step_end()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->endFR();
 }
 
 %} // inline

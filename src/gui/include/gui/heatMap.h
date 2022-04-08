@@ -38,6 +38,7 @@
 
 #include <array>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <variant>
@@ -121,8 +122,8 @@ class HeatMapDataSource
   void setDisplayRange(double min, double max);
   double getDisplayRangeMin() const { return display_range_min_; }
   double getDisplayRangeMax() const { return display_range_max_; }
-  double getDisplayRangeMinimumValue() const { return 0.0; }
-  double getDisplayRangeMaximumValue() const { return 100.0; }
+  virtual double getDisplayRangeMinimumValue() const { return 0.0; }
+  virtual double getDisplayRangeMaximumValue() const { return std::numeric_limits<double>::max(); }
   double getRealRangeMinimumValue() const;
   double getRealRangeMaximumValue() const;
   virtual double getDisplayRangeIncrement() const { return 1.0; }
@@ -287,6 +288,8 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
   virtual double convertValueToPercent(double value) const override;
   virtual double convertPercentToValue(double percent) const override;
   virtual double getDisplayRangeIncrement() const override;
+
+  virtual double getDisplayRangeMaximumValue() const override { return 100.0; }
 
  protected:
   void determineUnits();

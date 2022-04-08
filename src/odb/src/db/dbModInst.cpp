@@ -241,6 +241,10 @@ void dbModInst::destroy(dbModInst* modinst)
   _dbBlock* block = (_dbBlock*) _modinst->getOwner();
   _dbModule* module = (_dbModule*) modinst->getParent();
 
+  _dbModule* master = (_dbModule*) modinst->getMaster();
+  master->_mod_inst = dbId<_dbModInst>(); // clear
+  dbModule::destroy((dbModule*) master);
+
   // unlink from parent start
   uint id = _modinst->getOID();
   _dbModInst* prev = NULL;
@@ -286,7 +290,7 @@ std::string dbModInst::getName() const
   return h_name.substr(idx + 1);
 }
 
-std::string dbModInst::getHierarchalName() const
+std::string dbModInst::getHierarchicalName() const
 {
   _dbModInst* _obj = (_dbModInst*) this;
   dbBlock* block = (dbBlock*) _obj->getOwner();
@@ -295,7 +299,7 @@ std::string dbModInst::getHierarchalName() const
   if (parent == block->getTopModule())
     return inst_name;
   else
-    return parent->getModInst()->getHierarchalName() + "/" + inst_name;
+    return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 // User Code End dbModInstPublicMethods
 }  // namespace odb

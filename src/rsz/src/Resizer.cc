@@ -87,6 +87,7 @@ using std::sqrt;
 using utl::RSZ;
 
 using odb::dbInst;
+using odb::dbModule;
 using odb::dbPlacementStatus;
 using odb::Rect;
 using odb::dbOrientType;
@@ -513,8 +514,7 @@ Resizer::bufferInput(const Pin *top_pin,
   if (buffer) {
     journalMakeBuffer(buffer);
     Point pin_loc = db_network_->location(top_pin);
-    Point buf_loc = core_exists_ ? core_.closestPtInside(pin_loc) : pin_loc;
-    setLocation(buffer, buf_loc);
+    setLocation(buffer, pin_loc);
     designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
@@ -542,13 +542,28 @@ void
 Resizer::setLocation(Instance *inst,
                      Point pt)
 {
-  // Stay inside the lines.
-  if (core_exists_)
-    pt = core_.closestPtInside(pt);
-
   dbInst *dinst = db_network_->staToDb(inst);
+  int x = pt.x();
+  int y = pt.y();
+  // Stay inside the lines.
+  if (core_exists_) {
+    dbMaster *master = dinst->getMaster();
+    int width = master->getWidth();
+    if (x < core_.xMin())
+      x = core_.xMin();
+    else if (x > core_.xMax() - width)
+      // Make sure the instance is entirely inside core.
+      x = core_.xMax() - width;
+
+    int height = master->getHeight();
+    if (y < core_.yMin())
+      y = core_.yMin();
+    else if (y > core_.yMax() - height)
+      y = core_.yMax() - height;
+  }
+
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(pt.getX(), pt.getY());
+  dinst->setLocation(x, y);
 }
 
 void
@@ -2213,7 +2228,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
     if (drvr_pin) {
-      const char *inst_name = network_->name(inst);
       Net *net = network_->net(drvr_pin);
       if (net) {
         NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
@@ -2223,10 +2237,19 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             // Make tie inst.
             Point tie_loc = tieLocation(load, separation_dbu);
             Instance *load_inst = network_->instance(load);
+            const char *inst_name = network_->name(load_inst);
             string tie_name = makeUniqueInstName(inst_name, true);
             Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
                                          top_inst);
             setLocation(tie, tie_loc);
+
+            // Put the tie cell instance in the same module with the load
+            // it drives.
+            if (!network_->isTopInstance(load_inst)) {
+              dbInst* load_inst_odb = db_network_->staToDb(load_inst);
+              dbInst* tie_odb = db_network_->staToDb(tie);
+              load_inst_odb->getModule()->addInst(tie_odb);
+            }
 
             // Make tie output net.
             Net *load_net = makeUniqueNet();
@@ -2930,9 +2953,10 @@ Resizer::repairHoldPass(VertexSeq &hold_failures,
             Slack drvr_setup_slack1 = sta_->vertexSlack(vertex, max_);
             if (drvr_setup_slack1 < 0
                 && drvr_setup_slack1 < drvr_setup_slack)
-              printf("%s %s -> %s\n", vertex->name(network_),
-                     delayAsString(drvr_setup_slack, sta_, 3),
-                     delayAsString(drvr_setup_slack1, sta_, 3));
+              logger_->report("{} {} -> {}",
+                              vertex->name(network_),
+                              delayAsString(drvr_setup_slack, sta_, 3),
+                              delayAsString(drvr_setup_slack1, sta_, 3));
           }
           if (inserted_buffer_count_ > max_buffer_count
               || overMaxArea())
@@ -2994,14 +3018,14 @@ Resizer::sortHoldFanins(VertexSet &fanins)
     else
       return s1 < s2;});
   if (logger_->debugCheck(RSZ, "repair_hold", 4)) {
-    printf("Sorted fanins\n");
-    printf("     hold_slack  slack_gap  level\n");
+    logger_->report("Sorted fanins");
+    logger_->report("     hold_slack  slack_gap  level");
     for(Vertex *vertex : sorted_fanins)
-      printf("%s %s %s %d\n",
-             vertex->name(network_),
-             delayAsString(sta_->vertexSlack(vertex, MinMax::min()), sta_, 3),
-             delayAsString(slackGap(vertex), sta_, 3),
-             vertex->level());
+      logger_->report("{} {} {}",
+                      vertex->name(network_),
+                      delayAsString(sta_->vertexSlack(vertex, MinMax::min()), sta_, 3),
+                      delayAsString(slackGap(vertex), sta_, 3),
+                      vertex->level());
   }
   return sorted_fanins;
 }

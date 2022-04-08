@@ -41,6 +41,7 @@
 
 #include <functional>
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -56,6 +57,7 @@ class Logger;
 namespace dpl {
 
 using std::map;
+using std::unordered_map;
 using std::set;
 using std::string;
 using std::vector;
@@ -144,14 +146,22 @@ struct Pixel
 class NetBox
 {
 public:
-  NetBox(dbNet *n);
+  NetBox();
+  NetBox(dbNet *net,
+         Rect box,
+         bool ignore);
   int64_t hpwl();
+  void saveBox();
+  void restoreBox();
 
-  dbNet *net;
-  Rect box;
+  dbNet *net_;
+  Rect box_;
+  Rect box_saved_;
+  bool ignore_;
 };
 
-typedef vector<NetBox> NetBoxes;
+typedef unordered_map<dbNet*, NetBox> NetBoxMap;
+typedef vector<NetBox*> NetBoxes;
 
 ////////////////////////////////////////////////////////////////
 
@@ -395,13 +405,14 @@ private:
                            int col);
 
   // Optimizing mirroring
-  void findNetBoxes(NetBoxes &net_boxes);
-  void findMirrorCandidates(NetBoxes &net_boxes,
-                            vector<dbInst*> &mirror_candidates);
+  void findNetBoxes();
+  vector<dbInst*> findMirrorCandidates(NetBoxes &net_boxes);
   int mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
-  bool isSupply(dbNet *net) const;
+  void updateNetBoxes(dbInst *inst);
+  void saveNetBoxes(dbInst *inst);
+  void restoreNetBoxes(dbInst *inst);
 
   Logger *logger_;
   dbDatabase *db_;
@@ -446,6 +457,9 @@ private:
   int64_t displacement_sum_;
   int64_t displacement_max_;
 
+  // Optimiize mirroring.
+  NetBoxMap net_box_map_;
+
   std::unique_ptr<Graphics> graphics_;
 
   // Magic numbers
@@ -453,6 +467,9 @@ private:
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
+  // Net bounding box siaz on nets with more instance terminals
+  // than this are ignored.
+  static constexpr int mirror_max_iterm_count_ = 100;
 };
 
 int

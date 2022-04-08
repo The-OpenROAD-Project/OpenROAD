@@ -39,12 +39,13 @@ namespace fr {
 class frDesign;
 class DesignCallBack;
 struct frDebugSettings;
+class FlexDR;
 }  // namespace fr
 
 namespace odb {
 class dbDatabase;
 class dbInst;
-}
+}  // namespace odb
 namespace utl {
 class Logger;
 }
@@ -77,6 +78,7 @@ struct ParamStruct
   std::string topRoutingLayer;
   int verbose = 1;
   bool cleanPatches = false;
+  bool singleStepDR = false;
 };
 
 class TritonRoute
@@ -93,7 +95,16 @@ class TritonRoute
   fr::frDesign* getDesign() const { return design_.get(); }
 
   int main();
-  void pinAccess(std::vector<odb::dbInst*> target_insts = std::vector<odb::dbInst*>());
+  void endFR();
+  void pinAccess(std::vector<odb::dbInst*> target_insts
+                 = std::vector<odb::dbInst*>());
+  void stepDR(int size,
+              int offset,
+              int mazeEndIter,
+              unsigned int workerDRCCost,
+              unsigned int workerMarkerCost,
+              int ripupMode,
+              bool followGuide);
 
   int getNumDRVs() const;
 
@@ -115,7 +126,7 @@ class TritonRoute
 
   void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
-
+  void addUserSelectedVia(const std::string& viaName);
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const char* file_name);
@@ -127,6 +138,7 @@ class TritonRoute
   std::unique_ptr<fr::DesignCallBack> db_callback_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  std::unique_ptr<fr::FlexDR> dr_; // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_;
   int num_drvs_;
   gui::Gui* gui_;
@@ -142,7 +154,6 @@ class TritonRoute
   void gr();
   void ta();
   void dr();
-  void endFR();
 };
 }  // namespace triton_route
 #endif

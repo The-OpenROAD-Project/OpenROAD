@@ -63,11 +63,14 @@ proc detailed_route { args } {
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume} \
-    flags {-disable_via_gen -distributed -clean_patches}
+    flags {-disable_via_gen -distributed -clean_patches -single_step_dr}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
   set clean_patches [expr [info exists flags(-clean_patches)]]
+  # single_step_dr is not a user option but is intended for algorithm
+  # development.  It is not listed in the help string intentionally.
+  set single_step_dr  [expr [info exists flags(-single_step_dr)]]
   if { [info exists keys(-param)] } {
     if { [array size keys] > 1 } {
       utl::error DRT 251 "-param cannot be used with other arguments"
@@ -174,7 +177,7 @@ proc detailed_route { args } {
       $output_cmap $db_process_node $enable_via_gen $droute_end_iter \
       $via_in_pin_bottom_layer $via_in_pin_top_layer \
       $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches
+      $clean_patches $single_step_dr
   }
 }
 
@@ -282,4 +285,22 @@ proc pin_access { args } {
 proc detailed_route_run_worker { args } {
   sta::check_argc_eq1 "detailed_route_run_worker" $args
   drt::run_worker_cmd $args
+}
+
+proc detailed_route_set_default_via { args } {
+  sta::check_argc_eq1 "detailed_route_set_default_via" $args
+  drt::detailed_route_set_default_via $args
+}
+
+namespace eval drt {
+
+proc step_dr { args } {
+  # args match FlexDR::SearchRepairArgs
+  if { [llength $args] != 7 } {
+    utl::error DRT 308 "step_dr requires seven positional arguments."
+  }
+
+  drt::detailed_route_step_drt {*}$args
+}
+
 }

@@ -108,6 +108,16 @@ auto_place_pins_cmd(const char *pin_layer)
   ifp::autoPlacePins(pin_layer, db, logger);
 }
 
+
+void
+insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
+{
+  odb::dbDatabase *db = ord::getDb();
+  utl::Logger *logger = ord::getOpenRoad()->getLogger();
+  sta::dbNetwork *network = ord::getOpenRoad()->getDbNetwork();
+  ifp::insertTiecells(tie_term, prefix, db, network, logger);
+}
+
 } // namespace
 
 %} // inline
