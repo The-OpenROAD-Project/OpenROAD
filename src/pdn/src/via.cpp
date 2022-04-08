@@ -1109,7 +1109,7 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
       const int remainder_y = array_area_y - full_arrays_y * array_pitch_y;
       if (remainder_y != 0) {
         last_rows = getCuts(remainder_y,
-                            cut_width,
+                            cut_height,
                             0,
                             0,
                             cut_spacing_y + cut_height,

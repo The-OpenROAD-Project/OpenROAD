@@ -57,8 +57,6 @@ using utl::PDN;
 %import "dbtypes.i"
 %include "../../Exception.i"
 
-%include <std_string.i>
-
 %template(split_cuts_pitch_map) std::vector<int>;
 
 %typemap(in) pdn::ExtensionMode {
@@ -154,7 +152,7 @@ void set_core_domain(odb::dbNet* power, odb::dbNet* ground, const std::vector<od
   pdngen->setCoreDomain(power, ground, secondary_nets);
 }
 
-void make_region_domain(const std::string& name, odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
+void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
 {
   PdnGen* pdngen = ord::getPdnGen();
   pdngen->makeRegionVoltageDomain(name, power, ground, secondary_nets, region);
@@ -178,7 +176,10 @@ void build_grids(bool trim = true)
   pdngen->buildGrids(trim);
 }
 
-void make_core_grid(pdn::VoltageDomain* domain, const std::string& name, bool starts_with_power, const std::vector<odb::dbTechLayer*>& pin_layers)
+void make_core_grid(pdn::VoltageDomain* domain, 
+                    const char* name, 
+                    bool starts_with_power, 
+                    const std::vector<odb::dbTechLayer*>& pin_layers)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -189,7 +190,7 @@ void make_core_grid(pdn::VoltageDomain* domain, const std::string& name, bool st
 }
 
 void make_instance_grid(pdn::VoltageDomain* domain,
-                        const std::string& name,
+                        const char* name,
                         bool starts_with_power,
                         odb::dbInst* inst,
                         int x0,
@@ -209,13 +210,13 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid);
 }
 
-void make_existing_grid(const std::string& name)
+void make_existing_grid(const char* name)
 {
   PdnGen* pdngen = ord::getPdnGen();
   pdngen->makeExistingGrid(name);
 }
 
-void make_ring(const std::string& grid_name, 
+void make_ring(const char* grid_name, 
                odb::dbTechLayer* l0,
                int width0,
                int spacing0,
@@ -256,7 +257,7 @@ void make_ring(const std::string& grid_name,
   }
 }
 
-void make_followpin(const std::string& grid_name, 
+void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
                     int width, 
                     pdn::ExtensionMode extend)
@@ -267,7 +268,7 @@ void make_followpin(const std::string& grid_name,
   }
 }
 
-void make_strap(const std::string& grid_name, 
+void make_strap(const char* grid_name, 
                 odb::dbTechLayer* layer, 
                 int width, 
                 int spacing, 
@@ -293,7 +294,7 @@ void make_strap(const std::string& grid_name,
   }
 }
 
-void make_connect(const std::string& grid_name, 
+void make_connect(const char* grid_name, 
                   odb::dbTechLayer* layer0, 
                   odb::dbTechLayer* layer1, 
                   int cut_pitch_x, 
@@ -305,7 +306,7 @@ void make_connect(const std::string& grid_name,
                   const std::vector<odb::dbTechLayer*>& ongrid,
                   const std::vector<odb::dbTechLayer*>& split_cuts_layers,
                   const std::vector<int>& split_cut_pitches,
-                  const std::string& dont_use_vias)
+                  const char* dont_use_vias)
 {
   PdnGen* pdngen = ord::getPdnGen();
   std::map<odb::dbTechLayer*, int> split_cuts;
@@ -341,13 +342,13 @@ void report()
   pdngen->report();
 }
 
-pdn::VoltageDomain* find_domain(const std::string& name)
+pdn::VoltageDomain* find_domain(const char* name)
 {
   PdnGen* pdngen = ord::getPdnGen();
   return pdngen->findDomain(name);
 }
 
-bool has_grid(const std::string& name)
+bool has_grid(const char* name)
 {
   PdnGen* pdngen = ord::getPdnGen();
   return !pdngen->findGrid(name).empty();
@@ -359,7 +360,7 @@ void allow_repair_channels(bool allow)
   pdngen->setAllowRepairChannels(allow);
 }
 
-void filter_vias(const std::string& filter)
+void filter_vias(const char* filter)
 {
   PdnGen* pdngen = ord::getPdnGen();
   pdngen->filterVias(filter);

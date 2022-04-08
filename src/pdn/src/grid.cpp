@@ -824,7 +824,8 @@ InstanceGrid::InstanceGrid(VoltageDomain* domain,
     : Grid(domain, name, start_with_power),
       inst_(inst),
       halos_({0, 0, 0, 0}),
-      grid_to_boundary_(false)
+      grid_to_boundary_(false),
+      replaceable_(false)
 {
   auto* halo = inst->getHalo();
   if (halo != nullptr) {

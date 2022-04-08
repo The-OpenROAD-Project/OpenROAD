@@ -539,8 +539,8 @@ void PdnGen::makeCoreGrid(VoltageDomain* domain,
 Grid* PdnGen::instanceGrid(odb::dbInst* inst) const
 {
   for (auto* check_grid : getGrids()) {
-    if (check_grid->type() == Grid::Instance) {
-      auto* other_grid = dynamic_cast<InstanceGrid*>(check_grid);
+    auto* other_grid = dynamic_cast<InstanceGrid*>(check_grid);
+    if (other_grid != nullptr) {
       if (other_grid->getInstance() == inst) {
         return check_grid;
       }
