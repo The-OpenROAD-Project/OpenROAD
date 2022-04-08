@@ -251,7 +251,7 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
-      if(metrics_key_counter_.find(key)) {
+      if(metrics_key_counter_.find(key))
         key = fmt::format("{}_{}", key, metrics_key_counter_[key]++); 
       else
         metrics_key_counter_[key] = 1;
