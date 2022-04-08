@@ -1,16 +1,18 @@
 {
     "ord_version" : ""
   , "instance_count" : "23878"
-  , "utilization" : "8.3"
-  , "design_area" : "58905"
+  , "utilization" : "8.4"
+  , "design_area" : "59072"
   , "ANT::errors" : "0"
+  , "drt::wire length::total" : 816009
+  , "drt::vias::total" : 182858
   , "DRT::drv" : "0"
-  , "worst_slack_min" : "0.041883525611014036"
-  , "worst_slack_max" : "0.08348855176842435"
+  , "worst_slack_min" : "0.041340987359111306"
+  , "worst_slack_max" : "0.0608126899383482"
   , "tns_max" : "0.0"
-  , "clock_skew" : "0.06543082927334014"
-  , "max_slew_slack" : "7.31221194705256e-11"
-  , "max_fanout_slack" : "1.0000000150474662e+30"
-  , "max_capacitance_slack" : "-5.641036140806299e-16"
+  , "clock_skew" : "0.06815598278665765"
+  , "max_slew_slack" : "0.41157787265137924"
+  , "max_fanout_slack" : "7.136238570912107e+74"
+  , "max_capacitance_slack" : "0.17537555568087898"
   , "clock_period" : "2.030000"
 }

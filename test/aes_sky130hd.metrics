@@ -4,13 +4,15 @@
   , "utilization" : "7.4"
   , "design_area" : "223365"
   , "ANT::errors" : "0"
+  , "drt::wire length::total" : 1546478
+  , "drt::vias::total" : 155450
   , "DRT::drv" : "0"
   , "worst_slack_min" : "-0.09511280920961111"
   , "worst_slack_max" : "-1.5763688578435981"
   , "tns_max" : "-254.9123864144669"
   , "clock_skew" : "1.0831904568778818"
-  , "max_slew_slack" : "1.3247969388174852e-10"
-  , "max_fanout_slack" : "1.0000000150474662e+30"
-  , "max_capacitance_slack" : "8.706204431430803e-15"
+  , "max_slew_slack" : "0.08845247443536863"
+  , "max_fanout_slack" : "7.136238570912107e+74"
+  , "max_capacitance_slack" : "0.07793995420558211"
   , "clock_period" : "3.740000"
 }
