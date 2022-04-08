@@ -39,6 +39,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <unordered_map>
 #include <stack>
 #include <string_view>
 #include <cstdlib>
@@ -250,6 +251,11 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
+      if(metrics_key_counter_.find(key)) {
+        key = fmt::format("{}_{}", key, metrics_key_counter_[key]++]; 
+      else
+        metrics_key_counter_[key] = 1;
+
       metrics_logger_->info("  {}\"{}\" : {}",
                             first_metric_ ? "  " : ", ",
                             key,
@@ -276,6 +282,7 @@ class Logger
   std::shared_ptr<spdlog::logger> logger_;
   std::shared_ptr<spdlog::logger> metrics_logger_;
   std::stack<std::string> metrics_stages_;
+  std::unordered_map<std::string, int> metrics_key_counter_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
