@@ -303,7 +303,9 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 
   // set the pitch of the straps
-  for (auto* row : getDomain()->getRows()) {
+  auto rows = getDomain()->getRows();
+  if (!rows.empty()) {
+    auto* row = *rows.begin();
     odb::Rect bbox;
     row->getBBox(bbox);
     setPitch(2 * bbox.dy());
@@ -313,7 +315,10 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
     } else {
       setDirection(odb::dbTechLayerDir::VERTICAL);
     }
-    break;
+  } else {
+    if (getPitch() == 0) {
+      getLogger()->error(utl::PDN, 190, "Unable to determine the pitch of the rows.");
+    }
   }
 }
 
@@ -1191,6 +1196,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     }
 
     auto* grid_strap = dynamic_cast<Straps*>(grid_compomponent);
+    if (grid_strap == nullptr) {
+      continue;
+    }
+
     // determine bloat factor
     int bloat = grid_strap->getPitch();
     const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
