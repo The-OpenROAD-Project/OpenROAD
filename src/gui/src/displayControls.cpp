@@ -413,6 +413,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.regions, "Regions", misc, Qt::Checked);
   makeLeafItem(misc_.detailed, "Detailed view", misc, Qt::Unchecked);
   makeLeafItem(misc_.selected, "Highlight selected", misc, Qt::Checked);
+  makeLeafItem(misc_.module, "Module view", misc, Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -1476,6 +1477,11 @@ bool DisplayControls::areAccessPointsVisible() const
 bool DisplayControls::areRegionsVisible() const
 {
   return isRowVisible(&misc_.regions);
+}
+
+bool DisplayControls::isModuleView() const
+{
+  return isRowVisible(&misc_.module);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)
