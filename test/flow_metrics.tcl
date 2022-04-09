@@ -35,9 +35,9 @@
 
 # Functions/variables common to metrics scripts.
 
-proc define_metric { name short_name fmt cmp_op margin_expr } {
+proc define_metric { name short_name fmt cmp_op limit_expr } {
   variable metrics
-  dict set metrics $name [list $short_name $fmt $cmp_op $margin_expr]
+  dict set metrics $name [list $short_name $fmt $cmp_op $limit_expr]
 }
 
 proc metric_names {} {
@@ -47,13 +47,13 @@ proc metric_names {} {
 
 proc metric_short_name { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op limit_expr
   return $short_name
 }
 
 proc metric_format { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op limit_expr
   return $fmt
 }
 
@@ -63,14 +63,14 @@ proc metric_json_key { name } {
 
 proc metric_cmp_op { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op limit_expr
   return $cmp_op
 }
 
-proc metric_margin_expr { name } {
+proc metric_limit_expr { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
-  return $margin_expr
+  lassign [dict get $metrics $name] short_name fmt cmp_op limit_expr
+  return $limit_expr
 }
 
 proc cmp_op_negated { cmp_op } {
@@ -90,19 +90,19 @@ proc cmp_op_negated { cmp_op } {
 }
 
 # make format field width to match short name width
-define_metric "instance_count" "  insts" "%7d" "<" {$value * .2}
-define_metric "design_area" "   area" "%7.0f" "<" {$value * .2}
-define_metric "utilization" "util" "%4.1f" "<" {$value * .2}
-define_metric "worst_slack_min" "slack_min" "%9.3f" ">" {-$clock_period * .1}
-define_metric "worst_slack_max" "slack_max" "%9.3f" ">" {-$clock_period * .1}
-define_metric "tns_max" " tns_max" "%8.1f" ">" {-$clock_period * .1 * $instance_count * .1}
-define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * .2}
-define_metric "max_slew_violations" "max_slew" "%8d" "<=" {0}
-define_metric "max_capacitance_violations" "max_cap" "%7d" "<=" {0}
-define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
-define_metric "ANT::errors" "ANT" "%3d" "<=" {0}
-define_metric "DRT::drv" "drv" "%3d" "<=" {0}
-define_metric "clock_period" "" "%.2f" "<=" {$clock_period}
+define_metric "instance_count" "  insts" "%7d" "<" {$value * 1.2}
+define_metric "design_area" "   area" "%7.0f" "<" {$value * 1.2}
+define_metric "utilization" "util" "%4.1f" "<" {$value * 1.2}
+define_metric "worst_slack_min" "slack_min" "%9.3f" ">" {$value - $clock_period * .1}
+define_metric "worst_slack_max" "slack_max" "%9.3f" ">" {$value  - $clock_period * .1}
+define_metric "tns_max" " tns_max" "%8.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * 1.2}
+define_metric "max_slew_slack" "max_slew" "%8.3f" ">=" {0}
+define_metric "max_capacitance_slack" "max_cap" "%8.3f" ">=" {0}
+define_metric "max_fanout_slack" "max_fanout" "%9.0f" ">=" {0}
+define_metric "ANT::errors" "ANT" "%3d" "<=" {$value}
+define_metric "DRT::drv" "drv" "%3d" "<=" {$value}
+define_metric "clock_period" "" "%.2f" "<=" {$value}
 
 ################################################################
 
@@ -213,6 +213,9 @@ proc report_test_metrics { test } {
           set key [metric_json_key $name]
           if { [dict exists $metrics_dict $key] } {
             set value [dict get $metrics_dict $key]
+            if { $value > 1E+20 } {
+              set value "INF"
+            }
             set field [format [metric_format $name] $value]
           } else {
             set field [format "%[string length $short_name]s" "N/A"]
@@ -430,9 +433,8 @@ proc save_metric_limits { test } {
         set key [metric_json_key $name]
         if { [dict exists $metrics_dict $key] } {
           set value [dict get $metrics_dict $key]
-          set margin_expr [metric_margin_expr $name]
-          set margin [expr $margin_expr]
-          set value_limit [expr $value + $margin]
+          set limit_expr [metric_limit_expr $name]
+          set value_limit [expr $limit_expr]
           if { $first } {
             puts -nonewline $limits_stream "  "
           } else {

@@ -11,5 +11,5 @@
  ,"max_fanout_violations" : "0"
  ,"ANT::errors" : "0"
  ,"DRT::drv" : "0"
- ,"clock_period" : "16.0"
+ ,"clock_period" : "8.0"
 }
