@@ -57,6 +57,7 @@ class Logger;
 namespace fr {
 
 class frConstraint;
+struct SearchRepairArgs;
 
 struct FlexDRViaData
 {
@@ -100,6 +101,17 @@ struct FlexDRViaData
 class FlexDR
 {
  public:
+  struct SearchRepairArgs
+  {
+    int size;
+    int offset;
+    int mazeEndIter;
+    frUInt4 workerDRCCost;
+    frUInt4 workerMarkerCost;
+    int ripupMode;
+    bool followGuide;
+  };
+
   // constructors
   FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
   ~FlexDR();
@@ -108,7 +120,11 @@ class FlexDR
   frDesign* getDesign() const { return design_; }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   // others
+  void init();
   int main();
+  void searchRepair(const SearchRepairArgs& args);
+  void end(bool done = false);
+
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(frDebugSettings* settings);
 
@@ -152,9 +168,9 @@ class FlexDR
   std::string globals_path_;
   bool increaseClipsize_;
   float clipSizeInc_;
+  int iter_;
 
   // others
-  void init();
   void initFromTA();
   void initGCell2BoundaryPin();
   void getBatchInfo(int& batchStepX, int& batchStepY);
@@ -196,15 +212,6 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-  void searchRepair(int iter,
-                    int size,
-                    int offset,
-                    int mazeEndIter,
-                    frUInt4 workerDRCCost,
-                    frUInt4 workerMarkerCost,
-                    int ripupMode,
-                    bool followGuide);
-  void end(bool writeMetrics = false);
 
   // utility
   void reportDRC(const std::string& file_name);

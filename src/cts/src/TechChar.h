@@ -286,18 +286,6 @@ class TechChar
                                 unsigned* min,
                                 unsigned* max);
   void getClockLayerResCap(float dbUnitsPerMicron);
-  void getBufferMaxSlewMaxCap(sta::LibertyCell* buffer,
-                              float& maxSlew,
-                              bool& maxSlewExist,
-                              float& maxCap,
-                              bool& maxCapExist,
-                              bool midValue = false);
-  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis,
-                                float& maxSlew,
-                                bool& maxSlewExist,
-                                float& maxCap,
-                                bool& maxCapExist,
-                                bool midValue = false);
 
   CtsOptions* options_;
   ord::OpenRoad* openroad_;

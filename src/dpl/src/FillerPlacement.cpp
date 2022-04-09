@@ -116,7 +116,8 @@ Opendp::placeRowFillers(int row,
           string inst_name = prefix + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
           // site_width_);
-          dbInst *inst = dbInst::create(block_, master, inst_name.c_str());
+          dbInst *inst = dbInst::create(block_, master, inst_name.c_str(),
+                                        /* physical_only */ true);
           int x = core_.xMin() + k * site_width_;
           int y = core_.yMin() + row * row_height_;
           inst->setOrient(orient);

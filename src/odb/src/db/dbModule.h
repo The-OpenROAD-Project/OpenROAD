@@ -71,12 +71,17 @@ class _dbModule : public _dbObject
   _dbModule(_dbDatabase*, const _dbModule& r);
   _dbModule(_dbDatabase*);
   ~_dbModule();
+
   bool operator==(const _dbModule& rhs) const;
   bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModule& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
+
+  // This is only used when destroying an inst
+  void removeInst(dbInst* inst);
+
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj);

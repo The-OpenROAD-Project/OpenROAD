@@ -87,6 +87,7 @@ using std::sqrt;
 using utl::RSZ;
 
 using odb::dbInst;
+using odb::dbModule;
 using odb::dbPlacementStatus;
 using odb::Rect;
 using odb::dbOrientType;
@@ -2304,7 +2305,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
     if (drvr_pin) {
-      const char *inst_name = network_->name(inst);
       Net *net = network_->net(drvr_pin);
       if (net) {
         NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
@@ -2314,10 +2314,19 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             // Make tie inst.
             Point tie_loc = tieLocation(load, separation_dbu);
             Instance *load_inst = network_->instance(load);
+            const char *inst_name = network_->name(load_inst);
             string tie_name = makeUniqueInstName(inst_name, true);
             Instance *tie = makeInstance(tie_cell, tie_name.c_str(),
                                          top_inst);
             setLocation(tie, tie_loc);
+
+            // Put the tie cell instance in the same module with the load
+            // it drives.
+            if (!network_->isTopInstance(load_inst)) {
+              dbInst* load_inst_odb = db_network_->staToDb(load_inst);
+              dbInst* tie_odb = db_network_->staToDb(tie);
+              load_inst_odb->getModule()->addInst(tie_odb);
+            }
 
             // Make tie output net.
             Net *load_net = makeUniqueNet();
