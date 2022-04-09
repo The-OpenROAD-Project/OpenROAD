@@ -32,6 +32,8 @@
 
 #include "techlayer.h"
 
+#include "utl/Logger.h"
+
 #include <cmath>
 #include <limits>
 
@@ -166,6 +168,25 @@ int TechLayer::snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up
   }
 
   return pos;
+}
+
+bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const
+{
+  auto* tech = layer_->getTech();
+  if (!tech->hasManufacturingGrid()) {
+    return true;
+  }
+
+  const int grid = tech->getManufacturingGrid();
+
+  if (value % grid != 0) {
+    if (logger != nullptr) {
+      logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(grid));
+    }
+    return false;
+  }
+
+  return true;
 }
 
 int TechLayer::snapToManufacturingGrid(int pos, bool round_up) const

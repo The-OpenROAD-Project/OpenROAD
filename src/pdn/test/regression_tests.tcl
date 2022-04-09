@@ -11,6 +11,7 @@ record_tests {
   min_spacing
   widthtable
   design_width
+  offgrid
 
   core_grid
   core_grid_with_rings
