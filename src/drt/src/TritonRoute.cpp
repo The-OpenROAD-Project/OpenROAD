@@ -202,6 +202,7 @@ void TritonRoute::resetDb(const char* file_name)
   initDesign();
   initGuide();
   prep();
+  design_->getRegionQuery()->initDRObj();
 }
 
 void TritonRoute::resetDesign(const char* file_name)
@@ -334,7 +335,7 @@ void TritonRoute::updateDesign(const char* file_name)
     }
   }
   if (hasTAUpdates) {
-    design_->getRegionQuery()->initDRObj();
+    // design_->getRegionQuery()->initDRObj();
   }
 }
 
