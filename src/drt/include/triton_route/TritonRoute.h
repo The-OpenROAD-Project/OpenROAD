@@ -136,9 +136,11 @@ class TritonRoute
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
+  void sendFrDesignDist();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
   void sendDesignUpdates(const std::string& globals_path);
+  void sendGlobalsUpdates(const std::string& globals_path);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -158,7 +160,7 @@ class TritonRoute
   std::mutex results_mutex_;
   int results_sz_;
   unsigned int cloud_sz_;
-  std::unique_ptr<boost::asio::thread_pool> dist_pool_;
+  boost::asio::thread_pool dist_pool_;
 
   void initDesign();
   void initGuide();

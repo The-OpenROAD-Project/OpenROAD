@@ -74,7 +74,8 @@ TritonRoute::TritonRoute()
       num_drvs_(-1),
       gui_(gui::Gui::get()),
       distributed_(false),
-      results_sz_(0)
+      results_sz_(0),
+      dist_pool_(1)
 {
 }
 
@@ -476,33 +477,83 @@ bool TritonRoute::writeGlobals(const std::string& name)
   file.close();
   return true;
 }
+static bool serialize_design(frDesign* design,
+                             const std::string& name)
+{
+  ProfileTask t1("DIST: SERIALIZE_DESIGN");
+  ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(true);
+  register_types(ar);
+  ar << *design;
+  t1.done();
+  t1_version.done();
+  ProfileTask t2("DIST: WRITE_DESIGN");
+  ProfileTask t2_version(std::string("DIST: WRITE" + name).c_str());
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  file << stream.rdbuf();
+  file.close();
+  return true;
+}
+void TritonRoute::sendFrDesignDist()
+{
+  if(distributed_)
+  {
+    std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
+    std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
+    serialize_design(design_.get(), design_path);
+    writeGlobals(globals_path.c_str());
+    dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                        dst::JobMessage::BROADCAST),
+        result(dst::JobMessage::NONE);
+    std::unique_ptr<dst::JobDescription> desc
+        = std::make_unique<RoutingJobDescription>();
+    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    rjd->setDesignPath(design_path);
+    rjd->setSharedDir(shared_volume_);
+    rjd->setGlobalsPath(globals_path);
+    rjd->setDesignUpdate(false);
+    msg.setJobDescription(std::move(desc));
+    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    if (!ok)
+      logger_->error(DRT, 13304, "Updating design remotely failed");
+  }
+  design_->getRegionQuery()->dummyUpdate();
+  design_->clearUpdates();
+}
 
 void TritonRoute::sendDesignDist()
 {
-  std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
-  std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
-  std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
-  ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
-  std::ifstream src(GUIDE_FILE, std::ios::binary);
-  std::ofstream dst(guide_path.c_str(), std::ios::binary);
-  dst << src.rdbuf();
-  dst.close();
-  writeGlobals(globals_path.c_str());
-  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
-                      dst::JobMessage::BROADCAST),
-      result(dst::JobMessage::NONE);
-  std::unique_ptr<dst::JobDescription> desc
-      = std::make_unique<RoutingJobDescription>();
-  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setDesignPath(design_path);
-  rjd->setSharedDir(shared_volume_);
-  rjd->setGuidePath(guide_path);
-  rjd->setGlobalsPath(globals_path);
-  rjd->setDesignUpdate(false);
-  msg.setJobDescription(std::move(desc));
-  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-  if (!ok)
-    logger_->error(DRT, 12304, "Updating design remotely failed");
+  if(distributed_) {
+    std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
+    std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
+    std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
+    ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
+    std::ifstream src(GUIDE_FILE, std::ios::binary);
+    std::ofstream dst(guide_path.c_str(), std::ios::binary);
+    dst << src.rdbuf();
+    dst.close();
+    writeGlobals(globals_path.c_str());
+    dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                        dst::JobMessage::BROADCAST),
+        result(dst::JobMessage::NONE);
+    std::unique_ptr<dst::JobDescription> desc
+        = std::make_unique<RoutingJobDescription>();
+    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    rjd->setDesignPath(design_path);
+    rjd->setSharedDir(shared_volume_);
+    rjd->setGuidePath(guide_path);
+    rjd->setGlobalsPath(globals_path);
+    rjd->setDesignUpdate(false);
+    msg.setJobDescription(std::move(desc));
+    bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    if (!ok)
+      logger_->error(DRT, 12304, "Updating design remotely failed");
+  }
+  design_->clearUpdates();
 }
 
 static bool serializeDesignUpdates(frDesign* design,
@@ -525,9 +576,31 @@ static bool serializeDesignUpdates(frDesign* design,
   return true;
 }
 
+void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
+{
+  if(!distributed_)
+    return;
+  ProfileTask task("DIST: SENDING GLOBALS");
+  dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
+                      dst::JobMessage::BROADCAST),
+      result(dst::JobMessage::NONE);
+  std::unique_ptr<dst::JobDescription> desc
+      = std::make_unique<RoutingJobDescription>();
+  RoutingJobDescription* rjd
+      = static_cast<RoutingJobDescription*>(desc.get());
+  rjd->setGlobalsPath(globals_path);
+  rjd->setSharedDir(shared_volume_);
+  msg.setJobDescription(std::move(desc));
+  bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+  if (!ok)
+    logger_->error(DRT, 9504, "Updating globals remotely failed");
+}
+
 void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 {
-  if(design_->getUpdates().size())
+  if(!distributed_)
+    return;
+  if(design_->getUpdates().empty())
     return;
   std::string updates_path = fmt::format( "{}design_{}.bin", shared_volume_, design_->getVersion());
   ProfileTask task("DIST: SENDING UPDATES");
@@ -555,26 +628,19 @@ int TritonRoute::main()
 {
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_ && NO_PA) {
-    if (dist_pool_ == nullptr) {
-      dist_pool_ = std::make_unique<asio::thread_pool>(1);
-    }
-    asio::post(*dist_pool_.get(),
-               boost::bind(&TritonRoute::sendDesignDist, this));
+    asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initDesign();
   if (!NO_PA) {
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
-  }
-  if (distributed_ && !NO_PA) {
-    io::Writer writer(getDesign(), logger_);
-    writer.updateDb(db_, true);
-    if (dist_pool_ == nullptr) {
-      dist_pool_ = std::make_unique<asio::thread_pool>(1);
+    if(distributed_)
+    {
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_, true);
+      asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
     }
-    asio::post(*dist_pool_.get(),
-               boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initGuide();
   if (GUIDE_FILE == string("")) {
@@ -590,7 +656,7 @@ int TritonRoute::main()
   ta();
   if(distributed_)
   {
-    asio::post(*dist_pool_.get(), boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
+    asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
   dr();
   endFR();

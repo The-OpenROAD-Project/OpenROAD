@@ -1609,8 +1609,8 @@ void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
   }
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      if (iter != 0)
-        std::remove(globals_path_.c_str());
+      // if (iter != 0)
+      //   std::remove(globals_path_.c_str());
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
       router_->writeGlobals(globals_path_.c_str());
     }
@@ -1706,7 +1706,7 @@ void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
   }
 
   omp_set_num_threads(MAX_THREADS);
-
+  int vers = 0;
   increaseClipsize_ = false;
   // parallel execution
   for (auto& workerBatch : workers) {
@@ -1717,12 +1717,13 @@ void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        if (dist_on_) {
-          if (router_->dist_pool_ != nullptr) {
-            router_->dist_pool_->join();
-            router_->dist_pool_.reset();
-          }
-          router_->sendDesignUpdates(globals_path_);
+        if(dist_on_)
+        {
+          router_->dist_pool_.join();
+          if(vers++ == 0 && design_->getUpdates().empty())
+            router_->sendGlobalsUpdates(globals_path_);
+          else
+            router_->sendDesignUpdates(globals_path_);
         }
         {
           ProfileTask task("DIST: PROCESS_BATCH");
