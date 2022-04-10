@@ -864,9 +864,9 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     switch (term->getSigType()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
-      case odb::dbSigType::TIEOFF:
         // We allow for multuple pins
         break;
+      case odb::dbSigType::TIEOFF:
       case odb::dbSigType::SIGNAL:
       case odb::dbSigType::CLOCK:
       case odb::dbSigType::ANALOG:
@@ -910,10 +910,13 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
     auto pa = make_unique<frPinAccess>();
-    for (auto& db_ap : term->getAccessPoints()) {
-      auto ap = make_unique<frAccessPoint>();
-      updatefrAccessPoint(db_ap, ap.get(), tech);
-      pa->addAccessPoint(std::move(ap));
+    if (!term->getSigType().isSupply() && term->getBPins().size() == 1) {
+      auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
+      for (auto& db_ap : db_pin->getAccessPoints()) {
+        auto ap = make_unique<frAccessPoint>();
+        updatefrAccessPoint(db_ap, ap.get(), tech);
+        pa->addAccessPoint(std::move(ap));
+      }
     }
     pinIn->addPinAccess(std::move(pa));
     termIn->addPin(std::move(pinIn));
@@ -923,6 +926,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
 
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
 {
+  std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
   for (auto& master : design->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
     for (auto& term : master->getTerms()) {
@@ -946,10 +950,41 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();
             updatefrAccessPoint(db_ap, ap.get(), tech);
+            ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
           }
           pin->addPinAccess(std::move(pa));
         }
+      }
+    }
+  }
+  for (auto db_inst : db->getChip()->getBlock()->getInsts()) {
+    auto inst = tmpBlock->findInst(db_inst->getName());
+    if (inst == nullptr)
+      continue;
+    for (auto db_term : db_inst->getITerms()) {
+      auto term = inst->getInstTerm(db_term->getMTerm()->getName());
+      if (term == nullptr)
+        continue;
+
+      auto db_aps = db_term->getPrefAccessPoints();
+      std::map<odb::dbMPin*, odb::dbAccessPoint*> db_aps_map;
+      for (auto db_ap : db_aps) {
+        if (ap_map.find(db_ap) == ap_map.end())
+          logger->error(DRT,
+                        1011,
+                        "Access Point not found for iterm {}/{}",
+                        db_inst->getName(),
+                        db_term->getMTerm()->getName());
+        db_aps_map[db_ap->getMPin()] = db_ap;
+      }
+      int idx = 0;
+      for (auto mpin : db_term->getMTerm()->getMPins()) {
+        if (db_aps_map.find(mpin) == db_aps_map.end())
+          term->setAccessPoint(idx, nullptr);
+        else
+          term->setAccessPoint(idx, ap_map[db_aps_map[mpin]]);
+        ++idx;
       }
     }
   }
@@ -2954,17 +2989,27 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* tech)
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr)
       logger->error(DRT, 301, "bterm {} not found in db", term->getName());
-    for (const auto& pin : term->getPins()) {
-      int sz = pin->getNumPinAccess();
-      int j = 0;
-      while (j < sz) {
-        auto pa = pin->getPinAccess(j);
-        for (auto& ap : pa->getAccessPoints()) {
-          auto db_ap = odb::dbAccessPoint::create(db_term);
-          updateDbAccessPoint(db_ap, ap.get(), tech, getTech(), block);
-        }
-        j++;
+    if (db_term->getSigType() == odb::dbSigType::POWER
+        || db_term->getSigType() == odb::dbSigType::GROUND)
+      continue;
+    auto db_pins = db_term->getBPins();
+    auto& pins = term->getPins();
+    if (db_pins.size() != pins.size())
+      logger->error(
+          DRT, 303, "Mismatch in number of pins for bterm {}", term->getName());
+    if (pins.size() != 1)
+      continue;
+    auto db_pin = (odb::dbBPin*) *db_pins.begin();
+    auto& pin = pins[0];
+    int j = 0;
+    int sz = pin->getNumPinAccess();
+    while (j < sz) {
+      auto pa = pin->getPinAccess(j);
+      for (auto& ap : pa->getAccessPoints()) {
+        auto db_ap = odb::dbAccessPoint::create(db_pin);
+        updateDbAccessPoint(db_ap, ap.get(), tech, getTech(), block);
       }
+      j++;
     }
   }
 }

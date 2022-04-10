@@ -22,7 +22,7 @@ total displacement         36.8 u
 average displacement        1.8 u
 max displacement            7.4 u
 original HPWL            6773.1 u
-legalized HPWL           6797.6 u
-delta HPWL                    0 %
+legalized HPWL           6819.9 u
+delta HPWL                    1 %
 
-worst slack 0.20
+worst slack 0.22

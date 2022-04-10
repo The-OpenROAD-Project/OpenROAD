@@ -124,7 +124,9 @@ report_check_types -max_slew -max_capacitance -max_fanout -violators
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
 
-clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clustering_enable
+clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer \
+  -sink_clustering_enable \
+  -sink_clustering_max_diameter $cts_cluster_diameter
 
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets

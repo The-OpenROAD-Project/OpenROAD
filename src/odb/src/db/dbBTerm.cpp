@@ -33,7 +33,6 @@
 #include "dbBTerm.h"
 
 #include "db.h"
-#include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"
@@ -86,8 +85,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0),
-      aps_(b.aps_)
+      _sta_vertex_id(0)
 {
   if (b._name) {
     _name = strdup(b._name);
@@ -154,9 +152,6 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
     return false;
 
   if (_supply_pin != rhs._supply_pin)
-    return false;
-
-  if (aps_ != rhs.aps_)
     return false;
 
   return true;
@@ -245,7 +240,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
-  stream << bterm.aps_;
   return stream;
 }
 
@@ -264,7 +258,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._bpins;
   stream >> bterm._ground_pin;
   stream >> bterm._supply_pin;
-  stream >> bterm.aps_;
 
   return stream;
 }
@@ -598,17 +591,6 @@ void dbBTerm::setSupplyPin(dbBTerm* pin)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_supply_pin = pin->getImpl()->getOID();
-}
-
-std::vector<dbAccessPoint*> dbBTerm::getAccessPoints() const
-{
-  _dbBTerm* term = (_dbBTerm*) this;
-  _dbBlock* block = (_dbBlock*) getBlock();
-  std::vector<dbAccessPoint*> aps;
-  for (auto ap : term->aps_) {
-    aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
-  }
-  return aps;
 }
 
 dbBTerm* dbBTerm::create(dbNet* net_, const char* name)

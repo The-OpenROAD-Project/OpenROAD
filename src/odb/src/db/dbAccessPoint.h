@@ -50,7 +50,7 @@ class _dbTechLayer;
 class _dbLib;
 class _dbMaster;
 class _dbMPin;
-class _dbBTerm;
+class _dbBPin;
 class _dbITerm;
 class _dbObject;
 // User Code Begin Classes
@@ -70,7 +70,7 @@ class _dbAccessPoint : public _dbObject
   dbId<_dbLib> lib_;
   dbId<_dbMaster> master_;
   dbId<_dbMPin> mpin_;
-  dbId<_dbBTerm> bterm_;
+  dbId<_dbBPin> bpin_;
   std::array<bool, 6> accesses_;
   dbAccessType::Value low_type_;
   dbAccessType::Value high_type_;

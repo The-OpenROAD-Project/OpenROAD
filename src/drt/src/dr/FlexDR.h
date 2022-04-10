@@ -58,6 +58,7 @@ class Logger;
 namespace fr {
 
 class frConstraint;
+struct SearchRepairArgs;
 
 struct FlexDRViaData
 {
@@ -200,14 +201,7 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-  void searchRepair(int iter,
-                    int size,
-                    int offset,
-                    int mazeEndIter,
-                    frUInt4 workerDRCCost,
-                    frUInt4 workerMarkerCost,
-                    int ripupMode,
-                    bool followGuide);
+  void searchRepair(int iter, const SearchRepairArgs& args);
   void end(bool writeMetrics = false);
 
   // utility

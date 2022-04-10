@@ -32,10 +32,10 @@
         "parent": "dbMPin"
       },
       {
-        "type": "dbId<_dbBTerm>",
-        "name": "bterm_",
+        "type": "dbId<_dbBPin>",
+        "name": "bpin_",
         "flags":["private","cmpgt"],
-        "parent": "dbBTerm"
+        "parent": "dbBPin"
       },
       {
         "name": "accesses_",

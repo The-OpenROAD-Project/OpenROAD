@@ -299,19 +299,12 @@ Opendp::hpwl() const
 int64_t
 Opendp::hpwl(dbNet *net) const
 {
-  if (isSupply(net))
+  if (net->getSigType().isSupply())
     return 0;
   else {
     Rect bbox = net->getTermBBox();
     return bbox.dx() + bbox.dy();
   }
-}
-
-bool
-Opendp::isSupply(dbNet *net) const
-{
-  dbSigType sig_type = net->getSigType();
-  return sig_type == dbSigType::POWER || sig_type == dbSigType::GROUND;
 }
 
 ////////////////////////////////////////////////////////////////
