@@ -231,7 +231,6 @@ void TritonRoute::updateDesign(const char* file_name)
   ar >> updates;
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
-  bool hasTAUpdates = false;
   for (auto& update : updates) {
     switch (update.getType()) {
       case drUpdate::REMOVE_FROM_BLOCK: {
@@ -314,7 +313,6 @@ void TritonRoute::updateDesign(const char* file_name)
         break;
       }
       case drUpdate::ADD_GUIDE: {
-        hasTAUpdates = true;
         auto obj = update.getObj();
         frPathSeg seg = boost::get<frPathSeg>(obj);
         std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
@@ -333,9 +331,6 @@ void TritonRoute::updateDesign(const char* file_name)
         guide->setRoutes(tmp);
       }
     }
-  }
-  if (hasTAUpdates) {
-    // design_->getRegionQuery()->initDRObj();
   }
 }
 
