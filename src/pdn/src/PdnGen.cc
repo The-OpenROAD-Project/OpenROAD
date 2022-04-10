@@ -824,8 +824,9 @@ void PdnGen::ripUp(odb::dbNet* net)
       odb::dbBTerm::destroy(bterm);
     }
   }
-  for (auto* swire : net->getSWires()) {
-    odb::dbSWire::destroy(swire);
+  auto swires = net->getSWires();
+  for (auto iter = swires.begin(); iter != swires.end(); ) {
+    iter = odb::dbSWire::destroy(iter);
   }
 }
 
