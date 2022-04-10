@@ -1200,7 +1200,6 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap& adj_map)
   macro_weights_.resize(weight_size);
   for (size_t i = 0; i < weight_size; i++) {
     macro_weights_[i].resize(weight_size);
-    macro_weights_[i] = {0};
   }
 
   for (auto pair_weight : adj_map) {
