@@ -560,20 +560,29 @@ void TritonRoute::sendDesignDist()
 static bool serializeDesignUpdates(frDesign* design,
                                   const std::string& name)
 {
-  ProfileTask task("DIST: SERIALIZE_UPDATES");
+  std::unique_ptr<ProfileTask> serializeTask;
+  if(design->getVersion() == 0)
+    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
+  else
+    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UDPATES");
   std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
   frOArchive ar(stream);
   ar.setDeepSerialize(false);
   register_types(ar);
   auto updates = design->getUpdates();
   ar << updates;
-  task.done();
-  ProfileTask task2("DIST: WRITE_UPDATES");
+  serializeTask->done();
+  std::unique_ptr<ProfileTask> writeTask;
+  if(design->getVersion() == 0)
+    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
+  else
+    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
   std::ofstream file(name);
   if (!file.good())
     return false;
   file << stream.rdbuf();
   file.close();
+  writeTask->done();
   return true;
 }
 
@@ -604,8 +613,12 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
   if(design_->getUpdates().empty())
     return;
   std::string updates_path = fmt::format( "{}design_{}.bin", shared_volume_, design_->getVersion());
-  ProfileTask task("DIST: SENDING UPDATES");
   serializeDesignUpdates(design_.get(), updates_path);
+  std::unique_ptr<ProfileTask> task;
+  if(design_->getVersion() == 0)
+    task = std::make_unique<ProfileTask>("DIST: SENDING_TA");
+  else
+    task = std::make_unique<ProfileTask>("DIST: SENDING_UDPATES");
   dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                       dst::JobMessage::BROADCAST),
       result(dst::JobMessage::NONE);
@@ -621,6 +634,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
   bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
   if (!ok)
     logger_->error(DRT, 304, "Updating design remotely failed");
+  task->done();
   design_->clearUpdates();
   design_->incrementVersion();
 }
