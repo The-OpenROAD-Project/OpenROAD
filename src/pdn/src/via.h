@@ -106,6 +106,9 @@ class DbVia
 
   virtual bool requiresPatch() const { return false; }
 
+  odb::Rect adjustToMinArea(odb::dbTechLayer* layer,
+                            const odb::Rect& rect) const;
+
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
   void combineLayerShapes(const ViaLayerShape& other,
