@@ -366,6 +366,12 @@ void filter_vias(const char* filter)
   pdngen->filterVias(filter);
 }
 
+void check_setup()
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->checkSetup();
+}
+
 } // namespace
 
 %} // inline

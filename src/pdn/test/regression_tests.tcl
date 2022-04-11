@@ -19,6 +19,7 @@ record_tests {
   core_grid_start_power_strap_ground
   core_grid_with_rings_with_straps
   core_grid_dual_followpins
+  core_grid_dual_followpins_error
   core_grid_with_dual_rings
   core_grid_with_rings_connect
   core_grid_cut_pitch

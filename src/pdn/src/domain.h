@@ -100,6 +100,8 @@ class VoltageDomain
 
   void report() const;
 
+  void checkSetup() const;
+
  private:
   std::string name_;
   PdnGen* pdngen_;

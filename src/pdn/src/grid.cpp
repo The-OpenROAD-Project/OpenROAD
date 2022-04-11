@@ -411,6 +411,60 @@ void Grid::resetShapes()
   }
 }
 
+void Grid::checkSetup() const
+{
+  // check if follow pins have connect statements
+  std::set<odb::dbTechLayer*> follow_pin_layers;
+  for (const auto& strap : straps_) {
+    if (strap->type() == Straps::Followpin) {
+      follow_pin_layers.insert(strap->getLayer());
+    }
+  }
+  if (follow_pin_layers.empty()) {
+    return;
+  }
+  std::set<Connect*> follow_pin_connect;
+  for (auto* lower : follow_pin_layers) {
+    for (const auto& connect : connect_) {
+      if (connect->getLowerLayer() != lower) {
+        continue;
+      }
+      for (auto* upper : follow_pin_layers) {
+        if (connect->getUpperLayer() == upper) {
+          follow_pin_connect.insert(connect.get());
+          break;
+        }
+      }
+    }
+  }
+
+  if (follow_pin_layers.size() > 1 && follow_pin_connect.empty()) {
+    // found no connect statements between followpins
+    getLogger()->error(utl::PDN, 192, "There are multiple ({}) followpin definitions in {}, but no connect statements between them.", follow_pin_layers.size(), getName());
+  }
+  if (follow_pin_layers.size() - 1 != follow_pin_connect.size()) {
+    getLogger()->error(utl::PDN, 193, "There are only ({}) followpin connect statements when {} is/are required.", follow_pin_connect.size(), follow_pin_layers.size() - 1);
+  }
+
+  for (auto* connect0 : follow_pin_connect) {
+    for (auto* connect1 : follow_pin_connect) {
+      if (connect0 == connect1) {
+        continue;
+      }
+
+      if (connect0->overlaps(connect1) || connect1->overlaps(connect0)) {
+        getLogger()->error(utl::PDN,
+                           194,
+                           "Connect statements for followpins overlap between layers: {} -> {} and {} -> {}",
+                           connect0->getLowerLayer()->getName(),
+                           connect0->getUpperLayer()->getName(),
+                           connect1->getLowerLayer()->getName(),
+                           connect1->getUpperLayer()->getName());
+      }
+    }
+  }
+}
+
 void Grid::getObstructions(ShapeTreeMap& obstructions) const
 {
   for (const auto& [layer, shapes] : getShapes()) {
@@ -438,10 +492,10 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   // populate shapes and obstructions
   Box search_box(Point(search_area.xMin(), search_area.yMin()),
                  Point(search_area.xMax(), search_area.yMax()));
-  for (auto& [layer, layer_gloabl_shape] : global_shapes) {
+  for (auto& [layer, layer_global_shape] : global_shapes) {
     auto& shapes = search_shapes[layer];
-    for (auto it = layer_gloabl_shape.qbegin(bgi::intersects(search_box));
-         it != layer_gloabl_shape.qend();
+    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_box));
+         it != layer_global_shape.qend();
          it++) {
       shapes.insert(*it);
     }
