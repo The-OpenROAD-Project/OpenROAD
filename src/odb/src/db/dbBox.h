@@ -53,11 +53,14 @@ struct _dbBoxFlags
   dbBoxOwner::Value _owner_type : 4;
   uint _visited : 1;
   uint _mark : 1;
+  uint _octilinear : 1;
   uint _is_tech_via : 1;
   uint _is_block_via : 1;
   uint _layer_id : 8;
-  uint _via_id : 16;
+  uint _via_id : 15;
 };
+
+static_assert(sizeof(_dbBoxFlags) == 4, "_dbBoxFlags too large");
 
 class _dbBox : public _dbObject
 {
@@ -81,7 +84,6 @@ class _dbBox : public _dbObject
   dbBoxShape _shape = {Rect()};
   uint _owner;
   dbId<_dbBox> _next_box;
-  bool _octilinear;
   int design_rule_width_;
 
   _dbBox(_dbDatabase*);
@@ -122,8 +124,8 @@ inline _dbBox::_dbBox(_dbDatabase*)
   _flags._via_id = 0;
   _flags._visited = 0;
   _flags._mark = 0;
+  _flags._octilinear = false;
   _owner = 0;
-  _octilinear = false;
   design_rule_width_ = -1;
 }
 
@@ -131,7 +133,6 @@ inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
     : _flags(b._flags),
       _owner(b._owner),
       _next_box(b._next_box),
-      _octilinear(b._octilinear),
       design_rule_width_(b.design_rule_width_)
 {
   if (b.isOct()) {
@@ -151,7 +152,6 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 {
   uint* bit_field = (uint*) &box._flags;
   stream << *bit_field;
-  stream << box._octilinear;
   if (box.isOct())
     stream << box._shape._oct;
   else
@@ -166,7 +166,6 @@ inline dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
   uint* bit_field = (uint*) &box._flags;
   stream >> *bit_field;
-  stream >> box._octilinear;
   if (box.isOct()) {
     new (&box._shape._oct) Oct();
     stream >> box._shape._oct;

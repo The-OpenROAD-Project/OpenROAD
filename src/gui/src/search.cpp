@@ -372,8 +372,15 @@ void Search::addSNet(odb::dbNet* net)
       } else {
         Box bbox(Point(box->xMin(), box->yMin()),
                  Point(box->xMax(), box->yMax()));
+        std::vector<odb::Point> points;
+        if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
+          points = box->getOct().getPoints();
+        } else {
+          odb::Rect rect;
+          box->getBox(rect);
+          points = rect.getPoints();
+        }
         Polygon poly;
-        auto points = box->getGeomShape()->getPoints();
         for (auto point : points)
           bg::append(poly.outer(), Point(point.getX(), point.getY()));
         shapes_[box->getTechLayer()].insert(std::make_tuple(bbox, poly, net));

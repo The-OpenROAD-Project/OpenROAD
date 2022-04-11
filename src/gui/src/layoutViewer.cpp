@@ -182,16 +182,11 @@ class GuiPainter : public Painter
     painter_->restore();
   }
 
-  void drawGeomShape(const odb::GeomShape* shape) override
+  void drawOctagon(const odb::Oct& oct) override
   {
-    std::vector<Point> points = shape->getPoints();
+    std::vector<Point> points = oct.getPoints();
     const int size = points.size();
-    if (size == 5) {
-      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
-                               QPoint(shape->xMax(), shape->yMax())));
-    } else {
-      drawPolygon(points);
-    }
+    drawPolygon(points);
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
