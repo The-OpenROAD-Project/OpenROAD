@@ -107,6 +107,14 @@ class LayoutViewer : public QWidget
     CLEAR_FOCUS_ACT,
     CLEAR_ALL_ACT
   };
+
+  struct ModuleSettings {
+    QColor color;
+    QColor user_color;
+    QColor orig_color;
+    bool visible;
+  };
+
   // makeSelected is so that we don't have to pass in the whole
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
@@ -129,6 +137,8 @@ class LayoutViewer : public QWidget
   void removeFocusNet(odb::dbNet* net);
   void clearFocusNets();
   const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
+
+  const std::map<odb::dbModule*, ModuleSettings>& getModuleSettings() { return modules_; }
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect);
@@ -221,6 +231,9 @@ class LayoutViewer : public QWidget
   void selectionAnimation(const Selected& selection, int repeats = animation_repeats_, int update_interval = animation_interval_);
   void selectionAnimation(int repeats = animation_repeats_, int update_interval = animation_interval_) { selectionAnimation(inspector_selection_, repeats, update_interval); }
 
+  void updateModuleVisibility(odb::dbModule* module, bool visible);
+  void updateModuleColor(odb::dbModule* module, const QColor& color, bool user_selected);
+
  private slots:
   void setBlock(odb::dbBlock* block);
 
@@ -283,6 +296,8 @@ class LayoutViewer : public QWidget
                       const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
+  void drawModuleView(QPainter* painter,
+                      const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
@@ -332,6 +347,8 @@ class LayoutViewer : public QWidget
 
   bool isNetVisible(odb::dbNet* net);
 
+  void populateModuleColors();
+
   odb::dbBlock* block_;
   Options* options_;
   ScriptWidget* output_widget_;
@@ -356,6 +373,8 @@ class LayoutViewer : public QWidget
   bool rubber_band_showing_;
   std::function<Selected(const std::any&)> makeSelected_;
   std::function<bool(void)> usingDBU_;
+
+  std::map<odb::dbModule*, ModuleSettings> modules_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;

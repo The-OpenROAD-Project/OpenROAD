@@ -593,9 +593,9 @@ float Graph::calc_tree_det_cost()
 void Graph::run_PD_brute_force(float alpha)
 {
   heap_size_ = 0;
-  heap_key_.resize(num_terminals);
-  heap_idx_.resize(num_terminals);
-  heap_elt_.resize(num_terminals);
+  heap_key_.resize(num_terminals + 1);
+  heap_idx_.resize(num_terminals + 1);
+  heap_elt_.resize(num_terminals + 1);
 
   heap_insert(root_idx_, 0);
   nodes[root_idx_].parent = root_idx_;
