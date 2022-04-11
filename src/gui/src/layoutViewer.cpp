@@ -185,7 +185,6 @@ class GuiPainter : public Painter
   void drawOctagon(const odb::Oct& oct) override
   {
     std::vector<Point> points = oct.getPoints();
-    const int size = points.size();
     drawPolygon(points);
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
