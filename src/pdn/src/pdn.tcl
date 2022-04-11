@@ -145,6 +145,7 @@ proc pdngen { args } {
     set trim [expr [info exists flags(-skip_trim)] == 0]
     set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
 
+    pdn::check_setup
     pdn::build_grids $trim
     pdn::write_to_db $add_pins
     pdn::reset_shapes

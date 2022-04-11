@@ -68,7 +68,8 @@ Straps::Straps(Grid* grid,
   if (spacing_ == 0 && pitch_ != 0) {
     // spacing not defined, so use pitch / (# of nets)
     spacing_ = pitch_ / getNetCount() - width_;
-    spacing_ = TechLayer::snapToManufacturingGrid(getBlock()->getDataBase()->getTech(), spacing_, true);
+    // round down, later check will fail if spacing does not meet min spacing, but rounding up will cause pitch check to fail.
+    spacing_ = TechLayer::snapToManufacturingGrid(getBlock()->getDataBase()->getTech(), spacing_, false);
   }
   if (layer_ != nullptr) {
     direction_ = layer_->getDirection();
@@ -89,20 +90,24 @@ void Straps::checkLayerSpecifications() const
         layer_->getName());
   }
 
+  const TechLayer layer(layer_);
+
   checkLayerWidth(layer_, width_, direction_);
   checkLayerSpacing(layer_, width_, spacing_, direction_);
+  layer.checkIfManufacturingGrid(width_, getLogger(), "Width");
+  layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
+  layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {
     const int min_pitch = strap_width + spacing_;
     if (pitch_ < min_pitch) {
-      double lef_units = layer_->getTech()->getLefUnits();
       getLogger()->error(
           utl::PDN,
           175,
           "Pitch {:.4f} is too small for, must be atleast {:.4f}",
-          pitch_ / lef_units,
-          min_pitch / lef_units);
+          layer.dbuToMicron(pitch_),
+          layer.dbuToMicron(min_pitch));
     }
   }
 

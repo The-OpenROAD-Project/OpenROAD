@@ -185,6 +185,8 @@ class PdnGen
   void setAllowRepairChannels(bool allow);
   void filterVias(const std::string& filter);
 
+  void checkSetup() const;
+
  private:
   using regexPairs
       = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
