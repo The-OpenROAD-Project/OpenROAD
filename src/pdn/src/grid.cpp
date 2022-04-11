@@ -452,6 +452,16 @@ void Grid::checkSetup() const
         continue;
       }
 
+      // ensure order of connects is consistent
+      const int c0_lower = connect0->getLowerLayer()->getRoutingLevel();
+      const int c0_upper = connect0->getUpperLayer()->getRoutingLevel();
+      const int c1_lower = connect1->getLowerLayer()->getRoutingLevel();
+      const int c1_upper = connect1->getUpperLayer()->getRoutingLevel();
+      if (std::tie(c0_lower, c0_upper) >
+          std::tie(c1_lower, c1_upper)) {
+        std::swap(connect0, connect1);
+      }
+
       if (connect0->overlaps(connect1) || connect1->overlaps(connect0)) {
         getLogger()->error(utl::PDN,
                            194,

@@ -13,5 +13,5 @@
 PDN-0192
 [ERROR PDN-0193] There are only (1) followpin connect statements when 2 is/are required.
 PDN-0193
-[ERROR PDN-0194] Connect statements for followpins overlap between layers: metal1 -> metal3 and metal1 -> metal2
+[ERROR PDN-0194] Connect statements for followpins overlap between layers: metal1 -> metal2 and metal1 -> metal3
 PDN-0194
