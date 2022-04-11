@@ -775,6 +775,7 @@ void PdnGen::writeToDb(bool add_pins) const
 void PdnGen::ripUp(odb::dbNet* net)
 {
   if (net == nullptr) {
+    resetShapes();
     std::set<odb::dbNet*> nets;
     ensureCoreDomain();
     for (auto* domain : getDomains()) {

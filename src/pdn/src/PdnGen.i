@@ -372,6 +372,25 @@ void check_setup()
   pdngen->checkSetup();
 }
 
+// used for building debugging grids and should not be used.
+void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, const char* direction)
+{
+  auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  auto* block = swire->getBlock();
+  odb::Rect strap;
+  block->getBBox()->getBox(strap);
+  if (strcmp(direction, "HORIZONTAL") == 0) {
+    strap.set_ylo(offset);
+    strap.set_yhi(offset + width);
+  } else if (strcmp(direction, "VERTICAL") == 0) {
+    strap.set_xlo(offset);
+    strap.set_xhi(offset + width);    
+  } else {
+    return;
+  }
+  odb::dbSBox::create(swire, layer, strap.xMin(), strap.yMin(), strap.xMax(), strap.yMax(), odb::dbWireShapeType::STRIPE);
+}
+
 } // namespace
 
 %} // inline
