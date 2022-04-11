@@ -180,9 +180,7 @@ bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const s
   const int grid = tech->getManufacturingGrid();
 
   if (value % grid != 0) {
-    if (logger != nullptr) {
-      logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(grid));
-    }
+    logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(grid));
     return false;
   }
 
