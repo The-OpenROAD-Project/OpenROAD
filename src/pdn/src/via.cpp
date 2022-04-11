@@ -1326,6 +1326,22 @@ std::vector<odb::dbTechLayerCutEnclosureRule*> ViaGenerator::getCutMinimumEnclos
     }
   }
 
+  // rules with 0 width apply to all widths, so copy those rules to all other widths
+  CutRules* applies_to_all = nullptr;
+  auto find_itr = rules_map.find(0);
+  if (find_itr != rules_map.end()) {
+    applies_to_all = &find_itr->second;
+  }
+  if (applies_to_all != nullptr) {
+    for (auto& [min_width, width_rules] : rules_map) {
+      if (min_width == 0) {
+        continue;
+      }
+
+      width_rules.insert(width_rules.end(), applies_to_all->begin(), applies_to_all->end());
+    }
+  }
+
   CutRules* rules = nullptr;
   for (auto& [min_width, width_rules] : rules_map) {
     if (min_width <= width) {
