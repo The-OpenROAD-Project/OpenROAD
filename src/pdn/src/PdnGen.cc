@@ -279,7 +279,6 @@ void PdnGen::buildGrids(bool trim)
 {
   auto* block = db_->getChip()->getBlock();
 
-  checkDesign(block);
   resetShapes();
 
   ShapeTreeMap block_obs;
@@ -866,6 +865,17 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
                       inst->getName());
       }
     }
+  }
+}
+
+void PdnGen::checkSetup() const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  checkDesign(block);
+
+  for (auto* domain : getDomains()) {
+    domain->checkSetup();
   }
 }
 

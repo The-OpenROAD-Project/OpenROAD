@@ -174,6 +174,8 @@ class Grid
 
   virtual bool isReplaceable() const { return false; }
 
+  void checkSetup() const;
+
  protected:
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,

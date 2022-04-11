@@ -34,6 +34,7 @@
 
 #include "domain.h"
 #include "grid.h"
+#include "techlayer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -53,6 +54,12 @@ void Rings::checkLayerSpecifications() const
     checkLayerWidth(layer.layer, layer.width, layer.layer->getDirection());
     checkLayerSpacing(
         layer.layer, layer.width, layer.spacing, layer.layer->getDirection());
+    const TechLayer techlayer(layer.layer);
+    techlayer.checkIfManufacturingGrid(layer.width, getLogger(), "Width");
+    techlayer.checkIfManufacturingGrid(layer.spacing, getLogger(), "Spacing");
+    for (const auto& off : offset_) {
+      techlayer.checkIfManufacturingGrid(off, getLogger(), "Core offset");
+    }
   }
 
   if (layers_[0].layer->getDirection() == layers_[1].layer->getDirection()) {
