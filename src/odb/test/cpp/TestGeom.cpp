@@ -9,25 +9,25 @@ BOOST_AUTO_TEST_SUITE( test_suite )
 
 BOOST_AUTO_TEST_CASE( test_oct )
 {
-    Oct* oct = new Oct;
-    oct->init(Point(0,0),Point(400,400),40);
-    BOOST_TEST((oct->getCenterHigh() == Point(400,400)));
-    BOOST_TEST((oct->getCenterLow() == Point(0,0)));
-    BOOST_TEST(oct->getWidth()==40);
-    BOOST_TEST(oct->xMin()==-20);
-    BOOST_TEST(oct->xMax()==420);
-    BOOST_TEST(oct->yMin()==-20);
-    BOOST_TEST(oct->yMax()==420);
-    BOOST_TEST(oct->dx()==440);
-    BOOST_TEST(oct->dy()==440);
+    Oct oct;
+    oct.init(Point(0,0),Point(400,400),40);
+    BOOST_TEST((oct.getCenterHigh() == Point(400,400)));
+    BOOST_TEST((oct.getCenterLow() == Point(0,0)));
+    BOOST_TEST(oct.getWidth()==40);
+    BOOST_TEST(oct.xMin()==-20);
+    BOOST_TEST(oct.xMax()==420);
+    BOOST_TEST(oct.yMin()==-20);
+    BOOST_TEST(oct.yMax()==420);
+    BOOST_TEST(oct.dx()==440);
+    BOOST_TEST(oct.dy()==440);
 
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
-    oct->init(Point(0,0),Point(-400,400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
-    oct->init(Point(0,0),Point(-400,-400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
-    oct->init(Point(0,0),Point(400,-400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::RIGHT);
+    oct.init(Point(0,0),Point(-400,400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::LEFT);
+    oct.init(Point(0,0),Point(-400,-400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::RIGHT);
+    oct.init(Point(0,0),Point(400,-400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::LEFT);
 }
 BOOST_AUTO_TEST_CASE( test_sbox_shapes )
 {
