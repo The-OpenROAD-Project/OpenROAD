@@ -271,20 +271,19 @@ void TritonRoute::updateDesign(const char* file_name)
         break;
       }
       case drUpdate::ADD_SHAPE: {
-        auto obj = update.getObj();
-        switch (obj.which()) {
-          case 0: {
+        switch (update.getObjTypeId()) {
+          case frcPathSeg: {
             auto net = update.getNet();
-            frPathSeg seg = boost::get<frPathSeg>(obj);
+            frPathSeg seg = update.getPathSeg();
             std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
             auto sptr = uShape.get();
             net->addShape(std::move(uShape));
             regionQuery->addDRObj(sptr);
             break;
           }
-          case 1: {
+          case frcPatchWire: {
             auto net = update.getNet();
-            frPatchWire pwire = boost::get<frPatchWire>(obj);
+            frPatchWire pwire = update.getPatchWire();
             std::unique_ptr<frShape> uShape
                 = std::make_unique<frPatchWire>(pwire);
             auto sptr = uShape.get();
@@ -292,9 +291,9 @@ void TritonRoute::updateDesign(const char* file_name)
             regionQuery->addDRObj(sptr);
             break;
           }
-          case 2: {
+          case frcVia: {
             auto net = update.getNet();
-            frVia via = boost::get<frVia>(obj);
+            frVia via = update.getVia();
             auto uVia = std::make_unique<frVia>(via);
             auto sptr = uVia.get();
             net->addVia(std::move(uVia));
@@ -302,7 +301,7 @@ void TritonRoute::updateDesign(const char* file_name)
             break;
           }
           default: {
-            frMarker marker = boost::get<frMarker>(obj);
+            frMarker marker = update.getMarker();
             auto uMarker = std::make_unique<frMarker>(marker);
             auto sptr = uMarker.get();
             topBlock->addMarker(std::move(uMarker));
@@ -313,8 +312,7 @@ void TritonRoute::updateDesign(const char* file_name)
         break;
       }
       case drUpdate::ADD_GUIDE: {
-        auto obj = update.getObj();
-        frPathSeg seg = boost::get<frPathSeg>(obj);
+        frPathSeg seg = update.getPathSeg();
         std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
         auto net = update.getNet();
         uSeg->addToNet(net);

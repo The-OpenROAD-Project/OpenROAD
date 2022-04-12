@@ -27,8 +27,6 @@
  */
 
 #pragma once
-#include <boost/serialization/variant.hpp>
-
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
@@ -45,29 +43,48 @@ class drUpdate
     REMOVE_FROM_BLOCK
   };
   drUpdate(UpdateType type = ADD_SHAPE)
-      : net_(nullptr), order_in_owner_(0), type_(type)
+      : net_(nullptr),
+        order_in_owner_(0),
+        type_(type),
+        layer_(0),
+        bottomConnected_(false),
+        topConnected_(false),
+        tapered_(false),
+        viaDef_(nullptr),
+        obj_type_(frcBlock)
   {
   }
   void setNet(frNet* net) { net_ = net; }
-  void setPathSeg(const frPathSeg& seg) { obj_ = seg; }
-  void setPatchWire(const frPatchWire& pwire) { obj_ = pwire; }
-  void setVia(const frVia& via) { obj_ = via; }
-  void setMarker(const frMarker& marker) { obj_ = marker; }
   void setOrderInOwner(int value) { order_in_owner_ = value; }
   void setUpdateType(UpdateType value) { type_ = value; }
-  boost::variant<frPathSeg, frPatchWire, frVia, frMarker>& getObj()
-  {
-    return obj_;
-  }
+  void setPathSeg(const frPathSeg& seg);
+  void setPatchWire(const frPatchWire& pwire);
+  void setVia(const frVia& via);
+  void setMarker(const frMarker& marker);
+  frPathSeg getPathSeg() const;
+  frPatchWire getPatchWire() const;
+  frVia getVia() const;
   UpdateType getType() const { return type_; }
   int getOrderInOwner() const { return order_in_owner_; }
   frNet* getNet() const { return net_; }
+  frBlockObjectEnum getObjTypeId() const { return obj_type_; }
+  frMarker getMarker() const { return marker_; }
 
  private:
   frNet* net_;
   int order_in_owner_;
   UpdateType type_;
-  boost::variant<frPathSeg, frPatchWire, frVia, frMarker> obj_;
+  Point begin_;
+  Point end_;
+  frSegStyle style_;
+  Rect offsetBox_;
+  frLayerNum layer_;
+  bool bottomConnected_ : 1;
+  bool topConnected_ : 1;
+  bool tapered_ : 1;
+  frViaDef* viaDef_;
+  frBlockObjectEnum obj_type_;
+  frMarker marker_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
