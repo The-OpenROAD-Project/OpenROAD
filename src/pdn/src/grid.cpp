@@ -179,10 +179,31 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     TechLayer techlayer(layer);
     techlayer.populateGrid(block);
     const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const int min_spacing = techlayer.getSpacing(0);
 
     for (const auto& [box, shape] : itr->second) {
-      shape->generateObstruction();
-      const auto& obs = shape->getObstruction();
+      const auto& rect = shape->getRect();
+      // bloat to block routing based on spacing
+      const int width = is_horizontal ? rect.dy() : rect.dx();
+      const int length = is_horizontal ? rect.dx() : rect.dy();
+
+      const int width_spacing = techlayer.getSpacing(width, length);
+      const int length_spacing = techlayer.getSpacing(length, width);
+
+      int delta_x = is_horizontal ? length_spacing : width_spacing;
+      int delta_y = is_horizontal ? width_spacing : length_spacing;
+
+      if (is_horizontal) {
+        delta_x -= min_spacing;
+      } else {
+        delta_y -= min_spacing;
+      }
+
+      const odb::Rect obs(
+          rect.xMin() - delta_x,
+          rect.yMin() - delta_y,
+          rect.xMax() + delta_x,
+          rect.yMax() + delta_y);
 
       if (techlayer.hasGrid()) {
         std::vector<int> grid = techlayer.getGrid();
