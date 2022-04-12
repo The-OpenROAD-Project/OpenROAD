@@ -829,7 +829,7 @@ namespace eval pdn {
             # must match orientation, if provided
             if {[match_orientation $orients [$inst getOrient]] != 0} {
               foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid
+                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
               }
             }
           }
