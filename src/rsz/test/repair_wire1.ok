@@ -42,9 +42,9 @@ in1 manhtn 0.7 steiner 0.7 0.00
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
+repeater2/Z manhtn 758.6 steiner 758.6 0.05
 repeater1/Z manhtn 757.3 steiner 757.3 0.05
-repeater2/Z manhtn 756.9 steiner 756.9 0.05
-u2/Z manhtn 477.9 steiner 477.9 0.02
+u2/Z manhtn 479.3 steiner 479.3 0.02
 u3/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
@@ -55,19 +55,19 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.441    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (CLKBUF_X2)
-  12.433    0.017    0.035    0.035 ^ u1/Z (CLKBUF_X2)
-            0.017    0.000    0.035 ^ u2/A (BUF_X16)
-  37.385    0.006    0.023    0.058 ^ u2/Z (BUF_X16)
-            0.038    0.031    0.089 ^ repeater2/A (BUF_X16)
-  51.966    0.008    0.028    0.117 ^ repeater2/Z (BUF_X16)
-            0.077    0.063    0.179 ^ repeater1/A (BUF_X16)
-  40.547    0.009    0.031    0.210 ^ repeater1/Z (BUF_X16)
-            0.050    0.041    0.251 ^ u3/A (BUF_X1)
-   0.000    0.006    0.026    0.277 ^ u3/Z (BUF_X1)
-            0.006    0.000    0.277 ^ out1 (out)
-                              0.277   data arrival time
+   1.009    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X1)
+   6.609    0.018    0.031    0.031 ^ u1/Z (BUF_X1)
+            0.018    0.000    0.031 ^ u2/A (BUF_X8)
+  31.633    0.009    0.025    0.056 ^ u2/Z (BUF_X8)
+            0.031    0.025    0.081 ^ repeater2/A (BUF_X8)
+  52.050    0.011    0.030    0.111 ^ repeater2/Z (BUF_X8)
+            0.080    0.065    0.176 ^ repeater1/A (BUF_X16)
+  40.547    0.009    0.031    0.207 ^ repeater1/Z (BUF_X16)
+            0.050    0.041    0.248 ^ u3/A (BUF_X1)
+   0.000    0.006    0.026    0.273 ^ u3/Z (BUF_X1)
+            0.006    0.000    0.273 ^ out1 (out)
+                              0.273   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

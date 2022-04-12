@@ -7,7 +7,7 @@
  ,"tns_max" : "-484.72339999999997"
  ,"clock_skew" : "0.08178717934398917"
  ,"max_slew_slack" : "0"
- ,"max_capacitance_slack" : "0"
+ ,"max_capacitance_slack" : "-.01"
  ,"max_fanout_slack" : "0"
  ,"ANT::errors" : "0"
  ,"DRT::drv" : "0"

@@ -7,7 +7,8 @@ read_lef sky130hd/sky130hd_std_cell.lef
 read_lef repair_slew13.lef
 read_def repair_slew13.def
 
-set_wire_rc -layer met3
+source sky130hd/sky130hd.rc
+set_wire_rc -layer met2
 estimate_parasitics -placement
 
 report_check_types -max_slew
