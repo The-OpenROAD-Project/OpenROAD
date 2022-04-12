@@ -297,4 +297,11 @@ void VoltageDomain::removeGrid(Grid* grid)
       }));
 }
 
+void VoltageDomain::checkSetup() const
+{
+  for (const auto& grid : grids_) {
+    grid->checkSetup();
+  }
+}
+
 }  // namespace pdn
