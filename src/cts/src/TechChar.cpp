@@ -484,9 +484,33 @@ void TechChar::initCharacterization()
     masterNames_.insert(masterString);
   }
 
-  std::string bufMasterName = masterVector[0];
-  charBuf_ = db_->findMaster(bufMasterName.c_str());
-
+  float maxBuffCap = 0.0;
+  std::string bufMasterName; 
+  for (int i = 0; i < masterVector.size(); i++){
+      float maxCap= 0.0;
+      bool maxCapExist= false;
+      odb::dbMaster* buf = db_->findMaster(masterVector[i].c_str());
+      sta::Cell* masterCell = db_network_->dbToSta(buf);
+      sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
+      sta::LibertyPort *input, *output;
+      libertyCell->bufferPorts(input, output);
+      output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
+      if( maxCap >= maxBuffCap){
+        maxBuffCap = maxCap;
+        charBuf_ = buf;
+        bufMasterName=masterVector[i];
+      }
+  }
+  if (bufMasterName == ""){
+        logger_->error(
+        CTS,
+        113,
+        "Characterization buffer is not defined.\n"
+        "    Check that -buf_list has supported buffers from platform.");
+  } else{
+    logger_->info(CTS, 49, "Characterization buffer is: {}.", bufMasterName);
+  }
+  
   odb::dbMaster* sinkMaster
       = db_->findMaster(options_->getSinkBuffer().c_str());
 
