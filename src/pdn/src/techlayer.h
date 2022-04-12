@@ -63,6 +63,8 @@ class TechLayer
   void populateGrid(odb::dbBlock* block,
                     odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
   int snapToGrid(int pos, int greater_than = 0) const;
+  bool hasGrid() const { return !grid_.empty(); }
+  const std::vector<int>& getGrid() const { return grid_; }
   int snapToManufacturingGrid(int pos, bool round_up = false) const;
   static int snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up = false);
   bool checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const;

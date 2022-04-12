@@ -179,14 +179,15 @@ void build_grids(bool trim = true)
 void make_core_grid(pdn::VoltageDomain* domain, 
                     const char* name, 
                     bool starts_with_power, 
-                    const std::vector<odb::dbTechLayer*>& pin_layers)
+                    const std::vector<odb::dbTechLayer*>& pin_layers, 
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
   if (!starts_with_power) {
     starts_with = GROUND;
   }
-  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers);
+  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers, generate_obstructions);
 }
 
 void make_instance_grid(pdn::VoltageDomain* domain,
@@ -198,7 +199,8 @@ void make_instance_grid(pdn::VoltageDomain* domain,
                         int x1,
                         int y1,
                         bool pg_pins_to_boundary,
-                        bool default_grid)
+                        bool default_grid, 
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -207,13 +209,14 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   }
   
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions);
 }
 
-void make_existing_grid(const char* name)
+void make_existing_grid(const char* name, 
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->makeExistingGrid(name);
+  pdngen->makeExistingGrid(name, generate_obstructions);
 }
 
 void make_ring(const char* grid_name, 

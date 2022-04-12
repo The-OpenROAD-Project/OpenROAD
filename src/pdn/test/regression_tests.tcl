@@ -27,6 +27,7 @@ record_tests {
   core_grid_via_snap
   core_grid_split_cuts
   core_grid_with_rings_with_straps_rings_over_core
+  core_grid_with_routing_obstructions
 
   core_grid_obstruction
 
