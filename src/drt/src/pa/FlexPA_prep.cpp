@@ -728,38 +728,36 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
   frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
   frCoord stepSize = stepSizeMultiplier * width;
   frCoord pitch;
-  gtl::rectangle_data<frCoord>* rect = nullptr;
+  gtl::rectangle_data<frCoord> rect;
   if (isBlock) {
       auto tp = getDesign()->getPrefDirTracks(layerNum);
       pitch = tp[0]->getTrackSpacing();
-      vector<gtl::rectangle_data<frCoord>> maxrects;
-      gtl::get_max_rectangles(maxrects, layerPolys[layerNum]);
-      if (maxrects.size() > 1)
-          logger_->error(DRT, 9000, "Macro pin has more than one rectangle");
-      rect = &maxrects[0];
+      gtl::extents(rect, layerPolys[0]);
+      if (layerPolys.size() > 1)
+          logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
   }
   switch (dir) {
     case (frDirEnum::W):
         if (isBlock)
-            x = gtl::xl(*rect) - pitch;
+            x = gtl::xl(rect) - pitch;
         else 
             x -= stepSize;
         break;
     case (frDirEnum::E):
         if (isBlock)
-            x = gtl::xh(*rect) + pitch;
+            x = gtl::xh(rect) + pitch;
         else 
             x += stepSize;
         break;
     case (frDirEnum::S):
         if (isBlock)
-            y = gtl::yl(*rect) - pitch;
+            y = gtl::yl(rect) - pitch;
         else 
             y -= stepSize;
         break;
     case (frDirEnum::N):
         if (isBlock)
-            y = gtl::yh(*rect) + pitch;
+            y = gtl::yh(rect) + pitch;
         else 
             y += stepSize;
         break;
