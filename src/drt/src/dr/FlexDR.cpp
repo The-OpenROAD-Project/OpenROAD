@@ -186,7 +186,9 @@ int FlexDRWorker::main(frDesign* design)
     init(design);
   }
   if (debugSettings_->debugDumpDR
-      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})) {
+      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
+      && debugSettings_->iter == getDRIter())
+  {
     std::string prefix = fmt::format("{}/iter{}_x{}_y{}", debugSettings_->dumpDir,getDRIter(), routeBox_.xMin(), routeBox_.yMin());
     std::string workerStr;
     serialize_worker(this, workerStr);
