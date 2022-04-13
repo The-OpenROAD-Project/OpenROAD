@@ -528,9 +528,10 @@ std::vector<Grid*> PdnGen::findGrid(const std::string& name) const
 void PdnGen::makeCoreGrid(VoltageDomain* domain,
                           const std::string& name,
                           StartsWith starts_with,
-                          const std::vector<odb::dbTechLayer*>& pin_layers)
+                          const std::vector<odb::dbTechLayer*>& pin_layers,
+                          const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
-  auto grid = std::make_unique<CoreGrid>(domain, name, starts_with == POWER);
+  auto grid = std::make_unique<CoreGrid>(domain, name, starts_with == POWER, generate_obstructions);
   grid->setPinLayers(pin_layers);
   domain->addGrid(std::move(grid));
 }
@@ -555,7 +556,8 @@ void PdnGen::makeInstanceGrid(VoltageDomain* domain,
                               odb::dbInst* inst,
                               const std::array<int, 4>& halo,
                               bool pg_pins_to_boundary,
-                              bool default_grid)
+                              bool default_grid,
+                              const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   auto* check_grid = instanceGrid(inst);
   if (check_grid != nullptr) {
@@ -587,7 +589,7 @@ void PdnGen::makeInstanceGrid(VoltageDomain* domain,
   }
 
   auto grid
-      = std::make_unique<InstanceGrid>(domain, name, starts_with == POWER, inst);
+      = std::make_unique<InstanceGrid>(domain, name, starts_with == POWER, inst, generate_obstructions);
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
@@ -598,9 +600,10 @@ void PdnGen::makeInstanceGrid(VoltageDomain* domain,
   domain->addGrid(std::move(grid));
 }
 
-void PdnGen::makeExistingGrid(const std::string& name)
+void PdnGen::makeExistingGrid(const std::string& name,
+                              const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
-  auto grid = std::make_unique<ExistingGrid>(this, db_->getChip()->getBlock(), logger_, name);
+  auto grid = std::make_unique<ExistingGrid>(this, db_->getChip()->getBlock(), logger_, name, generate_obstructions);
 
   ensureCoreDomain();
   getCoreDomain()->addGrid(std::move(grid));
@@ -768,6 +771,7 @@ void PdnGen::writeToDb(bool add_pins) const
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
       grid->writeToDb(net_map, add_pins);
+      grid->makeRoutingObstructions(db_->getChip()->getBlock());
     }
   }
 }

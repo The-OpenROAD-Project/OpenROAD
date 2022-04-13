@@ -1200,6 +1200,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
+    if (grid_compomponent->type() == GridComponent::Strap) {
+      if (shape->getNumberOfConnections() == 0) {
+        // strap is floating and will be removed
+        continue;
+      }
+    }
+
     auto* grid_strap = dynamic_cast<Straps*>(grid_compomponent);
     if (grid_strap == nullptr) {
       continue;
