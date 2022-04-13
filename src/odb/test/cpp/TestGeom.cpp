@@ -9,38 +9,37 @@ BOOST_AUTO_TEST_SUITE( test_suite )
 
 BOOST_AUTO_TEST_CASE( test_oct )
 {
-    Oct* oct = new Oct;
-    oct->init(Point(0,0),Point(400,400),40);
-    BOOST_TEST((oct->getCenterHigh() == Point(400,400)));
-    BOOST_TEST((oct->getCenterLow() == Point(0,0)));
-    BOOST_TEST(oct->getWidth()==40);
-    BOOST_TEST(oct->xMin()==-20);
-    BOOST_TEST(oct->xMax()==420);
-    BOOST_TEST(oct->yMin()==-20);
-    BOOST_TEST(oct->yMax()==420);
-    BOOST_TEST(oct->dx()==440);
-    BOOST_TEST(oct->dy()==440);
+    Oct oct;
+    oct.init(Point(0,0),Point(400,400),40);
+    BOOST_TEST((oct.getCenterHigh() == Point(400,400)));
+    BOOST_TEST((oct.getCenterLow() == Point(0,0)));
+    BOOST_TEST(oct.getWidth()==40);
+    BOOST_TEST(oct.xMin()==-20);
+    BOOST_TEST(oct.xMax()==420);
+    BOOST_TEST(oct.yMin()==-20);
+    BOOST_TEST(oct.yMax()==420);
+    BOOST_TEST(oct.dx()==440);
+    BOOST_TEST(oct.dy()==440);
 
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
-    oct->init(Point(0,0),Point(-400,400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
-    oct->init(Point(0,0),Point(-400,-400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
-    oct->init(Point(0,0),Point(400,-400),40);
-    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::RIGHT);
+    oct.init(Point(0,0),Point(-400,400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::LEFT);
+    oct.init(Point(0,0),Point(-400,-400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::RIGHT);
+    oct.init(Point(0,0),Point(400,-400),40);
+    BOOST_TEST(oct.getDir() == Oct::OCT_DIR::LEFT);
 }
-BOOST_AUTO_TEST_CASE( test_geom_shape )
+BOOST_AUTO_TEST_CASE( test_sbox_shapes )
 {
     Oct oct(Point(0,0),Point(400,400),40);
-    GeomShape* shape = &oct;
-    BOOST_TEST(shape->xMin()==-20);
-    BOOST_TEST(shape->xMax()==420);
-    BOOST_TEST(shape->yMin()==-20);
-    BOOST_TEST(shape->yMax()==420);
-    BOOST_TEST(shape->dx()==440);
-    BOOST_TEST(shape->dy()==440);
+    BOOST_TEST(oct.xMin()==-20);
+    BOOST_TEST(oct.xMax()==420);
+    BOOST_TEST(oct.yMin()==-20);
+    BOOST_TEST(oct.yMax()==420);
+    BOOST_TEST(oct.dx()==440);
+    BOOST_TEST(oct.dy()==440);
     //OCT POINTS
-    std::vector<Point> points = shape->getPoints();
+    std::vector<Point> points = oct.getPoints();
     BOOST_TEST(points.size()==9);
     BOOST_TEST((points[0] == Point(-9,-20)));
     BOOST_TEST((points[1] == Point(9,-20)));
@@ -54,15 +53,14 @@ BOOST_AUTO_TEST_CASE( test_geom_shape )
 
     //RECT
     Rect rect(Point(0,0),Point(400,400));
-    shape = &rect;
-    BOOST_TEST(shape->xMin()==0);
-    BOOST_TEST(shape->xMax()==400);
-    BOOST_TEST(shape->yMin()==0);
-    BOOST_TEST(shape->yMax()==400);
-    BOOST_TEST(shape->dx()==400);
-    BOOST_TEST(shape->dy()==400);
+    BOOST_TEST(rect.xMin()==0);
+    BOOST_TEST(rect.xMax()==400);
+    BOOST_TEST(rect.yMin()==0);
+    BOOST_TEST(rect.yMax()==400);
+    BOOST_TEST(rect.dx()==400);
+    BOOST_TEST(rect.dy()==400);
     //RECT POINTS
-    points = shape->getPoints();
+    points = rect.getPoints();
     BOOST_TEST(points.size()==5);
     BOOST_TEST((points[0] == Point(0,0)));
     BOOST_TEST((points[1] == Point(400,0)));
@@ -75,7 +73,7 @@ BOOST_AUTO_TEST_CASE( test_rect_merge )
 {
     Rect rect(Point(0,0),Point(100,50));
     Oct oct(Point(100,50),Point(200,200),80);
-    rect.merge((GeomShape*)&oct);
+    rect.merge(oct);
     BOOST_TEST(rect.xMin()==0);
     BOOST_TEST(rect.xMax()==240);
     BOOST_TEST(rect.yMin()==0);

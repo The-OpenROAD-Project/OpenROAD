@@ -951,13 +951,13 @@ void DbNetDescriptor::highlight(std::any object,
     }
   }
 
-  odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
     if (sink_object != nullptr) {
       drawPathSegment(net, sink_object, painter);
     }
 
+    odb::Rect rect;
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
@@ -1030,8 +1030,13 @@ void DbNetDescriptor::highlight(std::any object,
   // Draw special (i.e. geometric) routing
   for (auto swire : net->getSWires()) {
     for (auto sbox : swire->getWires()) {
-      sbox->getBox(rect);
-      painter.drawGeomShape(sbox->getGeomShape());
+      if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
+        painter.drawOctagon(sbox->getOct());
+      } else {
+        odb::Rect rect;
+        sbox->getBox(rect);
+        painter.drawRect(rect);
+      }
     }
   }
 }
@@ -2093,18 +2098,22 @@ std::string DbModuleDescriptor::getTypeName() const
 bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
-  auto insts = module->getInsts();
-  if (insts.empty()) {
-    return false;
-  }
   bbox.mergeInit();
-  for (auto* inst : insts) {
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
     auto* box = inst->getBBox();
     odb::Rect box_rect;
     box->getBox(box_rect);
     bbox.merge(box_rect);
   }
-  return true;
+
+  return !bbox.isInverted();
 }
 
 void DbModuleDescriptor::highlight(std::any object,
