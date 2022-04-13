@@ -713,7 +713,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
-    const char *dbg_net_name = nullptr; //"rst_ni";
+    const char *dbg_net_name = nullptr;
     bool debug = net && dbg_net_name
       && sta::stringEq(network_->pathName(net), dbg_net_name);
     if (debug)
