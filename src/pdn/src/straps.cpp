@@ -1213,7 +1213,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     }
 
     // determine bloat factor
-    int bloat = grid_strap->getPitch();
+    const int bloat = grid_strap->getPitch();
     const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
     const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
 
@@ -1231,10 +1231,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     shape_set.insert(poly);
   }
 
-  std::vector<Rectangle> rects;
-  shape_set.get_rectangles(rects);
+  std::vector<Polygon90> channel_set;
+  shape_set.get_polygons(channel_set);
   std::vector<RepairChannelArea> channels;
-  for (const auto& rect : rects) {
+  for (const auto& channel_shape : channel_set) {
+    Rectangle rect;
+    extents(rect, channel_shape);
+
     odb::Rect area(xl(rect), yl(rect), xh(rect), yh(rect));
     if (!area.intersects(grid_core)) {
       continue;
