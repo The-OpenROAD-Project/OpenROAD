@@ -600,7 +600,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\"", name_);
   ShapeTreeMap search_shapes = getShapes();
 
-  odb::Rect search_area = getGridBoundary();
+  odb::Rect search_area = getDomainBoundary();
   for (const auto& [layer, shapes] : search_shapes) {
     for (const auto& [box, shape] : shapes) {
       search_area.merge(shape->getRect());
