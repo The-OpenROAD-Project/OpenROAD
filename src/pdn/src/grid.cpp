@@ -359,7 +359,7 @@ const odb::Rect Grid::getRingArea() const
   }
 
   // get the outline of the rings
-  odb::Rect rect = getDomainArea();
+  odb::Rect rect = getDomainBoundary();
   for (const auto& ring : rings_) {
     for (const auto& [layer, shapes] : ring->getShapes()) {
       for (const auto& [box, shape] : shapes) {
