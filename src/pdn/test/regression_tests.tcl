@@ -52,6 +52,7 @@ record_tests {
   macros_narrow_channel_repair_overlap
   macros_add_twice
   macros_cells_extend_boundary
+  macros_cells_no_grid
 
   region_temp_sensor
   region_secondary_nets
