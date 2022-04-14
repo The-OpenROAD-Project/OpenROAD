@@ -76,7 +76,10 @@ class Grid
     Existing
   };
 
-  Grid(VoltageDomain* domain, const std::string& name, bool start_with_power);
+  Grid(VoltageDomain* domain,
+      const std::string& name,
+      bool start_with_power,
+      const std::vector<odb::dbTechLayer*>& generate_obstructions);
   virtual ~Grid();
 
   const std::string getName() const { return name_; }
@@ -167,12 +170,15 @@ class Grid
 
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                  bool do_pins) const;
+  void makeRoutingObstructions(odb::dbBlock* block) const;
 
   static void makeInitialObstructions(odb::dbBlock* block, ShapeTreeMap& obs);
   static void makeInitialShapes(const std::set<odb::dbNet*>& nets,
                                 ShapeTreeMap& shapes);
 
   virtual bool isReplaceable() const { return false; }
+
+  void checkSetup() const;
 
  protected:
   // find all intersections in the shapes which may become vias
@@ -191,6 +197,7 @@ class Grid
   std::vector<std::unique_ptr<Connect>> connect_;
 
   std::set<odb::dbTechLayer*> pin_layers_;
+  std::set<odb::dbTechLayer*> obstruction_layers_;
 
   ViaTree vias_;
 
@@ -204,7 +211,8 @@ class CoreGrid : public Grid
  public:
   CoreGrid(VoltageDomain* domain,
            const std::string& name,
-           bool start_with_power);
+           bool start_with_power,
+           const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
   virtual Type type() const override { return Grid::Core; }
 
@@ -224,7 +232,8 @@ class InstanceGrid : public Grid
   InstanceGrid(VoltageDomain* domain,
                const std::string& name,
                bool start_with_power,
-               odb::dbInst* inst);
+               odb::dbInst* inst,
+               const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
   virtual const std::string getLongName() const override;
 
@@ -269,7 +278,8 @@ class ExistingGrid : public Grid
   ExistingGrid(PdnGen* pdngen,
                odb::dbBlock* block,
                utl::Logger* logger,
-               const std::string& name);
+               const std::string& name,
+               const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
   virtual Type type() const override { return Grid::Existing; }
 

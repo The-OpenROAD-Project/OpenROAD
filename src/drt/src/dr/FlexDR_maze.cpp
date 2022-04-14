@@ -2295,6 +2295,12 @@ void FlexDRWorker::routeNet_postAstarWritePath(
   it = mazeIdx2TaperBox.find(points.back());
   if (it != mazeIdx2TaperBox.end())
     srcBox = it->second;
+  if (points.size() == 1) {
+      if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()), 
+                                gridGraph_.yCoord(points[0].y()),
+                                gridGraph_.getLayerNum(points[0].z())))
+          addApPathSegs(points[0], net);
+  }
   for (int i = 0; i < (int) points.size() - 1; ++i) {
     FlexMazeIdx start, end;
     if (points[i + 1] < points[i]) {
@@ -2399,17 +2405,20 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         FlexMazeIdx mzIdxBot(startX, startY, currZ);
         FlexMazeIdx mzIdxTop(startX, startY, currZ + 1);
         currVia->setMazeIdx(mzIdxBot, mzIdxTop);
+        currVia->addToNet(net);
         /*update access point (AP) connectivity info. If it is over a boundary
         pin may still be over an unseen AP (this is checked by
         checkViaConnectivity) */
         if (realPinApMazeIdx.find(mzIdxBot) != realPinApMazeIdx.end()) {
-          currVia->setBottomConnected(true);
+            if (!addApPathSegs(mzIdxBot, net)) 
+                currVia->setBottomConnected(true);
         } else {
           checkViaConnectivityToAP(
               currVia.get(), true, net->getFrNet(), apMazeIdx, mzIdxBot);
         }
         if (realPinApMazeIdx.find(mzIdxTop) != realPinApMazeIdx.end()) {
-          currVia->setTopConnected(true);
+            if (!addApPathSegs(mzIdxTop, net)) 
+                currVia->setTopConnected(true);
         } else {
           checkViaConnectivityToAP(
               currVia.get(), false, net->getFrNet(), apMazeIdx, mzIdxTop);
@@ -2428,6 +2437,66 @@ void FlexDRWorker::routeNet_postAstarWritePath(
       std::cout << "Error: non-colinear path in updateFlexPin\n";
     }
   }
+}
+bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net) {
+    frCoord x = gridGraph_.xCoord(apIdx.x());
+    frCoord y = gridGraph_.yCoord(apIdx.y());
+    frLayerNum lNum = gridGraph_.getLayerNum(apIdx.z());
+    frBlockObject* owner = nullptr;
+    frAccessPoint* ap = net->getFrAccessPoint(x, y, lNum, &owner);
+    if (!ap)    //on-the-fly ap
+        return false;
+    assert(owner != nullptr);
+    frInst* inst = nullptr;
+    if (owner->typeId() == frBlockObjectEnum::frcInstTerm)
+        inst = static_cast<frInstTerm*>(owner)->getInst();
+    assert(ap != nullptr);
+    if (ap->getPathSegs().empty())
+        return false; 
+    for (auto& ps : ap->getPathSegs()) {
+        unique_ptr<drPathSeg> drPs = make_unique<drPathSeg>();
+        Point begin = ps.getBeginPoint();
+        Point end = ps.getEndPoint();
+        Point* connecting = nullptr;
+        if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle))
+            connecting = &begin;
+        else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle))
+            connecting = &end;
+        if (inst) {
+            dbTransform trans;
+            inst->getTransform(trans);
+            trans.apply(begin);
+            trans.apply(end);
+            if (end < begin) { //if rotation swaped order, correct it
+                if (connecting == &begin)
+                    connecting = &end;
+                else 
+                    connecting = &begin;
+                Point tmp = begin;
+                begin = end;
+                end = tmp;
+            }
+        }
+        drPs->setPoints(begin, end);
+        drPs->setLayerNum(lNum);
+        drPs->addToNet(net);
+        auto currStyle = getTech()->getLayer(lNum)->getDefaultSegStyle();
+        if (connecting == &begin)
+            currStyle.setBeginStyle(frcTruncateEndStyle, 0);
+        else if (connecting == &end)
+            currStyle.setEndStyle(frcTruncateEndStyle, 0);
+
+        if (net->getFrNet()->getNondefaultRule()) 
+            drPs->setTapered(true); //these tiny access pathsegs should all be tapered
+        drPs->setStyle(currStyle);
+        FlexMazeIdx startIdx, endIdx;
+        gridGraph_.getMazeIdx(startIdx, begin, lNum);
+        gridGraph_.getMazeIdx(endIdx, end, lNum);
+        drPs->setMazeIdx(startIdx, endIdx);
+        getWorkerRegionQuery().add(drPs.get());
+        net->addRoute(std::move(drPs));
+    }
+    return true;
 }
 bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 frMIdx& midY,
@@ -2513,12 +2582,14 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   FlexMazeIdx start(startX, startY, z), end(endX, endY, z);
   auto currStyle = getTech()->getLayer(currLayerNum)->getDefaultSegStyle();
   if (realApMazeIdx.find(start) != realApMazeIdx.end()) {
-    currStyle.setBeginStyle(frcTruncateEndStyle, 0);
+      if (!addApPathSegs(start, net))
+            currStyle.setBeginStyle(frcTruncateEndStyle, 0);
   } else {
     checkPathSegStyle(currPathSeg.get(), true, currStyle, apMazeIdx, start);
   }
   if (realApMazeIdx.find(end) != realApMazeIdx.end()) {
-    currStyle.setEndStyle(frcTruncateEndStyle, 0);
+      if (!addApPathSegs(end, net))
+            currStyle.setEndStyle(frcTruncateEndStyle, 0);
   } else {
     checkPathSegStyle(currPathSeg.get(), false, currStyle, apMazeIdx, end);
   }
@@ -2582,10 +2653,12 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
       && !isInWorkerBorder(pt.x(), pt.y()))
     return;
   if (hasAccessPoint(pt, ps->getLayerNum(), ps->getNet()->getFrNet())) {
-    if (isBegin)
-      style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
-    else
-      style.setEndStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+      if (!addApPathSegs(idx, ps->getNet())) {
+        if (isBegin)
+          style.setBeginStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+        else
+          style.setEndStyle(frEndStyle(frEndStyleEnum::frcTruncateEndStyle), 0);
+      }
   }
 }
 
@@ -2628,11 +2701,15 @@ void FlexDRWorker::checkViaConnectivityToAP(drVia* via,
       && !isInWorkerBorder(via->getOrigin().x(), via->getOrigin().y()))
     return;
   if (isBottom) {
-    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer1Num(), net))
-      via->setBottomConnected(true);
+    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer1Num(), net)) {
+        if (!addApPathSegs(idx, via->getNet())) 
+            via->setBottomConnected(true);
+    }
   } else {
-    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer2Num(), net))
-      via->setTopConnected(true);
+    if (hasAccessPoint(via->getOrigin(), via->getViaDef()->getLayer2Num(), net)) {
+        if (!addApPathSegs(idx, via->getNet())) 
+            via->setTopConnected(true);
+    }
   }
 }
 void FlexDRWorker::setNDRStyle(drNet* net,

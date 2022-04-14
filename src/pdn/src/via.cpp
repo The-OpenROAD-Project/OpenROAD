@@ -81,6 +81,49 @@ void DbVia::combineLayerShapes(const ViaLayerShape& other,
   shapes.top.insert(other.top.begin(), other.top.end());
 }
 
+odb::Rect DbVia::adjustToMinArea(odb::dbTechLayer* layer, const odb::Rect& rect) const
+{
+  odb::Rect new_rect = rect;
+
+  if (!layer->hasArea()) {
+    return new_rect;
+  }
+
+  const double min_area = layer->getArea();
+  if (min_area == 0.0) {
+    return new_rect;
+  }
+
+  // make sure minimum area is honored
+  const int dbu_per_micron = layer->getTech()->getLefUnits();
+  const double area
+      = min_area * dbu_per_micron * dbu_per_micron;
+
+  const TechLayer techlayer(layer);
+
+  const int width = new_rect.dx();
+  const int height = new_rect.dy();
+  if (width * height < area) {
+    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      const int required_width = std::ceil(area / height);
+      const int added_width = (required_width - width) / 2;
+      const int new_x0 = techlayer.snapToManufacturingGrid(rect.xMin() - added_width, false);
+      const int new_x1 = techlayer.snapToManufacturingGrid(rect.xMax() + added_width, true);
+      new_rect.set_xlo(new_x0);
+      new_rect.set_xhi(new_x1);
+    } else {
+      const int required_height = std::ceil(area / width);
+      const int added_height = (required_height - height) / 2;
+      const int new_y0 = techlayer.snapToManufacturingGrid(rect.yMin() - added_height, false);
+      const int new_y1 = techlayer.snapToManufacturingGrid(rect.yMax() + added_height, true);
+      new_rect.set_ylo(new_y0);
+      new_rect.set_yhi(new_y1);
+    }
+  }
+
+  return new_rect;
+}
+
 ////////////
 
 DbTechVia::DbTechVia(odb::dbTechVia* via,
@@ -530,9 +573,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
     }
     via_shapes.top = shapes.top;
 
-    bool add_patch_metal = false;
-
     Polygon90Set patch_shapes;
+    odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
       Polygon90Set bottom_of_current;
       for (const auto& shape : shapes.bottom) {
@@ -547,38 +589,43 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
         combine_layer.extents(patch_shape);
         patch_shapes.clear();
         patch_shapes += patch_shape;
-
-        // part of via stack with array parts
-        add_patch_metal = true;
       } else {
-        std::vector<Polygon90> patches;
-        combine_layer.get_polygons(patches);
-
-        // extract the rectangles that will patch the layer
-        for (const auto& patch : patches) {
-          Rectangle patch_shape;
-          extents(patch_shape, patch);
-
-          patch_shapes += patch_shape;
-        }
-
-        // find shapes that touch "left-over" shapes from the xor
-        patch_shapes = patch_shapes.interact(patch_shapes ^ combine_layer);
-
-        // the interface between vias does align and therefore add patch to
-        // prevent min-step violations
-        add_patch_metal = !patch_shapes.empty();
+        patch_shapes = combine_layer;
       }
+
+      std::vector<Polygon90> patches;
+      combine_layer.get_polygons(patches);
+
+      // extract the rectangles that will patch the layer
+      for (const auto& patch : patches) {
+        Rectangle patch_shape;
+        extents(patch_shape, patch);
+
+        patch_shapes += patch_shape;
+      }
+
+      // ensure patches are minimum area
+      std::vector<Rectangle> patch_rects;
+      patch_shapes.get_rectangles(patch_rects);
+      patch_shapes.clear();
+      for (const auto& patch : patch_rects) {
+        const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
+        odb::Rect min_area_shape = adjustToMinArea(add_to_layer, patch_rect);
+        patch_shapes += rect_to_poly(min_area_shape);
+      }
+
+      // find shapes that touch "left-over" shapes from the xor
+      patch_shapes = patch_shapes.interact(patch_shapes ^ combine_layer);
     }
 
-    if (add_patch_metal) {
+    if (!patch_shapes.empty()) {
       std::vector<Rectangle> patches;
       patch_shapes.get_rectangles(patches);
 
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack
         odb::dbSBox::create(wire,
-                            layer_lower->getLayer(),
+                            add_to_layer,
                             xl(patch),
                             yl(patch),
                             xh(patch),
@@ -1199,46 +1246,6 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
       top_y_enclosure_ = double_enc_y / 2;
     }
 
-    // make sure minimum area is honored
-    const int dbu_per_micron = getTech()->getLefUnits();
-    const double bottom_area
-        = getBottomLayer()->getArea() * dbu_per_micron * dbu_per_micron;
-
-    const int bottom_width = getCutsWidth(
-        core_col_, cut_width, getCutPitchX() - cut_width, bottom_x_enclosure_);
-    const int bottom_height = getCutsWidth(
-        core_row_, cut_height, getCutPitchY() - cut_height, bottom_y_enclosure_);
-    if (bottom_width * bottom_height < bottom_area && bottom_area != 0.0) {
-      if (getBottomLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-        bottom_x_enclosure_ = std::ceil(bottom_area / bottom_height);
-        bottom_x_enclosure_ -= via_width_y;
-        bottom_x_enclosure_ /= 2;
-      } else {
-        bottom_y_enclosure_ = std::ceil(bottom_area / bottom_width);
-        bottom_y_enclosure_ -= via_width_x;
-        bottom_y_enclosure_ /= 2;
-      }
-    }
-
-    const double top_area
-        = getTopLayer()->getArea() * dbu_per_micron * dbu_per_micron;
-
-    const int top_width = getCutsWidth(
-        core_col_, cut_width, getCutPitchX() - cut_width, top_x_enclosure_);
-    const int top_height = getCutsWidth(
-        core_row_, cut_height, getCutPitchY() - cut_height, top_y_enclosure_);
-    if (top_width * top_height < top_area && top_area != 0.0) {
-      if (getTopLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-        top_x_enclosure_ = std::ceil(top_area / top_height);
-        top_x_enclosure_ -= via_width_y;
-        top_x_enclosure_ /= 2;
-      } else {
-        top_y_enclosure_ = std::ceil(top_area / top_width);
-        top_y_enclosure_ -= via_width_x;
-        top_y_enclosure_ /= 2;
-      }
-    }
-
     if (isSplitCutArray()) {
       array_core_x_ = std::max(width / getCutPitchX(), 1);
       if (getMaxColumns() != 0) {
@@ -1323,6 +1330,22 @@ std::vector<odb::dbTechLayerCutEnclosureRule*> ViaGenerator::getCutMinimumEnclos
       }
 
       rules_map[min_width].push_back(enc_rule);
+    }
+  }
+
+  // rules with 0 width apply to all widths, so copy those rules to all other widths
+  CutRules* applies_to_all = nullptr;
+  auto find_itr = rules_map.find(0);
+  if (find_itr != rules_map.end()) {
+    applies_to_all = &find_itr->second;
+  }
+  if (applies_to_all != nullptr) {
+    for (auto& [min_width, width_rules] : rules_map) {
+      if (min_width == 0) {
+        continue;
+      }
+
+      width_rules.insert(width_rules.end(), applies_to_all->begin(), applies_to_all->end());
     }
   }
 

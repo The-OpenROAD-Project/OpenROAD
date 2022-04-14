@@ -538,11 +538,6 @@ class dbBox : public dbObject
   uint getLength(uint dir = 1);
 
   ///
-  /// Get GeomShape Interface
-  ///
-  GeomShape* getGeomShape();
-
-  ///
   /// Set temporary flag visited
   ///
   void setVisited(bool value);

@@ -35,6 +35,7 @@
 #include <array>
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
 #include <map>
 #include <memory>
 
@@ -104,6 +105,9 @@ class DbVia
                                  int y) const = 0;
 
   virtual bool requiresPatch() const { return false; }
+
+  odb::Rect adjustToMinArea(odb::dbTechLayer* layer,
+                            const odb::Rect& rect) const;
 
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;

@@ -1066,12 +1066,12 @@ void _dbBlock::add_rect(const Rect& rect)
   if (_flags._valid_bbox)
     box->_shape._rect.merge(rect);
 }
-void _dbBlock::add_geom_shape(GeomShape* shape)
+void _dbBlock::add_oct(const Oct& oct)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
 
   if (_flags._valid_bbox)
-    box->_shape._rect.merge(shape);
+    box->_shape._rect.merge(oct);
 }
 
 void _dbBlock::remove_rect(const Rect& rect)
@@ -1533,7 +1533,9 @@ void dbBlock::ComputeBBox()
 
   for (sitr = sboxes.begin(); sitr != sboxes.end(); ++sitr) {
     dbSBox* box = (dbSBox*) *sitr;
-    bbox->_shape._rect.merge(box->getGeomShape());
+    Rect rect;
+    box->getBox(rect);
+    bbox->_shape._rect.merge(rect);
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);

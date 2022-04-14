@@ -145,6 +145,7 @@ proc pdngen { args } {
     set trim [expr [info exists flags(-skip_trim)] == 0]
     set add_pins [expr [info exists flags(-dont_add_pins)] == 0]
 
+    pdn::check_setup
     pdn::build_grids $trim
     pdn::write_to_db $add_pins
     pdn::reset_shapes
@@ -231,7 +232,8 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-default] \
                                         [-halo <list_of_halo_values>] \
                                         [-pins <list_of_pin_layers>] \
-                                        [-starts_with (POWER|GROUND)]}
+                                        [-starts_with (POWER|GROUND)] \
+                                        [-obstructions <list_of_layers>]}
 
 proc define_pdn_grid {args} {
   set is_macro 0
@@ -648,7 +650,7 @@ namespace eval pdn {
 
   proc define_pdn_grid { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -pins -starts_with} \
+      keys {-name -voltage_domains -pins -starts_with -obstructions} \
       flags {}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -679,15 +681,20 @@ namespace eval pdn {
         lappend pin_layers [pdn::get_layer $pin]
       }
     }
+    
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
 
     foreach domain $domains {
-      pdn::make_core_grid $domain $keys(-name) $start_with_power $pin_layers
+      pdn::make_core_grid $domain $keys(-name) $start_with_power $pin_layers $obstructions
     }
   }
 
   proc define_pdn_grid_existing { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name} \
+      keys {-name -obstructions} \
       flags {-existing}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -698,12 +705,17 @@ namespace eval pdn {
        set name $keys(-name)
     }
 
-    pdn::make_existing_grid $name
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
+
+    pdn::make_existing_grid $name $obstructions
   }
 
   proc define_pdn_grid_macro { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with} \
+      keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
       flags {-macro -grid_over_pg_pins -grid_over_boundary -default}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -766,6 +778,11 @@ namespace eval pdn {
       set domains [pdn::find_domain "Core"]
     }
 
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
+
     set orients {}
     if {[info exists keys(-orient)]} {
       set orients [pdn::get_orientations $keys(-orient)]
@@ -788,7 +805,7 @@ namespace eval pdn {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
           foreach domain $domains {
-            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid
+            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
           }
         }
       }
@@ -812,7 +829,7 @@ namespace eval pdn {
             # must match orientation, if provided
             if {[match_orientation $orients [$inst getOrient]] != 0} {
               foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid
+                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
               }
             }
           }
@@ -890,6 +907,14 @@ namespace eval pdn {
       utl::error PDN 1034 "Argument $arg must consist of 1, 2 or 4 entries."
     }
     return $list_val
+  }
+
+  proc get_obstructions { obstruction } {
+    set layers {}
+    foreach l $obstruction {
+      lappend layers [pdn::get_layer $l]
+    }
+    return $layers
   }
 
   proc get_starts_with { value } {
@@ -1077,6 +1102,9 @@ namespace eval pdn {
     append command " -voltage_domains \{[dict get $spec voltage_domains]\}"
     if {[dict exists $spec starts_with]} {
       append command " -starts_with \{[dict get $spec starts_with]\}"
+    }
+    if {[dict exists $spec obstructions]} {
+      append command " -obstructions \{[dict get $spec obstructions]\}"
     }
     return $command
   }

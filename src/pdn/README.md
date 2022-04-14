@@ -101,7 +101,8 @@ define_pdn_grid [-name <name>] \
                 [-pins <list_of_pin_layers>] \
                 [-starts_with (POWER|GROUND)] \
                 [-voltage_domain <list_of_domain_names>] \
-                [-starts_with (POWER|GROUND)]
+                [-starts_with (POWER|GROUND)] \
+                [-obstructions <list_of_layers>]
 ```
 
 ##### Options
@@ -112,6 +113,7 @@ define_pdn_grid [-name <name>] \
 | `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 ##### Examples
 
@@ -132,7 +134,8 @@ define_pdn_grid -macro \
                 [-default] \
                 [-halo <list_of_halo_values>] \
                 [-voltage_domain <list_of_domain_names>] \
-                [-starts_with (POWER|GROUND)]    
+                [-starts_with (POWER|GROUND)] \
+                [-obstructions <list_of_layers>]  
 ```
 
 ##### Options
@@ -150,6 +153,7 @@ define_pdn_grid -macro \
 | `-default` | For a macro, specifies this is a default grid that can be overwritten. |
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 ##### Examples
 
@@ -162,7 +166,8 @@ define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_bou
 
 ```
 define_pdn_grid [-name <name>] \
-                -existing
+                -existing \
+                [-obstructions <list_of_layers>]
 ```
 
 ##### Options
@@ -170,6 +175,7 @@ define_pdn_grid [-name <name>] \
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 ##### Examples
 

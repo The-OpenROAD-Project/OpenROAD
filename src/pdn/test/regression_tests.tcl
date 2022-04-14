@@ -11,6 +11,7 @@ record_tests {
   min_spacing
   widthtable
   design_width
+  offgrid
 
   core_grid
   core_grid_with_rings
@@ -18,6 +19,7 @@ record_tests {
   core_grid_start_power_strap_ground
   core_grid_with_rings_with_straps
   core_grid_dual_followpins
+  core_grid_dual_followpins_error
   core_grid_with_dual_rings
   core_grid_with_rings_connect
   core_grid_cut_pitch
@@ -25,6 +27,7 @@ record_tests {
   core_grid_via_snap
   core_grid_split_cuts
   core_grid_with_rings_with_straps_rings_over_core
+  core_grid_with_routing_obstructions
 
   core_grid_obstruction
 

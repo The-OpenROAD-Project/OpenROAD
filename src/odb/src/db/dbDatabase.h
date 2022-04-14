@@ -66,8 +66,8 @@ namespace odb {
 // Schema Revisions
 //
 const uint db_schema_major = 0;  // Not used...
-const uint db_schema_initial = 51;
-const uint db_schema_minor = 51;  // Current revision number
+const uint db_schema_initial = 52;
+const uint db_schema_minor = 52;  // Current revision number
 
 template <class T>
 class dbTable;
