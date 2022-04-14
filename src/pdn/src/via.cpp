@@ -733,7 +733,12 @@ int ViaGenerator::getCuts(int width,
                           int max_cuts) const
 {
   const int max_enc = std::max(bot_enc, top_enc);
-  const int available_width = width - 2 * max_enc;
+  int available_width = width - 2 * max_enc;
+  if (available_width < 0) {
+    return 0;
+  }
+
+  available_width -= cut;
   if (available_width < 0) {
     return 0;
   }
@@ -742,12 +747,8 @@ int ViaGenerator::getCuts(int width,
     return 1;
   }
 
-  int additional_cuts = (available_width - cut) / pitch;
-  if (additional_cuts < 0) {
-    additional_cuts = 0;
-  }
-
-  int cuts = additional_cuts + 1;
+  const int additional_cuts = available_width / pitch;
+  const int cuts = additional_cuts + 1;
   if (max_cuts != 0) {
     return std::min(cuts, max_cuts);
   }
@@ -1057,6 +1058,7 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
                    minimum_enclosure_top_x,
                    getCutPitchX(),
                    getMaxColumns());
+
     rows = getCuts(height,
                    cut_height,
                    minimum_enclosure_bottom_y,
