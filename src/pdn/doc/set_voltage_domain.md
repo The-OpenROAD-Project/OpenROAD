@@ -3,11 +3,12 @@
 ## Synopsis
 ```
   % set_voltage_domain
-    -name name \
-    -power power_net \
-    -ground ground_net \
-    [-region region_name] \
-    [-secondary_power secondary_power_net]
+    -name <name> \
+    -power <power_net> \
+    [-switched_power <switched_power_net>] \
+    -ground <ground_net> \
+    [-region <region_name>] \
+    [-secondary_power <secondary_power_net>]
 ```
 
 ## Description
@@ -21,15 +22,18 @@ A default voltage domain called CORE exists with power net VDD and ground net VS
 The -name argument is used to define a name for the voltage domain that can be used in the [define_pdn_grid](define_pdn_grid.md) command
 The -power and -ground arguments are used to define the names of the nets to be use for power and ground respectively within this voltage domain.
 
+If the voltage domain is a switched power domain, then the name of the swiched power net must be specified with the `-switched_power` argument
+
 ## Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| -name | Defines the name of the voltage domain |
-| -power | Specifies the name of the power net for this voltage domain |
-| -ground | Specifies the name of the ground net for this voltage domain |
-| -region | Specifies a region of the design occupied by this voltage domain |
-| -secondary_power | Specifies the name of the secondary power net for this voltage domain |
+| `-name` | Defines the name of the voltage domain |
+| `-power` | Specifies the name of the power net for this voltage domain |
+| `-switched_power` | Specifies the name of the switched power net for switched power domains, |
+| `-ground` | Specifies the name of the ground net for this voltage domain |
+| `-region` | Specifies a region of the design occupied by this voltage domain |
+| `-secondary_power` | Specifies the name of the secondary power net for this voltage domain |
 
 ## Examples
 ```

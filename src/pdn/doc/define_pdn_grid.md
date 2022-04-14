@@ -8,7 +8,10 @@ For specifying a power grid over the stdcell area:
     [-pins <list_of_pin_layers>] \
     [-starts_with (POWER|GROUND)] \
     [-voltage_domain <list_of_domain_names>] \
-    [-starts_with (POWER|GROUND)]
+    [-starts_with (POWER|GROUND)] \
+    [-switch_cell <power_switch_cell_name> ] \
+    [-power_control <power_constrol_signal_name>] \
+    [-power_control_network (STAR|DAISY)]
 ```
 For specifying a power grid over macros in the design:
 ```
@@ -43,6 +46,14 @@ The `-pins` argument is used to create power and ground pins on the power and gr
 
 The `-starts_with` argument is used to define whether the power net, or ground net is added as the first in a power/ground pair (Default: GROUND)
 
+### Power switch insertion
+The `-switch_cell` argument is used to specify the name of a coarse-grain power switch cell that is to be inserted whereever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch` command.
+
+The `-power_control` argument specifies the name of the power control signal that must be connected to the inserted power control cells.
+
+The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the [define_power_switch](define_power_switch.md)  command defines an acknowledge pin for th switch.
+
+### Power grid over macros
 The presence of macros in the design interupts the normal power grid pattern, and additional power grids are defined over the macros in order to control the grid over the macro and which layers in the normal grid pattern are blocked around the macro.
 
 The `-macro` flag is used to declare that this grid definition is for macros in the design. All macro cell instances will have this grid, but this list of instances can be filtered using the `-instances`, `-cells` and/or `-orient` arguments
@@ -76,6 +87,8 @@ Each of the `-instances`, `-cells` and `-orient` acts as an independent filter a
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
 | `-pin_direction` | Specifies the direction of power/ground pins on the selected macro instances as eiher horizontal or vertical. |
+| `-switch_cell` | Defines the name of the power switch cell to be used for this grid. |
+| `-power_control` | Defines the name of the power control signal used to control the switching of the inserted power switches. |
 
 
 ## Examples

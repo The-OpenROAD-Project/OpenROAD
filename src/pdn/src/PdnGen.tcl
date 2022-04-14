@@ -132,13 +132,15 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-pin_direction (horizontal|vertical)] \
                                         [-pins <list_of_pin_layers>] \
                                         [-starts_with (POWER|GROUND)] \
-                                        [-switch_cell <switch_cell_name>]}
+                                        [-switch_cell <switch_cell_name>] \
+			                [-power_control <signal_name>] \
+				        [-power_control_network (STAR|DAISY)]}
 
 proc define_pdn_grid {args} {
   pdngen::check_design_state
 
   sta::parse_key_args "define_pdn_grid" args \
-    keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -pins -starts_with -switch_cell} \
+    keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -pins -starts_with -switch_cell -power_control -power_control_network} \
     flags {-macro -grid_over_pg_pins -grid_over_boundary}
 
   if {[llength $args] > 0} {
@@ -874,6 +876,23 @@ proc check_halo {value} {
   return $value
 }
 
+proc check_net {value} {
+  if {[set net [[ord::get_db_block] findNet $value]] == "NULL"} {
+    utl::error PDN 194 "Net $value does not exist in the design"
+  }
+
+  return $value
+}
+
+proc check_power_control_network_option {value} {
+  if {$value == "STAR"} {
+    return $value
+  } elseif {$value == "DAISY"} {
+    return $value
+  }
+  utl::error PDN 195 "Option -power_control_network must be set to STAR or DAISY"
+}
+
 proc define_pdn_grid {args} {
   variable current_grid
 
@@ -897,6 +916,8 @@ proc define_pdn_grid {args} {
       -starts_with       {dict set grid starts_with [check_starts_with $value]}
       -pin_direction     {dict set grid pin_direction [check_direction $value]}
       -switch_cell       {dict set grid switch_cell [check_switch_cells $value]}
+      -power_control     {dict set grid power_control [check_net $value]}
+      -power_control_network {dict set grid power_control_network [check_power_control_network_option $value]}
       default            {utl::error PDN 88 "Unrecognized argument $arg, should be one of -name, -orient, -instances -cells -pins -starts_with."}
     }
 
@@ -4102,6 +4123,95 @@ proc detect_and_fix_tapcell_overlaps {} {
   }
 }
 
+proc is_power_control_star {} {
+  variable grid_data
+  if {![dict exists $grid_data power_control_network]} {
+    dict set grid_data power_control_network "STAR"
+  }
+  if {[dict get $grid_data power_control_network] == "STAR"} {
+    return 1
+  }
+  return 0
+}
+
+proc is_power_control_daisy_chain {} {
+  variable grid_data
+  if {![dict exists $grid_data power_control_network]} {
+    dict set grid_data power_control_network "STAR"
+  }
+  if {[dict get $grid_data power_control_network] == "DAISY"} {
+    return 1
+  }
+  return 0
+}
+
+proc connect_power_switches {} {
+  variable power_switch_cells
+  variable grid_data
+
+  set block [ord::get_db_block]
+  if {![dict exists $grid_data power_control]} {
+    utl::error PDN 191 "No power control signal is defined for a grid that includes power switches"
+  }
+  set power_control_signal [dict get $grid_data power_control]
+  set power_control_net [$block findNet $power_control_signal]
+  if {$power_control_net == "NULL"} {
+    utl::error PDN 192 "Cannot find power control signal [dict get $power_switch control_signal]"
+  }
+
+  if {[is_power_control_star]} {
+    # Connect all the power control signal inputs to the power control signal in a high fanout net configuration
+    foreach inst [$block getInsts] {
+      set cell_name [[$inst getMaster] getName]
+      if {![dict exists $power_switch_cells $cell_name]} {continue}
+
+      set control_pin [dict get $power_switch_cells $cell_name control]
+      if {[set iterm [$inst findITerm $control_pin]] != "NULL"} {
+        $iterm connect $power_control_net
+      } else {
+        utl::error PDN 193 "Cannot find instance term $control_pin for [$inst getName] of cell [[$inst getMaster] getName]"
+      }
+    }
+  } elseif {[is_power_control_daisy_chain]} {
+    foreach inst [$block getInsts] {
+      set cell_name [[$inst getMaster] getName]
+      if {[dict exists $power_switch_cells $cell_name]} {
+	lappend psw_instances $inst
+      }
+    }
+    # sort instances by x, then y
+    foreach inst $psw_instances {
+      lassign [$inst getOrigin] x y
+      dict lappend columns $x $inst
+    }
+
+    set control_net $power_control_net
+    foreach x [lsort -integer [dict keys $columns]] {
+      set col [dict get $columns $x]
+      set sorted_col [lreverse [lsort -command sort_insts_by_y $col]]
+      foreach inst $sorted_col {
+	# debug "inst x=[lindex [$inst getOrigin] 0], y=[lindex [$inst getOrigin] 1]"
+        set control_pin [$inst findITerm [dict get $power_switch_cells $cell_name control]]
+        $control_pin connect $control_net
+        set control_net [odb::dbNet_create $block "[$inst getName]_out"]
+	set ack_pin_name [dict get $power_switch_cells $cell_name acknowledge]
+        set ack_pin [$inst findITerm $ack_pin_name]
+	if {$ack_pin == "NULL"} {
+          utl::error PDN 197 "Cannot find pin $ack_pin_name on power switch [$inst getName] ($cell_name)"
+	}
+        $ack_pin connect $control_net
+      }
+      set first [lindex $sorted_col 0]
+      set control_net [$block findNet "[$first getName]_out"]
+      # debug "control_net=[$control_net getName]"
+    }
+  } else {
+    utl::error PDN 196 "Invalid value specified for power control network type"
+  }
+}
+
+
+
 proc cut_blocked_areas {net} {
   variable stripe_locs
   variable grid_data
@@ -5874,6 +5984,7 @@ proc add_grid {} {
 
   if {[get_voltage_domain_switched_power [dict get $design_data core_domain]] != ""} {
     insert_power_switches
+    connect_power_switches
     detect_and_fix_tapcell_overlaps
   }
   
@@ -6284,6 +6395,23 @@ proc identify_channels {lower_layer_name upper_layer_name net} {
   # debug "Number of channels [llength [::odb::getPolygons $channels]]"
 
   return $channels
+}
+
+proc sort_insts_by_x_and_y {inst1 inst2} {
+  lassign [$inst1 getOrigin] x1 y1
+  lassign [$inst2 getOrigin] x2 y2
+
+  if {$x1 == $x2} {
+    return $y1 - $y2
+  }
+  return $x1 - $x2
+}
+
+proc sort_insts_by_y {inst1 inst2} {
+  lassign [$inst1 getOrigin] x1 y1
+  lassign [$inst2 getOrigin] x2 y2
+
+  return $y1 - $y2
 }
 
 proc sort_by_min_x {rect1 rect2} {

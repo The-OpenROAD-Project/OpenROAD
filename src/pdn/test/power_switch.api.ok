@@ -12,7 +12,7 @@
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 388 pins.
 [INFO ODB-0131]     Created 22271 components and 105165 component-terminals.
-[INFO ODB-0133]     Created 15003 nets and 60623 connections.
+[INFO ODB-0133]     Created 15004 nets and 60623 connections.
 [INFO ODB-0134] Finished DEF file: power_switch/2_5_floorplan_tapcell.def
 [INFO PDN-0008] Design name is aes_cipher_top.
 [INFO PDN-0009] Reading technology data.

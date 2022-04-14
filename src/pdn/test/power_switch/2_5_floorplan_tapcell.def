@@ -24120,7 +24120,8 @@ PINS 388 ;
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 759325 284580 ) N ;
 END PINS
-NETS 15003 ;
+NETS 15004 ;
+    - nPWRUP + USE SIGNAL ;
     - _00000_ ( _33612_ D ) ( _20224_ Y ) + USE SIGNAL ;
     - _00001_ ( _33483_ D ) ( _33014_ Y ) + USE SIGNAL ;
     - _00002_ ( _33484_ D ) ( _33020_ Y ) + USE SIGNAL ;
