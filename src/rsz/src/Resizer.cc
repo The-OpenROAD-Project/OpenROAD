@@ -738,8 +738,9 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
 
 // repairDesign but restricted to clock network and
 // no max_fanout/max_cap checks.
+// Use max_wire_length zero for none (meters)
 void
-Resizer::repairClkNets(double max_wire_length) // max_wire_length zero for none (meters)
+Resizer::repairClkNets(double max_wire_length)
 {
   init();
   // Need slews to resize inserted buffers.
@@ -756,17 +757,20 @@ Resizer::repairClkNets(double max_wire_length) // max_wire_length zero for none 
   int max_length = metersToDbu(max_wire_length);
   incrementalParasiticsBegin();
   for (Clock *clk : sdc_->clks()) {
-    for (const Pin *clk_pin : *sta_->pins(clk)) {
-      Net *net = network_->isTopLevelPort(clk_pin)
-        ? network_->net(network_->term(clk_pin))
-        : network_->net(clk_pin);
-      if (network_->isDriver(clk_pin)) {
-        Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
-        // Do not resize clock tree gates.
-        repairNet(net, clk_pin, drvr, 0.0, 0.0,
-                  false, false, false, max_length, false,
-                  repair_count, slew_violations, cap_violations,
-                  fanout_violations, length_violations);
+    const PinSet *clk_pins = sta_->pins(clk);
+    if (clk_pins) {
+      for (const Pin *clk_pin : *clk_pins) {
+        Net *net = network_->isTopLevelPort(clk_pin)
+          ? network_->net(network_->term(clk_pin))
+          : network_->net(clk_pin);
+        if (network_->isDriver(clk_pin)) {
+          Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
+          // Do not resize clock tree gates.
+          repairNet(net, clk_pin, drvr, 0.0, 0.0,
+                    false, false, false, max_length, false,
+                    repair_count, slew_violations, cap_violations,
+                    fanout_violations, length_violations);
+        }
       }
     }
   }
@@ -1094,23 +1098,16 @@ Resizer::bufferInputMaxSlew(LibertyCell *buffer,
 }
 
 float
-Resizer::maxInputSlew(LibertyPort *input,
+Resizer::maxInputSlew(const LibertyPort *input,
                       const Corner *corner) const
 {
-  MinMax *min_max = MinMax::max();
-  LibertyPort *corner_port = input->cornerPort(corner->libertyIndex(min_max));
-  bool exists;
   float limit;
-  corner_port->slewLimit(min_max, limit, exists);
-  // Note that liberty default_max_transition only applies to outputs.
-  if (exists) {
-    // brain damage defense
-    if (limit == 0.0)
-      limit = INF;
-    return limit;
-  }
-  else
-    return INF;
+  bool exists;
+  sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
+  // umich brain damage control
+  if (limit == 0.0)
+    limit = INF;
+  return limit;
 }
 
 // Find the output port load capacitance that results in slew.
