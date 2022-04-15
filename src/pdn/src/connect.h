@@ -82,7 +82,6 @@ class Connect
 
   bool isSingleLayerVia() const;
   bool isMultiLayerVia() const { return !isSingleLayerVia(); }
-  bool isTaperedVia(const odb::Rect& lower, const odb::Rect& upper) const;
 
   bool hasCutPitch() const { return cut_pitch_x_ != 0 || cut_pitch_y_ != 0; }
 
@@ -160,6 +159,13 @@ class Connect
   DbVia* generateDbVia(
       const std::vector<std::unique_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
+
+  bool isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper) const;
+  std::vector<std::pair<odb::Rect, odb::Rect>> generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+  std::vector<std::pair<odb::Rect, odb::Rect>> generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+
+  int getMinWidth(odb::dbTechLayer* layer) const;
+  int getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const;
 };
 
 }  // namespace pdn

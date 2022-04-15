@@ -660,46 +660,6 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // remove vias that are too small to make on any layer
-  for (const auto& via : vias) {
-    const odb::Rect& via_size = via->getArea();
-    const int width = via_size.minDXDY();
-    for (auto* layer : via->getConnect()->getIntermediteRoutingLayers()) {
-      if (width < layer->getMinWidth()) {
-        remove_vias.insert(via);
-        break;
-      }
-    }
-  }
-  debugPrint(getLogger(),
-             utl::PDN,
-             "Via",
-             2,
-             "Removing {} vias due to sizing limitations.",
-             remove_vias.size());
-  remove_set_of_vias(remove_vias);
-
-  // remove vias that are minimum area violations
-  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
-  const double umum_per_dbudbu = 1.0 / (dbu_per_micron * dbu_per_micron);
-  for (const auto& via : vias) {
-    const odb::Rect& via_size = via->getArea();
-    const double area = via_size.area() * umum_per_dbudbu;
-    for (auto* layer : via->getConnect()->getIntermediteRoutingLayers()) {
-      if (area < layer->getArea()) {
-        remove_vias.insert(via);
-        break;
-      }
-    }
-  }
-  debugPrint(getLogger(),
-             utl::PDN,
-             "Via",
-             2,
-             "Removing {} vias due to area limitations.",
-             remove_vias.size());
-  remove_set_of_vias(remove_vias);
-
   // remove vias are only partially overlapping
   for (const auto& via : vias) {
     const auto& via_area = via->getArea();

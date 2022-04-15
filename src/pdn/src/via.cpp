@@ -2018,64 +2018,55 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
     type = odb::dbWireShapeType::STRIPE;
   }
 
-  if (connect_->isTaperedVia(lower_->getRect(), upper_->getRect())) {
-    getLogger()->warn(
-        utl::PDN,
-        111,
-        "Tapered via required between {} and {}, which will not be added.",
-        getLowerLayer()->getName(),
-        getUpperLayer()->getName());
-  } else {
-    DbVia::ViaLayerShape shapes;
-    connect_->makeVia(wire, lower_->getRect(), upper_->getRect(), type, shapes);
+  DbVia::ViaLayerShape shapes;
+  connect_->makeVia(wire, lower_->getRect(), upper_->getRect(), type, shapes);
 
-    auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
-      const odb::Rect& rect = shape->getRect();
-      odb::Rect new_shape = rect;
-      for (const auto& via_shape : via_shapes) {
-        new_shape.merge(via_shape);
-      }
-      if (new_shape != rect) {
-        auto* layer = shape->getLayer();
+  auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
+    const odb::Rect& rect = shape->getRect();
+    odb::Rect new_shape = rect;
+    for (const auto& via_shape : via_shapes) {
+      new_shape.merge(via_shape);
+    }
+    if (new_shape != rect) {
+      auto* layer = shape->getLayer();
 
-        debugPrint(getLogger(),
-                   utl::PDN,
-                   "Via",
-                   3,
-                   "{} shape changed {}: {} -> {}",
-                   shape->getNet()->getName(),
-                   layer->getName(),
-                   Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
-                   Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
-        bool valid_change = shape->isModifiable();
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
-            valid_change = false;
-          }
-        } else {
-          if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
-            valid_change = false;
-          }
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Via",
+                 3,
+                 "{} shape changed {}: {} -> {}",
+                 shape->getNet()->getName(),
+                 layer->getName(),
+                 Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
+                 Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      bool valid_change = shape->isModifiable();
+      if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
+          valid_change = false;
         }
-
-        if (valid_change) {
-          shape->setRect(new_shape);
-        } else {
-          getLogger()->warn(utl::PDN,
-                            195,
-                            "{} shape change required in a non-preferred direction to fit via {}: {} -> {}",
-                            shape->getNet()->getName(),
-                            layer->getName(),
-                            Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
-                            Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      } else {
+        if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
+          valid_change = false;
         }
       }
 
-    };
+      if (valid_change) {
+        shape->setRect(new_shape);
+      } else {
+        getLogger()->warn(utl::PDN,
+                          195,
+                          "{} shape change required in a non-preferred direction to fit via {}: {} -> {}",
+                          shape->getNet()->getName(),
+                          layer->getName(),
+                          Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
+                          Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      }
+    }
 
-    check_shapes(lower_, shapes.bottom);
-    check_shapes(upper_, shapes.top);
-  }
+  };
+
+  check_shapes(lower_, shapes.bottom);
+  check_shapes(upper_, shapes.top);
 }
 
 const std::string Via::getDisplayText() const
