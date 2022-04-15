@@ -327,6 +327,12 @@ void debug_renderer(bool on)
   pdngen->setDebugRenderer(on);
 }
 
+void debug_renderer_update()
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->rendererRedraw();
+}
+
 void write_to_db(bool add_pins)
 {
   PdnGen* pdngen = ord::getPdnGen();

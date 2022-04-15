@@ -265,7 +265,6 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
-  rendererRedraw();
 }
 
 void PdnGen::resetShapes()
@@ -639,7 +638,6 @@ void PdnGen::makeRing(Grid* grid,
     auto* core_grid = static_cast<CoreGrid*>(grid);
     core_grid->setupDirectConnect(pad_pin_layers);
   }
-  rendererRedraw();
 }
 
 void PdnGen::makeFollowpin(Grid* grid,
@@ -651,7 +649,6 @@ void PdnGen::makeFollowpin(Grid* grid,
   strap->setExtend(extend);
 
   grid->addStrap(std::move(strap));
-  rendererRedraw();
 }
 
 void PdnGen::makeStrap(Grid* grid,
@@ -674,7 +671,6 @@ void PdnGen::makeStrap(Grid* grid,
     strap->setStartWithPower(starts_with == POWER);
   }
   grid->addStrap(std::move(strap));
-  rendererRedraw();
 }
 
 void PdnGen::makeConnect(Grid* grid,
@@ -711,7 +707,6 @@ void PdnGen::makeConnect(Grid* grid,
   }
 
   grid->addConnect(std::move(con));
-  rendererRedraw();
 }
 
 void PdnGen::setDebugRenderer(bool on)
@@ -733,6 +728,7 @@ void PdnGen::rendererRedraw()
       buildGrids(false);
     } catch (const std::runtime_error& /* e */) {
       // do nothing, dont want grid error to prevent debug renderer
+      debug_renderer_->update();
     }
   }
 }
