@@ -103,6 +103,7 @@ class Shape
 
   odb::dbTechLayer* getLayer() const { return layer_; }
   odb::dbNet* getNet() const { return net_; }
+  void setNet(odb::dbNet* net) { net_ = net; }
   void setRect(const odb::Rect& rect) { rect_ = rect; }
   const odb::Rect& getRect() const { return rect_; }
   const Box getRectBox() const;
