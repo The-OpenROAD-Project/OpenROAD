@@ -17,6 +17,6 @@ foreach ram $rams {
 set die_area {0 0 924.92 799.4}
 set core_area {10.07 9.8 914.85 789.6}
 
-set cap_margin 30
+set cap_margin 35
 
 source -echo "flow.tcl"

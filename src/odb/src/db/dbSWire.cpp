@@ -154,6 +154,16 @@ void _dbSWire::out(dbDiff& diff, char side, const char* field) const
   DIFF_END
 }
 
+void _dbSWire::addSBox(_dbSBox* box)
+{
+  box->_owner = getOID();
+  box->_next_box = (uint) _wires;
+  _wires = box->getOID();
+  _dbBlock* block = (_dbBlock*) getOwner();
+  for (auto callback : block->_callbacks)
+    callback->inDbSWireAddSBox((dbSBox*) box);
+}
+
 dbBlock* dbSWire::getBlock()
 {
   return (dbBlock*) getImpl()->getOwner();

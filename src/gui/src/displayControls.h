@@ -223,6 +223,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
 
+  bool isModuleView() const override;
+
   // API from dbNetworkObserver
   virtual void postReadLiberty() override;
 
@@ -336,6 +338,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
     ModelRow regions;
     ModelRow detailed;
     ModelRow selected;
+    ModelRow module;
   };
 
   struct InstanceShapeModels
