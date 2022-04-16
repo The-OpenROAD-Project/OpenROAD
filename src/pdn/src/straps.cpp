@@ -854,7 +854,6 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
   }
 
   const TechLayer layer(getLayer());
-  const double dbu_to_microns = layer.getLefUnits();
 
   // adjust spacing first to minimum spacing for the given width
   setSpacing(layer.getSpacing(getWidth(), max_length));
@@ -864,7 +863,7 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
              "Channel",
              2,
              "Adjust spacing to {:.4f} um.",
-             getSpacing() / dbu_to_microns);
+             layer.dbuToMicron(getSpacing()));
   if (check()) {
     // adjusting spacing works
     return;
@@ -882,8 +881,8 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
                "Channel",
                2,
                "Adjust width to {:.4f} um and spacing to {:.4f} um.",
-               getWidth() / dbu_to_microns,
-               getSpacing() / dbu_to_microns);
+               layer.dbuToMicron(getWidth()),
+               layer.dbuToMicron(getSpacing()));
     if (check()) {
       return;
     }
@@ -898,6 +897,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
                                           int bisect_dist,
                                           int level)
 {
+  const TechLayer layer(getLayer());
   const bool is_horizontal = isHorizontal();
   const int group_width = getStrapGroupWidth();
   int offset = -group_width / 2 + extra_offset;
@@ -908,6 +908,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   }
   const int half_width = getWidth() / 2;
   offset += half_width;
+  offset = layer.snapToManufacturingGrid(offset);
 
   odb::Rect estimated_straps;
   const int strap_start = offset - half_width;
@@ -919,15 +920,21 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
         strap_start, area_.yMin(), strap_start + group_width, area_.yMax());
   }
 
+  debugPrint(
+      getLogger(),
+      utl::PDN,
+      "Channel",
+      3,
+      "Estimating strap to be {}.",
+      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
+
   // check if straps will fit
   if (is_horizontal) {
-    if (estimated_straps.yMin() < area_.yMin()
-        || estimated_straps.yMax() > area_.yMax()) {
+    if (estimated_straps.dy() > area_.dy()) {
       return false;
     }
   } else {
-    if (estimated_straps.xMin() < area_.xMin()
-        || estimated_straps.xMax() > area_.xMax()) {
+    if (estimated_straps.dx() > area_.dx()) {
       return false;
     }
   }
@@ -936,30 +943,34 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   std::vector<odb::dbTechLayer*> check_layers;
   for (odb::dbTechLayer* next_layer = connect_to_->getUpperLayer();
        next_layer != getLayer();) {
-    if (next_layer->getType() == odb::dbTechLayerType::ROUTING) {
+    if (next_layer->getRoutingLevel() != 0) {
       check_layers.push_back(next_layer);
     }
 
     next_layer = next_layer->getUpperLayer();
   }
   check_layers.push_back(getLayer());
+
+  auto check_obstructions = [&estimated_straps](const ShapeTree& shapes) -> bool {
+    const Box estimated_straps_box(
+        Point(estimated_straps.xMin(), estimated_straps.yMin()),
+        Point(estimated_straps.xMax(), estimated_straps.yMax()));
+    for (auto itr = shapes.qbegin(bgi::intersects(estimated_straps_box)); itr != shapes.qend(); itr++) {
+      const auto& shape = itr->second;
+      const odb::Rect intersect = estimated_straps.intersect(shape->getObstruction());
+      if (intersect.area() != 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   bool has_obs = false;
-  debugPrint(
-      getLogger(),
-      utl::PDN,
-      "Channel",
-      3,
-      "Estimating strap to be {}.",
-      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
-  Box estimated_straps_box(
-      Point(estimated_straps.xMin(), estimated_straps.yMin()),
-      Point(estimated_straps.xMax(), estimated_straps.yMax()));
   for (auto* layer : check_layers) {
     if (obstructions.count(layer) != 0) {
       // obstructions possible on this layer
       const auto& shapes = obstructions.at(layer);
-      if (shapes.qbegin(bgi::intersects(estimated_straps_box))
-          != shapes.qend()) {
+      if (check_obstructions(shapes)) {
         has_obs = true;
         // found an obstruction, so it is safe to stop
         break;
@@ -977,8 +988,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
       // not first time, so search half the distance of the current bisection.
       new_bisect_dist = bisect_dist / 2;
     }
-    const TechLayer layer(getLayer());
-    layer.snapToManufacturingGrid(new_bisect_dist);
+    new_bisect_dist = layer.snapToManufacturingGrid(new_bisect_dist);
 
     if (new_bisect_dist == 0) {
       // no more searches possible
@@ -1002,25 +1012,21 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
                layer.dbuToMicron(new_bisect_dist),
                layer.dbuToMicron(extra_offset - new_bisect_dist),
                layer.dbuToMicron(extra_offset + new_bisect_dist));
-    if (new_bisect_dist < group_width) {
-      // new offset to too small to matter, so stop
-      return false;
-    } else {
-      // check lower range first
-      if (determineOffset(obstructions,
-                          extra_offset - new_bisect_dist,
-                          new_bisect_dist,
-                          level + 1)) {
-        return true;
-      }
-      // check higher range next
-      if (determineOffset(obstructions,
-                          extra_offset + new_bisect_dist,
-                          new_bisect_dist,
-                          level + 1)) {
-        return true;
-      }
+    // check lower range first
+    if (determineOffset(obstructions,
+                        extra_offset - new_bisect_dist,
+                        new_bisect_dist,
+                        level + 1)) {
+      return true;
     }
+    // check higher range next
+    if (determineOffset(obstructions,
+                        extra_offset + new_bisect_dist,
+                        new_bisect_dist,
+                        level + 1)) {
+      return true;
+    }
+
     // no offset found
     return false;
   }
