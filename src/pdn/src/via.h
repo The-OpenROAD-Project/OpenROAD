@@ -85,6 +85,22 @@ using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
 class Grid;
 class TechLayer;
 
+class Enclosure
+{
+ public:
+  Enclosure(int x, int y, odb::dbTechLayer* layer);
+
+  int getX() const { return x_; }
+  int getY() const { return y_; }
+
+  void setX(int x) { x_ = x; }
+  void setY(int y) { y_ = y; }
+
+ private:
+  int x_;
+  int y_;
+};
+
 // Wrapper class to handle building actual ODB DB Vias
 class DbVia
 {
@@ -119,7 +135,9 @@ class DbVia
 class DbBaseVia : public DbVia
 {
  public:
-  virtual const odb::Rect getViaRect(bool include_enclosure = true) const = 0;
+  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+                                     bool include_bottom = true,
+                                     bool include_top = true) const = 0;
 };
 
 // Wrapper to handle building dbTechVia as a single via or an array
@@ -141,8 +159,9 @@ class DbTechVia : public DbBaseVia
 
   virtual bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
 
-  virtual const odb::Rect getViaRect(bool include_enclosure
-                                     = true) const override;
+  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+                                     bool include_bottom = true,
+                                     bool include_top = true) const override;
 
  private:
   odb::dbTechVia* via_;
@@ -152,7 +171,8 @@ class DbTechVia : public DbBaseVia
   int col_pitch_;
 
   odb::Rect via_rect_;
-  odb::Rect enc_rect_;
+  odb::Rect enc_bottom_rect_;
+  odb::Rect enc_top_rect_;
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
@@ -181,8 +201,9 @@ class DbGenerateVia : public DbBaseVia
                                  int x,
                                  int y) const override;
 
-  virtual const odb::Rect getViaRect(bool include_enclosure
-                                     = true) const override;
+  virtual const odb::Rect getViaRect(bool include_enclosure = true,
+                                     bool include_bottom = true,
+                                     bool include_top = true) const override;
 
  private:
   odb::Rect rect_;
@@ -352,8 +373,8 @@ class ViaGenerator
   virtual bool checkConstraints() const;
 
   // determine the shape of the vias
-  virtual void determineRowsAndColumns(bool use_bottom_min_enclosure,
-                                       bool use_top_min_enclosure);
+  bool build(bool use_bottom_min_enclosure,
+             bool use_top_min_enclosure);
   virtual int getRows() const;
   virtual int getColumns() const;
   int getTotalCuts() const;
@@ -395,14 +416,6 @@ class ViaGenerator
               int max_cuts) const;
 
   int getCutsWidth(int cuts, int cut_width, int spacing, int enc) const;
-  virtual void getMinimumEnclosure(odb::dbTechLayer* layer,
-                                   int width,
-                                   int& dx,
-                                   int& dy) const;
-  bool getCutMinimumEnclosure(int width,
-                              odb::dbTechLayer* layer,
-                              int& overhang1,
-                              int& overhang2) const;
 
   int getViaCoreRows() const { return core_row_; }
   int getViaCoreColumns() const { return core_col_; }
@@ -425,6 +438,8 @@ class ViaGenerator
   int getUpperWidth(bool only_real = true) const;
 
   void determineCutSpacing();
+
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top) const;
 
  private:
   utl::Logger* logger_;
@@ -469,6 +484,11 @@ class ViaGenerator
   bool checkMinEnclosure() const;
 
   std::vector<odb::dbTechLayerCutEnclosureRule*> getCutMinimumEnclosureRules(int width, bool above) const;
+
+  void determineRowsAndColumns(bool use_bottom_min_enclosure,
+                               bool use_top_min_enclosure,
+                               const Enclosure& bottom_min_enclosure,
+                               const Enclosure& top_min_enclosure);
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -497,12 +517,6 @@ class GenerateViaGenerator : public ViaGenerator
                                  int row_pitch,
                                  int cols,
                                  int col_pitch) const override;
-
- protected:
-  virtual void getMinimumEnclosure(odb::dbTechLayer* layer,
-                                   int width,
-                                   int& dx,
-                                   int& dy) const override;
 
  private:
   odb::dbTechViaGenerateRule* rule_;
@@ -543,10 +557,7 @@ class TechViaGenerator : public ViaGenerator
                                  int col_pitch) const override;
 
  protected:
-  virtual void getMinimumEnclosure(odb::dbTechLayer* layer,
-                                   int width,
-                                   int& dx,
-                                   int& dy) const override;
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top) const override;
 
  private:
   odb::dbTechVia* via_;

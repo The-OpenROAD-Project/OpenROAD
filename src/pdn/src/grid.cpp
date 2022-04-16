@@ -359,7 +359,7 @@ const odb::Rect Grid::getRingArea() const
   }
 
   // get the outline of the rings
-  odb::Rect rect = getDomainArea();
+  odb::Rect rect = getDomainBoundary();
   for (const auto& ring : rings_) {
     for (const auto& [layer, shapes] : ring->getShapes()) {
       for (const auto& [box, shape] : shapes) {
@@ -697,6 +697,30 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              "Via",
              2,
              "Removing {} vias due to area limitations.",
+             remove_vias.size());
+  remove_set_of_vias(remove_vias);
+
+  // remove vias are only partially overlapping
+  for (const auto& via : vias) {
+    const auto& via_area = via->getArea();
+    const auto& lower = via->getLowerShape()->getRect();
+    const auto& upper = via->getUpperShape()->getRect();
+    if (via_area.xMin() == lower.xMin() && via_area.xMax() == lower.xMax() &&
+        via_area.yMin() == upper.yMin() && via_area.yMax() == upper.yMax()) {
+      continue;
+    } else if (via_area.yMin() == lower.yMin() && via_area.yMax() == lower.yMax() &&
+               via_area.xMin() == upper.xMin() && via_area.xMax() == upper.xMax()) {
+      continue;
+    } else if (lower.contains(upper) || upper.contains(lower)) {
+      continue;
+    }
+    remove_vias.insert(via);
+  }
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Removing {} vias due to partial overlap.",
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 

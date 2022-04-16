@@ -23,6 +23,6 @@ add_pdn_connect -layers {metal4 metal5}
 
 pdngen
 
-set def_file [make_result_file core_grid_with_rings_with_straps.def]
+set def_file [make_result_file core_grid_with_routing_obstructions.def]
 write_def $def_file
-diff_files core_grid_with_rings_with_straps.defok $def_file
+diff_files core_grid_with_routing_obstructions.defok $def_file

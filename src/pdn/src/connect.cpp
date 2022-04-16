@@ -335,6 +335,14 @@ DbVia* Connect::generateDbVia(
     via->setMaxRows(max_rows_);
     via->setMaxColumns(max_columns_);
 
+    debugPrint(grid_->getLogger(),
+               utl::PDN,
+               "Via",
+               1,
+               "Cut class {} - {}",
+               via->getCutLayer()->getName(),
+               via->hasCutClass() ? via->getCutClass()->getName() : "none");
+
     const int lower_split = getSplitCut(via->getBottomLayer());
     const int upper_split = getSplitCut(via->getTopLayer());
     if (lower_split != 0 || upper_split != 0) {
@@ -346,17 +354,7 @@ DbVia* Connect::generateDbVia(
 
     const bool lower_is_internal = via->getBottomLayer() != layer0_;
     const bool upper_is_internal = via->getTopLayer() != layer1_;
-    via->determineRowsAndColumns(lower_is_internal, upper_is_internal);
-
-    debugPrint(grid_->getLogger(),
-               utl::PDN,
-               "Via",
-               1,
-               "Cut class {} - {}",
-               via->getCutLayer()->getName(),
-               via->hasCutClass() ? via->getCutClass()->getName() : "none");
-
-    if (!via->checkConstraints()) {
+    if (!via->build(lower_is_internal, upper_is_internal)) {
       continue;
     }
 

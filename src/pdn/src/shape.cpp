@@ -382,6 +382,11 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
 
       ShapePtr shape
           = std::make_shared<Shape>(layer, net, rect, box->getWireShapeType());
+      if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
+        // cannot connect this this safely so make it an obstruction
+        shape->setNet(nullptr);
+        shape->setShapeType(Shape::OBS);
+      }
       shape->generateObstruction();
       map[layer].insert({shape->getRectBox(), shape});
     }

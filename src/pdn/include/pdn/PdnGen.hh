@@ -185,6 +185,7 @@ class PdnGen
   void ripUp(odb::dbNet* net);
 
   void setDebugRenderer(bool on);
+  void rendererRedraw();
   void setAllowRepairChannels(bool allow);
   void filterVias(const std::string& filter);
 
@@ -209,7 +210,6 @@ class PdnGen
                            dbBox* region,
                            std::shared_ptr<netRegexPairs>);
 
-  void rendererRedraw();
   void trimShapes();
   void cleanupVias();
 
