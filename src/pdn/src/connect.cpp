@@ -197,19 +197,20 @@ std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaR
 
   std::vector<std::pair<odb::Rect, odb::Rect>> stack;
   odb::Rect bottom = lower;
+  const odb::Rect intersection = lower.intersect(upper);
   for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
     auto* layer = intermediate_routing_layers_[i];
     auto* tech = layer->getTech();
 
-    odb::Rect intersection = bottom.intersect(upper);
+    odb::Rect level_intersection = intersection;
 
     const int min_width = getMinWidth(layer);
-    adjust_rect(min_width, true, tech, intersection);
-    adjust_rect(min_width, false, tech, intersection);
+    adjust_rect(min_width, true, tech, level_intersection);
+    adjust_rect(min_width, false, tech, level_intersection);
 
-    stack.emplace_back(bottom, intersection);
+    stack.emplace_back(bottom, level_intersection);
 
-    bottom = intersection;
+    bottom = level_intersection;
   }
   stack.emplace_back(bottom, upper);
 
