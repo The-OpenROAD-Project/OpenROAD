@@ -175,10 +175,6 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       }
     }
   }
-  // move to 0, 0
-  via_rect_.moveDelta(-via_rect_.xMin(), -via_rect_.yMin());
-  enc_bottom_rect_.moveDelta(-enc_bottom_rect_.xMin(), -enc_bottom_rect_.yMin());
-  enc_top_rect_.moveDelta(-enc_top_rect_.xMin(), -enc_top_rect_.yMin());
 }
 
 DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
@@ -299,10 +295,14 @@ const odb::Rect DbGenerateVia::getViaRect(bool include_enclosure, bool /* includ
   const int x_enc = std::max(bottom_enclosure_x_, top_enclosure_x_);
   const int width = (columns_ - 1) * cut_pitch_x_ + cut_rect_.dx();
 
-  const int height_enc = include_enclosure ? 2 * y_enc : 0;
-  const int width_enc = include_enclosure ? 2 * x_enc : 0;
+  const int height_enc = include_enclosure ? y_enc : 0;
+  const int width_enc = include_enclosure ? x_enc : 0;
 
-  return {0, 0, width + width_enc, height + height_enc};
+  const int height_half = height / 2;
+  const int width_half = width / 2;
+
+  return {-width_half - width_enc, -height_half - height_enc,
+	      width_half + width_enc, height_half + height_enc};
 }
 
 DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
@@ -1841,23 +1841,9 @@ bool TechViaGenerator::fitsShapes() const
       odb::Point(0.5 * (intersection.xMin() + intersection.xMax()),
                  0.5 * (intersection.yMin() + intersection.yMax())));
 
-  odb::Rect bottom_rect;
-  odb::Rect top_rect;
-  bottom_rect.mergeInit();
-  top_rect.mergeInit();
-
-  for (auto* box : via_->getBoxes()) {
-    odb::Rect box_rect;
-    box->getBox(box_rect);
-
-    odb::dbTechLayer* layer = box->getTechLayer();
-
-    if (layer == via_->getBottomLayer()) {
-      bottom_rect.merge(box_rect);
-    } else if (layer == via_->getTopLayer()) {
-      top_rect.merge(box_rect);
-    }
-  }
+  const DbTechVia via(via_, 1, 0, 1, 0);
+  odb::Rect bottom_rect = via.getViaRect(true, true, false);
+  odb::Rect top_rect = via.getViaRect(true, false, true);
 
   transform.apply(bottom_rect);
   if (!mostlyContains(lower_rect, bottom_rect)) {
