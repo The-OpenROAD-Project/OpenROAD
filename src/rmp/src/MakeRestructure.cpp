@@ -61,7 +61,10 @@ void initRestructure(OpenRoad* openroad)
   // Define swig TCL commands.
   Rmp_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::rmp_tcl_inits);
-  openroad->getRestructure()->init(openroad);
+  openroad->getRestructure()->init(openroad->getLogger(),
+                                   openroad->getSta(),
+                                   openroad->getDb(),
+                                   openroad->getResizer());
 }
 
 void deleteRestructure(rmp::Restructure* restructure)
