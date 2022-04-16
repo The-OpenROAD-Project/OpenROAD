@@ -82,7 +82,6 @@ target_link_libraries(gpl
     gui
     odb
     OpenSTA
-    stt
     rsz
     grt
 )
