@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "AntennaRepair.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -46,6 +44,7 @@
 #include <utility>
 #include <vector>
 
+#include "AntennaRepair.h"
 #include "Net.h"
 #include "Pin.h"
 #include "grt/GlobalRouter.h"
@@ -122,10 +121,11 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
       odb::orderWires(db_net, false, false);
 
-      std::vector<ant::VINFO> netViol = arc_->get_net_antenna_violations(
-          db_net,
-          diode_mterm->getMaster()->getConstName(),
-          diode_mterm->getConstName());
+      std::vector<ant::ViolationInfo> netViol
+          = arc_->get_net_antenna_violations(
+              db_net,
+              diode_mterm->getMaster()->getConstName(),
+              diode_mterm->getConstName());
       if (!netViol.empty()) {
         antenna_violations_[db_net] = netViol;
         // This should be done with the db callbacks.

@@ -51,74 +51,11 @@ using odb::dbWireGraph;
 
 using utl::Logger;
 
-typedef std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>>
-    wireroots_info_vec;
+struct PARinfo;
+struct ARinfo;
+struct ANTENNAmodel;
 
-struct PARinfo
-{
-  // std::pair<odb::dbWireGraph::Node*, std::vector<odb::dbWireGraph::Node*>>
-  // WirerootNode;
-  odb::dbWireGraph::Node* WirerootNode;
-  std::set<odb::dbITerm*> iterms;
-  double wire_area;
-  double side_wire_area;
-  double iterm_areas[2];
-  double PAR_value;
-  double PSR_value;
-  double diff_PAR_value;
-  double diff_PSR_value;
-};
-
-struct ARinfo
-{
-  odb::dbWireGraph::Node* WirerootNode;
-  odb::dbWireGraph::Node* GateNode;
-  bool violated_net;
-  double PAR_value;
-  double PSR_value;
-  double diff_PAR_value;
-  double diff_PSR_value;
-  double CAR_value;
-  double CSR_value;
-  double diff_CAR_value;
-  double diff_CSR_value;
-  double diff_area;
-};
-
-struct ANTENNAmodel
-{
-  odb::dbTechLayer* layer;
-
-  double metal_factor;
-  double diff_metal_factor;
-
-  double cut_factor;
-  double diff_cut_factor;
-
-  double side_metal_factor;
-  double diff_side_metal_factor;
-
-  double minus_diff_factor;
-  double plus_diff_factor;
-  double diff_metal_reduce_factor;
-
-  ANTENNAmodel& operator=(const ANTENNAmodel& am)
-  {
-    metal_factor = am.metal_factor;
-    diff_metal_factor = am.diff_metal_factor;
-    cut_factor = am.cut_factor;
-    diff_cut_factor = am.diff_cut_factor;
-    side_metal_factor = am.side_metal_factor;
-    diff_side_metal_factor = am.diff_side_metal_factor;
-    minus_diff_factor = am.minus_diff_factor;
-    plus_diff_factor = am.plus_diff_factor;
-    diff_metal_reduce_factor = am.diff_metal_reduce_factor;
-
-    return *this;
-  }
-};
-
-struct VINFO
+struct ViolationInfo
 {
   int routing_level;
   std::vector<odb::dbITerm*> iterms;
@@ -133,13 +70,27 @@ class AntennaChecker
 
   void init(odb::dbDatabase* db,
             utl::Logger *logger);
+
+  void load_antenna_rules();
+
+  int check_antennas(std::string report_filename, bool simple_report);
+
+  void check_max_length(const char *net_name,
+                        int layer);
+
+  void find_max_wire_length();
+
+  std::vector<ViolationInfo> get_net_antenna_violations(dbNet* net,
+                                                std::string antenna_cell_name
+                                                = "",
+                                                std::string cell_pin = "");
+
+private:
   dbNet* get_net(std::string net_name);
 
   template <class valueType>
   double defdist(valueType value);
 
-  // wireroots_info_vec find_segment_root(std::pair<dbWireGraph::Node*,
-  // std::vector<dbWireGraph::Node*>> node_info, int wire_level );
   dbWireGraph::Node* find_segment_root(dbWireGraph::Node* node_info,
                                        int wire_level);
   dbWireGraph::Node* find_segment_start(dbWireGraph::Node* node);
@@ -188,7 +139,6 @@ class AntennaChecker
                            std::vector<PARinfo> VIA_PARtable,
                            std::vector<dbWireGraph::Node*> gate_iterms);
 
-  // std::vector<wireroots_info_vec> get_wireroots(dbWireGraph graph);
   std::vector<dbWireGraph::Node*> get_wireroots(dbWireGraph graph);
 
   std::pair<bool, bool> check_wire_PAR(ARinfo AntennaRatio, bool simple_report, bool print);
@@ -198,9 +148,7 @@ class AntennaChecker
 
   std::vector<int> GetAntennaRatio(std::string path, bool simple_report);
 
-  void load_antenna_rules();
   void check_antenna_cell();
-  int check_antennas(std::string report_filename, bool simple_report);
 
   bool check_violation(PARinfo par_info, dbTechLayer* layer);
 
@@ -210,18 +158,9 @@ class AntennaChecker
   std::vector<std::pair<double, std::vector<dbITerm*>>> PAR_max_wire_length(
       dbNet* net,
       int layer);
-  void check_max_length(const char *net_name,
-                        int layer);
-  std::vector<VINFO> get_net_antenna_violations(dbNet* net,
-                                                std::string antenna_cell_name
-                                                = "",
-                                                std::string cell_pin = "");
   std::vector<std::pair<double, std::vector<dbITerm*>>>
   get_violated_wire_length(dbNet* net, int routing_level);
 
-  void find_max_wire_length();
-
- private:
   odb::dbDatabase* db_;
   utl::Logger *logger_;
   FILE* _out;

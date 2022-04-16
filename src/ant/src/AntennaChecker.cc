@@ -70,6 +70,71 @@ using utl::ANT;
 
 using std::unordered_set;
 
+struct PARinfo
+{
+  // std::pair<odb::dbWireGraph::Node*, std::vector<odb::dbWireGraph::Node*>>
+  // WirerootNode;
+  odb::dbWireGraph::Node* WirerootNode;
+  std::set<odb::dbITerm*> iterms;
+  double wire_area;
+  double side_wire_area;
+  double iterm_areas[2];
+  double PAR_value;
+  double PSR_value;
+  double diff_PAR_value;
+  double diff_PSR_value;
+};
+
+struct ARinfo
+{
+  odb::dbWireGraph::Node* WirerootNode;
+  odb::dbWireGraph::Node* GateNode;
+  bool violated_net;
+  double PAR_value;
+  double PSR_value;
+  double diff_PAR_value;
+  double diff_PSR_value;
+  double CAR_value;
+  double CSR_value;
+  double diff_CAR_value;
+  double diff_CSR_value;
+  double diff_area;
+};
+
+struct ANTENNAmodel
+{
+  odb::dbTechLayer* layer;
+
+  double metal_factor;
+  double diff_metal_factor;
+
+  double cut_factor;
+  double diff_cut_factor;
+
+  double side_metal_factor;
+  double diff_side_metal_factor;
+
+  double minus_diff_factor;
+  double plus_diff_factor;
+  double diff_metal_reduce_factor;
+
+  ANTENNAmodel& operator=(const ANTENNAmodel& am)
+  {
+    metal_factor = am.metal_factor;
+    diff_metal_factor = am.diff_metal_factor;
+    cut_factor = am.cut_factor;
+    diff_cut_factor = am.diff_cut_factor;
+    side_metal_factor = am.side_metal_factor;
+    diff_side_metal_factor = am.diff_side_metal_factor;
+    minus_diff_factor = am.minus_diff_factor;
+    plus_diff_factor = am.plus_diff_factor;
+    diff_metal_reduce_factor = am.diff_metal_reduce_factor;
+
+    return *this;
+  }
+};
+
+
 extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);
 }
@@ -1863,7 +1928,7 @@ bool AntennaChecker::check_violation(PARinfo par_info, dbTechLayer* layer)
   return wire_PAR_violation;
 }
 
-std::vector<VINFO> AntennaChecker::get_net_antenna_violations(
+std::vector<ViolationInfo> AntennaChecker::get_net_antenna_violations(
     dbNet* net,
     std::string antenna_cell_name,
     std::string cell_pin)
@@ -1881,7 +1946,7 @@ std::vector<VINFO> AntennaChecker::get_net_antenna_violations(
       max_diff_area = std::max(max_diff_area, (*diff_area_iter).first);
   }
 
-  std::vector<VINFO> antenna_violations;
+  std::vector<ViolationInfo> antenna_violations;
   if (net->isSpecial())
     return antenna_violations;
   dbWire* wire = net->getWire();
@@ -1924,7 +1989,7 @@ std::vector<VINFO> AntennaChecker::get_net_antenna_violations(
           // std::cout << "\n  Requires " << required_cell_nums << " diodes to
           // remove antenna violation"<<std::endl;
         }
-        VINFO antenna_violation
+        ViolationInfo antenna_violation
             = {layer->getRoutingLevel(), gates, required_cell_nums};
         antenna_violations.push_back(antenna_violation);
       }
