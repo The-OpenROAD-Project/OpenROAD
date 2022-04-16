@@ -70,7 +70,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 {
   odb::dbTech* tech = db_->getTech();
 
-  arc_->load_antenna_rules();
+  arc_->loadAntennaRules();
 
   std::map<int, odb::dbTechVia*> default_vias
       = grouter_->getDefaultVias(max_routing_layer);
@@ -122,7 +122,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
       odb::orderWires(db_net, false, false);
 
       std::vector<ant::ViolationInfo> netViol
-          = arc_->get_net_antenna_violations(
+          = arc_->getNetAntennaViolations(
               db_net,
               diode_mterm->getMaster()->getConstName(),
               diode_mterm->getConstName());
