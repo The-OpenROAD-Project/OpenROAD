@@ -48,10 +48,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
 
-namespace ord {
-class OpenRoad;
-}
-
 namespace gui {
 class Gui;
 }
@@ -70,6 +66,14 @@ class dbTechLayer;
 
 namespace stt {
 class SteinerTreeBuilder;
+}
+
+namespace ant {
+class AntennaChecker;
+}
+
+namespace dpl {
+class Opendp;
 }
 
 namespace sta {
@@ -141,7 +145,12 @@ class GlobalRouter
  public:
   GlobalRouter();
   ~GlobalRouter();
-  void init(ord::OpenRoad* openroad);
+  void init(utl::Logger* logger,
+            stt::SteinerTreeBuilder* stt_builder,
+            odb::dbDatabase* db,
+            sta::dbSta* sta,
+            ant::AntennaChecker* antenna_checker,
+            dpl::Opendp* opendp);
   void clear();
 
   void setAdjustment(const float adjustment);
@@ -358,10 +367,11 @@ class GlobalRouter
   bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
 
-  ord::OpenRoad* openroad_;
   utl::Logger* logger_;
   gui::Gui* gui_;
   stt::SteinerTreeBuilder* stt_builder_;
+  ant::AntennaChecker* antenna_checker_;
+  dpl::Opendp* opendp_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;

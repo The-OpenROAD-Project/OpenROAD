@@ -69,7 +69,10 @@ typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 class MakeWireParasitics
 {
  public:
-  MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* grouter);
+  MakeWireParasitics(utl::Logger* logger,
+                     sta::dbSta* sta,
+                     odb::dbTech* tech,
+                     GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          GRoute &route);
