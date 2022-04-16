@@ -1086,7 +1086,9 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
       const int cuts = getTotalCuts();
       if (best_cuts == cuts) {
         // if same cut area, pick smaller enclosure
-        if (bottom_is_horizontal) {
+        if (best_bot_enc == nullptr) {
+          save = true;
+        } else if (bottom_is_horizontal) {
           if (best_bot_enc->getY() > bottom_enc.getY()) {
             save = true;
           }
@@ -1095,7 +1097,9 @@ bool ViaGenerator::build(bool use_bottom_min_enclosure,
             save = true;
           }
         }
-        if (top_is_horizontal) {
+        if (best_top_enc == nullptr) {
+          save = true;
+        } else if (top_is_horizontal) {
           if (best_top_enc->getY() > top_enc.getY()) {
             save = true;
           }
