@@ -22,23 +22,23 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.027    0.193    0.193 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.027    0.000    0.193 v u1/A (sky130_fd_sc_hs__buf_1)
-   0.065    0.106    0.299 v u1/X (sky130_fd_sc_hs__buf_1)
-   0.065    0.000    0.299 v r2/D (sky130_fd_sc_hs__dfxbp_1)
-                     0.299   data arrival time
+   0.040    0.187    0.187 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.040    0.000    0.187 ^ u1/A (sky130_fd_sc_hs__buf_1)
+   0.115    0.122    0.309 ^ u1/X (sky130_fd_sc_hs__buf_1)
+   0.115    0.000    0.309 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.309   data arrival time
 
    0.000    1.000    1.000   clock clk (rise edge)
             0.000    1.000   clock network delay (ideal)
             0.000    1.000   clock reconvergence pessimism
                      1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-           -0.128    0.872   library setup time
-                     0.872   data required time
+           -0.121    0.879   library setup time
+                     0.879   data required time
 -------------------------------------------------------------------
-                     0.872   data required time
-                    -0.299   data arrival time
+                     0.879   data required time
+                    -0.309   data arrival time
 -------------------------------------------------------------------
-                     0.573   slack (MET)
+                     0.571   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -51,22 +51,22 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.027    0.193    0.193 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.027    0.000    0.193 v u1/A (sky130_fd_sc_hs__buf_1)
-   0.065    0.106    0.299 v u1/X (sky130_fd_sc_hs__buf_1)
-   0.065    0.000    0.299 v r2/D (sky130_fd_sc_hs__dfxbp_1)
-                     0.299   data arrival time
+   0.040    0.187    0.187 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.040    0.000    0.187 ^ u1/A (sky130_fd_sc_hs__buf_1)
+   0.115    0.122    0.309 ^ u1/X (sky130_fd_sc_hs__buf_1)
+   0.115    0.000    0.309 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.309   data arrival time
 
    0.000    1.000    1.000   clock clk (rise edge)
             0.000    1.000   clock network delay (ideal)
             0.000    1.000   clock reconvergence pessimism
                      1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-           -0.128    0.872   library setup time
-                     0.872   data required time
+           -0.121    0.879   library setup time
+                     0.879   data required time
 -------------------------------------------------------------------
-                     0.872   data required time
-                    -0.299   data arrival time
+                     0.879   data required time
+                    -0.309   data arrival time
 -------------------------------------------------------------------
-                     0.573   slack (MET)
+                     0.571   slack (MET)
 
 

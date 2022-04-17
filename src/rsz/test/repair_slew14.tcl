@@ -1,11 +1,10 @@
-# repair_design impossibly small liberty input pin max_transition (ala fakeram)
-# in1--u1---------u2-out1
+# repair_design max load slew with long wire to output
+# in1--u1------------out1
+#          |--u2
 read_liberty sky130hd/sky130hd_tt.lib
-read_liberty repair_slew13.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
-read_lef repair_slew13.lef
-read_def repair_slew13.def
+read_def repair_slew14.def
 
 source sky130hd/sky130hd.rc
 set_wire_rc -layer met2
