@@ -39,6 +39,7 @@
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbTechLayerArraySpacingRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"
@@ -47,9 +48,11 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
+#include "dbTechLayerWidthTableRule.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 #include "dbTech.h"
@@ -139,7 +142,16 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
     return false;
 
+  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
+    return false;
+
   if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
+    return false;
+
+  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
+    return false;
+
+  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
     return false;
 
   // User Code Begin ==
@@ -312,7 +324,10 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(cut_spacing_table_def_tbl_);
   DIFF_TABLE(cut_enc_rules_tbl_);
   DIFF_TABLE(eol_ext_rules_tbl_);
+  DIFF_TABLE(array_spacing_rules_tbl_);
   DIFF_TABLE(eol_keep_out_rules_tbl_);
+  DIFF_TABLE(width_table_rules_tbl_);
+  DIFF_TABLE(min_cuts_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -384,7 +399,10 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(cut_spacing_table_def_tbl_);
   DIFF_OUT_TABLE(cut_enc_rules_tbl_);
   DIFF_OUT_TABLE(eol_ext_rules_tbl_);
+  DIFF_OUT_TABLE(array_spacing_rules_tbl_);
   DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
+  DIFF_OUT_TABLE(width_table_rules_tbl_);
+  DIFF_OUT_TABLE(min_cuts_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -496,12 +514,30 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolExtensionRuleObj);
   ZALLOCATED(eol_ext_rules_tbl_);
+  array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerArraySpacingRuleObj);
+  ZALLOCATED(array_spacing_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolKeepOutRuleObj);
   ZALLOCATED(eol_keep_out_rules_tbl_);
+  width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerWidthTableRuleObj);
+  ZALLOCATED(width_table_rules_tbl_);
+  min_cuts_rules_tbl_ = new dbTable<_dbTechLayerMinCutRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerMinCutRuleObj);
+  ZALLOCATED(min_cuts_rules_tbl_);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -620,9 +656,18 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
       db, this, *r.eol_ext_rules_tbl_);
   ZALLOCATED(eol_ext_rules_tbl_);
+  array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
+      db, this, *r.array_spacing_rules_tbl_);
+  ZALLOCATED(array_spacing_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db, this, *r.eol_keep_out_rules_tbl_);
   ZALLOCATED(eol_keep_out_rules_tbl_);
+  width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
+      db, this, *r.width_table_rules_tbl_);
+  ZALLOCATED(width_table_rules_tbl_);
+  min_cuts_rules_tbl_
+      = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
+  ZALLOCATED(min_cuts_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -700,7 +745,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.cut_spacing_table_def_tbl_;
   stream >> *obj.cut_enc_rules_tbl_;
   stream >> *obj.eol_ext_rules_tbl_;
+  stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
+  stream >> *obj.width_table_rules_tbl_;
+  stream >> *obj.min_cuts_rules_tbl_;
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -758,7 +806,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.cut_spacing_table_def_tbl_;
   stream << *obj.cut_enc_rules_tbl_;
   stream << *obj.eol_ext_rules_tbl_;
+  stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
+  stream << *obj.width_table_rules_tbl_;
+  stream << *obj.min_cuts_rules_tbl_;
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
@@ -825,8 +876,14 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return cut_enc_rules_tbl_;
     case dbTechLayerEolExtensionRuleObj:
       return eol_ext_rules_tbl_;
+    case dbTechLayerArraySpacingRuleObj:
+      return array_spacing_rules_tbl_;
     case dbTechLayerEolKeepOutRuleObj:
       return eol_keep_out_rules_tbl_;
+    case dbTechLayerWidthTableRuleObj:
+      return width_table_rules_tbl_;
+    case dbTechLayerMinCutRuleObj:
+      return min_cuts_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -857,7 +914,10 @@ _dbTechLayer::~_dbTechLayer()
   delete cut_spacing_table_def_tbl_;
   delete cut_enc_rules_tbl_;
   delete eol_ext_rules_tbl_;
+  delete array_spacing_rules_tbl_;
   delete eol_keep_out_rules_tbl_;
+  delete width_table_rules_tbl_;
+  delete min_cuts_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -987,11 +1047,31 @@ dbSet<dbTechLayerEolExtensionRule> dbTechLayer::getTechLayerEolExtensionRules()
   return dbSet<dbTechLayerEolExtensionRule>(obj, obj->eol_ext_rules_tbl_);
 }
 
+dbSet<dbTechLayerArraySpacingRule> dbTechLayer::getTechLayerArraySpacingRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerArraySpacingRule>(obj, obj->array_spacing_rules_tbl_);
+}
+
 dbSet<dbTechLayerEolKeepOutRule> dbTechLayer::getTechLayerEolKeepOutRules()
     const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerEolKeepOutRule>(obj, obj->eol_keep_out_rules_tbl_);
+}
+
+dbSet<dbTechLayerWidthTableRule> dbTechLayer::getTechLayerWidthTableRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerWidthTableRule>(obj, obj->width_table_rules_tbl_);
+}
+
+dbSet<dbTechLayerMinCutRule> dbTechLayer::getTechLayerMinCutRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerMinCutRule>(obj, obj->min_cuts_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -1059,8 +1139,8 @@ void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.lef58_type_ = (uint) type;
-  if ((type == odb::dbTechLayer::MIMCAP ||
-       type == odb::dbTechLayer::STACKEDMIMCAP)
+  if ((type == odb::dbTechLayer::MIMCAP
+       || type == odb::dbTechLayer::STACKEDMIMCAP)
       && getType() == dbTechLayerType::ROUTING) {
     _dbTech* tech = (_dbTech*) layer->getOwner();
     layer->_rlevel = 0;

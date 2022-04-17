@@ -104,6 +104,9 @@ add_library(odb
     dbTechLayerCutSpacingTableDefRule.cpp
     dbTechLayerCutEnclosureRule.cpp
     dbTechLayerEolExtensionRule.cpp
+    dbTechLayerArraySpacingRule.cpp
+    dbTechLayerWidthTableRule.cpp
+    dbTechLayerMinCutRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp

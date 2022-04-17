@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
+#include "dbModule.h"
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
-#include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
@@ -173,16 +174,6 @@ const char* dbModule::getName() const
 {
   _dbModule* obj = (_dbModule*) this;
   return obj->_name;
-}
-
-std::string dbModule::getHierarchicalName() const
-{
-  dbModInst* inst = getModInst();
-  if (inst) {
-    return inst->getHierarchicalName();
-  } else {
-    return "<top>";
-  }
 }
 
 dbModInst* dbModule::getModInst() const
@@ -340,6 +331,16 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   std::vector<dbInst*> insts;
   odb::getLeafInsts(this, insts);
   return insts;
+}
+
+std::string dbModule::getHierarchicalName() const
+{
+  dbModInst* inst = getModInst();
+  if (inst) {
+    return inst->getHierarchicalName();
+  } else {
+    return "<top>";
+  }
 }
 
 // User Code End dbModulePublicMethods

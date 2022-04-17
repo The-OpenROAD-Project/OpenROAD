@@ -37,7 +37,6 @@
 #include "odb.h"
 
 // User Code Begin Includes
-#include "dbHashTable.h"
 // User Code End Includes
 
 namespace odb {
@@ -46,45 +45,61 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbInst;
-class _dbModInst;
 // User Code Begin Classes
 // User Code End Classes
 
+struct dbTechLayerMinCutRuleFlags
+{
+  bool per_cut_class_ : 1;
+  bool within_cut_dist_valid : 1;
+  bool from_above_ : 1;
+  bool from_below_ : 1;
+  bool length_valid_ : 1;
+  bool area_valid_ : 1;
+  bool area_within_dist_valid_ : 1;
+  bool same_metal_overlap : 1;
+  bool fully_enclosed_ : 1;
+  uint spare_bits_ : 23;
+};
 // User Code Begin Structs
 // User Code End Structs
 
-class _dbModule : public _dbObject
+class _dbTechLayerMinCutRule : public _dbObject
 {
  public:
   // User Code Begin Enums
   // User Code End Enums
 
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModInst> _mod_inst;
+  dbTechLayerMinCutRuleFlags flags_;
+  int num_cuts_;
+  std::map<std::string, int> cut_class_cuts_map_;
+  int width_;
+  int within_cut_dist;
+  int length_;
+  int length_within_dist_;
+  int area_;
+  int area_within_dist_;
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
-  ~_dbModule();
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
+  _dbTechLayerMinCutRule(_dbDatabase*, const _dbTechLayerMinCutRule& r);
+  _dbTechLayerMinCutRule(_dbDatabase*);
+  ~_dbTechLayerMinCutRule();
+  bool operator==(const _dbTechLayerMinCutRule& rhs) const;
+  bool operator!=(const _dbTechLayerMinCutRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerMinCutRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerMinCutRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
-
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
-
   // User Code End Methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj);
 // User Code Begin General
 // User Code End General
 }  // namespace odb
