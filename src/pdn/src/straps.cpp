@@ -284,6 +284,10 @@ void Straps::report() const
   logger->info(utl::PDN, 43, "    Spacing: {:.4f}", spacing_ / dbu_per_micron);
   logger->info(utl::PDN, 44, "    Pitch: {:.4f}", pitch_ / dbu_per_micron);
   logger->info(utl::PDN, 45, "    Offset: {:.4f}", offset_ / dbu_per_micron);
+  logger->info(utl::PDN, 46, "    Snap to grid: {}", snap_);
+  if (number_of_straps_ > 0) {
+      logger->info(utl::PDN, 47, "    Number of strap sets: {}", number_of_straps_);
+  }
 }
 
 int Straps::getStrapGroupWidth() const

@@ -173,30 +173,35 @@
 [INFO PDN-0043]     Spacing: 0.0000
 [INFO PDN-0044]     Pitch: 2.8000
 [INFO PDN-0045]     Offset: 0.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0040]   Type: Strap
 [INFO PDN-0041]     Layer: metal4
 [INFO PDN-0042]     Width: 0.4800
 [INFO PDN-0043]     Spacing: 27.5200
 [INFO PDN-0044]     Pitch: 56.0000
 [INFO PDN-0045]     Offset: 2.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0040]   Type: Strap
 [INFO PDN-0041]     Layer: metal7
 [INFO PDN-0042]     Width: 1.4000
 [INFO PDN-0043]     Spacing: 18.6000
 [INFO PDN-0044]     Pitch: 40.0000
 [INFO PDN-0045]     Offset: 2.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0040]   Type: Strap
 [INFO PDN-0041]     Layer: metal8
 [INFO PDN-0042]     Width: 1.4000
 [INFO PDN-0043]     Spacing: 18.6000
 [INFO PDN-0044]     Pitch: 40.0000
 [INFO PDN-0045]     Offset: 2.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0040]   Type: Strap
 [INFO PDN-0041]     Layer: metal9
 [INFO PDN-0042]     Width: 1.4000
 [INFO PDN-0043]     Spacing: 18.6000
 [INFO PDN-0044]     Pitch: 40.0000
 [INFO PDN-0045]     Offset: 2.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0024] Connect:
 [INFO PDN-0070]   Connect layers metal1 -> metal4
 [INFO PDN-0070]   Connect layers metal4 -> metal7
