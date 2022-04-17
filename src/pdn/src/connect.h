@@ -114,6 +114,8 @@ class Connect
 
   void filterVias(const std::string& filter);
 
+  void printViaReport() const;
+
  private:
   Grid* grid_;
   odb::dbTechLayer* layer0_;

@@ -139,6 +139,29 @@ odb::Rect DbVia::adjustToMinArea(odb::dbTechLayer* layer, const odb::Rect& rect)
   return new_rect;
 }
 
+void DbVia::addToViaReport(DbVia* via, ViaReport& report) const
+{
+  if (via == nullptr) {
+      return;
+  }
+
+  for (const auto& [name, count] : via->getViaReport()) {
+    report[name] += count;
+  }
+}
+
+////////////
+
+DbBaseVia::DbBaseVia() :
+    count_(0)
+{
+}
+
+ViaReport DbBaseVia::getViaReport() const
+{
+  return {{getName(), count_}};
+}
+
 ////////////
 
 DbTechVia::DbTechVia(odb::dbTechVia* via,
@@ -177,11 +200,16 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
   }
 }
 
+std::string DbTechVia::getName() const
+{
+  return via_->getName();
+}
+
 DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
                                          odb::dbSWire* wire,
                                          odb::dbWireShapeType type,
                                          int x,
-                                         int y) const
+                                         int y)
 {
   ViaLayerShape via_shapes;
 
@@ -195,6 +223,7 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
       auto shapes
           = getLayerShapes(odb::dbSBox::create(wire, via_, col, row, type));
       combineLayerShapes(shapes, via_shapes);
+      incrementCount();
 
       col += col_pitch_;
     }
@@ -261,7 +290,12 @@ DbGenerateVia::DbGenerateVia(const odb::Rect& rect,
   }
 }
 
-const std::string DbGenerateVia::getName() const
+std::string DbGenerateVia::getName() const
+{
+  return rule_->getName();
+}
+
+const std::string DbGenerateVia::getViaName() const
 {
   const std::string seperator = "_";
   std::string name = "via";
@@ -309,9 +343,9 @@ DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y) const
+                                             int y)
 {
-  const std::string via_name = getName();
+  const std::string via_name = getViaName();
   auto* via = block->findVia(via_name.c_str());
 
   if (via == nullptr) {
@@ -345,6 +379,7 @@ DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
     via->setViaParams(params);
   }
 
+  incrementCount();
   return getLayerShapes(odb::dbSBox::create(wire, via, x, y, type));
 }
 
@@ -415,7 +450,7 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
                                           odb::dbSWire* wire,
                                           odb::dbWireShapeType type,
                                           int x,
-                                          int y) const
+                                          int y)
 {
   const odb::Rect core_via_rect = core_via_->getViaRect(false);
   ViaLayerShape via_shapes;
@@ -454,6 +489,18 @@ DbVia::ViaLayerShape DbArrayVia::generate(odb::dbBlock* block,
   return via_shapes;
 }
 
+ViaReport DbArrayVia::getViaReport() const
+{
+  ViaReport report;
+
+  addToViaReport(core_via_.get(), report);
+  addToViaReport(end_of_row_column_.get(), report);
+  addToViaReport(end_of_row_.get(), report);
+  addToViaReport(end_of_row_column_.get(), report);
+
+  return report;
+}
+
 /////////////
 
 DbSplitCutVia::DbSplitCutVia(DbBaseVia* via,
@@ -490,7 +537,7 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
                                              odb::dbSWire* wire,
                                              odb::dbWireShapeType type,
                                              int x,
-                                             int y) const
+                                             int y)
 {
   TechLayer* horizontal = nullptr;
   TechLayer* vertical = nullptr;
@@ -527,6 +574,15 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(odb::dbBlock* block,
   return via_shapes;
 }
 
+ViaReport DbSplitCutVia::getViaReport() const
+{
+  ViaReport report;
+
+  addToViaReport(via_.get(), report);
+
+  return report;
+}
+
 /////////////
 
 DbGenerateStackedVia::DbGenerateStackedVia(
@@ -559,7 +615,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
                                                     odb::dbSWire* wire,
                                                     odb::dbWireShapeType type,
                                                     int x,
-                                                    int y) const
+                                                    int y)
 {
   using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
@@ -675,6 +731,17 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(odb::dbBlock* block,
   return via_shapes;
 }
 
+ViaReport DbGenerateStackedVia::getViaReport() const
+{
+  ViaReport report;
+
+  for (const auto& via : vias_) {
+    addToViaReport(via.get(), report);
+  }
+
+  return report;
+}
+
 /////////////
 
 DbGenerateDummyVia::DbGenerateDummyVia(utl::Logger* logger,
@@ -690,7 +757,7 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
     odb::dbSWire* wire,
     odb::dbWireShapeType /* type */,
     int x,
-    int y) const
+    int y)
 {
   odb::dbTransform xfm({x, y});
 
