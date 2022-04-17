@@ -225,20 +225,21 @@ void Straps::makeStraps(int x_start,
 
   const auto nets = getNets();
 
-  int last_strap_end = -spacing_;
+  const int group_pitch = spacing_ + width_;
+
+  int next_minimum_track = 0;
   for (pos += offset_; pos <= pos_end; pos += pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
-      const int strap_center
-          = layer.snapToGrid(group_pos, last_strap_end + spacing_);
-      const int strap_start = strap_center - half_width;
+      group_pos = layer.snapToGrid(group_pos, next_minimum_track);
+      const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       if (strap_start >= pos_end) {
         // no portion of the strap is inside the limit
         return;
       }
-      if (strap_center > pos_end) {
+      if (group_pos > pos_end) {
         // strap center is outside of alotted area
         return;
       }
@@ -249,8 +250,8 @@ void Straps::makeStraps(int x_start,
       } else {
         strap_rect = odb::Rect(x_start, strap_start, x_end, strap_end);
       }
-      last_strap_end = strap_end;
-      group_pos += spacing_ + width_;
+      group_pos += group_pitch;
+      next_minimum_track = group_pos;
 
       Box shape_check(Point(strap_rect.xMin(), strap_rect.yMin()),
                       Point(strap_rect.xMax(), strap_rect.yMax()));
