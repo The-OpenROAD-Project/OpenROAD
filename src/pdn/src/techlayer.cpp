@@ -276,38 +276,20 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
     });
   }
 
-  for (const auto& rule_set : tokenizeStringProperty("LEF58_MINIMUMCUT")) {
-    int width = 0;
-    auto width_find = std::find(rule_set.begin(), rule_set.end(), "WIDTH");
-    if (width_find != rule_set.end()) {
-      width_find++;
-
-      width = micronToDbu(*width_find);
-    }
-
-    const bool fromabove = std::find(rule_set.begin(), rule_set.end(), "FROMABOVE") != rule_set.end();
-    const bool frombelow = std::find(rule_set.begin(), rule_set.end(), "FROMBELOW") != rule_set.end();
-
-    for (auto itr = rule_set.begin(); itr != rule_set.end(); itr++) {
-      if (*itr == "CUTCLASS") {
-        itr++;
-        const std::string cutclass = *itr;
-        itr++;
-        const int cuts = std::stoi(*itr);
-
-        auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(cutclass.c_str());
-        if (cut_class == nullptr) {
-          cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(cutclass.c_str());
-        }
-
-        rules.push_back(MinCutRule{
-          cut_class,
-          frombelow, // same as ABOVE
-          fromabove, // same as BELOW
-          width,
-          cuts
-        });
+  for (auto* rule : layer_->getTechLayerMinCutRules()) {
+    for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
+      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(cut_class_name.c_str());
+      if (cut_class == nullptr) {
+        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(cut_class_name.c_str());
       }
+
+      rules.push_back(MinCutRule{
+        cut_class,
+        rule->isFromBelow(), // same as ABOVE
+        rule->isFromAbove(), // same as BELOW
+        rule->getWidth(),
+        cuts
+      });
     }
   }
 
