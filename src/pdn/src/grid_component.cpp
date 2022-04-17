@@ -366,9 +366,9 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
   }
 
   // check if width table in use and check widths
-  for (const auto& width_table : tech_layer.getWidthTable()) {
+  for (auto* rule : layer->getTechLayerWidthTableRules()) {
     bool check_table = false;
-    if (width_table.wrongdirection) {
+    if (rule->isWrongDirection()) {
       if (direction != layer->getDirection()) {
         check_table = true;
       }
@@ -378,17 +378,19 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
       }
     }
 
-    if (width_table.widths.empty()) {
+    const auto width_table = rule->getWidthTable();
+
+    if (width_table.empty()) {
       check_table = false;
     } else {
-      if (width > width_table.widths.back()) {
+      if (width > width_table.back()) {
         // width is outside of table
         check_table = false;
       }
     }
 
     bool found_width = false;
-    for (auto table_width : width_table.widths) {
+    for (auto table_width : width_table) {
       if (table_width == width) {
         found_width = true;
       }
@@ -396,11 +398,11 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
 
     if (check_table && !found_width) {
       std::string widths;
-      for (auto table_width : width_table.widths) {
+      for (auto width : width_table) {
         if (!widths.empty()) {
           widths += ", ";
         }
-        widths += fmt::format("{:.4f}", tech_layer.dbuToMicron(table_width));
+        widths += fmt::format("{:.4f}", tech_layer.dbuToMicron(width));
       }
       getLogger()->error(utl::PDN,
                          114,

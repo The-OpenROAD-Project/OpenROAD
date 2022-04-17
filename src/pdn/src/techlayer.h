@@ -91,15 +91,7 @@ class TechLayer
   };
   std::vector<MinCutRule> getMinCutRules() const;
 
-  struct WidthTable
-  {
-    bool wrongdirection;
-    bool orthogonal;
-    std::vector<int> widths;
-  };
-  std::vector<WidthTable> getWidthTable() const;
-
-private:
+ private:
   odb::dbTechLayer* layer_;
   std::vector<int> grid_;
 

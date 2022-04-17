@@ -314,39 +314,4 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
   return rules;
 }
 
-std::vector<TechLayer::WidthTable> TechLayer::getWidthTable() const
-{
-  auto width_tables = tokenizeStringProperty("LEF58_WIDTHTABLE");
-  if (width_tables.empty()) {
-    return {};
-  }
-
-  std::vector<WidthTable> tables;
-  for (auto& width_table : width_tables) {
-    WidthTable table{false, false, {}};
-    width_table.erase(
-        std::find(width_table.begin(), width_table.end(), "WIDTHTABLE"));
-    auto find_wrongdirection
-        = std::find(width_table.begin(), width_table.end(), "WRONGDIRECTION");
-    if (find_wrongdirection != width_table.end()) {
-      table.wrongdirection = true;
-      width_table.erase(find_wrongdirection);
-    }
-    auto find_orthogonal
-        = std::find(width_table.begin(), width_table.end(), "ORTHOGONAL");
-    if (find_orthogonal != width_table.end()) {
-      table.orthogonal = true;
-      width_table.erase(find_orthogonal);
-    }
-
-    for (const auto& width : width_table) {
-      table.widths.push_back(micronToDbu(width));
-    }
-
-    tables.push_back(table);
-  }
-
-  return tables;
-}
-
 }  // namespace pdn
