@@ -175,10 +175,6 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       }
     }
   }
-  // move to 0, 0
-  via_rect_.moveDelta(-via_rect_.xMin(), -via_rect_.yMin());
-  enc_bottom_rect_.moveDelta(-enc_bottom_rect_.xMin(), -enc_bottom_rect_.yMin());
-  enc_top_rect_.moveDelta(-enc_top_rect_.xMin(), -enc_top_rect_.yMin());
 }
 
 DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
@@ -299,10 +295,14 @@ const odb::Rect DbGenerateVia::getViaRect(bool include_enclosure, bool /* includ
   const int x_enc = std::max(bottom_enclosure_x_, top_enclosure_x_);
   const int width = (columns_ - 1) * cut_pitch_x_ + cut_rect_.dx();
 
-  const int height_enc = include_enclosure ? 2 * y_enc : 0;
-  const int width_enc = include_enclosure ? 2 * x_enc : 0;
+  const int height_enc = include_enclosure ? y_enc : 0;
+  const int width_enc = include_enclosure ? x_enc : 0;
 
-  return {0, 0, width + width_enc, height + height_enc};
+  const int height_half = height / 2;
+  const int width_half = width / 2;
+
+  return {-width_half - width_enc, -height_half - height_enc,
+	      width_half + width_enc, height_half + height_enc};
 }
 
 DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
@@ -1841,23 +1841,9 @@ bool TechViaGenerator::fitsShapes() const
       odb::Point(0.5 * (intersection.xMin() + intersection.xMax()),
                  0.5 * (intersection.yMin() + intersection.yMax())));
 
-  odb::Rect bottom_rect;
-  odb::Rect top_rect;
-  bottom_rect.mergeInit();
-  top_rect.mergeInit();
-
-  for (auto* box : via_->getBoxes()) {
-    odb::Rect box_rect;
-    box->getBox(box_rect);
-
-    odb::dbTechLayer* layer = box->getTechLayer();
-
-    if (layer == via_->getBottomLayer()) {
-      bottom_rect.merge(box_rect);
-    } else if (layer == via_->getTopLayer()) {
-      top_rect.merge(box_rect);
-    }
-  }
+  const DbTechVia via(via_, 1, 0, 1, 0);
+  odb::Rect bottom_rect = via.getViaRect(true, true, false);
+  odb::Rect top_rect = via.getViaRect(true, false, true);
 
   transform.apply(bottom_rect);
   if (!mostlyContains(lower_rect, bottom_rect)) {
@@ -2018,64 +2004,55 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
     type = odb::dbWireShapeType::STRIPE;
   }
 
-  if (connect_->isTaperedVia(lower_->getRect(), upper_->getRect())) {
-    getLogger()->warn(
-        utl::PDN,
-        111,
-        "Tapered via required between {} and {}, which will not be added.",
-        getLowerLayer()->getName(),
-        getUpperLayer()->getName());
-  } else {
-    DbVia::ViaLayerShape shapes;
-    connect_->makeVia(wire, lower_->getRect(), upper_->getRect(), type, shapes);
+  DbVia::ViaLayerShape shapes;
+  connect_->makeVia(wire, lower_->getRect(), upper_->getRect(), type, shapes);
 
-    auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
-      const odb::Rect& rect = shape->getRect();
-      odb::Rect new_shape = rect;
-      for (const auto& via_shape : via_shapes) {
-        new_shape.merge(via_shape);
-      }
-      if (new_shape != rect) {
-        auto* layer = shape->getLayer();
+  auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
+    const odb::Rect& rect = shape->getRect();
+    odb::Rect new_shape = rect;
+    for (const auto& via_shape : via_shapes) {
+      new_shape.merge(via_shape);
+    }
+    if (new_shape != rect) {
+      auto* layer = shape->getLayer();
 
-        debugPrint(getLogger(),
-                   utl::PDN,
-                   "Via",
-                   3,
-                   "{} shape changed {}: {} -> {}",
-                   shape->getNet()->getName(),
-                   layer->getName(),
-                   Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
-                   Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
-        bool valid_change = shape->isModifiable();
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
-            valid_change = false;
-          }
-        } else {
-          if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
-            valid_change = false;
-          }
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Via",
+                 3,
+                 "{} shape changed {}: {} -> {}",
+                 shape->getNet()->getName(),
+                 layer->getName(),
+                 Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
+                 Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      bool valid_change = shape->isModifiable();
+      if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        if (new_shape.yMin() != rect.yMin() || new_shape.yMax() != rect.yMax()) {
+          valid_change = false;
         }
-
-        if (valid_change) {
-          shape->setRect(new_shape);
-        } else {
-          getLogger()->warn(utl::PDN,
-                            195,
-                            "{} shape change required in a non-preferred direction to fit via {}: {} -> {}",
-                            shape->getNet()->getName(),
-                            layer->getName(),
-                            Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
-                            Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      } else {
+        if (new_shape.xMin() != rect.xMin() || new_shape.xMax() != rect.xMax()) {
+          valid_change = false;
         }
       }
 
-    };
+      if (valid_change) {
+        shape->setRect(new_shape);
+      } else {
+        getLogger()->warn(utl::PDN,
+                          195,
+                          "{} shape change required in a non-preferred direction to fit via {}: {} -> {}",
+                          shape->getNet()->getName(),
+                          layer->getName(),
+                          Shape::getRectText(shape->getRect(), layer->getTech()->getLefUnits()),
+                          Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
+      }
+    }
 
-    check_shapes(lower_, shapes.bottom);
-    check_shapes(upper_, shapes.top);
-  }
+  };
+
+  check_shapes(lower_, shapes.bottom);
+  check_shapes(upper_, shapes.top);
 }
 
 const std::string Via::getDisplayText() const

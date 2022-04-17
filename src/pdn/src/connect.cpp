@@ -130,8 +130,12 @@ bool Connect::isSingleLayerVia() const
   return intermediate_routing_layers_.empty();
 }
 
-bool Connect::isTaperedVia(const odb::Rect& lower, const odb::Rect& upper) const
+bool Connect::isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper) const
 {
+  if (isSingleLayerVia()) {
+    return false;
+  }
+
   const odb::Rect intersection = lower.intersect(upper);
   const int min_width = intersection.minDXDY();
 
@@ -142,6 +146,155 @@ bool Connect::isTaperedVia(const odb::Rect& lower, const odb::Rect& upper) const
   }
 
   return false;
+}
+
+std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+{
+  const odb::Rect intersection = lower.intersect(upper);
+
+  std::vector<std::pair<odb::Rect, odb::Rect>> stack;
+  odb::Rect bottom = lower;
+  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
+    stack.emplace_back(bottom, intersection);
+    bottom = intersection;
+  }
+  stack.emplace_back(bottom, upper);
+  return stack;
+}
+
+std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+{
+  auto adjust_rect = [&lower, &upper](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
+    const int width = is_x ? intersection.dx() : intersection.dy();
+    if (width < min_width) {
+      // fix intersection to meet min width
+      const int min_add = min_width - width;
+      const int half_min_add0 = min_add / 2;
+      const int half_min_add1 = min_add - half_min_add0;
+
+      int new_min = -half_min_add0;
+      int new_max = half_min_add1;
+      if (is_x) {
+        new_min += intersection.xMin();
+        new_max += intersection.xMax();
+      } else {
+        new_min += intersection.yMin();
+        new_max += intersection.yMax();
+      }
+
+      new_min = TechLayer::snapToManufacturingGrid(tech, new_min, false);
+      new_max = TechLayer::snapToManufacturingGrid(tech, new_max, true);
+
+      if (is_x) {
+        intersection.set_xlo(new_min);
+        intersection.set_xhi(new_max);
+      } else {
+        intersection.set_ylo(new_min);
+        intersection.set_yhi(new_max);
+      }
+    }
+  };
+
+  std::vector<std::pair<odb::Rect, odb::Rect>> stack;
+  odb::Rect bottom = lower;
+  const odb::Rect intersection = lower.intersect(upper);
+  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
+    auto* layer = intermediate_routing_layers_[i];
+    auto* tech = layer->getTech();
+
+    odb::Rect level_intersection = intersection;
+
+    const int min_width = getMinWidth(layer);
+    adjust_rect(min_width, true, tech, level_intersection);
+    adjust_rect(min_width, false, tech, level_intersection);
+
+    stack.emplace_back(bottom, level_intersection);
+
+    bottom = level_intersection;
+  }
+  stack.emplace_back(bottom, upper);
+
+  return stack;
+}
+
+int Connect::getMinWidth(odb::dbTechLayer* layer) const
+{
+  const int min_width = layer->getMinWidth();
+
+  auto* below = layer;
+  while (below->getType() != odb::dbTechLayerType::CUT) {
+    below = below->getLowerLayer();
+    if (below == nullptr) {
+      break;
+    }
+  }
+
+  int below_max_enc = 0;
+  if (below != nullptr) {
+    below_max_enc = getMaxEnclosureFromCutLayer(below, min_width);
+  }
+
+  auto* above = layer;
+  while (above->getType() != odb::dbTechLayerType::CUT) {
+    above = above->getUpperLayer();
+    if (above == nullptr) {
+      break;
+    }
+  }
+
+  int above_max_enc = 0;
+  if (above != nullptr) {
+    above_max_enc = getMaxEnclosureFromCutLayer(above, min_width);
+  }
+
+  // return the min width + the worst case enclosure to enclosure to ensure a via will fit
+  return min_width + 2 * std::max(below_max_enc, above_max_enc);
+}
+
+int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const
+{
+  int max_enclosure = 0;
+  for (auto* rule : layer->getTechLayerCutEnclosureRules()) {
+    max_enclosure = std::max(max_enclosure, rule->getFirstOverhang());
+    max_enclosure = std::max(max_enclosure, rule->getSecondOverhang());
+  }
+
+  for (auto* rule : generate_via_rules_) {
+    bool use = false;
+    int rule_max_enclosure = 0;
+    for (uint i = 0; i < rule->getViaLayerRuleCount(); i++) {
+      auto layer_rule = rule->getViaLayerRule(i);
+      use |= layer_rule->getLayer() == layer;
+
+      if (layer_rule->hasEnclosure()) {
+        int enc0, enc1;
+        layer_rule->getEnclosure(enc0, enc1);
+        rule_max_enclosure = std::max(rule_max_enclosure, std::max(enc0, enc1));
+      }
+    }
+
+    if (use) {
+      max_enclosure = std::max(max_enclosure, rule_max_enclosure);
+    }
+  }
+
+  for (auto* rule : tech_vias_) {
+    bool use = false;
+    int max_size = 0;
+    for (auto* box : rule->getBoxes()) {
+      use |= box->getTechLayer() == layer;
+
+      odb::Rect rect;
+      box->getBox(rect);
+      max_size = std::max(max_size, static_cast<int>(rect.maxDXDY()));
+    }
+
+    if (use) {
+      max_enclosure = std::max(max_enclosure, (max_size - min_width) / 2);
+    }
+  }
+
+  return max_enclosure;
 }
 
 bool Connect::containsIntermediateLayer(odb::dbTechLayer* layer) const
@@ -274,21 +427,30 @@ void Connect::makeVia(odb::dbSWire* wire,
 
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
+    std::vector<std::pair<odb::Rect, odb::Rect>> stack_rects;
+    if (isComplexStackedVia(lower_rect, upper_rect)) {
+      debugPrint(getGrid()->getLogger(),
+          utl::PDN,
+          "Via",
+          2,
+          "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
+          getLowerLayer()->getName(),
+          getUpperLayer()->getName(),
+          x / static_cast<double>(tech->getLefUnits()),
+          y / static_cast<double>(tech->getLefUnits()));
+
+      stack_rects = generateComplexStackedViaRects(lower_rect, upper_rect);
+    } else {
+      stack_rects = generateViaRects(lower_rect, upper_rect);
+    }
+
     std::vector<DbVia*> stack;
     std::vector<odb::dbTechLayer*> layers = getAllRoutingLayers();
 
     for (int i = 1; i < layers.size(); i++) {
+      const auto& [via_lower_rect, via_upper_rect] = stack_rects[i - 1];
       auto* l0 = layers[i - 1];
       auto* l1 = layers[i];
-
-      auto via_lower_rect = lower_rect;
-      if (l0 != layer0_) {
-        via_lower_rect = intersection;
-      }
-      auto via_upper_rect = upper_rect;
-      if (l1 != layer1_) {
-        via_upper_rect = intersection;
-      }
 
       auto* new_via = makeSingleLayerVia(
           wire->getBlock(), l0, via_lower_rect, l1, via_upper_rect);

@@ -74,6 +74,7 @@ record_tests {
   asap7_vias_arrayspacing_3_layer
   asap7_vias_max_rows_columns
   asap7_vias_dont_use
+  asap7_taper
 
   existing
 }
