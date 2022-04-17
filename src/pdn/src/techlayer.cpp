@@ -34,7 +34,6 @@
 
 #include "utl/Logger.h"
 
-#include <cmath>
 #include <limits>
 
 namespace pdn {
@@ -54,58 +53,9 @@ int TechLayer::getSpacing(int width, int length) const
   return std::max(db_spacing, two_widths_spacing);
 }
 
-int TechLayer::micronToDbu(const std::string& value) const
-{
-  return micronToDbu(std::stof(value));
-}
-
-int TechLayer::micronToDbu(double value) const
-{
-  return std::round(value * getLefUnits());
-}
-
 double TechLayer::dbuToMicron(int value) const
 {
   return value / static_cast<double>(getLefUnits());
-}
-
-std::vector<std::vector<std::string>> TechLayer::tokenizeStringProperty(
-    const std::string& property_name) const
-{
-  auto* property = odb::dbStringProperty::find(layer_, property_name.c_str());
-  if (property == nullptr) {
-    return {};
-  }
-  std::vector<std::vector<std::string>> tokenized_set;
-  std::vector<std::string> tokenized;
-  std::string token;
-  for (const char& c : property->getValue()) {
-    if (std::isspace(c)) {
-      if (!token.empty()) {
-        tokenized.push_back(token);
-        token.clear();
-      }
-      continue;
-    }
-
-    if (c == ';') {
-      tokenized_set.push_back(tokenized);
-      tokenized.clear();
-      continue;
-    }
-
-    token += c;
-  }
-
-  if (!token.empty()) {
-    tokenized.push_back(token);
-  }
-
-  if (!tokenized.empty()) {
-    tokenized_set.push_back(tokenized);
-  }
-
-  return tokenized_set;
 }
 
 void TechLayer::populateGrid(odb::dbBlock* block, odb::dbTechLayerDir dir)
@@ -199,62 +149,6 @@ bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const s
 int TechLayer::snapToManufacturingGrid(int pos, bool round_up) const
 {
   return snapToManufacturingGrid(layer_->getTech(), pos, round_up);
-}
-
-std::vector<TechLayer::ArraySpacing> TechLayer::getArraySpacing() const
-{
-  const auto tokenized_set = tokenizeStringProperty("LEF58_ARRAYSPACING");
-  if (tokenized_set.empty()) {
-    return {};
-  }
-
-  auto& tokenized = tokenized_set[0];
-
-  // get cut spacing
-  int cut_spacing = 0;
-  auto cut_spacing_find
-      = std::find(tokenized.begin(), tokenized.end(), "CUTSPACING");
-  if (cut_spacing_find != tokenized.end()) {
-    cut_spacing_find++;
-
-    cut_spacing = micronToDbu(*cut_spacing_find);
-  }
-  int width = 0;
-  auto width_find = std::find(tokenized.begin(), tokenized.end(), "WIDTH");
-  if (width_find != tokenized.end()) {
-    width_find++;
-
-    width = micronToDbu(*width_find);
-  }
-  bool longarray = false;
-  auto longarray_find
-      = std::find(tokenized.begin(), tokenized.end(), "LONGARRAY");
-  if (longarray_find != tokenized.end()) {
-    longarray = true;
-  }
-
-  // get cuts
-  std::vector<ArraySpacing> spacing;
-  ArraySpacing props{0, false, 0, 0, 0};
-  for (auto itr = tokenized.begin(); itr != tokenized.end(); itr++) {
-    if (*itr == "ARRAYCUTS") {
-      if (props.cuts != 0) {
-        spacing.push_back(props);
-      }
-      itr++;
-      const int cuts = std::stoi(*itr);
-      props = ArraySpacing{width, longarray, cut_spacing, cuts, 0};
-      continue;
-    }
-    if (*itr == "SPACING") {
-      itr++;
-      const int spacing = micronToDbu(*itr);
-      props.array_spacing = spacing;
-      continue;
-    }
-  }
-
-  return spacing;
 }
 
 std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
