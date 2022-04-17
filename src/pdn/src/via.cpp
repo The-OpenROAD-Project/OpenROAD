@@ -2043,8 +2043,7 @@ odb::dbTechLayer* Via::getUpperLayer() const
 
 const Box Via::getBox() const
 {
-  return Box(Point(area_.xMin(), area_.yMin()),
-             Point(area_.xMax(), area_.yMax()));
+  return Shape::rectToBox(area_);
 }
 
 Via* Via::copy() const

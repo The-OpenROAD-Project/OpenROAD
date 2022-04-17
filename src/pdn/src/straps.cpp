@@ -667,14 +667,15 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
     }
 
     // generate search box
-    Box search;
+    odb::Rect search_rect = pin_rect;
     if (is_horizontal_strap) {
-      search = Box(Point(die_rect.xMin(), pin_rect.yMin()),
-                   Point(die_rect.xMax(), pin_rect.yMax()));
+      search_rect.set_xlo(die_rect.xMin());
+      search_rect.set_xhi(die_rect.xMax());
     } else {
-      search = Box(Point(pin_rect.xMin(), die_rect.yMin()),
-                   Point(pin_rect.xMax(), die_rect.yMax()));
+      search_rect.set_ylo(die_rect.yMin());
+      search_rect.set_yhi(die_rect.yMax());
     }
+    Box search = Shape::rectToBox(search_rect);
 
     // find nearest target
     ShapePtr closest_shape = nullptr;
@@ -767,6 +768,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
                                          const ShapeTreeMap& other_shapes,
                                          const std::set<odb::dbNet*>& nets,
                                          const odb::Rect& area,
+                                         const odb::Rect& obs_check_area,
                                          bool allow)
     : Straps(grid,
              target->getLayer(),
@@ -777,6 +779,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
       nets_(nets),
       connect_to_(connect_to),
       area_(area),
+      obs_check_area_(obs_check_area),
       invalid_(false)
 {
   // use snap to grid
@@ -951,21 +954,25 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   }
   check_layers.push_back(getLayer());
 
-  auto check_obstructions = [&estimated_straps](const ShapeTree& shapes) -> bool {
-    const Box estimated_straps_box(
-        Point(estimated_straps.xMin(), estimated_straps.yMin()),
-        Point(estimated_straps.xMax(), estimated_straps.yMax()));
-    for (auto itr = shapes.qbegin(bgi::intersects(estimated_straps_box)); itr != shapes.qend(); itr++) {
+  bool has_obs = false;
+  odb::Rect obs_check = estimated_straps;
+  if (is_horizontal) {
+    obs_check.set_xlo(obs_check_area_.xMin());
+    obs_check.set_xhi(obs_check_area_.xMax());
+  } else {
+    obs_check.set_ylo(obs_check_area_.yMin());
+    obs_check.set_yhi(obs_check_area_.yMax());
+  }
+  auto check_obstructions = [&obs_check](const ShapeTree& shapes) -> bool {
+    for (auto itr = shapes.qbegin(bgi::intersects(Shape::rectToBox(obs_check))); itr != shapes.qend(); itr++) {
       const auto& shape = itr->second;
-      const odb::Rect intersect = estimated_straps.intersect(shape->getObstruction());
+      const odb::Rect intersect = obs_check.intersect(shape->getObstruction());
       if (intersect.area() != 0) {
         return true;
       }
     }
     return false;
   };
-
-  bool has_obs = false;
   for (auto* layer : check_layers) {
     if (obstructions.count(layer) != 0) {
       // obstructions possible on this layer
@@ -1253,13 +1260,20 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     if (!area.intersects(grid_core)) {
       continue;
     }
-    RepairChannelArea channel{area.intersect(grid_core), target, layer, {}};
+    RepairChannelArea channel{area.intersect(grid_core),
+                              odb::Rect(),
+                              target,
+                              layer,
+                              {}};
+    channel.obs_area.mergeInit();
 
     int followpin_count = 0;
     int strap_count = 0;
     // find all the nets in a given repair area
     for (auto* shape : shapes_used) {
-      if (channel.area.overlaps(shape->getRect())) {
+      const auto& shape_rect = shape->getRect();
+      if (channel.area.overlaps(shape_rect)) {
+        channel.obs_area.merge(shape_rect);
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
           followpin_count++;
@@ -1359,6 +1373,7 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
                                                        obstructions,
                                                        channel.nets,
                                                        channel.area,
+                                                       channel.obs_area,
                                                        allow);
 
     if (!strap->isRepairValid()) {
