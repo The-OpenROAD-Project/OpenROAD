@@ -894,26 +894,22 @@ _dbTechAntennaPinModel::_dbTechAntennaPinModel(_dbDatabase*,
 
   for (itr = m._gate_area.begin(); itr != m._gate_area.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _gate_area.push_back(e);
   }
 
   for (itr = m._max_area_car.begin(); itr != m._max_area_car.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _max_area_car.push_back(e);
   }
 
   for (itr = m._max_sidearea_car.begin(); itr != m._max_sidearea_car.end();
        ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _max_sidearea_car.push_back(e);
   }
 
   for (itr = m._max_cut_car.begin(); itr != m._max_cut_car.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _max_cut_car.push_back(e);
   }
 }

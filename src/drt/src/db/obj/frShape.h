@@ -524,6 +524,12 @@ class frPathSeg : public frShape
     begin_ = beginIn;
     end_ = endIn;
   }
+  void setPoints_safe(const Point& beginIn, const Point& endIn) {
+      if (endIn < beginIn)
+            setPoints(endIn, beginIn);
+      else 
+          setPoints(beginIn, endIn);
+  }
   void setStyle(const frSegStyle& styleIn)
   {
     style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());

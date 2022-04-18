@@ -35,8 +35,9 @@
 
 #pragma once
 
-#include <memory>
+#include <array>
 #include <map>
+#include <memory>
 #include <regex>
 
 #include "odb/db.h"
@@ -44,50 +45,191 @@
 
 namespace pdn {
 
-using odb::dbMaster;
-using odb::dbNet;
 using odb::dbBlock;
-using odb::dbInst;
 using odb::dbBox;
-using odb::dbMTerm;
 using odb::dbDatabase;
+using odb::dbInst;
+using odb::dbMaster;
+using odb::dbMTerm;
+using odb::dbNet;
 
 using utl::Logger;
 
 using std::regex;
 
-class PdnGen {
-public:
+enum ExtensionMode
+{
+  CORE,
+  RINGS,
+  BOUNDARY,
+  FIXED
+};
+
+enum StartsWith
+{
+  GRID,
+  POWER,
+  GROUND
+};
+
+class VoltageDomain;
+class Grid;
+class PDNRenderer;
+
+class PdnGen
+{
+ public:
   PdnGen();
-  ~PdnGen() {};
 
   void init(dbDatabase* db, Logger* logger);
 
   void setSpecialITerms();
-  void setSpecialITerms(dbNet *net);
+  void setSpecialITerms(dbNet* net);
 
-  void addGlobalConnect(const char* instPattern, const char* pinPattern, dbNet* net);
-  void addGlobalConnect(dbBox* region, const char* instPattern, const char* pinPattern, dbNet* net);
+  void addGlobalConnect(const char* instPattern,
+                        const char* pinPattern,
+                        dbNet* net);
+  void addGlobalConnect(dbBox* region,
+                        const char* instPattern,
+                        const char* pinPattern,
+                        dbNet* net);
   void clearGlobalConnect();
 
   void globalConnect(dbBlock* block);
-  void globalConnect(dbBlock* block, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet* net);
-  void globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::shared_ptr<regex>& pinPattern, dbNet* net);
+  void globalConnect(dbBlock* block,
+                     std::shared_ptr<regex>& instPattern,
+                     std::shared_ptr<regex>& pinPattern,
+                     dbNet* net);
+  void globalConnectRegion(dbBlock* block,
+                           dbBox* region,
+                           std::shared_ptr<regex>& instPattern,
+                           std::shared_ptr<regex>& pinPattern,
+                           dbNet* net);
 
-private:
-  using regexPairs = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
+  void reset();
+  void resetShapes();
+  void report();
+
+  // Domains
+  std::vector<VoltageDomain*> getDomains() const;
+  VoltageDomain* findDomain(const std::string& name);
+  void setCoreDomain(odb::dbNet* power,
+                     odb::dbNet* ground,
+                     const std::vector<odb::dbNet*>& secondary);
+  void makeRegionVoltageDomain(const std::string& name,
+                               odb::dbNet* power,
+                               odb::dbNet* ground,
+                               const std::vector<odb::dbNet*>& secondary_nets,
+                               odb::dbRegion* region);
+
+  // Grids
+  void buildGrids(bool trim);
+  std::vector<Grid*> findGrid(const std::string& name) const;
+  void makeCoreGrid(VoltageDomain* domain,
+                    const std::string& name,
+                    StartsWith starts_with,
+                    const std::vector<odb::dbTechLayer*>& pin_layers,
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions);
+  void makeInstanceGrid(VoltageDomain* domain,
+                        const std::string& name,
+                        StartsWith starts_with,
+                        odb::dbInst* inst,
+                        const std::array<int, 4>& halo,
+                        bool pg_pins_to_boundary,
+                        bool default_grid,
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
+  void makeExistingGrid(const std::string& name,
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
+
+  // Shapes
+  void makeRing(Grid* grid,
+                odb::dbTechLayer* layer0,
+                int width0,
+                int spacing0,
+                odb::dbTechLayer* layer1,
+                int width1,
+                int spacing1,
+                StartsWith starts_with,
+                const std::array<int, 4>& offset,
+                const std::array<int, 4>& pad_offset,
+                bool extend,
+                const std::vector<odb::dbTechLayer*>& pad_pin_layers);
+  void makeFollowpin(Grid* grid,
+                     odb::dbTechLayer* layer,
+                     int width,
+                     ExtensionMode extend);
+  void makeStrap(Grid* grid,
+                 odb::dbTechLayer* layer,
+                 int width,
+                 int spacing,
+                 int pitch,
+                 int offset,
+                 int number_of_straps,
+                 bool snap,
+                 StartsWith starts_with,
+                 ExtensionMode extend);
+  void makeConnect(Grid* grid,
+                   odb::dbTechLayer* layer0,
+                   odb::dbTechLayer* layer1,
+                   int cut_pitch_x,
+                   int cut_pitch_y,
+                   const std::vector<odb::dbTechViaGenerateRule*>& vias,
+                   const std::vector<odb::dbTechVia*>& techvias,
+                   int max_rows,
+                   int max_columns,
+                   const std::vector<odb::dbTechLayer*>& ongrid,
+                   const std::map<odb::dbTechLayer*, int>& split_cuts,
+                   const std::string& dont_use_vias);
+
+  void writeToDb(bool add_pins) const;
+  void ripUp(odb::dbNet* net);
+
+  void setDebugRenderer(bool on);
+  void rendererRedraw();
+  void setAllowRepairChannels(bool allow);
+  void filterVias(const std::string& filter);
+
+  void checkSetup() const;
+
+ private:
+  using regexPairs
+      = std::vector<std::pair<std::shared_ptr<regex>, std::shared_ptr<regex>>>;
   using netRegexPairs = std::map<dbNet*, std::shared_ptr<regexPairs>>;
   using regionNetRegexPairs = std::map<dbBox*, std::shared_ptr<netRegexPairs>>;
 
-  void findInstsInArea(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::vector<dbInst*>& insts);
-  void buildMasterPinMatchingMap(dbBlock* block, std::shared_ptr<regex>& pinPattern, std::map<dbMaster*, std::vector<dbMTerm*>>& masterMap);
+  void findInstsInArea(dbBlock* block,
+                       dbBox* region,
+                       std::shared_ptr<regex>& instPattern,
+                       std::vector<dbInst*>& insts);
+  void buildMasterPinMatchingMap(
+      dbBlock* block,
+      std::shared_ptr<regex>& pinPattern,
+      std::map<dbMaster*, std::vector<dbMTerm*>>& masterMap);
 
-  void globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRegexPairs>);
+  void globalConnectRegion(dbBlock* block,
+                           dbBox* region,
+                           std::shared_ptr<netRegexPairs>);
+
+  void trimShapes();
+  void cleanupVias();
+
+  void checkDesign(odb::dbBlock* block) const;
+
+  std::vector<Grid*> getGrids() const;
+  Grid* instanceGrid(odb::dbInst* inst) const;
+
+  VoltageDomain* getCoreDomain() const;
+  void ensureCoreDomain();
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
 
   std::unique_ptr<regionNetRegexPairs> global_connect_;
+
+  std::unique_ptr<PDNRenderer> debug_renderer_;
+
+  std::unique_ptr<VoltageDomain> core_domain_;
+  std::vector<std::unique_ptr<VoltageDomain>> domains_;
 };
 
-} // namespace
+}  // namespace pdn

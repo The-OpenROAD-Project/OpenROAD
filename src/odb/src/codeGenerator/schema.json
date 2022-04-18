@@ -37,6 +37,15 @@
       "src":"dbTechLayerEolExtensionRule.json"
     },
     {
+      "src":"dbTechLayerArraySpacingRule.json"
+    },
+    {
+      "src":"dbTechLayerWidthTableRule.json"
+    },
+    {
+      "src":"dbTechLayerMinCutRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -311,9 +320,27 @@
     },
     {
       "first":"dbTechLayer",
+      "second":"dbTechLayerArraySpacingRule",
+      "type":"1_n",
+      "tbl_name":"array_spacing_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
       "second":"dbTechLayerEolKeepOutRule",
       "type":"1_n",
       "tbl_name":"eol_keep_out_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerWidthTableRule",
+      "type":"1_n",
+      "tbl_name":"width_table_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerMinCutRule",
+      "type":"1_n",
+      "tbl_name":"min_cuts_rules_tbl_"
     }
   ]
 }

@@ -104,7 +104,8 @@ FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
       db_(dbIn),
       dist_on_(false),
       increaseClipsize_(false),
-      clipSizeInc_(0)
+      clipSizeInc_(0),
+      iter_(0)
 {
 }
 
@@ -1625,6 +1626,12 @@ void FlexDR::init()
   if (VERBOSE > 0) {
     t.print(logger_);
   }
+
+  iter_ = 0;
+
+  if (VERBOSE > 0) {
+    logger_->info(DRT, 194, "Start detail routing.");
+  }
 }
 
 void FlexDR::removeGCell2BoundaryPin()
@@ -1665,22 +1672,9 @@ void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
   batchStepY = 2;
 }
 
-namespace fr {
-
-struct SearchRepairArgs
+void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
-  int size;
-  int offset;
-  int mazeEndIter;
-  frUInt4 workerDRCCost;
-  frUInt4 workerMarkerCost;
-  int ripupMode;
-  bool followGuide;
-};
-}  // namespace fr
-
-void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
-{
+  const int iter = iter_++;
   const int size = args.size;
   const int offset = args.offset;
   const int mazeEndIter = args.mazeEndIter;
@@ -1890,8 +1884,15 @@ void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
   }
 }
 
-void FlexDR::end(bool writeMetrics)
+void FlexDR::end(bool done)
 {
+  if (done && DRC_RPT_FILE != string("")) {
+    reportDRC(DRC_RPT_FILE);
+  }
+  if (done && VERBOSE > 0) {
+    logger_->info(DRT, 198, "Complete detail routing.");
+  }
+
   using ULL = unsigned long long;
   vector<ULL> wlen(getTech()->getLayers().size(), 0);
   vector<ULL> sCut(getTech()->getLayers().size(), 0);
@@ -1921,7 +1922,7 @@ void FlexDR::end(bool writeMetrics)
   const ULL totSCut = std::accumulate(sCut.begin(), sCut.end(), ULL(0));
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
-  if (writeMetrics) {
+  if (done) {
     logger_->metric("drt::wire length::total",
                     totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     logger_->metric("drt::vias::total", totSCut + totMCut);
@@ -2255,7 +2256,7 @@ void FlexDR::reportDRC(const string& file_name)
   }
 }
 
-std::vector<SearchRepairArgs> strategy()
+static std::vector<FlexDR::SearchRepairArgs> strategy()
 {
   const fr::frUInt4 shapeCost = ROUTESHAPECOST;
 
@@ -2331,30 +2332,26 @@ int FlexDR::main()
   ProfileTask profile("DR:main");
   init();
   frTime t;
-  if (VERBOSE > 0) {
-    logger_->info(DRT, 194, "Start detail routing.");
-  }
 
-  int iter = 0;
   for (auto args : strategy()) {
-    if (iter < 3)
+    if (iter_ < 3)
       FIXEDSHAPECOST = ROUTESHAPECOST;
-    else if (iter < 10)
+    else if (iter_ < 10)
       FIXEDSHAPECOST = 2 * ROUTESHAPECOST;
-    else if (iter < 15)
+    else if (iter_ < 15)
       FIXEDSHAPECOST = 3 * ROUTESHAPECOST;
-    else if (iter < 20)
+    else if (iter_ < 20)
       FIXEDSHAPECOST = 4 * ROUTESHAPECOST;
-    else if (iter < 30)
+    else if (iter_ < 30)
       FIXEDSHAPECOST = 10 * ROUTESHAPECOST;
-    else if (iter < 40)
+    else if (iter_ < 40)
       FIXEDSHAPECOST = 50 * ROUTESHAPECOST;
     else
       FIXEDSHAPECOST = 100 * ROUTESHAPECOST;
 
-    if (iter == 40)
+    if (iter_ == 40)
       MARKERDECAY = 0.99;
-    if (iter == 50)
+    if (iter_ == 50)
       MARKERDECAY = 0.999;
 
     int clipSize = args.size;
@@ -2367,16 +2364,11 @@ int FlexDR::main()
     }
     args.size = clipSize;
 
-    searchRepair(iter++, args);
+    searchRepair(args);
   }
 
-  if (DRC_RPT_FILE != string("")) {
-    reportDRC(DRC_RPT_FILE);
-  }
-  if (VERBOSE > 0) {
-    logger_->info(DRT, 198, "Complete detail routing.");
-    end(/* writeMetrics */ true);
-  }
+  end(/* done */ true);
+
   if (VERBOSE > 0) {
     t.print(logger_);
     cout << endl;

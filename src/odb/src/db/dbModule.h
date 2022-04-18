@@ -77,6 +77,10 @@ class _dbModule : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
+
+  // This is only used when destroying an inst
+  void removeInst(dbInst* inst);
+
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj);

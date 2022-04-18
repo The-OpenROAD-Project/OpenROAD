@@ -663,6 +663,12 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
         lefTechLayerEolKeepOutRuleParser eolkoutParser(this);
         eolkoutParser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_WIDTHTABLE")) {
+        WidthTableParser parser(l, this);
+        valid = parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
+        MinCutParser parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
@@ -680,6 +686,9 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
             layer->propValue(iii), this, _incomplete_props);
+      } else if (!strcmp(layer->propName(iii), "LEF58_ARRAYSPACING")) {
+        ArraySpacingParser parser(l, this);
+        valid = parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       else
