@@ -457,87 +457,73 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutClassRuleObj);
-  ZALLOCATED(cut_class_rules_tbl_);
   cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
   spacing_eol_rules_tbl_ = new dbTable<_dbTechLayerSpacingEolRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingEolRuleObj);
-  ZALLOCATED(spacing_eol_rules_tbl_);
   cut_spacing_rules_tbl_ = new dbTable<_dbTechLayerCutSpacingRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutSpacingRuleObj);
-  ZALLOCATED(cut_spacing_rules_tbl_);
   minstep_rules_tbl_ = new dbTable<_dbTechLayerMinStepRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerMinStepRuleObj);
-  ZALLOCATED(minstep_rules_tbl_);
   corner_spacing_rules_tbl_ = new dbTable<_dbTechLayerCornerSpacingRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCornerSpacingRuleObj);
-  ZALLOCATED(corner_spacing_rules_tbl_);
   spacing_table_prl_rules_tbl_ = new dbTable<_dbTechLayerSpacingTablePrlRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingTablePrlRuleObj);
-  ZALLOCATED(spacing_table_prl_rules_tbl_);
   cut_spacing_table_orth_tbl_
       = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
           db,
           this,
           (GetObjTbl_t) &_dbTechLayer::getObjectTable,
           dbTechLayerCutSpacingTableOrthRuleObj);
-  ZALLOCATED(cut_spacing_table_orth_tbl_);
   cut_spacing_table_def_tbl_ = new dbTable<_dbTechLayerCutSpacingTableDefRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutSpacingTableDefRuleObj);
-  ZALLOCATED(cut_spacing_table_def_tbl_);
   cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutEnclosureRuleObj);
-  ZALLOCATED(cut_enc_rules_tbl_);
   eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolExtensionRuleObj);
-  ZALLOCATED(eol_ext_rules_tbl_);
   array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerArraySpacingRuleObj);
-  ZALLOCATED(array_spacing_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolKeepOutRuleObj);
-  ZALLOCATED(eol_keep_out_rules_tbl_);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerWidthTableRuleObj);
-  ZALLOCATED(width_table_rules_tbl_);
   min_cuts_rules_tbl_ = new dbTable<_dbTechLayerMinCutRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerMinCutRuleObj);
-  ZALLOCATED(min_cuts_rules_tbl_);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -576,7 +562,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingRuleObj);
-  ZALLOCATED(_spacing_rules_tbl);
 
   _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
       db,
@@ -585,7 +570,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechMinCutRuleObj,
       8,
       3);
-  ZALLOCATED(_min_cut_rules_tbl);
 
   _min_enc_rules_tbl = new dbTable<_dbTechMinEncRule>(
       db,
@@ -594,7 +578,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechMinEncRuleObj,
       8,
       3);
-  ZALLOCATED(_min_enc_rules_tbl);
 
   _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(
       db,
@@ -603,7 +586,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechV55InfluenceEntryObj,
       8,
       3);
-  ZALLOCATED(_v55inf_tbl);
   // User Code End Constructor
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
@@ -626,48 +608,34 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   flags_.spare_bits_ = r.flags_.spare_bits_;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r.cut_class_rules_tbl_);
-  ZALLOCATED(cut_class_rules_tbl_);
   cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
   spacing_eol_rules_tbl_ = new dbTable<_dbTechLayerSpacingEolRule>(
       db, this, *r.spacing_eol_rules_tbl_);
-  ZALLOCATED(spacing_eol_rules_tbl_);
   cut_spacing_rules_tbl_ = new dbTable<_dbTechLayerCutSpacingRule>(
       db, this, *r.cut_spacing_rules_tbl_);
-  ZALLOCATED(cut_spacing_rules_tbl_);
   minstep_rules_tbl_
       = new dbTable<_dbTechLayerMinStepRule>(db, this, *r.minstep_rules_tbl_);
-  ZALLOCATED(minstep_rules_tbl_);
   corner_spacing_rules_tbl_ = new dbTable<_dbTechLayerCornerSpacingRule>(
       db, this, *r.corner_spacing_rules_tbl_);
-  ZALLOCATED(corner_spacing_rules_tbl_);
   spacing_table_prl_rules_tbl_ = new dbTable<_dbTechLayerSpacingTablePrlRule>(
       db, this, *r.spacing_table_prl_rules_tbl_);
-  ZALLOCATED(spacing_table_prl_rules_tbl_);
   cut_spacing_table_orth_tbl_
       = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
           db, this, *r.cut_spacing_table_orth_tbl_);
-  ZALLOCATED(cut_spacing_table_orth_tbl_);
   cut_spacing_table_def_tbl_ = new dbTable<_dbTechLayerCutSpacingTableDefRule>(
       db, this, *r.cut_spacing_table_def_tbl_);
-  ZALLOCATED(cut_spacing_table_def_tbl_);
   cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
       db, this, *r.cut_enc_rules_tbl_);
-  ZALLOCATED(cut_enc_rules_tbl_);
   eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
       db, this, *r.eol_ext_rules_tbl_);
-  ZALLOCATED(eol_ext_rules_tbl_);
   array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
       db, this, *r.array_spacing_rules_tbl_);
-  ZALLOCATED(array_spacing_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db, this, *r.eol_keep_out_rules_tbl_);
-  ZALLOCATED(eol_keep_out_rules_tbl_);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db, this, *r.width_table_rules_tbl_);
-  ZALLOCATED(width_table_rules_tbl_);
   min_cuts_rules_tbl_
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
-  ZALLOCATED(min_cuts_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -715,18 +683,14 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 
   _spacing_rules_tbl
       = new dbTable<_dbTechLayerSpacingRule>(db, this, *r._spacing_rules_tbl);
-  ZALLOCATED(_spacing_rules_tbl);
 
   _min_cut_rules_tbl
       = new dbTable<_dbTechMinCutRule>(db, this, *r._min_cut_rules_tbl);
-  ZALLOCATED(_min_cut_rules_tbl);
 
   _min_enc_rules_tbl
       = new dbTable<_dbTechMinEncRule>(db, this, *r._min_enc_rules_tbl);
-  ZALLOCATED(_min_enc_rules_tbl);
 
   _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(db, this, *r._v55inf_tbl);
-  ZALLOCATED(_v55inf_tbl);
   // User Code End CopyConstructor
 }
 

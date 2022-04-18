@@ -203,7 +203,7 @@ void dbModule::addInst(dbInst* inst)
   }
 
   if (_inst->_module == module->getOID()) {
-    return; // already in this module
+    return;  // already in this module
   }
 
   if (_inst->_module != 0) {
