@@ -98,15 +98,20 @@ void Shape::merge(Shape* shape)
   generateObstruction();
 }
 
+const Box Shape::rectToBox(const odb::Rect& rect)
+{
+  return Box(Point(rect.xMin(), rect.yMin()),
+             Point(rect.xMax(), rect.yMax()));
+}
+
 const Box Shape::getRectBox() const
 {
-  return Box(Point(rect_.xMin(), rect_.yMin()),
-             Point(rect_.xMax(), rect_.yMax()));
+  return rectToBox(rect_);
 }
 
 const Box Shape::getObstructionBox() const
 {
-  return Box(Point(obs_.xMin(), obs_.yMin()), Point(obs_.xMax(), obs_.yMax()));
+  return rectToBox(obs_);
 }
 
 int Shape::getNumberOfConnections() const
