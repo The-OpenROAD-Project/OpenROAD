@@ -39,7 +39,6 @@
 #include <string>
 
 #include "SteinerTree.hh"
-#include "BufferedNet.hh"
 
 #include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -121,6 +120,8 @@ using sta::ParasiticNode;
 using sta::PathRef;
 using sta::PathExpanded;
 
+class BufferedNet;
+enum class BufferedNetType;
 class SteinerRenderer;
 
 class NetHash
