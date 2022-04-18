@@ -96,39 +96,29 @@ _dbChip::_dbChip(_dbDatabase* db)
 {
   _block_tbl = new dbTable<_dbBlock>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbBlockObj);
-  ZALLOCATED(_block_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbPropertyObj);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbChip::getObjectTable);
-  ZALLOCATED(_name_cache);
 
   _block_itr = new dbBlockItr(_block_tbl);
-  ZALLOCATED(_block_itr);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbChip::_dbChip(_dbDatabase* db, const _dbChip& c) : _top(c._top)
 {
   _block_tbl = new dbTable<_dbBlock>(db, this, *c._block_tbl);
-  ZALLOCATED(_block_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(db, this, *c._prop_tbl);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache = new _dbNameCache(db, this, *c._name_cache);
-  ZALLOCATED(_name_cache);
 
   _block_itr = new dbBlockItr(_block_tbl);
-  ZALLOCATED(_block_itr);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbChip::~_dbChip()

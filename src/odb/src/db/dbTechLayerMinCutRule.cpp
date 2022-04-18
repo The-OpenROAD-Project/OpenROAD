@@ -469,9 +469,8 @@ bool dbTechLayerMinCutRule::isFullyEnclosed() const
 
 // User Code Begin dbTechLayerMinCutRulePublicMethods
 
-void dbTechLayerMinCutRule::setCutsPerCutClass(
-    std::string cut_class,
-    int num_cuts)
+void dbTechLayerMinCutRule::setCutsPerCutClass(std::string cut_class,
+                                               int num_cuts)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   obj->cut_class_cuts_map_[cut_class] = num_cuts;
