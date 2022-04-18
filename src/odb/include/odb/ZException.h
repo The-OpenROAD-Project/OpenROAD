@@ -32,6 +32,9 @@
 
 #pragma once
 
+#include <stdarg.h>
+#include <stdexcept>
+
 #include "odb.h"
 
 #ifdef __GNUC__
@@ -42,43 +45,16 @@
 
 namespace odb {
 
-/////////////////////////////////
-// Base exception class
-/////////////////////////////////
-class ZException
+inline
+std::runtime_error ZException(const char* fmt, ...) // ADS_FORMAT_PRINTF(2, 3)
 {
- public:
-  const char* _msg;
-  bool _free_msg;
-
-  ZException();
-  ZException(const char* fmt, ...) ADS_FORMAT_PRINTF(2, 3);
-  ZException(const ZException& ex);
-  ~ZException();
-};
-
-class ZOutOfMemory : public ZException
-{
- public:
-  ZOutOfMemory()
-  {
-    _free_msg = false;
-    _msg = "Out of memory";
-  }
-};
-
-class ZIOError : public ZException
-{
- public:
-  ZIOError(int err);
-  ZIOError(int err, const char* msg);
-};
-
-class ZAssert : public ZException
-{
- public:
-  ZAssert(const char* expr, const char* file, int line);
-};
+  char buffer[8192];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, 8192, fmt, args);
+  va_end(args);
+  return std::runtime_error(buffer);
+}
 
 // See http://cnicholson.net/2009/02/stupid-c-tricks-adventures-in-assert
 // Avoids unused variable warnings.
@@ -91,10 +67,10 @@ class ZAssert : public ZException
 #define ZASSERT(x) assert(x)
 #endif
 
-#define ZALLOCATED(expr)    \
-  do {                      \
-    if ((expr) == NULL)     \
-      throw ZOutOfMemory(); \
+#define ZALLOCATED(expr)                         \
+  do {                                           \
+    if ((expr) == NULL)                          \
+      throw std::runtime_error("Out of memory"); \
   } while (0);
 
 }  // namespace odb

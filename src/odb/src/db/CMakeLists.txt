@@ -140,7 +140,6 @@ target_link_libraries(odb
         lefin
         lefout
         tm
-        zlib 
         zutil
         utl
         ${TCL_LIBRARY}
