@@ -1253,13 +1253,30 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
   shape_set.get_polygons(channel_set);
   std::vector<RepairChannelArea> channels;
   for (const auto& channel_shape : channel_set) {
-    Rectangle rect;
-    extents(rect, channel_shape);
+    // decompose channel polygon to rects and pick largest, remaining will be fixed later
+    Polygon90Set channel_max_rect;
+    channel_max_rect += channel_shape;
+    std::vector<Rectangle> max_rects;
+    channel_max_rect.get_rectangles(max_rects);
 
-    odb::Rect area(xl(rect), yl(rect), xh(rect), yh(rect));
+    odb::Rect area;
+    for (const auto& max_rect : max_rects) {
+      const odb::Rect max_area(xl(max_rect), yl(max_rect), xh(max_rect), yh(max_rect));
+      if (target->isHorizontal()) {
+        if (area.dy() < max_area.dy()) {
+          area = max_area;
+        }
+      } else {
+        if (area.dx() < max_area.dx()) {
+          area = max_area;
+        }
+      }
+    }
+
     if (!area.intersects(grid_core)) {
       continue;
     }
+
     RepairChannelArea channel{area.intersect(grid_core),
                               odb::Rect(),
                               target,
@@ -1273,6 +1290,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     for (auto* shape : shapes_used) {
       const auto& shape_rect = shape->getRect();
       if (channel.area.overlaps(shape_rect)) {
+        channel.area.merge(shape_rect);
         channel.obs_area.merge(shape_rect);
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
