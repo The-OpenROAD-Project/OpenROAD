@@ -97,6 +97,7 @@ void Straps::checkLayerSpecifications() const
   layer.checkIfManufacturingGrid(width_, getLogger(), "Width");
   layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
   layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
+  layer.checkIfManufacturingGrid(offset_, getLogger(), "Offset");
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {
