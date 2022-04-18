@@ -38,8 +38,6 @@
 #include <array>
 #include <string>
 
-#include "SteinerTree.hh"
-
 #include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
@@ -66,6 +64,7 @@ using utl::Logger;
 using gui::Gui;
 
 using odb::Rect;
+using odb::Point;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbMaster;
@@ -119,10 +118,13 @@ using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
 using sta::PathExpanded;
+using sta::PinSeq;
 
 class BufferedNet;
 enum class BufferedNetType;
 class SteinerRenderer;
+class SteinerTree;
+typedef int SteinerPt;
 
 class NetHash
 {

@@ -38,6 +38,7 @@
 #include <cstdint>
 
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -85,6 +86,7 @@ using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
 using sta::dbNetwork;
+using sta::Network;
 using sta::stringEq;
 
 using rsz::Resizer;
