@@ -419,7 +419,7 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
       continue;
     }
     inst->getLocation(x, y);
-    int l = m_bottom_layer;  // atach to the bottom most routing layer
+    int l = m_bottom_layer;  // attach to the bottom most routing layer
     Node* node_J = m_Gmat->GetNode(x, y, l, true);
     NodeLoc node_loc = node_J->GetLoc();
     if (abs(node_loc.first - x) > m_node_density ||
@@ -445,184 +445,345 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
   return true;
 }
 
-//! Function to create a G matrix using the nodes
-bool IRSolver::CreateGmat(bool connection_only) {
-  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Creating G matrix");
-  vector<Node*> node_vector;
-  dbTech* tech = m_db->getTech();
-  // dbSet<dbTechLayer>           layers = tech->getLayers();
-  dbSet<dbTechLayer>::iterator litr;
-  int unit_micron = tech->getDbUnitsPerMicron();
-  int num_routing_layers = tech->getRoutingLayerCount();
-
-  m_Gmat = new GMat(num_routing_layers, m_logger);
-  dbChip* chip = m_db->getChip();
-  dbBlock* block = chip->getBlock();
-  dbNet* power_net = block->findNet(m_power_net.data());
-  if (power_net == NULL) {
-    m_logger->error(utl::PSM, 27,
-                    "Cannot find net {} in the design. Please provide a valid "
-                    "VDD/VSS net.",
-                    m_power_net);
-  }
-  m_power_net_type = power_net->getSigType();
-  vector<dbNet*> power_nets;
-  int num_wires = 0;
-  debugPrint(m_logger, utl::PSM, "G Matrix", 1,
-             "Extracting power stripes on net {}", power_net->getName());
-  power_nets.push_back(power_net);
-
-  if (power_nets.size() == 0) {
-    m_logger->error(
-        utl::PSM, 29,
-        "No power stripes found in design. Power grid checker will not run.");
-  }
-  vector<dbNet*>::iterator vIter;
-  for (vIter = power_nets.begin(); vIter != power_nets.end(); ++vIter) {
-    dbNet* curDnet = *vIter;
-    dbSet<dbSWire> swires = curDnet->getSWires();
-    dbSet<dbSWire>::iterator sIter;
-    for (sIter = swires.begin(); sIter != swires.end(); ++sIter) {
-      dbSWire* curSWire = *sIter;
-      dbSet<dbSBox> wires = curSWire->getWires();
-      dbSet<dbSBox>::iterator wIter;
-      for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        num_wires++;
-        dbSBox* curWire = *wIter;
-        int l;
-        dbTechLayerDir::Value layer_dir;
-        if (curWire->isVia()) {
-          dbTechLayer* via_layer;
-          if (curWire->getBlockVia()) {
-            via_layer = curWire->getBlockVia()->getTopLayer();
-          } else {
-            via_layer = curWire->getTechVia()->getTopLayer();
-          }
-          l = via_layer->getRoutingLevel();
-          layer_dir = via_layer->getDirection();
+//! Function to find and store the upper and lower PDN layers and return a list
+//of wires for all PDN tasks
+vector<dbSBox*> IRSolver::FindPdnWires(dbNet* power_net) {
+  vector<dbSBox*> power_wires;
+  dbSet<dbSWire> swires = power_net->getSWires();
+  dbSet<dbSWire>::iterator sIter;
+  // Iterate through all wires till we reach the lowest abstraction level
+  for (sIter = swires.begin(); sIter != swires.end(); ++sIter) {
+    dbSWire* curSWire = *sIter;
+    dbSet<dbSBox> wires = curSWire->getWires();
+    dbSet<dbSBox>::iterator wIter;
+    for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
+      dbSBox* curWire = *wIter;
+      //Store wires in an easy to access format as we reuse it multiple times
+      power_wires.push_back(curWire);
+      int l;
+      dbTechLayerDir::Value layer_dir;
+      // If the wire is a via get extract the top layer
+      // We assume the bottom most layer must have power stripes. 
+      if (curWire->isVia()) {
+        dbTechLayer* via_layer;
+        if (curWire->getBlockVia()) {
+          via_layer = curWire->getBlockVia()->getTopLayer();
         } else {
-          dbTechLayer* wire_layer = curWire->getTechLayer();
-          l = wire_layer->getRoutingLevel();
-          layer_dir = wire_layer->getDirection();
-          if (l < m_bottom_layer) {
-            m_bottom_layer = l;
-            m_bottom_layer_dir = layer_dir;
-          }
+          via_layer = curWire->getTechVia()->getTopLayer();
         }
-        if (l > m_top_layer) {
-          m_top_layer = l;
-          m_top_layer_dir = layer_dir;
+        l = via_layer->getRoutingLevel();
+        layer_dir = via_layer->getDirection();
+      // If the wire is a power stripe extract the bottom and bottom layer
+      } else {
+        dbTechLayer* wire_layer = curWire->getTechLayer();
+        l = wire_layer->getRoutingLevel();
+        layer_dir = wire_layer->getDirection();
+        if (l < m_bottom_layer) {
+          m_bottom_layer = l;
+          m_bottom_layer_dir = layer_dir;
         }
+      }
+      if (l > m_top_layer) {
+        m_top_layer = l;
+        m_top_layer_dir = layer_dir;
       }
     }
   }
-  for (vIter = power_nets.begin(); vIter != power_nets.end(); ++vIter) {
-    dbNet* curDnet = *vIter;
-    dbSet<dbSWire> swires = curDnet->getSWires();
-    dbSet<dbSWire>::iterator sIter;
-    for (sIter = swires.begin(); sIter != swires.end(); ++sIter) {
-      dbSWire* curSWire = *sIter;
-      dbSet<dbSBox> wires = curSWire->getWires();
-      dbSet<dbSBox>::iterator wIter;
-      for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        dbSBox* curWire = *wIter;
-        if (curWire->isVia()) {
-          bool check_params;
-          dbBox* via_bBox;
-          dbViaParams params;
-          dbTechLayer* via_bottom_layer;
-          dbTechLayer* via_top_layer;
-          if (curWire->getBlockVia()) {
-            dbVia* via = curWire->getBlockVia();
-            via_bBox = via->getBBox();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
-            via_top_layer = via->getTopLayer();
-            via_bottom_layer = via->getBottomLayer();
-          } else {
-            dbTechVia* via = curWire->getTechVia();
-            via_bBox = via->getBBox();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
-            via_top_layer = via->getTopLayer();
-            via_bottom_layer = via->getBottomLayer();
-          }
-          BBox bBox =
-              make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
-          int x, y;
-          curWire->getViaXY(x, y);
-          // TODO: Using a single node for a via requires that the vias are
-          // stacked and not staggered, i.e., V1 via cut must overlap either V2
-          // via cut or enclosure and connections cannot be made through
-          // enclosures only.
-          int l = via_bottom_layer->getRoutingLevel();
-          if (m_bottom_layer != l) {  // do not set for bottom layers
-            m_Gmat->SetNode(x, y, l, bBox);
-          }
-          l = via_top_layer->getRoutingLevel();
-          if (m_bottom_layer != l) {  // do not set for bottom layers
-            m_Gmat->SetNode(x, y, l, bBox);
+  // return the list of wires to be used in all subsequent loops
+  return power_wires;
+}
+
+
+//! Function to create the nodes of the G matrix
+void  IRSolver::CreateGmatNodes(vector<dbSBox*> power_wires ) {
+  for (auto curWire: power_wires){
+    // For a Via we create the nodes at the top and bottom ends of the via
+    if (curWire->isVia()) {
+      bool check_params;
+      dbBox* via_bBox;
+      dbViaParams params;
+      dbTechLayer* via_bottom_layer;
+      dbTechLayer* via_top_layer;
+      if (curWire->getBlockVia()) {
+        dbVia* via = curWire->getBlockVia();
+        via_bBox = via->getBBox();
+        check_params = via->hasParams();
+        if (check_params) {
+          via->getViaParams(params);
+        }
+        via_top_layer = via->getTopLayer();
+        via_bottom_layer = via->getBottomLayer();
+      } else {
+        dbTechVia* via = curWire->getTechVia();
+        via_bBox = via->getBBox();
+        check_params = via->hasParams();
+        if (check_params) {
+          via->getViaParams(params);
+        }
+        via_top_layer = via->getTopLayer();
+        via_bottom_layer = via->getBottomLayer();
+      }
+      BBox bBox =
+          make_pair((via_bBox->getDX()) / 2, (via_bBox->getDY()) / 2);
+      int x, y;
+      curWire->getViaXY(x, y);
+      // TODO: Using a single node for a via requires that the vias are
+      // stacked and not staggered, i.e., V1 via cut must overlap either V2
+      // via cut or enclosure and connections cannot be made through
+      // enclosures only.
+      int l = via_bottom_layer->getRoutingLevel();
+      if (m_bottom_layer != l) {  // do not set for bottom layers
+        m_Gmat->SetNode(x, y, l, bBox);
+      }
+      l = via_top_layer->getRoutingLevel();
+      if (m_bottom_layer != l) {  // do not set for bottom layers
+        m_Gmat->SetNode(x, y, l, bBox);
+      }
+    // For a stripe we create nodes at the ends of the stripes and at a fixed
+    // frequency in the lowermost layer.
+    } else {
+      int x_loc1, x_loc2, y_loc1, y_loc2;
+      dbTechLayer* wire_layer = curWire->getTechLayer();
+      int l = wire_layer->getRoutingLevel();
+      dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
+      if (l == m_bottom_layer) {
+        layer_dir = dbTechLayerDir::Value::HORIZONTAL;
+      }
+      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+        y_loc1 = (curWire->yMin() + curWire->yMax()) / 2;
+        y_loc2 = (curWire->yMin() + curWire->yMax()) / 2;
+        x_loc1 = curWire->xMin();
+        x_loc2 = curWire->xMax();
+      } else {
+        x_loc1 = (curWire->xMin() + curWire->xMax()) / 2;
+        x_loc2 = (curWire->xMin() + curWire->xMax()) / 2;
+        y_loc1 = curWire->yMin();
+        y_loc2 = curWire->yMax();
+      }
+      // special case for bottom layers we design a dense grid at a fixed
+      // frequency
+      if (l == m_bottom_layer) {  
+        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+          int x_i;
+          x_loc1 = (x_loc1 / m_node_density) *
+                   m_node_density;  // quantize the horizontal direction
+          x_loc2 = (x_loc2 / m_node_density) *
+                   m_node_density;  // quantize the horizontal direction
+          for (x_i = x_loc1; x_i <= x_loc2; x_i = x_i + m_node_density) {
+            m_Gmat->SetNode(x_i, y_loc1, l, make_pair(0, 0));
           }
         } else {
-          int x_loc1, x_loc2, y_loc1, y_loc2;
-          dbTechLayer* wire_layer = curWire->getTechLayer();
-          int l = wire_layer->getRoutingLevel();
-          dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
-          if (l == m_bottom_layer) {
-            layer_dir = dbTechLayerDir::Value::HORIZONTAL;
-          }
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            y_loc1 = (curWire->yMin() + curWire->yMax()) / 2;
-            y_loc2 = (curWire->yMin() + curWire->yMax()) / 2;
-            x_loc1 = curWire->xMin();
-            x_loc2 = curWire->xMax();
-          } else {
-            x_loc1 = (curWire->xMin() + curWire->xMax()) / 2;
-            x_loc2 = (curWire->xMin() + curWire->xMax()) / 2;
-            y_loc1 = curWire->yMin();
-            y_loc2 = curWire->yMax();
-          }
-          if (l == m_bottom_layer) {  // special case for bottom layers
-                                   // we design a dense grid
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              int x_i;
-              x_loc1 = (x_loc1 / m_node_density) *
-                       m_node_density;  // quantize the horizontal direction
-              x_loc2 = (x_loc2 / m_node_density) *
-                       m_node_density;  // quantize the horizontal direction
-              for (x_i = x_loc1; x_i <= x_loc2; x_i = x_i + m_node_density) {
-                m_Gmat->SetNode(x_i, y_loc1, l, make_pair(0, 0));
-              }
-            } else {
-              y_loc1 = (y_loc1 / m_node_density) *
-                       m_node_density;  // quantize the vertical direction
-              y_loc2 = (y_loc2 / m_node_density) *
-                       m_node_density;  // quantize the vertical direction
-              int y_i;
-              for (y_i = y_loc1; y_i <= y_loc2; y_i = y_i + m_node_density) {
-                m_Gmat->SetNode(x_loc1, y_i, l, make_pair(0, 0));
-              }
-            }
-          } else {  // add end nodes
-            m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
-            m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
+          y_loc1 = (y_loc1 / m_node_density) *
+                   m_node_density;  // quantize the vertical direction
+          y_loc2 = (y_loc2 / m_node_density) *
+                   m_node_density;  // quantize the vertical direction
+          int y_i;
+          for (y_i = y_loc1; y_i <= y_loc2; y_i = y_i + m_node_density) {
+            m_Gmat->SetNode(x_loc1, y_i, l, make_pair(0, 0));
           }
         }
+      //For all other layers we just create the end nodes
+      } else {  
+        m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
+        m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
       }
     }
   }
+}
 
-  if (m_Gmat->GetNumNodes() == 0) {
-    m_logger->warn(utl::PSM, 70, "Net {} has no nodes and will be skipped",
-                   m_power_net);
-    return true;
+//! Function to create the connections of the G matrix
+void  IRSolver::CreateGmatConnections(vector<dbSBox*> power_wires,
+                                      bool connection_only) {
+  for (auto curWire: power_wires) {
+    // For vias we make 3 connections
+    // 1) From the top node to the bottom node
+    // 2) Nodes within the top enclosure
+    // 3) Nodes within the bottom enclosure
+    if (curWire->isVia()) {
+      bool check_params;
+      dbViaParams params;
+      dbTechLayer* via_top_layer;
+      dbTechLayer* via_bottom_layer;
+      if (curWire->getBlockVia()) {
+        dbVia* via = curWire->getBlockVia();
+        check_params = via->hasParams();
+        if (check_params) {
+          via->getViaParams(params);
+        }
+        via_top_layer = via->getTopLayer();
+        via_bottom_layer = via->getBottomLayer();
+      } else {
+        dbTechVia* via = curWire->getTechVia();
+        check_params = via->hasParams();
+        if (check_params) {
+          via->getViaParams(params);
+        }
+        via_top_layer = via->getTopLayer();
+        via_bottom_layer = via->getBottomLayer();
+      }
+      int num_via_rows = 1;
+      int num_via_cols = 1;
+      int x_cut_size = 0;
+      int y_cut_size = 0;
+      int x_bottom_enclosure = 0;
+      int y_bottom_enclosure = 0;
+      int x_top_enclosure = 0;
+      int y_top_enclosure = 0;
+      if (check_params) {
+        num_via_rows = params.getNumCutRows();
+        num_via_cols = params.getNumCutCols();
+        x_cut_size = params.getXCutSize();
+        y_cut_size = params.getYCutSize();
+        x_bottom_enclosure = params.getXBottomEnclosure();
+        y_bottom_enclosure = params.getYBottomEnclosure();
+        x_top_enclosure = params.getXTopEnclosure();
+        y_top_enclosure = params.getYTopEnclosure();
+      }
+      int x, y;
+      curWire->getViaXY(x, y);
+      int l = via_bottom_layer->getRoutingLevel();
+      
+      // Find the resistance of the via
+      double R = via_bottom_layer->getUpperLayer()->getResistance();
+      R = R / (num_via_rows * num_via_cols);
+      if (!CheckValidR(R) && !connection_only) {
+        m_logger->error(utl::PSM, 35,
+                        "{} resistance not found in DB. Check the LEF or "
+                        "set it using the 'set_layer_rc' command.",
+                        via_bottom_layer->getName());
+      }
+      // Find the nodes of the via
+      bool top_or_bottom = ((l == m_bottom_layer));
+      Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
+      NodeLoc node_loc = node_bot->GetLoc();
+      if (abs(node_loc.first - x) > m_node_density ||
+          abs(node_loc.second - y) > m_node_density) {
+        m_logger->warn(utl::PSM, 32,
+                       "Node at ({}, {}) and layer {} moved from ({}, {}).",
+                       node_loc.first, node_loc.second, l, x, y);
+      }
+
+      l = via_top_layer->getRoutingLevel();
+      top_or_bottom = ((l == m_bottom_layer));
+      Node* node_top = m_Gmat->GetNode(x, y, l, top_or_bottom);
+      node_loc = node_top->GetLoc();
+      if (abs(node_loc.first - x) > m_node_density ||
+          abs(node_loc.second - y) > m_node_density) {
+        m_logger->warn(utl::PSM, 33,
+                       "Node at ({}, {}) and layer {} moved from ({}, {}).",
+                       node_loc.first, node_loc.second, l, x, y);
+      }
+      // Make a connection between the top and bottom nodes of the via
+      if (node_bot == nullptr || node_top == nullptr) {
+        m_logger->error(
+            utl::PSM, 34,
+            "Unexpected condition. Null pointer received for node.");
+      } else {
+        if (R <= 1e-12) {  // if the resistance was not set.
+          m_Gmat->SetConductance(node_bot, node_top, 0);
+        } else {
+          m_Gmat->SetConductance(node_bot, node_top, 1 / R);
+        }
+      }
+      // Create the connections in the bottom enclosure
+      dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
+      l = via_bottom_layer->getRoutingLevel();
+      if (l != m_bottom_layer) {
+        double rho = via_bottom_layer->getResistance();
+        if (!CheckValidR(rho) && !connection_only) {
+          m_logger->error(utl::PSM, 36,
+                          "Layer {} per-unit resistance not found in DB. "
+                          "Check the LEF or set it using the command "
+                          "'set_layer_rc -layer'.",
+                          via_bottom_layer->getName());
+        }
+        int x_loc1, x_loc2, y_loc1, y_loc2;
+        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+          y_loc1 = y - y_cut_size / 2;
+          y_loc2 = y + y_cut_size / 2;
+          x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
+          x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
+        } else {
+          y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
+          y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
+          x_loc1 = x - x_cut_size / 2;
+          x_loc2 = x + x_cut_size / 2;
+        }
+        m_Gmat->GenerateStripeConductance(via_bottom_layer->getRoutingLevel(),
+                                          layer_dir, x_loc1, x_loc2, y_loc1,
+                                          y_loc2, rho);
+      }
+      // Create the connections in the top enclosure
+      layer_dir = via_top_layer->getDirection();
+      l = via_top_layer->getRoutingLevel();
+      double rho = via_top_layer->getResistance();
+      if (!CheckValidR(rho) && !connection_only) {
+        m_logger->error(utl::PSM, 37,
+                        "Layer {} per-unit resistance not found in DB. "
+                        "Check the LEF or set it using the command "
+                        "'set_layer_rc -layer'.",
+                        via_top_layer->getName());
+      }
+      int x_loc1, x_loc2, y_loc1, y_loc2;
+      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+        y_loc1 = y - y_cut_size / 2;
+        y_loc2 = y + y_cut_size / 2;
+        x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
+        x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
+      } else {
+        y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
+        y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
+        x_loc1 = x - x_cut_size / 2;
+        x_loc2 = x + x_cut_size / 2;
+      }
+      m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
+                                        layer_dir, x_loc1, x_loc2, y_loc1,
+                                        y_loc2, rho);
+    // If it is a strip we create a connection between all the nodes in the
+    // stripe
+    } else {
+      dbTechLayer* wire_layer = curWire->getTechLayer();
+      int l = wire_layer->getRoutingLevel();
+      double rho = wire_layer->getResistance();
+      if (!CheckValidR(rho) && !connection_only) {
+        m_logger->error(utl::PSM, 66,
+                        "Layer {} per-unit resistance not found in DB. "
+                        "Check the LEF or set it using the command "
+                        "'set_layer_rc -layer'.",
+                        wire_layer->getName());
+      }
+      dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
+      if (l == m_bottom_layer) {  // ensure that the bottom layer(rail) is
+                                  // horizontal
+        layer_dir = dbTechLayerDir::Value::HORIZONTAL;
+      }
+      int x_loc1 = curWire->xMin();
+      int x_loc2 = curWire->xMax();
+      int y_loc1 = curWire->yMin();
+      int y_loc2 = curWire->yMax();
+      if (l == m_bottom_layer) {  // special case for bottom layer
+                               // we design a dense grid
+        if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+          x_loc1 = (x_loc1 / m_node_density) *
+                   m_node_density;  // quantize the horizontal direction
+          x_loc2 = (x_loc2 / m_node_density) *
+                   m_node_density;  // quantize the horizontal direction
+        } else {
+          y_loc1 = (y_loc1 / m_node_density) *
+                   m_node_density;  // quantize the vertical direction
+          y_loc2 = (y_loc2 / m_node_density) *
+                   m_node_density;  // quantize the vertical direction
+        }
+      }
+      m_Gmat->GenerateStripeConductance(wire_layer->getRoutingLevel(),
+                                        layer_dir, x_loc1, x_loc2, y_loc1,
+                              y_loc2, rho);
+    }
   }
+}
 
-  // insert c4 bumps as nodes
+//! Function to create the nodes for the c4 bumps
+int IRSolver::CreateC4Nodes(bool connection_only, int unit_micron) {
   int num_C4 = 0;
   for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
     int x = get<0>(m_C4Bumps[it]);
@@ -664,201 +825,57 @@ bool IRSolver::CreateGmat(bool connection_only) {
       num_C4++;
     }
   }
+  return num_C4;
+}
+
+
+//! Function to create a G matrix using the nodes
+bool IRSolver::CreateGmat(bool connection_only) {
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Creating G matrix");
+  vector<Node*> node_vector;
+  dbTech* tech = m_db->getTech();
+  dbSet<dbTechLayer>::iterator litr;
+  int unit_micron = tech->getDbUnitsPerMicron();
+  int num_routing_layers = tech->getRoutingLayerCount();
+
+  m_Gmat = new GMat(num_routing_layers, m_logger);
+  dbChip* chip = m_db->getChip();
+  dbBlock* block = chip->getBlock();
+  dbNet* power_net = block->findNet(m_power_net.data());
+  if (power_net == NULL) {
+    m_logger->error(utl::PSM, 27,
+                    "Cannot find net {} in the design. Please provide a valid "
+                    "VDD/VSS net.",
+                    m_power_net);
+  }
+  m_power_net_type = power_net->getSigType();
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1,
+             "Extracting power stripes on net {}", power_net->getName());
+
+  // Extract all power wires for the net and store the upper and lower layers
+  vector<dbSBox*> power_wires = FindPdnWires(power_net);
+
+  //Create all the nodes for the G matrix
+  CreateGmatNodes(power_wires); 
+
+  if (m_Gmat->GetNumNodes() == 0) {
+    m_logger->warn(utl::PSM, 70, "Net {} has no nodes and will be skipped",
+                   m_power_net);
+    return true;
+  }
+
+  // insert c4 bumps as nodes
+  int num_C4 = CreateC4Nodes(connection_only, unit_micron);
+
   // All new nodes must be inserted by this point
   // initialize G Matrix
   m_logger->info(utl::PSM, 31, "Number of PDN nodes on net {} = {}.",
                  m_power_net, m_Gmat->GetNumNodes());
   m_Gmat->InitializeGmatDok(num_C4);
-  for (vIter = power_nets.begin(); vIter != power_nets.end();
-       ++vIter) {  // only 1 is expected?
-    dbNet* curDnet = *vIter;
-    dbSet<dbSWire> swires = curDnet->getSWires();
-    dbSet<dbSWire>::iterator sIter;
-    for (sIter = swires.begin(); sIter != swires.end();
-         ++sIter) {  // only 1 is expected?
-      dbSWire* curSWire = *sIter;
-      dbSet<dbSBox> wires = curSWire->getWires();
-      dbSet<dbSBox>::iterator wIter;
-      for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        dbSBox* curWire = *wIter;
-        if (curWire->isVia()) {
-          bool check_params;
-          dbViaParams params;
-          dbTechLayer* via_top_layer;
-          dbTechLayer* via_bottom_layer;
-          if (curWire->getBlockVia()) {
-            dbVia* via = curWire->getBlockVia();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
-            via_top_layer = via->getTopLayer();
-            via_bottom_layer = via->getBottomLayer();
-          } else {
-            dbTechVia* via = curWire->getTechVia();
-            check_params = via->hasParams();
-            if (check_params) {
-              via->getViaParams(params);
-            }
-            via_top_layer = via->getTopLayer();
-            via_bottom_layer = via->getBottomLayer();
-          }
-          int num_via_rows = 1;
-          int num_via_cols = 1;
-          int x_cut_size = 0;
-          int y_cut_size = 0;
-          int x_bottom_enclosure = 0;
-          int y_bottom_enclosure = 0;
-          int x_top_enclosure = 0;
-          int y_top_enclosure = 0;
-          if (check_params) {
-            num_via_rows = params.getNumCutRows();
-            num_via_cols = params.getNumCutCols();
-            x_cut_size = params.getXCutSize();
-            y_cut_size = params.getYCutSize();
-            x_bottom_enclosure = params.getXBottomEnclosure();
-            y_bottom_enclosure = params.getYBottomEnclosure();
-            x_top_enclosure = params.getXTopEnclosure();
-            y_top_enclosure = params.getYTopEnclosure();
-          }
-          int x, y;
-          curWire->getViaXY(x, y);
-          int l = via_bottom_layer->getRoutingLevel();
 
-          double R = via_bottom_layer->getUpperLayer()->getResistance();
-          R = R / (num_via_rows * num_via_cols);
-          if (!CheckValidR(R) && !connection_only) {
-            m_logger->error(utl::PSM, 35,
-                            "{} resistance not found in DB. Check the LEF or "
-                            "set it using the 'set_layer_rc' command.",
-                            via_bottom_layer->getUpperLayer()->getName());
-          }
-          bool top_or_bottom = ((l == m_bottom_layer));
-          Node* node_bot = m_Gmat->GetNode(x, y, l, top_or_bottom);
-          NodeLoc node_loc = node_bot->GetLoc();
-          if (abs(node_loc.first - x) > m_node_density ||
-              abs(node_loc.second - y) > m_node_density) {
-            m_logger->warn(utl::PSM, 32,
-                           "Node at ({}, {}) and layer {} moved from ({}, {}).",
-                           node_loc.first, node_loc.second, l, x, y);
-          }
-
-          l = via_top_layer->getRoutingLevel();
-          top_or_bottom = ((l == m_bottom_layer));
-          Node* node_top = m_Gmat->GetNode(x, y, l, top_or_bottom);
-          node_loc = node_top->GetLoc();
-          if (abs(node_loc.first - x) > m_node_density ||
-              abs(node_loc.second - y) > m_node_density) {
-            m_logger->warn(utl::PSM, 33,
-                           "Node at ({}, {}) and layer {} moved from ({}, {}).",
-                           node_loc.first, node_loc.second, l, x, y);
-          }
-
-          if (node_bot == nullptr || node_top == nullptr) {
-            m_logger->error(
-                utl::PSM, 34,
-                "Unexpected condition. Null pointer received for node.");
-          } else {
-            if (R <= 1e-12) {  // if the resistance was not set.
-              m_Gmat->SetConductance(node_bot, node_top, 0);
-            } else {
-              m_Gmat->SetConductance(node_bot, node_top, 1 / R);
-            }
-          }
-
-          dbTechLayerDir::Value layer_dir = via_bottom_layer->getDirection();
-          l = via_bottom_layer->getRoutingLevel();
-          if (l != m_bottom_layer) {
-            double rho = via_bottom_layer->getResistance();
-            if (!CheckValidR(rho) && !connection_only) {
-              m_logger->error(utl::PSM, 36,
-                              "Layer {} per-unit resistance not found in DB. "
-                              "Check the LEF or set it using the command "
-                              "'set_layer_rc -layer'.",
-                              via_bottom_layer->getName());
-            }
-            int x_loc1, x_loc2, y_loc1, y_loc2;
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              y_loc1 = y - y_cut_size / 2;
-              y_loc2 = y + y_cut_size / 2;
-              x_loc1 = x - (x_bottom_enclosure + x_cut_size / 2);
-              x_loc2 = x + (x_bottom_enclosure + x_cut_size / 2);
-            } else {
-              y_loc1 = y - (y_bottom_enclosure + y_cut_size / 2);
-              y_loc2 = y + (y_bottom_enclosure + y_cut_size / 2);
-              x_loc1 = x - x_cut_size / 2;
-              x_loc2 = x + x_cut_size / 2;
-            }
-            m_Gmat->GenerateStripeConductance(via_bottom_layer->getRoutingLevel(),
-                                              layer_dir, x_loc1, x_loc2, y_loc1,
-                                              y_loc2, rho);
-          }
-          layer_dir = via_top_layer->getDirection();
-          l = via_top_layer->getRoutingLevel();
-          double rho = via_top_layer->getResistance();
-          if (!CheckValidR(rho) && !connection_only) {
-            m_logger->error(utl::PSM, 37,
-                            "Layer {} per-unit resistance not found in DB. "
-                            "Check the LEF or set it using the command "
-                            "'set_layer_rc -layer'.",
-                            via_top_layer->getName());
-          }
-          int x_loc1, x_loc2, y_loc1, y_loc2;
-          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-            y_loc1 = y - y_cut_size / 2;
-            y_loc2 = y + y_cut_size / 2;
-            x_loc1 = x - (x_top_enclosure + x_cut_size / 2);
-            x_loc2 = x + (x_top_enclosure + x_cut_size / 2);
-          } else {
-            y_loc1 = y - (y_top_enclosure + y_cut_size / 2);
-            y_loc2 = y + (y_top_enclosure + y_cut_size / 2);
-            x_loc1 = x - x_cut_size / 2;
-            x_loc2 = x + x_cut_size / 2;
-          }
-          m_Gmat->GenerateStripeConductance(via_top_layer->getRoutingLevel(),
-                                            layer_dir, x_loc1, x_loc2, y_loc1,
-                                            y_loc2, rho);
-        } else {
-          dbTechLayer* wire_layer = curWire->getTechLayer();
-          int l = wire_layer->getRoutingLevel();
-          double rho = wire_layer->getResistance();
-          if (!CheckValidR(rho) && !connection_only) {
-            m_logger->error(utl::PSM, 66,
-                            "Layer {} per-unit resistance not found in DB. "
-                            "Check the LEF or set it using the command "
-                            "'set_layer_rc -layer'.",
-                            wire_layer->getName());
-          }
-          dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
-          if (l == m_bottom_layer) {  // ensure that the bottom layer(rail) is
-                                      // horizontal
-            layer_dir = dbTechLayerDir::Value::HORIZONTAL;
-          }
-          int x_loc1 = curWire->xMin();
-          int x_loc2 = curWire->xMax();
-          int y_loc1 = curWire->yMin();
-          int y_loc2 = curWire->yMax();
-          if (l == m_bottom_layer) {  // special case for bottom layer
-                                   // we design a dense grid
-            if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-              x_loc1 = (x_loc1 / m_node_density) *
-                       m_node_density;  // quantize the horizontal direction
-              x_loc2 = (x_loc2 / m_node_density) *
-                       m_node_density;  // quantize the horizontal direction
-            } else {
-              y_loc1 = (y_loc1 / m_node_density) *
-                       m_node_density;  // quantize the vertical direction
-              y_loc2 = (y_loc2 / m_node_density) *
-                       m_node_density;  // quantize the vertical direction
-            }
-          }
-          m_Gmat->GenerateStripeConductance(wire_layer->getRoutingLevel(),
-                                            layer_dir, x_loc1, x_loc2, y_loc1,
-                                            y_loc2, rho);
-        }
-      }
-    }
-  }
+  // Iterate through all the wires to populate condactance matrix
+  CreateGmatConnections(power_wires, connection_only);
+  
   debugPrint(m_logger, utl::PSM, "G Matrix", 1,
              "G matrix created successfully.");
   return true;
