@@ -1069,7 +1069,7 @@ bool IRSolver::Build() {
     res = CreateGmat();
     if (m_Gmat->GetNumNodes() == 0) {
       m_connection = true;
-      return true;
+      return false;
     }
   }
   if (res) {
