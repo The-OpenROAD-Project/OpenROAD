@@ -487,19 +487,10 @@ void PdnGen::makeRegionVoltageDomain(
 }
 
 void PdnGen::setVoltageDomainSwitchedPower(
-    const std::string& name,
+    VoltageDomain *voltage_domain,
     odb::dbNet* switched_power)
 {
-  for (const auto& domain: domains_) {
-    if (domain->getName() == name) {
-      domain->setSwitchedPower(switched_power);
-      return;
-    }
-  }
-  logger_->error(utl::PDN,
-		 195,
-		 "Voltage domain {} does not exist.",
-		 name);
+  voltage_domain->setSwitchedPower(switched_power);
 }
 
 std::vector<Grid*> PdnGen::getGrids() const

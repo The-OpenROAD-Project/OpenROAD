@@ -76,11 +76,12 @@ record_tests {
   asap7_vias_dont_use
 
   existing
+
+  power_switch.api
+  power_switch.daisy.api
 }
 
 set extra_tests {
-  power_switch.api
-  power_switch.daisy.api
   test_gcd.api
   test_gcd_dual_rails.api
   test_gcd.invert_viarule.api

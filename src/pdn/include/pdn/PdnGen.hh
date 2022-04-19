@@ -121,7 +121,7 @@ class PdnGen
                                odb::dbNet* ground,
                                const std::vector<odb::dbNet*>& secondary_nets,
                                odb::dbRegion* region);
-  void setVoltageDomainSwitchedPower(const std::string& name,
+  void setVoltageDomainSwitchedPower(VoltageDomain* voltage_domain,
 		                     odb::dbNet* switched_power);
 
   // Grids

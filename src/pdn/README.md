@@ -100,7 +100,7 @@ set_voltage_domain [-name name] \
                    -ground ground_net \
                    [-region region_name] \
                    [-secondary_power secondary_power_net] \
-                   [-switched_power <switched_power_net>] \
+                   [-switched_power <switched_power_net>]
 ```
 
 ##### Options
@@ -231,11 +231,11 @@ define_pdn_grid [-name <name>] \
 | `-power_control_network` | Defines the structure of the power control signal network. Choose from STAR, or DAISY |
 
 
-The `-switch_cell` argument is used to specify the name of a coarse-grain power switch cell that is to be inserted whereever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch` command.
+The `-switch_cell` argument is used to specify the name of a coarse-grain power switch cell that is to be inserted whereever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch_cell` command.
 
 The `-power_control` argument specifies the name of the power control signal that must be connected to the inserted power control cells.
 
-The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the [define_power_switch](define_power_switch.md)  command defines an acknowledge pin for th switch.
+The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch.
 
 #### Add straps / stripes
 

@@ -1,11 +1,12 @@
+# test the insertion of power switches into a design. The power switch control signals are connected using a daisy chain pattern
 source "helpers.tcl"
 
-read_lef ../../../test/sky130hd/sky130hd.tlef 
-read_lef ../../../test/sky130hd/sky130_fd_sc_hd_merged.lef 
+read_lef sky130hd/sky130hd.tlef 
+read_lef sky130hd/sky130_fd_sc_hd_merged.lef 
 
-read_lef sky130hd/power_switch.lef 
+read_lef sky130_power_switch/power_switch.lef 
 
-read_def power_switch/2_5_floorplan_tapcell.def
+read_def sky130_power_switch/floorplan.def
 
 set ::halo 4
 

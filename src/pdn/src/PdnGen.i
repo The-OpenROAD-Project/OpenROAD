@@ -161,7 +161,7 @@ void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* ground,
 void set_domain_switched_power(const char* name, odb::dbNet* switched_power)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setVoltageDomainSwitchedPower(name, switched_power);
+  pdngen->setVoltageDomainSwitchedPower(findDomain(name), switched_power);
 }
 
 void reset()

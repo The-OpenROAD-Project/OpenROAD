@@ -226,6 +226,7 @@ proc set_voltage_domain {args} {
     set db_net [[ord::get_db_block] findNet $switched_power_net_name]
     if {$db_net == "NULL"} {
       set db_net [odb::dbNet_create [ord::get_db_block] $switched_power_net_name]
+      $db_net setSpecial
     }
     pdn::set_domain_switched_power $name $db_net
   }
@@ -266,22 +267,20 @@ proc define_pdn_grid {args} {
   }
 }
 
-sta::define_cmd_args "define_power_switch_cell" {[-name <name>] \
-                                                 [-control <control_name>] \
-                                                 [-acknowledge <acknowledge_name>] \
-                                                 [-power_switchable <power_switchable_net_name>] \
-                                                 [-power <power_net_name> ] \
-                                                 [-ground <ground_net_name>] }
+sta::define_cmd_args "define_power_switch_cell" {-name <name> \
+                                                 -control <control_pin> \
+                                                 [-acknowledge <acknowledge_pin>] \
+                                                 -power_switchable <power_switchable_pin> \
+                                                 -power <power_pin> \
+                                                 -ground <ground_pin> }
 
 proc define_power_switch_cell {args} {
-  pdngen::check_design_state
-
   sta::parse_key_args "define_power_switch_cell" args \
     keys {-name -control -acknowledge -power_switchable -power -ground} 
 
-  if {[llength $args] > 0} {
-    utl::error PDN 1182 "Unexpected argument [lindex $args 0] for define_power_switch_cell command."
-  }
+  sta::check_argc_eq0 "define_power_switch_cell" $args
+
+  pdn::check_design_state "define_power_switch_cell"
 
   if {![info exists keys(-name)]} {
     utl::error PDN 1183 "The -name argument is required."
@@ -289,10 +288,6 @@ proc define_power_switch_cell {args} {
 
   if {![info exists keys(-control)]} {
     utl::error PDN 1184 "The -control argument is required."
-  }
-
-  if {![info exists keys(-acknowledge)]} {
-    utl::error PDN 1185 "The -acknowledge argument is required."
   }
 
   if {![info exists keys(-power_switchable)]} {
@@ -305,10 +300,6 @@ proc define_power_switch_cell {args} {
 
   if {![info exists keys(-ground)]} {
     utl::error PDN 1188 "The -ground argument is required."
-  }
-
-  if {[llength $args] > 0} {
-    utl::error PDN 1189 "Unrecognized argument [lindex $args 0] for define_power_switch_cell."
   }
 
   pdngen::define_power_switch_cell {*}[array get keys]
