@@ -715,7 +715,7 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
       : network_->net(drvr_pin);
     const char *dbg_net_name = nullptr;
     bool debug = net && dbg_net_name
-      && sta::stringEq(network_->pathName(net), dbg_net_name);
+      && sta::stringEq(sdc_network_->pathName(net), dbg_net_name);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
@@ -1242,7 +1242,7 @@ Resizer::repairNet(SteinerTree *tree,
   // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
-  float r_drvr = max(driveResistance(drvr_pin), bufferDriveResistance(buffer_cell));
+  float r_drvr = driveResistance(drvr_pin);
   // Elmore factor for 20-80% slew thresholds.
   constexpr float k_threshold = 1.39;
   float load_slew = (r_drvr + wire_length1 * wire_res) * load_cap * k_threshold;
@@ -1441,10 +1441,7 @@ Resizer::repairNet(SteinerTree *tree,
         wire_length1 = dbuToMeters(wire_length);
         load_cap = pin_cap + wire_length1 * wire_cap;
         load_slew = (r_drvr + wire_length1 * wire_res) * load_cap * k_threshold;
-        if (max_load_slew == INF)
-          buffer_cell = findTargetCell(buffer_lowest_drive_, load_cap, false);
-        else
-          buffer_cell = findBufferUnderSlew(max_load_slew, load_cap);
+        buffer_cell = findTargetCell(buffer_lowest_drive_, load_cap, false);
         debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
                    "", level,
                    units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
