@@ -1848,13 +1848,17 @@ bool GenerateViaGenerator::isSetupValid(odb::dbTechLayer* lower,
 TechViaGenerator::TechViaGenerator(utl::Logger* logger,
                                    odb::dbTechVia* via,
                                    const odb::Rect& lower_rect,
-                                   const odb::Rect& upper_rect)
+                                   const Constraint& lower_constraint,
+                                   const odb::Rect& upper_rect,
+                                   const Constraint& upper_constraint)
     : ViaGenerator(logger, lower_rect, upper_rect),
       via_(via),
       cuts_(0),
       bottom_(via_->getBottomLayer()),
       cut_(nullptr),
-      top_(via_->getTopLayer())
+      top_(via_->getTopLayer()),
+      lower_constraint_(lower_constraint),
+      upper_constraint_(upper_constraint)
 {
   for (auto* box : via_->getBoxes()) {
     auto* layer = box->getTechLayer();
@@ -1913,12 +1917,12 @@ bool TechViaGenerator::fitsShapes() const
   odb::Rect top_rect = via.getViaRect(true, false, true);
 
   transform.apply(bottom_rect);
-  if (!mostlyContains(lower_rect, bottom_rect)) {
+  if (!mostlyContains(lower_rect, bottom_rect, lower_constraint_)) {
     return false;
   }
 
   transform.apply(top_rect);
-  if (!mostlyContains(upper_rect, top_rect)) {
+  if (!mostlyContains(upper_rect, top_rect, upper_constraint_)) {
     return false;
   }
 
@@ -1927,28 +1931,40 @@ bool TechViaGenerator::fitsShapes() const
 
 // check if shape is contains on three sides
 bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
-                                      const odb::Rect& small_shape) const
+                                      const odb::Rect& small_shape,
+                                      const Constraint& contraint) const
 {
   const bool inside_top = full_shape.yMax() >= small_shape.yMax();
   const bool inside_right = full_shape.xMax() >= small_shape.xMax();
   const bool inside_bottom = full_shape.yMin() <= small_shape.yMin();
   const bool inside_left = full_shape.xMin() <= small_shape.xMin();
 
-  int contains = 0;
-  if (inside_top) {
-    contains++;
-  }
-  if (inside_right) {
-    contains++;
-  }
-  if (inside_bottom) {
-    contains++;
-  }
-  if (inside_left) {
-    contains++;
-  }
+  const bool inside_x = inside_right && inside_left;
+  const bool inside_y = inside_top && inside_bottom;
 
-  return contains > 2;
+  if (contraint.must_fit_x && contraint.must_fit_y) {
+    return inside_x && inside_y;
+  } else if (contraint.must_fit_x) {
+    return inside_x;
+  } else if (contraint.must_fit_y) {
+    return inside_y;
+  } else {
+    int contains = 0;
+    if (inside_top) {
+      contains++;
+    }
+    if (inside_right) {
+      contains++;
+    }
+    if (inside_bottom) {
+      contains++;
+    }
+    if (inside_left) {
+      contains++;
+    }
+
+    return contains > 2;
+  }
 }
 
 void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top) const
@@ -2071,7 +2087,7 @@ void Via::writeToDb(odb::dbSWire* wire, odb::dbBlock* block) const
   }
 
   DbVia::ViaLayerShape shapes;
-  connect_->makeVia(wire, lower_->getRect(), upper_->getRect(), type, shapes);
+  connect_->makeVia(wire, lower_, upper_, type, shapes);
 
   auto check_shapes = [this](const ShapePtr& shape, const std::set<odb::Rect>& via_shapes) {
     const odb::Rect& rect = shape->getRect();

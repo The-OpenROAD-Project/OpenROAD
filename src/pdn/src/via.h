@@ -376,6 +376,11 @@ class DbGenerateDummyVia : public DbVia
 class ViaGenerator
 {
  public:
+  struct Constraint {
+    bool must_fit_x;
+    bool must_fit_y;
+  };
+
   ViaGenerator(utl::Logger* logger, const odb::Rect& lower_rect, const odb::Rect& upper_rect);
   virtual ~ViaGenerator() = default;
 
@@ -567,7 +572,9 @@ class TechViaGenerator : public ViaGenerator
   TechViaGenerator(utl::Logger* logger,
                    odb::dbTechVia* via,
                    const odb::Rect& lower_rect,
-                   const odb::Rect& upper_rect);
+                   const Constraint& lower_constraint,
+                   const odb::Rect& upper_rect,
+                   const Constraint& upper_constraint);
 
   virtual odb::dbTechLayer* getBottomLayer() const override { return bottom_; }
   virtual odb::dbTechLayer* getTopLayer() const override { return top_; }
@@ -597,9 +604,13 @@ class TechViaGenerator : public ViaGenerator
   odb::dbTechLayer* cut_;
   odb::dbTechLayer* top_;
 
+  Constraint lower_constraint_;
+  Constraint upper_constraint_;
+
   bool fitsShapes() const;
   bool mostlyContains(const odb::Rect& full_shape,
-                      const odb::Rect& small_shape) const;
+                      const odb::Rect& small_shape,
+                      const Constraint& constraint) const;
 };
 
 class Via

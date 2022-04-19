@@ -410,11 +410,13 @@ void Connect::report() const
 }
 
 void Connect::makeVia(odb::dbSWire* wire,
-                      const odb::Rect& lower_rect,
-                      const odb::Rect& upper_rect,
+                      const ShapePtr& lower,
+                      const ShapePtr& upper,
                       odb::dbWireShapeType type,
                       DbVia::ViaLayerShape& shapes)
 {
+  const odb::Rect& lower_rect = lower->getRect();
+  const odb::Rect& upper_rect = upper->getRect();
   const odb::Rect intersection = lower_rect.intersect(upper_rect);
 
   const std::pair<int, int> via_index
@@ -452,8 +454,37 @@ void Connect::makeVia(odb::dbSWire* wire,
       auto* l0 = layers[i - 1];
       auto* l1 = layers[i];
 
+      ViaGenerator::Constraint lower_constraint{false, false};
+      if (lower->getLayer() == l0) {
+        if (!lower->isModifiable()) {
+          // lower is not modifiable to all sides must fit
+          lower_constraint.must_fit_x = true;
+          lower_constraint.must_fit_y = true;
+        } else {
+          lower_constraint.must_fit_x = !lower->isHorizontal();
+          lower_constraint.must_fit_y = !lower->isVertical();
+        }
+      }
+      ViaGenerator::Constraint upper_constraint{false, false};
+      if (upper->getLayer() == l1) {
+        if (!upper->isModifiable()) {
+          // upper is not modifiable to all sides must fit
+          upper_constraint.must_fit_x = true;
+          upper_constraint.must_fit_y = true;
+        } else {
+          upper_constraint.must_fit_x = !upper->isHorizontal();
+          upper_constraint.must_fit_y = !upper->isVertical();
+        }
+      }
+
       auto* new_via = makeSingleLayerVia(
-          wire->getBlock(), l0, via_lower_rect, l1, via_upper_rect);
+          wire->getBlock(),
+          l0,
+          via_lower_rect,
+          lower_constraint,
+          l1,
+          via_upper_rect,
+          upper_constraint);
       if (new_via == nullptr) {
         // no via made, so build dummy via for warning
         for (auto* stack_via : stack) {
@@ -545,8 +576,10 @@ DbVia* Connect::generateDbVia(
 DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                                    odb::dbTechLayer* lower,
                                    const odb::Rect& lower_rect,
+                                   const ViaGenerator::Constraint& lower_constraint,
                                    odb::dbTechLayer* upper,
-                                   const odb::Rect& upper_rect) const
+                                   const odb::Rect& upper_rect,
+                                   const ViaGenerator::Constraint& upper_constraint) const
 {
   // look for generate vias
   std::vector<std::unique_ptr<ViaGenerator>> generate_vias;
@@ -573,7 +606,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
   std::vector<std::unique_ptr<ViaGenerator>> tech_vias;
   for (odb::dbTechVia* db_via : tech_vias_) {
     std::unique_ptr<TechViaGenerator> rule
-        = std::make_unique<TechViaGenerator>(grid_->getLogger(), db_via, lower_rect, upper_rect);
+        = std::make_unique<TechViaGenerator>(grid_->getLogger(),
+                                             db_via,
+                                             lower_rect,
+                                             lower_constraint,
+                                             upper_rect,
+                                             upper_constraint);
 
     if (!rule->isSetupValid(lower, upper)) {
       continue;
