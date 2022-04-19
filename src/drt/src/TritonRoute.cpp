@@ -25,8 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <capnp/message.h>
-#include <capnp/serialize-packed.h>
+
 #include "triton_route/TritonRoute.h"
 
 #include <boost/asio/post.hpp>
@@ -56,8 +55,6 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
 #include "frProfileTask.h"
-#include "distributed/protoSchema.capnp.h"
-
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -223,81 +220,15 @@ void TritonRoute::resetDesign(const char* file_name)
 
 void TritonRoute::updateDesign(const char* file_name)
 {
+  std::ifstream file(file_name);
+  if (!file.good())
+    return;
   std::vector<drUpdate> updates;
-  FILE* fp = fopen(file_name, "rb");
-  int fd = fileno(fp);
-  uint64_t maxSize = (uint64_t) 64 * 1024 * 1024 * 1024;
-  capnp::PackedFdMessageReader message(fd, {maxSize, 64});
-  capnp::List<ProtoUpdate>::Reader protoUpdates = message.getRoot<capnp::List<ProtoUpdate>>();
-  for(ProtoUpdate::Reader protoUpdate : protoUpdates)
-  {
-    drUpdate update((drUpdate::UpdateType) protoUpdate.getType());
-    if(protoUpdate.hasNet())
-    {
-      frNet* net = nullptr;
-      if (protoUpdate.getNet().getFake()) {
-        if (protoUpdate.getNet().getId() == 0)
-          net = design_->getTopBlock()->getFakeVSSNet();
-        else
-          net = design_->getTopBlock()->getFakeVDDNet();
-      } else {
-        if (protoUpdate.getNet().getSpecial())
-          net = design_->getTopBlock()->getSNet(protoUpdate.getNet().getId());
-        else
-          net = design_->getTopBlock()->getNet(protoUpdate.getNet().getId());
-      }
-      if (net != nullptr && protoUpdate.getNet().getModified())
-        net->setModified(true);
-      update.setNet(net);
-    }
-    update.setOrderInOwner(protoUpdate.getOrderInOwner());
-    update.setBegin({protoUpdate.getBegin().getX(), protoUpdate.getBegin().getY()});
-    update.setEnd({protoUpdate.getEnd().getX(), protoUpdate.getEnd().getY()});
-
-    frSegStyle style;
-    style.setWidth(protoUpdate.getStyle().getWidth());
-    style.setBeginStyle((frEndStyleEnum) protoUpdate.getStyle().getBeginStyle());
-    style.setEndStyle((frEndStyleEnum) protoUpdate.getStyle().getEndStyle());
-    style.setBeginExt(protoUpdate.getStyle().getBeginExt());
-    style.setEndExt(protoUpdate.getStyle().getEndExt());
-    update.setStyle(style);
-    
-    update.setOffsetBox({protoUpdate.getOffsetBox().getBegin().getX(), protoUpdate.getOffsetBox().getBegin().getY(), protoUpdate.getOffsetBox().getEnd().getX(), protoUpdate.getOffsetBox().getEnd().getY()});
-    update.setLayerNum(protoUpdate.getLayerNum());
-    update.setBottomConnected(protoUpdate.getBottomConnected());
-    update.setTopConnected(protoUpdate.getTopConnected());
-    update.setTapered(protoUpdate.getTapered());
-
-    if(protoUpdate.getViaDefId() >= 0)
-    {
-      update.setViaDef(design_->getTech()->getVias().at(protoUpdate.getViaDefId()).get());
-    }
-    switch (protoUpdate.getShapeType())
-    {
-    case ProtoUpdate::ProtoShapeType::PATH_SEG:
-      update.setObjType(frcPathSeg);
-      break;
-    case ProtoUpdate::ProtoShapeType::PATCH_WIRE:
-      update.setObjType(frcPatchWire);
-      break;
-    case ProtoUpdate::ProtoShapeType::VIA:
-      update.setObjType(frcVia);
-      break;
-    default:
-      update.setObjType(frcBlock);
-      break;
-    }
-    updates.push_back(update);
-  }
-  fclose(fp);
-  // std::ifstream file(file_name);
-  // if (!file.good())
-  //   return;
-  // frIArchive ar(file);
-  // ar.setDeepSerialize(false);
-  // ar.setDesign(design_.get());
-  // register_types(ar);
-  // ar >> updates;
+  frIArchive ar(file);
+  ar.setDeepSerialize(false);
+  ar.setDesign(design_.get());
+  register_types(ar);
+  ar >> updates;
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
   for (auto& update : updates) {
@@ -627,101 +558,24 @@ static bool serializeDesignUpdates(frDesign* design,
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
   else
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UDPATES");
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(false);
+  register_types(ar);
   auto updates = design->getUpdates();
-  capnp::MallocMessageBuilder message;
-  capnp::List<ProtoUpdate>::Builder protoUpdates = message.initRoot<capnp::List<ProtoUpdate>>(updates.size());
-  for(int i = 0; i < updates.size(); i++)
-  {
-    auto update = updates[i];
-    protoUpdates[i].setType((ProtoUpdate::ProtoUpdateType) update.getType());
-    protoUpdates[i].setOrderInOwner(update.getOrderInOwner());    
-
-    protoUpdates[i].initBegin();
-    protoUpdates[i].getBegin().setX(update.getBegin().x());
-    protoUpdates[i].getBegin().setY(update.getBegin().y());
-
-    protoUpdates[i].initEnd();
-    protoUpdates[i].getEnd().setX(update.getEnd().x());
-    protoUpdates[i].getEnd().setY(update.getEnd().y());
-
-    protoUpdates[i].initStyle();
-    protoUpdates[i].getStyle().setBeginExt(update.getStyle().getBeginExt());
-    protoUpdates[i].getStyle().setEndExt(update.getStyle().getEndExt());
-    protoUpdates[i].getStyle().setWidth(update.getStyle().getWidth());
-    protoUpdates[i].getStyle().setBeginStyle((ProtoSegStyle::ProtoEndStyle) update.getStyle().getBeginStyle().getValue());
-    protoUpdates[i].getStyle().setEndStyle((ProtoSegStyle::ProtoEndStyle) update.getStyle().getEndStyle().getValue());
-
-    protoUpdates[i].initOffsetBox();
-    protoUpdates[i].getOffsetBox().initBegin();
-    protoUpdates[i].getOffsetBox().initEnd();
-    protoUpdates[i].getOffsetBox().getBegin().setX(update.getOffsetBox().xMin());
-    protoUpdates[i].getOffsetBox().getBegin().setY(update.getOffsetBox().yMin());
-    protoUpdates[i].getOffsetBox().getEnd().setX(update.getOffsetBox().xMax());
-    protoUpdates[i].getOffsetBox().getEnd().setY(update.getOffsetBox().yMax());
-
-    protoUpdates[i].setLayerNum(update.getLayerNum());
-
-    switch (update.getObjType())
-    {
-    case frcPathSeg:
-      protoUpdates[i].setShapeType(ProtoUpdate::ProtoShapeType::PATH_SEG);
-      break;
-    case frcPatchWire:
-      protoUpdates[i].setShapeType(ProtoUpdate::ProtoShapeType::PATCH_WIRE);
-      break;
-    case frcVia:
-      protoUpdates[i].setShapeType(ProtoUpdate::ProtoShapeType::VIA);
-      break;
-    default:
-      protoUpdates[i].setShapeType(ProtoUpdate::ProtoShapeType::NONE);
-      break;
-    }
-
-    if(update.getNet() != nullptr)
-    {
-      protoUpdates[i].initNet();
-      protoUpdates[i].getNet().setFake(update.getNet()->isFake());
-      protoUpdates[i].getNet().setSpecial(update.getNet()->isSpecial());
-      protoUpdates[i].getNet().setModified(update.getNet()->isModified());
-      if (update.getNet()->isFake()) {
-        if (update.getNet()->getType() == odb::dbSigType::GROUND)
-          protoUpdates[i].getNet().setId(0);
-        else
-          protoUpdates[i].getNet().setId(1);
-      } else 
-        protoUpdates[i].getNet().setId(update.getNet()->getId());
-    }
-
-    protoUpdates[i].setBottomConnected(update.isBottomConnected());
-    protoUpdates[i].setTopConnected(update.isTopConnected());
-    protoUpdates[i].setTapered(update.isTapered());
-
-    if(update.getViaDef() != nullptr)
-      protoUpdates[i].setViaDefId(update.getViaDef()->getId());
-    else
-      protoUpdates[i].setViaDefId(-1);
-  }
-  FILE* fp = fopen(name.c_str(), "wb");
-  int fd = fileno(fp);
-  capnp::writePackedMessageToFd(fd, message);
-  fclose(fp);
-  // std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-  // frOArchive ar(stream);
-  // ar.setDeepSerialize(false);
-  // register_types(ar);
-  // ar << updates;
-  // serializeTask->done();
-  // std::unique_ptr<ProfileTask> writeTask;
-  // if(design->getVersion() == 0)
-  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
-  // else
-  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
-  // std::ofstream file(name);
-  // if (!file.good())
-  //   return false;
-  // file << stream.rdbuf();
-  // file.close();
-  // writeTask->done();
+  ar << updates;
+  serializeTask->done();
+  std::unique_ptr<ProfileTask> writeTask;
+  if(design->getVersion() == 0)
+    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
+  else
+    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
+  std::ofstream file(name);
+  if (!file.good())
+    return false;
+  file << stream.rdbuf();
+  file.close();
+  writeTask->done();
   return true;
 }
 

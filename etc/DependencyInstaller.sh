@@ -13,7 +13,6 @@ _installCommonDev() {
     eigenVersion=3.3
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
-    capnpVersion=0.9.1
 
     # temp dir to download and compile
     baseDir=/tmp/installers
@@ -92,18 +91,6 @@ _installCommonDev() {
         cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
-    fi
-
-    # capnp
-     if [[ -z $(capnp --version | grep ${capnpVersion}) ]]; then
-        git clone -b "v${capnpVersion}" https://github.com/sandstorm-io/capnproto.git
-        cd capnproto/c++
-        autoreconf -i
-        ./configure
-        make -j$(nproc) check
-        sudo make install
-    else
-        echo "capnp already installed."
     fi
 
     cd "$lastDir"

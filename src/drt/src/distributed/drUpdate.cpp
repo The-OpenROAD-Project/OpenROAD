@@ -96,32 +96,6 @@ frVia drUpdate::getVia() const
   return via;
 }
 
-std::ofstream& operator<<(std::ofstream& stream, const drUpdate& update)
-{
-  stream << (uint) update.getType() << "\n";
-  stream << update.getOrderInOwner() << "\n";
-  stream << update.getBegin() << "\n";
-  stream << update.getEnd() << "\n";
-
-  stream << update.getStyle().getBeginExt() << "," << update.getStyle().getEndExt() << "," << update.getStyle().getWidth() << ","
-         << (uint)update.getStyle().getBeginStyle() << "," << (uint)update.getStyle().getEndStyle() << "\n";
-  stream << update.getOffsetBox() << "\n";
-  stream << update.getLayerNum() << "\n";
-  stream << (uint) update.getObjType() << "\n";
-  if(update.getNet() == nullptr)
-    stream << "nullptr" << "\n";
-  else
-    stream << update.getNet()->isFake() << "," << update.getNet()->isSpecial() << "," << update.getNet()->isModified() << "," << update.getNet()->getId() << "\n";
-  stream << update.isBottomConnected() << "\n";
-  stream << update.isTopConnected() << "\n";
-  stream << update.isTapered() << "\n";
-   if(update.getViaDef() == nullptr)
-    stream << "nullptr" << "\n";
-  else
-    stream << update.getViaDef()->getId() << "\n";
-  return stream;
-}
-
 template <class Archive>
 void drUpdate::serialize(Archive& ar, const unsigned int version)
 {
@@ -156,8 +130,8 @@ void drUpdate::serialize(Archive& ar, const unsigned int version)
   }
   if (obj_type_ == frcVia)
     serializeViaDef(ar, viaDef_);
-  // if (obj_type_ == frcMarker)
-  //   (ar) & marker_;
+  if (obj_type_ == frcMarker)
+    (ar) & marker_;
 }
 
 template void drUpdate::serialize<frIArchive>(frIArchive& ar,
