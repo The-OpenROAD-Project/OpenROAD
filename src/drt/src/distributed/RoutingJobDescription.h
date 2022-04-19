@@ -51,6 +51,10 @@ class RoutingJobDescription : public dst::JobDescription
   {
     workers_ = workers;
   }
+  void setUpdates(const std::vector<std::string>& updates)
+  {
+    updates_ = updates;
+  }
   void setDesignUpdate(const bool& value) { design_update_ = value; }
   const std::string& getGlobalsPath() const { return globals_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
@@ -59,6 +63,10 @@ class RoutingJobDescription : public dst::JobDescription
   const std::vector<std::pair<int, std::string>>& getWorkers()
   {
     return workers_;
+  }
+  const std::vector<std::string>& getUpdates()
+  {
+    return updates_;
   }
   bool isDesignUpdate() const { return design_update_; }
   bool reply_serialized_;
@@ -70,12 +78,14 @@ class RoutingJobDescription : public dst::JobDescription
   std::string shared_dir_;
   std::string guide_path_;
   std::vector<std::pair<int, std::string>> workers_;
+  std::vector<std::string> updates_;
   bool design_update_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & design_update_;
     (ar) & globals_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
@@ -83,7 +93,7 @@ class RoutingJobDescription : public dst::JobDescription
     (ar) & reply_serialized_;
     (ar) & send_every_;
     (ar) & workers_;
-    (ar) & design_update_;
+    (ar) & updates_;
   }
   friend class boost::serialization::access;
 };

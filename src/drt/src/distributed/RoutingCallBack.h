@@ -143,11 +143,11 @@ class RoutingCallBack : public dst::JobCallBack
     if (desc->getGuidePath() != "") {
       GUIDE_FILE = desc->getGuidePath();
     }
-    if (desc->getDesignPath() != "") {
+    if ((desc->isDesignUpdate() && !desc->getUpdates().empty()) || desc->getDesignPath() != "") {
       frTime t;
       logger_->report("Design Update");
       if (desc->isDesignUpdate())
-        router_->updateDesign(desc->getDesignPath());
+        router_->updateDesign(desc->getUpdates());
       else
         router_->resetDb(desc->getDesignPath().c_str());
       t.print(logger_);

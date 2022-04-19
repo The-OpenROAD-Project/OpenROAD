@@ -218,15 +218,27 @@ void TritonRoute::resetDesign(const char* file_name)
   file.close();
 }
 
-void TritonRoute::updateDesign(const std::string& updatesStr)
+static drUpdate deserializeUpdate(frDesign* design, const std::string& updateStr)
 {
-  std::stringstream stream(updatesStr, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  std::stringstream stream(updateStr, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
   frIArchive ar(stream);
-  std::vector<drUpdate> updates;
+  drUpdate update;
   ar.setDeepSerialize(false);
-  ar.setDesign(design_.get());
+  ar.setDesign(design);
   register_types(ar);
-  ar >> updates;
+  ar >> update;
+  return update;
+}
+
+void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
+{
+  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  std::vector<drUpdate> updates(updatesStrs.size());
+  #pragma omp parallel for schedule(dynamic)
+  for(int i = 0; i < updates.size(); i++)
+  {
+    updates[i] = deserializeUpdate(design_.get(), updatesStrs.at(i));
+  }
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
   for (auto& update : updates) {
@@ -547,35 +559,32 @@ void TritonRoute::sendDesignDist()
   }
   design_->clearUpdates();
 }
+static std::string serializeUpdate(const drUpdate& update)
+{
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frOArchive ar(stream);
+  ar.setDeepSerialize(false);
+  register_types(ar);
+  ar << update;
+  return stream.str();
+}
 
-static bool serializeDesignUpdates(frDesign* design,
-                                   std::string& updatesStr)
+static std::vector<std::string> serializeDesignUpdates(frDesign* design)
 {
   std::unique_ptr<ProfileTask> serializeTask;
   if(design->getVersion() == 0)
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
   else
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UDPATES");
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-  frOArchive ar(stream);
-  ar.setDeepSerialize(false);
-  register_types(ar);
-  auto updates = design->getUpdates();
-  ar << updates;
+  omp_set_num_threads(MAX_THREADS);
+  std::vector<std::string> updates(design->getUpdates().size());
+  #pragma omp parallel for schedule(dynamic)
+  for(int i = 0; i < design->getUpdates().size(); i++)
+  {
+    updates[i] = serializeUpdate(design->getUpdates().at(i));
+  }
   serializeTask->done();
-  updatesStr = stream.str();
-  // std::unique_ptr<ProfileTask> writeTask;
-  // if(design->getVersion() == 0)
-  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
-  // else
-  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
-  // std::ofstream file(name);
-  // if (!file.good())
-  //   return false;
-  // file << stream.rdbuf();
-  // file.close();
-  // writeTask->done();
-  return true;
+  return updates;
 }
 
 void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
@@ -604,8 +613,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
     return;
   if(design_->getUpdates().empty())
     return;
-  std::string updatesStr;
-  serializeDesignUpdates(design_.get(), updatesStr);
+  std::vector<std::string> updates = serializeDesignUpdates(design_.get());
   std::unique_ptr<ProfileTask> task;
   if(design_->getVersion() == 0)
     task = std::make_unique<ProfileTask>("DIST: SENDING_TA");
@@ -618,7 +626,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd
       = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setDesignPath(updatesStr);
+  rjd->setUpdates(updates);
   rjd->setGlobalsPath(globals_path);
   rjd->setSharedDir(shared_volume_);
   rjd->setDesignUpdate(true);
