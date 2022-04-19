@@ -476,41 +476,45 @@ void TechChar::initCharacterization()
     }
     auto* libertyCell = db_network_->findLibertyCell(masterString.c_str());
     if (libertyCell == nullptr) {
-      logger_->error(CTS,
-                     106,
-                     "No Liberty found for buffer {}.",
-                     masterString);
+      logger_->error(CTS, 106, "No Liberty found for buffer {}.", masterString);
     }
     masterNames_.insert(masterString);
   }
 
   float maxBuffCap = 0.0;
-  std::string bufMasterName; 
-  for (int i = 0; i < masterVector.size(); i++){
-      float maxCap= 0.0;
-      bool maxCapExist= false;
-      odb::dbMaster* buf = db_->findMaster(masterVector[i].c_str());
-      sta::Cell* masterCell = db_network_->dbToSta(buf);
-      sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
-      sta::LibertyPort *input, *output;
-      libertyCell->bufferPorts(input, output);
-      output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
-      if( maxCap >= maxBuffCap){
-        maxBuffCap = maxCap;
-        charBuf_ = buf;
-        bufMasterName=masterVector[i];
-      }
+  std::string bufMasterName;
+  for (int i = 0; i < masterVector.size(); i++) {
+    float maxCap = 0.0;
+    bool maxCapExist = false;
+    odb::dbMaster* buf = db_->findMaster(masterVector[i].c_str());
+    sta::Cell* masterCell = db_network_->dbToSta(buf);
+    sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
+    sta::LibertyPort *input, *output;
+    libertyCell->bufferPorts(input, output);
+    output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
+    sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
+    if (!maxCapExist)
+      lib->defaultMaxCapacitance(maxCap, maxCapExist);
+    if (!maxCapExist)
+      logger_->error(
+          CTS, 111, "No max capacitance found for cell {}.", masterVector[i]);
+    if (maxCap >= maxBuffCap) {
+      maxBuffCap = maxCap;
+      charBuf_ = buf;
+      bufMasterName = masterVector[i];
+    }
   }
-  if (bufMasterName == ""){
-        logger_->error(
+
+  if (bufMasterName == "") {
+    logger_->error(
         CTS,
         113,
         "Characterization buffer is not defined.\n"
         "    Check that -buf_list has supported buffers from platform.");
-  } else{
+  } else {
     logger_->info(CTS, 49, "Characterization buffer is: {}.", bufMasterName);
   }
-  
+
   odb::dbMaster* sinkMaster
       = db_->findMaster(options_->getSinkBuffer().c_str());
 
@@ -587,14 +591,16 @@ void TechChar::initCharacterization()
       if (!maxSlewExist)
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       if (!maxSlewExist)
-        logger_->error(CTS, 107, "No max slew found for cell {}.", bufMasterName);
+        logger_->error(
+            CTS, 107, "No max slew found for cell {}.", bufMasterName);
       charMaxSlew_ = maxSlew;
 
       output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
       if (!maxCapExist)
         lib->defaultMaxCapacitance(maxCap, maxCapExist);
       if (!maxCapExist)
-        logger_->error(CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
+        logger_->error(
+            CTS, 108, "No max capacitance found for cell {}.", bufMasterName);
       charMaxCap_ = maxCap;
     }
     if (!libertySinkCell) {
