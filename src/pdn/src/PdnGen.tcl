@@ -342,12 +342,11 @@ proc check_switched_power {switched_power_net_name} {
       utl::error PDN 9180 "Net $switched_power_net_name already exists in the design, but is of signal type [$net getSigType]."
     }
   }
+  add_power_net $switched_power_net_name
   return $switched_power_net_name
 }
 
 proc check_power {power_net_name} {
-  add_power_net $power_net_name
-
   set block [ord::get_db_block]
 
   if {[set net [$block findNet $power_net_name]] == "NULL"} {
@@ -359,6 +358,7 @@ proc check_power {power_net_name} {
       utl::error PDN 9128 "Net $power_net_name already exists in the design, but is of signal type [$net getSigType]."
     }
   }
+  add_power_net $power_net_name
   return $power_net_name
 }
 
@@ -428,6 +428,7 @@ proc set_voltage_domain {args} {
   set voltage_domain {}
   set process_args $args
   while {[llength $process_args] > 0} {
+
     set arg [lindex $process_args 0]
     set value [lindex $process_args 1]
 
@@ -632,6 +633,9 @@ proc get_pg_nets {{voltage_domain ""}} {
     if {[dict exists $voltage_domains $voltage_domain secondary_power]} {
       lappend pg_nets {*}[dict get $voltage_domains $voltage_domain secondary_power]
     }
+    if {[dict exists $voltage_domains $voltage_domain switched_power]} {
+      lappend pg_nets {*}[dict get $voltage_domains $voltage_domain switched_power]
+    }
   }
    return $pg_nets
 }
@@ -706,7 +710,12 @@ proc add_pdn_stripe {args} {
   }
   set grid $current_grid
 
-  set stripe [dict get $args stripe]
+  if {[lsearch $args -followpins] > -1} {
+    set stripe rails
+    set args [lreplace $args [lsearch $args "-followpins"] [lsearch $args "-followpins"]]
+  } else {
+    set stripe straps
+  }
   set layer [check_layer_names [dict get $args -layer]]
 
   set process_args $args
@@ -3502,6 +3511,17 @@ proc adjust_area_for_core_rings {layer area number} {
   return $extended_area
 }
 
+proc is_lowest_strap {lay} {
+  variable grid_data
+
+  foreach other_lay [dict keys [dict get $grid_data straps]] {
+    if {[get_layer_number $other_lay] < [get_layer_number $lay]} {
+      return 0
+    }
+  }
+  return 1 
+}
+
 ## this is a top-level proc to generate PDN stripes and insert vias between these stripes
 proc generate_stripes {net_name} {
   variable plan_template
@@ -3531,12 +3551,19 @@ proc generate_stripes {net_name} {
       # Create stripes for core domain's pwr/gnd nets
 
       if {$net_name == [get_voltage_domain_power [dict get $design_data core_domain]] ||
-          $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]] || 
-          $net_name == [get_voltage_domain_switched_power [dict get $design_data core_domain]]} {
+          $net_name == [get_voltage_domain_ground [dict get $design_data core_domain]]} {
         generate_upper_metal_mesh_stripes $net_name $lay [dict get $grid_data straps $lay] $area
         # Split core domains pwr/gnd nets when they cross other voltage domains that have different pwr/gnd nets
         update_mesh_stripes_with_voltage_domains $net_name $lay
       }
+
+      if {$net_name == [get_voltage_domain_switched_power [dict get $design_data core_domain]]} {
+        if {[is_lowest_strap $lay]} {
+          # debug "Generate $net_name on layer $lay"
+          generate_upper_metal_mesh_stripes $net_name $lay [dict get $grid_data straps $lay] $area
+	}
+      }
+
       # Create stripes for each voltage domains
       foreach domain_name [dict keys $voltage_domains] {
         if {$domain_name == [dict get $design_data core_domain]} {continue}
@@ -4489,12 +4516,10 @@ proc export_opendb_global_connection {} {
   ## Do global connect statements first
   get_global_connect_list_default [dict get $design_data core_domain] false
 
-  foreach net_type "power_nets ground_nets" {
-    foreach net_name [dict get $design_data $net_type] {
-      set net [$block findNet $net_name]
-      foreach pattern [get_global_connect_list $net_name] {
-        pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
-      }
+  foreach net_name [get_all_pg_nets] {
+    set net [$block findNet $net_name]
+    foreach pattern [get_global_connect_list $net_name] {
+      pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
     }
   }
 
@@ -4594,7 +4619,6 @@ proc export_opendb_specialnets {} {
 
   foreach net_name [get_all_pg_nets] {
     if {[lsearch -regexp [array names stripe_locs] ",$net_name\$"] > -1} {
-    # debug "net: $net_name, layers: [array names stripe_locs]"
       export_opendb_specialnet $net_name
     }
   }
@@ -6795,7 +6819,7 @@ proc plan_grid {} {
   ################################## Main Code #################################
 
   if {![dict exists $design_data grid macro]} {
-    utl::warn PDN 9018 "No macro grid specifications found - no straps added."
+    utl::warn PDN 9018 "No macro grid specifications found - no straps added for macros."
   }
 
   utl::info PDN 9011 "****** INFO ******"
