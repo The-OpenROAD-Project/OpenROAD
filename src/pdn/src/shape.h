@@ -170,6 +170,7 @@ class Shape
   // after shape is modified, remove any term connections that are no longer
   // connected
   virtual void updateTermConnections();
+  bool hasTermConnections() const;
 
   // returns the smallest shape possible when attempting to trim
   virtual const odb::Rect getMinimumRect() const;

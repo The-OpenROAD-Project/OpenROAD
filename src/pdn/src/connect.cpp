@@ -32,6 +32,7 @@
 
 #include "connect.h"
 
+#include <cmath>
 #include <regex>
 
 #include "grid.h"
@@ -424,8 +425,16 @@ void Connect::makeVia(odb::dbSWire* wire,
   auto& via = vias_[via_index];
 
   auto* tech = layer0_->getTech();
-  const int x = TechLayer::snapToManufacturingGrid(tech, 0.5 * (intersection.xMin() + intersection.xMax()));
-  const int y = TechLayer::snapToManufacturingGrid(tech, 0.5 * (intersection.yMin() + intersection.yMax()));
+  const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
+  const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
+
+  // check if off grid and don't add one if it is
+  if (!TechLayer::checkIfManufacturingGrid(tech, x) ||
+      !TechLayer::checkIfManufacturingGrid(tech, y)) {
+    DbGenerateDummyVia dummy_via(grid_->getLogger(), intersection, layer0_, layer1_);
+    dummy_via.generate(wire->getBlock(), wire, type, 0, 0);
+    return;
+  }
 
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
@@ -456,7 +465,7 @@ void Connect::makeVia(odb::dbSWire* wire,
 
       ViaGenerator::Constraint lower_constraint{false, false};
       if (lower->getLayer() == l0) {
-        if (!lower->isModifiable()) {
+        if (!lower->isModifiable() || lower->hasTermConnections()) {
           // lower is not modifiable to all sides must fit
           lower_constraint.must_fit_x = true;
           lower_constraint.must_fit_y = true;
@@ -467,7 +476,7 @@ void Connect::makeVia(odb::dbSWire* wire,
       }
       ViaGenerator::Constraint upper_constraint{false, false};
       if (upper->getLayer() == l1) {
-        if (!upper->isModifiable()) {
+        if (!upper->isModifiable() || upper->hasTermConnections()) {
           // upper is not modifiable to all sides must fit
           upper_constraint.must_fit_x = true;
           upper_constraint.must_fit_y = true;
