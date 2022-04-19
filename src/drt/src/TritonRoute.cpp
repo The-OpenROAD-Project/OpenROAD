@@ -218,13 +218,11 @@ void TritonRoute::resetDesign(const char* file_name)
   file.close();
 }
 
-void TritonRoute::updateDesign(const char* file_name)
+void TritonRoute::updateDesign(const std::string& updatesStr)
 {
-  std::ifstream file(file_name);
-  if (!file.good())
-    return;
+  std::stringstream stream(updatesStr, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  frIArchive ar(stream);
   std::vector<drUpdate> updates;
-  frIArchive ar(file);
   ar.setDeepSerialize(false);
   ar.setDesign(design_.get());
   register_types(ar);
@@ -551,7 +549,7 @@ void TritonRoute::sendDesignDist()
 }
 
 static bool serializeDesignUpdates(frDesign* design,
-                                  const std::string& name)
+                                   std::string& updatesStr)
 {
   std::unique_ptr<ProfileTask> serializeTask;
   if(design->getVersion() == 0)
@@ -565,17 +563,18 @@ static bool serializeDesignUpdates(frDesign* design,
   auto updates = design->getUpdates();
   ar << updates;
   serializeTask->done();
-  std::unique_ptr<ProfileTask> writeTask;
-  if(design->getVersion() == 0)
-    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
-  else
-    writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
-  std::ofstream file(name);
-  if (!file.good())
-    return false;
-  file << stream.rdbuf();
-  file.close();
-  writeTask->done();
+  updatesStr = stream.str();
+  // std::unique_ptr<ProfileTask> writeTask;
+  // if(design->getVersion() == 0)
+  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_TA");
+  // else
+  //   writeTask = std::make_unique<ProfileTask>("DIST: WRITE_UPDATES");
+  // std::ofstream file(name);
+  // if (!file.good())
+  //   return false;
+  // file << stream.rdbuf();
+  // file.close();
+  // writeTask->done();
   return true;
 }
 
@@ -605,8 +604,8 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
     return;
   if(design_->getUpdates().empty())
     return;
-  std::string updates_path = fmt::format( "{}design_{}.bin", shared_volume_, design_->getVersion());
-  serializeDesignUpdates(design_.get(), updates_path);
+  std::string updatesStr;
+  serializeDesignUpdates(design_.get(), updatesStr);
   std::unique_ptr<ProfileTask> task;
   if(design_->getVersion() == 0)
     task = std::make_unique<ProfileTask>("DIST: SENDING_TA");
@@ -619,7 +618,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
       = std::make_unique<RoutingJobDescription>();
   RoutingJobDescription* rjd
       = static_cast<RoutingJobDescription*>(desc.get());
-  rjd->setDesignPath(updates_path);
+  rjd->setDesignPath(updatesStr);
   rjd->setGlobalsPath(globals_path);
   rjd->setSharedDir(shared_volume_);
   rjd->setDesignUpdate(true);

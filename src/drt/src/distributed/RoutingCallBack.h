@@ -144,16 +144,13 @@ class RoutingCallBack : public dst::JobCallBack
       GUIDE_FILE = desc->getGuidePath();
     }
     if (desc->getDesignPath() != "") {
-      if (design_path_ != desc->getDesignPath()) {
-        frTime t;
-        logger_->report("Design: {}", desc->getDesignPath());
-        if (desc->isDesignUpdate())
-          router_->updateDesign(desc->getDesignPath().c_str());
-        else
-          router_->resetDb(desc->getDesignPath().c_str());
-        design_path_ = desc->getDesignPath();
-        t.print(logger_);
-      }
+      frTime t;
+      logger_->report("Design Update");
+      if (desc->isDesignUpdate())
+        router_->updateDesign(desc->getDesignPath());
+      else
+        router_->resetDb(desc->getDesignPath().c_str());
+      t.print(logger_);
     }
     dist_->sendResult(result, sock);
     sock.close();

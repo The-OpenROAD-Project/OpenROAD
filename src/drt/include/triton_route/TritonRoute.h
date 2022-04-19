@@ -131,7 +131,7 @@ class TritonRoute
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void resetDesign(const char* file_name);
-  void updateDesign(const char* file_name);
+  void updateDesign(const std::string& updates);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
