@@ -9,7 +9,7 @@ set base [$OR -exit aes_nangate45.tcl > results/base.log &]
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def aes_nangate45_preroute.def
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
+set_thread_count [expr [exec getconf _NPROCESSORS_ONLN] / 4]
 detailed_route -guide aes_nangate45.route_guide \
                -output_guide results/aes_nangate45_distributed.output.guide.mod \
                -output_drc results/aes_nangate45_distributed.output.drc.rpt \
