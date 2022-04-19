@@ -37,6 +37,7 @@
 
 #include <string>
 
+#include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
 #include "sta/Hash.hh"
@@ -90,7 +91,6 @@ public:
   }
 };
 
-typedef int SteinerPt;
 typedef Vector<SteinerPt> SteinerPtSeq;
 typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 

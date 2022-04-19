@@ -35,7 +35,7 @@
 
 #include "rsz/Resizer.hh"
 
-#include "rsz/SteinerTree.hh"
+#include "SteinerTree.hh"
 
 #include "gui/gui.h"
 #include "utl/Logger.h"
