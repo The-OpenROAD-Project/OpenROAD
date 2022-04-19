@@ -724,4 +724,40 @@ void Connect::filterVias(const std::string& filter)
       tech_vias_.end());
 }
 
+void Connect::printViaReport() const
+{
+  auto* logger = getGrid()->getLogger();
+
+  // check if debug is enabled
+  if (!logger->debugCheck(utl::PDN, "Write", 0)) {
+    return;
+  }
+
+  ViaReport report;
+  for (const auto& [via_index, via] : vias_) {
+    for (const auto& [via_name, count] : via->getViaReport()) {
+      report[via_name] += count;
+    }
+  }
+
+  debugPrint(logger,
+             utl::PDN,
+             "Write",
+             1,
+             "Vias from {} -> {}: {} types",
+             layer0_->getName(),
+             layer1_->getName(),
+             report.size());
+
+  for (const auto& [via_name, count] : report) {
+    debugPrint(logger,
+               utl::PDN,
+               "Write",
+               2,
+               "Via \"{}\": {}",
+               via_name,
+               count);
+  }
+}
+
 }  // namespace pdn

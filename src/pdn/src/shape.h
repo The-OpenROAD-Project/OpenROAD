@@ -205,6 +205,8 @@ class Shape
   // copy existing shapes into the map
   static void populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map);
 
+  static const Box rectToBox(const odb::Rect& rect);
+
  private:
   odb::dbTechLayer* layer_;
   odb::dbNet* net_;

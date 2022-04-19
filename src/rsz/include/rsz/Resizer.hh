@@ -38,9 +38,6 @@
 #include <array>
 #include <string>
 
-#include "SteinerTree.hh"
-#include "BufferedNet.hh"
-
 #include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
@@ -67,6 +64,7 @@ using utl::Logger;
 using gui::Gui;
 
 using odb::Rect;
+using odb::Point;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbMaster;
@@ -120,8 +118,13 @@ using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
 using sta::PathExpanded;
+using sta::PinSeq;
 
+class BufferedNet;
+enum class BufferedNetType;
 class SteinerRenderer;
+class SteinerTree;
+typedef int SteinerPt;
 
 class NetHash
 {
@@ -130,7 +133,6 @@ public:
 };
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
-typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];

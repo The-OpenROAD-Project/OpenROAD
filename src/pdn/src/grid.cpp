@@ -764,6 +764,9 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
   for (const auto& via : vias) {
     via->writeToDb(net_map.at(via->getNet()), getBlock());
   }
+  for (const auto& connect : connect_) {
+    connect->printViaReport();
+  }
 
   std::set<odb::dbTechLayer*> pin_layers(pin_layers_.begin(),
                                          pin_layers_.end());
