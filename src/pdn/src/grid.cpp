@@ -1150,8 +1150,9 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           odb::Rect box_rect;
           box->getBox(box_rect);
           transform.apply(box_rect);
-          pins.push_back(
-              std::make_shared<Shape>(box->getTechLayer(), net, box_rect));
+          auto shape = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          shape->setShapeType(Shape::FIXED);
+          pins.push_back(shape);
         }
       }
     }

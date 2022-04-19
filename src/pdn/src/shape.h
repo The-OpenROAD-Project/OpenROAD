@@ -92,7 +92,8 @@ class Shape
     SHAPE,
     GRID_OBS,
     BLOCK_OBS,
-    OBS
+    OBS,
+    FIXED
   };
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,

@@ -387,6 +387,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
 
       ShapePtr shape
           = std::make_shared<Shape>(layer, net, rect, box->getWireShapeType());
+      shape->setShapeType(Shape::FIXED);
       if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
         // cannot connect this this safely so make it an obstruction
         shape->setNet(nullptr);
@@ -485,7 +486,7 @@ bool Shape::isRemovable() const
 
 bool Shape::isModifiable() const
 {
-  return true;
+  return shape_type_ == SHAPE;
 }
 
 const std::string Shape::getReportText() const
