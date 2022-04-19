@@ -242,7 +242,7 @@ void dbModInst::destroy(dbModInst* modinst)
   _dbModule* module = (_dbModule*) modinst->getParent();
 
   _dbModule* master = (_dbModule*) modinst->getMaster();
-  master->_mod_inst = dbId<_dbModInst>(); // clear
+  master->_mod_inst = dbId<_dbModInst>();  // clear
   dbModule::destroy((dbModule*) master);
 
   // unlink from parent start

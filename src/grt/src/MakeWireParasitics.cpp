@@ -53,19 +53,21 @@ using utl::GRT;
 using std::abs;
 using std::min;
 
-MakeWireParasitics::MakeWireParasitics(ord::OpenRoad* openroad,
+MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
+                                       sta::dbSta* sta,
+                                       odb::dbTech* tech,
                                        GlobalRouter* grouter)
 {
   grouter_ = grouter;
-  logger_ = openroad->getLogger();
-  sta_ = openroad->getSta();
-  tech_ = openroad->getDb()->getTech();
+  logger_ = logger;
+  sta_ = sta;
+  tech_ = tech;
   parasitics_ = sta_->parasitics();
   corner_ = sta_->cmdCorner();
   min_max_ = sta::MinMax::max();
   analysis_point_ = corner_->findParasiticAnalysisPt(min_max_);
 
-  network_ = openroad->getDbNetwork();
+  network_ = sta->getDbNetwork();
   sta_net_ = nullptr;
   parasitic_ = nullptr;
   node_id_ = 0;

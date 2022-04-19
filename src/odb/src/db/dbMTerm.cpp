@@ -171,26 +171,22 @@ _dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
 
   for (itr = m._par_met_area.begin(); itr != m._par_met_area.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _par_met_area.push_back(e);
   }
 
   for (itr = m._par_met_sidearea.begin(); itr != m._par_met_sidearea.end();
        ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _par_met_sidearea.push_back(e);
   }
 
   for (itr = m._par_cut_area.begin(); itr != m._par_cut_area.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _par_cut_area.push_back(e);
   }
 
   for (itr = m._diffarea.begin(); itr != m._diffarea.end(); ++itr) {
     _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    ZALLOCATED(e);
     _diffarea.push_back(e);
   }
 }

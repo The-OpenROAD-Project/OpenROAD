@@ -149,6 +149,7 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->getObstructions(local_obstructions);
   }
 
+  // insert power switches
   // make vias
   makeVias(global_shapes, obstructions);
 
@@ -359,7 +360,7 @@ const odb::Rect Grid::getRingArea() const
   }
 
   // get the outline of the rings
-  odb::Rect rect = getDomainArea();
+  odb::Rect rect = getDomainBoundary();
   for (const auto& ring : rings_) {
     for (const auto& [layer, shapes] : ring->getShapes()) {
       for (const auto& [box, shape] : shapes) {
@@ -600,8 +601,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\"", name_);
   ShapeTreeMap search_shapes = getShapes();
 
-  odb::Rect search_area;
-  search_area.mergeInit();
+  odb::Rect search_area = getDomainBoundary();
   for (const auto& [layer, shapes] : search_shapes) {
     for (const auto& [box, shape] : shapes) {
       search_area.merge(shape->getRect());
@@ -661,43 +661,27 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // remove vias that are too small to make on any layer
+  // remove vias are only partially overlapping
   for (const auto& via : vias) {
-    const odb::Rect& via_size = via->getArea();
-    const int width = via_size.minDXDY();
-    for (auto* layer : via->getConnect()->getIntermediteRoutingLayers()) {
-      if (width < layer->getMinWidth()) {
-        remove_vias.insert(via);
-        break;
-      }
+    const auto& via_area = via->getArea();
+    const auto& lower = via->getLowerShape()->getRect();
+    const auto& upper = via->getUpperShape()->getRect();
+    if (via_area.xMin() == lower.xMin() && via_area.xMax() == lower.xMax() &&
+        via_area.yMin() == upper.yMin() && via_area.yMax() == upper.yMax()) {
+      continue;
+    } else if (via_area.yMin() == lower.yMin() && via_area.yMax() == lower.yMax() &&
+               via_area.xMin() == upper.xMin() && via_area.xMax() == upper.xMax()) {
+      continue;
+    } else if (lower.contains(upper) || upper.contains(lower)) {
+      continue;
     }
+    remove_vias.insert(via);
   }
   debugPrint(getLogger(),
              utl::PDN,
              "Via",
              2,
-             "Removing {} vias due to sizing limitations.",
-             remove_vias.size());
-  remove_set_of_vias(remove_vias);
-
-  // remove vias that are minimum area violations
-  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
-  const double umum_per_dbudbu = 1.0 / (dbu_per_micron * dbu_per_micron);
-  for (const auto& via : vias) {
-    const odb::Rect& via_size = via->getArea();
-    const double area = via_size.area() * umum_per_dbudbu;
-    for (auto* layer : via->getConnect()->getIntermediteRoutingLayers()) {
-      if (area < layer->getArea()) {
-        remove_vias.insert(via);
-        break;
-      }
-    }
-  }
-  debugPrint(getLogger(),
-             utl::PDN,
-             "Via",
-             2,
-             "Removing {} vias due to area limitations.",
+             "Removing {} vias due to partial overlap.",
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
@@ -780,6 +764,9 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
   });
   for (const auto& via : vias) {
     via->writeToDb(net_map.at(via->getNet()), getBlock());
+  }
+  for (const auto& connect : connect_) {
+    connect->printViaReport();
   }
 
   std::set<odb::dbTechLayer*> pin_layers(pin_layers_.begin(),

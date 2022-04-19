@@ -121,6 +121,8 @@ class PdnGen
                                odb::dbNet* ground,
                                const std::vector<odb::dbNet*>& secondary_nets,
                                odb::dbRegion* region);
+  void setVoltageDomainSwitchedPower(VoltageDomain* voltage_domain,
+		                     odb::dbNet* switched_power);
 
   // Grids
   void buildGrids(bool trim);
@@ -185,6 +187,7 @@ class PdnGen
   void ripUp(odb::dbNet* net);
 
   void setDebugRenderer(bool on);
+  void rendererRedraw();
   void setAllowRepairChannels(bool allow);
   void filterVias(const std::string& filter);
 
@@ -209,7 +212,6 @@ class PdnGen
                            dbBox* region,
                            std::shared_ptr<netRegexPairs>);
 
-  void rendererRedraw();
   void trimShapes();
   void cleanupVias();
 

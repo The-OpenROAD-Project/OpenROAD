@@ -97,6 +97,7 @@ void Straps::checkLayerSpecifications() const
   layer.checkIfManufacturingGrid(width_, getLogger(), "Width");
   layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
   layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
+  layer.checkIfManufacturingGrid(offset_, getLogger(), "Offset");
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {
@@ -225,20 +226,21 @@ void Straps::makeStraps(int x_start,
 
   const auto nets = getNets();
 
-  int last_strap_end = -spacing_;
+  const int group_pitch = spacing_ + width_;
+
+  int next_minimum_track = 0;
   for (pos += offset_; pos <= pos_end; pos += pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
-      const int strap_center
-          = layer.snapToGrid(group_pos, last_strap_end + spacing_);
-      const int strap_start = strap_center - half_width;
+      group_pos = layer.snapToGrid(group_pos, next_minimum_track);
+      const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       if (strap_start >= pos_end) {
         // no portion of the strap is inside the limit
         return;
       }
-      if (strap_center > pos_end) {
+      if (group_pos > pos_end) {
         // strap center is outside of alotted area
         return;
       }
@@ -249,8 +251,8 @@ void Straps::makeStraps(int x_start,
       } else {
         strap_rect = odb::Rect(x_start, strap_start, x_end, strap_end);
       }
-      last_strap_end = strap_end;
-      group_pos += spacing_ + width_;
+      group_pos += group_pitch;
+      next_minimum_track = group_pos;
 
       Box shape_check(Point(strap_rect.xMin(), strap_rect.yMin()),
                       Point(strap_rect.xMax(), strap_rect.yMax()));
@@ -284,6 +286,10 @@ void Straps::report() const
   logger->info(utl::PDN, 43, "    Spacing: {:.4f}", spacing_ / dbu_per_micron);
   logger->info(utl::PDN, 44, "    Pitch: {:.4f}", pitch_ / dbu_per_micron);
   logger->info(utl::PDN, 45, "    Offset: {:.4f}", offset_ / dbu_per_micron);
+  logger->info(utl::PDN, 46, "    Snap to grid: {}", snap_);
+  if (number_of_straps_ > 0) {
+      logger->info(utl::PDN, 47, "    Number of strap sets: {}", number_of_straps_);
+  }
 }
 
 int Straps::getStrapGroupWidth() const
@@ -662,14 +668,15 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
     }
 
     // generate search box
-    Box search;
+    odb::Rect search_rect = pin_rect;
     if (is_horizontal_strap) {
-      search = Box(Point(die_rect.xMin(), pin_rect.yMin()),
-                   Point(die_rect.xMax(), pin_rect.yMax()));
+      search_rect.set_xlo(die_rect.xMin());
+      search_rect.set_xhi(die_rect.xMax());
     } else {
-      search = Box(Point(pin_rect.xMin(), die_rect.yMin()),
-                   Point(pin_rect.xMax(), die_rect.yMax()));
+      search_rect.set_ylo(die_rect.yMin());
+      search_rect.set_yhi(die_rect.yMax());
     }
+    Box search = Shape::rectToBox(search_rect);
 
     // find nearest target
     ShapePtr closest_shape = nullptr;
@@ -762,6 +769,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
                                          const ShapeTreeMap& other_shapes,
                                          const std::set<odb::dbNet*>& nets,
                                          const odb::Rect& area,
+                                         const odb::Rect& obs_check_area,
                                          bool allow)
     : Straps(grid,
              target->getLayer(),
@@ -772,6 +780,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
       nets_(nets),
       connect_to_(connect_to),
       area_(area),
+      obs_check_area_(obs_check_area),
       invalid_(false)
 {
   // use snap to grid
@@ -849,7 +858,6 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
   }
 
   const TechLayer layer(getLayer());
-  const double dbu_to_microns = layer.getLefUnits();
 
   // adjust spacing first to minimum spacing for the given width
   setSpacing(layer.getSpacing(getWidth(), max_length));
@@ -859,7 +867,7 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
              "Channel",
              2,
              "Adjust spacing to {:.4f} um.",
-             getSpacing() / dbu_to_microns);
+             layer.dbuToMicron(getSpacing()));
   if (check()) {
     // adjusting spacing works
     return;
@@ -877,8 +885,8 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
                "Channel",
                2,
                "Adjust width to {:.4f} um and spacing to {:.4f} um.",
-               getWidth() / dbu_to_microns,
-               getSpacing() / dbu_to_microns);
+               layer.dbuToMicron(getWidth()),
+               layer.dbuToMicron(getSpacing()));
     if (check()) {
       return;
     }
@@ -893,6 +901,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
                                           int bisect_dist,
                                           int level)
 {
+  const TechLayer layer(getLayer());
   const bool is_horizontal = isHorizontal();
   const int group_width = getStrapGroupWidth();
   int offset = -group_width / 2 + extra_offset;
@@ -903,6 +912,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   }
   const int half_width = getWidth() / 2;
   offset += half_width;
+  offset = layer.snapToManufacturingGrid(offset);
 
   odb::Rect estimated_straps;
   const int strap_start = offset - half_width;
@@ -914,15 +924,21 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
         strap_start, area_.yMin(), strap_start + group_width, area_.yMax());
   }
 
+  debugPrint(
+      getLogger(),
+      utl::PDN,
+      "Channel",
+      3,
+      "Estimating strap to be {}.",
+      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
+
   // check if straps will fit
   if (is_horizontal) {
-    if (estimated_straps.yMin() < area_.yMin()
-        || estimated_straps.yMax() > area_.yMax()) {
+    if (estimated_straps.dy() > area_.dy()) {
       return false;
     }
   } else {
-    if (estimated_straps.xMin() < area_.xMin()
-        || estimated_straps.xMax() > area_.xMax()) {
+    if (estimated_straps.dx() > area_.dx()) {
       return false;
     }
   }
@@ -931,30 +947,38 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   std::vector<odb::dbTechLayer*> check_layers;
   for (odb::dbTechLayer* next_layer = connect_to_->getUpperLayer();
        next_layer != getLayer();) {
-    if (next_layer->getType() == odb::dbTechLayerType::ROUTING) {
+    if (next_layer->getRoutingLevel() != 0) {
       check_layers.push_back(next_layer);
     }
 
     next_layer = next_layer->getUpperLayer();
   }
   check_layers.push_back(getLayer());
+
   bool has_obs = false;
-  debugPrint(
-      getLogger(),
-      utl::PDN,
-      "Channel",
-      3,
-      "Estimating strap to be {}.",
-      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
-  Box estimated_straps_box(
-      Point(estimated_straps.xMin(), estimated_straps.yMin()),
-      Point(estimated_straps.xMax(), estimated_straps.yMax()));
+  odb::Rect obs_check = estimated_straps;
+  if (is_horizontal) {
+    obs_check.set_xlo(obs_check_area_.xMin());
+    obs_check.set_xhi(obs_check_area_.xMax());
+  } else {
+    obs_check.set_ylo(obs_check_area_.yMin());
+    obs_check.set_yhi(obs_check_area_.yMax());
+  }
+  auto check_obstructions = [&obs_check](const ShapeTree& shapes) -> bool {
+    for (auto itr = shapes.qbegin(bgi::intersects(Shape::rectToBox(obs_check))); itr != shapes.qend(); itr++) {
+      const auto& shape = itr->second;
+      const odb::Rect intersect = obs_check.intersect(shape->getObstruction());
+      if (intersect.area() != 0) {
+        return true;
+      }
+    }
+    return false;
+  };
   for (auto* layer : check_layers) {
     if (obstructions.count(layer) != 0) {
       // obstructions possible on this layer
       const auto& shapes = obstructions.at(layer);
-      if (shapes.qbegin(bgi::intersects(estimated_straps_box))
-          != shapes.qend()) {
+      if (check_obstructions(shapes)) {
         has_obs = true;
         // found an obstruction, so it is safe to stop
         break;
@@ -972,8 +996,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
       // not first time, so search half the distance of the current bisection.
       new_bisect_dist = bisect_dist / 2;
     }
-    const TechLayer layer(getLayer());
-    layer.snapToManufacturingGrid(new_bisect_dist);
+    new_bisect_dist = layer.snapToManufacturingGrid(new_bisect_dist);
 
     if (new_bisect_dist == 0) {
       // no more searches possible
@@ -997,25 +1020,21 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
                layer.dbuToMicron(new_bisect_dist),
                layer.dbuToMicron(extra_offset - new_bisect_dist),
                layer.dbuToMicron(extra_offset + new_bisect_dist));
-    if (new_bisect_dist < group_width) {
-      // new offset to too small to matter, so stop
-      return false;
-    } else {
-      // check lower range first
-      if (determineOffset(obstructions,
-                          extra_offset - new_bisect_dist,
-                          new_bisect_dist,
-                          level + 1)) {
-        return true;
-      }
-      // check higher range next
-      if (determineOffset(obstructions,
-                          extra_offset + new_bisect_dist,
-                          new_bisect_dist,
-                          level + 1)) {
-        return true;
-      }
+    // check lower range first
+    if (determineOffset(obstructions,
+                        extra_offset - new_bisect_dist,
+                        new_bisect_dist,
+                        level + 1)) {
+      return true;
     }
+    // check higher range next
+    if (determineOffset(obstructions,
+                        extra_offset + new_bisect_dist,
+                        new_bisect_dist,
+                        level + 1)) {
+      return true;
+    }
+
     // no offset found
     return false;
   }
@@ -1235,20 +1254,45 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
   shape_set.get_polygons(channel_set);
   std::vector<RepairChannelArea> channels;
   for (const auto& channel_shape : channel_set) {
-    Rectangle rect;
-    extents(rect, channel_shape);
+    // decompose channel polygon to rects and pick largest, remaining will be fixed later
+    Polygon90Set channel_max_rect;
+    channel_max_rect += channel_shape;
+    std::vector<Rectangle> max_rects;
+    channel_max_rect.get_rectangles(max_rects);
 
-    odb::Rect area(xl(rect), yl(rect), xh(rect), yh(rect));
+    odb::Rect area;
+    for (const auto& max_rect : max_rects) {
+      const odb::Rect max_area(xl(max_rect), yl(max_rect), xh(max_rect), yh(max_rect));
+      if (target->isHorizontal()) {
+        if (area.dy() < max_area.dy()) {
+          area = max_area;
+        }
+      } else {
+        if (area.dx() < max_area.dx()) {
+          area = max_area;
+        }
+      }
+    }
+
     if (!area.intersects(grid_core)) {
       continue;
     }
-    RepairChannelArea channel{area.intersect(grid_core), target, layer, {}};
+
+    RepairChannelArea channel{area.intersect(grid_core),
+                              odb::Rect(),
+                              target,
+                              layer,
+                              {}};
+    channel.obs_area.mergeInit();
 
     int followpin_count = 0;
     int strap_count = 0;
     // find all the nets in a given repair area
     for (auto* shape : shapes_used) {
-      if (channel.area.overlaps(shape->getRect())) {
+      const auto& shape_rect = shape->getRect();
+      if (channel.area.overlaps(shape_rect)) {
+        channel.area.merge(shape_rect);
+        channel.obs_area.merge(shape_rect);
         channel.nets.insert(shape->getNet());
         if (shape->getType() == odb::dbWireShapeType::FOLLOWPIN) {
           followpin_count++;
@@ -1348,6 +1392,7 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
                                                        obstructions,
                                                        channel.nets,
                                                        channel.area,
+                                                       channel.obs_area,
                                                        allow);
 
     if (!strap->isRepairValid()) {

@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "rsz/BufferedNet.hh"
+#include "BufferedNet.hh"
 
 #include <algorithm>
 // Use spdlog fmt::format until c++20 that supports std::format.
