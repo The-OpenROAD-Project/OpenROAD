@@ -135,7 +135,8 @@ class FlexDRConnectivityChecker
                      std::vector<int>& victims,
                      std::vector<Span>& newSegSpans,
                      const bool isHorz);
-  void merge_perform_helper(const std::vector<std::pair<Span, int>>& segSpans,
+  void merge_perform_helper(const NetRouteObjs& netRouteObjs,
+                            const std::vector<std::pair<Span, int>>& segSpans,
                             std::vector<int>& victims,
                             std::vector<Span>& newSegSpans);
   void merge_commit(frNet* net,

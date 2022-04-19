@@ -394,61 +394,61 @@ void FlexDRWorker::endAddNets_merge(frDesign* design,
     // merge horz pathseg
     if ((int) horzPathSegs.size() == 2 && vertPathSegs.empty() && !hasPatchMetal
         && horzPathSegs[0]->isTapered() == horzPathSegs[1]->isTapered()) {
-      unique_ptr<frShape> uShape = make_unique<frPathSeg>(*horzPathSegs[0]);
-      auto rptr = static_cast<frPathSeg*>(uShape.get());
-      Point bp1, ep1, bp2, ep2;
-      horzPathSegs[0]->getPoints(bp1, ep1);
-      horzPathSegs[1]->getPoints(bp2, ep2);
-      Point bp(min(bp1.x(), bp2.x()), bp1.y());
-      Point ep(max(ep1.x(), ep2.x()), ep1.y());
-      rptr->setPoints(bp, ep);
+        unique_ptr<frShape> uShape = make_unique<frPathSeg>(*horzPathSegs[0]);
+        auto rptr = static_cast<frPathSeg*>(uShape.get());
+        Point bp1, ep1, bp2, ep2;
+        horzPathSegs[0]->getPoints(bp1, ep1);
+        horzPathSegs[1]->getPoints(bp2, ep2);
+        Point bp(min(bp1.x(), bp2.x()), bp1.y());
+        Point ep(max(ep1.x(), ep2.x()), ep1.y());
+        rptr->setPoints(bp, ep);
 
-      frSegStyle style, style_1;
-      horzPathSegs[0]->getStyle(style);
-      horzPathSegs[1]->getStyle(style_1);
-      if (bp1.x() < bp2.x()) {
-        style.setEndStyle(style_1.getEndStyle(), style_1.getEndExt());
-      } else {
-        style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
-      }
-      rptr->setStyle(style);
+        frSegStyle style, style_1;
+        horzPathSegs[0]->getStyle(style);
+        horzPathSegs[1]->getStyle(style_1);
+        if (bp1.x() < bp2.x()) {
+          style.setEndStyle(style_1.getEndStyle(), style_1.getEndExt());
+        } else {
+          style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
+        }
+        rptr->setStyle(style);
 
-      regionQuery->removeDRObj(horzPathSegs[0]);
-      regionQuery->removeDRObj(horzPathSegs[1]);
-      net->removeShape(horzPathSegs[0]);
-      net->removeShape(horzPathSegs[1]);
+        regionQuery->removeDRObj(horzPathSegs[0]);
+        regionQuery->removeDRObj(horzPathSegs[1]);
+        net->removeShape(horzPathSegs[0]);
+        net->removeShape(horzPathSegs[1]);
 
-      net->addShape(std::move(uShape));
-      regionQuery->addDRObj(rptr);
+        net->addShape(std::move(uShape));
+        regionQuery->addDRObj(rptr);
     }
     if ((int) vertPathSegs.size() == 2 && horzPathSegs.empty() && !hasPatchMetal
         && vertPathSegs[0]->isTapered() == vertPathSegs[1]->isTapered()) {
-      unique_ptr<frShape> uShape = make_unique<frPathSeg>(*vertPathSegs[0]);
-      auto rptr = static_cast<frPathSeg*>(uShape.get());
-      Point bp1, ep1, bp2, ep2;
-      vertPathSegs[0]->getPoints(bp1, ep1);
-      vertPathSegs[1]->getPoints(bp2, ep2);
-      Point bp(bp1.x(), min(bp1.y(), bp2.y()));
-      Point ep(ep1.x(), max(ep1.y(), ep2.y()));
-      rptr->setPoints(bp, ep);
+        unique_ptr<frShape> uShape = make_unique<frPathSeg>(*vertPathSegs[0]);
+        auto rptr = static_cast<frPathSeg*>(uShape.get());
+        Point bp1, ep1, bp2, ep2;
+        vertPathSegs[0]->getPoints(bp1, ep1);
+        vertPathSegs[1]->getPoints(bp2, ep2);
+        Point bp(bp1.x(), min(bp1.y(), bp2.y()));
+        Point ep(ep1.x(), max(ep1.y(), ep2.y()));
+        rptr->setPoints(bp, ep);
 
-      frSegStyle style, style_1;
-      vertPathSegs[0]->getStyle(style);
-      vertPathSegs[1]->getStyle(style_1);
-      if (bp1.y() < bp2.y()) {
-        style.setEndStyle(style_1.getEndStyle(), style_1.getEndExt());
-      } else {
-        style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
-      }
-      rptr->setStyle(style);
+        frSegStyle style, style_1;
+        vertPathSegs[0]->getStyle(style);
+        vertPathSegs[1]->getStyle(style_1);
+        if (bp1.y() < bp2.y()) {
+          style.setEndStyle(style_1.getEndStyle(), style_1.getEndExt());
+        } else {
+          style.setBeginStyle(style_1.getBeginStyle(), style_1.getBeginExt());
+        }
+        rptr->setStyle(style);
 
-      regionQuery->removeDRObj(vertPathSegs[0]);
-      regionQuery->removeDRObj(vertPathSegs[1]);
-      net->removeShape(vertPathSegs[0]);
-      net->removeShape(vertPathSegs[1]);
+        regionQuery->removeDRObj(vertPathSegs[0]);
+        regionQuery->removeDRObj(vertPathSegs[1]);
+        net->removeShape(vertPathSegs[0]);
+        net->removeShape(vertPathSegs[1]);
 
-      net->addShape(std::move(uShape));
-      regionQuery->addDRObj(rptr);
+        net->addShape(std::move(uShape));
+        regionQuery->addDRObj(rptr);
     }
   }
 }

@@ -518,6 +518,12 @@ class frPathSeg : public frShape
   bool isVertical() const { return begin_.x() == end_.x(); }
   frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
+  bool isBeginTruncated() {
+    return style_.getBeginStyle() == frcTruncateEndStyle;
+  }
+  bool isEndTruncated() {
+    return style_.getEndStyle() == frcTruncateEndStyle;
+  }
   // setters
   void setPoints(const Point& beginIn, const Point& endIn)
   {

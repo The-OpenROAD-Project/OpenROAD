@@ -771,10 +771,11 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
   sort(segSpans.begin(), segSpans.end());
 
   // get victim segments and merged segments
-  merge_perform_helper(segSpans, victims, newSegSpans);
+  merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
 }
 
 void FlexDRConnectivityChecker::merge_perform_helper(
+    const NetRouteObjs& netRouteObjs,
     const vector<pair<Span, int>>& segSpans,
     vector<int>& victims,
     vector<Span>& newSegSpans)
@@ -782,9 +783,19 @@ void FlexDRConnectivityChecker::merge_perform_helper(
   bool hasOverlap = false;
   frCoord currStart = INT_MAX, currEnd = INT_MIN;
   vector<int> localVictims;
+  frPathSeg* last = nullptr;
   for (auto& segSpan : segSpans) {
+      frPathSeg* ps = static_cast<frPathSeg*>(netRouteObjs[segSpan.second]);
+//      if (ps->getBeginPoint() == Point(528770, 276000))
+//          print = true;
+//        if (print)
+//            cout << "passing by " << *ps << endl;
     if (segSpan.first.lo >= currEnd) {
+//        if (print)
+//            cout << " pre merging " << endl;
       if (hasOverlap) {
+//          if (print)
+//            cout << "merging " << currStart << " " << currEnd << endl;
         // commit prev merged segs
         newSegSpans.push_back({currStart, currEnd});
         // commit victims in merged segs
@@ -798,11 +809,19 @@ void FlexDRConnectivityChecker::merge_perform_helper(
       currEnd = segSpan.first.hi;
       localVictims.push_back(segSpan.second);
     } else {
-      hasOverlap = true;
-      // update local variables
-      currEnd = max(currEnd, segSpan.first.hi);
-      localVictims.push_back(segSpan.second);
+        if (!ps->isBeginTruncated() && (!last || !last->isEndTruncated()) &&
+              (segSpan.first.hi > currEnd || !ps->isEndTruncated())) {
+//            if (print)
+//                cout << "overlap " << endl;
+            hasOverlap = true;
+            // update local variables
+            localVictims.push_back(segSpan.second);
+        } 
+//        else if (print)
+//            cout << "not overlap " << endl;
+        currEnd = max(currEnd, segSpan.first.hi);
     }
+    last = ps;
   }
   if (hasOverlap) {
     newSegSpans.push_back({currStart, currEnd});
