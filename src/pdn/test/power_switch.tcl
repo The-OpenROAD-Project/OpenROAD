@@ -13,7 +13,7 @@ add_global_connection -net VDD_SW -pin_pattern VPB
 add_global_connection -net VSS -pin_pattern VGND -ground
 add_global_connection -net VSS -pin_pattern VNB
 
-set_voltage_domain -name CORE -power VDD -ground VSS -unswitched_power VDD_SW
+set_voltage_domain -name CORE -power VDD -ground VSS -switched_power VDD_SW
 
 define_pdn_grid -name grid -switch_cell POWER_SWITCH
 add_pdn_stripe -followpins -layer met1 -width 0.48

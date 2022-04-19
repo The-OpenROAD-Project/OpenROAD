@@ -485,6 +485,13 @@ void PdnGen::makeRegionVoltageDomain(
       this, name, block, power, ground, secondary_nets, region, logger_));
 }
 
+void PdnGen::setVoltageDomainSwitchedPower(
+    VoltageDomain *voltage_domain,
+    odb::dbNet* switched_power)
+{
+  voltage_domain->setSwitchedPower(switched_power);
+}
+
 std::vector<Grid*> PdnGen::getGrids() const
 {
   std::vector<Grid*> grids;

@@ -149,6 +149,7 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->getObstructions(local_obstructions);
   }
 
+  // insert power switches
   // make vias
   makeVias(global_shapes, obstructions);
 

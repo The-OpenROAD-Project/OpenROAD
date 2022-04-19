@@ -73,6 +73,8 @@ variable default_global_connections {
     {inst_name .* pin_name ^VSSE$}
   }
 }
+variable power_switch_cells {}
+variable psw_instance {}
 variable voltage_domains {
   CORE {
     primary_power VDD primary_ground VSS
@@ -318,9 +320,33 @@ proc check_region {region_name} {
   return $region_name
 }
 
-proc check_power {power_net_name} {
-  add_power_net $power_net_name
+proc check_switch_cells {switch_cells} {
+  foreach switch_cell $switch_cells {
+    if {[[ord::get_db] findMaster $switch_cell] == "NULL"} {
+      utl::warn PDN 9181 "Switch cell $switch_cell not loaded into the database."
+    }
+  }
 
+  return $switch_cells
+}
+
+proc check_switched_power {switched_power_net_name} {
+  set block [ord::get_db_block]
+
+  if {[set net [$block findNet $switched_power_net_name]] == "NULL"} {
+    set net [odb::dbNet_create $block $switched_power_net_name]
+    $net setSpecial
+    $net setSigType "POWER"
+  } else {
+    if {[$net getSigType] != "POWER"} {
+      utl::error PDN 9180 "Net $switched_power_net_name already exists in the design, but is of signal type [$net getSigType]."
+    }
+  }
+  add_power_net $switched_power_net_name
+  return $switched_power_net_name
+}
+
+proc check_power {power_net_name} {
   set block [ord::get_db_block]
 
   if {[set net [$block findNet $power_net_name]] == "NULL"} {
@@ -332,6 +358,7 @@ proc check_power {power_net_name} {
       utl::error PDN 9128 "Net $power_net_name already exists in the design, but is of signal type [$net getSigType]."
     }
   }
+  add_power_net $power_net_name
   return $power_net_name
 }
 
@@ -371,18 +398,44 @@ proc check_ground {ground_net_name} {
   return $ground_net_name
 }
 
-proc set_voltage_domain {args} {
-  variable voltage_domains
+proc define_power_switch_cell {args} {
+  variable power_switch_cells
 
-  set voltage_domain {}
+  set power_switch_cell {}
   set process_args $args
   while {[llength $process_args] > 0} {
     set arg [lindex $process_args 0]
     set value [lindex $process_args 1]
 
     switch $arg {
+      -name             {dict set power_switch_cell name $value}
+      -control          {dict set power_switch_cell control $value}
+      -acknowledge      {dict set power_switch_cell acknowledge $value}
+      -power_switchable {dict set power_switch_cell power_switchable $value}
+      -power            {dict set power_switch_cell power $value}
+      -ground           {dict set power_switch_cell ground $value}
+      default           {utl::error PDN 9190 "Unrecognized argument $arg, should be one of -name, -control, -acknowledge, -power, -ground."}
+    }
+
+    set process_args [lrange $process_args 2 end]
+  }
+  dict set power_switch_cells [dict get $power_switch_cell name] $power_switch_cell
+}
+
+proc set_voltage_domain {args} {
+  variable voltage_domains
+
+  set voltage_domain {}
+  set process_args $args
+  while {[llength $process_args] > 0} {
+
+    set arg [lindex $process_args 0]
+    set value [lindex $process_args 1]
+
+    switch $arg {
       -name            {dict set voltage_domain name $value}
       -power           {dict set voltage_domain primary_power [check_power $value]}
+      -switched_power  {dict set voltage_domain switched_power [check_switched_power $value]}
       -secondary_power {dict set voltage_domain secondary_power [check_secondary_power $value]}
       -ground          {dict set voltage_domain primary_ground [check_ground $value]}
       -region          {dict set voltage_domain region [check_region $value]}
@@ -447,6 +500,23 @@ proc check_halo {value} {
   return $value
 }
 
+proc check_net {value} {
+  if {[set net [[ord::get_db_block] findNet $value]] == "NULL"} {
+    utl::error PDN 9194 "Net $value does not exist in the design"
+  }
+
+  return $value
+}
+
+proc check_power_control_network_option {value} {
+  if {$value == "STAR"} {
+    return $value
+  } elseif {$value == "DAISY"} {
+    return $value
+  }
+  utl::error PDN 9195 "Option -power_control_network must be set to STAR or DAISY"
+}
+
 proc define_pdn_grid {args} {
   variable current_grid
 
@@ -469,6 +539,9 @@ proc define_pdn_grid {args} {
       -pins              {dict set grid pins [check_layer_names $value]}
       -starts_with       {dict set grid starts_with [check_starts_with $value]}
       -pin_direction     {dict set grid pin_direction [check_direction $value]}
+      -switch_cell       {dict set grid switch_cell [check_switch_cells $value]}
+      -power_control     {dict set grid power_control [check_net $value]}
+      -power_control_network {dict set grid power_control_network [check_power_control_network_option $value]}
       default            {utl::error PDN 9088 "Unrecognized argument $arg, should be one of -name, -orient, -instances -cells -pins -starts_with."}
     }
 
@@ -560,6 +633,9 @@ proc get_pg_nets {{voltage_domain ""}} {
     if {[dict exists $voltage_domains $voltage_domain secondary_power]} {
       lappend pg_nets {*}[dict get $voltage_domains $voltage_domain secondary_power]
     }
+    if {[dict exists $voltage_domains $voltage_domain switched_power]} {
+      lappend pg_nets {*}[dict get $voltage_domains $voltage_domain switched_power]
+    }
   }
    return $pg_nets
 }
@@ -634,7 +710,12 @@ proc add_pdn_stripe {args} {
   }
   set grid $current_grid
 
-  set stripe [dict get $args stripe]
+  if {[lsearch $args -followpins] > -1} {
+    set stripe rails
+    set args [lreplace $args [lsearch $args "-followpins"] [lsearch $args "-followpins"]]
+  } else {
+    set stripe straps
+  }
   set layer [check_layer_names [dict get $args -layer]]
 
   set process_args $args
@@ -3273,8 +3354,13 @@ proc generate_lower_metal_followpin_rails {} {
       set vss_name [get_voltage_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
       # generate power_rails using first domain_power
       set first_power_name [lindex $vdd_name 0]
+      set switched_power_name [get_voltage_domain_switched_power [dict get $design_data core_domain]]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
-      add_stripe $lay $first_power_name $vdd_box
+      if {$switched_power_name != ""} {
+        add_stripe $lay $switched_power_name $vdd_box
+      } else {
+        add_stripe $lay $first_power_name $vdd_box
+      }
       add_stripe $lay $vss_name $vss_box
     }
   }
@@ -3302,44 +3388,71 @@ proc generate_upper_metal_mesh_stripes {net layer layer_info area} {
 # otherwise:
 #    place the second stripe pitch / 2 away from the first,
 #
+  variable design_data
   set width [dict get $layer_info width]
-
+  set switched_power_name [get_voltage_domain_switched_power [dict get $design_data core_domain]]
   # debug "Starts with: [starts_with $layer]"
   # debug "net: $net, power: [is_power_net $net], ground: [is_ground_net $net], layer: $layer, area: $area"
 
   if {[get_dir $layer] == "hor"} {
     set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
-    if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
-      if {[dict exists $layer_info spacing]} {
-        set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
-      } else {
-        set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
+    if {$net == $switched_power_name} { #VDD_SW
+      set offset1 [expr {$offset + ([dict get $layer_info pitch] / 4)}]
+      set offset2 [expr {$offset - ([dict get $layer_info pitch] / 4)}]
+      for {set y $offset1} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
+        set box [::odb::newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
+        add_stripe $layer $net $box
       }
-    }
+      for {set y $offset2} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
+        set box [::odb::newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
+        add_stripe $layer $net $box
+      }
+    } else {
+      if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
+        if {[dict exists $layer_info spacing]} {
+          set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
+        } else {
+          set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
+        }
+      }
 
-    for {set y $offset} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
-      set box [::odb::newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
-      # debug "  box: [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]"
-      add_stripe $layer $net $box
+      for {set y $offset} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
+        set box [::odb::newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
+        # debug "  box: [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]"
+        add_stripe $layer $net $box
+      }
     }
   } elseif {[get_dir $layer] == "ver"} {
     set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
     # debug "layer_offset: [dict get $layer_info offset]"
     # debug "base_offset: $offset"
-    if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
-      set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
-      if {[dict exists $layer_info spacing]} {
-        set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
-        # debug "spacing_based_offset: $offset"
-      } else {
-        set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
-        # debug "pitch_based_offset: $offset"
+    if {$net == $switched_power_name} { #VDD_SW
+      set offset1 [expr {$offset + ([dict get $layer_info pitch] / 4)}]
+      set offset2 [expr {$offset - ([dict get $layer_info pitch] / 4)}]
+      for {set x $offset1} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
+        set box [::odb::newSetFromRect [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]]
+        add_stripe $layer $net $box
       }
-    }
-    for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
-      set box [::odb::newSetFromRect [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]]
-      # debug "  box: [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]"
-      add_stripe $layer $net $box
+      for {set x $offset2} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
+        set box [::odb::newSetFromRect [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]]
+        add_stripe $layer $net $box
+      }
+    } else {
+      if {([starts_with $layer] == "POWER" && ![is_power_net $net]) || ([starts_with $layer] == "GROUND" && ![is_ground_net $net])} {
+        set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
+        if {[dict exists $layer_info spacing]} {
+          set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
+          # debug "spacing_based_offset: $offset"
+        } else {
+          set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
+          # debug "pitch_based_offset: $offset"
+        }
+      }
+      for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
+        set box [::odb::newSetFromRect [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]]
+        # debug "  box: [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]"
+        add_stripe $layer $net $box
+      }
     }
   } else {
     utl::error PDN 9026 "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
@@ -3398,6 +3511,17 @@ proc adjust_area_for_core_rings {layer area number} {
   return $extended_area
 }
 
+proc is_lowest_strap {lay} {
+  variable grid_data
+
+  foreach other_lay [dict keys [dict get $grid_data straps]] {
+    if {[get_layer_number $other_lay] < [get_layer_number $lay]} {
+      return 0
+    }
+  }
+  return 1 
+}
+
 ## this is a top-level proc to generate PDN stripes and insert vias between these stripes
 proc generate_stripes {net_name} {
   variable plan_template
@@ -3432,6 +3556,14 @@ proc generate_stripes {net_name} {
         # Split core domains pwr/gnd nets when they cross other voltage domains that have different pwr/gnd nets
         update_mesh_stripes_with_voltage_domains $net_name $lay
       }
+
+      if {$net_name == [get_voltage_domain_switched_power [dict get $design_data core_domain]]} {
+        if {[is_lowest_strap $lay]} {
+          # debug "Generate $net_name on layer $lay"
+          generate_upper_metal_mesh_stripes $net_name $lay [dict get $grid_data straps $lay] $area
+	}
+      }
+
       # Create stripes for each voltage domains
       foreach domain_name [dict keys $voltage_domains] {
         if {$domain_name == [dict get $design_data core_domain]} {continue}
@@ -3473,6 +3605,262 @@ proc generate_stripes {net_name} {
     }
   }
 }
+
+proc insert_power_switches {} {
+  variable grid_data
+  variable power_switch_cells
+  variable psw_instance
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  set name [dict get $grid_data switch_cell]
+  set psw [$db findMaster $name]
+  # The selected power switch is double height, and has a central VSS pin, so align with VSS rails
+  set power [dict get $power_switch_cells $name power]
+  set ground [dict get $power_switch_cells $name ground]
+  set vgnd [[$psw findMTerm $ground] getMPins]
+  set vddg [lindex [[$psw findMTerm $power] getMPins] 0]
+  set vddg_lay [[[$vddg getGeometry] getTechLayer] getName]
+
+  set rail_lay [lindex [get_rails_layers] 0]
+  set rail_width [dict get $grid_data rails $rail_lay width]
+
+  set strap_lay [lindex [dict get $grid_data straps] 0]
+  set strap_lay_info [dict get $grid_data straps $strap_lay]
+  set strap_width [dict get $strap_lay_info width]
+
+  set area [dict get $grid_data area]
+  set offset [expr [lindex $area 0] + [dict get $strap_lay_info offset]]
+
+  set row_idx 0
+  set psw_instance {}
+  set num_crossing [expr ([llength [$block getRows]] - 1) / 2]
+
+  foreach row [$block getRows] {
+    set orient [$row getOrient]
+    set box [$row getBBox]
+    if {$orient == "R0"} {
+      if { [expr $row_idx % 2] == 1 || $row_idx == $num_crossing} {
+        if { [expr $num_crossing % 2] == 1 && $row_idx == $num_crossing} {continue}
+        set vss_y [$box yMin]
+        set overlap_y [expr $vss_y - $rail_width / 2]
+        
+        set col_idx 0
+
+        for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $strap_lay_info width]}]} {set x [expr {[dict get $strap_lay_info pitch] + $x}]} {
+          set overlap_x [expr $x - $strap_width / 2]
+
+          set location [list \
+            [expr $overlap_x - [[$vddg getBBox] xMin]] \
+            [expr $overlap_y - [[$vgnd getBBox] yMin]] \
+          ]
+
+          set inst_name "PSW_${row_idx}_${col_idx}"
+          if {[set inst [$block findInst $inst_name]] == "NULL"} {
+            set inst [odb::dbInst_create $block $psw $inst_name]
+          }
+
+          $inst setOrigin {*}$location
+          $inst setPlacementStatus "FIRM"
+
+          lappend psw_instance $inst
+          incr col_idx
+        }
+      }
+
+      incr row_idx
+    }
+  }
+
+  # automatically add design connection rule for vddg pin layer
+  set connections {}
+  foreach connection [dict get $grid_data connect] {
+    set l1 [lindex $connection 0]
+    set l2 [lindex $connection 1]
+    lappend connections $connection
+    if {$l1 == $vddg_lay} {
+      lappend connections "${l1}_PIN_hor ${l2}"
+    } elseif {$l2 == $vddg_lay} {
+      lappend connections "${l1} ${l2}_PIN_hor"
+    }
+  }
+  dict set grid_data connect $connections
+
+  foreach inst $psw_instance {
+    set orient [$inst getOrient]
+    set origin [$inst getOrigin]
+    foreach vddg [$inst findITerm $power] {
+      set mTerm [$vddg getMTerm]
+      foreach mPin [$mTerm getMPins] {
+        set shape [$mPin getGeometry]
+        set layer [[$shape getTechLayer] getName]
+        set rect [transform_box [$shape xMin] [$shape yMin] [$shape xMax] [$shape yMax] $origin $orient]
+        # debug "layer: $layer, rect: $rect"
+        add_stripe "${layer}_PIN_hor" "VDD" [odb::newSetFromRect {*}$rect]
+      }
+      # set vddg_layer [[[$vddg getGeometry] getTechLayer] getName]
+      # add_stripe $vddg_layer "POWER" [odb::newSetFromRect [[$vddg getBBox] xMin] [[$vddg getBBox] yMin] [[$vddg getBBox] xMax] [[$vddg getBBox] yMax]]
+    }
+  }
+  merge_stripes
+}
+
+proc get_power_switch_shape {} {
+  variable psw_instance
+  set psw {}
+
+  foreach psw_inst $psw_instance {
+    set bbox [$psw_inst getBBox]
+    set box [odb::newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+    lappend psw $box
+  }
+  return [odb::orSets $psw]
+}
+ 
+proc move_tapcell {tapcell_inst switch_inst print_num} {
+
+  set tapcell_bbox [$tapcell_inst getBBox]
+  set switch_bbox [odb::getRectangles $switch_inst]
+
+  set avg_tapcell [expr ([$tapcell_bbox xMin] + [$tapcell_bbox xMax]) / 2]
+  set avg_switch [expr ([$switch_bbox xMin] + [$switch_bbox xMax]) / 2]
+
+  if {$avg_tapcell > $avg_switch} { 
+    # move to rhs
+    set location [list \
+            [expr [lindex [$tapcell_inst getOrigin] 0] + [$switch_bbox xMax] - [$tapcell_bbox xMin]] \
+            [lindex [$tapcell_inst getOrigin] 1] \
+          ]
+  } else {
+    # move to lhs
+    set location [list \
+            [expr [lindex [$tapcell_inst getOrigin] 0] - [$tapcell_bbox xMax] + [$switch_bbox xMin]] \
+            [lindex [$tapcell_inst getOrigin] 1] \
+          ]
+  }
+  $tapcell_inst setOrigin {*}$location
+}
+
+proc detect_and_fix_tapcell_overlaps {} {
+  variable grid_data
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  set name [dict get $grid_data switch_cell]
+  set psw_width [[$db findMaster $name] getWidth]
+
+  set power_switches [get_power_switch_shape]
+  set tapcell_idx 0
+
+  foreach Inst [$block getInsts] {
+    set tapcell_inst [$block findInst "TAP_${tapcell_idx}"]
+    if {$tapcell_inst != "NULL"} {
+      set bbox [$tapcell_inst getBBox]
+      set box [odb::newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+      set overlap [odb::andSet $power_switches $box]
+
+      if {[llength [odb::getRectangles $overlap]] > 0} {
+        set switch_overlap [odb::bloatSet $overlap $psw_width]
+        set switch_inst  [odb::andSet $power_switches $switch_overlap]
+        move_tapcell $tapcell_inst $switch_inst $tapcell_idx
+      } 
+      incr tapcell_idx
+    } else {
+      break
+    }
+  }
+}
+
+proc is_power_control_star {} {
+  variable grid_data
+  if {![dict exists $grid_data power_control_network]} {
+    dict set grid_data power_control_network "STAR"
+  }
+  if {[dict get $grid_data power_control_network] == "STAR"} {
+    return 1
+  }
+  return 0
+}
+
+proc is_power_control_daisy_chain {} {
+  variable grid_data
+  if {![dict exists $grid_data power_control_network]} {
+    dict set grid_data power_control_network "STAR"
+  }
+  if {[dict get $grid_data power_control_network] == "DAISY"} {
+    return 1
+  }
+  return 0
+}
+
+proc connect_power_switches {} {
+  variable power_switch_cells
+  variable grid_data
+
+  set block [ord::get_db_block]
+  if {![dict exists $grid_data power_control]} {
+    utl::error PDN 9191 "No power control signal is defined for a grid that includes power switches"
+  }
+  set power_control_signal [dict get $grid_data power_control]
+  set power_control_net [$block findNet $power_control_signal]
+  if {$power_control_net == "NULL"} {
+    utl::error PDN 9192 "Cannot find power control signal [dict get $power_switch control_signal]"
+  }
+
+  if {[is_power_control_star]} {
+    # Connect all the power control signal inputs to the power control signal in a high fanout net configuration
+    foreach inst [$block getInsts] {
+      set cell_name [[$inst getMaster] getName]
+      if {![dict exists $power_switch_cells $cell_name]} {continue}
+
+      set control_pin [dict get $power_switch_cells $cell_name control]
+      if {[set iterm [$inst findITerm $control_pin]] != "NULL"} {
+        $iterm connect $power_control_net
+      } else {
+        utl::error PDN 9193 "Cannot find instance term $control_pin for [$inst getName] of cell [[$inst getMaster] getName]"
+      }
+    }
+  } elseif {[is_power_control_daisy_chain]} {
+    foreach inst [$block getInsts] {
+      set cell_name [[$inst getMaster] getName]
+      if {[dict exists $power_switch_cells $cell_name]} {
+	lappend psw_instances $inst
+      }
+    }
+    # sort instances by x, then y
+    foreach inst $psw_instances {
+      lassign [$inst getOrigin] x y
+      dict lappend columns $x $inst
+    }
+
+    set control_net $power_control_net
+    foreach x [lsort -integer [dict keys $columns]] {
+      set col [dict get $columns $x]
+      set sorted_col [lreverse [lsort -command sort_insts_by_y $col]]
+      foreach inst $sorted_col {
+	# debug "inst x=[lindex [$inst getOrigin] 0], y=[lindex [$inst getOrigin] 1]"
+        set control_pin [$inst findITerm [dict get $power_switch_cells $cell_name control]]
+        $control_pin connect $control_net
+        set control_net [odb::dbNet_create $block "[$inst getName]_out"]
+	set ack_pin_name [dict get $power_switch_cells $cell_name acknowledge]
+        set ack_pin [$inst findITerm $ack_pin_name]
+	if {$ack_pin == "NULL"} {
+          utl::error PDN 9197 "Cannot find pin $ack_pin_name on power switch [$inst getName] ($cell_name)"
+	}
+        $ack_pin connect $control_net
+      }
+      set first [lindex $sorted_col 0]
+      set control_net [$block findNet "[$first getName]_out"]
+      # debug "control_net=[$control_net getName]"
+    }
+  } else {
+    utl::error PDN 9196 "Invalid value specified for power control network type"
+  }
+}
+
+
 
 proc cut_blocked_areas {net} {
   variable stripe_locs
@@ -4128,12 +4516,10 @@ proc export_opendb_global_connection {} {
   ## Do global connect statements first
   get_global_connect_list_default [dict get $design_data core_domain] false
 
-  foreach net_type "power_nets ground_nets" {
-    foreach net_name [dict get $design_data $net_type] {
-      set net [$block findNet $net_name]
-      foreach pattern [get_global_connect_list $net_name] {
-        pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
-      }
+  foreach net_name [get_all_pg_nets] {
+    set net [$block findNet $net_name]
+    foreach pattern [get_global_connect_list $net_name] {
+      pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
     }
   }
 
@@ -4233,7 +4619,6 @@ proc export_opendb_specialnets {} {
 
   foreach net_name [get_all_pg_nets] {
     if {[lsearch -regexp [array names stripe_locs] ",$net_name\$"] > -1} {
-    # debug "net: $net_name, layers: [array names stripe_locs]"
       export_opendb_specialnet $net_name
     }
   }
@@ -5244,6 +5629,12 @@ proc add_grid {} {
   }
   merge_stripes
 
+  if {[get_voltage_domain_switched_power [dict get $design_data core_domain]] != ""} {
+    insert_power_switches
+    connect_power_switches
+    detect_and_fix_tapcell_overlaps
+  }
+  
   ## Cut blocked areas on power and ground nets
   foreach net [get_pg_nets] {
     cut_blocked_areas $net
@@ -5454,6 +5845,9 @@ proc print_strategy {type specification} {
   if {[dict exists $specification connect]} {
     utl::report "    Connect: [dict get $specification connect]"
   }
+  if {[dict exists $specification switch_cell]} {
+    utl::report "    Switch cell: [dict get $specification switch_cell]"
+  }
 }
 
 proc read_template_placement {} {
@@ -5594,6 +5988,7 @@ proc round_to_routing_grid {layer_name location} {
 proc identify_channels {lower_layer_name upper_layer_name net} {
   variable block
   variable stripe_locs
+  variable design_data
 
   set channels {}
   set wire_groups {}
@@ -5649,6 +6044,23 @@ proc identify_channels {lower_layer_name upper_layer_name net} {
   return $channels
 }
 
+proc sort_insts_by_x_and_y {inst1 inst2} {
+  lassign [$inst1 getOrigin] x1 y1
+  lassign [$inst2 getOrigin] x2 y2
+
+  if {$x1 == $x2} {
+    return $y1 - $y2
+  }
+  return $x1 - $x2
+}
+
+proc sort_insts_by_y {inst1 inst2} {
+  lassign [$inst1 getOrigin] x1 y1
+  lassign [$inst2 getOrigin] x2 y2
+
+  return $y1 - $y2
+}
+
 proc sort_by_min_x {rect1 rect2} {
   return [$rect1 xMin] - [$rect2 xMin]
 }
@@ -5676,6 +6088,7 @@ proc lowest_rect {rects} {
   # debug $str
   return [lindex [lsort -command sort_by_min_y $rects] 0]
 }
+
 
 proc repair_channel {channel layer_name net min_size} {
   variable stripe_locs
@@ -5920,6 +6333,16 @@ proc get_voltage_domain {llx lly urx ury} {
     }
   }
   return $name
+}
+
+proc get_voltage_domain_switched_power {domain} {
+  variable voltage_domains
+
+  if {[dict exists $voltage_domains $domain switched_power]} {
+    return [dict get $voltage_domains $domain switched_power]
+  } else {
+    return []
+  }
 }
 
 proc get_voltage_domain_power {domain} {
@@ -6396,7 +6819,7 @@ proc plan_grid {} {
   ################################## Main Code #################################
 
   if {![dict exists $design_data grid macro]} {
-    utl::warn PDN 9018 "No macro grid specifications found - no straps added."
+    utl::warn PDN 9018 "No macro grid specifications found - no straps added for macros."
   }
 
   utl::info PDN 9011 "****** INFO ******"

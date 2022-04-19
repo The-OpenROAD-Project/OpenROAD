@@ -78,4 +78,7 @@ record_tests {
   asap7_taper
 
   existing
+
+  power_switch.api
+  power_switch.daisy.api
 }
