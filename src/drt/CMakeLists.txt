@@ -47,6 +47,7 @@ check_ipo_supported(RESULT ipo_supported OUTPUT error)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
+find_package(CapnProto REQUIRED)
 
 swig_lib(NAME      drt
          NAMESPACE drt
@@ -123,6 +124,7 @@ target_sources(drt
     src/rp/FlexRP_prep.cpp
     src/distributed/frArchive.cpp
     src/distributed/drUpdate.cpp
+    src/distributed/protoSchema.capnp.c++
     src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
     src/frBaseTypes.cpp
@@ -149,6 +151,7 @@ target_link_libraries(drt
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}
+    ${CAPNP_LIBRARIES}
     ZLIB::ZLIB
 )
 

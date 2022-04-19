@@ -30,6 +30,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include <fstream>
 namespace fr {
 class frNet;
 class drUpdate
@@ -69,7 +70,26 @@ class drUpdate
   frNet* getNet() const { return net_; }
   frBlockObjectEnum getObjTypeId() const { return obj_type_; }
   frMarker getMarker() const { return marker_; }
-
+  Point getBegin() const { return begin_; }
+  Point getEnd() const { return end_; }
+  frSegStyle getStyle() const { return style_; }
+  Rect getOffsetBox() const { return offsetBox_; }
+  frLayerNum getLayerNum() const { return layer_; }
+  bool isBottomConnected() const { return bottomConnected_; }
+  bool isTopConnected() const { return topConnected_; }
+  bool isTapered() const { return tapered_; }
+  frViaDef* getViaDef() const { return viaDef_; }
+  frBlockObjectEnum getObjType() const { return obj_type_; }
+  void setBegin(Point begin) { begin_ = begin; }
+  void setEnd(Point end) { end_ = end; }
+  void setStyle(frSegStyle style) { style_ = style; }
+  void setOffsetBox(Rect rect) { offsetBox_ = rect; }
+  void setBottomConnected(bool value) { bottomConnected_ = value; }
+  void setTopConnected(bool value) { topConnected_ = value; }
+  void setTapered(bool value) { tapered_ = value; }
+  void setViaDef(frViaDef* value) { viaDef_ = value; }
+  void setObjType(frBlockObjectEnum value) { obj_type_ = value; }
+  void setLayerNum(frLayerNum value) { layer_ = value; }
  private:
   frNet* net_;
   int order_in_owner_;
@@ -92,3 +112,4 @@ class drUpdate
   friend class boost::serialization::access;
 };
 }  // namespace fr
+std::ofstream& operator<<(std::ofstream& stream, const fr::drUpdate& update);

@@ -571,7 +571,7 @@ void FlexDRWorker::endRemoveMarkers(frDesign* design)
   vector<frMarker*> result;
   regionQuery->queryMarker(getDrcBox(), result);
   for (auto mptr : result) {
-    if (dist_on_) {
+    if (false) {
       drUpdate update(drUpdate::REMOVE_FROM_BLOCK);
       update.setOrderInOwner(mptr->getIndexInOwner());
       design_->addUpdate(update);
@@ -594,7 +594,7 @@ void FlexDRWorker::endAddMarkers(frDesign* design)
       auto ptr = uptr.get();
       regionQuery->addMarker(ptr);
       topBlock->addMarker(std::move(uptr));
-      if (dist_on_) {
+      if (false) {
         drUpdate update(drUpdate::ADD_SHAPE);
         update.setMarker(*ptr);
         design_->addUpdate(update);

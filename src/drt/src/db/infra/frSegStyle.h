@@ -44,6 +44,7 @@ class frEndStyle
   void set(const frEndStyle& styleIn) { style_ = styleIn.style_; }
   // getters
   operator frEndStyleEnum() const { return style_; }
+  frEndStyleEnum getValue () const { return style_; }
 
  private:
   frEndStyleEnum style_;
