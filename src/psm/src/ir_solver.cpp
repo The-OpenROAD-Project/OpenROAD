@@ -420,19 +420,83 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
     }
     inst->getLocation(x, y);
     int l = m_bottom_layer;  // attach to the bottom most routing layer
-    Node* node_J = m_Gmat->GetNode(x, y, l, true);
-    NodeLoc node_loc = node_J->GetLoc();
-    if (abs(node_loc.first - x) > m_node_density ||
-        abs(node_loc.second - y) > m_node_density) {
-      m_logger->warn(utl::PSM, 24,
-                     "Instance {}, current node at ({}, {}) at layer {} have "
-                     "been moved from ({}, {}).",
-                     it->first, node_loc.first, node_loc.second, l, x, y);
+    // Special condition to distribute power across multiple nodes for macro
+    // blocks
+    if(inst->isBlock() || inst->isPad()) {
+      dbBox* inst_bBox = inst->getBBox();
+      std::set<int> pin_layers;
+      auto iterms = inst->getITerms();
+      // Find the pin layers for the macro
+      for (auto&& iterm : iterms) {
+        if (iterm->getSigType() == m_power_net_type) {
+          auto mterm = iterm->getMTerm();  
+          for (auto mpin : mterm->getMPins()) {
+            for (auto box : mpin->getGeometry()) {
+              dbTechLayer* pin_layer = box->getTechLayer();
+              pin_layers.insert(pin_layer->getRoutingLevel());
+            }
+          }
+        }
+      }
+      // Search for all nodes within the macro boundary 
+      vector <Node*> nodes_J;
+      for(auto ll : pin_layers){
+        vector <Node*> nodes_J_l = m_Gmat->GetNodes(ll, inst_bBox->xMin(),
+                                                        inst_bBox->xMax(), 
+                                                        inst_bBox->yMin(), 
+                                                        inst_bBox->yMax());
+        nodes_J.insert(nodes_J.end(), nodes_J_l.begin(), nodes_J_l.end());
+      }
+      double num_nodes = nodes_J.size();
+      // If nodes are not found on the pin layers we search one layer above  
+      if(num_nodes == 0){
+        int max_l = *std::max_element(pin_layers.begin(),pin_layers.end());
+        nodes_J = m_Gmat->GetNodes(max_l+1, inst_bBox->xMin(),
+                                            inst_bBox->xMax(), 
+                                            inst_bBox->yMin(), 
+                                            inst_bBox->yMax());
+        num_nodes = nodes_J.size();
+        // If nodes are still not found we connect to the neartest ndoe on the
+        // highest pin layer with a warning
+        if (num_nodes == 0) {
+          Node* node_J = m_Gmat->GetNode(x, y, max_l, true);
+          nodes_J = {node_J};
+          num_nodes = 1.0;
+          NodeLoc node_loc = node_J->GetLoc();
+          m_logger->warn(utl::PSM, 72,
+                   "No nodes found in macro bounding box for Instance {}."
+                   "Using nearest node at ({}, {}) on the pin layer at routing level {}.",
+                   inst->getName(), node_loc.first, node_loc.second, x, y, max_l);
+
+        } else {
+          m_logger->warn(utl::PSM, 73,
+                   "No nodes found in macro bounding box for Instance {} "
+                   "for the pin layer at routing level {}. Using layer {}.",
+                   inst->getName(), max_l, max_l+1);
+        }
+      }
+      // Distribute the power across all nodes within the bounding box
+      for (auto node_J : nodes_J) {
+        node_J->AddCurrentSrc(it->second/num_nodes);
+        node_J->AddInstance(inst);
+      }
+    // For normal instances we only attach the current source to one node  
+    } else {
+      Node* node_J = m_Gmat->GetNode(x, y, l, true);
+      NodeLoc node_loc = node_J->GetLoc();
+      if (abs(node_loc.first - x) > m_node_density ||
+          abs(node_loc.second - y) > m_node_density) {
+        m_logger->warn(utl::PSM, 24,
+                       "Instance {}, current node at ({}, {}) at layer {} have "
+                       "been moved from ({}, {}).",
+                       it->first, node_loc.first, node_loc.second, l, x, y);
+      }
+      // Both these lines will change in the future for multiple power domains
+      node_J->AddCurrentSrc(it->second);
+      node_J->AddInstance(inst);
     }
-    // Both these lines will change in the future for multiple power domains
-    node_J->AddCurrentSrc(it->second);
-    node_J->AddInstance(inst);
   }
+  // Creating the J matrix
   for (int i = 0; i < num_nodes; ++i) {
     Node* node_J = m_Gmat->GetNode(i);
     if (m_power_net_type == dbSigType::GROUND) {
