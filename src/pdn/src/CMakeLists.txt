@@ -51,6 +51,7 @@ target_sources(pdn
     
     techlayer.cpp
     domain.cpp
+    power_cells.cpp
     grid.cpp
     grid_component.cpp
     rings.cpp

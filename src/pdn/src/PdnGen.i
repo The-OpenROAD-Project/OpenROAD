@@ -146,22 +146,16 @@ global_connect_region(odb::dbBlock* block, const char* region_name, const char* 
     pdngen->globalConnectRegion(block, regionBox, instReg, pinReg, net);
 }
 
-void set_core_domain(odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
+void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setCoreDomain(power, ground, secondary_nets);
+  pdngen->setCoreDomain(power, switched_power, ground, secondary_nets);
 }
 
-void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
+void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->makeRegionVoltageDomain(name, power, ground, secondary_nets, region);
-}
-
-void set_domain_switched_power(const char* name, odb::dbNet* switched_power)
-{
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setVoltageDomainSwitchedPower(pdngen->findDomain(name), switched_power);
+  pdngen->makeRegionVoltageDomain(name, power, switched_power, ground, secondary_nets, region);
 }
 
 void reset()
@@ -186,14 +180,24 @@ void make_core_grid(pdn::VoltageDomain* domain,
                     const char* name, 
                     bool starts_with_power, 
                     const std::vector<odb::dbTechLayer*>& pin_layers, 
-                    const std::vector<odb::dbTechLayer*>& generate_obstructions)
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                    pdn::PowerCell* powercell,
+                    odb::dbNet* powercontrol,
+                    const char* powercontrolnetwork)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
   if (!starts_with_power) {
     starts_with = GROUND;
   }
-  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers, generate_obstructions);
+  pdngen->makeCoreGrid(domain, 
+                       name, 
+                       starts_with, 
+                       pin_layers,
+                       generate_obstructions, 
+                       powercell, 
+                       powercontrol, 
+                       powercontrolnetwork);
 }
 
 void make_instance_grid(pdn::VoltageDomain* domain,
@@ -385,6 +389,23 @@ void check_setup()
 {
   PdnGen* pdngen = ord::getPdnGen();
   pdngen->checkSetup();
+}
+
+void make_switched_power_cell(odb::dbMaster* master,
+                              odb::dbMTerm* control,
+                              odb::dbMTerm* acknowledge,
+                              odb::dbMTerm* switched_power,
+                              odb::dbMTerm* alwayson_power,
+                              odb::dbMTerm* ground)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->makeSwitchedPowerCell(master, control, acknowledge, switched_power, alwayson_power, ground);
+}
+
+pdn::PowerCell* find_switched_power_cell(const char* name)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  return pdngen->findSwitchedPowerCell(name);
 }
 
 // used for building debugging grids and should not be used.
