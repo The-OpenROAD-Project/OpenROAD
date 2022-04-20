@@ -38,7 +38,8 @@ swig_lib(NAME         dpo
          SCRIPTS      src/Optdp.tcl
 )
 
-find_package(LEMON REQUIRED)
+# https://github.com/The-OpenROAD-Project/OpenROAD/issues/1186
+find_package(LEMON NAMES LEMON lemon REQUIRED)
 
 target_sources(dpo
   PRIVATE
