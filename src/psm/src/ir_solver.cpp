@@ -332,6 +332,12 @@ void IRSolver::ReadC4Data() {
           "Y direction bump pitch is not specified, defaulting to {}um.",
           m_bump_pitch_default);
     }
+    if (m_node_density_um > 0) {
+      m_node_density = m_node_density_um * unit_micron;
+      m_logger->info(utl::PSM, 73,
+                   "Setting lower metal node density to {}um.",
+                   m_node_density_um);
+    }
     if (!m_net_voltage_map.empty() &&
         m_net_voltage_map.count(m_power_net) > 0) {
       supply_voltage_src = m_net_voltage_map.at(m_power_net);
@@ -866,7 +872,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
 
 bool IRSolver::CheckValidR(double R) { return R >= 1e-12; }
 
-bool IRSolver::CheckConnectivity() {
+bool IRSolver::CheckConnectivity(bool connection_only) {
   std::map<NodeIdx, double>::iterator c4_node_it;
   CscMatrix* Amat = m_Gmat->GetAMat();
   int num_nodes = m_Gmat->GetNumNodes();
@@ -874,34 +880,42 @@ bool IRSolver::CheckConnectivity() {
   dbTech* tech = m_db->getTech();
   int unit_micron = tech->getDbUnitsPerMicron();
 
-  for (c4_node_it = m_C4Nodes.begin(); c4_node_it != m_C4Nodes.end();
-       c4_node_it++) {
-    Node* c4_node = m_Gmat->GetNode((*c4_node_it).first);
-    queue<Node*> node_q;
+  queue<Node*> node_q;
+  //If we want to test the connectivity of the grid we just start from a single
+  //point
+  if(connection_only) { 
+    Node* c4_node = m_Gmat->GetNode((m_C4Nodes.begin())->first);
     node_q.push(c4_node);
-    while (!node_q.empty()) {
-      NodeIdx col_loc, n_col_loc;
-      Node* node = node_q.front();
-      node_q.pop();
-      node->SetConnected();
-      NodeIdx col_num = node->GetGLoc();
-      col_loc = Amat->col_ptr[col_num];
-      if (col_num < Amat->col_ptr.size() - 1) {
-        n_col_loc = Amat->col_ptr[col_num + 1];
-      } else {
-        n_col_loc = Amat->row_idx.size();
-      }
-      vector<NodeIdx> col_vec(Amat->row_idx.begin() + col_loc,
-                              Amat->row_idx.begin() + n_col_loc);
+  //If we do IR analysis, we assume the grid can be connected by differne bumps
+  } else {
+    for (c4_node_it = m_C4Nodes.begin(); c4_node_it != m_C4Nodes.end();
+         c4_node_it++) {
+      Node* c4_node = m_Gmat->GetNode((*c4_node_it).first);
+      node_q.push(c4_node);
+    }
+  }
+  while (!node_q.empty()) {
+    NodeIdx col_loc, n_col_loc;
+    Node* node = node_q.front();
+    node_q.pop();
+    node->SetConnected();
+    NodeIdx col_num = node->GetGLoc();
+    col_loc = Amat->col_ptr[col_num];
+    if (col_num < Amat->col_ptr.size() - 1) {
+      n_col_loc = Amat->col_ptr[col_num + 1];
+    } else {
+      n_col_loc = Amat->row_idx.size();
+    }
+    vector<NodeIdx> col_vec(Amat->row_idx.begin() + col_loc,
+                            Amat->row_idx.begin() + n_col_loc);
 
-      vector<NodeIdx>::iterator col_vec_it;
-      for (col_vec_it = col_vec.begin(); col_vec_it != col_vec.end();
-           col_vec_it++) {
-        if (*col_vec_it < num_nodes) {
-          Node* node_next = m_Gmat->GetNode(*col_vec_it);
-          if (!(node_next->GetConnected())) {
-            node_q.push(node_next);
-          }
+    vector<NodeIdx>::iterator col_vec_it;
+    for (col_vec_it = col_vec.begin(); col_vec_it != col_vec.end();
+         col_vec_it++) {
+      if (*col_vec_it < num_nodes) {
+        Node* node_next = m_Gmat->GetNode(*col_vec_it);
+        if (!(node_next->GetConnected())) {
+          node_q.push(node_next);
         }
       }
     }
@@ -1107,7 +1121,7 @@ bool IRSolver::BuildConnection() {
     res = m_Gmat->GenerateACSCMatrix();
   }
   if (res) {
-    m_connection = CheckConnectivity();
+    m_connection = CheckConnectivity(true);
     res = m_connection;
   }
   m_result = res;
