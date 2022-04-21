@@ -90,8 +90,9 @@ class TechLayer;
 class Enclosure
 {
  public:
+  Enclosure();
   Enclosure(int x, int y);
-  Enclosure(int x, int y, odb::dbTechLayer* layer);
+  Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut);
 
   int getX() const { return x_; }
   int getY() const { return y_; }
@@ -99,12 +100,23 @@ class Enclosure
   void setX(int x) { x_ = x; }
   void setY(int y) { y_ = y; }
 
+  bool check(int x, int y) const;
+
   bool operator<(const Enclosure& other) const;
   bool operator==(const Enclosure& other) const;
+
+  bool isPreferredOver(const Enclosure* other, odb::dbTechLayer* layer) const;
+  bool isPreferredOver(const Enclosure* other, bool minimize_x) const;
+
+  void snap(odb::dbTech* tech);
 
  private:
   int x_;
   int y_;
+
+  bool allow_swap_;
+
+  void swap(odb::dbTechLayer* layer);
 };
 
 // Wrapper class to handle building actual ODB DB Vias
@@ -436,10 +448,13 @@ class ViaGenerator
     return !isSplitCutArray() && (array_core_x_ != 1 || array_core_y_ != 1);
   }
 
-  int getBottomEnclosureX() const { return bottom_x_enclosure_; }
-  int getBottomEnclosureY() const { return bottom_y_enclosure_; }
-  int getTopEnclosureX() const { return top_x_enclosure_; }
-  int getTopEnclosureY() const { return top_y_enclosure_; }
+  Enclosure* getBottomEnclosure() const { return bottom_enclosure_.get(); }
+  Enclosure* getTopEnclosure() const { return top_enclosure_.get(); }
+
+  bool isPreferredOver(const ViaGenerator* other) const;
+
+  int getGeneratorWidth(bool bottom) const;
+  int getGeneratorHeight(bool bottom) const;
 
  protected:
   int getMaxRows() const { return max_rows_; }
@@ -473,13 +488,16 @@ class ViaGenerator
   utl::Logger* getLogger() const { return logger_; }
   odb::dbTech* getTech() const;
 
+  virtual const Constraint getLowerConstraint() const = 0;
+  virtual const Constraint getUpperConstraint() const = 0;
+
  protected:
   int getLowerWidth(bool only_real = true) const;
   int getUpperWidth(bool only_real = true) const;
 
   void determineCutSpacing();
 
-  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top) const;
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const;
 
  private:
   utl::Logger* logger_;
@@ -511,10 +529,8 @@ class ViaGenerator
   int array_core_x_;
   int array_core_y_;
 
-  int bottom_x_enclosure_;
-  int bottom_y_enclosure_;
-  int top_x_enclosure_;
-  int top_y_enclosure_;
+  std::unique_ptr<Enclosure> bottom_enclosure_;
+  std::unique_ptr<Enclosure> top_enclosure_;
 
   void determineCutClass();
   bool checkMinCuts() const;
@@ -529,9 +545,6 @@ class ViaGenerator
                                bool use_top_min_enclosure,
                                const Enclosure& bottom_min_enclosure,
                                const Enclosure& top_min_enclosure);
-
-  bool xIsViaEnd() const;
-  bool yIsViaEnd() const;
 };
 
 // Class to build a generate via, either as a single group or as an array
@@ -560,6 +573,10 @@ class GenerateViaGenerator : public ViaGenerator
                                  int row_pitch,
                                  int cols,
                                  int col_pitch) const override;
+
+ protected:
+  virtual const Constraint getLowerConstraint() const override { return {true, true}; }
+  virtual const Constraint getUpperConstraint() const override { return {true, true}; }
 
  private:
   odb::dbTechViaGenerateRule* rule_;
@@ -604,7 +621,9 @@ class TechViaGenerator : public ViaGenerator
                                  int col_pitch) const override;
 
  protected:
-  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top) const override;
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
+  virtual const Constraint getLowerConstraint() const override { return lower_constraint_; }
+  virtual const Constraint getUpperConstraint() const override { return upper_constraint_; }
 
  private:
   odb::dbTechVia* via_;
@@ -620,6 +639,7 @@ class TechViaGenerator : public ViaGenerator
 
   bool fitsShapes() const;
   bool mostlyContains(const odb::Rect& full_shape,
+                      const odb::Rect& intersection,
                       const odb::Rect& small_shape,
                       const Constraint& constraint) const;
 };

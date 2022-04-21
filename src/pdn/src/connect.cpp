@@ -527,8 +527,7 @@ DbVia* Connect::generateDbVia(
     const std::vector<std::unique_ptr<ViaGenerator>>& generators,
     odb::dbBlock* block) const
 {
-  ViaGenerator* best_rule = nullptr;
-  int best_area = 0;
+  std::vector<ViaGenerator*> vias;
   for (const auto& via : generators) {
     if (hasCutPitch()) {
       via->setCutPitchX(cut_pitch_x_);
@@ -567,26 +566,27 @@ DbVia* Connect::generateDbVia(
       continue;
     }
 
-    const int area = via->getCutArea();
-    debugPrint(grid_->getLogger(),
-               utl::PDN,
-               "Via",
-               3,
-               "{}: Current via area {} with {} cuts, best via area {}",
-               via->getName(),
-               area, via->getTotalCuts(), best_area);
-
-    if (area > best_area) {
-      best_rule = via.get();
-      best_area = area;
-    }
+    vias.push_back(via.get());
   }
 
-  if (best_rule != nullptr) {
-    return best_rule->generate(block);
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             3,
+             "Vias possible: {}",
+             vias.size());
+
+  if (vias.empty()) {
+    return nullptr;
   }
 
-  return nullptr;
+  std::stable_sort(vias.begin(), vias.end(), [](ViaGenerator* lhs, ViaGenerator* rhs) {
+    return lhs->isPreferredOver(rhs);
+  });
+
+  ViaGenerator* best_rule = *vias.begin();
+
+  return best_rule->generate(block);
 }
 
 DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
