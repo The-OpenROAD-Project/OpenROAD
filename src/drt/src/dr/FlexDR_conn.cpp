@@ -670,7 +670,7 @@ void FlexDRConnectivityChecker::organizePathSegsByLayerAndTrack(
 }
 
 void FlexDRConnectivityChecker::findSegmentOverlaps(
-    const NetRouteObjs& netRouteObjs,
+    NetRouteObjs& netRouteObjs,
     const PathSegsByLayerAndTrack& horzPathSegs,
     const PathSegsByLayerAndTrack& vertPathSegs,
     PathSegsByLayerAndTrackId& horzVictims,
@@ -746,7 +746,7 @@ void FlexDRConnectivityChecker::mergeSegmentOverlaps(
   }
 }
 
-void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
+void FlexDRConnectivityChecker::merge_perform(NetRouteObjs& netRouteObjs,
                                               const vector<int>& indices,
                                               vector<int>& victims,
                                               vector<Span>& newSegSpans,
@@ -769,13 +769,85 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
     }
   }
   sort(segSpans.begin(), segSpans.end());
-
+  
+  splitPathSegs(netRouteObjs, segSpans);
   // get victim segments and merged segments
   merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
 }
 
+void FlexDRConnectivityChecker::splitPathSegs(
+    NetRouteObjs& netRouteObjs,
+    vector<pair<Span, int>>& segSpans)
+{
+    if (segSpans.empty())
+        return;
+    for (int i = 1; i < segSpans.size(); i++) {
+        auto& curr = segSpans[i];
+        auto& prev = segSpans[i-1];
+        if (curr.first.lo >= prev.first.hi)
+            continue;
+        int split1 = std::numeric_limits<int>().max();
+        int split2 = std::numeric_limits<int>().max();
+        frPathSeg* currPs = static_cast<frPathSeg*>(netRouteObjs[curr.second]);
+        frPathSeg* prevPs = static_cast<frPathSeg*>(netRouteObjs[prev.second]);
+        if (currPs->isBeginTruncated() && curr.first.lo > prev.first.lo)
+            split1 = curr.first.lo;
+        if (curr.first.hi < prev.first.hi) {
+            if (currPs->isEndTruncated())
+                split2 = curr.first.hi;
+        } else if (prev.first.hi < curr.first.hi && prevPs->isEndTruncated())
+            split2 = prev.first.hi;
+        auto& maxHi = (curr.first.hi > prev.first.hi ? 
+                    curr : prev);
+        frPathSeg* maxHiPs = static_cast<frPathSeg*>(netRouteObjs[maxHi.second]);
+        int hi = maxHiPs->high();
+        if (split1 == std::numeric_limits<int>().max()) {
+            if (split2 != std::numeric_limits<int>().max()) {
+                getRegionQuery()->removeDRObj(maxHiPs);
+                maxHi.first.lo = split2;
+                maxHiPs->setLow(split2);
+                getRegionQuery()->addDRObj(maxHiPs);
+            }
+        } else {
+            getRegionQuery()->removeDRObj(prevPs);
+            prev.first.hi = split1;
+            prevPs->setHigh(split1);
+            getRegionQuery()->addDRObj(prevPs);
+            if (split2 != std::numeric_limits<int>().max()) {
+                getRegionQuery()->removeDRObj(currPs);
+                curr.first.hi = split2;
+                currPs->setHigh(split2);
+                getRegionQuery()->addDRObj(currPs);
+                int j;
+                pair<Span, int> newSpan = pair<Span, int>({split2, hi}, netRouteObjs.size());
+                for (j = i+1; j < segSpans.size() && !(newSpan < segSpans[j]); j++) //find the right position to add the last seg piece
+                    ;
+                segSpans.insert(segSpans.begin() + j, newSpan);
+                unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
+                Point begin, end;
+                if (currPs->isVertical()) {
+                    begin.set(currPs->getBeginPoint().x(), split2);
+                    end.set(currPs->getBeginPoint().x(), hi);
+                } else {
+                    begin.set(split2, currPs->getBeginPoint().y());
+                    end.set(hi, currPs->getBeginPoint().y());
+                }
+                newPs->setPoints(begin, end);
+                newPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
+                newPs->setEndStyle(maxHiPs->getEndStyle());
+                newPs->setLayerNum(currPs->getLayerNum());
+                frPathSeg* ptr = newPs.get();
+                netRouteObjs.push_back(ptr);
+                currPs->getNet()->addShape(std::move(newPs));
+                getRegionQuery()->addDRObj(ptr);
+            }
+        }
+        
+    }
+}
+
 void FlexDRConnectivityChecker::merge_perform_helper(
-    const NetRouteObjs& netRouteObjs,
+    NetRouteObjs& netRouteObjs,
     const vector<pair<Span, int>>& segSpans,
     vector<int>& victims,
     vector<Span>& newSegSpans)

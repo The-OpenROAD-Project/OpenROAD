@@ -114,7 +114,7 @@ class FlexDRConnectivityChecker
                                        const NetRouteObjs& netRouteObjs,
                                        PathSegsByLayerAndTrack& horzPathSegs,
                                        PathSegsByLayerAndTrack& vertPathSegs);
-  void findSegmentOverlaps(const NetRouteObjs& netRouteObjs,
+  void findSegmentOverlaps(NetRouteObjs& netRouteObjs,
                            const PathSegsByLayerAndTrack& horzPathSegs,
                            const PathSegsByLayerAndTrack& vertPathSegs,
                            PathSegsByLayerAndTrackId& horzVictims,
@@ -130,12 +130,14 @@ class FlexDRConnectivityChecker
                             const SpansByLayerAndTrackId& horzNewSegSpans,
                             const SpansByLayerAndTrackId& vertNewSegSpans);
   void addMarker(frNet* net, frLayerNum lNum, const Rect& bbox);
-  void merge_perform(const NetRouteObjs& netRouteObjs,
+  void merge_perform(NetRouteObjs& netRouteObjs,
                      const std::vector<int>& indices,
                      std::vector<int>& victims,
                      std::vector<Span>& newSegSpans,
                      const bool isHorz);
-  void merge_perform_helper(const NetRouteObjs& netRouteObjs,
+  void splitPathSegs(NetRouteObjs& netRouteObjs,
+                    std::vector<std::pair<Span, int>>& segSpans);
+  void merge_perform_helper(NetRouteObjs& netRouteObjs,
                             const std::vector<std::pair<Span, int>>& segSpans,
                             std::vector<int>& victims,
                             std::vector<Span>& newSegSpans);
