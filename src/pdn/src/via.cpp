@@ -45,6 +45,10 @@
 
 namespace pdn {
 
+Enclosure::Enclosure(int x, int y) : x_(x), y_(y)
+{
+}
+
 Enclosure::Enclosure(int x, int y, odb::dbTechLayer* layer) : x_(x), y_(y)
 {
   if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
@@ -1104,13 +1108,34 @@ void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vec
 {
   auto populate_enc = [this](odb::dbTechLayer* layer, int width, bool above, std::vector<Enclosure>& encs) {
     for (auto* rule : getCutMinimumEnclosureRules(width, above)) {
-      encs.emplace_back(rule->getFirstOverhang(),
-                        rule->getSecondOverhang(),
-                        layer);
+      switch (rule->getType()) {
+      case odb::dbTechLayerCutEnclosureRule::DEFAULT:
+        encs.emplace_back(rule->getFirstOverhang(),
+                          rule->getSecondOverhang(),
+                          layer);
+        break;
+      case odb::dbTechLayerCutEnclosureRule::EOL:
+        encs.emplace_back(std::max(rule->getFirstOverhang(), rule->getSecondOverhang()),
+                          std::max(rule->getFirstOverhang(), rule->getSecondOverhang()));
+        break;
+      case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
+        if (xIsViaEnd()) {
+          encs.emplace_back(rule->getFirstOverhang(),
+                            rule->getSecondOverhang());
+        } else {
+          encs.emplace_back(rule->getSecondOverhang(),
+                            rule->getFirstOverhang());
+        }
+        break;
+      case odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT:
+        encs.emplace_back(rule->getFirstOverhang(),
+                          rule->getSecondOverhang());
+        break;
+      }
     }
     if (encs.empty()) {
       // assume zero enclosure when nothing is available
-      encs.emplace_back(0, 0, layer);
+      encs.emplace_back(0, 0);
     }
   };
 
@@ -1122,6 +1147,16 @@ void ViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vec
                getUpperWidth(false),
                true,
                top);
+}
+
+bool ViaGenerator::xIsViaEnd() const
+{
+  return cut_.dx() < cut_.dy();
+}
+
+bool ViaGenerator::yIsViaEnd() const
+{
+  return cut_.dy() < cut_.dx();
 }
 
 bool ViaGenerator::build(bool use_bottom_min_enclosure,
@@ -2010,7 +2045,7 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std:
       enc.setY(ody);
     }
   }
-  bottom.emplace_back(odx, ody, getBottomLayer());
+  bottom.emplace_back(odx, ody);
 
   odx = 0;
   ody = 0;
@@ -2033,7 +2068,7 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std:
       enc.setY(ody);
     }
   }
-  top.emplace_back(odx, ody, getTopLayer());
+  top.emplace_back(odx, ody);
 }
 
 /////////

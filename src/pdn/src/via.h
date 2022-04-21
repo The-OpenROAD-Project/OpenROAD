@@ -90,6 +90,7 @@ class TechLayer;
 class Enclosure
 {
  public:
+  Enclosure(int x, int y);
   Enclosure(int x, int y, odb::dbTechLayer* layer);
 
   int getX() const { return x_; }
@@ -523,6 +524,9 @@ class ViaGenerator
                                bool use_top_min_enclosure,
                                const Enclosure& bottom_min_enclosure,
                                const Enclosure& top_min_enclosure);
+
+  bool xIsViaEnd() const;
+  bool yIsViaEnd() const;
 };
 
 // Class to build a generate via, either as a single group or as an array
