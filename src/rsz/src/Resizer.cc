@@ -1117,10 +1117,13 @@ Resizer::findSlewLoadCap(LibertyPort *drvr_port,
                          const Corner *corner)
 {
   const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  double drvr_res = drvr_port->driveResistance();
+  if (drvr_res == 0.0)
+    return INF;
   // cap1 lower bound
   // cap2 upper bound
   double cap1 = 0.0;
-  double cap2 = slew / drvr_port->driveResistance() * 2;
+  double cap2 = slew / drvr_res * 2;
   double tol = .01; // 1%
   double diff1 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
   // binary search for diff = 0.
