@@ -451,11 +451,20 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
       // If nodes are not found on the pin layers we search one layer above  
       if(num_nodes == 0){
         int max_l = *std::max_element(pin_layers.begin(),pin_layers.end());
-        nodes_J = m_Gmat->GetNodes(max_l+1, inst_bBox->xMin(),
-                                            inst_bBox->xMax(), 
-                                            inst_bBox->yMin(), 
-                                            inst_bBox->yMax());
-        num_nodes = nodes_J.size();
+        for(int pl = m_bottom_layer+1; pl <= m_top_layer; pl++) {
+          nodes_J = m_Gmat->GetNodes(pl, inst_bBox->xMin(),
+                                              inst_bBox->xMax(), 
+                                              inst_bBox->yMin(), 
+                                              inst_bBox->yMax());
+          num_nodes = nodes_J.size();
+          if (num_nodes > 0) {
+            m_logger->warn(utl::PSM, 74,
+                   "No nodes found in macro bounding box for Instance {} "
+                   "for the pin layer at routing level {}. Using layer {}.",
+                   inst->getName(), max_l, pl);
+            break;
+          }
+        }
         // If nodes are still not found we connect to the neartest ndoe on the
         // highest pin layer with a warning
         if (num_nodes == 0) {
@@ -466,13 +475,7 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
           m_logger->warn(utl::PSM, 72,
                    "No nodes found in macro bounding box for Instance {}."
                    "Using nearest node at ({}, {}) on the pin layer at routing level {}.",
-                   inst->getName(), node_loc.first, node_loc.second, x, y, max_l);
-
-        } else {
-          m_logger->warn(utl::PSM, 73,
-                   "No nodes found in macro bounding box for Instance {} "
-                   "for the pin layer at routing level {}. Using layer {}.",
-                   inst->getName(), max_l, max_l+1);
+                   inst->getName(), node_loc.first, node_loc.second, max_l);
         }
       }
       // Distribute the power across all nodes within the bounding box
@@ -559,7 +562,8 @@ vector<dbSBox*> IRSolver::FindPdnWires(dbNet* power_net) {
 
 
 //! Function to create the nodes of the G matrix
-void  IRSolver::CreateGmatNodes(vector<dbSBox*> power_wires ) {
+void  IRSolver::CreateGmatNodes(vector<dbSBox*> power_wires,
+                                vector<tuple<int, int, int, int>> macros) {
   for (auto curWire: power_wires){
     // For a Via we create the nodes at the top and bottom ends of the via
     if (curWire->isVia()) {
@@ -650,6 +654,28 @@ void  IRSolver::CreateGmatNodes(vector<dbSBox*> power_wires ) {
       } else {  
         m_Gmat->SetNode(x_loc1, y_loc1, l, make_pair(0, 0));
         m_Gmat->SetNode(x_loc2, y_loc2, l, make_pair(0, 0));
+        // Special condition: if the stripe ovelaps a macro ensure a node is
+        // created
+        for(auto macro : macros){
+          if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
+            //y range is withing the marco (min, max)
+            if (y_loc1 >= get<2>(macro) && y_loc1 <= get<3>(macro)){
+              // Both x values outside the macro
+              // (Values inside will already have a node at endpoints)
+              if (x_loc1 < get<0>(macro) && x_loc2 > get<1>(macro) ) {
+                int x = (get<0>(macro)+get<1>(macro))/2;
+                m_Gmat->SetNode(x, y_loc1, l, make_pair(0, 0));
+              }
+            }
+          } else {
+            if (x_loc1 >= get<0>(macro) && x_loc1 <= get<1>(macro)){
+              if (y_loc1 < get<2>(macro) && y_loc2 > get<3>(macro) ) {
+                int y = (get<2>(macro)+get<3>(macro))/2;
+                m_Gmat->SetNode(x_loc1, y, l, make_pair(0, 0));
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -892,6 +918,22 @@ int IRSolver::CreateC4Nodes(bool connection_only, int unit_micron) {
   return num_C4;
 }
 
+//! Function to find and store the macro boundaries
+vector<tuple<int, int, int, int>> IRSolver::GetMacroBoundaries() {
+  dbChip* chip = m_db->getChip();
+  dbBlock* block = chip->getBlock();
+  vector<tuple<int, int, int, int>> macro_boundaries;
+  for(auto* inst : block->getInsts()) {
+    if(inst->isBlock() || inst->isPad()) {
+      dbBox* inst_bBox = inst->getBBox();
+      macro_boundaries.push_back(make_tuple(inst_bBox->xMin(),
+                                            inst_bBox->xMax(),
+                                            inst_bBox->yMin(),
+                                            inst_bBox->yMax()));   
+    }
+  }
+  return macro_boundaries;
+}
 
 //! Function to create a G matrix using the nodes
 bool IRSolver::CreateGmat(bool connection_only) {
@@ -905,6 +947,9 @@ bool IRSolver::CreateGmat(bool connection_only) {
   m_Gmat = new GMat(num_routing_layers, m_logger);
   dbChip* chip = m_db->getChip();
   dbBlock* block = chip->getBlock();
+
+  auto macro_boundaries = GetMacroBoundaries();
+
   dbNet* power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
     m_logger->error(utl::PSM, 27,
@@ -920,7 +965,7 @@ bool IRSolver::CreateGmat(bool connection_only) {
   vector<dbSBox*> power_wires = FindPdnWires(power_net);
 
   //Create all the nodes for the G matrix
-  CreateGmatNodes(power_wires); 
+  CreateGmatNodes(power_wires, macro_boundaries); 
 
   if (m_Gmat->GetNumNodes() == 0) {
     m_logger->warn(utl::PSM, 70, "Net {} has no nodes and will be skipped",
