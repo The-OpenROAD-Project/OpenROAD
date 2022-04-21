@@ -541,7 +541,8 @@ DbVia* Connect::generateDbVia(
                utl::PDN,
                "Via",
                1,
-               "Cut class {} - {}",
+               "Cut class {} : {} - {}",
+               via->getName(),
                via->getCutLayer()->getName(),
                via->hasCutClass() ? via->getCutClass()->getName() : "none");
 
@@ -557,6 +558,12 @@ DbVia* Connect::generateDbVia(
     const bool lower_is_internal = via->getBottomLayer() != layer0_;
     const bool upper_is_internal = via->getTopLayer() != layer1_;
     if (!via->build(lower_is_internal, upper_is_internal)) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "{} was not buildable.",
+                 via->getName());
       continue;
     }
 
@@ -566,7 +573,7 @@ DbVia* Connect::generateDbVia(
                "Via",
                3,
                "{}: Current via area {} with {} cuts, best via area {}",
-               via->getCutLayer()->getName(),
+               via->getName(),
                area, via->getTotalCuts(), best_area);
 
     if (area > best_area) {

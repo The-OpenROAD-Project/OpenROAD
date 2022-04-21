@@ -99,6 +99,9 @@ class Enclosure
   void setX(int x) { x_ = x; }
   void setY(int y) { y_ = y; }
 
+  bool operator<(const Enclosure& other) const;
+  bool operator==(const Enclosure& other) const;
+
  private:
   int x_;
   int y_;
@@ -385,6 +388,8 @@ class ViaGenerator
   ViaGenerator(utl::Logger* logger, const odb::Rect& lower_rect, const odb::Rect& upper_rect);
   virtual ~ViaGenerator() = default;
 
+  virtual const std::string getName() const = 0;
+
   virtual odb::dbTechLayer* getBottomLayer() const = 0;
   virtual odb::dbTechLayer* getTopLayer() const = 0;
   virtual odb::dbTechLayer* getCutLayer() const = 0;
@@ -538,7 +543,7 @@ class GenerateViaGenerator : public ViaGenerator
                        const odb::Rect& lower_rect,
                        const odb::Rect& upper_rect);
 
-  const std::string getName() const;
+  virtual const std::string getName() const override;
   const std::string getRuleName() const;
 
   virtual odb::dbTechLayer* getBottomLayer() const override;
@@ -579,6 +584,8 @@ class TechViaGenerator : public ViaGenerator
                    const Constraint& lower_constraint,
                    const odb::Rect& upper_rect,
                    const Constraint& upper_constraint);
+
+  virtual const std::string getName() const override;
 
   virtual odb::dbTechLayer* getBottomLayer() const override { return bottom_; }
   virtual odb::dbTechLayer* getTopLayer() const override { return top_; }

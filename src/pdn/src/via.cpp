@@ -62,6 +62,16 @@ Enclosure::Enclosure(int x, int y, odb::dbTechLayer* layer) : x_(x), y_(y)
   }
 }
 
+bool Enclosure::operator<(const Enclosure& other) const
+{
+  return std::tie(x_, y_) < std::tie(other.x_, other.y_);
+}
+
+bool Enclosure::operator==(const Enclosure& other) const
+{
+  return std::tie(x_, y_) == std::tie(other.x_, other.y_);
+}
+
 //////////
 
 DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
@@ -889,6 +899,13 @@ void ViaGenerator::determineCutClass()
 bool ViaGenerator::checkConstraints() const
 {
   if (getTotalCuts() == 0) {
+    debugPrint(logger_,
+               utl::PDN,
+               "Via",
+               2,
+               "Does not generate any vias: {}",
+               getTotalCuts());
+
     return false;
   }
 
@@ -1162,16 +1179,19 @@ bool ViaGenerator::yIsViaEnd() const
 bool ViaGenerator::build(bool use_bottom_min_enclosure,
                          bool use_top_min_enclosure)
 {
-  std::vector<Enclosure> bottom_enclosures;
-  std::vector<Enclosure> top_enclosures;
-  getMinimumEnclosures(bottom_enclosures, top_enclosures);
+  std::vector<Enclosure> bottom_enclosures_list;
+  std::vector<Enclosure> top_enclosures_list;
+  getMinimumEnclosures(bottom_enclosures_list, top_enclosures_list);
+
+  std::set<Enclosure> bottom_enclosures(bottom_enclosures_list.begin(), bottom_enclosures_list.end());
+  std::set<Enclosure> top_enclosures(top_enclosures_list.begin(), top_enclosures_list.end());
 
   const bool bottom_is_horizontal = getBottomLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
   const bool top_is_horizontal = getTopLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
 
   int best_cuts = 0;
-  Enclosure* best_bot_enc = nullptr;
-  Enclosure* best_top_enc = nullptr;
+  const Enclosure* best_bot_enc = nullptr;
+  const Enclosure* best_top_enc = nullptr;
   for (auto& bottom_enc : bottom_enclosures) {
     for (auto& top_enc : top_enclosures) {
       determineRowsAndColumns(use_bottom_min_enclosure,
@@ -1913,6 +1933,11 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
   }
 
   determineCutSpacing();
+}
+
+const std::string TechViaGenerator::getName() const
+{
+  return via_->getName();
 }
 
 int TechViaGenerator::getCutArea() const
