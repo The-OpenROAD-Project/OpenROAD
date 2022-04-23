@@ -433,6 +433,11 @@ void Connect::makeVia(odb::dbSWire* wire,
       !TechLayer::checkIfManufacturingGrid(tech, y)) {
     DbGenerateDummyVia dummy_via(grid_->getLogger(), intersection, layer0_, layer1_);
     dummy_via.generate(wire->getBlock(), wire, type, 0, 0);
+
+    if (via == nullptr) {
+      // no via was inserted so need to remove from map
+      vias_.erase(via_index);
+    }
     return;
   }
 
@@ -798,7 +803,8 @@ void Connect::printViaReport() const
              utl::PDN,
              "Write",
              1,
-             "Vias from {} -> {}: {} types",
+             "Vias ({}) from {} -> {}: {} types",
+             grid_->getLongName(),
              layer0_->getName(),
              layer1_->getName(),
              report.size());
