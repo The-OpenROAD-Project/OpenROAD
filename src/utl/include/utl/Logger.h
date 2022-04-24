@@ -257,20 +257,7 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
-      /*
-      if(metrics_key_counter_.find(key) != metrics_key_counter_.end())
-        key = fmt::format("{}_{}", key, metrics_key_counter_[key]++); 
-      else
-        metrics_key_counter_[key] = 1;
-
-      metrics_logger_->info("  {}\"{}\" : {}",
-                            first_metric_ ? "  " : ", ",
-                            key,
-                            value);
-      first_metric_ = false;
-      */
-
-     metrics_entries_.push_back(new MetricsEntry(ley, std::to_string(value)));
+     metrics_entries_.push_back(MetricsEntry(key, std::to_string(value)));
 
     }
 
