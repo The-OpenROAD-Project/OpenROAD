@@ -1,0 +1,36 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
+[INFO ODB-0127] Reading DEF file: sky130_power_switch/floorplan.def
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 22271 components and 105165 component-terminals.
+[INFO ODB-0133]     Created 15004 nets and 60623 connections.
+[INFO ODB-0134] Finished DEF file: sky130_power_switch/floorplan.def
+[INFO PDN-9008] Design name is aes_cipher_top.
+[INFO PDN-9009] Reading technology data.
+[WARNING PDN-9018] No macro grid specifications found - no straps added for macros.
+[INFO PDN-9011] ****** INFO ******
+Type: stdcell, grid
+    Stdcell Rails
+      Layer: met1  -  width: 0.480  pitch: 5.440  offset: 0.000 
+    Straps
+      Layer: met4  -  width: 1.600  pitch: 27.140  offset: 13.570 
+      Layer: met5  -  width: 1.600  pitch: 27.200  offset: 13.600 
+    Connect: {met1 met4} {met4 met5}
+    Switch cell: POWER_SWITCH
+[INFO PDN-9012] **** END INFO ****
+[INFO PDN-9013] Inserting stdcell grid - grid.
+[WARNING PDN-9002] No shapes on layer met1 for VDD.
+[WARNING PDN-9002] No shapes on layer met1_PIN_hor for VSS.
+[WARNING PDN-9002] No shapes on layer met1_PIN_hor for VDD_SW.
+[WARNING PDN-9003] No shapes on layer met5 for VDD_SW.
+[INFO PDN-9015] Writing to database.
+No differences found.

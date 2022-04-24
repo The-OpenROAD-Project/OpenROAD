@@ -23,6 +23,7 @@
 [INFO PDN-0043]     Spacing: 0.0000
 [INFO PDN-0044]     Pitch: 2.8000
 [INFO PDN-0045]     Offset: 0.0000
+[INFO PDN-0046]     Snap to grid: false
 [INFO PDN-0101] Using VDD as power net for Core domain.
 [INFO PDN-0102] Using VSS as ground net for Core domain.
 [INFO PDN-0010] Voltage domain: Core

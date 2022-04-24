@@ -155,22 +155,17 @@ _dbLib::_dbLib(_dbDatabase* db)
 
   _master_tbl = new dbTable<_dbMaster>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbMasterObj);
-  ZALLOCATED(_master_tbl);
 
   _site_tbl = new dbTable<_dbSite>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbSiteObj);
-  ZALLOCATED(_site_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbPropertyObj);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbLib::getObjectTable);
-  ZALLOCATED(_name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 
   _master_hash.setTable(_master_tbl);
   _site_hash.setTable(_site_tbl);
@@ -193,19 +188,14 @@ _dbLib::_dbLib(_dbDatabase* db, const _dbLib& l)
   }
 
   _master_tbl = new dbTable<_dbMaster>(db, this, *l._master_tbl);
-  ZALLOCATED(_master_tbl);
 
   _site_tbl = new dbTable<_dbSite>(db, this, *l._site_tbl);
-  ZALLOCATED(_site_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(db, this, *l._prop_tbl);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache = new _dbNameCache(db, this, *l._name_cache);
-  ZALLOCATED(_name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 
   _master_hash.setTable(_master_tbl);
   _site_hash.setTable(_site_tbl);

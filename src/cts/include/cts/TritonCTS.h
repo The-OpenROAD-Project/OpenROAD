@@ -84,12 +84,13 @@ class TritonCTS
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_; }
-  void addBuilder(TreeBuilder* builder);
-  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
 
  private:
+  void addBuilder(TreeBuilder* builder);
+  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+
   void setupCharacterization();
   void checkCharacterization();
   void findClockRoots();

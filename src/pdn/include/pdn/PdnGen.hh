@@ -121,6 +121,8 @@ class PdnGen
                                odb::dbNet* ground,
                                const std::vector<odb::dbNet*>& secondary_nets,
                                odb::dbRegion* region);
+  void setVoltageDomainSwitchedPower(VoltageDomain* voltage_domain,
+		                     odb::dbNet* switched_power);
 
   // Grids
   void buildGrids(bool trim);
@@ -128,15 +130,18 @@ class PdnGen
   void makeCoreGrid(VoltageDomain* domain,
                     const std::string& name,
                     StartsWith starts_with,
-                    const std::vector<odb::dbTechLayer*>& pin_layers);
+                    const std::vector<odb::dbTechLayer*>& pin_layers,
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions);
   void makeInstanceGrid(VoltageDomain* domain,
                         const std::string& name,
                         StartsWith starts_with,
                         odb::dbInst* inst,
                         const std::array<int, 4>& halo,
                         bool pg_pins_to_boundary,
-                        bool default_grid);
-  void makeExistingGrid(const std::string& name);
+                        bool default_grid,
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
+  void makeExistingGrid(const std::string& name,
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
   // Shapes
   void makeRing(Grid* grid,
@@ -182,8 +187,11 @@ class PdnGen
   void ripUp(odb::dbNet* net);
 
   void setDebugRenderer(bool on);
+  void rendererRedraw();
   void setAllowRepairChannels(bool allow);
   void filterVias(const std::string& filter);
+
+  void checkSetup() const;
 
  private:
   using regexPairs
@@ -204,7 +212,6 @@ class PdnGen
                            dbBox* region,
                            std::shared_ptr<netRegexPairs>);
 
-  void rendererRedraw();
   void trimShapes();
   void cleanupVias();
 

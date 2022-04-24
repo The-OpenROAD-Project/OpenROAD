@@ -160,11 +160,10 @@ const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
     return {};
   }
 
-  odb::Rect region_box;
-
-  for (auto* box : region->getBoundaries()) {
+  auto boundaries = region->getBoundaries();
+  if (!boundaries.empty()) {
     odb::Rect box_rect;
-    box->getBox(box_rect);
+    boundaries.begin()->getBox(box_rect);
     return box_rect;
   }
 
@@ -296,6 +295,13 @@ void VoltageDomain::removeGrid(Grid* grid)
       std::remove_if(grids_.begin(), grids_.end(), [grid](const auto& other) {
         return other.get() == grid;
       }));
+}
+
+void VoltageDomain::checkSetup() const
+{
+  for (const auto& grid : grids_) {
+    grid->checkSetup();
+  }
 }
 
 }  // namespace pdn

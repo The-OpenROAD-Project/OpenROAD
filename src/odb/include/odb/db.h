@@ -137,6 +137,9 @@ class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerCutSpacingTableDefRule;
 class dbTechLayerCutEnclosureRule;
 class dbTechLayerEolExtensionRule;
+class dbTechLayerArraySpacingRule;
+class dbTechLayerWidthTableRule;
+class dbTechLayerMinCutRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -536,11 +539,6 @@ class dbBox : public dbObject
   uint getDY();
   uint getWidth(uint dir = 1);
   uint getLength(uint dir = 1);
-
-  ///
-  /// Get GeomShape Interface
-  ///
-  GeomShape* getGeomShape();
 
   ///
   /// Set temporary flag visited
@@ -3153,7 +3151,9 @@ class dbInst : public dbObject
   /// Returns NULL if an instance with this name already exists.
   /// Returns NULL if the master is not FROZEN.
   ///
-  static dbInst* create(dbBlock* block, dbMaster* master, const char* name,
+  static dbInst* create(dbBlock* block,
+                        dbMaster* master,
+                        const char* name,
                         bool physical_only = false);
 
   ///
@@ -6920,7 +6920,13 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerEolExtensionRule> getTechLayerEolExtensionRules() const;
 
+  dbSet<dbTechLayerArraySpacingRule> getTechLayerArraySpacingRules() const;
+
   dbSet<dbTechLayerEolKeepOutRule> getTechLayerEolKeepOutRules() const;
+
+  dbSet<dbTechLayerWidthTableRule> getTechLayerWidthTableRules() const;
+
+  dbSet<dbTechLayerMinCutRule> getTechLayerMinCutRules() const;
 
   void setRectOnly(bool rect_only);
 
@@ -8577,14 +8583,187 @@ class dbTechLayerEolExtensionRule : public dbObject
   // User Code End dbTechLayerEolExtensionRule
 };
 
+class dbTechLayerArraySpacingRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerArraySpacingRuleEnums
+  // User Code End dbTechLayerArraySpacingRuleEnums
+
+  void setViaWidth(int via_width);
+
+  int getViaWidth() const;
+
+  void setCutSpacing(int cut_spacing);
+
+  int getCutSpacing() const;
+
+  void setWithin(int within);
+
+  int getWithin() const;
+
+  void setArrayWidth(int array_width);
+
+  int getArrayWidth() const;
+
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
+
+  void setParallelOverlap(bool parallel_overlap);
+
+  bool isParallelOverlap() const;
+
+  void setLongArray(bool long_array);
+
+  bool isLongArray() const;
+
+  void setViaWidthValid(bool via_width_valid);
+
+  bool isViaWidthValid() const;
+
+  void setWithinValid(bool within_valid);
+
+  bool isWithinValid() const;
+
+  // User Code Begin dbTechLayerArraySpacingRule
+
+  void setCutsArraySpacing(int num_cuts, int spacing);
+
+  const std::map<int, int>& getCutsArraySpacing() const;
+
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  static dbTechLayerArraySpacingRule* create(dbTechLayer* layer);
+
+  static dbTechLayerArraySpacingRule* getTechLayerArraySpacingRule(
+      dbTechLayer* inly,
+      uint dbid);
+
+  static void destroy(dbTechLayerArraySpacingRule* rule);
+
+  // User Code End dbTechLayerArraySpacingRule
+};
+
+class dbTechLayerWidthTableRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerWidthTableRuleEnums
+  // User Code End dbTechLayerWidthTableRuleEnums
+
+  void setWrongDirection(bool wrong_direction);
+
+  bool isWrongDirection() const;
+
+  void setOrthogonal(bool orthogonal);
+
+  bool isOrthogonal() const;
+
+  // User Code Begin dbTechLayerWidthTableRule
+
+  void addWidth(int width);
+
+  std::vector<int> getWidthTable() const;
+
+  static dbTechLayerWidthTableRule* create(dbTechLayer* layer);
+
+  static dbTechLayerWidthTableRule* getTechLayerWidthTableRule(
+      dbTechLayer* inly,
+      uint dbid);
+
+  static void destroy(dbTechLayerWidthTableRule* rule);
+  // User Code End dbTechLayerWidthTableRule
+};
+
+class dbTechLayerMinCutRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerMinCutRuleEnums
+  // User Code End dbTechLayerMinCutRuleEnums
+
+  void setNumCuts(int num_cuts);
+
+  int getNumCuts() const;
+
+  std::map<std::string, int> getCutClassCutsMap() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setWithinCutDist(int within_cut_dist);
+
+  int getWithinCutDist() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setLengthWithinDist(int length_within_dist);
+
+  int getLengthWithinDist() const;
+
+  void setArea(int area);
+
+  int getArea() const;
+
+  void setAreaWithinDist(int area_within_dist);
+
+  int getAreaWithinDist() const;
+
+  void setPerCutClass(bool per_cut_class);
+
+  bool isPerCutClass() const;
+
+  void setWithinCutDistValid(bool within_cut_dist_valid);
+
+  bool isWithinCutDistValid() const;
+
+  void setFromAbove(bool from_above);
+
+  bool isFromAbove() const;
+
+  void setFromBelow(bool from_below);
+
+  bool isFromBelow() const;
+
+  void setLengthValid(bool length_valid);
+
+  bool isLengthValid() const;
+
+  void setAreaValid(bool area_valid);
+
+  bool isAreaValid() const;
+
+  void setAreaWithinDistValid(bool area_within_dist_valid);
+
+  bool isAreaWithinDistValid() const;
+
+  void setSameMetalOverlap(bool same_metal_overlap);
+
+  bool isSameMetalOverlap() const;
+
+  void setFullyEnclosed(bool fully_enclosed);
+
+  bool isFullyEnclosed() const;
+
+  // User Code Begin dbTechLayerMinCutRule
+
+  void setCutsPerCutClass(std::string cut_class, int num_cuts);
+
+  static dbTechLayerMinCutRule* create(dbTechLayer* layer);
+
+  static dbTechLayerMinCutRule* getTechLayerMinCutRule(dbTechLayer* inly,
+                                                       uint dbid);
+
+  static void destroy(dbTechLayerMinCutRule* rule);
+
+  // User Code End dbTechLayerMinCutRule
+};
+
 class dbModule : public dbObject
 {
  public:
   // User Code Begin dbModuleEnums
   // User Code End dbModuleEnums
   const char* getName() const;
-
-  std::string getHierarchicalName() const;
 
   dbModInst* getModInst() const;
 
@@ -8608,6 +8787,7 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
+  std::string getHierarchicalName() const;
   // User Code End dbModule
 };
 

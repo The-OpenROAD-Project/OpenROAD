@@ -849,6 +849,9 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
 {
   if (highlight_group < 0) {
     highlight_group = requestHighlightGroup();
+    if (highlight_group < 0) {
+      return;
+    }
   }
 
   if (highlight_group >= highlighted_.size()) {
@@ -902,7 +905,9 @@ void MainWindow::deleteRuler(const std::string& name)
 int MainWindow::requestHighlightGroup()
 {
   HighlightGroupDialog dlg;
-  dlg.exec();
+  if (dlg.exec() == QDialog::Rejected) {
+    return -1;
+  }
   return dlg.getSelectedHighlightGroup();
 }
 
@@ -911,6 +916,9 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
 {
   if (highlight_group < 0) {
     highlight_group = requestHighlightGroup();
+    if (highlight_group < 0) {
+      return;
+    }
   }
 
   if (highlight_group >= highlighted_.size()) {

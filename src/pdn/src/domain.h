@@ -80,6 +80,10 @@ class VoltageDomain
 
   odb::dbNet* getPower() const { return power_; }
   odb::dbNet* getGround() const { return ground_; }
+  odb::dbNet* getSwitchedPower() const { return switched_power_; }
+
+  void setSwitchedPower(odb::dbNet* switched_power) { switched_power_ = switched_power; }
+
   // returns the order in which the nets should be arranged in the grid shapes
   std::vector<odb::dbNet*> getNets(bool start_with_power = true) const;
 
@@ -100,11 +104,14 @@ class VoltageDomain
 
   void report() const;
 
+  void checkSetup() const;
+
  private:
   std::string name_;
   PdnGen* pdngen_;
   odb::dbBlock* block_;
   odb::dbNet* power_;
+  odb::dbNet* switched_power_;
   odb::dbNet* ground_;
   std::vector<odb::dbNet*> secondary_;
 

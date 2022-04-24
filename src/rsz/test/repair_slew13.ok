@@ -2,13 +2,14 @@
 [INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
 [INFO ODB-0222] Reading LEF file: repair_slew13.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  repair_slew13.lef
 [INFO ODB-0127] Reading DEF file: repair_slew13.def
 [INFO ODB-0128] Design: long_wire
-[WARNING ODB-0121] error: undefined layer (metal1) referenced
-[WARNING ODB-0121] error: undefined layer (metal1) referenced
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 2 components and 8 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
@@ -18,14 +19,15 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/A                                    0.00    0.06   -0.05 (VIOLATED)
+b1/A                                    0.03    0.07   -0.04 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 7681um.
+[INFO RSZ-0058] Using max wire length 2393um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/A                                    0.00    0.06   -0.05 (VIOLATED)
+b1/A                                    0.03    0.04   -0.01 (VIOLATED)
 

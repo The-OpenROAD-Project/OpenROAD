@@ -65,7 +65,8 @@ namespace bgi = boost::geometry::index;
 
 namespace grt {
 
-typedef std::map<odb::dbNet*, std::vector<ant::VINFO>> AntennaViolations;
+typedef std::map<odb::dbNet*, std::vector<ant::ViolationInfo>>
+    AntennaViolations;
 
 class GlobalRouter;
 

@@ -171,6 +171,7 @@ class RepairChannelStraps : public Straps
                       const ShapeTreeMap& other_shapes,
                       const std::set<odb::dbNet*>& nets,
                       const odb::Rect& area,
+                      const odb::Rect& obs_check_area,
                       bool allow);
 
   virtual Type type() const override { return GridComponent::RepairChannel; }
@@ -195,6 +196,7 @@ class RepairChannelStraps : public Straps
   struct RepairChannelArea
   {
     odb::Rect area;
+    odb::Rect obs_area;
     Straps* target;
     odb::dbTechLayer* connect_to;
     std::set<odb::dbNet*> nets;
@@ -206,6 +208,7 @@ class RepairChannelStraps : public Straps
   std::set<odb::dbNet*> nets_;
   odb::dbTechLayer* connect_to_;
   odb::Rect area_;
+  odb::Rect obs_check_area_;
 
   bool invalid_;
 

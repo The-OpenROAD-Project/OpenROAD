@@ -12,5 +12,6 @@
   <file alias="add.png">google_icons/round_add_black_36dp.png</file>
   <file alias="focus.png">google_icons/round_loupe_black_36dp.png</file>
   <file alias="defocus.png">google_icons/round_minusloupe_black_36dp.png</file>
+  <file alias="undo.png">google_icons/round_undo_black_36dp.png</file>
 </qresource>
 </RCC>

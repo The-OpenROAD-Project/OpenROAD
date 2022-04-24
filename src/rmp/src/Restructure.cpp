@@ -71,12 +71,15 @@ namespace rmp {
 
 
 
-void Restructure::init(ord::OpenRoad* openroad)
+void Restructure::init(utl::Logger* logger,
+                       sta::dbSta* open_sta,
+                       odb::dbDatabase* db,
+                       rsz::Resizer* resizer)
 {
-  logger_ = openroad->getLogger();
-  db_ = openroad->getDb();
-  open_sta_ = openroad->getSta();
-  resizer_ = openroad->getResizer();
+  logger_ = logger;
+  db_ = db;
+  open_sta_ = open_sta;
+  resizer_ = resizer;
 }
 
 void Restructure::deleteComponents()

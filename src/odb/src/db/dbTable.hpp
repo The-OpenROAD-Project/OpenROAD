@@ -181,7 +181,6 @@ void dbTable<T>::resizePageTbl()
   _page_tbl_size *= 2;
 
   _pages = new dbTablePage*[_page_tbl_size];
-  ZALLOCATED(_pages);
 
   for (i = 0; i < old_tbl_size; ++i)
     _pages[i] = old_tbl[i];
@@ -204,7 +203,6 @@ void dbTable<T>::newPage()
 
   if (_page_tbl_size == 0) {
     _pages = new dbTablePage*[1];
-    ZALLOCATED(_pages);
     _page_tbl_size = 1;
   } else if (_page_tbl_size == _page_cnt) {
     resizePageTbl();
@@ -573,7 +571,6 @@ template <class T>
 void dbTable<T>::copy_pages(const dbTable<T>& t)
 {
   _pages = new dbTablePage*[_page_tbl_size];
-  ZALLOCATED(_pages);
 
   uint i;
 
@@ -662,7 +659,6 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
     table._pages = NULL;
   else {
     table._pages = new dbTablePage*[table._page_tbl_size];
-    ZALLOCATED(table._pages);
   }
 
   uint i;

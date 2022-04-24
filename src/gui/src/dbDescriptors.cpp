@@ -951,13 +951,13 @@ void DbNetDescriptor::highlight(std::any object,
     }
   }
 
-  odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
     if (sink_object != nullptr) {
       drawPathSegment(net, sink_object, painter);
     }
 
+    odb::Rect rect;
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
@@ -1030,8 +1030,13 @@ void DbNetDescriptor::highlight(std::any object,
   // Draw special (i.e. geometric) routing
   for (auto swire : net->getSWires()) {
     for (auto sbox : swire->getWires()) {
-      sbox->getBox(rect);
-      painter.drawGeomShape(sbox->getGeomShape());
+      if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
+        painter.drawOctagon(sbox->getOct());
+      } else {
+        odb::Rect rect;
+        sbox->getBox(rect);
+        painter.drawRect(rect);
+      }
     }
   }
 }
