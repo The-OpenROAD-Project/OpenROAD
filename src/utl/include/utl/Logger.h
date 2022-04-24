@@ -184,7 +184,7 @@ class Logger
   inline void metric(const std::string_view metric,
                      const std::string& value)
   {
-    log_metric(metric, '"' +  value + '"');
+    log_metric(metric, std::string('"' +  value + '"'));
   }
 
 
