@@ -257,6 +257,9 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
+      if(value == nullptr) {
+        logger_->critical(fmt::format("Error: tried to add metric '{}' with null value", key);
+      }
       metrics_entries_.push_back({key, value});
 
     }
