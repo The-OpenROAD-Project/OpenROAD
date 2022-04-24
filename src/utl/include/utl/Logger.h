@@ -257,7 +257,7 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
-      metrics_entries_.push_back(MetricsEntry(key, value);
+      metrics_entries_.push_back(MetricsEntry(key, value));
 
     }
 
