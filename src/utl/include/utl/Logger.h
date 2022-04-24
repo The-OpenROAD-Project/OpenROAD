@@ -249,7 +249,7 @@ class Logger
 
   template <typename Value>
     inline void log_metric(const std::string_view metric,
-                           const std::string_view value)
+                           const std::string value)
     {
       std::string key;
       if (metrics_stages_.empty()) 
