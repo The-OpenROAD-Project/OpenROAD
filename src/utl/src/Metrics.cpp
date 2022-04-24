@@ -35,16 +35,17 @@
 
 #include "utl/Metrics.h"
 
-#include "spdlog/spdlog.h"
-#include "spdlog/fmt/ostr.h"
 #include "spdlog/fmt/fmt.h"
+#include "spdlog/fmt/ostr.h"
+#include "spdlog/spdlog.h"
 
 namespace utl {
 
-std::string MetricsEntry::assembleJSON(std::list<MetricsEntry> entries) {
+std::string MetricsEntry::assembleJSON(std::list<MetricsEntry> entries)
+{
   std::string json = "{";
   std::string separator = "";
-  for(MetricsEntry entry : entries) {
+  for (MetricsEntry entry : entries) {
     json += fmt::format("{}\n\t\"{}\":{}", separator, entry.key, entry.value);
     separator = ",";
   }
@@ -73,7 +74,7 @@ bool MetricsPolicy::matching(std::string key)
 void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
 {
   switch (policy_) {
-    case MetricsPolicyType::KeepFirst:
+    case MetricsPolicyType::KeepFirst: {
       bool matched = false;
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
         if (matching(iter->key)) {
@@ -83,8 +84,9 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
         }
       }
       break;
+    }
 
-    case MetricsPolicyType::KeepLast:
+    case MetricsPolicyType::KeepLast: {
       bool matched = false;
       std::list<MetricsEntry>::iterator last;
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
@@ -96,8 +98,9 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
         }
       }
       break;
+    }
 
-    case MetricsPolicyType::EnumerateFirstToLast:
+    case MetricsPolicyType::EnumerateFirstToLast: {
       int ctr = 0;
       std::list<MetricsEntry>::iterator last;
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
@@ -107,13 +110,15 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
         }
       }
       break;
+    }
 
-    case MetricsPolicyType::Remove:
+    case MetricsPolicyType::Remove: {
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
         if (matching(iter->key))
           entries.erase(iter);
       }
       break;
+    }
   }
 }
 
