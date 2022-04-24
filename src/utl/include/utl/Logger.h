@@ -49,6 +49,7 @@
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/fmt/fmt.h"
 
+#include "Metrics.h"
 
 namespace utl {
 
@@ -208,6 +209,11 @@ class Logger
   void pushMetricsStage(std::string_view format);
   std::string popMetricsStage();
 
+  std::vector<std::string> metrics_sinks_;
+  std::list<MetricsEntry> metrics_entries_;
+  std::vector<MetricsPolicy> metrics_policies_;
+
+
  private:
   template <typename... Args>
     inline void log(ToolId tool,
@@ -251,6 +257,7 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
+      /*
       if(metrics_key_counter_.find(key) != metrics_key_counter_.end())
         key = fmt::format("{}_{}", key, metrics_key_counter_[key]++); 
       else
@@ -261,7 +268,13 @@ class Logger
                             key,
                             value);
       first_metric_ = false;
+      */
+
+     metrics_entries_.push_back(new MetricsEntry(ley, std::to_string(value)));
+
     }
+
+    void finalizeMetrics();
 
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup
@@ -280,9 +293,8 @@ class Logger
 
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
-  std::shared_ptr<spdlog::logger> metrics_logger_;
+  //std::shared_ptr<spdlog::logger> metrics_logger_;
   std::stack<std::string> metrics_stages_;
-  std::unordered_map<std::string, int> metrics_key_counter_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
