@@ -252,11 +252,11 @@ Opendp::reportLegalizationStats() const
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
   logger_->report("total displacement   {:10.1f} u", dbuToMicrons(displacement_sum_));
-  logger_->metric("detailedplace__design__instance__displacement__total", dbuToMicrons(displacement_sum_));
+  logger_->metric("__design__instance__displacement__total", dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u", dbuToMicrons(displacement_avg_));
-  logger_->metric("detailedplace__design__instance__displacement__mean", dbuToMicrons(displacement_avg_));
+  logger_->metric("__design__instance__displacement__mean", dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u", dbuToMicrons(displacement_max_));
-  logger_->metric("detailedplace__design__instance__displacement__max", dbuToMicrons(displacement_max_));
+  logger_->metric("__design__instance__displacement__max", dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before_));
   double hpwl_legal = hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
