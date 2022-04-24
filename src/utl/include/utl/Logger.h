@@ -178,7 +178,7 @@ class Logger
   inline void metric(const std::string_view metric,
                      T value)
   {
-    log_metric(metric, value);
+    log_metric(metric, std::to_string(value));
   }
 
   inline void metric(const std::string_view metric,
@@ -249,7 +249,7 @@ class Logger
 
   template <typename Value>
     inline void log_metric(const std::string_view metric,
-                           const Value& value)
+                           const std::string value)
     {
       std::string key;
       if (metrics_stages_.empty()) 
@@ -257,7 +257,7 @@ class Logger
       else 
         key = fmt::format(metrics_stages_.top(), metric);
 
-     metrics_entries_.push_back(MetricsEntry(key, std::to_string(value)));
+     metrics_entries_.push_back(MetricsEntry(key, value));
 
     }
 
