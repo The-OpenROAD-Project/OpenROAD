@@ -115,7 +115,7 @@ void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)
     case MetricsPolicyType::Remove: {
       for (auto iter = entries.begin(); iter != entries.end(); iter++) {
         if (matching(iter->key))
-          entries.erase(iter);
+          entries.erase(iter--);
       }
       break;
     }
