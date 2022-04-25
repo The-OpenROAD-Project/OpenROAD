@@ -420,10 +420,6 @@ void Connect::makeVia(odb::dbSWire* wire,
   const odb::Rect& upper_rect = upper->getRect();
   const odb::Rect intersection = lower_rect.intersect(upper_rect);
 
-  const std::pair<int, int> via_index
-      = std::make_pair(intersection.dx(), intersection.dy());
-  auto& via = vias_[via_index];
-
   auto* tech = layer0_->getTech();
   const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
   const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
@@ -433,13 +429,12 @@ void Connect::makeVia(odb::dbSWire* wire,
       !TechLayer::checkIfManufacturingGrid(tech, y)) {
     DbGenerateDummyVia dummy_via(grid_->getLogger(), intersection, layer0_, layer1_);
     dummy_via.generate(wire->getBlock(), wire, type, 0, 0);
-
-    if (via == nullptr) {
-      // no via was inserted so need to remove from map
-      vias_.erase(via_index);
-    }
     return;
   }
+
+  const std::pair<int, int> via_index
+      = std::make_pair(intersection.dx(), intersection.dy());
+  auto& via = vias_[via_index];
 
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
