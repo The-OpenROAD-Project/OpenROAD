@@ -126,6 +126,7 @@ std::vector<MetricsPolicy> MetricsPolicy::makeDefaultPolicies()
 {
   return {
       MetricsPolicy(".*::.*", MetricsPolicyType::Remove, true),
+      MetricsPolicy("placeopt_pre__.*", MetricsPolicyType::Remove, true),
       MetricsPolicy("detailedroute__.*", MetricsPolicyType::KeepLast, false)};
 }
 
