@@ -2901,14 +2901,14 @@ Resizer::repairHold(VertexSeq &ends,
   if (!hold_failures.empty()) {
     logger_->info(RSZ, 46, "Found {} endpoints with hold violations.",
                   hold_failures.size());
-    inserted_buffer_count_ = 0;
+    hold_buffer_count_ = 0;
     int repair_count = 1;
     int pass = 1;
     while (!hold_failures.empty()
            // Make sure we are making progress.
            && repair_count > 0
            && !overMaxArea()
-           && inserted_buffer_count_ <= max_buffer_count
+           && hold_buffer_count_ <= max_buffer_count
            && pass <= max_passes) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, slack_margin,
                                     allow_setup_violations, max_buffer_count);
@@ -2927,11 +2927,11 @@ Resizer::repairHold(VertexSeq &ends,
     else if (fuzzyLess(worst_slack, slack_margin))
       logger_->warn(RSZ, 64, "Unable to repair all hold checks within margin.");
 
-    if (inserted_buffer_count_ > 0) {
-      logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
+    if (hold_buffer_count_ > 0) {
+      logger_->info(RSZ, 32, "Inserted {} hold buffers.", hold_buffer_count_);
       level_drvr_vertices_valid_ = false;
     }
-    if (inserted_buffer_count_ > max_buffer_count)
+    if (hold_buffer_count_ > max_buffer_count)
       logger_->error(RSZ, 60, "Max buffer count reached.");
     if (overMaxArea())
       logger_->error(RSZ, 50, "Max utilization reached.");
@@ -3063,7 +3063,7 @@ Resizer::repairHoldPass(VertexSeq &hold_failures,
                               delayAsString(drvr_setup_slack, sta_, 3),
                               delayAsString(drvr_setup_slack1, sta_, 3));
           }
-          if (inserted_buffer_count_ > max_buffer_count
+          if (hold_buffer_count_ > max_buffer_count
               || overMaxArea())
             return repair_count;
         }
@@ -3185,7 +3185,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
     buffer = makeInstance(buffer_cell, buffer_name.c_str(),
                           parent);
     journalMakeBuffer(buffer);
-    inserted_buffer_count_++;
+    hold_buffer_count_++;
     designAreaIncr(area(db_network_->cell(buffer_cell)));
 
     sta_->connectPin(buffer, input, buf_in_net);

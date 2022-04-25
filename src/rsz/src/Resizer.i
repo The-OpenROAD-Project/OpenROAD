@@ -482,6 +482,13 @@ repair_hold(float slack_margin,
                       max_buffer_percent, max_passes);
 }
 
+int
+hold_buffer_count()
+{
+  Resizer *resizer = getResizer();
+  return resizer->holdBufferCount();
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Rebuffer one net (for testing).

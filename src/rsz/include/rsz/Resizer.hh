@@ -223,6 +223,7 @@ public:
                   bool allow_setup_violations,
                   float max_buffer_percent,
                   int max_passes);
+  int holdBufferCount() const { return hold_buffer_count_; }
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -719,6 +720,7 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  int hold_buffer_count_;
   // Slack map variables.
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
