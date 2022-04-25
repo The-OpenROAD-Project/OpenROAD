@@ -215,12 +215,14 @@ public:
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -521,7 +523,8 @@ protected:
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  int max_buffer_count);
+                  int max_buffer_count,
+                  int max_passes);
   int repairHoldPass(VertexSeq &ends,
                      LibertyCell *buffer_cell,
                      float slack_margin,

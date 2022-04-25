@@ -2790,7 +2790,8 @@ void
 Resizer::repairHold(float slack_margin,
                     bool allow_setup_violations,
                     // Max buffer count as percent of design instance count.
-                    float max_buffer_percent)
+                    float max_buffer_percent,
+                    int max_passes)
 {
   init();
   LibertyCell *buffer_cell = findHoldBuffer();
@@ -2804,7 +2805,7 @@ Resizer::repairHold(float slack_margin,
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   incrementalParasiticsBegin();
   repairHold(ends1, buffer_cell, slack_margin,
-             allow_setup_violations, max_buffer_count);
+             allow_setup_violations, max_buffer_count, max_passes);
 
   // Leave the parasitices up to date.
   updateParasitics();
@@ -2817,18 +2818,20 @@ Resizer::repairHold(Pin *end_pin,
                     LibertyCell *buffer_cell,
                     float slack_margin,
                     bool allow_setup_violations,
-                    float max_buffer_percent)
+                    float max_buffer_percent,
+                    int max_passes)
 {
+  init();
+
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSeq ends;
   ends.push_back(end);
 
-  init();
   sta_->findRequireds();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   incrementalParasiticsBegin();
   repairHold(ends, buffer_cell, slack_margin, allow_setup_violations,
-             max_buffer_count);
+             max_buffer_count, max_passes);
   // Leave the parasitices up to date.
   updateParasitics();
   incrementalParasiticsEnd();
@@ -2888,7 +2891,8 @@ Resizer::repairHold(VertexSeq &ends,
                     LibertyCell *buffer_cell,
                     float slack_margin,
                     bool allow_setup_violations,
-                    int max_buffer_count)
+                    int max_buffer_count,
+                    int max_passes)
 {
   // Find endpoints with hold violation.
   VertexSeq hold_failures;
@@ -2904,7 +2908,8 @@ Resizer::repairHold(VertexSeq &ends,
            // Make sure we are making progress.
            && repair_count > 0
            && !overMaxArea()
-           && inserted_buffer_count_ <= max_buffer_count) {
+           && inserted_buffer_count_ <= max_buffer_count
+           && pass <= max_passes) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, slack_margin,
                                     allow_setup_violations, max_buffer_count);
       debugPrint(logger_, RSZ, "repair_hold", 1,
@@ -2995,8 +3000,6 @@ Resizer::repairHoldPass(VertexSeq &hold_failures,
         // Have to have enough setup slack to add delay to repair the hold violation.
         && (allow_setup_violations
             || fuzzyLess(drvr_hold_slack, drvr_setup_slack))) {
-      debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
-                 vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
       PinSeq load_pins;
       float load_cap = 0.0;
@@ -3040,7 +3043,7 @@ Resizer::repairHoldPass(VertexSeq &hold_failures,
             ? hold_buffer_count
             : min(max_insert_count, hold_buffer_count);
           debugPrint(logger_, RSZ, "repair_hold", 2,
-                     " {} hold={} inserted {} for {}/{} loads",
+                     "driver {} hold={} inserted {} for {}/{} loads",
                      vertex->name(sdc_network_),
                      delayAsString(drvr_hold_slack, this, 3),
                      buffer_count,
@@ -3049,14 +3052,14 @@ Resizer::repairHoldPass(VertexSeq &hold_failures,
           makeHoldDelay(vertex, buffer_count, load_pins,
                         loads_have_out_port, buffer_cell);
           repair_count += buffer_count;
-          if (logger_->debugCheck(RSZ, "repair_hold", 4)) {
+          if (logger_->debugCheck(RSZ, "repair_hold", 5)) {
             // Check that no setup violations are introduced.
             updateParasitics();
             Slack drvr_setup_slack1 = sta_->vertexSlack(vertex, max_);
             if (drvr_setup_slack1 < 0
                 && drvr_setup_slack1 < drvr_setup_slack)
               logger_->report("{} {} -> {}",
-                              vertex->name(network_),
+                              vertex->name(sdc_network_),
                               delayAsString(drvr_setup_slack, sta_, 3),
                               delayAsString(drvr_setup_slack1, sta_, 3));
           }
@@ -3122,12 +3125,14 @@ Resizer::sortHoldFanins(VertexSet &fanins)
   if (logger_->debugCheck(RSZ, "repair_hold", 4)) {
     logger_->report("Sorted fanins");
     logger_->report("     hold_slack  slack_gap  level");
-    for(Vertex *vertex : sorted_fanins)
-      logger_->report("{} {} {}",
+    for(int i = 0; i < sorted_fanins.size() && i < 20; i++) {
+      Vertex *vertex = sorted_fanins[i];
+      logger_->report("{} {} {} {}",
                       vertex->name(network_),
                       delayAsString(sta_->vertexSlack(vertex, MinMax::min()), sta_, 3),
                       delayAsString(slackGap(vertex), sta_, 3),
                       vertex->level());
+    }
   }
   return sorted_fanins;
 }
