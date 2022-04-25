@@ -269,12 +269,16 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
                      int rows,
                      int row_pitch,
                      int cols,
-                     int col_pitch)
+                     int col_pitch,
+                     Enclosure* required_bottom_enc,
+                     Enclosure* required_top_enc)
     : via_(via),
       rows_(rows),
       row_pitch_(row_pitch),
       cols_(cols),
-      col_pitch_(col_pitch)
+      col_pitch_(col_pitch),
+      required_bottom_rect_(),
+      required_top_rect_()
 {
   via_rect_.mergeInit();
   enc_bottom_rect_.mergeInit();
@@ -298,6 +302,23 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
         enc_top_rect_.merge(rect);
       }
     }
+  }
+
+  if (required_bottom_enc != nullptr) {
+    required_bottom_rect_ = odb::Rect(via_rect_.xMin() - required_bottom_enc->getX(),
+                                      via_rect_.yMin() - required_bottom_enc->getY(),
+                                      via_rect_.xMax() + required_bottom_enc->getX(),
+                                      via_rect_.yMax() + required_bottom_enc->getY());
+  } else {
+    required_bottom_rect_ = enc_bottom_rect_;
+  }
+  if (required_top_enc != nullptr) {
+    required_top_rect_ = odb::Rect(via_rect_.xMin() - required_top_enc->getX(),
+                                   via_rect_.yMin() - required_top_enc->getY(),
+                                   via_rect_.xMax() + required_top_enc->getX(),
+                                   via_rect_.yMax() + required_top_enc->getY());
+  } else {
+    required_top_rect_ = enc_top_rect_;
   }
 }
 
@@ -323,6 +344,13 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
     for (int c = 0; c < cols_; c++) {
       auto shapes
           = getLayerShapes(odb::dbSBox::create(wire, via_, col, row, type));
+      const odb::dbTransform xfm(odb::Point{col, row});
+      odb::Rect top_shape = required_top_rect_;
+      xfm.apply(top_shape);
+      shapes.top.insert(top_shape);
+      odb::Rect bottom_shape = required_bottom_rect_;
+      xfm.apply(bottom_shape);
+      shapes.bottom.insert(bottom_shape);
       combineLayerShapes(shapes, via_shapes);
       incrementCount();
 
@@ -2136,7 +2164,13 @@ DbBaseVia* TechViaGenerator::makeBaseVia(int rows,
                                          int cols,
                                          int col_pitch) const
 {
-  return new DbTechVia(via_, rows, row_pitch, cols, col_pitch);
+  return new DbTechVia(via_,
+                       rows,
+                       row_pitch,
+                       cols,
+                       col_pitch,
+                       getBottomEnclosure(),
+                       getTopEnclosure());
 }
 
 bool TechViaGenerator::isSetupValid(odb::dbTechLayer* lower,

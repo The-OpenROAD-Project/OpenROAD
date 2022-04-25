@@ -183,7 +183,9 @@ class DbTechVia : public DbBaseVia
             int rows,
             int row_pitch,
             int cols,
-            int col_pitch);
+            int col_pitch,
+            Enclosure* required_bottom_enc = nullptr,
+            Enclosure* required_top_enc = nullptr);
   virtual ~DbTechVia() {}
 
   virtual ViaLayerShape generate(odb::dbBlock* block,
@@ -209,6 +211,9 @@ class DbTechVia : public DbBaseVia
   odb::Rect via_rect_;
   odb::Rect enc_bottom_rect_;
   odb::Rect enc_top_rect_;
+
+  odb::Rect required_bottom_rect_;
+  odb::Rect required_top_rect_;
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
