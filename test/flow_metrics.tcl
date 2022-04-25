@@ -469,8 +469,9 @@ proc save_metric_limits { test } {
       puts $limits_stream "{"
       set first 1
       # Find value of variables used in margin expr's.
-      foreach var {"clock_period" "instance_count"} {
-        set key [metric_json_key $var]
+      foreach metric {"DRT::clock_period" "IFP::instance_count"} {
+        regexp "(...)::(.*)" $metric ignore tool var
+        set key [metric_json_key $metric]
         if { [dict exists $metrics_dict $key] } {
           set value [dict get $metrics_dict $key]
           set $var $value
