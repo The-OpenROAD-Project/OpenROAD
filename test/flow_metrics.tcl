@@ -112,14 +112,15 @@ define_metric "IFP::instance_count" "" "insts" 7 "%7d" "<" {$value * 1.2}
 define_metric "DPL::design_area" "" "area" 7 "%7.0f" "<" {$value * 1.2}
 define_metric "DPL::utilization" "" "util" 4 "%4.1f" "<" {$value * 1.2}
 
-define_metric "RSZ::max_slew_slack" "max" "slew" 4 "%4.2f" ">=" {0}
-define_metric "RSZ::max_capacitance_slack" "max" "cap" 4 "%4.2f" ">=" {0}
-define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%6.2f" ">=" {0}
+define_metric "RSZ::repair_design_buffer_count" "drv" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
+define_metric "RSZ::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {0}
+define_metric "RSZ::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {0}
+define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {0}
 
 define_metric "RSZ::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
 define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
-define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<" {$value * 1.2}
+define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
 
 define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 
@@ -128,9 +129,9 @@ define_metric "DRT::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $cloc
 define_metric "DRT::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
 define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "DRT::clock_skew" "clk" "skew" 5 "%5.2f" "<=" {$value * 1.2}
-define_metric "DRT::max_slew_slack" "max" "slew" 4 "%4.2f" ">=" {0}
-define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%4.2f" ">=" {0}
-define_metric "DRT::max_fanout_slack" "max" "fanout" 6 "%6.2f" ">=" {0}
+define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {0}
+define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {0}
+define_metric "DRT::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {0}
 define_metric "DRT::clock_period" "" "" 0 "%5.2f" "<=" {$value}
 
 ################################################################

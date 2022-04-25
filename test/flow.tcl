@@ -118,9 +118,10 @@ report_tns -digits 3
 # Check slew repair
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
-utl::metric "RSZ::max_slew_slack" [sta::max_slew_check_slack_limit]
-utl::metric "RSZ::max_fanout_slack" [sta::max_fanout_check_slack_limit]
-utl::metric "RSZ::max_capacitance_slack" [sta::max_capacitance_check_slack_limit]
+utl::metric "RSZ::repair_design_buffer_count" [rsz::repair_design_buffer_count]
+utl::metric "RSZ::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
+utl::metric "RSZ::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
+utl::metric "RSZ::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100]
 
 ################################################################
 # Clock Tree Synthesis
@@ -252,9 +253,9 @@ utl::metric "DRT::worst_slack_max" [sta::worst_slack -max]
 utl::metric "DRT::tns_max" [sta::total_negative_slack -max]
 utl::metric "DRT::clock_skew" [sta::worst_clock_skew -setup]
 # slew/cap/fanout slack/limit
-utl::metric "DRT::max_slew_slack" [sta::max_slew_check_slack_limit]
-utl::metric "DRT::max_fanout_slack" [sta::max_fanout_check_slack_limit]
-utl::metric "DRT::max_capacitance_slack" [sta::max_capacitance_check_slack_limit]
+utl::metric "DRT::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
+utl::metric "DRT::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
+utl::metric "DRT::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100];
 # report clock period as a metric for updating limits
 utl::metric "DRT::clock_period" [get_property [lindex [all_clocks] 0] period]
 

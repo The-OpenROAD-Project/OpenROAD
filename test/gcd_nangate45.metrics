@@ -1,25 +1,26 @@
 {
     "IFP::ord_version" : ""
   , "IFP::instance_count" : "363"
+  , "RSZ::repair_design_buffer_count" : "0"
   , "RSZ::max_slew_slack" : "0.3838480220375221"
   , "RSZ::max_fanout_slack" : "1.0"
   , "RSZ::max_capacitance_slack" : "0.09247201894102454"
   , "RSZ::worst_slack_min" : "0.05458949419236768"
   , "RSZ::worst_slack_max" : "-0.04705735934112258"
   , "RSZ::tns_max" : "-0.6746677296682354"
-  , "RSZ::hold_buffer_count" : "677737569"
+  , "RSZ::hold_buffer_count" : "0"
   , "DPL::utilization" : "8.7"
   , "DPL::design_area" : "556"
   , "GRT::ANT::errors" : "0"
-  , "drt::wire length::total" : 5800
-  , "drt::vias::total" : 2401
+  , "drt::wire length::total" : 5803
+  , "drt::vias::total" : 2403
   , "DRT::drv" : "0"
-  , "DRT::worst_slack_min" : "0.05372399205346745"
-  , "DRT::worst_slack_max" : "-0.06167350138483673"
-  , "DRT::tns_max" : "-0.8102423405988921"
-  , "DRT::clock_skew" : "0.003904279787756438"
-  , "DRT::max_slew_slack" : "0.36162623847352543"
+  , "DRT::worst_slack_min" : "0.05360603432321191"
+  , "DRT::worst_slack_max" : "-0.06254941186488719"
+  , "DRT::tns_max" : "-0.8302020972335573"
+  , "DRT::clock_skew" : "0.004037145731986159"
+  , "DRT::max_slew_slack" : "0.36033047876910035"
   , "DRT::max_fanout_slack" : "1.0"
-  , "DRT::max_capacitance_slack" : "0.05728270756197659"
+  , "DRT::max_capacitance_slack" : "0.05433572755665166"
   , "DRT::clock_period" : "0.485000"
 }

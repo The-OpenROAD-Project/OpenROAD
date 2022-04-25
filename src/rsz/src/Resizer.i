@@ -412,6 +412,13 @@ repair_design_cmd(double max_length,
   resizer->repairDesign(max_length, slew_margin, cap_margin);
 }
 
+int
+repair_design_buffer_count()
+{
+  Resizer *resizer = getResizer();
+  return resizer->repairDesignBufferCount();
+}
+
 void
 repair_clk_nets_cmd(double max_length)
 {
