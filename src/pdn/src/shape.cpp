@@ -167,27 +167,23 @@ bool Shape::isWrongWay() const
   return false;
 }
 
+void Shape::updateIBTermConnections(std::set<odb::Rect>& terms)
+{
+  std::set<odb::Rect> remove_terms;
+  for (const odb::Rect& term : terms) {
+    if (!rect_.overlaps(term)) {
+      remove_terms.insert(term);
+    }
+  }
+  for (const odb::Rect& term : remove_terms) {
+      terms.erase(term);
+  }
+}
+
 void Shape::updateTermConnections()
 {
-  std::set<odb::Rect> remove_iterms;
-  for (const odb::Rect& iterm : iterm_connections_) {
-    if (!rect_.overlaps(iterm)) {
-      remove_iterms.insert(iterm);
-    }
-  }
-  for (const odb::Rect& iterm : remove_iterms) {
-    removeITermConnection(iterm);
-  }
-
-  std::set<odb::Rect> remove_bterms;
-  for (const auto& bterm : bterm_connections_) {
-    if (!rect_.overlaps(bterm)) {
-      remove_bterms.insert(bterm);
-    }
-  }
-  for (const auto& bterm : remove_bterms) {
-    removeBTermConnection(bterm);
-  }
+  updateIBTermConnections(iterm_connections_);
+  updateIBTermConnections(bterm_connections_);
 }
 
 bool Shape::hasTermConnections() const
@@ -496,9 +492,14 @@ bool Shape::isModifiable() const
 
 const std::string Shape::getReportText() const
 {
-  return fmt::format("{} on {}",
-                     getRectText(rect_, layer_->getTech()->getLefUnits()),
-                     layer_->getName());
+  std::string text = fmt::format("{} on {}",
+                                 getRectText(rect_, layer_->getTech()->getLefUnits()),
+                                 layer_->getName());
+
+  if (net_ != nullptr) {
+    text = net_->getName() + " " + text;
+  }
+  return text;
 }
 
 const std::string Shape::getRectText(const odb::Rect& rect,

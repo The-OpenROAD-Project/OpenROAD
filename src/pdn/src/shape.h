@@ -226,6 +226,8 @@ class Shape
 
   // add rect as bterm to database
   void addBPinToDb(const odb::Rect& rect) const;
+
+  void updateIBTermConnections(std::set<odb::Rect>& terms);
 };
 
 class FollowPinShape : public Shape
