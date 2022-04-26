@@ -661,30 +661,6 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
-  // remove vias are only partially overlapping
-  for (const auto& via : vias) {
-    const auto& via_area = via->getArea();
-    const auto& lower = via->getLowerShape()->getRect();
-    const auto& upper = via->getUpperShape()->getRect();
-    if (via_area.xMin() == lower.xMin() && via_area.xMax() == lower.xMax() &&
-        via_area.yMin() == upper.yMin() && via_area.yMax() == upper.yMax()) {
-      continue;
-    } else if (via_area.yMin() == lower.yMin() && via_area.yMax() == lower.yMax() &&
-               via_area.xMin() == upper.xMin() && via_area.xMax() == upper.xMax()) {
-      continue;
-    } else if (lower.contains(upper) || upper.contains(lower)) {
-      continue;
-    }
-    remove_vias.insert(via);
-  }
-  debugPrint(getLogger(),
-             utl::PDN,
-             "Via",
-             2,
-             "Removing {} vias due to partial overlap.",
-             remove_vias.size());
-  remove_set_of_vias(remove_vias);
-
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
@@ -1150,8 +1126,9 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           odb::Rect box_rect;
           box->getBox(box_rect);
           transform.apply(box_rect);
-          pins.push_back(
-              std::make_shared<Shape>(box->getTechLayer(), net, box_rect));
+          auto shape = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          shape->setShapeType(Shape::FIXED);
+          pins.push_back(shape);
         }
       }
     }
