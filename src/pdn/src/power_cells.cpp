@@ -153,6 +153,9 @@ void GridSwitchedPower::build()
 {
   if (!insts_.empty()) {
     // power switches already built and need to be ripped up to try again
+    grid_->getLogger()->warn(utl::PDN,
+                             222,
+                             "Power switch insertion has already run. To reset use -ripup option.");
     return;
   }
 
@@ -272,7 +275,13 @@ void GridSwitchedPower::build()
       if (inst_rows.size() < 2) {
         // inst is not in multiple rows, so remove
         odb::dbInst::destroy(inst);
-        debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 3, "Removing switch {} since it is not inside two twos.", new_name);
+        const double dbu_to_microns = grid_->getBlock()->getDbUnitsPerMicron();
+        grid_->getLogger()->warn(utl::PDN,
+                                 223,
+                                 "Unable to insert power switch ({}) at ({:.4f}, {:.4f}), due to lack of available rows.",
+                                 new_name,
+                                 *locations.begin() / dbu_to_microns,
+                                 bbox.yMin() / dbu_to_microns);
         continue;
       }
 
