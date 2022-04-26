@@ -84,19 +84,19 @@ void PowerCell::populateAlwaysOnPinPositions(int site_width)
       odb::Rect bbox;
       box->getBox(bbox);
 
-      const auto pin_pos = getRectAsSiteWidths(bbox, site_width);
+      const auto pin_pos = getRectAsSiteWidths(bbox, site_width, 0);
       alwayson_power_positions_.insert(pin_pos.begin(), pin_pos.end());
     }
   }
 }
 
-std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect, int site_width)
+std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect, int site_width, int offset)
 {
   std::set<int> pos;
-  const int x_start = std::ceil(static_cast<double>(rect.xMin()) / site_width) * site_width;
-  const int x_end = std::floor(static_cast<double>(rect.xMax()) / site_width) * site_width;
+  const int x_start = std::ceil(static_cast<double>(rect.xMin() - offset) / site_width) * site_width;
+  const int x_end = std::floor(static_cast<double>(rect.xMax() - offset) / site_width) * site_width;
   for (int x = x_start; x <= x_end; x += site_width) {
-    pos.insert(x);
+    pos.insert(x + offset);
   }
   return pos;
 }
@@ -155,6 +155,9 @@ void GridSwitchedPower::build()
     // power switches already built and need to be ripped up to try again
     return;
   }
+
+  odb::Rect core_area;
+  grid_->getBlock()->getCoreArea(core_area);
 
   InstTree exisiting_insts;
   for (auto* inst : grid_->getBlock()->getInsts()) {
@@ -261,7 +264,7 @@ void GridSwitchedPower::build()
 
       debugPrint(grid_->getLogger(), utl::PDN, "PowerSwitch", 3, "Adding switch {}", new_name);
 
-      const auto locations = computeLocations(strap, site_width);
+      const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
       inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
@@ -393,7 +396,7 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
     inst->getLocation(x, y);
     bool fixed = false;
     // start by checking if this can be resolved by moving the power switch
-    for (int new_pos : inst_info.possible_positions) {
+    for (int new_pos : inst_info.sites) {
       if (new_pos == x) {
         continue;
       }
@@ -418,8 +421,8 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
     // restore original position
     inst->setLocation(x, y);
     // next find minimum shift of other cell
-    const int pws_min = *inst_info.possible_positions.begin();
-    const int pws_max = *inst_info.possible_positions.rbegin();
+    const int pws_min = *inst_info.sites.begin();
+    const int pws_max = *inst_info.sites.rbegin();
     const int pws_width = cell_->getMaster()->getWidth();
 
     int overlap_y;
@@ -548,14 +551,15 @@ const ShapeTreeMap GridSwitchedPower::getShapes() const
 }
 
 std::set<int> GridSwitchedPower::computeLocations(const odb::Rect& strap,
-                                                  int site_width) const
+                                                  int site_width,
+                                                  const odb::Rect& corearea) const
 {
   const auto& pin_pos = cell_->getAlwaysOnPowerPinPositions();
   const int min_pin = *pin_pos.begin();
   const int max_pin = *pin_pos.rbegin();
 
   std::set<int> pos;
-  for (auto strap_pos : PowerCell::getRectAsSiteWidths(strap, site_width)) {
+  for (auto strap_pos : PowerCell::getRectAsSiteWidths(strap, site_width, corearea.xMin())) {
     for (auto pin : cell_->getAlwaysOnPowerPinPositions()) {
       const int new_pos = strap_pos - pin;
 

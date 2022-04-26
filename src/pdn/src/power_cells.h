@@ -88,7 +88,7 @@ class PowerCell
   void report() const;
 
   void populateAlwaysOnPinPositions(int site_width);
-  static std::set<int> getRectAsSiteWidths(const odb::Rect& rect, int site_width);
+  static std::set<int> getRectAsSiteWidths(const odb::Rect& rect, int site_width, int offset);
 
  private:
   utl::Logger* logger_;
@@ -137,14 +137,14 @@ class GridSwitchedPower
 
   // instances with additional information;
   struct InstanceInfo {
-    std::set<int> possible_positions;
+    std::set<int> sites;
     std::set<odb::dbRow*> rows;
   };
   std::map<odb::dbInst*, InstanceInfo> insts_;
 
   Straps* getLowestStrap() const;
 
-  std::set<int> computeLocations(const odb::Rect& strap, int site_width) const;
+  std::set<int> computeLocations(const odb::Rect& strap, int site_width, const odb::Rect& corearea) const;
 
   using InstValue = std::pair<Box, odb::dbInst*>;
   using InstTree = bgi::rtree<InstValue, bgi::quadratic<16>>;
