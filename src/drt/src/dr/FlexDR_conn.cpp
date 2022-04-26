@@ -802,20 +802,27 @@ void FlexDRConnectivityChecker::splitPathSegs(
         frPathSeg* maxHiPs = static_cast<frPathSeg*>(netRouteObjs[maxHi.second]);
         int hi = maxHiPs->high();
         if (split1 == std::numeric_limits<int>().max()) {
-            if (split2 != std::numeric_limits<int>().max()) {
+            if (split2 != std::numeric_limits<int>().max()) 
+            #pragma omp critical
+            {
                 getRegionQuery()->removeDRObj(maxHiPs);
                 maxHi.first.lo = split2;
+                maxHiPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
                 maxHiPs->setLow(split2);
                 getRegionQuery()->addDRObj(maxHiPs);
             }
-        } else {
+        } else 
+        #pragma omp critical
+        {
             getRegionQuery()->removeDRObj(prevPs);
             prev.first.hi = split1;
+            prevPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
             prevPs->setHigh(split1);
             getRegionQuery()->addDRObj(prevPs);
             if (split2 != std::numeric_limits<int>().max()) {
                 getRegionQuery()->removeDRObj(currPs);
                 curr.first.hi = split2;
+                currPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
                 currPs->setHigh(split2);
                 getRegionQuery()->addDRObj(currPs);
                 int j;
