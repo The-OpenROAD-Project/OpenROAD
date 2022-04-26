@@ -573,26 +573,26 @@ END COMPONENTS
 PINS 56 ;
     - VDD + NET VDD + SPECIAL + DIRECTION INOUT + USE POWER
       + PORT
-        + LAYER metal6 ( -2000 -100660 ) ( 2000 100660 )
-        + LAYER metal6 ( -2000 -100940 ) ( 2000 100380 )
-        + LAYER metal6 ( -190360 -100660 ) ( -186360 100660 )
-        + LAYER metal6 ( -190360 -100940 ) ( -186360 100380 )
-        + LAYER metal5 ( 5480 90260 ) ( 5760 94260 )
-        + LAYER metal5 ( -194500 90260 ) ( -194220 94260 )
-        + LAYER metal5 ( 5480 -94540 ) ( 5760 -90540 )
-        + LAYER metal5 ( -194500 -94540 ) ( -194220 -90540 )
-        + FIXED ( 194500 100940 ) N ;
+        + LAYER metal6 ( -2000 -140 ) ( 2000 140 )
+        + LAYER metal6 ( -2000 -201460 ) ( 2000 -201180 )
+        + LAYER metal6 ( -190360 -140 ) ( -186360 140 )
+        + LAYER metal6 ( -190360 -201460 ) ( -186360 -201180 )
+        + LAYER metal5 ( 5480 -10260 ) ( 5760 -6260 )
+        + LAYER metal5 ( -194500 -10260 ) ( -194220 -6260 )
+        + LAYER metal5 ( 5480 -195060 ) ( 5760 -191060 )
+        + LAYER metal5 ( -194500 -195060 ) ( -194220 -191060 )
+        + FIXED ( 194500 201460 ) N ;
     - VSS + NET VSS + SPECIAL + DIRECTION INOUT + USE GROUND
       + PORT
-        + LAYER metal6 ( -2000 -100660 ) ( 2000 100660 )
-        + LAYER metal6 ( -2000 -100940 ) ( 2000 100380 )
-        + LAYER metal6 ( -174360 -100660 ) ( -170360 100660 )
-        + LAYER metal6 ( -174360 -100940 ) ( -170360 100380 )
-        + LAYER metal5 ( 13480 82260 ) ( 13760 86260 )
-        + LAYER metal5 ( -186500 82260 ) ( -186220 86260 )
-        + LAYER metal5 ( 13480 -86540 ) ( 13760 -82540 )
-        + LAYER metal5 ( -186500 -86540 ) ( -186220 -82540 )
-        + FIXED ( 186500 100940 ) N ;
+        + LAYER metal6 ( -2000 -140 ) ( 2000 140 )
+        + LAYER metal6 ( -2000 -201460 ) ( 2000 -201180 )
+        + LAYER metal6 ( -174360 -140 ) ( -170360 140 )
+        + LAYER metal6 ( -174360 -201460 ) ( -170360 -201180 )
+        + LAYER metal5 ( 13480 -18260 ) ( 13760 -14260 )
+        + LAYER metal5 ( -186500 -18260 ) ( -186220 -14260 )
+        + LAYER metal5 ( 13480 -187060 ) ( 13760 -183060 )
+        + LAYER metal5 ( -186500 -187060 ) ( -186220 -183060 )
+        + FIXED ( 186500 201460 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -140 -140 ) ( 140 140 )

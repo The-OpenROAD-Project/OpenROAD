@@ -67,6 +67,7 @@ class TechLayer
   const std::vector<int>& getGrid() const { return grid_; }
   int snapToManufacturingGrid(int pos, bool round_up = false) const;
   static int snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up = false);
+  static bool checkIfManufacturingGrid(odb::dbTech* tech, int value);
   bool checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const;
 
   double dbuToMicron(int value) const;

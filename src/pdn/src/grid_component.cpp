@@ -180,14 +180,14 @@ ShapePtr GridComponent::addShape(Shape* shape)
     const int y = std::min(static_cast<int>(die_area.yMin() + min_width),
                            final_shape_rect.yMax());
     odb::Rect pin_rect = final_shape_rect;
-    pin_rect.set_ylo(y);
+    pin_rect.set_yhi(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
   if (final_shape_rect.yMax() == die_area.yMax()) {
     const int y = std::max(static_cast<int>(die_area.yMax() - min_width),
                            final_shape_rect.yMin());
     odb::Rect pin_rect = final_shape_rect;
-    pin_rect.set_yhi(y);
+    pin_rect.set_ylo(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
 
