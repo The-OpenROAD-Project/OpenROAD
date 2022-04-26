@@ -315,7 +315,11 @@ void GlobalRouter::estimateRC()
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
   MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
-  GRoute& route = routes_[db_net];
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return;
+  }
+  GRoute& route = iter->second;
   if (!route.empty()) {
     Net* net = getNet(db_net);
     builder.estimateParasitcs(db_net, net->getPins(), route);
@@ -499,7 +503,11 @@ int GlobalRouter::getEdgeResource(int x1,
 void GlobalRouter::removeDirtyNetsRouting()
 {
   for (odb::dbNet* db_net : dirty_nets_) {
-    GRoute& net_route = routes_[db_net];
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    GRoute& net_route = iter->second;
     for (GSegment& segment : net_route) {
       if (!(segment.init_layer != segment.final_layer || (segment.isVia()))) {
         odb::Point init_on_grid = grid_->getPositionOnGrid(
@@ -1517,7 +1525,11 @@ void GlobalRouter::writeGuides(const char* file_name)
             });
 
   for (odb::dbNet* db_net : sorted_nets) {
-    GRoute& route = routes_[db_net];
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    GRoute& route = iter->second;
     if (!route.empty()) {
       guide_file << db_net->getConstName() << "\n";
       guide_file << "(\n";
@@ -1875,7 +1887,11 @@ void GlobalRouter::checkPinPlacement()
 
 int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 {
-  const GRoute& route = routes_[db_net];
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return 0;
+  }
+  const GRoute& route = iter->second;
   int net_wl = 0;
   for (const GSegment& segment : route) {
     const int segment_wl = std::abs(segment.final_x - segment.init_x)
@@ -2017,7 +2033,9 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
-
+    if (!net) {
+      continue;
+    }
     for (Pin& pin : net->getPins()) {
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);
