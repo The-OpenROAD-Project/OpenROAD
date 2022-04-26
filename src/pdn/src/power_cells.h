@@ -82,6 +82,8 @@ class PowerCell
 
   bool hasAcknowledge() const { return acknowledge_ != nullptr; }
 
+  bool appliesToRow(odb::dbRow* row) const;
+
   // returns the site positions that overlap the power pin
   const std::set<int>& getAlwaysOnPowerPinPositions() const { return alwayson_power_positions_; }
 

@@ -101,6 +101,12 @@ std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect, int site_wid
   return pos;
 }
 
+bool PowerCell::appliesToRow(odb::dbRow* row) const
+{
+  // double height cell with switched power in the center needs to be placed in MX rows
+  return row->getOrient() == odb::dbOrientType::MX;
+}
+
 //////////
 
 GridSwitchedPower::GridSwitchedPower(Grid* grid,
@@ -246,11 +252,11 @@ void GridSwitchedPower::build()
   const RowTree row_search = buildRowTree();
 
   for (auto* row : grid_->getDomain()->getRows()) {
-    const int site_width = row->getSite()->getWidth();
-    cell_->populateAlwaysOnPinPositions(site_width);
-    if (row->getOrient() == odb::dbOrientType::R0) {
+    if (!cell_->appliesToRow(row)) {
       continue;
     }
+    const int site_width = row->getSite()->getWidth();
+    cell_->populateAlwaysOnPinPositions(site_width);
     const std::string inst_prefix = inst_prefix_ + row->getName() + "_";
     int idx = 0;
 
@@ -271,7 +277,7 @@ void GridSwitchedPower::build()
     });
 
     for (const auto& strap : straps) {
-      const std::string new_name = inst_prefix + std::to_string(idx);
+      const std::string new_name = inst_prefix + std::to_string(idx++);
       auto* inst = odb::dbInst::create(grid_->getBlock(),
                                        cell_->getMaster(),
                                        new_name.c_str(),
@@ -313,8 +319,6 @@ void GridSwitchedPower::build()
       inst->getITerm(cell_->getSwitchedPowerPin())->connect(switched);
 
       insts_[inst] = InstanceInfo{locations, inst_rows};
-
-      idx++;
     }
   }
 
