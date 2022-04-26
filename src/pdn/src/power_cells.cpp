@@ -149,6 +149,75 @@ void GridSwitchedPower::report() const
   logger->info(utl::PDN, 212, "  Network type: {}", toString(network_));
 }
 
+GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
+{
+  InstTree exisiting_insts;
+  for (auto* inst : grid_->getBlock()->getInsts()) {
+    if (!inst->getPlacementStatus().isFixed()) {
+      continue;
+    }
+
+    odb::Rect bbox;
+    inst->getBBox()->getBox(bbox);
+
+    exisiting_insts.insert({Shape::rectToBox(bbox), inst});
+  }
+
+  return exisiting_insts;
+}
+
+ShapeTree GridSwitchedPower::buildStrapTargetList(Straps* target) const
+{
+  const odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
+  const auto& target_shapes = target->getShapes();
+
+  ShapeTree targets;
+  for (const auto& [box, shape] : target_shapes.at(target->getLayer())) {
+    if (shape->getNet() != alwayson) {
+      continue;
+    }
+    targets.insert({box, shape});
+  }
+
+  return targets;
+}
+
+GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
+{
+  RowTree row_search;
+  for (auto* row : grid_->getDomain()->getRows()) {
+    odb::Rect bbox;
+    row->getBBox(bbox);
+
+    row_search.insert({Shape::rectToBox(bbox), row});
+  }
+
+  return row_search;
+}
+
+std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(odb::dbInst* inst, const RowTree& row_search) const
+{
+  std::set<odb::dbRow*> rows;
+
+  odb::Rect box;
+  inst->getBBox()->getBox(box);
+
+  for (auto itr = row_search.qbegin(bgi::intersects(Shape::rectToBox(box)));
+       itr != row_search.qend();
+       itr++) {
+    auto* row = itr->second;
+    odb::Rect row_box;
+    row->getBBox(row_box);
+
+    const auto overlap = row_box.intersect(box);
+    if (overlap.minDXDY() != 0) {
+      rows.insert(row);
+    }
+  }
+
+  return rows;
+}
+
 void GridSwitchedPower::build()
 {
   if (!insts_.empty()) {
@@ -162,67 +231,21 @@ void GridSwitchedPower::build()
   odb::Rect core_area;
   grid_->getBlock()->getCoreArea(core_area);
 
-  InstTree exisiting_insts;
-  for (auto* inst : grid_->getBlock()->getInsts()) {
-    if (!inst->getPlacementStatus().isFixed()) {
-      continue;
-    }
-
-    odb::Rect bbox;
-    inst->getBBox()->getBox(bbox);
-
-    exisiting_insts.insert({Shape::rectToBox(bbox), inst});
-  }
-
   auto* target = getLowestStrap();
   if (target == nullptr) {
     grid_->getLogger()->error(utl::PDN, 220, "Unable to find a strap to connect power switched to.");
   }
 
+  const InstTree exisiting_insts = buildInstanceSearchTree();
+
   odb::dbNet* switched = grid_->getDomain()->getSwitchedPower();
   odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
   odb::dbNet* ground = grid_->getDomain()->getGround();
 
-  const auto& target_shapes = target->getShapes();
-  ShapeTree targets;
-  for (const auto& [box, shape] : target_shapes.at(target->getLayer())) {
-    if (shape->getNet() != alwayson) {
-      continue;
-    }
-    targets.insert({box, shape});
-  }
+  const ShapeTree targets = buildStrapTargetList(target);
+  const RowTree row_search = buildRowTree();
 
-  const auto rows = grid_->getDomain()->getRows();
-  bgi::rtree<std::pair<Box, odb::dbRow*>, bgi::quadratic<16>> row_search;
-  for (auto* row : rows) {
-    odb::Rect bbox;
-    row->getBBox(bbox);
-
-    row_search.insert({Shape::rectToBox(bbox), row});
-  }
-  auto get_instance_rows = [&row_search] (odb::dbInst* inst) -> std::set<odb::dbRow*> {
-    std::set<odb::dbRow*> rows;
-
-    odb::Rect box;
-    inst->getBBox()->getBox(box);
-
-    for (auto itr = row_search.qbegin(bgi::intersects(Shape::rectToBox(box)));
-         itr != row_search.qend();
-         itr++) {
-      auto* row = itr->second;
-      odb::Rect row_box;
-      row->getBBox(row_box);
-
-      const auto overlap = row_box.intersect(box);
-      if (overlap.minDXDY() != 0) {
-        rows.insert(row);
-      }
-    }
-
-    return rows;
-  };
-
-  for (auto* row : rows) {
+  for (auto* row : grid_->getDomain()->getRows()) {
     const int site_width = row->getSite()->getWidth();
     cell_->populateAlwaysOnPinPositions(site_width);
     if (row->getOrient() == odb::dbOrientType::R0) {
@@ -271,7 +294,7 @@ void GridSwitchedPower::build()
       inst->setLocation(*locations.begin(), bbox.yMin());
       inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-      const auto inst_rows = get_instance_rows(inst);
+      const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
         // inst is not in multiple rows, so remove
         odb::dbInst::destroy(inst);
@@ -295,6 +318,13 @@ void GridSwitchedPower::build()
     }
   }
 
+  updateControlNetwork();
+
+  checkAndFixOverlappingInsts(exisiting_insts);
+}
+
+void GridSwitchedPower::updateControlNetwork()
+{
   switch(network_) {
   case STAR:
     updateControlNetworkSTAR();
@@ -303,8 +333,6 @@ void GridSwitchedPower::build()
     updateControlNetworkDAISY(true);
     break;
   }
-
-  checkAndFixOverlappingInsts(exisiting_insts);
 }
 
 void GridSwitchedPower::updateControlNetworkSTAR()

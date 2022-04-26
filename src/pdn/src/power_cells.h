@@ -148,10 +148,19 @@ class GridSwitchedPower
 
   using InstValue = std::pair<Box, odb::dbInst*>;
   using InstTree = bgi::rtree<InstValue, bgi::quadratic<16>>;
+  InstTree buildInstanceSearchTree() const;
   odb::dbInst* checkOverlappingInst(odb::dbInst* cell, const InstTree& insts) const;
   void checkAndFixOverlappingInsts(const InstTree& insts);
 
+  ShapeTree buildStrapTargetList(Straps* target) const;
+
+  using RowValue = std::pair<Box, odb::dbRow*>;
+  using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;
+  RowTree buildRowTree() const;
+  std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst, const RowTree& rows) const;
+
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;
+  void updateControlNetwork();
   void updateControlNetworkSTAR();
   void updateControlNetworkDAISY(const bool order_by_x);
 
