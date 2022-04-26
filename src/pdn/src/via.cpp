@@ -1504,14 +1504,12 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
   auto determine_enclosure = [this](bool use_min, bool is_x, int min_enc, int overlap_enc, const Constraint& contraint) -> int {
     if (use_min) {
       return min_enc;
+    } else if (is_x && contraint.must_fit_x) {
+      return overlap_enc;
+    } else if (!is_x && contraint.must_fit_y) {
+      return overlap_enc;
     } else {
-      if (is_x && contraint.must_fit_x) {
-        return overlap_enc;
-      } else if (!is_x && contraint.must_fit_y) {
-        return overlap_enc;
-      } else {
-        return min_enc;
-      }
+      return min_enc;
     }
   };
 
