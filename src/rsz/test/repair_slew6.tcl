@@ -15,7 +15,8 @@ write_hi_fanout_def1 $def_file 50 \
 
 read_def $def_file
 
-set_wire_rc -layer met3
+source sky130hd/sky130hd.rc
+set_wire_rc -layer met2
 estimate_parasitics -placement
 
 report_check_types -max_slew -violators

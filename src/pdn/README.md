@@ -55,6 +55,34 @@ The `global_connect` command is used to connect power and ground pins on design 
 global_connect
 ```
 
+### Define Power Switch Cell
+
+Define a power switch cell that will be inserted into a power grid 
+```
+define_power_switch_cell -name <name> \
+                         -control <control_pin_name> \
+                         [-acknowledge <acknowledge_pin_name>] \
+                         -switched_power <switched_power_pin> \
+                         -power <unswitched_power_pin> \
+                         -ground <ground_pin> 
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-name` | The name of the power switch cell. |
+| `-control` | The name of the power control port of the power switch cell. |
+| `-acknowledge` | Defines the name of the output control signal of the power control switch if it has one. |
+| `-switched_power | Defines the name of the pin that outputs the switched power net |
+| `-power` | Defines the name of the pin that connects to the unswitched power net. |
+| `-ground` | Defines the name of the pin that connects to the ground net. |
+
+#### Examples
+```
+define_power_switch_cell -name POWER_SWITCH -control SLEEP -switched_power VDD -power VDDG -ground VSS
+
+```
 
 ### Define voltage domains
 
@@ -65,12 +93,14 @@ The -region argument specifies the name of a region of the design. This region m
 The -name argument is used to define a name for the voltage domain that can be used in the `define_pdn_grid` command
 The -power and -ground arguments are used to define the names of the nets to be use for power and ground respectively within this voltage domain.
 
+If the voltage domain is a switched power domain, then the name of the swiched power net must be specified with the -switched_power option.
 ```
 set_voltage_domain [-name name] \
                    -power power_net \
                    -ground ground_net \
                    [-region region_name] \
-                   [-secondary_power secondary_power_net]
+                   [-secondary_power secondary_power_net] \
+                   [-switched_power <switched_power_net>]
 ```
 
 ##### Options
@@ -82,6 +112,7 @@ set_voltage_domain [-name name] \
 | -ground | Specifies the name of the ground net for this voltage domain |
 | -region | Specifies a region of the design occupied by this voltage domain |
 | -secondary_power | Specifies the name of the secondary power net for this voltage domain |
+| -switched_power | Specifies the name of the switched power net for switched power domains, |
 
 ##### Examples
 ```
@@ -94,14 +125,13 @@ set_voltage_domain -region test_domain -power VDD -ground VSS -secondary_power V
 
 Define the rules to describe a power grid pattern to be placed in the design.
 
-#### Define a core power grid
-
 ```
 define_pdn_grid [-name <name>] \
                 [-pins <list_of_pin_layers>] \
                 [-starts_with (POWER|GROUND)] \
                 [-voltage_domain <list_of_domain_names>] \
-                [-starts_with (POWER|GROUND)]
+                [-starts_with (POWER|GROUND)] \
+                [-obstructions <list_of_layers>]
 ```
 
 ##### Options
@@ -112,6 +142,8 @@ define_pdn_grid [-name <name>] \
 | `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
+
 
 ##### Examples
 
@@ -132,7 +164,8 @@ define_pdn_grid -macro \
                 [-default] \
                 [-halo <list_of_halo_values>] \
                 [-voltage_domain <list_of_domain_names>] \
-                [-starts_with (POWER|GROUND)]    
+                [-starts_with (POWER|GROUND)] \
+                [-obstructions <list_of_layers>]  
 ```
 
 ##### Options
@@ -150,6 +183,7 @@ define_pdn_grid -macro \
 | `-default` | For a macro, specifies this is a default grid that can be overwritten. |
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 ##### Examples
 
@@ -162,7 +196,8 @@ define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_bou
 
 ```
 define_pdn_grid [-name <name>] \
-                -existing
+                -existing \
+                [-obstructions <list_of_layers>]
 ```
 
 ##### Options
@@ -170,6 +205,7 @@ define_pdn_grid [-name <name>] \
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 ##### Examples
 
@@ -177,6 +213,29 @@ define_pdn_grid [-name <name>] \
 define_pdn_grid -name main_grid -existing
 ```
 
+#### Power switch insertion
+
+```
+define_pdn_grid [-name <name>] \
+                [-switch_cell <power_switch_cell_name> ] \
+                [-power_control <power_constrol_signal_name>] \
+                [-power_control_network (STAR|DAISY)]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-switch_cell` | Defines the name of the coarse grain power switch cell to be used for this grid. |
+| `-power_control` | Defines the name of the power control signal used to control the switching of the inserted power switches. |
+| `-power_control_network` | Defines the structure of the power control signal network. Choose from STAR, or DAISY |
+
+
+The `-switch_cell` argument is used to specify the name of a coarse-grain power switch cell that is to be inserted whereever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch_cell` command.
+
+The `-power_control` argument specifies the name of the power control signal that must be connected to the inserted power control cells.
+
+The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch.
 
 #### Add straps / stripes
 

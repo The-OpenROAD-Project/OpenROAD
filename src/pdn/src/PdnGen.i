@@ -158,6 +158,12 @@ void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* ground,
   pdngen->makeRegionVoltageDomain(name, power, ground, secondary_nets, region);
 }
 
+void set_domain_switched_power(const char* name, odb::dbNet* switched_power)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->setVoltageDomainSwitchedPower(pdngen->findDomain(name), switched_power);
+}
+
 void reset()
 {
   PdnGen* pdngen = ord::getPdnGen();
@@ -179,14 +185,15 @@ void build_grids(bool trim = true)
 void make_core_grid(pdn::VoltageDomain* domain, 
                     const char* name, 
                     bool starts_with_power, 
-                    const std::vector<odb::dbTechLayer*>& pin_layers)
+                    const std::vector<odb::dbTechLayer*>& pin_layers, 
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
   if (!starts_with_power) {
     starts_with = GROUND;
   }
-  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers);
+  pdngen->makeCoreGrid(domain, name, starts_with, pin_layers, generate_obstructions);
 }
 
 void make_instance_grid(pdn::VoltageDomain* domain,
@@ -198,7 +205,8 @@ void make_instance_grid(pdn::VoltageDomain* domain,
                         int x1,
                         int y1,
                         bool pg_pins_to_boundary,
-                        bool default_grid)
+                        bool default_grid, 
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -207,13 +215,14 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   }
   
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions);
 }
 
-void make_existing_grid(const char* name)
+void make_existing_grid(const char* name, 
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->makeExistingGrid(name);
+  pdngen->makeExistingGrid(name, generate_obstructions);
 }
 
 void make_ring(const char* grid_name, 
@@ -324,6 +333,12 @@ void debug_renderer(bool on)
   pdngen->setDebugRenderer(on);
 }
 
+void debug_renderer_update()
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->rendererRedraw();
+}
+
 void write_to_db(bool add_pins)
 {
   PdnGen* pdngen = ord::getPdnGen();
@@ -370,6 +385,25 @@ void check_setup()
 {
   PdnGen* pdngen = ord::getPdnGen();
   pdngen->checkSetup();
+}
+
+// used for building debugging grids and should not be used.
+void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, const char* direction)
+{
+  auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  auto* block = swire->getBlock();
+  odb::Rect strap;
+  block->getBBox()->getBox(strap);
+  if (strcmp(direction, "HORIZONTAL") == 0) {
+    strap.set_ylo(offset);
+    strap.set_yhi(offset + width);
+  } else if (strcmp(direction, "VERTICAL") == 0) {
+    strap.set_xlo(offset);
+    strap.set_xhi(offset + width);    
+  } else {
+    return;
+  }
+  odb::dbSBox::create(swire, layer, strap.xMin(), strap.yMin(), strap.xMax(), strap.yMax(), odb::dbWireShapeType::STRIPE);
 }
 
 } // namespace

@@ -121,7 +121,6 @@ class dbAttrTable
 
     if (_pages[page] == NULL) {
       _pages[page] = new T[page_size];
-      ZALLOCATED(_pages[page]);
 
       uint i;
 
@@ -144,7 +143,6 @@ class dbAttrTable
       _page_cnt *= 2;
 
     _pages = new T*[_page_cnt];
-    ZALLOCATED(_pages);
 
     unsigned int i;
 
@@ -270,7 +268,6 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
     return stream;
 
   t._pages = new T*[t._page_cnt];
-  ZALLOCATED(t._pages);
 
   uint i;
 
@@ -282,7 +279,6 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
       t._pages[i] = NULL;
     else {
       t._pages[i] = new T[dbAttrTable<T>::page_size];
-      ZALLOCATED(t._pages[i]);
       uint j;
 
       for (j = 0; j < dbAttrTable<T>::page_size; j++)

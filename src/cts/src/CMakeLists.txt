@@ -35,7 +35,8 @@
 
 include("openroad")
 
-find_package(LEMON REQUIRED)
+# https://github.com/The-OpenROAD-Project/OpenROAD/issues/1186
+find_package(LEMON NAMES LEMON lemon REQUIRED)
 
 swig_lib(NAME      cts
          NAMESPACE cts

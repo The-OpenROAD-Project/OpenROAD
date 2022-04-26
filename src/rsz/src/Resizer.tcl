@@ -403,7 +403,8 @@ proc repair_timing { args } {
     rsz::repair_setup $slack_margin $max_passes
   }
   if { $hold } {
-    rsz::repair_hold $slack_margin $allow_setup_violations $max_buffer_percent
+    rsz::repair_hold $slack_margin $allow_setup_violations \
+      $max_buffer_percent $max_passes
   }
 }
 

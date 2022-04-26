@@ -152,15 +152,16 @@ proc pdngen { args } {
   }
 }
 
-sta::define_cmd_args "set_voltage_domain" {[-name domain_name] \
+sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            -power power_net_name \
                                            -ground ground_net_name \
                                            [-region region_name] \
-                                           [-secondary_power secondary_power_net_name]}
+                                           [-secondary_power secondary_power_net_name] \
+                                           [-switched_power switched_power_net_name]}
 
 proc set_voltage_domain {args} {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power}
+    keys {-name -region -power -ground -secondary_power -switched_power}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -219,6 +220,16 @@ proc set_voltage_domain {args} {
   } else {
     pdn::make_region_domain $name $pwr $gnd $secondary $region
   }
+
+  if {[info exists keys(-switched_power)]} {
+    set switched_power_net_name $keys(-switched_power)
+    set db_net [[ord::get_db_block] findNet $switched_power_net_name]
+    if {$db_net == "NULL"} {
+      set db_net [odb::dbNet_create [ord::get_db_block] $switched_power_net_name]
+      $db_net setSpecial
+    }
+    pdn::set_domain_switched_power $name $db_net
+  }
 }
 
 sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
@@ -232,7 +243,10 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-default] \
                                         [-halo <list_of_halo_values>] \
                                         [-pins <list_of_pin_layers>] \
-                                        [-starts_with (POWER|GROUND)]}
+                                        [-starts_with (POWER|GROUND)] \
+                                        [-obstructions <list_of_layers>] \
+				        [-power_control <signal_name>] \
+				        [-power_control_network (STAR|DAISY)]}
 
 proc define_pdn_grid {args} {
   set is_macro 0
@@ -251,6 +265,44 @@ proc define_pdn_grid {args} {
   } else {
     pdn::define_pdn_grid {*}$args
   }
+}
+
+sta::define_cmd_args "define_power_switch_cell" {-name <name> \
+                                                 -control <control_pin> \
+                                                 [-acknowledge <acknowledge_pin>] \
+                                                 -power_switchable <power_switchable_pin> \
+                                                 -power <power_pin> \
+                                                 -ground <ground_pin> }
+
+proc define_power_switch_cell {args} {
+  sta::parse_key_args "define_power_switch_cell" args \
+    keys {-name -control -acknowledge -power_switchable -power -ground} 
+
+  sta::check_argc_eq0 "define_power_switch_cell" $args
+
+  pdn::check_design_state "define_power_switch_cell"
+
+  if {![info exists keys(-name)]} {
+    utl::error PDN 1183 "The -name argument is required."
+  }
+
+  if {![info exists keys(-control)]} {
+    utl::error PDN 1184 "The -control argument is required."
+  }
+
+  if {![info exists keys(-power_switchable)]} {
+    utl::error PDN 1186 "The -power_switchable argument is required."
+  }
+
+  if {![info exists keys(-power)]} {
+    utl::error PDN 1187 "The -power argument is required."
+  }
+
+  if {![info exists keys(-ground)]} {
+    utl::error PDN 1188 "The -ground argument is required."
+  }
+
+  pdngen::define_power_switch_cell {*}[array get keys]
 }
 
 sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
@@ -649,7 +701,7 @@ namespace eval pdn {
 
   proc define_pdn_grid { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -pins -starts_with} \
+      keys {-name -voltage_domains -pins -starts_with -obstructions} \
       flags {}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -680,15 +732,20 @@ namespace eval pdn {
         lappend pin_layers [pdn::get_layer $pin]
       }
     }
+    
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
 
     foreach domain $domains {
-      pdn::make_core_grid $domain $keys(-name) $start_with_power $pin_layers
+      pdn::make_core_grid $domain $keys(-name) $start_with_power $pin_layers $obstructions
     }
   }
 
   proc define_pdn_grid_existing { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name} \
+      keys {-name -obstructions} \
       flags {-existing}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -699,12 +756,17 @@ namespace eval pdn {
        set name $keys(-name)
     }
 
-    pdn::make_existing_grid $name
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
+
+    pdn::make_existing_grid $name $obstructions
   }
 
   proc define_pdn_grid_macro { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with} \
+      keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
       flags {-macro -grid_over_pg_pins -grid_over_boundary -default}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -767,6 +829,11 @@ namespace eval pdn {
       set domains [pdn::find_domain "Core"]
     }
 
+    set obstructions {}
+    if {[info exists keys(-obstructions)]} {
+      set obstructions [get_obstructions $keys(-obstructions)]
+    }
+
     set orients {}
     if {[info exists keys(-orient)]} {
       set orients [pdn::get_orientations $keys(-orient)]
@@ -789,7 +856,7 @@ namespace eval pdn {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
           foreach domain $domains {
-            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid
+            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
           }
         }
       }
@@ -813,7 +880,7 @@ namespace eval pdn {
             # must match orientation, if provided
             if {[match_orientation $orients [$inst getOrient]] != 0} {
               foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid
+                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
               }
             }
           }
@@ -891,6 +958,14 @@ namespace eval pdn {
       utl::error PDN 1034 "Argument $arg must consist of 1, 2 or 4 entries."
     }
     return $list_val
+  }
+
+  proc get_obstructions { obstruction } {
+    set layers {}
+    foreach l $obstruction {
+      lappend layers [pdn::get_layer $l]
+    }
+    return $layers
   }
 
   proc get_starts_with { value } {
@@ -1078,6 +1153,9 @@ namespace eval pdn {
     append command " -voltage_domains \{[dict get $spec voltage_domains]\}"
     if {[dict exists $spec starts_with]} {
       append command " -starts_with \{[dict get $spec starts_with]\}"
+    }
+    if {[dict exists $spec obstructions]} {
+      append command " -obstructions \{[dict get $spec obstructions]\}"
     }
     return $command
   }

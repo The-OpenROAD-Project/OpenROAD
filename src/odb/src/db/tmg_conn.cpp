@@ -59,7 +59,7 @@ tmg_rcpt::tmg_rcpt()
 {
 }
 
-void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
+static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 {
   *iterm = NULL;
   *bterm = NULL;
@@ -1630,12 +1630,10 @@ void tmg_conn::printConnections()
 static void print_rcterm(tmg_rcterm* x)
 {
   dbITerm* iterm = x->_iterm;
-  // if (iterm) notice(0, " iterm %s/%s",iterm->getInst()->getName().c_str(),
-  //     iterm->getMTerm()->getName().c_str());
   if (iterm)
     notice(0,
-           " iterm I%d/%s",
-           iterm->getInst()->getId(),
+           " iterm %s/%s",
+           iterm->getInst()->getName().c_str(),
            iterm->getMTerm()->getName().c_str());
   dbBTerm* bterm = x->_bterm;
   if (bterm)
@@ -2154,7 +2152,7 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
 void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 {
   int verbose = 0;
-  tmg_rc* rc = &_rcV[k];
+  tmg_rc* rc = (k >= 0) ? &_rcV[k] : nullptr;
   tmg_rcterm* x;
   int xfr, yfr, xto, yto;
   xfr = _ptV[fr]._x;

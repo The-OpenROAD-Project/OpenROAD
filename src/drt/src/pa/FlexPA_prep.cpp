@@ -239,6 +239,47 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   }
   ap->setType((frAccessPointEnum) lowCost, true);
   ap->setType((frAccessPointEnum) highCost, false);
+  if ((lowCost == frAccessPointEnum::NearbyGrid || 
+        highCost == frAccessPointEnum::NearbyGrid)) {
+      Point end;
+      int halfWidth = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth()/2;
+      if (fpt.x() < gtl::xl(maxrect)+halfWidth) {
+          end.setX(gtl::xl(maxrect)+halfWidth);
+      } else if (fpt.x() > gtl::xh(maxrect)-halfWidth)
+          end.setX(gtl::xh(maxrect)-halfWidth);
+      else 
+          end.setX(fpt.x());
+      if (fpt.y() < gtl::yl(maxrect)+halfWidth)
+          end.setY(gtl::yl(maxrect)+halfWidth);
+      else if (fpt.y() > gtl::yh(maxrect)-halfWidth)
+          end.setY(gtl::yh(maxrect)-halfWidth);
+      else 
+          end.setY(fpt.y());
+      
+      Point e = fpt;
+      if (fpt.x() != end.x())
+          e.x() = end.x();
+      else if (fpt.y() != end.y())
+          e.y() = end.y();
+      if (!(e == fpt)) {
+        frPathSeg ps;
+        ps.setPoints_safe(fpt, e);
+        if (ps.getBeginPoint() == end)
+            ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+        else if (ps.getEndPoint() == end)
+            ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+        ap->addPathSeg(std::move(ps));
+        if (!(e == end)) {
+            fpt = e;
+            ps.setPoints_safe(fpt, end);
+            if (ps.getBeginPoint() == end)
+                ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+            else
+                ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+            ap->addPathSeg(std::move(ps));
+        }
+      }
+  }
   aps.push_back(std::move(ap));
   apset.insert(make_pair(fpt, layerNum));
 }
@@ -833,19 +874,23 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     gcWorker.setTargetObj(pin->getTerm());
   }
   gcWorker.initPA0(getDesign());
+  frBlockObject* owner;
   if (instTerm) {
     if (instTerm->hasNet()) {
-      gcWorker.addPAObj(ps.get(), instTerm->getNet());
+      owner = instTerm->getNet();
     } else {
-      gcWorker.addPAObj(ps.get(), instTerm);
+      owner = instTerm;
     }
   } else {
     if (pin->getTerm()->hasNet()) {
-      gcWorker.addPAObj(ps.get(), pin->getTerm()->getNet());
+      owner = pin->getTerm()->getNet();
     } else {
-      gcWorker.addPAObj(ps.get(), pin->getTerm());
+      owner = pin->getTerm();
     }
   }
+  gcWorker.addPAObj(ps.get(), owner);
+  for (auto& apPs : ap->getPathSegs())
+      gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -1003,15 +1048,19 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   }
 
   gcWorker.initPA0(getDesign());
+  frBlockObject* owner;
   if (instTerm) {
     if (instTerm->hasNet()) {
-      gcWorker.addPAObj(via, instTerm->getNet());
+      owner = instTerm->getNet();
     } else {
-      gcWorker.addPAObj(via, instTerm);
+      owner = instTerm;
     }
   } else {
-    gcWorker.addPAObj(via, pin->getTerm());
+    owner = pin->getTerm();
   }
+  gcWorker.addPAObj(via, owner);
+  for (auto& apPs : ap->getPathSegs())
+      gcWorker.addPAObj(&apPs, owner);
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -1558,6 +1607,18 @@ void FlexPA::revertAccessPoints()
           Point uniqueAPPoint(accessPoint->getPoint());
           revertXform.apply(uniqueAPPoint);
           accessPoint->setPoint(uniqueAPPoint);
+          for (auto& ps : accessPoint->getPathSegs()) {
+              Point begin = ps.getBeginPoint();
+              Point end = ps.getEndPoint();
+              revertXform.apply(begin);
+              revertXform.apply(end);
+              if (end < begin ) {
+                  Point tmp = begin;
+                  begin = end;
+                  end = tmp;
+              }
+              ps.setPoints(begin, end);
+          }
         }
       }
     }

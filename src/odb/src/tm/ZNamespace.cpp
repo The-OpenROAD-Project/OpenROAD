@@ -95,7 +95,6 @@ const char* ZNamespace::addZObject(ZObject* obj)
   char buf[BUFSIZ];
   snprintf(buf, BUFSIZ, "_zobj_%d", _unique_id++);
   entry = new ZEntry(buf, obj);
-  ZALLOCATED(entry);
   _zobj_names[entry->_name] = entry;
   return entry->_name;
 }
@@ -137,7 +136,6 @@ void ZNamespace::registerDb(dbDatabase* db)
   char dbname[256];
   db->getDbName(dbname);
   e = new dbEntry(dbname, db);
-  ZALLOCATED(e);
   _db_names[e->_name] = e;
 }
 

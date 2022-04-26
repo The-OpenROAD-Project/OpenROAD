@@ -67,7 +67,12 @@ void initGlobalRouter(OpenRoad* openroad)
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::grt_tcl_inits);
-  openroad->getGlobalRouter()->init(openroad);
+  openroad->getGlobalRouter()->init(openroad->getLogger(),
+                                    openroad->getSteinerTreeBuilder(),
+                                    openroad->getDb(),
+                                    openroad->getSta(),
+                                    openroad->getAntennaChecker(),
+                                    openroad->getOpendp());
 }
 
 }  // namespace ord

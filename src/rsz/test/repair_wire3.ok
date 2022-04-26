@@ -14,8 +14,8 @@
 [WARNING RSZ-0011] Signal/clock wire capacitance is 0.
 [WARNING RSZ-0014] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Driver    length delay
-u2/Z manhtn 1999.8 steiner 1999.8 0.00
-u3/Z manhtn 1.1 steiner 1.1 0.00
+u2/Z manhtn 1998.8 steiner 1998.8 0.00
+u3/Z manhtn 1.3 steiner 1.3 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0037] Found 1 long wires.
