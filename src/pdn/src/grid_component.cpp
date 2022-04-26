@@ -268,6 +268,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
              "Cutting shapes in \"{}\"",
              getGrid()->getName());
 
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Make",
+             2,
+             "Initial shape count: {}",
+             getShapeCount());
+
   for (const auto& [layer, shapes] : shapes_) {
     if (obstructions.count(layer) == 0) {
       continue;
@@ -287,6 +294,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
       replaceShape(shape, replacement);
     }
   }
+
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Make",
+             2,
+             "Final shape count: {}",
+             getShapeCount());
 }
 
 void GridComponent::writeToDb(
