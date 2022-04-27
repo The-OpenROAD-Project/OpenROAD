@@ -51,6 +51,7 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
       pdngen_(pdngen),
       block_(block),
       power_(power),
+      switched_power_(nullptr),
       ground_(ground),
       secondary_(secondary_nets),
       region_(nullptr),
@@ -71,6 +72,7 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
       pdngen_(pdngen),
       block_(block),
       power_(power),
+      switched_power_(nullptr),
       ground_(ground),
       secondary_(secondary_nets),
       region_(region),
@@ -97,10 +99,16 @@ std::vector<odb::dbNet*> VoltageDomain::getNets(bool start_with_power) const
 
   if (start_with_power) {
     nets.push_back(power_);
+    if (switched_power_ != nullptr) {
+      nets.push_back(switched_power_);
+    }
     nets.push_back(ground_);
   } else {
     nets.push_back(ground_);
     nets.push_back(power_);
+    if (switched_power_ != nullptr) {
+      nets.push_back(switched_power_);
+    }
   }
 
   nets.insert(nets.end(), secondary_.begin(), secondary_.end());
@@ -226,12 +234,16 @@ void VoltageDomain::report() const
   logger_->info(utl::PDN, 12, "  Power net: {}", power_->getName());
   logger_->info(utl::PDN, 13, "  Ground net: {}", ground_->getName());
 
+  if (switched_power_ != nullptr) {
+    logger_->info(utl::PDN, 14, "  Switched power net: {}", switched_power_->getName());
+  }
+
   if (!secondary_.empty()) {
     std::string nets;
     for (auto* net : secondary_) {
       nets += net->getName() + " ";
     }
-    logger_->info(utl::PDN, 14, "  Secondary nets: {}", nets);
+    logger_->info(utl::PDN, 15, "  Secondary nets: {}", nets);
   }
 
   for (const auto& grid : grids_) {
@@ -302,6 +314,14 @@ void VoltageDomain::checkSetup() const
   for (const auto& grid : grids_) {
     grid->checkSetup();
   }
+}
+
+odb::dbNet* VoltageDomain::getPower() const
+{
+  if (switched_power_ != nullptr) {
+    return switched_power_;
+  }
+  return power_;
 }
 
 }  // namespace pdn

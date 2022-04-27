@@ -37,6 +37,7 @@
 #include "techlayer.h"
 #include "connect.h"
 #include "domain.h"
+#include "power_cells.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "rings.h"
@@ -133,6 +134,7 @@ void Grid::addConnect(std::unique_ptr<Connect> connect)
 void Grid::makeShapes(const ShapeTreeMap& global_shapes,
                       const ShapeTreeMap& obstructions)
 {
+  ShapeTreeMap all_shapes = global_shapes;
   auto* logger = getLogger();
   logger->info(utl::PDN, 1, "Inserting grid: {}", getLongName());
 
@@ -142,7 +144,7 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
   // make shapes
   for (auto* component : getGridComponents()) {
     // make initial shapes
-    component->makeShapes(global_shapes);
+    component->makeShapes(all_shapes);
     // cut shapes to avoid obstructions
     component->cutShapes(local_obstructions);
     // add obstructions to they are accounted for in future shapes
@@ -150,17 +152,25 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
   }
 
   // insert power switches
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->build();
+    for (const auto& [layer, cell_shapes] : switched_power_cell_->getShapes()) {
+      auto& layer_shapes = all_shapes[layer];
+      layer_shapes.insert(cell_shapes.begin(), cell_shapes.end());
+    }
+  }
+
   // make vias
-  makeVias(global_shapes, obstructions);
+  makeVias(all_shapes, obstructions);
 
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
-      this, global_shapes, local_obstructions, allow_repair_channels_);
+      this, all_shapes, local_obstructions, allow_repair_channels_);
 
   // repair vias that are only partially overlapping straps
-  if (repairVias(global_shapes, local_obstructions)) {
+  if (repairVias(all_shapes, local_obstructions)) {
     // rebuild vias since shapes changed
-    makeVias(global_shapes, obstructions);
+    makeVias(all_shapes, obstructions);
   }
 }
 
@@ -433,6 +443,9 @@ void Grid::report() const
     }
     logger->info(utl::PDN, 26, "Routing obstruction layers: {}", layers);
   }
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->report();
+  }
 }
 
 void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
@@ -518,6 +531,13 @@ void Grid::resetShapes()
 
   for (const auto& connect : connect_) {
     connect->clearShapes();
+  }
+}
+
+void Grid::ripup()
+{
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->ripup();
   }
 }
 
@@ -876,6 +896,12 @@ std::set<odb::dbTechLayer*> Grid::connectableLayers(
     }
   }
   return layers;
+}
+
+void Grid::setSwitchedPower(GridSwitchedPower* cell)
+{
+  switched_power_cell_ = std::unique_ptr<GridSwitchedPower>(cell);
+  cell->setGrid(this);
 }
 
 ///////////////

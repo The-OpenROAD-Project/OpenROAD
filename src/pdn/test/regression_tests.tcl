@@ -81,6 +81,9 @@ record_tests {
 
   existing
 
-  power_switch.api
-  power_switch.daisy.api
+  power_switch
+  power_switch_star
+  power_switch_daisy
+  power_switch_regions
+  power_switch_cut_rows
 }
