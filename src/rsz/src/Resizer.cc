@@ -3001,69 +3001,71 @@ Resizer::repairEndHold(Vertex *end_vertex,
                        int max_buffer_count)
 {
   PathRef end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  Slack end_hold_slack = end_path.slack(sta_);
-  debugPrint(logger_, RSZ, "repair_hold", 3, "repair end {} hold_slack={}",
-             end_vertex->name(network_),
-             delayAsString(end_hold_slack, sta_));
-  PathExpanded expanded(&end_path, sta_);
-  sta::SearchPredNonLatch2 pred(sta_);
-  int path_length = expanded.size();
-  if (path_length > 1) {
-    int min_index = MinMax::minIndex();
-    int max_index = MinMax::maxIndex();
-    for (int i = expanded.startIndex(); i < path_length; i++) {
-      PathRef *path = expanded.path(i);
-      Vertex *path_vertex = path->vertex(sta_);
-      if (path_vertex->isDriver(network_)) {
-        const RiseFall *path_rf = path->transition(sta_);
-        PinSeq load_pins;
-        float load_cap = 0.0;
-        bool loads_have_out_port = false;
-        VertexOutEdgeIterator edge_iter(path_vertex, graph_);
-        while (edge_iter.hasNext()) {
-          Edge *edge = edge_iter.next();
-          Vertex *fanout = edge->to(graph_);
-          if (pred.searchTo(fanout)
-              && pred.searchThru(edge)) {
-            Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_)
-              - slack_margin;
-            if (fanout_hold_slack < 0.0) {
-              Pin *load_pin = fanout->pin();
-              load_pins.push_back(load_pin);
-              if (network_->direction(load_pin)->isAnyOutput()
-                  && network_->isTopLevelPort(load_pin))
-                loads_have_out_port = true;
-              else {
-                LibertyPort *load_port = network_->libertyPort(load_pin);
-                if (load_port)
-                  load_cap += load_port->capacitance();
+  if (!end_path.isNull()) {
+    Slack end_hold_slack = end_path.slack(sta_);
+    debugPrint(logger_, RSZ, "repair_hold", 3, "repair end {} hold_slack={}",
+               end_vertex->name(network_),
+               delayAsString(end_hold_slack, sta_));
+    PathExpanded expanded(&end_path, sta_);
+    sta::SearchPredNonLatch2 pred(sta_);
+    int path_length = expanded.size();
+    if (path_length > 1) {
+      int min_index = MinMax::minIndex();
+      int max_index = MinMax::maxIndex();
+      for (int i = expanded.startIndex(); i < path_length; i++) {
+        PathRef *path = expanded.path(i);
+        Vertex *path_vertex = path->vertex(sta_);
+        if (path_vertex->isDriver(network_)) {
+          const RiseFall *path_rf = path->transition(sta_);
+          PinSeq load_pins;
+          float load_cap = 0.0;
+          bool loads_have_out_port = false;
+          VertexOutEdgeIterator edge_iter(path_vertex, graph_);
+          while (edge_iter.hasNext()) {
+            Edge *edge = edge_iter.next();
+            Vertex *fanout = edge->to(graph_);
+            if (pred.searchTo(fanout)
+                && pred.searchThru(edge)) {
+              Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_)
+                - slack_margin;
+              if (fanout_hold_slack < 0.0) {
+                Pin *load_pin = fanout->pin();
+                load_pins.push_back(load_pin);
+                if (network_->direction(load_pin)->isAnyOutput()
+                    && network_->isTopLevelPort(load_pin))
+                  loads_have_out_port = true;
+                else {
+                  LibertyPort *load_port = network_->libertyPort(load_pin);
+                  if (load_port)
+                    load_cap += load_port->capacitance();
+                }
               }
             }
           }
-        }
-        if (!load_pins.empty()) {
-          Slack path_slacks[RiseFall::index_count][MinMax::index_count];
-          sta_->vertexSlacks(path_vertex, path_slacks);
-          Slack hold_slack  = path_slacks[path_rf->index()][min_index] - slack_margin;
-          Slack setup_slack = path_slacks[path_rf->index()][max_index];;
-          debugPrint(logger_, RSZ,
-                     "repair_hold", 3, " {} hold_slack={} setup_slack={} fanouts={}",
-                     path_vertex->name(network_),
-                     delayAsString(hold_slack, sta_),
-                     delayAsString(setup_slack, sta_),
-                     load_pins.size());
-          const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
-          Delay buffer_delay = bufferDelay(buffer_cell, path_rf, load_cap, dcalc_ap);
-          if (setup_slack > -hold_slack
-              // enough slack to insert a buffer
-              && setup_slack > buffer_delay) {
-            Vertex *path_load = expanded.path(i + 1)->vertex(sta_);
-            Point path_load_loc = db_network_->location(path_load->pin());
-            Point drvr_loc = db_network_->location(path_vertex->pin());
-            Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
-                             (drvr_loc.y() + path_load_loc.y()) / 2);
-            makeHoldDelay(path_vertex, load_pins, loads_have_out_port,
-                          buffer_cell, buffer_loc);
+          if (!load_pins.empty()) {
+            Slack path_slacks[RiseFall::index_count][MinMax::index_count];
+            sta_->vertexSlacks(path_vertex, path_slacks);
+            Slack hold_slack  = path_slacks[path_rf->index()][min_index] - slack_margin;
+            Slack setup_slack = path_slacks[path_rf->index()][max_index];;
+            debugPrint(logger_, RSZ,
+                       "repair_hold", 3, " {} hold_slack={} setup_slack={} fanouts={}",
+                       path_vertex->name(network_),
+                       delayAsString(hold_slack, sta_),
+                       delayAsString(setup_slack, sta_),
+                       load_pins.size());
+            const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
+            Delay buffer_delay = bufferDelay(buffer_cell, path_rf, load_cap, dcalc_ap);
+            if (setup_slack > -hold_slack
+                // enough slack to insert a buffer
+                && setup_slack > buffer_delay) {
+              Vertex *path_load = expanded.path(i + 1)->vertex(sta_);
+              Point path_load_loc = db_network_->location(path_load->pin());
+              Point drvr_loc = db_network_->location(path_vertex->pin());
+              Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
+                               (drvr_loc.y() + path_load_loc.y()) / 2);
+              makeHoldDelay(path_vertex, load_pins, loads_have_out_port,
+                            buffer_cell, buffer_loc);
+            }
           }
         }
       }
@@ -3139,24 +3141,27 @@ Resizer::makeHoldDelay(Vertex *drvr,
 bool
 Resizer::checkMaxSlewCap(const Pin *drvr_pin)
 {
-  float cap1, max_cap1, cap_slack1;
-  const Corner *corner1;
-  const RiseFall *tr1;
+  float cap, limit, slack;
+  const Corner *corner;
+  const RiseFall *tr;
   sta_->checkCapacitance(drvr_pin, nullptr, max_,
-                         corner1, tr1, cap1, max_cap1, cap_slack1);
-  if (cap_slack1 < 0.0)
+                         corner, tr, cap, limit, slack);
+  float slack_limit_ratio = slack / limit;
+  if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
-  Slew slew1;
-  float limit1, slack1;
+  Slew slew;
   sta_->checkSlew(drvr_pin, nullptr, max_, false,
-                  corner1, tr1, slew1, limit1, slack1);
-  if (slack1 < 0.0)
+                  corner, tr, slew, limit, slack);
+  slack_limit_ratio = slack / limit;
+  if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
-  checkLoadSlews(drvr_pin, 0.0, slew1, limit1, slack1, corner1);
-  if (slack1 < 0.0)
+  checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
+  slack_limit_ratio = slack / limit;
+  if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
+
   return true;
 }
 

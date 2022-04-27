@@ -746,6 +746,7 @@ protected:
   static constexpr int split_load_min_fanout_ = 8;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
+  static constexpr float hold_slack_limit_ratio_max_ = 0.2;
 
   friend class BufferedNet;
 };

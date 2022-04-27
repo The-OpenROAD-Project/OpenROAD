@@ -1,4 +1,4 @@
-# ibex sky130
+# ibex sky130hd
 source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"
