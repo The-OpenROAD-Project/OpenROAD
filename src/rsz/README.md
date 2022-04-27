@@ -155,20 +155,20 @@ repair_timing [-setup]
               [-allow_setup_violations]
               [-max_utilization util]
               [-max_buffer_percent buffer_percent]
-              [-max_passes passes]
 ```
 
-The `repair_timing` command repairs setup and hold violations.  It should
-be run after clock tree synthesis with propagated clocks.  While repairing
-hold violations buffers are not inserted that will cause setup violations
-unless '-allow_setup_violations' is specified.  Use `-slack_margin` to add
-additional slack margin. To specify different slack margins use separate
-`repair_timing` commands for setup and hold. Use `-max_buffer_percent` to
-specify a maximum number of buffers to insert to repair hold violations as
-a percentage of the number of instances in the design. The default value for
-`buffer_percent` is 20, for 20%.
+The `repair_timing` command repairs setup and hold violations.  It
+should be run after clock tree synthesis with propagated clocks.
+Setup repair is done before hold repair so that hold repair does not
+cause setup checks to fail. While repairing hold violations buffers
+are not inserted that will cause setup violations unless
+'-allow_setup_violations' is specified.  Use `-slack_margin` to add
+additional slack margin. To specify different slack margins use
+separate `repair_timing` commands for setup and hold. Use
+`-max_buffer_percent` to specify a maximum number of buffers to insert
+to repair hold violations as a percentage of the number of instances
+in the design. The default value for `buffer_percent` is 20, for 20%.
 
-The `-max_passes' keyword is for debugging.
 
 ### Report Design Area
 

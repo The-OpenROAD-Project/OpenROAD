@@ -170,9 +170,8 @@ int TechLayer::snapToManufacturingGrid(odb::dbTech* tech, int pos, bool round_up
   return pos;
 }
 
-bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const
+bool TechLayer::checkIfManufacturingGrid(odb::dbTech* tech, int value)
 {
-  auto* tech = layer_->getTech();
   if (!tech->hasManufacturingGrid()) {
     return true;
   }
@@ -180,7 +179,17 @@ bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const s
   const int grid = tech->getManufacturingGrid();
 
   if (value % grid != 0) {
-    logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(grid));
+    return false;
+  }
+
+  return true;
+}
+
+bool TechLayer::checkIfManufacturingGrid(int value, utl::Logger* logger, const std::string& type) const
+{
+  auto* tech = layer_->getTech();
+  if (!checkIfManufacturingGrid(tech, value)) {
+    logger->error(utl::PDN, 191, "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.", type, dbuToMicron(value), dbuToMicron(tech->getManufacturingGrid()));
     return false;
   }
 

@@ -41,6 +41,8 @@ record_tests {
   core_grid_strap_count
 
   core_grid_no_trim
+  
+  core_grid_offset_strap
 
   macros
   macros_with_halo

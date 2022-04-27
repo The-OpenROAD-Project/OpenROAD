@@ -27,7 +27,7 @@ jobs:
           cmake --build build -j --target install
       - name: Install brew dependencies
         run: |
-          brew install bison boost eigen flex git libomp pyqt5 python spdlog
+          brew install bison boost eigen flex libomp pyqt5 python spdlog
           brew install swig tcl-tk zlib
       - name: Check out repository code
         uses: actions/checkout@v2

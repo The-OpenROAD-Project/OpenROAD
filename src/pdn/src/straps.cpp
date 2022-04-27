@@ -208,6 +208,12 @@ void Straps::makeShapes(const ShapeTreeMap& other_shapes)
 
     makeStraps(core.xMin(), y_start, core.xMax(), y_end, true, layer, avoid);
   }
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Straps",
+             1,
+             "Generated {} straps",
+             getShapeCount());
 }
 
 void Straps::makeStraps(int x_start,
@@ -769,8 +775,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
                                          const ShapeTreeMap& other_shapes,
                                          const std::set<odb::dbNet*>& nets,
                                          const odb::Rect& area,
-                                         const odb::Rect& obs_check_area,
-                                         bool allow)
+                                         const odb::Rect& obs_check_area)
     : Straps(grid,
              target->getLayer(),
              target->getWidth(),
@@ -795,11 +800,12 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
 
   determineParameters(other_shapes);
 
-  if (invalid_ && !allow) {
+  if (invalid_) {
     const TechLayer layer(getLayer());
-    getLogger()->error(
+    debugPrint(getLogger(),
         utl::PDN,
-        176,
+        "Channel",
+        1,
         "Cannot repair channel {} on {} with straps on {} for: {}",
         Shape::getRectText(area_, layer.getLefUnits()),
         connect_to_->getName(),
@@ -846,10 +852,25 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
   }
 
   auto check = [&]() -> bool {
-    if (getStrapGroupWidth() > area_width) {
+    const int group_width = getStrapGroupWidth();
+    if (group_width > area_width) {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Channel",
+                 2,
+                 "Failed on channel width check, group {:.4f} and channel {.4f}.",
+                 group_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
+                 area_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
       return false;
     }
-    return determineOffset(obstructions);
+    const bool done = determineOffset(obstructions);
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Channel",
+               2,
+               "Determine offset: {}",
+               done);
+    return done;
   };
 
   if (check()) {
@@ -1068,7 +1089,7 @@ void RepairChannelStraps::cutShapes(const ShapeTreeMap& obstructions)
   for (const auto& [layer, layer_shapes] : getShapes()) {
     for (const auto& entry : layer_shapes) {
       const auto& shape = entry.second;
-      if (!shape->getRect().intersects(area_)) {
+      if (!shape->getRect().intersects(obs_check_area_)) {
         remove_shapes.push_back(shape.get());
       }
     }
@@ -1250,35 +1271,23 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     shape_set.insert(poly);
   }
 
-  std::vector<Polygon90> channel_set;
-  shape_set.get_polygons(channel_set);
+  // get all possible channel rects
+  std::set<odb::Rect> channels_rects;
+  std::vector<Rectangle> channel_set;
+  shape_set.get_rectangles(channel_set);
+  for (const auto& channel : channel_set) {
+    const odb::Rect area(xl(channel), yl(channel),
+                         xh(channel), yh(channel));
+
+    if (area.intersects(grid_core)) {
+      channels_rects.insert(area.intersect(grid_core));
+    }
+  }
+
+  // setup channels with information needed to build
   std::vector<RepairChannelArea> channels;
-  for (const auto& channel_shape : channel_set) {
-    // decompose channel polygon to rects and pick largest, remaining will be fixed later
-    Polygon90Set channel_max_rect;
-    channel_max_rect += channel_shape;
-    std::vector<Rectangle> max_rects;
-    channel_max_rect.get_rectangles(max_rects);
-
-    odb::Rect area;
-    for (const auto& max_rect : max_rects) {
-      const odb::Rect max_area(xl(max_rect), yl(max_rect), xh(max_rect), yh(max_rect));
-      if (target->isHorizontal()) {
-        if (area.dy() < max_area.dy()) {
-          area = max_area;
-        }
-      } else {
-        if (area.dx() < max_area.dx()) {
-          area = max_area;
-        }
-      }
-    }
-
-    if (!area.intersects(grid_core)) {
-      continue;
-    }
-
-    RepairChannelArea channel{area.intersect(grid_core),
+  for (const auto& area : channels_rects) {
+    RepairChannelArea channel{area,
                               odb::Rect(),
                               target,
                               layer,
@@ -1392,8 +1401,7 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
                                                        obstructions,
                                                        channel.nets,
                                                        channel.area,
-                                                       channel.obs_area,
-                                                       allow);
+                                                       channel.obs_area);
 
     if (!strap->isRepairValid()) {
       continue;
@@ -1403,8 +1411,14 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
     strap->makeShapes(local_shapes);
     strap->cutShapes(obstructions);
     if (strap->getShapeCount() == 0) {
-      // nothing was added
-      continue;
+      // nothing was added, so try without snapped to grid
+      strap->setSnapToGrid(false);
+
+      strap->makeShapes(local_shapes);
+      strap->cutShapes(obstructions);
+      if (strap->getShapeCount() == 0) {
+        continue;
+      }
     }
     strap->getShapes(local_shapes);  // need new shapes
     strap->getObstructions(obstructions);
@@ -1429,13 +1443,17 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
       for (const auto& channel : remaining_channels) {
         std::string nets;
         for (auto* net : channel.nets) {
-          nets += net->getName() + " ";
+          if (!nets.empty()) {
+            nets += ", ";
+          }
+          nets += net->getName();
         }
         grid->getLogger()->warn(
             utl::PDN,
             178,
-            "Remaining channel {} for nets: {}",
+            "Remaining channel {} on {} for nets: {}",
             Shape::getRectText(channel.area, dbu_to_microns),
+            channel.connect_to->getName(),
             nets);
       }
       if (!allow) {

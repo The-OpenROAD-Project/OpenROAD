@@ -409,12 +409,14 @@ pdn::PowerCell* find_switched_power_cell(const char* name)
 }
 
 // used for building debugging grids and should not be used.
-void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, const char* direction)
+void add_debug_strap(odb::dbNet* net, odb::dbTechLayer* layer, int offset, int width, int start, int stop, const char* direction)
 {
   auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
-  auto* block = swire->getBlock();
-  odb::Rect strap;
-  block->getBBox()->getBox(strap);
+  odb::Rect strap(start, start, stop, stop);
+  if (start == stop) {
+    auto* block = swire->getBlock();
+    block->getCoreArea(strap);
+  }
   if (strcmp(direction, "HORIZONTAL") == 0) {
     strap.set_ylo(offset);
     strap.set_yhi(offset + width);
