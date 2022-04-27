@@ -579,12 +579,19 @@ Straps* GridSwitchedPower::getLowestStrap() const
 
 const ShapeTreeMap GridSwitchedPower::getShapes() const
 {
+  odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
+
   ShapeTreeMap shapes;
 
   for (const auto& [inst, inst_info] : insts_) {
     for (const auto& [layer, inst_shapes] : InstanceGrid::getInstancePins(inst)) {
       auto& layer_shapes = shapes[layer];
-      layer_shapes.insert(inst_shapes.begin(), inst_shapes.end());
+      for (const auto& [box, shape] : inst_shapes) {
+        if (shape->getNet() == alwayson) {
+          layer_shapes.insert({box, shape});
+        }
+      }
+
     }
   }
 
