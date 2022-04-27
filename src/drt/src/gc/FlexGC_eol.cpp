@@ -439,6 +439,12 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       if (con->getWithinConstraint()->hasEndToEndConstraint()) {
         auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
         eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+        if (con->getWithinConstraint()->getEndToEndConstraint()->hasExtension())
+          eolWithin = std::max(eolWithin,
+                               con->getWithinConstraint()
+                                       ->getEndToEndConstraint()
+                                       ->getExtension()
+                                   * 2);
       }
     } break;
     default:
@@ -539,6 +545,14 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   addMarker(std::move(marker));
 }
 
+void extendEolEdge(frCoord ext, gtl::rectangle_data<frCoord>& rect)
+{
+  if (ext == 0)
+    return;
+  auto orient = gtl::guess_orientation(rect);
+  gtl::bloat(rect, orient, ext);
+}
+
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
     gcSegment* edge1,
     gcSegment* edge2,
@@ -553,12 +567,31 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
   frCoord eolSpace = con->getEolSpace();
   frCoord endSpace = endToEndCon->getEndToEndSpace();
+  frCoord ext = !endToEndCon->hasExtension() ? 0 : endToEndCon->getExtension();
   gtl::rectangle_data<frCoord> rect1;
   gtl::set_points(rect1, edge1->low(), edge1->high());
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
-  frCoord dist = gtl::euclidean_distance(rect1, rect2);
-  if (checkMetalEndOfLine_eol_isEolEdge(edge2, constraint)) {
+  extendEolEdge(ext, rect1);
+  bool isEolEdge = checkMetalEndOfLine_eol_isEolEdge(edge2, constraint);
+  if (isEolEdge)
+    extendEolEdge(ext, rect2);
+  gtl::rectangle_data<frCoord> markerRect(rect1);
+  gtl::generalized_intersect(markerRect, rect2);
+  auto distX = gtl::euclidean_distance(rect1, rect2, gtl::HORIZONTAL);
+  auto distY = gtl::euclidean_distance(rect1, rect2, gtl::VERTICAL);
+  auto prlX = gtl::delta(markerRect, gtl::HORIZONTAL);
+  auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
+  if (distX) {
+    prlX = -prlX;
+  }
+  if (distY) {
+    prlY = -prlY;
+  }
+  if (prlX < 1 && prlY < 1)  // no prl
+    return false;
+  auto dist = std::max(distX, distY);
+  if (isEolEdge) {
     if (dist < endSpace)
       return true;
   } else {
