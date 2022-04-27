@@ -3149,27 +3149,18 @@ Resizer::checkMaxSlewCap(const Pin *drvr_pin)
   sta_->checkCapacitance(drvr_pin, nullptr, max_,
                          corner, tr, cap, limit, slack);
   float slack_limit_ratio = slack / limit;
-  if (sta::stringEq(network_->pathName(drvr_pin), "hold1159/X")) {
-    logger_->report("cap {} {} {}", cap, limit, slack);
-  }
   if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
   Slew slew;
   sta_->checkSlew(drvr_pin, nullptr, max_, false,
                   corner, tr, slew, limit, slack);
-  if (sta::stringEq(network_->pathName(drvr_pin), "hold1159/X")) {
-    logger_->report("drvr slew {} {} {}", slew, limit, slack);
-  }
   slack_limit_ratio = slack / limit;
   if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
   checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
   slack_limit_ratio = slack / limit;
-  if (sta::stringEq(network_->pathName(drvr_pin), "hold1159/X")) {
-    logger_->report("load slews {} {} {}", slew, limit, slack);
-  }
   if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
