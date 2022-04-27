@@ -218,7 +218,6 @@ public:
                   float max_buffer_percent,
                   int max_passes);
   void repairHold(Pin *end_pin,
-                  LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
                   float max_buffer_percent,
@@ -521,32 +520,33 @@ protected:
   void bufferHoldDelays(LibertyCell *buffer,
                         // Return values.
                         Delay delays[RiseFall::index_count]);
+  void findHoldViolations(VertexSeq &ends,
+                          float slack_margin,
+                          // Return values.
+                          Slack &worst_slack,
+                          VertexSeq &hold_violations);
   void repairHold(VertexSeq &ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
                   int max_buffer_count,
                   int max_passes);
-  int repairHoldPass(VertexSeq &ends,
+  void repairHoldPass(VertexSeq &ends,
+                      LibertyCell *buffer_cell,
+                      float slack_margin,
+                      bool allow_setup_violations,
+                      int max_buffer_count);
+  void repairEndHold(Vertex *worst_vertex,
                      LibertyCell *buffer_cell,
                      float slack_margin,
                      bool allow_setup_violations,
                      int max_buffer_count);
-  void findHoldViolations(VertexSeq &ends,
-                          float slack_margin,
-                          // Return values.
-                          Slack &worst_slack,
-                          VertexSeq &hold_violations);
-  VertexSet findHoldFanins(VertexSeq &ends);
-  VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Vertex *drvr,
-                     int buffer_count,
                      PinSeq &load_pins,
                      bool loads_have_out_port,
-                     LibertyCell *buffer_cell);
-  Point findCenter(PinSeq &pins);
-  Slack slackGap(Vertex *vertex);
-  Slack slackGap(Slacks &slacks);
+                     LibertyCell *buffer_cell,
+                     Point loc);
+  bool checkMaxSlewCap(const Pin *drvr_pin);
   int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
                          // Return value.
@@ -703,6 +703,7 @@ protected:
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
 
   double design_area_;
+  const MinMax *min_;
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
