@@ -259,6 +259,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
     frCoord prl /*, bool &hasRoute*/)
 {
   auto layerNum = rect1->getLayerNum();
+  auto dbLayer = tech_->getLayer(layerNum)->getDbLayer();
   frCoord reqSpcVal = 0;
   auto currLayer = getTech()->getLayer(layerNum);
   bool isObs = false;
@@ -292,8 +293,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
         minSpcVal = static_cast<frSpacingTablePrlConstraint*>(con)->findMin();
         break;
       case frConstraintTypeEnum::frcSpacingTableTwConstraint:
-        reqSpcVal = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, prl);
+        reqSpcVal = dbLayer->findTwSpacing(width1, width2, prl);
         minSpcVal = static_cast<frSpacingTableTwConstraint*>(con)->findMin();
         break;
       default:
