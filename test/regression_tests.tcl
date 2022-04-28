@@ -27,3 +27,6 @@ record_flow_tests {
   jpeg_sky130hs
   jpeg_sky130hd
 }
+
+# sidelined because drt blows chow
+

@@ -89,6 +89,7 @@ class frInst : public frRef
   {
     tmpOrigin = xform_.getOffset();
   }
+  Point getOrigin() const { return xform_.getOffset(); }
   void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
   void getTransform(dbTransform& xformIn) const override
   {

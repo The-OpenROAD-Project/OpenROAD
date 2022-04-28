@@ -223,12 +223,6 @@ VIAS 36 ;
   + RECT metal1 ( -35 -95 ) ( 35 95 )
   + RECT metal2 ( -65 -65 ) ( 65 65 ) ;
       
-- TURNM1_1
-    + RECT metal1 ( -100 -60 ) ( 100 60 ) ;
-- TURNM2_1
-    + RECT metal2 ( -100 -60 ) ( 100 60 ) ;
-- TURNM3_1
-    + RECT metal3 ( -100 -60 ) ( 100 60 ) ;
 - myvia1
     + RECT metal1 ( 0 0 ) ( 40000 40000 )
     + RECT via1  ( 0 0 ) ( 40000 40000 )

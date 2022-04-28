@@ -218,19 +218,15 @@ _dbMaster::_dbMaster(_dbDatabase* db)
 
   _mterm_tbl = new dbTable<_dbMTerm>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj, 4, 2);
-  ZALLOCATED(_mterm_tbl);
 
   _mpin_tbl = new dbTable<_dbMPin>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMPinObj, 4, 2);
-  ZALLOCATED(_mpin_tbl);
 
   _target_tbl = new dbTable<_dbTarget>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbTargetObj, 4, 2);
-  ZALLOCATED(_target_tbl);
 
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
-  ZALLOCATED(_box_tbl);
 
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db,
@@ -239,16 +235,12 @@ _dbMaster::_dbMaster(_dbDatabase* db)
       dbTechAntennaPinModelObj,
       8,
       3);
-  ZALLOCATED(_antenna_pin_model_tbl);
 
   _box_itr = new dbBoxItr(_box_tbl);
-  ZALLOCATED(_box_itr);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
-  ZALLOCATED(_mpin_itr);
 
   _target_itr = new dbTargetItr(_target_tbl);
-  ZALLOCATED(_target_itr);
 
   _mterm_hash.setTable(_mterm_tbl);
 
@@ -278,29 +270,21 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
   }
 
   _mterm_tbl = new dbTable<_dbMTerm>(db, this, *m._mterm_tbl);
-  ZALLOCATED(_mterm_tbl);
 
   _mpin_tbl = new dbTable<_dbMPin>(db, this, *m._mpin_tbl);
-  ZALLOCATED(_mpin_tbl);
 
   _target_tbl = new dbTable<_dbTarget>(db, this, *m._target_tbl);
-  ZALLOCATED(_target_tbl);
 
   _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
-  ZALLOCATED(_box_tbl);
 
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db, this, *m._antenna_pin_model_tbl);
-  ZALLOCATED(_antenna_pin_model_tbl);
 
   _box_itr = new dbBoxItr(_box_tbl);
-  ZALLOCATED(_box_itr);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
-  ZALLOCATED(_mpin_itr);
 
   _target_itr = new dbTargetItr(_target_tbl);
-  ZALLOCATED(_target_itr);
 
   _mterm_hash.setTable(_mterm_tbl);
 }

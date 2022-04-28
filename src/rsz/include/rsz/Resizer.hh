@@ -38,9 +38,6 @@
 #include <array>
 #include <string>
 
-#include "SteinerTree.hh"
-#include "BufferedNet.hh"
-
 #include "utl/Logger.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "db_sta/dbSta.hh"
@@ -67,6 +64,7 @@ using utl::Logger;
 using gui::Gui;
 
 using odb::Rect;
+using odb::Point;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbMaster;
@@ -120,8 +118,13 @@ using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
 using sta::PathExpanded;
+using sta::PinSeq;
 
+class BufferedNet;
+enum class BufferedNetType;
 class SteinerRenderer;
+class SteinerTree;
+typedef int SteinerPt;
 
 class NetHash
 {
@@ -130,7 +133,6 @@ public:
 };
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
-typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
@@ -213,12 +215,15 @@ public:
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
+  int holdBufferCount() const { return hold_buffer_count_; }
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -249,6 +254,7 @@ public:
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
                     double cap_margin); // 0.0-1.0
+  int repairDesignBufferCount() const { return repair_design_buffer_count_; }
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
@@ -397,12 +403,15 @@ protected:
                       float &limit,
                       float &slack,
                       const Corner *&corner);
+  float bufferInputMaxSlew(LibertyCell *buffer,
+                           const Corner *corner) const;
+  float maxInputSlew(const LibertyPort *input,
+                     const Corner *corner) const;
   void repairNet(SteinerTree *tree,
                  SteinerPt pt,
                  SteinerPt prev_pt,
                  Net *net,
                  const Pin *drvr_pin,
-                 float max_load_slew,
                  float max_cap,
                  float max_fanout,
                  int max_length,
@@ -412,7 +421,8 @@ protected:
                  int &wire_length,
                  float &pin_cap,
                  float &fanout,
-                 PinSeq &load_pins);
+                 PinSeq &load_pins,
+                 float &max_load_slew);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
                          const Corner *corner);
@@ -424,21 +434,30 @@ protected:
                     SteinerTree *tree,
                     SteinerPt pt,
                     LibertyCell *buffer_cell,
+                    const Corner *corner,
+                    bool resize,
                     int level,
                     int &wire_length,
                     float &pin_cap,
                     float &fanout,
-                    PinSeq &load_pins);
+                    PinSeq &load_pins,
+                    float &max_load_slew);
   void makeRepeater(const char *where,
                     int x,
                     int y,
                     LibertyCell *buffer_cell,
+                    const Corner *corner,
+                    bool resize,
                     int level,
                     int &wire_length,
                     float &pin_cap,
                     float &fanout,
-                    PinSeq &load_pins);
+                    PinSeq &load_pins,
+                    float &max_load_slew);
+  LibertyCell *findBufferUnderSlew(float max_slew,
+                                   float load_cap);
   float driveResistance(const Pin *drvr_pin);
+  float bufferDriveResistance(const LibertyCell *buffer) const;
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
@@ -467,6 +486,9 @@ protected:
                     const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
+  float bufferSlew(LibertyCell *buffer_cell,
+                   float load_cap,
+                   const DcalcAnalysisPt *dcalc_ap);
   void makeWireParasitic(Net *net,
                          Pin *drvr_pin,
                          Pin *load_pin,
@@ -503,7 +525,8 @@ protected:
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  int max_buffer_count);
+                  int max_buffer_count,
+                  int max_passes);
   int repairHoldPass(VertexSeq &ends,
                      LibertyCell *buffer_cell,
                      float slack_margin,
@@ -697,6 +720,7 @@ protected:
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;
+  int repair_design_buffer_count_;
   int inserted_buffer_count_;
   // Slack map variables.
   float max_wire_length_;
@@ -706,6 +730,8 @@ protected:
 
   int rebuffer_net_count_;
   BufferedNetSeq rebuffer_options_;
+
+  int hold_buffer_count_;
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;

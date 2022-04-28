@@ -45,10 +45,10 @@ class PdnGen;
 
 namespace ord {
 
-void initPdnGen(OpenRoad *openroad);
+void initPdnGen(OpenRoad* openroad);
 
 pdn::PdnGen* makePdnGen();
 
 void deletePdnGen(pdn::PdnGen* pdngen);
 
-} // namespace
+}  // namespace ord

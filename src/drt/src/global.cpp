@@ -69,6 +69,7 @@ bool ENABLE_BOUNDARY_MAR_FIX = true;
 bool ENABLE_VIA_GEN = true;
 bool CLEAN_PATCHES = false;
 bool NO_PA = false;
+bool SINGLE_STEP_DR = false;
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;
 std::string VIAINPIN_TOPLAYER_NAME;

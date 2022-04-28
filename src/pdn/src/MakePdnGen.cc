@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -33,32 +33,35 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "pdn/MakePdnGen.hh"
+
 #include <tcl.h>
 
+#include "domain.h"
+#include "grid.h"
+#include "power_cells.h"
 #include "ord/OpenRoad.hh"
-#include "pdn/MakePdnGen.hh"
 #include "pdn/PdnGen.hh"
+#include "renderer.h"
 
 namespace sta {
 
-extern const char *pdn_tcl_inits[];
+extern const char* pdn_tcl_inits[];
 extern void evalTclInit(Tcl_Interp*, const char*[]);
 
-}
+}  // namespace sta
 
 namespace pdn {
 extern "C" {
-extern int Pdn_Init(Tcl_Interp *interp);
+extern int Pdn_Init(Tcl_Interp* interp);
 }
-}
-
+}  // namespace pdn
 
 namespace ord {
 
-void
-initPdnGen(OpenRoad *openroad)
+void initPdnGen(OpenRoad* openroad)
 {
-  Tcl_Interp *interp = openroad->tclInterp();
+  Tcl_Interp* interp = openroad->tclInterp();
   // Define swig TCL commands.
   pdn::Pdn_Init(interp);
   // Eval encoded sta TCL sources.
@@ -72,10 +75,9 @@ pdn::PdnGen* makePdnGen()
   return new pdn::PdnGen();
 }
 
-
 void deletePdnGen(pdn::PdnGen* pdngen)
 {
   delete pdngen;
 }
 
-} // namespace ord
+}  // namespace ord

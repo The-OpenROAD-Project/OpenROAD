@@ -284,11 +284,9 @@ _dbTech::_dbTech(_dbDatabase* db)
 
   _layer_tbl = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
-  ZALLOCATED(_layer_tbl);
 
   _via_tbl = new dbTable<_dbTechVia>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechViaObj);
-  ZALLOCATED(_via_tbl);
 
   _non_default_rule_tbl = new dbTable<_dbTechNonDefaultRule>(
       db,
@@ -297,7 +295,6 @@ _dbTech::_dbTech(_dbDatabase* db)
       dbTechNonDefaultRuleObj,
       4,
       2);
-  ZALLOCATED(_non_default_rule_tbl);
 
   _layer_rule_tbl
       = new dbTable<_dbTechLayerRule>(db,
@@ -306,11 +303,9 @@ _dbTech::_dbTech(_dbDatabase* db)
                                       dbTechLayerRuleObj,
                                       4,
                                       2);
-  ZALLOCATED(_layer_rule_tbl);
 
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbBoxObj);
-  ZALLOCATED(_box_tbl);
 
   _samenet_rule_tbl
       = new dbTable<_dbTechSameNetRule>(db,
@@ -319,7 +314,6 @@ _dbTech::_dbTech(_dbDatabase* db)
                                         dbTechSameNetRuleObj,
                                         16,
                                         4);
-  ZALLOCATED(_samenet_rule_tbl);
 
   _antenna_rule_tbl = new dbTable<_dbTechLayerAntennaRule>(
       db,
@@ -328,7 +322,6 @@ _dbTech::_dbTech(_dbDatabase* db)
       dbTechLayerAntennaRuleObj,
       16,
       4);
-  ZALLOCATED(_antenna_rule_tbl);
 
   _via_rule_tbl
       = new dbTable<_dbTechViaRule>(db,
@@ -337,7 +330,6 @@ _dbTech::_dbTech(_dbDatabase* db)
                                     dbTechViaRuleObj,
                                     16,
                                     4);
-  ZALLOCATED(_via_rule_tbl);
 
   _via_layer_rule_tbl
       = new dbTable<_dbTechViaLayerRule>(db,
@@ -346,7 +338,6 @@ _dbTech::_dbTech(_dbDatabase* db)
                                          dbTechViaLayerRuleObj,
                                          16,
                                          4);
-  ZALLOCATED(_via_layer_rule_tbl);
 
   _via_generate_rule_tbl = new dbTable<_dbTechViaGenerateRule>(
       db,
@@ -355,26 +346,20 @@ _dbTech::_dbTech(_dbDatabase* db)
       dbTechViaGenerateRuleObj,
       16,
       4);
-  ZALLOCATED(_via_generate_rule_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbPropertyObj);
-  ZALLOCATED(_prop_tbl);
 
   _via_hash.setTable(_via_tbl);
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbTech::getObjectTable);
-  ZALLOCATED(_name_cache);
 
   _layer_itr = new dbTechLayerItr(_layer_tbl);
-  ZALLOCATED(_layer_itr);
 
   _box_itr = new dbBoxItr(_box_tbl);
-  ZALLOCATED(_box_itr);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
@@ -396,56 +381,41 @@ _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
   strncpy(_version_buf, t._version_buf, sizeof(_version_buf));
 
   _layer_tbl = new dbTable<_dbTechLayer>(db, this, *t._layer_tbl);
-  ZALLOCATED(_layer_tbl);
 
   _via_tbl = new dbTable<_dbTechVia>(db, this, *t._via_tbl);
-  ZALLOCATED(_via_tbl);
 
   _non_default_rule_tbl
       = new dbTable<_dbTechNonDefaultRule>(db, this, *t._non_default_rule_tbl);
-  ZALLOCATED(_non_default_rule_tbl);
 
   _layer_rule_tbl = new dbTable<_dbTechLayerRule>(db, this, *t._layer_rule_tbl);
-  ZALLOCATED(_layer_rule_tbl);
 
   _box_tbl = new dbTable<_dbBox>(db, this, *t._box_tbl);
-  ZALLOCATED(_box_tbl);
 
   _samenet_rule_tbl
       = new dbTable<_dbTechSameNetRule>(db, this, *t._samenet_rule_tbl);
-  ZALLOCATED(_samenet_rule_tbl);
 
   _antenna_rule_tbl
       = new dbTable<_dbTechLayerAntennaRule>(db, this, *t._antenna_rule_tbl);
-  ZALLOCATED(_antenna_rule_tbl);
 
   _via_rule_tbl = new dbTable<_dbTechViaRule>(db, this, *t._via_rule_tbl);
-  ZALLOCATED(_via_rule_tbl);
 
   _via_layer_rule_tbl
       = new dbTable<_dbTechViaLayerRule>(db, this, *t._via_layer_rule_tbl);
-  ZALLOCATED(_via_layer_rule_tbl);
 
   _via_generate_rule_tbl = new dbTable<_dbTechViaGenerateRule>(
       db, this, *t._via_generate_rule_tbl);
-  ZALLOCATED(_via_generate_rule_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(db, this, *t._prop_tbl);
-  ZALLOCATED(_prop_tbl);
 
   _via_hash.setTable(_via_tbl);
 
   _name_cache = new _dbNameCache(db, this, *t._name_cache);
-  ZALLOCATED(_name_cache);
 
   _layer_itr = new dbTechLayerItr(_layer_tbl);
-  ZALLOCATED(_layer_itr);
 
   _box_itr = new dbBoxItr(_box_tbl);
-  ZALLOCATED(_box_itr);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbTech::~_dbTech()
@@ -462,15 +432,9 @@ _dbTech::~_dbTech()
   delete _via_generate_rule_tbl;
   delete _prop_tbl;
   delete _name_cache;
-  /******************************************* dimitri_fix
-  dbTech.cpp:363:12: warning: deleting object of polymorphic class type
-  ‘dbTechLayerItr’ which has non-virtual destructor might cause undefined
-  behavior [-Wdelete-non-virtual-dtor] delete _layer_itr;
-
-      delete _layer_itr;
-      delete _box_itr;
-      delete _prop_itr;
-  */
+  delete _layer_itr;
+  delete _box_itr;
+  delete _prop_itr;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)

@@ -104,6 +104,9 @@ add_library(odb
     dbTechLayerCutSpacingTableDefRule.cpp
     dbTechLayerCutEnclosureRule.cpp
     dbTechLayerEolExtensionRule.cpp
+    dbTechLayerArraySpacingRule.cpp
+    dbTechLayerWidthTableRule.cpp
+    dbTechLayerMinCutRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp
@@ -137,7 +140,6 @@ target_link_libraries(odb
         lefin
         lefout
         tm
-        zlib 
         zutil
         utl
         ${TCL_LIBRARY}
