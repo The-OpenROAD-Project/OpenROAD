@@ -30,14 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "definVia.h"
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "db.h"
 #include "dbShape.h"
+#include "definVia.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -252,6 +251,47 @@ void definVia::viaEnd()
 
   if (boxes.reversible() && boxes.orderReversed())
     boxes.reverse();
+
+  if (boxes.size() < 3) {
+    _logger->error(utl::ODB,
+                   299,
+                   "Via {} has only {} shapes and must have at least three.",
+                   _cur_via->getName(),
+                   boxes.size());
+  }
+
+  dbTechLayer* top = _cur_via->getTopLayer();
+  dbTechLayerType top_type = top->getType();
+  if (top_type == dbTechLayerType::CUT) {
+    _logger->error(utl::ODB,
+                   300,
+                   "Via {} has cut top layer {}",
+                   _cur_via->getName(),
+                   top->getName());
+  }
+
+  dbTechLayer* bottom = _cur_via->getBottomLayer();
+  dbTechLayerType bottom_type = bottom->getType();
+  if (bottom_type == dbTechLayerType::CUT) {
+    _logger->error(utl::ODB,
+                   301,
+                   "Via {} has cut bottom layer {}",
+                   _cur_via->getName(),
+                   bottom->getName());
+  }
+
+  bool has_cut = false;
+  for (dbBox* box : boxes) {
+    dbTechLayer* layer = box->getTechLayer();
+    if (layer->getType() == dbTechLayerType::CUT) {
+      has_cut = true;
+      break;
+    }
+  }
+  if (!has_cut) {
+    _logger->error(
+        utl::ODB, 302, "Via {} has no cut shapes.", _cur_via->getName());
+  }
 
   _cur_via = NULL;
 }
