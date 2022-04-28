@@ -1382,6 +1382,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   }
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tech->addLayer(std::move(uLayer));
@@ -1690,6 +1691,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
+  tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt++);
   tmpLayer->setName(layer->getName());
   tmpLayer->setType(dbTechLayerType::CUT);
