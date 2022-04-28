@@ -74,6 +74,7 @@ enum StartsWith
 
 class VoltageDomain;
 class Grid;
+class PowerCell;
 class PDNRenderer;
 
 class PdnGen
@@ -110,14 +111,25 @@ class PdnGen
   void resetShapes();
   void report();
 
+  // Power cells
+  PowerCell* findSwitchedPowerCell(const std::string& name) const;
+  void makeSwitchedPowerCell(odb::dbMaster* master,
+                             odb::dbMTerm* control,
+                             odb::dbMTerm* acknowledge,
+                             odb::dbMTerm* switched_power,
+                             odb::dbMTerm* alwayson_power,
+                             odb::dbMTerm* ground);
+
   // Domains
   std::vector<VoltageDomain*> getDomains() const;
   VoltageDomain* findDomain(const std::string& name);
   void setCoreDomain(odb::dbNet* power,
+                     odb::dbNet* switched_power,
                      odb::dbNet* ground,
                      const std::vector<odb::dbNet*>& secondary);
   void makeRegionVoltageDomain(const std::string& name,
                                odb::dbNet* power,
+                               odb::dbNet* switched_power,
                                odb::dbNet* ground,
                                const std::vector<odb::dbNet*>& secondary_nets,
                                odb::dbRegion* region);
@@ -129,7 +141,10 @@ class PdnGen
                     const std::string& name,
                     StartsWith starts_with,
                     const std::vector<odb::dbTechLayer*>& pin_layers,
-                    const std::vector<odb::dbTechLayer*>& generate_obstructions);
+                    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                    PowerCell* powercell,
+                    odb::dbNet* powercontrol,
+                    const char* powercontrolnetwork);
   void makeInstanceGrid(VoltageDomain* domain,
                         const std::string& name,
                         StartsWith starts_with,
@@ -230,6 +245,7 @@ class PdnGen
 
   std::unique_ptr<VoltageDomain> core_domain_;
   std::vector<std::unique_ptr<VoltageDomain>> domains_;
+  std::vector<std::unique_ptr<PowerCell>> switched_power_cells_;
 };
 
 }  // namespace pdn

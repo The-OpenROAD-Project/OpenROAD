@@ -1,5 +1,6 @@
 record_tests {
   check_buffers
+  check_charBuf
   find_clock
   find_clock_pad
   no_clocks

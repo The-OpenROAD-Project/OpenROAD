@@ -16,115 +16,116 @@
 }
 
 %typemap(out) odb::Point, Point {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New(2);
     PyObject *x = PyInt_FromLong($1.getX());
     PyObject *y = PyInt_FromLong($1.getY());
-    PyList_Append(list, x);
-    PyList_Append(list, y);
+    PyList_SetItem(list, 0, x);
+    PyList_SetItem(list, 1, y);
     $result = list;
 }
 
 // Wrapper for dbSet, dbVector...etc
 %define WRAP_DB_CONTAINER(T)
 %typemap(out) dbSet< T >, dbVector< T > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
-    for (dbSet< T >::iterator itr = $1.begin(); itr != $1.end(); ++itr)
+    int pos = 0;
+    for (dbSet< T >::iterator itr = $1.begin(); itr != $1.end(); ++itr, ++pos)
     {
         PyObject *obj = SWIG_NewInstanceObj(*itr, tf, 0);
-        PyList_Append(list, obj);
+        PyList_SetItem(list, pos, obj);
     }
     $result = list;
 }
 
 %typemap(out) std::vector< T > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i=0; i<$1.size(); i++) {
         T* ptr = new T((($1_type &)$1)[i]);
-        PyList_Append(list,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
+        PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
 }
 %typemap(out) std::vector< T* > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
         T* ptr = ((($1_type &)$1)[i]);
-        PyList_Append(list,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
+        PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
 }
 
 %typemap(out) std::pair< int, int > {
-    PyObject *list = PyList_New(0);
-    PyList_Append(list, PyInt_FromLong((long)$1.first));
-    PyList_Append(list, PyInt_FromLong((long)$1.second));
+    PyObject *list = PyList_New(2);
+    PyList_SetItem(list, 0, PyInt_FromLong((long)$1.first));
+    PyList_SetItem(list, 1, PyInt_FromLong((long)$1.second));
     $result = list;
 }
 
 %typemap(out) std::vector< std::pair< T*, int > > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
-        PyObject *sub_list = PyList_New(0);
+        PyObject *sub_list = PyList_New(2);
         std::pair< T*, int > p = ((($1_type &)$1)[i]);
         T* ptr1 = p.first;
         int num = p.second;
         PyObject *obj = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
-        PyList_Append(sub_list, obj);
-        PyList_Append(sub_list, PyInt_FromLong((long)num));
-        PyList_Append(list, sub_list);
+        PyList_SetItem(sub_list, 0, obj);
+        PyList_SetItem(sub_list, 1, PyInt_FromLong((long)num));
+        PyList_SetItem(list, i, sub_list);
     }
     $result = list;
 }
 
 %typemap(out) std::vector< std::tuple< T*, T*, int > > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
-        PyObject *sub_list = PyList_New(0);
+        PyObject *sub_list = PyList_New(3);
         std::tuple< T*, T*, int > p = ((($1_type &)$1)[i]);
         T* ptr1 = std::get<0>(p);
         T* ptr2 = std::get<1>(p);
         int num = std::get<2>(p);
         PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
         PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
-        PyList_Append(sub_list, obj1);
-        PyList_Append(sub_list, obj2);
-        PyList_Append(sub_list, PyInt_FromLong((long)num));
-        PyList_Append(list, sub_list);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(sub_list, 2, PyInt_FromLong((long)num));
+        PyList_SetItem(list, i, sub_list);
     }
     $result = list;
 }
 
 %typemap(out) std::vector< std::tuple< T*, int, int, int > > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
-        PyObject *sub_list = PyList_New(0);
+        PyObject *sub_list = PyList_New(4);
         std::tuple< T*, int, int, int > p = ((($1_type &)$1)[i]);
         T* ptr = std::get<0>(p);
         int num1 = std::get<1>(p);
         int num2 = std::get<2>(p);
         int num3 = std::get<3>(p);
         PyObject *obj = SWIG_NewInstanceObj(ptr, $descriptor(T *), 0);
-        PyList_Append(sub_list, obj);
-        PyList_Append(sub_list, PyInt_FromLong((long)num1));
-        PyList_Append(sub_list, PyInt_FromLong((long)num2));
-        PyList_Append(sub_list, PyInt_FromLong((long)num3));
-        PyList_Append(list, sub_list);
+        PyList_SetItem(sub_list, 0, obj);
+        PyList_SetItem(sub_list, 1, PyInt_FromLong((long)num1));
+        PyList_SetItem(sub_list, 2, PyInt_FromLong((long)num2));
+        PyList_SetItem(sub_list, 3, PyInt_FromLong((long)num3));
+        PyList_SetItem(list, i, sub_list);
     }
     $result = list;
 }
 
 %typemap(out) std::vector< std::pair< T*, T* > > {
-    PyObject *list = PyList_New(0);
+    PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
-        PyObject *sub_list = PyList_New(0);
+        PyObject *sub_list = PyList_New(2);
         std::pair< T*, T* > p = ((($1_type &)$1)[i]);
         T* ptr1 = p.first;
         T* ptr2 = p.second;
         PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
         PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
-        PyList_Append(sub_list, obj1);
-        PyList_Append(sub_list, obj2);
-        PyList_Append(list, sub_list);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(list, i, sub_list);
     }
     $result = list;
 }

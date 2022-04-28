@@ -215,12 +215,15 @@ public:
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  float max_buffer_percent);
+                  float max_buffer_percent,
+                  int max_passes);
+  int holdBufferCount() const { return hold_buffer_count_; }
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -251,6 +254,7 @@ public:
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
                     double cap_margin); // 0.0-1.0
+  int repairDesignBufferCount() const { return repair_design_buffer_count_; }
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
@@ -521,7 +525,8 @@ protected:
                   LibertyCell *buffer_cell,
                   float slack_margin,
                   bool allow_setup_violations,
-                  int max_buffer_count);
+                  int max_buffer_count,
+                  int max_passes);
   int repairHoldPass(VertexSeq &ends,
                      LibertyCell *buffer_cell,
                      float slack_margin,
@@ -715,6 +720,7 @@ protected:
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;
+  int repair_design_buffer_count_;
   int inserted_buffer_count_;
   // Slack map variables.
   float max_wire_length_;
@@ -724,6 +730,8 @@ protected:
 
   int rebuffer_net_count_;
   BufferedNetSeq rebuffer_options_;
+
+  int hold_buffer_count_;
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
