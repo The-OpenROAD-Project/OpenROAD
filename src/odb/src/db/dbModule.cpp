@@ -214,10 +214,10 @@ void dbModule::addInst(dbInst* inst)
   _inst->_module = module->getOID();
 
   if (module->_insts != 0) {
-    _dbInst* _tail = block->_inst_tbl->getPtr(module->_insts);
+    _dbInst* tail = block->_inst_tbl->getPtr(module->_insts);
     _inst->_module_next = module->_insts;
     _inst->_module_prev = 0;
-    _tail->_module_prev = _inst->getOID();
+    tail->_module_prev = _inst->getOID();
   } else {
     _inst->_module_next = 0;
     _inst->_module_prev = 0;
@@ -246,13 +246,13 @@ void _dbModule::removeInst(dbInst* inst)
     }
   } else {
     if (_inst->_module_next != 0) {
-      _dbInst* _next = block->_inst_tbl->getPtr(_inst->_module_next);
-      _next->_module_prev = _inst->_module_prev;
+      _dbInst* next = block->_inst_tbl->getPtr(_inst->_module_next);
+      next->_module_prev = _inst->_module_prev;
     }
 
     if (_inst->_module_prev != 0) {
-      _dbInst* _prev = block->_inst_tbl->getPtr(_inst->_module_prev);
-      _prev->_module_next = _inst->_module_next;
+      _dbInst* prev = block->_inst_tbl->getPtr(_inst->_module_prev);
+      prev->_module_next = _inst->_module_next;
     }
   }
 
