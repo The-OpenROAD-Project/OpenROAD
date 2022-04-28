@@ -217,8 +217,7 @@ class deltaDebugger:
         while(True):
             if(poll_obj.poll(0)): # polling on the output of the process
                 if(self.use_stdout == 0):
-                    output = process.stderr.readline()
-                    print(output, end='')
+                    output = process.stderr.readline()  
                 else:
                     output = process.stdout.readline()
             
