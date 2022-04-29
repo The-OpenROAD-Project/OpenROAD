@@ -29,17 +29,19 @@ analyze_power_grid -vsrc <voltage_source_location_file> \
                    [-dx]
                    [-dy]
                    [-em_outfile <filename>]
+                   [-node_density <node_pitch>]
 write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
 Options description:
 - ``vsrc``: (optional) file to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
-- ``dx,dy``: (optional) these arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc
-- ``net``: (mandatory) is the name of the net to analyze, power or ground net name
-- ``enable_em``: (optional) is the flag to report current per power grid segment
-- ``outfile``: (optional) filename specified per-instance voltage written into file
-- ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists
+- ``dx,dy``: (optional) these arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc.
+- ``net``: (mandatory) is the name of the net to analyze, power or ground net name.
+- ``enable_em``: (optional) is the flag to report current per power grid segment.
+- ``outfile``: (optional) filename specified per-instance voltage written into file.
+- ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists.
 - ``voltage``: Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
+- ``node_pitch``: This value can be specfied by the user in um to determine the pitch of the PDN nodes in M1 layer.
 
 ## Example scripts
 
