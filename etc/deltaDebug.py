@@ -26,17 +26,23 @@ import select
 import time
 from math import ceil
 import errno
+import enum
+
 
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
 parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--persistence', type=int, default=1, help= 'Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
+parser.add_argument('--persistence', type=int, default=1, choices=[1,2,3,4,5,6], help= 'Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
 
 dump_def = 0    # a flag to indicate whether to dump def per each step, could be used if the step acts on a def file rather than an odb
 use_stdout = 0  # a flag either 0 or 1 to enable/disable detecting the error string from stdout in addition to stderr
 
+
+class cutLevel(enum.Enum):
+    Nets = 0
+    Insts = 1
 
 class deltaDebugger:
     def __init__(self, opt):
@@ -57,10 +63,7 @@ class deltaDebugger:
         self.timeout = 1e6 # Timeout in seconds
         
         # Setting persistence for the run
-        if opt.persistence in range(1,7):
-            self.persistence = opt.persistence
-        else:
-            self.persistence = 6
+        self.persistence = opt.persistence
         
         # Temporary file names to hold the original base_db file across the run
         self.original_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_original_{base_db_name}")
@@ -80,8 +83,8 @@ class deltaDebugger:
         self.base_db  = None   
         
         # Debugging level 
-        # cut_level (1) for inst then nets, (0) for nets only.
-        self.cut_level = 1
+        # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
+        self.cut_level = cutLevel.Insts
 
         # step command
         self.step = opt.step
@@ -118,9 +121,9 @@ class deltaDebugger:
                     break
 
             if(err == None or err == "NOCUT"):
-                if(self.cut_level > 0):
+                if(self.cut_level == cutLevel.Insts):
                     # Reduce cut level from inst to nets
-                    self.cut_level -= 1
+                    self.cut_level = cutLevel.Nets
                 else:
                     # We are done and we found the smallest input file that
                     # produces the target error.
@@ -259,15 +262,15 @@ class deltaDebugger:
 
         
     # A function that cuts the block according to the given direction
-    # and ratio. It also uses the class level of granularity to
-    # know whehter to cut Insts or Nets.
+    # and ratio. It also uses the class cut level  to identify
+    # whehter to cut Insts or Nets.
     def cut_block(self, index = 0):  
         block = self.base_db.getChip().getBlock()
-        if(self.cut_level == 1): # Inst level granularity
+        if(self.cut_level == cutLevel.Insts): # Insts cut level
             elms = block.getInsts()
             print("Insts level debugging")
 
-        elif(self.cut_level == 0): # Net level granularity
+        elif(self.cut_level == cutLevel.Nets): # Nets cut level 
             elms = block.getNets()
             print("Nets level debugging")
                     
