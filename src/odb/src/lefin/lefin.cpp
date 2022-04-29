@@ -839,7 +839,6 @@ void lefin::layer(lefiLayer* layer)
       for (int i = 0; i < cur_two->numWidth(); i++) {
         int prl = cur_two->hasWidthPRL(i) ? dbdist(cur_two->widthPRL(i))
                                           : defaultPrl;
-        defaultPrl = prl;
         l->addTwoWidthsIndexEntry(dbdist(cur_two->width(i)), prl);
       }
 

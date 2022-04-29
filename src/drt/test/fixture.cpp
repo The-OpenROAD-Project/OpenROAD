@@ -385,6 +385,7 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   unique_ptr<frConstraint> uCon
       = make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
   auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+  rptr->setLayer(layer);
   tech->addUConstraint(std::move(uCon));
   layer->setMinSpacing(rptr);
   return rptr;

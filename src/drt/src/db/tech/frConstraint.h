@@ -43,6 +43,7 @@
 #include "utl/Logger.h"
 
 namespace fr {
+class frLayer;
 namespace io {
 class Parser;
 }
@@ -84,8 +85,10 @@ class frConstraint
   virtual ~frConstraint() {}
   virtual frConstraintTypeEnum typeId() const = 0;
   virtual void report(utl::Logger* logger) const = 0;
+  void setLayer(frLayer* layer) { layer_ = layer; }
 
  protected:
+  frLayer* layer_;
   frConstraint() {}
 
   template <class Archive>
@@ -1612,14 +1615,7 @@ class frSpacingTableTwConstraint : public frConstraint
   {
   }
   // getter
-  frCoord find(frCoord width1, frCoord width2, frCoord prl) const
-  {
-    if (rows.empty())
-      return 0;
-    auto rowIdx = getIdx(width1, prl);
-    auto colIdx = getIdx(width2, prl);
-    return spacingTbl[rowIdx][colIdx];
-  }
+  frCoord find(frCoord width1, frCoord width2, frCoord prl) const;
   frCoord findMin() const { return spacingTbl.front().front(); }
   frCoord findMax() const { return spacingTbl.back().back(); }
   // setter
