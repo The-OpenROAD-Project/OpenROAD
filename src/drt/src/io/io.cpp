@@ -1639,6 +1639,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     unique_ptr<frConstraint> uCon
         = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+    rptr->setLayer(tmpLayer);
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
       logger->warn(
