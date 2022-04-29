@@ -3,16 +3,17 @@
 # --base_db_path <the relative path to the db file to perform the step on>
 # --error_string <the output that indicates a target error has occured>
 # --step <Command used to perform a step on the base_db file>
-# You also have 3 additional arguments
-# --use_stdout <gets either 0 or 1 to either or enable detecting the error string from stdout in addition to stderr>
+# You also have 1 additional argument
 # --persistence <a value in [1,6] indicating maximum granularity where maximum granularity = 2^persistence>
-# --dump_def <indicates whether to dump def per each step, could be used if the step acts on a def file rather than an odb>
 
 # EXAMPLE COMMAND:
 # Assuming running in a directory with the following files in:
 # deltaDebug.py base.odb step.sh
 # openroad -python deltaDebug.py --base_db_path base.odb --error_string <any_possible_error> --step './step.sh' 
 #                                --use_stdout 1 --persistence 5 --dump_def 0
+
+# N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1) and operate on it
+# where the script manipulates base.odb between steps to reduce its size. 
 ################################
 
 import odb
@@ -24,36 +25,36 @@ import shutil
 import select
 import time
 from math import ceil
-import sys
+import errno
 
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
 parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--use_stdout', type=int, default=0, choices=[0,1], help='Enables reading the error string from standard output')
 parser.add_argument('--persistence', type=int, default=1, help= 'Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
-parser.add_argument('--dump_def', type=int, default= 0, choices=[0,1], help='Determines whether to dumb def at each step in addition to the odb')
+
+dump_def = 0    # a flag to indicate whether to dump def per each step, could be used if the step acts on a def file rather than an odb
+use_stdout = 0  # a flag either 0 or 1 to enable/disable detecting the error string from stdout in addition to stderr
 
 
 class deltaDebugger:
     def __init__(self, opt):
         if not os.path.exists(opt.base_db_path):
-            print("Could not find input odb file with the given path, exiting!")
-            sys.exit(1)
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), opt.base_db_path)
 
         base_db_directory = os.path.dirname(opt.base_db_path)
         base_db_name = os.path.basename(opt.base_db_path)
         self.base_db_file = opt.base_db_path
 
         self.error_string = opt.error_string
-        self.use_stdout = opt.use_stdout
+        self.use_stdout = use_stdout
         self.step_count = 0
 
         # timeout used to measure the time the original input takes
         # to reach an error to use as standard timeout for different 
         # cuts.
-        self.timeout = 1e6 
+        self.timeout = 1e6 # Timeout in seconds
         
         # Setting persistence for the run
         if opt.persistence in range(1,7):
@@ -71,7 +72,7 @@ class deltaDebugger:
         self.deltaDebug_result_base_file = os.path.join(base_db_directory, f"deltaDebug_base_result_{base_db_name}")
         
         # This determines whether design def shall be dumped or not
-        self.dump_def = opt.dump_def 
+        self.dump_def = dump_def 
         if(self.dump_def != 0):
             self.base_def_file = self.base_db_file[:-3] + "def"
 
@@ -94,7 +95,7 @@ class deltaDebugger:
         os.rename(self.base_db_file, self.temp_base_db_file)
         
         # Perform a step with no cuts to measure timeout
-        print("Performing a step with the original input file to calculte timeout.")
+        print("Performing a step with the original input file to calculate timeout.")
         self.perform_step()
 
         while(True):
