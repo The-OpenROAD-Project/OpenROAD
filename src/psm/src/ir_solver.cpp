@@ -448,7 +448,8 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
         nodes_J.insert(nodes_J.end(), nodes_J_l.begin(), nodes_J_l.end());
       }
       double num_nodes = nodes_J.size();
-      // If nodes are not found on the pin layers we search one layer above  
+      // If nodes are not found on the pin layers we search for the lowest
+      // metal layer that overlaps the macro  
       if(num_nodes == 0){
         int max_l = *std::max_element(pin_layers.begin(),pin_layers.end());
         for(int pl = m_bottom_layer+1; pl <= m_top_layer; pl++) {
@@ -465,7 +466,7 @@ bool IRSolver::CreateJ() {  // take current_map as an input?
             break;
           }
         }
-        // If nodes are still not found we connect to the neartest ndoe on the
+        // If nodes are still not found we connect to the neartest node on the
         // highest pin layer with a warning
         if (num_nodes == 0) {
           Node* node_J = m_Gmat->GetNode(x, y, max_l, true);

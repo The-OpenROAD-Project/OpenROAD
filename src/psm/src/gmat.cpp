@@ -68,12 +68,10 @@ vector<Node*> GMat::GetNodes(int t_l, int t_x_min, int t_x_max,
     vector<Node*> block_nodes;
     NodeMap& layer_map = m_layer_maps[t_l];
 
-    map<pair<int, int>, Node*> y_map;
     for (auto x_itr = layer_map.lower_bound(t_x_min);
          x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
       map<int, Node*> y_itr_map = x_itr->second;
-      map<int, Node*>::iterator y_map_itr;
-      for (y_map_itr = y_itr_map.lower_bound(t_y_min);
+      for (auto y_map_itr = y_itr_map.lower_bound(t_y_min);
            y_map_itr != y_itr_map.end() && y_map_itr->first <= t_y_max;
            ++y_map_itr)
         block_nodes.push_back(y_map_itr->second);
