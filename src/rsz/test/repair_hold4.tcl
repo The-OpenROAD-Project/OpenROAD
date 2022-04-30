@@ -1,4 +1,4 @@
-# repair_timing -hold sky130
+# repair_timing -hold sky130hs
 source helpers.tcl
 read_liberty sky130hs/sky130hs_tt.lib
 read_lef sky130hs/sky130hs.tlef

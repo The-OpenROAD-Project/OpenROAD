@@ -11,18 +11,18 @@
 [INFO ODB-0131]     Created 15 components and 68 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 29 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold10.def
-worst slack -1.92
+worst slack -1.80
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 5 hold buffers.
-worst slack 0.18
+[INFO RSZ-0032] Inserted 4 hold buffers.
+worst slack 0.41
 [WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
-total displacement         36.8 u
-average displacement        1.8 u
-max displacement            7.4 u
-original HPWL            6773.1 u
-legalized HPWL           6819.9 u
-delta HPWL                    1 %
+total displacement         12.5 u
+average displacement        0.7 u
+max displacement            5.1 u
+original HPWL            6886.3 u
+legalized HPWL           6886.8 u
+delta HPWL                    0 %
 
-worst slack 0.22
+worst slack 0.41

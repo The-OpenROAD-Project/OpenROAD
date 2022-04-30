@@ -466,14 +466,13 @@ repair_setup_pin(Pin *end_pin)
 // requires rsz::resizer_preamble
 void
 repair_hold_pin(Pin *end_pin,
-                LibertyCell *buffer_cell,
                 bool allow_setup_violations,
                 float max_buffer_percent,
                 int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations,
+  resizer->repairHold(end_pin, 0.0, allow_setup_violations,
                       max_buffer_percent, max_passes);
 }
 
