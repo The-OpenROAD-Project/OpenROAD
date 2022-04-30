@@ -102,6 +102,11 @@ write_pg_spice_cmd()
   return pdnsim->write_pg_spice();
 }
 
+void set_debug_gui_cmd()
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->setDebugGui();
+}
 
 %} // inline
 

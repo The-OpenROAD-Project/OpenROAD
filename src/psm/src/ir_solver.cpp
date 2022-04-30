@@ -361,6 +361,8 @@ void IRSolver::ReadC4Data() {
     int x_cor, y_cor;
     if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
       float to_micron = 1.0f / unit_micron;
+      x_cor = coreW / 2 + offset_x;
+      y_cor = coreL / 2 + offset_y;
       m_logger->warn(utl::PSM, 63,
                      "Specified bump pitches of {:4.3f} and {:4.3f} are less "
                      "than core width of {:4.3f} or core height of {:4.3f}. "
@@ -368,9 +370,7 @@ void IRSolver::ReadC4Data() {
                      "({:4.3f}, {:4.3f}).",
                      m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron,
                      coreW * to_micron, coreL * to_micron,
-                     (coreW * to_micron) / 2, (coreL * to_micron) / 2);
-      x_cor = coreW / 2;
-      y_cor = coreL / 2;
+                     x_cor * to_micron, y_cor * to_micron);
       m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size * unit_micron,
                                      supply_voltage_src));
     }

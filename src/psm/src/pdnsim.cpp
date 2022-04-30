@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "utl/Logger.h"
 #include "heatMap.h"
+#include "debug_gui.h"
 
 namespace psm {
 
@@ -59,8 +60,7 @@ PDNSim::PDNSim()
       _bump_pitch_y(0),
       _spice_out_file(""),
       _power_net(""),
-      _node_density(-1),
-      heatmap_(nullptr)
+      _node_density(-1)
 {
 }
 
@@ -84,6 +84,11 @@ void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
   _logger = logger;
   heatmap_ = std::make_unique<IRDropDataSource>(this, _logger);
   heatmap_->registerHeatMap();
+}
+
+void PDNSim::setDebugGui()
+{
+  _debug_gui = std::make_unique<DebugGui>(this);
 }
 
 void PDNSim::set_power_net(std::string net) { _power_net = net; }
@@ -172,7 +177,7 @@ int PDNSim::analyze_power_grid() {
     _logger->report("######################################");
   }
 
-  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drop;
+  IRDropByLayer ir_drop;
   std::vector<Node*> nodes = gmat_obj->GetAllNodes();
   int vsize;
   vsize = nodes.size();
@@ -192,6 +197,9 @@ int PDNSim::analyze_power_grid() {
   _node_density = irsolve_h->GetMinimumResolution();
 
   heatmap_->update();
+  if (_debug_gui) {
+    _debug_gui->setBumps(irsolve_h->getBumps(), irsolve_h->getTopLayer());
+  }
 
   delete irsolve_h;
   return 1;
@@ -211,9 +219,19 @@ int PDNSim::check_connectivity() {
   return val;
 }
 
-void PDNSim::getIRDropMap(
-    std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop) {
+void PDNSim::getIRDropMap(IRDropByLayer& ir_drop) {
   ir_drop = _ir_drop;
+}
+
+void PDNSim::getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop)
+{
+  auto it = _ir_drop.find(layer);
+  if (it == _ir_drop.end()) {
+    ir_drop.clear();
+    return;
+  }
+
+  ir_drop = it->second;
 }
 
 int PDNSim::getMinimumResolution() {

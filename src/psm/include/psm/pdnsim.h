@@ -53,10 +53,14 @@ class Logger;
 
 namespace psm {
 class IRDropDataSource;
+class DebugGui;
 
 class PDNSim
 {
  public:
+  using IRDropByPoint = std::map<odb::Point, double>;
+  using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
+
   PDNSim();
   ~PDNSim();
 
@@ -74,10 +78,12 @@ class PDNSim
   void set_pdnsim_net_voltage(std::string net, float voltage);
   int  analyze_power_grid();
   void write_pg_spice();
-  void getIRDropMap(std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop);
+  void getIRDropMap(IRDropByLayer& ir_drop);
+  void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
   int  getMinimumResolution();
   int check_connectivity();
-
+  void setDebugGui();
+  
  private:
   odb::dbDatabase*             _db;
   sta::dbSta*                  _sta;
@@ -91,9 +97,9 @@ class PDNSim
   std::string                  _spice_out_file;
   std::string                  _power_net;
   std::map<std::string, float> _net_voltage_map;
-  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> _ir_drop;
+  IRDropByLayer                _ir_drop;
   int                          _node_density;
-
+  std::unique_ptr<DebugGui>    _debug_gui;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };
 }  // namespace psm

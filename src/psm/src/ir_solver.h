@@ -37,6 +37,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+namespace sta
+{
+class dbSta;
+}
+
 namespace psm {
 
 //! Class for IR solver
@@ -46,6 +51,8 @@ namespace psm {
  */
 class IRSolver {
  public:
+  using BumpData = std::tuple<int, int, int, double>;
+
   //! Constructor for IRSolver class
   /*
    * This constructor creates an instance of the class using
@@ -108,6 +115,9 @@ class IRSolver {
   bool BuildConnection();
   float supply_voltage_src;
 
+  const std::vector<BumpData>& getBumps() const { return m_C4Bumps; }
+  int getTopLayer() const { return m_top_layer; }
+
  private:
   //! Pointer to the Db
   odb::dbDatabase* m_db;
@@ -147,7 +157,7 @@ class IRSolver {
   //! Current vector 1D
   std::vector<double> m_J;
   //! C4 bump locations and values
-  std::vector<std::tuple<int, int, int, double>> m_C4Bumps;
+  std::vector<BumpData> m_C4Bumps;
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> m_layer_res;
   //! Locations of the C4 bumps in the G matrix
