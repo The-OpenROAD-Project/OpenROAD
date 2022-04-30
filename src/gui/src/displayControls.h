@@ -74,6 +74,7 @@ class Logger;
 } // namespace utl
 
 namespace gui {
+class DbInstDescriptor;
 
 using CallbackFunction = std::function<void(bool)>;
 
@@ -167,6 +168,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   void setDb(odb::dbDatabase* db);
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
+  void setDBInstDescriptor(DbInstDescriptor* desciptor);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -446,6 +448,8 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
+  DbInstDescriptor* inst_descriptor_;
+
   bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;

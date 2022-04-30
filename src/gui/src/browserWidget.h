@@ -49,16 +49,25 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "db_sta/dbNetwork.hh"
+
+namespace sta {
+class dbSta;
+}
 
 namespace gui {
+class DbInstDescriptor;
 
-class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
+class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public sta::dbNetworkObserver
 {
   Q_OBJECT
 
   public:
     BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings,
                   QWidget* parent = nullptr);
+
+    void setSTA(sta::dbSta* sta);
+    void setDBInstDescriptor(DbInstDescriptor* desciptor);
 
     void readSettings(QSettings* settings);
     void writeSettings(QSettings* settings);
@@ -70,6 +79,10 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*);
     virtual void inDbInstDestroy(odb::dbInst*);
     virtual void inDbInstSwapMasterAfter(odb::dbInst*);
+
+    // API from dbNetworkObserver
+    virtual void postReadLiberty() override;
+    virtual void postReadDb() override;
 
   signals:
     void select(const SelectionSet& selected);
@@ -108,6 +121,8 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj
     void toggleParent(QStandardItem* item);
 
     odb::dbBlock* block_;
+    sta::dbSta* sta_;
+    DbInstDescriptor* inst_descriptor_;
 
     const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
 

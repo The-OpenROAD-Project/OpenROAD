@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "browserWidget.h"
+#include "dbDescriptors.h"
 
 #include <QColorDialog>
 #include <QHeaderView>
@@ -42,6 +43,7 @@
 #include <QMouseEvent>
 
 #include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
 Q_DECLARE_METATYPE(odb::dbModule*);
@@ -55,6 +57,8 @@ BrowserWidget::BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::Module
                              QWidget* parent)
     : QDockWidget("Hierarchy Browser", parent),
       block_(nullptr),
+      sta_(nullptr),
+      inst_descriptor_(nullptr),
       modulesettings_(modulesettings),
       view_(new QTreeView(this)),
       model_(new QStandardItemModel(this)),
@@ -215,6 +219,11 @@ void BrowserWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
+void BrowserWidget::setDBInstDescriptor(DbInstDescriptor* desciptor)
+{
+  inst_descriptor_ = desciptor;
+}
+
 Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
 {
   QStandardItem* item = model_->itemFromIndex(index);
@@ -273,12 +282,16 @@ void BrowserWidget::setBlock(odb::dbBlock* block)
 void BrowserWidget::showEvent(QShowEvent* event)
 {
   addOwner(block_);
+  if (sta_ != nullptr) {
+    sta_->getDbNetwork()->addObserver(this);
+  }
   updateModel();
 }
 
 void BrowserWidget::hideEvent(QHideEvent* event)
 {
   removeOwner();
+  sta_->getDbNetwork()->removeObserver(this);
   clearModel();
 }
 
@@ -317,13 +330,25 @@ void BrowserWidget::clearModel()
 
 BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
 {
-  ModuleStats leaf_stats;
+  auto make_leaf_item = [] (const std::string& title) -> QStandardItem* {
+    QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
+    leaf->setEditable(false);
+    leaf->setSelectable(false);
+    return leaf;
+  };
 
-  auto* leafs = new QStandardItem("Leaf instances");
-  leafs->setEditable(false);
-  leafs->setSelectable(false);
+  struct Leaf {
+    QStandardItem* item = nullptr;
+    ModuleStats stats;
+  };
+  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
   for (auto* inst : module->getInsts()) {
-    leaf_stats += addInstanceItem(inst, leafs);
+    auto type = inst_descriptor_->getInstanceType(inst);
+    auto& leaf_parent = leaf_types[type];
+    if (leaf_parent.item == nullptr) {
+      leaf_parent.item = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+    }
+    leaf_parent.stats += addInstanceItem(inst, leaf_parent.item);
   }
 
   ModuleStats stats;
@@ -333,9 +358,19 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, 
   stats.resetMacros();
   stats.resetInstances();
 
-  makeRowItems(leafs, "", leaf_stats, parent, true);
+  ModuleStats total = stats;
+  if (!leaf_types.empty()) {
+    auto* leafs = make_leaf_item("Leaf instances");
+    ModuleStats leaf_stats;
+    for (const auto& [type, leaf] : leaf_types) {
+      makeRowItems(leaf.item, "", leaf.stats, leafs, true);
 
-  ModuleStats total = leaf_stats + stats;
+      leaf_stats += leaf.stats;
+    }
+    makeRowItems(leafs, "", leaf_stats, parent, true);
+
+    total += leaf_stats;
+  }
 
   return total;
 }
@@ -664,6 +699,23 @@ std::set<odb::dbModule*> BrowserWidget::getAllChildren(odb::dbModule* parent)
     children.insert(next_children.begin(), next_children.end());
   }
   return children;
+}
+
+void BrowserWidget::setSTA(sta::dbSta* sta)
+{
+  sta_ = sta;
+  sta_->getDbNetwork()->addObserver(this);
+  updateModel();
+}
+
+void BrowserWidget::postReadLiberty()
+{
+  updateModel();
+}
+
+void BrowserWidget::postReadDb()
+{
+  updateModel();
 }
 
 }  // namespace gui
