@@ -61,7 +61,7 @@ class IRSolver {
   IRSolver(odb::dbDatabase* t_db, sta::dbSta* t_sta, utl::Logger* t_logger,
            std::string vsrc_loc, std::string power_net, std::string out_file,
            std::string em_out_file, std::string spice_out_file, int em_analyze,
-           int bump_pitch_x, int bump_pitch_y,
+           int bump_pitch_x, int bump_pitch_y, float node_density_um,
            std::map<std::string, float> net_voltage_map) {
     m_db = t_db;
     m_sta = t_sta;
@@ -74,6 +74,7 @@ class IRSolver {
     m_spice_out_file = spice_out_file;
     m_bump_pitch_x = bump_pitch_x;
     m_bump_pitch_y = bump_pitch_y;
+    m_node_density_um = node_density_um;
     m_net_voltage_map = net_voltage_map;
   }
   //! IRSolver destructor
@@ -100,7 +101,7 @@ class IRSolver {
   std::vector<std::pair<std::string, double>> GetPower();
   std::pair<double, double> GetSupplyVoltage();
 
-  bool CheckConnectivity();
+  bool CheckConnectivity(bool connection_only = false);
   bool CheckValidR(double R);
 
   int GetConnectionTest();
@@ -137,6 +138,7 @@ class IRSolver {
   GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
   int m_node_density{5400};  // TODO get from somewhere
+  float m_node_density_um{-1};  // TODO get from somewhere
   //! Routing Level of the top layer
   int m_top_layer{0};
   int m_bump_pitch_x{0};

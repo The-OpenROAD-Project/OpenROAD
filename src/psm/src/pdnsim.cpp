@@ -75,7 +75,7 @@ PDNSim::~PDNSim() {
   _spice_out_file = "";
   _bump_pitch_x = 0;
   _bump_pitch_y = 0;
-  _node_density = -1;
+  _node_density = -1.0;
 }
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
@@ -96,6 +96,8 @@ void PDNSim::set_power_net(std::string net) { _power_net = net; }
 void PDNSim::set_bump_pitch_x(float bump_pitch) { _bump_pitch_x = bump_pitch; }
 
 void PDNSim::set_bump_pitch_y(float bump_pitch) { _bump_pitch_y = bump_pitch; }
+
+void PDNSim::set_node_density(float node_density) { _node_density = node_density; }
 
 void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage) {
   _net_voltage_map.insert(std::pair<std::string, float>(net, voltage));
@@ -133,7 +135,7 @@ void PDNSim::write_pg_spice() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -154,7 +156,7 @@ int PDNSim::analyze_power_grid() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -209,7 +211,7 @@ int PDNSim::check_connectivity() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
   if (!irsolve_h->BuildConnection()) {
     delete irsolve_h;
     return 0;
