@@ -142,3 +142,13 @@ proc set_pdnsim_net_voltage { args } {
     utl::error PSM 62 "Argument -net or -voltage not specified. Please specify both -net and -voltage arguments."
   }
 }
+
+namespace eval psm {
+proc debug_gui { args } {
+  sta::parse_key_args "debug" args \
+      keys {} \
+      flags {}
+
+  set_debug_gui_cmd
+}
+}
