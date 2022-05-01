@@ -44,7 +44,7 @@ void DebugGui::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
     for (auto& bump : bumps_) {
-      painter.drawCircle(std::get<0>(bump), std::get<1>(bump), 50000);
+      painter.drawCircle(bump.x, bump.y, 50000);
     }
   }
 }
@@ -65,7 +65,7 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool bumps = checkDisplayControl("bumps");
   if (bumps && layer->getRoutingLevel() == bump_layer_) {
     for (auto& bump : bumps_) {
-      painter.drawCircle(std::get<0>(bump), std::get<1>(bump), 5000);
+      painter.drawCircle(bump.x, bump.y, 5000);
     }
   }
 }

@@ -51,7 +51,12 @@ namespace psm {
  */
 class IRSolver {
  public:
-  using BumpData = std::tuple<int, int, int, double>;
+  struct BumpData {
+    int x;
+    int y;
+    int size;
+    double voltage;
+  };
 
   //! Constructor for IRSolver class
   /*
