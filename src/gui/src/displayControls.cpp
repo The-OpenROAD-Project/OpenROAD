@@ -1753,6 +1753,11 @@ void DisplayControls::postReadLiberty()
   checkLiberty(true);
 }
 
+void DisplayControls::postReadDb()
+{
+  emit changed();
+}
+
 void DisplayControls::checkLiberty(bool assume_loaded)
 {
   bool enable = true;

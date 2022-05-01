@@ -229,6 +229,7 @@ class DisplayControls : public QDockWidget, public Options, public sta::dbNetwor
 
   // API from dbNetworkObserver
   virtual void postReadLiberty() override;
+  virtual void postReadDb() override;
 
  signals:
   // The display options have changed and clients need to update
