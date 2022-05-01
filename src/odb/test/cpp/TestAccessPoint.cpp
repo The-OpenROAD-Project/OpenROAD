@@ -20,6 +20,8 @@ BOOST_AUTO_TEST_CASE( test_default )
     auto ap = dbAccessPoint::create(block, pin, 0);
     auto inst = dbInst::create(db->getChip()->getBlock(), and2, "i1");
     auto iterm = inst->getITerm(term);
+    ap->addSegment(Rect(10,20,30,40));
+    ap->addSegment(Rect(50,60,70,80));
     ap->setPoint(Point(10,250));
     ap->setLayer(layer);
     ap->setHighType(dbAccessType::HalfGrid);
@@ -45,6 +47,10 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(ap->hasAccess());
     BOOST_TEST(ap->getHighType() == dbAccessType::HalfGrid);
     BOOST_TEST(ap->hasAccess(dbDirection::DOWN));
+    auto path_segs = ap->getSegments();
+    BOOST_TEST(path_segs.size() == 2);
+    BOOST_TEST(path_segs[0].xMax() == 30);
+    BOOST_TEST(path_segs[1].yMax() == 80); 
     std::vector<dbDirection> dirs;
     ap->getAccesses(dirs);
     BOOST_TEST(dirs.size() == 1);    

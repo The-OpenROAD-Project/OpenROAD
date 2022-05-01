@@ -169,6 +169,7 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.accesses_;
   stream >> obj.iterms_;
   stream >> obj.vias_;
+  stream >> obj.path_segs_;
   // User Code Begin >>
   int8_t low, high;
   stream >> low;
@@ -189,6 +190,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.accesses_;
   stream << obj.iterms_;
   stream << obj.vias_;
+  stream << obj.path_segs_;
   // User Code Begin <<
   int8_t low = static_cast<int8_t>(obj.low_type_);
   int8_t high = static_cast<int8_t>(obj.high_type_);
@@ -221,6 +223,18 @@ void _dbAccessPoint::setMPin(_dbMPin* mpin)
 // dbAccessPoint - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbAccessPoint::addSegment(const Rect & path_seg) 
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  obj->path_segs_.push_back(std::move(path_seg));
+}
+
+std::vector<Rect> & dbAccessPoint::getSegments() const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  return obj->path_segs_;
+}
 
 void dbAccessPoint::setPoint(Point point)
 {
