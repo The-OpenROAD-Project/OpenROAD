@@ -37,13 +37,26 @@ DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim), bump_layer_(-1)
   gui::Gui::get()->registerRenderer(this);
 }
 
+void DebugGui::drawObjects(gui::Painter& painter)
+{
+  const bool bumps = checkDisplayControl("bumps");
+  if (bumps) {
+    painter.setPen(gui::Painter::white, /* cosmetic */ true);
+    painter.setBrush(gui::Painter::transparent);
+    for (auto& bump : bumps_) {
+      painter.drawCircle(std::get<0>(bump), std::get<1>(bump), 50000);
+    }
+  }
+}
+
 void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  painter.setPen(gui::Painter::white, /* cosmetic */ true);
+
   const bool nodes = checkDisplayControl("nodes");
   if (nodes) {
     PDNSim::IRDropByPoint ir_drop;
     pdnsim_->getIRDropForLayer(layer, ir_drop);
-    painter.setPen(gui::Painter::white, /* cosmetic */ true);
     for (auto& [pt, v] : ir_drop) {
       painter.drawCircle(pt.getX(), pt.getY(), 1000);
     }
