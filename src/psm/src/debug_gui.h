@@ -41,6 +41,8 @@ class DebugGui : public gui::Renderer
   virtual void drawLayer(odb::dbTechLayer* layer,
                          gui::Painter& painter) override;
 
+  virtual void drawObjects(gui::Painter& painter) override;
+
   void setBumps(const std::vector<IRSolver::BumpData>& bumps, int bump_layer);
 
  private:
