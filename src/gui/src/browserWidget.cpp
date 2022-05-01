@@ -306,18 +306,15 @@ void BrowserWidget::updateModel()
   auto* root = model_->invisibleRootItem();
   addModuleItem(block_->getTopModule(), root, true);
 
-  QStandardItem* physical = new QStandardItem("Physical only");
-  physical->setEditable(false);
-  physical->setSelectable(false);
-  ModuleStats stats;
+  std::vector<odb::dbInst*> insts;
   for (auto* inst : block_->getInsts()) {
     if (inst->getModule() != nullptr) {
       continue;
     }
 
-    stats += addInstanceItem(inst, physical);
+    insts.push_back(inst);
   }
-  makeRowItems(physical, "", stats, root, true);
+  addInstanceItems(insts, "Physical only", root);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
 }
@@ -329,6 +326,26 @@ void BrowserWidget::clearModel()
 }
 
 BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, QStandardItem* parent)
+{
+  ModuleStats stats;
+  for (auto* child : module->getChildren()) {
+    stats += addModuleItem(child->getMaster(), parent, false);
+  }
+  stats.resetMacros();
+  stats.resetInstances();
+
+  std::vector<odb::dbInst*> insts;
+  for (auto* inst : module->getInsts()) {
+    insts.push_back(inst);
+  }
+  stats += addInstanceItems(insts, "Leaf instances", parent);
+
+  return stats;
+}
+
+BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(const std::vector<odb::dbInst*>& insts,
+                                                           const std::string& title,
+                                                           QStandardItem* parent)
 {
   auto make_leaf_item = [] (const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
@@ -342,7 +359,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, 
     ModuleStats stats;
   };
   std::map<DbInstDescriptor::Type, Leaf> leaf_types;
-  for (auto* inst : module->getInsts()) {
+  for (auto* inst : insts) {
     auto type = inst_descriptor_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
@@ -351,16 +368,9 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module, 
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item);
   }
 
-  ModuleStats stats;
-  for (auto* child : module->getChildren()) {
-    stats += addModuleItem(child->getMaster(), parent, false);
-  }
-  stats.resetMacros();
-  stats.resetInstances();
-
-  ModuleStats total = stats;
+  ModuleStats total;
   if (!leaf_types.empty()) {
-    auto* leafs = make_leaf_item("Leaf instances");
+    auto* leafs = make_leaf_item(title);
     ModuleStats leaf_stats;
     for (const auto& [type, leaf] : leaf_types) {
       makeRowItems(leaf.item, "", leaf.stats, leafs, true);

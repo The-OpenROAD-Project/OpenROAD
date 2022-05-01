@@ -222,6 +222,9 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public
     ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
     ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
+    ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
+                                 const std::string& title,
+                                 QStandardItem* parent);
     ModuleStats addModuleItem(odb::dbModule* module, QStandardItem* parent, bool expand);
 
     const QIcon makeModuleIcon(const QColor& color);
