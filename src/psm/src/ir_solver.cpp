@@ -286,22 +286,27 @@ void IRSolver::ReadC4Data() {
     string line = "";
     // Iterate through each line and split the content using delimiter
     while (getline(file, line)) {
-      int first, second, size;
+      int x = -1, y = -1, size = -1;
       stringstream X(line);
       string val;
       for (int i = 0; i < 4; ++i) {
         getline(X, val, ',');
         if (i == 0) {
-          first = (int)(unit_micron * stod(val));
+          x = (int)(unit_micron * stod(val));
         } else if (i == 1) {
-          second = (int)(unit_micron * stod(val));
+          y = (int)(unit_micron * stod(val));
         } else if (i == 2) {
           size = (int)(unit_micron * stod(val));
         } else {
           supply_voltage_src = stod(val);
         }
       }
-      m_C4Bumps.push_back(make_tuple(first, second, size, supply_voltage_src));
+      if (x == -1 || y == -1 || size == -1) {
+        m_logger->error(utl::PSM, 75, "Expected four values on line: {}",
+                        line);
+      } else {
+        m_C4Bumps.push_back({x, y, size, supply_voltage_src});
+      }
     }
     file.close();
   } else {
@@ -377,8 +382,8 @@ void IRSolver::ReadC4Data() {
                      m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron,
                      coreW * to_micron, coreL * to_micron,
                      x_cor * to_micron, y_cor * to_micron);
-      m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size * unit_micron,
-                                     supply_voltage_src));
+      m_C4Bumps.push_back({x_cor, y_cor, m_bump_size * unit_micron,
+                                     supply_voltage_src});
     }
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
@@ -392,8 +397,8 @@ void IRSolver::ReadC4Data() {
             (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) + offset_x;
         y_cor = (m_bump_pitch_y * i) + offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
-          m_C4Bumps.push_back(make_tuple(
-              x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
+          m_C4Bumps.push_back(
+              {x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src});
         }
       }
     }
@@ -883,10 +888,10 @@ void  IRSolver::CreateGmatConnections(vector<dbSBox*> power_wires,
 int IRSolver::CreateC4Nodes(bool connection_only, int unit_micron) {
   int num_C4 = 0;
   for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
-    int x = get<0>(m_C4Bumps[it]);
-    int y = get<1>(m_C4Bumps[it]);
-    int size = get<2>(m_C4Bumps[it]);
-    double v = get<3>(m_C4Bumps[it]);
+    int x = m_C4Bumps[it].x;
+    int y = m_C4Bumps[it].y;
+    int size = m_C4Bumps[it].size;
+    double v = m_C4Bumps[it].voltage;
     vector<Node*> RDL_nodes;
     Node* node = m_Gmat->GetNode(x, y, m_top_layer, true);
     NodeLoc node_loc = node->GetLoc();
