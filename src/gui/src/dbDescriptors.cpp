@@ -440,7 +440,7 @@ std::string DbInstDescriptor::getInstanceTypeText(Type type) const
   case STD_LEVEL_SHIFT:
     return "Level shifter";
   case STD_SEQUENTIAL:
-    return "SSequential";
+    return "Sequential";
   case STD_PHYSICAL:
     return "Physical";
   case STD_COMBINATIONAL:
