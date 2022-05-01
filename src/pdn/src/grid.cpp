@@ -191,6 +191,7 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     techlayer.populateGrid(block);
     const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const int min_width = techlayer.getMinWidth();
+    const int min_spacing = techlayer.getSpacing(0);
 
     for (const auto& [box, shape] : itr->second) {
       const auto& rect = shape->getRect();
@@ -204,9 +205,13 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
       int delta_x = is_horizontal ? length_spacing : width_spacing;
       int delta_y = is_horizontal ? width_spacing : length_spacing;
 
-      const int offset = min_width;
-      delta_x += offset;
-      delta_y += offset;
+      if (is_horizontal) {
+        delta_x -= min_spacing;
+        delta_y += min_width;
+      } else {
+        delta_x += min_width;
+        delta_y -= min_spacing;
+      }
 
       const odb::Rect obs(
           rect.xMin() - delta_x,
