@@ -430,23 +430,23 @@ std::string DbInstDescriptor::getInstanceTypeText(Type type) const
   case STD_CELL:
     return "Standard cell";
   case STD_BUFINV:
-    return "Standard cell buffer/inverter";
+    return "Buffer/inverter";
   case STD_BUFINV_CLK_TREE:
-    return "Standard cell clock buffer/inverter";
+    return "Clock buffer/inverter";
   case STD_BUFINV_TIMING_REPAIR:
-    return "Standard cell buffer/inverter from timing repair";
+    return "Buffer/inverter from timing repair";
   case STD_CLOCK_GATE:
-    return "Standard cell clock gate";
+    return "Clock gate";
   case STD_LEVEL_SHIFT:
-    return "Standard cell level shifter";
+    return "Level shifter";
   case STD_SEQUENTIAL:
-    return "Standard cell sequential";
+    return "SSequential";
   case STD_PHYSICAL:
-    return "Standard cell physical";
+    return "Physical";
   case STD_COMBINATIONAL:
-    return "Standard cell combinational";
+    return "Combinational";
   case STD_OTHER:
-    return "Standard cell other";
+    return "Other";
   }
 
   return "Unknown";
