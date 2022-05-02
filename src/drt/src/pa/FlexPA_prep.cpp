@@ -760,26 +760,48 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const Point& bp,
     frLayerNum layerNum,
-    frDirEnum dir)
+    frDirEnum dir,
+    bool isBlock)
 {
   const int stepSizeMultiplier = 3;
   frCoord x = bp.x();
   frCoord y = bp.y();
   frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
   frCoord stepSize = stepSizeMultiplier * width;
+  frCoord pitch;
+  gtl::rectangle_data<frCoord> rect;
+  if (isBlock) {
+      auto tp = getDesign()->getPrefDirTracks(layerNum);
+      pitch = tp[0]->getTrackSpacing();
+      gtl::extents(rect, layerPolys[0]);
+      if (layerPolys.size() > 1)
+          logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
+  }
   switch (dir) {
     case (frDirEnum::W):
-      x -= stepSize;
-      break;
+        if (isBlock)
+            x = gtl::xl(rect) - pitch;
+        else 
+            x -= stepSize;
+        break;
     case (frDirEnum::E):
-      x += stepSize;
-      break;
+        if (isBlock)
+            x = gtl::xh(rect) + pitch;
+        else 
+            x += stepSize;
+        break;
     case (frDirEnum::S):
-      y -= stepSize;
-      break;
+        if (isBlock)
+            y = gtl::yl(rect) - pitch;
+        else 
+            y -= stepSize;
+        break;
     case (frDirEnum::N):
-      y += stepSize;
-      break;
+        if (isBlock)
+            y = gtl::yh(rect) + pitch;
+        else 
+            y += stepSize;
+        break;
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
@@ -810,16 +832,14 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   if (!ap->hasAccess(dir)) {
     return;
   }
+  bool isBlock = instTerm && 
+                instTerm->getInst()->getMaster()->getMasterType().isBlock();
   bool isOutSide = prepPoint_pin_checkPoint_planar_ep(
-      ep, layerPolys, bp, ap->getLayerNum(), dir);
+      ep, layerPolys, bp, ap->getLayerNum(), dir, isBlock);
   // skip if two width within shape for standard cell
   if (!isOutSide) {
-        if (!instTerm || 
-                instTerm->getInst()->getMaster()->getMasterType().isBlock())
-            ap->setAccess(dir, true);
-        else
-            ap->setAccess(dir, false);
-    return;
+        ap->setAccess(dir, false);
+        return;
   }
 
   auto ps = make_unique<frPathSeg>();
