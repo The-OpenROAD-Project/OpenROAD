@@ -72,6 +72,7 @@ class dbNetworkObserver
    virtual ~dbNetworkObserver();
 
    virtual void postReadLiberty() = 0;
+   virtual void postReadDb() {};
 
   private:
    dbNetwork* owner_ = nullptr;
