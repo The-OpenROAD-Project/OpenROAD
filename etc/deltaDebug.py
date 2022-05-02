@@ -12,7 +12,7 @@
 # Assuming running in a directory with the following files in:
 # deltaDebug.py base.odb step.sh
 # openroad -python deltaDebug.py --base_db_path base.odb --error_string <any_possible_error> --step './step.sh' 
-#                                --use_stdout 1 --persistence 5 --dump_def 0
+#                                --persistence 5  --use_stdout --dump_def 
 
 # N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1) and operate on it
 # where the script manipulates base.odb between steps to reduce its size. 
