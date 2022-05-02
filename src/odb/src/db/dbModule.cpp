@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
+#include "dbModule.h"
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
-#include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
@@ -175,16 +176,6 @@ const char* dbModule::getName() const
   return obj->_name;
 }
 
-std::string dbModule::getHierarchicalName() const
-{
-  dbModInst* inst = getModInst();
-  if (inst) {
-    return inst->getHierarchicalName();
-  } else {
-    return "<top>";
-  }
-}
-
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -209,6 +200,10 @@ void dbModule::addInst(dbInst* inst)
         "Physical only instance {} can't be added to module {}",
         inst->getName(),
         getName());
+  }
+
+  if (_inst->_module == module->getOID()) {
+    return;  // already in this module
   }
 
   if (_inst->_module != 0) {
@@ -336,6 +331,16 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   std::vector<dbInst*> insts;
   odb::getLeafInsts(this, insts);
   return insts;
+}
+
+std::string dbModule::getHierarchicalName() const
+{
+  dbModInst* inst = getModInst();
+  if (inst) {
+    return inst->getHierarchicalName();
+  } else {
+    return "<top>";
+  }
 }
 
 // User Code End dbModulePublicMethods

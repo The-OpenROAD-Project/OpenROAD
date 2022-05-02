@@ -6,11 +6,12 @@ sta::define_cmd_args "analyze_power_grid" {
   [-net net_name]
   [-dx bump_pitch_x]
   [-dy bump_pitch_y]
+  [-node_density m1_node_density]
   }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile -em_outfile -net -dx -dy} flags {-enable_em}
+    keys {-vsrc -outfile -em_outfile -net -dx -dy -node_density} flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
     if { [file readable $vsrc_file] } {
@@ -32,6 +33,10 @@ proc analyze_power_grid { args } {
   if { [info exists keys(-dy)] } {
     set bump_pitch_y $keys(-dy)
     psm::set_bump_pitch_y $bump_pitch_y
+  }
+  if { [info exists keys(-node_density)] } {
+    set m1_node_density $keys(-node_density)
+    psm::set_node_density $m1_node_density
   }
   if { [info exists keys(-outfile)] } {
     set out_file $keys(-outfile)
@@ -136,4 +141,14 @@ proc set_pdnsim_net_voltage { args } {
   } else {
     utl::error PSM 62 "Argument -net or -voltage not specified. Please specify both -net and -voltage arguments."
   }
+}
+
+namespace eval psm {
+proc debug_gui { args } {
+  sta::parse_key_args "debug" args \
+      keys {} \
+      flags {}
+
+  set_debug_gui_cmd
+}
 }

@@ -198,7 +198,6 @@ namespace odb {
         *{{field.name}}_bit_field = 0;
       {% elif field.table %}
         {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
-        ZALLOCATED({{field.name}});
       {% elif field.isHashTable %}
         {{field.name}}.setTable({{field.table_name}});
       {% elif 'default' in field%}
@@ -214,7 +213,6 @@ namespace odb {
       {% for component in field.components %}
         {% if field.table %}
           {{field.name}} = new dbTable<_{{field.type}}>(db, this, *r.{{field.name}});
-          ZALLOCATED({{field.name}});
         {% elif field.isHashTable %}
           {{field.name}}.setTable({{field.table_name}});
         {% else %}

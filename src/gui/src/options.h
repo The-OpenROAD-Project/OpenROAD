@@ -88,6 +88,8 @@ class Options
   virtual QFont pinMarkersFont() = 0;
   virtual bool areAccessPointsVisible() const = 0;
   virtual bool areRegionsVisible() const = 0;
+
+  virtual bool isModuleView() const = 0;
 };
 
 }  // namespace gui

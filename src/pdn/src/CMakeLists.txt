@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, The Regents of the University of California
+## Copyright (c) 2022, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -38,13 +38,28 @@ include("openroad")
 swig_lib(NAME      pdn
          NAMESPACE pdn
          I_FILE    PdnGen.i
-         SCRIPTS   PdnGen.tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
+         SCRIPTS   pdn.tcl
+                   PdnGen.tcl
 )
 
 target_sources(pdn
   PRIVATE
     PdnGen.cc
     MakePdnGen.cc
+    
+    techlayer.cpp
+    domain.cpp
+    power_cells.cpp
+    grid.cpp
+    grid_component.cpp
+    rings.cpp
+    straps.cpp
+    shape.cpp
+    via.cpp
+    connect.cpp
+    renderer.cpp
 )
 
 target_include_directories(pdn
@@ -56,6 +71,8 @@ target_link_libraries(pdn
   PRIVATE
     odb
     utl
+    gui
+    Boost::boost
 )
 
 messages(

@@ -34,8 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+#include "SteinerTree.hh"
 
-#include "rsz/BufferedNet.hh"
+#include "BufferedNet.hh"
 
 #include "sta/Units.hh"
 #include "sta/Fuzzy.hh"

@@ -33,6 +33,7 @@
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
+#include "frShape.h"
 
 namespace fr {
 class frViaDef;
@@ -49,7 +50,8 @@ class frAccessPoint : public frBlockObject
         viaDefs_(),
         typeL_(frAccessPointEnum::OnGrid),
         typeH_(frAccessPointEnum::OnGrid),
-        aps_(nullptr)
+        aps_(nullptr),
+        pathSegs_()
   {
   }
   // getters
@@ -173,7 +175,11 @@ class frAccessPoint : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
   frCoord x() const { return point_.x(); }
   frCoord y() const { return point_.y(); }
-
+  
+  void addPathSeg(frPathSeg ps) {
+      pathSegs_.push_back(std::move(ps));
+  }
+  std::vector<frPathSeg>& getPathSegs() { return pathSegs_;}
  private:
   Point point_;
   frLayerNum layerNum_;
@@ -183,6 +189,7 @@ class frAccessPoint : public frBlockObject
   frAccessPointEnum typeL_;
   frAccessPointEnum typeH_;
   frPinAccess* aps_;
+  std::vector<frPathSeg> pathSegs_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -195,6 +202,7 @@ class frAccessPoint : public frBlockObject
     (ar) & typeL_;
     (ar) & typeH_;
     (ar) & aps_;
+    (ar) & pathSegs_;
   }
 
   frAccessPoint() = default;  // for serialization

@@ -238,6 +238,8 @@ class Inspector : public QDockWidget
 
   void makeAction(const Descriptor::Action& action);
 
+  void navigateBack();
+
   // The columns in the tree view
   enum Column
   {
@@ -260,6 +262,8 @@ class Inspector : public QDockWidget
   QModelIndex clicked_index_;
 
   const HighlightSet& highlighted_;
+
+  std::vector<Selected> navigation_history_;
 
   std::map<QWidget*, Descriptor::ActionCallback> actions_;
   Descriptor::ActionCallback deselect_action_;

@@ -3,7 +3,6 @@ find_package(Boost)
 set(TEST_LIBS
         odb
         zutil 
-        zlib 
         tm
         lef
         defin

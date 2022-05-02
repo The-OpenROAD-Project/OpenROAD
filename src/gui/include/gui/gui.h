@@ -178,9 +178,9 @@ class Painter
   // restore the saved state of the painter
   virtual void restoreState() = 0;
 
-  // Draw a geom shape as a polygon with coordinates in DBU with the current
-  // pen/brush
-  virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
+  // Draw an octagon shape as a polygon with coordinates in DBU with the
+  // current pen/brush
+  virtual void drawOctagon(const odb::Oct& oct) = 0;
 
   // Draw a rect with coordinates in DBU with the current pen/brush; draws a
   // round rect if roundX > 0 or roundY > 0

@@ -1,0 +1,57 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
+[INFO ODB-0127] Reading DEF file: sky130_power_switch/floorplan.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1160 components and 3368 component-terminals.
+[INFO ODB-0133]     Created 324 nets and 1048 connections.
+[INFO ODB-0134] Finished DEF file: sky130_power_switch/floorplan.def
+[INFO PDN-0200] Switched power cell: POWER_SWITCH
+[INFO PDN-0201]   Control pin: SLEEP
+[INFO PDN-0202]   Acknowledge pin: SLEEP_OUT
+[INFO PDN-0203]   Switched power pin: VPWR
+[INFO PDN-0204]   Always on power pin: VDDG
+[INFO PDN-0205]   Ground pin: VGND
+[INFO PDN-0010] Voltage domain: Core
+[INFO PDN-0012]   Power net: VDD
+[INFO PDN-0013]   Ground net: VSS
+[INFO PDN-0014]   Switched power net: VDD_SW
+[INFO PDN-0020] Grid name: Core
+[INFO PDN-0021] Type: Core
+[INFO PDN-0023] Straps:
+[INFO PDN-0040]   Type: Followpin
+[INFO PDN-0041]     Layer: met1
+[INFO PDN-0042]     Width: 0.4800
+[INFO PDN-0043]     Spacing: 0.0000
+[INFO PDN-0044]     Pitch: 5.4400
+[INFO PDN-0045]     Offset: 0.0000
+[INFO PDN-0046]     Snap to grid: false
+[INFO PDN-0040]   Type: Strap
+[INFO PDN-0041]     Layer: met4
+[INFO PDN-0042]     Width: 1.6000
+[INFO PDN-0043]     Spacing: 7.4450
+[INFO PDN-0044]     Pitch: 27.1400
+[INFO PDN-0045]     Offset: 13.5700
+[INFO PDN-0046]     Snap to grid: false
+[INFO PDN-0040]   Type: Strap
+[INFO PDN-0041]     Layer: met5
+[INFO PDN-0042]     Width: 1.6000
+[INFO PDN-0043]     Spacing: 7.4650
+[INFO PDN-0044]     Pitch: 27.2000
+[INFO PDN-0045]     Offset: 13.6000
+[INFO PDN-0046]     Snap to grid: false
+[INFO PDN-0024] Connect:
+[INFO PDN-0070]   Connect layers met1 -> met4
+[INFO PDN-0070]   Connect layers met2 -> met4
+[INFO PDN-0070]   Connect layers met4 -> met5
+[INFO PDN-0210] Switched power cell: POWER_SWITCH
+[INFO PDN-0211]   Control net: nPWRUP
+[INFO PDN-0212]   Network type: DAISY

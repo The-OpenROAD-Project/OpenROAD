@@ -53,6 +53,7 @@ class dbPlacementStatus;
 class dbObstruction;
 class dbRegion;
 class dbRow;
+class dbSBox;
 class dbSWire;
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -145,6 +146,7 @@ class dbBlockCallBackObj
   // dbSWire Start
   virtual void inDbSWireCreate(dbSWire*) {}
   virtual void inDbSWireDestroy(dbSWire*) {}
+  virtual void inDbSWireAddSBox(dbSBox*) {}
   virtual void inDbSWirePreDestroySBoxes(dbSWire*) {}
   virtual void inDbSWirePostDestroySBoxes(dbSWire*) {}
   // dbSWire End

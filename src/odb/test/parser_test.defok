@@ -64,16 +64,13 @@ DIEAREA ( 100 200 ) ( 400 600 ) ;
 ROW CORE_ROW_0 CoreSite 840 896 FS DO 793 BY 1 STEP 168 0 + PROPERTY X "DOG"  ;
 GCELLGRID X 0 DO 100 STEP 600 ;
 GCELLGRID Y 10 DO 120 STEP 400 ;
-VIAS 10 ;
+VIAS 7 ;
     - VIA1 + RECT metal2 ( 1 2 ) ( 3 4 ) + RECT via2 ( 1 2 ) ( 3 4 ) + RECT metal3 ( 1 2 ) ( 3 4 ) ;
     - VIAGEN12_0 + RECT metal1 ( -4400 -3800 ) ( 4400 3800 ) + RECT metal2 ( -4500 -3800 ) ( 4500 3800 ) + RECT via1 ( -3600 -3800 ) ( -2000 -2200 ) + RECT via1 ( -3600 2200 ) ( -2000 3800 ) + RECT via1 ( 2000 -3800 ) ( 3600 -2200 ) + RECT via1 ( 2000 2200 ) ( 3600 3800 ) ;
     - VIAGEN12_2 + RECT metal1 ( -2500 -1500 ) ( 2500 1500 ) + RECT metal2 ( -2500 -1500 ) ( 2500 1500 ) + RECT via1 ( -2360 -960 ) ( -760 640 ) + RECT via1 ( -1320 -960 ) ( 280 640 ) + RECT via1 ( 760 -960 ) ( 2360 640 ) ;
     - VIAGEN12_3 + RECT metal1 ( -1600 -1600 ) ( 1600 1600 ) + RECT metal2 ( -1600 -1600 ) ( 1600 1600 ) + RECT via1 ( -800 -800 ) ( 800 800 ) ;
     - VIAGEN12_4 + VIARULE M2_M1 + CUTSIZE 1600 1600  + LAYERS metal1 via1 metal2  + CUTSPACING 5600 6100  + ENCLOSURE 100 100 150 150  + ROWCOL 5 14  + ORIGIN 10 -10  + OFFSET 0 0 20 -20  + PATTERNNAME 2_FFE0_3_FFFF ;
     - M2_M1rct_0 + RECT via1 ( -25 -65 ) ( 25 65 ) + RECT metal1 ( -35 -95 ) ( 35 95 ) + RECT metal2 ( -65 -65 ) ( 65 65 ) ;
-    - TURNM1_1 + RECT metal1 ( -100 -60 ) ( 100 60 ) ;
-    - TURNM2_1 + RECT metal2 ( -100 -60 ) ( 100 60 ) ;
-    - TURNM3_1 + RECT metal3 ( -100 -60 ) ( 100 60 ) ;
     - myvia1 + RECT metal1 ( 0 0 ) ( 40000 40000 ) + RECT via1 ( 0 0 ) ( 40000 40000 ) + RECT metal2 ( 0 0 ) ( 40000 40000 ) ;
 END VIAS
 NONDEFAULTRULES 3 ;

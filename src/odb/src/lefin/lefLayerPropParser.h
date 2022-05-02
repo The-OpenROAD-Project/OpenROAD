@@ -108,7 +108,7 @@ class lefTechLayerCutSpacingParser
 {
  public:
   odb::dbTechLayerCutSpacingRule* curRule;
-  bool parse(std::string,
+  bool parse(std::string, 
              dbTechLayer*,
              lefin*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
@@ -173,6 +173,53 @@ class lefTechLayerEolKeepOutRuleParser
   void setClass(std::string,
                 odb::dbTechLayerEolKeepOutRule* rule,
                 odb::dbTechLayer* layer);
+};
+
+class ArraySpacingParser
+{
+ public:
+  ArraySpacingParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  bool parse(std::string);
+ private:
+  void setCutClass(std::string name);
+  void setArraySpacing(boost::fusion::vector<int, double>& params);
+  void setWithin(boost::fusion::vector<double, double>& params);
+  void setCutSpacing(double spacing);
+  void setViaWidth(double width);
+  dbTechLayer* layer_;
+  lefin* lefin_;
+  dbTechLayerArraySpacingRule* rule_;
+};
+
+class WidthTableParser
+{
+ public:
+  WidthTableParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  bool parse(std::string);
+ private:
+  void addWidth(double width);
+  dbTechLayer* layer_;
+  lefin* lefin_;
+  dbTechLayerWidthTableRule* rule_;
+};
+
+class MinCutParser
+{
+ public:
+  MinCutParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin), rule_(nullptr) {}
+  void parse(std::string);
+ private:
+  bool parseSubRule(std::string);
+  void addCutClass(boost::fusion::vector<std::string, int>&);
+  void setWidth(double);
+  void setWithinCutDist(double);
+  void setLength(double);
+  void setLengthWithin(double);
+  void setArea(double);
+  void setAreaWithin(double);
+  dbTechLayer* layer_;
+  lefin* lefin_;
+  dbTechLayerMinCutRule* rule_;
 };
 
 }  // namespace odb

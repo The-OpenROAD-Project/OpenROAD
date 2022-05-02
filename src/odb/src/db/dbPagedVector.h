@@ -222,7 +222,6 @@ void dbPagedVector<T, P, S>::resizePageTbl()
     _page_tbl_size += (unsigned int) ((float) _page_tbl_size * (0.5));
 
   _pages = new T*[_page_tbl_size];
-  ZALLOCATED(_pages);
 
   unsigned int i;
 
@@ -239,11 +238,9 @@ template <class T, const uint P, const uint S>
 void dbPagedVector<T, P, S>::newPage()
 {
   T* page = new T[P];
-  ZALLOCATED(page);
 
   if (_page_tbl_size == 0) {
     _pages = new T*[1];
-    ZALLOCATED(_pages);
     _page_tbl_size = 1;
   } else if (_page_tbl_size == _page_cnt) {
     resizePageTbl();
