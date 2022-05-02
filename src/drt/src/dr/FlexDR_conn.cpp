@@ -805,6 +805,7 @@ void FlexDRConnectivityChecker::splitPathSegs(
             if (split2 != std::numeric_limits<int>().max()) 
             #pragma omp critical
             {
+                cout << "GOT HERE! 1" << endl;
                 getRegionQuery()->removeDRObj(maxHiPs);
                 maxHi.first.lo = split2;
                 maxHiPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
@@ -814,12 +815,14 @@ void FlexDRConnectivityChecker::splitPathSegs(
         } else 
         #pragma omp critical
         {
+            cout << "GOT HERE! 2" << endl;
             getRegionQuery()->removeDRObj(prevPs);
             prev.first.hi = split1;
             prevPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
             prevPs->setHigh(split1);
             getRegionQuery()->addDRObj(prevPs);
             if (split2 != std::numeric_limits<int>().max()) {
+                cout << "GOT HERE! 3" << endl;
                 getRegionQuery()->removeDRObj(currPs);
                 curr.first.hi = split2;
                 currPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
