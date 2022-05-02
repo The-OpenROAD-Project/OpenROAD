@@ -6952,6 +6952,7 @@ class dbTechLayer : public dbObject
   void setLef58Type(LEF58_TYPE type);
 
   LEF58_TYPE getLef58Type() const;
+  std::string getLef58TypeString() const;
 
   ///
   /// Get the layer name.
