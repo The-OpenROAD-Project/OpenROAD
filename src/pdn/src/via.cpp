@@ -94,6 +94,15 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* l
   }
 }
 
+Enclosure::Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer)
+  : x_(0),
+    y_(0),
+    allow_swap_(true)
+{
+  rule->getEnclosure(x_, y_);
+  swap(layer);
+}
+
 bool Enclosure::check(int x, int y) const
 {
   if (allow_swap_) {
@@ -2109,6 +2118,18 @@ bool GenerateViaGenerator::isSetupValid(odb::dbTechLayer* lower,
 
   return isBottomValidForWidth(getLowerWidth())
          && isTopValidForWidth(getUpperWidth());
+}
+
+void GenerateViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
+{
+  ViaGenerator::getMinimumEnclosures(bottom, top, true);
+
+  if (rules_only) {
+    return;
+  }
+
+  bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
+  top.emplace_back(getTopLayerRule(), getTopLayer());
 }
 
 /////////

@@ -93,6 +93,7 @@ class Enclosure
   Enclosure();
   Enclosure(int x, int y);
   Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut);
+  Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer);
 
   int getX() const { return x_; }
   int getY() const { return y_; }
@@ -582,6 +583,8 @@ class GenerateViaGenerator : public ViaGenerator
  protected:
   virtual const Constraint getLowerConstraint() const override { return {true, true}; }
   virtual const Constraint getUpperConstraint() const override { return {true, true}; }
+
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
 
  private:
   odb::dbTechViaGenerateRule* rule_;
