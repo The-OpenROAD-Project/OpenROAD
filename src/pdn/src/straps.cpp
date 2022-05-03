@@ -1309,6 +1309,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
           strap_count++;
         }
       }
+
+      // ensure areas are inside the core
+      channel.area = channel.area.intersect(grid_core);
+      channel.obs_area = channel.obs_area.intersect(grid_core);
     }
 
     // all followpins must be repaired
