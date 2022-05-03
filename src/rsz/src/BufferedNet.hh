@@ -103,7 +103,7 @@ public:
                   Resizer *resizer);
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
-  // wire     location opposite end of wire to location(ref_)
+  // wire     wire is from loc to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
   Point location() const { return location_; }
@@ -117,6 +117,9 @@ public:
   BufferedNetPtr ref() const { return ref_; }
   // junction  right
   BufferedNetPtr ref2() const { return ref2_; }
+
+  // repairNet
+  int maxLoadWireLength() const;
 
   // Rebuffer
   float cap() const { return cap_; }

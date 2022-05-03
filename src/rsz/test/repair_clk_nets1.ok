@@ -32,7 +32,7 @@ Path Type: max
            0.04    0.03    0.11 ^ repeater2/A (BUF_X8)
   36.30    0.01    0.03    0.14 ^ repeater2/Z (BUF_X8)
            0.04    0.03    0.17 ^ repeater1/A (BUF_X8)
-  30.71    0.01    0.03    0.20 ^ repeater1/Z (BUF_X8)
+  30.07    0.01    0.03    0.20 ^ repeater1/Z (BUF_X8)
            0.03    0.02    0.23 ^ u3/A (BUF_X1)
    0.31    0.01    0.02    0.25 ^ u3/Z (BUF_X1)
            0.01    0.00    0.25 ^ out1 (out)

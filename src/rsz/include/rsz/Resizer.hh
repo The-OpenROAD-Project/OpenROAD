@@ -407,9 +407,7 @@ protected:
                            const Corner *corner) const;
   float maxInputSlew(const LibertyPort *input,
                      const Corner *corner) const;
-  void repairNet(SteinerTree *tree,
-                 SteinerPt pt,
-                 SteinerPt prev_pt,
+  void repairNet(BufferedNetPtr bnet,
                  Net *net,
                  const Pin *drvr_pin,
                  float max_cap,
@@ -423,6 +421,48 @@ protected:
                  float &fanout,
                  PinSeq &load_pins,
                  float &max_load_slew);
+  void repairNetWire(BufferedNetPtr bnet,
+                     Net *net,
+                     const Pin *drvr_pin,
+                     float max_cap,
+                     float max_fanout,
+                     int max_length,
+                     const Corner *corner,
+                     int level,
+                     // Return values.
+                     int &wire_length,
+                     float &pin_cap,
+                     float &fanout,
+                     PinSeq &load_pins,
+                     float &max_load_slew);
+  void repairNetJunc(BufferedNetPtr bnet,
+                     Net *net,
+                     const Pin *drvr_pin,
+                     float max_cap,
+                     float max_fanout,
+                     int max_length,
+                     const Corner *corner,
+                     int level,
+                     // Return values.
+                     int &wire_length,
+                     float &pin_cap,
+                     float &fanout,
+                     PinSeq &load_pins,
+                     float &max_load_slew);
+  void repairNetLoad(BufferedNetPtr bnet,
+                     Net *net,
+                     const Pin *drvr_pin,
+                     float max_cap,
+                     float max_fanout,
+                     int max_length,
+                     const Corner *corner,
+                     int level,
+                     // Return values.
+                     int &wire_length,
+                     float &pin_cap,
+                     float &fanout,
+                     PinSeq &load_pins,
+                     float &max_load_slew);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
                          const Corner *corner);
@@ -431,8 +471,7 @@ protected:
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap);
   void makeRepeater(const char *where,
-                    SteinerTree *tree,
-                    SteinerPt pt,
+                    Point loc,
                     LibertyCell *buffer_cell,
                     const Corner *corner,
                     bool resize,
@@ -733,6 +772,8 @@ protected:
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
+  // Elmore factor for 20-80% slew thresholds.
+  static constexpr float elmore_skew_factor_ = 1.39;
 
   friend class BufferedNet;
 };

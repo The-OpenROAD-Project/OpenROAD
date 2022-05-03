@@ -35,8 +35,10 @@
 
 #include "rsz/Resizer.hh"
 #include "BufferedNet.hh"
+#include "SteinerTree.hh"
 
 #include <algorithm>
+#include <memory>
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include <spdlog/fmt/fmt.h>
 
@@ -50,11 +52,86 @@
 namespace rsz {
 
 using std::min;
+using std::max;
+using std::make_shared;
 
 using sta::INF;
 
 using utl::Logger;
 using utl::RSZ;
+
+////////////////////////////////////////////////////////////////
+
+// Make BufferedNet from steiner tree.
+BufferedNetPtr
+Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
+{
+  BufferedNetPtr bnet = nullptr;
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
+                                      stt_builder_, db_network_, logger_);
+  if (tree) {
+    SteinerPt drvr_pt = tree->drvrPt(network_);
+    if (drvr_pt != SteinerTree::null_pt)
+      bnet = makeBufferedNet(tree, drvr_pt, tree->left(drvr_pt), 0);
+    delete tree;
+  }
+  return bnet;
+}
+
+BufferedNetPtr 
+Resizer::makeBufferedNet(SteinerTree *tree,
+                         SteinerPt from,
+                         SteinerPt to,
+                         int level)
+{
+  if (to != SteinerTree::null_pt) {
+    const PinSeq *pins = tree->pins(to);
+    if (pins) {
+      BufferedNetPtr bnet = nullptr;
+      for (Pin *pin : *pins) {
+        if (network_->isLoad(pin)) {
+          auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
+                                                    tree->location(to), pin);
+          //BufferedNetPtr load_bnet = new BufferedNet(BufferedNetType::load,
+          //                                       tree->location(to), pin);
+          debugPrint(logger_, RSZ, "make_buffered_net", 4, "{:{}s}{}",
+                     "", level, load_bnet->to_string(this));
+          if (bnet)
+            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                            tree->location(to),
+                                            bnet, load_bnet);
+          else
+            bnet = load_bnet;
+        }
+      }
+      if (tree->location(to) != tree->location(from))
+        bnet = make_shared<BufferedNet>(BufferedNetType::wire,
+                                        tree->location(from), bnet);
+      return bnet;
+    }
+    else {
+      // Steiner pt.
+      BufferedNetPtr bnet1 = makeBufferedNet(tree, to, tree->left(to), level + 1);
+      BufferedNetPtr bnet2 = makeBufferedNet(tree, to, tree->right(to), level + 1);
+      BufferedNetPtr junc = nullptr;
+      if (bnet1 && bnet2)
+        junc = make_shared<BufferedNet>(BufferedNetType::junction,
+                                        tree->location(to),
+                                        bnet1, bnet2);
+      else if (bnet1)
+        junc = bnet1;
+      else if (bnet2)
+        junc = bnet2;
+      if (junc && tree->location(to) != tree->location(from))
+        junc = make_shared<BufferedNet>(BufferedNetType::wire,
+                                        tree->location(from), junc);
+      return junc;
+    }
+  }
+  return nullptr;
+}
+
+////////////////////////////////////////////////////////////////
 
 // load
 BufferedNet::BufferedNet(BufferedNetType type,
@@ -215,6 +292,23 @@ BufferedNet::bufferCount() const
     return ref_->bufferCount();
   case BufferedNetType::junction:
     return ref_->bufferCount() + ref2_->bufferCount();
+  case BufferedNetType::load:
+    return 0;
+  }
+  return 0;
+}
+
+int
+BufferedNet::maxLoadWireLength() const
+{
+  switch (type_) {
+  case BufferedNetType::buffer:
+    return ref_->maxLoadWireLength();
+  case BufferedNetType::wire:
+    return odb::Point::manhattanDistance(location_, ref_->location())
+      + ref_->maxLoadWireLength();
+  case BufferedNetType::junction:
+    return max(ref_->maxLoadWireLength(), ref2_->maxLoadWireLength());
   case BufferedNetType::load:
     return 0;
   }

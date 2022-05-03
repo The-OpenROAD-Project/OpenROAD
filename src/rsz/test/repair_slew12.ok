@@ -11,4 +11,3 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: repair_slew12.def
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
-[INFO RSZ-0034] Found 1 slew violations.

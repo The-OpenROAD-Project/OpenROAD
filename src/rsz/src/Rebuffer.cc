@@ -34,9 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
-
-#include "SteinerTree.hh"
 #include "BufferedNet.hh"
+
+#include "db_sta/dbNetwork.hh"
 
 #include "sta/Units.hh"
 #include "sta/Fuzzy.hh"
@@ -445,76 +445,6 @@ Resizer::rebufferTopDown(BufferedNetPtr choice,
     break;
   }
   }
-}
-
-////////////////////////////////////////////////////////////////
-
-// Make BufferedNet from steiner tree.
-BufferedNetPtr 
-Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
-{
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
-                                      stt_builder_, db_network_, logger_);
-  if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(network_);
-    BufferedNetPtr bnet = makeBufferedNet(tree, drvr_pt, tree->left(drvr_pt), 0);
-    delete tree;
-    return bnet;
-  }
-  return nullptr;
-}
-
-BufferedNetPtr 
-Resizer::makeBufferedNet(SteinerTree *tree,
-                         SteinerPt from,
-                         SteinerPt to,
-                         int level)
-{
-  if (to != SteinerTree::null_pt) {
-    const PinSeq *pins = tree->pins(to);
-    if (pins) {
-      BufferedNetPtr bnet = nullptr;
-      for (Pin *pin : *pins) {
-        if (network_->isLoad(pin)) {
-          auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
-                                                    tree->location(to), pin);
-          //BufferedNetPtr load_bnet = new BufferedNet(BufferedNetType::load,
-          //                                       tree->location(to), pin);
-          debugPrint(logger_, RSZ, "make_buffered_net", 4, "{:{}s}{}",
-                     "", level, load_bnet->to_string(this));
-          if (bnet)
-            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                            tree->location(to),
-                                            bnet, load_bnet);
-          else
-            bnet = load_bnet;
-        }
-      }
-      if (tree->location(to) != tree->location(from))
-        bnet = make_shared<BufferedNet>(BufferedNetType::wire,
-                                        tree->location(from), bnet);
-      return bnet;
-    }
-    else {
-      // Steiner pt.
-      BufferedNetPtr bnet1 = makeBufferedNet(tree, to, tree->left(to), level + 1);
-      BufferedNetPtr bnet2 = makeBufferedNet(tree, to, tree->right(to), level + 1);
-      BufferedNetPtr junc = nullptr;
-      if (bnet1 && bnet2)
-        junc = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        tree->location(to),
-                                        bnet1, bnet2);
-      else if (bnet1)
-        junc = bnet1;
-      else if (bnet2)
-        junc = bnet2;
-      if (junc && tree->location(to) != tree->location(from))
-        junc = make_shared<BufferedNet>(BufferedNetType::wire,
-                                        tree->location(from), junc);
-      return junc;
-    }
-  }
-  return nullptr;
 }
 
 } // namespace
