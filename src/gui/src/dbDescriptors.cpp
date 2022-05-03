@@ -1835,7 +1835,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
     props.push_back({"Routing layer", layer->getRoutingLevel()});
   }
   if (layer->getWidth() != 0) {
-    props.push_back({"Minimum path width", Property::convert_dbu(layer->getWidth(), true)});
+    props.push_back({"Default width", Property::convert_dbu(layer->getWidth(), true)});
   }
   if (layer->getMinWidth() != 0) {
     props.push_back({"Minimum width", Property::convert_dbu(layer->getMinWidth(), true)});
