@@ -121,6 +121,7 @@ using sta::PathExpanded;
 using sta::PinSeq;
 
 class BufferedNet;
+typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
@@ -136,7 +137,7 @@ typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
-typedef Vector<BufferedNet*> BufferedNetSeq;
+typedef Vector<BufferedNetPtr> BufferedNetSeq;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
@@ -609,31 +610,17 @@ protected:
                    bool journal);
 
   int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
-                                  SteinerPt k,
-                                  SteinerPt prev,
+  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
                                   int level,
                                   double wire_signal_cap);
-  void rebufferTopDown(BufferedNet *choice,
+  void rebufferTopDown(BufferedNetPtr choice,
                        Net *net,
                        int level);
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
-                   SteinerTree *tree,
-                   SteinerPt k,
-                   SteinerPt prev,
+                   BufferedNetPtr bnet_wire,
                    int level,
                    double wire_signal_cap);
-  // BufferedNet factory.
-  BufferedNet *makeBufferedNet(BufferedNetType type,
-                               Point location,
-                               float cap,
-                               Pin *load_pin,
-                               PathRef req_path,
-                               Delay req_delay,
-                               LibertyCell *buffer_cell,
-                               BufferedNet *ref,
-                               BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);
@@ -643,15 +630,15 @@ protected:
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
-  BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
-  BufferedNet *makeBufferedNet(SteinerTree *tree,
-                               SteinerPt prev,
-                               SteinerPt k,
-                               int level);
-  BufferedNet *makeBufferedNetWire(SteinerTree *tree,
-                                   SteinerPt from,
-                                   SteinerPt to,
-                                   int level);
+  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNet(SteinerTree *tree,
+                                 SteinerPt prev,
+                                 SteinerPt k,
+                                 int level);
+  BufferedNetPtr makeBufferedNetWire(SteinerTree *tree,
+                                     SteinerPt from,
+                                     SteinerPt to,
+                                     int level);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -730,7 +717,6 @@ protected:
   SteinerRenderer *steiner_renderer_;
 
   int rebuffer_net_count_;
-  BufferedNetSeq rebuffer_options_;
 
   int hold_buffer_count_;
 

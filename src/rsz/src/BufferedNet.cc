@@ -33,6 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "rsz/Resizer.hh"
 #include "BufferedNet.hh"
 
 #include <algorithm>
@@ -62,8 +63,8 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          PathRef required_path,
                          Delay required_delay,
                          LibertyCell *buffer,
-                         BufferedNet *ref,
-                         BufferedNet *ref2) :
+                         BufferedNetPtr ref,
+                         BufferedNetPtr ref2) :
   type_(type),
   location_(location),
   load_pin_(load_pin),
@@ -80,8 +81,8 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          float cap,
                          Pin *load_pin,
-                         BufferedNet *ref,
-                         BufferedNet *ref2) :
+                         BufferedNetPtr ref,
+                         BufferedNetPtr ref2) :
   type_(type),
   location_(location),
   load_pin_(load_pin),
@@ -109,8 +110,8 @@ BufferedNet::BufferedNet(BufferedNetType type,
 // junc
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
-                         BufferedNet *ref,
-                         BufferedNet *ref2) :
+                         BufferedNetPtr ref,
+                         BufferedNetPtr ref2) :
   type_(type),
   location_(location),
   load_pin_(nullptr),
@@ -124,7 +125,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
 // wire
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
-                         BufferedNet *ref)  :
+                         BufferedNetPtr ref)  :
   type_(type),
   location_(location),
   load_pin_(nullptr),
@@ -198,6 +199,18 @@ BufferedNet::to_string(Resizer *resizer)
   }
   // suppress gcc warning
   return "";
+}
+
+void
+BufferedNet::setCapacitance(float cap)
+{
+  cap_ = cap;
+}
+
+void
+BufferedNet::setRequiredPath(const PathRef &path_ref)
+{
+  required_path_ = path_ref;
 }
 
 Required

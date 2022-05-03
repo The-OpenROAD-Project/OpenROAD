@@ -36,6 +36,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 
 #include "utl/Logger.h"
 #include "spdlog/fmt/fmt.h"
@@ -85,14 +86,14 @@ public:
               PathRef load_req_path,
               Delay required_delay,
               LibertyCell *buffer,
-              BufferedNet *ref,
-              BufferedNet *ref2);
+              BufferedNetPtr ref,
+              BufferedNetPtr ref2);
   BufferedNet(BufferedNetType type,
               Point location,
               float cap,
               Pin *load_pin,
-              BufferedNet *ref,
-              BufferedNet *ref2);
+              BufferedNetPtr ref,
+              BufferedNetPtr ref2);
   // load
   BufferedNet(BufferedNetType type,
               Point location,
@@ -100,12 +101,12 @@ public:
   // junc
   BufferedNet(BufferedNetType type,
               Point location,
-              BufferedNet *ref,
-              BufferedNet *ref2);
+              BufferedNetPtr ref,
+              BufferedNetPtr ref2);
   // wire
   BufferedNet(BufferedNetType type,
               Point location,
-              BufferedNet *ref);
+              BufferedNetPtr ref);
   ~BufferedNet();
   string to_string(Resizer *resizer);
   void reportTree(Resizer *resizer);
@@ -113,8 +114,10 @@ public:
                   Resizer *resizer);
   BufferedNetType type() const { return type_; }
   float cap() const { return cap_; }
+  void setCapacitance(float cap);
   Required required(StaState *sta);
   const PathRef &requiredPath() const { return required_path_; }
+  void setRequiredPath(const PathRef &path_ref);
   Delay requiredDelay() const { return required_delay_; }
   // junction steiner point location connecting ref/ref2
   // wire     location opposite end of wire to location(ref_)
@@ -130,25 +133,25 @@ public:
   // junction  left
   // buffer    wire
   // wire      end of wire
-  BufferedNet *ref() const { return ref_; }
+  BufferedNetPtr ref() const { return ref_; }
   // junction  right
-  BufferedNet *ref2() const { return ref2_; }
+  BufferedNetPtr ref2() const { return ref2_; }
 
 private:
   BufferedNetType type_;
   Point location_;
-  // Type load.
+  // load
   Pin *load_pin_;
-  BufferedNet *ref_;
-  BufferedNet *ref2_;
+  BufferedNetPtr ref_;
+  BufferedNetPtr ref2_;
 
-  // Capacitance looking into Net.
+  // Capacitance looking downstream from here.
   float cap_;
   // PathRef for worst required path at load.
   PathRef required_path_;
-  // Delay from this BufferedNet to the load.
+  // Max delay from here to the loads.
   Delay required_delay_;
-  // Type buffer.
+  // buffer
   LibertyCell *buffer_cell_;
 };
 

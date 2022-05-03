@@ -47,7 +47,7 @@ Path Type: max
            -0.239   slack (VIOLATED)
 
 
-[INFO RSZ-0040] Inserted 4 buffers.
+[INFO RSZ-0040] Inserted 3 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)

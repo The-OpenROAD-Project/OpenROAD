@@ -2523,9 +2523,6 @@ Resizer::repairSetup(float slack_margin,
 void
 Resizer::repairSetup(Pin *end_pin)
 {
-  BufferedNet *bnet = makeBufferedNetSteiner(end_pin);
-  bnet->reportTree(this);
-
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
