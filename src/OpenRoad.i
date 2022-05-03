@@ -523,12 +523,6 @@ thread_count()
   return ord->getThreadCount();
 }
 
-void
-delete_all_memory()
-{
-  ord::deleteAllMemory();
-}
-
 }
 
 %} // inline
