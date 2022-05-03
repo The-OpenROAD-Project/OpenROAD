@@ -37,6 +37,7 @@
 #include "SteinerTree.hh"
 
 #include "utl/Logger.h"
+#include "db_sta/dbNetwork.hh"
 
 #include "sta/Report.hh"
 #include "sta/Units.hh"

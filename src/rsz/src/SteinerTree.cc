@@ -37,13 +37,14 @@
 
 #include <string>
 
+#include "rsz/Resizer.hh"
+#include "db_sta/dbNetwork.hh"
 #include "utl/Logger.h"
 // Move logger macro out of the way.
 #undef debugPrint
-
+#include "gui/gui.h"
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
-
 #include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {
@@ -389,6 +390,61 @@ SteinerPt
 SteinerTree::right(SteinerPt pt)
 {
   return right_[pt];
+}
+
+////////////////////////////////////////////////////////////////
+
+class SteinerRenderer : public gui::Renderer
+{
+public:
+  SteinerRenderer();
+  void highlight(SteinerTree *tree);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  SteinerTree *tree_;
+};
+
+void
+Resizer::highlightSteiner(const Pin *drvr)
+{
+  if (gui::Gui::enabled()) {
+    if (steiner_renderer_ == nullptr) {
+      steiner_renderer_ = new SteinerRenderer();
+      gui_->registerRenderer(steiner_renderer_);
+    }
+    SteinerTree *tree = nullptr;
+    if (drvr)
+      tree = makeSteinerTree(drvr, false, max_steiner_pin_count_,
+                             stt_builder_, db_network_, logger_);
+    steiner_renderer_->highlight(tree);
+  }
+}
+
+SteinerRenderer::SteinerRenderer() :
+  tree_(nullptr)
+{
+}
+
+void
+SteinerRenderer::highlight(SteinerTree *tree)
+{
+  tree_ = tree;
+}
+
+void
+SteinerRenderer::drawObjects(gui::Painter &painter)
+{
+  if (tree_) {
+    painter.setPen(gui::Painter::red, true);
+    for (int i = 0 ; i < tree_->branchCount(); ++i) {
+      Point pt1, pt2;
+      int steiner_pt1, steiner_pt2;
+      int wire_length;
+      tree_->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length);
+      painter.drawLine(pt1, pt2);
+    }
+  }
 }
 
 }

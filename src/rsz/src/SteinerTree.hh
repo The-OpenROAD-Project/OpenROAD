@@ -45,8 +45,6 @@
 
 #include "odb/geom.h"
 
-#include "db_sta/dbNetwork.hh"
-
 #include "stt/SteinerTreeBuilder.h"
 
 namespace rsz {

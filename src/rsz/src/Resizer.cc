@@ -34,12 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
-
-#include "SteinerTree.hh"
 #include "BufferedNet.hh"
 
-#include "gui/gui.h"
 #include "utl/Logger.h"
+#include "db_sta/dbNetwork.hh"
 
 #include "sta/Report.hh"
 #include "sta/FuncExpr.hh"
@@ -3338,55 +3336,14 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
 // the driver to loads (in dbu).
 int
 Resizer::findMaxSteinerDist(Vertex *drvr)
+
 {
   Pin *drvr_pin = drvr->pin();
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
-                                      stt_builder_, db_network_, logger_);
-  if (tree) {
-    int dist = findMaxSteinerDist(tree);
-    delete tree;
-    return dist;
-  }
-  return 0;
-}
-
-int
-Resizer::findMaxSteinerDist(SteinerTree *tree)
-{
-  SteinerPt drvr_pt = tree->drvrPt(network_);
-  if (drvr_pt == SteinerTree::null_pt)
-    return 0;
+  BufferedNetPtr bnet = makeBufferedNetSteiner(drvr_pin);
+  if (bnet)
+    return bnet->maxLoadWireLength();
   else
-    return findMaxSteinerDist(tree, drvr_pt, 0);
-}
-
-// DFS of steiner tree.
-int
-Resizer::findMaxSteinerDist(SteinerTree *tree,
-                            SteinerPt pt,
-                            int dist_from_drvr)
-{
-  const PinSeq *pins = tree->pins(pt);
-  if (pins) {
-    for (const Pin *pin : *pins) {
-      if (db_network_->isLoad(pin))
-        return dist_from_drvr;
-    }
-  }
-  Point loc = tree->location(pt);
-  SteinerPt left = tree->left(pt);
-  int left_max = 0;
-  if (left != SteinerTree::null_pt) {
-    int left_dist = Point::manhattanDistance(loc, tree->location(left));
-    left_max = findMaxSteinerDist(tree, left, dist_from_drvr + left_dist);
-  }
-  SteinerPt right = tree->right(pt);
-  int right_max = 0;
-  if (right != SteinerTree::null_pt) {
-    int right_dist = Point::manhattanDistance(loc, tree->location(right));
-    right_max = findMaxSteinerDist(tree, right, dist_from_drvr + right_dist);
-  }
-  return max(left_max, right_max);
+    return 0;
 }
 
 double
@@ -4081,61 +4038,6 @@ Resizer::journalRestore()
                network_->pathName(buffer));
     removeBuffer(buffer);
     inserted_buffer_count_--;
-  }
-}
-
-////////////////////////////////////////////////////////////////
-
-class SteinerRenderer : public gui::Renderer
-{
-public:
-  SteinerRenderer();
-  void highlight(SteinerTree *tree);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
-private:
-  SteinerTree *tree_;
-};
-
-void
-Resizer::highlightSteiner(const Pin *drvr)
-{
-  if (gui::Gui::enabled()) {
-    if (steiner_renderer_ == nullptr) {
-      steiner_renderer_ = new SteinerRenderer();
-      gui_->registerRenderer(steiner_renderer_);
-    }
-    SteinerTree *tree = nullptr;
-    if (drvr)
-      tree = makeSteinerTree(drvr, false, max_steiner_pin_count_,
-                             stt_builder_, db_network_, logger_);
-    steiner_renderer_->highlight(tree);
-  }
-}
-
-SteinerRenderer::SteinerRenderer() :
-  tree_(nullptr)
-{
-}
-
-void
-SteinerRenderer::highlight(SteinerTree *tree)
-{
-  tree_ = tree;
-}
-
-void
-SteinerRenderer::drawObjects(gui::Painter &painter)
-{
-  if (tree_) {
-    painter.setPen(gui::Painter::red, true);
-    for (int i = 0 ; i < tree_->branchCount(); ++i) {
-      Point pt1, pt2;
-      int steiner_pt1, steiner_pt2;
-      int wire_length;
-      tree_->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length);
-      painter.drawLine(pt1, pt2);
-    }
   }
 }
 
