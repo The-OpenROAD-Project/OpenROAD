@@ -6980,7 +6980,7 @@ class dbTechLayer : public dbObject
   void setAlias(const char* alias);
 
   ///
-  /// Get the minimum path-width.
+  /// Get the default width.
   ///
   uint getWidth() const;
   void setWidth(int width);

@@ -197,7 +197,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
         add_prop("Direction", information);
 
         // min path width
-        add_prop("Minimum path width", information);
+        add_prop("Default width", information);
 
         // min spacing
         add_prop("Minimum spacing", information);
