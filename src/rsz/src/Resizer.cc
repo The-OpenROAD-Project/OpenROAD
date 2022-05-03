@@ -4069,6 +4069,7 @@ SteinerRenderer::drawObjects(gui::Painter &painter)
 
 ////////////////////////////////////////////////////////////////
 
+// API for logic resynthesis
 PinSet
 Resizer::findFaninFanouts(PinSet *end_pins)
 {

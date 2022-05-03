@@ -56,43 +56,6 @@ using sta::INF;
 using utl::Logger;
 using utl::RSZ;
 
-BufferedNet::BufferedNet(BufferedNetType type,
-                         Point location,
-                         float cap,
-                         Pin *load_pin,
-                         PathRef required_path,
-                         Delay required_delay,
-                         LibertyCell *buffer,
-                         BufferedNetPtr ref,
-                         BufferedNetPtr ref2) :
-  type_(type),
-  location_(location),
-  load_pin_(load_pin),
-  ref_(ref),
-  ref2_(ref2),
-  cap_(cap),
-  required_path_(required_path),
-  required_delay_(required_delay),
-  buffer_cell_(buffer)
-{
-}
-
-BufferedNet::BufferedNet(BufferedNetType type,
-                         Point location,
-                         float cap,
-                         Pin *load_pin,
-                         BufferedNetPtr ref,
-                         BufferedNetPtr ref2) :
-  type_(type),
-  location_(location),
-  load_pin_(load_pin),
-  ref_(ref),
-  ref2_(ref2),
-  cap_(cap),
-  buffer_cell_(nullptr)
-{
-}
-
 // load
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
@@ -103,6 +66,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
   ref_(nullptr),
   ref2_(nullptr),
   cap_(0.0),
+  required_delay_(0.0),
   buffer_cell_(nullptr)
 {
 }
@@ -118,6 +82,7 @@ BufferedNet::BufferedNet(BufferedNetType type,
   ref_(ref),
   ref2_(ref2),
   cap_(0.0),
+  required_delay_(0.0),
   buffer_cell_(nullptr)
 {
 }
@@ -132,11 +97,23 @@ BufferedNet::BufferedNet(BufferedNetType type,
   ref_(ref),
   ref2_(nullptr),
   cap_(0.0),
+  required_delay_(0.0),
   buffer_cell_(nullptr)
 {
 }
 
-BufferedNet::~BufferedNet()
+// buffer
+BufferedNet::BufferedNet(BufferedNetType type,
+                         Point location,
+                         LibertyCell *buffer_cell,
+                         BufferedNetPtr ref)  :
+  type_(type),
+  location_(location),
+  load_pin_(nullptr),
+  ref_(ref),
+  ref2_(nullptr),
+  required_delay_(0.0),
+  buffer_cell_(buffer_cell)
 {
 }
 
@@ -220,6 +197,12 @@ BufferedNet::required(StaState *sta)
     return INF;
   else
     return required_path_.required(sta) - required_delay_;
+}
+
+void
+BufferedNet::setRequiredDelay(Delay delay)
+{
+  required_delay_ = delay;
 }
 
 int

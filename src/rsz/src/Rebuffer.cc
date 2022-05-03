@@ -201,12 +201,10 @@ Resizer::rebufferBottomUp(BufferedNetPtr bnet,
                                          q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
                                                        bnet->location(),
-                                                       p->cap() + q->cap(),
-                                                       nullptr,
-                                                       min_req->requiredPath(),
-                                                       min_req->requiredDelay(),
-                                                       nullptr,
                                                        p, q);
+        junc->setCapacitance(p->cap() + q->cap());
+        junc->setRequiredPath(min_req->requiredPath());
+        junc->setRequiredDelay(min_req->requiredDelay());
         Z.push_back(junc);
       }
     }
@@ -294,15 +292,12 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
     double wire_res = wire_length * wireSignalResistance(corner);
     double wire_delay = wire_res * wire_cap;
     BufferedNetPtr z = make_shared<BufferedNet>(BufferedNetType::wire,
-                                                wire_end,
-                                                // account for wire load
-                                                p->cap() + wire_cap,
-                                                nullptr,
-                                                req_path,
-                                                // account for wire delay
-                                                p->requiredDelay() + wire_delay,
-                                                nullptr,
-                                                p, nullptr);
+                                                wire_end, p);
+    // account for wire load
+    z->setCapacitance(p->cap() + wire_cap);
+    z->setRequiredPath(req_path);
+    // account for wire delay
+    z->setRequiredDelay(p->requiredDelay() + wire_delay);
     debugPrint(logger_, RSZ, "rebuffer", 4, "{:{}s}swire wl {} {}",
                "", level,
                wire_length_dbu,
@@ -357,12 +352,11 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
           BufferedNetPtr z = make_shared<BufferedNet>(BufferedNetType::buffer,
                                                       // Locate buffer at opposite end of wire.
                                                       wire_end,
-                                                      buffer_cap,
-                                                      nullptr,
-                                                      req_path,
-                                                      best_option->requiredDelay()+buffer_delay,
                                                       buffer_cell,
-                                                      best_option, nullptr);
+                                                      best_option);
+          z->setCapacitance(buffer_cap);
+          z->setRequiredPath(req_path);
+          z->setRequiredDelay(best_option->requiredDelay()+buffer_delay);
           debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}buffer cap {} req {} -> {}",
                      "", level,
                      units_->capacitanceUnit()->asString(best_option->cap()),

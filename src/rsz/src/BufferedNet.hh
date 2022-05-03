@@ -79,21 +79,6 @@ enum class BufferedNetType { load, junction, wire, buffer };
 class BufferedNet
 {
 public:
-  BufferedNet(BufferedNetType type,
-              Point location,
-              float cap,
-              Pin *load_pin,
-              PathRef load_req_path,
-              Delay required_delay,
-              LibertyCell *buffer,
-              BufferedNetPtr ref,
-              BufferedNetPtr ref2);
-  BufferedNet(BufferedNetType type,
-              Point location,
-              float cap,
-              Pin *load_pin,
-              BufferedNetPtr ref,
-              BufferedNetPtr ref2);
   // load
   BufferedNet(BufferedNetType type,
               Point location,
@@ -107,25 +92,21 @@ public:
   BufferedNet(BufferedNetType type,
               Point location,
               BufferedNetPtr ref);
-  ~BufferedNet();
+  // buffer
+  BufferedNet(BufferedNetType type,
+              Point location,
+              LibertyCell *buffer_cell,
+              BufferedNetPtr ref);
   string to_string(Resizer *resizer);
   void reportTree(Resizer *resizer);
   void reportTree(int level,
                   Resizer *resizer);
   BufferedNetType type() const { return type_; }
-  float cap() const { return cap_; }
-  void setCapacitance(float cap);
-  Required required(StaState *sta);
-  const PathRef &requiredPath() const { return required_path_; }
-  void setRequiredPath(const PathRef &path_ref);
-  Delay requiredDelay() const { return required_delay_; }
   // junction steiner point location connecting ref/ref2
   // wire     location opposite end of wire to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
   Point location() const { return location_; }
-  // Downstream buffer count.
-  int bufferCount() const;
   // buffer
   LibertyCell *bufferCell() const { return buffer_cell_; }
   // load
@@ -136,6 +117,17 @@ public:
   BufferedNetPtr ref() const { return ref_; }
   // junction  right
   BufferedNetPtr ref2() const { return ref2_; }
+
+  // Rebuffer
+  float cap() const { return cap_; }
+  void setCapacitance(float cap);
+  Required required(StaState *sta);
+  const PathRef &requiredPath() const { return required_path_; }
+  void setRequiredPath(const PathRef &path_ref);
+  Delay requiredDelay() const { return required_delay_; }
+  void setRequiredDelay(Delay delay);
+  // Downstream buffer count.
+  int bufferCount() const;
 
 private:
   BufferedNetType type_;
