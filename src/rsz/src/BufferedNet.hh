@@ -93,6 +93,19 @@ public:
               Pin *load_pin,
               BufferedNet *ref,
               BufferedNet *ref2);
+  // load
+  BufferedNet(BufferedNetType type,
+              Point location,
+              Pin *load_pin);
+  // junc
+  BufferedNet(BufferedNetType type,
+              Point location,
+              BufferedNet *ref,
+              BufferedNet *ref2);
+  // wire
+  BufferedNet(BufferedNetType type,
+              Point location,
+              BufferedNet *ref);
   ~BufferedNet();
   string to_string(Resizer *resizer);
   void reportTree(Resizer *resizer);
@@ -103,7 +116,6 @@ public:
   Required required(StaState *sta);
   const PathRef &requiredPath() const { return required_path_; }
   Delay requiredDelay() const { return required_delay_; }
-  // driver   driver pin location
   // junction steiner point location connecting ref/ref2
   // wire     location opposite end of wire to location(ref_)
   // buffer   buffer driver pin location
@@ -124,19 +136,20 @@ public:
 
 private:
   BufferedNetType type_;
+  Point location_;
+  // Type load.
+  Pin *load_pin_;
+  BufferedNet *ref_;
+  BufferedNet *ref2_;
+
   // Capacitance looking into Net.
   float cap_;
-  Point location_;
   // PathRef for worst required path at load.
   PathRef required_path_;
   // Delay from this BufferedNet to the load.
   Delay required_delay_;
-  // Type load.
-  Pin *load_pin_;
   // Type buffer.
   LibertyCell *buffer_cell_;
-  BufferedNet *ref_;
-  BufferedNet *ref2_;
 };
 
 } // namespace

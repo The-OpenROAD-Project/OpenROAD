@@ -624,15 +624,6 @@ protected:
                    SteinerPt prev,
                    int level,
                    double wire_signal_cap);
-  BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
-  BufferedNet *makeBufferedNet(SteinerTree *tree,
-                               SteinerPt k,
-                               SteinerPt prev,
-                               int level);
-  BufferedNet *makeBufferedNetWire(SteinerTree *tree,
-                                   SteinerPt from,
-                                   SteinerPt to,
-                                   int level);
   // BufferedNet factory.
   BufferedNet *makeBufferedNet(BufferedNetType type,
                                Point location,
@@ -652,6 +643,15 @@ protected:
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
+  BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
+  BufferedNet *makeBufferedNet(SteinerTree *tree,
+                               SteinerPt prev,
+                               SteinerPt k,
+                               int level);
+  BufferedNet *makeBufferedNetWire(SteinerTree *tree,
+                                   SteinerPt from,
+                                   SteinerPt to,
+                                   int level);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes

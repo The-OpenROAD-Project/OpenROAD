@@ -456,7 +456,7 @@ repair_setup(float slack_margin,
 }
 
 void
-repair_setup_pin(Pin *end_pin)
+repair_setup_pin_cmd(Pin *end_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();

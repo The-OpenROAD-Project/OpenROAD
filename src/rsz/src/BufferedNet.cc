@@ -65,14 +65,14 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          BufferedNet *ref,
                          BufferedNet *ref2) :
   type_(type),
-  cap_(cap),
   location_(location),
+  load_pin_(load_pin),
+  ref_(ref),
+  ref2_(ref2),
+  cap_(cap),
   required_path_(required_path),
   required_delay_(required_delay),
-  load_pin_(load_pin),
-  buffer_cell_(buffer),
-  ref_(ref),
-  ref2_(ref2)
+  buffer_cell_(buffer)
 {
 }
 
@@ -83,14 +83,56 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          BufferedNet *ref,
                          BufferedNet *ref2) :
   type_(type),
-  cap_(cap),
   location_(location),
   load_pin_(load_pin),
-  buffer_cell_(nullptr),
   ref_(ref),
-  ref2_(ref2)
+  ref2_(ref2),
+  cap_(cap),
+  buffer_cell_(nullptr)
 {
+}
 
+// load
+BufferedNet::BufferedNet(BufferedNetType type,
+                         Point location,
+                         Pin *load_pin) :
+  type_(type),
+  location_(location),
+  load_pin_(load_pin),
+  ref_(nullptr),
+  ref2_(nullptr),
+  cap_(0.0),
+  buffer_cell_(nullptr)
+{
+}
+
+// junc
+BufferedNet::BufferedNet(BufferedNetType type,
+                         Point location,
+                         BufferedNet *ref,
+                         BufferedNet *ref2) :
+  type_(type),
+  location_(location),
+  load_pin_(nullptr),
+  ref_(ref),
+  ref2_(ref2),
+  cap_(0.0),
+  buffer_cell_(nullptr)
+{
+}
+  
+// wire
+BufferedNet::BufferedNet(BufferedNetType type,
+                         Point location,
+                         BufferedNet *ref)  :
+  type_(type),
+  location_(location),
+  load_pin_(nullptr),
+  ref_(ref),
+  ref2_(nullptr),
+  cap_(0.0),
+  buffer_cell_(nullptr)
+{
 }
 
 BufferedNet::~BufferedNet()
@@ -128,8 +170,8 @@ BufferedNet::to_string(Resizer *resizer)
   Network *sdc_network = resizer->sdcNetwork();
   Units *units = resizer->units();
   Unit *dist_unit = units->distanceUnit();
-  const char *x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 1);
-  const char *y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 1);
+  const char *x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
+  const char *y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);
   const char *cap = units->capacitanceUnit()->asString(cap_);
   
   switch (type_) {
