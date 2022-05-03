@@ -774,7 +774,14 @@ void FlexDRConnectivityChecker::merge_perform(NetRouteObjs& netRouteObjs,
   // get victim segments and merged segments
   merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
 }
-
+void FlexDRConnectivityChecker::insertSegSpan(pair<Span, int>& spanEntry, 
+                                            vector<pair<Span, int>>& segSpans, 
+                                            int startIdx) {
+     //insert sorted
+    int j;
+    for (j = startIdx; j < segSpans.size() && !(spanEntry < segSpans[j]); j++);
+    segSpans.insert(segSpans.begin() + j, spanEntry);
+}
 void FlexDRConnectivityChecker::splitPathSegs(
     NetRouteObjs& netRouteObjs,
     vector<pair<Span, int>>& segSpans)
@@ -800,20 +807,14 @@ void FlexDRConnectivityChecker::splitPathSegs(
         auto& maxHi = (curr.first.hi > prev.first.hi ? 
                     curr : prev);
         frPathSeg* maxHiPs = static_cast<frPathSeg*>(netRouteObjs[maxHi.second]);
+        frEndStyle hiEndStyle = maxHiPs->getEndStyle();
         int hi = maxHiPs->high();
         if (split1 == std::numeric_limits<int>().max()) {
-            if (split2 != std::numeric_limits<int>().max()) 
+            split1 = split2;
+            split2 = std::numeric_limits<int>().max();
+        }
+        if (split1 != std::numeric_limits<int>().max())
             #pragma omp critical
-            {
-                cout << "GOT HERE! 1" << endl;
-                getRegionQuery()->removeDRObj(maxHiPs);
-                maxHi.first.lo = split2;
-                maxHiPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
-                maxHiPs->setLow(split2);
-                getRegionQuery()->addDRObj(maxHiPs);
-            }
-        } else 
-        #pragma omp critical
         {
             cout << "GOT HERE! 2" << endl;
             getRegionQuery()->removeDRObj(prevPs);
@@ -821,18 +822,23 @@ void FlexDRConnectivityChecker::splitPathSegs(
             prevPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
             prevPs->setHigh(split1);
             getRegionQuery()->addDRObj(prevPs);
+            pair<Span, int> auxSpan = prev; //readd to ensure consistent ordering
+            segSpans.erase(segSpans.begin()+i-1);
+            insertSegSpan(auxSpan, segSpans, i-1);
+            getRegionQuery()->removeDRObj(currPs);
+            curr.first.lo = split1;
+            currPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
+            currPs->setLow(split1);
+            auxSpan = curr;
             if (split2 != std::numeric_limits<int>().max()) {
                 cout << "GOT HERE! 3" << endl;
-                getRegionQuery()->removeDRObj(currPs);
                 curr.first.hi = split2;
                 currPs->setEndStyle(frEndStyle(frcTruncateEndStyle));
                 currPs->setHigh(split2);
-                getRegionQuery()->addDRObj(currPs);
-                int j;
-                pair<Span, int> newSpan = pair<Span, int>({split2, hi}, netRouteObjs.size());
-                for (j = i+1; j < segSpans.size() && !(newSpan < segSpans[j]); j++) //find the right position to add the last seg piece
-                    ;
-                segSpans.insert(segSpans.begin() + j, newSpan);
+                segSpans.erase(segSpans.begin()+i); //readd to ensure consistent ordering
+                insertSegSpan(auxSpan, segSpans, i);
+                auxSpan = pair<Span, int>({split2, hi}, netRouteObjs.size()); //add last segment piece
+                insertSegSpan(auxSpan, segSpans, i+1);
                 unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
                 Point begin, end;
                 if (currPs->isVertical()) {
@@ -850,9 +856,15 @@ void FlexDRConnectivityChecker::splitPathSegs(
                 netRouteObjs.push_back(ptr);
                 currPs->getNet()->addShape(std::move(newPs));
                 getRegionQuery()->addDRObj(ptr);
+            } else {
+                curr.first.hi = hi;
+                currPs->setEndStyle(hiEndStyle);
+                currPs->setHigh(hi);
+                segSpans.erase(segSpans.begin()+i); //readd to ensure consistent ordering
+                insertSegSpan(auxSpan, segSpans, i);
             }
+            getRegionQuery()->addDRObj(currPs);
         }
-        
     }
 }
 

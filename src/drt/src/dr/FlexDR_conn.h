@@ -137,6 +137,8 @@ class FlexDRConnectivityChecker
                      const bool isHorz);
   void splitPathSegs(NetRouteObjs& netRouteObjs,
                     std::vector<std::pair<Span, int>>& segSpans);
+  void insertSegSpan(pair<Span, int>& spanEntry, vector<pair<Span, int>>& segSpans, 
+                                                          int startIdx);
   void merge_perform_helper(NetRouteObjs& netRouteObjs,
                             const std::vector<std::pair<Span, int>>& segSpans,
                             std::vector<int>& victims,
