@@ -78,7 +78,7 @@ class _dbAccessPoint : public _dbObject
       iterms_;  // list of iterms that prefer this access point
   dbVector<dbVector<std::pair<dbObjectType, dbId<_dbObject>>>>
       vias_;  // list of vias by num of cuts
-  dbVector<Rect> path_segs_;
+  dbVector<std::tuple<Rect, bool, bool>> path_segs_;
 
   // User Code Begin Fields
   // User Code End Fields

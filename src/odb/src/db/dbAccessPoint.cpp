@@ -42,8 +42,8 @@
 // User Code Begin Includes
 #include <algorithm>
 
-#include "dbBTerm.h"
 #include "dbBPin.h"
+#include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbITerm.h"
 #include "dbLib.h"
@@ -224,18 +224,6 @@ void _dbAccessPoint::setMPin(_dbMPin* mpin)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbAccessPoint::addSegment(const Rect & path_seg) 
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  obj->path_segs_.push_back(std::move(path_seg));
-}
-
-std::vector<Rect> & dbAccessPoint::getSegments() const
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  return obj->path_segs_;
-}
-
 void dbAccessPoint::setPoint(Point point)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
@@ -257,6 +245,19 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
 }
 
 // User Code Begin dbAccessPointPublicMethods
+
+void dbAccessPoint::addSegment(const std::tuple<Rect, bool, bool>& path_seg)
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  obj->path_segs_.push_back(std::move(path_seg));
+}
+
+const std::vector<std::tuple<Rect, bool, bool>>& dbAccessPoint::getSegments()
+    const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  return obj->path_segs_;
+}
 
 void dbAccessPoint::setAccesses(const std::vector<dbDirection>& accesses)
 {
