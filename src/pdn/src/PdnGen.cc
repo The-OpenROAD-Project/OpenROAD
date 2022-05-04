@@ -798,9 +798,11 @@ void PdnGen::writeToDb(bool add_pins) const
     // determine if unique and set WildConnected
     bool appear_in_all_grids = true;
     for (auto* domain : domains) {
-      const auto nets = domain->getNets();
-      if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
-        appear_in_all_grids = false;
+      for (const auto& grid : domain->getGrids()) {
+        const auto nets = grid->getNets();
+        if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
+          appear_in_all_grids = false;
+        }
       }
     }
 
