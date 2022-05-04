@@ -2143,25 +2143,30 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
     : ViaGenerator(logger, lower_rect, upper_rect),
       via_(via),
       cuts_(0),
+      cut_outline_(),
       bottom_(via_->getBottomLayer()),
       cut_(nullptr),
       top_(via_->getTopLayer()),
       lower_constraint_(lower_constraint),
       upper_constraint_(upper_constraint)
 {
+  cut_outline_.mergeInit();
   for (auto* box : via_->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer == bottom_ || layer == top_ || layer == nullptr) {
       continue;
     }
 
+    odb::Rect cut;
+    box->getBox(cut);
+
     if (cuts_ == 0) {
       cut_ = layer;
 
-      odb::Rect cut;
-      box->getBox(cut);
       setCut(cut);
     }
+
+    cut_outline_.merge(cut);
 
     cuts_++;
   }
@@ -2169,9 +2174,19 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
   determineCutSpacing();
 }
 
+int TechViaGenerator::getTotalCuts() const
+{
+  return ViaGenerator::getTotalCuts() * cuts_;
+}
+
 const std::string TechViaGenerator::getName() const
 {
   return via_->getName();
+}
+
+const odb::Rect& TechViaGenerator::getCut() const
+{
+  return cut_outline_;
 }
 
 int TechViaGenerator::getCutArea() const
