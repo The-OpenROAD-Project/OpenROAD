@@ -130,7 +130,7 @@ define_metric "DRT::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clo
 define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "DRT::clock_skew" "clk" "skew" 5 "%5.2f" "<=" {$value * 1.2}
 define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {0}
-define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {0}
+define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
 define_metric "DRT::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {0}
 define_metric "DRT::clock_period" "" "" 0 "%5.2f" "<=" {$value}
 
