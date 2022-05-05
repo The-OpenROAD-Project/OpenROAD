@@ -56,6 +56,7 @@ record_tests {
   macros_cells_extend_boundary
   macros_cells_no_grid
   macros_narrow_channel_jog
+  macros_different_nets
 
   region_temp_sensor
   region_secondary_nets

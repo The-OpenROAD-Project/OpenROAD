@@ -75,10 +75,10 @@ class BrowserWidget : public QDockWidget, public odb::dbBlockCallBackObj, public
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     // dbBlockCallBackObj
-    virtual void inDbInstCreate(odb::dbInst*);
-    virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*);
-    virtual void inDbInstDestroy(odb::dbInst*);
-    virtual void inDbInstSwapMasterAfter(odb::dbInst*);
+    virtual void inDbInstCreate(odb::dbInst*) override;
+    virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+    virtual void inDbInstDestroy(odb::dbInst*) override;
+    virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
 
     // API from dbNetworkObserver
     virtual void postReadLiberty() override;

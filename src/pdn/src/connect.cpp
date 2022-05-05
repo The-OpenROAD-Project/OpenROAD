@@ -75,6 +75,11 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
     }
   }
 
+  populateDBVias();
+}
+
+void Connect::populateDBVias()
+{
   populateGenerateRules();
   populateTechVias();
 }
@@ -82,11 +87,13 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
 void Connect::addFixedVia(odb::dbTechViaGenerateRule* via)
 {
   fixed_generate_vias_.push_back(via);
+  populateDBVias();
 }
 
 void Connect::addFixedVia(odb::dbTechVia* via)
 {
   fixed_tech_vias_.push_back(via);
+  populateDBVias();
 }
 
 void Connect::setCutPitch(int x, int y)
@@ -641,6 +648,8 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
 
 void Connect::populateGenerateRules()
 {
+  generate_via_rules_.clear();
+
   odb::dbTech* tech = layer0_->getTech();
 
   const auto layers = getAllRoutingLayers();
@@ -682,6 +691,8 @@ void Connect::populateGenerateRules()
 
 void Connect::populateTechVias()
 {
+  tech_vias_.clear();
+
   odb::dbTech* tech = layer0_->getTech();
 
   const auto layers = getAllRoutingLayers();

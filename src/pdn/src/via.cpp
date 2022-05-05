@@ -94,6 +94,15 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* l
   }
 }
 
+Enclosure::Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer)
+  : x_(0),
+    y_(0),
+    allow_swap_(true)
+{
+  rule->getEnclosure(x_, y_);
+  swap(layer);
+}
+
 bool Enclosure::check(int x, int y) const
 {
   if (allow_swap_) {
@@ -1525,134 +1534,135 @@ void ViaGenerator::determineRowsAndColumns(bool use_bottom_min_enclosure,
         = height
           - 2 * std::max(bottom_min_enclosure.getY(), top_min_enclosure.getY());
     int max_cut_area = 0;
-    const TechLayer layer(getCutLayer());
-    for (const auto& spacing : layer.getArraySpacing()) {
-      if (spacing.width != 0 && spacing.width > width) {
+    for (auto* rule : getCutLayer()->getTechLayerArraySpacingRules()) {
+      if (!isCutClass(rule->getCutClass())) {
+        continue;
+      }
+
+      if (rule->getArrayWidth() != 0 && rule->getArrayWidth() > width) {
         // this rule is ignored due to width
         continue;
       }
 
-      if (spacing.cuts > array_size) {
-        // this rule is ignored due to cuts
-        continue;
-      }
+      for (const auto& [rule_cuts, rule_spacing] : rule->getCutsArraySpacing()) {
+        if (rule_cuts > array_size) {
+          // this rule is ignored due to cuts
+          continue;
+        }
 
-      int cut_spacing_x = getCutPitchX() - cut_width;
-      int cut_spacing_y = getCutPitchY() - cut_height;
-      if (spacing.cut_spacing != 0) {
-        // reset spacing based on rule
-        cut_spacing_x = spacing.cut_spacing;
-        cut_spacing_y = spacing.cut_spacing;
-      }
-      // determine new rows and columns for array segments
-      int x_cuts = getCuts(width,
-                           cut_width,
-                           bottom_min_enclosure.getX(),
-                           top_min_enclosure.getX(),
-                           cut_spacing_x + cut_width,
-                           getMaxColumns());
-      // if long array allowed,  leave x alone
-      x_cuts = spacing.longarray ? x_cuts : std::min(x_cuts, spacing.cuts);
-      int y_cuts = getCuts(height,
-                           cut_height,
-                           bottom_min_enclosure.getY(),
-                           top_min_enclosure.getY(),
-                           cut_spacing_y + cut_height,
-                           getMaxRows());
-      y_cuts = std::min(y_cuts, spacing.cuts);
-      const int array_width_x
-          = getCutsWidth(x_cuts, cut_width, cut_spacing_x, 0);
-      const int array_width_y
-          = getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0);
-
-      const int array_pitch_x = array_width_x + spacing.array_spacing;
-      const int array_pitch_y = array_width_y + spacing.array_spacing;
-
-      const int full_arrays_x
-          = (array_area_x - array_width_x) / array_pitch_x + 1;
-      const int full_arrays_y
-          = (array_area_y - array_width_y) / array_pitch_y + 1;
-
-      // determine how many via row and columns are needed in the last segments
-      // of the array if any
-      int last_rows = 0;
-      int last_cols = 0;
-      const int remainder_x = array_area_x - full_arrays_x * array_pitch_x;
-      if (remainder_x != 0) {
-        last_cols = getCuts(remainder_x,
-                            cut_width,
-                            0,
-                            0,
-                            cut_spacing_x + cut_width,
-                            getMaxColumns());
-      }
-      const int remainder_y = array_area_y - full_arrays_y * array_pitch_y;
-      if (remainder_y != 0) {
-        last_rows = getCuts(remainder_y,
-                            cut_height,
-                            0,
-                            0,
-                            cut_spacing_y + cut_height,
-                            getMaxRows());
-      }
-
-      const int total_cut_area = cut.area()
-                                 * (full_arrays_x * x_cuts + last_cols)
-                                 * (full_arrays_y * y_cuts + last_rows);
-      if (max_cut_area < total_cut_area) {
-        // new array contains a greater cut area, so save this
-        array_core_x_ = full_arrays_x;
-        array_core_y_ = full_arrays_y;
-        core_col_ = x_cuts;
-        core_row_ = y_cuts;
-        end_col_ = last_cols;
-        end_row_ = last_rows;
-
-        setCutPitchX(cut_spacing_x + cut_width);
-        setCutPitchY(cut_spacing_y + cut_height);
-
-        array_spacing_x_ = spacing.array_spacing;
-        array_spacing_y_ = spacing.array_spacing;
-
-        const int via_width_x
-            = full_arrays_x * getCutsWidth(x_cuts, cut_width, cut_spacing_x, 0)
-              + (full_arrays_x - 1) * array_spacing_x_
-              + getCutsWidth(last_cols, cut_width, cut_spacing_x, 0)
-              + (last_cols > 0 ? array_spacing_x_ : 0);
-        const int double_enc_x = width - via_width_x;
-        const int via_width_y
-            = full_arrays_y * getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0)
-              + (full_arrays_y - 1) * array_spacing_y_
-              + getCutsWidth(last_rows, cut_height, cut_spacing_y, 0)
-              + (last_rows > 0 ? array_spacing_y_ : 0);
-        const int double_enc_y = height - via_width_y;
-
-        bottom_enclosure_->setX(determine_enclosure(
-            use_bottom_min_enclosure,
-            true,
+        int cut_spacing_x = getCutPitchX() - cut_width;
+        int cut_spacing_y = getCutPitchY() - cut_height;
+        if (rule->getCutSpacing() != 0) {
+          // reset spacing based on rule
+          cut_spacing_x = rule->getCutSpacing();
+          cut_spacing_y = rule->getCutSpacing();
+        }
+        // determine new rows and columns for array segments
+        int x_cuts = getCuts(width,
+            cut_width,
             bottom_min_enclosure.getX(),
-            double_enc_x / 2,
-            getLowerConstraint()));
-        bottom_enclosure_->setY(determine_enclosure(
-            use_bottom_min_enclosure,
-            false,
-            bottom_min_enclosure.getY(),
-            double_enc_y / 2,
-            getLowerConstraint()));
-        top_enclosure_->setX(determine_enclosure(
-            use_top_min_enclosure,
-            true,
             top_min_enclosure.getX(),
-            double_enc_x / 2,
-            getUpperConstraint()));
-        top_enclosure_->setY(determine_enclosure(
-            use_top_min_enclosure,
-            false,
+            cut_spacing_x + cut_width,
+            getMaxColumns());
+        // if long array allowed,  leave x alone
+        x_cuts = rule->isLongArray() ? x_cuts : std::min(x_cuts, rule_cuts);
+        int y_cuts = getCuts(height,
+            cut_height,
+            bottom_min_enclosure.getY(),
             top_min_enclosure.getY(),
-            double_enc_y / 2,
-            getUpperConstraint()));
+            cut_spacing_y + cut_height,
+            getMaxRows());
+        y_cuts = std::min(y_cuts, rule_cuts);
+        const int array_width_x = getCutsWidth(x_cuts, cut_width, cut_spacing_x, 0);
+        const int array_width_y = getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0);
 
-        max_cut_area = total_cut_area;
+        const int array_pitch_x = array_width_x + rule_spacing;
+        const int array_pitch_y = array_width_y + rule_spacing;
+
+        const int full_arrays_x = (array_area_x - array_width_x) / array_pitch_x + 1;
+        const int full_arrays_y = (array_area_y - array_width_y) / array_pitch_y + 1;
+
+        // determine how many via row and columns are needed in the last segments
+        // of the array if any
+        int last_rows = 0;
+        int last_cols = 0;
+        const int remainder_x = array_area_x - full_arrays_x * array_pitch_x;
+        if (remainder_x != 0) {
+          last_cols = getCuts(remainder_x,
+              cut_width,
+              0,
+              0,
+              cut_spacing_x + cut_width,
+              getMaxColumns());
+        }
+        const int remainder_y = array_area_y - full_arrays_y * array_pitch_y;
+        if (remainder_y != 0) {
+          last_rows = getCuts(remainder_y,
+              cut_height,
+              0,
+              0,
+              cut_spacing_y + cut_height,
+              getMaxRows());
+        }
+
+        const int total_cut_area = cut.area()
+                                     * (full_arrays_x * x_cuts + last_cols)
+                                     * (full_arrays_y * y_cuts + last_rows);
+        if (max_cut_area < total_cut_area) {
+          // new array contains a greater cut area, so save this
+          array_core_x_ = full_arrays_x;
+          array_core_y_ = full_arrays_y;
+          core_col_ = x_cuts;
+          core_row_ = y_cuts;
+          end_col_ = last_cols;
+          end_row_ = last_rows;
+
+          setCutPitchX(cut_spacing_x + cut_width);
+          setCutPitchY(cut_spacing_y + cut_height);
+
+          array_spacing_x_ = rule_spacing;
+          array_spacing_y_ = rule_spacing;
+
+          const int via_width_x
+            = full_arrays_x * getCutsWidth(x_cuts, cut_width, cut_spacing_x, 0)
+            + (full_arrays_x - 1) * array_spacing_x_
+            + getCutsWidth(last_cols, cut_width, cut_spacing_x, 0)
+            + (last_cols > 0 ? array_spacing_x_ : 0);
+          const int double_enc_x = width - via_width_x;
+          const int via_width_y
+            = full_arrays_y * getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0)
+            + (full_arrays_y - 1) * array_spacing_y_
+            + getCutsWidth(last_rows, cut_height, cut_spacing_y, 0)
+            + (last_rows > 0 ? array_spacing_y_ : 0);
+          const int double_enc_y = height - via_width_y;
+
+          bottom_enclosure_->setX(determine_enclosure(
+              use_bottom_min_enclosure,
+              true,
+              bottom_min_enclosure.getX(),
+              double_enc_x / 2,
+              getLowerConstraint()));
+          bottom_enclosure_->setY(determine_enclosure(
+              use_bottom_min_enclosure,
+              false,
+              bottom_min_enclosure.getY(),
+              double_enc_y / 2,
+              getLowerConstraint()));
+          top_enclosure_->setX(determine_enclosure(
+              use_top_min_enclosure,
+              true,
+              top_min_enclosure.getX(),
+              double_enc_x / 2,
+              getUpperConstraint()));
+          top_enclosure_->setY(determine_enclosure(
+              use_top_min_enclosure,
+              false,
+              top_min_enclosure.getY(),
+              double_enc_y / 2,
+              getUpperConstraint()));
+
+          max_cut_area = total_cut_area;
+        }
       }
     }
 
@@ -2110,6 +2120,18 @@ bool GenerateViaGenerator::isSetupValid(odb::dbTechLayer* lower,
          && isTopValidForWidth(getUpperWidth());
 }
 
+void GenerateViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const
+{
+  ViaGenerator::getMinimumEnclosures(bottom, top, true);
+
+  if (rules_only) {
+    return;
+  }
+
+  bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
+  top.emplace_back(getTopLayerRule(), getTopLayer());
+}
+
 /////////
 
 TechViaGenerator::TechViaGenerator(utl::Logger* logger,
@@ -2121,25 +2143,30 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
     : ViaGenerator(logger, lower_rect, upper_rect),
       via_(via),
       cuts_(0),
+      cut_outline_(),
       bottom_(via_->getBottomLayer()),
       cut_(nullptr),
       top_(via_->getTopLayer()),
       lower_constraint_(lower_constraint),
       upper_constraint_(upper_constraint)
 {
+  cut_outline_.mergeInit();
   for (auto* box : via_->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer == bottom_ || layer == top_ || layer == nullptr) {
       continue;
     }
 
+    odb::Rect cut;
+    box->getBox(cut);
+
     if (cuts_ == 0) {
       cut_ = layer;
 
-      odb::Rect cut;
-      box->getBox(cut);
       setCut(cut);
     }
+
+    cut_outline_.merge(cut);
 
     cuts_++;
   }
@@ -2147,9 +2174,19 @@ TechViaGenerator::TechViaGenerator(utl::Logger* logger,
   determineCutSpacing();
 }
 
+int TechViaGenerator::getTotalCuts() const
+{
+  return ViaGenerator::getTotalCuts() * cuts_;
+}
+
 const std::string TechViaGenerator::getName() const
 {
   return via_->getName();
+}
+
+const odb::Rect& TechViaGenerator::getCut() const
+{
+  return cut_outline_;
 }
 
 int TechViaGenerator::getCutArea() const

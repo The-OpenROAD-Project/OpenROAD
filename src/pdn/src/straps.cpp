@@ -897,7 +897,7 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
   const int min_width = layer.getMinWidth();
   while (getWidth() > min_width) {
     // adjust the width and spacing until something works
-    const int new_width = std::max(layer.snapToManufacturingGrid(getWidth() / 2), min_width);
+    const int new_width = getNextWidth();
     setWidth(new_width);
     setSpacing(layer.getSpacing(new_width, max_length));
 
@@ -1309,6 +1309,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
           strap_count++;
         }
       }
+
+      // ensure areas are inside the core
+      channel.area = channel.area.intersect(grid_core);
+      channel.obs_area = channel.obs_area.intersect(grid_core);
     }
 
     // all followpins must be repaired
@@ -1462,6 +1466,49 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
       }
     }
   }
+}
+
+int RepairChannelStraps::getNextWidth() const
+{
+  const TechLayer layer(getLayer());
+
+  int new_width = layer.snapToManufacturingGrid(getWidth() / 2);
+
+  // if new is smaller than min width use min width
+  const int min_width = layer.getMinWidth();
+  if (new_width <= min_width) {
+    return min_width;
+  }
+
+  // check if width tables apply and use those
+  for (auto* rule : layer.getLayer()->getTechLayerWidthTableRules()) {
+    if (rule->isWrongDirection()) {
+      if (getDirection() == layer.getLayer()->getDirection()) {
+        continue;
+      }
+    } else {
+      if (getDirection() != layer.getLayer()->getDirection()) {
+        continue;
+      }
+    }
+
+    const auto widths = rule->getWidthTable();
+    if (!widths.empty()) {
+      if (new_width > widths.back()) {
+        continue;
+      }
+
+      int use_width = 0;
+      for (int width : widths) {
+        if (width <= new_width) {
+          use_width = width;
+        }
+      }
+      new_width = use_width;
+    }
+  }
+
+  return new_width;
 }
 
 }  // namespace pdn
