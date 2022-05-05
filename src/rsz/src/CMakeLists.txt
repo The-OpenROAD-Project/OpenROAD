@@ -47,6 +47,8 @@ target_sources(rsz
     MakeResizer.cc
     Resizer.cc
     RepairDesign.cc
+    RepairHold.cc
+    RepairSetup.cc
     Rebuffer.cc
     SteinerTree.cc
     EstimateWireParasitics.cc

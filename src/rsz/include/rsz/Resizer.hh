@@ -213,6 +213,9 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
+
+  ////////////////////////////////////////////////////////////////
+
   void repairHold(float slack_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -224,6 +227,9 @@ public:
                   float max_buffer_percent,
                   int max_passes);
   int holdBufferCount() const { return hold_buffer_count_; }
+
+  ////////////////////////////////////////////////////////////////
+
   void repairSetup(float slack_margin,
                    int max_passes);
   // For testing.
@@ -231,6 +237,8 @@ public:
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebuffer1(const Pin *drvr_pin);
+
+  ////////////////////////////////////////////////////////////////
 
   // Area of the design in meter^2.
   double designArea();
@@ -735,8 +743,6 @@ protected:
   const MinMax *max_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
-  LibertyCell *buffer_med_drive_;
-  LibertyCell *buffer_highest_drive_;
 
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_vertices_;
