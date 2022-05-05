@@ -68,9 +68,12 @@ using sta::Delay;
 using sta::StaState;
 using sta::DcalcAnalysisPt;
 
+class BufferedNet;
+class Resizer;
+
+typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 typedef array<Required, RiseFall::index_count> Requireds;
 
-class Resizer;
 enum class BufferedNetType { load, junction, wire, buffer };
 
 // The routing tree is represented a binary tree with the sinks being the leaves

@@ -413,7 +413,7 @@ Resizer::splitLoads(PathRef *drvr_path,
     }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
-  resizeToTargetSlew(buffer_out_pin, false);
+  resizeToTargetSlew(buffer_out_pin, resize_count_);
 }
 
 int

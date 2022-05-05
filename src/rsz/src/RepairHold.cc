@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+#include "RepairDesign.hh"
 
 #include "utl/Logger.h"
 #include "db_sta/dbNetwork.hh"
@@ -428,7 +429,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
   Vertex *buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin))
-    resizeToTargetSlew(buffer_out_pin, false);
+    resizeToTargetSlew(buffer_out_pin, resize_count_);
 }
 
 bool
@@ -450,7 +451,7 @@ Resizer::checkMaxSlewCap(const Pin *drvr_pin)
   if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;
 
-  checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
+  repair_design_->checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
   slack_limit_ratio = slack / limit;
   if (slack_limit_ratio < hold_slack_limit_ratio_max_)
     return false;

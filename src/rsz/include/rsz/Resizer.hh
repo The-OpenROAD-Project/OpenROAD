@@ -127,6 +127,8 @@ class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
 
+class RepairDesign;
+
 class NetHash
 {
 public:
@@ -145,6 +147,7 @@ class Resizer : public StaState
 {
 public:
   Resizer();
+  ~Resizer();
   void init(OpenRoad *openroad,
             Tcl_Interp *interp,
             Logger *logger,
@@ -209,7 +212,7 @@ public:
   // resizerPreamble() required.
   // Return true if resized.
   bool resizeToTargetSlew(const Pin *drvr_pin,
-                          bool update_count);
+                          int &resize_count);
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
@@ -269,20 +272,23 @@ public:
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
                     double cap_margin); // 0.0-1.0
-  int repairDesignBufferCount() const { return repair_design_buffer_count_; }
-  // repairDesign but restricted to clock network and
+  int repairDesignBufferCount() const;
+  // for debugging
+  void repairNet(Net *net,
+                 double max_wire_length, // meters
+                 double slew_margin,
+                 double cap_margin);
+
+  // Repair long wires from clock input pins to clock tree root buffer
+  // because CTS ignores the issue.
   // no max_fanout/max_cap checks.
+  // Use max_wire_length zero for none (meters)
   void repairClkNets(double max_wire_length); // max_wire_length zero for none (meters)
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
   // and TritonCTS is too stupid to balance clock networks with inverters.
   void repairClkInverters();
-  // for debugging
-  void repairNet(Net *net,
-                 double max_wire_length, // meters
-                 double slew_margin,
-                 double cap_margin);
 
   void reportLongWires(int count,
                        int digits);
@@ -368,144 +374,9 @@ protected:
 
   ////////////////////////////////////////////////////////////////
 
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    double slew_margin,
-                    double cap_margin,
-                    int &repair_count,
-                    int &slew_violations,
-                    int &cap_violations,
-                    int &fanout_violations,
-                    int &length_violations);
-  void repairNet(Net *net,
-                 const Pin *drvr_pin,
-                 Vertex *drvr,
-                 double slew_margin,
-                 double cap_margin,
-                 bool check_slew,
-                 bool check_cap,
-                 bool check_fanout,
-                 int max_length, // dbu
-                 bool resize_drvr,
-                 int &repair_count,
-                 int &slew_violations,
-                 int &cap_violations,
-                 int &fanout_violations,
-                 int &length_violations);
-  bool checkLimits(const Pin *drvr_pin,
-                   double slew_margin,
-                   double cap_margin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
-  void checkSlew(const Pin *drvr_pin,
-                 double slew_margin,
-                 // Return values.
-                 Slew &slew,
-                 float &limit,
-                 float &slack,
-                 const Corner *&corner);
-  void checkLoadSlews(const Pin *drvr_pin,
-                      double slew_margin,
-                      // Return values.
-                      Slew &slew,
-                      float &limit,
-                      float &slack,
-                      const Corner *&corner);
-  float bufferInputMaxSlew(LibertyCell *buffer,
-                           const Corner *corner) const;
-  float maxInputSlew(const LibertyPort *input,
-                     const Corner *corner) const;
-  void repairNet(BufferedNetPtr bnet,
-                 Net *net,
-                 const Pin *drvr_pin,
-                 float max_cap,
-                 float max_fanout,
-                 int max_length,
-                 const Corner *corner,
-                 int level,
-                 // Return values.
-                 int &wire_length,
-                 float &pin_cap,
-                 float &fanout,
-                 PinSeq &load_pins,
-                 float &max_load_slew);
-  void repairNetWire(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
-                     int level,
-                     // Return values.
-                     int &wire_length,
-                     float &pin_cap,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
-  void repairNetJunc(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
-                     int level,
-                     // Return values.
-                     int &wire_length,
-                     float &pin_cap,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
-  void repairNetLoad(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
-                     int level,
-                     // Return values.
-                     int &wire_length,
-                     float &pin_cap,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew,
-                         const Corner *corner);
-  double gateSlewDiff(LibertyPort *drvr_port,
-                      double load_cap,
-                      double slew,
-                      const DcalcAnalysisPt *dcalc_ap);
-  void makeRepeater(const char *where,
-                    Point loc,
-                    LibertyCell *buffer_cell,
-                    const Corner *corner,
-                    bool resize,
-                    int level,
-                    int &wire_length,
-                    float &pin_cap,
-                    float &fanout,
-                    PinSeq &load_pins,
-                    float &max_load_slew);
-  void makeRepeater(const char *where,
-                    int x,
-                    int y,
-                    LibertyCell *buffer_cell,
-                    const Corner *corner,
-                    bool resize,
-                    int level,
-                    int &wire_length,
-                    float &pin_cap,
-                    float &fanout,
-                    PinSeq &load_pins,
-                    float &max_load_slew);
   void findLongWires(VertexSeq &drvrs);
   void findLongWiresSteiner(VertexSeq &drvrs);
   int findMaxSteinerDist(Vertex *drvr);
-  LibertyCell *findBufferUnderSlew(float max_slew,
-                                   float load_cap);
   float driveResistance(const Pin *drvr_pin);
   float bufferDriveResistance(const LibertyCell *buffer) const;
   // Max distance from driver to load (in dbu).
@@ -705,10 +576,10 @@ protected:
   bool isRegOutput(Vertex *vertex);
   bool isRegister(Vertex *vertex);
 
-  ////////////////////////////////////////////////////////////////
   Logger *logger() { return logger_; }
 
-  // These are command args values.
+  RepairDesign *repair_design_;
+
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
@@ -726,12 +597,13 @@ protected:
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;
   IncrementalGRoute *incr_groute_;
-
   Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
+  int dbu_;
+
   Rect core_;
   bool core_exists_;
 
@@ -755,7 +627,6 @@ protected:
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;
-  int repair_design_buffer_count_;
   int inserted_buffer_count_;
   // Slack map variables.
   float max_wire_length_;
@@ -780,10 +651,9 @@ protected:
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 100000;
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
-  // Elmore factor for 20-80% slew thresholds.
-  static constexpr float elmore_skew_factor_ = 1.39;
 
   friend class BufferedNet;
+  friend class RepairDesign;
 };
 
 } // namespace
