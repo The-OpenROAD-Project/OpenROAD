@@ -1064,9 +1064,9 @@ void lefin::layer(lefiLayer* layer)
 
     if (layer->hasEnclosureRule(i)) {
       const char* rule_name = layer->enclosureRule(i);
-      if (strcasecmp(rule_name, "ABOVE")) {
+      if (strcasecmp(rule_name, "ABOVE") == 0) {
         rule->setAbove(true);
-      } else if (strcasecmp(rule_name, "BELOW")) {
+      } else if (strcasecmp(rule_name, "BELOW") == 0) {
         rule->setBelow(true);
       }
     }
