@@ -46,6 +46,7 @@ target_sources(rsz
     BufferedNet.cc
     MakeResizer.cc
     Resizer.cc
+    RepairDesign.cc
     Rebuffer.cc
     SteinerTree.cc
     EstimateWireParasitics.cc

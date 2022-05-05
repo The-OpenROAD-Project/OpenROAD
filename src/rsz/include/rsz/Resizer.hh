@@ -228,6 +228,10 @@ public:
                    int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
+  // Rebuffer one net (for testing).
+  // resizerPreamble() required.
+  void rebuffer1(const Pin *drvr_pin);
+
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -250,6 +254,9 @@ public:
   float bufferSelfDelay(LibertyCell *buffer_cell);
   float bufferSelfDelay(LibertyCell *buffer_cell,
                         const RiseFall *rf);
+
+  ////////////////////////////////////////////////////////////////
+
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
@@ -268,6 +275,7 @@ public:
                  double max_wire_length, // meters
                  double slew_margin,
                  double cap_margin);
+
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
@@ -284,10 +292,6 @@ public:
                                const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
-
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebuffer1(const Pin *drvr_pin);
 
   ////////////////////////////////////////////////////////////////
   // Slack API for timing driven placement.
@@ -353,9 +357,9 @@ protected:
                              Slew slews[],
                              int counts[]);
   bool hasMultipleOutputs(const Instance *inst);
-  void findLongWires(VertexSeq &drvrs);
-  void findLongWiresSteiner(VertexSeq &drvrs);
-  int findMaxSteinerDist(Vertex *drvr);
+
+  ////////////////////////////////////////////////////////////////
+
   void repairDesign(double max_wire_length, // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
@@ -489,6 +493,9 @@ protected:
                     float &fanout,
                     PinSeq &load_pins,
                     float &max_load_slew);
+  void findLongWires(VertexSeq &drvrs);
+  void findLongWiresSteiner(VertexSeq &drvrs);
+  int findMaxSteinerDist(Vertex *drvr);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
   float driveResistance(const Pin *drvr_pin);
@@ -539,7 +546,6 @@ protected:
   bool bufferBetweenPorts(Instance *buffer);
   bool hasPort(const Net *net);
   bool hasInputPort(const Net *net);
-  bool hasOutputPort(const Net *net);
   Point location(Instance *inst);
   void setLocation(Instance *inst,
                    Point pt);
