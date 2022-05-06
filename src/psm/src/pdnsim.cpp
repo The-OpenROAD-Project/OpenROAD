@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "utl/Logger.h"
 #include "heatMap.h"
+#include "debug_gui.h"
 
 namespace psm {
 
@@ -59,8 +60,7 @@ PDNSim::PDNSim()
       _bump_pitch_y(0),
       _spice_out_file(""),
       _power_net(""),
-      _node_density(-1),
-      heatmap_(nullptr)
+      _node_density(-1)
 {
 }
 
@@ -75,7 +75,7 @@ PDNSim::~PDNSim() {
   _spice_out_file = "";
   _bump_pitch_x = 0;
   _bump_pitch_y = 0;
-  _node_density = -1;
+  _node_density = -1.0;
 }
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
@@ -86,11 +86,18 @@ void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta) {
   heatmap_->registerHeatMap();
 }
 
+void PDNSim::setDebugGui()
+{
+  _debug_gui = std::make_unique<DebugGui>(this);
+}
+
 void PDNSim::set_power_net(std::string net) { _power_net = net; }
 
 void PDNSim::set_bump_pitch_x(float bump_pitch) { _bump_pitch_x = bump_pitch; }
 
 void PDNSim::set_bump_pitch_y(float bump_pitch) { _bump_pitch_y = bump_pitch; }
+
+void PDNSim::set_node_density(float node_density) { _node_density = node_density; }
 
 void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage) {
   _net_voltage_map.insert(std::pair<std::string, float>(net, voltage));
@@ -128,7 +135,7 @@ void PDNSim::write_pg_spice() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -149,7 +156,7 @@ int PDNSim::analyze_power_grid() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
 
   if (!irsolve_h->Build()) {
     delete irsolve_h;
@@ -172,7 +179,7 @@ int PDNSim::analyze_power_grid() {
     _logger->report("######################################");
   }
 
-  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drop;
+  IRDropByLayer ir_drop;
   std::vector<Node*> nodes = gmat_obj->GetAllNodes();
   int vsize;
   vsize = nodes.size();
@@ -192,6 +199,9 @@ int PDNSim::analyze_power_grid() {
   _node_density = irsolve_h->GetMinimumResolution();
 
   heatmap_->update();
+  if (_debug_gui) {
+    _debug_gui->setBumps(irsolve_h->getBumps(), irsolve_h->getTopLayer());
+  }
 
   delete irsolve_h;
   return 1;
@@ -201,7 +211,7 @@ int PDNSim::check_connectivity() {
   IRSolver* irsolve_h =
       new IRSolver(_db, _sta, _logger, _vsrc_loc, _power_net, _out_file,
                    _em_out_file, _spice_out_file, _enable_em, _bump_pitch_x,
-                   _bump_pitch_y, _net_voltage_map);
+                   _bump_pitch_y, _node_density, _net_voltage_map);
   if (!irsolve_h->BuildConnection()) {
     delete irsolve_h;
     return 0;
@@ -211,9 +221,19 @@ int PDNSim::check_connectivity() {
   return val;
 }
 
-void PDNSim::getIRDropMap(
-    std::map<odb::dbTechLayer*, std::map<odb::Point, double>>& ir_drop) {
+void PDNSim::getIRDropMap(IRDropByLayer& ir_drop) {
   ir_drop = _ir_drop;
+}
+
+void PDNSim::getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop)
+{
+  auto it = _ir_drop.find(layer);
+  if (it == _ir_drop.end()) {
+    ir_drop.clear();
+    return;
+  }
+
+  ir_drop = it->second;
 }
 
 int PDNSim::getMinimumResolution() {

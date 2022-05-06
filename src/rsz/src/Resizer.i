@@ -412,6 +412,13 @@ repair_design_cmd(double max_length,
   resizer->repairDesign(max_length, slew_margin, cap_margin);
 }
 
+int
+repair_design_buffer_count()
+{
+  Resizer *resizer = getResizer();
+  return resizer->repairDesignBufferCount();
+}
+
 void
 repair_clk_nets_cmd(double max_length)
 {
@@ -456,24 +463,36 @@ repair_setup_pin(Pin *end_pin)
   resizer->repairSetup(end_pin);
 }
 
+// requires rsz::resizer_preamble
 void
 repair_hold_pin(Pin *end_pin,
-                LibertyCell *buffer_cell,
-                bool allow_setup_violations)
+                bool allow_setup_violations,
+                float max_buffer_percent,
+                int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations, 0.2);
+  resizer->repairHold(end_pin, 0.0, allow_setup_violations,
+                      max_buffer_percent, max_passes);
 }
 
 void
 repair_hold(float slack_margin,
             bool allow_setup_violations,
-            float max_buffer_percent)
+            float max_buffer_percent,
+            int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(slack_margin, allow_setup_violations, max_buffer_percent);
+  resizer->repairHold(slack_margin, allow_setup_violations,
+                      max_buffer_percent, max_passes);
+}
+
+int
+hold_buffer_count()
+{
+  Resizer *resizer = getResizer();
+  return resizer->holdBufferCount();
 }
 
 ////////////////////////////////////////////////////////////////

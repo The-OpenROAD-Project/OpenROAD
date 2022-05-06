@@ -211,24 +211,29 @@ proc set_voltage_domain {args} {
       }
     }
   }
+  
+  set switched_power "NULL"
+  if {[info exists keys(-switched_power)]} {
+    set switched_power_net_name $keys(-switched_power)
+    set switched_power [[ord::get_db_block] findNet $switched_power_net_name]
+    if {$switched_power == "NULL"} {
+      set switched_power [odb::dbNet_create [ord::get_db_block] $switched_power_net_name]
+      $switched_power setSpecial
+      $switched_power setSigType POWER
+    } else {
+      if {[$switched_power getSigType] != "POWER"} {
+        utl::error PDN 199 "Net $switched_power_net_name already exists in the design, but is of signal type [$switched_power getSigType]."
+      }
+    }
+  }
 
   if {$region == "NULL"} {
     if {[info exists keys(-name)] && [pdn::modify_voltage_domain_name $keys(-name)] != "Core"} {
       utl::warn PDN 1042 "Core voltage domain will be named \"Core\"."
     }
-    pdn::set_core_domain $pwr $gnd $secondary
+    pdn::set_core_domain $pwr $switched_power $gnd $secondary
   } else {
-    pdn::make_region_domain $name $pwr $gnd $secondary $region
-  }
-
-  if {[info exists keys(-switched_power)]} {
-    set switched_power_net_name $keys(-switched_power)
-    set db_net [[ord::get_db_block] findNet $switched_power_net_name]
-    if {$db_net == "NULL"} {
-      set db_net [odb::dbNet_create [ord::get_db_block] $switched_power_net_name]
-      $db_net setSpecial
-    }
-    pdn::set_domain_switched_power $name $db_net
+    pdn::make_region_domain $name $pwr $switched_power $gnd $secondary $region
   }
 }
 
@@ -245,8 +250,9 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-pins <list_of_pin_layers>] \
                                         [-starts_with (POWER|GROUND)] \
                                         [-obstructions <list_of_layers>] \
-				        [-power_control <signal_name>] \
-				        [-power_control_network (STAR|DAISY)]}
+                                        [-power_switch_cell <name>] \
+                                        [-power_control <signal_name>] \
+                                        [-power_control_network (STAR|DAISY)]}
 
 proc define_pdn_grid {args} {
   set is_macro 0
@@ -284,25 +290,48 @@ proc define_power_switch_cell {args} {
 
   if {![info exists keys(-name)]} {
     utl::error PDN 1183 "The -name argument is required."
+  } else {
+    set master [[ord::get_db] findMaster $keys(-name)]
+    if { $master == "NULL" } {
+      utl::error PDN 1046 "Unable to find power switch cell master: $keys(-name)"
+    }
   }
 
   if {![info exists keys(-control)]} {
     utl::error PDN 1184 "The -control argument is required."
+  } else {
+    set control [pdn::get_mterm $master $keys(-control)]
+  }
+
+  set acknowledge "NULL"
+  if {[info exists keys(-acknowledge)]} {
+    set acknowledge [pdn::get_mterm $master $keys(-acknowledge)]
   }
 
   if {![info exists keys(-power_switchable)]} {
     utl::error PDN 1186 "The -power_switchable argument is required."
+  } else {
+    set power_switchable [pdn::get_mterm $master $keys(-power_switchable)]
   }
 
   if {![info exists keys(-power)]} {
     utl::error PDN 1187 "The -power argument is required."
+  } else {
+    set power [pdn::get_mterm $master $keys(-power)]
   }
 
   if {![info exists keys(-ground)]} {
     utl::error PDN 1188 "The -ground argument is required."
+  } else {
+    set ground [pdn::get_mterm $master $keys(-ground)]
   }
-
-  pdngen::define_power_switch_cell {*}[array get keys]
+  
+  pdn::make_switched_power_cell $master \
+                                $control \
+                                $acknowledge \
+                                $power_switchable \
+                                $power \
+                                $ground
 }
 
 sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
@@ -701,7 +730,7 @@ namespace eval pdn {
 
   proc define_pdn_grid { args } {
     sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -pins -starts_with -obstructions} \
+      keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell -power_control -power_control_network} \
       flags {}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
@@ -737,9 +766,39 @@ namespace eval pdn {
     if {[info exists keys(-obstructions)]} {
       set obstructions [get_obstructions $keys(-obstructions)]
     }
+    
+    set power_cell "NULL"
+    set power_control "NULL"
+    set power_control_network "STAR"
+    if {[info exists keys(-power_switch_cell)]} {
+      set power_cell [pdn::find_switched_power_cell $keys(-power_switch_cell)]
+      if { $power_cell == "NULL" } {
+        utl::error PDN 1048 "Switched power cell $keys(-power_switch_cell) is not defined."
+      }
+      
+      if {![info exists keys(-power_control)]} {
+        utl::error PDN 1045 "-power_control must be specified with -power_switch_cell"
+      } else {
+        set power_control [[ord::get_db_block] findNet $keys(-power_control)]
+        if { $power_control == "NULL" } {
+          utl::error PDN 1049 "Unable to find power control net: $keys(-power_control)"
+        }
+      }
+      
+      if {[info exists keys(-power_control_network)]} {
+        set power_control_network $keys(-power_control_network)
+      }
+    }
 
     foreach domain $domains {
-      pdn::make_core_grid $domain $keys(-name) $start_with_power $pin_layers $obstructions
+      pdn::make_core_grid $domain \
+                          $keys(-name) \
+                          $start_with_power \
+                          $pin_layers \
+                          $obstructions \
+                          $power_cell \
+                          $power_control \
+                          $power_control_network
     }
   }
 
@@ -976,6 +1035,14 @@ namespace eval pdn {
     } else {
       utl::error PDN 1035 "Unknown -starts_with option: $value"
     }
+  }
+  
+  proc get_mterm { master term } {
+    set mterm [$master findMTerm $term]
+    if { $mterm == "NULL" } {
+      utl::error PDN 1047 "Unable to find $term on $master"
+    }
+    return $mterm
   }
 
   proc get_orientations {orientations} {

@@ -39,9 +39,9 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-utl::metric "ord_version" [ord::openroad_git_describe]
+utl::metric "IFP::ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
-utl::metric "instance_count" [sta::network_instance_count]
+utl::metric "IFP::instance_count" [sta::network_instance_count]
 
 initialize_floorplan -site $site \
   -die_area $die_area \
@@ -118,6 +118,11 @@ report_tns -digits 3
 # Check slew repair
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
+utl::metric "RSZ::repair_design_buffer_count" [rsz::repair_design_buffer_count]
+utl::metric "RSZ::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
+utl::metric "RSZ::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
+utl::metric "RSZ::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100]
+
 ################################################################
 # Clock Tree Synthesis
 
@@ -161,14 +166,20 @@ repair_timing
 report_worst_slack -min -digits 3
 report_worst_slack -max -digits 3
 report_tns -digits 3
+report_check_types -max_slew -max_capacitance -max_fanout -violators -digits 3
+
+utl::metric "RSZ::worst_slack_min" [sta::worst_slack -min]
+utl::metric "RSZ::worst_slack_max" [sta::worst_slack -max]
+utl::metric "RSZ::tns_max" [sta::total_negative_slack -max]
+utl::metric "RSZ::hold_buffer_count" [rsz::hold_buffer_count]
 
 ################################################################
 # Detailed Placement (final)
 
 detailed_placement
 # Capture utilization before fillers make it 100%
-utl::metric "utilization" [format %.1f [expr [rsz::utilization] * 100]]
-utl::metric "design_area" [sta::format_area [rsz::design_area] 0]
+utl::metric "DPL::utilization" [format %.1f [expr [rsz::utilization] * 100]]
+utl::metric "DPL::design_area" [sta::format_area [rsz::design_area] 0]
 filler_placement $filler_cells
 check_placement -verbose
 
@@ -183,7 +194,7 @@ global_route -guide_file $route_guide \
 set antenna_report [make_result_file ${design}_${platform}_ant.log]
 set antenna_errors [check_antennas -report_violating_nets -report_file $antenna_report]
 
-utl::metric "ANT::errors" $antenna_errors
+utl::metric "GRT::ANT::errors" $antenna_errors
 
 if { $antenna_errors > 0 } {
   utl::error FLW 1 "found $antenna_errors antenna violations"
@@ -239,16 +250,16 @@ report_power -corner $power_corner
 report_floating_nets -verbose
 report_design_area
 
-utl::metric "worst_slack_min" [sta::worst_slack -min]
-utl::metric "worst_slack_max" [sta::worst_slack -max]
-utl::metric "tns_max" [sta::total_negative_slack -max]
-utl::metric "clock_skew" [sta::worst_clock_skew -setup]
+utl::metric "DRT::worst_slack_min" [sta::worst_slack -min]
+utl::metric "DRT::worst_slack_max" [sta::worst_slack -max]
+utl::metric "DRT::tns_max" [sta::total_negative_slack -max]
+utl::metric "DRT::clock_skew" [sta::worst_clock_skew -setup]
 # slew/cap/fanout slack/limit
-utl::metric "max_slew_slack" [sta::max_slew_check_slack_limit]
-utl::metric "max_fanout_slack" [sta::max_fanout_check_slack_limit]
-utl::metric "max_capacitance_slack" [sta::max_capacitance_check_slack_limit]
+utl::metric "DRT::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
+utl::metric "DRT::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
+utl::metric "DRT::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100];
 # report clock period as a metric for updating limits
-utl::metric "clock_period" [get_property [lindex [all_clocks] 0] period]
+utl::metric "DRT::clock_period" [get_property [lindex [all_clocks] 0] period]
 
 # not really useful without pad locations
 #set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage

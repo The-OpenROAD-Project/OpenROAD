@@ -37,6 +37,7 @@
 #include "techlayer.h"
 #include "connect.h"
 #include "domain.h"
+#include "power_cells.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "rings.h"
@@ -133,6 +134,7 @@ void Grid::addConnect(std::unique_ptr<Connect> connect)
 void Grid::makeShapes(const ShapeTreeMap& global_shapes,
                       const ShapeTreeMap& obstructions)
 {
+  ShapeTreeMap all_shapes = global_shapes;
   auto* logger = getLogger();
   logger->info(utl::PDN, 1, "Inserting grid: {}", getLongName());
 
@@ -142,7 +144,7 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
   // make shapes
   for (auto* component : getGridComponents()) {
     // make initial shapes
-    component->makeShapes(global_shapes);
+    component->makeShapes(all_shapes);
     // cut shapes to avoid obstructions
     component->cutShapes(local_obstructions);
     // add obstructions to they are accounted for in future shapes
@@ -150,17 +152,25 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
   }
 
   // insert power switches
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->build();
+    for (const auto& [layer, cell_shapes] : switched_power_cell_->getShapes()) {
+      auto& layer_shapes = all_shapes[layer];
+      layer_shapes.insert(cell_shapes.begin(), cell_shapes.end());
+    }
+  }
+
   // make vias
-  makeVias(global_shapes, obstructions);
+  makeVias(all_shapes, obstructions);
 
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
-      this, global_shapes, local_obstructions, allow_repair_channels_);
+      this, all_shapes, local_obstructions, allow_repair_channels_);
 
   // repair vias that are only partially overlapping straps
-  if (repairVias(global_shapes, local_obstructions)) {
+  if (repairVias(all_shapes, local_obstructions)) {
     // rebuild vias since shapes changed
-    makeVias(global_shapes, obstructions);
+    makeVias(all_shapes, obstructions);
   }
 }
 
@@ -180,6 +190,7 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     TechLayer techlayer(layer);
     techlayer.populateGrid(block);
     const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const int min_width = techlayer.getMinWidth();
     const int min_spacing = techlayer.getSpacing(0);
 
     for (const auto& [box, shape] : itr->second) {
@@ -196,7 +207,9 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
 
       if (is_horizontal) {
         delta_x -= min_spacing;
+        delta_y += min_width;
       } else {
+        delta_x += min_width;
         delta_y -= min_spacing;
       }
 
@@ -433,6 +446,9 @@ void Grid::report() const
     }
     logger->info(utl::PDN, 26, "Routing obstruction layers: {}", layers);
   }
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->report();
+  }
 }
 
 void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
@@ -518,6 +534,13 @@ void Grid::resetShapes()
 
   for (const auto& connect : connect_) {
     connect->clearShapes();
+  }
+}
+
+void Grid::ripup()
+{
+  if (switched_power_cell_ != nullptr) {
+    switched_power_cell_->ripup();
   }
 }
 
@@ -658,30 +681,6 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              "Via",
              2,
              "Removing {} vias due to obstructions.",
-             remove_vias.size());
-  remove_set_of_vias(remove_vias);
-
-  // remove vias are only partially overlapping
-  for (const auto& via : vias) {
-    const auto& via_area = via->getArea();
-    const auto& lower = via->getLowerShape()->getRect();
-    const auto& upper = via->getUpperShape()->getRect();
-    if (via_area.xMin() == lower.xMin() && via_area.xMax() == lower.xMax() &&
-        via_area.yMin() == upper.yMin() && via_area.yMax() == upper.yMax()) {
-      continue;
-    } else if (via_area.yMin() == lower.yMin() && via_area.yMax() == lower.yMax() &&
-               via_area.xMin() == upper.xMin() && via_area.xMax() == upper.xMax()) {
-      continue;
-    } else if (lower.contains(upper) || upper.contains(lower)) {
-      continue;
-    }
-    remove_vias.insert(via);
-  }
-  debugPrint(getLogger(),
-             utl::PDN,
-             "Via",
-             2,
-             "Removing {} vias due to partial overlap.",
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
@@ -900,6 +899,12 @@ std::set<odb::dbTechLayer*> Grid::connectableLayers(
     }
   }
   return layers;
+}
+
+void Grid::setSwitchedPower(GridSwitchedPower* cell)
+{
+  switched_power_cell_ = std::unique_ptr<GridSwitchedPower>(cell);
+  cell->setGrid(this);
 }
 
 ///////////////
@@ -1150,8 +1155,9 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           odb::Rect box_rect;
           box->getBox(box_rect);
           transform.apply(box_rect);
-          pins.push_back(
-              std::make_shared<Shape>(box->getTechLayer(), net, box_rect));
+          auto shape = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          shape->setShapeType(Shape::FIXED);
+          pins.push_back(shape);
         }
       }
     }
@@ -1170,7 +1176,7 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
 {
   // add instance pins
   ShapeTreeMap inst_shapes = shapes;
-  for (auto* net : getNets()) {
+  for (auto* net : getNets(false)) {
     for (const auto& [layer, shapes_on_layer] : getInstancePins(inst_)) {
       auto& layer_shapes = inst_shapes[layer];
       for (const auto& [box, shape] : shapes_on_layer) {
@@ -1182,6 +1188,25 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
   }
 
   Grid::getIntersections(vias, inst_shapes);
+}
+
+std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
+{
+  auto nets = Grid::getNets(starts_with_power);
+
+  std::set<odb::dbNet*> connected_nets;
+  for (auto* iterm : inst_->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (net != nullptr) {
+      connected_nets.insert(net);
+    }
+  }
+
+  nets.erase(std::remove_if(nets.begin(), nets.end(), [&connected_nets](odb::dbNet* net) {
+    return connected_nets.find(net) == connected_nets.end();
+  }), nets.end());
+
+  return nets;
 }
 
 ////////

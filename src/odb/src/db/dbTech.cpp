@@ -432,15 +432,9 @@ _dbTech::~_dbTech()
   delete _via_generate_rule_tbl;
   delete _prop_tbl;
   delete _name_cache;
-  /******************************************* dimitri_fix
-  dbTech.cpp:363:12: warning: deleting object of polymorphic class type
-  ‘dbTechLayerItr’ which has non-virtual destructor might cause undefined
-  behavior [-Wdelete-non-virtual-dtor] delete _layer_itr;
-
-      delete _layer_itr;
-      delete _box_itr;
-      delete _prop_itr;
-  */
+  delete _layer_itr;
+  delete _box_itr;
+  delete _prop_itr;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
