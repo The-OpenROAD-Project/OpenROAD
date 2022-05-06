@@ -38,7 +38,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStringList>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 
 #include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
@@ -128,7 +128,7 @@ class ScriptWidget : public QDockWidget
                             int argc,
                             const char **argv);
 
-  QTextEdit* output_;
+  QPlainTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;

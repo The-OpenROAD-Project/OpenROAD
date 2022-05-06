@@ -52,7 +52,7 @@ namespace gui {
 
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
-      output_(new QTextEdit(this)),
+      output_(new QPlainTextEdit(this)),
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
@@ -268,9 +268,6 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
     output_text.chop(1);
   }
 
-  // set new text color
-  output_->setTextColor(color);
-
   QStringList output;
   for (QString& text_line : output_text.split('\n')) {
     // check for line length limits
@@ -281,8 +278,13 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
 
     output.append(text_line);
   }
+
   // output new text
-  output_->append(output.join("\n"));
+  // set new text color
+  QString html = "<p style=\"color:" + color.name() + ";white-space: pre;\">";
+  html += output.join("<br>");
+  html += "</p>";
+  output_->appendHtml(html);
 }
 
 void ScriptWidget::goForwardHistory()
