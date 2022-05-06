@@ -92,15 +92,6 @@ public:
 typedef Vector<SteinerPt> SteinerPtSeq;
 typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 
-// Returns nullptr if net has less than 2 pins or any pin is not placed.
-SteinerTree *
-makeSteinerTree(const Pin *drvr_pin,
-                bool find_left_rights,
-                int max_pin_count,
-                SteinerTreeBuilder *stt_builder,
-                dbNetwork *network,
-                Logger *logger);
-
 // Wrapper for stt::Tree
 //
 // Flute
@@ -110,7 +101,6 @@ makeSteinerTree(const Pin *drvr_pin,
 // pd/pdrev
 //   preserves pin order
 //   removes duplicate locations
-
 class SteinerTree
 {
 public:
@@ -172,12 +162,7 @@ protected:
   SteinerPtSeq left_;
   SteinerPtSeq right_;
 
-  friend SteinerTree *makeSteinerTree(const Pin *drvr_pin,
-                                      bool find_left_rights,
-                                      int max_pin_count,
-                                      SteinerTreeBuilder *stt_builder,
-                                      dbNetwork *network,
-                                      Logger *logger);
+  friend class Resizer;
 };
 
 } // namespace

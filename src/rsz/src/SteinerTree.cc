@@ -36,14 +36,12 @@
 #include "SteinerTree.hh"
 
 #include <string>
+#include <memory>
 
 #include "rsz/Resizer.hh"
 #include "db_sta/dbNetwork.hh"
 #include "utl/Logger.h"
-// Move logger macro out of the way.
-#undef debugPrint
 #include "gui/gui.h"
-#include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
 
@@ -51,18 +49,10 @@ namespace rsz {
 
 using std::abs;
 using std::string;
-using std::vector;
 
 using utl::RSZ;
 
-using odb::dbShape;
-using odb::dbPlacementStatus;
-
-using sta::Debug;
-using sta::Report;
-using sta::stringPrint;
 using sta::stringPrintTmp;
-using sta::PinPathNameLess;
 using sta::NetConnectedPinIterator;
 
 static void
@@ -73,38 +63,34 @@ connectedPins(const Net *net,
 
 SteinerPt SteinerTree::null_pt = -1;
 
+// Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
-makeSteinerTree(const Pin *drvr_pin,
-                bool find_left_rights,
-                int max_pin_count,
-                SteinerTreeBuilder *stt_builder,
-                dbNetwork *network,
-                Logger *logger)
+Resizer::makeSteinerTree(const Pin *drvr_pin,
+                         bool find_left_rights)
 {
-  Network *sdc_network = network->sdcNetwork();
-  Debug *debug = network->debug();
-  Net *net = network->isTopLevelPort(drvr_pin)
-    ? network->net(network->term(drvr_pin))
-    : network->net(drvr_pin);
-  debugPrint(debug, "steiner", 1, "Net %s",
+  Network *sdc_network = network_->sdcNetwork();
+  Net *net = network_->isTopLevelPort(drvr_pin)
+    ? network_->net(network_->term(drvr_pin))
+    : network_->net(drvr_pin);
+  debugPrint(logger_, RSZ, "steiner", 1, "Net %s",
              sdc_network->pathName(net));
   SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
-  connectedPins(net, network, pins);
+  connectedPins(net, network_, pins);
   // Sort pins by location because connectedPins order is not deterministic.
   sort(pins, [=](const Pin *pin1, const Pin *pin2) {
-      Point loc1 = network->location(pin1);
-      Point loc2 = network->location(pin2);
+      Point loc1 = db_network_->location(pin1);
+      Point loc2 = db_network_->location(pin2);
       return loc1.getX() < loc2.getX()
         || (loc1.getX() == loc2.getX()
             && loc1.getY() < loc2.getY());
   });
   int pin_count = pins.size();
   bool is_placed = true;
-  if (pin_count > max_pin_count)
-    logger->warn(RSZ, 69, "skipping net {} with {} pins.",
-                 sdc_network->pathName(net),
-                 pin_count);
+  if (pin_count > max_steiner_pin_count_)
+    logger_->warn(RSZ, 69, "skipping net {} with {} pins.",
+                  sdc_network->pathName(net),
+                  pin_count);
   else if (pin_count >= 2) {
     vector<int> x, y;
     int drvr_idx = 0;
@@ -112,13 +98,13 @@ makeSteinerTree(const Pin *drvr_pin,
       Pin *pin = pins[i];
       if (pin == drvr_pin)
         drvr_idx = i;
-      Point loc = network->location(pin);
+      Point loc = db_network_->location(pin);
       x.push_back(loc.x());
       y.push_back(loc.y());
-      debugPrint(debug, "steiner", 3, " %s (%d %d)",
+      debugPrint(logger_, RSZ, "steiner", 3, " {} ({} {})",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
-      is_placed &= network->isPlaced(pin);
+      is_placed &= db_network_->isPlaced(pin);
 
       // Flute may reorder the input points, so it takes some unravelling
       // to find the mapping back to the original pins. The complication is
@@ -126,16 +112,12 @@ makeSteinerTree(const Pin *drvr_pin,
       tree->locAddPin(loc, pin);
     }
     if (is_placed) {
-      stt::Tree ftree = stt_builder->makeSteinerTree(network->staToDb(net),
-                                                     x, y, drvr_idx);
+      stt::Tree ftree = stt_builder_->makeSteinerTree(db_network_->staToDb(net),
+                                                      x, y, drvr_idx);
       
-      if (debug->check("steiner", 3))
-        ftree.printTree(logger);
-      tree->setTree(ftree, network);
+      tree->setTree(ftree, db_network_);
       if (find_left_rights)
-        tree->findLeftRights(network, logger);
-      if (debug->check("steiner", 3))
-        tree->report(logger, network);
+        tree->findLeftRights(network_, logger_);
       return tree;
     }
   }
@@ -291,7 +273,6 @@ void
 SteinerTree::findLeftRights(const Network *network,
                             Logger *logger)
 {
-  Debug *debug = network->debug();
   int branch_count = branchCount();
   left_.resize(branch_count, null_pt);
   right_.resize(branch_count, null_pt);
@@ -317,7 +298,7 @@ SteinerTree::findLeftRights(const Network *network,
         adj3[j] = i;
     }
   }
-  if (debug->check("steiner", 3)) {
+  if (logger->debugCheck(RSZ, "steiner", 3)) {
     printf("adjacent\n");
     for (int i = 0; i < branch_count; i++) {
       printf("%d:", i);
@@ -415,8 +396,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false, max_steiner_pin_count_,
-                             stt_builder_, db_network_, logger_);
+      tree = makeSteinerTree(drvr, false);
     steiner_renderer_->highlight(tree);
   }
 }

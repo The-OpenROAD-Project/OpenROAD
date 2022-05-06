@@ -33,8 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "rsz/Resizer.hh"
 #include "BufferedNet.hh"
+#include "rsz/Resizer.hh"
 #include "SteinerTree.hh"
 
 #include <algorithm>
@@ -57,7 +57,6 @@ using std::make_shared;
 
 using sta::INF;
 
-using utl::Logger;
 using utl::RSZ;
 
 ////////////////////////////////////////////////////////////////
@@ -67,8 +66,7 @@ BufferedNetPtr
 Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
 {
   BufferedNetPtr bnet = nullptr;
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true, max_steiner_pin_count_,
-                                      stt_builder_, db_network_, logger_);
+  SteinerTree *tree = makeSteinerTree(drvr_pin, true);
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(network_);
     if (drvr_pt != SteinerTree::null_pt)
@@ -78,7 +76,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
   return bnet;
 }
 
-BufferedNetPtr 
+BufferedNetPtr
 Resizer::makeBufferedNet(SteinerTree *tree,
                          SteinerPt from,
                          SteinerPt to,
@@ -92,8 +90,7 @@ Resizer::makeBufferedNet(SteinerTree *tree,
         if (network_->isLoad(pin)) {
           auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
                                                     tree->location(to), pin);
-          //BufferedNetPtr load_bnet = new BufferedNet(BufferedNetType::load,
-          //                                       tree->location(to), pin);
+
           debugPrint(logger_, RSZ, "make_buffered_net", 4, "{:{}s}{}",
                      "", level, load_bnet->to_string(this));
           if (bnet)
