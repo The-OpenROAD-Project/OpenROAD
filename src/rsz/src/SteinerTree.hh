@@ -91,8 +91,6 @@ public:
   }
 };
 
-typedef vector<SteinerPt> SteinerPtSeq;
-typedef vector<vector<SteinerPt>> SteinerPtAdjacenies;
 typedef unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 
 // Wrapper for stt::Tree
@@ -118,6 +116,7 @@ public:
               Point &pt2,
               int &steiner_pt2,
               int &wire_length);
+  stt::Branch &branch(int index) { return tree_.branch[index]; }
   void report(Logger *logger,
               const Network *network);
   // Return the steiner pt connected to the driver pin.
@@ -128,10 +127,6 @@ public:
                    const Network *network);
   const PinSeq *pins(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
-  SteinerPt left(SteinerPt pt);
-  SteinerPt right(SteinerPt pt);
-  void findLeftRights(const Network *network,
-                      Logger *logger);
   void setTree(stt::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
@@ -140,10 +135,6 @@ public:
   static SteinerPt null_pt;
 
 protected:
-  void findLeftRights(SteinerPt from,
-                      SteinerPt to,
-                      SteinerPtAdjacenies &adjacenies,
-                      Logger *logger);
   void locAddPin(Point &loc,
                  Pin *pin);
 
@@ -153,8 +144,6 @@ protected:
   PinSeq pins_;
   // location -> pins
   LocPinMap loc_pin_map_;
-  SteinerPtSeq left_;
-  SteinerPtSeq right_;
 
   friend class Resizer;
 };

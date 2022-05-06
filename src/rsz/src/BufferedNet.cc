@@ -70,8 +70,18 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(network_);
     if (drvr_pt != SteinerTree::null_pt) {
-      tree->findLeftRights(network_, logger_);
-      bnet = makeBufferedNet(tree, drvr_pt, tree->left(drvr_pt), 0);
+      int branch_count = tree->branchCount();
+      SteinerPtAdjacenies adjacenies(branch_count);
+      for (int i = 0; i < branch_count; i++) {
+        stt::Branch &branch_pt = tree->branch(i);
+        SteinerPt j = branch_pt.n;
+        if (j != i) {
+          adjacenies[i].push_back(j);
+          adjacenies[j].push_back(i);
+        }
+      }
+      bnet = makeBufferedNet(tree, drvr_pt, adjacenies[drvr_pt][0],
+                             adjacenies, 0);
     }
     delete tree;
   }
@@ -82,6 +92,7 @@ BufferedNetPtr
 Resizer::makeBufferedNet(SteinerTree *tree,
                          SteinerPt from,
                          SteinerPt to,
+                         SteinerPtAdjacenies &adjacenies,
                          int level)
 {
   if (to == SteinerTree::null_pt)
@@ -112,21 +123,23 @@ Resizer::makeBufferedNet(SteinerTree *tree,
     }
     else {
       // Steiner pt.
-      BufferedNetPtr bnet1 = makeBufferedNet(tree, to, tree->left(to), level + 1);
-      BufferedNetPtr bnet2 = makeBufferedNet(tree, to, tree->right(to), level + 1);
-      BufferedNetPtr junc = nullptr;
-      if (bnet1 && bnet2)
-        junc = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        tree->location(to),
-                                        bnet1, bnet2);
-      else if (bnet1)
-        junc = bnet1;
-      else if (bnet2)
-        junc = bnet2;
-      if (junc && tree->location(to) != tree->location(from))
-        junc = make_shared<BufferedNet>(BufferedNetType::wire,
-                                        tree->location(from), junc);
-      return junc;
+      BufferedNetPtr bnet = nullptr;
+      for (int adj : adjacenies[to]) {
+        if (adj != from) {
+          BufferedNetPtr bnet1 = makeBufferedNet(tree, to, adj,
+                                                 adjacenies, level + 1);
+          if (bnet)
+            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                            tree->location(to),
+                                            bnet, bnet1);
+          else
+            bnet = bnet1;
+        }
+      }
+      if (bnet && tree->location(to) != tree->location(from))
+        bnet = make_shared<BufferedNet>(BufferedNetType::wire,
+                                        tree->location(from), bnet);
+      return bnet;
     }
   }
 }

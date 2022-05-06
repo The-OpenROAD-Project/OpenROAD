@@ -126,6 +126,7 @@ enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
+typedef vector<vector<SteinerPt>> SteinerPtAdjacenies;
 
 class RepairDesign;
 
@@ -554,11 +555,8 @@ protected:
   BufferedNetPtr makeBufferedNet(SteinerTree *tree,
                                  SteinerPt prev,
                                  SteinerPt k,
+                                 SteinerPtAdjacenies &adjacenies,
                                  int level);
-  BufferedNetPtr makeBufferedNetWire(SteinerTree *tree,
-                                     SteinerPt from,
-                                     SteinerPt to,
-                                     int level);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree *makeSteinerTree(const Pin *drvr_pin);
 

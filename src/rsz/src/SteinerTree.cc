@@ -206,15 +206,13 @@ SteinerTree::report(Logger *logger,
     int j = pt1.n;
     stt::Branch &pt2 = tree_.branch[j];
     int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
-    logger->report(" {}{} ({} {}) - {} wire_length = {} left = {} right = {}",
+    logger->report(" {}{} ({} {}) - {} wire_length = {}",
                    name(i, network),
                    i == drvr_steiner_pt_ ? " drvr" : "",
                    pt1.x,
                    pt1.y,
                    name(j, network),
-                   wire_length,
-                   left_.size() ? name(this->left(i), network) : "",
-                   right_.size() ? name(this->right(i), network) : "");
+                   wire_length);
   }
 }
 
@@ -264,76 +262,6 @@ SteinerTree::location(SteinerPt pt) const
 {
   stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
-}
-
-
-void
-SteinerTree::findLeftRights(const Network *network,
-                            Logger *logger)
-{
-  int branch_count = branchCount();
-  SteinerPtAdjacenies adjacenies(branch_count);
-  for (int i = 0; i < branch_count; i++) {
-    stt::Branch &branch_pt = tree_.branch[i];
-    SteinerPt j = branch_pt.n;
-    if (j != i) {
-      adjacenies[i].push_back(j);
-      adjacenies[j].push_back(i);
-    }
-  }
-  if (logger->debugCheck(RSZ, "steiner", 3)) {
-    printf("adjacenies\n");
-    for (int i = 0; i < branch_count; i++) {
-      printf("%d:", i);
-      for (int adj : adjacenies[i])
-        printf(" %d", adj);
-      printf("\n");
-    }
-  }
-  left_.resize(branch_count, null_pt);
-  right_.resize(branch_count, null_pt);
-  if (drvr_steiner_pt_ != null_pt) {
-    SteinerPt root = drvrPt(network);
-    SteinerPt root_adj = adjacenies[root][0];
-    left_[root] = root_adj;
-    right_[root] = null_pt;
-    findLeftRights(root, root_adj, adjacenies, logger);
-  }
-}
-
-void
-SteinerTree::findLeftRights(SteinerPt from,
-                            SteinerPt to,
-                            SteinerPtAdjacenies &adjacenies,
-                            Logger *logger)
-
-{
-  for (int adj : adjacenies[to]) {
-    if (adj != from) {
-      if (left_[to] == null_pt) {
-        left_[to] = adj;
-        findLeftRights(to, adj, adjacenies, logger);
-      }
-      else if (right_[to] == null_pt) {
-        right_[to] = adj;
-        findLeftRights(to, adj, adjacenies, logger);
-      }
-      else
-        logger->critical(RSZ, 73, "too many adjencies in steiner tree");
-    }
-  }
-}
-
-SteinerPt
-SteinerTree::left(SteinerPt pt)
-{
-  return left_[pt];
-}
-
-SteinerPt
-SteinerTree::right(SteinerPt pt)
-{
-  return right_[pt];
 }
 
 ////////////////////////////////////////////////////////////////
