@@ -425,7 +425,7 @@ void
 Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                                       const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(drvr_pin, false);
+  SteinerTree *tree = makeSteinerTree(drvr_pin);
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));

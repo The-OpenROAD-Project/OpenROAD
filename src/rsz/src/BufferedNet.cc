@@ -66,11 +66,13 @@ BufferedNetPtr
 Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
 {
   BufferedNetPtr bnet = nullptr;
-  SteinerTree *tree = makeSteinerTree(drvr_pin, true);
+  SteinerTree *tree = makeSteinerTree(drvr_pin);
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(network_);
-    if (drvr_pt != SteinerTree::null_pt)
+    if (drvr_pt != SteinerTree::null_pt) {
+      tree->findLeftRights(network_, logger_);
       bnet = makeBufferedNet(tree, drvr_pt, tree->left(drvr_pt), 0);
+    }
     delete tree;
   }
   return bnet;
@@ -82,7 +84,9 @@ Resizer::makeBufferedNet(SteinerTree *tree,
                          SteinerPt to,
                          int level)
 {
-  if (to != SteinerTree::null_pt) {
+  if (to == SteinerTree::null_pt)
+    return nullptr;
+  else {
     const PinSeq *pins = tree->pins(to);
     if (pins) {
       BufferedNetPtr bnet = nullptr;
@@ -125,7 +129,6 @@ Resizer::makeBufferedNet(SteinerTree *tree,
       return junc;
     }
   }
-  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////

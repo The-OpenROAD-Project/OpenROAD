@@ -65,8 +65,7 @@ SteinerPt SteinerTree::null_pt = -1;
 
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
-Resizer::makeSteinerTree(const Pin *drvr_pin,
-                         bool find_left_rights)
+Resizer::makeSteinerTree(const Pin *drvr_pin)
 {
   Network *sdc_network = network_->sdcNetwork();
   Net *net = network_->isTopLevelPort(drvr_pin)
@@ -116,8 +115,6 @@ Resizer::makeSteinerTree(const Pin *drvr_pin,
                                                       x, y, drvr_idx);
       
       tree->setTree(ftree, db_network_);
-      if (find_left_rights)
-        tree->findLeftRights(network_, logger_);
       return tree;
     }
   }
@@ -396,7 +393,7 @@ Resizer::highlightSteiner(const Pin *drvr)
     }
     SteinerTree *tree = nullptr;
     if (drvr)
-      tree = makeSteinerTree(drvr, false);
+      tree = makeSteinerTree(drvr);
     steiner_renderer_->highlight(tree);
   }
 }

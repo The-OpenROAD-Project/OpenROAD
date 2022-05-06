@@ -560,8 +560,7 @@ protected:
                                      SteinerPt to,
                                      int level);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
-  SteinerTree *makeSteinerTree(const Pin *drvr_pin,
-                               bool find_left_rights);
+  SteinerTree *makeSteinerTree(const Pin *drvr_pin);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
