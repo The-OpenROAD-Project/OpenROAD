@@ -135,7 +135,7 @@ class Grid
   bool allowsRepairChannels() const { return allow_repair_channels_; }
 
   // returns the ordered nets for this grid.
-  std::vector<odb::dbNet*> getNets(bool starts_with_power) const;
+  virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const;
   std::vector<odb::dbNet*> getNets() const
   {
     return getNets(starts_with_power_);
@@ -247,6 +247,8 @@ class InstanceGrid : public Grid
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }
+
+  virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
   void addHalo(const std::array<int, 4>& halos);
   void setGridToBoundary(bool value);

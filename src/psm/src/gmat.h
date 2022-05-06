@@ -71,6 +71,9 @@ class GMat {
   Node* GetNode(NodeIdx t_node);
   //! Function to return a pointer to the node with the x, y, and layer number
   Node* GetNode(int t_x, int t_y, int t_l, bool t_nearest = false);
+  //! Function to return a vector to all nodes in the region defined
+  std::vector<Node*> GetNodes(int t_l, int t_x_min, int t_x_max,
+                               int t_y_min, int t_y_max);
   //! Function to set attributes of the node with index and node pointer
   void SetNode(NodeIdx t_node_loc, Node* t_node);
   //! Function to create a node

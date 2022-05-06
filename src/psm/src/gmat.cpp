@@ -62,6 +62,23 @@ Node* GMat::GetNode(NodeIdx t_node) {
      \param t_l layer number
      \return Pointer to the node in the matrix
 */
+
+vector<Node*> GMat::GetNodes(int t_l, int t_x_min, int t_x_max,
+                             int t_y_min, int t_y_max) {
+    vector<Node*> block_nodes;
+    NodeMap& layer_map = m_layer_maps[t_l];
+
+    for (auto x_itr = layer_map.lower_bound(t_x_min);
+         x_itr != layer_map.end() && x_itr->first <= t_x_max; ++x_itr) {
+      map<int, Node*> y_itr_map = x_itr->second;
+      for (auto y_map_itr = y_itr_map.lower_bound(t_y_min);
+           y_map_itr != y_itr_map.end() && y_map_itr->first <= t_y_max;
+           ++y_map_itr)
+        block_nodes.push_back(y_map_itr->second);
+    }
+    return block_nodes; 
+}
+
 Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/) {
   NodeMap& layer_map = m_layer_maps[t_l];
   if (t_l != 1 && t_nearest == false) {

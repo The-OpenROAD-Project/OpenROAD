@@ -1055,6 +1055,35 @@ void lefin::layer(lefiLayer* layer)
   if (layer->hasWireExtension())
     l->setWireExtension(dbdist(layer->wireExtension()));
 
+  for (int i = 0; i < layer->numEnclosure(); ++i) {
+    auto* rule = odb::dbTechLayerCutEnclosureRule::create(l);
+    rule->setFirstOverhang(dbdist(layer->enclosureOverhang1(i)));
+    rule->setSecondOverhang(dbdist(layer->enclosureOverhang2(i)));
+    rule->setType(dbTechLayerCutEnclosureRule::DEFAULT);
+
+    if (layer->hasEnclosureRule(i)) {
+      const char* rule_name = layer->enclosureRule(i);
+      if (strcasecmp(rule_name, "ABOVE") == 0) {
+        rule->setAbove(true);
+      } else if (strcasecmp(rule_name, "BELOW") == 0) {
+        rule->setBelow(true);
+      }
+    }
+
+    if (layer->hasEnclosureWidth(i)) {
+      rule->setMinWidth(dbdist(layer->enclosureMinWidth(i)));
+    }
+
+    if (layer->hasEnclosureExceptExtraCut(i)) {
+      rule->setExceptExtraCut(true);
+      rule->setCutWithin(dbdist(layer->enclosureExceptExtraCut(i)));
+    }
+
+    if (layer->hasEnclosureMinLength(i)) {
+      rule->setMinLength(dbdist(layer->enclosureMinLength(i)));
+    }
+  }
+
   dbSet<dbProperty> props = dbProperty::getProperties(l);
   if (!props.empty() && props.orderReversed())
     props.reverse();
