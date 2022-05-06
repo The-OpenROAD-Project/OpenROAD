@@ -855,6 +855,27 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
       }
     }
   }
+  auto db_path_segs = db_ap->getSegments();
+  for(const auto& db_path_seg : db_path_segs) {
+    Rect db_rect = std::get<0>(db_path_seg);
+    bool begin_style_trunc = std::get<1>(db_path_seg);
+    bool end_style_trunc = std::get<2>(db_path_seg);
+
+    auto db_rect_points = db_rect.getPoints();
+    Point db_ul_point = db_rect_points[3];
+    Point db_lr_point = db_rect_points[1];
+
+    frPathSeg path_seg;
+    path_seg.setPoints_safe(db_ul_point, db_lr_point);
+    if(begin_style_trunc == true){
+      path_seg.setBeginStyle(frcTruncateEndStyle);
+    }
+    if(end_style_trunc == true){
+      path_seg.setEndStyle(frcTruncateEndStyle);
+    }
+    
+    ap->addPathSeg(path_seg);
+  }
 }
 
 void io::Parser::setBTerms(odb::dbBlock* block)
@@ -2913,6 +2934,13 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
       }
     }
     ++numCuts;
+  }
+  auto path_segs = ap->getPathSegs();
+  for(const auto& path_seg : path_segs) {
+    Rect db_rect = Rect(path_seg.getBeginPoint(), path_seg.getEndPoint());
+    bool begin_style_trunc = (path_seg.getBeginStyle() == frcTruncateEndStyle);
+    bool end_style_trunc = (path_seg.getEndStyle() == frcTruncateEndStyle);
+    db_ap->addSegment(std::make_tuple(db_rect, begin_style_trunc, end_style_trunc));
   }
 }
 
