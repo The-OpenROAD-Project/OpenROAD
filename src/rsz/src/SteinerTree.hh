@@ -36,12 +36,12 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
 #include "sta/Hash.hh"
-#include "sta/UnorderedMap.hh"
 
 #include "odb/geom.h"
 
@@ -49,12 +49,14 @@
 
 namespace rsz {
 
+using std::vector;
+using std::unordered_map;
+
 using utl::Logger;
 
 using odb::Point;
 
 using sta::UnorderedMap;
-using sta::Vector;
 using sta::Network;
 using sta::dbNetwork;
 using sta::Net;
@@ -89,8 +91,9 @@ public:
   }
 };
 
-typedef Vector<SteinerPt> SteinerPtSeq;
-typedef UnorderedMap<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+typedef vector<SteinerPt> SteinerPtSeq;
+typedef vector<vector<SteinerPt>> SteinerPtAdjacenies;
+typedef unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
 
 // Wrapper for stt::Tree
 //
@@ -139,16 +142,7 @@ public:
 protected:
   void findLeftRights(SteinerPt from,
                       SteinerPt to,
-                      SteinerPtSeq &adj1,
-                      SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3,
-                      Logger *logger);
-  void findLeftRights(SteinerPt from,
-                      SteinerPt to,
-                      SteinerPt adj,
-                      SteinerPtSeq &adj1,
-                      SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3,
+                      SteinerPtAdjacenies &adjacenies,
                       Logger *logger);
   void locAddPin(Point &loc,
                  Pin *pin);

@@ -71,7 +71,7 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
   Net *net = network_->isTopLevelPort(drvr_pin)
     ? network_->net(network_->term(drvr_pin))
     : network_->net(drvr_pin);
-  debugPrint(logger_, RSZ, "steiner", 1, "Net %s",
+  debugPrint(logger_, RSZ, "steiner", 1, "Net {}",
              sdc_network->pathName(net));
   SteinerTree *tree = new SteinerTree(drvr_pin);
   PinSeq &pins = tree->pins();
@@ -266,94 +266,60 @@ SteinerTree::location(SteinerPt pt) const
   return Point(branch_pt.x, branch_pt.y);
 }
 
+
 void
 SteinerTree::findLeftRights(const Network *network,
                             Logger *logger)
 {
   int branch_count = branchCount();
-  left_.resize(branch_count, null_pt);
-  right_.resize(branch_count, null_pt);
-  SteinerPtSeq adj1(branch_count, null_pt);
-  SteinerPtSeq adj2(branch_count, null_pt);
-  SteinerPtSeq adj3(branch_count, null_pt);
+  SteinerPtAdjacenies adjacenies(branch_count);
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &branch_pt = tree_.branch[i];
     SteinerPt j = branch_pt.n;
     if (j != i) {
-      if (adj1[i] == null_pt)
-        adj1[i] = j;
-      else if (adj2[i] == null_pt)
-        adj2[i] = j;
-      else
-        adj3[i] = j;
-
-      if (adj1[j] == null_pt)
-        adj1[j] = i;
-      else if (adj2[j] == null_pt)
-        adj2[j] = i;
-      else
-        adj3[j] = i;
+      adjacenies[i].push_back(j);
+      adjacenies[j].push_back(i);
     }
   }
   if (logger->debugCheck(RSZ, "steiner", 3)) {
-    printf("adjacent\n");
+    printf("adjacenies\n");
     for (int i = 0; i < branch_count; i++) {
       printf("%d:", i);
-      if (adj1[i] != null_pt)
-        printf(" %d", adj1[i]);
-      if (adj2[i] != null_pt)
-        printf(" %d", adj2[i]);
-      if (adj3[i] != null_pt)
-        printf(" %d", adj3[i]);
+      for (int adj : adjacenies[i])
+        printf(" %d", adj);
       printf("\n");
     }
   }
+  left_.resize(branch_count, null_pt);
+  right_.resize(branch_count, null_pt);
   if (drvr_steiner_pt_ != null_pt) {
     SteinerPt root = drvrPt(network);
-    SteinerPt root_adj = adj1[root];
+    SteinerPt root_adj = adjacenies[root][0];
     left_[root] = root_adj;
-    findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
+    right_[root] = null_pt;
+    findLeftRights(root, root_adj, adjacenies, logger);
   }
 }
 
 void
 SteinerTree::findLeftRights(SteinerPt from,
                             SteinerPt to,
-                            SteinerPtSeq &adj1,
-                            SteinerPtSeq &adj2,
-                            SteinerPtSeq &adj3,
+                            SteinerPtAdjacenies &adjacenies,
                             Logger *logger)
-{
-  if (to >= tree_.deg) {
-    SteinerPt adj;
-    adj = adj1[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
-    adj = adj2[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
-    adj = adj3[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
-  }
-}
 
-void
-SteinerTree::findLeftRights(SteinerPt from,
-                            SteinerPt to,
-                            SteinerPt adj,
-                            SteinerPtSeq &adj1,
-                            SteinerPtSeq &adj2,
-                            SteinerPtSeq &adj3,
-                            Logger *logger)
 {
-  if (adj != from && adj != null_pt) {
-    if (adj == to)
-      logger->critical(RSZ, 45, "steiner left/right failed.");
-    if (left_[to] == null_pt) {
-      left_[to] = adj;
-      findLeftRights(to, adj, adj1, adj2, adj3, logger);
-    }
-    else if (right_[to] == null_pt) {
-      right_[to] = adj;
-      findLeftRights(to, adj, adj1, adj2, adj3, logger);
+  for (int adj : adjacenies[to]) {
+    if (adj != from) {
+      if (left_[to] == null_pt) {
+        left_[to] = adj;
+        findLeftRights(to, adj, adjacenies, logger);
+      }
+      else if (right_[to] == null_pt) {
+        right_[to] = adj;
+        findLeftRights(to, adj, adjacenies, logger);
+      }
+      else
+        logger->critical(RSZ, 73, "too many adjencies in steiner tree");
     }
   }
 }

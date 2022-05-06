@@ -1449,7 +1449,7 @@ Resizer::reportLongWires(int count,
   sta_->ensureClkNetwork();
   VertexSeq drvrs;
   findLongWires(drvrs);
-  report_->reportLine("Driver    length delay");
+  logger_->report("Driver    length delay");
   const Corner *corner = sta_->cmdCorner();
   double wire_res = wireSignalResistance(corner);
   double wire_cap = wireSignalCapacitance(corner);
@@ -1459,11 +1459,11 @@ Resizer::reportLongWires(int count,
     double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
     double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
     double delay = (wire_length * wire_res) * (wire_length * wire_cap) * 0.5;
-    report_->reportLine("%s manhtn %s steiner %s %s",
-                        sdc_network_->pathName(drvr_pin),
-                        units_->distanceUnit()->asString(wire_length, 1),
-                        units_->distanceUnit()->asString(steiner_length, 1),
-                        delayAsString(delay, sta_, digits));
+    logger_->report("{} manhtn {} steiner {} {}",
+                    sdc_network_->pathName(drvr_pin),
+                    units_->distanceUnit()->asString(wire_length, 1),
+                    units_->distanceUnit()->asString(steiner_length, 1),
+                    delayAsString(delay, sta_, digits));
     if (i == count)
       break;
     i++;

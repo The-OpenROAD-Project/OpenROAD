@@ -302,14 +302,14 @@ int
 BufferedNet::maxLoadWireLength() const
 {
   switch (type_) {
-  case BufferedNetType::buffer:
-    return ref_->maxLoadWireLength();
   case BufferedNetType::wire:
     return odb::Point::manhattanDistance(location_, ref_->location())
       + ref_->maxLoadWireLength();
   case BufferedNetType::junction:
     return max(ref_->maxLoadWireLength(), ref2_->maxLoadWireLength());
   case BufferedNetType::load:
+    return 0;
+  case BufferedNetType::buffer:
     return 0;
   }
   return 0;
