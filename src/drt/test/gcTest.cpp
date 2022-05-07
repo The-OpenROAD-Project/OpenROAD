@@ -662,6 +662,32 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              Rect(100, 0, 350, 100));
 }
+BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  auto endToEnd
+      = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+  endToEnd->setEndToEndSpace(300);
+  endToEnd->setExtension(10);
+  con->getWithinConstraint()->setSameMask(true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {350, 160}, {1000, 160});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 100, 350, 110));
+}
 BOOST_DATA_TEST_CASE(eol_ext_basic,
                      (bdata::make({30, 50})) ^ (bdata::make({true, false})),
                      ext,
