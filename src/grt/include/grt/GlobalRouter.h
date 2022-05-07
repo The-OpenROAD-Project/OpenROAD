@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "GRoute.h"
+#include "RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -120,25 +121,6 @@ enum class NetType
   Antenna,
   All
 };
-
-class RoutePt
-{
- public:
-  RoutePt() = default;
-  RoutePt(int x, int y, int layer);
-  int x() { return _x; };
-  int y() { return _y; };
-  int layer() { return _layer; };
-
-  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
-
- private:
-  int _x;
-  int _y;
-  int _layer;
-};
-
-bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
 {

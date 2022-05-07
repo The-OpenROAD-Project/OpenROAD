@@ -4040,4 +4040,9 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
   grouter_->addDirtyNet(bterm->getNet());
 }
 
+bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
+{
+  return net1->getId() < net2->getId();
+}
+
 }  // namespace grt
