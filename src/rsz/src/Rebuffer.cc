@@ -90,7 +90,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    BufferedNetPtr bnet = makeBufferedNetSteiner(drvr_pin);
+    BufferedNetPtr bnet = makeBufferedNet(drvr_pin);
     double wire_signal_cap = wireSignalCapacitance(drvr_pin, net, sta_->cmdCorner());
     debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                sdc_network_->pathName(drvr_pin));

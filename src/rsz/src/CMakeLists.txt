@@ -66,6 +66,7 @@ target_link_libraries(rsz
     OpenSTA
     dbSta
     grt
+    grt
     gui
     utl
 )

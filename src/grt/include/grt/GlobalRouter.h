@@ -122,6 +122,17 @@ enum class NetType
   All
 };
 
+struct PinGridLocation
+{
+  PinGridLocation(odb::dbITerm* iterm,
+                  odb::dbBTerm* bterm,
+                  odb::Point pt);
+
+  odb::dbITerm* iterm_;
+  odb::dbBTerm* bterm_;
+  odb::Point pt_;
+};
+
 class GlobalRouter
 {
  public:
@@ -221,6 +232,7 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
+  std::vector<PinGridLocation> getPinGridPositions(odb::dbNet *db_net);
 
  private:
   // Net functions

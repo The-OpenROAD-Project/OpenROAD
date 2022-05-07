@@ -553,6 +553,7 @@ protected:
                               bool revisiting_inst);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree *makeSteinerTree(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNet(const Pin *drvr_pin);
   BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin);
   BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin);
 

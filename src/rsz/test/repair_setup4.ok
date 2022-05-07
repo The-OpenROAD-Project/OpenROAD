@@ -21,31 +21,31 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.835    0.835 ^ r1/Q (DFF_X1)
-   0.001    0.836 ^ u1/A (BUF_X1)
-   0.196    1.032 ^ u1/Z (BUF_X1)
-   0.001    1.033 ^ u2/A (BUF_X1)
-   0.121    1.154 ^ u2/Z (BUF_X1)
-   0.001    1.155 ^ u3/A (BUF_X1)
-   0.118    1.273 ^ u3/Z (BUF_X1)
-   0.001    1.275 ^ u4/A (BUF_X1)
-   0.118    1.393 ^ u4/Z (BUF_X1)
-   0.001    1.394 ^ u5/A (BUF_X1)
-   0.367    1.761 ^ u5/Z (BUF_X1)
-   0.048    1.809 ^ r2/D (DFF_X1)
-            1.809   data arrival time
+   0.891    0.891 ^ r1/Q (DFF_X1)
+   0.030    0.920 ^ u1/A (BUF_X1)
+   0.220    1.140 ^ u1/Z (BUF_X1)
+   0.002    1.142 ^ u2/A (BUF_X1)
+   0.146    1.288 ^ u2/Z (BUF_X1)
+   0.002    1.290 ^ u3/A (BUF_X1)
+   0.144    1.434 ^ u3/Z (BUF_X1)
+   0.002    1.435 ^ u4/A (BUF_X1)
+   0.144    1.579 ^ u4/Z (BUF_X1)
+   0.002    1.581 ^ u5/A (BUF_X1)
+   0.451    2.032 ^ u5/Z (BUF_X1)
+   0.052    2.084 ^ r2/D (DFF_X1)
+            2.084   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.155    0.145   library setup time
-            0.145   data required time
+  -0.171    0.129   library setup time
+            0.129   data required time
 -----------------------------------------------------------
-            0.145   data required time
-           -1.809   data arrival time
+            0.129   data required time
+           -2.084   data arrival time
 -----------------------------------------------------------
-           -1.664   slack (VIOLATED)
+           -1.955   slack (VIOLATED)
 
 
 [INFO RSZ-0040] Inserted 3 buffers.
@@ -62,30 +62,30 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X2)
-   0.433    0.433 ^ r1/Q (DFF_X2)
-   0.002    0.435 ^ u1/A (BUF_X4)
-   0.084    0.519 ^ u1/Z (BUF_X4)
-   0.003    0.522 ^ u2/A (BUF_X8)
-   0.063    0.585 ^ u2/Z (BUF_X8)
-   0.003    0.589 ^ u3/A (BUF_X8)
-   0.058    0.646 ^ u3/Z (BUF_X8)
-   0.003    0.649 ^ u4/A (BUF_X8)
-   0.063    0.713 ^ u4/Z (BUF_X8)
-   0.005    0.718 ^ u5/A (BUF_X16)
-   0.062    0.780 ^ u5/Z (BUF_X16)
-   0.038    0.819 ^ r2/D (DFF_X1)
-            0.819   data arrival time
+   0.448    0.448 ^ r1/Q (DFF_X2)
+   0.004    0.452 ^ u1/A (BUF_X4)
+   0.095    0.547 ^ u1/Z (BUF_X4)
+   0.004    0.551 ^ u2/A (BUF_X8)
+   0.068    0.619 ^ u2/Z (BUF_X8)
+   0.004    0.623 ^ u3/A (BUF_X8)
+   0.061    0.684 ^ u3/Z (BUF_X8)
+   0.004    0.688 ^ u4/A (BUF_X8)
+   0.067    0.754 ^ u4/Z (BUF_X8)
+   0.006    0.760 ^ u5/A (BUF_X16)
+   0.067    0.827 ^ u5/Z (BUF_X16)
+   0.042    0.869 ^ r2/D (DFF_X1)
+            0.869   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.085    0.215   library setup time
-            0.215   data required time
+  -0.088    0.212   library setup time
+            0.212   data required time
 -----------------------------------------------------------
-            0.215   data required time
-           -0.819   data arrival time
+            0.212   data required time
+           -0.869   data arrival time
 -----------------------------------------------------------
-           -0.604   slack (VIOLATED)
+           -0.656   slack (VIOLATED)
 
 

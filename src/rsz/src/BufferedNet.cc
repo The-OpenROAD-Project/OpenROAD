@@ -253,6 +253,19 @@ BufferedNet::maxLoadWireLength() const
 
 ////////////////////////////////////////////////////////////////
 
+BufferedNetPtr
+Resizer::makeBufferedNet(const Pin *drvr_pin)
+{
+  switch (parasitics_src_) {
+  case ParasiticsSrc::placement:
+    return makeBufferedNetSteiner(drvr_pin);
+  case ParasiticsSrc::global_routing:
+    return makeBufferedNetGroute(drvr_pin);
+  case ParasiticsSrc::none:
+    return nullptr;
+  }
+}
+
 static BufferedNetPtr
 makeBufferedNet(SteinerTree *tree,
                 SteinerPt from,
@@ -282,8 +295,8 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin)
           adjacenies[j].push_back(i);
         }
       }
-      bnet = makeBufferedNet(tree, drvr_pt, adjacenies[drvr_pt][0],
-                             adjacenies, 0, this, logger_, network_);
+      bnet = rsz::makeBufferedNet(tree, drvr_pt, adjacenies[drvr_pt][0],
+                                  adjacenies, 0, this, logger_, network_);
     }
     delete tree;
   }
@@ -406,37 +419,52 @@ Resizer::makeBufferedNetGroute(const Pin *drvr_pin)
   const Net *net = network_->isTopLevelPort(drvr_pin)
     ? network_->net(db_network_->term(drvr_pin))
     : network_->net(drvr_pin);
-  bool is_placed = true;
+  dbNet *db_net = db_network_->staToDb(net);
+  std::vector<grt::PinGridLocation> pin_grid_locs = 
+    global_router_->getPinGridPositions(db_net);
   LocPinMap loc_pin_map;
-  sta::NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    Point loc = db_network_->location(pin);
-    is_placed &= db_network_->isPlaced(pin);
+  Point drvr_pt;
+  for (grt::PinGridLocation &pin_loc : pin_grid_locs) {
+    Pin *pin = pin_loc.iterm_
+      ? db_network_->dbToSta(pin_loc.iterm_)
+      : db_network_->dbToSta(pin_loc.iterm_);
+    Point &loc = pin_loc.pt_;
     loc_pin_map[loc].push_back(pin);
+    if (pin == drvr_pin)
+      drvr_pt = loc;
   }
-  delete pin_iter;
 
-  if (is_placed) {
-    Point drvr_pt = db_network_->location(drvr_pin);
-    RoutePt drvr_route_pt;
-    grt::GRoute &route = route_map[db_network_->staToDb(net)];
-    GRouteAdjacenies adjacenies(route.size());
-    for (grt::GSegment &seg : route) {
+  debugPrint(logger_, RSZ, "groute_bnet", 1,
+             "drvr {} {}", drvr_pt.x(), drvr_pt.y());
+  RoutePt drvr_route_pt;
+  bool found_drvr = false;
+  grt::GRoute &route = route_map[db_network_->staToDb(net)];
+  GRouteAdjacenies adjacenies(route.size());
+  for (grt::GSegment &seg : route) {
+    if (!seg.isVia()) {
       RoutePt from(seg.init_x, seg.init_y, seg.init_layer);
       RoutePt to(seg.final_x, seg.final_y, seg.final_layer);
+      debugPrint(logger_, RSZ, "groute_bnet", 2,
+                 "route {} {} -> {} {}",
+                 seg.init_x, seg.init_y,
+                 seg.final_x, seg.final_y);
       adjacenies[from].push_back(to);
       adjacenies[to].push_back(from);
       if (from.x() == drvr_pt.x()
-          && from.y() == drvr_pt.y())
+          && from.y() == drvr_pt.y()) {
         drvr_route_pt = from;
+        found_drvr = true;
+      }
       if (to.x() == drvr_pt.x()
-          && to.y() == drvr_pt.y())
+          && to.y() == drvr_pt.y()) {        
         drvr_route_pt = to;
+        found_drvr = true;
+      }
     }
-    return makeBufferedNet(drvr_route_pt, adjacenies[drvr_route_pt][0], adjacenies,
-                           loc_pin_map, 0, this, logger_, db_network_);
   }
+  if (found_drvr)
+    return rsz::makeBufferedNet(drvr_route_pt, adjacenies[drvr_route_pt][0], adjacenies,
+                                loc_pin_map, 0, this, logger_, db_network_);
   return nullptr;
 }
 
@@ -469,7 +497,7 @@ makeBufferedNet(RoutePt from,
         auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
                                                   to_pt, pin);
 
-        debugPrint(logger, RSZ, "make_buffered_net", 4, "{:{}s}{}",
+        debugPrint(logger, RSZ, "groute_bnet", 2, "{:{}s}{}",
                    "", level, load_bnet->to_string(resizer));
         if (bnet)
           bnet = make_shared<BufferedNet>(BufferedNetType::junction,
