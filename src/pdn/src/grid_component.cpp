@@ -180,14 +180,14 @@ ShapePtr GridComponent::addShape(Shape* shape)
     const int y = std::min(static_cast<int>(die_area.yMin() + min_width),
                            final_shape_rect.yMax());
     odb::Rect pin_rect = final_shape_rect;
-    pin_rect.set_ylo(y);
+    pin_rect.set_yhi(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
   if (final_shape_rect.yMax() == die_area.yMax()) {
     const int y = std::max(static_cast<int>(die_area.yMax() - min_width),
                            final_shape_rect.yMin());
     odb::Rect pin_rect = final_shape_rect;
-    pin_rect.set_yhi(y);
+    pin_rect.set_ylo(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
 
@@ -268,6 +268,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
              "Cutting shapes in \"{}\"",
              getGrid()->getName());
 
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Make",
+             2,
+             "Initial shape count: {}",
+             getShapeCount());
+
   for (const auto& [layer, shapes] : shapes_) {
     if (obstructions.count(layer) == 0) {
       continue;
@@ -287,6 +294,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
       replaceShape(shape, replacement);
     }
   }
+
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Make",
+             2,
+             "Final shape count: {}",
+             getShapeCount());
 }
 
 void GridComponent::writeToDb(
@@ -352,9 +366,9 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
   }
 
   // check if width table in use and check widths
-  for (const auto& width_table : tech_layer.getWidthTable()) {
+  for (auto* rule : layer->getTechLayerWidthTableRules()) {
     bool check_table = false;
-    if (width_table.wrongdirection) {
+    if (rule->isWrongDirection()) {
       if (direction != layer->getDirection()) {
         check_table = true;
       }
@@ -364,17 +378,19 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
       }
     }
 
-    if (width_table.widths.empty()) {
+    const auto width_table = rule->getWidthTable();
+
+    if (width_table.empty()) {
       check_table = false;
     } else {
-      if (width > width_table.widths.back()) {
+      if (width > width_table.back()) {
         // width is outside of table
         check_table = false;
       }
     }
 
     bool found_width = false;
-    for (auto table_width : width_table.widths) {
+    for (auto table_width : width_table) {
       if (table_width == width) {
         found_width = true;
       }
@@ -382,11 +398,11 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
 
     if (check_table && !found_width) {
       std::string widths;
-      for (auto table_width : width_table.widths) {
+      for (auto width : width_table) {
         if (!widths.empty()) {
           widths += ", ";
         }
-        widths += fmt::format("{:.4f}", tech_layer.dbuToMicron(table_width));
+        widths += fmt::format("{:.4f}", tech_layer.dbuToMicron(width));
       }
       getLogger()->error(utl::PDN,
                          114,

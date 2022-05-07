@@ -55,6 +55,28 @@ namespace gui {
 class DbInstDescriptor : public Descriptor
 {
  public:
+  enum Type {
+    BLOCK,
+    PAD,
+    ENDCAP,
+    FILL,
+    TAPCELL,
+    BUMP,
+    COVER,
+    ANTENNA,
+    TIE,
+    LEF_OTHER,
+    STD_CELL,
+    STD_BUFINV,
+    STD_BUFINV_CLK_TREE,
+    STD_BUFINV_TIMING_REPAIR,
+    STD_CLOCK_GATE,
+    STD_LEVEL_SHIFT,
+    STD_SEQUENTIAL,
+    STD_PHYSICAL,
+    STD_COMBINATIONAL,
+    STD_OTHER
+  };
   DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
@@ -74,6 +96,9 @@ class DbInstDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
+
+  Type getInstanceType(odb::dbInst* inst) const;
+  std::string getInstanceTypeText(Type type) const;
 
  private:
   void makeMasterOptions(odb::dbMaster* master, std::vector<EditorOption>& options) const;

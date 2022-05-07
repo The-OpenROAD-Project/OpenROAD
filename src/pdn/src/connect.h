@@ -102,8 +102,8 @@ class Connect
   bool appliesToVia(const ViaPtr& via) const;
 
   void makeVia(odb::dbSWire* wire,
-               const odb::Rect& lower_rect,
-               const odb::Rect& upper_rect,
+               const ShapePtr& lower,
+               const ShapePtr& upper,
                odb::dbWireShapeType type,
                DbVia::ViaLayerShape& via_shapes);
 
@@ -143,9 +143,12 @@ class Connect
   DbVia* makeSingleLayerVia(odb::dbBlock* block,
                             odb::dbTechLayer* lower,
                             const odb::Rect& lower_rect,
+                            const ViaGenerator::Constraint& lower_constraint,
                             odb::dbTechLayer* upper,
-                            const odb::Rect& upper_rect) const;
+                            const odb::Rect& upper_rect,
+                            const ViaGenerator::Constraint& upper_constraint) const;
 
+  void populateDBVias();
   void populateGenerateRules();
   void populateTechVias();
 

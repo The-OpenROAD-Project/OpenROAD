@@ -171,8 +171,7 @@ class RepairChannelStraps : public Straps
                       const ShapeTreeMap& other_shapes,
                       const std::set<odb::dbNet*>& nets,
                       const odb::Rect& area,
-                      const odb::Rect& obs_check_area,
-                      bool allow);
+                      const odb::Rect& obs_check_area);
 
   virtual Type type() const override { return GridComponent::RepairChannel; }
 
@@ -227,6 +226,8 @@ class RepairChannelStraps : public Straps
       odb::dbTechLayer* layer);
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
+
+  int getNextWidth() const;
 };
 
 }  // namespace pdn

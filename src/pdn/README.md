@@ -74,7 +74,7 @@ define_power_switch_cell -name <name> \
 | `-name` | The name of the power switch cell. |
 | `-control` | The name of the power control port of the power switch cell. |
 | `-acknowledge` | Defines the name of the output control signal of the power control switch if it has one. |
-| `-switched_power | Defines the name of the pin that outputs the switched power net |
+| `-switched_power` | Defines the name of the pin that outputs the switched power net |
 | `-power` | Defines the name of the pin that connects to the unswitched power net. |
 | `-ground` | Defines the name of the pin that connects to the ground net. |
 
@@ -107,12 +107,12 @@ set_voltage_domain [-name name] \
 
 | Switch Name | Description |
 | ----- | ----- |
-| -name | Defines the name of the voltage domain, default is "Core" or region name if provided |
-| -power | Specifies the name of the power net for this voltage domain |
-| -ground | Specifies the name of the ground net for this voltage domain |
-| -region | Specifies a region of the design occupied by this voltage domain |
-| -secondary_power | Specifies the name of the secondary power net for this voltage domain |
-| -switched_power | Specifies the name of the switched power net for switched power domains, |
+| `-name` | Defines the name of the voltage domain, default is "Core" or region name if provided |
+| `-power` | Specifies the name of the power net for this voltage domain |
+| `-ground` | Specifies the name of the ground net for this voltage domain |
+| `-region` | Specifies a region of the design occupied by this voltage domain |
+| `-secondary_power` | Specifies the name of the secondary power net for this voltage domain |
+| `-switched_power` | Specifies the name of the switched power net for switched power domains, |
 
 ##### Examples
 ```

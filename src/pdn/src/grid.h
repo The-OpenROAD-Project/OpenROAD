@@ -63,6 +63,7 @@ class Rings;
 class Straps;
 class Connect;
 class GridComponent;
+class GridSwitchedPower;
 
 class PdnGen;
 
@@ -134,7 +135,7 @@ class Grid
   bool allowsRepairChannels() const { return allow_repair_channels_; }
 
   // returns the ordered nets for this grid.
-  std::vector<odb::dbNet*> getNets(bool starts_with_power) const;
+  virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const;
   std::vector<odb::dbNet*> getNets() const
   {
     return getNets(starts_with_power_);
@@ -180,6 +181,10 @@ class Grid
 
   void checkSetup() const;
 
+  void setSwitchedPower(GridSwitchedPower* cell);
+
+  void ripup();
+
  protected:
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
@@ -189,6 +194,8 @@ class Grid
   VoltageDomain* domain_;
   std::string name_;
   bool starts_with_power_;
+
+  std::unique_ptr<GridSwitchedPower> switched_power_cell_;
 
   bool allow_repair_channels_;
 
@@ -240,6 +247,8 @@ class InstanceGrid : public Grid
   virtual Type type() const override { return Grid::Instance; }
 
   odb::dbInst* getInstance() const { return inst_; }
+
+  virtual std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 
   void addHalo(const std::array<int, 4>& halos);
   void setGridToBoundary(bool value);

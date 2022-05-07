@@ -857,6 +857,10 @@ dbNetwork::readDbAfter(odb::dbDatabase *db)
       makeLibrary(lib);
     readDbNetlistAfter();
   }
+
+  for (auto* observer : observers_) {
+    observer->postReadDb();
+  }
 }
 
 void

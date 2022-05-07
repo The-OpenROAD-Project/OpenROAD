@@ -32,6 +32,7 @@
 
 #include "connect.h"
 
+#include <cmath>
 #include <regex>
 
 #include "grid.h"
@@ -74,6 +75,11 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
     }
   }
 
+  populateDBVias();
+}
+
+void Connect::populateDBVias()
+{
   populateGenerateRules();
   populateTechVias();
 }
@@ -81,11 +87,13 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
 void Connect::addFixedVia(odb::dbTechViaGenerateRule* via)
 {
   fixed_generate_vias_.push_back(via);
+  populateDBVias();
 }
 
 void Connect::addFixedVia(odb::dbTechVia* via)
 {
   fixed_tech_vias_.push_back(via);
+  populateDBVias();
 }
 
 void Connect::setCutPitch(int x, int y)
@@ -410,20 +418,30 @@ void Connect::report() const
 }
 
 void Connect::makeVia(odb::dbSWire* wire,
-                      const odb::Rect& lower_rect,
-                      const odb::Rect& upper_rect,
+                      const ShapePtr& lower,
+                      const ShapePtr& upper,
                       odb::dbWireShapeType type,
                       DbVia::ViaLayerShape& shapes)
 {
+  const odb::Rect& lower_rect = lower->getRect();
+  const odb::Rect& upper_rect = upper->getRect();
   const odb::Rect intersection = lower_rect.intersect(upper_rect);
+
+  auto* tech = layer0_->getTech();
+  const int x = std::round(0.5 * (intersection.xMin() + intersection.xMax()));
+  const int y = std::round(0.5 * (intersection.yMin() + intersection.yMax()));
+
+  // check if off grid and don't add one if it is
+  if (!TechLayer::checkIfManufacturingGrid(tech, x) ||
+      !TechLayer::checkIfManufacturingGrid(tech, y)) {
+    DbGenerateDummyVia dummy_via(grid_->getLogger(), intersection, layer0_, layer1_);
+    dummy_via.generate(wire->getBlock(), wire, type, 0, 0);
+    return;
+  }
 
   const std::pair<int, int> via_index
       = std::make_pair(intersection.dx(), intersection.dy());
   auto& via = vias_[via_index];
-
-  auto* tech = layer0_->getTech();
-  const int x = TechLayer::snapToManufacturingGrid(tech, 0.5 * (intersection.xMin() + intersection.xMax()));
-  const int y = TechLayer::snapToManufacturingGrid(tech, 0.5 * (intersection.yMin() + intersection.yMax()));
 
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
@@ -452,8 +470,37 @@ void Connect::makeVia(odb::dbSWire* wire,
       auto* l0 = layers[i - 1];
       auto* l1 = layers[i];
 
+      ViaGenerator::Constraint lower_constraint{false, false};
+      if (lower->getLayer() == l0) {
+        if (!lower->isModifiable() || lower->hasTermConnections()) {
+          // lower is not modifiable to all sides must fit
+          lower_constraint.must_fit_x = true;
+          lower_constraint.must_fit_y = true;
+        } else {
+          lower_constraint.must_fit_x = !lower->isHorizontal();
+          lower_constraint.must_fit_y = !lower->isVertical();
+        }
+      }
+      ViaGenerator::Constraint upper_constraint{false, false};
+      if (upper->getLayer() == l1) {
+        if (!upper->isModifiable() || upper->hasTermConnections()) {
+          // upper is not modifiable to all sides must fit
+          upper_constraint.must_fit_x = true;
+          upper_constraint.must_fit_y = true;
+        } else {
+          upper_constraint.must_fit_x = !upper->isHorizontal();
+          upper_constraint.must_fit_y = !upper->isVertical();
+        }
+      }
+
       auto* new_via = makeSingleLayerVia(
-          wire->getBlock(), l0, via_lower_rect, l1, via_upper_rect);
+          wire->getBlock(),
+          l0,
+          via_lower_rect,
+          lower_constraint,
+          l1,
+          via_upper_rect,
+          upper_constraint);
       if (new_via == nullptr) {
         // no via made, so build dummy via for warning
         for (auto* stack_via : stack) {
@@ -487,8 +534,7 @@ DbVia* Connect::generateDbVia(
     const std::vector<std::unique_ptr<ViaGenerator>>& generators,
     odb::dbBlock* block) const
 {
-  ViaGenerator* best_rule = nullptr;
-  int best_area = 0;
+  std::vector<ViaGenerator*> vias;
   for (const auto& via : generators) {
     if (hasCutPitch()) {
       via->setCutPitchX(cut_pitch_x_);
@@ -501,7 +547,8 @@ DbVia* Connect::generateDbVia(
                utl::PDN,
                "Via",
                1,
-               "Cut class {} - {}",
+               "Cut class {} : {} - {}",
+               via->getName(),
                via->getCutLayer()->getName(),
                via->hasCutClass() ? via->getCutClass()->getName() : "none");
 
@@ -517,36 +564,45 @@ DbVia* Connect::generateDbVia(
     const bool lower_is_internal = via->getBottomLayer() != layer0_;
     const bool upper_is_internal = via->getTopLayer() != layer1_;
     if (!via->build(lower_is_internal, upper_is_internal)) {
+      debugPrint(grid_->getLogger(),
+                 utl::PDN,
+                 "Via",
+                 2,
+                 "{} was not buildable.",
+                 via->getName());
       continue;
     }
 
-    const int area = via->getCutArea();
-    debugPrint(grid_->getLogger(),
-               utl::PDN,
-               "Via",
-               3,
-               "{}: Current via area {} with {} cuts, best via area {}",
-               via->getCutLayer()->getName(),
-               area, via->getTotalCuts(), best_area);
-
-    if (area > best_area) {
-      best_rule = via.get();
-      best_area = area;
-    }
+    vias.push_back(via.get());
   }
 
-  if (best_rule != nullptr) {
-    return best_rule->generate(block);
+  debugPrint(grid_->getLogger(),
+             utl::PDN,
+             "Via",
+             3,
+             "Vias possible: {}",
+             vias.size());
+
+  if (vias.empty()) {
+    return nullptr;
   }
 
-  return nullptr;
+  std::stable_sort(vias.begin(), vias.end(), [](ViaGenerator* lhs, ViaGenerator* rhs) {
+    return lhs->isPreferredOver(rhs);
+  });
+
+  ViaGenerator* best_rule = *vias.begin();
+
+  return best_rule->generate(block);
 }
 
 DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                                    odb::dbTechLayer* lower,
                                    const odb::Rect& lower_rect,
+                                   const ViaGenerator::Constraint& lower_constraint,
                                    odb::dbTechLayer* upper,
-                                   const odb::Rect& upper_rect) const
+                                   const odb::Rect& upper_rect,
+                                   const ViaGenerator::Constraint& upper_constraint) const
 {
   // look for generate vias
   std::vector<std::unique_ptr<ViaGenerator>> generate_vias;
@@ -573,7 +629,12 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
   std::vector<std::unique_ptr<ViaGenerator>> tech_vias;
   for (odb::dbTechVia* db_via : tech_vias_) {
     std::unique_ptr<TechViaGenerator> rule
-        = std::make_unique<TechViaGenerator>(grid_->getLogger(), db_via, lower_rect, upper_rect);
+        = std::make_unique<TechViaGenerator>(grid_->getLogger(),
+                                             db_via,
+                                             lower_rect,
+                                             lower_constraint,
+                                             upper_rect,
+                                             upper_constraint);
 
     if (!rule->isSetupValid(lower, upper)) {
       continue;
@@ -587,6 +648,8 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
 
 void Connect::populateGenerateRules()
 {
+  generate_via_rules_.clear();
+
   odb::dbTech* tech = layer0_->getTech();
 
   const auto layers = getAllRoutingLayers();
@@ -628,6 +691,8 @@ void Connect::populateGenerateRules()
 
 void Connect::populateTechVias()
 {
+  tech_vias_.clear();
+
   odb::dbTech* tech = layer0_->getTech();
 
   const auto layers = getAllRoutingLayers();
@@ -744,7 +809,8 @@ void Connect::printViaReport() const
              utl::PDN,
              "Write",
              1,
-             "Vias from {} -> {}: {} types",
+             "Vias ({}) from {} -> {}: {} types",
+             grid_->getLongName(),
              layer0_->getName(),
              layer1_->getName(),
              report.size());

@@ -13,9 +13,11 @@ source sky130hs/sky130hs.rc
 set_wire_rc -layer met2
 estimate_parasitics -placement
 
+# fails hold
 report_slack r2/D
 # fails setup and hold
 report_slack r3/D
+# no violations
 report_slack r4/D
 
 repair_timing -hold

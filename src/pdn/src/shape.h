@@ -92,7 +92,8 @@ class Shape
     SHAPE,
     GRID_OBS,
     BLOCK_OBS,
-    OBS
+    OBS,
+    FIXED
   };
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
@@ -169,6 +170,7 @@ class Shape
   // after shape is modified, remove any term connections that are no longer
   // connected
   virtual void updateTermConnections();
+  bool hasTermConnections() const;
 
   // returns the smallest shape possible when attempting to trim
   virtual const odb::Rect getMinimumRect() const;
@@ -224,6 +226,8 @@ class Shape
 
   // add rect as bterm to database
   void addBPinToDb(const odb::Rect& rect) const;
+
+  void updateIBTermConnections(std::set<odb::Rect>& terms);
 };
 
 class FollowPinShape : public Shape

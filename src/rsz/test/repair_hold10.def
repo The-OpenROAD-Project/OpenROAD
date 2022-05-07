@@ -203,14 +203,14 @@ COMPONENTS 15 ;
     - i5 sky130_fd_sc_hd__buf_2 + PLACED ( 419980 448800 ) FS ;
     - i6 sky130_fd_sc_hd__buf_2 + PLACED ( 19780 8160 ) FS ;
     - i7 sky130_fd_sc_hd__buf_2 + PLACED ( 430100 448800 ) FS ;
-    - r1 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 15180 10880 ) N ;
-    - r2 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 21620 13600 ) FS ;
-    - r3 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 21620 16320 ) N ;
-    - r4 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 23920 10880 ) N ;
-    - u1 sky130_fd_sc_hd__buf_2 + PLACED ( 30360 13600 ) FS ;
-    - u2 sky130_fd_sc_hd__buf_2 + PLACED ( 22080 8160 ) FS ;
-    - u3 sky130_fd_sc_hd__buf_2 + PLACED ( 22540 19040 ) FS ;
-    - u4 sky130_fd_sc_hd__buf_2 + PLACED ( 23920 8160 ) FS ;
+    - r1 sky130_fd_sc_hd__dfxbp_1 + PLACED (  35000 35000 ) N ;
+    - r2 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 135000 35000 ) FS ;
+    - r3 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 235000 35000 ) N ;
+    - r4 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 335000 35000 ) N ;
+    - u1 sky130_fd_sc_hd__buf_2 + PLACED (  40000 40000 ) FS ;
+    - u2 sky130_fd_sc_hd__buf_2 + PLACED ( 140000 40000 ) FS ;
+    - u3 sky130_fd_sc_hd__buf_2 + PLACED ( 240000 40000 ) FS ;
+    - u4 sky130_fd_sc_hd__buf_2 + PLACED ( 340000 40000 ) FS ;
 END COMPONENTS
 PINS 1 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL

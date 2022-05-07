@@ -40,6 +40,7 @@
 
 #include "connect.h"
 #include "domain.h"
+#include "power_cells.h"
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -418,7 +419,7 @@ VoltageDomain* PdnGen::getCoreDomain() const
 void PdnGen::ensureCoreDomain()
 {
   if (core_domain_ == nullptr) {
-    setCoreDomain(nullptr, nullptr, {});
+    setCoreDomain(nullptr, nullptr, nullptr, {});
   }
 }
 
@@ -453,6 +454,7 @@ VoltageDomain* PdnGen::findDomain(const std::string& name)
 }
 
 void PdnGen::setCoreDomain(odb::dbNet* power,
+                           odb::dbNet* switched_power,
                            odb::dbNet* ground,
                            const std::vector<odb::dbNet*>& secondary)
 {
@@ -462,11 +464,14 @@ void PdnGen::setCoreDomain(odb::dbNet* power,
   }
   core_domain_ = std::make_unique<VoltageDomain>(
       this, block, power, ground, secondary, logger_);
+
+  core_domain_->setSwitchedPower(switched_power);
 }
 
 void PdnGen::makeRegionVoltageDomain(
     const std::string& name,
     odb::dbNet* power,
+    odb::dbNet* switched_power,
     odb::dbNet* ground,
     const std::vector<odb::dbNet*>& secondary_nets,
     odb::dbRegion* region)
@@ -481,15 +486,42 @@ void PdnGen::makeRegionVoltageDomain(
     }
   }
   auto* block = db_->getChip()->getBlock();
-  domains_.push_back(std::make_unique<VoltageDomain>(
-      this, name, block, power, ground, secondary_nets, region, logger_));
+  auto domain = std::make_unique<VoltageDomain>(
+      this, name, block, power, ground, secondary_nets, region, logger_);
+  domain->setSwitchedPower(switched_power);
+  domains_.push_back(std::move(domain));
 }
 
-void PdnGen::setVoltageDomainSwitchedPower(
-    VoltageDomain *voltage_domain,
-    odb::dbNet* switched_power)
+PowerCell* PdnGen::findSwitchedPowerCell(const std::string& name) const
 {
-  voltage_domain->setSwitchedPower(switched_power);
+  for (const auto& cell : switched_power_cells_) {
+    if (cell->getName() == name) {
+      return cell.get();
+    }
+  }
+  return nullptr;
+}
+
+void PdnGen::makeSwitchedPowerCell(odb::dbMaster* master,
+                                   odb::dbMTerm* control,
+                                   odb::dbMTerm* acknowledge,
+                                   odb::dbMTerm* switched_power,
+                                   odb::dbMTerm* alwayson_power,
+                                   odb::dbMTerm* ground)
+{
+  auto* check = findSwitchedPowerCell(master->getName());
+  if (check != nullptr) {
+    logger_->error(utl::PDN, 196, "{} is already defined.", master->getName());
+  }
+
+  switched_power_cells_.push_back(std::make_unique<PowerCell>(
+      logger_,
+      master,
+      control,
+      acknowledge,
+      switched_power,
+      alwayson_power,
+      ground));
 }
 
 std::vector<Grid*> PdnGen::getGrids() const
@@ -535,10 +567,19 @@ void PdnGen::makeCoreGrid(VoltageDomain* domain,
                           const std::string& name,
                           StartsWith starts_with,
                           const std::vector<odb::dbTechLayer*>& pin_layers,
-                          const std::vector<odb::dbTechLayer*>& generate_obstructions)
+                          const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                          PowerCell* powercell,
+                          odb::dbNet* powercontrol,
+                          const char* powercontrolnetwork)
 {
   auto grid = std::make_unique<CoreGrid>(domain, name, starts_with == POWER, generate_obstructions);
   grid->setPinLayers(pin_layers);
+  if (powercell != nullptr) {
+    grid->setSwitchedPower(new GridSwitchedPower(grid.get(),
+                                                 powercell,
+                                                 powercontrol,
+                                                 GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+  }
   domain->addGrid(std::move(grid));
 }
 
@@ -757,9 +798,11 @@ void PdnGen::writeToDb(bool add_pins) const
     // determine if unique and set WildConnected
     bool appear_in_all_grids = true;
     for (auto* domain : domains) {
-      const auto nets = domain->getNets();
-      if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
-        appear_in_all_grids = false;
+      for (const auto& grid : domain->getGrids()) {
+        const auto nets = grid->getNets();
+        if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
+          appear_in_all_grids = false;
+        }
       }
     }
 
@@ -789,6 +832,10 @@ void PdnGen::ripUp(odb::dbNet* net)
       for (auto* net : domain->getNets()) {
         nets.insert(net);
       }
+    }
+
+    for (auto* grid : getGrids()) {
+      grid->ripup();
     }
 
     for (odb::dbNet* net : nets) {
@@ -839,6 +886,9 @@ void PdnGen::ripUp(odb::dbNet* net)
 
 void PdnGen::report()
 {
+  for (const auto& cell : switched_power_cells_) {
+    cell->report();
+  }
   ensureCoreDomain();
   for (auto* domain : getDomains()) {
     domain->report();
