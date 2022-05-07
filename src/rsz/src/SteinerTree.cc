@@ -318,4 +318,23 @@ SteinerRenderer::drawObjects(gui::Painter &painter)
   }
 }
 
+////////////////////////////////////////////////////////////////
+
+size_t
+PointHash::operator()(const Point &pt) const
+{
+  size_t hash = sta::hash_init_value;
+  hashIncr(hash, pt.x());
+  hashIncr(hash, pt.y());
+  return hash;
+}
+
+bool
+PointEqual::operator()(const Point &pt1,
+                       const Point &pt2) const
+{
+  return pt1.x() == pt2.x()
+    && pt1.y() == pt2.y();
+}
+
 }

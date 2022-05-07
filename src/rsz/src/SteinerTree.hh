@@ -36,7 +36,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
@@ -50,7 +49,6 @@
 namespace rsz {
 
 using std::vector;
-using std::unordered_map;
 
 using utl::Logger;
 
@@ -66,32 +64,22 @@ using sta::hashIncr;
 
 using stt::SteinerTreeBuilder;
 
-class SteinerTree;
-
 class PointHash
 {
 public:
-  size_t operator()(const Point &pt) const
-  {
-    size_t hash = sta::hash_init_value;
-    hashIncr(hash, pt.x());
-    hashIncr(hash, pt.y());
-    return hash;
-  }
+  size_t operator()(const Point &pt) const;
 };
 
 class PointEqual
 {
 public:
   bool operator()(const Point &pt1,
-                  const Point &pt2) const
-  {
-    return pt1.x() == pt2.x()
-      && pt1.y() == pt2.y();
-  }
+                  const Point &pt2) const;
 };
 
-typedef unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+typedef std::unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+
+class SteinerTree;
 
 // Wrapper for stt::Tree
 //

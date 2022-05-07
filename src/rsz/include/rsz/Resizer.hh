@@ -551,14 +551,10 @@ protected:
   LibertyCell *findTargetCell(LibertyCell *cell,
                               float load_cap,
                               bool revisiting_inst);
-  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin);
-  BufferedNetPtr makeBufferedNet(SteinerTree *tree,
-                                 SteinerPt prev,
-                                 SteinerPt k,
-                                 SteinerPtAdjacenies &adjacenies,
-                                 int level);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree *makeSteinerTree(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
