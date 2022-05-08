@@ -208,6 +208,9 @@ int ScriptWidget::executeTclCommand(const QString& command)
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
 
+  emit commandAboutToExecute();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   pauser_->setText("Idle");
@@ -341,6 +344,8 @@ void ScriptWidget::pause(int timeout)
   pauser_->setEnabled(true);
   paused_ = true;
 
+  emit executionPaused();
+
   input_->setReadOnly(true);
 
   triggerPauseCountDown(timeout);
@@ -355,6 +360,8 @@ void ScriptWidget::pause(int timeout)
   pauser_->setEnabled(prior_enable);
 
   input_->setReadOnly(false);
+
+  emit commandAboutToExecute();
 
   // Make changes visible while command runs
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
