@@ -134,6 +134,22 @@ Resizer::wireSignalCapacitance(const Corner *corner)
 }
 
 void
+Resizer::wireSignalRC(const Corner *corner,
+                      // Return values.
+                      double &res,
+                      double &cap)
+{
+  if (wire_signal_res_.empty())
+    res = 0.0;
+  else
+    res = wire_signal_res_[corner->index()];
+  if (wire_signal_cap_.empty())
+    cap = 0.0;
+  else
+    cap = wire_signal_cap_[corner->index()];
+}
+
+void
 Resizer::setWireClkRC(const Corner *corner,
                       double res,
                       double cap)
@@ -160,58 +176,6 @@ Resizer::wireClkCapacitance(const Corner *corner)
     return 0.0;
   else
     return wire_clk_cap_[corner->index()];
-}
-
-////////////////////////////////////////////////////////////////
-
-double
-Resizer::wireSignalCapacitance(const Pin *drvr_pin,
-                               const Net *net,
-                               const Corner *corner)
-{
-  switch (parasitics_src_) {
-  case ParasiticsSrc::placement:
-    return wireSignalCapacitance(corner);
-  case ParasiticsSrc::global_routing: {
-    // Use the global route capacitance / wire_length(net) as unit capacitance.
-    sta::Parasitics *parasitics = sta_->parasitics();
-    Parasitic *parasitic = parasitics->findPiElmore(drvr_pin,
-                                                    RiseFall::rise(),
-                                                    corner->findParasiticAnalysisPt(MinMax::max()));
-    
-    double net_cap = parasitics->capacitance(parasitic) - pinCap(drvr_pin, corner);
-    double cap = net_cap / grouteLength(net);
-    return cap;
-  }
-  case ParasiticsSrc::none:
-    break;
-  }
-  return 0.0;
-}
-
-float
-Resizer::pinCap(const Pin *drvr_pin,
-                const Corner *corner)
-{
-  sta::Sdc *sdc = sta_->sdc();
-  DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(MinMax::max());
-  const OperatingConditions *op_cond = dcalc_ap->operatingConditions();
-  float pin_cap, wire_cap, fanout;
-  bool has_set_load;
-  sdc->connectedCap(drvr_pin, RiseFall::rise(), op_cond, corner, MinMax::max(),
-                    pin_cap, wire_cap, fanout, has_set_load);
-  return pin_cap;
-}
-
-double
-Resizer::grouteLength(const Net *net)
-{
-  grt::NetRouteMap& route_map = global_router_->getRoutes();
-  grt::GRoute &route = route_map[db_network_->staToDb(net)];
-  double length = 0.0;
-  for (grt::GSegment &seg : route)
-    length += seg.length();
-  return dbuToMeters(length);
 }
 
 ////////////////////////////////////////////////////////////////

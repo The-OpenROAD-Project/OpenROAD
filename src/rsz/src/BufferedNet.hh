@@ -94,6 +94,7 @@ public:
   // wire
   BufferedNet(BufferedNetType type,
               Point location,
+              int layer,
               BufferedNetPtr ref);
   // buffer
   BufferedNet(BufferedNetType type,
@@ -114,6 +115,7 @@ public:
   LibertyCell *bufferCell() const { return buffer_cell_; }
   // load
   Pin *loadPin() const { return load_pin_; }
+  int layer() const { return layer_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -135,22 +137,29 @@ public:
   // Downstream buffer count.
   int bufferCount() const;
 
+  static constexpr int null_layer = -1;
+
 private:
   BufferedNetType type_;
   Point location_;
   // load
   Pin *load_pin_;
+  // buffer
+  LibertyCell *buffer_cell_;
+  // wire
+  int layer_;
+  // load wire junc
   BufferedNetPtr ref_;
+  // junc
   BufferedNetPtr ref2_;
 
+  // Rebuffer annotations
   // Capacitance looking downstream from here.
   float cap_;
   // PathRef for worst required path at load.
   PathRef required_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
-  // buffer
-  LibertyCell *buffer_cell_;
 };
 
 } // namespace

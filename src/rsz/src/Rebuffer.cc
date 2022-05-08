@@ -91,11 +91,10 @@ Resizer::rebuffer(const Pin *drvr_pin)
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
     BufferedNetPtr bnet = makeBufferedNet(drvr_pin);
-    double wire_signal_cap = wireSignalCapacitance(drvr_pin, net, sta_->cmdCorner());
     debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                sdc_network_->pathName(drvr_pin));
     sta_->findRequireds();
-    BufferedNetSeq Z = rebufferBottomUp(bnet, 1, wire_signal_cap);
+    BufferedNetSeq Z = rebufferBottomUp(bnet, 1);
     Required best_slack_penalized = -INF;
     BufferedNetPtr best_option = nullptr;
     int best_index = 0;
@@ -179,20 +178,16 @@ Resizer::hasTopLevelOutputPort(Net *net)
 
 BufferedNetSeq
 Resizer::rebufferBottomUp(BufferedNetPtr bnet,
-                          int level,
-                          double wire_signal_cap)
+                          int level)
 {
   switch (bnet->type()) {
   case BufferedNetType::wire: {
-    BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), level + 1,
-                                        wire_signal_cap);
-    return addWireAndBuffer(Z, bnet, level, wire_signal_cap);
+    BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), level + 1);
+    return addWireAndBuffer(Z, bnet, level);
   }
   case BufferedNetType::junction: {
-    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), level + 1,
-                                         wire_signal_cap);
-    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), level + 1,
-                                         wire_signal_cap);
+    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), level + 1);
+    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
     // Combine the options from both branches.
     for (BufferedNetPtr p : Z1) {
@@ -274,8 +269,7 @@ Resizer::pinCapacitance(const Pin *pin,
 BufferedNetSeq
 Resizer::addWireAndBuffer(BufferedNetSeq Z,
                           BufferedNetPtr bnet_wire,
-                          int level,
-                          double wire_signal_cap)
+                          int level)
 {
   BufferedNetSeq Z1;
   Point wire_end = bnet_wire->location();
@@ -288,11 +282,22 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
     const Corner *corner = req_path.isNull()
       ? sta_->cmdCorner()
       : req_path.dcalcAnalysisPt(sta_)->corner();
-    double wire_cap = wire_length * wire_signal_cap;
-    double wire_res = wire_length * wireSignalResistance(corner);
+    int wire_layer = bnet_wire->layer();
+    double layer_cap, layer_res;
+    if (wire_layer == BufferedNet::null_layer) {
+      layer_cap = wireSignalCapacitance(corner);
+      layer_res = wireSignalResistance(corner);
+    }
+    else {
+      odb::dbTech* tech = db_->getTech();
+      odb::dbTechLayer* layer = tech->findRoutingLayer(wire_layer);
+      layerRC(layer, corner, layer_res, layer_cap);
+    }
+    double wire_cap = wire_length * layer_cap;
+    double wire_res = wire_length * layer_res;
     double wire_delay = wire_res * wire_cap;
     BufferedNetPtr z = make_shared<BufferedNet>(BufferedNetType::wire,
-                                                wire_end, p);
+                                                wire_end, wire_layer, p);
     // account for wire load
     z->setCapacitance(p->cap() + wire_cap);
     z->setRequiredPath(req_path);

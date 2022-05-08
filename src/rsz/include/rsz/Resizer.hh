@@ -175,7 +175,11 @@ public:
   void setWireClkRC(const Corner *corner,
                     double res,
                     double cap); // farads/meter
-  // ohms/meter
+  // ohms/meter, farads/meter
+  void wireSignalRC(const Corner *corner,
+                    // Return values.
+                    double &res,
+                    double &cap);
   double wireSignalResistance(const Corner *corner);
   double wireClkResistance(const Corner *corner);
   // farads/meter
@@ -505,12 +509,6 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
-  double wireSignalCapacitance(const Pin *drvr_pin,
-                               const Net *net,
-                               const Corner *corner);
-  float pinCap(const Pin *drvr_pin,
-               const Corner *corner);
-  double grouteLength(const Net *net);
 
   bool repairSetup(PathRef &path,
                    Slack path_slack);
@@ -532,16 +530,14 @@ protected:
 
   int rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
-                                  int level,
-                                  double wire_signal_cap);
+                                  int level);
   void rebufferTopDown(BufferedNetPtr choice,
                        Net *net,
                        int level);
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
-                   int level,
-                   double wire_signal_cap);
+                   int level);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
   void removeBuffer(Instance *buffer);

@@ -76,11 +76,12 @@ BufferedNet::BufferedNet(BufferedNetType type,
   type_(type),
   location_(location),
   load_pin_(load_pin),
+  buffer_cell_(nullptr),
+  layer_(null_layer),
   ref_(nullptr),
   ref2_(nullptr),
   cap_(0.0),
-  required_delay_(0.0),
-  buffer_cell_(nullptr)
+  required_delay_(0.0)
 {
 }
 
@@ -92,26 +93,29 @@ BufferedNet::BufferedNet(BufferedNetType type,
   type_(type),
   location_(location),
   load_pin_(nullptr),
+  buffer_cell_(nullptr),
+  layer_(null_layer),
   ref_(ref),
   ref2_(ref2),
   cap_(0.0),
-  required_delay_(0.0),
-  buffer_cell_(nullptr)
+  required_delay_(0.0)
 {
 }
   
 // wire
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
+                         int layer,
                          BufferedNetPtr ref)  :
   type_(type),
   location_(location),
   load_pin_(nullptr),
+  buffer_cell_(nullptr),
+  layer_(layer),
   ref_(ref),
   ref2_(nullptr),
   cap_(0.0),
-  required_delay_(0.0),
-  buffer_cell_(nullptr)
+  required_delay_(0.0)
 {
 }
 
@@ -123,10 +127,11 @@ BufferedNet::BufferedNet(BufferedNetType type,
   type_(type),
   location_(location),
   load_pin_(nullptr),
+  buffer_cell_(buffer_cell),
+  layer_(null_layer),
   ref_(ref),
   ref2_(nullptr),
-  required_delay_(0.0),
-  buffer_cell_(buffer_cell)
+  required_delay_(0.0)
 {
 }
 
@@ -336,7 +341,8 @@ makeBufferedNet(SteinerTree *tree,
       }
       if (tree->location(to) != tree->location(from))
         bnet = make_shared<BufferedNet>(BufferedNetType::wire,
-                                        tree->location(from), bnet);
+                                        tree->location(from),
+                                        BufferedNet::null_layer, bnet);
       return bnet;
     }
     else {
@@ -357,7 +363,8 @@ makeBufferedNet(SteinerTree *tree,
       }
       if (bnet && tree->location(to) != tree->location(from))
         bnet = make_shared<BufferedNet>(BufferedNetType::wire,
-                                        tree->location(from), bnet);
+                                        tree->location(from),
+                                        BufferedNet::null_layer, bnet);
       return bnet;
     }
   }
@@ -508,7 +515,8 @@ makeBufferedNet(RoutePt from,
     }
     if (to != from)
       bnet = make_shared<BufferedNet>(BufferedNetType::wire,
-                                      from_pt, bnet);
+                                      from_pt, from.layer(),
+                                      bnet);
     return bnet;
   }
   else {
@@ -528,7 +536,8 @@ makeBufferedNet(RoutePt from,
     }
     if (bnet && to != from)
       bnet = make_shared<BufferedNet>(BufferedNetType::wire,
-                                      from_pt, bnet);
+                                      from_pt, from.layer(),
+                                      bnet);
     return bnet;
   }
 }
