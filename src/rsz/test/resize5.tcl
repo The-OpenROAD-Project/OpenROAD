@@ -13,5 +13,10 @@ report_instance r1
 # swap loads to check other resize order
 set_load 40 r1q
 set_load  5 r1qn
+
+source Nangate45/Nangate45.rc
+set_wire_rc -layer metal3
+estimate_parasitics -placement
+
 rsz::resize
 report_instance r1

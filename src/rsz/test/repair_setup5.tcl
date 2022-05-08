@@ -14,6 +14,8 @@ create_clock -period 0.3 clk
 set_propagated_clock clk
 
 detailed_placement
+
+source Nangate45/Nangate45.rc
 # Intentionaly reduce RC so there is a large discrepancy between
 # placement and global route parasitics.
 set_wire_rc -resistance 0.0001 -capacitance 0.00001

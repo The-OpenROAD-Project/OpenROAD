@@ -4,6 +4,7 @@ read_lef Nangate45/Nangate45.lef
 read_def repair_wire1.def
 create_clock in1 -period 10
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 

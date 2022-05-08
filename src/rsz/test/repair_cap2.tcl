@@ -8,6 +8,7 @@ set def_file [make_result_file "repair_cap2.def"]
 write_hi_fanout_def $def_file 60
 read_def $def_file
 
+source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
