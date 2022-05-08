@@ -915,7 +915,9 @@ uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = --(std::lower_bound(_two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width));
+  auto pos = std::lower_bound(_two_widths_sp_idx.begin(), _two_widths_sp_idx.end(), width);
+  if(pos != _two_widths_sp_idx.begin())
+    --pos;
   int idx = std::max(0, (int) std::distance(_two_widths_sp_idx.begin(), pos));
   for(; idx >= 0; idx--)
   {
