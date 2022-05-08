@@ -86,10 +86,10 @@ Opendp::placeRowFillers(int row,
                         const char* prefix,
                         dbMasterSeq *filler_masters)
 {
-  dbOrientType orient = rowOrient(row);
   int j = 0;
   while (j < row_site_count_) {
     Pixel *pixel = gridPixel(j, row);
+    const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr
         && pixel->is_valid) {
       int k = j;

@@ -848,10 +848,7 @@ Opendp::binSearch(int x,
     graphics_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
 
-  // Check y is beyond the border.
-  if (y_end > row_count_
-      // Check top power for even row multi-deck cell.
-      || (height % 2 == 0 && rowTopPower(bin_y) == topPower(cell))) {
+  if (y_end > row_count_) {
     return PixelPt();
   }
 
