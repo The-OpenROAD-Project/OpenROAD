@@ -87,7 +87,9 @@ Opendp::initGrid()
     const int y_row = (orig_y - core_.yMin()) / row_height_;
 
     for (int x = x_start; x < x_end; x++) {
-      grid_[y_row][x].is_valid = true;
+      Pixel& pixel = grid_[y_row][x];
+      pixel.is_valid = true;
+      pixel.orient_ = db_row->getOrient();
     }
 
     // The safety margin is to avoid having only a very few sites
@@ -372,20 +374,9 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
       }
     }
   }
-  // This is most likely broken. -cherry
-  if (have_multi_row_cells_) {
-    if (grid_height % 2 == 1) {
-      if (rowTopPower(grid_y) != topPower(cell)) {
-        cell->orient_ = dbOrientType::MX;
-      }
-      else {
-        cell->orient_ = dbOrientType::R0;
-      }
-    }
-  }
-  else {
-    cell->orient_ = rowOrient(grid_y);
-  }
+
+  // This is most likely broken for multi-row cells
+  cell->orient_ = gridPixel(grid_x, grid_y)->orient_;
 }
 
 }  // namespace opendp

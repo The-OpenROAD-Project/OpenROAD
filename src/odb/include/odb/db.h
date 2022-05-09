@@ -6952,6 +6952,7 @@ class dbTechLayer : public dbObject
   void setLef58Type(LEF58_TYPE type);
 
   LEF58_TYPE getLef58Type() const;
+  std::string getLef58TypeString() const;
 
   ///
   /// Get the layer name.
@@ -6979,7 +6980,7 @@ class dbTechLayer : public dbObject
   void setAlias(const char* alias);
 
   ///
-  /// Get the minimum path-width.
+  /// Get the default width.
   ///
   uint getWidth() const;
   void setWidth(int width);

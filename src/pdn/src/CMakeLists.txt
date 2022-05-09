@@ -38,7 +38,8 @@ include("openroad")
 swig_lib(NAME      pdn
          NAMESPACE pdn
          I_FILE    PdnGen.i
-         SWIG_INCLUDES ${ODB_HOME}/src/swig/tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
                        ${ODB_HOME}/include
          SCRIPTS   pdn.tcl
                    PdnGen.tcl

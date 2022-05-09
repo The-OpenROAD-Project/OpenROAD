@@ -9,7 +9,6 @@
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
 [INFO ODB-0134] Finished DEF file: simple07.def
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement         15.9 u

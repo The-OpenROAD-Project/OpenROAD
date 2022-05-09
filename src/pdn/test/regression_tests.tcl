@@ -56,6 +56,7 @@ record_tests {
   macros_cells_extend_boundary
   macros_cells_no_grid
   macros_narrow_channel_jog
+  macros_different_nets
 
   region_temp_sensor
   region_secondary_nets
@@ -78,6 +79,7 @@ record_tests {
   asap7_vias_max_rows_columns
   asap7_vias_dont_use
   asap7_taper
+  asap7_offcenter_via
 
   existing
 
