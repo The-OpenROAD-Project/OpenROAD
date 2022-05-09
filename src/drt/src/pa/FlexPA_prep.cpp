@@ -768,11 +768,9 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
   frCoord y = bp.y();
   frCoord width = getDesign()->getTech()->getLayer(layerNum)->getWidth();
   frCoord stepSize = stepSizeMultiplier * width;
-  frCoord pitch;
+  frCoord pitch = getDesign()->getTech()->getLayer(layerNum)->getPitch();
   gtl::rectangle_data<frCoord> rect;
   if (isBlock) {
-      auto tp = getDesign()->getPrefDirTracks(layerNum);
-      pitch = tp[0]->getTrackSpacing();
       gtl::extents(rect, layerPolys[0]);
       if (layerPolys.size() > 1)
           logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
