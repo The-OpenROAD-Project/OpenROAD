@@ -137,7 +137,6 @@ private:
                  int level,
                  // Return values.
                  int &wire_length,
-                 float &pin_cap,
                  float &fanout,
                  PinSeq &load_pins,
                  float &max_load_slew);
@@ -151,7 +150,6 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &pin_cap,
                      float &fanout,
                      PinSeq &load_pins,
                      float &max_load_slew);
@@ -165,7 +163,6 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &pin_cap,
                      float &fanout,
                      PinSeq &load_pins,
                      float &max_load_slew);
@@ -179,7 +176,6 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &pin_cap,
                      float &fanout,
                      PinSeq &load_pins,
                      float &max_load_slew);
@@ -196,11 +192,10 @@ private:
                     const Corner *corner,
                     bool resize,
                     int level,
-                    int &wire_length,
-                    float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins,
-                    float &max_load_slew);
+                    float &max_load_slew,
+                    float &pin_cap);
   void makeRepeater(const char *where,
                     int x,
                     int y,
@@ -208,11 +203,10 @@ private:
                     const Corner *corner,
                     bool resize,
                     int level,
-                    int &wire_length,
-                    float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins,
-                    float &max_load_slew);
+                    float &max_load_slew,
+                    float &pin_cap);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
   double dbuToMeters(int dist) const;
