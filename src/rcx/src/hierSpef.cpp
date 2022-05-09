@@ -628,7 +628,7 @@ bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg) {
     writePorts(net);
     writeITerms(net);
   }
-  if (_writingNodeCoords == C_STARRC)
+  if (_writingNodeCoords == C_ON)
     writeNodeCoords(netId, rcSet);
 
   if (_wCap || _wOnlyCCcap)

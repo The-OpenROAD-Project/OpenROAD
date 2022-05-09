@@ -75,8 +75,7 @@ class extSpef
   enum COORD_TYPE
   {
     C_NONE,
-    C_STARRC,
-    C_MAGMA
+    C_ON
   };
 
   char _inFile[1024];
@@ -232,7 +231,6 @@ class extSpef
   FILE* _capStatsFP;
 
   bool _singleP;
-  bool _NsLayer;
 
   std::vector<odb::dbNet*> _netV1;
 
