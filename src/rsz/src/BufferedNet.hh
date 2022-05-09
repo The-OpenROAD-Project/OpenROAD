@@ -67,6 +67,7 @@ using sta::PathRef;
 using sta::Delay;
 using sta::StaState;
 using sta::DcalcAnalysisPt;
+using sta::Corner;
 
 class BufferedNet;
 class Resizer;
@@ -115,7 +116,14 @@ public:
   LibertyCell *bufferCell() const { return buffer_cell_; }
   // load
   Pin *loadPin() const { return load_pin_; }
+  // wire
+  // routing level
   int layer() const { return layer_; }
+  void wireRC(const Corner *corner,
+              const Resizer *resizer,
+              // Return values.
+              double &cap,
+              double &res);
   // junction  left
   // buffer    wire
   // wire      end of wire

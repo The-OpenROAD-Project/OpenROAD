@@ -283,18 +283,10 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
       ? sta_->cmdCorner()
       : req_path.dcalcAnalysisPt(sta_)->corner();
     int wire_layer = bnet_wire->layer();
-    double layer_cap, layer_res;
-    if (wire_layer == BufferedNet::null_layer) {
-      layer_cap = wireSignalCapacitance(corner);
-      layer_res = wireSignalResistance(corner);
-    }
-    else {
-      odb::dbTech* tech = db_->getTech();
-      odb::dbTechLayer* layer = tech->findRoutingLayer(wire_layer);
-      layerRC(layer, corner, layer_res, layer_cap);
-    }
-    double wire_cap = wire_length * layer_cap;
+    double layer_res, layer_cap;
+    bnet_wire->wireRC(corner, this, layer_res, layer_cap);
     double wire_res = wire_length * layer_res;
+    double wire_cap = wire_length * layer_cap;
     double wire_delay = wire_res * wire_cap;
     BufferedNetPtr z = make_shared<BufferedNet>(BufferedNetType::wire,
                                                 wire_end, wire_layer, p);

@@ -31,4 +31,3 @@ report_worst_slack -max
 global_route
 estimate_parasitics -global_routing
 report_worst_slack -max
-

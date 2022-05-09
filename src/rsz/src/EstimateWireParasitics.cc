@@ -81,8 +81,8 @@ Resizer::setLayerRC(dbTechLayer *layer,
     }
   }
 
-  layer_res_[layer->getNumber()][corner->index()] = res;
-  layer_cap_[layer->getNumber()][corner->index()] = cap;
+  layer_res_[layer->getRoutingLevel()][corner->index()] = res;
+  layer_cap_[layer->getRoutingLevel()][corner->index()] = cap;
 }
 
 void
@@ -90,15 +90,25 @@ Resizer::layerRC(dbTechLayer *layer,
                  const Corner *corner,
                  // Return values.
                  double &res,
-                 double &cap)
+                 double &cap) const
+{
+  layerRC(layer->getRoutingLevel(), corner, res, cap);
+}
+
+void
+Resizer::layerRC(int routing_level,
+                 const Corner *corner,
+                 // Return values.
+                 double &res,
+                 double &cap) const
 {
   if (layer_res_.empty()) {
     res = 0.0;
     cap = 0.0;
   }
   else {
-    res = layer_res_[layer->getNumber()][corner->index()];
-    cap = layer_cap_[layer->getNumber()][corner->index()];
+    res = layer_res_[routing_level][corner->index()];
+    cap = layer_cap_[routing_level][corner->index()];
   }
 }
 
@@ -116,7 +126,7 @@ Resizer::setWireSignalRC(const Corner *corner,
 }
 
 double
-Resizer::wireSignalResistance(const Corner *corner)
+Resizer::wireSignalResistance(const Corner *corner) const
 {
   if (wire_signal_res_.empty())
     return 0.0;
@@ -125,7 +135,7 @@ Resizer::wireSignalResistance(const Corner *corner)
 }
 
 double
-Resizer::wireSignalCapacitance(const Corner *corner)
+Resizer::wireSignalCapacitance(const Corner *corner) const
 {
   if (wire_signal_cap_.empty())
     return 0.0;
@@ -137,7 +147,7 @@ void
 Resizer::wireSignalRC(const Corner *corner,
                       // Return values.
                       double &res,
-                      double &cap)
+                      double &cap) const
 {
   if (wire_signal_res_.empty())
     res = 0.0;
@@ -161,7 +171,7 @@ Resizer::setWireClkRC(const Corner *corner,
 }
 
 double
-Resizer::wireClkResistance(const Corner *corner)
+Resizer::wireClkResistance(const Corner *corner) const
 {
   if (wire_clk_res_.empty())
     return 0.0;
@@ -170,7 +180,7 @@ Resizer::wireClkResistance(const Corner *corner)
 }
 
 double
-Resizer::wireClkCapacitance(const Corner *corner)
+Resizer::wireClkCapacitance(const Corner *corner) const
 {
   if (wire_clk_cap_.empty())
     return 0.0;

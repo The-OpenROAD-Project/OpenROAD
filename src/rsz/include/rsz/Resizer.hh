@@ -157,7 +157,6 @@ public:
             dbSta *sta,
             SteinerTreeBuilder *stt_builder,
             GlobalRouter *global_router);
-
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,
@@ -166,7 +165,12 @@ public:
                const Corner *corner,
                // Return values.
                double &res,
-               double &cap);
+               double &cap) const;
+  void layerRC(int routing_level,
+               const Corner *corner,
+               // Return values.
+               double &res,
+               double &cap) const;
   // Set the resistance and capacitance used for parasitics on signal nets.
   void setWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
@@ -179,12 +183,12 @@ public:
   void wireSignalRC(const Corner *corner,
                     // Return values.
                     double &res,
-                    double &cap);
-  double wireSignalResistance(const Corner *corner);
-  double wireClkResistance(const Corner *corner);
+                    double &cap) const;
+  double wireSignalResistance(const Corner *corner) const;
+  double wireClkResistance(const Corner *corner) const;
   // farads/meter
-  double wireSignalCapacitance(const Corner *corner);
-  double wireClkCapacitance(const Corner *corner);
+  double wireSignalCapacitance(const Corner *corner) const;
+  double wireClkCapacitance(const Corner *corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);

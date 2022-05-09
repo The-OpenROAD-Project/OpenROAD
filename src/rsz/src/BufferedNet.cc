@@ -256,6 +256,19 @@ BufferedNet::maxLoadWireLength() const
   return 0;
 }
 
+void
+BufferedNet::wireRC(const Corner *corner,
+                    const Resizer *resizer,
+                    // Return values.
+                    double &res,
+                    double &cap)
+{
+  if (layer_ == BufferedNet::null_layer)
+    resizer->wireSignalRC(corner, res, cap);
+  else
+    resizer->layerRC(layer_, corner, res, cap);
+}
+
 ////////////////////////////////////////////////////////////////
 
 BufferedNetPtr
