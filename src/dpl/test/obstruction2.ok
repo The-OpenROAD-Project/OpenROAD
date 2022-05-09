@@ -13,14 +13,13 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 137 connections.
 [INFO ODB-0134] Finished DEF file: obstruction2.def
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement         73.5 u
 average displacement        2.3 u
 max displacement           12.4 u
 original HPWL             731.2 u
-legalized HPWL            737.9 u
+legalized HPWL            737.7 u
 delta HPWL                    1 %
 
 [INFO DPL-0001] Placed 258 filler instances.

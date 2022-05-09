@@ -14,7 +14,6 @@
 [INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
 [INFO ODB-0133]     Created 31790 nets and 67032 connections.
 [INFO ODB-0134] Finished DEF file: cell_on_block2.def
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement     301889.2 u

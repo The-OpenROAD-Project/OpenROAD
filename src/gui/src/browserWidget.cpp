@@ -291,7 +291,9 @@ void BrowserWidget::showEvent(QShowEvent* event)
 void BrowserWidget::hideEvent(QHideEvent* event)
 {
   removeOwner();
-  sta_->getDbNetwork()->removeObserver(this);
+  if (sta_ != nullptr) {
+    sta_->getDbNetwork()->removeObserver(this);
+  }
   clearModel();
 }
 

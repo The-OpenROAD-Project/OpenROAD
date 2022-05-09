@@ -215,6 +215,8 @@ class DbTechVia : public DbBaseVia
 
   odb::Rect required_bottom_rect_;
   odb::Rect required_top_rect_;
+
+  odb::Point via_center_;
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
