@@ -42,12 +42,12 @@ class Logger;
 namespace odb {
 class dbDatabase;
 class dbMTerm;
-}
+}  // namespace odb
 
 namespace sta {
 class dbNetwork;
 class Report;
-}
+}  // namespace sta
 
 namespace ifp {
 
@@ -55,40 +55,34 @@ using odb::dbDatabase;
 using sta::dbNetwork;
 using utl::Logger;
 
-void
-initFloorplan(int die_lx,
-	      int die_ly,
-	      int die_ux,
-	      int die_uy,
-	      int core_lx,
-	      int core_ly,
-	      int core_ux,
-	      int core_uy,
-	      const char *site_name,
-	      dbDatabase *db,
-	      Logger *logger);
+void initFloorplan(int die_lx,
+                   int die_ly,
+                   int die_ux,
+                   int die_uy,
+                   int core_lx,
+                   int core_ly,
+                   int core_ux,
+                   int core_uy,
+                   const char* site_name,
+                   dbDatabase* db,
+                   Logger* logger);
 
-void
-initFloorplan(double util,
-	      double aspect_ratio,
-	      int core_space_bottom,
-	      int core_space_top,
-	      int core_space_left,
-	      int core_space_right,
-	      const char *site_name,
-	      dbDatabase *db,
-	      Logger *logger);
+void initFloorplan(double util,
+                   double aspect_ratio,
+                   int core_space_bottom,
+                   int core_space_top,
+                   int core_space_left,
+                   int core_space_right,
+                   const char* site_name,
+                   dbDatabase* db,
+                   Logger* logger);
 
-void
-autoPlacePins(const char *pin_layer_name,
-	      dbDatabase *db,
-	      Logger *logger);
+void autoPlacePins(const char* pin_layer_name, dbDatabase* db, Logger* logger);
 
-void
-insertTiecells(odb::dbMTerm* tie_term,
-        const char* prefix,
-        dbDatabase *db,
-        dbNetwork* network,
-        Logger *logger);
+void insertTiecells(odb::dbMTerm* tie_term,
+                    const char* prefix,
+                    dbDatabase* db,
+                    dbNetwork* network,
+                    Logger* logger);
 
-} // namespace
+}  // namespace ifp
