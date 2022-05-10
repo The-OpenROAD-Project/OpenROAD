@@ -1,9 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,58 +33,31 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
+#pragma once
 
-%{
+#include <string>
 
-#include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Floorplan.h"
+namespace odb {
+class dbDatabase;
+}
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+namespace utl {
+class Logger;
+}
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+namespace ord {
 
-const char *
-openroad_git_describe();
+class Tech
+{
+ public:
+  Tech();
+  void readLEF(const std::string& file_name,
+               const std::string& lib_name);
+  void readLiberty(const std::string& file_name);
+  odb::dbDatabase* getDB();
 
-odb::dbDatabase *
-get_db();
+ private:
+  odb::dbDatabase* db_;
+};
 
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%}
-
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Floorplan.h"
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
+}  // namespace ord

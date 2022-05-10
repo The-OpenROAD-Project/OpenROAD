@@ -1,9 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,58 +33,39 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
+#pragma once
 
-%{
+#include <string>
 
-#include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Floorplan.h"
+namespace odb {
+class dbBlock;
+}  // namespace odb
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+namespace ord {
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+class Tech;
+class Floorplan;
 
-const char *
-openroad_git_describe();
+class Design
+{
+ public:
+  Design(Tech* tech);
+  void readVerilog(const std::string& file_name);
+  void link(const std::string& design_name);
 
-odb::dbDatabase *
-get_db();
+  void writeDb(const std::string& file_name);
+  void writeDef(const std::string& file_name);
 
-odb::dbTech *
-get_db_tech();
+  odb::dbBlock* getBlock();
+  utl::Logger* getLogger();
 
-bool
-db_has_tech();
+  int micronToDBU(double coord);
 
-odb::dbBlock *
-get_db_block();
+  // Services
+  Floorplan getFloorplan();
 
-%}
+ private:
+  Tech* tech_;
+};
 
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Floorplan.h"
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
+}  // namespace ord

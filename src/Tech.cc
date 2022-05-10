@@ -1,9 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,58 +33,41 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
-
-%{
-
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/lefin.h"
+#include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Floorplan.h"
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+namespace ord {
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+Tech::Tech()
+{
+  auto app = OpenRoad::openRoad();
+  db_ = app->getDb();
+}
 
-const char *
-openroad_git_describe();
+odb::dbDatabase* Tech::getDB()
+{
+  return db_;
+}
 
-odb::dbDatabase *
-get_db();
+void Tech::readLEF(const std::string& file_name, const std::string& lib_name)
+{
+  auto app = OpenRoad::openRoad();
+  const bool make_tech = db_->getTech() == nullptr;
+  const bool make_library = true;
+  app->readLef(file_name.c_str(), lib_name.c_str(), make_tech, make_library);
+}
 
-odb::dbTech *
-get_db_tech();
+void Tech::readLiberty(const std::string& file_name)
+{
+  auto sta = OpenRoad::openRoad()->getSta();
+  // TODO: take corner & min/max args
+  sta->readLiberty(file_name.c_str(),
+                   sta->cmdCorner(),
+                   sta::MinMaxAll::all(),
+                   true /* infer_latches */);
+}
 
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%}
-
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Floorplan.h"
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
+}  // namespace ord

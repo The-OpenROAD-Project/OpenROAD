@@ -31,6 +31,9 @@ set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(PAD_HOME ${OPENROAD_HOME}/src/pad)
 
 set(OPENROAD_SOURCE
+  Design.cc
+  Tech.cc
+  Floorplan.cc
   OpenRoad.cc
   Main.cc
   )

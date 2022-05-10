@@ -1,9 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,58 +33,69 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
-
-%{
-
 #include "odb/db.h"
-#include "ord/Tech.h"
 #include "ord/Design.h"
 #include "ord/Floorplan.h"
+#include "ord/OpenRoad.hh"
+#include "ord/Tech.h"
+#include "utl/Logger.h"
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+namespace ord {
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+Design::Design(Tech* tech) : tech_(tech)
+{
+}
 
-const char *
-openroad_git_describe();
+odb::dbBlock* Design::getBlock()
+{
+  auto chip = tech_->getDB()->getChip();
+  return chip ? chip->getBlock() : nullptr;
+}
 
-odb::dbDatabase *
-get_db();
+void Design::readVerilog(const std::string& file_name)
+{
+  auto chip = tech_->getDB()->getChip();
+  if (chip && chip->getBlock()) {
+    getLogger()->error(utl::ORD, 36, "A block already exists in the db");
+  }
 
-odb::dbTech *
-get_db_tech();
+  auto app = OpenRoad::openRoad();
+  app->readVerilog(file_name.c_str());
+}
 
-bool
-db_has_tech();
+void Design::link(const std::string& design_name)
+{
+  auto app = OpenRoad::openRoad();
+  app->linkDesign(design_name.c_str());
+}
 
-odb::dbBlock *
-get_db_block();
+void Design::writeDb(const std::string& file_name)
+{
+  auto app = OpenRoad::openRoad();
+  app->writeDb(file_name.c_str());
+}
 
-%}
+void Design::writeDef(const std::string& file_name)
+{
+  auto app = OpenRoad::openRoad();
+  app->writeDef(file_name.c_str(), "5.8");
+}
 
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Floorplan.h"
+Floorplan Design::getFloorplan()
+{
+  return Floorplan(*this);
+}
 
-const char *
-openroad_version();
+utl::Logger* Design::getLogger()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getLogger();
+}
 
-const char *
-openroad_git_describe();
+int Design::micronToDBU(double coord)
+{
+  int dbuPerMicron = getBlock()->getDbUnitsPerMicron();
+  return round(coord * dbuPerMicron);
+}
 
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
+}  // namespace ord

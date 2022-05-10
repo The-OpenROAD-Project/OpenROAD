@@ -66,6 +66,8 @@ function(swig_lib)
                PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY USE_SWIG_DEPENDENCIES TRUE)
+  set_property(SOURCE ${ARG_I_FILE}
+               PROPERTY USE_TARGET_INCLUDE_DIRECTORIES true)
 
   swig_add_library(${ARG_NAME}
     LANGUAGE ${ARG_LANGUAGE}

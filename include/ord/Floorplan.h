@@ -1,9 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,58 +33,39 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
+#pragma once
 
-%{
+// Temporary until ifp/include/ifp/InitFloorplan.hh can be swig'ed
 
-#include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Floorplan.h"
+#include <string>
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+namespace odb {
+class Rect;
+}  // namespace odb
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+namespace ord {
 
-const char *
-openroad_git_describe();
+class Design;
 
-odb::dbDatabase *
-get_db();
+class Floorplan
+{
+ public:
+  Floorplan(Design& design);
+  // Operations
+  void initialize(const odb::Rect& die_area,
+                  const odb::Rect& core_area,
+                  const std::string& site_name);
 
-odb::dbTech *
-get_db_tech();
+  void initialize(double utilization,
+                  double aspect_ratio,
+                  int core_space_bottom,
+                  int core_space_top,
+                  int core_space_left,
+                  int core_space_right,
+                  const std::string& site_name);
 
-bool
-db_has_tech();
+ private:
+  Design& design_;
+};
 
-odb::dbBlock *
-get_db_block();
-
-%}
-
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Floorplan.h"
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
+}  // namespace ord
