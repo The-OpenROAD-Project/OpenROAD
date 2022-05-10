@@ -121,7 +121,9 @@ public:
   float cap() const { return cap_; }
   void setCapacitance(float cap);
   float fanout() const { return fanout_; }
+  void setFanout(float fanout);
   float maxLoadSlew() const { return max_load_slew_; }
+  void setMaxLoadSlew(float max_slew);
   // load
   Pin *loadPin() const { return load_pin_; }
   // wire

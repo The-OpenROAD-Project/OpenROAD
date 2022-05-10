@@ -135,9 +135,7 @@ private:
                  int level,
                  // Return values.
                  int &wire_length,
-                 float &fanout,
-                 PinSeq &load_pins,
-                 float &max_load_slew);
+                 PinSeq &load_pins);
   void repairNetWire(BufferedNetPtr bnet,
                      Net *net,
                      const Pin *drvr_pin,
@@ -148,9 +146,7 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
+                     PinSeq &load_pins);
   void repairNetJunc(BufferedNetPtr bnet,
                      Net *net,
                      const Pin *drvr_pin,
@@ -161,9 +157,7 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
+                     PinSeq &load_pins);
   void repairNetLoad(BufferedNetPtr bnet,
                      Net *net,
                      const Pin *drvr_pin,
@@ -174,9 +168,7 @@ private:
                      int level,
                      // Return values.
                      int &wire_length,
-                     float &fanout,
-                     PinSeq &load_pins,
-                     float &max_load_slew);
+                     PinSeq &load_pins);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
                          const Corner *corner);
@@ -190,10 +182,11 @@ private:
                     const Corner *corner,
                     bool resize,
                     int level,
-                    float &fanout,
+                    // Return values.
                     PinSeq &load_pins,
-                    float &max_load_slew,
-                    float &pin_cap);
+                    float &repeater_cap,
+                    float &repeater_fanout,
+                    float &repeater_max_slew);
   void makeRepeater(const char *where,
                     int x,
                     int y,
@@ -201,10 +194,11 @@ private:
                     const Corner *corner,
                     bool resize,
                     int level,
-                    float &fanout,
+                    // Return values.
                     PinSeq &load_pins,
-                    float &max_load_slew,
-                    float &pin_cap);
+                    float &repeater_cap,
+                    float &repeater_fanout,
+                    float &repeater_max_slew);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
   double dbuToMeters(int dist) const;

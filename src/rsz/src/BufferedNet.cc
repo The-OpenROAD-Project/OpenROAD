@@ -236,6 +236,18 @@ BufferedNet::setCapacitance(float cap)
 }
 
 void
+BufferedNet::setFanout(float fanout)
+{
+  fanout_ = fanout;
+}
+
+void
+BufferedNet::setMaxLoadSlew(float max_slew)
+{
+  max_load_slew_ = max_slew;
+}
+
+void
 BufferedNet::setRequiredPath(const PathRef &path_ref)
 {
   required_path_ = path_ref;
