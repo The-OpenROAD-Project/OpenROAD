@@ -806,7 +806,7 @@ void FlexDRConnectivityChecker::splitPathSegs(
         } else {
             auto& prev = segSpans[i-1];
             frPathSeg* prevPs = static_cast<frPathSeg*>(netRouteObjs[prev.second]);
-            if (currPs->isBeginTruncated() && !isRedundant(splitPoints, curr.first.lo))
+            if (curr.first.lo != segSpans[first].first.lo && currPs->isBeginTruncated() && !isRedundant(splitPoints, curr.first.lo))
                 splitPoints.push_back(curr.first.lo);
             if (currPs->isEndTruncated() && !isRedundant(splitPoints, curr.first.hi))
                 splitPoints.push_back(curr.first.hi);
@@ -826,7 +826,6 @@ void FlexDRConnectivityChecker::splitPathSegs(
 }
 void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, frPathSeg* highestPs, int first, int& i, vector<pair<Span, int>>& segSpans, NetRouteObjs& netRouteObjs) {
     sort(splitPoints.begin(), splitPoints.end());
-    std::unique(splitPoints.begin(), splitPoints.end()); // remove duplicates
     if (splitPoints[splitPoints.size()-1] == highestPs->high())
         splitPoints.erase(std::prev(splitPoints.end()));
     if (!splitPoints.empty()) {
@@ -863,6 +862,8 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, f
                     ps->setEndStyle(highestPsEndStyle);
                     ps->setBeginStyle(frcTruncateEndStyle);
                     segSpans[segSpnIdx].first.hi = highestHi;
+                    if (currIdxSplitSpanIdxs < splitSpanIdxs.size()-1)
+                        s--;
                 } else {
                     segSpans[segSpnIdx].first.hi = splitPoints[s];
                     ps->setHigh(splitPoints[s]);
@@ -871,40 +872,38 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, f
                 getRegionQuery()->addDRObj(ps);
             }
         }
-        if (s <= splitPoints.size()) { //add remaining splits
-            for (; s <= splitPoints.size(); s++) {
-                int lo = splitPoints[s-1];
-                int hi;
-                frEndStyle hiStyle;
-                if (s == splitPoints.size()) {
-                    hiStyle = highestPsEndStyle;
-                    hi = highestHi;
-                } else {
-                    hi = splitPoints[s];
-                    hiStyle = frcTruncateEndStyle;
-                }
-                auto newSpan = pair<Span, int>({lo, hi}, netRouteObjs.size()); //add last segment piece
-                segSpans.insert(segSpans.begin()+i, newSpan);
-                i++;
-                unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
-                Point begin, end;
-                if (highestPs->isVertical()) {
-                    begin.set(highestPs->getBeginPoint().x(), lo);
-                    end.set(highestPs->getBeginPoint().x(), hi);
-                } else {
-                    begin.set(lo, highestPs->getBeginPoint().y());
-                    end.set(hi, highestPs->getBeginPoint().y());
-                }
-                newPs->setPoints(begin, end);
-                newPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
-                newPs->setEndStyle(hiStyle);
-                newPs->setLayerNum(highestPs->getLayerNum());
-                frPathSeg* ptr = newPs.get();
-                netRouteObjs.push_back(ptr);
-                highestPs->getNet()->addShape(std::move(newPs));
-                #pragma omp critical
-                getRegionQuery()->addDRObj(ptr);
+        for (; s <= splitPoints.size(); s++) { //add remaining splits
+            int lo = splitPoints[s-1];
+            int hi;
+            frEndStyle hiStyle;
+            if (s == splitPoints.size()) {
+                hiStyle = highestPsEndStyle;
+                hi = highestHi;
+            } else {
+                hi = splitPoints[s];
+                hiStyle = frcTruncateEndStyle;
             }
+            auto newSpan = pair<Span, int>({lo, hi}, netRouteObjs.size()); //add last segment piece
+            segSpans.insert(segSpans.begin()+i, newSpan);
+            i++;
+            unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
+            Point begin, end;
+            if (highestPs->isVertical()) {
+                begin.set(highestPs->getBeginPoint().x(), lo);
+                end.set(highestPs->getBeginPoint().x(), hi);
+            } else {
+                begin.set(lo, highestPs->getBeginPoint().y());
+                end.set(hi, highestPs->getBeginPoint().y());
+            }
+            newPs->setPoints(begin, end);
+            newPs->setBeginStyle(frEndStyle(frcTruncateEndStyle));
+            newPs->setEndStyle(hiStyle);
+            newPs->setLayerNum(highestPs->getLayerNum());
+            frPathSeg* ptr = newPs.get();
+            netRouteObjs.push_back(ptr);
+            highestPs->getNet()->addShape(std::move(newPs));
+            #pragma omp critical
+            getRegionQuery()->addDRObj(ptr);
         }
         sort(segSpans.begin()+first, segSpans.begin()+i);
     }
