@@ -20,8 +20,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     auto ap = dbAccessPoint::create(block, pin, 0);
     auto inst = dbInst::create(db->getChip()->getBlock(), and2, "i1");
     auto iterm = inst->getITerm(term);
-    auto seg = std::make_tuple(Rect(10,20,30,40), true, false);
-    ap->addSegment(seg);
+    ap->addSegment(Rect(10,20,30,40), true, false);
     ap->setPoint(Point(10,250));
     ap->setLayer(layer);
     ap->setHighType(dbAccessType::HalfGrid);
@@ -49,12 +48,9 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(ap->hasAccess(dbDirection::DOWN));
     auto path_segs = ap->getSegments();
     BOOST_TEST(path_segs.size() == 1);   
-    BOOST_TEST(std::get<0>(path_segs[0]).xMin() == std::get<0>(seg).xMin());
-    BOOST_TEST(std::get<0>(path_segs[0]).yMin() == std::get<0>(seg).yMin());
-    BOOST_TEST(std::get<0>(path_segs[0]).xMax() == std::get<0>(seg).xMax());
-    BOOST_TEST(std::get<0>(path_segs[0]).yMax() == std::get<0>(seg).yMax());
-    BOOST_TEST(std::get<1>(path_segs[0]) == std::get<1>(seg));
-    BOOST_TEST(std::get<2>(path_segs[0]) == std::get<2>(seg));
+    BOOST_TEST(std::get<0>(path_segs[0]) == Rect(10,20,30,40));
+    BOOST_TEST(std::get<1>(path_segs[0]) == true);
+    BOOST_TEST(std::get<2>(path_segs[0]) == false);
     std::vector<dbDirection> dirs;
     ap->getAccesses(dirs);
     BOOST_TEST(dirs.size() == 1);    
