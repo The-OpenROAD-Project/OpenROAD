@@ -94,10 +94,10 @@ proc initialize_floorplan { args } {
       set aspect_ratio 1.0
     }
     ifp::init_floorplan_util $util $aspect_ratio \
-      [sta::distance_ui_sta $core_sp_bottom] \
-      [sta::distance_ui_sta $core_sp_top] \
-      [sta::distance_ui_sta $core_sp_left] \
-      [sta::distance_ui_sta $core_sp_right] \
+      [ifp::to_dbu $core_sp_bottom] \
+      [ifp::to_dbu $core_sp_top] \
+      [ifp::to_dbu $core_sp_left] \
+      [ifp::to_dbu $core_sp_right] \
       $site_name
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
@@ -124,10 +124,10 @@ proc initialize_floorplan { args } {
 
       # convert die/core coordinates to meters.
       ifp::init_floorplan_core \
-	[sta::distance_ui_sta $die_lx] [sta::distance_ui_sta $die_ly] \
-	[sta::distance_ui_sta $die_ux] [sta::distance_ui_sta $die_uy] \
-	[sta::distance_ui_sta $core_lx] [sta::distance_ui_sta $core_ly] \
-	[sta::distance_ui_sta $core_ux] [sta::distance_ui_sta $core_uy] \
+	[ifp::to_dbu $die_lx] [ifp::to_dbu $die_ly] \
+	[ifp::to_dbu $die_ux] [ifp::to_dbu $die_uy] \
+	[ifp::to_dbu $core_lx] [ifp::to_dbu $core_ly] \
+	[ifp::to_dbu $core_ux] [ifp::to_dbu $core_uy] \
 	$site_name
     } else {
       utl::error IFP 17 "no -core_area specified."
@@ -266,6 +266,11 @@ proc insert_tiecells { args } {
 }
 
 namespace eval ifp {
+
+proc to_dbu { coord } {
+    set in_meters [sta::distance_ui_sta $coord]
+    return [ord::microns_to_dbu [expr $in_meters * 1e6]]
+}
 
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   set block [ord::get_db_block]
