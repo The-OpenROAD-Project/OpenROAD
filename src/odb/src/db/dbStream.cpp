@@ -115,4 +115,17 @@ dbIStream::dbIStream(_dbDatabase* db, FILE* f)
   }
 }
 
+std::ostream& operator<<(std::ostream& os, const Rect& box)
+{
+  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
+     << " " << box.yMax() << " )";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Point& pIn)
+{
+  os << "( " << pIn.x() << " " << pIn.y() << " )";
+  return os;
+}
+
 }  // namespace odb
