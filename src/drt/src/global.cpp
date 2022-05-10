@@ -116,12 +116,6 @@ int HISTCOST = 32;
 
 namespace fr {
 
-ostream& operator<<(ostream& os, const Point& pIn)
-{
-  os << "( " << pIn.x() << " " << pIn.y() << " )";
-  return os;
-}
-
 ostream& operator<<(ostream& os, const frRect& pinFigIn)
 {
   //  if (pinFigIn.getPin()) {
@@ -262,13 +256,6 @@ ostream& operator<<(ostream& os, const frInst& instIn)
   for (auto& m : instIn.getInstTerms()) {
     os << endl << *m;
   }
-  return os;
-}
-
-ostream& operator<<(ostream& os, const Rect& box)
-{
-  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
-     << " " << box.yMax() << " )";
   return os;
 }
 
