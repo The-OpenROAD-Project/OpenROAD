@@ -33,6 +33,7 @@
 #pragma once
 
 #include <algorithm>
+#include <iosfwd>
 #include <vector>
 
 #include "odb.h"
@@ -128,6 +129,8 @@ class Point
   friend dbIStream& operator>>(dbIStream& stream, Point& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
 };
+
+std::ostream& operator<<(std::ostream& os, const Point& pIn);
 
 /*
 an Oct represents a 45-degree routing segment as 2 connected octagons
@@ -411,6 +414,8 @@ class Rect
   friend dbIStream& operator>>(dbIStream& stream, Rect& r);
   friend dbOStream& operator<<(dbOStream& stream, const Rect& r);
 };
+
+std::ostream& operator<<(std::ostream& os, const Rect& box);
 
 inline Point::Point()
 {
