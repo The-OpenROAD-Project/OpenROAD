@@ -125,8 +125,6 @@ private:
                  const Corner *&corner);
   float bufferInputMaxSlew(LibertyCell *buffer,
                            const Corner *corner) const;
-  float maxInputSlew(const LibertyPort *input,
-                     const Corner *corner) const;
   void repairNet(BufferedNetPtr bnet,
                  Net *net,
                  const Pin *drvr_pin,

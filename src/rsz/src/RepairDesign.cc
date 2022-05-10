@@ -302,7 +302,8 @@ RepairDesign::repairNet(Net *net,
 {
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
-    BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin);
+    const Corner *corner = sta_->cmdCorner();
+    BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
     if (bnet) {
       debugPrint(logger_, RSZ, "repair_net", 1, "repair net {}",
                  sdc_network_->pathName(drvr_pin));
@@ -321,7 +322,6 @@ RepairDesign::repairNet(Net *net,
         bool repair_cap = false;
         bool repair_fanout = false;
         bool repair_wire = false;
-        const Corner *corner = sta_->cmdCorner();
         if (check_cap) {
           float cap1, max_cap1, cap_slack1;
           const Corner *corner1;
@@ -534,20 +534,7 @@ RepairDesign::bufferInputMaxSlew(LibertyCell *buffer,
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
-  return maxInputSlew(input, corner);
-}
-
-float
-RepairDesign::maxInputSlew(const LibertyPort *input,
-                           const Corner *corner) const
-{
-  float limit;
-  bool exists;
-  sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
-  // umich brain damage control
-  if (limit == 0.0)
-    limit = INF;
-  return limit;
+  return resizer_->maxInputSlew(input, corner);
 }
 
 // Find the output port load capacitance that results in slew.
@@ -725,10 +712,10 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  delayAsString(load_slew, this, 3),
                  delayAsString(max_load_slew, this, 3));
       // Using elmore delay to approximate wire
-      // load_slew = (Rbuffer + L*Rwire) * (L*Cwire + Cref) * k_threshold
+      // load_slew = (Rbuffer + L*Rwire) * (L*Cwire + Cref) * elmore_skew_factor_
       // Setting this to max_slew_load is a quadratic in L
       // L^2*Rwire*Cwire + L*(Rbuffer*Cwire + Rwire*Cref)
-      //   + Rbuffer*Cref - max_load_slew/k_threshold
+      //   + Rbuffer*Cref - max_load_slew/elmore_skew_factor_
       // Solve using quadradic eqn for L.
       float r_buffer = resizer_->bufferDriveResistance(buffer_cell);
       float ref_cap = bnet->ref()->cap();
@@ -751,12 +738,12 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  units_->distanceUnit()->asString(dbuToMeters(split_length), 1));
     }
     if (split_wire) {
-      // Distance from pt to repeater backward toward from_pt.
+      // Distance from to_pt to repeater backward toward from_pt.
       // Note that split_length can be longer than the wire length
       // because it is the maximum value that satisfies max slew/cap.
       double buf_dist = (split_length >= length)
         ? length
-        : length - split_length * (1.0 - length_margin);
+        : split_length * (1.0 - length_margin);
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;
@@ -771,8 +758,9 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       to_x = buf_x;
       to_y = buf_y;
 
-      load_cap = pin_cap;
-      load_slew = r_drvr * load_cap * elmore_skew_factor_;
+      float wire_length1 = dbuToMeters(wire_length);
+      load_cap = pin_cap + wire_length1 * wire_cap;
+      load_slew = (r_drvr + wire_length1 * wire_res) * load_cap * elmore_skew_factor_;
       buffer_cell = resizer_->findTargetCell(resizer_->buffer_lowest_drive_,
                                              load_cap, false);
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}wl={} l={}",
@@ -965,7 +953,7 @@ RepairDesign::repairNetLoad(BufferedNetPtr bnet,
   if (load_port) {
     bnet->setCapacitance(load_port->capacitance());
     fanout = resizer_->portFanoutLoad(load_port);
-    max_load_slew = maxInputSlew(load_port, corner);
+    max_load_slew = resizer_->maxInputSlew(load_port, corner);
   }
   else {
     bnet->setCapacitance(0.0);

@@ -1457,7 +1457,7 @@ Resizer::reportLongWires(int count,
   for (Vertex *drvr : drvrs) {
     Pin *drvr_pin = drvr->pin();
     double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
-    double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
+    double steiner_length = dbuToMeters(findMaxSteinerDist(drvr, corner));
     double delay = (wire_length * wire_res) * (wire_length * wire_cap) * 0.5;
     logger_->report("{} manhtn {} steiner {} {}",
                     sdc_network_->pathName(drvr_pin),
@@ -1497,38 +1497,15 @@ Resizer::findLongWires(VertexSeq &drvrs)
     drvrs.push_back(drvr_dist.first);
 }
 
-void
-Resizer::findLongWiresSteiner(VertexSeq &drvrs)
-{
-  Vector<DrvrDist> drvr_dists;
-  VertexIterator vertex_iter(graph_);
-  while (vertex_iter.hasNext()) {
-    Vertex *vertex = vertex_iter.next();
-    if (vertex->isDriver(network_)) {
-      Pin *pin = vertex->pin();
-      // Hands off the clock nets.
-      if (!sta_->isClock(pin)
-          && !vertex->isConstant())
-        drvr_dists.push_back(DrvrDist(vertex, findMaxSteinerDist(vertex)));
-    }
-  }
-  sort(drvr_dists, [](const DrvrDist &drvr_dist1,
-                          const DrvrDist &drvr_dist2) {
-                     return drvr_dist1.second > drvr_dist2.second;
-                   });
-  drvrs.reserve(drvr_dists.size());
-  for (DrvrDist &drvr_dist : drvr_dists)
-    drvrs.push_back(drvr_dist.first);
-}
-
 // Find the maximum distance along steiner tree branches from
 // the driver to loads (in dbu).
 int
-Resizer::findMaxSteinerDist(Vertex *drvr)
+Resizer::findMaxSteinerDist(Vertex *drvr,
+                            const Corner *corner)
 
 {
   Pin *drvr_pin = drvr->pin();
-  BufferedNetPtr bnet = makeBufferedNetSteiner(drvr_pin);
+  BufferedNetPtr bnet = makeBufferedNetSteiner(drvr_pin, corner);
   if (bnet)
     return bnet->maxLoadWireLength();
   else
@@ -1632,7 +1609,7 @@ Resizer::makeUniqueInstName(const char *base_name,
 }
 
 float
-Resizer::portFanoutLoad(LibertyPort *port)
+Resizer::portFanoutLoad(LibertyPort *port) const
 {
   float fanout_load;
   bool exists;
@@ -2395,15 +2372,39 @@ Resizer::isRegister(Vertex *vertex)
   return false;
 }
 
-Instance *Resizer::makeInstance(LibertyCell *cell,
-                                const char *name,
-                                Instance *parent)
+Instance *
+Resizer::makeInstance(LibertyCell *cell,
+                      const char *name,
+                      Instance *parent)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
   Instance *inst = db_network_->makeInstance(cell, name, parent);
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   return inst;
+}
+
+float
+Resizer::portCapacitance(LibertyPort *input,
+                         const Corner *corner) const
+{
+  const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  int lib_ap = dcalc_ap->libertyIndex();
+  LibertyPort *corner_input = input->cornerPort(lib_ap);
+  return corner_input->capacitance();
+}
+
+float
+Resizer::maxInputSlew(const LibertyPort *input,
+                      const Corner *corner) const
+{
+  float limit;
+  bool exists;
+  sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
+  // umich brain damage control
+  if (limit == 0.0)
+    limit = INF;
+  return limit;
 }
 
 } // namespace

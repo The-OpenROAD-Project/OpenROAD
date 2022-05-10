@@ -86,37 +86,46 @@ public:
   // load
   BufferedNet(BufferedNetType type,
               Point location,
-              Pin *load_pin);
+              Pin *load_pin,
+              const Corner *corner,
+              const Resizer *resizer);
+  // wire
+  BufferedNet(BufferedNetType type,
+              Point location,
+              int layer,
+              BufferedNetPtr ref,
+              const Corner *corner,
+              const Resizer *resizer);
   // junc
   BufferedNet(BufferedNetType type,
               Point location,
               BufferedNetPtr ref,
               BufferedNetPtr ref2);
-  // wire
-  BufferedNet(BufferedNetType type,
-              Point location,
-              int layer,
-              BufferedNetPtr ref);
   // buffer
   BufferedNet(BufferedNetType type,
               Point location,
               LibertyCell *buffer_cell,
-              BufferedNetPtr ref);
-  string to_string(Resizer *resizer);
-  void reportTree(Resizer *resizer);
+              BufferedNetPtr ref,
+              const Corner *corner,
+              const Resizer *resizer);
+  string to_string(const Resizer *resizer) const;
+  void reportTree(const Resizer *resizer) const;
   void reportTree(int level,
-                  Resizer *resizer);
+                  const Resizer *resizer) const;
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
   // wire     wire is from loc to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
   Point location() const { return location_; }
-  // buffer
-  LibertyCell *bufferCell() const { return buffer_cell_; }
+  float cap() const { return cap_; }
+  void setCapacitance(float cap);
+  float fanout() const { return fanout_; }
+  float maxLoadSlew() const { return max_load_slew_; }
   // load
   Pin *loadPin() const { return load_pin_; }
   // wire
+  int length() const;
   // routing level
   int layer() const { return layer_; }
   void wireRC(const Corner *corner,
@@ -124,6 +133,8 @@ public:
               // Return values.
               double &cap,
               double &res);
+  // buffer
+  LibertyCell *bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -135,9 +146,7 @@ public:
   int maxLoadWireLength() const;
 
   // Rebuffer
-  float cap() const { return cap_; }
-  void setCapacitance(float cap);
-  Required required(StaState *sta);
+  Required required(const StaState *sta) const;
   const PathRef &requiredPath() const { return required_path_; }
   void setRequiredPath(const PathRef &path_ref);
   Delay requiredDelay() const { return required_delay_; }
@@ -150,6 +159,10 @@ public:
 private:
   BufferedNetType type_;
   Point location_;
+  // Capacitance looking downstream from here.
+  float cap_;
+  float fanout_;
+  float max_load_slew_;
   // load
   Pin *load_pin_;
   // buffer
@@ -162,8 +175,6 @@ private:
   BufferedNetPtr ref2_;
 
   // Rebuffer annotations
-  // Capacitance looking downstream from here.
-  float cap_;
   // PathRef for worst required path at load.
   PathRef required_path_;
   // Max delay from here to the loads.

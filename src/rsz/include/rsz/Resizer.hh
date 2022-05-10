@@ -384,18 +384,20 @@ protected:
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(VertexSeq &drvrs);
-  void findLongWiresSteiner(VertexSeq &drvrs);
-  int findMaxSteinerDist(Vertex *drvr);
+  int findMaxSteinerDist(Vertex *drvr,
+                         const Corner *corner);
   float driveResistance(const Pin *drvr_pin);
   float bufferDriveResistance(const LibertyCell *buffer) const;
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
-  float portFanoutLoad(LibertyPort *port);
+  float portFanoutLoad(LibertyPort *port) const;
   float pinCapacitance(const Pin *pin,
                        const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
+  float portCapacitance(LibertyPort *input,
+                        const Corner *corner) const;
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -534,6 +536,7 @@ protected:
 
   int rebuffer(const Pin *drvr_pin);
   BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
+                                  const Corner *corner,
                                   int level);
   void rebufferTopDown(BufferedNetPtr choice,
                        Net *net,
@@ -541,6 +544,7 @@ protected:
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
+                   const Corner *corner,
                    int level);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
@@ -553,9 +557,14 @@ protected:
                               bool revisiting_inst);
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree *makeSteinerTree(const Pin *drvr_pin);
-  BufferedNetPtr makeBufferedNet(const Pin *drvr_pin);
-  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin);
-  BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin);
+  BufferedNetPtr makeBufferedNet(const Pin *drvr_pin,
+                                 const Corner *corner);
+  BufferedNetPtr makeBufferedNetSteiner(const Pin *drvr_pin,
+                                        const Corner *corner);
+  BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin,
+                                       const Corner *corner);
+  float maxInputSlew(const LibertyPort *input,
+                     const Corner *corner) const;
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -573,7 +582,7 @@ protected:
   bool isRegOutput(Vertex *vertex);
   bool isRegister(Vertex *vertex);
 
-  Logger *logger() { return logger_; }
+  Logger *logger() const { return logger_; }
 
   RepairDesign *repair_design_;
 
