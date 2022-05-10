@@ -126,45 +126,27 @@ private:
   float bufferInputMaxSlew(LibertyCell *buffer,
                            const Corner *corner) const;
   void repairNet(BufferedNetPtr bnet,
-                 Net *net,
                  const Pin *drvr_pin,
                  float max_cap,
                  float max_fanout,
-                 int max_length,
-                 const Corner *corner,
+                 int max_length, // dbu
+                 const Corner *corner);
+  void repairNet(BufferedNetPtr bnet,
                  int level,
                  // Return values.
                  int &wire_length,
                  PinSeq &load_pins);
   void repairNetWire(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
   void repairNetJunc(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
   void repairNetLoad(BufferedNetPtr bnet,
-                     Net *net,
-                     const Pin *drvr_pin,
-                     float max_cap,
-                     float max_fanout,
-                     int max_length,
-                     const Corner *corner,
                      int level,
                      // Return values.
                      int &wire_length,
@@ -179,7 +161,6 @@ private:
   void makeRepeater(const char *where,
                     Point loc,
                     LibertyCell *buffer_cell,
-                    const Corner *corner,
                     bool resize,
                     int level,
                     // Return values.
@@ -191,7 +172,6 @@ private:
                     int x,
                     int y,
                     LibertyCell *buffer_cell,
-                    const Corner *corner,
                     bool resize,
                     int level,
                     // Return values.
@@ -209,6 +189,13 @@ private:
   dbNetwork *db_network_;
   Resizer *resizer_;
   int dbu_;
+
+  // Implicit arguments to repairNet bnet recursion.
+  const Pin *drvr_pin_;
+  float max_cap_;
+  float max_fanout_;
+  int max_length_;
+  const Corner *corner_;
 
   int resize_count_;
   int inserted_buffer_count_;
