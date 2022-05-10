@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <iostream>
+
 #include "dbStream.h"
 
 #include "db.h"
@@ -113,6 +115,19 @@ dbIStream::dbIStream(_dbDatabase* db, FILE* f)
     _lef_dist_factor = 0.0005;
     _lef_area_factor = 0.00000025;
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const Rect& box)
+{
+  os << "( " << box.xMin() << " " << box.yMin() << " ) ( " << box.xMax()
+     << " " << box.yMax() << " )";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Point& pIn)
+{
+  os << "( " << pIn.x() << " " << pIn.y() << " )";
+  return os;
 }
 
 }  // namespace odb

@@ -167,8 +167,6 @@ std::ostream& operator<<(std::ostream& os, const fr::frBTerm& termIn);
 //std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
-std::ostream& operator<<(std::ostream& os, const odb::Point& pIn);
-std::ostream& operator<<(std::ostream& os, const odb::Rect& box);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frShape& fig);
 std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
