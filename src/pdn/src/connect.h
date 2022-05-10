@@ -148,6 +148,7 @@ class Connect
                             const odb::Rect& upper_rect,
                             const ViaGenerator::Constraint& upper_constraint) const;
 
+  void populateDBVias();
   void populateGenerateRules();
   void populateTechVias();
 

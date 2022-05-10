@@ -226,6 +226,8 @@ class RepairChannelStraps : public Straps
       odb::dbTechLayer* layer);
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);
+
+  int getNextWidth() const;
 };
 
 }  // namespace pdn

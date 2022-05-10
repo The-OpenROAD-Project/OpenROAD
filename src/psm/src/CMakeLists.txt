@@ -49,6 +49,7 @@ target_sources(psm
   pdnsim.cpp
   MakePDNSim.cpp
   heatMap.cpp
+  debug_gui.cpp
 )
 
 target_include_directories( psm

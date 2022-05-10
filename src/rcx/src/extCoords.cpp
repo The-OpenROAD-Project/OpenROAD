@@ -278,9 +278,6 @@ bool extSpef::readNodeCoords(uint cpos) {
   _xCoordTable->add(x);
   _yCoordTable->add(y);
   uint level = 0;
-  //	if (_NsLayer && _parser->getWordCnt() > cpos + 3)
-  //		level = _tech->findLayer(_parser->get(cpos +
-  // 3))->getRoutingLevel();
   _levelTable->add(level);
   return true;
 }

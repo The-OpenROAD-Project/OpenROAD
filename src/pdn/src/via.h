@@ -93,6 +93,7 @@ class Enclosure
   Enclosure();
   Enclosure(int x, int y);
   Enclosure(odb::dbTechLayerCutEnclosureRule* rule, odb::dbTechLayer* layer, const odb::Rect& cut);
+  Enclosure(odb::dbTechViaLayerRule* rule, odb::dbTechLayer* layer);
 
   int getX() const { return x_; }
   int getY() const { return y_; }
@@ -214,6 +215,8 @@ class DbTechVia : public DbBaseVia
 
   odb::Rect required_bottom_rect_;
   odb::Rect required_top_rect_;
+
+  odb::Point via_center_;
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
@@ -411,7 +414,7 @@ class ViaGenerator
   virtual odb::dbTechLayer* getTopLayer() const = 0;
   virtual odb::dbTechLayer* getCutLayer() const = 0;
 
-  const odb::Rect& getCut() const { return cut_; }
+  virtual const odb::Rect& getCut() const { return cut_; }
   virtual int getCutArea() const;
 
   void setCutPitchX(int pitch) { cut_pitch_x_ = pitch; }
@@ -434,7 +437,7 @@ class ViaGenerator
              bool use_top_min_enclosure);
   virtual int getRows() const;
   virtual int getColumns() const;
-  int getTotalCuts() const;
+  virtual int getTotalCuts() const;
 
   DbVia* generate(odb::dbBlock* block) const;
   virtual DbBaseVia* makeBaseVia(int rows,
@@ -583,6 +586,8 @@ class GenerateViaGenerator : public ViaGenerator
   virtual const Constraint getLowerConstraint() const override { return {true, true}; }
   virtual const Constraint getUpperConstraint() const override { return {true, true}; }
 
+  virtual void getMinimumEnclosures(std::vector<Enclosure>& bottom, std::vector<Enclosure>& top, bool rules_only) const override;
+
  private:
   odb::dbTechViaGenerateRule* rule_;
 
@@ -613,7 +618,10 @@ class TechViaGenerator : public ViaGenerator
   virtual odb::dbTechLayer* getTopLayer() const override { return top_; }
   virtual odb::dbTechLayer* getCutLayer() const override { return cut_; }
 
+  virtual const odb::Rect& getCut() const override;
   int getCutArea() const override;
+
+  virtual int getTotalCuts() const override;
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const override;
@@ -634,6 +642,7 @@ class TechViaGenerator : public ViaGenerator
   odb::dbTechVia* via_;
 
   int cuts_;
+  odb::Rect cut_outline_;
 
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* cut_;

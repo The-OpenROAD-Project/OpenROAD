@@ -166,6 +166,8 @@ repair_timing
 report_worst_slack -min -digits 3
 report_worst_slack -max -digits 3
 report_tns -digits 3
+report_check_types -max_slew -max_capacitance -max_fanout -violators -digits 3
+
 utl::metric "RSZ::worst_slack_min" [sta::worst_slack -min]
 utl::metric "RSZ::worst_slack_max" [sta::worst_slack -max]
 utl::metric "RSZ::tns_max" [sta::total_negative_slack -max]
