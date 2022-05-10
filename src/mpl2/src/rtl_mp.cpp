@@ -356,9 +356,9 @@ bool rtl_macro_placer(const char* config_file,
 
   file.close();
 
-  string invs_filename
+  string txt_filename
       = string("./") + string(report_directory) + "/macro_placement.txt";
-  file.open(invs_filename);
+  file.open(txt_filename);
   for (int i = 0; i < clusters.size(); i++) {
     if (clusters[i]->GetNumMacro() > 0) {
       float cluster_lx = clusters[i]->GetX();
