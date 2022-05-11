@@ -100,22 +100,22 @@ public:
   InitFloorplan() {}
   void initFloorplan(double util,
 		     double aspect_ratio,
-		     double core_space_bottom,
-		     double core_space_top,
-		     double core_space_left,
-		     double core_space_right,
+		     int core_space_bottom,
+		     int core_space_top,
+		     int core_space_left,
+		     int core_space_right,
 		     const char *site_name,
 		     dbDatabase *db,
 		     Logger *logger);
 
-  void initFloorplan(double die_lx,
-		     double die_ly,
-		     double die_ux,
-		     double die_uy,
-		     double core_lx,
-		     double core_ly,
-		     double core_ux,
-		     double core_uy,
+  void initFloorplan(int die_lx,
+		     int die_ly,
+		     int die_ux,
+		     int die_uy,
+		     int core_lx,
+		     int core_ly,
+		     int core_ux,
+		     int core_uy,
 		     const char *site_name,
 		     dbDatabase *db,
 		     Logger *logger );
@@ -125,14 +125,14 @@ public:
 		     Logger *logger);
 
 protected:
-  void initFloorplan(double die_lx,
-		     double die_ly,
-		     double die_ux,
-		     double die_uy,
-		     double core_lx,
-		     double core_ly,
-		     double core_ux,
-		     double core_uy,
+  void initFloorplan(int die_lx,
+		     int die_ly,
+		     int die_ux,
+		     int die_uy,
+		     int core_lx,
+		     int core_ly,
+		     int core_ux,
+		     int core_uy,
 		     const char *site_name);
   double designArea();
   void makeRows(dbSite *site,
@@ -145,7 +145,7 @@ protected:
 		  Rect &die_area);
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
-  int metersToMfgGrid(double dist) const;
+  int snapToMfgGrid(int coord) const;
   int metersToDbu(double dist) const;
   double dbuToMeters(int dist) const;
   void updateVoltageDomain(dbSite *site,
@@ -162,10 +162,10 @@ protected:
 void
 initFloorplan(double util,
 	      double aspect_ratio,
-	      double core_space_bottom,
-	      double core_space_top,
-	      double core_space_left,
-	      double core_space_right,
+	      int core_space_bottom,
+	      int core_space_top,
+	      int core_space_left,
+	      int core_space_right,
 	      const char *site_name,
 	      dbDatabase *db,
 	      Logger *logger)
@@ -178,14 +178,14 @@ initFloorplan(double util,
 }
 
 void
-initFloorplan(double die_lx,
-	      double die_ly,
-	      double die_ux,
-	      double die_uy,
-	      double core_lx,
-	      double core_ly,
-	      double core_ux,
-	      double core_uy,
+initFloorplan(int die_lx,
+	      int die_ly,
+	      int die_ux,
+	      int die_uy,
+	      int core_lx,
+	      int core_ly,
+	      int core_ux,
+	      int core_uy,
 	      const char *site_name,
 	      dbDatabase *db,
               Logger *logger)
@@ -199,10 +199,10 @@ initFloorplan(double die_lx,
 void
 InitFloorplan::initFloorplan(double util,
 			     double aspect_ratio,
-			     double core_space_bottom,
-			     double core_space_top,
-			     double core_space_left,
-			     double core_space_right,
+			     int core_space_bottom,
+			     int core_space_top,
+			     int core_space_left,
+			     int core_space_right,
 			     const char *site_name,
 			     dbDatabase *db,
 			     Logger *logger)
@@ -213,20 +213,19 @@ InitFloorplan::initFloorplan(double util,
   if (chip) {
     block_ = chip->getBlock();
     if (block_) {
-      // In microns.
-      double design_area = designArea();
-      double core_area = design_area / util;
-      double core_width = std::sqrt(core_area / aspect_ratio);
-      double core_height = core_width * aspect_ratio;
+      const double design_area = designArea();
+      const double core_area = design_area / util;
+      const int core_width = metersToDbu(std::sqrt(core_area / aspect_ratio));
+      const int core_height = round(core_width * aspect_ratio);
 
-      double core_lx = core_space_left;
-      double core_ly = core_space_bottom;
-      double core_ux = core_lx + core_width;
-      double core_uy = core_ly + core_height;
-      double die_lx = 0.0;
-      double die_ly = 0.0;
-      double die_ux = core_width + core_space_left + core_space_right ;
-      double die_uy = core_height + core_space_top + core_space_bottom;
+      const int core_lx = core_space_left;
+      const int core_ly = core_space_bottom;
+      const int core_ux = core_lx + core_width;
+      const int core_uy = core_ly + core_height;
+      const int die_lx = 0;
+      const int die_ly = 0;
+      const int die_ux = core_ux + core_space_right ;
+      const int die_uy = core_uy + core_space_top;
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
 		    site_name);
@@ -240,21 +239,21 @@ InitFloorplan::designArea()
   double design_area = 0.0;
   for (dbInst *inst : block_->getInsts()) {
     dbMaster *master = inst->getMaster();
-    double area = dbuToMeters(master->getHeight()) * dbuToMeters(master->getWidth());
+    const double area = dbuToMeters(master->getHeight()) * dbuToMeters(master->getWidth());
     design_area += area;
   }
   return design_area;
 }
 
 void
-InitFloorplan::initFloorplan(double die_lx,
-			     double die_ly,
-			     double die_ux,
-			     double die_uy,
-			     double core_lx,
-			     double core_ly,
-			     double core_ux,
-			     double core_uy,
+InitFloorplan::initFloorplan(int die_lx,
+			     int die_ly,
+			     int die_ux,
+			     int die_uy,
+			     int core_lx,
+			     int core_ly,
+			     int core_ux,
+			     int core_uy,
 			     const char *site_name,
 			     dbDatabase *db,
 			     Logger *logger)
@@ -280,20 +279,20 @@ divCeil(int dividend, int divisor)
 }
 
 void
-InitFloorplan::initFloorplan(double die_lx,
-			     double die_ly,
-			     double die_ux,
-			     double die_uy,
-			     double core_lx,
-			     double core_ly,
-			     double core_ux,
-			     double core_uy,
+InitFloorplan::initFloorplan(int die_lx,
+			     int die_ly,
+			     int die_ux,
+			     int die_uy,
+			     int core_lx,
+			     int core_ly,
+			     int core_ux,
+			     int core_uy,
 			     const char *site_name)
 {
-  Rect die_area(metersToMfgGrid(die_lx),
-                metersToMfgGrid(die_ly),
-                metersToMfgGrid(die_ux),
-                metersToMfgGrid(die_uy));
+  Rect die_area(snapToMfgGrid(die_lx),
+                snapToMfgGrid(die_ly),
+                snapToMfgGrid(die_ux),
+                snapToMfgGrid(die_uy));
   block_->setDieArea(die_area);
 
   if (site_name && site_name[0]
@@ -309,17 +308,17 @@ InitFloorplan::initFloorplan(double die_lx,
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
-      int clx = divCeil(metersToDbu(core_lx), site_dx) * site_dx;
-      int cly = divCeil(metersToDbu(core_ly), site_dy) * site_dy;
+      int clx = divCeil(core_lx, site_dx) * site_dx;
+      int cly = divCeil(core_ly, site_dy) * site_dy;
       if (clx != core_lx || cly != core_ly) {
         dbTech *tech = db_->getTech();
         const double dbu = tech->getDbUnitsPerMicron();
         logger_->warn(IFP, 28,
                       "Core area lower left ({:.3f}, {:.3f}) snapped to ({:.3f}, {:.3f}).",
-                      1e6 * core_lx, 1e6 * core_ly, clx / dbu, cly / dbu);
+                      core_lx / dbu, core_ly / dbu, clx / dbu, cly / dbu);
       }
-      int cux = metersToDbu(core_ux);
-      int cuy = metersToDbu(core_uy);
+      int cux = core_ux;
+      int cuy = core_uy;
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
     }
@@ -555,16 +554,15 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 }
 
 int
-InitFloorplan::metersToMfgGrid(double dist) const
+InitFloorplan::snapToMfgGrid(int coord) const
 {
   dbTech *tech = db_->getTech();
-  int dbu = tech->getDbUnitsPerMicron();
   if (tech->hasManufacturingGrid()) {
     int grid = tech->getManufacturingGrid();
-    return round(round(dist * dbu * 1e+6 / grid) * grid);
+    return round(coord / (double) grid) * grid;
   }
-  else
-    return round(dist * 1e+9);
+
+  return coord;
 }
 
 double
