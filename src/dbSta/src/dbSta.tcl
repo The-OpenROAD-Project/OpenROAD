@@ -108,7 +108,7 @@ proc report_tns { args } {
   global sta_report_default_digits
   eval [linsert $args 0 report_tns_raw]
 
-  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta::sta_report_default_digits]"
+  utl::metric_float "timing__setup__tns"  "[format_time [total_negative_slack_cmd "max"] $sta_report_default_digits]"
 }
 
 rename report_worst_slack report_worst_slack_raw
