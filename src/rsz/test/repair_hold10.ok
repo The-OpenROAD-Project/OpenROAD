@@ -15,7 +15,6 @@ worst slack -3.23
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 8 hold buffers.
 worst slack 0.21
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement         15.7 u

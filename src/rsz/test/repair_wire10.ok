@@ -11,7 +11,6 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: repair_wire1.def
 [INFO IFP-0001] Added 142 rows of 11052 sites.
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement          0.6 u

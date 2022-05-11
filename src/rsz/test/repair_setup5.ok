@@ -11,7 +11,6 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 [INFO ODB-0134] Finished DEF file: repair_setup1.def
 [INFO IFP-0001] Added 857 rows of 210 sites.
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement          6.8 u
