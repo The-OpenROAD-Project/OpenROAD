@@ -1443,11 +1443,10 @@ uint extSpef::sortRSegs() {
     return 0;
   }
   int ndx, ndy;
-  int nndx, nndy;
   int ncidx = 0;
   int x1, y1;
   bool zcfound = false;
-  if (_readingNodeCoords == C_STARRC) {
+  if (_readingNodeCoords == C_ON) {
     ncidx = findNodeIndexFromNodeCoords(drvCapNode->getId());
     if (ncidx >= 0) {
       ndx = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
@@ -1541,23 +1540,6 @@ uint extSpef::sortRSegs() {
     tgtCapn = rc->getTargetNode();
     tgtCapNode = dbCapNode::getCapNode(_cornerBlock, tgtCapn);
     zcfound = false;
-    if (_readingNodeCoords == C_MAGMA) {
-      if (tridx < (int)_x1CoordTable->getCnt()) {
-        nndx = abs(_x1CoordTable->get(tridx) - ndx) >
-                       abs(_x2CoordTable->get(tridx) - ndx)
-                   ? _x1CoordTable->get(tridx)
-                   : _x2CoordTable->get(tridx);
-        nndy = abs(_y1CoordTable->get(tridx) - ndy) >
-                       abs(_y2CoordTable->get(tridx) - ndy)
-                   ? _y1CoordTable->get(tridx)
-                   : _y2CoordTable->get(tridx);
-        zcfound = true;
-      } else
-        zcfound = tgtCapNode->getTermCoords(nndx, nndy);
-      rc->setCoords(nndx, nndy);
-      ndx = nndx;
-      ndy = nndy;
-    }
     srcCapn = rc->getSourceNode();
     int srcCapidx =
         dbCapNode::getCapNode(_cornerBlock, srcCapn)->getSortIndex() - 1;
@@ -1577,9 +1559,7 @@ uint extSpef::sortRSegs() {
       return 0;
     }
     tgtCapNode = dbCapNode::getCapNode(_cornerBlock, tgtCapn);
-    // if (_readingNodeCoords == C_STARRC && !tgtCapNode->isITerm() &&
-    // !tgtCapNode->isBTerm())
-    if (_readingNodeCoords == C_STARRC) {
+    if (_readingNodeCoords == C_ON) {
       ncidx = findNodeIndexFromNodeCoords(tgtCapn);
       if (ncidx >= 0) {
         x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
@@ -1804,7 +1784,7 @@ uint extSpef::readDNet(uint debug) {
       while (_parser->parseNextLine() > 0) {
         //_parser->printWords(stdout);
 
-        if (_readingNodeCoords == C_STARRC && !_diff) {
+        if (_readingNodeCoords == C_ON && !_diff) {
           cpos = 0;
           if (strcmp("*N", _parser->get(0)) == 0)
             cpos = 2;
@@ -1826,8 +1806,8 @@ uint extSpef::readDNet(uint debug) {
           break;
         if (strcmp("*CAP", _parser->get(0)) == 0)
           break;
-        if (_readingNodeCoords == C_STARRC) {
-          if (_readingNodeCoordsInput == C_STARRC) {
+        if (_readingNodeCoords == C_ON) {
+          if (_readingNodeCoordsInput == C_ON) {
             logger_->warn(RCX, 281,
                           "\"-N s\" in read_spef command, but no coordinates "
                           "in spef file.");
@@ -1991,23 +1971,6 @@ uint extSpef::readDNet(uint debug) {
           dstCapNodeId = getCapNodeId(_parser->get(2), NULL, &netId);
           if (!dstCapNodeId)
             return 0;
-
-          //					uint shapeId= 0;
-          if (_readingNodeCoords != C_NONE) {
-            //						dbCapNode *capNode=
-            // dbCapNode::getCapNode(_block, dstCapNodeId);
-            if (_readingNodeCoords == C_MAGMA) {
-              // 1 *1:1 *1:2 7.3792 // x=[782.74,791.7] y=[376.67,376.81]
-              // dx=8.96 dy=0.14 lyr=METAL3 shapeId= parseAndFindShapeId();
-              readNmCoords();
-            }
-            // else if (capNode->isITerm())
-            //	shapeId = getITermShapeId(dbITerm::getITerm(_block,
-            // capNode->getNode())); else if (capNode->isBTerm()) 	shapeId
-            // = getBTermShapeId(dbBTerm::getBTerm(_block, capNode->getNode()));
-            // else if (s_coordFlag)
-            //	shapeId= getShapeIdFromNodeCoords(dstCapNode);
-          }
 
           if (fstRSegDone == false) {
             fstRSegDone = true;
@@ -2231,26 +2194,20 @@ uint extSpef::readBlock(uint debug, std::vector<dbNet*> tnets, bool force,
     _rRun = 1;
   _lengthUnit = length_unit;
   _fixloop = fixLoop;
-  //_nodeCoordFactor = 1000.0;
   int dbunit = _block->getDbUnitsPerMicron();
   _nodeCoordFactor = (double)dbunit * _lengthUnit;
-  if (nodeCoord && strcmp(nodeCoord, "m") == 0)
-    _readingNodeCoords = C_MAGMA;
-  else if (nodeCoord && strcmp(nodeCoord, "s") == 0)
-    _readingNodeCoords = C_STARRC;
+  if (nodeCoord && strcmp(nodeCoord, "s") == 0)
+    _readingNodeCoords = C_ON;
   else if (nodeCoord && strcmp(nodeCoord, "s01") == 0) {
-    _readingNodeCoords = C_STARRC;  // SynopsysStarRC
+    _readingNodeCoords = C_ON;
     _nodeCoordFactor = 0.1;
   } else if (nodeCoord && strcmp(nodeCoord, "S") == 0) {
-    _readingNodeCoords = C_STARRC;
-    _NsLayer = false;
+    _readingNodeCoords = C_ON;
   } else if (nodeCoord) {
     logger_->info(RCX, 178, "\" -N {} \" is unknown.", nodeCoord);
     return 0;
   }
   _readingNodeCoordsInput = _readingNodeCoords;
-  // 0620 if (_readingNodeCoords == C_NONE)
-  // 0620	  _readingNodeCoords = C_STARRC;
   if (_readingNodeCoords != C_NONE && _nodeCoordParser == NULL)
     _nodeCoordParser = new Ath__parser();
   if (capStatsFile != NULL) {

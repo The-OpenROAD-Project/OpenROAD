@@ -47,7 +47,6 @@ record_tests {
   repair_hold11
   repair_hold12
   repair_setup1
-  repair_setup2
   repair_setup3
   repair_setup4
   repair_slew1

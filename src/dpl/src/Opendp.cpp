@@ -105,15 +105,7 @@ Opendp::isMultiRow(const Cell *cell) const
 {
   auto iter = db_master_map_.find(cell->db_inst_->getMaster());
   assert(iter != db_master_map_.end());
-  return iter->second.is_multi_row_;
-}
-
-Power
-Opendp::topPower(const Cell *cell) const
-{
-  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
-  assert(iter != db_master_map_.end());
-  return iter->second.top_power_;
+  return iter->second.is_multi_row;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -213,7 +205,6 @@ Opendp::detailedPlacement(int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
 
-  reportImportWarnings();
   hpwl_before_ = hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
@@ -309,22 +300,6 @@ Opendp::hpwl(dbNet *net) const
     Rect bbox = net->getTermBBox();
     return bbox.dx() + bbox.dy();
   }
-}
-
-////////////////////////////////////////////////////////////////
-
-Power
-Opendp::rowTopPower(int row) const
-{
-  return ((row0_top_power_is_vdd_ ? row : row + 1) % 2 == 0) ? VDD : VSS;
-}
-
-dbOrientType
-Opendp::rowOrient(int row) const
-{
-  // Row orient flips R0 -> MX -> R0 -> MX ...
-  return ((row0_orient_is_r0_ ? row : row + 1) % 2 == 0) ? dbOrientType::R0
-                                                         : dbOrientType::MX;
 }
 
 ////////////////////////////////////////////////////////////////

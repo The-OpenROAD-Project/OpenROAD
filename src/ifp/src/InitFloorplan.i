@@ -66,14 +66,14 @@ getSta();
 namespace ifp {
 
 void
-init_floorplan_core(double die_lx,
-		    double die_ly,
-		    double die_ux,
-		    double die_uy,
-		    double core_lx,
-		    double core_ly,
-		    double core_ux,
-		    double core_uy,
+init_floorplan_core(int die_lx,
+		    int die_ly,
+		    int die_ux,
+		    int die_uy,
+		    int core_lx,
+		    int core_ly,
+		    int core_ux,
+		    int core_uy,
 		    const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();
@@ -86,10 +86,10 @@ init_floorplan_core(double die_lx,
 void
 init_floorplan_util(double util,
                     double aspect_ratio,
-                    double core_space_bottom,
-                    double core_space_top,
-                    double core_space_left,
-                    double core_space_right,
+                    int core_space_bottom,
+                    int core_space_top,
+                    int core_space_left,
+                    int core_space_right,
                     const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();

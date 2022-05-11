@@ -233,7 +233,8 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       const Point& bp,
       frLayerNum layerNum,
-      frDirEnum dir);
+      frDirEnum dir,
+      bool isBlock);
   template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,

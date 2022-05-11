@@ -54,7 +54,6 @@ proc diff_files { file1 file2 } {
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0131]     Created 121 components and 621 component-terminals.
 [INFO ODB-0134] Finished DEF file: obstruction1.def
-[WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
 total displacement         47.3 u

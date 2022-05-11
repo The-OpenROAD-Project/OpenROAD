@@ -287,7 +287,8 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
       cols_(cols),
       col_pitch_(col_pitch),
       required_bottom_rect_(),
-      required_top_rect_()
+      required_top_rect_(),
+      via_center_()
 {
   via_rect_.mergeInit();
   enc_bottom_rect_.mergeInit();
@@ -329,6 +330,9 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
   } else {
     required_top_rect_ = enc_top_rect_;
   }
+
+  via_center_.setX(via_rect_.xMin() + via_rect_.dx() / 2);
+  via_center_.setY(via_rect_.yMin() + via_rect_.dy() / 2);
 }
 
 std::string DbTechVia::getName() const
@@ -347,9 +351,9 @@ DbVia::ViaLayerShape DbTechVia::generate(odb::dbBlock* block,
   odb::Rect via_rect(0, 0, (cols_ - 1) * col_pitch_, (rows_ - 1) * row_pitch_);
   via_rect.moveTo(x - via_rect.dx() / 2, y - via_rect.dy() / 2);
 
-  int row = via_rect.yMin();
+  int row = via_rect.yMin() - via_center_.getY();
   for (int r = 0; r < rows_; r++) {
-    int col = via_rect.xMin();
+    int col = via_rect.xMin() - via_center_.getX();
     for (int c = 0; c < cols_; c++) {
       auto shapes
           = getLayerShapes(odb::dbSBox::create(wire, via_, col, row, type));

@@ -175,7 +175,6 @@ extSpef::extSpef(odb::dbTech* tech, odb::dbBlock* blk, Logger* logger,
   _tmpNetName = NULL;
 
   _singleP = false;
-  _NsLayer = true;
   _doSortRSeg = true;
   _readingNodeCoords = C_NONE;
   _writingNodeCoords = C_NONE;
@@ -446,7 +445,7 @@ bool extSpef::writeITerm(uint node) {
   odb::dbWire* wire = _d_net->getWire();
   if (wire)
     jid = wire->getTermJid(iterm->getId());
-  if (_writingNodeCoords == C_STARRC) {
+  if (_writingNodeCoords == C_ON) {
     if (_termJxy && jid) {
       wire->getCoord(jid, x1, y1);
     } else
@@ -565,7 +564,7 @@ uint extSpef::writePort(uint node) {
                  addEscChar(bterm->getName().c_str(), false),
                  bterm->getIoType().getString()[0]);
   }
-  if (_writingNodeCoords != C_STARRC) {
+  if (_writingNodeCoords != C_ON) {
     ATH__fprintf(_outFP, "\n");
     return 1;
   }
@@ -1170,25 +1169,10 @@ uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet) {
     if (capNode->isITerm() || capNode->isBTerm())
       continue;
 
-    // int x1, y1, x2, y2;
-    // odb::dbTechLayer *layer;
-    // getAnchorCoords(net, shapeId, &x1, &y1, &x2, &y2, &layer);
-    //
-    // ATH__fprintf(_outFP, "*N ");
-    // writeCapNode(rc->getTargetNode());
-
-    // if (_NsLayer)
-    //	ATH__fprintf(_outFP, "*C %f %f %s\n", db2nm*(x1+x2)/2, db2nm*(y1+y2)/2,
-    // layer->getConstName()); else 	ATH__fprintf(_outFP, "*C %f %f\n",
-    // db2nm*(x1+x2)/2, db2nm*(y1+y2)/2);
     ATH__fprintf(_outFP, "*N ");
     writeCapNode(rc->getTargetNode(), netId);
     int x1, y1;
 
-    // if (_foreign)
-    //	rc->getCoords(x1, y1);
-    // else
-    //	net->getWire() -> getCoord( shapeId, x1, y1);
     rc->getCoords(x1, y1);
 
     ATH__fprintf(_outFP, "*C %f %f\n", db2nm * x1, db2nm * y1);
@@ -1283,7 +1267,7 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug) {
         writePorts(net);
         writeITerms(net);
       }
-      if (_writingNodeCoords == C_STARRC)
+      if (_writingNodeCoords == C_ON)
         writeNodeCoords(netId, rcSet);
 
       if (_wCap || _wOnlyCCcap)
@@ -1311,7 +1295,7 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug) {
         writePorts(net);
         writeITerms(net);
       }
-      if (_writingNodeCoords == C_STARRC)
+      if (_writingNodeCoords == C_ON)
         writeNodeCoords(netId, rcSet);
 
       if (_wCap || _wOnlyCCcap)
@@ -1633,18 +1617,8 @@ uint extSpef::writeBlock(char* nodeCoord, const char* excludeCell,
   _foreign = _block->getExtControl()->_foreign;
 
   _writingNodeCoords = C_NONE;
-  if (nodeCoord && strcmp(nodeCoord, "m") == 0) {
-    _writingNodeCoords = C_MAGMA;  // Magma
-    logger_->warn(RCX, 177, "\" -N m \" is not implemented.");
-    return 0;
-  } else if (nodeCoord && strcmp(nodeCoord, "s") == 0)
-    _writingNodeCoords = C_STARRC;  // SynopsysStarRC
-  else if (nodeCoord && strcmp(nodeCoord, "S") == 0) {
-    _writingNodeCoords = C_STARRC;
-    _NsLayer = false;
-  } else if (nodeCoord && nodeCoord[0] != '\0') {
-    logger_->warn(RCX, 64, "\" -N {} \" is unknown.", nodeCoord);
-    return 0;
+  if (nodeCoord && nodeCoord[0] != '\0') {
+    _writingNodeCoords = C_ON;
   }
   if (!wConn && !wCap && !wOnlyCCcap && !wRes)
     _wConn = _wCap = _wRes = true;
