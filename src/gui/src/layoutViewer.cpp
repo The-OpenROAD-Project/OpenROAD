@@ -459,6 +459,8 @@ LayoutViewer::LayoutViewer(
       animate_selection_(nullptr),
       block_drawing_(nullptr),
       repaint_requested_(true),
+      last_paint_time_(),
+      repaint_interval_(0),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
@@ -475,6 +477,19 @@ LayoutViewer::LayoutViewer(
           SIGNAL(newBlock(odb::dbBlock*)),
           this,
           SLOT(setBlock(odb::dbBlock*)));
+
+  connect(output_widget_,
+          SIGNAL(commandExecuted(int)),
+          this,
+          SLOT(setResetRepaintInterval()));
+  connect(output_widget_,
+          SIGNAL(executionPaused()),
+          this,
+          SLOT(setResetRepaintInterval()));
+  connect(output_widget_,
+          SIGNAL(commandAboutToExecute()),
+          this,
+          SLOT(setLongRepaintInterval()));
 }
 
 void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
@@ -2442,6 +2457,14 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
     return;
   }
 
+  auto now = std::chrono::system_clock::now();
+  if (block_drawing_ != nullptr && std::chrono::duration_cast<std::chrono::milliseconds>(now - last_paint_time_).count() < repaint_interval_) {
+    // re-emit update since a paint will be needed later
+    emit update();
+    return;
+  }
+
+  last_paint_time_ = now;
   repaint_requested_ = false;
 
   // build new drawing of layout
@@ -2838,6 +2861,7 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
     img.fill(background_);
     // need to remove cache to ensure image is correct
     std::unique_ptr<QPixmap> saved_cache = std::move(block_drawing_);
+    const auto last_paint_time = last_paint_time_;
     block_drawing_ = nullptr;
 
     render(&img, {0, 0}, save_region);
@@ -2846,6 +2870,7 @@ void LayoutViewer::saveImage(const QString& filepath, const Rect& region, double
     }
     // restore cache
     block_drawing_ = std::move(saved_cache);
+    last_paint_time_ = last_paint_time;
   } else {
     logger_->warn(utl::GUI, 12, "Image is too big to be generated: {}px x {}px", bounding_rect.width(), bounding_rect.height());
   }
@@ -3032,6 +3057,16 @@ bool LayoutViewer::isNetVisible(odb::dbNet* net)
   }
 
   return focus_visible && options_->isNetVisible(net);
+}
+
+void LayoutViewer::setResetRepaintInterval()
+{
+  repaint_interval_ = 0; // no delay in repaints
+}
+
+void LayoutViewer::setLongRepaintInterval()
+{
+  repaint_interval_ = 1000; // wait one second before repainting layout
 }
 
 ////// LayoutScroll ///////
