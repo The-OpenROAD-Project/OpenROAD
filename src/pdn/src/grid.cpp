@@ -190,6 +190,7 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     TechLayer techlayer(layer);
     techlayer.populateGrid(block);
     const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const int min_width = techlayer.getMinWidth();
     const int min_spacing = techlayer.getSpacing(0);
 
     for (const auto& [box, shape] : itr->second) {
@@ -206,7 +207,9 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
 
       if (is_horizontal) {
         delta_x -= min_spacing;
+        delta_y += min_width;
       } else {
+        delta_x += min_width;
         delta_y -= min_spacing;
       }
 
@@ -1173,7 +1176,7 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
 {
   // add instance pins
   ShapeTreeMap inst_shapes = shapes;
-  for (auto* net : getNets()) {
+  for (auto* net : getNets(false)) {
     for (const auto& [layer, shapes_on_layer] : getInstancePins(inst_)) {
       auto& layer_shapes = inst_shapes[layer];
       for (const auto& [box, shape] : shapes_on_layer) {
@@ -1185,6 +1188,25 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
   }
 
   Grid::getIntersections(vias, inst_shapes);
+}
+
+std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
+{
+  auto nets = Grid::getNets(starts_with_power);
+
+  std::set<odb::dbNet*> connected_nets;
+  for (auto* iterm : inst_->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (net != nullptr) {
+      connected_nets.insert(net);
+    }
+  }
+
+  nets.erase(std::remove_if(nets.begin(), nets.end(), [&connected_nets](odb::dbNet* net) {
+    return connected_nets.find(net) == connected_nets.end();
+  }), nets.end());
+
+  return nets;
 }
 
 ////////

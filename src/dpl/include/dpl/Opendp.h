@@ -93,16 +93,9 @@ using GapFillers = vector<dbMasterSeq>;
 typedef map<dbInst*, pair<int, int>> InstPaddingMap;
 typedef map<dbMaster*, pair<int, int>> MasterPaddingMap;
 
-enum Power {
-  undefined,
-  VDD,
-  VSS
-};
-
-struct Macro
+struct Master
 {
-  bool is_multi_row_;
-  Power top_power_;  // VDD/VSS
+  bool is_multi_row = false;
 };
 
 struct Cell
@@ -138,6 +131,7 @@ struct Pixel
   Cell *cell;
   Group *group_;
   double util;
+  dbOrientType orient_;
   bool is_valid;  // false for dummy cells
   bool is_hopeless; // too far from sites for diamond search
 };
@@ -219,8 +213,6 @@ public:
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void findDisplacementStats();
-  void setPowerNetName(const char *power_name);
-  void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
 
@@ -235,22 +227,18 @@ private:
   void importDb();
   void importClear();
   Rect getBbox(dbInst *inst);
-  void reportImportWarnings();
   void makeMacros();
   void examineRows();
   void makeCells();
   static bool isPlacedType(dbMasterType type);
   void makeGroups();
-  void findRowPower();
   double dbuToMicrons(int64_t dbu) const;
   double dbuAreaToMicrons(int64_t dbu_area) const;
   bool isFixed(const Cell *cell) const;  // fixed cell or not
   bool isMultiRow(const Cell *cell) const;
-  Power topPower(const Cell *cell) const;
   void updateDbInstLocations();
 
-  void defineTopPower(Macro *macro, dbMaster *master);
-  int find_ymax(dbMTerm *term) const;
+  void makeMaster(Master *master, dbMaster *db_master);
 
   void initGrid();
   void detailedPlacement();
@@ -334,7 +322,6 @@ private:
 
   // checkPlacement
   static bool isPlaced(const Cell *cell);
-  bool checkPowerLine(const Cell &cell) const;
   bool checkInRows(const Cell &cell) const;
   Cell *checkOverlap(Cell &cell) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
@@ -358,8 +345,6 @@ private:
                 int *x,
                 int *y) const;
   int rectDist(const Cell *cell, const Rect *rect) const;
-  Power rowTopPower(int row) const;
-  dbOrientType rowOrient(int row) const;
   bool havePadding() const;
 
   void deleteGrid();
@@ -425,14 +410,10 @@ private:
   vector<Cell> cells_;
   vector<Group> groups_;
 
-  map<const dbMaster *, Macro> db_master_map_;
+  map<const dbMaster *, Master> db_master_map_;
   map<dbInst *, Cell *> db_inst_map_;
 
   Rect core_;
-  Power initial_power_;
-  bool row0_orient_is_r0_;
-  bool row0_top_power_is_vdd_;
-  Power macro_top_power_;
   int row_height_;  // dbu
   int site_width_;  // dbu
   int row_count_;

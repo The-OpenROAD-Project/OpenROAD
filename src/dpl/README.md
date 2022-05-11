@@ -2,15 +2,10 @@
 
 OpenDP: Open-Source Detailed Placement Engine
 
-| <img src="doc/OpenDP.jpg" width=900px> |
-|:--:|
-| Visualized detailed placement result using `aes_cipher_top` design with Innovus initial placement; doc/OpenDP.jpg |
-
 Features:
 
--   Fence region and multi-height cells. (ICCAD 2017 Contest benchmarks)
+-   Fence region.
 -   Fragmented ROWs.
--   Macro blocks.
 
 ## Commands
 
