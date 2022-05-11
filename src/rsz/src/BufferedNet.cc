@@ -327,6 +327,8 @@ Resizer::makeBufferedNet(const Pin *drvr_pin,
   case ParasiticsSrc::none:
     return nullptr;
   }
+  // gcc is stupid
+  return nullptr;
 }
 
 static BufferedNetPtr
