@@ -40,14 +40,13 @@
 #include <string.h>
 #include "array1.h"
 
+namespace odb {
 using uint = unsigned int;
 
 unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);
 
-namespace odb {
 int AthResourceLog(const char* title, int smallScale = 0);
-}  // namespace odb
 
 // Simple list
 template <class T>
@@ -479,3 +478,5 @@ unsigned int prime)
     return tmp_iter;
   }
 };
+
+}  // namespace odb

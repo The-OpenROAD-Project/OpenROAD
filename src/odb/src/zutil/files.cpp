@@ -36,6 +36,8 @@
 
 #include "dbLogger.h"
 
+namespace odb {
+
 FILE* ATH__openFile(const char* name, const char* type)
 {
   FILE* a = fopen(name, type);
@@ -54,3 +56,5 @@ void ATH__closeFile(FILE* fp)
   }
   fclose(fp);
 }
+
+}  // namespace odb

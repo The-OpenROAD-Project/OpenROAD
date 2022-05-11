@@ -44,6 +44,8 @@ class Logger;
 namespace rcx {
 
 using utl::Logger;
+using odb::Ath__array1D;
+using odb::Ath__parser;
 
 class extProcess;
 

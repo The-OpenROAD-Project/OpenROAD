@@ -42,13 +42,9 @@
 #include "util.h"
 #include "rcx.h"
 
-// class duiShape;
-// typedef duiShape * duiShapeId;
-
-class Ath__gridTable;
-
 namespace odb {
 
+class Ath__gridTable;
 class dbBox;
 class dbBlock;
 class dbTech;

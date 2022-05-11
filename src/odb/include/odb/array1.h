@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+namespace odb {
+
 template <class T>
 class Ath__array1D
 {
@@ -178,3 +180,5 @@ class Ath__array1D
     _array[ii] = t;
   }
 };
+
+}  // namespace odb

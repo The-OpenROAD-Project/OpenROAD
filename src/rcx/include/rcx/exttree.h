@@ -45,6 +45,8 @@ class Logger;
 
 namespace rcx {
 
+using odb::AthPool;
+using odb::Ath__array1D;
 using utl::Logger;
 
 class extRCnode

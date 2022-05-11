@@ -38,6 +38,8 @@
 
 namespace rcx {
 
+using namespace odb;
+
 void extSpef::initSearchForNets() {
   uint W[16];
   uint S[16];
@@ -468,6 +470,8 @@ void extSpef::searchDealloc() { _search->dealloc(); }
 
 }  // namespace rcx
 
+namespace odb {
+
 void Ath__grid::dealloc() {
   for (uint ii = 0; ii <= _searchHiTrack; ii++) {
     Ath__track* btrack = _trackTable[ii];
@@ -494,3 +498,5 @@ void Ath__gridTable::dealloc() {
     }
   }
 }
+
+}  // namespace odb

@@ -49,25 +49,7 @@ namespace rcx {
 
 using utl::RCX;
 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbCapNode;
-using odb::dbCCSeg;
-using odb::dbNet;
-using odb::dbRSeg;
-using odb::dbSet;
-using odb::dbShape;
-using odb::dbSigType;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbTechLayerType;
-using odb::dbWire;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
-using odb::gs;
-using odb::Rect;
+using namespace odb;
 
 uint extMain::getBucketNum(int base, int max, uint step, int xy) {
   if (xy >= max)
@@ -682,7 +664,7 @@ uint extMain::initSearchForNets(int* X1, int* Y1, uint* pitchTable,
   }
   uint layerCnt = n + 1;
 
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new odb::Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
   return layerCnt;
 }

@@ -45,6 +45,8 @@ namespace rcx {
 CoupleOptions coupleOptionsNull{};
 };
 
+namespace odb {
+
 uint Ath__track::trackContextOn(int orig, int end, int base, int width,
                                 uint firstContextTrack,
                                 Ath__array1D<int>* context) {
@@ -1064,3 +1066,5 @@ void Ath__gridTable::initCouplingCapLoops(
                                     false, startXY[jj]);
   }
 }
+
+}  // namespace odb

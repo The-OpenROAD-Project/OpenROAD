@@ -45,6 +45,7 @@
 
 namespace rcx {
 
+using namespace odb;
 using utl::RCX;
 
 void extMain::setPowerExtOptions(bool skip_power_stubs,
