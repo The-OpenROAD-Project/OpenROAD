@@ -52,6 +52,7 @@ class frDesign
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
         rq_(std::make_unique<frRegionQuery>(this, logger)),
+        updates_sz_(0),
         version_(0)
   {
   }
@@ -89,9 +90,19 @@ class frDesign
   }
   bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
 
-  void addUpdate(const drUpdate& update) { updates_.push_back(update); }
-  const std::vector<drUpdate>& getUpdates() const { return updates_; }
-  void clearUpdates() { updates_.clear(); }
+  void addUpdate(const drUpdate& update) 
+  {
+    if(updates_.size() == 0)
+      updates_.resize(MAX_THREADS * 2);
+    auto num_batches = updates_.size();
+    updates_[updates_sz_++ % num_batches].push_back(update);
+  }
+  const std::vector<std::vector<drUpdate>>& getUpdates() const { return updates_; }
+  bool hasUpdates() const { return updates_sz_ != 0; }
+  void clearUpdates() {
+    updates_.clear();
+    updates_sz_ = 0;
+  }
   void incrementVersion() { ++version_; }
   int getVersion() const { return version_; }
   
@@ -102,7 +113,8 @@ class frDesign
   std::vector<std::unique_ptr<frMaster>> masters_;
   std::unique_ptr<frTechObject> tech_;
   std::unique_ptr<frRegionQuery> rq_;
-  std::vector<drUpdate> updates_;
+  std::vector<std::vector<drUpdate>> updates_;
+  int updates_sz_;
   std::vector<std::string> user_selected_vias_;
   int version_;
   template <class Archive>

@@ -218,125 +218,132 @@ void TritonRoute::resetDesign(const char* file_name)
   file.close();
 }
 
-static drUpdate deserializeUpdate(frDesign* design, const std::string& updateStr)
+static void deserializeUpdate(frDesign* design, const std::string& updateStr, std::vector<drUpdate>& updates)
 {
-  std::stringstream stream(updateStr, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-  frIArchive ar(stream);
-  drUpdate update;
+  std::ifstream file(updateStr.c_str());
+  frIArchive ar(file);
   ar.setDeepSerialize(false);
   ar.setDesign(design);
   register_types(ar);
-  ar >> update;
-  return update;
+  ar >> updates;
+  file.close();
 }
 
 void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
 {
   omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
-  std::vector<drUpdate> updates(updatesStrs.size());
+  std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
   #pragma omp parallel for schedule(dynamic)
-  for(int i = 0; i < updates.size(); i++)
+  for(int i = 0; i < updatesStrs.size(); i++)
   {
-    updates[i] = deserializeUpdate(design_.get(), updatesStrs.at(i));
+    deserializeUpdate(design_.get(), updatesStrs.at(i), updates[i]);
   }
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
-  for (auto& update : updates) {
-    switch (update.getType()) {
-      case drUpdate::REMOVE_FROM_BLOCK: {
-        auto id = update.getOrderInOwner();
-        auto marker = design_->getTopBlock()->getMarker(id);
-        regionQuery->removeMarker(marker);
-        topBlock->removeMarker(marker);
-        break;
-      }
-      case drUpdate::REMOVE_FROM_NET: {
-        auto net = update.getNet();
-        auto id = update.getOrderInOwner();
-        auto pinfig = net->getPinFig(id);
-        switch (pinfig->typeId()) {
-          case frcPathSeg: {
-            auto seg = static_cast<frPathSeg*>(pinfig);
-            regionQuery->removeDRObj(seg);
-            net->removeShape(seg);
-            break;
-          }
-          case frcPatchWire: {
-            auto pwire = static_cast<frPatchWire*>(pinfig);
-            regionQuery->removeDRObj(pwire);
-            net->removePatchWire(pwire);
-            break;
-          }
-          case frcVia: {
-            auto via = static_cast<frVia*>(pinfig);
-            regionQuery->removeDRObj(via);
-            net->removeVia(via);
-            break;
-          }
-          default:
-            logger_->error(
-                DRT, 9999, "unknown update type {}", pinfig->typeId());
-            break;
+  const auto maxSz = updates[0].size();
+  for(int j = 0; j < maxSz; j++)
+  {
+    for(int i = 0; i < updates.size(); i++)
+    {
+      if(updates[i].size() <= j)
+        continue;
+      const auto& update = updates[i][j];
+      switch (update.getType()) {
+        case drUpdate::REMOVE_FROM_BLOCK: {
+          auto id = update.getOrderInOwner();
+          auto marker = design_->getTopBlock()->getMarker(id);
+          regionQuery->removeMarker(marker);
+          topBlock->removeMarker(marker);
+          break;
         }
-        break;
-      }
-      case drUpdate::ADD_SHAPE: {
-        switch (update.getObjTypeId()) {
-          case frcPathSeg: {
-            auto net = update.getNet();
-            frPathSeg seg = update.getPathSeg();
-            std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
-            auto sptr = uShape.get();
-            net->addShape(std::move(uShape));
-            regionQuery->addDRObj(sptr);
-            break;
+        case drUpdate::REMOVE_FROM_NET: {
+          auto net = update.getNet();
+          auto id = update.getOrderInOwner();
+          auto pinfig = net->getPinFig(id);
+          switch (pinfig->typeId()) {
+            case frcPathSeg: {
+              auto seg = static_cast<frPathSeg*>(pinfig);
+              regionQuery->removeDRObj(seg);
+              net->removeShape(seg);
+              break;
+            }
+            case frcPatchWire: {
+              auto pwire = static_cast<frPatchWire*>(pinfig);
+              regionQuery->removeDRObj(pwire);
+              net->removePatchWire(pwire);
+              break;
+            }
+            case frcVia: {
+              auto via = static_cast<frVia*>(pinfig);
+              regionQuery->removeDRObj(via);
+              net->removeVia(via);
+              break;
+            }
+            default:
+              logger_->error(
+                  DRT, 9999, "unknown update type {}", pinfig->typeId());
+              break;
           }
-          case frcPatchWire: {
-            auto net = update.getNet();
-            frPatchWire pwire = update.getPatchWire();
-            std::unique_ptr<frShape> uShape
-                = std::make_unique<frPatchWire>(pwire);
-            auto sptr = uShape.get();
-            net->addPatchWire(std::move(uShape));
-            regionQuery->addDRObj(sptr);
-            break;
-          }
-          case frcVia: {
-            auto net = update.getNet();
-            frVia via = update.getVia();
-            auto uVia = std::make_unique<frVia>(via);
-            auto sptr = uVia.get();
-            net->addVia(std::move(uVia));
-            regionQuery->addDRObj(sptr);
-            break;
-          }
-          default: {
-            frMarker marker = update.getMarker();
-            auto uMarker = std::make_unique<frMarker>(marker);
-            auto sptr = uMarker.get();
-            topBlock->addMarker(std::move(uMarker));
-            regionQuery->addMarker(sptr);
-            break;
-          }
+          break;
         }
-        break;
-      }
-      case drUpdate::ADD_GUIDE: {
-        frPathSeg seg = update.getPathSeg();
-        std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
-        auto net = update.getNet();
-        uSeg->addToNet(net);
-        vector<unique_ptr<frConnFig>> tmp;
-        tmp.push_back(std::move(uSeg));
-        auto idx = update.getOrderInOwner();
-        if (idx < 0 || idx >= net->getGuides().size())
-          logger_->error(DRT,
-                         9199,
-                         "Guide {} out of range {}",
-                         idx,
-                         net->getGuides().size());
-        const auto& guide = net->getGuides().at(idx);
-        guide->setRoutes(tmp);
+        case drUpdate::ADD_SHAPE: {
+          switch (update.getObjTypeId()) {
+            case frcPathSeg: {
+              auto net = update.getNet();
+              frPathSeg seg = update.getPathSeg();
+              std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
+              auto sptr = uShape.get();
+              net->addShape(std::move(uShape));
+              regionQuery->addDRObj(sptr);
+              break;
+            }
+            case frcPatchWire: {
+              auto net = update.getNet();
+              frPatchWire pwire = update.getPatchWire();
+              std::unique_ptr<frShape> uShape
+                  = std::make_unique<frPatchWire>(pwire);
+              auto sptr = uShape.get();
+              net->addPatchWire(std::move(uShape));
+              regionQuery->addDRObj(sptr);
+              break;
+            }
+            case frcVia: {
+              auto net = update.getNet();
+              frVia via = update.getVia();
+              auto uVia = std::make_unique<frVia>(via);
+              auto sptr = uVia.get();
+              net->addVia(std::move(uVia));
+              regionQuery->addDRObj(sptr);
+              break;
+            }
+            default: {
+              frMarker marker = update.getMarker();
+              auto uMarker = std::make_unique<frMarker>(marker);
+              auto sptr = uMarker.get();
+              topBlock->addMarker(std::move(uMarker));
+              regionQuery->addMarker(sptr);
+              break;
+            }
+          }
+          break;
+        }
+        case drUpdate::ADD_GUIDE: {
+          frPathSeg seg = update.getPathSeg();
+          std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
+          auto net = update.getNet();
+          uSeg->addToNet(net);
+          vector<unique_ptr<frConnFig>> tmp;
+          tmp.push_back(std::move(uSeg));
+          auto idx = update.getOrderInOwner();
+          if (idx < 0 || idx >= net->getGuides().size())
+            logger_->error(DRT,
+                          9199,
+                          "Guide {} out of range {}",
+                          idx,
+                          net->getGuides().size());
+          const auto& guide = net->getGuides().at(idx);
+          guide->setRoutes(tmp);
+        }
       }
     }
   }
@@ -559,32 +566,14 @@ void TritonRoute::sendDesignDist()
   }
   design_->clearUpdates();
 }
-static std::string serializeUpdate(const drUpdate& update)
+static void serializeUpdatesBatch(const std::vector<drUpdate>& batch, const std::string& file_name)
 {
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
-  frOArchive ar(stream);
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
   ar.setDeepSerialize(false);
   register_types(ar);
-  ar << update;
-  return stream.str();
-}
-
-static std::vector<std::string> serializeDesignUpdates(frDesign* design)
-{
-  std::unique_ptr<ProfileTask> serializeTask;
-  if(design->getVersion() == 0)
-    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
-  else
-    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UDPATES");
-  omp_set_num_threads(MAX_THREADS);
-  std::vector<std::string> updates(design->getUpdates().size());
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0; i < design->getUpdates().size(); i++)
-  {
-    updates[i] = serializeUpdate(design->getUpdates().at(i));
-  }
-  serializeTask->done();
-  return updates;
+  ar << batch;
+  file.close();
 }
 
 void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
@@ -611,9 +600,23 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 {
   if(!distributed_)
     return;
-  if(design_->getUpdates().empty())
+  if(!design_->hasUpdates())
     return;
-  std::vector<std::string> updates = serializeDesignUpdates(design_.get());
+  std::unique_ptr<ProfileTask> serializeTask;
+  if(design_->getVersion() == 0)
+    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
+  else
+    serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
+  const auto& designUpdates = design_->getUpdates();
+  omp_set_num_threads(MAX_THREADS);
+  std::vector<std::string> updates(designUpdates.size());
+  #pragma omp parallel for schedule(dynamic)
+  for(int i = 0; i < designUpdates.size(); i++)
+  {
+    updates[i] = fmt::format("{}updates_{}.bin", shared_volume_, i);
+    serializeUpdatesBatch(designUpdates.at(i), updates[i]);
+  }
+  serializeTask->done();
   std::unique_ptr<ProfileTask> task;
   if(design_->getVersion() == 0)
     task = std::make_unique<ProfileTask>("DIST: SENDING_TA");
@@ -671,6 +674,7 @@ int TritonRoute::main()
   ta();
   if(distributed_)
   {
+    // sendDesignUpdates("");
     asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
   dr();

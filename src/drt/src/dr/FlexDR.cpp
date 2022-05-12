@@ -1722,7 +1722,7 @@ void FlexDR::searchRepair(int iter, const SearchRepairArgs& args)
         if(dist_on_)
         {
           router_->dist_pool_.join();
-          if(vers++ == 0 && design_->getUpdates().empty())
+          if(vers++ == 0 && !design_->hasUpdates())
             router_->sendGlobalsUpdates(globals_path_);
           else
             router_->sendDesignUpdates(globals_path_);
