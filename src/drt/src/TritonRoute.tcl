@@ -306,6 +306,50 @@ proc detailed_route_run_worker { args } {
   drt::run_worker_cmd  [lindex $args 0] [lindex $args 1]  [lindex $args 2] [lindex $args 3] [lindex $args 4]
 }
 
+sta::define_cmd_args "detailed_route_worker_debug" {
+    [-maze_end_iter iter]
+    [-drc_cost d_cost]
+    [-marker_cost m_cost]
+    [-ripup_mode mode]
+    [-follow_guide f_guide]
+}
+
+proc detailed_route_worker_debug { args } {
+  sta::parse_key_args "detailed_route_worker_debug" args \
+      keys {-maze_end_iter -drc_cost -marker_cost -ripup_mode -follow_guide} \
+      flags {}
+  if [info exists keys(-maze_end_iter)] {
+    set maze_end_iter $keys(-maze_end_iter)
+  } else {
+    set maze_end_iter -1
+  }
+
+  if [info exists keys(-drc_cost)] {
+    set drc_cost $keys(-drc_cost)
+  } else {
+    set drc_cost -1
+  }
+
+  if [info exists keys(-marker_cost)] {
+    set marker_cost $keys(-marker_cost)
+  } else {
+    set marker_cost -1
+  }
+
+  if [info exists keys(-ripup_mode)] {
+    set ripup_mode $keys(-ripup_mode)
+  } else {
+    set ripup_mode -1
+  }
+
+  if [info exists keys(-follow_guide)] {
+    set follow_guide $keys(-follow_guide)
+  } else {
+    set follow_guide -1
+  }
+  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $ripup_mode $follow_guide
+}
+
 proc detailed_route_set_default_via { args } {
   sta::check_argc_eq1 "detailed_route_set_default_via" $args
   drt::detailed_route_set_default_via $args

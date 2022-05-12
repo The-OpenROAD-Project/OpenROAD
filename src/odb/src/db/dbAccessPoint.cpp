@@ -42,8 +42,8 @@
 // User Code Begin Includes
 #include <algorithm>
 
-#include "dbBTerm.h"
 #include "dbBPin.h"
+#include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbITerm.h"
 #include "dbLib.h"
@@ -169,6 +169,7 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   stream >> obj.accesses_;
   stream >> obj.iterms_;
   stream >> obj.vias_;
+  stream >> obj.path_segs_;
   // User Code Begin >>
   int8_t low, high;
   stream >> low;
@@ -189,6 +190,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.accesses_;
   stream << obj.iterms_;
   stream << obj.vias_;
+  stream << obj.path_segs_;
   // User Code Begin <<
   int8_t low = static_cast<int8_t>(obj.low_type_);
   int8_t high = static_cast<int8_t>(obj.high_type_);
@@ -243,6 +245,20 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
 }
 
 // User Code Begin dbAccessPointPublicMethods
+
+void dbAccessPoint::addSegment(const Rect& segment, const bool& begin_style_trunc, const bool& end_style_trunc)
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  std::tuple path_seg = std::make_tuple(segment, begin_style_trunc, end_style_trunc);
+  obj->path_segs_.push_back(std::move(path_seg));
+}
+
+const std::vector<std::tuple<Rect, bool, bool>>& dbAccessPoint::getSegments()
+    const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  return obj->path_segs_;
+}
 
 void dbAccessPoint::setAccesses(const std::vector<dbDirection>& accesses)
 {

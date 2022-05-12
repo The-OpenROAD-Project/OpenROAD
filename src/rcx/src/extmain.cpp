@@ -192,7 +192,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
     if (_spef)
       delete _spef;
     _spef = new extSpef(_tech, _block, logger_, this);
-    // copy block name for incremental spef - needed for magma
+    // copy block name for incremental spef
     // Mattias - Nov 19/07
     _spef->setDesign((char*)_block->getName().c_str());
   }

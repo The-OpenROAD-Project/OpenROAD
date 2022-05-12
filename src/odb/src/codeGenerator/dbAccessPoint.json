@@ -63,6 +63,11 @@
         "type": "dbVector<dbVector<std::pair<dbObjectType,dbId<_dbObject>>>>",
         "comment" : "//list of vias by num of cuts",
         "flags" : ["private"]
+      },
+      {
+        "name": "path_segs_",
+        "type": "dbVector<std::tuple<Rect, bool, bool>>",
+        "flags": ["private", "no-template"]
       }
     ],
     "h_includes": [

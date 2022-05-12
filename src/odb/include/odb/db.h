@@ -9117,6 +9117,10 @@ class dbAccessPoint : public dbObject
 
   void addBlockVia(int num_cuts, dbVia* via);
 
+  void addSegment(const Rect& segment, const bool& begin_style_trunc, const bool& end_style_trunc);
+
+  const std::vector<std::tuple<Rect, bool, bool>>& getSegments() const;
+
   static dbAccessPoint* create(dbBlock* block,
                                dbMPin* pin,
                                uint pin_access_idx);
