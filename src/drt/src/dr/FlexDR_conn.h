@@ -138,8 +138,6 @@ class FlexDRConnectivityChecker
   void splitPathSegs(NetRouteObjs& netRouteObjs,
                     std::vector<std::pair<Span, int>>& segSpans);
   void splitPathSegs_commit(vector<int>& splitPoints, frPathSeg* highestPs, int first, int& i, vector<pair<Span, int>>& segSpans, NetRouteObjs& netRouteObjs);
-  void insertSegSpan(pair<Span, int>& spanEntry, vector<pair<Span, int>>& segSpans, 
-                                                          int startIdx);
   void merge_perform_helper(NetRouteObjs& netRouteObjs,
                             const std::vector<std::pair<Span, int>>& segSpans,
                             std::vector<int>& victims,

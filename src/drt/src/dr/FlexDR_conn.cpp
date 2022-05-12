@@ -774,14 +774,7 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(NetRouteObjs& netRouteObj
   // get victim segments and merged segments
   merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
 }
-void FlexDRConnectivityChecker::insertSegSpan(pair<Span, int>& spanEntry, 
-                                            vector<pair<Span, int>>& segSpans, 
-                                            int startIdx) {
-     //insert sorted
-    int j;
-    for (j = startIdx; j < segSpans.size() && !(spanEntry < segSpans[j]); j++);
-    segSpans.insert(segSpans.begin() + j, spanEntry);
-}
+
 bool debug = false;
 bool isRedundant(vector<int>& splitPoints, int v) {
     return std::find(splitPoints.begin(), splitPoints.end(), v) != splitPoints.end();
@@ -790,7 +783,7 @@ void FlexDRConnectivityChecker::splitPathSegs(
     NetRouteObjs& netRouteObjs,
     vector<pair<Span, int>>& segSpans)
 {   
-    frPathSeg* highestPs = nullptr;
+    frPathSeg* highestPs = nullptr; //overlapping ps with the highest endPoint
     int first = 0;
     vector<int> splitPoints;
     if (segSpans.empty())
@@ -804,6 +797,7 @@ void FlexDRConnectivityChecker::splitPathSegs(
             first = i;
             highestPs = currPs;
         } else {
+            //this section tries to gather all split points (truncatStyle points) involved in the overlapping of pathsegs 
             auto& prev = segSpans[i-1];
             frPathSeg* prevPs = static_cast<frPathSeg*>(netRouteObjs[prev.second]);
             if (curr.first.lo != segSpans[first].first.lo && currPs->isBeginTruncated() && !isRedundant(splitPoints, curr.first.lo))
@@ -826,13 +820,13 @@ void FlexDRConnectivityChecker::splitPathSegs(
 }
 void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, frPathSeg* highestPs, int first, int& i, vector<pair<Span, int>>& segSpans, NetRouteObjs& netRouteObjs) {
     sort(splitPoints.begin(), splitPoints.end());
-    if (splitPoints[splitPoints.size()-1] == highestPs->high())
+    if (splitPoints[splitPoints.size()-1] == highestPs->high()) //we dont need this split point, only those inside the overlapping interval
         splitPoints.erase(std::prev(splitPoints.end()));
     if (!splitPoints.empty()) {
         frEndStyle highestPsEndStyle = highestPs->getEndStyle();
         int highestHi = highestPs->high();
         vector<int> splitSpanIdxs;
-        for (int k = first; k < i; k++) { //detect split ps's
+        for (int k = first; k < i; k++) { //detect split ps's. We want to get all path segs that have some split point in the middle
             auto& spn = segSpans[k].first;
             for (auto p : splitPoints) {
                 if (spn.lo < p && spn.hi > p) {
@@ -862,6 +856,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, f
                     ps->setEndStyle(highestPsEndStyle);
                     ps->setBeginStyle(frcTruncateEndStyle);
                     segSpans[segSpnIdx].first.hi = highestHi;
+                    //if we have 2 or more splitting pathsegs than split points. This will create redundant pathsegs that will be merged later
                     if (currIdxSplitSpanIdxs < splitSpanIdxs.size()-1)
                         s--;
                 } else {
@@ -872,7 +867,8 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, f
                 getRegionQuery()->addDRObj(ps);
             }
         }
-        for (; s <= splitPoints.size(); s++) { //add remaining splits
+        //add remaining splits. This will create new split pathsegs
+        for (; s <= splitPoints.size(); s++) { 
             int lo = splitPoints[s-1];
             int hi;
             frEndStyle hiStyle;
@@ -883,8 +879,8 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(vector<int>& splitPoints, f
                 hi = splitPoints[s];
                 hiStyle = frcTruncateEndStyle;
             }
-            auto newSpan = pair<Span, int>({lo, hi}, netRouteObjs.size()); //add last segment piece
-            segSpans.insert(segSpans.begin()+i, newSpan);
+            auto newSpan = pair<Span, int>({lo, hi}, netRouteObjs.size()); 
+            segSpans.insert(segSpans.begin()+i, newSpan); //add last segment piece
             i++;
             unique_ptr<frPathSeg> newPs = make_unique<frPathSeg>();
             Point begin, end;
@@ -917,7 +913,6 @@ void FlexDRConnectivityChecker::merge_perform_helper(
     vector<Span>& newSegSpans)
 {
   bool hasOverlap = false;
-  bool debug = false;
   frCoord currStart = INT_MAX, currEnd = INT_MIN;
   vector<int> localVictims;
   frPathSeg* currEndPs = nullptr;
@@ -929,11 +924,6 @@ void FlexDRConnectivityChecker::merge_perform_helper(
         newSegSpans.push_back({currStart, currEnd});
         // commit victims in merged segs
         victims.insert(victims.end(), localVictims.begin(), localVictims.end());
-        if (debug) {
-            cout << "VICTIMS:" << endl;
-            for (auto& a : localVictims)
-                cout << *static_cast<frPathSeg*>(netRouteObjs[a]) << endl;
-        }
       }
       // cleanup
       localVictims.clear();
@@ -946,9 +936,7 @@ void FlexDRConnectivityChecker::merge_perform_helper(
     } else {
         if (ps->isBeginTruncated() && ((currEnd < ps->high() && currEndPs->isEndTruncated()) ||
               (currEnd > ps->high() && ps->isEndTruncated()))) {
-            cout << "SHOULDNT BE HERE" << endl;
-            debug = true;
-            cout << "curr " << *ps << "\n" << "currEndPs " << *currEndPs << endl;
+            logger_->warn(DRT, 6001, "Path segs were not split: {} and {}", *ps, *currEndPs);
         }
         hasOverlap = true;
         // update local variables
