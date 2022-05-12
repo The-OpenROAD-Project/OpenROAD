@@ -86,7 +86,8 @@ void detailed_route_cmd(const char* guideFile,
                         const char* topRoutingLayer,
                         int verbose,
                         bool cleanPatches,
-                        bool noPa)
+                        bool noPa,
+                        bool singleStepDR)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({guideFile,
@@ -105,7 +106,8 @@ void detailed_route_cmd(const char* guideFile,
                     topRoutingLayer,
                     verbose,
                     cleanPatches,
-                    noPa});
+                    noPa,
+                    singleStepDR});
   router->main();
 }
 
@@ -177,6 +179,25 @@ run_worker_cmd(const char* design_path, const char* globals_path, const char* wo
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
   workerFile.close();
   router->runDRWorker(workerStr);
+}
+
+void detailed_route_step_drt(int size,
+                             int offset,
+                             int mazeEndIter,
+                             int workerDRCCost,
+                             int workerMarkerCost,
+                             int ripupMode,
+                             bool followGuide)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->stepDR(size, offset, mazeEndIter, workerDRCCost,
+                 workerMarkerCost, ripupMode, followGuide);
+}
+
+void step_end()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->endFR();
 }
 
 %} // inline

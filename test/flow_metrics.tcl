@@ -35,9 +35,9 @@
 
 # Functions/variables common to metrics scripts.
 
-proc define_metric { name short_name fmt cmp_op margin_expr } {
+proc define_metric { name header1 header2 field_width fmt cmp_op limit_expr } {
   variable metrics
-  dict set metrics $name [list $short_name $fmt $cmp_op $margin_expr]
+  dict set metrics $name [list $header1 $header2 $field_width $fmt $cmp_op $limit_expr]
 }
 
 proc metric_names {} {
@@ -45,15 +45,32 @@ proc metric_names {} {
   return [dict keys $metrics]
 }
 
-proc metric_short_name { name } {
+proc metric_header1 { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
-  return $short_name
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
+  return $header1
+}
+
+proc metric_header2 { name } {
+  variable metrics
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
+  return $header2
+}
+
+proc metric_tool_name { name } {
+  regexp "(...)::.*" $name ignore tool
+  return $tool
+}
+
+proc metric_field_width { name } {
+  variable metrics
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
+  return $field_width
 }
 
 proc metric_format { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
   return $fmt
 }
 
@@ -63,14 +80,14 @@ proc metric_json_key { name } {
 
 proc metric_cmp_op { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
   return $cmp_op
 }
 
-proc metric_margin_expr { name } {
+proc metric_limit_expr { name } {
   variable metrics
-  lassign [dict get $metrics $name] short_name fmt cmp_op margin_expr
-  return $margin_expr
+  lassign [dict get $metrics $name] header1 header2 field_width fmt cmp_op limit_expr
+  return $limit_expr
 }
 
 proc cmp_op_negated { cmp_op } {
@@ -90,19 +107,32 @@ proc cmp_op_negated { cmp_op } {
 }
 
 # make format field width to match short name width
-define_metric "instance_count" "  insts" "%7d" "<" {$value * .2}
-define_metric "design_area" "   area" "%7.0f" "<" {$value * .2}
-define_metric "utilization" "util" "%4.1f" "<" {$value * .2}
-define_metric "worst_slack_min" "slack_min" "%9.3f" ">" {-$clock_period * .1}
-define_metric "worst_slack_max" "slack_max" "%9.3f" ">" {-$clock_period * .1}
-define_metric "tns_max" " tns_max" "%8.1f" ">" {-$clock_period * .1 * $instance_count * .1}
-define_metric "clock_skew" "clk_skew" "%8.3f" "<=" {$value * .2}
-define_metric "max_slew_violations" "max_slew" "%8d" "<=" {0}
-define_metric "max_capacitance_violations" "max_cap" "%7d" "<=" {0}
-define_metric "max_fanout_violations" "max_fanout" "%10d" "<=" {0}
-define_metric "ANT::errors" "ANT" "%3d" "<=" {0}
-define_metric "DRT::drv" "drv" "%3d" "<=" {0}
-define_metric "clock_period" "" "%.2f" "<=" {$clock_period}
+define_metric "IFP::instance_count" "" "insts" 7 "%7d" "<" {$value * 1.2}
+
+define_metric "DPL::design_area" "" "area" 7 "%7.0f" "<" {$value * 1.2}
+define_metric "DPL::utilization" "" "util" 4 "%4.1f" "<" {$value * 1.2}
+
+define_metric "RSZ::repair_design_buffer_count" "drv" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
+define_metric "RSZ::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {0}
+define_metric "RSZ::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {0}
+define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {0}
+
+define_metric "RSZ::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
+define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
+define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
+
+define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
+
+define_metric "DRT::drv" "" "drv" 3 "%3d" "<=" {$value}
+define_metric "DRT::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
+define_metric "DRT::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}
+define_metric "DRT::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
+define_metric "DRT::clock_skew" "clk" "skew" 5 "%5.2f" "<=" {$value * 1.2}
+define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
+define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
+define_metric "DRT::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {min(0, $value * 1.2)}
+define_metric "DRT::clock_period" "" "" 0 "%5.2f" "<=" {$value}
 
 ################################################################
 
@@ -186,11 +216,32 @@ proc report_flow_metrics_main {} {
 }
 
 proc report_metrics_header {} {
-  puts -nonewline [format "%-20s" ""]
+  puts -nonewline [format "%20s" ""]
   foreach name [metric_names] {
-    set short_name [metric_short_name $name]
-    if { $short_name != "" } {
-      puts -nonewline " $short_name"
+    set tool_name [metric_tool_name $name]
+    set field_width [metric_field_width $name]
+    if { $field_width > 0 } {
+      puts -nonewline " [format %${field_width}s $tool_name]"
+    }
+  }
+  puts ""
+
+  puts -nonewline [format "%20s" ""]
+  foreach name [metric_names] {
+    set header1 [metric_header1 $name]
+    set field_width [metric_field_width $name]
+    if { $field_width > 0 } {
+      puts -nonewline " [format %${field_width}s $header1]"
+    }
+  }
+  puts ""
+
+  puts -nonewline [format "%20s" ""]
+  foreach name [metric_names] {
+    set header2 [metric_header2 $name]
+    set field_width [metric_field_width $name]
+    if { $field_width > 0 } {
+      puts -nonewline " [format %${field_width}s $header2]"
     }
   }
   puts ""
@@ -208,14 +259,17 @@ proc report_test_metrics { test } {
     puts -nonewline [format "%-20s" $test]
     if { ![catch {json::json2dict $json_string} metrics_dict] } {
       foreach name [metric_names] {
-        set short_name [metric_short_name $name]
-        if { $short_name != "" } {
+        set field_width [metric_field_width $name]
+        if { $field_width != 0 } {
           set key [metric_json_key $name]
           if { [dict exists $metrics_dict $key] } {
             set value [dict get $metrics_dict $key]
+            if { $value > 1E+20 } {
+              set value "INF"
+            }
             set field [format [metric_format $name] $value]
           } else {
-            set field [format "%[string length $short_name]s" "N/A"]
+            set field [format "%${field_width}s" "N/A"]
           }
           puts -nonewline " $field"
         }
@@ -261,8 +315,8 @@ proc report_test_metric_limits { test } {
 
   puts -nonewline [format "%-20s" $test]
   foreach name [metric_names] {
-    set short_name [metric_short_name $name]
-    if { $short_name != "" } {
+    set field_width [metric_field_width $name]
+    if { $field_width != 0 } {
       set key [metric_json_key $name]
       if { [dict exists $metrics_limits_dict $key] } {
         set limit [dict get $metrics_limits_dict $key]
@@ -272,7 +326,7 @@ proc report_test_metric_limits { test } {
         }
         set field [format $format $limit]
       } else {
-        set field [format "%[string length $short_name]s" "N/A"]
+        set field [format "%${field_width}s" "N/A"]
       }
       puts -nonewline " $field"
     }
@@ -324,8 +378,8 @@ proc compare_test_metrics { test relative } {
     if { ![catch {json::json2dict $metrics_json} metrics_dict] \
          && ![catch {json::json2dict $results_json} results_dict]} {
       foreach name [metric_names] {
-        set short_name [metric_short_name $name]
-        if { $short_name != "" } {
+        set field_width [metric_field_width $name]
+        if { $field_width != 0 } {
           set key [metric_json_key $name]
           if { [dict exists $metrics_dict $key] \
                && [dict exists $results_dict $key]} {
@@ -340,7 +394,7 @@ proc compare_test_metrics { test relative } {
               set field [format [metric_format $name] $delta]
             }
           } else {
-            set field [format "%[string length $short_name]s" "N/A"]
+            set field [format "%${field_width}s" "N/A"]
           }
           puts -nonewline " $field"
         }
@@ -416,8 +470,9 @@ proc save_metric_limits { test } {
       puts $limits_stream "{"
       set first 1
       # Find value of variables used in margin expr's.
-      foreach var {"clock_period" "instance_count"} {
-        set key [metric_json_key $var]
+      foreach metric {"DRT::clock_period" "IFP::instance_count"} {
+        regexp "(...)::(.*)" $metric ignore tool var
+        set key [metric_json_key $metric]
         if { [dict exists $metrics_dict $key] } {
           set value [dict get $metrics_dict $key]
           set $var $value
@@ -430,9 +485,8 @@ proc save_metric_limits { test } {
         set key [metric_json_key $name]
         if { [dict exists $metrics_dict $key] } {
           set value [dict get $metrics_dict $key]
-          set margin_expr [metric_margin_expr $name]
-          set margin [expr $margin_expr]
-          set value_limit [expr $value + $margin]
+          set limit_expr [metric_limit_expr $name]
+          set value_limit [expr $limit_expr]
           if { $first } {
             puts -nonewline $limits_stream "  "
           } else {

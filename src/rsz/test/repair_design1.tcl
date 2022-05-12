@@ -1,4 +1,4 @@
-# repair_design liberty max_capacitance/max_transition/max_fanout 0.0 (nonsense values)
+# repair_design liberty max_cap/max_slew/max_fanout 0.0 (nonsense values)
 source "helpers.tcl"
 source "hi_fanout.tcl"
 

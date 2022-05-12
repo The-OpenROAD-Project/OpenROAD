@@ -663,6 +663,12 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLKEEPOUT")) {
         lefTechLayerEolKeepOutRuleParser eolkoutParser(this);
         eolkoutParser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_WIDTHTABLE")) {
+        WidthTableParser parser(l, this);
+        valid = parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
+        MinCutParser parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
@@ -680,6 +686,9 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
             layer->propValue(iii), this, _incomplete_props);
+      } else if (!strcmp(layer->propName(iii), "LEF58_ARRAYSPACING")) {
+        ArraySpacingParser parser(l, this);
+        valid = parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       else
@@ -1046,6 +1055,35 @@ void lefin::layer(lefiLayer* layer)
 
   if (layer->hasWireExtension())
     l->setWireExtension(dbdist(layer->wireExtension()));
+
+  for (int i = 0; i < layer->numEnclosure(); ++i) {
+    auto* rule = odb::dbTechLayerCutEnclosureRule::create(l);
+    rule->setFirstOverhang(dbdist(layer->enclosureOverhang1(i)));
+    rule->setSecondOverhang(dbdist(layer->enclosureOverhang2(i)));
+    rule->setType(dbTechLayerCutEnclosureRule::DEFAULT);
+
+    if (layer->hasEnclosureRule(i)) {
+      const char* rule_name = layer->enclosureRule(i);
+      if (strcasecmp(rule_name, "ABOVE") == 0) {
+        rule->setAbove(true);
+      } else if (strcasecmp(rule_name, "BELOW") == 0) {
+        rule->setBelow(true);
+      }
+    }
+
+    if (layer->hasEnclosureWidth(i)) {
+      rule->setMinWidth(dbdist(layer->enclosureMinWidth(i)));
+    }
+
+    if (layer->hasEnclosureExceptExtraCut(i)) {
+      rule->setExceptExtraCut(true);
+      rule->setCutWithin(dbdist(layer->enclosureExceptExtraCut(i)));
+    }
+
+    if (layer->hasEnclosureMinLength(i)) {
+      rule->setMinLength(dbdist(layer->enclosureMinLength(i)));
+    }
+  }
 
   dbSet<dbProperty> props = dbProperty::getProperties(l);
   if (!props.empty() && props.orderReversed())

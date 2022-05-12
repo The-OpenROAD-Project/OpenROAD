@@ -241,6 +241,10 @@ void dbModInst::destroy(dbModInst* modinst)
   _dbBlock* block = (_dbBlock*) _modinst->getOwner();
   _dbModule* module = (_dbModule*) modinst->getParent();
 
+  _dbModule* master = (_dbModule*) modinst->getMaster();
+  master->_mod_inst = dbId<_dbModInst>();  // clear
+  dbModule::destroy((dbModule*) master);
+
   // unlink from parent start
   uint id = _modinst->getOID();
   _dbModInst* prev = NULL;

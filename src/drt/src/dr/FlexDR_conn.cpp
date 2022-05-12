@@ -51,32 +51,18 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  //  In PA we may have used NearbyGrid which puts a via outside the pin
-  //  but still overlapping.  So we expand pt to a min-width square when
-  //  searching for the pin shape.
-  auto half_min_width = getTech()->getLayer(lNum)->getMinWidth() / 2;
-  Rect query_box(pt.x() - half_min_width,
-                  pt.y() - half_min_width,
-                  pt.x() + half_min_width,
-                  pt.y() + half_min_width);
+  Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
-    if (isPathSeg && !bx.intersects(pt))
-      continue;
     switch (rqObj->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(rqObj);
         if (instTerm->getNet() == net) {
-          if (!isPathSeg && !bx.intersects(pt)
-              && !instTerm->hasAccessPoint(pt.x(), pt.y(), lNum))
-            continue;
           pin2epMap[instTerm].insert(make_pair(pt, lNum));
         }
         break;
       }
       case frcBTerm: {
-        if (!isPathSeg && !bx.intersects(pt))
-          continue;
         auto bterm = static_cast<frBTerm*>(rqObj);
         if (bterm->getNet() == net) {
           pin2epMap[bterm].insert(make_pair(pt, lNum));
@@ -773,12 +759,12 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        cout << "Error: bp >= ep\n";
+        cout << "Error1: bp.x() >= ep.x()" << bp << " " << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        cout << "Error: bp >= ep\n";
+        cout << "Error2: bp.y() >= ep.y()" << bp << " " << " " << ep << "\n";
       }
     }
   }

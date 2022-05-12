@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include "odb.h"
 
@@ -129,19 +129,6 @@ class Point
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
 };
 
-class GeomShape
-{
- public:
-  virtual uint dx() const = 0;
-  virtual uint dy() const = 0;
-  virtual int xMin() const = 0;
-  virtual int yMin() const = 0;
-  virtual int xMax() const = 0;
-  virtual int yMax() const = 0;
-  virtual std::vector<Point> getPoints() const = 0;
-  virtual ~GeomShape() = default;
-};
-
 /*
 an Oct represents a 45-degree routing segment as 2 connected octagons
 
@@ -195,7 +182,7 @@ A = W/2
 B = [ceiling(W/(sqrt(2) * M) ) * M] - A
 where W is wire width and M is the manufacturing grid
 */
-class Oct : public GeomShape
+class Oct
 {
   Point center_high;  // the center of the higher octagon
   Point center_low;   // the center of the lower octagon
@@ -222,7 +209,7 @@ class Oct : public GeomShape
   Point getCenterLow() const;
   int getWidth() const;
 
-  uint dx() const override
+  uint dx() const
   {
     OCT_DIR D = getDir();
     if (D == RIGHT)
@@ -232,11 +219,11 @@ class Oct : public GeomShape
     else
       return 0;
   };
-  uint dy() const override
+  uint dy() const
   {
     return abs(center_high.getY() + A - center_low.getY() + A);
   };
-  int xMin() const override
+  int xMin() const
   {
     OCT_DIR D = getDir();
     if (D == RIGHT)
@@ -246,8 +233,8 @@ class Oct : public GeomShape
     else
       return 0;
   };
-  int yMin() const override { return center_low.getY() - A; };
-  int xMax() const override
+  int yMin() const { return center_low.getY() - A; };
+  int xMax() const
   {
     OCT_DIR D = getDir();
     if (D == RIGHT)
@@ -257,8 +244,8 @@ class Oct : public GeomShape
     else
       return 0;
   };
-  int yMax() const override { return center_high.getY() + A; };
-  std::vector<Point> getPoints() const override
+  int yMax() const { return center_high.getY() + A; };
+  std::vector<Point> getPoints() const
   {
     OCT_DIR dir = getDir();
     int B = ceil((A * 2) / (sqrt(2))) - A;
@@ -296,7 +283,7 @@ class Oct : public GeomShape
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
 };
 
-class Rect : public GeomShape
+class Rect
 {
   int _xlo;
   int _ylo;
@@ -344,13 +331,13 @@ class Rect : public GeomShape
   void set_ylo(int x1);
   void set_yhi(int x1);
 
-  int xMin() const override { return _xlo; };
-  int yMin() const override { return _ylo; };
-  int xMax() const override { return _xhi; };
-  int yMax() const override { return _yhi; };
-  uint dx() const override { return (uint) (_xhi - _xlo); };
-  uint dy() const override { return (uint) (_yhi - _ylo); };
-  std::vector<Point> getPoints() const override
+  int xMin() const { return _xlo; };
+  int yMin() const { return _ylo; };
+  int xMax() const { return _xhi; };
+  int yMax() const { return _yhi; };
+  uint dx() const { return (uint) (_xhi - _xlo); };
+  uint dy() const { return (uint) (_yhi - _ylo); };
+  std::vector<Point> getPoints() const
   {
     std::vector<Point> points(5);
     points[0] = points[4] = ll();
@@ -394,13 +381,16 @@ class Rect : public GeomShape
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
 
-  void merge(GeomShape* s, Rect& result);
+  // Compute the union of this rectangle and an octagon.
+  void merge(const Oct& s, Rect& result);
 
   // Compute the union of these two rectangles. The result is stored in this
   // rectangle.
   void merge(const Rect& r);
 
-  void merge(GeomShape* s);
+  // Compute the union of this rectangle an an octagon.
+  // The result is stored in this rectangle.
+  void merge(const Oct& s);
 
   // Bloat each side of the rectangle by the margin.
   void bloat(int margin, Rect& result) const;
@@ -816,12 +806,13 @@ inline void Rect::merge(const Rect& r, Rect& result)
   result._xhi = MAX(_xhi, r._xhi);
   result._yhi = MAX(_yhi, r._yhi);
 }
-inline void Rect::merge(GeomShape* s, Rect& result)
+
+inline void Rect::merge(const Oct& o, Rect& result)
 {
-  result._xlo = MIN(_xlo, s->xMin());
-  result._ylo = MIN(_ylo, s->yMin());
-  result._xhi = MAX(_xhi, s->xMax());
-  result._yhi = MAX(_yhi, s->yMax());
+  result._xlo = MIN(_xlo, o.xMin());
+  result._ylo = MIN(_ylo, o.yMin());
+  result._xhi = MAX(_xhi, o.xMax());
+  result._yhi = MAX(_yhi, o.yMax());
 }
 
 // Compute the union of these two rectangles.
@@ -832,12 +823,13 @@ inline void Rect::merge(const Rect& r)
   _xhi = MAX(_xhi, r._xhi);
   _yhi = MAX(_yhi, r._yhi);
 }
-inline void Rect::merge(GeomShape* s)
+
+inline void Rect::merge(const Oct& o)
 {
-  _xlo = MIN(_xlo, s->xMin());
-  _ylo = MIN(_ylo, s->yMin());
-  _xhi = MAX(_xhi, s->xMax());
-  _yhi = MAX(_yhi, s->yMax());
+  _xlo = MIN(_xlo, o.xMin());
+  _ylo = MIN(_ylo, o.yMin());
+  _xhi = MAX(_xhi, o.xMax());
+  _yhi = MAX(_yhi, o.yMax());
 }
 
 // Bloat each side of the rectangle by the margin.

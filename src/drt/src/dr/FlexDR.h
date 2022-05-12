@@ -102,6 +102,17 @@ struct FlexDRViaData
 class FlexDR
 {
  public:
+  struct SearchRepairArgs
+  {
+    int size;
+    int offset;
+    int mazeEndIter;
+    frUInt4 workerDRCCost;
+    frUInt4 workerMarkerCost;
+    int ripupMode;
+    bool followGuide;
+  };
+
   // constructors
   FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
   ~FlexDR();
@@ -110,7 +121,11 @@ class FlexDR
   frDesign* getDesign() const { return design_; }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
   // others
+  void init();
   int main();
+  void searchRepair(const SearchRepairArgs& args);
+  void end(bool done = false);
+
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(frDebugSettings* settings);
 
@@ -157,9 +172,9 @@ class FlexDR
   bool design_updated_;
   bool increaseClipsize_;
   float clipSizeInc_;
+  int iter_;
 
   // others
-  void init();
   void initFromTA();
   void initGCell2BoundaryPin();
   void getBatchInfo(int& batchStepX, int& batchStepY);
@@ -201,8 +216,6 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-  void searchRepair(int iter, const SearchRepairArgs& args);
-  void end(bool writeMetrics = false);
 
   // utility
   void reportDRC(const std::string& file_name);
@@ -901,6 +914,7 @@ class FlexDRWorker
       const std::set<FlexMazeIdx>& realPinApMazeIdx,
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
       const set<FlexMazeIdx>& apMazeIdx);
+  bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,

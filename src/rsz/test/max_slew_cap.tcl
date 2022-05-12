@@ -11,13 +11,14 @@ set def_file [make_result_file "repair_slew1.def"]
 # to normalize slews is just under slew and cap limits
 write_hi_fanout_def1 $def_file 104 \
   "rdrv" "sky130_fd_sc_hd__o21ai_0" "" "Y" \
-  "r" "sky130_fd_sc_hd__dfxtp_1" "" "D" 5000 \
+  "r" "sky130_fd_sc_hd__dfxtp_1" "" "D" 8000 \
   "met1" 1000
 
 read_def $def_file
 create_clock -period 1 clk1
 
-set_wire_rc -layer met3
+source sky130hd/sky130hd.rc
+set_wire_rc -layer met2
 estimate_parasitics -placement
 
 puts "Found [sta::max_slew_violation_count] slew violations"

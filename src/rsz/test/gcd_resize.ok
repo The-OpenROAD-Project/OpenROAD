@@ -16,9 +16,9 @@ worst slack 1.36
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0039] Resized 45 instances.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 105 hold buffers.
+[INFO RSZ-0032] Inserted 94 hold buffers.
 worst slack 0.20
-worst slack 1.28
+worst slack 1.24
 max slew
 
 Pin                                    Limit    Slew   Slack
@@ -49,4 +49,4 @@ _847_/Z manhtn 60.3 steiner 60.3 0.00
 _851_/Z manhtn 58.3 steiner 58.3 0.00
 _771_/Z manhtn 58.1 steiner 58.1 0.00
 _725_/Z manhtn 56.1 steiner 56.1 0.00
-Design area 791 u^2 12% utilization.
+Design area 828 u^2 13% utilization.

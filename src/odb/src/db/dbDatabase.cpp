@@ -181,26 +181,20 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
-  ZALLOCATED(_chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
-  ZALLOCATED(_tech_tbl);
 
   _lib_tbl = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
-  ZALLOCATED(_lib_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
-  ZALLOCATED(_name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 //
@@ -220,26 +214,20 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
-  ZALLOCATED(_chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
-  ZALLOCATED(_tech_tbl);
 
   _lib_tbl = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
-  ZALLOCATED(_lib_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
-  ZALLOCATED(_name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
@@ -260,22 +248,16 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
   }
 
   _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
-  ZALLOCATED(_chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
-  ZALLOCATED(_tech_tbl);
 
   _lib_tbl = new dbTable<_dbLib>(this, this, *d._lib_tbl);
-  ZALLOCATED(_lib_tbl);
 
   _prop_tbl = new dbTable<_dbProperty>(this, this, *d._prop_tbl);
-  ZALLOCATED(_prop_tbl);
 
   _name_cache = new _dbNameCache(this, this, *d._name_cache);
-  ZALLOCATED(_name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
-  ZALLOCATED(_prop_itr);
 }
 
 _dbDatabase::~_dbDatabase()
@@ -730,7 +712,6 @@ dbDatabase* dbDatabase::create()
   if (db_tbl == NULL) {
     db_tbl = new dbTable<_dbDatabase>(
         NULL, NULL, (GetObjTbl_t) NULL, dbDatabaseObj);
-    ZALLOCATED(db_tbl);
   }
 
   _dbDatabase* db = db_tbl->create();

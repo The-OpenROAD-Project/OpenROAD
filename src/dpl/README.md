@@ -10,7 +10,6 @@ Features:
 
 -   Fence region and multi-height cells. (ICCAD 2017 Contest benchmarks)
 -   Fragmented ROWs.
--   Macro blocks.
 
 ## Commands
 
