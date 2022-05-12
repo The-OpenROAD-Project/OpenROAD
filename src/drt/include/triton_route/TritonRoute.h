@@ -123,6 +123,7 @@ class TritonRoute
   void setDebugWorker(int x, int y);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDebugWorkerParams(int mazeEndIter, int drcCost, int markerCost, int ripupMode, int followGuide);
   void setDistributed(bool on = true);
   void setWorkerIpPort(const char* ip, unsigned short port);
   void setSharedVolume(const std::string& vol);

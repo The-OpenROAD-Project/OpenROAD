@@ -170,6 +170,17 @@ set_detailed_route_debug_cmd(const char* net_name,
 }
 
 void
+set_worker_debug_params(int maze_end_iter,
+                        int drc_cost,
+                        int marker_cost,
+                        int ripup_mode,
+                        int follow_guide)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setDebugWorkerParams(maze_end_iter, drc_cost, marker_cost, ripup_mode, follow_guide);
+}
+
+void
 run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_path, const char* worker_path, const char* updates)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

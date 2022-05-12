@@ -159,6 +159,15 @@ void TritonRoute::setDebugPaCommit(bool on)
   debug_->paCommit = on;
 }
 
+void TritonRoute::setDebugWorkerParams(int mazeEndIter, int drcCost, int markerCost, int ripupMode, int followGuide)
+{
+  debug_->mazeEndIter = mazeEndIter;
+  debug_->drcCost = drcCost;
+  debug_->markerCost = markerCost;
+  debug_->ripupMode = ripupMode;
+  debug_->followGuide = followGuide;
+}
+
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {
@@ -195,6 +204,16 @@ void TritonRoute::debugSingleWorker(const std::string& worker_path)
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
   workerFile.close();
   auto worker = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
+  if(debug_->mazeEndIter != -1)
+    worker->setMazeEndIter(debug_->mazeEndIter);
+  if(debug_->markerCost != -1)
+    worker->setMarkerCost(debug_->markerCost);
+  if(debug_->drcCost != -1)
+    worker->setDrcCost(debug_->drcCost);
+  if(debug_->ripupMode != -1)
+    worker->setRipupMode(debug_->ripupMode);
+  if(debug_->followGuide != -1)
+    worker->setFollowGuide((debug_->followGuide == 1));
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_)
