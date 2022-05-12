@@ -225,14 +225,13 @@ class FlexGridGraph
         mIdx1.setY(max(0, mIdx1.y() - 1));
       }
     }
-    mIdx2.set(
-        frMIdx(std::upper_bound(xCoords_.begin(), xCoords_.end(), box.xMax())
-               - xCoords_.begin())
-            - 1,
-        frMIdx(std::upper_bound(yCoords_.begin(), yCoords_.end(), box.yMax())
-               - yCoords_.begin())
-            - 1,
-        mIdx2.z());
+    const int ux
+        = std::upper_bound(xCoords_.begin(), xCoords_.end(), box.xMax())
+          - xCoords_.begin();
+    const int uy
+        = std::upper_bound(yCoords_.begin(), yCoords_.end(), box.yMax())
+          - yCoords_.begin();
+    mIdx2.set(frMIdx(max(0, ux - 1)), frMIdx(max(0, uy - 1)), mIdx2.z());
     if (enclosureOption == 2) {
       if (xCoords_[mIdx2.x()] > box.xMax()) {
         mIdx2.setX(max(0, mIdx2.x() - 1));

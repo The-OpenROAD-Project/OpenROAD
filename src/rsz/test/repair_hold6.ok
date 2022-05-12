@@ -12,10 +12,10 @@
 [INFO ODB-0133]     Created 13 nets and 30 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold4.def
  (clk ^) r -0.14:2.03 f -0.05:2.01
- (clk ^) r -0.07:-0.22 f 0.02:-0.25
- (clk ^) r 0.04:1.85 f 0.16:1.79
+ (clk ^) r -0.07:1.96 f 0.02:1.93
+ (clk ^) r 0.05:1.85 f 0.16:1.79
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 3 hold buffers.
- (clk ^) r 0.06:1.83 f 0.16:1.80
- (clk ^) r 0.07:-0.36 f 0.17:-0.40
- (clk ^) r 0.19:1.71 f 0.31:1.64
+[INFO RSZ-0032] Inserted 1 hold buffers.
+ (clk ^) r 0.14:1.76 f 0.25:1.71
+ (clk ^) r 0.20:1.69 f 0.32:1.63
+ (clk ^) r 0.32:1.57 f 0.46:1.49

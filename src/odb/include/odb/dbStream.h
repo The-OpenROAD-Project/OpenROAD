@@ -56,8 +56,8 @@ class dbOStream
 
   void write_error()
   {
-    throw ZIOError(ferror(_f),
-                   "write failed on database stream; system io error: ");
+    throw ZException("write failed on database stream; system io error: (%s)",
+                     strerror(ferror(_f)));
   }
 
  public:
@@ -256,8 +256,8 @@ class dbIStream
       throw ZException(
           "read failed on database stream (unexpected end-of-file encounted).");
     else
-      throw ZIOError(ferror(_f),
-                     "read failed on database stream; system io error: ");
+      throw ZException("read failed on database stream; system io error: (%s)",
+                       strerror(ferror(_f)));
   }
 
  public:

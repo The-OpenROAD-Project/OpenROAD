@@ -62,6 +62,7 @@
 #include "utl/Logger.h"
 #include "timingWidget.h"
 #include "drcWidget.h"
+#include "browserWidget.h"
 #include "gui/heatMap.h"
 
 // must be loaded in global namespace
@@ -93,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
       scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
+      hierarchy_widget_(new BrowserWidget(viewer_->getModuleSettings(), this)),
       find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
@@ -109,12 +111,14 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::RightDockWidgetArea, inspector_);
+  addDockWidget(Qt::RightDockWidgetArea, hierarchy_widget_);
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 
+  tabifyDockWidget(inspector_, hierarchy_widget_);
   tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
   drc_viewer_->hide();
@@ -219,6 +223,31 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addHighlighted(const SelectionSet&)));
 
+  connect(hierarchy_widget_,
+          SIGNAL(select(const SelectionSet&)),
+          this,
+          SLOT(setSelected(const SelectionSet&)));
+  connect(hierarchy_widget_,
+          SIGNAL(removeSelect(const Selected&)),
+          this,
+          SLOT(removeSelected(const Selected&)));
+  connect(hierarchy_widget_,
+          SIGNAL(highlight(const SelectionSet&)),
+          this,
+          SLOT(addHighlighted(const SelectionSet&)));
+  connect(hierarchy_widget_,
+          SIGNAL(removeHighlight(const Selected&)),
+          this,
+          SLOT(removeHighlighted(const Selected&)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleVisibility(odb::dbModule*, bool)),
+          viewer_,
+          SLOT(updateModuleVisibility(odb::dbModule*, bool)));
+  connect(hierarchy_widget_,
+          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
+          viewer_,
+          SLOT(updateModuleColor(odb::dbModule*, const QColor&, bool)));
+
   connect(timing_widget_,
           &TimingWidget::inspect,
           [this](const Selected& selected) {
@@ -321,6 +350,7 @@ MainWindow::MainWindow(QWidget* parent)
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
+  hierarchy_widget_->readSettings(&settings);
   settings.endGroup();
 
   // load resources and set window icon and title
@@ -361,6 +391,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
   }
+  hierarchy_widget_->setBlock(block);
 }
 
 void MainWindow::init(sta::dbSta* sta)
@@ -368,10 +399,12 @@ void MainWindow::init(sta::dbSta* sta)
   // Setup widgets
   timing_widget_->init(sta);
   controls_->setSTA(sta);
+  hierarchy_widget_->setSTA(sta);
 
   // register descriptors
   auto* gui = Gui::get();
-  gui->registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db_, sta));
+  auto* inst_descriptor = new DbInstDescriptor(db_, sta);
+  gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
   gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(db_, sta, viewer_->getFocusNets()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
@@ -384,6 +417,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  controls_->setDBInstDescriptor(inst_descriptor);
+  hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
 }
 
 void MainWindow::createStatusBar()
@@ -511,6 +547,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   windows_menu_->addAction(timing_widget_->toggleViewAction());
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
+  windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
@@ -754,6 +791,17 @@ void MainWindow::removeSelected(const Selected& selection)
   }
 }
 
+void MainWindow::removeHighlighted(const Selected& selection)
+{
+  for (auto& group : highlighted_) {
+    auto itr = std::find(group.begin(), group.end(), selection);
+    if (itr != group.end()) {
+      group.erase(itr);
+      emit highlightChanged();
+    }
+  }
+}
+
 void MainWindow::removeSelectedByType(const std::string& type)
 {
   bool changed = false;
@@ -785,6 +833,12 @@ void MainWindow::addSelected(const SelectionSet& selections)
   emit selectionChanged();
 }
 
+void MainWindow::setSelected(const SelectionSet& selections)
+{
+  selected_.clear();
+  addSelected(selections);
+}
+
 void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
 {
   selected_.clear();
@@ -800,6 +854,9 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
 {
   if (highlight_group < 0) {
     highlight_group = requestHighlightGroup();
+    if (highlight_group < 0) {
+      return;
+    }
   }
 
   if (highlight_group >= highlighted_.size()) {
@@ -853,7 +910,9 @@ void MainWindow::deleteRuler(const std::string& name)
 int MainWindow::requestHighlightGroup()
 {
   HighlightGroupDialog dlg;
-  dlg.exec();
+  if (dlg.exec() == QDialog::Rejected) {
+    return -1;
+  }
   return dlg.getSelectedHighlightGroup();
 }
 
@@ -862,6 +921,9 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
 {
   if (highlight_group < 0) {
     highlight_group = requestHighlightGroup();
+    if (highlight_group < 0) {
+      return;
+    }
   }
 
   if (highlight_group >= highlighted_.size()) {
@@ -1073,6 +1135,7 @@ void MainWindow::saveSettings()
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
+  hierarchy_widget_->writeSettings(&settings);
   settings.endGroup();
 }
 

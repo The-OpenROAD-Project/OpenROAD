@@ -1,133 +1,133 @@
 library ("sky130_fd_sc_hd__tt_025C_1v80_") {
-    define(def_sim_opt,library,string);
-    define(default_arc_mode,library,string);
-    define(default_constraint_arc_mode,library,string);
-    define(driver_model,library,string);
-    define(leakage_sim_opt,library,string);
-    define(min_pulse_width_mode,library,string);
-    define(simulator,library,string);
-    define(switching_power_split_model,library,string);
-    define(sim_opt,timing,string);
-    define(violation_delay_degrade_pct,timing,string);
-    technology("cmos");
-    delay_model : "table_lookup";
-    bus_naming_style : "%s[%d]";
-    time_unit : "1ns";
-    voltage_unit : "1V";
-    leakage_power_unit : "1nW";
-    current_unit : "1mA";
-    pulling_resistance_unit : "1kohm";
-    capacitive_load_unit(1.0000000000, "pf");
-    revision : 1.0000000000;
-    default_cell_leakage_power : 0.0000000000;
-    default_fanout_load : 0.0000000000;
-    default_inout_pin_cap : 0.0000000000;
-    default_input_pin_cap : 0.0000000000;
-    default_max_transition : 1.5000000000;
-    default_output_pin_cap : 0.0000000000;
-    default_arc_mode : "worst_edges";
-    default_constraint_arc_mode : "worst";
-    default_leakage_power_density : 0.0000000000;
-    operating_conditions ("tt_025C_1v80") {
-        voltage : 1.8000000000;
-        process : 1.0000000000;
-        temperature : 25.000000000;
-        tree_type : "balanced_tree";
-    }
-    /* Wire load tables */
+  define(def_sim_opt,library,string);
+  define(default_arc_mode,library,string);
+  define(default_constraint_arc_mode,library,string);
+  define(driver_model,library,string);
+  define(leakage_sim_opt,library,string);
+  define(min_pulse_width_mode,library,string);
+  define(simulator,library,string);
+  define(switching_power_split_model,library,string);
+  define(sim_opt,timing,string);
+  define(violation_delay_degrade_pct,timing,string);
+  technology("cmos");
+  delay_model : "table_lookup";
+  bus_naming_style : "%s[%d]";
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  leakage_power_unit : "1nW";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit(1.0000000000, "pf");
+  revision : 1.0000000000;
+  default_cell_leakage_power : 0.0000000000;
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.0000000000;
+  default_input_pin_cap : 0.0000000000;
+  default_max_transition : 1.5000000000;
+  default_output_pin_cap : 0.0000000000;
+  default_arc_mode : "worst_edges";
+  default_constraint_arc_mode : "worst";
+  default_leakage_power_density : 0.0000000000;
+  operating_conditions ("tt_025C_1v80") {
+    voltage : 1.8000000000;
+    process : 1.0000000000;
+    temperature : 25.000000000;
+    tree_type : "balanced_tree";
+  }
+  /* Wire load tables */
 
-    wire_load("Small") {
-      capacitance : 1.42e-05;
-      resistance : 0.0745;
-      slope : 8.3631;
-      fanout_length( 1, 23.2746);
-      fanout_length( 2, 32.1136);
-      fanout_length( 3, 48.4862);
-      fanout_length( 4, 64.0974);
-      fanout_length( 5, 86.2649);
-      fanout_length( 6, 84.2649);
-    }
-
-
-    wire_load("Medium") {
-      capacitance : 1.42e-05;
-      resistance : 0.0745;
-      slope : 8.3631;
-      fanout_length( 1, 23.2746);
-      fanout_length( 2, 32.1136);
-      fanout_length( 3, 48.4862);
-      fanout_length( 4, 64.0974);
-      fanout_length( 5, 86.2649);
-      fanout_length( 6, 84.2649);
-    }
-
-    wire_load("Large") {
-      capacitance : 1.42e-05;
-      resistance : 0.0745;
-      slope : 8.3631;
-      fanout_length( 1, 23.2746);
-      fanout_length( 2, 32.1136);
-      fanout_length( 3, 48.4862);
-      fanout_length( 4, 64.0974);
-      fanout_length( 5, 86.2649);
-      fanout_length( 6, 84.2649);
-    }
+  wire_load("Small") {
+    capacitance : 1.42e-05;
+    resistance : 0.0745;
+    slope : 8.3631;
+    fanout_length( 1, 23.2746);
+    fanout_length( 2, 32.1136);
+    fanout_length( 3, 48.4862);
+    fanout_length( 4, 64.0974);
+    fanout_length( 5, 86.2649);
+    fanout_length( 6, 84.2649);
+  }
 
 
-    wire_load("Huge") {
-      capacitance : 1.42e-05;
-      resistance : 0.0745;
-      slope : 8.3631;
-      fanout_length( 1, 23.2746);
-      fanout_length( 2, 32.1136);
-      fanout_length( 3, 48.4862);
-      fanout_length( 4, 64.0974);
-      fanout_length( 5, 86.2649);
-      fanout_length( 6, 84.2649);
-    }
+  wire_load("Medium") {
+    capacitance : 1.42e-05;
+    resistance : 0.0745;
+    slope : 8.3631;
+    fanout_length( 1, 23.2746);
+    fanout_length( 2, 32.1136);
+    fanout_length( 3, 48.4862);
+    fanout_length( 4, 64.0974);
+    fanout_length( 5, 86.2649);
+    fanout_length( 6, 84.2649);
+  }
+
+  wire_load("Large") {
+    capacitance : 1.42e-05;
+    resistance : 0.0745;
+    slope : 8.3631;
+    fanout_length( 1, 23.2746);
+    fanout_length( 2, 32.1136);
+    fanout_length( 3, 48.4862);
+    fanout_length( 4, 64.0974);
+    fanout_length( 5, 86.2649);
+    fanout_length( 6, 84.2649);
+  }
 
 
-    default_wire_load : "Small" ;
-    default_wire_load_mode : top;
+  wire_load("Huge") {
+    capacitance : 1.42e-05;
+    resistance : 0.0745;
+    slope : 8.3631;
+    fanout_length( 1, 23.2746);
+    fanout_length( 2, 32.1136);
+    fanout_length( 3, 48.4862);
+    fanout_length( 4, 64.0974);
+    fanout_length( 5, 86.2649);
+    fanout_length( 6, 84.2649);
+  }
 
-    power_lut_template ("power_inputs_1") {
-        variable_1 : "input_transition_time";
-        index_1("1, 2, 3, 4, 5, 6, 7");
-    }
-    power_lut_template ("power_outputs_1") {
-        variable_1 : "input_transition_time";
-        variable_2 : "total_output_net_capacitance";
-        index_1("1, 2, 3, 4, 5, 6, 7");
-        index_2("1, 2, 3, 4, 5, 6, 7");
-    }
-    lu_table_template ("constraint_3_0_1") {
-        variable_1 : "related_pin_transition";
-        index_1("1, 2, 3");
-    }
-    lu_table_template ("del_1_7_7") {
-        variable_1 : "input_net_transition";
-        variable_2 : "total_output_net_capacitance";
-        index_1("1, 2, 3, 4, 5, 6, 7");
-        index_2("1, 2, 3, 4, 5, 6, 7");
-    }
-    lu_table_template ("driver_waveform_template") {
-        variable_1 : "input_net_transition";
-        variable_2 : "normalized_voltage";
-        index_1("1, 2");
-        index_2("1, 2");
-    }
-    lu_table_template ("vio_3_3_1") {
-        variable_1 : "related_pin_transition";
-        variable_2 : "constrained_pin_transition";
-        index_1("1, 2, 3");
-        index_2("1, 2, 3");
-    }
-    normalized_driver_waveform ("driver_waveform_template") {
-        index_1("0.0100000000, 0.0230506000, 0.0531329000, 0.1224745000, 0.2823108000, 0.5000000000, 0.6507428000, 1.5000000000");
-        index_2("0.0000000000, 0.5000000000, 1.0000000000");
-        driver_waveform_name : "ramp";
-        values("0.0000000000, 0.0083333333, 0.0166666670", \
-            "0.0000000000, 0.0192088180, 0.0384176350", \
+
+  default_wire_load : "Small" ;
+  default_wire_load_mode : top;
+
+  power_lut_template ("power_inputs_1") {
+    variable_1 : "input_transition_time";
+    index_1("1, 2, 3, 4, 5, 6, 7");
+  }
+  power_lut_template ("power_outputs_1") {
+    variable_1 : "input_transition_time";
+    variable_2 : "total_output_net_capacitance";
+    index_1("1, 2, 3, 4, 5, 6, 7");
+    index_2("1, 2, 3, 4, 5, 6, 7");
+  }
+  lu_table_template ("constraint_3_0_1") {
+    variable_1 : "related_pin_transition";
+    index_1("1, 2, 3");
+  }
+  lu_table_template ("del_1_7_7") {
+    variable_1 : "input_net_transition";
+    variable_2 : "total_output_net_capacitance";
+    index_1("1, 2, 3, 4, 5, 6, 7");
+    index_2("1, 2, 3, 4, 5, 6, 7");
+  }
+  lu_table_template ("driver_waveform_template") {
+    variable_1 : "input_net_transition";
+    variable_2 : "normalized_voltage";
+    index_1("1, 2");
+    index_2("1, 2");
+  }
+  lu_table_template ("vio_3_3_1") {
+    variable_1 : "related_pin_transition";
+    variable_2 : "constrained_pin_transition";
+    index_1("1, 2, 3");
+    index_2("1, 2, 3");
+  }
+  normalized_driver_waveform ("driver_waveform_template") {
+    index_1("0.0100000000, 0.0230506000, 0.0531329000, 0.1224745000, 0.2823108000, 0.5000000000, 0.6507428000, 1.5000000000");
+    index_2("0.0000000000, 0.5000000000, 1.0000000000");
+    driver_waveform_name : "ramp";
+    values("0.0000000000, 0.0083333333, 0.0166666670", \
+             "0.0000000000, 0.0192088180, 0.0384176350", \
             "0.0000000000, 0.0442774400, 0.0885548810", \
             "0.0000000000, 0.1020620700, 0.2041241500", \
             "0.0000000000, 0.2352590100, 0.4705180100", \
@@ -162,59 +162,59 @@ library ("sky130_fd_sc_hd__tt_025C_1v80_") {
     slew_upper_threshold_pct_rise : 80.000000000;
     switching_power_split_model : "true";
 
-    cell ("buf_1") {
-        leakage_power () {
-            value : 0.0011810000;
-            when : "A";
-        }
-        leakage_power () {
-            value : 0.0011810000;
-            when : "!A";
-        }
-        area : 3.7536000000;
-        cell_footprint : "sky130_fd_sc_hd__buf";
-        cell_leakage_power : 0.0011810180;
-        driver_waveform_fall : "ramp";
-        driver_waveform_rise : "ramp";
-        pg_pin ("VGND") {
-            pg_type : "primary_ground";
-            related_bias_pin : "VPB";
-            voltage_name : "VGND";
-        }
-        pg_pin ("VNB") {
-            pg_type : "nwell";
-            physical_connection : "device_layer";
-            voltage_name : "VNB";
-        }
-        pg_pin ("VPB") {
-            pg_type : "pwell";
-            physical_connection : "device_layer";
-            voltage_name : "VPB";
-        }
-        pg_pin ("VPWR") {
-            pg_type : "primary_power";
-            related_bias_pin : "VNB";
-            voltage_name : "VPWR";
-        }
-        pin ("A") {
-            capacitance : 0.0021030000;
-            clock : "false";
-            direction : "input";
-            fall_capacitance : 0.0020150000;
-            max_transition : 0.005;
-            related_ground_pin : "VGND";
-            related_power_pin : "VPWR";
-            rise_capacitance : 0.0021910000;
-        }
-        pin ("X") {
-            direction : "output";
-            function : "(A)";
-            internal_power () {
-                fall_power ("power_outputs_1") {
-                    index_1("0.0100000000, 0.0230505800, 0.0531329300, 0.1224745000, 0.2823108000, 0.6507428000, 1.5000000000");
-                    index_2("0.0005000000, 0.0012632050, 0.0031913740, 0.0080627180, 0.0203697300, 0.0514622900, 0.1300148000");
-                    values("0.0108054000, 0.0097834000, 0.0069418000, -0.000808000, -0.020725600, -0.071111700, -0.198366400", \
-                        "0.0105490000, 0.0095435000, 0.0066983000, -0.001032800, -0.020903300, -0.071322800, -0.198572800", \
+    cell ("BLOCK1") {
+      is_macro : true;
+      leakage_power () {
+        value : 0.0011810000;
+        when : "A";
+      }
+      leakage_power () {
+        value : 0.0011810000;
+        when : "!A";
+      }
+      area : 3.7536000000;
+      cell_footprint : "sky130_fd_sc_hd__buf";
+      cell_leakage_power : 0.0011810180;
+      driver_waveform_fall : "ramp";
+      driver_waveform_rise : "ramp";
+      pg_pin ("VGND") {
+        pg_type : "primary_ground";
+        related_bias_pin : "VPB";
+        voltage_name : "VGND";
+      }
+      pg_pin ("VNB") {
+        pg_type : "nwell";
+        physical_connection : "device_layer";
+        voltage_name : "VNB";
+      }
+      pg_pin ("VPB") {
+        pg_type : "pwell";
+        physical_connection : "device_layer";
+        voltage_name : "VPB";
+      }
+      pg_pin ("VPWR") {
+        pg_type : "primary_power";
+        related_bias_pin : "VNB";
+        voltage_name : "VPWR";
+      }
+      pin ("A") {
+        capacitance : 0.0021030000;
+        clock : "false";
+        direction : "input";
+        fall_capacitance : 0.0020150000;
+        max_transition : 0.03;
+        related_ground_pin : "VGND";
+        related_power_pin : "VPWR";
+        rise_capacitance : 0.0021910000;
+      }
+      pin ("X") {
+        direction : "output";
+        internal_power () {
+          fall_power ("power_outputs_1") {
+            index_1("0.0100000000, 0.0230505800, 0.0531329300, 0.1224745000, 0.2823108000, 0.6507428000, 1.5000000000");
+            index_2("0.0005000000, 0.0012632050, 0.0031913740, 0.0080627180, 0.0203697300, 0.0514622900, 0.1300148000");
+            values("0.0108054000, 0.0097834000, 0.0069418000, -0.000808000, -0.020725600, -0.071111700, -0.198366400", \
+                     "0.0105490000, 0.0095435000, 0.0066983000, -0.001032800, -0.020903300, -0.071322800, -0.198572800", \
                         "0.0103270000, 0.0093022000, 0.0064758000, -0.001239900, -0.021126200, -0.071476300, -0.198740200", \
                         "0.0102095000, 0.0091712000, 0.0063456000, -0.001333800, -0.021148000, -0.071505900, -0.198745900", \
                         "0.0100561000, 0.0088657000, 0.0061667000, -0.001306700, -0.021101500, -0.071399700, -0.198641200", \
@@ -290,5 +290,4 @@ library ("sky130_fd_sc_hd__tt_025C_1v80_") {
             }
         }
     }
-
 }

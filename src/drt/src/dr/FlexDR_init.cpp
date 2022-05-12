@@ -421,27 +421,15 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
     cout << "initNets_searchRepair_pin2epMap_helper\nQuerying " << bp << "\n";
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  // In PA we may have used NearbyGrid which puts a via outside the pin
-  // but still overlapping.  So we expand bp to a min-width square when
-  // searching for the pin shape.
-  auto half_min_width = getTech()->getLayer(lNum)->getMinWidth() / 2;
-  Rect query_box(bp.x() - half_min_width,
-                 bp.y() - half_min_width,
-                 bp.x() + half_min_width,
-                 bp.y() + half_min_width);
+  Rect query_box(bp.x(), bp.y(), bp.x(), bp.y());
   regionQuery->query(query_box, lNum, result);
   for (auto& [bx, rqObj] : result) {
-    if (isPathSeg && !bx.intersects(bp))
-      continue;
     if (enableOutput)
       cout << "got " << rqObj << "\n";
     switch (rqObj->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(rqObj);
         if (instTerm->getNet() == net) {
-          if (!isPathSeg && !bx.intersects(bp)
-              && !instTerm->hasAccessPoint(bp.x(), bp.y(), lNum))
-            continue;
           if (enableOutput)
             cout << "inserting " << instTerm << "\n";
           pin2epMap[rqObj].insert(make_pair(bp, lNum));
@@ -449,9 +437,6 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
         break;
       }
       case frcBTerm: {
-        if (!isPathSeg
-            && !bx.intersects(bp))  // terms have aps created on the fly
-          continue;
         auto term = static_cast<frBTerm*>(rqObj);
         if (term->getNet() == net) {
           if (enableOutput)

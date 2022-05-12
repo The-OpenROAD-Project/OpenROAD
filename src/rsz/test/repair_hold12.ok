@@ -12,4 +12,4 @@
  (clk ^) r -0.04:INF f -0.05:INF
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 5 hold buffers.
- (clk ^) r 0.02:INF f 0.02:INF
+ (clk ^) r 0.03:INF f 0.02:INF

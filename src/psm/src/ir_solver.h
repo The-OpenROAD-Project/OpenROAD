@@ -37,6 +37,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+namespace sta
+{
+class dbSta;
+}
+
 namespace psm {
 
 //! Class for IR solver
@@ -46,6 +51,13 @@ namespace psm {
  */
 class IRSolver {
  public:
+  struct BumpData {
+    int x;
+    int y;
+    int size;
+    double voltage;
+  };
+
   //! Constructor for IRSolver class
   /*
    * This constructor creates an instance of the class using
@@ -54,7 +66,7 @@ class IRSolver {
   IRSolver(odb::dbDatabase* t_db, sta::dbSta* t_sta, utl::Logger* t_logger,
            std::string vsrc_loc, std::string power_net, std::string out_file,
            std::string em_out_file, std::string spice_out_file, int em_analyze,
-           int bump_pitch_x, int bump_pitch_y,
+           int bump_pitch_x, int bump_pitch_y, float node_density_um,
            std::map<std::string, float> net_voltage_map) {
     m_db = t_db;
     m_sta = t_sta;
@@ -67,6 +79,7 @@ class IRSolver {
     m_spice_out_file = spice_out_file;
     m_bump_pitch_x = bump_pitch_x;
     m_bump_pitch_y = bump_pitch_y;
+    m_node_density_um = node_density_um;
     m_net_voltage_map = net_voltage_map;
   }
   //! IRSolver destructor
@@ -93,7 +106,7 @@ class IRSolver {
   std::vector<std::pair<std::string, double>> GetPower();
   std::pair<double, double> GetSupplyVoltage();
 
-  bool CheckConnectivity();
+  bool CheckConnectivity(bool connection_only = false);
   bool CheckValidR(double R);
 
   int GetConnectionTest();
@@ -107,6 +120,9 @@ class IRSolver {
 
   bool BuildConnection();
   float supply_voltage_src;
+
+  const std::vector<BumpData>& getBumps() const { return m_C4Bumps; }
+  int getTopLayer() const { return m_top_layer; }
 
  private:
   //! Pointer to the Db
@@ -127,6 +143,7 @@ class IRSolver {
   GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
   int m_node_density{5400};  // TODO get from somewhere
+  float m_node_density_um{-1};  // TODO get from somewhere
   //! Routing Level of the top layer
   int m_top_layer{0};
   int m_bump_pitch_x{0};
@@ -147,7 +164,7 @@ class IRSolver {
   //! Current vector 1D
   std::vector<double> m_J;
   //! C4 bump locations and values
-  std::vector<std::tuple<int, int, int, double>> m_C4Bumps;
+  std::vector<BumpData> m_C4Bumps;
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> m_layer_res;
   //! Locations of the C4 bumps in the G matrix
@@ -161,6 +178,20 @@ class IRSolver {
   bool CreateJ();
   //! Function to create a G matrix using the nodes
   bool CreateGmat(bool connection_only = false);
+  //! Function to find and store the upper and lower PDN layers and return a list
+  //of wires for all PDN tasks
+  std::vector<odb::dbSBox*> FindPdnWires(odb::dbNet* power_net);
+  //! Function to create the nodes of the G matrix
+  void CreateGmatNodes(std::vector<odb::dbSBox*> power_wires,
+                       std::vector<std::tuple<int, int, int, int>> macros);
+  
+  //! Function to find and store the macro boundaries
+  std::vector<std::tuple<int, int, int, int>> GetMacroBoundaries();
+
+  //! Function to create the nodes for the c4 bumps
+  int CreateC4Nodes(bool connection_only, int unit_micron);
+  //! Function to create the connections of the G matrix
+  void CreateGmatConnections(std::vector<odb::dbSBox*> power_wires, bool connection_only);
 };
 }  // namespace psm
 #endif

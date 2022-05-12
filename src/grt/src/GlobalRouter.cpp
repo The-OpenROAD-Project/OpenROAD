@@ -62,7 +62,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
-#include "ord/OpenRoad.hh"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -75,10 +74,11 @@ namespace grt {
 using utl::GRT;
 
 GlobalRouter::GlobalRouter()
-    : openroad_(nullptr),
-      logger_(nullptr),
+    : logger_(nullptr),
       gui_(nullptr),
       stt_builder_(nullptr),
+      antenna_checker_(nullptr),
+      opendp_(nullptr),
       fastroute_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
@@ -105,16 +105,23 @@ GlobalRouter::GlobalRouter()
 {
 }
 
-void GlobalRouter::init(ord::OpenRoad* openroad)
+void GlobalRouter::init(utl::Logger* logger,
+                        stt::SteinerTreeBuilder* stt_builder,
+                        odb::dbDatabase* db,
+                        sta::dbSta* sta,
+                        ant::AntennaChecker* antenna_checker,
+                        dpl::Opendp* opendp)
 {
-  openroad_ = openroad;
-  logger_ = openroad->getLogger();
+  logger_ = logger;
   // Broken gui api missing openroad accessor.
   gui_ = gui::Gui::get();
-  stt_builder_ = openroad_->getSteinerTreeBuilder();
-  db_ = openroad_->getDb();
+  stt_builder_ = stt_builder;
+  db_ = db;
+  stt_builder_ = stt_builder;
+  antenna_checker_ = antenna_checker;
+  opendp_ = opendp;
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
-  sta_ = openroad_->getSta();
+  sta_ = sta;
 
   heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_);
   heatmap_->registerHeatMap();
@@ -233,8 +240,8 @@ void GlobalRouter::updateDbCongestion()
 void GlobalRouter::repairAntennas(sta::LibertyPort* diode_port, int iterations)
 {
   AntennaRepair antenna_repair = AntennaRepair(this,
-                                               openroad_->getAntennaChecker(),
-                                               openroad_->getOpendp(),
+                                               antenna_checker_,
+                                               opendp_,
                                                db_,
                                                logger_);
 
@@ -292,10 +299,9 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 void GlobalRouter::estimateRC()
 {
   // Remove any existing parasitics.
-  sta::dbSta* db_sta = openroad_->getSta();
-  db_sta->deleteParasitics();
+  sta_->deleteParasitics();
 
-  MakeWireParasitics builder(openroad_, this);
+  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
   for (auto& net_route : routes_) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -308,8 +314,12 @@ void GlobalRouter::estimateRC()
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(openroad_, this);
-  GRoute& route = routes_[db_net];
+  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return;
+  }
+  GRoute& route = iter->second;
   if (!route.empty()) {
     Net* net = getNet(db_net);
     builder.estimateParasitcs(db_net, net->getPins(), route);
@@ -318,7 +328,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(openroad_, this);
+  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
   return builder.routeLayerLengths(db_net);
 }
 
@@ -493,7 +503,11 @@ int GlobalRouter::getEdgeResource(int x1,
 void GlobalRouter::removeDirtyNetsRouting()
 {
   for (odb::dbNet* db_net : dirty_nets_) {
-    GRoute& net_route = routes_[db_net];
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    GRoute& net_route = iter->second;
     for (GSegment& segment : net_route) {
       if (!(segment.init_layer != segment.final_layer || (segment.isVia()))) {
         odb::Point init_on_grid = grid_->getPositionOnGrid(
@@ -1511,7 +1525,11 @@ void GlobalRouter::writeGuides(const char* file_name)
             });
 
   for (odb::dbNet* db_net : sorted_nets) {
-    GRoute& route = routes_[db_net];
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    GRoute& route = iter->second;
     if (!route.empty()) {
       guide_file << db_net->getConstName() << "\n";
       guide_file << "(\n";
@@ -1869,7 +1887,11 @@ void GlobalRouter::checkPinPlacement()
 
 int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 {
-  const GRoute& route = routes_[db_net];
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return 0;
+  }
+  const GRoute& route = iter->second;
   int net_wl = 0;
   for (const GSegment& segment : route) {
     const int segment_wl = std::abs(segment.final_x - segment.init_x)
@@ -2011,7 +2033,9 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
-
+    if (!net) {
+      continue;
+    }
     for (Pin& pin : net->getPins()) {
       top_layer = pin.getTopLayer();
       pin_boxes = pin.getBoxes().at(top_layer);

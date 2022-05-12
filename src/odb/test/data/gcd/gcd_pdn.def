@@ -63,7 +63,7 @@ VIAS 6 ;
 - via6_960x2800
  + VIARULE Via6Array-0
  + CUTSIZE 280 280
- + LAYERS metal6 via6 metal6
+ + LAYERS metal6 via6 metal7
  + CUTSPACING 320 320
  + ENCLOSURE 340 360 340 360
  + ROWCOL 4 1

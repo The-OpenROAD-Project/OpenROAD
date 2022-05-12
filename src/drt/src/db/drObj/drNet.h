@@ -214,7 +214,29 @@ class drNet : public drBlockObject
   bool canAvoidRipup() const { return nRipupAvoids_ < maxRipupAvoids_; }
   unsigned short getMaxRipupAvoids() const { return maxRipupAvoids_; }
   void setMaxRipupAvoids(unsigned short n) { maxRipupAvoids_ = n; }
-
+  
+  frAccessPoint* getFrAccessPoint(frCoord x, frCoord y, frLayerNum lNum, frBlockObject** owner = nullptr) {
+      for (auto& term : fNetTerms_) {
+          if (term->typeId() == frBlockObjectEnum::frcInstTerm) {
+                frInstTerm* it = static_cast<frInstTerm*>(term);
+                frAccessPoint* ap = it->getAccessPoint(x, y, lNum);
+                if (ap) {
+                    if (owner)
+                        (*owner) = term;
+                    return ap;
+                }
+          } else if (term->typeId() == frBlockObjectEnum::frcBTerm) {
+                frBTerm* t = static_cast<frBTerm*>(term);
+                frAccessPoint* ap = t->getAccessPoint(x, y, lNum, 0);
+                if (ap) {
+                    if (owner)
+                        (*owner) = term;
+                    return ap;
+                }
+          }
+      }
+      return nullptr;
+  }
  private:
   std::vector<std::unique_ptr<drPin>> pins_;
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;

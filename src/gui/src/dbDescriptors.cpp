@@ -50,34 +50,51 @@
 
 namespace gui {
 
-static std::string convertUnits(double value)
+static std::string convertUnits(double value, bool area = false)
 {
   std::stringstream ss;
   const int precision = 3;
   ss << std::fixed << std::setprecision(precision);
   const char* micron = "\u03BC";
-  int log_units = std::floor(std::log10(value) / 3.0) * 3;
-  if (log_units <= -18) {
-    ss << value * 1e18 << "a";
-  } else if (log_units <= -15) {
-    ss << value * 1e15 << "f";
-  } else if (log_units <= -12) {
-    ss << value * 1e12 << "p";
-  } else if (log_units <= -9) {
-    ss << value * 1e9 << "n";
-  } else if (log_units <= -6) {
-    ss << value * 1e6 << micron;
-  } else if (log_units <= -3) {
-    ss << value * 1e3 << "m";
-  } else if (log_units <= 0) {
-    ss << value;
-  } else if (log_units <= 3) {
-    ss << value * 1e-3 << "k";
-  } else if (log_units <= 6) {
-    ss << value * 1e-6 << "M";
-  } else {
-    ss << value;
+  double log_value = value;
+  if (area) {
+    log_value = std::sqrt(log_value);
   }
+  int log_units = std::floor(std::log10(log_value) / 3.0) * 3;
+  double unit_scale = 1.0;
+  std::string unit = "";
+  if (log_units <= -18) {
+    unit_scale = 1e18;
+    unit = "a";
+  } else if (log_units <= -15) {
+    unit_scale = 1e15;
+    unit = "f";
+  } else if (log_units <= -12) {
+    unit_scale = 1e12;
+    unit = "p";
+  } else if (log_units <= -9) {
+    unit_scale = 1e9;
+    unit = "n";
+  } else if (log_units <= -6) {
+    unit_scale = 1e6;
+    unit = micron;
+  } else if (log_units <= -3) {
+    unit_scale = 1e3;
+    unit = "m";
+  } else if (log_units <= 0) {
+  } else if (log_units <= 3) {
+    unit_scale = 1e-3;
+    unit = "k";
+  } else if (log_units <= 6) {
+    unit_scale = 1e-6;
+    unit = "M";
+  }
+  if (area) {
+    unit_scale *= unit_scale;
+  }
+
+  ss << value * unit_scale << unit;
+
   return ss.str();
 }
 
@@ -227,6 +244,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     props.push_back({"Module", gui->makeSelected(module)});
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
+  props.push_back({"Description", getInstanceTypeText(getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
   props.push_back({"Source type", inst->getSourceType().getString()});
   if (placed.isPlaced()) {
@@ -401,6 +419,127 @@ bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
     objects.insert(makeSelected(inst, nullptr));
   }
   return true;
+}
+
+std::string DbInstDescriptor::getInstanceTypeText(Type type) const
+{
+  switch (type) {
+  case BLOCK:
+    return "Macro";
+  case PAD:
+    return "Pad";
+  case ENDCAP:
+    return "Endcap";
+  case FILL:
+    return "Fill";
+  case TAPCELL:
+    return "Tapcell";
+  case BUMP:
+    return "Bump";
+  case COVER:
+    return "Cover";
+  case ANTENNA:
+    return "Antenna";
+  case TIE:
+    return "Tie";
+  case LEF_OTHER:
+    return "Other";
+  case STD_CELL:
+    return "Standard cell";
+  case STD_BUFINV:
+    return "Buffer/inverter";
+  case STD_BUFINV_CLK_TREE:
+    return "Clock buffer/inverter";
+  case STD_BUFINV_TIMING_REPAIR:
+    return "Buffer/inverter from timing repair";
+  case STD_CLOCK_GATE:
+    return "Clock gate";
+  case STD_LEVEL_SHIFT:
+    return "Level shifter";
+  case STD_SEQUENTIAL:
+    return "Sequential";
+  case STD_PHYSICAL:
+    return "Physical";
+  case STD_COMBINATIONAL:
+    return "Combinational";
+  case STD_OTHER:
+    return "Other";
+  }
+
+  return "Unknown";
+}
+
+DbInstDescriptor::Type DbInstDescriptor::getInstanceType(odb::dbInst* inst) const
+{
+  odb::dbMaster* master = inst->getMaster();
+  const auto master_type = master->getType();
+  const auto source_type = inst->getSourceType();
+  if (master->isBlock()) {
+    return BLOCK;
+  } else if (master->isPad()) {
+    return PAD;
+  } else if (master->isEndCap()) {
+    return ENDCAP;
+  } else if (master->isFiller()) {
+    return FILL;
+  } else if (master_type == odb::dbMasterType::CORE_WELLTAP) {
+    return TAPCELL;
+  } else if (master->isCover()) {
+    if (master_type == odb::dbMasterType::COVER_BUMP) {
+      return BUMP;
+    } else {
+      return COVER;
+    }
+  } else if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
+    return ANTENNA;
+  } else if (master_type == odb::dbMasterType::CORE_TIEHIGH || master_type == odb::dbMasterType::CORE_TIELOW) {
+    return TIE;
+  } else if (source_type == odb::dbSourceType::DIST) {
+    return LEF_OTHER;
+  }
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  if (cell == nullptr) {
+    return LEF_OTHER;
+  }
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    if (master->isCore()) {
+      return STD_CELL;
+    }
+    // default to use overall instance setting if there is no liberty cell and it's not a core cell.
+    return STD_OTHER;
+  }
+
+  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+    if (source_type == odb::dbSourceType::TIMING) {
+      for (auto* iterm : inst->getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return STD_BUFINV_CLK_TREE;
+        }
+      }
+      return STD_BUFINV_TIMING_REPAIR;
+    } else {
+      return STD_BUFINV;
+    }
+  } else if (lib_cell->isClockGate()) {
+    return STD_CLOCK_GATE;
+  } if (lib_cell->isLevelShifter()) {
+    return STD_LEVEL_SHIFT;
+  } else if (lib_cell->hasSequentials()) {
+    return STD_SEQUENTIAL;
+  } else if (lib_cell->portCount() == 0) {
+    return STD_PHYSICAL; // generic physical
+  } else {
+    // not anything else, so combinational
+    return STD_COMBINATIONAL;
+  }
 }
 
 //////////////////////////////////////////////////
@@ -951,13 +1090,13 @@ void DbNetDescriptor::highlight(std::any object,
     }
   }
 
-  odb::Rect rect;
   odb::dbWire* wire = net->getWire();
   if (wire) {
     if (sink_object != nullptr) {
       drawPathSegment(net, sink_object, painter);
     }
 
+    odb::Rect rect;
     odb::dbWireShapeItr it;
     it.begin(wire);
     odb::dbShape shape;
@@ -1030,8 +1169,13 @@ void DbNetDescriptor::highlight(std::any object,
   // Draw special (i.e. geometric) routing
   for (auto swire : net->getSWires()) {
     for (auto sbox : swire->getWires()) {
-      sbox->getBox(rect);
-      painter.drawGeomShape(sbox->getGeomShape());
+      if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
+        painter.drawOctagon(sbox->getOct());
+      } else {
+        odb::Rect rect;
+        sbox->getBox(rect);
+        painter.drawRect(rect);
+      }
     }
   }
 }
@@ -1682,15 +1826,154 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(std::any object) con
 {
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Direction", layer->getDirection().getString()},
-                    {"Minimum width", Property::convert_dbu(layer->getWidth(), true)},
-                    {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)}});
+                    {"Type", layer->getType().getString()}});
+  if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
+    props.push_back({"LEF58 type", layer->getLef58TypeString()});
+  }
+  props.push_back({"Layer number", layer->getNumber()});
+  if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+    props.push_back({"Routing layer", layer->getRoutingLevel()});
+  }
+  if (layer->getWidth() != 0) {
+    props.push_back({"Default width", Property::convert_dbu(layer->getWidth(), true)});
+  }
+  if (layer->getMinWidth() != 0) {
+    props.push_back({"Minimum width", Property::convert_dbu(layer->getMinWidth(), true)});
+  }
+  if (layer->hasMaxWidth()) {
+    props.push_back({"Max width", Property::convert_dbu(layer->getMaxWidth(), true)});
+  }
+  if (layer->getSpacing() != 0) {
+    props.push_back({"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
+  }
   const char* micron = "\u03BC";
+  if (layer->hasArea()) {
+    props.push_back({"Minimum area", convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m\u00B2"}); // m^2
+  }
   if (layer->getResistance() != 0.0) {
     props.push_back({"Resistance", convertUnits(layer->getResistance()) + "\u03A9/sq"}); // ohm/sq
   }
   if (layer->getCapacitance() != 0.0) {
     props.push_back({"Capacitance", convertUnits(layer->getCapacitance() * 1e-12) + "F/" + micron + "m\u00B2"}); // F/um^2
   }
+  if (layer->getEdgeCapacitance() != 0.0) {
+    props.push_back({"Edge capacitance", convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/" + micron + "m"}); // F/um
+  }
+
+  for (auto* width_table : layer->getTechLayerWidthTableRules()) {
+    std::string title = "Width table";
+    if (width_table->isWrongDirection()) {
+      title += " - wrong direction";
+    }
+    if (width_table->isOrthogonal()) {
+      title += " - orthogonal";
+    }
+
+    std::vector<std::any> widths;
+    for (auto width : width_table->getWidthTable()) {
+      widths.push_back(Property::convert_dbu(width, true));
+    }
+    props.push_back({title, widths});
+  }
+
+  PropertyList cutclasses;
+  for (auto* cutclass : layer->getTechLayerCutClassRules()) {
+    std::string text = Property::convert_dbu(cutclass->getWidth(), true) + " x ";
+    if (cutclass->isLengthValid()) {
+      text += Property::convert_dbu(cutclass->getLength(), true);
+    } else {
+      text += Property::convert_dbu(cutclass->getWidth(), true);
+    }
+
+    if (cutclass->isCutsValid()) {
+      text += " - " + std::to_string(cutclass->getNumCuts()) + " cuts";
+    }
+
+    cutclasses.emplace_back(cutclass->getName(), text);
+  }
+  if (!cutclasses.empty()) {
+    props.push_back({"Cut classes", cutclasses});
+  }
+
+  PropertyList cut_enclosures;
+  for (auto* enc_rule : layer->getTechLayerCutEnclosureRules()) {
+    std::string text = Property::convert_dbu(enc_rule->getMinWidth(), true);
+
+    if (enc_rule->getCutClass() != nullptr) {
+      text += " - ";
+      text += enc_rule->getCutClass()->getName();
+    }
+    if (enc_rule->isAbove()) {
+      text += " - above";
+    }
+    if (enc_rule->isBelow()) {
+      text += " - below";
+    }
+
+    const std::string enc0 = Property::convert_dbu(enc_rule->getFirstOverhang(), true);
+    const std::string enc1 = Property::convert_dbu(enc_rule->getSecondOverhang(), true);
+    std::string enclosure;
+    switch (enc_rule->getType()) {
+    case odb::dbTechLayerCutEnclosureRule::DEFAULT:
+      enclosure = enc0 + " x " + enc1;
+      break;
+    case odb::dbTechLayerCutEnclosureRule::EOL:
+      enclosure = "EOL: " + enc0 + " x " + enc1;
+      break;
+    case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
+      enclosure = "End: " + enc0 + " x Side: " + enc1;
+      break;
+    case odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT:
+      enclosure = "Horizontal: " + enc0 + " x Vertical: " + enc1;
+      break;
+    }
+
+    cut_enclosures.emplace_back(text, enclosure);
+  }
+  if (!cut_enclosures.empty()) {
+    props.push_back({"Cut enclosures", cut_enclosures});
+  }
+
+  PropertyList minimum_cuts;
+  for (auto* min_cut_rule : layer->getMinCutRules()) {
+    uint numcuts;
+    uint rule_width;
+    min_cut_rule->getMinimumCuts(numcuts, rule_width);
+
+    std::string text = Property::convert_dbu(rule_width, true);
+
+    if (min_cut_rule->isAboveOnly()) {
+      text += " - above only";
+    }
+    if (min_cut_rule->isBelowOnly()) {
+      text += " - below only";
+    }
+
+    minimum_cuts.emplace_back(text, static_cast<int>(numcuts));
+  }
+  if (!minimum_cuts.empty()) {
+    props.push_back({"Minimum cuts", minimum_cuts});
+  }
+
+  PropertyList lef58_minimum_cuts;
+  for (auto* min_cut_rule : layer->getTechLayerMinCutRules()) {
+    std::string text = Property::convert_dbu(min_cut_rule->getWidth(), true);
+
+    if (min_cut_rule->isFromAbove()) {
+      text += " - from above";
+    }
+    if (min_cut_rule->isFromBelow()) {
+      text += " - from below";
+    }
+
+    for (const auto& [cutclass, min_cut] : min_cut_rule->getCutClassCutsMap()) {
+      lef58_minimum_cuts.emplace_back(text + " - " + cutclass, min_cut);
+    }
+  }
+  if (!lef58_minimum_cuts.empty()) {
+    props.push_back({"LEF58 minimum cuts", lef58_minimum_cuts});
+  }
+
   return props;
 }
 
@@ -2093,18 +2376,22 @@ std::string DbModuleDescriptor::getTypeName() const
 bool DbModuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* module = std::any_cast<odb::dbModule*>(object);
-  auto insts = module->getInsts();
-  if (insts.empty()) {
-    return false;
-  }
   bbox.mergeInit();
-  for (auto* inst : insts) {
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
     auto* box = inst->getBBox();
     odb::Rect box_rect;
     box->getBox(box_rect);
     bbox.merge(box_rect);
   }
-  return true;
+
+  return !bbox.isInverted();
 }
 
 void DbModuleDescriptor::highlight(std::any object,
