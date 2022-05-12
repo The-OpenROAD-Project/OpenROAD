@@ -147,6 +147,17 @@ class frBlock : public frBlockObject
     }
     return sol;
   }
+  //isHorizontal means vertical tracks
+  std::vector<frTrackPattern*> getTrackPatterns(frCoord layerNum, 
+                                                bool isHorizontal) const
+  {
+    std::vector<frTrackPattern*> tps;
+    for (auto& t : trackPatterns_.at(layerNum)) {
+        if (t->isHorizontal() == isHorizontal)
+            tps.push_back(t.get());
+    }
+    return tps;
+  }
   const std::vector<std::unique_ptr<frTrackPattern>>& getTrackPatterns(
       frLayerNum lNum) const
   {
