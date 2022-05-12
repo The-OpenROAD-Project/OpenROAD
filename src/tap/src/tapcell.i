@@ -106,41 +106,6 @@
 
   void reset() { getTapcell()->reset(); }
 
-  int make_site_loc(int x, double site_x, bool at_left_from_macro, int offset)
-  {
-    return getTapcell()->makeSiteLoc(x, site_x, at_left_from_macro, offset);
-  }
-
-  void build_row(odb::dbBlock* block,
-                 const char* name,
-                 odb::dbSite* site,
-                 int start_x,
-                 int end_x,
-                 int y,
-                 odb::dbRow* row,
-                 int min_row_width)
-  {
-    odb::dbOrientType orient = row->getOrient();
-    odb::dbRowDir direction = row->getDirection();
-    getTapcell()->buildRow(block,
-                           name,
-                           site,
-                           start_x,
-                           end_x,
-                           y,
-                           orient,
-                           direction,
-                           min_row_width);
-  }
-
-  void cut_rows(odb::dbMaster* endcap_master,
-                std::vector<odb::dbBox*>& blockages,
-                int halo_x,
-                int halo_y)
-  {
-    getTapcell()->cutRows(endcap_master, blockages, halo_x, halo_y);
-  }
-
   int remove_cells(const char* prefix)
   {
     return getTapcell()->removeCells(prefix);
@@ -149,15 +114,6 @@
   std::vector<odb::dbBox*> find_blockages() {
     return getTapcell()->findBlockages();
   }
-
-  bool overlaps(odb::dbBox* blockage,
-                odb::dbRow* row,
-                int halo_x,
-                int halo_y) {
-    return getTapcell()->overlaps(blockage, row, halo_x, halo_y);
-  }
-
-
 
 
   }  // namespace tap

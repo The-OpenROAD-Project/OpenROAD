@@ -84,21 +84,6 @@ class Tapcell
            odb::dbMaster* tapcell_master,
            int dist);
   void reset();
-  int makeSiteLoc(int x, double site_x, bool at_left_from_macro, int offset);
-  void buildRow(odb::dbBlock* block,
-                const std::string& name,
-                odb::dbSite* site,
-                int start_x,
-                int end_x,
-                int y,
-                odb::dbOrientType& orient,
-                odb::dbRowDir& direction,
-                int min_row_width);
-  void cutRows(odb::dbMaster* endcap_master,
-               const std::vector<odb::dbBox*>& blockages,
-               int halo_x,
-               int halo_y);
-  bool overlaps(odb::dbBox* blockage, odb::dbRow* row, int halo_x, int halo_y);
   int removeCells(const std::string& prefix);
   std::vector<odb::dbBox*> findBlockages();
 
@@ -122,12 +107,6 @@ class Tapcell
   std::vector<FilledSites> filled_sites_;
   std::string tap_prefix_;
   std::string endcap_prefix_;
-  void cutRow(odb::dbBlock* block,
-              odb::dbRow* row,
-              std::vector<odb::dbBox*>& row_blockages,
-              int min_row_width,
-              int halo_x,
-              int halo_y);
   const std::pair<int, int> getMinMaxX(
       const std::vector<std::vector<odb::dbRow*>>& rows);
   RowFills findRowFills();
