@@ -29,6 +29,8 @@
 #ifndef _FR_FLEXDR_H_
 #define _FR_FLEXDR_H_
 
+#include <triton_route/TritonRoute.h>
+
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/export.hpp>
 #include <deque>
@@ -42,7 +44,6 @@
 #include "dst/JobMessage.h"
 #include "frDesign.h"
 #include "gc/FlexGC.h"
-#include <triton_route/TritonRoute.h>
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
@@ -114,7 +115,10 @@ class FlexDR
   };
 
   // constructors
-  FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
+  FlexDR(triton_route::TritonRoute* router,
+         frDesign* designIn,
+         Logger* loggerIn,
+         odb::dbDatabase* dbIn);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -145,7 +149,10 @@ class FlexDR
     dist_port_ = remote_port;
     dist_dir_ = dir;
   }
-  void sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch, std::vector<std::unique_ptr<FlexDRWorker>>& batch);
+  void sendWorkers(
+      const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
+      std::vector<std::unique_ptr<FlexDRWorker>>& batch);
+
  private:
   triton_route::TritonRoute* router_;
   frDesign* design_;

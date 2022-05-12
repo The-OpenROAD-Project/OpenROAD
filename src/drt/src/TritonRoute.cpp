@@ -42,6 +42,7 @@
 #include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"
 #include "frDesign.h"
+#include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "global.h"
 #include "gr/FlexGR.h"
@@ -54,7 +55,6 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-#include "frProfileTask.h"
 using namespace std;
 using namespace fr;
 using namespace triton_route;
@@ -218,7 +218,9 @@ void TritonRoute::resetDesign(const char* file_name)
   file.close();
 }
 
-static void deserializeUpdate(frDesign* design, const std::string& updateStr, std::vector<drUpdate>& updates)
+static void deserializeUpdate(frDesign* design,
+                              const std::string& updateStr,
+                              std::vector<drUpdate>& updates)
 {
   std::ifstream file(updateStr.c_str());
   frIArchive ar(file);
@@ -233,19 +235,16 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
 {
   omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
   std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0; i < updatesStrs.size(); i++)
-  {
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < updatesStrs.size(); i++) {
     deserializeUpdate(design_.get(), updatesStrs.at(i), updates[i]);
   }
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
   const auto maxSz = updates[0].size();
-  for(int j = 0; j < maxSz; j++)
-  {
-    for(int i = 0; i < updates.size(); i++)
-    {
-      if(updates[i].size() <= j)
+  for (int j = 0; j < maxSz; j++) {
+    for (int i = 0; i < updates.size(); i++) {
+      if (updates[i].size() <= j)
         continue;
       const auto& update = updates[i][j];
       switch (update.getType()) {
@@ -257,8 +256,7 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
           break;
         }
         case drUpdate::REMOVE_FROM_NET:
-        case drUpdate::REMOVE_FROM_RQ: 
-        {
+        case drUpdate::REMOVE_FROM_RQ: {
           auto net = update.getNet();
           auto id = update.getOrderInOwner();
           auto pinfig = net->getPinFig(id);
@@ -266,21 +264,21 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
             case frcPathSeg: {
               auto seg = static_cast<frPathSeg*>(pinfig);
               regionQuery->removeDRObj(seg);
-              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+              if (update.getType() == drUpdate::REMOVE_FROM_NET)
                 net->removeShape(seg);
               break;
             }
             case frcPatchWire: {
               auto pwire = static_cast<frPatchWire*>(pinfig);
               regionQuery->removeDRObj(pwire);
-              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+              if (update.getType() == drUpdate::REMOVE_FROM_NET)
                 net->removePatchWire(pwire);
               break;
             }
             case frcVia: {
               auto via = static_cast<frVia*>(pinfig);
               regionQuery->removeDRObj(via);
-              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+              if (update.getType() == drUpdate::REMOVE_FROM_NET)
                 net->removeVia(via);
               break;
             }
@@ -292,16 +290,16 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
           break;
         }
         case drUpdate::ADD_SHAPE:
-        case drUpdate::ADD_SHAPE_NET_ONLY:
-        {
+        case drUpdate::ADD_SHAPE_NET_ONLY: {
           switch (update.getObjTypeId()) {
             case frcPathSeg: {
               auto net = update.getNet();
               frPathSeg seg = update.getPathSeg();
-              std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
+              std::unique_ptr<frShape> uShape
+                  = std::make_unique<frPathSeg>(seg);
               auto sptr = uShape.get();
               net->addShape(std::move(uShape));
-              if(update.getType() == drUpdate::ADD_SHAPE)
+              if (update.getType() == drUpdate::ADD_SHAPE)
                 regionQuery->addDRObj(sptr);
               break;
             }
@@ -312,7 +310,7 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
                   = std::make_unique<frPatchWire>(pwire);
               auto sptr = uShape.get();
               net->addPatchWire(std::move(uShape));
-              if(update.getType() == drUpdate::ADD_SHAPE)
+              if (update.getType() == drUpdate::ADD_SHAPE)
                 regionQuery->addDRObj(sptr);
               break;
             }
@@ -322,7 +320,7 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
               auto uVia = std::make_unique<frVia>(via);
               auto sptr = uVia.get();
               net->addVia(std::move(uVia));
-              if(update.getType() == drUpdate::ADD_SHAPE)
+              if (update.getType() == drUpdate::ADD_SHAPE)
                 regionQuery->addDRObj(sptr);
               break;
             }
@@ -347,16 +345,15 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
           auto idx = update.getOrderInOwner();
           if (idx < 0 || idx >= net->getGuides().size())
             logger_->error(DRT,
-                          9199,
-                          "Guide {} out of range {}",
-                          idx,
-                          net->getGuides().size());
+                           9199,
+                           "Guide {} out of range {}",
+                           idx,
+                           net->getGuides().size());
           const auto& guide = net->getGuides().at(idx);
           guide->setRoutes(tmp);
           break;
         }
-        case drUpdate::UPDATE_SHAPE:
-        {
+        case drUpdate::UPDATE_SHAPE: {
           auto net = update.getNet();
           auto id = update.getOrderInOwner();
           auto pinfig = net->getPinFig(id);
@@ -364,7 +361,8 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
             case frcPathSeg: {
               auto seg = static_cast<frPathSeg*>(pinfig);
               frPathSeg updatedSeg = update.getPathSeg();
-              seg->setPoints(updatedSeg.getBeginPoint(), updatedSeg.getEndPoint());
+              seg->setPoints(updatedSeg.getBeginPoint(),
+                             updatedSeg.getEndPoint());
               frSegStyle style;
               updatedSeg.getStyle(style);
               seg->setStyle(style);
@@ -509,8 +507,13 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size, offset, mazeEndIter, workerDRCCost,
-      workerMarkerCost, ripupMode, followGuide});
+  dr_->searchRepair({size,
+                     offset,
+                     mazeEndIter,
+                     workerDRCCost,
+                     workerMarkerCost,
+                     ripupMode,
+                     followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
@@ -542,12 +545,12 @@ bool TritonRoute::writeGlobals(const std::string& name)
   file.close();
   return true;
 }
-static bool serialize_design(frDesign* design,
-                             const std::string& name)
+static bool serialize_design(frDesign* design, const std::string& name)
 {
   ProfileTask t1("DIST: SERIALIZE_DESIGN");
   ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
   frOArchive ar(stream);
   ar.setDeepSerialize(true);
   register_types(ar);
@@ -565,8 +568,7 @@ static bool serialize_design(frDesign* design,
 }
 void TritonRoute::sendFrDesignDist()
 {
-  if(distributed_)
-  {
+  if (distributed_) {
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
     std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
     serialize_design(design_.get(), design_path);
@@ -576,7 +578,8 @@ void TritonRoute::sendFrDesignDist()
         result(dst::JobMessage::NONE);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
-    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    RoutingJobDescription* rjd
+        = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setDesignPath(design_path);
     rjd->setSharedDir(shared_volume_);
     rjd->setGlobalsPath(globals_path);
@@ -592,7 +595,7 @@ void TritonRoute::sendFrDesignDist()
 
 void TritonRoute::sendDesignDist()
 {
-  if(distributed_) {
+  if (distributed_) {
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
     std::string guide_path = fmt::format("{}DESIGN.guide", shared_volume_);
     std::string globals_path = fmt::format("{}DESIGN.globals", shared_volume_);
@@ -607,7 +610,8 @@ void TritonRoute::sendDesignDist()
         result(dst::JobMessage::NONE);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
-    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    RoutingJobDescription* rjd
+        = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setDesignPath(design_path);
     rjd->setSharedDir(shared_volume_);
     rjd->setGuidePath(guide_path);
@@ -620,7 +624,8 @@ void TritonRoute::sendDesignDist()
   }
   design_->clearUpdates();
 }
-static void serializeUpdatesBatch(const std::vector<drUpdate>& batch, const std::string& file_name)
+static void serializeUpdatesBatch(const std::vector<drUpdate>& batch,
+                                  const std::string& file_name)
 {
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
@@ -632,7 +637,7 @@ static void serializeUpdatesBatch(const std::vector<drUpdate>& batch, const std:
 
 void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
 {
-  if(!distributed_)
+  if (!distributed_)
     return;
   ProfileTask task("DIST: SENDING GLOBALS");
   dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
@@ -640,8 +645,7 @@ void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
       result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
-  RoutingJobDescription* rjd
-      = static_cast<RoutingJobDescription*>(desc.get());
+  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
   rjd->setGlobalsPath(globals_path);
   rjd->setSharedDir(shared_volume_);
   msg.setJobDescription(std::move(desc));
@@ -652,27 +656,26 @@ void TritonRoute::sendGlobalsUpdates(const std::string& globals_path)
 
 void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 {
-  if(!distributed_)
+  if (!distributed_)
     return;
-  if(!design_->hasUpdates())
+  if (!design_->hasUpdates())
     return;
   std::unique_ptr<ProfileTask> serializeTask;
-  if(design_->getVersion() == 0)
+  if (design_->getVersion() == 0)
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_TA");
   else
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
   const auto& designUpdates = design_->getUpdates();
   omp_set_num_threads(MAX_THREADS);
   std::vector<std::string> updates(designUpdates.size());
-  #pragma omp parallel for schedule(dynamic)
-  for(int i = 0; i < designUpdates.size(); i++)
-  {
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < designUpdates.size(); i++) {
     updates[i] = fmt::format("{}updates_{}.bin", shared_volume_, i);
     serializeUpdatesBatch(designUpdates.at(i), updates[i]);
   }
   serializeTask->done();
   std::unique_ptr<ProfileTask> task;
-  if(design_->getVersion() == 0)
+  if (design_->getVersion() == 0)
     task = std::make_unique<ProfileTask>("DIST: SENDING_TA");
   else
     task = std::make_unique<ProfileTask>("DIST: SENDING_UDPATES");
@@ -681,8 +684,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
       result(dst::JobMessage::NONE);
   std::unique_ptr<dst::JobDescription> desc
       = std::make_unique<RoutingJobDescription>();
-  RoutingJobDescription* rjd
-      = static_cast<RoutingJobDescription*>(desc.get());
+  RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
   rjd->setUpdates(updates);
   rjd->setGlobalsPath(globals_path);
   rjd->setSharedDir(shared_volume_);
@@ -707,8 +709,7 @@ int TritonRoute::main()
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
-    if(distributed_)
-    {
+    if (distributed_) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
       asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
@@ -726,10 +727,10 @@ int TritonRoute::main()
   }
   prep();
   ta();
-  if(distributed_)
-  {
+  if (distributed_) {
     // sendDesignUpdates("");
-    asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
+    asio::post(dist_pool_,
+               boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
   dr();
   if (!SINGLE_STEP_DR) {

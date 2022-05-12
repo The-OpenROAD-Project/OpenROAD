@@ -35,10 +35,10 @@
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
 #include "db/tech/frTechObject.h"
+#include "distributed/drUpdate.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
 #include "global.h"
-#include "distributed/drUpdate.h"
 
 namespace fr {
 namespace io {
@@ -90,23 +90,28 @@ class frDesign
   }
   bool isVerticalLayer(frLayerNum l) { return getTech()->isVerticalLayer(l); }
 
-  void addUpdate(const drUpdate& update) 
+  void addUpdate(const drUpdate& update)
   {
-    if(updates_.size() == 0)
+    if (updates_.size() == 0)
       updates_.resize(MAX_THREADS * 2);
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);
   }
-  const std::vector<std::vector<drUpdate>>& getUpdates() const { return updates_; }
+  const std::vector<std::vector<drUpdate>>& getUpdates() const
+  {
+    return updates_;
+  }
   bool hasUpdates() const { return updates_sz_ != 0; }
-  void clearUpdates() {
+  void clearUpdates()
+  {
     updates_.clear();
     updates_sz_ = 0;
   }
   void incrementVersion() { ++version_; }
   int getVersion() const { return version_; }
-  
+
   ~frDesign() {}
+
  private:
   std::unique_ptr<frBlock> topBlock_;
   std::map<frString, frMaster*> name2master_;

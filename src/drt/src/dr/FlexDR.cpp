@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <dst/JobMessage.h>
 #include <omp.h>
 #include <stdio.h>
@@ -42,14 +44,13 @@
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
+#include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
-#include "dst/BalancerJobDescription.h"
 #include "utl/exception.h"
 
 using namespace std;
@@ -60,17 +61,16 @@ using utl::ThreadException;
 BOOST_CLASS_EXPORT(RoutingJobDescription)
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 
-
 enum class SerializationType
 {
   READ,
   WRITE
 };
 
-static void serialize_worker(FlexDRWorker* worker,
-                             std::string& workerStr)
+static void serialize_worker(FlexDRWorker* worker, std::string& workerStr)
 {
-  std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                           | std::ios_base::out);
   frOArchive ar(stream);
   ar.setDeepSerialize(false);
   register_types(ar);
@@ -82,7 +82,9 @@ static void deserialize_worker(FlexDRWorker* worker,
                                frDesign* design,
                                const std::string& workerStr)
 {
-  std::stringstream stream(workerStr, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+  std::stringstream stream(
+      workerStr,
+      std::ios_base::binary | std::ios_base::in | std::ios_base::out);
   frIArchive ar(stream);
   ar.setDeepSerialize(false);
   ar.setDesign(design);
@@ -106,7 +108,8 @@ static bool serialize_design(SerializationType type,
   } else {
     ProfileTask t1("DIST: SERIALIZE_DESIGN");
     ProfileTask t1_version(std::string("DIST: SERIALIZE" + name).c_str());
-    std::stringstream stream(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
+    std::stringstream stream(std::ios_base::binary | std::ios_base::in
+                             | std::ios_base::out);
     frOArchive ar(stream);
     ar.setDeepSerialize(true);
     register_types(ar);
@@ -124,9 +127,18 @@ static bool serialize_design(SerializationType type,
   return true;
 }
 
-FlexDR::FlexDR(triton_route::TritonRoute* router, frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
-    : router_(router), design_(designIn), logger_(loggerIn), db_(dbIn), dist_on_(false),
-      increaseClipsize_(false), clipSizeInc_(0), iter_(0)
+FlexDR::FlexDR(triton_route::TritonRoute* router,
+               frDesign* designIn,
+               Logger* loggerIn,
+               odb::dbDatabase* dbIn)
+    : router_(router),
+      design_(designIn),
+      logger_(loggerIn),
+      db_(dbIn),
+      dist_on_(false),
+      increaseClipsize_(false),
+      clipSizeInc_(0),
+      iter_(0)
 {
 }
 
@@ -187,16 +199,20 @@ int FlexDRWorker::main(frDesign* design)
   }
   if (debugSettings_->debugDumpDR
       && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
-      && debugSettings_->iter == getDRIter())
-  {
-    std::string prefix = fmt::format("{}/iter{}_x{}_y{}", debugSettings_->dumpDir,getDRIter(), routeBox_.xMin(), routeBox_.yMin());
+      && debugSettings_->iter == getDRIter()) {
+    std::string prefix = fmt::format("{}/iter{}_x{}_y{}",
+                                     debugSettings_->dumpDir,
+                                     getDRIter(),
+                                     routeBox_.xMin(),
+                                     routeBox_.yMin());
     std::string workerStr;
     serialize_worker(this, workerStr);
-    ofstream workerFile(fmt::format("{}.worker",prefix).c_str());
+    ofstream workerFile(fmt::format("{}.worker", prefix).c_str());
     workerFile << workerStr;
     workerFile.close();
-    serialize_design(SerializationType::WRITE, design, fmt::format("{}.design",prefix));
-    std::ofstream file(fmt::format("{}.globals",prefix).c_str());
+    serialize_design(
+        SerializationType::WRITE, design, fmt::format("{}.design", prefix));
+    std::ofstream file(fmt::format("{}.globals", prefix).c_str());
     frOArchive ar(file);
     register_types(ar);
     serialize_globals(ar);
@@ -1689,7 +1705,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
-          || (!dist_on_ && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
+          || (!dist_on_
+              && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
         workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
       }
       workers[batchIdx].back().push_back(std::move(worker));
@@ -1712,10 +1729,9 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                                        + std::to_string(workersInBatch.size())
                                        + ">";
         ProfileTask profile(batch_name.c_str());
-        if(dist_on_)
-        {
+        if (dist_on_) {
           router_->dist_pool_.join();
-          if(vers++ == 0 && !design_->hasUpdates())
+          if (vers++ == 0 && !design_->hasUpdates())
             router_->sendGlobalsUpdates(globals_path_);
           else
             router_->sendDesignUpdates(globals_path_);
@@ -1724,14 +1740,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
           ThreadException exception;
-          #pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
           for (int i = 0; i < (int) workersInBatch.size(); i++) {
             try {
               if (dist_on_)
                 workersInBatch[i]->distributedMain(getDesign());
               else
                 workersInBatch[i]->main(getDesign());
-              #pragma omp critical
+#pragma omp critical
               {
                 cnt++;
                 if (VERBOSE > 0) {
@@ -1742,9 +1758,10 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                     }
                     prev_perc += 10;
                     if (isExceed) {
-                      logger_->report("    Completing {}% with {} violations.",
-                                      prev_perc,
-                                      getDesign()->getTopBlock()->getNumMarkers());
+                      logger_->report(
+                          "    Completing {}% with {} violations.",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
                       logger_->report("    {}.", t);
                     }
                   }
@@ -1755,22 +1772,21 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             }
           }
           exception.rethrow();
-          if(dist_on_) {
+          if (dist_on_) {
             int j = 0;
-            std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(router_->getCloudSize());
-            for(int i = 0; i < workersInBatch.size(); i++)
-            {
+            std::vector<std::vector<std::pair<int, FlexDRWorker*>>>
+                distWorkerBatches(router_->getCloudSize());
+            for (int i = 0; i < workersInBatch.size(); i++) {
               auto worker = workersInBatch.at(i).get();
-              if(!worker->isSkipRouting())
-              {
+              if (!worker->isSkipRouting()) {
                 distWorkerBatches[j].push_back({i, worker});
-                j = (j+1) % router_->getCloudSize();
+                j = (j + 1) % router_->getCloudSize();
               }
             }
             {
               ProfileTask task("DIST: SERIALIZE+SEND");
-              #pragma omp parallel for schedule(dynamic)
-              for(int i = 0; i < distWorkerBatches.size(); i++)
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < distWorkerBatches.size(); i++)
                 sendWorkers(distWorkerBatches.at(i), workersInBatch);
             }
             logger_->report("    Received Batches:{}.", t);
@@ -1778,14 +1794,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             router_->getWorkerResults(workers);
             {
               ProfileTask task("DIST: DESERIALIZING_BATCH");
-              #pragma omp parallel for schedule(dynamic)
-              for(int i = 0; i < workers.size(); i++)
-              {
-                deserialize_worker(workersInBatch.at(workers.at(i).first).get(), design_, workers.at(i).second);
+#pragma omp parallel for schedule(dynamic)
+              for (int i = 0; i < workers.size(); i++) {
+                deserialize_worker(workersInBatch.at(workers.at(i).first).get(),
+                                   design_,
+                                   workers.at(i).second);
               }
             }
             logger_->report("    Deserialized Batches:{}.", t);
-
           }
         }
       }
@@ -1819,7 +1835,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
   }
-  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get(), dist_on_);
+  FlexDRConnectivityChecker checker(
+      getDesign(), logger_, db_, graphics_.get(), dist_on_);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
@@ -2328,15 +2345,16 @@ int FlexDR::main()
   return 0;
 }
 
-void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch, std::vector<std::unique_ptr<FlexDRWorker>>& batch)
+void FlexDR::sendWorkers(
+    const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
+    std::vector<std::unique_ptr<FlexDRWorker>>& batch)
 {
-  if(remote_batch.empty())
+  if (remote_batch.empty())
     return;
   std::vector<std::pair<int, std::string>> workers;
   {
     ProfileTask task("DIST: SERIALIZE_BATCH");
-    for(auto& [idx, worker] : remote_batch)
-    {
+    for (auto& [idx, worker] : remote_batch) {
       std::string workerStr;
       serialize_worker(worker, workerStr);
       workers.push_back({idx, workerStr});
@@ -2344,23 +2362,27 @@ void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remot
   }
   std::string remote_ip = dist_ip_;
   unsigned short remote_port = dist_port_;
-  if(router_->getCloudSize() > 1)
-  {
-    dst::JobMessage msg(dst::JobMessage::BALANCER), result(dst::JobMessage::NONE);
+  if (router_->getCloudSize() > 1) {
+    dst::JobMessage msg(dst::JobMessage::BALANCER),
+        result(dst::JobMessage::NONE);
     bool ok = dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
-    if(!ok) {
+    if (!ok) {
       logger_->error(utl::DRT, 7461, "Balancer failed");
     } else {
-      dst::BalancerJobDescription* desc = static_cast<dst::BalancerJobDescription*>(result.getJobDescription());
+      dst::BalancerJobDescription* desc
+          = static_cast<dst::BalancerJobDescription*>(
+              result.getJobDescription());
       remote_ip = desc->getWorkerIP();
       remote_port = desc->getWorkerPort();
     }
   }
   {
-    dst::JobMessage msg(dst::JobMessage::ROUTING), result(dst::JobMessage::NONE);
+    dst::JobMessage msg(dst::JobMessage::ROUTING),
+        result(dst::JobMessage::NONE);
     std::unique_ptr<dst::JobDescription> desc
         = std::make_unique<RoutingJobDescription>();
-    RoutingJobDescription* rjd = static_cast<RoutingJobDescription*>(desc.get());
+    RoutingJobDescription* rjd
+        = static_cast<RoutingJobDescription*>(desc.get());
     rjd->setWorkers(workers);
     rjd->setDesignPath(design_path_);
     rjd->setGlobalsPath(globals_path_);
@@ -2369,13 +2391,14 @@ void FlexDR::sendWorkers(const std::vector<std::pair<int, FlexDRWorker*>>& remot
     rjd->send_every_ = 20;
     msg.setJobDescription(std::move(desc));
     ProfileTask task("DIST: SENDJOB");
-    bool ok = dist_->sendJobMultiResult(msg, remote_ip.c_str(), remote_port, result);
+    bool ok = dist_->sendJobMultiResult(
+        msg, remote_ip.c_str(), remote_port, result);
     if (!ok) {
       logger_->error(utl::DRT, 500, "Sending worker {} failed");
     }
-    for(const auto& one_desc : result.getAccumelatedDescriptions())
-    {
-      RoutingJobDescription* result_desc = static_cast<RoutingJobDescription*>(one_desc.get());
+    for (const auto& one_desc : result.getAccumelatedDescriptions()) {
+      RoutingJobDescription* result_desc
+          = static_cast<RoutingJobDescription*>(one_desc.get());
       router_->addWorkerResults(result_desc->getWorkers());
     }
   }
@@ -2394,8 +2417,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
 
   // The logger_, graphics_ and debugSettings_ are handled by the caller to
   // use the current ones.
-  if(is_loading(ar))
-  {
+  if (is_loading(ar)) {
     frDesign* design = ar.getDesign();
     design_ = design;
   }

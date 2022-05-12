@@ -26,13 +26,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR_conn.h"
+
 #include <omp.h>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_conn.h"
 #include "frProfileTask.h"
 #include "io/io.h"
-
 #include "utl/exception.h"
 
 using namespace std;
@@ -258,9 +258,8 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
 void FlexDRConnectivityChecker::nodeMap_pin(
     const vector<frConnFig*>& netRouteObjs,
     vector<frBlockObject*>& netPins,
-    const map<frBlockObject*,
-              set<pair<Point, frLayerNum>>,
-              frBlockObjectComp>& pin2epMap,
+    const map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
+        pin2epMap,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
@@ -277,9 +276,8 @@ void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
     vector<frBlockObject*>& netPins,
-    const map<frBlockObject*,
-              set<pair<Point, frLayerNum>>,
-              frBlockObjectComp>& pin2epMap,
+    const map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
+        pin2epMap,
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
@@ -425,8 +423,7 @@ void FlexDRConnectivityChecker::finish(
         Rect bbox;
         victimPathSeg->getBBox(bbox);
         addMarker(net, victimPathSeg->getLayerNum(), bbox);
-        if(save_updates_)
-        {
+        if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(victimPathSeg->getNet());
           update.setOrderInOwner(victimPathSeg->getOrderInOwner());
@@ -442,8 +439,7 @@ void FlexDRConnectivityChecker::finish(
         addMarker(net, victimVia->getViaDef()->getLayer1Num(), bbox);
 
         frVia* via = static_cast<frVia*>(netRouteObjs[i]);
-        if(save_updates_)
-        {
+        if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(via->getNet());
           update.setOrderInOwner(via->getOrderInOwner());
@@ -562,8 +558,7 @@ void FlexDRConnectivityChecker::finish(
     auto ps2 = uPs2.get();
     addedPS.push_back(ps2);
     unique_ptr<frShape> uShape(std::move(uPs2));
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::ADD_SHAPE_NET_ONLY);
       update.setNet(ps2->getNet());
       update.setPathSeg(*ps2);
@@ -571,8 +566,7 @@ void FlexDRConnectivityChecker::finish(
     }
     net->addShape(std::move(uShape));
     // manipulate ps1
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_RQ);
       update.setNet(ps1->getNet());
       update.setOrderInOwner(ps1->getOrderInOwner());
@@ -584,8 +578,7 @@ void FlexDRConnectivityChecker::finish(
     ps1Style.setEndStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps1->setStyle(ps1Style);
     ps1->setPoints(bp1, splitPt);
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(ps1->getNet());
       update.setOrderInOwner(ps1->getOrderInOwner());
@@ -600,8 +593,7 @@ void FlexDRConnectivityChecker::finish(
     ps2Style.setBeginStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps2->setStyle(ps2Style);
     ps2->setPoints(splitPt, ep1);
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(ps2->getNet());
       update.setOrderInOwner(ps2->getOrderInOwner());
@@ -634,8 +626,7 @@ void FlexDRConnectivityChecker::finish(
       Rect bbox;
       ps->getBBox(bbox);
       addMarker(net, ps->getLayerNum(), bbox);
-      if(save_updates_)
-      {
+      if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_RQ);
         update.setNet(ps->getNet());
         update.setOrderInOwner(ps->getOrderInOwner());
@@ -643,8 +634,7 @@ void FlexDRConnectivityChecker::finish(
       }
       regionQuery->removeDRObj(ps);
       ps->setPoints(minPt, maxPt);
-      if(save_updates_)
-      {
+      if (save_updates_) {
         drUpdate update(drUpdate::UPDATE_SHAPE);
         update.setNet(ps->getNet());
         update.setOrderInOwner(ps->getOrderInOwner());
@@ -694,8 +684,7 @@ void FlexDRConnectivityChecker::finish(
       Rect bbox;
       obj->getBBox(bbox);
       addMarker(net, obj->getLayerNum(), bbox);
-      if(save_updates_)
-      {
+      if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(obj->getNet());
         update.setOrderInOwner(obj->getOrderInOwner());
@@ -822,12 +811,14 @@ void FlexDRConnectivityChecker::merge_perform(const NetRouteObjs& netRouteObjs,
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        cout << "Error1: bp.x() >= ep.x()" << bp << " " << " " << ep << "\n";
+        cout << "Error1: bp.x() >= ep.x()" << bp << " "
+             << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        cout << "Error2: bp.y() >= ep.y()" << bp << " " << " " << ep << "\n";
+        cout << "Error2: bp.y() >= ep.y()" << bp << " "
+             << " " << ep << "\n";
       }
     }
   }
@@ -888,8 +879,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
   int cnt = 0;
   for (auto& newSegSpan : newSegSpans) {
     auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_RQ);
       update.setNet(victimPathSeg->getNet());
       update.setOrderInOwner(victimPathSeg->getOrderInOwner());
@@ -914,8 +904,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
       if (curr->high() <= newSegSpan.hi) {
         end_style = curr->getEndStyle();
         end_ext = curr->getEndExt();
-        if(save_updates_)
-        {
+        if (save_updates_) {
           drUpdate update(drUpdate::REMOVE_FROM_NET);
           update.setNet(curr->getNet());
           update.setOrderInOwner(curr->getOrderInOwner());
@@ -930,8 +919,7 @@ void FlexDRConnectivityChecker::merge_commit(frNet* net,
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
-    if(save_updates_)
-    {
+    if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(victimPathSeg->getNet());
       update.setOrderInOwner(victimPathSeg->getOrderInOwner());
@@ -953,15 +941,13 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
   marker->addSrc(net);
   marker->addVictim(net, make_tuple(lNum, bbox, false));
   marker->addAggressor(net, make_tuple(lNum, bbox, false));
-  if(save_updates_)
-  {
+  if (save_updates_) {
     drUpdate update(drUpdate::ADD_SHAPE);
     update.setMarker(*marker.get());
     design_->addUpdate(update);
   }
   regionQuery->addMarker(marker.get());
   design_->getTopBlock()->addMarker(std::move(marker));
-  
 }
 
 // feedthrough and loop check
@@ -1016,7 +1002,7 @@ void FlexDRConnectivityChecker::check(int iter)
         batchSize, SpansByLayerAndTrackId(numLayers));
 
     ProfileTask init_parallel("init-parallel");
-// parallel
+    // parallel
     ThreadException exception;
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int) batch.size(); i++) {
@@ -1029,7 +1015,7 @@ void FlexDRConnectivityChecker::check(int iter)
         auto& vertVictims = aVertVictims[i];
         auto& horzNewSegSpans = aHorzNewSegSpans[i];
         auto& vertNewSegSpans = aVertNewSegSpans[i];
-  
+
         initRouteObjs(net, initNetRouteObjs);
         organizePathSegsByLayerAndTrack(
             net, initNetRouteObjs, horzPathSegs, vertPathSegs);
@@ -1068,8 +1054,7 @@ void FlexDRConnectivityChecker::check(int iter)
                            vertNewSegSpans);
     }
     // net->term/instTerm->pt_layer
-    vector<
-        map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>
+    vector<map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>
         aPin2epMap(batchSize);
     vector<vector<frBlockObject*>> aNetPins(batchSize);
     vector<map<pair<Point, frLayerNum>, set<int>>> aNodeMap(batchSize);
@@ -1095,7 +1080,7 @@ void FlexDRConnectivityChecker::check(int iter)
         initRouteObjs(net, netRouteObjs);
         buildPin2epMap(net, netRouteObjs, pin2epMap);
         buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
-  
+
         const int nNetRouteObjs = (int) netRouteObjs.size();
         const int nNetObjs = (int) netRouteObjs.size() + (int) netPins.size();
         status[i] = astar(net,
@@ -1160,6 +1145,10 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(frDesign* design,
                                                      odb::dbDatabase* db,
                                                      FlexDRGraphics* graphics,
                                                      bool save_updates)
-    : design_(design), logger_(logger), db_(db), graphics_(graphics), save_updates_(save_updates)
+    : design_(design),
+      logger_(logger),
+      db_(db),
+      graphics_(graphics),
+      save_updates_(save_updates)
 {
 }
