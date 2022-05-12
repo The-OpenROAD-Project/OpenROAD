@@ -186,17 +186,6 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
-
-std::string dbModule::getHierarchicalName() const
-{
-  dbModInst* inst = getModInst();
-  if (inst) {
-    return inst->getHierarchicalName();
-  } else {
-    return "<top>";
-  }
-}
-
 void dbModule::addInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
