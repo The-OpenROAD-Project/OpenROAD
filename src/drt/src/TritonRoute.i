@@ -170,15 +170,15 @@ set_detailed_route_debug_cmd(const char* net_name,
 }
 
 void
-run_worker_cmd(const char* design_path, const char* globals_path, const char* worker_path)
+run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_path, const char* worker_path, const char* updates)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->resetDesign(design_path);
+  router->setGuideFile(guide_path);
+  router->resetDb(db_path);
   router->updateGlobals(globals_path);
-  std::ifstream workerFile(worker_path, std::ios::binary);
-  std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
-  workerFile.close();
-  router->runDRWorker(workerStr);
+  router->updateDesign(updates);
+  
+  router->debugSingleWorker(worker_path);
 }
 
 void detailed_route_step_drt(int size,

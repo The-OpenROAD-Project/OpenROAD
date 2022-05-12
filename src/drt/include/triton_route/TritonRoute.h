@@ -42,6 +42,7 @@ namespace fr {
 class frDesign;
 class DesignCallBack;
 class FlexDR;
+class drUpdate;
 struct frDebugSettings;
 class FlexDR;
 }  // namespace fr
@@ -138,10 +139,12 @@ class TritonRoute
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr);
+  void debugSingleWorker(const std::string& worker_path);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void resetDesign(const char* file_name);
   void updateDesign(const std::vector<std::string>& updates);
+  void updateDesign(const std::string& updates);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
@@ -151,6 +154,7 @@ class TritonRoute
   bool writeGlobals(const std::string& name);
   void sendDesignUpdates(const std::string& globals_path);
   void sendGlobalsUpdates(const std::string& globals_path);
+  void setGuideFile(const std::string& guide_path);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -179,6 +183,7 @@ class TritonRoute
   void gr();
   void ta();
   void dr();
+  void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

@@ -184,6 +184,26 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr)
   return result;
 }
 
+void TritonRoute::debugSingleWorker(const std::string& worker_path)
+{
+  bool on = debug_->debugDR;
+  std::unique_ptr<FlexDRGraphics> graphics_
+      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
+            debug_.get(), design_.get(), db_, logger_)
+                                          : nullptr;
+  std::ifstream workerFile(worker_path, std::ios::binary);
+  std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
+  workerFile.close();
+  auto worker = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
+  worker->setSharedVolume(shared_volume_);
+  worker->setDebugSettings(debug_.get());
+  if (graphics_)
+    graphics_->startIter(worker->getDRIter());
+  std::string result = worker->reloadedMain();
+  bool updated = worker->end(design_.get());
+  debugPrint(logger_, utl::DRT, "autotuner", 1, "End number of markers {}. Updated={}", worker->getBestNumMarkers(), updated);
+}
+
 void TritonRoute::updateGlobals(const char* file_name)
 {
   std::ifstream file(file_name);
@@ -193,6 +213,11 @@ void TritonRoute::updateGlobals(const char* file_name)
   register_types(ar);
   serialize_globals(ar);
   file.close();
+}
+
+void TritonRoute::setGuideFile(const std::string& guide_path)
+{
+  GUIDE_FILE = guide_path;
 }
 
 void TritonRoute::resetDb(const char* file_name)
@@ -231,6 +256,19 @@ static void deserializeUpdate(frDesign* design,
   file.close();
 }
 
+static void deserializeUpdates(frDesign* design,
+                               const std::string& updateStr,
+                               std::vector<std::vector<drUpdate>>& updates)
+{
+  std::ifstream file(updateStr.c_str());
+  frIArchive ar(file);
+  ar.setDeepSerialize(false);
+  ar.setDesign(design);
+  register_types(ar);
+  ar >> updates;
+  file.close();
+}
+
 void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
 {
   omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
@@ -239,6 +277,19 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
   for (int i = 0; i < updatesStrs.size(); i++) {
     deserializeUpdate(design_.get(), updatesStrs.at(i), updates[i]);
   }
+  applyUpdates(updates);
+}
+
+void TritonRoute::updateDesign(const std::string& path)
+{
+  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  std::vector<std::vector<drUpdate>> updates;
+  deserializeUpdates(design_.get(), path, updates);
+  applyUpdates(updates);
+}
+
+void TritonRoute::applyUpdates(const std::vector<std::vector<drUpdate>>& updates)
+{
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
   const auto maxSz = updates[0].size();
@@ -709,11 +760,15 @@ int TritonRoute::main()
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
-    if (distributed_) {
+    if (distributed_ || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
       asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
     }
+  }
+  if(debug_->debugDumpDR)
+  {
+    ord::OpenRoad::openRoad()->writeDb(fmt::format("{}/design.db", debug_->dumpDir).c_str());
   }
   initGuide();
   if (GUIDE_FILE == string("")) {

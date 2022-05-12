@@ -1,7 +1,3 @@
-read_lef Nangate45/Nangate45_tech.lef
-read_lef Nangate45/Nangate45_stdcell.lef
-
-read_def gcd_nangate45_preroute.def
-
-detailed_route_debug -dr
-detailed_route_run_worker results/iter1_x79800_y50400.design results/iter1_x79800_y50400.globals results/iter1_x79800_y50400.worker
+set_debug_level DRT autotuner 1
+detailed_route_debug -dr -net _132_
+detailed_route_run_worker results/design.db gcd_nangate45.route_guide results/iter1_x79800_y50400.globals results/iter1_x79800_y50400.worker results/updates_pre_init.bin

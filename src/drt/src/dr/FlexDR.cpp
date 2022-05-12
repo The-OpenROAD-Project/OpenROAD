@@ -162,6 +162,7 @@ void FlexDR::setDebug(frDebugSettings* settings)
 std::string FlexDRWorker::reloadedMain()
 {
   init(design_);
+  debugPrint(logger_, utl::DRT, "autotuner", 1, "Init number of markers {}", getInitNumMarkers());
   route_queue();
   setGCWorker(nullptr);
   cleanup();
@@ -174,6 +175,17 @@ std::string FlexDRWorker::reloadedMain()
   serialize_worker(this, workerStr);
   return workerStr;
   // reply with file path
+}
+
+static void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
+                             const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  ar.setDeepSerialize(false);
+  register_types(ar);
+  ar << updates;
+  file.close();
 }
 
 int FlexDRWorker::main(frDesign* design)
@@ -200,6 +212,8 @@ int FlexDRWorker::main(frDesign* design)
   if (debugSettings_->debugDumpDR
       && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
       && debugSettings_->iter == getDRIter()) {
+    serializeUpdates(design_->getUpdates(), fmt::format("{}/updates_pre_init.bin", debugSettings_->dumpDir));
+    design_->clearUpdates();
     std::string prefix = fmt::format("{}/iter{}_x{}_y{}",
                                      debugSettings_->dumpDir,
                                      getDRIter(),
@@ -1836,7 +1850,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     }
   }
   FlexDRConnectivityChecker checker(
-      getDesign(), logger_, db_, graphics_.get(), dist_on_);
+      getDesign(), logger_, db_, graphics_.get(), dist_on_ || router_->getDebugSettings()->debugDumpDR);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
@@ -2301,7 +2315,7 @@ int FlexDR::main()
   ProfileTask profile("DR:main");
   init();
   frTime t;
-
+  
   for (auto args : strategy()) {
     if (iter_ < 3)
       FIXEDSHAPECOST = ROUTESHAPECOST;
