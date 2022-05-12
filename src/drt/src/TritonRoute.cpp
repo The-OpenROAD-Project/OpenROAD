@@ -159,7 +159,11 @@ void TritonRoute::setDebugPaCommit(bool on)
   debug_->paCommit = on;
 }
 
-void TritonRoute::setDebugWorkerParams(int mazeEndIter, int drcCost, int markerCost, int ripupMode, int followGuide)
+void TritonRoute::setDebugWorkerParams(int mazeEndIter,
+                                       int drcCost,
+                                       int markerCost,
+                                       int ripupMode,
+                                       int followGuide)
 {
   debug_->mazeEndIter = mazeEndIter;
   debug_->drcCost = drcCost;
@@ -193,7 +197,8 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr)
   return result;
 }
 
-void TritonRoute::debugSingleWorker(const std::string& worker_path)
+void TritonRoute::debugSingleWorker(const std::string& worker_path,
+                                    const std::string& drc_rpt)
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
@@ -201,18 +206,20 @@ void TritonRoute::debugSingleWorker(const std::string& worker_path)
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
   std::ifstream workerFile(worker_path, std::ios::binary);
-  std::string workerStr((std::istreambuf_iterator<char>(workerFile)), std::istreambuf_iterator<char>());
+  std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
+                        std::istreambuf_iterator<char>());
   workerFile.close();
-  auto worker = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
-  if(debug_->mazeEndIter != -1)
+  auto worker
+      = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
+  if (debug_->mazeEndIter != -1)
     worker->setMazeEndIter(debug_->mazeEndIter);
-  if(debug_->markerCost != -1)
+  if (debug_->markerCost != -1)
     worker->setMarkerCost(debug_->markerCost);
-  if(debug_->drcCost != -1)
+  if (debug_->drcCost != -1)
     worker->setDrcCost(debug_->drcCost);
-  if(debug_->ripupMode != -1)
+  if (debug_->ripupMode != -1)
     worker->setRipupMode(debug_->ripupMode);
-  if(debug_->followGuide != -1)
+  if (debug_->followGuide != -1)
     worker->setFollowGuide((debug_->followGuide == 1));
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
@@ -220,7 +227,15 @@ void TritonRoute::debugSingleWorker(const std::string& worker_path)
     graphics_->startIter(worker->getDRIter());
   std::string result = worker->reloadedMain();
   bool updated = worker->end(design_.get());
-  debugPrint(logger_, utl::DRT, "autotuner", 1, "End number of markers {}. Updated={}", worker->getBestNumMarkers(), updated);
+  debugPrint(logger_,
+             utl::DRT,
+             "autotuner",
+             1,
+             "End number of markers {}. Updated={}",
+             worker->getBestNumMarkers(),
+             updated);
+  if (updated)
+    reportDRC(drc_rpt, worker.get());
 }
 
 void TritonRoute::updateGlobals(const char* file_name)
@@ -307,7 +322,8 @@ void TritonRoute::updateDesign(const std::string& path)
   applyUpdates(updates);
 }
 
-void TritonRoute::applyUpdates(const std::vector<std::vector<drUpdate>>& updates)
+void TritonRoute::applyUpdates(
+    const std::vector<std::vector<drUpdate>>& updates)
 {
   auto topBlock = design_->getTopBlock();
   auto regionQuery = design_->getRegionQuery();
@@ -785,9 +801,9 @@ int TritonRoute::main()
       asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
     }
   }
-  if(debug_->debugDumpDR)
-  {
-    ord::OpenRoad::openRoad()->writeDb(fmt::format("{}/design.db", debug_->dumpDir).c_str());
+  if (debug_->debugDumpDR) {
+    ord::OpenRoad::openRoad()->writeDb(
+        fmt::format("{}/design.db", debug_->dumpDir).c_str());
   }
   initGuide();
   if (GUIDE_FILE == string("")) {
@@ -986,4 +1002,251 @@ bool TritonRoute::getWorkerResults(
 int TritonRoute::getWorkerResultsSize()
 {
   return results_sz_;
+}
+
+void TritonRoute::reportDRC(const string& file_name, FlexDRWorker* worker)
+{
+  double dbu = getDesign()->getTech()->getDBUPerUU();
+
+  if (file_name == string("")) {
+    if (VERBOSE > 0) {
+      logger_->warn(
+          DRT,
+          290,
+          "Waring: no DRC report specified, skipped writing DRC report");
+    }
+    return;
+  }
+
+  ofstream drcRpt(file_name.c_str());
+  if (drcRpt.is_open()) {
+    for (auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+      // get violation bbox
+      Rect bbox;
+      marker->getBBox(bbox);
+      if (worker != nullptr && !worker->getDrcBox().intersects(bbox))
+        continue;
+      auto con = marker->getConstraint();
+      drcRpt << "  violation type: ";
+      if (con) {
+        switch (con->typeId()) {
+          case frConstraintTypeEnum::frcShortConstraint: {
+            if (getDesign()
+                    ->getTech()
+                    ->getLayer(marker->getLayerNum())
+                    ->getType()
+                == dbTechLayerType::ROUTING) {
+              drcRpt << "Short";
+            } else if (getDesign()
+                           ->getTech()
+                           ->getLayer(marker->getLayerNum())
+                           ->getType()
+                       == dbTechLayerType::CUT) {
+              drcRpt << "CShort";
+            }
+            break;
+          }
+          case frConstraintTypeEnum::frcMinWidthConstraint:
+            drcRpt << "MinWid";
+            break;
+          case frConstraintTypeEnum::frcSpacingConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcSpacingEndOfLineConstraint:
+            drcRpt << "EOLSpc";
+            break;
+          case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcCutSpacingConstraint:
+            drcRpt << "CutSpc";
+            break;
+          case frConstraintTypeEnum::frcMinStepConstraint:
+            drcRpt << "MinStp";
+            break;
+          case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
+            drcRpt << "NSMet";
+            break;
+          case frConstraintTypeEnum::frcSpacingSamenetConstraint:
+            drcRpt << "MetSpc";
+            break;
+          case frConstraintTypeEnum::frcOffGridConstraint:
+            drcRpt << "OffGrid";
+            break;
+          case frConstraintTypeEnum::frcMinEnclosedAreaConstraint:
+            drcRpt << "MinHole";
+            break;
+          case frConstraintTypeEnum::frcAreaConstraint:
+            drcRpt << "MinArea";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingConstraint:
+            drcRpt << "CornerSpc";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingConstraint:
+            drcRpt << "CutSpc";
+            break;
+          case frConstraintTypeEnum::frcLef58RectOnlyConstraint:
+            drcRpt << "RectOnly";
+            break;
+          case frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint:
+            drcRpt << "RightWayOnGridOnly";
+            break;
+          case frConstraintTypeEnum::frcLef58MinStepConstraint:
+            drcRpt << "MinStp";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableInfluenceConstraint:
+            drcRpt << "MetSpcInf";
+            break;
+          case frConstraintTypeEnum::frcSpacingEndOfLineParallelEdgeConstraint:
+            drcRpt << "SpacingEndOfLineParallelEdge";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableConstraint:
+            drcRpt << "SpacingTable";
+            break;
+          case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+            drcRpt << "SpacingTableTw";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingTableConstraint:
+            drcRpt << "Lef58SpacingTable";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTableConstraint:
+            drcRpt << "Lef58CutSpacingTable";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint:
+            drcRpt << "Lef58CutSpacingTablePrl";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint:
+            drcRpt << "Lef58CutSpacingTableLayer";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingParallelWithinConstraint:
+            drcRpt << "Lef58CutSpacingParallelWithin";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingAdjacentCutsConstraint:
+            drcRpt << "Lef58CutSpacingAdjacentCuts";
+            break;
+          case frConstraintTypeEnum::frcLef58CutSpacingLayerConstraint:
+            drcRpt << "Lef58CutSpacingLayer";
+            break;
+          case frConstraintTypeEnum::frcMinimumcutConstraint:
+            drcRpt << "Minimumcut";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58CornerSpacingConcaveCornerConstraint:
+            drcRpt << "Lef58CornerSpacingConcaveCorner";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58CornerSpacingConvexCornerConstraint:
+            drcRpt << "Lef58CornerSpacingConvexCorner";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing1D";
+            break;
+          case frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint:
+            drcRpt << "Lef58CornerSpacingSpacing2D";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint:
+            drcRpt << "Lef58SpacingEndOfLine";
+            break;
+          case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithin";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinEndToEndConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinEndToEnd";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinEncloseCutConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinEncloseCut";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinParallelEdgeConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinParallelEdge";
+            break;
+          case frConstraintTypeEnum::
+              frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
+            drcRpt << "Lef58SpacingEndOfLineWithinMaxMinLength";
+            break;
+          case frConstraintTypeEnum::frcLef58CutClassConstraint:
+            drcRpt << "Lef58CutClass";
+            break;
+          case frConstraintTypeEnum::frcRecheckConstraint:
+            drcRpt << "Recheck";
+            break;
+          case frConstraintTypeEnum::frcLef58EolExtensionConstraint:
+            drcRpt << "Lef58EolExtension";
+            break;
+          case frConstraintTypeEnum::frcLef58EolKeepOutConstraint:
+            drcRpt << "Lef58EolKeepOut";
+            break;
+        }
+      } else {
+        drcRpt << "nullptr";
+      }
+      drcRpt << endl;
+      // get source(s) of violation
+      // format: type:name/identifier
+      drcRpt << "    srcs: ";
+      for (auto src : marker->getSrcs()) {
+        if (src) {
+          switch (src->typeId()) {
+            case frcNet:
+              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
+              break;
+            case frcInstTerm: {
+              frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
+              drcRpt << "iterm:" << instTerm->getInst()->getName() << "/"
+                     << instTerm->getTerm()->getName() << " ";
+              break;
+            }
+            case frcBTerm: {
+              frBTerm* bterm = (static_cast<frBTerm*>(src));
+              drcRpt << "bterm:" << bterm->getName() << " ";
+              break;
+            }
+            case frcInstBlockage: {
+              frInstBlockage* instBlockage
+                  = (static_cast<frInstBlockage*>(src));
+              drcRpt << "inst:" << instBlockage->getInst()->getName() << " ";
+              break;
+            }
+            case frcBlockage: {
+              drcRpt << "obstruction: ";
+              break;
+            }
+            default:
+              logger_->error(DRT,
+                             291,
+                             "Unexpected source type in marker: {}",
+                             src->typeId());
+          }
+        }
+      }
+      drcRpt << "\n";
+
+      drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
+             << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
+             << bbox.yMax() / dbu << " ) on Layer ";
+      if (getDesign()->getTech()->getLayer(marker->getLayerNum())->getType()
+              == dbTechLayerType::CUT
+          && marker->getLayerNum() - 1
+                 >= getDesign()->getTech()->getBottomLayerNum()) {
+        drcRpt << getDesign()
+                      ->getTech()
+                      ->getLayer(marker->getLayerNum() - 1)
+                      ->getName()
+               << "\n";
+      } else {
+        drcRpt << getDesign()
+                      ->getTech()
+                      ->getLayer(marker->getLayerNum())
+                      ->getName()
+               << "\n";
+      }
+    }
+  } else {
+    cout << "Error: Fail to open DRC report file\n";
+  }
 }

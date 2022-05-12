@@ -223,9 +223,6 @@ class FlexDR
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
   initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
-
-  // utility
-  void reportDRC(const std::string& file_name);
 };
 
 class FlexDRWorker;
@@ -380,14 +377,8 @@ class FlexDRWorker
     workerDRCCost_ = drcCostIn;
     workerMarkerCost_ = markerCostIn;
   }
-  void setMarkerCost(frUInt4 markerCostIn)
-  {
-    workerMarkerCost_ = markerCostIn;
-  }
-  void setDrcCost(frUInt4 drcCostIn)
-  {
-    workerDRCCost_ = drcCostIn;
-  }
+  void setMarkerCost(frUInt4 markerCostIn) { workerMarkerCost_ = markerCostIn; }
+  void setDrcCost(frUInt4 drcCostIn) { workerDRCCost_ = drcCostIn; }
   void setMarkers(std::vector<frMarker>& in)
   {
     markers_.clear();

@@ -181,7 +181,7 @@ set_worker_debug_params(int maze_end_iter,
 }
 
 void
-run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_path, const char* worker_path, const char* updates)
+run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_path, const char* worker_path, const char* updates, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setGuideFile(guide_path);
@@ -189,7 +189,7 @@ run_worker_cmd(const char* db_path, const char* guide_path, const char* globals_
   router->updateGlobals(globals_path);
   router->updateDesign(updates);
   
-  router->debugSingleWorker(worker_path);
+  router->debugSingleWorker(worker_path, drc_rpt);
 }
 
 void detailed_route_step_drt(int size,

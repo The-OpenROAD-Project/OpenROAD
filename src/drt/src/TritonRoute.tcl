@@ -300,10 +300,10 @@ proc pin_access { args } {
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose
 }
 proc detailed_route_run_worker { args } {
-  if { [llength $args] != 5 } {
-    utl::error DRT 319 "detailed_route_run_worker requires five positional arguments."
+  if { [llength $args] != 6 } {
+    utl::error DRT 319 "detailed_route_run_worker requires six positional arguments."
   }
-  drt::run_worker_cmd  [lindex $args 0] [lindex $args 1]  [lindex $args 2] [lindex $args 3] [lindex $args 4]
+  drt::run_worker_cmd  [lindex $args 0] [lindex $args 1]  [lindex $args 2] [lindex $args 3] [lindex $args 4] [lindex $args 5]
 }
 
 sta::define_cmd_args "detailed_route_worker_debug" {
