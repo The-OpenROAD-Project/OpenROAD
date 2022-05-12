@@ -1819,7 +1819,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
   }
-  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get());
+  FlexDRConnectivityChecker checker(getDesign(), logger_, db_, graphics_.get(), dist_on_);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {

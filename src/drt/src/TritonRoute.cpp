@@ -256,7 +256,9 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
           topBlock->removeMarker(marker);
           break;
         }
-        case drUpdate::REMOVE_FROM_NET: {
+        case drUpdate::REMOVE_FROM_NET:
+        case drUpdate::REMOVE_FROM_RQ: 
+        {
           auto net = update.getNet();
           auto id = update.getOrderInOwner();
           auto pinfig = net->getPinFig(id);
@@ -264,19 +266,22 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
             case frcPathSeg: {
               auto seg = static_cast<frPathSeg*>(pinfig);
               regionQuery->removeDRObj(seg);
-              net->removeShape(seg);
+              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+                net->removeShape(seg);
               break;
             }
             case frcPatchWire: {
               auto pwire = static_cast<frPatchWire*>(pinfig);
               regionQuery->removeDRObj(pwire);
-              net->removePatchWire(pwire);
+              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+                net->removePatchWire(pwire);
               break;
             }
             case frcVia: {
               auto via = static_cast<frVia*>(pinfig);
               regionQuery->removeDRObj(via);
-              net->removeVia(via);
+              if(update.getType() == drUpdate::REMOVE_FROM_NET)
+                net->removeVia(via);
               break;
             }
             default:
@@ -286,7 +291,9 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
           }
           break;
         }
-        case drUpdate::ADD_SHAPE: {
+        case drUpdate::ADD_SHAPE:
+        case drUpdate::ADD_SHAPE_NET_ONLY:
+        {
           switch (update.getObjTypeId()) {
             case frcPathSeg: {
               auto net = update.getNet();
@@ -294,7 +301,8 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
               std::unique_ptr<frShape> uShape = std::make_unique<frPathSeg>(seg);
               auto sptr = uShape.get();
               net->addShape(std::move(uShape));
-              regionQuery->addDRObj(sptr);
+              if(update.getType() == drUpdate::ADD_SHAPE)
+                regionQuery->addDRObj(sptr);
               break;
             }
             case frcPatchWire: {
@@ -304,7 +312,8 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
                   = std::make_unique<frPatchWire>(pwire);
               auto sptr = uShape.get();
               net->addPatchWire(std::move(uShape));
-              regionQuery->addDRObj(sptr);
+              if(update.getType() == drUpdate::ADD_SHAPE)
+                regionQuery->addDRObj(sptr);
               break;
             }
             case frcVia: {
@@ -313,7 +322,8 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
               auto uVia = std::make_unique<frVia>(via);
               auto sptr = uVia.get();
               net->addVia(std::move(uVia));
-              regionQuery->addDRObj(sptr);
+              if(update.getType() == drUpdate::ADD_SHAPE)
+                regionQuery->addDRObj(sptr);
               break;
             }
             default: {
@@ -343,6 +353,27 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
                           net->getGuides().size());
           const auto& guide = net->getGuides().at(idx);
           guide->setRoutes(tmp);
+          break;
+        }
+        case drUpdate::UPDATE_SHAPE:
+        {
+          auto net = update.getNet();
+          auto id = update.getOrderInOwner();
+          auto pinfig = net->getPinFig(id);
+          switch (pinfig->typeId()) {
+            case frcPathSeg: {
+              auto seg = static_cast<frPathSeg*>(pinfig);
+              frPathSeg updatedSeg = update.getPathSeg();
+              seg->setPoints(updatedSeg.getBeginPoint(), updatedSeg.getEndPoint());
+              frSegStyle style;
+              updatedSeg.getStyle(style);
+              seg->setStyle(style);
+              regionQuery->addDRObj(seg);
+              break;
+            }
+            default:
+              break;
+          }
         }
       }
     }

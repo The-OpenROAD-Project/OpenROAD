@@ -40,7 +40,10 @@ class drUpdate
     ADD_SHAPE,
     ADD_GUIDE,
     REMOVE_FROM_NET,
-    REMOVE_FROM_BLOCK
+    REMOVE_FROM_BLOCK,
+    REMOVE_FROM_RQ,
+    UPDATE_SHAPE,
+    ADD_SHAPE_NET_ONLY
   };
   drUpdate(UpdateType type = ADD_SHAPE)
       : net_(nullptr),

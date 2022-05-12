@@ -19,11 +19,15 @@ detailed_route -guide gcd_nangate45.route_guide \
 	             -remote_host 127.0.0.1 \
 	             -remote_port 1234 \
                -cloud_size 2 \
-               -shared_volume results \
-               -droute_end_iter 0
+               -shared_volume results
 exec kill $server1
 exec kill $server2
 exec kill $balancer
 set def_file results/gcd_nangate45.def
 write_def $def_file
+set running [file exists /proc/$base]
+while { $running } {
+  sleep 1
+  set running [file exists /proc/$base]
+}
 diff_files results/gcd_nangate45.defok $def_file

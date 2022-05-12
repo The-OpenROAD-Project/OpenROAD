@@ -45,7 +45,8 @@ class FlexDRConnectivityChecker
   FlexDRConnectivityChecker(frDesign* design,
                             Logger* logger,
                             odb::dbDatabase* db,
-                            FlexDRGraphics* graphics);
+                            FlexDRGraphics* graphics,
+                            bool save_updates = false);
   void check(int iter = -1);
 
  private:
@@ -167,6 +168,7 @@ class FlexDRConnectivityChecker
   Logger* logger_;
   odb::dbDatabase* db_;
   FlexDRGraphics* graphics_;
+  bool save_updates_;
 };
 
 }  // namespace fr
