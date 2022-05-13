@@ -57,7 +57,7 @@ class Validator
   void check_above(const char* name, T value, T limit, int id, EndType end = CLOSED)
   {
     static_assert(std::is_arithmetic_v<T>, "Must be arithmetic type");
-    if (value < limit || (end == CLOSED && value == limit)) {
+    if (value < limit || (end == OPEN && value == limit)) {
       logger_->error(tool_,
                      id,
                      "{} {} not {} {}",
@@ -73,7 +73,7 @@ class Validator
   void check_below(const char* name, T value, T limit, int id, EndType end = CLOSED)
   {
     static_assert(std::is_arithmetic_v<T>, "Must be arithmetic type");
-    if (value > limit || (end == CLOSED && value == limit)) {
+    if (value > limit || (end == OPEN && value == limit)) {
       logger_->error(tool_,
                      id,
                      "{} {} not {} {}",
@@ -99,8 +99,8 @@ class Validator
                    EndType high_end = CLOSED)
   {
     static_assert(std::is_arithmetic_v<T>, "Must be arithmetic type");
-    if (value < low_limit || (low_end == CLOSED && value == low_limit)
-        || value > high_limit || (high_end == CLOSED && value == high_limit)) {
+    if (value < low_limit || (low_end == OPEN && value == low_limit)
+        || value > high_limit || (high_end == OPEN && value == high_limit)) {
       logger_->error(tool_,
                      id,
                      "{} {} not in {}{}, {}{}",
