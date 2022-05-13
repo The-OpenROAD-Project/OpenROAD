@@ -126,7 +126,7 @@ enum class BufferedNetType;
 class SteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
-typedef vector<vector<SteinerPt>> SteinerPtAdjacenies;
+typedef vector<vector<SteinerPt>> SteinerPtAdjacents;
 
 class RepairDesign;
 

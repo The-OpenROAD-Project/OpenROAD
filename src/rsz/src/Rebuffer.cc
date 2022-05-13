@@ -92,6 +92,13 @@ Resizer::rebuffer(const Pin *drvr_pin)
       && !hasTopLevelOutputPort(net)) {
     const Corner *corner = sta_->cmdCorner();
     BufferedNetPtr bnet = makeBufferedNet(drvr_pin, corner);
+    if (bnet == nullptr) {
+      logger_->setDebugLevel(RSZ, "groute_bnet", 3);
+      logger_->setDebugLevel(RSZ, "make_buffered_net", 4);
+      bnet = makeBufferedNet(drvr_pin, corner);
+      logger_->setDebugLevel(RSZ, "groute_bnet", 0);
+      logger_->setDebugLevel(RSZ, "make_buffered_net", 0);
+    }
     debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                sdc_network_->pathName(drvr_pin));
     sta_->findRequireds();
