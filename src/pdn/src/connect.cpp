@@ -439,7 +439,7 @@ void Connect::makeVia(odb::dbSWire* wire,
     return;
   }
 
-  const std::pair<int, int> via_index
+  const ViaIndex via_index
       = std::make_pair(intersection.dx(), intersection.dy());
   auto& via = vias_[via_index];
 
