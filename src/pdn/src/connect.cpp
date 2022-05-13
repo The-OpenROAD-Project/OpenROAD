@@ -156,21 +156,20 @@ bool Connect::isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper
   return false;
 }
 
-std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+std::vector<Connect::ViaLayerRects> Connect::generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const
 {
   const odb::Rect intersection = lower.intersect(upper);
 
-  std::vector<std::pair<odb::Rect, odb::Rect>> stack;
-  odb::Rect bottom = lower;
+  std::vector<ViaLayerRects> stack;
+  stack.push_back({lower});
   for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
-    stack.emplace_back(bottom, intersection);
-    bottom = intersection;
+    stack.push_back({intersection});
   }
-  stack.emplace_back(bottom, upper);
+  stack.push_back({upper});
   return stack;
 }
 
-std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const
+std::vector<Connect::ViaLayerRects> Connect::generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const
 {
   auto adjust_rect = [](int min_width, bool is_x, odb::dbTech* tech, odb::Rect& intersection) {
     const int width = is_x ? intersection.dx() : intersection.dy();
@@ -203,8 +202,8 @@ std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaR
     }
   };
 
-  std::vector<std::pair<odb::Rect, odb::Rect>> stack;
-  odb::Rect bottom = lower;
+  std::vector<ViaLayerRects> stack;
+  stack.push_back({lower});
   const odb::Rect intersection = lower.intersect(upper);
   for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
     auto* layer = intermediate_routing_layers_[i];
@@ -216,13 +215,41 @@ std::vector<std::pair<odb::Rect, odb::Rect>> Connect::generateComplexStackedViaR
     adjust_rect(min_width, true, tech, level_intersection);
     adjust_rect(min_width, false, tech, level_intersection);
 
-    stack.emplace_back(bottom, level_intersection);
-
-    bottom = level_intersection;
+    stack.push_back({level_intersection});
   }
-  stack.emplace_back(bottom, upper);
+  stack.push_back({upper});
 
   return stack;
+}
+
+void Connect::generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const
+{
+  // fill possible rects with min width rects to ensure min enclosure is checked
+  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
+    auto* layer = intermediate_routing_layers_[i];
+    auto& layer_rects = rects[i + 1];
+
+    const bool is_horizontal = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const int min_width = layer->getWidth();
+
+    ViaLayerRects new_rects;
+    for (const auto& rect : layer_rects) {
+      odb::Rect new_rect = rect;
+      const odb::Point new_rect_center(new_rect.xMin() + new_rect.dx() / 2,
+                                       new_rect.yMin() + new_rect.dy() / 2);
+      if (is_horizontal) {
+        new_rect.set_ylo(new_rect_center.y() - min_width / 2);
+        new_rect.set_yhi(new_rect.yMin() + min_width);
+      } else {
+        new_rect.set_xlo(new_rect_center.x() - min_width / 2);
+        new_rect.set_xhi(new_rect.xMin() + min_width);
+      }
+
+      new_rects.insert(new_rect);
+    }
+
+    layer_rects.insert(new_rects.begin(), new_rects.end());
+  }
 }
 
 int Connect::getMinWidth(odb::dbTechLayer* layer) const
@@ -445,7 +472,7 @@ void Connect::makeVia(odb::dbSWire* wire,
 
   // make the via stack if one is not available for the given size
   if (via == nullptr) {
-    std::vector<std::pair<odb::Rect, odb::Rect>> stack_rects;
+    std::vector<ViaLayerRects> stack_rects;
     if (isComplexStackedVia(lower_rect, upper_rect)) {
       debugPrint(getGrid()->getLogger(),
           utl::PDN,
@@ -461,12 +488,14 @@ void Connect::makeVia(odb::dbSWire* wire,
     } else {
       stack_rects = generateViaRects(lower_rect, upper_rect);
     }
+    generateMinEnclosureViaRects(stack_rects);
 
     std::vector<DbVia*> stack;
     std::vector<odb::dbTechLayer*> layers = getAllRoutingLayers();
 
     for (int i = 1; i < layers.size(); i++) {
-      const auto& [via_lower_rect, via_upper_rect] = stack_rects[i - 1];
+      const auto& via_lower_rects = stack_rects[i - 1];
+      const auto& via_upper_rects = stack_rects[i];
       auto* l0 = layers[i - 1];
       auto* l1 = layers[i];
 
@@ -496,10 +525,10 @@ void Connect::makeVia(odb::dbSWire* wire,
       auto* new_via = makeSingleLayerVia(
           wire->getBlock(),
           l0,
-          via_lower_rect,
+          via_lower_rects,
           lower_constraint,
           l1,
-          via_upper_rect,
+          via_upper_rects,
           upper_constraint);
       if (new_via == nullptr) {
         // no via made, so build dummy via for warning
@@ -598,24 +627,28 @@ DbVia* Connect::generateDbVia(
 
 DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
                                    odb::dbTechLayer* lower,
-                                   const odb::Rect& lower_rect,
+                                   const std::set<odb::Rect>& lower_rects,
                                    const ViaGenerator::Constraint& lower_constraint,
                                    odb::dbTechLayer* upper,
-                                   const odb::Rect& upper_rect,
+                                   const std::set<odb::Rect>& upper_rects,
                                    const ViaGenerator::Constraint& upper_constraint) const
 {
   // look for generate vias
   std::vector<std::unique_ptr<ViaGenerator>> generate_vias;
-  for (odb::dbTechViaGenerateRule* db_via : generate_via_rules_) {
-    std::unique_ptr<GenerateViaGenerator> rule
-        = std::make_unique<GenerateViaGenerator>(
-            grid_->getLogger(), db_via, lower_rect, upper_rect);
+  for (const auto& lower_rect : lower_rects) {
+    for (const auto& upper_rect : upper_rects) {
+      for (odb::dbTechViaGenerateRule* db_via : generate_via_rules_) {
+        std::unique_ptr<GenerateViaGenerator> rule
+            = std::make_unique<GenerateViaGenerator>(
+                grid_->getLogger(), db_via, lower_rect, upper_rect);
 
-    if (!rule->isSetupValid(lower, upper)) {
-      continue;
+        if (!rule->isSetupValid(lower, upper)) {
+          continue;
+        }
+
+        generate_vias.push_back(std::move(rule));
+      }
     }
-
-    generate_vias.push_back(std::move(rule));
   }
 
   DbVia* generate_via = generateDbVia(generate_vias, block);
@@ -627,20 +660,24 @@ DbVia* Connect::makeSingleLayerVia(odb::dbBlock* block,
   // fallback to tech vias if generate is not possible
   // look for generate vias
   std::vector<std::unique_ptr<ViaGenerator>> tech_vias;
-  for (odb::dbTechVia* db_via : tech_vias_) {
-    std::unique_ptr<TechViaGenerator> rule
-        = std::make_unique<TechViaGenerator>(grid_->getLogger(),
-                                             db_via,
-                                             lower_rect,
-                                             lower_constraint,
-                                             upper_rect,
-                                             upper_constraint);
+  for (const auto& lower_rect : lower_rects) {
+    for (const auto& upper_rect : upper_rects) {
+      for (odb::dbTechVia* db_via : tech_vias_) {
+        std::unique_ptr<TechViaGenerator> rule
+          = std::make_unique<TechViaGenerator>(grid_->getLogger(),
+                                               db_via,
+                                               lower_rect,
+                                               lower_constraint,
+                                               upper_rect,
+                                               upper_constraint);
 
-    if (!rule->isSetupValid(lower, upper)) {
-      continue;
+        if (!rule->isSetupValid(lower, upper)) {
+          continue;
+        }
+
+        tech_vias.push_back(std::move(rule));
+      }
     }
-
-    tech_vias.push_back(std::move(rule));
   }
 
   return generateDbVia(tech_vias, block);

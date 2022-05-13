@@ -143,10 +143,10 @@ class Connect
 
   DbVia* makeSingleLayerVia(odb::dbBlock* block,
                             odb::dbTechLayer* lower,
-                            const odb::Rect& lower_rect,
+                            const std::set<odb::Rect>& lower_rects,
                             const ViaGenerator::Constraint& lower_constraint,
                             odb::dbTechLayer* upper,
-                            const odb::Rect& upper_rect,
+                            const std::set<odb::Rect>& upper_rects,
                             const ViaGenerator::Constraint& upper_constraint) const;
 
   void populateDBVias();
@@ -166,9 +166,11 @@ class Connect
       const std::vector<std::unique_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
 
+  using ViaLayerRects = std::set<odb::Rect>;
   bool isComplexStackedVia(const odb::Rect& lower, const odb::Rect& upper) const;
-  std::vector<std::pair<odb::Rect, odb::Rect>> generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
-  std::vector<std::pair<odb::Rect, odb::Rect>> generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateComplexStackedViaRects(const odb::Rect& lower, const odb::Rect& upper) const;
+  void generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const;
 
   int getMinWidth(odb::dbTechLayer* layer) const;
   int getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const;
