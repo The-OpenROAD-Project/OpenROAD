@@ -5,6 +5,5 @@
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 100.800).
 [INFO IFP-0001] Added 570 rows of 4209 sites.
-[INFO IFP-0006] Placement blockages found: 1
-[INFO IFP-0023] Cut rows: 3
+[INFO ODB-0303] The initial 570 rows (2399130 sites) were cut with 1 shapes for a total of 567 rows (2386503 sites).
 No differences found.

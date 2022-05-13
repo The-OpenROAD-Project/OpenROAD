@@ -41,18 +41,22 @@
 #include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/util.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
+#include "utl/validation.h"
 
 namespace ifp {
 
 using std::abs;
 using std::ceil;
+using std::map;
 using std::round;
+using std::set;
 using std::string;
 
 using sta::dbNetwork;
@@ -90,157 +94,47 @@ using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Rect;
 
-class InitFloorplan
+InitFloorplan::InitFloorplan(dbBlock* block,
+                             Logger* logger,
+                             sta::dbNetwork* network)
+    : block_(block), logger_(logger), network_(network)
 {
- public:
-  InitFloorplan() {}
-  void initFloorplan(double util,
-                     double aspect_ratio,
-                     int core_space_bottom,
-                     int core_space_top,
-                     int core_space_left,
-                     int core_space_right,
-                     const char* site_name,
-                     dbDatabase* db,
-                     Logger* logger);
-
-  void initFloorplan(int die_lx,
-                     int die_ly,
-                     int die_ux,
-                     int die_uy,
-                     int core_lx,
-                     int core_ly,
-                     int core_ux,
-                     int core_uy,
-                     const char* site_name,
-                     dbDatabase* db,
-                     Logger* logger);
-
-  void autoPlacePins(const char* pin_layer_name,
-                     dbDatabase* db,
-                     Logger* logger);
-
- protected:
-  void initFloorplan(int die_lx,
-                     int die_ly,
-                     int die_ux,
-                     int die_uy,
-                     int core_lx,
-                     int core_ly,
-                     int core_ux,
-                     int core_uy,
-                     const char* site_name);
-  double designArea();
-  void makeRows(dbSite* site,
-                int core_lx,
-                int core_ly,
-                int core_ux,
-                int core_uy);
-  dbSite* findSite(const char* site_name);
-  void makeTracks(const char* tracks_file, Rect& die_area);
-  void autoPlacePins(dbTechLayer* pin_layer, Rect& core);
-  int snapToMfgGrid(int coord) const;
-  int metersToDbu(double dist) const;
-  double dbuToMeters(int dist) const;
-  void updateVoltageDomain(dbSite* site,
-                           int core_lx,
-                           int core_ly,
-                           int core_ux,
-                           int core_uy);
-
-  dbDatabase* db_;
-  dbBlock* block_;
-  Logger* logger_;
-};
-
-void initFloorplan(double util,
-                   double aspect_ratio,
-                   int core_space_bottom,
-                   int core_space_top,
-                   int core_space_left,
-                   int core_space_right,
-                   const char* site_name,
-                   dbDatabase* db,
-                   Logger* logger)
-{
-  InitFloorplan init_fp;
-  init_fp.initFloorplan(util,
-                        aspect_ratio,
-                        core_space_bottom,
-                        core_space_top,
-                        core_space_left,
-                        core_space_right,
-                        site_name,
-                        db,
-                        logger);
 }
 
-void initFloorplan(int die_lx,
-                   int die_ly,
-                   int die_ux,
-                   int die_uy,
-                   int core_lx,
-                   int core_ly,
-                   int core_ux,
-                   int core_uy,
-                   const char* site_name,
-                   dbDatabase* db,
-                   Logger* logger)
-{
-  InitFloorplan init_fp;
-  init_fp.initFloorplan(die_lx,
-                        die_ly,
-                        die_ux,
-                        die_uy,
-                        core_lx,
-                        core_ly,
-                        core_ux,
-                        core_uy,
-                        site_name,
-                        db,
-                        logger);
-}
-
-void InitFloorplan::initFloorplan(double util,
+void InitFloorplan::initFloorplan(double utilization,
                                   double aspect_ratio,
                                   int core_space_bottom,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const char* site_name,
-                                  dbDatabase* db,
-                                  Logger* logger)
+                                  const char* site_name)
 {
-  logger_ = logger;
-  db_ = db;
-  dbChip* chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      const double design_area = designArea();
-      const double core_area = design_area / util;
-      const int core_width = metersToDbu(std::sqrt(core_area / aspect_ratio));
-      const int core_height = round(core_width * aspect_ratio);
+  utl::Validator v(logger_, IFP);
+  v.check_percentage("utilization", utilization, 12);
+  v.check_non_negative("core_space_bottom", core_space_bottom, 32);
+  v.check_non_negative("core_space_top", core_space_top, 33);
+  v.check_non_negative("core_space_left", core_space_left, 34);
+  v.check_non_negative("core_space_right", core_space_right, 35);
+  v.check_non_negative("aspect_ratio", aspect_ratio, 36);
+  v.check_non_null("site_name", site_name, 37);
 
-      const int core_lx = core_space_left;
-      const int core_ly = core_space_bottom;
-      const int core_ux = core_lx + core_width;
-      const int core_uy = core_ly + core_height;
-      const int die_lx = 0;
-      const int die_ly = 0;
-      const int die_ux = core_ux + core_space_right;
-      const int die_uy = core_uy + core_space_top;
-      initFloorplan(die_lx,
-                    die_ly,
-                    die_ux,
-                    die_uy,
-                    core_lx,
-                    core_ly,
-                    core_ux,
-                    core_uy,
-                    site_name);
-    }
-  }
+  utilization /= 100;
+  const double design_area = designArea();
+  const double core_area = design_area / utilization;
+  const int core_width = std::sqrt(core_area / aspect_ratio);
+  const int core_height = round(core_width * aspect_ratio);
+
+  const int core_lx = core_space_left;
+  const int core_ly = core_space_bottom;
+  const int core_ux = core_lx + core_width;
+  const int core_uy = core_ly + core_height;
+  const int die_lx = 0;
+  const int die_ly = 0;
+  const int die_ux = core_ux + core_space_right;
+  const int die_uy = core_uy + core_space_top;
+  initFloorplan({die_lx, die_ly, die_ux, die_uy},
+                {core_lx, core_ly, core_ux, core_uy},
+                site_name);
 }
 
 double InitFloorplan::designArea()
@@ -249,41 +143,10 @@ double InitFloorplan::designArea()
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
     const double area
-        = dbuToMeters(master->getHeight()) * dbuToMeters(master->getWidth());
+        = master->getHeight() * static_cast<double>(master->getWidth());
     design_area += area;
   }
   return design_area;
-}
-
-void InitFloorplan::initFloorplan(int die_lx,
-                                  int die_ly,
-                                  int die_ux,
-                                  int die_uy,
-                                  int core_lx,
-                                  int core_ly,
-                                  int core_ux,
-                                  int core_uy,
-                                  const char* site_name,
-                                  dbDatabase* db,
-                                  Logger* logger)
-{
-  logger_ = logger;
-  db_ = db;
-  dbChip* chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      initFloorplan(die_lx,
-                    die_ly,
-                    die_ux,
-                    die_uy,
-                    core_lx,
-                    core_ly,
-                    core_ux,
-                    core_uy,
-                    site_name);
-    }
-  }
 }
 
 static int divCeil(int dividend, int divisor)
@@ -291,24 +154,17 @@ static int divCeil(int dividend, int divisor)
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-void InitFloorplan::initFloorplan(int die_lx,
-                                  int die_ly,
-                                  int die_ux,
-                                  int die_uy,
-                                  int core_lx,
-                                  int core_ly,
-                                  int core_ux,
-                                  int core_uy,
+void InitFloorplan::initFloorplan(const odb::Rect& die,
+                                  const odb::Rect& core,
                                   const char* site_name)
 {
-  Rect die_area(snapToMfgGrid(die_lx),
-                snapToMfgGrid(die_ly),
-                snapToMfgGrid(die_ux),
-                snapToMfgGrid(die_uy));
+  Rect die_area(snapToMfgGrid(die.xMin()),
+                snapToMfgGrid(die.yMin()),
+                snapToMfgGrid(die.xMax()),
+                snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
 
-  if (site_name && site_name[0] && core_lx >= 0.0 && core_lx >= 0.0
-      && core_ux >= 0.0 && core_uy >= 0.0) {
+  if (site_name && site_name[0] && core.xMin() >= 0 && core.yMin() >= 0) {
     dbSite* site = findSite(site_name);
     if (site) {
       // Destroy any existing rows.
@@ -320,27 +176,39 @@ void InitFloorplan::initFloorplan(int die_lx,
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
-      int clx = divCeil(core_lx, site_dx) * site_dx;
-      int cly = divCeil(core_ly, site_dy) * site_dy;
-      if (clx != core_lx || cly != core_ly) {
-        dbTech* tech = db_->getTech();
+      int clx = divCeil(core.xMin(), site_dx) * site_dx;
+      int cly = divCeil(core.yMin(), site_dy) * site_dy;
+      if (clx != core.xMin() || cly != core.yMin()) {
+        dbTech* tech = block_->getDataBase()->getTech();
         const double dbu = tech->getDbUnitsPerMicron();
         logger_->warn(IFP,
                       28,
                       "Core area lower left ({:.3f}, {:.3f}) snapped to "
                       "({:.3f}, {:.3f}).",
-                      core_lx / dbu,
-                      core_ly / dbu,
+                      core.xMin() / dbu,
+                      core.yMin() / dbu,
                       clx / dbu,
                       cly / dbu);
       }
-      int cux = core_ux;
-      int cuy = core_uy;
+      int cux = core.xMax();
+      int cuy = core.yMax();
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
     } else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
   }
+
+  std::vector<dbBox*> blockage_bboxes;
+  for (auto blockage : block_->getBlockages()) {
+    blockage_bboxes.push_back(blockage->getBBox());
+  }
+
+  odb::cutRows(block_,
+               /* min_row_width */ 0,
+               blockage_bboxes,
+               /* halo_x */ 0,
+               /* halo_y */ 0,
+               logger_);
 }
 
 // this function is used to create regions ( split overlapped rows and create
@@ -501,7 +369,7 @@ void InitFloorplan::makeRows(dbSite* site,
 
 dbSite* InitFloorplan::findSite(const char* site_name)
 {
-  for (dbLib* lib : db_->getLibs()) {
+  for (dbLib* lib : block_->getDataBase()->getLibs()) {
     dbSite* site = lib->findSite(site_name);
     if (site)
       return site;
@@ -511,32 +379,16 @@ dbSite* InitFloorplan::findSite(const char* site_name)
 
 ////////////////////////////////////////////////////////////////
 
-void autoPlacePins(const char* pin_layer_name, dbDatabase* db, Logger* logger)
+void InitFloorplan::autoPlacePins(const char* pin_layer_name)
 {
-  InitFloorplan init_fp;
-  init_fp.autoPlacePins(pin_layer_name, db, logger);
-}
-
-void InitFloorplan::autoPlacePins(const char* pin_layer_name,
-                                  dbDatabase* db,
-                                  Logger* logger)
-{
-  logger_ = logger;
-  db_ = db;
-  dbChip* chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    if (block_) {
-      dbTech* tech = db_->getTech();
-      dbTechLayer* pin_layer = tech->findLayer(pin_layer_name);
-      if (pin_layer) {
-        odb::Rect core;
-        block_->getCoreArea(core);
-        autoPlacePins(pin_layer, core);
-      } else
-        logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
-    }
-  }
+  dbTech* tech = block_->getDataBase()->getTech();
+  dbTechLayer* pin_layer = tech->findLayer(pin_layer_name);
+  if (pin_layer) {
+    odb::Rect core;
+    block_->getCoreArea(core);
+    autoPlacePins(pin_layer, core);
+  } else
+    logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
 }
 
 void InitFloorplan::autoPlacePins(dbTechLayer* pin_layer, Rect& core)
@@ -592,7 +444,7 @@ void InitFloorplan::autoPlacePins(dbTechLayer* pin_layer, Rect& core)
 
 int InitFloorplan::snapToMfgGrid(int coord) const
 {
-  dbTech* tech = db_->getTech();
+  dbTech* tech = block_->getDataBase()->getTech();
   if (tech->hasManufacturingGrid()) {
     int grid = tech->getManufacturingGrid();
     return round(coord / (double) grid) * grid;
@@ -601,32 +453,12 @@ int InitFloorplan::snapToMfgGrid(int coord) const
   return coord;
 }
 
-double InitFloorplan::dbuToMeters(int dist) const
+void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term, const char* prefix)
 {
-  dbTech* tech = db_->getTech();
-  int dbu = tech->getDbUnitsPerMicron();
-  return dist / (dbu * 1e+6);
-}
-
-int InitFloorplan::metersToDbu(double dist) const
-{
-  dbTech* tech = db_->getTech();
-  int dbu = tech->getDbUnitsPerMicron();
-  return round(dist * 1e+6 * dbu);
-}
-
-void insertTiecells(odb::dbMTerm* tie_term,
-                    const char* prefix,
-                    dbDatabase* db,
-                    sta::dbNetwork* network,
-                    Logger* logger)
-{
-  dbChip* chip = db->getChip();
-
   auto* master = tie_term->getMaster();
 
-  auto* port = network->dbToSta(tie_term);
-  auto* lib_port = network->libertyPort(port);
+  auto* port = network_->dbToSta(tie_term);
+  auto* lib_port = network_->libertyPort(port);
   auto func_operation = lib_port->function()->op();
   const bool is_zero = func_operation == sta::FuncExpr::op_zero;
   const bool is_one = func_operation == sta::FuncExpr::op_one;
@@ -637,43 +469,38 @@ void insertTiecells(odb::dbMTerm* tie_term,
   } else if (is_one) {
     look_for = odb::dbSigType::POWER;
   } else {
-    logger->error(utl::IFP,
-                  29,
-                  "Unable to determine tiecell ({}) function.",
-                  master->getName());
+    logger_->error(utl::IFP,
+                   29,
+                   "Unable to determine tiecell ({}) function.",
+                   master->getName());
   }
 
   int count = 0;
 
-  if (chip != nullptr) {
-    auto* block = chip->getBlock();
-    if (block != nullptr) {
-      for (auto* net : block->getNets()) {
-        if (net->isSpecial()) {
-          continue;
-        }
-        if (look_for != net->getSigType()) {
-          continue;
-        }
-
-        std::string inst_name = prefix;
-        inst_name += net->getName();
-
-        auto* inst = odb::dbInst::create(block, master, inst_name.c_str());
-        auto* iterm = inst->findITerm(tie_term->getConstName());
-        iterm->connect(net);
-        net->setSigType(odb::dbSigType::SIGNAL);
-        count++;
-      }
+  for (auto* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
     }
+    if (look_for != net->getSigType()) {
+      continue;
+    }
+
+    std::string inst_name = prefix;
+    inst_name += net->getName();
+
+    auto* inst = odb::dbInst::create(block_, master, inst_name.c_str());
+    auto* iterm = inst->findITerm(tie_term->getConstName());
+    iterm->connect(net);
+    net->setSigType(odb::dbSigType::SIGNAL);
+    count++;
   }
 
-  logger->info(utl::IFP,
-               30,
-               "Inserted {} tiecells using {}/{}.",
-               count,
-               master->getName(),
-               tie_term->getName());
+  logger_->info(utl::IFP,
+                30,
+                "Inserted {} tiecells using {}/{}.",
+                count,
+                master->getName(),
+                tie_term->getName());
 }
 
 }  // namespace ifp
