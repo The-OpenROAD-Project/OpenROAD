@@ -44,6 +44,7 @@ class Logger;
 
 namespace rcx {
 
+using odb::uint;
 using utl::Logger;
 class Ext
 
