@@ -554,7 +554,7 @@ void DRCWidget::loadTRReport(const QString& filename)
       } else if (item_type == "obstruction") {
         bool found = false;
         if (layer != nullptr) {
-          for (const auto& obs : block_->getObstructions()) {
+          for (const auto obs : block_->getObstructions()) {
             auto obs_bbox = obs->getBBox();
             if (obs_bbox->getTechLayer() == layer) {
               odb::Rect obs_rect;
