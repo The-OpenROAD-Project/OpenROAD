@@ -32,6 +32,8 @@
 
 #include "name.h"
 
+namespace odb {
+
 void Ath__nameBucket::set(char* name, uint tag)
 {
   int len = strlen(name);
@@ -165,3 +167,5 @@ uint Ath__nameTable::getTagId(char* name)
 
   return 0;
 }
+
+}  // namespace odb

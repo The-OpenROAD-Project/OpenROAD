@@ -38,7 +38,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStringList>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 
 #include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
@@ -81,6 +81,9 @@ class ScriptWidget : public QDockWidget
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
   void commandExecuted(int return_code);
+  void commandAboutToExecute();
+  void executionPaused();
+
   // tcl exit has been initiated, want the gui to handle
   // shutdown
   void tclExiting();
@@ -128,7 +131,7 @@ class ScriptWidget : public QDockWidget
                             int argc,
                             const char **argv);
 
-  QTextEdit* output_;
+  QPlainTextEdit* output_;
   TclCmdInputWidget* input_;
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;

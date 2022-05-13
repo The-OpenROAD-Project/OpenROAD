@@ -332,12 +332,13 @@ void FlexGridGraph::initTracks(
     dbTechLayerDir currPrefRouteDir = layer->getDir();
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global varialble and design rule allow
-      bool flag = (USENONPREFTRACKS && !layer->isUnidirectional())
-                      ? (tp->isHorizontal()
-                         && currPrefRouteDir == dbTechLayerDir::VERTICAL)
-                            || (!tp->isHorizontal()
-                                && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)
-                      : true;
+      bool flag
+          = (USENONPREFTRACKS && !layer->isUnidirectional())
+                ? (tp->isHorizontal()
+                   && currPrefRouteDir == dbTechLayerDir::VERTICAL)
+                      || (!tp->isHorizontal()
+                          && currPrefRouteDir == dbTechLayerDir::HORIZONTAL)
+                : true;
       if (flag) {
         int trackNum = ((tp->isHorizontal() ? bbox.xMin() : bbox.yMin())
                         - tp->getStartCoord())
