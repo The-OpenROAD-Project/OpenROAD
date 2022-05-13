@@ -38,7 +38,6 @@
 #include "dbLogger.h"
 #include "wire.h"
 //#define ZDEBUG 1
-uint ttttGetDgOverlap;
 //#define TEST_GetDgOverlap
 
 namespace rcx {
@@ -46,6 +45,8 @@ CoupleOptions coupleOptionsNull{};
 };
 
 namespace odb {
+
+static uint ttttGetDgOverlap;
 
 uint Ath__track::trackContextOn(int orig, int end, int base, int width,
                                 uint firstContextTrack,
