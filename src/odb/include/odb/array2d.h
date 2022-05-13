@@ -40,6 +40,8 @@
 #include "parse.h"
 #include "util.h"
 
+namespace odb {
+
 template <class T>
 class Ath__array2d
 {
@@ -207,3 +209,5 @@ class Ath__array2d
     }
   }
 };
+
+}  // namespace odb

@@ -18,6 +18,7 @@ namespace rcx {
 
 using utl::RCX;
 
+using odb::Ath__double2int;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;

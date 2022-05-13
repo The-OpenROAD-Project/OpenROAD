@@ -38,6 +38,8 @@
 
 #include "array1.h"
 
+namespace odb {
+
 class Ath__parser
 {
  private:
@@ -150,3 +152,5 @@ class Ath__parser
                    char* v,
                    bool pos = false);
 };
+
+}  // namespace odb

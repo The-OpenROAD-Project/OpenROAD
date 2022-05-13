@@ -74,6 +74,11 @@ namespace rcx {
 
 class extMeasure;
 
+using odb::Ath__array1D;
+using odb::Ath__gridTable;
+using odb::AthPool;
+using odb::Darr;
+using odb::uint;
 using utl::Logger;
 
 class ext2dBox  // assume cross-section on the z-direction
