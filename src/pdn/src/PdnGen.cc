@@ -373,10 +373,10 @@ void PdnGen::trimShapes()
         if (!shape->isModifiable()) {
           continue;
         }
-        // only trim shapes on non pin layers
-        if (pin_layers.find(shape->getLayer()) != pin_layers.end()) {
-          continue;
-        }
+
+        // if pin layer, do not modify the shapes, but allow them to be
+        // removed if they are not connected to anything
+        const bool is_pin_layer = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         Shape* new_shape = nullptr;
         const odb::Rect new_rect = shape->getMinimumRect();
@@ -403,7 +403,9 @@ void PdnGen::trimShapes()
             component->removeShape(shape.get());
           }
         } else {
-          component->replaceShape(shape.get(), {new_shape});
+          if (!is_pin_layer) {
+            component->replaceShape(shape.get(), {new_shape});
+          }
         }
       }
     }
