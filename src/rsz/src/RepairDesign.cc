@@ -135,13 +135,14 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            int &fanout_violations,
                            int &length_violations)
 {
-  repaired_net_count = 0;
   slew_violations = 0;
   cap_violations = 0;
   fanout_violations = 0;
   length_violations = 0;
+  repaired_net_count = 0;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+  resizer_->resized_multi_output_insts_.clear();
 
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -185,20 +186,20 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
 void
 RepairDesign::repairClkNets(double max_wire_length)
 {
-  resizer_->init();
   // Need slews to resize inserted buffers.
   sta_->findDelays();
 
-  inserted_buffer_count_ = 0;
-  resize_count_ = 0;
-
-  int repaired_net_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;
   int length_violations = 0;
-  int max_length = resizer_->metersToDbu(max_wire_length);
+  int repaired_net_count = 0;
+  inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+  resizer_->resized_multi_output_insts_.clear();
+
   resizer_->incrementalParasiticsBegin();
+  int max_length = resizer_->metersToDbu(max_wire_length);
   for (Clock *clk : sdc_->clks()) {
     const PinSet *clk_pins = sta_->pins(clk);
     if (clk_pins) {
@@ -237,20 +238,20 @@ RepairDesign::repairNet(Net *net,
                         double slew_margin,
                         double max_cap_margin)
 {
-  resizer_->init();
+  int slew_violations = 0;
+  int cap_violations = 0;
+  int fanout_violations = 0;
+  int length_violations = 0;
+  int repaired_net_count = 0;
+  inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+  resizer_->resized_multi_output_insts_.clear();
 
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
-  inserted_buffer_count_ = 0;
-  resize_count_ = 0;
-  resizer_->resized_multi_output_insts_.clear();
-  int repaired_net_count = 0;
-  int slew_violations = 0;
-  int cap_violations = 0;
-  int fanout_violations = 0;
-  int length_violations = 0;
+  resizer_->incrementalParasiticsBegin();
   int max_length = resizer_->metersToDbu(max_wire_length);
   PinSet *drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
@@ -262,6 +263,8 @@ RepairDesign::repairNet(Net *net,
               repaired_net_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
   }
+  resizer_->updateParasitics();
+  resizer_->incrementalParasiticsEnd();
 
   if (slew_violations > 0)
     logger_->info(RSZ, 51, "Found {} slew violations.", slew_violations);
