@@ -41,6 +41,7 @@
 #include <QEvent>
 #include <QLocale>
 #include <QMouseEvent>
+#include <QString>
 
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
@@ -482,7 +483,7 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     units = "m";
   }
 
-  auto text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
+  QString text = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2"; // m2
 
   auto makeDataItem = [item](const QString& text, bool right_align = true) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);

@@ -177,8 +177,8 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
     bool valid = table_data_[row_index].second->getBBox(bbox);
     return valid ? QString::fromStdString(Descriptor::Property::toString(bbox)) : "<none>";
   } else if (index.column() == 3) {
-    return QString("Group ")
-           + QString::number(table_data_[row_index].first + 1);
+    QString group_string = QString("Group ") + QString::number(table_data_[row_index].first + 1);
+    return group_string;
   }
   return QVariant();
 }
