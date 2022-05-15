@@ -38,11 +38,7 @@ namespace pdr {
 using std::ostream;
 using std::vector;
 
-Node::Node(int _idx, int _x, int _y) :
-  idx(_idx),
-  x(_x),
-  y(_y),
-  maxPLToChild(0)
+Node::Node(int _idx, int _x, int _y) : idx(_idx), x(_x), y(_y), maxPLToChild(0)
 {
   parent = 0;
   min_dist = 0;
@@ -58,8 +54,7 @@ Node::Node(int _idx, int _x, int _y) :
   idx_of_cn_y = 105;
 };
 
-void Node::report(ostream& os,
-                  int level) const
+void Node::report(ostream& os, int level) const
 {
   os << idx << " (" << x << ", " << y << ")";
   if (level > 1) {
@@ -104,4 +99,4 @@ Node1::Node1(int _idx, int _x, int _y)
   y = _y;
 }
 
-} // namespace
+}  // namespace pdr

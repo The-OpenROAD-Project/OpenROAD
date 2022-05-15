@@ -74,8 +74,7 @@ ostream& operator<<(ostream& os, const Edge& n)
     for (int i = 0; i < n.lower_sps_to_be_added_x.size(); ++i) {
       os << " (" << n.lower_sps_to_be_added_x[i].x << " "
          << n.lower_sps_to_be_added_x[i].y << ") Child: ";
-      for (int j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size();
-           ++j) {
+      for (int j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size(); ++j) {
         os << n.lower_sps_to_be_added_x[i].sp_chil[j] << " ";
       }
       os << "/";
@@ -93,4 +92,4 @@ ostream& operator<<(ostream& os, const Edge& n)
   return os;
 }
 
-} // namespace
+}  // namespace pdr
