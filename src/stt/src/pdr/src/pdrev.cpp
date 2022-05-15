@@ -32,35 +32,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stt/pdrev.h"
-#include "stt/LinesRenderer.h"
 
 #include "graph.h"
+#include "stt/LinesRenderer.h"
 #include "utl/Logger.h"
 
 namespace pdr {
 
 class Graph;
 
-using stt::Tree;
 using stt::Branch;
+using stt::Tree;
 using utl::PDR;
 
 class PdRev
 {
-public:
+ public:
   PdRev(std::vector<int>& x,
         std::vector<int>& y,
         int root_index,
         Logger* logger);
   ~PdRev();
-  Tree primDijkstra(float alpha,
-                    int root_idx);
-  Tree primDijkstraRevII(float alpha,
-                         int root_idx);
-  void graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines);
+  Tree primDijkstra(float alpha, int root_idx);
+  Tree primDijkstraRevII(float alpha, int root_idx);
+  void graphLines(
+      std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& lines);
   void highlightGraph();
 
-private:
+ private:
   Tree translateTree();
   void replaceNode(Graph* graph, int originalNode);
   void transferChildren(int originalNode);
@@ -71,25 +70,24 @@ private:
   Logger* logger_;
 };
 
-Tree
-primDijkstra(std::vector<int>& x,
-             std::vector<int>& y,
-             int drvr_index,
-             float alpha,
-             Logger* logger)
-{
-  pdr::PdRev pd(x, y, drvr_index, logger);
-  return pd.primDijkstra(alpha, drvr_index);
-}
-
-Tree
-primDijkstraRevII(std::vector<int>& x,
+Tree primDijkstra(std::vector<int>& x,
                   std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger)
 {
-  // pdrev fails with non-zero root index despite showing signs of supporting it.
+  pdr::PdRev pd(x, y, drvr_index, logger);
+  return pd.primDijkstra(alpha, drvr_index);
+}
+
+Tree primDijkstraRevII(std::vector<int>& x,
+                       std::vector<int>& y,
+                       int drvr_index,
+                       float alpha,
+                       Logger* logger)
+{
+  // pdrev fails with non-zero root index despite showing signs of supporting
+  // it.
   std::vector<int> x1(x);
   std::vector<int> y1(y);
   // Move driver to pole position until drvr_index arg works.
@@ -104,8 +102,8 @@ primDijkstraRevII(std::vector<int>& x,
 PdRev::PdRev(std::vector<int>& x,
              std::vector<int>& y,
              int root_index,
-             Logger* logger) :
-  logger_(logger)
+             Logger* logger)
+    : logger_(logger)
 {
   graph_ = new Graph(x, y, root_index, logger_);
 }
@@ -115,20 +113,18 @@ PdRev::~PdRev()
   delete graph_;
 }
 
-Tree PdRev::primDijkstra(float alpha,
-                         int root_idx)
+Tree PdRev::primDijkstra(float alpha, int root_idx)
 {
   graph_->buildNearestNeighborsForSPT();
   graph_->run_PD_brute_force(alpha);
   graph_->doSteiner_HoVW();
   // The following slightly improves wire length but the cost is the use
   // of absolutely horrid unreliable code.
-  //graph_->fix_max_dc();
+  // graph_->fix_max_dc();
   return translateTree();
 }
 
-Tree PdRev::primDijkstraRevII(float alpha,
-                              int root_idx)
+Tree PdRev::primDijkstraRevII(float alpha, int root_idx)
 {
 #ifdef PDREVII
   graph_->buildNearestNeighborsForSPT();
@@ -150,7 +146,7 @@ Tree PdRev::translateTree()
     for (int i = 0; i < graph_->num_terminals; ++i) {
       Node& node = graph_->nodes[i];
       if (!(node.children.empty()
-            || (node.parent == i // is root node
+            || (node.parent == i  // is root node
                 && node.children.size() == 1
                 && node.children[0] >= graph_->num_terminals))) {
         replaceNode(graph_, i);
@@ -174,8 +170,7 @@ Tree PdRev::translateTree()
   if (num_terminals < 2) {
     // No branches.
     tree.length = 0;
-  }
-  else {
+  } else {
     int branch_count = tree.branchCount();
     tree.branch.resize(branch_count);
     tree.length = graph_->calc_tree_wl_pd();
@@ -261,7 +256,7 @@ void PdRev::transferChildren(int originalNode)
 void PdRev::RemoveSTNodes()
 {
   vector<int> toBeRemoved;
-  vector<Node> &nodes = graph_->nodes;
+  vector<Node>& nodes = graph_->nodes;
 
   for (int i = graph_->num_terminals; i < nodes.size(); ++i) {
     if (nodes[i].children.size() < 2
@@ -273,17 +268,19 @@ void PdRev::RemoveSTNodes()
     Node& cN = nodes[toBeRemoved[i]];
     graph_->removeChild(nodes[cN.parent], cN.idx);
     for (int j = 0; j < cN.children.size(); ++j) {
-      graph_->replaceParent(nodes[cN.children[j]], cN.idx,
-                            // Note that the root node's parent is itself,
-                            // so the removed node's parent cannot be used
-                            // for the children. This fact seems to have escaped
-                            // the original author. Use the original root node
-                            // as the parent.
-                            // Note well that the root_idx passed to the top level
-                            // function cannot be used here because it may have
-                            // been if duplicate x/y locations were removed.
-                            // -cherry 08/09/2021
-                            cN.parent == cN.idx ? graph_->root_idx_ : cN.parent);
+      graph_->replaceParent(
+          nodes[cN.children[j]],
+          cN.idx,
+          // Note that the root node's parent is itself,
+          // so the removed node's parent cannot be used
+          // for the children. This fact seems to have escaped
+          // the original author. Use the original root node
+          // as the parent.
+          // Note well that the root_idx passed to the top level
+          // function cannot be used here because it may have
+          // been if duplicate x/y locations were removed.
+          // -cherry 08/09/2021
+          cN.parent == cN.idx ? graph_->root_idx_ : cN.parent);
       graph_->addChild(nodes[cN.parent], cN.children[j]);
     }
   }
@@ -313,34 +310,31 @@ void PdRev::RemoveSTNodes()
 
 ////////////////////////////////////////////////////////////////
 
-void
-PdRev::graphLines(std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> &lines)
+void PdRev::graphLines(
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>>& lines)
 {
-  vector<Node> &nodes = graph_->nodes;
-  for (Node &node : nodes) {
-    Node &parent = nodes[node.parent];
+  vector<Node>& nodes = graph_->nodes;
+  for (Node& node : nodes) {
+    Node& parent = nodes[node.parent];
     std::pair<int, int> node_xy(node.x, node.y);
     std::pair<int, int> parent_xy(parent.x, parent.y);
-    std::pair<std::pair<int, int>, std::pair<int, int>> line(node_xy, parent_xy);
+    std::pair<std::pair<int, int>, std::pair<int, int>> line(node_xy,
+                                                             parent_xy);
     lines.push_back(line);
   }
 }
 
 // Useful for generating regression data.
-void
-reportXY(std::vector<int> x,
-         std::vector<int> y,
-         Logger* logger)
+void reportXY(std::vector<int> x, std::vector<int> y, Logger* logger)
 {
   for (int i = 0; i < x.size(); i++)
     logger->report("\\{p{} {} {}\\}", i, x[i], y[i]);
 }
 
-void
-PdRev::highlightGraph()
+void PdRev::highlightGraph()
 {
   if (gui::Gui::enabled()) {
-    gui::Gui *gui = gui::Gui::get();
+    gui::Gui* gui = gui::Gui::get();
     if (stt::LinesRenderer::lines_renderer == nullptr) {
       stt::LinesRenderer::lines_renderer = new stt::LinesRenderer();
       gui->registerRenderer(stt::LinesRenderer::lines_renderer);
@@ -358,4 +352,4 @@ PdRev::highlightGraph()
   }
 }
 
-}  // namespace
+}  // namespace pdr

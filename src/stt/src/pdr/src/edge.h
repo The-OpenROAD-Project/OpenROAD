@@ -36,8 +36,8 @@
 #include <ostream>
 #include <vector>
 
-#include "pdrevII.h"
 #include "node.h"
+#include "pdrevII.h"
 
 namespace pdr {
 
@@ -45,7 +45,7 @@ using std::ostream;
 
 class Edge
 {
-public:
+ public:
   Edge(int _idx, int _head, int _tail);
   ~Edge();
 
@@ -67,4 +67,4 @@ public:
   friend ostream& operator<<(ostream& os, const Edge& n);
 };
 
-}  // namespace
+}  // namespace pdr

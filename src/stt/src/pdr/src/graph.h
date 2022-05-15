@@ -35,9 +35,9 @@
 
 #include <vector>
 
-#include "pdrevII.h"
 #include "edge.h"
 #include "node.h"
+#include "pdrevII.h"
 
 namespace utl {
 class Logger;
@@ -51,11 +51,8 @@ using utl::Logger;
 
 class Graph
 {
-public:
-  Graph(vector<int>& x,
-        vector<int>& y,
-        int root_index,
-        Logger* logger);
+ public:
+  Graph(vector<int>& x, vector<int>& y, int root_index, Logger* logger);
   void buildNearestNeighborsForSPT();
   void run_PD_brute_force(float alpha);
   void doSteiner_HoVW();
@@ -71,7 +68,7 @@ public:
   int num_terminals;
   int root_idx_;
 
-private:
+ private:
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
   int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
@@ -132,21 +129,18 @@ private:
 
 #ifdef PDREVII
   // Segregated PDrevII code
-public:
+ public:
   void PDBU_new_NN(float alpha);
   void fix_max_dc();
 
-private:
+ private:
   void buildNearestNeighbors_single_node(int idx);
   void RemoveUnneceSTNodes();
   void refineSteiner();
   void refineSteiner2();
   bool IsOnEdge(Node& tNode, int idx);
   void update_detourcosts_to_NNs(int j);
-  void swap_and_update_tree(int min_node,
-                            int nn_idx,
-                            int distance,
-                            int i_node);
+  void swap_and_update_tree(int min_node, int nn_idx, int distance, int i_node);
   int ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape);
   void UpdateSteinerNodes();
   void UpdateAllEdgesNSEW();
@@ -200,7 +194,6 @@ private:
 
   vector<Node> sheared_;
 #endif
-
 };
 
-}  // namespace PD
+}  // namespace pdr

@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+
 #include "SteinerTreeBuilder.h"
 
 namespace utl {
@@ -43,21 +44,19 @@ class Gui;
 
 namespace pdr {
 
-using utl::Logger;
 using stt::Tree;
+using utl::Logger;
 
-Tree
-primDijkstra(std::vector<int>& x,
-             std::vector<int>& y,
-             int drvr_index,
-             float alpha,
-             Logger* logger);
-
-Tree
-primDijkstraRevII(std::vector<int>& x,
+Tree primDijkstra(std::vector<int>& x,
                   std::vector<int>& y,
                   int drvr_index,
                   float alpha,
                   Logger* logger);
 
-}  // namespace PD
+Tree primDijkstraRevII(std::vector<int>& x,
+                       std::vector<int>& y,
+                       int drvr_index,
+                       float alpha,
+                       Logger* logger);
+
+}  // namespace pdr
