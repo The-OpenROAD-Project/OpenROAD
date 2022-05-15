@@ -46,6 +46,7 @@ class Logger;
 namespace pdr {
 
 using std::ofstream;
+using std::pair;
 using std::vector;
 using utl::Logger;
 
@@ -97,15 +98,15 @@ class Graph
   void FreeManhDist();
 
   // Aux functions
-  void intersection(const std::vector<std::pair<double, double>> l1,
-                    const std::vector<std::pair<double, double>> l2,
-                    std::vector<std::pair<double, double>>& out);
-  double length(std::vector<std::pair<double, double>> l);
-  bool segmentIntersection(std::pair<double, double> A,
-                           std::pair<double, double> B,
-                           std::pair<double, double> C,
-                           std::pair<double, double> D,
-                           std::pair<double, double>& out);
+  void intersection(const vector<pair<double, double>>& l1,
+                    const vector<pair<double, double>>& l2,
+                    vector<pair<double, double>>& out);
+  double length(const vector<pair<double, double>>& l);
+  bool segmentIntersection(pair<double, double> A,
+                           pair<double, double> B,
+                           pair<double, double> C,
+                           pair<double, double> D,
+                           pair<double, double>& out);
   bool nodeLessY(const int i, const int j);
 
   vector<Edge> edges_;

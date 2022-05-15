@@ -1120,11 +1120,11 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   }
 }
 
-bool Graph::segmentIntersection(std::pair<double, double> A,
-                                std::pair<double, double> B,
-                                std::pair<double, double> C,
-                                std::pair<double, double> D,
-                                std::pair<double, double>& out)
+bool Graph::segmentIntersection(pair<double, double> A,
+                                pair<double, double> B,
+                                pair<double, double> C,
+                                pair<double, double> D,
+                                pair<double, double>& out)
 {
   double x, y;
   double a1 = B.second - A.second;
@@ -1202,8 +1202,8 @@ bool Graph::segmentIntersection(std::pair<double, double> A,
   }
 }
 
-void Graph::intersection(const std::vector<std::pair<double, double>> l1,
-                         const std::vector<std::pair<double, double>> l2,
+void Graph::intersection(const std::vector<std::pair<double, double>>& l1,
+                         const std::vector<std::pair<double, double>>& l2,
                          std::vector<std::pair<double, double>>& out)
 {
   std::vector<std::pair<double, double>> tmpVec;
@@ -1219,7 +1219,7 @@ void Graph::intersection(const std::vector<std::pair<double, double>> l1,
   out = tmpVec;
 }
 
-double Graph::length(std::vector<std::pair<double, double>> l)
+double Graph::length(const std::vector<std::pair<double, double>>& l)
 {
   double totalLen = 0;
 
