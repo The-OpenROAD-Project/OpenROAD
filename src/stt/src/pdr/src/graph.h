@@ -87,7 +87,7 @@ class Graph
 
   void get_children_of_node();
   void print_tree();
-  float calc_tree_det_cost();
+  float calc_tree_detour_cost();
   int calc_tree_pl();
   bool make_unique(vector<Node>& vec);
 

@@ -69,8 +69,8 @@ class Node
   bool conn_to_par;
   vector<int> sp_chil;
   int idx_of_cn_x, idx_of_cn_y;
-  int det_cost_node;  // Detour cost of the node j = Sum of all the detour costs
-                      // of the edges from the source to the node j
+  int detour_cost_node;  // Detour cost of the node j = Sum of all the detour
+                         // costs of the edges from the source to the node j
   int maxPLToChild;
 
   friend ostream& operator<<(ostream& os, const Node& n);

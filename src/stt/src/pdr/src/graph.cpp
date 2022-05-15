@@ -623,12 +623,12 @@ int Graph::calc_tree_pl()
   return pl;
 }
 
-float Graph::calc_tree_det_cost()
+float Graph::calc_tree_detour_cost()
 {
-  int det_cost = 0;
+  int detour_cost = 0;
   for (int j = 0; j < num_terminals; ++j)
-    det_cost += nodes[j].det_cost_node;
-  return det_cost;
+    detour_cost += nodes[j].detour_cost_node;
+  return detour_cost;
 }
 
 void Graph::run_PD_brute_force(float alpha)
@@ -776,14 +776,14 @@ void Graph::doSteiner_HoVW()
              "pdrev",
              3,
              "Tree detour cost before Steiner = {}",
-             calc_tree_det_cost());
+             calc_tree_detour_cost());
   debugPrint(logger_,
              PDR,
              "pdrev",
              3,
              "{} {}",
              calc_tree_wl_pd(),
-             calc_tree_det_cost());
+             calc_tree_detour_cost());
   if (logger_->debugCheck(PDR, "pdrev", 3))
     print_tree();
 
@@ -1434,9 +1434,9 @@ void Graph::update_node_detcost_Kt(int j)
   int par = nodes[j].parent;
   int child = j;
   int count = 1;
-  nodes[j].det_cost_node = 0;
+  nodes[j].detour_cost_node = 0;
   while (par != child) {
-    nodes[j].det_cost_node += nodes[child].detcost_edgePToNode;
+    nodes[j].detour_cost_node += nodes[child].detcost_edgePToNode;
     nodes[par].K_t++;
     child = par;
     par = nodes[par].parent;
@@ -1784,13 +1784,13 @@ void Graph::PDBU_new_NN(float alpha)
             if ((nn_node) > -1 && (nn_node != j) && !is_found_in_swap_space) {
               int child = node_e_new, par = nodes[node_e_new].parent;
               float sum_q_terms = nodes[node_e_new].nn_edge_detcost[oct];
-              float cumul_det_cost_term = 0;
+              float cumul_detour_cost_term = 0;
               while (par != j) {
                 sum_q_terms += nodes[child].detcost_edgeNodeToP;
-                cumul_det_cost_term
+                cumul_detour_cost_term
                     += (nodes[par].K_t - nodes[child].K_t)
-                       * (nodes[nn_node].det_cost_node + sum_q_terms
-                          - nodes[par].det_cost_node);
+                       * (nodes[nn_node].detour_cost_node + sum_q_terms
+                          - nodes[par].detour_cost_node);
                 child = par;
                 par = nodes[par].parent;
                 if ((child == 0) && (par == 0))
@@ -1802,14 +1802,14 @@ void Graph::PDBU_new_NN(float alpha)
               float last_len_term
                   = (dist(nodes[nn_node], nodes[node_e_new])
                      - (dist(nodes[node_e_rem_par], nodes[node_e_rem])));
-              float last_det_cost_term
+              float last_detour_cost_term
                   = nodes[node_e_new].K_t
-                    * (nodes[nn_node].det_cost_node
+                    * (nodes[nn_node].detour_cost_node
                        + nodes[node_e_new].nn_edge_detcost[oct]
-                       - nodes[node_e_new].det_cost_node);
-              swap_cost
-                  = alpha2_ * m_ * (cumul_det_cost_term + last_det_cost_term)
-                    + (1 - alpha2_) * (float) last_len_term;
+                       - nodes[node_e_new].detour_cost_node);
+              swap_cost = alpha2_ * m_
+                              * (cumul_detour_cost_term + last_detour_cost_term)
+                          + (1 - alpha2_) * (float) last_len_term;
               debugPrint(logger_,
                          PDR,
                          "pdrev",
@@ -1950,7 +1950,7 @@ void Graph::fix_max_dc()
   float init_wl = st_wl;
   for (int k = 1; k < tree_struct_1darr_.size(); k++) {
     int cnode = tree_struct_1darr_[k];
-    float cnode_dc = (float) nodes[cnode].det_cost_node;
+    float cnode_dc = (float) nodes[cnode].detour_cost_node;
     if (cnode_dc > 0) {
       if (use_nn == 1) {
         buildNearestNeighbors_single_node(cnode);
@@ -1958,8 +1958,8 @@ void Graph::fix_max_dc()
       }
       int cpar = nodes[cnode].parent;
       int edge_len_to_par = dist(nodes[cnode], nodes[cpar]);
-      int new_edge_len, nn2, det_cost_new_edge, size = 0, new_tree_wl = 0,
-                                                diff_in_wl, diff_in_dc = 0;
+      int new_edge_len, nn2, detour_cost_new_edge, size = 0, new_tree_wl = 0,
+                                                   diff_in_wl, diff_in_dc = 0;
       float new_dc, min_dc = cnode_dc;
       int min_dc_nn = -1, min_dc_new_tree_wl = 0;
 
@@ -1981,13 +1981,13 @@ void Graph::fix_max_dc()
           new_tree_wl = init_wl + diff_in_wl;
           if (((float) (new_tree_wl - st_wl) / (float) st_wl) <= alpha3_) {
             if (use_nn == 1) {
-              new_dc
-                  = nodes[cnode].nn_edge_detcost[ag] + nodes[nn2].det_cost_node;
+              new_dc = nodes[cnode].nn_edge_detcost[ag]
+                       + nodes[nn2].detour_cost_node;
             } else {
-              det_cost_new_edge = nodes[nn2].min_dist
-                                  + dist(nodes[nn2], nodes[cnode])
-                                  - nodes[cnode].min_dist;
-              new_dc = det_cost_new_edge + nodes[nn2].det_cost_node;
+              detour_cost_new_edge = nodes[nn2].min_dist
+                                     + dist(nodes[nn2], nodes[cnode])
+                                     - nodes[cnode].min_dist;
+              new_dc = detour_cost_new_edge + nodes[nn2].detour_cost_node;
             }
             if (new_dc < cnode_dc) {
               if (new_dc < min_dc) {
@@ -2008,7 +2008,7 @@ void Graph::fix_max_dc()
           tmp = chi;
           chi.clear();
           for (id = 0; id < tmp.size(); id++) {
-            init_dc += nodes[tmp[id]].det_cost_node;
+            init_dc += nodes[tmp[id]].detour_cost_node;
             count++;
             chi.insert(chi.end(),
                        nodes[tmp[id]].children.begin(),
@@ -2021,7 +2021,7 @@ void Graph::fix_max_dc()
         tmp.clear();
         if ((init_dc - final_dc) / init_dc >= alpha4_) {
           nodes[cnode].parent = min_dc_nn;
-          nodes[cnode].det_cost_node = min_dc;
+          nodes[cnode].detour_cost_node = min_dc;
           diff_in_dc = cnode_dc - min_dc;
           init_wl = min_dc_new_tree_wl;
           // Update the DCs of the nodes in the subtree of k
@@ -2031,7 +2031,7 @@ void Graph::fix_max_dc()
             tmp = chi;
             chi.clear();
             for (id = 0; id < tmp.size(); id++) {
-              nodes[tmp[id]].det_cost_node -= diff_in_dc;
+              nodes[tmp[id]].detour_cost_node -= diff_in_dc;
               chi.insert(chi.end(),
                          nodes[tmp[id]].children.begin(),
                          nodes[tmp[id]].children.end());
@@ -2051,15 +2051,15 @@ void Graph::update_detourcosts_to_NNs(int j)
   int child = j;
   for (int oct = 0; oct < nn_[child].size(); oct++) {
     int nn_node = nn_[child][oct];
-    int det_cost_nn_edge;
+    int detour_cost_nn_edge;
     if ((nn_node > -1) && (nodes[nn_node].parent != j)) {
-      det_cost_nn_edge = nodes[nn_node].min_dist
-                         + dist(nodes[nn_node], nodes[child])
-                         - nodes[child].min_dist;
+      detour_cost_nn_edge = nodes[nn_node].min_dist
+                            + dist(nodes[nn_node], nodes[child])
+                            - nodes[child].min_dist;
     } else {
-      det_cost_nn_edge = 10000;
+      detour_cost_nn_edge = 10000;
     }
-    nodes[j].nn_edge_detcost[oct] = det_cost_nn_edge;
+    nodes[j].nn_edge_detcost[oct] = detour_cost_nn_edge;
   }
 }
 
@@ -3332,12 +3332,12 @@ void Graph::BuildDAG()
 float Graph::calc_tree_cost()
 {
   float tree_cost = 0;
-  int det_cost = 0, wl = 0;
+  int detour_cost = 0, wl = 0;
   for (int j = 0; j < num_terminals; ++j) {
     wl += abs(nodes[j].cost_edgeToP);
-    det_cost += nodes[j].det_cost_node;
+    detour_cost += nodes[j].detour_cost_node;
   }
-  tree_cost = alpha2_ * m_ * (float) det_cost + (1 - alpha2_) * (float) wl;
+  tree_cost = alpha2_ * m_ * (float) detour_cost + (1 - alpha2_) * (float) wl;
   return (tree_cost);
 }
 
