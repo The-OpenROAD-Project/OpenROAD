@@ -5610,10 +5610,10 @@ namespace eval ICeWall {
         "left"   {set yMin [expr [dict get $center y] - $pitch / 2]; set yMax [expr [dict get $center y] + $pitch / 2]}
       }
       if {[dict get $padcell cell scaled_center x] < $xMin || [dict get $padcell cell scaled_center x] > $xMax} {
-        utl::error PAD 163 "Padcell $padcell x location ([ord::dbu_to_microns [dict get $padcell cell scaled_center x]]) cannot connect to the bump $row,$col on the $side_name edge. The x location must satisfy [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]."
+        utl::error PAD 163 "Padcell [dict get $padcell inst_name] x location ([ord::dbu_to_microns [dict get $padcell cell scaled_center x]]) cannot connect to the bump $row,$col on the $side_name edge. The x location must satisfy [ord::dbu_to_microns $xMin] <= x <= [ord::dbu_to_microns $xMax]."
       }
       if {[dict get $padcell cell scaled_center y] < $yMin || [dict get $padcell cell scaled_center y] > $yMax} {
-        utl::error PAD 164 "Padcell $padcell y location ([ord::dbu_to_microns [dict get $padcell cell scaled_center y]]) cannot connect to the bump $row,$col on the $side_name edge. The y location must satisfy [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]."
+        utl::error PAD 164 "Padcell [dict get $padcell inst_name] y location ([ord::dbu_to_microns [dict get $padcell cell scaled_center y]]) cannot connect to the bump $row,$col on the $side_name edge. The y location must satisfy [ord::dbu_to_microns $yMin] <= y <= [ord::dbu_to_microns $yMax]."
       }
 
       if {[dict exists $padcell use_signal_name]} {
