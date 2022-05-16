@@ -1196,6 +1196,7 @@ class FlexGridGraph
 
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);
+  bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
   template <class Archive>
