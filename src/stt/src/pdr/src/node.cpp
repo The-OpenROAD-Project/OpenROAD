@@ -48,10 +48,9 @@ Node::Node(int _idx, int _x, int _y) : idx(_idx), x(_x), y(_y), maxPLToChild(0)
   src_to_sink_dist = 0;
   K_t = 1;
   level = 0;
-  conn_to_par = false;
-  // magic number alert -cherry
-  idx_of_cn_x = 105;
-  idx_of_cn_y = 105;
+  conn_to_parent = false;
+  idx_of_current_node_x = std::numeric_limits<int>::max();
+  idx_of_current_node_y = std::numeric_limits<int>::max();
 };
 
 void Node::report(ostream& os, int level) const

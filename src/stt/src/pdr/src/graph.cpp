@@ -31,8 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "graph.h"
-
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -42,6 +40,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "graph.h"
 #include "utl/Logger.h"
 
 namespace pdr {
@@ -233,9 +232,7 @@ int Graph::IdentLoc(int pIdx, int cIdx)
 
 /***************************************************************************/
 
-/* comparison function for use in sort
- */
-bool Graph::make_unique(vector<Node>& vec)
+static void make_unique(vector<Node>& vec)
 {
   for (int a = 0; a < vec.size(); a++) {
     for (int b = 0; b < vec.size(); b++)
@@ -247,9 +244,10 @@ bool Graph::make_unique(vector<Node>& vec)
         }
       }
   }
-  return true;
 }
 
+/* comparison function for use in sort
+ */
 static bool comp_x(const Node& i, const Node& j)
 {
   if (i.x == j.x)
@@ -809,28 +807,28 @@ void Graph::doSteiner_HoVW()
   if (tree_struct_.size() >= 3) {
     for (int k = 0; k <= tree_struct_.size() - 3; k++) {
       for (int l = 0; l < tree_struct_[k].size(); l++) {
-        int curr_node = tree_struct_[k][l];
-        if (nodes[curr_node].children.size() > 0) {
-          if (curr_node == 0) {
-            for (int i = 0; i < edges_[curr_node].lower_best_config.size();
+        int current_node = tree_struct_[k][l];
+        if (nodes[current_node].children.size() > 0) {
+          if (current_node == root_idx_) {
+            for (int i = 0; i < edges_[current_node].lower_best_config.size();
                  i = i + 2)
-              edges_[edges_[curr_node].lower_best_config[i]].best_shape
-                  = edges_[curr_node].lower_best_config[i + 1];
-          } else if (edges_[curr_node].best_shape == 0) {
-            for (int i = 0; i < edges_[curr_node].lower_best_config.size();
+              edges_[edges_[current_node].lower_best_config[i]].best_shape
+                  = edges_[current_node].lower_best_config[i + 1];
+          } else if (edges_[current_node].best_shape == 0) {
+            for (int i = 0; i < edges_[current_node].lower_best_config.size();
                  i = i + 2)
-              edges_[edges_[curr_node].lower_best_config[i]].best_shape
-                  = edges_[curr_node].lower_best_config[i + 1];
-          } else if (edges_[curr_node].best_shape == 1) {
-            for (int i = 0; i < edges_[curr_node].upper_best_config.size();
+              edges_[edges_[current_node].lower_best_config[i]].best_shape
+                  = edges_[current_node].lower_best_config[i + 1];
+          } else if (edges_[current_node].best_shape == 1) {
+            for (int i = 0; i < edges_[current_node].upper_best_config.size();
                  i = i + 2)
-              edges_[edges_[curr_node].upper_best_config[i]].best_shape
-                  = edges_[curr_node].upper_best_config[i + 1];
-          } else if (edges_[curr_node].best_shape == 5) {
-            for (int i = 0; i < edges_[curr_node].upper_best_config.size();
+              edges_[edges_[current_node].upper_best_config[i]].best_shape
+                  = edges_[current_node].upper_best_config[i + 1];
+          } else if (edges_[current_node].best_shape == 5) {
+            for (int i = 0; i < edges_[current_node].upper_best_config.size();
                  i = i + 2)
-              edges_[edges_[curr_node].upper_best_config[i]].best_shape
-                  = edges_[curr_node].upper_best_config[i + 1];
+              edges_[edges_[current_node].upper_best_config[i]].best_shape
+                  = edges_[current_node].upper_best_config[i + 1];
           }
           // Condition for best_shape == 5? //SV: Not required since if current
           // edge shape is don't care, child config won't be set
@@ -879,8 +877,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   int max_overlap = 0;
   vector<int> best_config;
   vector<Node> best_sps_x, best_sps_y;
-  int best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
-  int best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
+  int best_sps_current_node_idx_x = std::numeric_limits<int>::max();
+  int best_sps_current_node_idx_y = std::numeric_limits<int>::max();
 
   for (int i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
@@ -925,13 +923,13 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
       best_config = config;
       best_sps_x.clear();
       best_sps_y.clear();
-      best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
-      best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
+      best_sps_current_node_idx_x = std::numeric_limits<int>::max();
+      best_sps_current_node_idx_y = std::numeric_limits<int>::max();
       if (set_of_points.size() != num_edges) {
         best_sps_x = set_of_points[num_edges];
-        best_sps_curr_node_idx_x = nodes[index].idx_of_cn_x;
+        best_sps_current_node_idx_x = nodes[index].idx_of_current_node_x;
         best_sps_y = set_of_points[num_edges + 1];
-        best_sps_curr_node_idx_y = nodes[index].idx_of_cn_y;
+        best_sps_current_node_idx_y = nodes[index].idx_of_current_node_y;
       }
     }
     for (int i = 0; i < set_of_points.size(); ++i)
@@ -1000,8 +998,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   edges_[index].lower_sps_to_be_added_x = best_sps_x;
   edges_[index].lower_sps_to_be_added_y = best_sps_y;
 
-  edges_[index].lower_idx_of_cn_x = best_sps_curr_node_idx_x;
-  edges_[index].lower_idx_of_cn_y = best_sps_curr_node_idx_y;
+  edges_[index].lower_idx_of_current_node_x = best_sps_current_node_idx_x;
+  edges_[index].lower_idx_of_current_node_y = best_sps_current_node_idx_y;
   best_config.clear();
   best_sps_x.clear();
   best_sps_y.clear();
@@ -1046,15 +1044,15 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     if (upper_overlap >= max_overlap) {
       max_overlap = upper_overlap;
       best_config = config;
-      best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
-      best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
+      best_sps_current_node_idx_x = std::numeric_limits<int>::max();
+      best_sps_current_node_idx_y = std::numeric_limits<int>::max();
       best_sps_x.clear();
       best_sps_y.clear();
       if (set_of_points.size() != num_edges) {
         best_sps_x = set_of_points[num_edges];
-        best_sps_curr_node_idx_x = nodes[index].idx_of_cn_x;
+        best_sps_current_node_idx_x = nodes[index].idx_of_current_node_x;
         best_sps_y = set_of_points[num_edges + 1];
-        best_sps_curr_node_idx_y = nodes[index].idx_of_cn_y;
+        best_sps_current_node_idx_y = nodes[index].idx_of_current_node_y;
       }
     }
     for (int i = 0; i < set_of_points.size(); ++i)
@@ -1064,7 +1062,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   }
 
   // New part added from here
-  max_ap_cnt = 0;  // Count of Max_overlap value appearing in the results combination
+  max_ap_cnt
+      = 0;  // Count of Max_overlap value appearing in the results combination
   res_size = result[0].size();
   not_dont_care_flag = 0;
   for (int p = 0; p < result.size(); p++) {
@@ -1103,8 +1102,8 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   edges_[index].upper_best_config = best_config;
   edges_[index].upper_sps_to_be_added_x = best_sps_x;
   edges_[index].upper_sps_to_be_added_y = best_sps_y;
-  edges_[index].upper_idx_of_cn_x = best_sps_curr_node_idx_x;
-  edges_[index].upper_idx_of_cn_y = best_sps_curr_node_idx_y;
+  edges_[index].upper_idx_of_current_node_x = best_sps_current_node_idx_x;
+  edges_[index].upper_idx_of_current_node_y = best_sps_current_node_idx_y;
 
   // Choosing the best
   if (edges_[index].lower_overlap > edges_[index].upper_overlap) {
@@ -1239,29 +1238,31 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 {
   int max_overlap = 0;
   typedef std::pair<double, double> s_point;
-  Node curr_node = set_of_nodes[0][0];
+  Node current_node = set_of_nodes[0][0];
   vector<Node> all_pts, sorted_x, sorted_y;
   for (int i = 0; i < set_of_nodes.size(); i++) {
+    const vector<Node>& n = set_of_nodes[i];
+
+    const s_point pn0(n[0].x, n[0].y);
+    const s_point pn1(n[1].x, n[1].y);
+    const s_point pn2(n[2].x, n[2].y);
+
+    const std::vector<s_point> line1{pn0, pn1, pn2};
+
     for (int j = i + 1; j < set_of_nodes.size(); j++) {
-      vector<Node>& n = set_of_nodes[i];
-      vector<Node>& m = set_of_nodes[j];
+      const vector<Node>& m = set_of_nodes[j];
 
-      s_point pn0((double) n[0].x, (double) n[0].y);
-      s_point pn1((double) n[1].x, (double) n[1].y);
-      s_point pn2((double) n[2].x, (double) n[2].y);
+      const s_point pm0(m[0].x, m[0].y);
+      const s_point pm1(m[1].x, m[1].y);
+      const s_point pm2(m[2].x, m[2].y);
 
-      s_point pm0((double) m[0].x, (double) m[0].y);
-      s_point pm1((double) m[1].x, (double) m[1].y);
-      s_point pm2((double) m[2].x, (double) m[2].y);
-
-      std::vector<s_point> line1{pn0, pn1, pn2};
-      std::vector<s_point> line2{pm0, pm1, pm2};
+      const std::vector<s_point> line2{pm0, pm1, pm2};
       std::vector<s_point> output;
 
       intersection(line1, line2, output);
 
       //            Known Problem - output-double, when converting to int for
-      //            output_nodes, 232 becomes 231 for somereason
+      //            output_nodes, 232 becomes 231 for some reason
       vector<Node> output_nodes;
       for (int g = 0; g < output.size(); g++)
         output_nodes.push_back(Node(0, output[g].first, output[g].second));
@@ -1270,11 +1271,11 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 
       if (output_nodes.size() > 1) {
         for (int k = 0; k < output_nodes.size(); ++k) {
-          // set flag if this node == curr_node
-          int curr_node_flag = 0;
-          if ((output_nodes[k].x == curr_node.x)
-              && (output_nodes[k].y == curr_node.y)) {
-            curr_node_flag = 1;
+          // set flag if this node == current_node
+          int current_node_flag = 0;
+          if ((output_nodes[k].x == current_node.x)
+              && (output_nodes[k].y == current_node.y)) {
+            current_node_flag = 1;
           }
           // If not present in all_pts
           bool is_present = false;
@@ -1282,15 +1283,15 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
           for (int s = 0; s < all_pts.size(); s++) {
             if ((output_nodes[k].x == all_pts[s].x)
                 && (output_nodes[k].y == all_pts[s].y)) {
-              if (curr_node_flag == 1) {
+              if (current_node_flag == 1) {
                 is_present = true;
                 all_pts_idx = s;
-              }  // Add anyway if not curr_node
+              }  // Add anyway if not current_node
             }
           }
           if (!is_present) {
             if (i == 0) {
-              output_nodes[k].conn_to_par = true;
+              output_nodes[k].conn_to_parent = true;
               output_nodes[k].sp_chil.push_back(m[2].idx);
             } else {
               output_nodes[k].sp_chil.push_back(n[2].idx);
@@ -1298,7 +1299,7 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
             }
           } else {
             if (i == 0) {
-              all_pts[all_pts_idx].conn_to_par = true;
+              all_pts[all_pts_idx].conn_to_parent = true;
               all_pts[all_pts_idx].sp_chil.push_back(m[2].idx);
             } else {
               all_pts[all_pts_idx].sp_chil.push_back(n[2].idx);
@@ -1320,38 +1321,41 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
     }
   }
   if (all_pts.size() > 1) {
-    int posn_of_cn = std::numeric_limits<int>::max();
+    int position_of_current_node = std::numeric_limits<int>::max();
     for (int u = 0; u < all_pts.size(); u++)
-      if ((all_pts[u].x == curr_node.x) && (all_pts[u].y == curr_node.y)) {
-        posn_of_cn = u;
+      if ((all_pts[u].x == current_node.x)
+          && (all_pts[u].y == current_node.y)) {
+        position_of_current_node = u;
         break;
       }
     for (int u = 0; u < all_pts.size(); u++) {
-      if (all_pts[u].x == all_pts[posn_of_cn].x)
+      if (all_pts[u].x == all_pts[position_of_current_node].x)
         sorted_y.push_back(all_pts[u]);
-      if (all_pts[u].y == all_pts[posn_of_cn].y)
+      if (all_pts[u].y == all_pts[position_of_current_node].y)
         sorted_x.push_back(all_pts[u]);
     }
     sort(sorted_x.begin(), sorted_x.end(), comp_x);
     sort(sorted_y.begin(), sorted_y.end(), comp_y);
     for (int u = 0; u < sorted_x.size(); u++)
-      if ((sorted_x[u].x == curr_node.x) && (sorted_x[u].y == curr_node.y)) {
-        nodes[curr_node.idx].idx_of_cn_x = u;
+      if ((sorted_x[u].x == current_node.x)
+          && (sorted_x[u].y == current_node.y)) {
+        nodes[current_node.idx].idx_of_current_node_x = u;
         break;
       }
     for (int u = 0; u < sorted_y.size(); u++)
-      if ((sorted_y[u].x == curr_node.x) && (sorted_y[u].y == curr_node.y)) {
-        nodes[curr_node.idx].idx_of_cn_y = u;
+      if ((sorted_y[u].x == current_node.x)
+          && (sorted_y[u].y == current_node.y)) {
+        nodes[current_node.idx].idx_of_current_node_y = u;
         break;
       }
     set_of_nodes.push_back(sorted_x);
     set_of_nodes.push_back(sorted_y);
     int overlap_x = 0, overlap_y = 0;
     if (sorted_x.size() > 1) {
-      overlap_x = calc_overlap_x_or_y(sorted_x, curr_node, 'x');
+      overlap_x = calc_overlap_x_or_y(sorted_x, current_node, 'x');
     }
     if (sorted_y.size() > 1) {
-      overlap_y = calc_overlap_x_or_y(sorted_y, curr_node, 'y');
+      overlap_y = calc_overlap_x_or_y(sorted_y, current_node, 'y');
     }
     max_overlap = overlap_x + overlap_y;
   }
@@ -1359,19 +1363,23 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
   return max_overlap;
 }
 
-int Graph::calc_overlap_x_or_y(vector<Node>& sorted, const Node& curr_node, char tag)
+int Graph::calc_overlap_x_or_y(const vector<Node>& sorted,
+                               const Node& current_node,
+                               const char tag)
 {
   int overlap1 = 0, overlap2 = 0;
   vector<int> tmp_overlap, tmp;
-  int ind_of_curr_node = 0;
-  for (int i = 0; i < sorted.size(); i++)  // Getting position of "curr_node"
-    if ((sorted[i].x == curr_node.x) && (sorted[i].y == curr_node.y)) {
-      ind_of_curr_node = i;
+  int index_of_current_node = 0;
+  for (int i = 0; i < sorted.size(); i++) {
+    // Getting position of "current_node"
+    if ((sorted[i].x == current_node.x) && (sorted[i].y == current_node.y)) {
+      index_of_current_node = i;
       break;
     }
-  if (ind_of_curr_node > 0) {
+  }
+  if (index_of_current_node > 0) {
     int cnt = 0;
-    for (int j = ind_of_curr_node - 1; j >= 0; j--) {
+    for (int j = index_of_current_node - 1; j >= 0; j--) {
       tmp.push_back(0);
       if (tag == 'x')
         tmp[cnt] = sorted[j + 1].x - sorted[j].x;
@@ -1391,9 +1399,9 @@ int Graph::calc_overlap_x_or_y(vector<Node>& sorted, const Node& curr_node, char
     tmp_overlap.clear();
     tmp.clear();
   }
-  if (ind_of_curr_node < (sorted.size() - 1)) {
+  if (index_of_current_node < (sorted.size() - 1)) {
     int cnt = 0;
-    for (int j = ind_of_curr_node + 1; j <= sorted.size() - 1; j++) {
+    for (int j = index_of_current_node + 1; j <= sorted.size() - 1; j++) {
       tmp.push_back(0);
       if (tag == 'x')
         tmp[cnt] = sorted[j].x - sorted[j - 1].x;
@@ -3365,7 +3373,7 @@ void Graph::GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes)
   if (IsOnEdge(corner1, nIdx)
       && (corner1.x != nodes[cIdx].x || corner1.y != nodes[cIdx].y)
       && (corner1.x != nodes[pIdx].x || corner1.y != nodes[pIdx].y)) {
-    corner1.conn_to_par = true;
+    corner1.conn_to_parent = true;
     corner1.sp_chil.push_back(cIdx);
     corner1.sp_chil.push_back(nIdx);
     STNodes.push_back(corner1);
@@ -3376,7 +3384,7 @@ void Graph::GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes)
       && (corner1.x != corner2.x || corner1.y != corner2.y)
       && (corner2.x != nodes[cIdx].x || corner2.y != nodes[cIdx].y)
       && (corner2.x != nodes[pIdx].x || corner2.y != nodes[pIdx].y)) {
-    corner2.conn_to_par = true;
+    corner2.conn_to_parent = true;
     corner2.sp_chil.push_back(cIdx);
     corner2.sp_chil.push_back(nIdx);
     STNodes.push_back(corner2);
