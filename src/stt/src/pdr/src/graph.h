@@ -71,7 +71,7 @@ class Graph
 
  private:
   int calc_overlap(vector<vector<Node>>& set_of_nodes);
-  int calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag);
+  int calc_overlap_x_or_y(vector<Node>& sorted, const Node& curr_node, char tag);
   void get_overlap_lshape(vector<Node>& set_of_nodes, int index);
   void generate_permutations(vector<vector<int>> lists,
                              vector<vector<int>>& result,

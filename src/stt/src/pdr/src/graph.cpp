@@ -876,12 +876,11 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   generate_permutations(lists, result, 0, tmp2);
   // Lower of curr_edge
   // For each combination, calc overlap
-  int max_ov = 0;
+  int max_overlap = 0;
   vector<int> best_config;
   vector<Node> best_sps_x, best_sps_y;
   int best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
   int best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
-  vector<int> all_lower_ovs;
 
   for (int i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
@@ -890,7 +889,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     tmp3.push_back(Node(0, set_of_nodes[1].x, set_of_nodes[0].y));
     tmp3.push_back(set_of_nodes[1]);
     set_of_points.push_back(tmp3);
-    int lower_ov = 0;
+    int lower_overlap = 0;
     vector<int> config;
     for (int j = 2; j < set_of_nodes.size(); j++) {
       if (result[i][j - 2] == 0) {
@@ -900,7 +899,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         tmp4.push_back(set_of_nodes[j]);
         set_of_points.push_back(tmp4);
         tmp4.clear();
-        lower_ov += edges_[set_of_nodes[j].idx].lower_ov;
+        lower_overlap += edges_[set_of_nodes[j].idx].lower_overlap;
         config.push_back(set_of_nodes[j].idx);
         config.push_back(0);
       } else if (result[i][j - 2] == 1) {
@@ -910,7 +909,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         tmp5.push_back(set_of_nodes[j]);
         set_of_points.push_back(tmp5);
         tmp5.clear();
-        lower_ov += edges_[set_of_nodes[j].idx].upper_ov;
+        lower_overlap += edges_[set_of_nodes[j].idx].upper_overlap;
         config.push_back(set_of_nodes[j].idx);
         config.push_back(1);
       }
@@ -918,11 +917,11 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 
     // Calculation of overlaps
     int num_edges = set_of_points.size();
-    int curr_level_ov = calc_overlap(set_of_points);
-    lower_ov += curr_level_ov;
-    result[i].push_back(lower_ov);
-    if (lower_ov >= max_ov) {
-      max_ov = lower_ov;
+    int curr_level_overlap = calc_overlap(set_of_points);
+    lower_overlap += curr_level_overlap;
+    result[i].push_back(lower_overlap);
+    if (lower_overlap >= max_overlap) {
+      max_overlap = lower_overlap;
       best_config = config;
       best_sps_x.clear();
       best_sps_y.clear();
@@ -942,12 +941,12 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   }
 
   // New part added from here
-  // Count of Max_ov value appearing in the results combination
+  // Count of Max_overlap value appearing in the results combination
   int max_ap_cnt = 0;
   int res_size = result[0].size(), not_dont_care_flag = 0;
   vector<int> tmp_res, not_dont_care_child;
   for (int p = 0; p < result.size(); p++) {
-    if (max_ov == result[p][res_size - 1]) {
+    if (max_overlap == result[p][res_size - 1]) {
       max_ap_cnt++;
       // Set first row which matches as reference row
       if (max_ap_cnt == 1) {
@@ -996,7 +995,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   tmp_res.clear();
   not_dont_care_child.clear();
 
-  edges_[index].lower_ov = max_ov;
+  edges_[index].lower_overlap = max_overlap;
   edges_[index].lower_best_config = best_config;
   edges_[index].lower_sps_to_be_added_x = best_sps_x;
   edges_[index].lower_sps_to_be_added_y = best_sps_y;
@@ -1006,7 +1005,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   best_config.clear();
   best_sps_x.clear();
   best_sps_y.clear();
-  max_ov = 0;
+  max_overlap = 0;
   for (int i = 0; i < result.size(); i++) {
     vector<vector<Node>> set_of_points;
     vector<Node> tmp3;
@@ -1014,7 +1013,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
     tmp3.push_back(Node(0, set_of_nodes[0].x, set_of_nodes[1].y));
     tmp3.push_back(set_of_nodes[1]);
     set_of_points.push_back(tmp3);
-    int upper_ov = 0;
+    int upper_overlap = 0;
     vector<int> config;
     for (int j = 2; j < set_of_nodes.size(); j++) {
       if (result[i][j - 2] == 0) {
@@ -1023,7 +1022,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         tmp4.push_back(Node(0, set_of_nodes[0].x, set_of_nodes[j].y));
         tmp4.push_back(set_of_nodes[j]);
         set_of_points.push_back(tmp4);
-        upper_ov += edges_[set_of_nodes[j].idx].lower_ov;
+        upper_overlap += edges_[set_of_nodes[j].idx].lower_overlap;
         config.push_back(set_of_nodes[j].idx);
         config.push_back(0);
       } else if (result[i][j - 2] == 1) {
@@ -1032,7 +1031,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
         tmp5.push_back(Node(0, set_of_nodes[j].x, set_of_nodes[0].y));
         tmp5.push_back(set_of_nodes[j]);
         set_of_points.push_back(tmp5);
-        upper_ov += edges_[set_of_nodes[j].idx].upper_ov;
+        upper_overlap += edges_[set_of_nodes[j].idx].upper_overlap;
         config.push_back(set_of_nodes[j].idx);
         config.push_back(1);
       }
@@ -1040,12 +1039,12 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
 
     // Calculation of overlaps
     int num_edges = set_of_points.size();
-    int curr_level_ov = calc_overlap(set_of_points);
-    upper_ov += curr_level_ov;
+    int curr_level_overlap = calc_overlap(set_of_points);
+    upper_overlap += curr_level_overlap;
     int last_res_idx = result[i].size() - 1;
-    result[i][last_res_idx] = upper_ov;
-    if (upper_ov >= max_ov) {
-      max_ov = upper_ov;
+    result[i][last_res_idx] = upper_overlap;
+    if (upper_overlap >= max_overlap) {
+      max_overlap = upper_overlap;
       best_config = config;
       best_sps_curr_node_idx_x = std::numeric_limits<int>::max();
       best_sps_curr_node_idx_y = std::numeric_limits<int>::max();
@@ -1065,11 +1064,11 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   }
 
   // New part added from here
-  max_ap_cnt = 0;  // Count of Max_ov value appearing in the results combination
+  max_ap_cnt = 0;  // Count of Max_overlap value appearing in the results combination
   res_size = result[0].size();
   not_dont_care_flag = 0;
   for (int p = 0; p < result.size(); p++) {
-    if (max_ov == result[p][res_size - 1]) {
+    if (max_overlap == result[p][res_size - 1]) {
       max_ap_cnt++;
       if (max_ap_cnt == 1) {
         tmp_res = result[p];
@@ -1100,7 +1099,7 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
       best_config[dont_care_child * 2 + 1] = 5;
   }
   // New part added till here
-  edges_[index].upper_ov = max_ov;
+  edges_[index].upper_overlap = max_overlap;
   edges_[index].upper_best_config = best_config;
   edges_[index].upper_sps_to_be_added_x = best_sps_x;
   edges_[index].upper_sps_to_be_added_y = best_sps_y;
@@ -1108,14 +1107,14 @@ void Graph::get_overlap_lshape(vector<Node>& set_of_nodes, int index)
   edges_[index].upper_idx_of_cn_y = best_sps_curr_node_idx_y;
 
   // Choosing the best
-  if (edges_[index].lower_ov > edges_[index].upper_ov) {
-    edges_[index].best_ov = edges_[index].lower_ov;
+  if (edges_[index].lower_overlap > edges_[index].upper_overlap) {
+    edges_[index].best_overlap = edges_[index].lower_overlap;
     edges_[index].best_shape = 0;
-  } else if (edges_[index].lower_ov < edges_[index].upper_ov) {
-    edges_[index].best_ov = edges_[index].upper_ov;
+  } else if (edges_[index].lower_overlap < edges_[index].upper_overlap) {
+    edges_[index].best_overlap = edges_[index].upper_overlap;
     edges_[index].best_shape = 1;
   } else {
-    edges_[index].best_ov = edges_[index].lower_ov;
+    edges_[index].best_overlap = edges_[index].lower_overlap;
     edges_[index].best_shape = 5;
   }
 }
@@ -1238,7 +1237,7 @@ double Graph::length(const std::vector<std::pair<double, double>>& l)
 
 int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
 {
-  int max_ov = 0;
+  int max_overlap = 0;
   typedef std::pair<double, double> s_point;
   Node curr_node = set_of_nodes[0][0];
   vector<Node> all_pts, sorted_x, sorted_y;
@@ -1347,23 +1346,23 @@ int Graph::calc_overlap(vector<vector<Node>>& set_of_nodes)
       }
     set_of_nodes.push_back(sorted_x);
     set_of_nodes.push_back(sorted_y);
-    int ov_x = 0, ov_y = 0;
+    int overlap_x = 0, overlap_y = 0;
     if (sorted_x.size() > 1) {
-      ov_x = calc_ov_x_or_y(sorted_x, curr_node, 'x');
+      overlap_x = calc_overlap_x_or_y(sorted_x, curr_node, 'x');
     }
     if (sorted_y.size() > 1) {
-      ov_y = calc_ov_x_or_y(sorted_y, curr_node, 'y');
+      overlap_y = calc_overlap_x_or_y(sorted_y, curr_node, 'y');
     }
-    max_ov = ov_x + ov_y;
+    max_overlap = overlap_x + overlap_y;
   }
   all_pts.clear();
-  return max_ov;
+  return max_overlap;
 }
 
-int Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
+int Graph::calc_overlap_x_or_y(vector<Node>& sorted, const Node& curr_node, char tag)
 {
-  int ov1 = 0, ov2 = 0;
-  vector<int> tmp_ov, tmp;
+  int overlap1 = 0, overlap2 = 0;
+  vector<int> tmp_overlap, tmp;
   int ind_of_curr_node = 0;
   for (int i = 0; i < sorted.size(); i++)  // Getting position of "curr_node"
     if ((sorted[i].x == curr_node.x) && (sorted[i].y == curr_node.y)) {
@@ -1383,13 +1382,13 @@ int Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
     cnt = 0;
     size_t s = tmp.size();
     for (int j = 0; j < s; j++) {
-      tmp_ov.push_back(0);
-      tmp_ov[j] = tmp[j] * (s - j);
+      tmp_overlap.push_back(0);
+      tmp_overlap[j] = tmp[j] * (s - j);
     }
     for (int j = 0; j < s; j++)
-      ov1 += tmp_ov[j];
+      overlap1 += tmp_overlap[j];
 
-    tmp_ov.clear();
+    tmp_overlap.clear();
     tmp.clear();
   }
   if (ind_of_curr_node < (sorted.size() - 1)) {
@@ -1405,17 +1404,17 @@ int Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag)
     cnt = 0;
     size_t s = tmp.size();
     for (int j = 0; j < s; j++) {
-      tmp_ov.push_back(0);
-      tmp_ov[j] = tmp[j] * (s - j);
+      tmp_overlap.push_back(0);
+      tmp_overlap[j] = tmp[j] * (s - j);
     }
     for (int j = 0; j < s; j++)
-      ov2 += tmp_ov[j];
-    tmp_ov.clear();
+      overlap2 += tmp_overlap[j];
+    tmp_overlap.clear();
     tmp.clear();
   }
-  tmp_ov.clear();
+  tmp_overlap.clear();
   tmp.clear();
-  return (ov1 + ov2);
+  return (overlap1 + overlap2);
 }
 
 void Graph::update_edgecosts_to_parent(int child, int par)
