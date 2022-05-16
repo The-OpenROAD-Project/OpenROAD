@@ -103,7 +103,7 @@ void detailed_route_cmd(const char* guideFile,
                     topRoutingLayer,
                     verbose,
                     cleanPatches,
-                    noPa,
+                    !noPa,
                     singleStepDR});
   router->main();
 }

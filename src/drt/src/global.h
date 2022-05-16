@@ -62,7 +62,7 @@ extern bool USEMINSPACING_OBS;
 extern bool ENABLE_BOUNDARY_MAR_FIX;
 extern bool ENABLE_VIA_GEN;
 extern bool CLEAN_PATCHES;
-extern bool NO_PA;
+extern bool DO_PA;
 extern bool SINGLE_STEP_DR;
 // extern int TEST;
 extern std::string VIAINPIN_BOTTOMLAYER_NAME;
